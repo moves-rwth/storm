@@ -23,7 +23,7 @@ namespace storm {
         namespace region {
         
             template<typename ParametricSparseModelType, typename ConstantType>
-            ApproximationModel<ParametricSparseModelType, ConstantType>::ApproximationModel(ParametricSparseModelType const& parametricModel, std::shared_ptr<storm::logic::OperatorFormula> formula) {
+            ApproximationModel<ParametricSparseModelType, ConstantType>::ApproximationModel(ParametricSparseModelType const& parametricModel, std::shared_ptr<storm::logic::OperatorFormula const> formula) {
                 //First some simple checks and initializations
                 this->typeOfParametricModel = parametricModel.getType();
                 if(formula->isProbabilityOperatorFormula()){

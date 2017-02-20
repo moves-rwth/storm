@@ -72,7 +72,7 @@ namespace storm {
 
             template<typename ParametricSparseModelType, typename ConstantType>
             void SparseMdpRegionModelChecker<ParametricSparseModelType, ConstantType>::preprocess(std::shared_ptr<ParametricSparseModelType>& simpleModel,
-                                                                                                  std::shared_ptr<storm::logic::OperatorFormula>& simpleFormula,
+                                                                                                  std::shared_ptr<storm::logic::OperatorFormula const>& simpleFormula,
                                                                                                   bool& isApproximationApplicable,
                                                                                                   boost::optional<ConstantType>& constantResult){
                 STORM_LOG_DEBUG("Preprocessing for MDPs started.");
@@ -104,6 +104,7 @@ namespace storm {
                 //The states that we consider to eliminate
                 storm::storage::BitVector considerToEliminate(submatrix.getRowGroupCount(), true);
                 considerToEliminate.set(initialState, false);
+                
 
 
                 std::vector<uint64_t> statesToEliminate;
@@ -197,7 +198,7 @@ namespace storm {
                 //Get the simplified formula
                 std::shared_ptr<storm::logic::AtomicLabelFormula> targetFormulaPtr(new storm::logic::AtomicLabelFormula("target"));
                 std::shared_ptr<storm::logic::EventuallyFormula> eventuallyFormula(new storm::logic::EventuallyFormula(targetFormulaPtr));
-                simpleFormula = std::shared_ptr<storm::logic::OperatorFormula>(new storm::logic::ProbabilityOperatorFormula(eventuallyFormula, storm::logic::OperatorInformation(boost::none, this->getSpecifiedFormula()->getBound())));
+                simpleFormula = std::shared_ptr<storm::logic::OperatorFormula const>(new storm::logic::ProbabilityOperatorFormula(eventuallyFormula, storm::logic::OperatorInformation(boost::none, this->getSpecifiedFormula()->getBound())));
             }
 
             template<typename ParametricSparseModelType, typename ConstantType>

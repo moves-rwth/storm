@@ -40,7 +40,7 @@ namespace storm {
                  * The (single) initial state should be disjoint from these states. (otherwise the result would be independent of the parameters, anyway)
                  * @note This will not check whether approximation is applicable
                  */
-                ApproximationModel(ParametricSparseModelType const& parametricModel, std::shared_ptr<storm::logic::OperatorFormula> formula);
+                ApproximationModel(ParametricSparseModelType const& parametricModel, std::shared_ptr<storm::logic::OperatorFormula const> formula);
                 virtual ~ApproximationModel();
 
                 /*!

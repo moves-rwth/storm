@@ -31,7 +31,7 @@ namespace storm {
         namespace region {
         
             template<typename ParametricSparseModelType, typename ConstantType>
-            SamplingModel<ParametricSparseModelType, ConstantType>::SamplingModel(ParametricSparseModelType const& parametricModel, std::shared_ptr<storm::logic::OperatorFormula> formula) : modelInstantiator(parametricModel){
+            SamplingModel<ParametricSparseModelType, ConstantType>::SamplingModel(ParametricSparseModelType const& parametricModel, std::shared_ptr<storm::logic::OperatorFormula const> formula) : modelInstantiator(parametricModel){
                 //First some simple checks and initializations..
                 this->typeOfParametricModel = parametricModel.getType();
                 if(formula->isProbabilityOperatorFormula()){

@@ -73,7 +73,7 @@ namespace storm {
             }
 
             template<typename ParametricSparseModelType, typename ConstantType>
-            std::shared_ptr<storm::logic::OperatorFormula> const& SparseRegionModelChecker<ParametricSparseModelType, ConstantType>::getSpecifiedFormula() const {
+            std::shared_ptr<storm::logic::OperatorFormula const> const& SparseRegionModelChecker<ParametricSparseModelType, ConstantType>::getSpecifiedFormula() const {
                 return this->specifiedFormula;
             }
 
@@ -103,7 +103,7 @@ namespace storm {
             }
             
             template<typename ParametricSparseModelType, typename ConstantType>
-            std::shared_ptr<storm::logic::OperatorFormula> const& SparseRegionModelChecker<ParametricSparseModelType, ConstantType>::getSimpleFormula() const {
+            std::shared_ptr<storm::logic::OperatorFormula const> const& SparseRegionModelChecker<ParametricSparseModelType, ConstantType>::getSimpleFormula() const {
                 return this->simpleFormula;
             }
 
@@ -192,7 +192,7 @@ namespace storm {
             }
             
             template<typename ParametricSparseModelType, typename ConstantType>
-            void SparseRegionModelChecker<ParametricSparseModelType, ConstantType>::initializeApproximationModel(ParametricSparseModelType const& model, std::shared_ptr<storm::logic::OperatorFormula> formula) {
+            void SparseRegionModelChecker<ParametricSparseModelType, ConstantType>::initializeApproximationModel(ParametricSparseModelType const& model, std::shared_ptr<storm::logic::OperatorFormula const> formula) {
                 std::chrono::high_resolution_clock::time_point timeInitApproxModelStart = std::chrono::high_resolution_clock::now();
                 STORM_LOG_DEBUG("Initializing the Approximation Model...");
                 STORM_LOG_THROW(this->isApproximationApplicable, storm::exceptions::UnexpectedException, "Approximation model requested but approximation is not applicable");
@@ -203,7 +203,7 @@ namespace storm {
             }
 
             template<typename ParametricSparseModelType, typename ConstantType>
-            void SparseRegionModelChecker<ParametricSparseModelType, ConstantType>::initializeSamplingModel(ParametricSparseModelType const& model, std::shared_ptr<storm::logic::OperatorFormula> formula) {
+            void SparseRegionModelChecker<ParametricSparseModelType, ConstantType>::initializeSamplingModel(ParametricSparseModelType const& model, std::shared_ptr<storm::logic::OperatorFormula const> formula) {
                 STORM_LOG_DEBUG("Initializing the Sampling Model....");
                 std::chrono::high_resolution_clock::time_point timeInitSamplingModelStart = std::chrono::high_resolution_clock::now();
                 this->samplingModel=std::make_shared<SamplingModel<ParametricSparseModelType, ConstantType>>(model, formula);

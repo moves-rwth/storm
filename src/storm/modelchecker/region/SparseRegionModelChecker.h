@@ -150,7 +150,7 @@ namespace storm {
                 /*!
                  * Returns the formula that has been specified upon initialization of this
                  */
-                std::shared_ptr<storm::logic::OperatorFormula> const& getSpecifiedFormula() const;
+                std::shared_ptr<storm::logic::OperatorFormula const> const& getSpecifiedFormula() const;
 
                 //SparseRegionModelCheckerSettings& getSettings();
                 SparseRegionModelCheckerSettings const& getSettings() const;
@@ -165,7 +165,7 @@ namespace storm {
                 bool const& isComputeRewards() const;
                 bool isResultConstant() const;
                 std::shared_ptr<ParametricSparseModelType> const& getSimpleModel() const;
-                std::shared_ptr<storm::logic::OperatorFormula> const& getSimpleFormula() const;
+                std::shared_ptr<storm::logic::OperatorFormula const> const& getSimpleFormula() const;
                 
                 /*!
                  * Makes the required preprocessing steps for the specified model and formula
@@ -174,7 +174,7 @@ namespace storm {
                  * In the latter case, the result is already computed and set to the given parameter. (otherwise the parameter is not touched).
                  * @note this->specifiedFormula and this->computeRewards has to be set accordingly, before calling this function
                  */
-                virtual void preprocess(std::shared_ptr<ParametricSparseModelType>& simpleModel, std::shared_ptr<storm::logic::OperatorFormula>& simpleFormula, bool& isApproximationApplicable, boost::optional<ConstantType>& constantResult) = 0;
+                virtual void preprocess(std::shared_ptr<ParametricSparseModelType>& simpleModel, std::shared_ptr<storm::logic::OperatorFormula const>& simpleFormula, bool& isApproximationApplicable, boost::optional<ConstantType>& constantResult) = 0;
                 
                 /*!
                  * Instantiates the approximation model to compute bounds on the maximal/minimal reachability probability (or reachability reward).
@@ -236,23 +236,23 @@ namespace storm {
                  * 
                  * @note does not check whether approximation can be applied
                  */
-                void initializeApproximationModel(ParametricSparseModelType const& model, std::shared_ptr<storm::logic::OperatorFormula> formula);
+                void initializeApproximationModel(ParametricSparseModelType const& model, std::shared_ptr<storm::logic::OperatorFormula const> formula);
 
                 /*!
                  * initializes the Sampling Model
                  */
-                void initializeSamplingModel(ParametricSparseModelType const& model, std::shared_ptr<storm::logic::OperatorFormula> formula);
+                void initializeSamplingModel(ParametricSparseModelType const& model, std::shared_ptr<storm::logic::OperatorFormula const> formula);
                 
                 // The model this model checker is supposed to analyze.
                 std::shared_ptr<ParametricSparseModelType> model;
                 //The currently specified formula
-                std::shared_ptr<storm::logic::OperatorFormula> specifiedFormula;
+                std::shared_ptr<storm::logic::OperatorFormula const> specifiedFormula;
                 //A flag that is true iff we are interested in rewards
                 bool computeRewards;
                 // the original model after states with constant transitions have been eliminated
                 std::shared_ptr<ParametricSparseModelType> simpleModel;
                 // a formula that can be checked on the simplified model
-                std::shared_ptr<storm::logic::OperatorFormula> simpleFormula;
+                std::shared_ptr<storm::logic::OperatorFormula const> simpleFormula;
                 // a flag that is true if approximation is applicable, i.e., there are only linear functions at transitions of the model
                 bool isApproximationApplicable;
                 // the model that  is used to approximate the reachability values

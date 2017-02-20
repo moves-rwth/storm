@@ -40,7 +40,7 @@ namespace storm {
                  * * "sink", labeled on states from which a target state can not be reached.
                  * The (single) initial state should be disjoint from these states. (otherwise the result would be independent of the parameters, anyway)
                  */
-                SamplingModel(ParametricSparseModelType const& parametricModel, std::shared_ptr<storm::logic::OperatorFormula> formula);
+                SamplingModel(ParametricSparseModelType const& parametricModel, std::shared_ptr<storm::logic::OperatorFormula const> formula);
                 virtual ~SamplingModel();
 
                 /*!

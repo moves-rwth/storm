@@ -31,6 +31,8 @@
 #include "storm/exceptions/NotSupportedException.h"
 #include "storm/logic/FragmentSpecification.h"
 
+#include "storm/transformer/SparseParametricDtmcSimplifier.h"
+
 namespace storm {
     namespace modelchecker {
         namespace region {
@@ -72,7 +74,7 @@ namespace storm {
 
             template<typename ParametricSparseModelType, typename ConstantType>
             void SparseDtmcRegionModelChecker<ParametricSparseModelType, ConstantType>::preprocess(std::shared_ptr<ParametricSparseModelType>& simpleModel,
-                                                                                                   std::shared_ptr<storm::logic::OperatorFormula>& simpleFormula,
+                                                                                                   std::shared_ptr<storm::logic::OperatorFormula const>& simpleFormula,
                                                                                                    bool& isApproximationApplicable,
                                                                                                    boost::optional<ConstantType>& constantResult){
                 STORM_LOG_DEBUG("Preprocessing for DTMC started.");
@@ -95,6 +97,17 @@ namespace storm {
                     //The result is already known. Nothing else to do here
                     return;
                 }
+                
+                storm::transformer::SparseParametricDtmcSimplifier<ParametricSparseModelType> simplifier(*this->getModel());
+                if(!simplifier.simplify(*this->getSpecifiedFormula())) {
+                    STORM_LOG_THROW(false, storm::exceptions::UnexpectedException, "Simplification was not possible");
+                }
+                simpleModel = simplifier.getSimplifiedModel();
+                STORM_LOG_THROW(simplifier.getSimplifiedFormula()->isOperatorFormula(), storm::exceptions::UnexpectedException, "Expected that the simplified formula is an Operator formula");
+                simpleFormula =  std::dynamic_pointer_cast<storm::logic::OperatorFormula const>(simplifier.getSimplifiedFormula());
+                
+                /*
+                
                 STORM_LOG_DEBUG("Elimination of states with constant outgoing transitions is happening now.");
                 // Determine the set of states that is reachable from the initial state without jumping over a target state.
                 storm::storage::BitVector reachableStates = storm::utility::graph::getReachableStates(this->getModel()->getTransitionMatrix(), this->getModel()->getInitialStates(), maybeStates, targetStates);
@@ -241,16 +254,17 @@ namespace storm {
                 std::shared_ptr<storm::logic::AtomicLabelFormula> targetFormulaPtr(new storm::logic::AtomicLabelFormula("target"));
                 if(this->isComputeRewards()){
                     std::shared_ptr<storm::logic::EventuallyFormula> eventuallyFormula(new storm::logic::EventuallyFormula(targetFormulaPtr, storm::logic::FormulaContext::Reward));
-                    simpleFormula = std::shared_ptr<storm::logic::OperatorFormula>(new storm::logic::RewardOperatorFormula(eventuallyFormula, boost::none, storm::logic::OperatorInformation(boost::none, this->getSpecifiedFormula()->getBound())));
+                    simpleFormula = std::shared_ptr<storm::logic::OperatorFormula const>(new storm::logic::RewardOperatorFormula(eventuallyFormula, boost::none, storm::logic::OperatorInformation(boost::none, this->getSpecifiedFormula()->getBound())));
                 } else {
                     std::shared_ptr<storm::logic::EventuallyFormula> eventuallyFormula(new storm::logic::EventuallyFormula(targetFormulaPtr));
-                    simpleFormula = std::shared_ptr<storm::logic::OperatorFormula>(new storm::logic::ProbabilityOperatorFormula(eventuallyFormula, storm::logic::OperatorInformation(boost::none, this->getSpecifiedFormula()->getBound())));
+                    simpleFormula = std::shared_ptr<storm::logic::OperatorFormula const>(new storm::logic::ProbabilityOperatorFormula(eventuallyFormula, storm::logic::OperatorInformation(boost::none, this->getSpecifiedFormula()->getBound())));
                 }
                 //Check if the reachability function needs to be computed
                 if((this->getSettings().getSmtMode()==storm::settings::modules::RegionSettings::SmtMode::FUNCTION) ||
                         (this->getSettings().getSampleMode()==storm::settings::modules::RegionSettings::SampleMode::EVALUATE)){
                     this->computeReachabilityFunction(*(this->getSimpleModel())->template as<storm::models::sparse::Dtmc<ParametricType>>());
                 }
+                 */
             }
 
             template<typename ParametricSparseModelType, typename ConstantType>
