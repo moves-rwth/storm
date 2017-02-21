@@ -2,6 +2,7 @@
 title: Models
 layout: default
 documentation: true
+category_weight: 1
 categories: [Usage]
 ---
 

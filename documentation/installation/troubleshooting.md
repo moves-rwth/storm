@@ -2,6 +2,7 @@
 title: Troubleshooting
 layout: default
 documentation: true
+category_weight: 4
 categories: [Installation]
 ---
 

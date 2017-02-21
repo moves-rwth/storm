@@ -10,7 +10,7 @@
 			{% if page.categories and page.categories != empty %}
 			<li><a href="{{ site.baseurl }}/{{ page.categories.first | prepend: site.github.url }}.html">{{ page.categories }}</a></li>
 			{% endif %}
-			<li class="active"><a href="{{ page.url }}">{{ page.title }}</a></li>
+			<li class="active">{{ page.title }}</li>
 		</ul>
 		
 		<!--

@@ -4,14 +4,29 @@ navigation_weight: 5
 layout: default
 ---
 
-To assess performance aspects of storm, we currently use the prism benchmark suite and the imca benchmarks for MAs. 
-In order to share these results, we provide the results together with the log files on github.
+On this page, you can find (extended) benchmark results accompanying paper submissions.
 
-{:.alert .alert-info}
-The log files were obtained using a version of storm that represents "infinity" as "-1" in `--exact` mode. This is,
-however just a displaying issue. Newer versions of storm correctly display "inf" as the result.
+# A Storm is Coming: A Modern Probabilistic Model Checker[^1]
 
-<a href="https://moves-rwth.github.io/storm-benchmark-logs/" class="btn btn-primary btn-lg active" role="button" aria-pressed="true">To the Results</a>
+## Setup
 
+The benchmarks were conducted on a HP BL685C G7. All tools had up to eight cores with 2.0GHz and 8GB of memory available, but only the Java garbage collection of PRISM and EPMC used more than one core. The timeout was set to 1800 seconds.
 
+## Models
 
+In this paper, we use all non-PTA models from the [PRISM benchmark suite](http://www.prismmodelchecker.org/benchmarks/) and the [IMCA](https://github.com/buschko/imca) benchmarks for MAs.
+
+## Results
+In order to share the results, we provide them as a set of log files. To make the results more accessible, we also give four tables (one for each model type: DTMC, CTMC, MDP and MA). Using the buttons near the top of the table, you can select which of the configurations of the tools are displayed side-by-side (by default all configurations of participating tools are shown). For example, clicking "Storm-sparse" toggles whether Storm's sparse engine participates in the comparison or not. As argued in the paper[^1], it makes sense to compare "matching engines" of the tools. (For an explanation which engines are comparable, please consult the paper.) This is why there are also buttons that let you select the tool configurations that are comparable with one click ("Show sparse", "Show hybrid", "Show dd" and "Show exact"). The best time for each instance is marked green. By clicking on the time for a particular experiment, you are taken to the log file of that experiment. 
+
+{:.alert .alert-warning}
+The log files were obtained using a version of Storm that represents "infinity" as "-1" in `--exact` mode. This is,
+however just a displaying issue. Newer versions of Storm correctly display "inf" as the result.
+
+<a target="_blank" href="https://moves-rwth.github.io/storm-benchmark-logs/docs/index_dtmc.html" class="btn btn-primary btn-md active" role="button">Show DTMC table</a>
+<a target="_blank" href="https://moves-rwth.github.io/storm-benchmark-logs/docs/index_ctmc.html" class="btn btn-primary btn-md active" role="button">Show CTMC table</a>
+<a target="_blank" href="https://moves-rwth.github.io/storm-benchmark-logs/docs/index_mdp.html" class="btn btn-primary btn-md active" role="button">Show MDP table</a>
+<a target="_blank" href="https://moves-rwth.github.io/storm-benchmark-logs/docs/index_ma.html" class="btn btn-primary btn-md active" role="button">Show MA table</a>
+<a target="_blank" href="https://www.github.com/moves-rwth/storm-benchmark-logs/" class="btn btn-primary btn-md active" role="button">Show log files</a>
+
+[^1]: [C. Dehnert, S. Junges, J.-P. Katoen, M. Volk *A Storm is Coming: A Modern Probabilistic Model Checker*, 2017](https://arxiv.org/abs/1702.04311)

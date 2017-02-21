@@ -2,6 +2,7 @@
 title: Requirements
 layout: default
 documentation: true
+category_weight: 2
 categories: [Installation]
 ---
 

@@ -7,7 +7,8 @@ layout: default
 {% for cat in site.category-list %}
 ### {{ cat }}
 <ul>
-  {% for page in site.pages %}
+  {% assign sorted_pages = site.pages | sort: 'category_weight' %}
+  {% for page in sorted_pages %}
     {% if page.documentation == true %}
       {% for pc in page.categories %}
         {% if pc == cat %}

@@ -10,14 +10,33 @@
         </div>
         <div class="navbar-collapse collapse" id="navbar-main">
         	<ul class="nav navbar-nav">
+				{% assign sorted_pages = site.pages | sort: 'category_weight' %}
 				{% assign navigation_pages = site.pages | sort: 'navigation_weight' %}
     			{% for p in navigation_pages %}
       				{% if p.navigation_weight %}
+      					{% if p.title == "Documentation" %}
+						<li class="dropdown">
+				        	<a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-expanded="false">{{ p.title }}<span class="caret"></span></a>
+							<ul class="dropdown-menu" role="menu">
+							{% for cat in site.category-list %}
+								{% for page in sorted_pages %}
+									{% if page.documentation == true and page.categories contains cat %}
+										<li><a href="{{ page.url }}">{{ page.title }}</a></li>
+									{% endif %}
+								{% endfor %}
+								{% unless cat == site.category-list.last %}
+								<li class="divider"></li>
+								{% endunless %}
+							{% endfor %}
+							</ul>
+						</li>      					
+      					{% else %}
 				    	<li class="nav-item">
 				        	<a href="{{ p.url | prepend: site.github.url  }}" class="nav-link {% if p.url == page.url %}active{% endif %}">
             				{{ p.title }}
           					</a>
         				</li>
+        				{% endif %}
       				{% endif %}
 				{% endfor %}
 			</ul>

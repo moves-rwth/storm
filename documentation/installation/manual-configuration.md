@@ -1,7 +1,8 @@
 ---
-title: Configuration Guide
+title: Manual Configuration
 layout: default
 documentation: true
+category_weight: 3
 categories: [Installation]
 ---
 

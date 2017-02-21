@@ -2,6 +2,7 @@
 title: Command Line
 layout: default
 documentation: true
+category_weight: 5
 categories: [Usage]
 ---
 
