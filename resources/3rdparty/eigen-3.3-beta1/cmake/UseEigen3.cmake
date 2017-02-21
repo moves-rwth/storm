@@ -2,5 +2,5 @@
 #
 #  UseEigen3.cmake
 
-add_definitions     ( ${EIGEN3_DEFINITIONS} )
-include_directories ( ${EIGEN3_INCLUDE_DIRS} )
+add_definitions     ( ${STORMEIGEN3_DEFINITIONS} )
+include_directories ( ${STORMEIGEN3_INCLUDE_DIRS} )

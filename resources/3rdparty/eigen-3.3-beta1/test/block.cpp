@@ -7,7 +7,7 @@
 // Public License v. 2.0. If a copy of the MPL was not distributed
 // with this file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
-#define EIGEN_NO_STATIC_ASSERT // otherwise we fail at compile time on unused paths
+#define STORMEIGEN_NO_STATIC_ASSERT // otherwise we fail at compile time on unused paths
 #include "main.h"
 
 template<typename MatrixType, typename Index, typename Scalar>
@@ -251,7 +251,7 @@ void test_block()
 
     CALL_SUBTEST_8( block(Matrix<float,Dynamic,4>(3, 4)) );
 
-#ifndef EIGEN_DEFAULT_TO_ROW_MAJOR
+#ifndef STORMEIGEN_DEFAULT_TO_ROW_MAJOR
     CALL_SUBTEST_6( data_and_stride(MatrixXf(internal::random(5,50), internal::random(5,50))) );
     CALL_SUBTEST_7( data_and_stride(Matrix<int,Dynamic,Dynamic,RowMajor>(internal::random(5,50), internal::random(5,50))) );
 #endif

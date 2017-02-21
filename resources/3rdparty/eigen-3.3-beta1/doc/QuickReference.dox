@@ -13,17 +13,17 @@ The Eigen library is divided in a Core module and several additional modules. Ea
 
 <table class="manual">
 <tr><th>Module</th><th>Header file</th><th>Contents</th></tr>
-<tr            ><td>\link Core_Module Core \endlink</td><td>\code#include <Eigen/Core>\endcode</td><td>Matrix and Array classes, basic linear algebra (including triangular and selfadjoint products), array manipulation</td></tr>
-<tr class="alt"><td>\link Geometry_Module Geometry \endlink</td><td>\code#include <Eigen/Geometry>\endcode</td><td>Transform, Translation, Scaling, Rotation2D and 3D rotations (Quaternion, AngleAxis)</td></tr>
-<tr            ><td>\link LU_Module LU \endlink</td><td>\code#include <Eigen/LU>\endcode</td><td>Inverse, determinant, LU decompositions with solver (FullPivLU, PartialPivLU)</td></tr>
-<tr class="alt"><td>\link Cholesky_Module Cholesky \endlink</td><td>\code#include <Eigen/Cholesky>\endcode</td><td>LLT and LDLT Cholesky factorization with solver</td></tr>
-<tr            ><td>\link Householder_Module Householder \endlink</td><td>\code#include <Eigen/Householder>\endcode</td><td>Householder transformations; this module is used by several linear algebra modules</td></tr>
-<tr class="alt"><td>\link SVD_Module SVD \endlink</td><td>\code#include <Eigen/SVD>\endcode</td><td>SVD decompositions with least-squares solver (JacobiSVD, BDCSVD)</td></tr>
-<tr            ><td>\link QR_Module QR \endlink</td><td>\code#include <Eigen/QR>\endcode</td><td>QR decomposition with solver (HouseholderQR, ColPivHouseholderQR, FullPivHouseholderQR)</td></tr>
-<tr class="alt"><td>\link Eigenvalues_Module Eigenvalues \endlink</td><td>\code#include <Eigen/Eigenvalues>\endcode</td><td>Eigenvalue, eigenvector decompositions (EigenSolver, SelfAdjointEigenSolver, ComplexEigenSolver)</td></tr>
-<tr            ><td>\link Sparse_modules Sparse \endlink</td><td>\code#include <Eigen/Sparse>\endcode</td><td>%Sparse matrix storage and related basic linear algebra (SparseMatrix, SparseVector) \n (see \ref SparseQuickRefPage for details on sparse modules)</td></tr>
-<tr class="alt"><td></td><td>\code#include <Eigen/Dense>\endcode</td><td>Includes Core, Geometry, LU, Cholesky, SVD, QR, and Eigenvalues header files</td></tr>
-<tr            ><td></td><td>\code#include <Eigen/Eigen>\endcode</td><td>Includes %Dense and %Sparse header files (the whole Eigen library)</td></tr>
+<tr            ><td>\link Core_Module Core \endlink</td><td>\code#include <StormEigen/Core>\endcode</td><td>Matrix and Array classes, basic linear algebra (including triangular and selfadjoint products), array manipulation</td></tr>
+<tr class="alt"><td>\link Geometry_Module Geometry \endlink</td><td>\code#include <StormEigen/Geometry>\endcode</td><td>Transform, Translation, Scaling, Rotation2D and 3D rotations (Quaternion, AngleAxis)</td></tr>
+<tr            ><td>\link LU_Module LU \endlink</td><td>\code#include <StormEigen/LU>\endcode</td><td>Inverse, determinant, LU decompositions with solver (FullPivLU, PartialPivLU)</td></tr>
+<tr class="alt"><td>\link Cholesky_Module Cholesky \endlink</td><td>\code#include <StormEigen/Cholesky>\endcode</td><td>LLT and LDLT Cholesky factorization with solver</td></tr>
+<tr            ><td>\link Householder_Module Householder \endlink</td><td>\code#include <StormEigen/Householder>\endcode</td><td>Householder transformations; this module is used by several linear algebra modules</td></tr>
+<tr class="alt"><td>\link SVD_Module SVD \endlink</td><td>\code#include <StormEigen/SVD>\endcode</td><td>SVD decompositions with least-squares solver (JacobiSVD, BDCSVD)</td></tr>
+<tr            ><td>\link QR_Module QR \endlink</td><td>\code#include <StormEigen/QR>\endcode</td><td>QR decomposition with solver (HouseholderQR, ColPivHouseholderQR, FullPivHouseholderQR)</td></tr>
+<tr class="alt"><td>\link Eigenvalues_Module Eigenvalues \endlink</td><td>\code#include <StormEigen/Eigenvalues>\endcode</td><td>Eigenvalue, eigenvector decompositions (EigenSolver, SelfAdjointEigenSolver, ComplexEigenSolver)</td></tr>
+<tr            ><td>\link Sparse_modules Sparse \endlink</td><td>\code#include <StormEigen/Sparse>\endcode</td><td>%Sparse matrix storage and related basic linear algebra (SparseMatrix, SparseVector) \n (see \ref SparseQuickRefPage for details on sparse modules)</td></tr>
+<tr class="alt"><td></td><td>\code#include <StormEigen/Dense>\endcode</td><td>Includes Core, Geometry, LU, Cholesky, SVD, QR, and Eigenvalues header files</td></tr>
+<tr            ><td></td><td>\code#include <StormEigen/Eigen>\endcode</td><td>Includes %Dense and %Sparse header files (the whole Eigen library)</td></tr>
 </table>
 
 <a href="#" class="top">top</a>
@@ -167,7 +167,7 @@ vector[i]     vector.y()
               vector.w()
 \endcode</td><td>\code
 matrix(i,j)
-\endcode</td><td class="note">Range checking is disabled if \n NDEBUG or EIGEN_NO_DEBUG is defined</td></tr>
+\endcode</td><td class="note">Range checking is disabled if \n NDEBUG or STORMEIGEN_NO_DEBUG is defined</td></tr>
 
 <tr class="alt"><td>Coeff access without \n range checking</td>
 <td>\code
@@ -358,7 +358,7 @@ vec2 = vec1.normalized();     vec1.normalize(); // inplace \endcode
 
 <tr class="alt"><td>
 \link MatrixBase::cross() cross product \endlink \matrixworld</td><td>\code
-#include <Eigen/Geometry>
+#include <StormEigen/Geometry>
 vec3 = vec1.cross(vec2);\endcode</td></tr>
 </table>
 

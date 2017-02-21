@@ -19,7 +19,7 @@
 #include <cstring>
 #include <memory>
 
-#include <Eigen/Core>
+#include <StormEigen/Core>
 
 using namespace std;
 

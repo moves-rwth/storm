@@ -9,7 +9,7 @@
 
 #include "main.h"
 
-#include <unsupported/Eigen/Splines>
+#include <unsupported/StormEigen/Splines>
 
 namespace StormEigen {
   

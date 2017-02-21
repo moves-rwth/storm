@@ -2,7 +2,7 @@
 // g++ -DNDEBUG -O3 -I.. benchLLT.cpp  -o benchLLT && ./benchLLT
 // options:
 //  -DBENCH_GSL -lgsl /usr/lib/libcblas.so.3
-//  -DEIGEN_DONT_VECTORIZE
+//  -DSTORMEIGEN_DONT_VECTORIZE
 //  -msse2
 //  -DREPEAT=100
 //  -DTRIES=10
@@ -10,8 +10,8 @@
 
 #include <iostream>
 
-#include <Eigen/Core>
-#include <Eigen/Cholesky>
+#include <StormEigen/Core>
+#include <StormEigen/Cholesky>
 #include <bench/BenchUtil.h>
 using namespace StormEigen;
 

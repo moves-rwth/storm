@@ -8,10 +8,10 @@
 // with this file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 #include "common.h"
-#include <Eigen/LU>
+#include <StormEigen/LU>
 
 // computes an LU factorization of a general M-by-N matrix A using partial pivoting with row interchanges
-EIGEN_LAPACK_FUNC(getrf,(int *m, int *n, RealScalar *pa, int *lda, int *ipiv, int *info))
+STORMEIGEN_LAPACK_FUNC(getrf,(int *m, int *n, RealScalar *pa, int *lda, int *ipiv, int *info))
 {
   *info = 0;
         if(*m<0)                  *info = -1;
@@ -43,7 +43,7 @@ EIGEN_LAPACK_FUNC(getrf,(int *m, int *n, RealScalar *pa, int *lda, int *ipiv, in
 //GETRS solves a system of linear equations
 //    A * X = B  or  A' * X = B
 //  with a general N-by-N matrix A using the LU factorization computed  by GETRF
-EIGEN_LAPACK_FUNC(getrs,(char *trans, int *n, int *nrhs, RealScalar *pa, int *lda, int *ipiv, RealScalar *pb, int *ldb, int *info))
+STORMEIGEN_LAPACK_FUNC(getrs,(char *trans, int *n, int *nrhs, RealScalar *pa, int *lda, int *ipiv, RealScalar *pb, int *ldb, int *info))
 {
   *info = 0;
         if(OP(*trans)==INVALID)  *info = -1;

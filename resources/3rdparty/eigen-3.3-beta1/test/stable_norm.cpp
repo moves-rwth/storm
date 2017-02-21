@@ -9,7 +9,7 @@
 
 #include "main.h"
 
-template<typename T> EIGEN_DONT_INLINE T copy(const T& x)
+template<typename T> STORMEIGEN_DONT_INLINE T copy(const T& x)
 {
   return x;
 }

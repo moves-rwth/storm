@@ -32,7 +32,12 @@ namespace storm {
         boost::any IntegerLiteralExpression::accept(ExpressionVisitor& visitor, boost::any const& data) const {
             return visitor.visit(*this, data);
         }
-        
+
+        bool IntegerLiteralExpression::isIntegerLiteralExpression() const {
+            return true;
+        }
+
+
         int_fast64_t IntegerLiteralExpression::getValue() const {
             return this->value;
         }

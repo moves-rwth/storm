@@ -8,8 +8,8 @@
 // with this file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 #include "main.h"
-#include <Eigen/StdVector>
-#include <Eigen/Geometry>
+#include <StormEigen/StdVector>
+#include <StormEigen/Geometry>
 
 template<typename MatrixType>
 void check_stdvector_matrix(const MatrixType& m)

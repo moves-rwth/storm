@@ -1,6 +1,6 @@
 #include <iostream>
 #include "BenchTimer.h"
-#include <Eigen/Dense>
+#include <StormEigen/Dense>
 #include <map>
 #include <string>
 using namespace StormEigen;

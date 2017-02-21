@@ -50,7 +50,7 @@ namespace storm {
             template <class SparseModelType>
             void SparsePcaaWeightVectorChecker<SparseModelType>::check(std::vector<ValueType> const& weightVector) {
                 checkHasBeenCalled=true;
-                STORM_LOG_DEBUG("Invoked WeightVectorChecker with weights " << std::endl << "\t" << storm::utility::vector::toString(storm::utility::vector::convertNumericVector<double>(weightVector)));
+                STORM_LOG_INFO("Invoked WeightVectorChecker with weights " << std::endl << "\t" << storm::utility::vector::toString(storm::utility::vector::convertNumericVector<double>(weightVector)));
                 std::vector<ValueType> weightedRewardVector(model.getTransitionMatrix().getRowCount(), storm::utility::zero<ValueType>());
                 for(auto objIndex : objectivesWithNoUpperTimeBound) {
                     storm::utility::vector::addScaledVector(weightedRewardVector, discreteActionRewards[objIndex], weightVector[objIndex]);
@@ -64,7 +64,7 @@ namespace storm {
                         break;
                     }
                 }
-                STORM_LOG_DEBUG("Weight vector check done. Lower bounds for results in initial state: " << storm::utility::vector::toString(storm::utility::vector::convertNumericVector<double>(getLowerBoundsOfInitialStateResults())));
+                STORM_LOG_INFO("Weight vector check done. Lower bounds for results in initial state: " << storm::utility::vector::toString(storm::utility::vector::convertNumericVector<double>(getLowerBoundsOfInitialStateResults())));
                 // Validate that the results are sufficiently precise
                 ValueType resultingWeightedPrecision = storm::utility::vector::dotProduct(getUpperBoundsOfInitialStateResults(), weightVector) - storm::utility::vector::dotProduct(getLowerBoundsOfInitialStateResults(), weightVector);
                 STORM_LOG_THROW(resultingWeightedPrecision >= storm::utility::zero<ValueType>(), storm::exceptions::UnexpectedException, "The distance between the lower and the upper result is negative.");
@@ -147,7 +147,7 @@ namespace storm {
                 solver->setOptimizationDirection(storm::solver::OptimizationDirection::Maximize);
                 solver->setTrackScheduler(true);
                 solver->solveEquations(subResult, subRewardVector);
-                
+
                 this->weightedResult = std::vector<ValueType>(model.getNumberOfStates());
                 std::vector<uint_fast64_t> optimalChoices(model.getNumberOfStates());
                 

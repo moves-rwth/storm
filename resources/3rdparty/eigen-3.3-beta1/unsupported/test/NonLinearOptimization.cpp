@@ -6,11 +6,11 @@
 #include <stdio.h>
 
 #include "main.h"
-#include <unsupported/Eigen/NonLinearOptimization>
+#include <unsupported/StormEigen/NonLinearOptimization>
 
 // This disables some useless Warnings on MSVC.
 // It is intended to be done for this test only.
-#include <Eigen/src/Core/util/DisableStupidWarnings.h>
+#include <StormEigen/src/Core/util/DisableStupidWarnings.h>
 
 using std::sqrt;
 

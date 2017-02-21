@@ -12,7 +12,7 @@
 //  - no memory leak when a custom scalar type trow an exceptions
 //  - todo: complete the list of tests!
 
-#define EIGEN_STACK_ALLOCATION_LIMIT 100000000
+#define STORMEIGEN_STACK_ALLOCATION_LIMIT 100000000
 
 #include "main.h"
 
@@ -84,9 +84,9 @@ int ScalarWithExceptions::countdown = 0;
     try { OP; }                              \
     catch (my_exception) {                                  \
       exception_thrown = true;                              \
-      VERIFY(ScalarWithExceptions::instances==before && "memory leak detected in " && EIGEN_MAKESTRING(OP)); \
+      VERIFY(ScalarWithExceptions::instances==before && "memory leak detected in " && STORMEIGEN_MAKESTRING(OP)); \
     } \
-    VERIFY(exception_thrown && " no exception thrown in " && EIGEN_MAKESTRING(OP)); \
+    VERIFY(exception_thrown && " no exception thrown in " && STORMEIGEN_MAKESTRING(OP)); \
   }
 
 void memoryleak()
@@ -104,7 +104,7 @@ void memoryleak()
     CHECK_MEMLEAK(m2 = m0 * m1 * m2);
     CHECK_MEMLEAK((v0+v1).dot(v0+v1));
   }
-  VERIFY(ScalarWithExceptions::instances==0 && "global memory leak detected in " && EIGEN_MAKESTRING(OP)); \
+  VERIFY(ScalarWithExceptions::instances==0 && "global memory leak detected in " && STORMEIGEN_MAKESTRING(OP)); \
 }
 
 void test_exceptions()

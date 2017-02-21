@@ -21,6 +21,8 @@ namespace storm {
                     return "Gurobi";
                 case LpSolverType::Glpk:
                     return "Glpk";
+                case LpSolverType::Z3:
+                    return "Z3";
             }
             return "invalid";
         }

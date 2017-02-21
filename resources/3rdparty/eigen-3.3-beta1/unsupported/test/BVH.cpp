@@ -8,9 +8,9 @@
 // with this file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 #include "main.h"
-#include <Eigen/StdVector>
-#include <Eigen/Geometry>
-#include <unsupported/Eigen/BVH>
+#include <StormEigen/StdVector>
+#include <StormEigen/Geometry>
+#include <unsupported/StormEigen/BVH>
 
 namespace StormEigen {
 
@@ -22,7 +22,7 @@ template<typename Scalar, int Dim> AlignedBox<Scalar, Dim> bounding_box(const Ma
 template<int Dim>
 struct Ball
 {
-EIGEN_MAKE_ALIGNED_OPERATOR_NEW_IF_VECTORIZABLE_FIXED_SIZE(double, Dim)
+STORMEIGEN_MAKE_ALIGNED_OPERATOR_NEW_IF_VECTORIZABLE_FIXED_SIZE(double, Dim)
 
   typedef Matrix<double, Dim, 1> VectorType;
 
@@ -195,7 +195,7 @@ struct TreeTest
 void test_BVH()
 {
   for(int i = 0; i < g_repeat; i++) {
-#ifdef EIGEN_TEST_PART_1
+#ifdef STORMEIGEN_TEST_PART_1
     TreeTest<2> test2;
     CALL_SUBTEST(test2.testIntersect1());
     CALL_SUBTEST(test2.testMinimize1());
@@ -203,7 +203,7 @@ void test_BVH()
     CALL_SUBTEST(test2.testMinimize2());
 #endif
 
-#ifdef EIGEN_TEST_PART_2
+#ifdef STORMEIGEN_TEST_PART_2
     TreeTest<3> test3;
     CALL_SUBTEST(test3.testIntersect1());
     CALL_SUBTEST(test3.testMinimize1());
@@ -211,7 +211,7 @@ void test_BVH()
     CALL_SUBTEST(test3.testMinimize2());
 #endif
 
-#ifdef EIGEN_TEST_PART_3
+#ifdef STORMEIGEN_TEST_PART_3
     TreeTest<4> test4;
     CALL_SUBTEST(test4.testIntersect1());
     CALL_SUBTEST(test4.testMinimize1());

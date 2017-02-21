@@ -11,7 +11,8 @@
 #pragma GCC diagnostic ignored "-Wignored-attributes"
 #pragma GCC diagnostic ignored "-Wmisleading-indentation"
 #pragma GCC diagnostic ignored "-Wunused-parameter"
-#include <Eigen/Sparse>
-#include <unsupported/Eigen/IterativeSolvers>
+#include <StormEigen/Dense>
+#include <StormEigen/Sparse>
+#include <unsupported/StormEigen/IterativeSolvers>
 #pragma GCC diagnostic pop
 #pragma clang diagnostic pop

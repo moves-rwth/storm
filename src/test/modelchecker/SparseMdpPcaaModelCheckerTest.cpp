@@ -1,7 +1,7 @@
 #include "gtest/gtest.h"
 #include "storm-config.h"
 
-#ifdef STORM_HAVE_HYPRO
+#if defined STORM_HAVE_HYPRO || defined STORM_HAVE_Z3_OPTIMIZE
 
 #include "storm/modelchecker/multiobjective/pcaa.h"
 #include "storm/modelchecker/results/ExplicitQuantitativeCheckResult.h"
@@ -104,10 +104,10 @@ TEST(SparseMdpPcaaModelCheckerTest, dpm) {
     
     std::unique_ptr<storm::modelchecker::CheckResult> result = storm::modelchecker::multiobjective::performPcaa(*mdp, formulas[0]->asMultiObjectiveFormula());
     ASSERT_TRUE(result->isExplicitQuantitativeCheckResult());
-    EXPECT_NEAR(121.61288, result->asExplicitQuantitativeCheckResult<double>()[initState], storm::settings::getModule<storm::settings::modules::GeneralSettings>().getPrecision());
+    EXPECT_NEAR(121.6128842, result->asExplicitQuantitativeCheckResult<double>()[initState], storm::settings::getModule<storm::settings::modules::GeneralSettings>().getPrecision());
 }
 
 
 
 
-#endif /* STORM_HAVE_HYPRO */
+#endif /* STORM_HAVE_HYPRO || defined STORM_HAVE_Z3_OPTIMIZE */

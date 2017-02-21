@@ -8,9 +8,9 @@
 // with this file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 #include "sparse_solver.h"
-#include <Eigen/SparseLU>
-#include <Eigen/MetisSupport>
-#include <unsupported/Eigen/SparseExtra>
+#include <StormEigen/SparseLU>
+#include <StormEigen/MetisSupport>
+#include <unsupported/StormEigen/SparseExtra>
 
 template<typename T> void test_metis_T()
 {

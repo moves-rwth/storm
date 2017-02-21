@@ -26,15 +26,15 @@ DOXYFILE_ENCODING      = UTF-8
 # identify the project. Note that if you do not use Doxywizard you need
 # to put quotes around the project name if it contains spaces.
 
-PROJECT_NAME           = ${EIGEN_DOXY_PROJECT_NAME}
+PROJECT_NAME           = ${STORMEIGEN_DOXY_PROJECT_NAME}
 
 # The PROJECT_NUMBER tag can be used to enter a project or revision number.
 # This could be handy for archiving the generated documentation or
 # if some version control system is used.
 
-# EIGEN_VERSION is set in the root CMakeLists.txt
+# STORMEIGEN_VERSION is set in the root CMakeLists.txt
 
-PROJECT_NUMBER         = "${EIGEN_VERSION}"
+PROJECT_NUMBER         = "${STORMEIGEN_VERSION}"
 
 # Using the PROJECT_BRIEF tag one can provide an optional one line description
 # for a project that appears at the top of each page and should give viewer
@@ -54,7 +54,7 @@ PROJECT_LOGO           = "${Eigen_SOURCE_DIR}/doc/Eigen_Silly_Professor_64x64.pn
 # If a relative path is entered, it will be relative to the location
 # where doxygen was started. If left blank the current directory will be used.
 
-OUTPUT_DIRECTORY       = "${Eigen_BINARY_DIR}/doc${EIGEN_DOXY_OUTPUT_DIRECTORY_SUFFIX}"
+OUTPUT_DIRECTORY       = "${Eigen_BINARY_DIR}/doc${STORMEIGEN_DOXY_OUTPUT_DIRECTORY_SUFFIX}"
 
 # If the CREATE_SUBDIRS tag is set to YES, then doxygen will create
 # 4096 sub-directories (in 2 levels) under the output directory of each output
@@ -207,15 +207,15 @@ TAB_SIZE               = 8
 
 ALIASES                = "only_for_vectors=This is only for vectors (either row-vectors or column-vectors), i.e. matrices which are known at compile-time to have either one row or one column." \
                          "not_reentrant=\warning This function is not re-entrant." \
-                         "array_module=This is defined in the %Array module. \code #include <Eigen/Array> \endcode" \
-                         "cholesky_module=This is defined in the %Cholesky module. \code #include <Eigen/Cholesky> \endcode" \
-                         "eigenvalues_module=This is defined in the %Eigenvalues module. \code #include <Eigen/Eigenvalues> \endcode" \
-                         "geometry_module=This is defined in the %Geometry module. \code #include <Eigen/Geometry> \endcode" \
-                         "householder_module=This is defined in the %Householder module. \code #include <Eigen/Householder> \endcode" \
-                         "jacobi_module=This is defined in the %Jacobi module. \code #include <Eigen/Jacobi> \endcode" \
-                         "lu_module=This is defined in the %LU module. \code #include <Eigen/LU> \endcode" \
-                         "qr_module=This is defined in the %QR module. \code #include <Eigen/QR> \endcode" \
-                         "svd_module=This is defined in the %SVD module. \code #include <Eigen/SVD> \endcode" \
+                         "array_module=This is defined in the %Array module. \code #include <StormEigen/Array> \endcode" \
+                         "cholesky_module=This is defined in the %Cholesky module. \code #include <StormEigen/Cholesky> \endcode" \
+                         "eigenvalues_module=This is defined in the %Eigenvalues module. \code #include <StormEigen/Eigenvalues> \endcode" \
+                         "geometry_module=This is defined in the %Geometry module. \code #include <StormEigen/Geometry> \endcode" \
+                         "householder_module=This is defined in the %Householder module. \code #include <StormEigen/Householder> \endcode" \
+                         "jacobi_module=This is defined in the %Jacobi module. \code #include <StormEigen/Jacobi> \endcode" \
+                         "lu_module=This is defined in the %LU module. \code #include <StormEigen/LU> \endcode" \
+                         "qr_module=This is defined in the %QR module. \code #include <StormEigen/QR> \endcode" \
+                         "svd_module=This is defined in the %SVD module. \code #include <StormEigen/SVD> \endcode" \
                          "label=\bug" \
                          "matrixworld=<a href='#matrixonly' style='color:green;text-decoration: none;'>*</a>" \
                          "arrayworld=<a href='#arrayonly' style='color:blue;text-decoration: none;'>*</a>" \
@@ -461,7 +461,7 @@ HIDE_IN_BODY_DOCS      = NO
 # to NO (the default) then the documentation will be excluded.
 # Set it to YES to include the internal documentation.
 
-INTERNAL_DOCS          = ${EIGEN_DOXY_INTERNAL}
+INTERNAL_DOCS          = ${STORMEIGEN_DOXY_INTERNAL}
 
 # If the CASE_SENSE_NAMES tag is set to NO then Doxygen will only generate
 # file names in lower-case letters. If set to YES upper-case letters are also
@@ -481,7 +481,7 @@ HIDE_SCOPE_NAMES       = NO
 # will put a list of the files that are included by a file in the documentation
 # of that file.
 
-SHOW_INCLUDE_FILES     = ${EIGEN_DOXY_INTERNAL}
+SHOW_INCLUDE_FILES     = ${STORMEIGEN_DOXY_INTERNAL}
 
 # If the FORCE_LOCAL_INCLUDES tag is set to YES then Doxygen
 # will list include files with double quotes in the documentation
@@ -547,7 +547,7 @@ STRICT_PROTO_MATCHING  = NO
 # disable (NO) the todo list. This list is created by putting \todo
 # commands in the documentation.
 
-GENERATE_TODOLIST      = ${EIGEN_DOXY_INTERNAL}
+GENERATE_TODOLIST      = ${STORMEIGEN_DOXY_INTERNAL}
 
 # The GENERATE_TESTLIST tag can be used to enable (YES) or
 # disable (NO) the test list. This list is created by putting \test
@@ -559,7 +559,7 @@ GENERATE_TESTLIST      = NO
 # disable (NO) the bug list. This list is created by putting \bug
 # commands in the documentation.
 
-GENERATE_BUGLIST       = ${EIGEN_DOXY_INTERNAL}
+GENERATE_BUGLIST       = ${STORMEIGEN_DOXY_INTERNAL}
 
 # The GENERATE_DEPRECATEDLIST tag can be used to enable (YES) or
 # disable (NO) the deprecated list. This list is created by putting
@@ -618,7 +618,7 @@ FILE_VERSION_FILTER    =
 # You can optionally specify a file name after the option, if omitted
 # DoxygenLayout.xml will be used as the name of the layout file.
 
-LAYOUT_FILE            = "${Eigen_BINARY_DIR}/doc${EIGEN_DOXY_OUTPUT_DIRECTORY_SUFFIX}/eigendoxy_layout.xml"
+LAYOUT_FILE            = "${Eigen_BINARY_DIR}/doc${STORMEIGEN_DOXY_OUTPUT_DIRECTORY_SUFFIX}/eigendoxy_layout.xml"
 
 # The CITE_BIB_FILES tag can be used to specify one or more bib files
 # containing the references data. This must be a list of .bib files. The
@@ -690,7 +690,7 @@ WARN_LOGFILE           =
 # directories like "/usr/src/myproject". Separate the files or directories
 # with spaces.
 
-INPUT                  = ${EIGEN_DOXY_INPUT}
+INPUT                  = ${STORMEIGEN_DOXY_INPUT}
 
 # This tag can be used to specify the character encoding of the source files
 # that doxygen parses. Internally doxygen uses the UTF-8 encoding, which is
@@ -722,8 +722,8 @@ RECURSIVE              = YES
 # Note that relative paths are relative to the directory from which doxygen is
 # run.
 
-EXCLUDE                = "${Eigen_SOURCE_DIR}/Eigen/Eigen2Support" \
-                         "${Eigen_SOURCE_DIR}/Eigen/src/Eigen2Support" \
+EXCLUDE                = "${Eigen_SOURCE_DIR}/StormEigen/Eigen2Support" \
+                         "${Eigen_SOURCE_DIR}/StormEigen/src/Eigen2Support" \
                          "${Eigen_SOURCE_DIR}/doc/examples" \
                          "${Eigen_SOURCE_DIR}/doc/special_examples" \
                          "${Eigen_SOURCE_DIR}/doc/snippets" \
@@ -933,7 +933,7 @@ GENERATE_HTML          = YES
 # If a relative path is entered the value of OUTPUT_DIRECTORY will be
 # put in front of it. If left blank `html' will be used as the default path.
 
-HTML_OUTPUT            = "${Eigen_BINARY_DIR}/doc/html${EIGEN_DOXY_OUTPUT_DIRECTORY_SUFFIX}"
+HTML_OUTPUT            = "${Eigen_BINARY_DIR}/doc/html${STORMEIGEN_DOXY_OUTPUT_DIRECTORY_SUFFIX}"
 
 # The HTML_FILE_EXTENSION tag can be used to specify the file extension for
 # each generated HTML page (for example: .htm,.php,.asp). If it is left blank
@@ -987,7 +987,7 @@ HTML_EXTRA_FILES       = "${Eigen_SOURCE_DIR}/doc/eigendoxy.css"
 # The allowed range is 0 to 359.
 # The default is 220.
 
-HTML_COLORSTYLE_HUE    = ${EIGEN_DOXY_HTML_COLORSTYLE_HUE}
+HTML_COLORSTYLE_HUE    = ${STORMEIGEN_DOXY_HTML_COLORSTYLE_HUE}
 
 # The HTML_COLORSTYLE_SAT tag controls the purity (or saturation) of
 # the colors in the HTML output. For a value of 0 the output will use
@@ -1562,7 +1562,7 @@ SEARCH_INCLUDES        = YES
 # contain include files that are not input files but should be processed by
 # the preprocessor.
 
-INCLUDE_PATH           = "${Eigen_SOURCE_DIR}/Eigen/src/plugins"
+INCLUDE_PATH           = "${Eigen_SOURCE_DIR}/StormEigen/src/plugins"
 
 # You can use the INCLUDE_FILE_PATTERNS tag to specify one or more wildcard
 # patterns (like *.h and *.hpp) to filter out the header-files in the
@@ -1579,14 +1579,14 @@ INCLUDE_FILE_PATTERNS  =
 # undefined via #undef or recursively expanded use the := operator
 # instead of the = operator.
 
-PREDEFINED             = EIGEN_EMPTY_STRUCT \
-                         EIGEN_PARSED_BY_DOXYGEN \
-                         EIGEN_VECTORIZE \
-                         EIGEN_QT_SUPPORT \
-                         EIGEN_STRONG_INLINE=inline \
-                         EIGEN_DEVICE_FUNC= \
-                         "EIGEN_MAKE_CWISE_BINARY_OP(METHOD,FUNCTOR)=template<typename OtherDerived> const CwiseBinaryOp<FUNCTOR<Scalar>, const Derived, const OtherDerived> METHOD(const EIGEN_CURRENT_STORAGE_BASE_CLASS<OtherDerived> &other) const;" \
-                         "EIGEN_CWISE_PRODUCT_RETURN_TYPE(LHS,RHS)=CwiseBinaryOp<internal::scalar_product_op<typename LHS::Scalar, typename RHS::Scalar >, const LHS, const RHS>"
+PREDEFINED             = STORMEIGEN_EMPTY_STRUCT \
+                         STORMEIGEN_PARSED_BY_DOXYGEN \
+                         STORMEIGEN_VECTORIZE \
+                         STORMEIGEN_QT_SUPPORT \
+                         STORMEIGEN_STRONG_INLINE=inline \
+                         STORMEIGEN_DEVICE_FUNC= \
+                         "STORMEIGEN_MAKE_CWISE_BINARY_OP(METHOD,FUNCTOR)=template<typename OtherDerived> const CwiseBinaryOp<FUNCTOR<Scalar>, const Derived, const OtherDerived> METHOD(const STORMEIGEN_CURRENT_STORAGE_BASE_CLASS<OtherDerived> &other) const;" \
+                         "STORMEIGEN_CWISE_PRODUCT_RETURN_TYPE(LHS,RHS)=CwiseBinaryOp<internal::scalar_product_op<typename LHS::Scalar, typename RHS::Scalar >, const LHS, const RHS>"
 
 # If the MACRO_EXPANSION and EXPAND_ONLY_PREDEF tags are set to YES then
 # this tag can be used to specify a list of macro names that should be expanded.
@@ -1594,14 +1594,14 @@ PREDEFINED             = EIGEN_EMPTY_STRUCT \
 # Use the PREDEFINED tag if you want to use a different macro definition that
 # overrules the definition found in the source code.
 
-EXPAND_AS_DEFINED      = EIGEN_MAKE_TYPEDEFS \
-                         EIGEN_MAKE_FIXED_TYPEDEFS \
-                         EIGEN_MAKE_TYPEDEFS_ALL_SIZES \
-                         EIGEN_CWISE_UNOP_RETURN_TYPE \
-                         EIGEN_CWISE_BINOP_RETURN_TYPE \
-                         EIGEN_CURRENT_STORAGE_BASE_CLASS \
-                         EIGEN_MATHFUNC_IMPL \
-                         _EIGEN_GENERIC_PUBLIC_INTERFACE
+EXPAND_AS_DEFINED      = STORMEIGEN_MAKE_TYPEDEFS \
+                         STORMEIGEN_MAKE_FIXED_TYPEDEFS \
+                         STORMEIGEN_MAKE_TYPEDEFS_ALL_SIZES \
+                         STORMEIGEN_CWISE_UNOP_RETURN_TYPE \
+                         STORMEIGEN_CWISE_BINOP_RETURN_TYPE \
+                         STORMEIGEN_CURRENT_STORAGE_BASE_CLASS \
+                         STORMEIGEN_MATHFUNC_IMPL \
+                         _STORMEIGEN_GENERIC_PUBLIC_INTERFACE
 
 # If the SKIP_FUNCTION_MACROS tag is set to YES (the default) then
 # doxygen's preprocessor will remove all references to function-like macros
@@ -1627,13 +1627,13 @@ SKIP_FUNCTION_MACROS   = YES
 # NOT include the path). If a tag file is not located in the directory in which
 # doxygen is run, you must also specify the path to the tagfile here.
 
-TAGFILES               = ${EIGEN_DOXY_TAGFILES}
+TAGFILES               = ${STORMEIGEN_DOXY_TAGFILES}
 # "${Eigen_BINARY_DIR}/doc/eigen-unsupported.doxytags =unsupported"
 
 # When a file name is specified after GENERATE_TAGFILE, doxygen will create
 # a tag file that is based on the input files it reads.
 
-GENERATE_TAGFILE       = "${Eigen_BINARY_DIR}/doc/${EIGEN_DOXY_PROJECT_NAME}.doxytags"
+GENERATE_TAGFILE       = "${Eigen_BINARY_DIR}/doc/${STORMEIGEN_DOXY_PROJECT_NAME}.doxytags"
 
 # If the ALLEXTERNALS tag is set to YES all external classes will be listed
 # in the class index. If set to NO only the inherited external classes

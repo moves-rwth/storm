@@ -37,6 +37,7 @@ namespace storm {
             virtual bool evaluateAsBool(Valuation const* valuation = nullptr) const override;
             virtual std::shared_ptr<BaseExpression const> simplify() const override;
             virtual boost::any accept(ExpressionVisitor& visitor, boost::any const& data) const override;
+            virtual bool isUnaryBooleanFunctionExpression() const override;
 
             /*!
              * Retrieves the operator associated with this expression.

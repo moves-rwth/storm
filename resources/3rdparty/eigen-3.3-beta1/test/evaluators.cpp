@@ -18,7 +18,7 @@ namespace StormEigen {
   }
   
   template<typename DstXprType, typename SrcXprType>
-  EIGEN_STRONG_INLINE
+  STORMEIGEN_STRONG_INLINE
   DstXprType& copy_using_evaluator(const EigenBase<DstXprType> &dst, const SrcXprType &src)
   {
     call_assignment(dst.const_cast_derived(), src.derived(), internal::assign_op<typename DstXprType::Scalar>());
@@ -26,7 +26,7 @@ namespace StormEigen {
   }
   
   template<typename DstXprType, template <typename> class StorageBase, typename SrcXprType>
-  EIGEN_STRONG_INLINE
+  STORMEIGEN_STRONG_INLINE
   const DstXprType& copy_using_evaluator(const NoAlias<DstXprType, StorageBase>& dst, const SrcXprType &src)
   {
     call_assignment(dst, src.derived(), internal::assign_op<typename DstXprType::Scalar>());
@@ -34,13 +34,13 @@ namespace StormEigen {
   }
   
   template<typename DstXprType, typename SrcXprType>
-  EIGEN_STRONG_INLINE
+  STORMEIGEN_STRONG_INLINE
   DstXprType& copy_using_evaluator(const PlainObjectBase<DstXprType> &dst, const SrcXprType &src)
   {
-    #ifdef EIGEN_NO_AUTOMATIC_RESIZING
+    #ifdef STORMEIGEN_NO_AUTOMATIC_RESIZING
     eigen_assert((dst.size()==0 || (IsVectorAtCompileTime ? (dst.size() == src.size())
                                                           : (dst.rows() == src.rows() && dst.cols() == src.cols())))
-                && "Size mismatch. Automatic resizing is disabled because EIGEN_NO_AUTOMATIC_RESIZING is defined");
+                && "Size mismatch. Automatic resizing is disabled because STORMEIGEN_NO_AUTOMATIC_RESIZING is defined");
   #else
     dst.const_cast_derived().resizeLike(src.derived());
   #endif
@@ -86,7 +86,7 @@ namespace StormEigen {
 
   namespace internal {
     template<typename Dst, template <typename> class StorageBase, typename Src, typename Func>
-    EIGEN_DEVICE_FUNC void call_assignment(const NoAlias<Dst,StorageBase>& dst, const Src& src, const Func& func)
+    STORMEIGEN_DEVICE_FUNC void call_assignment(const NoAlias<Dst,StorageBase>& dst, const Src& src, const Func& func)
     {
       call_assignment_no_alias(dst.expression(), src, func);
     }

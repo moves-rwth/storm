@@ -1,4 +1,4 @@
-#define EIGEN_USE_THREADS
+#define STORMEIGEN_USE_THREADS
 
 #include "base/sysinfo.h"
 #include "strings/strcat.h"

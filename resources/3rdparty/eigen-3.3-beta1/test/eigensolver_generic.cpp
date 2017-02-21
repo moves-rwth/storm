@@ -10,7 +10,7 @@
 
 #include "main.h"
 #include <limits>
-#include <Eigen/Eigenvalues>
+#include <StormEigen/Eigenvalues>
 
 template<typename MatrixType> void eigensolver(const MatrixType& m)
 {
@@ -97,7 +97,7 @@ void test_eigensolver_generic()
   int s = 0;
   for(int i = 0; i < g_repeat; i++) {
     CALL_SUBTEST_1( eigensolver(Matrix4f()) );
-    s = internal::random<int>(1,EIGEN_TEST_MAX_SIZE/4);
+    s = internal::random<int>(1,STORMEIGEN_TEST_MAX_SIZE/4);
     CALL_SUBTEST_2( eigensolver(MatrixXd(s,s)) );
     TEST_SET_BUT_UNUSED_VARIABLE(s)
 
@@ -109,7 +109,7 @@ void test_eigensolver_generic()
   }
 
   CALL_SUBTEST_1( eigensolver_verify_assert(Matrix4f()) );
-  s = internal::random<int>(1,EIGEN_TEST_MAX_SIZE/4);
+  s = internal::random<int>(1,STORMEIGEN_TEST_MAX_SIZE/4);
   CALL_SUBTEST_2( eigensolver_verify_assert(MatrixXd(s,s)) );
   CALL_SUBTEST_3( eigensolver_verify_assert(Matrix<double,1,1>()) );
   CALL_SUBTEST_4( eigensolver_verify_assert(Matrix2d()) );
@@ -128,7 +128,7 @@ void test_eigensolver_generic()
   );
   
   // regression test for bug 793
-#ifdef EIGEN_TEST_PART_2
+#ifdef STORMEIGEN_TEST_PART_2
   {
      MatrixXd a(3,3);
      a << 0,  0,  1,

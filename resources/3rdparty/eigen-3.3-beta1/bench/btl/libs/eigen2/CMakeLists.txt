@@ -1,9 +1,9 @@
 
 find_package(Eigen2)
 
-if(EIGEN2_FOUND)
+if(STORMEIGEN2_FOUND)
 
-  include_directories(BEFORE ${EIGEN2_INCLUDE_DIR})
+  include_directories(BEFORE ${STORMEIGEN2_INCLUDE_DIR})
   btl_add_bench(btl_eigen2_linear main_linear.cpp)
   btl_add_bench(btl_eigen2_vecmat main_vecmat.cpp)
   btl_add_bench(btl_eigen2_matmat main_matmat.cpp)
@@ -16,4 +16,4 @@ if(EIGEN2_FOUND)
 
   btl_add_bench(btl_tiny_eigen2 btl_tiny_eigen2.cpp OFF)
 
-endif() # EIGEN2_FOUND
+endif() # STORMEIGEN2_FOUND

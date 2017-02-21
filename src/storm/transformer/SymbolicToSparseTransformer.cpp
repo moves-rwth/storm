@@ -32,9 +32,9 @@ namespace storm {
                 }
                 rewardModels.emplace(rewardModelNameAndModel.first,storm::models::sparse::StandardRewardModel<ValueType>(stateRewards, stateActionRewards, transitionRewards));
             }
-            storm::models::sparse::StateLabeling labelling;
+            storm::models::sparse::StateLabeling labelling(transitionMatrix.getRowGroupCount());
 
-            labelling.addLabel("initial", symbolicMdp.getInitialStates().toVector(odd));
+            labelling.addLabel("init", symbolicMdp.getInitialStates().toVector(odd));
             labelling.addLabel("deadlock", symbolicMdp.getDeadlockStates().toVector(odd));
             for(auto const& label : symbolicMdp.getLabels()) {
                 labelling.addLabel(label, symbolicMdp.getStates(label).toVector(odd));

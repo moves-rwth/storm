@@ -13,8 +13,8 @@
 #include <algorithm>
 #include <iterator>
 #include <iostream>
-#include <Eigen/Core>
-#include <unsupported/Eigen/FFT>
+#include <StormEigen/Core>
+#include <unsupported/StormEigen/FFT>
 
 using namespace std;
 using namespace StormEigen;

@@ -3,12 +3,12 @@ project(EigenBlas CXX)
 
 include("../cmake/language_support.cmake")
 
-workaround_9220(Fortran EIGEN_Fortran_COMPILER_WORKS)
+workaround_9220(Fortran STORMEIGEN_Fortran_COMPILER_WORKS)
 
-if(EIGEN_Fortran_COMPILER_WORKS)
+if(STORMEIGEN_Fortran_COMPILER_WORKS)
   enable_language(Fortran OPTIONAL)
   if(NOT CMAKE_Fortran_COMPILER)
-    set(EIGEN_Fortran_COMPILER_WORKS OFF)
+    set(STORMEIGEN_Fortran_COMPILER_WORKS OFF)
   endif()
 endif()
 
@@ -22,7 +22,7 @@ set(EigenBlas_SRCS  single.cpp double.cpp complex_single.cpp complex_double.cpp 
                     f2c/ztbmv.c   f2c/d_cnjg.c  f2c/r_cnjg.c
    )
 
-if (EIGEN_Fortran_COMPILER_WORKS)
+if (STORMEIGEN_Fortran_COMPILER_WORKS)
   set(EigenBlas_SRCS ${EigenBlas_SRCS} fortran/complexdots.f)
 else()
   set(EigenBlas_SRCS ${EigenBlas_SRCS} f2c/complexdots.c)
@@ -31,9 +31,9 @@ endif()
 add_library(eigen_blas_static ${EigenBlas_SRCS})
 add_library(eigen_blas SHARED ${EigenBlas_SRCS})
 
-if(EIGEN_STANDARD_LIBRARIES_TO_LINK_TO)
-  target_link_libraries(eigen_blas_static ${EIGEN_STANDARD_LIBRARIES_TO_LINK_TO})
-  target_link_libraries(eigen_blas        ${EIGEN_STANDARD_LIBRARIES_TO_LINK_TO})
+if(STORMEIGEN_STANDARD_LIBRARIES_TO_LINK_TO)
+  target_link_libraries(eigen_blas_static ${STORMEIGEN_STANDARD_LIBRARIES_TO_LINK_TO})
+  target_link_libraries(eigen_blas        ${STORMEIGEN_STANDARD_LIBRARIES_TO_LINK_TO})
 endif()
 
 add_dependencies(blas eigen_blas eigen_blas_static)
@@ -43,9 +43,9 @@ install(TARGETS eigen_blas eigen_blas_static
         LIBRARY DESTINATION lib
         ARCHIVE DESTINATION lib)
 
-if(EIGEN_Fortran_COMPILER_WORKS)
+if(STORMEIGEN_Fortran_COMPILER_WORKS)
 
-if(EIGEN_LEAVE_TEST_IN_ALL_TARGET)
+if(STORMEIGEN_LEAVE_TEST_IN_ALL_TARGET)
   add_subdirectory(testing) # can't do EXCLUDE_FROM_ALL here, breaks CTest
 else()
   add_subdirectory(testing EXCLUDE_FROM_ALL)

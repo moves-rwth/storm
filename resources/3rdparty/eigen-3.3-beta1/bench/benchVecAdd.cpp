@@ -1,6 +1,6 @@
 
 #include <iostream>
-#include <Eigen/Core>
+#include <StormEigen/Core>
 #include <bench/BenchTimer.h>
 using namespace StormEigen;
 

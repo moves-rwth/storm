@@ -48,7 +48,7 @@ namespace storm {
                 this->addOption(storm::settings::OptionBuilder(moduleName, ddLibraryOptionName, false, "Sets which library is preferred for decision-diagram operations.")
                                 .addArgument(storm::settings::ArgumentBuilder::createStringArgument("name", "The name of the library to prefer.").addValidatorString(ArgumentValidatorFactory::createMultipleChoiceValidator(ddLibraries)).setDefaultValueString("cudd").build()).build());
                 
-                std::vector<std::string> lpSolvers = {"gurobi", "glpk"};
+                std::vector<std::string> lpSolvers = {"gurobi", "glpk", "z3"};
                 this->addOption(storm::settings::OptionBuilder(moduleName, lpSolverOptionName, false, "Sets which LP solver is preferred.")
                                 .addArgument(storm::settings::ArgumentBuilder::createStringArgument("name", "The name of an LP solver.").addValidatorString(ArgumentValidatorFactory::createMultipleChoiceValidator(lpSolvers)).setDefaultValueString("glpk").build()).build());
                 std::vector<std::string> smtSolvers = {"z3", "mathsat"};
@@ -94,6 +94,8 @@ namespace storm {
                     return storm::solver::LpSolverType::Gurobi;
                 } else if (lpSolverName == "glpk") {
                     return storm::solver::LpSolverType::Glpk;
+                } else if (lpSolverName == "z3") {
+                    return storm::solver::LpSolverType::Z3;
                 }
                 STORM_LOG_THROW(false, storm::exceptions::IllegalArgumentValueException, "Unknown LP solver '" << lpSolverName << "'.");
             }

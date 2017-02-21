@@ -9,7 +9,7 @@
 // with this file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 #include "main.h"
-#include <Eigen/QR>
+#include <StormEigen/QR>
 
 template<typename MatrixType> void qr()
 {

@@ -2,7 +2,7 @@ project(EigenDemos)
 
 add_custom_target(demos)
 
-if(NOT EIGEN_TEST_NOQT)
+if(NOT STORMEIGEN_TEST_NOQT)
   find_package(Qt4)
   if(QT4_FOUND)
     add_subdirectory(mandelbrot)

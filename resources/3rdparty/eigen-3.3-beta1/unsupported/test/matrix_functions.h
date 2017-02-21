@@ -8,7 +8,7 @@
 // with this file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 #include "main.h"
-#include <unsupported/Eigen/MatrixFunctions>
+#include <unsupported/StormEigen/MatrixFunctions>
 
 // For complex matrices, any matrix is fine.
 template<typename MatrixType, int IsComplex = NumTraits<typename internal::traits<MatrixType>::Scalar>::IsComplex>

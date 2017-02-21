@@ -1,13 +1,13 @@
-if(NOT EIGEN_TEST_NOQT)
+if(NOT STORMEIGEN_TEST_NOQT)
   find_package(Qt4)
   if(QT4_FOUND)
     include(${QT_USE_FILE})
   endif()
-endif(NOT EIGEN_TEST_NOQT)
+endif(NOT STORMEIGEN_TEST_NOQT)
 
 if(QT4_FOUND)
   add_executable(Tutorial_sparse_example Tutorial_sparse_example.cpp Tutorial_sparse_example_details.cpp)
-  target_link_libraries(Tutorial_sparse_example ${EIGEN_STANDARD_LIBRARIES_TO_LINK_TO} ${QT_QTCORE_LIBRARY} ${QT_QTGUI_LIBRARY})
+  target_link_libraries(Tutorial_sparse_example ${STORMEIGEN_STANDARD_LIBRARIES_TO_LINK_TO} ${QT_QTCORE_LIBRARY} ${QT_QTGUI_LIBRARY})
 
   add_custom_command(
     TARGET Tutorial_sparse_example
@@ -19,10 +19,10 @@ if(QT4_FOUND)
   add_dependencies(all_examples Tutorial_sparse_example)
 endif(QT4_FOUND)
 
-check_cxx_compiler_flag("-std=c++11" EIGEN_COMPILER_SUPPORT_CPP11)
-if(EIGEN_COMPILER_SUPPORT_CPP11)
+check_cxx_compiler_flag("-std=c++11" STORMEIGEN_COMPILER_SUPPORT_CPP11)
+if(STORMEIGEN_COMPILER_SUPPORT_CPP11)
   add_executable(random_cpp11 random_cpp11.cpp)
-  target_link_libraries(random_cpp11 ${EIGEN_STANDARD_LIBRARIES_TO_LINK_TO})
+  target_link_libraries(random_cpp11 ${STORMEIGEN_STANDARD_LIBRARIES_TO_LINK_TO})
   add_dependencies(all_examples random_cpp11)
   ei_add_target_property(random_cpp11 COMPILE_FLAGS "-std=c++11")
 

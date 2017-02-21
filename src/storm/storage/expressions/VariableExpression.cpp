@@ -66,7 +66,11 @@ namespace storm {
         boost::any VariableExpression::accept(ExpressionVisitor& visitor, boost::any const& data) const {
             return visitor.visit(*this, data);
         }
-        
+
+        bool VariableExpression::isVariableExpression() const {
+            return true;
+        }
+
         void VariableExpression::printToStream(std::ostream& stream) const {
             stream << this->getVariableName();
         }

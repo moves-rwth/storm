@@ -10,7 +10,7 @@
 #include <cmath>
 
 #include "../../test/sparse_solver.h"
-#include <Eigen/IterativeSolvers>
+#include <StormEigen/IterativeSolvers>
 
 template<typename T> void test_minres_T()
 {

@@ -7,10 +7,10 @@
 // Public License v. 2.0. If a copy of the MPL was not distributed
 // with this file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
-#ifndef EIGEN_ICOSPHERE_H
-#define EIGEN_ICOSPHERE_H
+#ifndef STORMEIGEN_ICOSPHERE_H
+#define STORMEIGEN_ICOSPHERE_H
 
-#include <Eigen/Core>
+#include <StormEigen/Core>
 #include <vector>
 
 class IcoSphere
@@ -27,4 +27,4 @@ class IcoSphere
     std::vector<int> mListIds;
 };
 
-#endif // EIGEN_ICOSPHERE_H
+#endif // STORMEIGEN_ICOSPHERE_H

@@ -7,14 +7,14 @@
 // Public License v. 2.0. If a copy of the MPL was not distributed
 // with this file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
-#if defined EIGEN_TEST_PART_1 || defined EIGEN_TEST_PART_2 || defined EIGEN_TEST_PART_3 || defined EIGEN_TEST_PART_4
-#define EIGEN_DONT_ALIGN
-#elif defined EIGEN_TEST_PART_5 || defined EIGEN_TEST_PART_6 || defined EIGEN_TEST_PART_7 || defined EIGEN_TEST_PART_8
-#define EIGEN_DONT_ALIGN_STATICALLY
+#if defined STORMEIGEN_TEST_PART_1 || defined STORMEIGEN_TEST_PART_2 || defined STORMEIGEN_TEST_PART_3 || defined STORMEIGEN_TEST_PART_4
+#define STORMEIGEN_DONT_ALIGN
+#elif defined STORMEIGEN_TEST_PART_5 || defined STORMEIGEN_TEST_PART_6 || defined STORMEIGEN_TEST_PART_7 || defined STORMEIGEN_TEST_PART_8
+#define STORMEIGEN_DONT_ALIGN_STATICALLY
 #endif
 
 #include "main.h"
-#include <Eigen/Dense>
+#include <StormEigen/Dense>
 
 template<typename MatrixType>
 void dontalign(const MatrixType& m)
@@ -39,7 +39,7 @@ void dontalign(const MatrixType& m)
   v = a.adjoint() * v;
   VERIFY(square.determinant() != Scalar(0));
 
-  // bug 219: MapAligned() was giving an assert with EIGEN_DONT_ALIGN, because Map Flags were miscomputed
+  // bug 219: MapAligned() was giving an assert with STORMEIGEN_DONT_ALIGN, because Map Flags were miscomputed
   Scalar* array = internal::aligned_new<Scalar>(rows);
   v = VectorType::MapAligned(array, rows);
   internal::aligned_delete(array, rows);
@@ -47,16 +47,16 @@ void dontalign(const MatrixType& m)
 
 void test_dontalign()
 {
-#if defined EIGEN_TEST_PART_1 || defined EIGEN_TEST_PART_5
+#if defined STORMEIGEN_TEST_PART_1 || defined STORMEIGEN_TEST_PART_5
   dontalign(Matrix3d());
   dontalign(Matrix4f());
-#elif defined EIGEN_TEST_PART_2 || defined EIGEN_TEST_PART_6
+#elif defined STORMEIGEN_TEST_PART_2 || defined STORMEIGEN_TEST_PART_6
   dontalign(Matrix3cd());
   dontalign(Matrix4cf());
-#elif defined EIGEN_TEST_PART_3 || defined EIGEN_TEST_PART_7
+#elif defined STORMEIGEN_TEST_PART_3 || defined STORMEIGEN_TEST_PART_7
   dontalign(Matrix<float, 32, 32>());
   dontalign(Matrix<std::complex<float>, 32, 32>());
-#elif defined EIGEN_TEST_PART_4 || defined EIGEN_TEST_PART_8
+#elif defined STORMEIGEN_TEST_PART_4 || defined STORMEIGEN_TEST_PART_8
   dontalign(MatrixXd(32, 32));
   dontalign(MatrixXcf(32, 32));
 #endif

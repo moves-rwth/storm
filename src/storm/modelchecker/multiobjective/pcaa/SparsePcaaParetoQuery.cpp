@@ -4,7 +4,7 @@
 #include "storm/models/sparse/Mdp.h"
 #include "storm/models/sparse/MarkovAutomaton.h"
 #include "storm/models/sparse/StandardRewardModel.h"
-#include "storm/modelchecker/results/ParetoCurveCheckResult.h"
+#include "storm/modelchecker/results/ExplicitParetoCurveCheckResult.h"
 #include "storm/utility/constants.h"
 #include "storm/utility/vector.h"
 #include "storm/settings/SettingsManager.h"
@@ -43,7 +43,7 @@ namespace storm {
                 for(auto const& vertex : vertices) {
                     paretoOptimalPoints.push_back(storm::utility::vector::convertNumericVector<typename SparseModelType::ValueType>(this->transformPointToOriginalModel(vertex)));
                 }
-                return std::unique_ptr<CheckResult>(new ParetoCurveCheckResult<typename SparseModelType::ValueType>(this->originalModel.getInitialStates().getNextSetIndex(0),
+                return std::unique_ptr<CheckResult>(new ExplicitParetoCurveCheckResult<typename SparseModelType::ValueType>(this->originalModel.getInitialStates().getNextSetIndex(0),
                                                                         std::move(paretoOptimalPoints),
                                                                         this->transformPolytopeToOriginalModel(this->underApproximation)->template convertNumberRepresentation<typename SparseModelType::ValueType>(),
                                                                         this->transformPolytopeToOriginalModel(this->overApproximation)->template convertNumberRepresentation<typename SparseModelType::ValueType>()));
@@ -80,7 +80,7 @@ namespace storm {
                         // Goal precision reached!
                         return;
                     }
-                    STORM_LOG_DEBUG("Current precision of the approximation of the pareto curve is ~" << storm::utility::convertNumber<double>(farestDistance));
+                    STORM_LOG_INFO("Current precision of the approximation of the pareto curve is ~" << storm::utility::convertNumber<double>(farestDistance));
                     WeightVector direction = underApproxHalfspaces[farestHalfspaceIndex].normalVector();
                     this->performRefinementStep(std::move(direction));
                 }

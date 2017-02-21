@@ -12,7 +12,7 @@
 
 #include "binary_library.h"
 
-#include <Eigen/Core>
+#include <StormEigen/Core>
 
 using namespace StormEigen;
 

@@ -31,7 +31,7 @@ namespace storm {
                 }
                 
                 auto preprocessorResult = SparsePcaaPreprocessor<SparseModelType>::preprocess(model, formula);
-                STORM_LOG_DEBUG("Preprocessing done. Result: " << preprocessorResult);
+                STORM_LOG_INFO("Preprocessing done. Result: " << preprocessorResult);
                 
                 std::unique_ptr<SparsePcaaQuery<SparseModelType, storm::RationalNumber>> query;
                 switch (preprocessorResult.queryType) {

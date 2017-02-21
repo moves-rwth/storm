@@ -1,7 +1,7 @@
 #include "main.h"
-#include <Eigen/MPRealSupport>
-#include <Eigen/LU>
-#include <Eigen/Eigenvalues>
+#include <StormEigen/MPRealSupport>
+#include <StormEigen/LU>
+#include <StormEigen/Eigenvalues>
 #include <sstream>
 
 using namespace mpfr;

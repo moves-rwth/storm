@@ -1,4 +1,4 @@
-#include <unsupported/Eigen/Polynomials>
+#include <unsupported/StormEigen/Polynomials>
 #include <iostream>
 
 using namespace StormEigen;

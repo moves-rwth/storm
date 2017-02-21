@@ -38,6 +38,9 @@
 // Whether Z3 is available and to be used (define/undef)
 #cmakedefine STORM_HAVE_Z3
 
+// Whether the optimization feature of Z3 is available and to be used (define/undef)
+#cmakedefine STORM_HAVE_Z3_OPTIMIZE
+
 // Whether MathSAT is available and to be used (define/undef)
 #cmakedefine STORM_HAVE_MSAT
 

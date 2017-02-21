@@ -5,17 +5,29 @@
 #include "storm/models/symbolic/Mdp.h"
 #include "storm/models/symbolic/StandardRewardModel.h"
 
+#include "storm/storage/dd/DdManager.h"
+
 #include "storm/modelchecker/results/SymbolicQualitativeCheckResult.h"
 #include "storm/modelchecker/results/SymbolicQuantitativeCheckResult.h"
+#include "storm/modelchecker/results/SymbolicParetoCurveCheckResult.h"
+#include "storm/modelchecker/results/ExplicitQualitativeCheckResult.h"
+#include "storm/modelchecker/results/ExplicitQuantitativeCheckResult.h"
+#include "storm/modelchecker/results/ExplicitParetoCurveCheckResult.h"
 
 #include "storm/logic/FragmentSpecification.h"
+
+#include "storm/modelchecker/multiobjective/pcaa.h"
 
 #include "storm/solver/MinMaxLinearEquationSolver.h"
 
 #include "storm/settings/modules/GeneralSettings.h"
 
+#include "storm/models/sparse/StandardRewardModel.h"
+#include "storm/transformer/SymbolicToSparseTransformer.h"
+
 #include "storm/exceptions/InvalidStateException.h"
 #include "storm/exceptions/InvalidPropertyException.h"
+#include "storm/exceptions/UnexpectedException.h"
 
 namespace storm {
     namespace modelchecker {
@@ -32,7 +44,16 @@ namespace storm {
         template<typename ModelType>
         bool HybridMdpPrctlModelChecker<ModelType>::canHandle(CheckTask<storm::logic::Formula, ValueType> const& checkTask) const {
             storm::logic::Formula const& formula = checkTask.getFormula();
-            return formula.isInFragment(storm::logic::prctl().setLongRunAverageRewardFormulasAllowed(false));
+            if(formula.isInFragment(storm::logic::prctl().setLongRunAverageRewardFormulasAllowed(false))) {
+                return true;
+            } else {
+                // Check whether we consider a multi-objective formula
+                // For multi-objective model checking, each state requires an individual scheduler (in contrast to single-objective model checking). Let's exclude that multiple states are relevant
+                if(this->getModel().getInitialStates().getNonZeroCount() > 1) return false;
+                if(!checkTask.isOnlyInitialStatesRelevantSet()) return false;
+                return formula.isInFragment(storm::logic::multiObjective().setCumulativeRewardFormulasAllowed(true));
+            }
+
         }
                 
         template<typename ModelType>
@@ -102,6 +123,29 @@ namespace storm {
             return storm::modelchecker::helper::HybridMdpPrctlHelper<DdType, ValueType>::computeReachabilityRewards(checkTask.getOptimizationDirection(), this->getModel(), this->getModel().getTransitionMatrix(), checkTask.isRewardModelSet() ? this->getModel().getRewardModel(checkTask.getRewardModel()) : this->getModel().getRewardModel(""), subResult.getTruthValuesVector(), checkTask.isQualitativeSet(), *this->linearEquationSolverFactory);
         }
 
+        template<typename ModelType>
+        std::unique_ptr<CheckResult> HybridMdpPrctlModelChecker<ModelType>::checkMultiObjectiveFormula(CheckTask<storm::logic::MultiObjectiveFormula, ValueType> const& checkTask) {
+            auto sparseModel = storm::transformer::SymbolicMdpToSparseMdpTransformer<DdType, ValueType>::translate(this->getModel());
+            std::unique_ptr<CheckResult> explicitResult = multiobjective::performPcaa(*sparseModel, checkTask.getFormula());
+
+            // Convert the explicit result
+            if(explicitResult->isExplicitQualitativeCheckResult()) {
+                if(explicitResult->asExplicitQualitativeCheckResult()[*sparseModel->getInitialStates().begin()]) {
+                    return std::unique_ptr<CheckResult>(new storm::modelchecker::SymbolicQualitativeCheckResult<DdType>(this->getModel().getReachableStates(), this->getModel().getInitialStates(), this->getModel().getManager().getBddOne()));
+                } else {
+                    return std::unique_ptr<CheckResult>(new storm::modelchecker::SymbolicQualitativeCheckResult<DdType>(this->getModel().getReachableStates(), this->getModel().getInitialStates(), this->getModel().getManager().getBddZero()));
+                }
+            } else if(explicitResult->isExplicitQuantitativeCheckResult()) {
+                ValueType const& res = explicitResult->template asExplicitQuantitativeCheckResult<ValueType>()[*sparseModel->getInitialStates().begin()];
+                return std::unique_ptr<CheckResult>(new storm::modelchecker::SymbolicQuantitativeCheckResult<DdType, ValueType>(this->getModel().getReachableStates(), this->getModel().getInitialStates(), this->getModel().getManager().template getConstant<ValueType>(res)));
+            } else if(explicitResult->isExplicitParetoCurveCheckResult()) {
+                ExplicitParetoCurveCheckResult<ValueType> const& paretoResult = explicitResult->template asExplicitParetoCurveCheckResult<ValueType>();
+                return std::unique_ptr<CheckResult>(new storm::modelchecker::SymbolicParetoCurveCheckResult<DdType, ValueType>(this->getModel().getInitialStates(), paretoResult.getPoints(), paretoResult.getUnderApproximation(), paretoResult.getOverApproximation()));
+            } else {
+                STORM_LOG_THROW(false, storm::exceptions::UnexpectedException, "The obtained checkresult has an unexpected type.");
+                return nullptr;
+            }
+        }
 
         template class HybridMdpPrctlModelChecker<storm::models::symbolic::Mdp<storm::dd::DdType::CUDD, double>>;
         template class HybridMdpPrctlModelChecker<storm::models::symbolic::Mdp<storm::dd::DdType::Sylvan, double>>;

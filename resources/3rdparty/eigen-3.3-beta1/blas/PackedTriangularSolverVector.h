@@ -7,8 +7,8 @@
 // Public License v. 2.0. If a copy of the MPL was not distributed
 // with this file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
-#ifndef EIGEN_PACKED_TRIANGULAR_SOLVER_VECTOR_H
-#define EIGEN_PACKED_TRIANGULAR_SOLVER_VECTOR_H
+#ifndef STORMEIGEN_PACKED_TRIANGULAR_SOLVER_VECTOR_H
+#define STORMEIGEN_PACKED_TRIANGULAR_SOLVER_VECTOR_H
 
 namespace internal {
 
@@ -85,4 +85,4 @@ struct packed_triangular_solve_vector<LhsScalar, RhsScalar, Index, OnTheRight, M
 
 } // end namespace internal
 
-#endif // EIGEN_PACKED_TRIANGULAR_SOLVER_VECTOR_H
+#endif // STORMEIGEN_PACKED_TRIANGULAR_SOLVER_VECTOR_H

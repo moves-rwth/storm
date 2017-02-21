@@ -98,7 +98,7 @@ void test_nesting_ops()
   CALL_SUBTEST_3(run_nesting_ops_1(Matrix4f::Random()));
   CALL_SUBTEST_4(run_nesting_ops_1(Matrix2d::Random()));
 
-  Index s = internal::random<int>(1,EIGEN_TEST_MAX_SIZE);
+  Index s = internal::random<int>(1,STORMEIGEN_TEST_MAX_SIZE);
   CALL_SUBTEST_1( run_nesting_ops_2(MatrixXf(s,s)) );
   CALL_SUBTEST_2( run_nesting_ops_2(MatrixXcd(s,s)) );
   CALL_SUBTEST_3( run_nesting_ops_2(Matrix4f()) );
