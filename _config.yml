@@ -48,7 +48,7 @@ verbose:  true
 defaults: []
 
 # Content
-category-list: [Usage, Installation, Code]
+category-list: [Installation, Usage, VM]
 
 liquid:
   error_mode: warn

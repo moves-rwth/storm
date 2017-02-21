@@ -2,7 +2,6 @@
 layout: default
 title:  "Storm Release Candidate 1 released"
 date:   2017-01-20 12:00:00 +0100
-tags: ['release']
 ---
 
 We proudly announce the release of the source code on github. 
