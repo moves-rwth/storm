@@ -231,6 +231,15 @@ namespace storm {
                 std::vector<ValueType> getTotalActionRewardVector(storm::storage::SparseMatrix<MatrixValueType> const& transitionMatrix,  std::vector<MatrixValueType> const& stateRewardWeights) const;
 
                 /*!
+                 * Returns the set of states at which a all rewards (state-, action- and transition-rewards) are zero.
+                 *
+                 * @param transitionMatrix the transition matrix of the model (used to determine the actions and transitions that belong to a state)
+                 * @ return a vector representing all states at which the reward is zero
+                 */
+                 template<typename MatrixValueType>
+                 storm::storage::BitVector getStatesWithZeroReward(storm::storage::SparseMatrix<MatrixValueType> const& transitionMatrix) const;
+                 
+                /*!
                  * Sets the given value in the state-action reward vector at the given row. This assumes that the reward
                  * model has state-action rewards.
                  *

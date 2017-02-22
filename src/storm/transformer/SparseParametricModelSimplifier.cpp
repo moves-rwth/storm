@@ -10,8 +10,10 @@
 #include "storm/solver/stateelimination/PrioritizedStateEliminator.h"
 #include "storm/storage/FlexibleSparseMatrix.h"
 #include "storm/utility/vector.h"
+
 #include "storm/exceptions/InvalidStateException.h"
 #include "storm/exceptions/NotImplementedException.h"
+#include "storm/exceptions/InvalidPropertyException.h"
 
 namespace storm {
     namespace transformer {
@@ -37,6 +39,7 @@ namespace storm {
                 }
             } else if (formula.isRewardOperatorFormula()) {
                 storm::logic::RewardOperatorFormula rewOpForm = formula.asRewardOperatorFormula();
+                STORM_LOG_THROW((rewOpForm.hasRewardModelName() && originalModel.hasRewardModel(rewOpForm.getRewardModelName())) || (!rewOpForm.hasRewardModelName() && originalModel.hasUniqueRewardModel()), storm::exceptions::InvalidPropertyException, "The reward model specified by formula " << formula << " is not available in the given model.");
                 if (rewOpForm.getSubformula().isReachabilityRewardFormula()) {
                     return simplifyForReachabilityRewards(rewOpForm);
                 } else if (rewOpForm.getSubformula().isCumulativeRewardFormula()) {
@@ -141,7 +144,6 @@ namespace storm {
             storm::solver::stateelimination::PrioritizedStateEliminator<typename SparseModelType::ValueType> stateEliminator(flexibleMatrix, flexibleBackwardTransitions, statesToEliminate, stateValues);
             stateEliminator.eliminateAll();
             
-            flexibleMatrix.createSubmatrix(keptRows, keptStates);
             stateValues = storm::utility::vector::filterVector(stateValues, keptRows);
             
             std::unordered_map<std::string, typename SparseModelType::RewardModelType> rewardModels;
@@ -149,7 +151,7 @@ namespace storm {
                 rewardModels.insert(std::make_pair(model.getRewardModels().begin()->first, typename SparseModelType::RewardModelType(boost::none, stateValues)));
             }
             
-            return std::make_shared<SparseModelType>(flexibleMatrix.createSparseMatrix(), model.getStateLabeling().getSubLabeling(keptStates), std::move(rewardModels));
+            return std::make_shared<SparseModelType>(flexibleMatrix.createSparseMatrix(keptRows, keptStates), model.getStateLabeling().getSubLabeling(keptStates), std::move(rewardModels));
         }
 
 

@@ -43,7 +43,7 @@ namespace storm {
                     this->computeRewards=true;
                     STORM_LOG_THROW(this->typeOfParametricModel==storm::models::ModelType::Dtmc, storm::exceptions::InvalidArgumentException, "Sampling with rewards is only implemented for Dtmcs");
                     STORM_LOG_THROW(parametricModel.hasUniqueRewardModel(), storm::exceptions::InvalidArgumentException, "The rewardmodel of the sampling model should be unique");
-                    STORM_LOG_THROW(parametricModel.getUniqueRewardModel().hasOnlyStateRewards(), storm::exceptions::InvalidArgumentException, "The rewardmodel of the sampling model should have state rewards only");
+                    STORM_LOG_THROW(parametricModel.getUniqueRewardModel().hasStateActionRewards() && !parametricModel.getUniqueRewardModel().hasStateRewards() && !parametricModel.getUniqueRewardModel().hasTransitionRewards(), storm::exceptions::InvalidArgumentException, "The rewardmodel of the sempling model should have state action rewards only");
                     STORM_LOG_THROW(formula->getSubformula().isEventuallyFormula(), storm::exceptions::InvalidArgumentException, "The subformula should be a reachabilityreward formula");
                     STORM_LOG_THROW(formula->getSubformula().asEventuallyFormula().getSubformula().isInFragment(storm::logic::propositional()), storm::exceptions::InvalidArgumentException, "The subsubformula should be a propositional formula");
                 } else {
@@ -131,7 +131,7 @@ namespace storm {
                     std::vector<ConstantType> b;
                     if(this->computeRewards){
                         b.resize(submatrix.getRowCount());
-                        storm::utility::vector::selectVectorValues(b, this->maybeStates, instantiatedModel.getUniqueRewardModel().getStateRewardVector());
+                        storm::utility::vector::selectVectorValues(b, this->maybeStates, instantiatedModel.getUniqueRewardModel().getStateActionRewardVector());
                     } else {
                         b = instantiatedModel.getTransitionMatrix().getConstrainedRowSumVector(this->maybeStates, this->targetStates);
                     }

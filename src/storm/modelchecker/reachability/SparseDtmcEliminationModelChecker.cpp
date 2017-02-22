@@ -186,9 +186,9 @@ namespace storm {
             
             // Then, we convert the reduced matrix to a more flexible format to be able to perform state elimination more easily.
             storm::storage::FlexibleSparseMatrix<ValueType> flexibleMatrix(transitionMatrix);
-            flexibleMatrix.createSubmatrix(maybeStates, maybeStates);
+            flexibleMatrix.filterEntries(maybeStates, maybeStates);
             storm::storage::FlexibleSparseMatrix<ValueType> flexibleBackwardTransitions(backwardTransitions);
-            flexibleBackwardTransitions.createSubmatrix(maybeStates, maybeStates);
+            flexibleBackwardTransitions.filterEntries(maybeStates, maybeStates);
             auto conversionEnd = std::chrono::high_resolution_clock::now();
             
             std::chrono::high_resolution_clock::time_point modelCheckingStart = std::chrono::high_resolution_clock::now();

@@ -33,7 +33,7 @@ namespace storm {
                     this->computeRewards=true;
                     STORM_LOG_THROW(this->typeOfParametricModel==storm::models::ModelType::Dtmc, storm::exceptions::InvalidArgumentException, "Approximation with rewards is only implemented for Dtmcs");
                     STORM_LOG_THROW(parametricModel.hasUniqueRewardModel(), storm::exceptions::InvalidArgumentException, "The rewardmodel of the approximation model should be unique");
-                    STORM_LOG_THROW(parametricModel.getUniqueRewardModel().hasOnlyStateRewards(), storm::exceptions::InvalidArgumentException, "The rewardmodel of the approximation model should have state rewards only");
+                    STORM_LOG_THROW(parametricModel.getUniqueRewardModel().hasStateActionRewards() && !parametricModel.getUniqueRewardModel().hasStateRewards() && !parametricModel.getUniqueRewardModel().hasTransitionRewards(), storm::exceptions::InvalidArgumentException, "The rewardmodel of the approximation model should have state action rewards only");
                 } else {
                     STORM_LOG_THROW(false, storm::exceptions::InvalidArgumentException, "Invalid formula: " << formula << ". Approximation model only supports eventually or reachability reward formulae.");
                 }
@@ -205,13 +205,13 @@ namespace storm {
                 STORM_LOG_THROW(this->vectorData.vector.size()==this->matrixData.matrix.getRowCount(), storm::exceptions::UnexpectedException, "The size of the eq-sys vector does not match to the number of rows in the eq-sys matrix");
                 this->vectorData.assignment.reserve(vectorData.vector.size());
                 
-                // run through the state reward vector of the parametric model.
+                // run through the state action reward vector of the parametric model.
                 // Constant entries can be set directly.
                 // For Parametric entries we set a dummy value and insert the corresponding function and the assignment
                 ConstantType dummyNonZeroValue = storm::utility::one<ConstantType>();
                 auto vectorIt = this->vectorData.vector.begin();
                 for(auto oldState : this->maybeStates){
-                    if(storm::utility::isConstant(parametricModel.getUniqueRewardModel().getStateRewardVector()[oldState])){
+                    if(storm::utility::isConstant(parametricModel.getUniqueRewardModel().getStateActionRewardVector()[oldState])){
                         ConstantType reward = storm::utility::region::convertNumber<ConstantType>(storm::utility::region::getConstantPart(parametricModel.getUniqueRewardModel().getStateRewardVector()[oldState]));
                         //Add one of these entries for every row in the row group of oldState
                         for(auto matrixRow=this->matrixData.matrix.getRowGroupIndices()[oldState]; matrixRow<this->matrixData.matrix.getRowGroupIndices()[oldState+1]; ++matrixRow){
@@ -220,7 +220,7 @@ namespace storm {
                         }
                     } else {
                         std::set<VariableType> occurringRewVariables;
-                        storm::utility::region::gatherOccurringVariables(parametricModel.getUniqueRewardModel().getStateRewardVector()[oldState], occurringRewVariables);
+                        storm::utility::region::gatherOccurringVariables(parametricModel.getUniqueRewardModel().getStateActionRewardVector()[oldState], occurringRewVariables);
                         // For each row in the row group of oldState, we get the corresponding substitution and insert the FunctionSubstitution
                         for(auto matrixRow=this->matrixData.matrix.getRowGroupIndices()[oldState]; matrixRow<this->matrixData.matrix.getRowGroupIndices()[oldState+1]; ++matrixRow){
                             //Extend the substitution for the probabilities with the reward parameters
@@ -230,7 +230,7 @@ namespace storm {
                                 substitution.insert(typename std::map<VariableType, RegionBoundary>::value_type(rewardVar, RegionBoundary::UNSPECIFIED));
                             }
                             // insert the FunctionSubstitution
-                            auto functionsIt = this->funcSubData.functions.insert(FunctionEntry(FunctionSubstitution(parametricModel.getUniqueRewardModel().getStateRewardVector()[oldState], this->matrixData.rowSubstitutions[matrixRow]), dummyNonZeroValue)).first;
+                            auto functionsIt = this->funcSubData.functions.insert(FunctionEntry(FunctionSubstitution(parametricModel.getUniqueRewardModel().getStateActionRewardVector()[oldState], this->matrixData.rowSubstitutions[matrixRow]), dummyNonZeroValue)).first;
                             //insert assignment and dummy data
                             this->vectorData.assignment.emplace_back(vectorIt, functionsIt->second);
                             *vectorIt = dummyNonZeroValue;
