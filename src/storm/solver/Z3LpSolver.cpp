@@ -188,7 +188,7 @@ namespace storm {
             z3::expr z3Var = this->expressionAdapter->translateExpression(variable);
 			return this->expressionAdapter->translateExpression(lastCheckModel->eval(z3Var, true));
         }
-
+        
         double Z3LpSolver::getContinuousValue(storm::expressions::Variable const& variable) const {
             storm::expressions::Expression value = getValue(variable);
             if(value.getBaseExpression().isIntegerLiteralExpression()) {
@@ -396,6 +396,10 @@ namespace storm {
             }
 
             bool Z3LpSolver::isOptimal() const {
+                throw storm::exceptions::NotImplementedException() << "This version of storm was compiled without Z3 or the version of Z3 does not support optimization. Yet, a method was called that requires this support.";
+            }
+            
+            storm::expressions::Expression Z3LpSolver::getValue(storm::expressions::Variable const& variable) const {
                 throw storm::exceptions::NotImplementedException() << "This version of storm was compiled without Z3 or the version of Z3 does not support optimization. Yet, a method was called that requires this support.";
             }
 
