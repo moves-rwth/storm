@@ -212,7 +212,7 @@ namespace storm {
                 auto vectorIt = this->vectorData.vector.begin();
                 for(auto oldState : this->maybeStates){
                     if(storm::utility::isConstant(parametricModel.getUniqueRewardModel().getStateActionRewardVector()[oldState])){
-                        ConstantType reward = storm::utility::region::convertNumber<ConstantType>(storm::utility::region::getConstantPart(parametricModel.getUniqueRewardModel().getStateRewardVector()[oldState]));
+                        ConstantType reward = storm::utility::region::convertNumber<ConstantType>(storm::utility::region::getConstantPart(parametricModel.getUniqueRewardModel().getStateActionRewardVector()[oldState]));
                         //Add one of these entries for every row in the row group of oldState
                         for(auto matrixRow=this->matrixData.matrix.getRowGroupIndices()[oldState]; matrixRow<this->matrixData.matrix.getRowGroupIndices()[oldState+1]; ++matrixRow){
                             *vectorIt = reward;

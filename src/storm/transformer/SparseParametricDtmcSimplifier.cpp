@@ -56,7 +56,13 @@ namespace storm {
         bool SparseParametricDtmcSimplifier<SparseModelType>::simplifyForBoundedUntilProbabilities(storm::logic::ProbabilityOperatorFormula const& formula) {
             STORM_LOG_THROW(!formula.getSubformula().asBoundedUntilFormula().hasLowerBound(), storm::exceptions::NotSupportedException, "Lower step bounds are not supported.");
             STORM_LOG_THROW(formula.getSubformula().asBoundedUntilFormula().hasUpperBound(), storm::exceptions::UnexpectedException, "Expected a bounded until formula with an upper bound.");
-            STORM_LOG_THROW(formula.getSubformula().asBoundedUntilFormula().hasIntegerUpperBound(), storm::exceptions::UnexpectedException, "Expected a bounded until formula with an integral upper bound.");
+            STORM_LOG_THROW(formula.getSubformula().asBoundedUntilFormula().isStepBounded(), storm::exceptions::UnexpectedException, "Expected a bounded until formula with step bounds.");
+                        
+            uint_fast64_t upperStepBound = formula.getSubformula().asBoundedUntilFormula().getUpperBound().evaluateAsInt();
+            if (formula.getSubformula().asBoundedUntilFormula().isUpperBoundStrict()) {
+                STORM_LOG_THROW(upperStepBound > 0, storm::exceptions::UnexpectedException, "Expected a strict upper bound that is greater than zero.");
+                --upperStepBound;
+            }
             
             // Get the prob0, target, and the maybeStates
             storm::modelchecker::SparsePropositionalModelChecker<SparseModelType> propositionalChecker(this->originalModel);
@@ -66,12 +72,11 @@ namespace storm {
             }
             storm::storage::BitVector phiStates = std::move(propositionalChecker.check(formula.getSubformula().asBoundedUntilFormula().getLeftSubformula())->asExplicitQualitativeCheckResult().getTruthValuesVector());
             storm::storage::BitVector psiStates = std::move(propositionalChecker.check(formula.getSubformula().asBoundedUntilFormula().getRightSubformula())->asExplicitQualitativeCheckResult().getTruthValuesVector());
-            storm::storage::BitVector probGreater0States = storm::utility::graph::performProbGreater0(this->originalModel.getBackwardTransitions(), phiStates, psiStates, true, formula.getSubformula().asBoundedUntilFormula().getUpperBound().evaluateAsInt());
+            storm::storage::BitVector probGreater0States = storm::utility::graph::performProbGreater0(this->originalModel.getBackwardTransitions(), phiStates, psiStates, true, upperStepBound);
             storm::storage::BitVector prob0States = ~probGreater0States;
             
-            
             // Only consider the maybestates that are reachable from one initial probGreater0 state within the given amount of steps and without hopping over a target state
-            storm::storage::BitVector reachableGreater0States = storm::utility::graph::getReachableStates(this->originalModel.getTransitionMatrix(), this->originalModel.getInitialStates() & probGreater0States, probGreater0States, psiStates, true, formula.getSubformula().asBoundedUntilFormula().getUpperBound().evaluateAsInt());
+            storm::storage::BitVector reachableGreater0States = storm::utility::graph::getReachableStates(this->originalModel.getTransitionMatrix(), this->originalModel.getInitialStates() & probGreater0States, probGreater0States, psiStates, true, upperStepBound);
             storm::storage::BitVector maybeStates = reachableGreater0States & ~psiStates;
             
             // obtain the resulting subsystem
@@ -82,8 +87,8 @@ namespace storm {
             
             // obtain the simplified formula for the simplified model
             auto labelFormula = std::make_shared<storm::logic::AtomicLabelFormula const> ("target");
-            auto boundedUntilFormula = std::make_shared<storm::logic::BoundedUntilFormula const>(storm::logic::Formula::getTrueFormula(), labelFormula, boost::none, storm::logic::);
-            this->simplifiedFormula = std::make_shared<storm::logic::ProbabilityOperatorFormula const>(eventuallyFormula, formula.getOperatorInformation());
+            auto boundedUntilFormula = std::make_shared<storm::logic::BoundedUntilFormula const>(storm::logic::Formula::getTrueFormula(), labelFormula, boost::none, storm::logic::TimeBound(formula.getSubformula().asBoundedUntilFormula().isUpperBoundStrict(), formula.getSubformula().asBoundedUntilFormula().getUpperBound()), storm::logic::TimeBoundType::Steps);
+            this->simplifiedFormula = std::make_shared<storm::logic::ProbabilityOperatorFormula const>(boundedUntilFormula, formula.getOperatorInformation());
             
             return true;
         }
@@ -128,8 +133,30 @@ namespace storm {
         
         template<typename SparseModelType>
         bool SparseParametricDtmcSimplifier<SparseModelType>::simplifyForCumulativeRewards(storm::logic::RewardOperatorFormula const& formula) {
-            // If this method was not overriden by any subclass, simplification is not possible
-            return false;
+            STORM_LOG_THROW(formula.getSubformula().asCumulativeRewardFormula().isStepBounded(), storm::exceptions::UnexpectedException, "Expected a cumulative reward formula with step bounds.");
+                        
+            typename SparseModelType::RewardModelType const& originalRewardModel = formula.hasRewardModelName() ? this->originalModel.getRewardModel(formula.getRewardModelName()) : this->originalModel.getUniqueRewardModel();
+
+            uint_fast64_t stepBound = formula.getSubformula().asCumulativeRewardFormula().getBound().evaluateAsInt();
+            if (formula.getSubformula().asCumulativeRewardFormula().isBoundStrict()) {
+                STORM_LOG_THROW(stepBound > 0, storm::exceptions::UnexpectedException, "Expected a strict upper bound that is greater than zero.");
+                --stepBound;
+            }
+            
+            // Get the states with non-zero reward
+            storm::storage::BitVector maybeStates = storm::utility::graph::performProbGreater0(this->originalModel.getBackwardTransitions(), storm::storage::BitVector(this->originalModel.getNumberOfStates(), true), ~originalRewardModel.getStatesWithZeroReward(this->originalModel.getTransitionMatrix()), true, stepBound);
+            storm::storage::BitVector zeroRewardStates = ~maybeStates;
+            storm::storage::BitVector noStates(this->originalModel.getNumberOfStates(), false);
+            
+            // obtain the resulting subsystem
+            std::vector<std::string> rewardModelNameAsVector(1, formula.hasRewardModelName() ? formula.getRewardModelName() : this->originalModel.getRewardModels().begin()->first);
+            storm::transformer::GoalStateMerger<SparseModelType> goalStateMerger(this->originalModel);
+            this->simplifiedModel = goalStateMerger.mergeTargetAndSinkStates(maybeStates, noStates, zeroRewardStates, rewardModelNameAsVector);
+            
+            // obtain the simplified formula for the simplified model
+            this->simplifiedFormula = formula.asSharedPointer();
+            
+            return true;
         }
 
         template class SparseParametricDtmcSimplifier<storm::models::sparse::Dtmc<storm::RationalFunction>>;

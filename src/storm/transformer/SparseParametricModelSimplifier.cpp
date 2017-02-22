@@ -126,7 +126,7 @@ namespace storm {
                 if (sparseMatrix.getRowGroupSize(state) == 1 && storm::utility::isConstant(stateValues[state])) {
                     bool hasOnlyConstEntries = true;
                     for (auto const& entry : sparseMatrix.getRowGroup(state)) {
-                        if(!storm::utility::isConstant(entry.getColumn())) {
+                        if(!storm::utility::isConstant(entry.getValue())) {
                             hasOnlyConstEntries = false;
                             break;
                         }
