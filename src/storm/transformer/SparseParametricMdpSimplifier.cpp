@@ -1,13 +1,15 @@
-#include "storm/transformer/SparseParametricDtmcSimplifier.h"
+#include "storm/transformer/SparseParametricMdpSimplifier.h"
 
 #include "storm/adapters/CarlAdapter.h"
 
 #include "storm/modelchecker/propositional/SparsePropositionalModelChecker.h"
 #include "storm/modelchecker/results/ExplicitQualitativeCheckResult.h"
-#include "storm/models/sparse/Dtmc.h"
+#include "storm/models/sparse/Mdp.h"
 #include "storm/models/sparse/StandardRewardModel.h"
 #include "storm/transformer/GoalStateMerger.h"
+#include "storm/transformer/EndComponentEliminator.h"
 #include "storm/utility/graph.h"
+#include "storm/utility/vector.h"
 
 #include <storm/exceptions/NotSupportedException.h>
 #include <storm/exceptions/UnexpectedException.h>
@@ -16,12 +18,14 @@ namespace storm {
     namespace transformer {
 
         template<typename SparseModelType>
-        SparseParametricDtmcSimplifier<SparseModelType>::SparseParametricDtmcSimplifier(SparseModelType const& model) : SparseParametricModelSimplifier<SparseModelType>(model) {
+        SparseParametricMdpSimplifier<SparseModelType>::SparseParametricMdpSimplifier(SparseModelType const& model) : SparseParametricModelSimplifier<SparseModelType>(model) {
             // intentionally left empty
         }
         
         template<typename SparseModelType>
-        bool SparseParametricDtmcSimplifier<SparseModelType>::simplifyForUntilProbabilities(storm::logic::ProbabilityOperatorFormula const& formula) {
+        bool SparseParametricMdpSimplifier<SparseModelType>::simplifyForUntilProbabilities(storm::logic::ProbabilityOperatorFormula const& formula) {
+            bool minimizing = formula.hasOptimalityType() ? storm::solver::minimize(formula.getOptimalityType()) : storm::logic::isLowerBound(formula.getBound().comparisonType);
+            
             // Get the prob0, prob1 and the maybeStates
             storm::modelchecker::SparsePropositionalModelChecker<SparseModelType> propositionalChecker(this->originalModel);
             if(!propositionalChecker.canHandle(formula.getSubformula().asUntilFormula().getLeftSubformula()) || !propositionalChecker.canHandle(formula.getSubformula().asUntilFormula().getRightSubformula())) {
@@ -30,7 +34,10 @@ namespace storm {
             }
             storm::storage::BitVector phiStates = std::move(propositionalChecker.check(formula.getSubformula().asUntilFormula().getLeftSubformula())->asExplicitQualitativeCheckResult().getTruthValuesVector());
             storm::storage::BitVector psiStates = std::move(propositionalChecker.check(formula.getSubformula().asUntilFormula().getRightSubformula())->asExplicitQualitativeCheckResult().getTruthValuesVector());
-            std::pair<storm::storage::BitVector, storm::storage::BitVector> statesWithProbability01 = storm::utility::graph::performProb01(this->originalModel, phiStates, psiStates);
+            std::pair<storm::storage::BitVector, storm::storage::BitVector> statesWithProbability01 = minimizing ?
+                                                                                                      storm::utility::graph::performProb01Min(this->originalModel, phiStates, psiStates) :
+                                                                                                      storm::utility::graph::performProb01Max(this->originalModel, phiStates, psiStates);
+                                                                                                      
             // Only consider the maybestates that are reachable from one initial state without hopping over a target (i.e., prob1) state
             storm::storage::BitVector reachableGreater0States = storm::utility::graph::getReachableStates(this->originalModel.getTransitionMatrix(), this->originalModel.getInitialStates() & ~statesWithProbability01.first, ~statesWithProbability01.first, statesWithProbability01.second);
             storm::storage::BitVector maybeStates = reachableGreater0States & ~statesWithProbability01.second;
@@ -48,16 +55,22 @@ namespace storm {
             
             // Eliminate all states for which all outgoing transitions are constant
             this->simplifiedModel = this->eliminateConstantDeterministicStates(*this->simplifiedModel);
-                
+                        
+            // Eliminate the end components that do not contain a target or a sink state (only required if the probability is maximized)
+            if(!minimizing) {
+                this->simplifiedModel = this->eliminateNeutralEndComponents(*this->simplifiedModel, this->simplifiedModel->getStates("target") | this->simplifiedModel->getStates("sink"));
+            }
+            
             return true;
         }
         
         template<typename SparseModelType>
-        bool SparseParametricDtmcSimplifier<SparseModelType>::simplifyForBoundedUntilProbabilities(storm::logic::ProbabilityOperatorFormula const& formula) {
+        bool SparseParametricMdpSimplifier<SparseModelType>::simplifyForBoundedUntilProbabilities(storm::logic::ProbabilityOperatorFormula const& formula) {
             STORM_LOG_THROW(!formula.getSubformula().asBoundedUntilFormula().hasLowerBound(), storm::exceptions::NotSupportedException, "Lower step bounds are not supported.");
             STORM_LOG_THROW(formula.getSubformula().asBoundedUntilFormula().hasUpperBound(), storm::exceptions::UnexpectedException, "Expected a bounded until formula with an upper bound.");
             STORM_LOG_THROW(formula.getSubformula().asBoundedUntilFormula().isStepBounded(), storm::exceptions::UnexpectedException, "Expected a bounded until formula with step bounds.");
                         
+            bool minimizing = formula.hasOptimalityType() ? storm::solver::minimize(formula.getOptimalityType()) : storm::logic::isLowerBound(formula.getBound().comparisonType);
             uint_fast64_t upperStepBound = formula.getSubformula().asBoundedUntilFormula().getUpperBound().evaluateAsInt();
             if (formula.getSubformula().asBoundedUntilFormula().isUpperBoundStrict()) {
                 STORM_LOG_THROW(upperStepBound > 0, storm::exceptions::UnexpectedException, "Expected a strict upper bound that is greater than zero.");
@@ -72,7 +85,9 @@ namespace storm {
             }
             storm::storage::BitVector phiStates = std::move(propositionalChecker.check(formula.getSubformula().asBoundedUntilFormula().getLeftSubformula())->asExplicitQualitativeCheckResult().getTruthValuesVector());
             storm::storage::BitVector psiStates = std::move(propositionalChecker.check(formula.getSubformula().asBoundedUntilFormula().getRightSubformula())->asExplicitQualitativeCheckResult().getTruthValuesVector());
-            storm::storage::BitVector probGreater0States = storm::utility::graph::performProbGreater0(this->originalModel.getBackwardTransitions(), phiStates, psiStates, true, upperStepBound);
+            storm::storage::BitVector probGreater0States = minimizing ?
+                                                           storm::utility::graph::performProbGreater0A(this->originalModel.getTransitionMatrix(), this->originalModel.getTransitionMatrix().getRowGroupIndices(), this->originalModel.getBackwardTransitions(), phiStates, psiStates, true, upperStepBound) :
+                                                           storm::utility::graph::performProbGreater0E(this->originalModel.getBackwardTransitions(), phiStates, psiStates, true, upperStepBound);
             storm::storage::BitVector prob0States = ~probGreater0States;
             
             // Only consider the maybestates that are reachable from one initial probGreater0 state within the given amount of steps and without hopping over a target state
@@ -94,9 +109,11 @@ namespace storm {
         }
         
         template<typename SparseModelType>
-        bool SparseParametricDtmcSimplifier<SparseModelType>::simplifyForReachabilityRewards(storm::logic::RewardOperatorFormula const& formula) {
+        bool SparseParametricMdpSimplifier<SparseModelType>::simplifyForReachabilityRewards(storm::logic::RewardOperatorFormula const& formula) {
             typename SparseModelType::RewardModelType const& originalRewardModel = formula.hasRewardModelName() ? this->originalModel.getRewardModel(formula.getRewardModelName()) : this->originalModel.getUniqueRewardModel();
             
+            bool minimizing = formula.hasOptimalityType() ? storm::solver::minimize(formula.getOptimalityType()) : storm::logic::isLowerBound(formula.getBound().comparisonType);
+
             // Get the prob1 and the maybeStates
             storm::modelchecker::SparsePropositionalModelChecker<SparseModelType> propositionalChecker(this->originalModel);
             if(!propositionalChecker.canHandle(formula.getSubformula().asEventuallyFormula().getSubformula())) {
@@ -105,8 +122,13 @@ namespace storm {
             }
             storm::storage::BitVector targetStates = std::move(propositionalChecker.check(formula.getSubformula().asEventuallyFormula().getSubformula())->asExplicitQualitativeCheckResult().getTruthValuesVector());
             // The set of target states can be extended by the states that reach target with probability 1 without collecting any reward
-            targetStates = storm::utility::graph::performProb1(this->originalModel.getBackwardTransitions(), originalRewardModel.getStatesWithZeroReward(this->originalModel.getTransitionMatrix()), targetStates);
-            storm::storage::BitVector statesWithProb1 = storm::utility::graph::performProb1(this->originalModel.getBackwardTransitions(), storm::storage::BitVector(this->originalModel.getNumberOfStates(), true), targetStates);
+            // TODO for the call of Prob1E we could restrict the analysis to actions with zero reward instead of states with zero reward
+            targetStates = minimizing ?
+                           storm::utility::graph::performProb1E(this->originalModel, this->originalModel.getBackwardTransitions(), originalRewardModel.getStatesWithZeroReward(this->originalModel.getTransitionMatrix()), targetStates) :
+                           storm::utility::graph::performProb1A(this->originalModel, this->originalModel.getBackwardTransitions(), originalRewardModel.getStatesWithZeroReward(this->originalModel.getTransitionMatrix()), targetStates);
+            storm::storage::BitVector statesWithProb1 = minimizing ?
+                                     storm::utility::graph::performProb1E(this->originalModel, this->originalModel.getBackwardTransitions(), storm::storage::BitVector(this->originalModel.getNumberOfStates(), true), targetStates) :
+                                     storm::utility::graph::performProb1A(this->originalModel, this->originalModel.getBackwardTransitions(), storm::storage::BitVector(this->originalModel.getNumberOfStates(), true), targetStates);
             storm::storage::BitVector infinityStates = ~statesWithProb1;
             // Only consider the states that are reachable from an initial state without hopping over a target state
             storm::storage::BitVector reachableStates = storm::utility::graph::getReachableStates(this->originalModel.getTransitionMatrix(), this->originalModel.getInitialStates() & statesWithProb1, statesWithProb1, targetStates);
@@ -126,16 +148,19 @@ namespace storm {
             
             // Eliminate all states for which all outgoing transitions are constant
             this->simplifiedModel = this->eliminateConstantDeterministicStates(*this->simplifiedModel, rewardModelNameAsVector.front());
-                
+            
+            // Eliminate the end components in which no reward is collected (only required if rewards are minimized)
+            this->simplifiedModel = this->eliminateNeutralEndComponents(*this->simplifiedModel, this->simplifiedModel->getStates("target") | this->simplifiedModel->getStates("sink"), rewardModelNameAsVector.front());
             return true;
         }
         
         template<typename SparseModelType>
-        bool SparseParametricDtmcSimplifier<SparseModelType>::simplifyForCumulativeRewards(storm::logic::RewardOperatorFormula const& formula) {
+        bool SparseParametricMdpSimplifier<SparseModelType>::simplifyForCumulativeRewards(storm::logic::RewardOperatorFormula const& formula) {
             STORM_LOG_THROW(formula.getSubformula().asCumulativeRewardFormula().isStepBounded(), storm::exceptions::UnexpectedException, "Expected a cumulative reward formula with step bounds.");
                         
             typename SparseModelType::RewardModelType const& originalRewardModel = formula.hasRewardModelName() ? this->originalModel.getRewardModel(formula.getRewardModelName()) : this->originalModel.getUniqueRewardModel();
 
+            bool minimizing = formula.hasOptimalityType() ? storm::solver::minimize(formula.getOptimalityType()) : storm::logic::isLowerBound(formula.getBound().comparisonType);
             uint_fast64_t stepBound = formula.getSubformula().asCumulativeRewardFormula().getBound().evaluateAsInt();
             if (formula.getSubformula().asCumulativeRewardFormula().isBoundStrict()) {
                 STORM_LOG_THROW(stepBound > 0, storm::exceptions::UnexpectedException, "Expected a strict upper bound that is greater than zero.");
@@ -143,7 +168,9 @@ namespace storm {
             }
             
             // Get the states with non-zero reward
-            storm::storage::BitVector maybeStates = storm::utility::graph::performProbGreater0(this->originalModel.getBackwardTransitions(), storm::storage::BitVector(this->originalModel.getNumberOfStates(), true), ~originalRewardModel.getStatesWithZeroReward(this->originalModel.getTransitionMatrix()), true, stepBound);
+            storm::storage::BitVector maybeStates = minimizing ?
+                                                    storm::utility::graph::performProbGreater0A(this->originalModel.getTransitionMatrix(), this->originalModel.getTransitionMatrix().getRowGroupIndices(), this->originalModel.getBackwardTransitions(), storm::storage::BitVector(this->originalModel.getNumberOfStates(), true), ~originalRewardModel.getStatesWithZeroReward(this->originalModel.getTransitionMatrix()), true, stepBound) :
+                                                    storm::utility::graph::performProbGreater0E(this->originalModel.getBackwardTransitions(), storm::storage::BitVector(this->originalModel.getNumberOfStates(), true), ~originalRewardModel.getStatesWithZeroReward(this->originalModel.getTransitionMatrix()), true, stepBound);
             storm::storage::BitVector zeroRewardStates = ~maybeStates;
             storm::storage::BitVector noStates(this->originalModel.getNumberOfStates(), false);
             
@@ -157,7 +184,57 @@ namespace storm {
             
             return true;
         }
+        
+        template<typename SparseModelType>
+        std::shared_ptr<SparseModelType> SparseParametricMdpSimplifier<SparseModelType>::eliminateNeutralEndComponents(SparseModelType const& model, storm::storage::BitVector const& ignoredStates, boost::optional<std::string> const& rewardModelName) {
+            
+            // Get the actions that can be part of an EC
+            storm::storage::BitVector possibleECActions(model.getNumberOfChoices(), true);
+            for (auto const& state : ignoredStates) {
+                for(uint_fast64_t actionIndex = model.getTransitionMatrix().getRowGroupIndices()[state]; actionIndex < model.getTransitionMatrix().getRowGroupIndices()[state+1]; ++actionIndex) {
+                    possibleECActions.set(actionIndex, false);
+                }
+            }
+            
+            // Get the action-based reward values and unselect non-zero reward actions
+            std::vector<typename SparseModelType::ValueType> actionRewards;
+            if(rewardModelName) {
+                actionRewards = model.getRewardModel(*rewardModelName).getTotalRewardVector(model.getTransitionMatrix());
+                uint_fast64_t actionIndex = 0;
+                for (auto const& actionReward : actionRewards) {
+                    if(!storm::utility::isZero(actionReward)) {
+                        possibleECActions.set(actionIndex, false);
+                    }
+                    ++actionIndex;
+                }
+            }
+            
+            // Invoke EC Elimination
+            auto ecEliminatorResult = storm::transformer::EndComponentEliminator<typename SparseModelType::ValueType>::transform(model.getTransitionMatrix(), storm::storage::BitVector(model.getNumberOfStates(), true), possibleECActions, storm::storage::BitVector(model.getNumberOfStates(), false));
+            
+            // obtain the reward model for the resulting system
+            std::unordered_map<std::string, typename SparseModelType::RewardModelType> rewardModels;
+            if(rewardModelName) {
+                std::vector<typename SparseModelType::ValueType> newActionRewards(ecEliminatorResult.matrix.getRowCount());
+                storm::utility::vector::selectVectorValues(newActionRewards, ecEliminatorResult.newToOldRowMapping, actionRewards);
+                rewardModels.insert(std::make_pair(*rewardModelName, typename SparseModelType::RewardModelType(boost::none, std::move(actionRewards))));
+            }
+            
+            // the new labeling
+            storm::models::sparse::StateLabeling labeling(ecEliminatorResult.matrix.getRowGroupCount());
+            for (auto const& label : model.getStateLabeling().getLabels()) {
+                auto const& origStatesWithLabel = model.getStates(label);
+                storm::storage::BitVector newStatesWithLabel(ecEliminatorResult.matrix.getRowGroupCount(), false);
+                for (auto const& origState : origStatesWithLabel) {
+                    newStatesWithLabel.set(ecEliminatorResult.oldToNewStateMapping[origState], true);
+                }
+                labeling.addLabel(label, std::move(newStatesWithLabel));
+            }
+            
+            return std::make_shared<SparseModelType>(std::move(ecEliminatorResult.matrix), std::move(labeling), std::move(rewardModels));
+        }
 
-        template class SparseParametricDtmcSimplifier<storm::models::sparse::Dtmc<storm::RationalFunction>>;
+
+        template class SparseParametricMdpSimplifier<storm::models::sparse::Mdp<storm::RationalFunction>>;
     }
 }

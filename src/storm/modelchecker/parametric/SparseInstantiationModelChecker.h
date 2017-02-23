@@ -1,0 +1,16 @@
+//
+// Created by Tim Quatmann on 23/02/2017.
+//
+
+#ifndef STORM_SPARSEINSTANTIATIONMODELCHECKER_H
+#define STORM_SPARSEINSTANTIATIONMODELCHECKER_H
+
+
+
+class SparseInstantiationModelChecker {
+
+};
+
+
+
+#endif //STORM_SPARSEINSTANTIATIONMODELCHECKER_H

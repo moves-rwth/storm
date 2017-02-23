@@ -53,11 +53,11 @@ namespace storm {
              * * there is only one enabled action (i.e., there is no nondeterministic choice at the state),
              * * all outgoing transitions are constant,
              * * there is no statelabel defined, and
-             * * (if applicable) the reward collected at the state is constant.
+             * * (if rewardModelName is given) the reward collected at the state is constant.
              *
-             * Assumes that there is at most one reward model defined. Otherwise an exception is thrown.
+             * The resulting model will only have the rewardModel with the provided name (or no reward model at all if no name was given)
              */
-            static std::shared_ptr<SparseModelType> eliminateConstantDeterministicStates(SparseModelType const& model);
+            static std::shared_ptr<SparseModelType> eliminateConstantDeterministicStates(SparseModelType const& model, boost::optional<std::string> const& rewardModelName = boost::none);
             
             SparseModelType const& originalModel;
             
