@@ -25,7 +25,7 @@ namespace storm {
             
 #ifdef STORM_HAVE_CARL
             template<>
-            typename CoefficientType<storm::RationalFunction>::type evaluate<storm::RationalFunction>(storm::RationalFunction const& function, std::map<typename VariableType<storm::RationalFunction>::type, typename CoefficientType<storm::RationalFunction>::type> const& valuation){
+            typename CoefficientType<storm::RationalFunction>::type evaluate<storm::RationalFunction>(storm::RationalFunction const& function, Valuation<storm::RationalFunction> const& valuation){
                 return function.evaluate(valuation);
             }
             

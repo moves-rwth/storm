@@ -53,7 +53,7 @@ namespace storm {
                  * @param valuation Maps each occurring variables to the value with which it should be substituted
                  * @return The instantiated model
                  */
-                ConstantSparseModelType const& instantiate(std::map<VariableType, CoefficientType>const& valuation);
+                ConstantSparseModelType const& instantiate(storm::utility::parametric::Valuation<ParametricType> const& valuation);
                 
                 /*!
                  *  Check validity

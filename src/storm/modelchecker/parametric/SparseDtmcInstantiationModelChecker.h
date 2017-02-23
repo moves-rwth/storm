@@ -1,37 +1,32 @@
 #pragma once
 
-#include "storm/logic/Formulas.h"
-#include "storm/modelchecker/CheckTask.h"
-#include "storm/modelchecker/results/CheckResult.h"
-#include "storm/utility/parametric.h"
+#include <memory>
+
+#include "storm/models/sparse/Dtmc.h"
+#include "storm/modelchecker/parametric/SparseInstantiationModelChecker.h"
+#include "storm/utility/ModelInstantiator.h"
 
 namespace storm {
     namespace modelchecker {
         namespace parametric {
-            template <typename SparseModelType, typename ConstantType>
-            
             
             /*!
-             * Class to efficiently check a formula on a parametric model on different parameter instantiations
+             * Class to efficiently check a formula on a parametric model with different parameter instantiations
              */
-            class SparseInstantiationModelChecker {
+            template <typename SparseModelType, typename ConstantType>
+            class SparseDtmcInstantiationModelChecker : public SparseInstantiationModelChecker<SparseModelType, ConstantType> {
             public:
-                SparseInstantiationModelChecker(SparseModelType const& parametricModel);
+                SparseDtmcInstantiationModelChecker(SparseModelType const& parametricModel);
                 
-                virtual bool canHandle(CheckTask<storm::logic::Formula, ValueType> const& checkTask) = 0;
+                virtual bool canHandle(CheckTask<storm::logic::Formula, typename SparseModelType::ValueType> const& checkTask) const override;
                 
-                virtual void specifyFormula(CheckTask<storm::logic::Formula, ValueType> const& checkTask) = 0;
+                virtual void specifyFormula(CheckTask<storm::logic::Formula, typename SparseModelType::ValueType> const& checkTask) override;
                 
-                virtual std::unique_ptr<CheckResult> check(storm::utility::parametric::Valuation<typename SparseModelType::ValueType> const& valuation) = 0;
+                virtual std::unique_ptr<CheckResult> check(storm::utility::parametric::Valuation<typename SparseModelType::ValueType> const& valuation) override;
 
-            private:
-                
-                SparseModelType const& parametricModel;
-                
+            protected:
+                storm::utility::ModelInstantiator<SparseModelType, storm::models::sparse::Dtmc<ConstantType>> modelInstantiator;
             };
         }
     }
 }
-
-
-#endif //STORM_SPARSEINSTANTIATIONMODELCHECKER_H

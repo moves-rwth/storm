@@ -132,7 +132,7 @@ namespace storm {
             }
             
             template<typename ParametricSparseModelType, typename ConstantSparseModelType>
-            ConstantSparseModelType const& ModelInstantiator<ParametricSparseModelType, ConstantSparseModelType>::instantiate(std::map<VariableType, CoefficientType>const& valuation){
+            ConstantSparseModelType const& ModelInstantiator<ParametricSparseModelType, ConstantSparseModelType>::instantiate(storm::utility::parametric::Valuation<ParametricType> const& valuation){
                 //Write results into the placeholders
                 for(auto& functionResult : this->functions){
                     functionResult.second=storm::utility::convertNumber<ConstantType>(
