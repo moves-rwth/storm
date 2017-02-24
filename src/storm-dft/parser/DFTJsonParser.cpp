@@ -74,6 +74,9 @@ namespace storm {
                     success = builder.addAndElement(name, childNames);
                 } else if (type == "or") {
                     success = builder.addOrElement(name, childNames);
+                } else if (type == "vot") {
+                    std::string votThreshold = data.at("voting");
+                    success = builder.addVotElement(name, boost::lexical_cast<unsigned>(votThreshold), childNames);
                 } else if (type == "pand") {
                     success = builder.addPandElement(name, childNames);
                 } else if (type == "por") {
