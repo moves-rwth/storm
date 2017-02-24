@@ -45,7 +45,7 @@ namespace storm {
         
         template<typename ValueType, typename StateType>
         StateBehavior<ValueType, StateType> DftNextStateGenerator<ValueType, StateType>::expand(StateToIdCallback const& stateToIdCallback) {
-            STORM_LOG_TRACE("Explore state: " << mDft.getStateString(state));
+            STORM_LOG_DEBUG("Explore state: " << mDft.getStateString(state));
 
             // Prepare the result, in case we return early.
             StateBehavior<ValueType, StateType> result;

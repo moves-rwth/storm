@@ -525,8 +525,6 @@ namespace storm {
                 }
             }
 
-            STORM_LOG_DEBUG("No. states: " << model->getNumberOfStates());
-            STORM_LOG_DEBUG("No. transitions: " << model->getNumberOfTransitions());
             if (model->getNumberOfStates() <= 15) {
                 STORM_LOG_TRACE("Transition matrix: " << std::endl << model->getTransitionMatrix());
             } else {

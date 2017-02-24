@@ -194,9 +194,6 @@ namespace storm {
                     typename storm::builder::ExplicitDFTModelBuilderApprox<ValueType>::LabelOptions labeloptions(properties);
                     builder.buildModel(labeloptions, 0, 0.0);
                     std::shared_ptr<storm::models::sparse::Model<ValueType>> model = builder.getModel();
-                    //model->printModelInformationToStream(std::cout);
-                    STORM_LOG_INFO("No. states (Explored): " << model->getNumberOfStates());
-                    STORM_LOG_INFO("No. transitions (Explored): " << model->getNumberOfTransitions());
                     explorationTimer.stop();
 
                     STORM_LOG_THROW(model->isOfType(storm::models::ModelType::Ctmc), storm::exceptions::NotSupportedException, "Parallel composition only applicable for CTMCs");
@@ -219,8 +216,8 @@ namespace storm {
                     composedModel =  storm::performDeterministicSparseBisimulationMinimization<storm::models::sparse::Ctmc<ValueType>>(composedModel, properties, storm::storage::BisimulationType::Weak)->template as<storm::models::sparse::Ctmc<ValueType>>();
                     bisimulationTimer.stop();
 
-                    STORM_LOG_INFO("No. states (Composed): " << composedModel->getNumberOfStates());
-                    STORM_LOG_INFO("No. transitions (Composed): " << composedModel->getNumberOfTransitions());
+                    STORM_LOG_DEBUG("No. states (Composed): " << composedModel->getNumberOfStates());
+                    STORM_LOG_DEBUG("No. transitions (Composed): " << composedModel->getNumberOfTransitions());
                     if (composedModel->getNumberOfStates() <= 15) {
                         STORM_LOG_TRACE("Transition matrix: " << std::endl << composedModel->getTransitionMatrix());
                     } else {
@@ -228,6 +225,7 @@ namespace storm {
                     }
 
                 }
+                composedModel->printModelInformationToStream(std::cout);
                 return composedModel;
             } else {
                 // No composition was possible
@@ -249,9 +247,7 @@ namespace storm {
                 typename storm::builder::ExplicitDFTModelBuilderApprox<ValueType>::LabelOptions labeloptions(properties);
                 builder.buildModel(labeloptions, 0, 0.0);
                 std::shared_ptr<storm::models::sparse::Model<ValueType>> model = builder.getModel();
-                //model->printModelInformationToStream(std::cout);
-                STORM_LOG_INFO("No. states (Explored): " << model->getNumberOfStates());
-                STORM_LOG_INFO("No. transitions (Explored): " << model->getNumberOfTransitions());
+                model->printModelInformationToStream(std::cout);
                 explorationTimer.stop();
                 STORM_LOG_THROW(model->isOfType(storm::models::ModelType::Ctmc), storm::exceptions::NotSupportedException, "Parallel composition only applicable for CTMCs");
                 return model->template as<storm::models::sparse::Ctmc<ValueType>>();
@@ -308,8 +304,7 @@ namespace storm {
                     STORM_LOG_INFO("Getting model for lower bound...");
                     model = builder.getModelApproximation(probabilityFormula ? false : true);
                     // We only output the info from the lower bound as the info for the upper bound is the same
-                    STORM_LOG_INFO("No. states: " << model->getNumberOfStates());
-                    STORM_LOG_INFO("No. transitions: " << model->getNumberOfTransitions());
+                    model->printModelInformationToStream(std::cout);
                     buildingTimer.stop();
 
                     // Check lower bounds
@@ -356,9 +351,7 @@ namespace storm {
                     typename storm::builder::ExplicitDFTModelBuilder<ValueType>::LabelOptions labeloptions;
                     model = builder.buildModel(labeloptions);
                 }
-                //model->printModelInformationToStream(std::cout);
-                STORM_LOG_INFO("No. states (Explored): " << model->getNumberOfStates());
-                STORM_LOG_INFO("No. transitions (Explored): " << model->getNumberOfTransitions());
+                model->printModelInformationToStream(std::cout);
                 explorationTimer.stop();
 
                 // Model checking
