@@ -7,7 +7,7 @@
 #include "storm/modelchecker/region/AbstractSparseRegionModelChecker.h"
 #include "storm/modelchecker/region/ParameterRegion.h"
 #include "storm/modelchecker/region/ApproximationModel.h"
-#include "storm/modelchecker/region/SamplingModel.h"
+#include "storm/modelchecker/parametric/SparseInstantiationModelChecker.h"
 
 #include "storm/models/sparse/StandardRewardModel.h"
 #include "storm/models/sparse/Model.h"
@@ -218,7 +218,7 @@ namespace storm {
                  * Returns the sampling model.
                  * If it is not yet available, it is computed.
                  */
-                std::shared_ptr<SamplingModel<ParametricSparseModelType, ConstantType>> const& getSamplingModel();
+                std::shared_ptr<storm::modelchecker::parametric::SparseInstantiationModelChecker<ParametricSparseModelType, ConstantType>> const& getSamplingModel();
                 
                 /*!
                  * Starts the SMTSolver to get the result.
@@ -228,8 +228,18 @@ namespace storm {
                  * A Sat- or Violated point is set, if the solver has found one (not yet implemented!).
                  * The region checkResult of the given region is changed accordingly.
                  */
-                virtual bool checkSmt(ParameterRegion<ParametricType>& region)=0; 
+                virtual bool checkSmt(ParameterRegion<ParametricType>& region)=0;
+                
+                
+                /*!
+                 * initializes the Sampling Model
+                 */
+                virtual void initializeSamplingModel(ParametricSparseModelType const& model, std::shared_ptr<storm::logic::OperatorFormula const> formula) = 0;
               
+                
+                                // the model that can be instantiated to check the value at a certain point
+                std::shared_ptr<storm::modelchecker::parametric::SparseInstantiationModelChecker<ParametricSparseModelType, ConstantType>> samplingModel;
+                
             private:
                 /*!
                  * initializes the Approximation Model
@@ -238,10 +248,6 @@ namespace storm {
                  */
                 void initializeApproximationModel(ParametricSparseModelType const& model, std::shared_ptr<storm::logic::OperatorFormula const> formula);
 
-                /*!
-                 * initializes the Sampling Model
-                 */
-                void initializeSamplingModel(ParametricSparseModelType const& model, std::shared_ptr<storm::logic::OperatorFormula const> formula);
                 
                 // The model this model checker is supposed to analyze.
                 std::shared_ptr<ParametricSparseModelType> model;
@@ -257,8 +263,7 @@ namespace storm {
                 bool isApproximationApplicable;
                 // the model that  is used to approximate the reachability values
                 std::shared_ptr<ApproximationModel<ParametricSparseModelType, ConstantType>> approximationModel;
-                // the model that can be instantiated to check the value at a certain point
-                std::shared_ptr<SamplingModel<ParametricSparseModelType, ConstantType>> samplingModel;
+
                 // a flag that is true iff the resulting reachability function is constant
                 boost::optional<ConstantType> constantResult;
 

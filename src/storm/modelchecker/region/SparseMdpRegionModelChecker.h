@@ -78,6 +78,13 @@ namespace storm {
                  * The region checkResult of the given region is changed accordingly.
                  */
                 virtual bool checkSmt(ParameterRegion<ParametricType>& /*region*/);
+                
+                                
+                
+                /*!
+                 * initializes the Sampling Model
+                 */
+                virtual void initializeSamplingModel(ParametricSparseModelType const& model, std::shared_ptr<storm::logic::OperatorFormula const> formula) override;
 
             };
         } //namespace region

@@ -1,5 +1,10 @@
 #include "SparseInstantiationModelChecker.h"
 
+#include "storm/adapters/CarlAdapter.h"
+#include "storm/models/sparse/Dtmc.h"
+#include "storm/models/sparse/Mdp.h"
+#include "storm/models/sparse/StandardRewardModel.h"
+
 #include "storm/exceptions/InvalidArgumentException.h"
 
 namespace storm {
@@ -14,13 +19,14 @@ namespace storm {
                 
             template <typename SparseModelType, typename ConstantType>
             void SparseInstantiationModelChecker<SparseModelType, ConstantType>::specifyFormula(storm::modelchecker::CheckTask<storm::logic::Formula, typename SparseModelType::ValueType> const& checkTask) {
-                storm::logic::Formula const& formula = checkTask.getFormula();
-                STORM_LOG_THROW(this->canHandle(checkTask), storm::exceptions::InvalidArgumentException, "The model checker is not able to check the formula '" << formula << "'.");
-                
-                currentCheckTask = std::make_unique<storm::modelchecker::CheckTask<storm::logic::Formula, ConstantType>>(checkTask.getFormula(), checkTask.isOnlyInitialStatesRelevantSet());
+                currentFormula = checkTask.getFormula().asSharedPointer();
+                currentCheckTask = std::make_unique<storm::modelchecker::CheckTask<storm::logic::Formula, ConstantType>>(*currentFormula, checkTask.isOnlyInitialStatesRelevantSet());
                 currentCheckTask->setProduceSchedulers(checkTask.isProduceSchedulersSet());
             }
             
+            template class SparseInstantiationModelChecker<storm::models::sparse::Dtmc<storm::RationalFunction>, double>;
+            template class SparseInstantiationModelChecker<storm::models::sparse::Mdp<storm::RationalFunction>, double>;
+
         }
     }
 }

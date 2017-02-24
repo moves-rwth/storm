@@ -48,6 +48,11 @@ namespace storm {
         }
         
         template<typename ValueType>
+        typename ExplicitQuantitativeCheckResult<ValueType>::vector_type& ExplicitQuantitativeCheckResult<ValueType>::getValueVector() {
+            return boost::get<vector_type>(values);
+        }
+        
+        template<typename ValueType>
         typename ExplicitQuantitativeCheckResult<ValueType>::map_type const& ExplicitQuantitativeCheckResult<ValueType>::getValueMap() const {
             return boost::get<map_type>(values);
         }

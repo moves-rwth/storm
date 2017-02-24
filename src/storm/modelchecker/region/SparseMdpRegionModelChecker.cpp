@@ -32,6 +32,7 @@
 #include "storm/logic/FragmentSpecification.h"
 
 #include "storm/transformer/SparseParametricMdpSimplifier.h"
+#include "storm/modelchecker/parametric/SparseMdpInstantiationModelChecker.h"
 
 
 namespace storm {
@@ -80,13 +81,14 @@ namespace storm {
                                                                                                   boost::optional<ConstantType>& constantResult){
                 STORM_LOG_DEBUG("Preprocessing for MDPs started.");
                 STORM_LOG_THROW(this->getModel()->getInitialStates().getNumberOfSetBits() == 1, storm::exceptions::InvalidArgumentException, "Input model is required to have exactly one initial state.");
+                /*
                 storm::storage::BitVector maybeStates, targetStates;
                 preprocessForProbabilities(maybeStates, targetStates, isApproximationApplicable, constantResult);
                 if(constantResult && constantResult.get()>=storm::utility::zero<ConstantType>()){
                     //The result is already known. Nothing else to do here
                     return;
                 }
-                                
+                  */
                 storm::transformer::SparseParametricMdpSimplifier<ParametricSparseModelType> simplifier(*this->getModel());
                 if(!simplifier.simplify(*this->getSpecifiedFormula())) {
                     STORM_LOG_THROW(false, storm::exceptions::UnexpectedException, "Simplification was not possible");
@@ -268,6 +270,22 @@ namespace storm {
                 }
             }
 
+            template<typename ParametricSparseModelType, typename ConstantType>
+            void SparseMdpRegionModelChecker<ParametricSparseModelType, ConstantType>::initializeSamplingModel(ParametricSparseModelType const& model, std::shared_ptr<storm::logic::OperatorFormula const> formula) {
+                STORM_LOG_DEBUG("Initializing the Sampling Model....");
+                std::chrono::high_resolution_clock::time_point timeInitSamplingModelStart = std::chrono::high_resolution_clock::now();
+                this->samplingModel=std::make_shared<storm::modelchecker::parametric::SparseMdpInstantiationModelChecker<ParametricSparseModelType, ConstantType>>(model);
+                if(formula->isProbabilityOperatorFormula()) {
+                    auto quantitativeFormula = std::make_shared<storm::logic::ProbabilityOperatorFormula const>(formula->getSubformula().asSharedPointer(), storm::logic::OperatorInformation(storm::logic::isLowerBound(formula->getComparisonType()) ? storm::solver::OptimizationDirection::Minimize : storm::solver::OptimizationDirection::Maximize));
+                    this->samplingModel->specifyFormula(*quantitativeFormula);
+                } else {
+                    auto quantitativeFormula = std::make_shared<storm::logic::RewardOperatorFormula>(formula->getSubformula().asSharedPointer(), formula->asRewardOperatorFormula().getOptionalRewardModelName(),  storm::logic::OperatorInformation(storm::logic::isLowerBound(formula->getComparisonType()) ? storm::solver::OptimizationDirection::Minimize : storm::solver::OptimizationDirection::Maximize));
+                    this->samplingModel->specifyFormula(*quantitativeFormula);
+                }
+                std::chrono::high_resolution_clock::time_point timeInitSamplingModelEnd = std::chrono::high_resolution_clock::now();
+                STORM_LOG_DEBUG("Initialized Sampling Model");
+            }
+            
             template<typename ParametricSparseModelType, typename ConstantType>
             bool SparseMdpRegionModelChecker<ParametricSparseModelType, ConstantType>::checkPoint(ParameterRegion<ParametricType>& region, std::map<VariableType, CoefficientType>const& point, bool /*favorViaFunction*/) {
                             if(this->checkFormulaOnSamplingPoint(point)){

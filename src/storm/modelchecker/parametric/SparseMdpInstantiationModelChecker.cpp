@@ -1,24 +1,25 @@
-#include "SparseDtmcInstantiationModelChecker.h"
+#include "SparseMdpInstantiationModelChecker.h"
 
 #include "storm/logic/FragmentSpecification.h"
 #include "storm/modelchecker/results/ExplicitQuantitativeCheckResult.h"
 
 #include "storm/exceptions/InvalidArgumentException.h"
 #include "storm/exceptions/InvalidStateException.h"
+
 namespace storm {
     namespace modelchecker {
         namespace parametric {
             
             template <typename SparseModelType, typename ConstantType>
-            SparseDtmcInstantiationModelChecker<SparseModelType, ConstantType>::SparseDtmcInstantiationModelChecker(SparseModelType const& parametricModel) : SparseInstantiationModelChecker<SparseModelType, ConstantType>(parametricModel), modelInstantiator(parametricModel) {
+            SparseMdpInstantiationModelChecker<SparseModelType, ConstantType>::SparseMdpInstantiationModelChecker(SparseModelType const& parametricModel) : SparseInstantiationModelChecker<SparseModelType, ConstantType>(parametricModel), modelInstantiator(parametricModel) {
                 //Intentionally left empty
             }
     
-            template <typename SparseModelType, typename ConstantType>
-            std::unique_ptr<CheckResult> SparseDtmcInstantiationModelChecker<SparseModelType, ConstantType>::check(storm::utility::parametric::Valuation<typename SparseModelType::ValueType> const& valuation) {
+           template <typename SparseModelType, typename ConstantType>
+            std::unique_ptr<CheckResult> SparseMdpInstantiationModelChecker<SparseModelType, ConstantType>::check(storm::utility::parametric::Valuation<typename SparseModelType::ValueType> const& valuation) {
                 STORM_LOG_THROW(this->currentCheckTask, storm::exceptions::InvalidStateException, "Checking has been invoked but no property has been specified before.");
                 auto const& instantiatedModel = modelInstantiator.instantiate(valuation);
-                storm::modelchecker::SparseDtmcPrctlModelChecker<storm::models::sparse::Dtmc<ConstantType>> modelChecker(instantiatedModel);
+                storm::modelchecker::SparseMdpPrctlModelChecker<storm::models::sparse::Mdp<ConstantType>> modelChecker(instantiatedModel);
 
                 // Check if there are some optimizations implemented for the specified property
                 if(!this->currentCheckTask->isQualitativeSet() && this->currentCheckTask->getFormula().isInFragment(storm::logic::reachability().setRewardOperatorsAllowed(true).setReachabilityRewardFormulasAllowed(true))) {
@@ -30,7 +31,7 @@ namespace storm {
             
                 
             template <typename SparseModelType, typename ConstantType>
-            std::unique_ptr<CheckResult> SparseDtmcInstantiationModelChecker<SparseModelType, ConstantType>::checkWithResultHint(storm::modelchecker::SparseDtmcPrctlModelChecker<storm::models::sparse::Dtmc<ConstantType>>& modelchecker) {
+            std::unique_ptr<CheckResult> SparseMdpInstantiationModelChecker<SparseModelType, ConstantType>::checkWithResultHint(storm::modelchecker::SparseMdpPrctlModelChecker<storm::models::sparse::Mdp<ConstantType>>& modelchecker) {
                 
                 // Insert the hint if it exists
                 if(resultOfLastCheck) {
@@ -59,8 +60,7 @@ namespace storm {
                 }
             }
             
-            
-            template class SparseDtmcInstantiationModelChecker<storm::models::sparse::Dtmc<storm::RationalFunction>, double>;
+            template class SparseMdpInstantiationModelChecker<storm::models::sparse::Mdp<storm::RationalFunction>, double>;
 
         }
     }

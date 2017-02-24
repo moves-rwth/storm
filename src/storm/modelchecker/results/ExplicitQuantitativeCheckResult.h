@@ -45,6 +45,7 @@ namespace storm {
             virtual bool isExplicitQuantitativeCheckResult() const override;
             
             vector_type const& getValueVector() const;
+            vector_type& getValueVector();
             map_type const& getValueMap() const;
             
             virtual std::ostream& writeToStream(std::ostream& out) const override;

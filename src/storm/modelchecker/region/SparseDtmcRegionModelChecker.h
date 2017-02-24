@@ -55,6 +55,12 @@ namespace storm {
                  * @note this->specifiedFormula and this->computeRewards has to be set accordingly before calling this function
                  */
                 virtual void preprocess(std::shared_ptr<ParametricSparseModelType>& simpleModel, std::shared_ptr<storm::logic::OperatorFormula const>& simpleFormula, bool& isApproximationApplicable, boost::optional<ConstantType>& constantResult);
+                
+                                
+                /*!
+                 * initializes the Sampling Model
+                 */
+                virtual void initializeSamplingModel(ParametricSparseModelType const& model, std::shared_ptr<storm::logic::OperatorFormula const> formula) override;
 
                 private:
                 /*!

@@ -17,8 +17,6 @@ namespace storm {
             public:
                 SparseInstantiationModelChecker(SparseModelType const& parametricModel);
                 
-                virtual bool canHandle(CheckTask<storm::logic::Formula, typename SparseModelType::ValueType> const& checkTask) const = 0;
-                
                 void specifyFormula(CheckTask<storm::logic::Formula, typename SparseModelType::ValueType> const& checkTask);
                 
                 virtual std::unique_ptr<CheckResult> check(storm::utility::parametric::Valuation<typename SparseModelType::ValueType> const& valuation) = 0;
@@ -27,6 +25,10 @@ namespace storm {
                 
                 SparseModelType const& parametricModel;
                 std::unique_ptr<CheckTask<storm::logic::Formula, ConstantType>> currentCheckTask;
+
+            private:
+                // store the current formula. Note that currentCheckTask only stores a reference to the formula.
+                std::shared_ptr<storm::logic::Formula const> currentFormula;
 
             };
         }

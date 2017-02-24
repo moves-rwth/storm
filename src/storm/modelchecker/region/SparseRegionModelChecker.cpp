@@ -182,7 +182,7 @@ namespace storm {
                     STORM_LOG_DEBUG("The Result is constant and will be computed now.");
                     initializeSamplingModel(*this->getSimpleModel(), this->getSimpleFormula());
                     std::map<VariableType, CoefficientType> emptySubstitution;
-                    this->constantResult = this->getSamplingModel()->computeInitialStateValue(emptySubstitution);
+                    this->constantResult = this->getReachabilityValue(emptySubstitution);
                 }
 
                 //some more information for statistics...
@@ -201,17 +201,6 @@ namespace storm {
                 this->timeInitApproxModel=timeInitApproxModelEnd - timeInitApproxModelStart;
                 STORM_LOG_DEBUG("Initialized Approximation Model");
             }
-
-            template<typename ParametricSparseModelType, typename ConstantType>
-            void SparseRegionModelChecker<ParametricSparseModelType, ConstantType>::initializeSamplingModel(ParametricSparseModelType const& model, std::shared_ptr<storm::logic::OperatorFormula const> formula) {
-                STORM_LOG_DEBUG("Initializing the Sampling Model....");
-                std::chrono::high_resolution_clock::time_point timeInitSamplingModelStart = std::chrono::high_resolution_clock::now();
-                this->samplingModel=std::make_shared<SamplingModel<ParametricSparseModelType, ConstantType>>(model, formula);
-                std::chrono::high_resolution_clock::time_point timeInitSamplingModelEnd = std::chrono::high_resolution_clock::now();
-                this->timeInitSamplingModel = timeInitSamplingModelEnd - timeInitSamplingModelStart;
-                STORM_LOG_DEBUG("Initialized Sampling Model");
-            }
-            
             
             template<typename ParametricSparseModelType, typename ConstantType>
             void SparseRegionModelChecker<ParametricSparseModelType, ConstantType>::checkRegions(std::vector<ParameterRegion<ParametricType>>& regions) {
@@ -448,7 +437,7 @@ namespace storm {
                 if(this->isResultConstant()){
                     return this->constantResult.get();
                 }
-                return this->getSamplingModel()->computeInitialStateValue(point);
+                return this->getSamplingModel()->check(point)->template asExplicitQuantitativeCheckResult<ConstantType>()[*this->simpleModel->getInitialStates().begin()];
             }
             
             template<typename ParametricSparseModelType, typename ConstantType>
@@ -456,11 +445,11 @@ namespace storm {
                 if(this->isResultConstant()){
                     return this->valueIsInBoundOfFormula(this->constantResult.get());
                 }
-                return this->getSamplingModel()->checkFormulaOnSamplingPoint(point);
+                return this->valueIsInBoundOfFormula(getReachabilityValue(point));
             }
             
             template<typename ParametricSparseModelType, typename ConstantType>
-            std::shared_ptr<SamplingModel<ParametricSparseModelType, ConstantType>> const& SparseRegionModelChecker<ParametricSparseModelType, ConstantType>::getSamplingModel() {
+            std::shared_ptr<storm::modelchecker::parametric::SparseInstantiationModelChecker<ParametricSparseModelType, ConstantType>> const& SparseRegionModelChecker<ParametricSparseModelType, ConstantType>::getSamplingModel() {
                 if(this->samplingModel==nullptr){
                     STORM_LOG_WARN("Sampling model requested but it has not been initialized when specifying the formula. Will initialize it now.");
                     initializeSamplingModel(*this->getSimpleModel(), this->getSimpleFormula());
