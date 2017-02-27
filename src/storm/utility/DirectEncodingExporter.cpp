@@ -1,4 +1,4 @@
-#include "ExplicitExporter.h"
+#include "DirectEncodingExporter.h"
 
 #include "storm/adapters/CarlAdapter.h"
 #include "storm/utility/constants.h"
@@ -14,26 +14,24 @@
 
 namespace storm {
     namespace exporter {
+
         template<typename ValueType>
         void explicitExportSparseModel(std::ostream& os, std::shared_ptr<storm::models::sparse::Model<ValueType>> sparseModel,  std::vector<std::string> const& parameters) {
-            bool embedded = false;
-            if(sparseModel->getType() == storm::models::ModelType::Ctmc || sparseModel->getType() == storm::models::ModelType::MarkovAutomaton) {
-                STORM_LOG_WARN("This format only supports discrete time models");
-                embedded = true;
-            }
-            
-            STORM_LOG_THROW(embedded || sparseModel->getType() == storm::models::ModelType::Mdp || sparseModel->getType() == storm::models::ModelType::Dtmc , storm::exceptions::NotImplementedException, "This functionality is not yet implemented." );
-            
+
+            // Notice that for CTMCs we write the rate matrix instead of probabilities
+
+            // Initialize
             std::vector<ValueType> exitRates; // Only for CTMCs and MAs.
             if(sparseModel->getType() == storm::models::ModelType::Ctmc) {
                 exitRates = sparseModel->template as<storm::models::sparse::Ctmc<ValueType>>()->getExitRateVector();
             } else if(sparseModel->getType() == storm::models::ModelType::MarkovAutomaton) {
                 exitRates = sparseModel->template as<storm::models::sparse::MarkovAutomaton<ValueType>>()->getExitRates();
             }
-            
+
+            // Write header
             os << "// Exported by storm" << std::endl;
             os << "// Original model type: " << sparseModel->getType() << std::endl;
-            os << "@type: mdp" << std::endl;
+            os << "@type: " << sparseModel->getType() << std::endl;
             os << "@parameters" << std::endl;
             for (auto const& p : parameters) {
                os << p << " ";
@@ -41,98 +39,93 @@ namespace storm {
             os << std::endl;
             os << "@nr_states" << std::endl  << sparseModel->getNumberOfStates() <<  std::endl;
             os << "@model" << std::endl;
+
             storm::storage::SparseMatrix<ValueType> const& matrix = sparseModel->getTransitionMatrix();
             
             for (typename storm::storage::SparseMatrix<ValueType>::index_type group = 0; group < matrix.getRowGroupCount(); ++group) {
                 os << "state " << group;
-                
-                if (!embedded) {
-                   bool first = true;
-                   for (auto const& rewardModelEntry : sparseModel->getRewardModels()) {
-                       if (first) {
-                           os << " [";
-                           first = false;
-                       } else {
-                           os << ", ";
-                       }
-                       
-                       if(rewardModelEntry.second.hasStateRewards()) {
-                           os << rewardModelEntry.second.getStateRewardVector().at(group);
-                       } else {
-                           os << "0";
-                       }
+
+                // Write state rewards
+                bool first = true;
+                for (auto const& rewardModelEntry : sparseModel->getRewardModels()) {
+                    if (first) {
+                        os << " [";
+                        first = false;
+                    } else {
+                        os << ", ";
                     }
-                    
-                    if (!first) {
-                        os << "]";
+
+                    if(rewardModelEntry.second.hasStateRewards()) {
+                        os << rewardModelEntry.second.getStateRewardVector().at(group);
+                    } else {
+                        os << "0";
                     }
-                } else {
-                    // We currently only support the expected time.
-                    os << " [" << storm::utility::one<ValueType>()/exitRates.at(group) << "]";
                 }
-                
+
+                if (!first) {
+                    os << "]";
+                }
+
+                // Write labels
                 for(auto const& label : sparseModel->getStateLabeling().getLabelsOfState(group)) {
                     os << " " << label;
                 }
                 os << std::endl;
+
+                // Write probabilities
                 typename storm::storage::SparseMatrix<ValueType>::index_type start = matrix.hasTrivialRowGrouping() ? group : matrix.getRowGroupIndices()[group];
                 typename storm::storage::SparseMatrix<ValueType>::index_type end = matrix.hasTrivialRowGrouping() ? group + 1 : matrix.getRowGroupIndices()[group + 1];
-                
-                
-                for (typename storm::storage::SparseMatrix<ValueType>::index_type i = start; i < end; ++i) {
+
+                // Iterate over all actions
+                for (typename storm::storage::SparseMatrix<ValueType>::index_type row = start; row < end; ++row) {
                     // Print the actual row.
-                    os << "\taction " << i - start;
-                    if (!embedded) {
-                        bool first = true;
-                        for (auto const& rewardModelEntry : sparseModel->getRewardModels()) {
-                            if (first) {
-                                os << " [";
-                                first = false;
-                            } else {
-                                os << ", ";
-                            }
-                            
-                            if(rewardModelEntry.second.hasStateActionRewards()) {
-                                os << storm::utility::to_string(rewardModelEntry.second.getStateActionRewardVector().at(i));
-                            } else {
-                                os << "0";
-                            }
-                            
+                    os << "\taction " << row - start;
+                    bool first = true;
+                    // Write transition rewards
+                    for (auto const& rewardModelEntry : sparseModel->getRewardModels()) {
+                        if (first) {
+                            os << " [";
+                            first = false;
+                        } else {
+                            os << ", ";
                         }
-                        if (!first) {
-                            os << "]";
+
+                        if(rewardModelEntry.second.hasStateActionRewards()) {
+                            os << storm::utility::to_string(rewardModelEntry.second.getStateActionRewardVector().at(row));
+                        } else {
+                            os << "0";
                         }
-                    } else {
-                        // We currently only support the expected time.
+
+                    }
+                    if (!first) {
+                        os << "]";
                     }
 
-                    
-                    
+                    // Write choice labeling
                     if(sparseModel->hasChoiceLabeling()) {
-                        //TODO
+                        // TODO export choice labeling
                     }
                     os << std::endl;
                     
-                    
-                    for(auto it = matrix.begin(i); it != matrix.end(i); ++it) {
+                    // Write probabilities
+                    for(auto it = matrix.begin(row); it != matrix.end(row); ++it) {
                         ValueType prob = it->getValue();
-                        if(embedded) {
-                            prob = prob / exitRates.at(group);
-                        }
                         os << "\t\t" << it->getColumn() << " : ";
                         os << storm::utility::to_string(prob) << std::endl;
                     }
                     
                 }
-            }
+            } // end matrix iteration
             
         }
         
         
         
         template void explicitExportSparseModel<double>(std::ostream& os, std::shared_ptr<storm::models::sparse::Model<double>> sparseModel, std::vector<std::string> const& parameters);
-        
+
+#ifdef STORM_HAVE_CARL
         template void explicitExportSparseModel<storm::RationalNumber>(std::ostream& os, std::shared_ptr<storm::models::sparse::Model<storm::RationalNumber>> sparseModel, std::vector<std::string> const& parameters);
         template void explicitExportSparseModel<storm::RationalFunction>(std::ostream& os, std::shared_ptr<storm::models::sparse::Model<storm::RationalFunction>> sparseModel, std::vector<std::string> const& parameters);
+#endif
     }
 }

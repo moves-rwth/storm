@@ -6,7 +6,7 @@
 #include "storm/utility/storm.h"
 
 #include "storm/storage/SymbolicModelDescription.h"
-#include "storm/utility/ExplicitExporter.h"
+#include "storm/utility/DirectEncodingExporter.h"
 #include "storm/utility/Stopwatch.h"
 
 #include "storm/exceptions/NotImplementedException.h"

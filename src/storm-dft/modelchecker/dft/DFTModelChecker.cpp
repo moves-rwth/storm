@@ -2,6 +2,7 @@
 
 #include "storm/builder/ParallelCompositionBuilder.h"
 #include "storm/utility/bitoperations.h"
+#include "storm/utility/DirectEncodingExporter.h"
 
 #include "storm-dft/builder/ExplicitDFTModelBuilder.h"
 #include "storm-dft/builder/ExplicitDFTModelBuilderApprox.h"
@@ -353,6 +354,16 @@ namespace storm {
                 }
                 model->printModelInformationToStream(std::cout);
                 explorationTimer.stop();
+
+                // Export the model if required
+                if (storm::settings::getModule<storm::settings::modules::IOSettings>().isExportExplicitSet()) {
+                    std::ofstream stream;
+                    storm::utility::openFile(storm::settings::getModule<storm::settings::modules::IOSettings>().getExportExplicitFilename(), stream);
+                    std::vector<std::string> parameterNames;
+                    // TODO fill parameter names
+                    storm::exporter::explicitExportSparseModel(stream, model, parameterNames);
+                    storm::utility::closeFile(stream);
+                }
 
                 // Model checking
                 std::vector<ValueType> resultsValue = checkModel(model, properties);
