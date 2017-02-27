@@ -41,6 +41,7 @@
 #include "storm/storage/dd/Bdd.h"
 
 #include "storm/parser/AutoParser.h"
+#include "storm/parser/DirectEncodingParser.h"
 
 #include "storm/storage/jani/Model.h"
 #include "storm/storage/jani/Property.h"
@@ -108,6 +109,11 @@ namespace storm {
     template<typename ValueType>
     std::shared_ptr<storm::models::sparse::Model<ValueType>> buildExplicitModel(std::string const& transitionsFile, std::string const& labelingFile, boost::optional<std::string> const& stateRewardsFile = boost::none, boost::optional<std::string> const& transitionRewardsFile = boost::none, boost::optional<std::string> const& choiceLabelingFile = boost::none) {
         return storm::parser::AutoParser<>::parseModel(transitionsFile, labelingFile, stateRewardsFile ? stateRewardsFile.get() : "", transitionRewardsFile ? transitionRewardsFile.get() : "", choiceLabelingFile ? choiceLabelingFile.get() : "" );
+    }
+
+    template<typename ValueType>
+    std::shared_ptr<storm::models::sparse::Model<ValueType>> buildExplicitDRNModel(std::string const& drnFile) {
+        return storm::parser::DirectEncodingParser<ValueType>::parseModel(drnFile);
     }
 
     std::vector<std::shared_ptr<storm::logic::Formula const>> extractFormulasFromProperties(std::vector<storm::jani::Property> const& properties);

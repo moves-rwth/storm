@@ -294,7 +294,7 @@ namespace storm {
                 } else {
                     buildAndCheckSymbolicModel<double>(model, properties, true);
                 }
-            } else if (ioSettings.isExplicitSet()) {
+            } else if (ioSettings.isExplicitSet() || ioSettings.isExplicitDRNSet()) {
                 STORM_LOG_THROW(coreSettings.getEngine() == storm::settings::modules::CoreSettings::Engine::Sparse, storm::exceptions::InvalidSettingsException, "Only the sparse engine supports explicit model input.");
                 
                 // If the model is given in an explicit format, we parse the properties without allowing expressions

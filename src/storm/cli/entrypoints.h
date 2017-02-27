@@ -385,10 +385,15 @@ namespace storm {
         void buildAndCheckExplicitModel(std::vector<storm::jani::Property> const& properties, bool onlyInitialStatesRelevant = false) {
             storm::settings::modules::IOSettings const& settings = storm::settings::getModule<storm::settings::modules::IOSettings>();
 
-            STORM_LOG_THROW(settings.isExplicitSet(), storm::exceptions::InvalidStateException, "Unable to build explicit model without model files.");
+            STORM_LOG_THROW(settings.isExplicitSet() || settings.isExplicitDRNSet(), storm::exceptions::InvalidStateException, "Unable to build explicit model without model files.");
 
             storm::utility::Stopwatch modelBuildingWatch(true);
-            std::shared_ptr<storm::models::ModelBase> model = buildExplicitModel<ValueType>(settings.getTransitionFilename(), settings.getLabelingFilename(), settings.isStateRewardsSet() ? boost::optional<std::string>(settings.getStateRewardsFilename()) : boost::none, settings.isTransitionRewardsSet() ? boost::optional<std::string>(settings.getTransitionRewardsFilename()) : boost::none, settings.isChoiceLabelingSet() ? boost::optional<std::string>(settings.getChoiceLabelingFilename()) : boost::none);
+            std::shared_ptr<storm::models::ModelBase> model;
+            if (settings.isExplicitSet()) {
+                model = buildExplicitModel<ValueType>(settings.getTransitionFilename(), settings.getLabelingFilename(), settings.isStateRewardsSet() ? boost::optional<std::string>(settings.getStateRewardsFilename()) : boost::none, settings.isTransitionRewardsSet() ? boost::optional<std::string>(settings.getTransitionRewardsFilename()) : boost::none, settings.isChoiceLabelingSet() ? boost::optional<std::string>(settings.getChoiceLabelingFilename()) : boost::none);
+            } else {
+                model = buildExplicitDRNModel<ValueType>(settings.getExplicitDRNFilename());
+            }
             modelBuildingWatch.stop();
             STORM_PRINT_AND_LOG("Time for model construction: " << modelBuildingWatch << "." << std::endl);
             
