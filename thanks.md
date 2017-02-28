@@ -3,7 +3,7 @@ title: Thanks
 layout: default
 ---
 
-Storm has a large number of dependencies which all contribute to the capabilities of storm. 
+Storm has a large number of dependencies which all contribute to the capabilities of storm.
 We would like to thank the developers of these tools (in lexicographic order):
 
 - [Boost](http://www.boost.org), which we use for Just-in-Time compilation, parsing of the prism language & properties, as well as other tasks.

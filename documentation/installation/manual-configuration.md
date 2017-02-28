@@ -18,7 +18,7 @@ This document collects these steps.
 
 ## Carl
 
-Obtain [carl](https://github.com/smtrat/carl): 
+Obtain [carl](https://github.com/smtrat/carl):
 
 ```shell
 git clone https://github.com/smtrat/carl

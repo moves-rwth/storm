@@ -13,7 +13,7 @@ categories: [Usage]
 
 # General
 
-storm takes properties very similar to the PRISM property language, or alternatively as part of the JANI-specification language. 
+storm takes properties very similar to the PRISM property language, or alternatively as part of the JANI-specification language.
 
 {:.alert .alert-info}
 For DFTs, GSPNs and probabilistic programs, domain specific properties can be given. These are typically mapped to the properties discussed here. Their meaning and syntax can be found below.
@@ -98,7 +98,7 @@ To illustrate how the formulae can be used, we give some examples of syntactical
 
 ## Multi-objective Model Checking
 
-{:.alert .alert-info} 
+{:.alert .alert-info}
 Coming soon.
 
 ## Naming Properties
@@ -107,15 +107,15 @@ To allow referring to specific properties, they can be equipped with names. To g
 
 # DFTs
 
-{:.alert .alert-info} 
+{:.alert .alert-info}
 Coming soon.
 
 # GSPNs
 
-{:.alert .alert-info} 
+{:.alert .alert-info}
 Coming soon.
 
 # cpGCL Programs
 
-{:.alert .alert-info} 
+{:.alert .alert-info}
 Coming soon.

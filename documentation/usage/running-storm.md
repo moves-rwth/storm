@@ -30,14 +30,14 @@ Linked with GNU Linear Programming Kit v4.60.
 Linked with Microsoft Z3 Optimizer v4.5 Build 0 Rev 0.
 Linked with MathSAT5 version 5.3.14 (0b98b661254c) (Nov 17 2016 11:27:06, gmp 5.1.3, clang/LLVM 6.0, 64-bit).
 Linked with CARL.
-Command line arguments: 
+Command line arguments:
 Current working directory: /Users/chris/storm/build
 
 ERROR (cli.cpp:306): No input model.
 ERROR (storm.cpp:39): An exception caused storm to terminate. The message of the exception is: No input model.
 ```
 
-Of course, your version, the git revision and the linked libraries are likely to differ, but the general picture should be the same. In particular, `storm` should complain about a missing input model. 
+Of course, your version, the git revision and the linked libraries are likely to differ, but the general picture should be the same. In particular, `storm` should complain about a missing input model.
 
 ### Example 1 (Analysis of a PRISM model of the Knuth-Yao die)
 

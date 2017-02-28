@@ -75,10 +75,10 @@ Storm has been developed at the [Chair for Software Modeling and Verification](h
 - [Joost-Pieter Katoen](https://moves.rwth-aachen.de/people/katoen/)
 - [Matthias Volk](https://moves.rwth-aachen.de/people/volk/)
 
-and received significant contributions from 
+and received significant contributions from
 
 - [Philipp Berger](https://moves.rwth-aachen.de/people/berger/)
-- [Tim Quatman](https://moves.rwth-aachen.de/people/quatmann/) 
+- [Tim Quatman](https://moves.rwth-aachen.de/people/quatmann/)
 
 # Miscellaneous
 

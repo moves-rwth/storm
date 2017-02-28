@@ -14,7 +14,7 @@ Currently, we provide detailed instructions for macOS 10.12, Ubuntu 16.10 and De
 
 For the compilation step, a C++14-compliant compiler is required. Storm is known to work with
 
-- GCC 5.3 
+- GCC 5.3
 - Clang 3.5.0
 - AppleClang 8.0.0
 
@@ -47,7 +47,7 @@ Recommended:
 
 We collected some platform specific hints to ease the installation of Storm on the supported operating systems. Since Storm has some optional dependencies that enhance it's functionality, and some dependencies that are strictly required, we show how to install the *required* and *recommended* dependencies. The installation instructions of the *recommended* dependencies are to be understood incrementally, i.e. **in addition to the required dependencies**.
 
-## Debian 9 "Stretch" 
+## Debian 9 "Stretch"
 
 - Required:
 ```

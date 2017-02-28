@@ -11,10 +11,10 @@ categories: [Installation]
 We currently provide three ways of obtaining and running storm.
 
 - [Homebrew](#homebrew) (**new!**)
-- a [virtual machine](#virtual-machine) 
+- a [virtual machine](#virtual-machine)
 - [source code](#building-storm-from-source)
 
-If you just want to run storm and you want to run it natively on your machine, then we recommend installing it via [Homebrew](#homebrew). If you just want to have a peek at what storm can do and you cannot use the Homebrew installation, then downloading the VM is the best choice as it comes with the necessary dependencies preinstalled and let's you just run the tool. However, if you want or need to make changes to the storm code base, you have to obtain the source code and [build it](#building-storm-from-source) yourself. While this is not always easy, we spent some effort on making this process easy. Please also consult our list of [requirements](documentation/installation/requirements) to see whether building storm on your system promises to be successful.  
+If you just want to run storm and you want to run it natively on your machine, then we recommend installing it via [Homebrew](#homebrew). If you just want to have a peek at what storm can do and you cannot use the Homebrew installation, then downloading the VM is the best choice as it comes with the necessary dependencies preinstalled and let's you just run the tool. However, if you want or need to make changes to the storm code base, you have to obtain the source code and [build it](#building-storm-from-source) yourself. While this is not always easy, we spent some effort on making this process easy. Please also consult our list of [requirements](documentation/installation/requirements) to see whether building storm on your system promises to be successful.
 
 ## Homebrew
 
@@ -22,7 +22,7 @@ If you are running a version of macOS that is newer than Mavericks, you can use 
 
 ```shell
 brew tap moves-rwth/storm
-``` 
+```
 
 to make Homebrew aware of how to install storm. Then, installing storm is as easy as
 
@@ -51,7 +51,7 @@ The virtual machine image can be found [here](https://rwth-aachen.sciebo.de/inde
 {:.alert .alert-info}
 The virtual machine is hosted at sciebo, an academic cloud hoster. We are not able to trace the identity of downloaders, so reviewers can use this link without revealing their identity.
 
-When you have downloaded the OVA image, you can import it into, for example, [VirtualBox](link) and run it. The username and password are both *storm* and a `README` file is provided in the home folder of the user *storm*. In the virtual machine, storm is installed into `/home/storm/storm` and the binaries can be found in `/home/storm/storm/build/bin`. For your convenience, an environment variable with the name `STORM_DIR` is set to the path containing the binaries and this directory is added to the `PATH`, meaning that you can run the storm binaries from any location in the terminal and that `cd $STORM_DIR` will take you to the folders containing storm's binaries. For more information on how to run storm, please see [below](#running-storm). 
+When you have downloaded the OVA image, you can import it into, for example, [VirtualBox](link) and run it. The username and password are both *storm* and a `README` file is provided in the home folder of the user *storm*. In the virtual machine, storm is installed into `/home/storm/storm` and the binaries can be found in `/home/storm/storm/build/bin`. For your convenience, an environment variable with the name `STORM_DIR` is set to the path containing the binaries and this directory is added to the `PATH`, meaning that you can run the storm binaries from any location in the terminal and that `cd $STORM_DIR` will take you to the folders containing storm's binaries. For more information on how to run storm, please see [below](#running-storm).
 
 The VM is periodically updated to include bug fixes, new versions, etc. You can find the history of updates [here](documentation/installation/vmchangelog.html).
 
@@ -104,7 +104,7 @@ make storm-main
 ```
 
 {:.alert .alert-info}
-If you have multiple cores at your disposal and at least 8GB of memory, you can execute 
+If you have multiple cores at your disposal and at least 8GB of memory, you can execute
 `make storm-main -j${NUMBER_OF_CORES}` to speed up compilation. You will still be able to get the coffee, no worries.
 
 ### Other Binaries
@@ -136,6 +136,6 @@ While this step is optional, we recommend to execute it to verify that storm pro
 make check
 ```
 
-will build and run the tests. 
+will build and run the tests.
 
 In case of errors, please do not hesitate to [notify us](documentation/installation/troubleshooting.html#file-an-issue).
