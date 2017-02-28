@@ -6,7 +6,7 @@ category_weight: 3
 categories: [Installation]
 ---
 
-For advanced users and people developping under storm, we recommend to install some dependencies by hand, and configuring storm for improved usability.
+For advanced users and people developing under storm, we recommend to install some dependencies by hand, and configuring storm for improved usability.
 This document collects these steps.
 
 # TOC

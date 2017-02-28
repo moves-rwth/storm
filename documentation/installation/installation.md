@@ -10,21 +10,21 @@ categories: [Installation]
 
 We currently provide three ways of obtaining and running storm.
 
-- [homebrew](#homebrew) (**new!**)
+- [Homebrew](#homebrew) (**new!**)
 - a [virtual machine](#virtual-machine) 
 - [source code](#building-storm-from-source)
 
-If you just want to run storm and you want to run it natively on your machine, then we recommend installing it via [homebrew](#homebrew). If you just want to have a peek at what storm can do and you cannot use the homebrew installation, then downloading the VM is the best choice as it comes with the necessary dependencies preinstalled and let's you just run the tool. However, if you want or need to make changes to the storm code base, you have to obtain the source code and [build it](#building-storm-from-source) yourself. While this is not always easy, we spent some effort on making this process easy. Please also consult our list of [requirements](documentation/installation/requirements) to see whether building storm on your system promises to be successful.  
+If you just want to run storm and you want to run it natively on your machine, then we recommend installing it via [Homebrew](#homebrew). If you just want to have a peek at what storm can do and you cannot use the Homebrew installation, then downloading the VM is the best choice as it comes with the necessary dependencies preinstalled and let's you just run the tool. However, if you want or need to make changes to the storm code base, you have to obtain the source code and [build it](#building-storm-from-source) yourself. While this is not always easy, we spent some effort on making this process easy. Please also consult our list of [requirements](documentation/installation/requirements) to see whether building storm on your system promises to be successful.  
 
 ## Homebrew
 
-If you are running a version of macOS that is newer than Mavericks, you can use [homebrew](http://brew.sh/), a tool that provides easy access to packages. Once you have installed homebrew, you need to *tap* the storm homebrew formulas
+If you are running a version of macOS that is newer than Mavericks, you can use [Homebrew](http://brew.sh/), a tool that provides easy access to packages. Once you have installed Homebrew, you need to *tap* the storm Homebrew formulas
 
 ```shell
 brew tap moves-rwth/storm
 ``` 
 
-to make homebrew aware of how to install storm. Then, installing storm is as easy as
+to make Homebrew aware of how to install storm. Then, installing storm is as easy as
 
 ```shell
 brew install stormchecker
@@ -61,7 +61,7 @@ This guide helps you building a standard version of storm. There are plenty of c
 
 ### Obtaining the source code
 
-The source code can be downloaded from [github](https://github.com/moves-rwth/storm). You can either clone the git repository
+The source code can be downloaded from [GitHub](https://github.com/moves-rwth/storm). You can either clone the git repository
 ```shell
 git clone https://github.com/moves-rwth/storm.git STORM_DIR
 ```
@@ -138,4 +138,4 @@ make check
 
 will build and run the tests. 
 
-In case of errors, please do not hesistate to [notify us](documentation/installation/troubleshooting.html#file-an-issue).
+In case of errors, please do not hesitate to [notify us](documentation/installation/troubleshooting.html#file-an-issue).

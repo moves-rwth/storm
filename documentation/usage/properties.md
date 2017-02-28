@@ -28,7 +28,7 @@ To refer to a label a model exports, put the name of the label in quotes. For ex
 
 ### Propositional Expressions
 
-For symbolic input (PRISM and JANI), one may also use expressions over the model variables to identify states. For example, if the model has an integer-valued state variable `s`, then `s < 5` refers to all states in which `s` is smaller than five. Of course, boolean combinations of such expressions are allowed, i.e. `s < 5 & (b | s < y)` is valid for a model with integer variables `s` and `y` and boolean variable `b`.
+For symbolic input (PRISM and JANI), one may also use expressions over the model variables to identify states. For example, if the model has an integer-valued state variable `s`, then `s < 5` refers to all states in which `s` is smaller than five. Of course, Boolean combinations of such expressions are allowed, i.e. `s < 5 & (b | s < y)` is valid for a model with integer variables `s` and `y` and Boolean variable `b`.
 
 ## Probabilistic Computation Tree Logic (PCTL) / Continuous Stochastic Logic (CSL)
 

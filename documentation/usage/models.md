@@ -18,7 +18,7 @@ If the time in the model flows continuously and it is important to preserve this
 
 # Models With Nondeterminism
 
-Sometimes, it is necessary to model a nondeterministic choice between alternatives. Typical sources of nondeterminism include scheduling freedom (as found in distributed systems), abstraction and underspecification. In these cases, the modelling formalism needs to provide a means to specify nondeterministic behavior.
+Sometimes, it is necessary to model a nondeterministic choice between alternatives. Typical sources of nondeterminism include scheduling freedom (as found in distributed systems), abstraction and underspecification. In these cases, the modeling formalism needs to provide a means to specify nondeterministic behavior.
 
 ## Discrete-Time Markov Decision Processes (MDPs)
 

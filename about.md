@@ -52,7 +52,7 @@ Encapsulating solvers like this has several key advantages. First of all, it pro
 
 Let us assume a user is interested in verifying a particular system. In order for a probabilistic model checker to understand the behavior of the system, it needs to be modeled in some formal language the tool is capable of treating. However, different communities and different tools often favor or even demand other input languages. Besides, different modeling languages have different strengths and weaknesses and it depends on the system at hand which language is suited best. Sometimes, the model has already been created by another tool and it cannot be forwarded to another tool without transcription, because the target tool requires the input to be in a different language.
 
-Storm tries to mitigate this problem by offering support for several major input languages. While some of them are rewritten to one of the other input languages, others are supported *natively*. That is, Storm has specific model builders (and sometimes even analysis procedures) tailored towards different inputs. This allows Storm to make domain-specific optimizations as the structure of the original problem is preserved and is therefore accesible to Storm.
+Storm tries to mitigate this problem by offering support for several major input languages. While some of them are rewritten to one of the other input languages, others are supported *natively*. That is, Storm has specific model builders (and sometimes even analysis procedures) tailored towards different inputs. This allows Storm to make domain-specific optimizations as the structure of the original problem is preserved and is therefore accessible to Storm.
 
 ## <i class="icon-python"></i> Easy Interface
 
@@ -61,7 +61,7 @@ While Storm tries to make it easy to include new functionality, a developer stil
 - simple IO,
 - plotting (e.g. matplotlib),
 - calling solvers such as [z3](https://github.com/Z3Prover/z3) or [CPLEX](https://www-01.ibm.com/software/commerce/optimization/cplex-optimizer/),
-- libraries from the area of arteficial intelligence and machine learning,
+- libraries from the area of artificial intelligence and machine learning,
 - rational function manipulation (via pycarl).
 
 # People

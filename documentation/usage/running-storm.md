@@ -8,7 +8,7 @@ categories: [Usage]
 
 # Running storm
 
-We will now discuss some examples to get you started. While they should illustrate how the tool is run, there are many more features and options to explore. For more details, be sure to check the [usage](documentation/usage/usage.html) and consult the help message of storm. In this tutorial, we assume that `storm` is in your `PATH` (if you installed storm via [homebrew](#homebrew) this is already the case; if you built storm yourself, you need to add it [manually](#adding-storm-to-your-path)).
+We will now discuss some examples to get you started. While they should illustrate how the tool is run, there are many more features and options to explore. For more details, be sure to check the [usage](documentation/usage/usage.html) and consult the help message of storm. In this tutorial, we assume that `storm` is in your `PATH` (if you installed storm via [Homebrew](#homebrew) this is already the case; if you built storm yourself, you need to add it [manually](#adding-storm-to-your-path)).
 
 ## Standard model checking
 

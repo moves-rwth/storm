@@ -18,9 +18,9 @@ We would like to thank the developers of these tools (in lexicographic order):
 - [Prism](http://www.prismmodelchecker.org), from which we took some CUDD extensions for MTBDD based model checking.
 - [Sylvan](http://fmt.cs.utwente.nl/tools/sylvan/), which we use as a backend for MTBDD based model checking.
 - [Xerces](https://xerces.apache.org), which we use for XML parsing.
-- [Z3](https://github.com/Z3Prover/z3/wiki), which we ue for smt solving.
+- [Z3](https://github.com/Z3Prover/z3/wiki), which we use for SMT solving.
 
-We are happy to use the XCode, CLion, Valgrind, Git and Jenkins for development purposes.
+We are happy to use the Xcode, CLion, Valgrind, Git and Jenkins for development purposes.
 
 Furthermore, we are grateful for the feedback we received by:
 

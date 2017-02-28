@@ -14,7 +14,7 @@ For more information, please read the [PRISM manual](http://www.prismmodelchecke
 
 # Jani
 
-Jani is a recently introduced modelling language for the landscape of probabilistic models. To allow easy parsing, JANI is based on [JSON](http://www.json.org/). In general, JANI models can encode a variety of model types. storm's support for JANI models covers DTMCs, CTMCs and MDPs.
+Jani is a recently introduced modeling language for the landscape of probabilistic models. To allow easy parsing, JANI is based on [JSON](http://www.json.org/). In general, JANI models can encode a variety of model types. storm's support for JANI models covers DTMCs, CTMCs and MDPs.
 
 For more information, please visit the [Jani specification](http://www.jani-spec.org), where you can also find some [examples](https://github.com/ahartmanns/jani-models/).
 
@@ -37,7 +37,7 @@ The format is a simple textual format naming the root of the tree and then lists
 
 # cpGCL
 
-The conditional probabilistic guarded command language, cpGCL for short, is an extension of Dijkstra's guarded command language and [pGCL](http://www.sciencedirect.com/science/article/pii/S0167642396000196) to also accomodate probabilistic choice and conditional observations. Examples can be found in some of the folders in the [JANI repository](#jani). For example, the famous coupon collector example encoded as a cpGCL program can be found [here](https://github.com/ahartmanns/jani-models/blob/master/CouponCollector/MultiAllowed/coupon_m_03_02.pgcl).
+The conditional probabilistic guarded command language, cpGCL for short, is an extension of Dijkstra's guarded command language and [pGCL](http://www.sciencedirect.com/science/article/pii/S0167642396000196) to also accommodate probabilistic choice and conditional observations. Examples can be found in some of the folders in the [JANI repository](#jani). For example, the famous coupon collector example encoded as a cpGCL program can be found [here](https://github.com/ahartmanns/jani-models/blob/master/CouponCollector/MultiAllowed/coupon_m_03_02.pgcl).
 
 # Explicit
 
