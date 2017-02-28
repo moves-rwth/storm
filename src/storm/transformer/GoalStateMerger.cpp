@@ -74,7 +74,7 @@ namespace storm {
             // Get the number of rows, cols and entries that the resulting transition matrix will have.
             uint_fast64_t resNumStates(maybeStates.getNumberOfSetBits()), resNumActions(0), resNumTransitions(0);
             bool targetStateRequired = !originalModel.getInitialStates().isDisjointFrom(targetStates);
-            bool sinkStateRequired = !originalModel.getInitialStates().isDisjointFrom(targetStates);
+            bool sinkStateRequired = !originalModel.getInitialStates().isDisjointFrom(sinkStates);
             for( auto state : maybeStates) {
                 resNumActions += origMatrix.getRowGroupSize(state);
                 bool hasTransitionToTarget(false), hasTransitionToSink(false);
