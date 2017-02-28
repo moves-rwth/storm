@@ -6,7 +6,19 @@ category_weight: 4
 categories: [Usage]
 ---
 
-# Running Storm
+# Binaries
+
+|------------------------|----------------+----------------|
+| purpose                | target         | binary         |
+|------------------------|----------------+----------------|
+| PRISM, JANI, explicit  | storm-main     | storm          |
+| DFTs                   | storm-dft-cli  |                |
+| GSPNs                  | storm-gspn-cli |                |
+| cpGCL                  | storm-pgcl-cli |                |
+|------------------------|----------------+----------------|
+
+
+# Running storm
 
 We will now discuss some examples to get you started. While they should illustrate how the tool is run, there are many more features and options to explore. For more details, be sure to check the [usage](documentation/usage/usage.html) and consult the help message of Storm. In this tutorial, we assume that `storm` is in your `PATH` (if you installed Storm via [Homebrew](#homebrew) this is already the case; if you built Storm yourself, you need to add it [manually](#adding-storm-to-your-path)).
 

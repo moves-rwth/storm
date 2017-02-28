@@ -19,6 +19,7 @@
                             <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-expanded="false">{{ p.title }}<span class="caret"></span></a>
                             <ul class="dropdown-menu" role="menu">
                             {% for cat in site.category-list %}
+                                <li class="container">{{ cat }}</li>
                                 {% for page in sorted_pages %}
                                     {% if page.documentation == true and page.categories contains cat %}
                                         <li><a href="{{ page.url }}">{{ page.title }}</a></li>

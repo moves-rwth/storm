@@ -6,19 +6,25 @@ category_weight: 3
 categories: [Installation]
 ---
 
-For advanced users and people developing under Storm, we recommend to install some dependencies by hand, and configuring Storm for improved usability.
-This document collects these steps.
-
-# TOC
- {:.no_toc}
+{::options parse_block_html="true" /}
+<div class="panel panel-default">
+<div class="panel-heading">
+### Table of contents
+{:.no_toc}
 - list
 {:toc}
+</div>
+</div>
 
-# Install dependencies by hand
+
+Designed for users that need particular features and people developing under Storm, this guide will detail how perform a manual configuration of the build process.
+
+# Manually installing dependencies
 
 ## Carl
+{:.no_toc}
 
-Obtain [carl](https://github.com/smtrat/carl):
+Storm makes use of [CArL](https://github.com/smtrat/carl)
 
 ```shell
 git clone https://github.com/smtrat/carl
@@ -30,8 +36,10 @@ cmake -DUSE_CLN_NUMBERS=ON -DUSE_GINAC=ON ..
 
 
 ## Boost
+{:.no_toc}
 
 # CMake Options
 
 ## Debug Flags
+{:.no_toc}
 

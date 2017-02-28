@@ -14,18 +14,18 @@ Currently, we provide detailed instructions for macOS 10.12, Ubuntu 16.10 and De
 
 For the compilation step, a C++14-compliant compiler is required. Storm is known to work with
 
-- GCC 5.3
-- Clang 3.5.0
+- GCC 5.3, GCC 6
+- clang 3.5.0
 - AppleClang 8.0.0
 
 Newer versions of these compilers will probably work, but are not tested. In particular, the following list of compilers is known to *not* work.
 
 - GCC versions 4.9.1 and older
-- Clang 3.4 and older
+- clang 3.4 and older
 
 ## General Dependencies
 
-The following two lists provide an overview over the *required* and *recommended* dependencies of Storm. *Required* dependencies are absolutely essential for Storm to be compiled and must be installed. *Recommended* dependencies are optional, but not installing them limits the offered functionality.
+The following two lists provide an overview over the *required* and *recommended* dependencies of Storm. *Required* dependencies are absolutely essential for Storm to be compiled and must be installed. *Recommended* dependencies are optional, but not installing them severely limits the offered functionality.
 
 Required:
 - git
@@ -39,9 +39,9 @@ Required:
 - hwloc (on some systems)
 
 Recommended:
-- z3
-- xercesc
-- mathsat (needs to be configured manually during the [configuration step](configuration-guide.html))
+- z3 (not strictly required, but needed for standard tasks like PRISM/JANI model building)
+- xercesc (installation prevents an expensive part of the build step)
+- [MathSAT](http://mathsat.fbk.eu/) (needed by the abstraction refinement engine, needs to be configured manually during the [configuration](manual-configuration.html)
 
 # OS specific preparations
 
@@ -51,12 +51,12 @@ We collected some platform specific hints to ease the installation of Storm on t
 
 - Required:
 ```
-sudo apt-get install git cmake libboost-all-dev libcln-dev libginac-dev automake doxygen libglpk-dev
+sudo apt-get install git cmake libboost-all-dev libcln-dev libginac-dev automake doxygen libglpk-dev libz3-dev
 ```
 
 - Recommended
 ```
-sudo apt-get install libz3-dev libxerces-c-dev
+sudo apt-get install libxerces-c-dev
 ```
 
 ## macOS 10.12 "Sierra"
@@ -67,24 +67,25 @@ Furthermore, we recommend the usage of [Homebrew](http://brew.sh) to install the
 
 - Required:
 ```
-brew install cln ginac boost autoconf cmake doxygen
+brew install cln ginac boost autoconf cmake doxygen z3
+brew tap homebrew/science
 brew install homebrew/science/glpk
 ```
 
 - Recommended:
 ```
-brew install z3 xerces-c
+brew install xerces-c
 ```
 
 ## Ubuntu 16.10
 
 - Required:
 ```
-sudo apt-get install git cmake libboost-all-dev libcln-dev libginac-dev automake doxygen libglpk-dev libhwloc-dev
+sudo apt-get install git cmake libboost-all-dev libcln-dev libginac-dev automake doxygen libglpk-dev libhwloc-dev libz3-dev
 ```
 
 - Recommended:
 ```
-sudo apt-get install libz3-dev libxerces-c-dev
+sudo apt-get install libxerces-c-dev
 ```
 

@@ -6,25 +6,24 @@ category_weight: 1
 categories: [Installation]
 ---
 
-# Obtaining Storm
+This guide shows you the options you have to install Storm. For this, we are going to assume that all necessary [dependencies](requirements.html) have been installed on the machine in default locations so they can be found by our build machinery. Also, we are going to assume that your operating system is in the list of supported [operating systems](requirements.html#supported-os). If your operating system is not in this list but is Linux-based, chances are that you can install Storm but you may have to perform additional steps that we do not cover here. If you just want to quickly try Storm and/or are not able to install the dependencies, you might want to check out our [virtual machine]({{ site.baseurl }}/documentation/vm/vm.html) image.
 
-We currently provide three ways of obtaining and running Storm.
+We currently provide two ways of installing Storm:
 
-- [Homebrew](#homebrew) (**new!**)
-- a [virtual machine](#virtual-machine)
-- [source code](#building-storm-from-source)
+- [homebrew](#homebrew) <span class="label label-info">new!</span>
+- [from source](#building-storm-from-source)
 
-If you just want to run Storm and you want to run it natively on your machine, then we recommend installing it via [Homebrew](#homebrew). If you just want to have a peek at what Storm can do and you cannot use the Homebrew installation, then downloading the VM is the best choice as it comes with the necessary dependencies preinstalled and let's you just run the tool. However, if you want or need to make changes to the Storm code base, you have to obtain the source code and [build it](#building-storm-from-source) yourself. While this is not always easy, we spent some effort on making this process easy. Please also consult our list of [requirements](documentation/installation/requirements) to see whether building Storm on your system promises to be successful.
+If you just want to run Storm and you want to run it natively on your machine, then we recommend installing it via [homebrew](#homebrew). However, if you want or need to make changes to the Storm code base, you have to obtain the source code and [build it](#building-storm-from-source) yourself. While this is not always a breeze (depending on your operating system), we spent some effort on making this process as easy as possible.
 
 ## Homebrew
 
-If you are running a version of macOS that is newer than Mavericks, you can use [Homebrew](http://brew.sh/), a tool that provides easy access to packages. Once you have installed Homebrew, you need to *tap* the Storm Homebrew formulas
+If you are running a version of macOS that is newer than Mavericks, you can use [homebrew](http://brew.sh/), the "missing package manager for macOS". Once you have installed homebrew, you need to make homebrew aware of how to install Storm. In brew-speak, you need to *tap* the Storm homebrew formulas
 
 ```shell
 brew tap moves-rwth/storm
 ```
 
-to make Homebrew aware of how to install Storm. Then, installing Storm is as easy as
+Then, installing Storm is as easy as
 
 ```shell
 brew install stormchecker
@@ -42,28 +41,17 @@ After installing the package, you should directly be able to invoke
 storm
 ```
 
-and continue with the guide on how to [invoke Storm](#running-storm).
-
-## Virtual Machine
-
-The virtual machine image can be found [here](https://rwth-aachen.sciebo.de/index.php/s/nthEAQL4o49zkYp).
-
-{:.alert .alert-info}
-The virtual machine is hosted at sciebo, an academic cloud hoster. We are not able to trace the identity of downloaders, so reviewers can use this link without revealing their identity.
-
-When you have downloaded the OVA image, you can import it into, for example, [VirtualBox](link) and run it. The username and password are both *storm* and a `README` file is provided in the home folder of the user *storm*. In the virtual machine, Storm is installed into `/home/storm/storm` and the binaries can be found in `/home/storm/storm/build/bin`. For your convenience, an environment variable with the name `STORM_DIR` is set to the path containing the binaries and this directory is added to the `PATH`, meaning that you can run the Storm binaries from any location in the terminal and that `cd $STORM_DIR` will take you to the folders containing Storm's binaries. For more information on how to run Storm, please see [below](#running-storm).
-
-The VM is periodically updated to include bug fixes, new versions, etc. You can find the history of updates [here](documentation/installation/vmchangelog.html).
+and continue with the guide on how to [run Storm]({{ site.baseurl }}/documentation/usage/running-storm.html).
 
 ## Building Storm from source
 
-This guide helps you building a standard version of Storm. There are plenty of configuration options, please check our [configuration guide](documentation/installation/configuration-guide.html) if you want to build a non-standard version. Most notably, you will have to set additional options if you want to include solvers that are not shipped with Storm (for example Gurobi or MathSAT). However, the defaults should be suitable in most cases.
+This guide helps you building a standard version of storm. There are plenty of configuration options, please check our [configuration guide](documentation/installation/configuration-guide.html) if you want to build a non-standard version. Most notably, you will have to set additional options if you want to include solvers that are not shipped with Storm (for example Gurobi or MathSAT). However, the defaults should be suitable in most cases.
 
 ### Obtaining the source code
 
 The source code can be downloaded from [GitHub](https://github.com/moves-rwth/storm). You can either clone the git repository
 ```shell
-git clone https://github.com/moves-rwth/storm.git STORM_DIR
+git clone https://github.com/moves-rwth/storm.git
 ```
 or download a zip archive with the latest snapshot of the master branch:
 ```shell
@@ -91,7 +79,7 @@ Then, use cmake to configure the build of Storm on your system by invoking
 cmake ..
 ```
 
-Check the output carefully for errors and warnings. If all requirements are properly installed and found, you are ready to build Storm and move to the next step. In case of errors, check the [requirements](documentation/installation/requirements.html), consult the [troubleshooting guide](documentation/installation/troubleshooting) and, if necessary, [file a bug](documentation/installation/troubleshooting.html#file-an-issue).
+Check the output carefully for errors and warnings. If all requirements are properly installed and found, you are ready to build Storm and move to the next step. In case of errors, check the [requirements](requirements.html), consult the [troubleshooting guide](troubleshooting.html) and, if necessary, [file an issue](documentation/installation/troubleshooting.html#file-an-issue).
 
 ### Build step
 
@@ -99,7 +87,7 @@ If the configuration step went smoothly, the compilation step should run through
 
 To compile just Storm's main command line interface, enter
 
-```bash
+```shell
 make storm-main
 ```
 
@@ -107,26 +95,23 @@ make storm-main
 If you have multiple cores at your disposal and at least 8GB of memory, you can execute
 `make storm-main -j${NUMBER_OF_CORES}` to speed up compilation. You will still be able to get the coffee, no worries.
 
-### Other Binaries
+To build all binaries of Storm, use
 
-If you are interested in one of the other binaries, replace `storm-main` with the appropriate target:
+```shell
+make all
+```
 
-|------------------------|----------------+----------------|
-| purpose                | target         | binary         |
-|------------------------|----------------+----------------|
-| PRISM, JANI, explicit  | storm-main     | storm          |
-| DFTs                   | storm-dft-cli  |                |
-| GSPNs                  | storm-gspn-cli |                |
-| cpGCL                  | storm-pgcl-cli |                |
-|------------------------|----------------+----------------|
+For an overview of the available binaries and for which tasks you need them, please have a look at our guide on [running Storm](running-storm.html#binaries)
 
 ### Adding Storm to your path
 
-This step is optional. If you want to be able to run Storm from anywhere, you may want to add Storm to your path (in the tutorial on how to [run Storm](#running-storm) this is assumed). You can do so, by
+This step is optional. If you want to be able to run Storm from anywhere, you may want to add it to your path (in the tutorial on how to [run Storm](#running-storm) this is assumed). You can do so, by
 
 ```shell
 export PATH=$PATH:$STORM_DIR/build/bin
 ```
+
+where `$STORM_DIR` is the environment variable set [earlier](#obtaining-the-source-code).
 
 ### Test step
 
@@ -138,4 +123,4 @@ make check
 
 will build and run the tests.
 
-In case of errors, please do not hesitate to [notify us](documentation/installation/troubleshooting.html#file-an-issue).
+In case of errors, please do not hesistate to [file an issue](troubleshooting.html#file-an-issue).
