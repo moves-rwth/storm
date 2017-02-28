@@ -2,6 +2,7 @@
 
 #include "storm/logic/FragmentSpecification.h"
 #include "storm/modelchecker/results/ExplicitQuantitativeCheckResult.h"
+#include "storm/modelchecker/hints/ExplicitModelCheckerHint.h"
 
 #include "storm/exceptions/InvalidArgumentException.h"
 #include "storm/exceptions/InvalidStateException.h"
@@ -22,7 +23,7 @@ namespace storm {
 
                 // Check if there are some optimizations implemented for the specified property
                 if(!this->currentCheckTask->isQualitativeSet() && this->currentCheckTask->getFormula().isInFragment(storm::logic::reachability().setRewardOperatorsAllowed(true).setReachabilityRewardFormulasAllowed(true))) {
-                    return checkWithResultHint(modelChecker);
+                    return checkWithHint(modelChecker);
                 } else {
                     return modelChecker.check(*this->currentCheckTask);
                 }
@@ -30,18 +31,12 @@ namespace storm {
             
                 
             template <typename SparseModelType, typename ConstantType>
-            std::unique_ptr<CheckResult> SparseDtmcInstantiationModelChecker<SparseModelType, ConstantType>::checkWithResultHint(storm::modelchecker::SparseDtmcPrctlModelChecker<storm::models::sparse::Dtmc<ConstantType>>& modelchecker) {
-                
-                // Insert the hint if it exists
-                if(resultOfLastCheck) {
-                    this->currentCheckTask->setResultHint(std::move(*resultOfLastCheck));
-                }
-                
+            std::unique_ptr<CheckResult> SparseDtmcInstantiationModelChecker<SparseModelType, ConstantType>::checkWithHint(storm::modelchecker::SparseDtmcPrctlModelChecker<storm::models::sparse::Dtmc<ConstantType>>& modelchecker) {
                 // Check the formula and store the result as a hint for the next call.
-                // For qualitative properties, we still want a quantitative result hint. Hence we perform the subformula
+                // For qualitative properties, we still want a quantitative result hint. Hence we perform the check on the subformula
                 if(this->currentCheckTask->getFormula().asOperatorFormula().hasQuantitativeResult()) {
                     std::unique_ptr<storm::modelchecker::CheckResult> result = modelchecker.check(*this->currentCheckTask);
-                    resultOfLastCheck = result->template asExplicitQuantitativeCheckResult<ConstantType>().getValueVector();
+                    this->currentCheckTask->setHint(ExplicitModelCheckerHint<ConstantType>(result->template asExplicitQuantitativeCheckResult<ConstantType>().getValueVector()));
                     return result;
                 } else {
                     std::unique_ptr<storm::modelchecker::CheckResult> quantitativeResult;
@@ -54,7 +49,7 @@ namespace storm {
                         STORM_LOG_THROW(false, storm::exceptions::InvalidArgumentException, "Checking with result hint is only implemented for probability or reward operator formulas");
                     }
                     std::unique_ptr<storm::modelchecker::CheckResult> qualitativeResult = quantitativeResult->template asExplicitQuantitativeCheckResult<ConstantType>().compareAgainstBound(this->currentCheckTask->getFormula().asOperatorFormula().getComparisonType(), this->currentCheckTask->getFormula().asOperatorFormula().template getThresholdAs<ConstantType>());
-                    resultOfLastCheck = std::move(quantitativeResult->template asExplicitQuantitativeCheckResult<ConstantType>().getValueVector());
+                    this->currentCheckTask->setHint(ExplicitModelCheckerHint<ConstantType>(std::move(quantitativeResult->template asExplicitQuantitativeCheckResult<ConstantType>().getValueVector())));
                     return qualitativeResult;
                 }
             }

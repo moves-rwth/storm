@@ -176,6 +176,12 @@ namespace storm {
         }
         
         template<typename ValueType>
+        storm::storage::Scheduler& ExplicitQuantitativeCheckResult<ValueType>::getScheduler() {
+            STORM_LOG_THROW(this->hasScheduler(), storm::exceptions::InvalidOperationException, "Unable to retrieve non-existing scheduler.");
+            return *scheduler.get();
+        }
+        
+        template<typename ValueType>
         void print(std::ostream& out, ValueType const& value) {
             if (value == storm::utility::infinity<ValueType>()) {
                 out << "inf";

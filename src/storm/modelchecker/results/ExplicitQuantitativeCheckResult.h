@@ -64,6 +64,7 @@ namespace storm {
             bool hasScheduler() const;
             void setScheduler(std::unique_ptr<storm::storage::Scheduler>&& scheduler);
             storm::storage::Scheduler const& getScheduler() const;
+            storm::storage::Scheduler& getScheduler();
             
         private:
             // The values of the quantitative check result.

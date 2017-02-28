@@ -29,10 +29,6 @@ namespace storm {
                 std::unique_ptr<CheckResult> checkWithResultHint(storm::modelchecker::SparseMdpPrctlModelChecker<storm::models::sparse::Mdp<ConstantType>>& modelChecker);
                 
                 storm::utility::ModelInstantiator<SparseModelType, storm::models::sparse::Mdp<ConstantType>> modelInstantiator;
-                
-                                
-                // Stores the result of the last check in order to use it as a hint for the next check. (If this is supported by the property)
-                boost::optional<std::vector<ConstantType>> resultOfLastCheck;
             };
         }
     }

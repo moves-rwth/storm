@@ -26,13 +26,9 @@ namespace storm {
             protected:
                 
                 // Considers the result of the last check as a hint for the current check
-                std::unique_ptr<CheckResult> checkWithResultHint(storm::modelchecker::SparseDtmcPrctlModelChecker<storm::models::sparse::Dtmc<ConstantType>>& modelChecker);
-                
+                std::unique_ptr<CheckResult> checkWithHint(storm::modelchecker::SparseDtmcPrctlModelChecker<storm::models::sparse::Dtmc<ConstantType>>& modelChecker);
                 
                 storm::utility::ModelInstantiator<SparseModelType, storm::models::sparse::Dtmc<ConstantType>> modelInstantiator;
-                
-                // Stores the result of the last check in order to use it as a hint for the next check. (If this is supported by the property)
-                boost::optional<std::vector<ConstantType>> resultOfLastCheck;
             };
         }
     }
