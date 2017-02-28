@@ -1,211 +1,210 @@
 <!DOCTYPE html>
 <html lang="en">
-	{% include head.html %}
-	<body>
-  
-	{% include navbar.html %}
-	<div class="container">
-		<div id="myCarousel" data-interval="8000" data-pause="hover" class="carousel slide" data-ride="carousel">
-			<!-- Indicators -->
-			<ol class="carousel-indicators">
-				<li data-target="#myCarousel" data-slide-to="0" class="active"></li>
-				<li data-target="#myCarousel" data-slide-to="1"></li>
-				<li data-target="#myCarousel" data-slide-to="2"></li>
-				<li data-target="#myCarousel" data-slide-to="3"></li>
-				<li data-target="#myCarousel" data-slide-to="4"></li>
-			</ol>
+    {% include head.html %}
+    <body>
 
-			<!-- Wrapper for slides -->
-			<div class="carousel-inner" role="listbox">
-				<div class="item active">
-					<div class="jumbotron">
-						<h1>A Storm is coming.</h1>
-						<div class="pull-right">
-							<a href="about.html" class="btn btn-default btn-md active" role="button" aria-pressed="true">Read more</a>
-						</div>
-						<p>A modern model checker for probabilistic systems.</p>
-					</div>
-				</div>
+    {% include navbar.html %}
+    <div class="container">
+        <div id="myCarousel" data-interval="8000" data-pause="hover" class="carousel slide" data-ride="carousel">
+            <!-- Indicators -->
+            <ol class="carousel-indicators">
+                <li data-target="#myCarousel" data-slide-to="0" class="active"></li>
+                <li data-target="#myCarousel" data-slide-to="1"></li>
+                <li data-target="#myCarousel" data-slide-to="2"></li>
+                <li data-target="#myCarousel" data-slide-to="3"></li>
+                <li data-target="#myCarousel" data-slide-to="4"></li>
+            </ol>
 
-				<div class="item">
-					<div class="jumbotron">
-						<h1>Efficient.</h1>
-						<div class="pull-right">
-							<a href="about.html" class="btn btn-default btn-md active" role="button" aria-pressed="true">Read more</a>
-						</div>						
-						<p>Its C++14 core focuses on time and memory efficiency.</p>
-					</div>
-				</div>
+            <!-- Wrapper for slides -->
+            <div class="carousel-inner" role="listbox">
+                <div class="item active">
+                    <div class="jumbotron">
+                        <h1>A Storm is coming.</h1>
+                        <div class="pull-right">
+                            <a href="about.html" class="btn btn-default btn-md active" role="button" aria-pressed="true">Read more</a>
+                        </div>
+                        <p>A modern model checker for probabilistic systems.</p>
+                    </div>
+                </div>
 
-				<div class="item">
-					<div class="jumbotron">
-						<h1>Modular.</h1>
-						<div class="pull-right">
-							<a href="about.html" class="btn btn-default btn-md active" role="button" aria-pressed="true">Read more</a>
-						</div>
-						<p>Solver interfaces make it easy to integrate new solvers.</p>
-					</div>
-				</div>
+                <div class="item">
+                    <div class="jumbotron">
+                        <h1>Efficient.</h1>
+                        <div class="pull-right">
+                            <a href="about.html" class="btn btn-default btn-md active" role="button" aria-pressed="true">Read more</a>
+                        </div>
+                        <p>Its C++14 core focuses on time and memory efficiency.</p>
+                    </div>
+                </div>
 
-				<div class="item">
-					<div class="jumbotron">
-						<h1>Versatile.</h1>
-						<div class="pull-right">
-							<a href="about.html" class="btn btn-default btn-md active" role="button" aria-pressed="true">Read more</a>
-						</div>
-						<p>Treat your domain specific models without translating them.</p>
-					</div>
-				</div>
+                <div class="item">
+                    <div class="jumbotron">
+                        <h1>Modular.</h1>
+                        <div class="pull-right">
+                            <a href="about.html" class="btn btn-default btn-md active" role="button" aria-pressed="true">Read more</a>
+                        </div>
+                        <p>Solver interfaces make it easy to integrate new solvers.</p>
+                    </div>
+                </div>
 
-				<div class="item">
-					<div class="jumbotron">
-						<h1>Easy.</h1>
-						<div class="pull-right">
-							<a href="about.html" class="btn btn-default btn-md active" role="button" aria-pressed="true">Read more</a>
-						</div>
-						<p>Enjoy access to the efficient core with the ease of python.</p>
-					</div>
-				</div>
-			</div>
-		</div>
+                <div class="item">
+                    <div class="jumbotron">
+                        <h1>Versatile.</h1>
+                        <div class="pull-right">
+                            <a href="about.html" class="btn btn-default btn-md active" role="button" aria-pressed="true">Read more</a>
+                        </div>
+                        <p>Treat your domain specific models without translating them.</p>
+                    </div>
+                </div>
 
-		<div class="row">
-			<div class="col-lg-8">
-				<div class="row">
-					<div class="col-lg-6">
-						<div class="panel panel-default">
-							<div class="panel-heading">
-								<h3 class="panel-title">Description</h3>
-							</div>
-							<div class="panel-body">
-								Storm is a tool for the analysis of systems involving random or probabilistic phenomena. Given an input model and a quantitative specification, it can determine whether the input model conforms to the specification. It has been designed with performance and modularity in mind.
-								<div class="pull-right">
-	    				            <a href="documentation/usage/languages.html" class="btn btn-sm btn-default">Getting started</a>
-								</div>
-							</div>
-						</div>
-					</div>
-			
-					<div class="col-lg-6">
-						<div class="panel panel-default">
-							<div class="panel-heading">
-								<h3 class="panel-title">Modeling formalisms</h3>
-							</div>
-							<div class="panel-body">
-								Storm is built around discrete- and continuous-time Markov models:
-								<ul>
-									<li>Deterministic Time Markov Chains</li>
-									<li>Markov Decision Processes</li>
-									<li>Continuous Time Markov Chains</li>
-									<li>Markov Automata</li>
-								</ul>
-								<div class="pull-right">
-	            		            <a href="documentation/usage/languages.html" class="btn btn-sm btn-default">Read more</a>
-	                    		</div>
-							</div>
-						</div>
-					</div>
-				</div>
-				
-				
-				<div class="row">
-					<div class="col-lg-6">
-						<div class="panel panel-default">
-							<div class="panel-heading">
-								<h3 class="panel-title">Input languages</h3>
-							</div>
-							<div class="panel-body">
-								Storm supports several types of input:
-                        		<ul>
-		                        	<li>PRISM</li>
-        		                	<li>JANI</li>
-                		        	<li>GSPNs</li>
-                        			<li>DFTs</li>
-		                        	<li>cpGCL</li>
-		                        	<li>explicit</li>
-        		                </ul>
-								<div class="pull-right">
-	                    		    <a href="documentation/usage/languages.html" class="btn btn-sm btn-default">Read more</a>
-			                    </div>
-							</div>
-						</div>
-					</div>
-						
-					<div class="col-lg-6">
-						<div class="panel panel-default">
-							<div class="panel-heading">
-								<h3 class="panel-title">Properties</h3>
-							</div>
-							<div class="panel-body">
-								Storm focuses on reachability queries and its support includes
-								<ul>
-									<li>PCTL</li>
-									<li>CSL</li>
-									<li>Expected Rewards</li>
-									<li>Conditional Probabilities</li>
-								</ul>
-								<div class="pull-right">
-	     							<a href="documentation/usage/properties.html" class="btn btn-sm btn-default">Read more</a>
-	     						</div>
-							</div>
-						</div>
-					</div>
-				</div>				
-			</div>
-			
-			<div class="col-lg-4">
-				<div class="panel panel-primary">
-					<div class="panel-heading">
-						<h3 class="panel-title">News</h3>
-					</div>
-					<div class="panel-body">
-						{% for post in site.posts limit:2 %}
-						<div class="row">
-							<div class="col-lg-12">
-							{{ post.date | date_to_long_string }}
-							<h4>{{ post.title }}</h4>
-							{{ post.excerpt }}
-							<div class="pull-right">
-								<a href="{{ post.url }}" class="btn btn-sm btn-default">Read more</a>
-							</div>
-							</div>
-						</div>
+                <div class="item">
+                    <div class="jumbotron">
+                        <h1>Easy.</h1>
+                        <div class="pull-right">
+                            <a href="about.html" class="btn btn-default btn-md active" role="button" aria-pressed="true">Read more</a>
+                        </div>
+                        <p>Enjoy access to the efficient core with the ease of python.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
 
-						<div class="row">
-							<hr />
-						</div>
-						{% endfor %}
-						{% for post in site.posts offset:2 limit:1 %}
-						<div class="row">
-							<div class="col-lg-12">
-							{{ post.date | date_to_long_string }}
-							<h4>{{ post.title }}</h4>
-							{{ post.excerpt }}
-							<div class="pull-right">
-								<a href="{{ post.url }}" class="btn btn-sm btn-default">Read more</a>
-							</div>
-							</div>
-						</div>
-						{% endfor %}
-					</div>
-				</div>
-			</div>
-		</div>
+        <div class="row">
+            <div class="col-lg-8">
+                <div class="row">
+                    <div class="col-lg-6">
+                        <div class="panel panel-default">
+                            <div class="panel-heading">
+                                <h3 class="panel-title">Description</h3>
+                            </div>
+                            <div class="panel-body">
+                                Storm is a tool for the analysis of systems involving random or probabilistic phenomena. Given an input model and a quantitative specification, it can determine whether the input model conforms to the specification. It has been designed with performance and modularity in mind.
+                                <div class="pull-right">
+                                    <a href="documentation/usage/languages.html" class="btn btn-sm btn-default">Getting started</a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col-lg-6">
+                        <div class="panel panel-default">
+                            <div class="panel-heading">
+                                <h3 class="panel-title">Modeling formalisms</h3>
+                            </div>
+                            <div class="panel-body">
+                                Storm is built around discrete- and continuous-time Markov models:
+                                <ul>
+                                    <li>Deterministic Time Markov Chains</li>
+                                    <li>Markov Decision Processes</li>
+                                    <li>Continuous Time Markov Chains</li>
+                                    <li>Markov Automata</li>
+                                </ul>
+                                <div class="pull-right">
+                                    <a href="documentation/usage/languages.html" class="btn btn-sm btn-default">Read more</a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="col-lg-6">
+                        <div class="panel panel-default">
+                            <div class="panel-heading">
+                                <h3 class="panel-title">Input languages</h3>
+                            </div>
+                            <div class="panel-body">
+                                Storm supports several types of input:
+                                <ul>
+                                    <li>PRISM</li>
+                                    <li>JANI</li>
+                                    <li>GSPNs</li>
+                                    <li>DFTs</li>
+                                    <li>cpGCL</li>
+                                    <li>explicit</li>
+                                </ul>
+                                <div class="pull-right">
+                                    <a href="documentation/usage/languages.html" class="btn btn-sm btn-default">Read more</a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col-lg-6">
+                        <div class="panel panel-default">
+                            <div class="panel-heading">
+                                <h3 class="panel-title">Properties</h3>
+                            </div>
+                            <div class="panel-body">
+                                Storm focuses on reachability queries and its support includes
+                                <ul>
+                                    <li>PCTL</li>
+                                    <li>CSL</li>
+                                    <li>Expected Rewards</li>
+                                    <li>Conditional Probabilities</li>
+                                </ul>
+                                <div class="pull-right">
+                                    <a href="documentation/usage/properties.html" class="btn btn-sm btn-default">Read more</a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-lg-4">
+                <div class="panel panel-primary">
+                    <div class="panel-heading">
+                        <h3 class="panel-title">News</h3>
+                    </div>
+                    <div class="panel-body">
+                        {% for post in site.posts limit:2 %}
+                        <div class="row">
+                            <div class="col-lg-12">
+                            {{ post.date | date_to_long_string }}
+                            <h4>{{ post.title }}</h4>
+                            {{ post.excerpt }}
+                            <div class="pull-right">
+                                <a href="{{ post.url }}" class="btn btn-sm btn-default">Read more</a>
+                            </div>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <hr />
+                        </div>
+                        {% endfor %}
+                        {% for post in site.posts offset:2 limit:1 %}
+                        <div class="row">
+                            <div class="col-lg-12">
+                            {{ post.date | date_to_long_string }}
+                            <h4>{{ post.title }}</h4>
+                            {{ post.excerpt }}
+                            <div class="pull-right">
+                                <a href="{{ post.url }}" class="btn btn-sm btn-default">Read more</a>
+                            </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
 
     {% include footer.html %}
-<script>
-    $(function(){
-      $("#papers_storm").load("https://www-i2.informatik.rwth-aachen.de/pub/index.php?title=&topics=storm_paper&years=0&author_url=");
-      $("#papers_storm_techniques").load("https://www-i2.informatik.rwth-aachen.de/pub/index.php?title=&topics=storm_techniques&years=0&author_url=");
-      $("#papers_use_storm").load("https://www-i2.informatik.rwth-aachen.de/pub/index.php?title=&topics=use_storm&years=0&author_url=");
-    });
-</script>
-<script>
-$(document).ready(function(){
-    $('[data-toggle="popover"]').popover();   
-});
-</script>
+    <script>
+        $(function(){
+          $("#papers_storm").load("https://www-i2.informatik.rwth-aachen.de/pub/index.php?title=&topics=storm_paper&years=0&author_url=");
+          $("#papers_storm_techniques").load("https://www-i2.informatik.rwth-aachen.de/pub/index.php?title=&topics=storm_techniques&years=0&author_url=");
+          $("#papers_use_storm").load("https://www-i2.informatik.rwth-aachen.de/pub/index.php?title=&topics=use_storm&years=0&author_url=");
+        });
+    </script>
+    <script>
+        $(document).ready(function(){
+            $('[data-toggle="popover"]').popover();
+        });
+    </script>
 
   </body>
 </html>

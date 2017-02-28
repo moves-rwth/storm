@@ -1,53 +1,53 @@
 <div class="navbar navbar-default navbar-fixed-top">
-	<div class="container">
+    <div class="container">
         <div class="navbar-header">
-        	<a href="{{ site.github.url }}/index.html" class="navbar-brand">Storm</a>
-          	<button class="navbar-toggle" type="button" data-toggle="collapse" data-target="#navbar-main">
+            <a href="{{ site.github.url }}/index.html" class="navbar-brand">Storm</a>
+            <button class="navbar-toggle" type="button" data-toggle="collapse" data-target="#navbar-main">
             <span class="icon-bar"></span>
             <span class="icon-bar"></span>
             <span class="icon-bar"></span>
           </button>
         </div>
         <div class="navbar-collapse collapse" id="navbar-main">
-        	<ul class="nav navbar-nav">
-				{% assign sorted_pages = site.pages | sort: 'category_weight' %}
-				{% assign navigation_pages = site.pages | sort: 'navigation_weight' %}
-    			{% for p in navigation_pages %}
-      				{% if p.navigation_weight %}
-      					{% if p.title == "Documentation" %}
-						<li class="dropdown">
-				        	<a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-expanded="false">{{ p.title }}<span class="caret"></span></a>
-							<ul class="dropdown-menu" role="menu">
-							{% for cat in site.category-list %}
-								{% for page in sorted_pages %}
-									{% if page.documentation == true and page.categories contains cat %}
-										<li><a href="{{ page.url }}">{{ page.title }}</a></li>
-									{% endif %}
-								{% endfor %}
-								{% unless cat == site.category-list.last %}
-								<li class="divider"></li>
-								{% endunless %}
-							{% endfor %}
-							</ul>
-						</li>      					
-      					{% else %}
-				    	<li class="nav-item">
-				        	<a href="{{ p.url | prepend: site.github.url  }}" class="nav-link {% if p.url == page.url %}active{% endif %}">
-            				{{ p.title }}
-          					</a>
-        				</li>
-        				{% endif %}
-      				{% endif %}
-				{% endfor %}
-			</ul>
-			<ul class="nav navbar-nav navbar-right">
-				<li class="nav-item">
-			       <a href="http://github.com/moves-rwth/storm" class="nav-link"><i class="fa fa-github" aria-hidden="true"></i> source</a>
-    			</li>
-				<li class="nav-item">
-      				<a href="https://moves-rwth.github.io/stormpy/" class="nav-link"><i class="icon-python"></i> stormpy</a>
-   				</li>
-          	</ul>
+            <ul class="nav navbar-nav">
+                {% assign sorted_pages = site.pages | sort: 'category_weight' %}
+                {% assign navigation_pages = site.pages | sort: 'navigation_weight' %}
+                {% for p in navigation_pages %}
+                    {% if p.navigation_weight %}
+                        {% if p.title == "Documentation" %}
+                        <li class="dropdown">
+                            <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-expanded="false">{{ p.title }}<span class="caret"></span></a>
+                            <ul class="dropdown-menu" role="menu">
+                            {% for cat in site.category-list %}
+                                {% for page in sorted_pages %}
+                                    {% if page.documentation == true and page.categories contains cat %}
+                                        <li><a href="{{ page.url }}">{{ page.title }}</a></li>
+                                    {% endif %}
+                                {% endfor %}
+                                {% unless cat == site.category-list.last %}
+                                <li class="divider"></li>
+                                {% endunless %}
+                            {% endfor %}
+                            </ul>
+                        </li>
+                        {% else %}
+                        <li class="nav-item">
+                            <a href="{{ p.url | prepend: site.github.url  }}" class="nav-link {% if p.url == page.url %}active{% endif %}">
+                            {{ p.title }}
+                            </a>
+                        </li>
+                        {% endif %}
+                    {% endif %}
+                {% endfor %}
+            </ul>
+            <ul class="nav navbar-nav navbar-right">
+                <li class="nav-item">
+                   <a href="http://github.com/moves-rwth/storm" class="nav-link"><i class="fa fa-github" aria-hidden="true"></i> source</a>
+                </li>
+                <li class="nav-item">
+                    <a href="https://moves-rwth.github.io/stormpy/" class="nav-link"><i class="icon-python"></i> stormpy</a>
+                </li>
+            </ul>
         </div>
       </div>
     </div>
