@@ -14,7 +14,7 @@ For more information, please read the [PRISM manual](http://www.prismmodelchecke
 
 # Jani
 
-Jani is a recently introduced modeling language for the landscape of probabilistic models. To allow easy parsing, JANI is based on [JSON](http://www.json.org/). In general, JANI models can encode a variety of model types. storm's support for JANI models covers DTMCs, CTMCs and MDPs.
+Jani is a recently introduced modeling language for the landscape of probabilistic models. To allow easy parsing, JANI is based on [JSON](http://www.json.org/). In general, JANI models can encode a variety of model types. Storm's support for JANI models covers DTMCs, CTMCs and MDPs.
 
 For more information, please visit the [Jani specification](http://www.jani-spec.org), where you can also find some [examples](https://github.com/ahartmanns/jani-models/).
 
@@ -28,7 +28,7 @@ The [Petri Net Markup Language](http://www.pnml.org/) is an ISO-standardized XML
 
 ## GreatSPN editor projects
 
-The [GreatSPN editor](http://www.di.unito.it/~amparore/mc4cslta/editor.html) is a GUI capable of specifying and verifying GSPNs. Project files (XML) specifying a single GSPN can be parsed directly by storm.
+The [GreatSPN editor](http://www.di.unito.it/~amparore/mc4cslta/editor.html) is a GUI capable of specifying and verifying GSPNs. Project files (XML) specifying a single GSPN can be parsed directly by Storm.
 
 # DFTs
 
@@ -41,7 +41,7 @@ The conditional probabilistic guarded command language, cpGCL for short, is an e
 
 # Explicit
 
-In the spirit of [MRMC](http://www.mrmc-tool.org/), storm also supports input models specified in an explicit format. While the format closely resembles that of MRMC, it does not match exactly. Likewise, at the moment the model export of PRISM generates files that can be easily modified to be handled by storm, but they still need to be adapted by hand.
+In the spirit of [MRMC](http://www.mrmc-tool.org/), Storm also supports input models specified in an explicit format. While the format closely resembles that of MRMC, it does not match exactly. Likewise, at the moment the model export of PRISM generates files that can be easily modified to be handled by Storm, but they still need to be adapted by hand.
 
 ## Transitions File
 

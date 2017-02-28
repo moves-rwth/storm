@@ -6,13 +6,13 @@ category_weight: 4
 categories: [Usage]
 ---
 
-# Running storm
+# Running Storm
 
-We will now discuss some examples to get you started. While they should illustrate how the tool is run, there are many more features and options to explore. For more details, be sure to check the [usage](documentation/usage/usage.html) and consult the help message of storm. In this tutorial, we assume that `storm` is in your `PATH` (if you installed storm via [Homebrew](#homebrew) this is already the case; if you built storm yourself, you need to add it [manually](#adding-storm-to-your-path)).
+We will now discuss some examples to get you started. While they should illustrate how the tool is run, there are many more features and options to explore. For more details, be sure to check the [usage](documentation/usage/usage.html) and consult the help message of Storm. In this tutorial, we assume that `storm` is in your `PATH` (if you installed Storm via [Homebrew](#homebrew) this is already the case; if you built Storm yourself, you need to add it [manually](#adding-storm-to-your-path)).
 
 ## Standard model checking
 
-Let's make sure that you can run storm:
+Let's make sure that you can run Storm:
 
 ```shell
 storm
@@ -55,7 +55,7 @@ This will tell you that the model is a [discrete-time Markov chain](models) with
 storm --prism die.pm --buildfull
 ```
 
-This gives you the same model, but this time there is a reward model `coin_flips` attached to it. Unless you want to know how many states satisfy a custom label, you can let `storm` take care of generating the needed reward models and labels. Note that by default, the model is stored in an sparse matrix representation (hence the `(sparse)` marker after the model type). There are other formats supported by storm; please look at the [usage guide](documentation/usage/usage.html) for more details.
+This gives you the same model, but this time there is a reward model `coin_flips` attached to it. Unless you want to know how many states satisfy a custom label, you can let `storm` take care of generating the needed reward models and labels. Note that by default, the model is stored in an sparse matrix representation (hence the `(sparse)` marker after the model type). There are other formats supported by Storm; please look at the [usage guide](documentation/usage/usage.html) for more details.
 
 Now, let's say we want to check whether the probability to roll a one with our simulated die is as we'd expect. For this, we specify a reachability property
 
@@ -93,13 +93,13 @@ Apparently this is true. But what about the performance of the protocol? The pro
 storm --prism leader4.nm --prop "P=? [F<=40 (s1=4 | s2=4 | s3=4 | s4=4) ]"
 ```
 
-Likely, storm will tell you that there is an error and that for nondeterministic models you need to specify whether minimal or maximal probabilities are to be computed. Why is that? Since the model is a [Markov Decision Process](documentation/usage/models.html), there are (potentially) nondeterministic choices in the model that need to be resolved. storm doesn't know how to resolve them unless you tell it to either minimize or maximize (wrt. to the probability of the objective) whenever there is a nondeterministic choice.
+Likely, Storm will tell you that there is an error and that for nondeterministic models you need to specify whether minimal or maximal probabilities are to be computed. Why is that? Since the model is a [Markov Decision Process](documentation/usage/models.html), there are (potentially) nondeterministic choices in the model that need to be resolved. Storm doesn't know how to resolve them unless you tell it to either minimize or maximize (wrt. to the probability of the objective) whenever there is a nondeterministic choice.
 
 ```shell
 storm --prism leader4.nm --prop "Pmin=? [F<=40 (s1=4 | s2=4 | s3=4 | s4=4) ]"
 ```
 
-storm should tell you that this probability is 0.375. So what does it mean? It means that even in the worst of all cases, so when every nondeterministic choice in the model is chosen to minimize the probability to elect a leader quickly, then we will elect a leader within our time bound in about 3 out of 8 cases.
+Storm should tell you that this probability is 0.375. So what does it mean? It means that even in the worst of all cases, so when every nondeterministic choice in the model is chosen to minimize the probability to elect a leader quickly, then we will elect a leader within our time bound in about 3 out of 8 cases.
 
 {:.alert .alert-info}
 For [nondeterministic models (MDPs and MAs)](documentation/usage/models.html), you will have to specify in which direction the nondeterminism is going to be resolved.

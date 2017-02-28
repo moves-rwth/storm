@@ -13,14 +13,14 @@ categories: [Usage]
 
 # General
 
-storm takes properties very similar to the PRISM property language, or alternatively as part of the JANI-specification language.
+Storm takes properties very similar to the PRISM property language, or alternatively as part of the JANI-specification language.
 
 {:.alert .alert-info}
 For DFTs, GSPNs and probabilistic programs, domain specific properties can be given. These are typically mapped to the properties discussed here. Their meaning and syntax can be found below.
 
 ## Identifying States
 
-storm allows to identify sets of states by either labels or via the symbolic variables describing the model. Note that it depends on the [input language](languages.html) which of these two ways are enabled. For example, for explicit models, there are no symbolic variables and therefore only labels can be used. For PRISM and JANI input, both labels and expressions over model variables are valid. Finally, the expression `true` can be used to describe the set of all states.
+Storm allows to identify sets of states by either labels or via the symbolic variables describing the model. Note that it depends on the [input language](languages.html) which of these two ways are enabled. For example, for explicit models, there are no symbolic variables and therefore only labels can be used. For PRISM and JANI input, both labels and expressions over model variables are valid. Finally, the expression `true` can be used to describe the set of all states.
 
 ### Labels
 
@@ -60,11 +60,11 @@ Although formally not allowed in PCTL/CSL, one can also request probability of o
 
 ### Nondeterministic Models
 
-For nondeterministic models, the formula can (and sometimes needs to) specify whether it refers to minimal or maximal probabilities. Since there is no information on how the nondeterminism in the models is to be resolved, storm needs information on whether it should resolve the choices to *minimize* or *maximize* the values. That is, you cannot write `P=? [F a]`, but have to either write `Pmin=? [F a]` or `Pmax=? [F a]`. While you can also specify `min` and `max` when comparing to a probability threshold, it's not necessary to do it. By default, if the comparison operator `{op}` is `<` or `<=`, then the probability is maximized and otherwise minimized. The reasoning is the following: if the property holds in a state, then no matter which resolution of nondeterminism is taken, the probability will always be below (or equal) to the threshold value.
+For nondeterministic models, the formula can (and sometimes needs to) specify whether it refers to minimal or maximal probabilities. Since there is no information on how the nondeterminism in the models is to be resolved, Storm needs information on whether it should resolve the choices to *minimize* or *maximize* the values. That is, you cannot write `P=? [F a]`, but have to either write `Pmin=? [F a]` or `Pmax=? [F a]`. While you can also specify `min` and `max` when comparing to a probability threshold, it's not necessary to do it. By default, if the comparison operator `{op}` is `<` or `<=`, then the probability is maximized and otherwise minimized. The reasoning is the following: if the property holds in a state, then no matter which resolution of nondeterminism is taken, the probability will always be below (or equal) to the threshold value.
 
 ## Reward extensions
 
-To measure rewards (or costs) in models, storm supports extensions of the aforementioned logics. More specifically, there are the following reward formulae, where `a` is a [state formula](#state-formulae)
+To measure rewards (or costs) in models, Storm supports extensions of the aforementioned logics. More specifically, there are the following reward formulae, where `a` is a [state formula](#state-formulae)
 
 - `I=k` is the expected reward obtained in time point `k`.
 - `C<=k` is the expected reward obtained up until time point `k`.

@@ -6,7 +6,7 @@ category_weight: 5
 categories: [Usage]
 ---
 
-storm provides many command-line arguments. Since these are subject to change and provide access to settings that are typically only meaningful to experts, we only cover the most important ones. There are [several binaries](../../getting-started.html#other-binaries) that provide access to specific functionality (DFT analysis, etc.). In the following, we will restrict the discussion to storm's main executable.
+Storm provides many command-line arguments. Since these are subject to change and provide access to settings that are typically only meaningful to experts, we only cover the most important ones. There are [several binaries](../../getting-started.html#other-binaries) that provide access to specific functionality (DFT analysis, etc.). In the following, we will restrict the discussion to Storm's main executable.
 
 # Help Message
 
@@ -14,7 +14,7 @@ To get an overview of the available options, you can provide the `--help <hint>`
 
 # Loading Models
 
-There are various [input formats](languages.html) that storm can handle. Some of them need to be transformed to other formats or need to be fed into a specialized binary. The main executable `storm` can treat PRISM, JANI and explicit [input formats](languages.html). Depending on the latter, the model can be specified via one of the following switches.
+There are various [input formats](languages.html) that Storm can handle. Some of them need to be transformed to other formats or need to be fed into a specialized binary. The main executable `storm` can treat PRISM, JANI and explicit [input formats](languages.html). Depending on the latter, the model can be specified via one of the following switches.
 
 - `--prism <prism-file>`
 - `--jani <jani-file>`
@@ -22,7 +22,7 @@ There are various [input formats](languages.html) that storm can handle. Some of
 
 # Specifying Properties
 
-storm supports various [properties](properties.html). They can be passed to storm by providing the `--prop <properties> <selection>` switch. The `<properties>` argument can be either a property as a string or the path to a file containing the properties. The `<selection>` argument is optional. If set, it can be used to indicate that only certain properties of the provided ones are to be checked. More specifically, this argument is either "all" or a comma-separated list of [names of properties](properties.html#naming-properties) and/or property indices. Note that named properties cannot be indexed by name, but need to be referred to by their name.
+Storm supports various [properties](properties.html). They can be passed to Storm by providing the `--prop <properties> <selection>` switch. The `<properties>` argument can be either a property as a string or the path to a file containing the properties. The `<selection>` argument is optional. If set, it can be used to indicate that only certain properties of the provided ones are to be checked. More specifically, this argument is either "all" or a comma-separated list of [names of properties](properties.html#naming-properties) and/or property indices. Note that named properties cannot be indexed by name, but need to be referred to by their name.
 
 # Engines
 
