@@ -81,7 +81,7 @@ namespace storm {
                 // A vector that stores a labeling for each choice.
                 boost::optional<std::vector<storm::models::sparse::LabelSet>> choiceLabeling;
 
-                // The exit rates for CTMCs and MAs.
+                // The exit rates for MAs.
                 std::vector<ValueType> exitRates;
 
                 // The Markovian states for MA.

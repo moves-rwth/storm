@@ -126,6 +126,7 @@ namespace storm {
             std::shared_ptr<ModelComponents> modelComponents = std::make_shared<ModelComponents>();
             modelComponents->nonDeterministic = (type == storm::models::ModelType::Mdp || type == storm::models::ModelType::MarkovAutomaton);
             storm::storage::SparseMatrixBuilder<ValueType> builder = storm::storage::SparseMatrixBuilder<ValueType>(0, 0, 0, false, modelComponents->nonDeterministic, 0);
+            modelComponents->stateLabeling = storm::models::sparse::StateLabeling(stateSize);
 
             // Iterate over all lines
             std::string line;
@@ -136,6 +137,11 @@ namespace storm {
                 STORM_LOG_TRACE("Parsing: " << line);
                 if (boost::starts_with(line, "state ")) {
                     // New state
+                    if (first) {
+                        first = false;
+                    } else {
+                        ++state;
+                    }
                     line = line.substr(6);
                     size_t parsedId;
                     size_t posId = line.find(" ");
@@ -151,27 +157,36 @@ namespace storm {
                             STORM_LOG_THROW(posEndReward != std::string::npos, storm::exceptions::WrongFormatException, "] missing.");
                             std::string rewards = line.substr(1, posEndReward-1);
                             STORM_LOG_TRACE("State rewards: " << rewards);
-                            // TODO save rewards
+                            // TODO import rewards
+                            STORM_LOG_WARN("Rewards were not imported");
                             line = line.substr(posEndReward+1);
                         }
                         // Check for labels
                         std::vector<std::string> labels;
                         boost::split(labels, line, boost::is_any_of(" "));
-                        if (!labels.empty()) {
-                            STORM_LOG_TRACE("Labels: " << labels);
+                        for (std::string label : labels) {
+                            if (!modelComponents->stateLabeling.containsLabel(label)) {
+                                modelComponents->stateLabeling.addLabel(label);
+                            }
+                            modelComponents->stateLabeling.addLabelToState(label, state);
+                            STORM_LOG_TRACE("New label: " << label);
                         }
                     } else {
                         // Only state id given
                         parsedId = boost::lexical_cast<size_t>(line);
                     }
-                    STORM_LOG_TRACE("New state " << state << " " << parsedId);
+                    STORM_LOG_TRACE("New state " << state);
                     STORM_LOG_ASSERT(state == parsedId, "State ids do not correspond.");
                     if (modelComponents->nonDeterministic) {
                         builder.newRowGroup(row);
                     }
-                    ++state;
                 } else if (boost::starts_with(line, "\taction ")) {
                     // New action
+                    if (first) {
+                        first = false;
+                    } else {
+                        ++row;
+                    }
                     line = line.substr(8);
                     STORM_LOG_TRACE("New action: " << row);
                     // Check for rewards
@@ -186,11 +201,6 @@ namespace storm {
                     }
                     // TODO import choice labeling when the export works
 
-                    if (first) {
-                        first = false;
-                    } else {
-                        ++row;
-                    }
                 } else {
                     // New transition
                     size_t posColon = line.find(":");

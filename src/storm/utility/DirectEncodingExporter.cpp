@@ -104,6 +104,7 @@ namespace storm {
                     // Write choice labeling
                     if(sparseModel->hasChoiceLabeling()) {
                         // TODO export choice labeling
+                        STORM_LOG_WARN("Choice labeling was not exported.");
                     }
                     os << std::endl;
                     
