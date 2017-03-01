@@ -20,8 +20,8 @@
 namespace storm {
     namespace parser {
 
-        template<>
-        void ValueParser<double>::addParameter(std::string const& parameter) {
+        template<typename ValueType>
+        void ValueParser<ValueType>::addParameter(std::string const& parameter) {
             STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Parameters are not supported in this build.");
         }
 

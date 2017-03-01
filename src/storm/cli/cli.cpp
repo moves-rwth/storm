@@ -303,9 +303,18 @@ namespace storm {
                 if (ioSettings.isPropertySet()) {
                     properties = storm::parsePropertiesForExplicit(ioSettings.getProperty(), propertyFilter);
                 }
-                
-                buildAndCheckExplicitModel<double>(properties, true);
+
+                if (generalSettings.isParametricSet()) {
+#ifdef STORM_HAVE_CARL
+                    buildAndCheckExplicitModel<storm::RationalFunction>(properties, true);
+#else
+                    STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "No parameters are supported in this build.");
+#endif
+                } else {
+                    buildAndCheckExplicitModel<double>(properties, true);
+                }
             } else {
+
                 STORM_LOG_THROW(false, storm::exceptions::InvalidSettingsException, "No input model.");
             }
         }

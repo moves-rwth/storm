@@ -16,6 +16,15 @@ namespace storm {
          */
         template<typename ValueType>
         void explicitExportSparseModel(std::ostream& os, std::shared_ptr<storm::models::sparse::Model<ValueType>> sparseModel, std::vector<std::string> const& parameters);
+
+        /*!
+         * Accumalate parameters in the model.
+         *
+         * @param sparseModel Model.
+         * @return List of parameters in the model.
+         */
+        template<typename ValueType>
+        std::vector<std::string> getParameters(std::shared_ptr<storm::models::sparse::Model<ValueType>> sparseModel);
         
     }
 }

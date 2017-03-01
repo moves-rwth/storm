@@ -16,7 +16,7 @@ namespace storm {
     namespace exporter {
 
         template<typename ValueType>
-        void explicitExportSparseModel(std::ostream& os, std::shared_ptr<storm::models::sparse::Model<ValueType>> sparseModel,  std::vector<std::string> const& parameters) {
+        void explicitExportSparseModel(std::ostream& os, std::shared_ptr<storm::models::sparse::Model<ValueType>> sparseModel, std::vector<std::string> const& parameters) {
 
             // Notice that for CTMCs we write the rate matrix instead of probabilities
 
@@ -33,8 +33,14 @@ namespace storm {
             os << "// Original model type: " << sparseModel->getType() << std::endl;
             os << "@type: " << sparseModel->getType() << std::endl;
             os << "@parameters" << std::endl;
-            for (auto const& p : parameters) {
-               os << p << " ";
+            if (parameters.empty()) {
+                for (std::string const& parameter : getParameters(sparseModel)) {
+                    os << parameter << " ";
+                }
+            } else {
+                for (std::string const& parameter : parameters) {
+                    os << parameter << " ";
+                }
             }
             os << std::endl;
             os << "@nr_states" << std::endl  << sparseModel->getNumberOfStates() <<  std::endl;
@@ -119,12 +125,33 @@ namespace storm {
             } // end matrix iteration
             
         }
-        
-        
-        
+
+        template<typename ValueType>
+        std::vector<std::string> getParameters(std::shared_ptr<storm::models::sparse::Model<ValueType>> sparseModel) {
+            return {};
+        }
+
         template void explicitExportSparseModel<double>(std::ostream& os, std::shared_ptr<storm::models::sparse::Model<double>> sparseModel, std::vector<std::string> const& parameters);
 
 #ifdef STORM_HAVE_CARL
+        template<>
+        std::vector<std::string> getParameters(std::shared_ptr<storm::models::sparse::Model<storm::RationalFunction>> sparseModel) {
+            std::vector<std::string> parameters;
+            std::set<storm::RationalFunctionVariable> parametersProb = storm::models::sparse::getProbabilityParameters(*sparseModel);
+            for (auto const& parameter : parametersProb) {
+                std::stringstream stream;
+                stream << parameter;
+                parameters.push_back(stream.str());
+            }
+            std::set<storm::RationalFunctionVariable> parametersReward = storm::models::sparse::getRewardParameters(*sparseModel);
+            for (auto const& parameter : parametersReward) {
+                std::stringstream stream;
+                stream << parameter;
+                parameters.push_back(stream.str());
+            }
+            return parameters;
+        }
+
         template void explicitExportSparseModel<storm::RationalNumber>(std::ostream& os, std::shared_ptr<storm::models::sparse::Model<storm::RationalNumber>> sparseModel, std::vector<std::string> const& parameters);
         template void explicitExportSparseModel<storm::RationalFunction>(std::ostream& os, std::shared_ptr<storm::models::sparse::Model<storm::RationalFunction>> sparseModel, std::vector<std::string> const& parameters);
 #endif
