@@ -29,7 +29,7 @@ namespace storm {
 
             using DFTStatePointer = std::shared_ptr<storm::storage::DFTState<ValueType>>;
             // TODO Matthias: make choosable
-            using ExplorationHeuristic = DFTExplorationHeuristicBoundDifference<ValueType>;
+            using ExplorationHeuristic = DFTExplorationHeuristicNone<ValueType>;
             using ExplorationHeuristicPointer = std::shared_ptr<ExplorationHeuristic>;
 
 
@@ -335,7 +335,6 @@ namespace storm {
 
             // A priority queue of states that still need to be explored.
             storm::storage::BucketPriorityQueue<ValueType> explorationQueue;
-            //storm::storage::DynamicPriorityQueue<ExplorationHeuristicPointer, std::vector<ExplorationHeuristicPointer>, std::function<bool(ExplorationHeuristicPointer, ExplorationHeuristicPointer)>> explorationQueue;
 
             // A mapping of not yet explored states from the id to the tuple (state object, heuristic values).
             std::map<StateType, std::pair<DFTStatePointer, ExplorationHeuristicPointer>> statesNotExplored;

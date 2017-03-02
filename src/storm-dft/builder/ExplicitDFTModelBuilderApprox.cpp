@@ -65,7 +65,7 @@ namespace storm {
         {
             // Intentionally left empty.
             // TODO Matthias: remove again
-            usedHeuristic = storm::builder::ApproximationHeuristic::BOUNDDIFFERENCE;
+            usedHeuristic = storm::builder::ApproximationHeuristic::NONE;
 
             // Compute independent subtrees
             if (dft.topLevelType() == storm::storage::DFTElementType::OR) {
