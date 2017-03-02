@@ -344,7 +344,7 @@ namespace storm {
                 // TODO Matthias: use only one builder if everything works again
                 if (storm::settings::getModule<storm::settings::modules::DFTSettings>().isApproximationErrorSet()) {
                     storm::builder::ExplicitDFTModelBuilderApprox<ValueType> builder(dft, symmetries, enableDC);
-                    typename storm::builder::ExplicitDFTModelBuilderApprox<ValueType>::LabelOptions labeloptions(properties);
+                    typename storm::builder::ExplicitDFTModelBuilderApprox<ValueType>::LabelOptions labeloptions(properties, storm::settings::getModule<storm::settings::modules::IOSettings>().isExportExplicitSet());
                     builder.buildModel(labeloptions, 0, 0.0);
                     model = builder.getModel();
                 } else {

@@ -28,7 +28,7 @@ namespace storm {
         }
 
         template<typename ValueType, typename StateType>
-        ExplicitDFTModelBuilderApprox<ValueType, StateType>::LabelOptions::LabelOptions(std::vector<std::shared_ptr<const storm::logic::Formula>> properties) : buildFailLabel(true), buildFailSafeLabel(false) {
+        ExplicitDFTModelBuilderApprox<ValueType, StateType>::LabelOptions::LabelOptions(std::vector<std::shared_ptr<const storm::logic::Formula>> properties, bool buildAllLabels) : buildFailLabel(true), buildFailSafeLabel(false), buildAllLabels(buildAllLabels) {
             // Get necessary labels from properties
             std::vector<std::shared_ptr<storm::logic::AtomicLabelFormula const>> atomicLabels;
             for (auto property : properties) {
@@ -441,7 +441,7 @@ namespace storm {
             // Collect labels for all necessary elements
             for (size_t id = 0; id < dft.nrElements(); ++id) {
                 std::shared_ptr<storage::DFTElement<ValueType> const> element = dft.getElement(id);
-                if (labelOpts.elementLabels.count(element->name()) > 0) {
+                if (labelOpts.buildAllLabels || labelOpts.elementLabels.count(element->name()) > 0) {
                     modelComponents.stateLabeling.addLabel(element->name() + "_fail");
                 }
             }
@@ -462,7 +462,7 @@ namespace storm {
                 // Set fail status for each necessary element
                 for (size_t id = 0; id < dft.nrElements(); ++id) {
                     std::shared_ptr<storage::DFTElement<ValueType> const> element = dft.getElement(id);
-                    if (labelOpts.elementLabels.count(element->name()) > 0 && storm::storage::DFTState<ValueType>::hasFailed(state, stateGenerationInfo->getStateIndex(element->id()))) {
+                    if ((labelOpts.buildAllLabels || labelOpts.elementLabels.count(element->name()) > 0) && storm::storage::DFTState<ValueType>::hasFailed(state, stateGenerationInfo->getStateIndex(element->id()))) {
                         modelComponents.stateLabeling.addLabelToState(element->name() + "_fail", stateId);
                     }
                 }
