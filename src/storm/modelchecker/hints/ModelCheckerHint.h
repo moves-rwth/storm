@@ -8,8 +8,9 @@ namespace storm {
         class ExplicitModelCheckerHint;
         
         
-        /*
-         * This class contains information that might accelerate the solving process
+        /*!
+         * This class contains information that might accelerate the model checking process.
+         * @note The model checker has to make sure whether a given hint is actually applicable and thus a hint might be ignored.
          */
         class ModelCheckerHint {
         public:

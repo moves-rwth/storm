@@ -10,6 +10,10 @@
 namespace storm {
     namespace modelchecker {
         
+        /*!
+         * This class contains information that might accelerate the model checking process.
+         * @note The model checker has to make sure whether a given hint is actually applicable and thus a hint might be ignored.
+         */
         template<typename ValueType>
         class ExplicitModelCheckerHint : public ModelCheckerHint {
         public:
@@ -37,9 +41,16 @@ namespace storm {
             void setSchedulerHint(boost::optional<storage::TotalScheduler> const& schedulerHint);
             void setSchedulerHint(boost::optional<storage::TotalScheduler>&& schedulerHint);
             
+            // If set, this option forces the application of the specified hints. This means that the model checker may skip some checks to increase performance.
+            // This might yield wrong results on certain models, e.g., when computing maximal probabilities on an MDP that has an end component consisting only of maybestates.
+            bool getForceApplicationOfHints() const;
+            void setForceApplicationOfHints(bool value);
+            
         private:
             boost::optional<std::vector<ValueType>> resultHint;
             boost::optional<storm::storage::TotalScheduler> schedulerHint;
+            
+            bool forceApplicationOfHints;
         };
         
     }

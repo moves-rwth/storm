@@ -4,12 +4,12 @@ namespace storm {
     namespace modelchecker {
            
         template<typename ValueType>
-        ExplicitModelCheckerHint<ValueType>::ExplicitModelCheckerHint(boost::optional<std::vector<ValueType>> const& resultHint, boost::optional<storm::storage::TotalScheduler> const& schedulerHint) : resultHint(resultHint), schedulerHint(schedulerHint) {
+        ExplicitModelCheckerHint<ValueType>::ExplicitModelCheckerHint(boost::optional<std::vector<ValueType>> const& resultHint, boost::optional<storm::storage::TotalScheduler> const& schedulerHint) : resultHint(resultHint), schedulerHint(schedulerHint), forceApplicationOfHints(false) {
             // Intentionally left empty
         }
         
         template<typename ValueType>
-        ExplicitModelCheckerHint<ValueType>::ExplicitModelCheckerHint(boost::optional<std::vector<ValueType>>&& resultHint, boost::optional<storm::storage::TotalScheduler>&& schedulerHint) : resultHint(resultHint), schedulerHint(schedulerHint) {
+        ExplicitModelCheckerHint<ValueType>::ExplicitModelCheckerHint(boost::optional<std::vector<ValueType>>&& resultHint, boost::optional<storm::storage::TotalScheduler>&& schedulerHint) : resultHint(resultHint), schedulerHint(schedulerHint), forceApplicationOfHints(false) {
             // Intentionally left empty
         }
         
@@ -71,6 +71,16 @@ namespace storm {
         template<typename ValueType>
         void ExplicitModelCheckerHint<ValueType>::setSchedulerHint(boost::optional<storm::storage::TotalScheduler>&& schedulerHint) {
             this->schedulerHint = schedulerHint;
+        }
+    
+        template<typename ValueType>
+        bool ExplicitModelCheckerHint<ValueType>::getForceApplicationOfHints() const {
+            return forceApplicationOfHints;
+        }
+    
+        template<typename ValueType>
+        void ExplicitModelCheckerHint<ValueType>::setForceApplicationOfHints(bool value) {
+            forceApplicationOfHints = value;
         }
     
         template class ExplicitModelCheckerHint<double>;

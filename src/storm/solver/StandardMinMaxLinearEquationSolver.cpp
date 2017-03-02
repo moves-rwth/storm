@@ -97,7 +97,7 @@ namespace storm {
         template<typename ValueType>
         bool StandardMinMaxLinearEquationSolver<ValueType>::solveEquationsPolicyIteration(OptimizationDirection dir, std::vector<ValueType>& x, std::vector<ValueType> const& b) const {
             // Create the initial scheduler.
-            std::vector<storm::storage::sparse::state_type> scheduler(this->A.getRowGroupCount());
+            std::vector<storm::storage::sparse::state_type> scheduler = this->schedulerHint ? this->schedulerHint->getChoices() : std::vector<storm::storage::sparse::state_type>(this->A.getRowGroupCount());
             
             // Get a vector for storing the right-hand side of the inner equation system.
             if(!auxiliaryRowGroupVector) {
@@ -229,6 +229,19 @@ namespace storm {
             if (!auxiliaryRowGroupVector.get()) {
                 auxiliaryRowGroupVector = std::make_unique<std::vector<ValueType>>(A.getRowGroupCount());
             }
+            
+            if(this->schedulerHint) {
+                // Resolve the nondeterminism according to the scheduler hint and solve the resulting equation system.
+                storm::storage::SparseMatrix<ValueType> submatrix = this->A.selectRowsFromRowGroups(this->schedulerHint->getChoices(), true);
+                submatrix.convertToEquationSystem();
+                storm::utility::vector::selectVectorValues<ValueType>(*auxiliaryRowGroupVector, this->schedulerHint->getChoices(), this->A.getRowGroupIndices(), b);
+
+                auto submatrixSolver = linearEquationSolverFactory->create(std::move(submatrix));
+                if (this->lowerBound) { submatrixSolver->setLowerBound(this->lowerBound.get()); }
+                if (this->upperBound) { submatrixSolver->setUpperBound(this->upperBound.get()); }
+                submatrixSolver->solveEquations(x, *auxiliaryRowGroupVector);
+            }
+            
             std::vector<ValueType>* newX = auxiliaryRowGroupVector.get();
             
             std::vector<ValueType>* currentX = &x;

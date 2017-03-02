@@ -24,6 +24,17 @@ namespace storm {
                 currentCheckTask->setProduceSchedulers(checkTask.isProduceSchedulersSet());
             }
             
+            template <typename SparseModelType, typename ConstantType>
+            storm::modelchecker::ModelCheckerHint& SparseInstantiationModelChecker<SparseModelType, ConstantType>::getHint() {
+                return currentCheckTask->getHint();
+            }
+            
+            template <typename SparseModelType, typename ConstantType>
+            storm::modelchecker::ModelCheckerHint const& SparseInstantiationModelChecker<SparseModelType, ConstantType>::getHint() const {
+                return currentCheckTask->getHint();
+            }
+            
+            
             template class SparseInstantiationModelChecker<storm::models::sparse::Dtmc<storm::RationalFunction>, double>;
             template class SparseInstantiationModelChecker<storm::models::sparse::Mdp<storm::RationalFunction>, double>;
 

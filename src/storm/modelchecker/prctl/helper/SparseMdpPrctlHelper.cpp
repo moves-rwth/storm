@@ -121,13 +121,8 @@ namespace storm {
                         // the accumulated probability of going from state i to some 'yes' state.
                         std::vector<ValueType> b = transitionMatrix.getConstrainedRowGroupSumVector(maybeStates, statesWithProbability1);
                         
-                        // Prepare the solution vector for the maybestates. Apply the hint, if given and applicable
-                        std::vector<ValueType> x(submatrix.getRowGroupCount());
-                        if(!hint.isEmpty() && (goal.minimize() || (maybeStates & storm::utility::graph::performProb0E(transitionMatrix, transitionMatrix.getRowGroupIndices(), backwardTransitions, maybeStates, ~maybeStates)).empty())) {
-                            storm::utility::vector::selectVectorValues(x, maybeStates, hint.template asExplicitModelCheckerHint<ValueType>().getResultHint());
-                        }
-                        
-                        MDPSparseModelCheckingHelperReturnType<ValueType> resultForMaybeStates = computeUntilProbabilitiesOnlyMaybeStates(goal, submatrix, b, produceScheduler, minMaxLinearEquationSolverFactory, std::move(x));
+                        // Now compute the results for the maybeStates
+                        MDPSparseModelCheckingHelperReturnType<ValueType> resultForMaybeStates = computeValuesOnlyMaybeStates(goal, transitionMatrix, backwardTransitions, maybeStates, submatrix, b, produceScheduler, minMaxLinearEquationSolverFactory, hint, goal.minimize(), storm::utility::zero<ValueType>(), storm::utility::one<ValueType>());
                         
                         // Set values of resulting vector according to result.
                         storm::utility::vector::setVectorValues<ValueType>(result, maybeStates, resultForMaybeStates.values);
@@ -161,23 +156,44 @@ namespace storm {
             }
             
             template<typename ValueType>
-            MDPSparseModelCheckingHelperReturnType<ValueType> SparseMdpPrctlHelper<ValueType>::computeUntilProbabilitiesOnlyMaybeStates(storm::solver::SolveGoal const& goal, storm::storage::SparseMatrix<ValueType> const& submatrix, std::vector<ValueType> const& b, bool produceScheduler, storm::solver::MinMaxLinearEquationSolverFactory<ValueType> const& minMaxLinearEquationSolverFactory, std::vector<ValueType>&& x) {
-                // If requested, we will produce a scheduler.
-                std::unique_ptr<storm::storage::TotalScheduler> scheduler;
+            MDPSparseModelCheckingHelperReturnType<ValueType> SparseMdpPrctlHelper<ValueType>::computeValuesOnlyMaybeStates(storm::solver::SolveGoal const& goal, storm::storage::SparseMatrix<ValueType> const& transitionMatrix, storm::storage::SparseMatrix<ValueType> const& backwardTransitions, storm::storage::BitVector const& maybeStates, storm::storage::SparseMatrix<ValueType> const& submatrix, std::vector<ValueType> const& b, bool produceScheduler, storm::solver::MinMaxLinearEquationSolverFactory<ValueType> const& minMaxLinearEquationSolverFactory, ModelCheckerHint const& hint, bool skipECWithinMaybeStatesCheck, boost::optional<ValueType> const& lowerResultBound, boost::optional<ValueType> const& upperResultBound) {
                 
-                // make sure that the solution vector has the correct size.
-                x.resize(submatrix.getRowGroupCount());
-                
-                // Solve the corresponding system of equations.
+                // Set up the solver
                 std::unique_ptr<storm::solver::MinMaxLinearEquationSolver<ValueType>> solver = storm::solver::configureMinMaxLinearEquationSolver(goal, minMaxLinearEquationSolverFactory, submatrix);
+                if (lowerResultBound) {
+                    solver->setLowerBound(lowerResultBound.get());
+                }
+                if (upperResultBound) {
+                    solver->setUpperBound(upperResultBound.get());
+                }
+                // the scheduler hint is only applicable if it induces no BSCC consisting of maybestates
+                if(hint.isExplicitModelCheckerHint() && hint.template asExplicitModelCheckerHint<ValueType>().hasSchedulerHint() &&
+                   (hint.template asExplicitModelCheckerHint<ValueType>().getForceApplicationOfHints() || skipECWithinMaybeStatesCheck ||
+                    storm::utility::graph::performProb1(transitionMatrix.transposeSelectedRowsFromRowGroups(hint.template asExplicitModelCheckerHint<ValueType>().getSchedulerHint().getChoices()), maybeStates, ~maybeStates).full())) {
+                    solver->setSchedulerHint(hint.template asExplicitModelCheckerHint<ValueType>().getSchedulerHint().getSchedulerForSubsystem(maybeStates));
+                }
                 solver->setTrackScheduler(produceScheduler);
-                solver->solveEquations(x, b);
                 
-                if (produceScheduler) {
-                    scheduler = solver->getScheduler();
+                // Create the solution vector.
+                std::vector<ValueType> x;
+                // The result hint is only applicable if there are no End Components consisting of maybestates
+                if(hint.isExplicitModelCheckerHint() && hint.template asExplicitModelCheckerHint<ValueType>().hasResultHint() &&
+                   (hint.template asExplicitModelCheckerHint<ValueType>().getForceApplicationOfHints() || skipECWithinMaybeStatesCheck || solver->hasSchedulerHint() ||
+                    storm::utility::graph::performProb1A(transitionMatrix, transitionMatrix.getRowGroupIndices(), backwardTransitions, maybeStates, ~maybeStates).full())) {
+                    x = storm::utility::vector::filterVector(hint.template asExplicitModelCheckerHint<ValueType>().getResultHint(), maybeStates);
+                } else {
+                    x = std::vector<ValueType>(submatrix.getRowGroupCount(), lowerResultBound ? lowerResultBound.get() : storm::utility::zero<ValueType>());
                 }
                 
-                return MDPSparseModelCheckingHelperReturnType<ValueType>(std::move(x), std::move(scheduler));
+                // Solve the corresponding system of equations.
+                solver->solveEquations(x, b);
+                
+                // If requested, a scheduler was produced
+                if (produceScheduler) {
+                   return MDPSparseModelCheckingHelperReturnType<ValueType>(std::move(x), std::move(solver->getScheduler()));
+                } else {
+                    return MDPSparseModelCheckingHelperReturnType<ValueType>(std::move(x));
+                }
             }
 
             template<typename ValueType>
@@ -247,17 +263,28 @@ namespace storm {
                 return result;
             }
             
-
             template<typename ValueType>
             template<typename RewardModelType>
-            std::vector<ValueType> SparseMdpPrctlHelper<ValueType>::computeReachabilityRewards(OptimizationDirection dir, storm::storage::SparseMatrix<ValueType> const& transitionMatrix, storm::storage::SparseMatrix<ValueType> const& backwardTransitions, RewardModelType const& rewardModel, storm::storage::BitVector const& targetStates, bool qualitative, storm::solver::MinMaxLinearEquationSolverFactory<ValueType> const& minMaxLinearEquationSolverFactory, ModelCheckerHint const& hint) {
+            MDPSparseModelCheckingHelperReturnType<ValueType> SparseMdpPrctlHelper<ValueType>::computeReachabilityRewards(OptimizationDirection dir, storm::storage::SparseMatrix<ValueType> const& transitionMatrix, storm::storage::SparseMatrix<ValueType> const& backwardTransitions, RewardModelType const& rewardModel, storm::storage::BitVector const& targetStates, bool qualitative, bool produceScheduler, storm::solver::MinMaxLinearEquationSolverFactory<ValueType> const& minMaxLinearEquationSolverFactory, ModelCheckerHint const& hint) {
                 // Only compute the result if the model has at least one reward this->getModel().
                 STORM_LOG_THROW(!rewardModel.empty(), storm::exceptions::InvalidPropertyException, "Missing reward model for formula. Skipping formula.");
-                return computeReachabilityRewardsHelper(dir, transitionMatrix, backwardTransitions,
+                return computeReachabilityRewardsHelper(storm::solver::SolveGoal(dir), transitionMatrix, backwardTransitions,
                                                         [&rewardModel] (uint_fast64_t rowCount, storm::storage::SparseMatrix<ValueType> const& transitionMatrix, storm::storage::BitVector const& maybeStates) {
                                                             return rewardModel.getTotalRewardVector(rowCount, transitionMatrix, maybeStates);
                                                         },
-                                                        targetStates, qualitative, minMaxLinearEquationSolverFactory, hint);
+                                                        targetStates, qualitative, produceScheduler, minMaxLinearEquationSolverFactory, hint);
+            }
+            
+            template<typename ValueType>
+            template<typename RewardModelType>
+            MDPSparseModelCheckingHelperReturnType<ValueType> SparseMdpPrctlHelper<ValueType>::computeReachabilityRewards(storm::solver::SolveGoal const& goal, storm::storage::SparseMatrix<ValueType> const& transitionMatrix, storm::storage::SparseMatrix<ValueType> const& backwardTransitions, RewardModelType const& rewardModel, storm::storage::BitVector const& targetStates, bool qualitative, bool produceScheduler, storm::solver::MinMaxLinearEquationSolverFactory<ValueType> const& minMaxLinearEquationSolverFactory, ModelCheckerHint const& hint) {
+                // Only compute the result if the model has at least one reward this->getModel().
+                STORM_LOG_THROW(!rewardModel.empty(), storm::exceptions::InvalidPropertyException, "Missing reward model for formula. Skipping formula.");
+                return computeReachabilityRewardsHelper(goal, transitionMatrix, backwardTransitions,
+                                                        [&rewardModel] (uint_fast64_t rowCount, storm::storage::SparseMatrix<ValueType> const& transitionMatrix, storm::storage::BitVector const& maybeStates) {
+                                                            return rewardModel.getTotalRewardVector(rowCount, transitionMatrix, maybeStates);
+                                                        },
+                                                        targetStates, qualitative, produceScheduler, minMaxLinearEquationSolverFactory, hint);
             }
             
 #ifdef STORM_HAVE_CARL
@@ -265,7 +292,7 @@ namespace storm {
             std::vector<ValueType> SparseMdpPrctlHelper<ValueType>::computeReachabilityRewards(OptimizationDirection dir, storm::storage::SparseMatrix<ValueType> const& transitionMatrix, storm::storage::SparseMatrix<ValueType> const& backwardTransitions, storm::models::sparse::StandardRewardModel<storm::Interval> const& intervalRewardModel, bool lowerBoundOfIntervals, storm::storage::BitVector const& targetStates, bool qualitative, storm::solver::MinMaxLinearEquationSolverFactory<ValueType> const& minMaxLinearEquationSolverFactory) {
                 // Only compute the result if the reward model is not empty.
                 STORM_LOG_THROW(!intervalRewardModel.empty(), storm::exceptions::InvalidPropertyException, "Missing reward model for formula. Skipping formula.");
-                return computeReachabilityRewardsHelper(dir, transitionMatrix, backwardTransitions, \
+                return computeReachabilityRewardsHelper(storm::solver::SolveGoal(dir), transitionMatrix, backwardTransitions, \
                                                         [&] (uint_fast64_t rowCount, storm::storage::SparseMatrix<ValueType> const& transitionMatrix, storm::storage::BitVector const& maybeStates) {
                                                             std::vector<ValueType> result;
                                                             result.reserve(rowCount);
@@ -275,7 +302,7 @@ namespace storm {
                                                             }
                                                             return result;
                                                         }, \
-                                                        targetStates, qualitative, minMaxLinearEquationSolverFactory);
+                                                        targetStates, qualitative, false, minMaxLinearEquationSolverFactory).values;
             }
             
             template<>
@@ -285,14 +312,14 @@ namespace storm {
 #endif
             
             template<typename ValueType>
-            std::vector<ValueType> SparseMdpPrctlHelper<ValueType>::computeReachabilityRewardsHelper(OptimizationDirection dir, storm::storage::SparseMatrix<ValueType> const& transitionMatrix, storm::storage::SparseMatrix<ValueType> const& backwardTransitions, std::function<std::vector<ValueType>(uint_fast64_t, storm::storage::SparseMatrix<ValueType> const&, storm::storage::BitVector const&)> const& totalStateRewardVectorGetter, storm::storage::BitVector const& targetStates, bool qualitative, storm::solver::MinMaxLinearEquationSolverFactory<ValueType> const& minMaxLinearEquationSolverFactory, ModelCheckerHint const& hint) {
+            MDPSparseModelCheckingHelperReturnType<ValueType> SparseMdpPrctlHelper<ValueType>::computeReachabilityRewardsHelper(storm::solver::SolveGoal const& goal, storm::storage::SparseMatrix<ValueType> const& transitionMatrix, storm::storage::SparseMatrix<ValueType> const& backwardTransitions, std::function<std::vector<ValueType>(uint_fast64_t, storm::storage::SparseMatrix<ValueType> const&, storm::storage::BitVector const&)> const& totalStateRewardVectorGetter, storm::storage::BitVector const& targetStates, bool qualitative, bool produceScheduler, storm::solver::MinMaxLinearEquationSolverFactory<ValueType> const& minMaxLinearEquationSolverFactory, ModelCheckerHint const& hint) {
                 
                 std::vector<uint_fast64_t> const& nondeterministicChoiceIndices = transitionMatrix.getRowGroupIndices();
                 
                 // Determine which states have a reward of infinity by definition.
                 storm::storage::BitVector infinityStates;
                 storm::storage::BitVector trueStates(transitionMatrix.getRowGroupCount(), true);
-                if (dir == OptimizationDirection::Minimize) {
+                if (goal.minimize()) {
                     STORM_LOG_WARN("Results of reward computation may be too low, because of zero-reward loops.");
                     infinityStates = storm::utility::graph::performProb1E(transitionMatrix, nondeterministicChoiceIndices, backwardTransitions, trueStates, targetStates);
                 } else {
@@ -306,6 +333,15 @@ namespace storm {
                 
                 // Create resulting vector.
                 std::vector<ValueType> result(transitionMatrix.getRowGroupCount(), storm::utility::zero<ValueType>());
+                
+                // Set values of resulting vector that are known exactly.
+                storm::utility::vector::setVectorValues(result, infinityStates, storm::utility::infinity<ValueType>());
+                
+                // If requested, we will produce a scheduler.
+                std::unique_ptr<storm::storage::TotalScheduler> scheduler;
+                if (produceScheduler) {
+                    scheduler = std::make_unique<storm::storage::TotalScheduler>(transitionMatrix.getRowGroupCount());
+                }
                 
                 // Check whether we need to compute exact rewards for some states.
                 if (qualitative) {
@@ -337,36 +373,37 @@ namespace storm {
                                 }
                             }
                         }
-                                                
-                        // Create vector for results for maybe states and a solver object.
-                        std::vector<ValueType> x;
-                        std::unique_ptr<storm::solver::MinMaxLinearEquationSolver<ValueType>> solver = minMaxLinearEquationSolverFactory.create(std::move(submatrix));
                         
-                        // If applicable, consider the given hint(s)
-                        if(hint.isExplicitModelCheckerHint() && hint.template asExplicitModelCheckerHint<ValueType>().hasResultHint() &&
-                            (hint.template asExplicitModelCheckerHint<ValueType>().hasSchedulerHint() ||
-                             dir == OptimizationDirection::Maximize ||
-                             (maybeStates & storm::utility::graph::performProb0E(transitionMatrix, transitionMatrix.getRowGroupIndices(), backwardTransitions, maybeStates, ~maybeStates)).empty())) {
-                            x = storm::utility::vector::filterVector(hint.template asExplicitModelCheckerHint<ValueType>().getResultHint(), maybeStates);
-                        } else {
-                            x = std::vector<ValueType>(maybeStates.getNumberOfSetBits(), storm::utility::zero<ValueType>());
-                        }
-                        if(hint.isExplicitModelCheckerHint() && hint.template asExplicitModelCheckerHint<ValueType>().hasSchedulerHint()) {
-                            solver->setSchedulerHint(hint.template asExplicitModelCheckerHint<ValueType>().getSchedulerHint().getSchedulerForSubsystem(maybeStates));
-                        }
-                        
-                        // Solve the corresponding system of equations.
-                        solver->solveEquations(dir, x, b);
-                        
+                        // Now compute the results for the maybeStates
+                        MDPSparseModelCheckingHelperReturnType<ValueType> resultForMaybeStates = computeValuesOnlyMaybeStates(goal, transitionMatrix, backwardTransitions, maybeStates, submatrix, b, produceScheduler, minMaxLinearEquationSolverFactory, hint, !goal.minimize(), storm::utility::zero<ValueType>());
+
                         // Set values of resulting vector according to result.
-                        storm::utility::vector::setVectorValues<ValueType>(result, maybeStates, x);
+                        storm::utility::vector::setVectorValues<ValueType>(result, maybeStates, resultForMaybeStates.values);
+                        
+                        if (produceScheduler) {
+                            storm::storage::Scheduler const& subscheduler = *resultForMaybeStates.scheduler;
+                            uint_fast64_t currentSubState = 0;
+                            for (auto maybeState : maybeStates) {
+                                scheduler->setChoice(maybeState, subscheduler.getChoice(currentSubState));
+                                ++currentSubState;
+                            }
+                        }
                     }
                 }
                 
-                // Set values of resulting vector that are known exactly.
-                storm::utility::vector::setVectorValues(result, infinityStates, storm::utility::infinity<ValueType>());
+                // Finally, if we need to produce a scheduler, we also need to figure out the parts of the scheduler for
+                // the states with reward infinity.
+                if (produceScheduler) {
+                    storm::storage::PartialScheduler relevantQualitativeScheduler;
+                    if (!goal.minimize()) {
+                        relevantQualitativeScheduler = storm::utility::graph::computeSchedulerProb0E(infinityStates, transitionMatrix);
+                    }
+                    for (auto const& stateChoicePair : relevantQualitativeScheduler) {
+                        scheduler->setChoice(stateChoicePair.first, stateChoicePair.second);
+                    }
+                }
                 
-                return result;
+                return MDPSparseModelCheckingHelperReturnType<ValueType>(std::move(result), std::move(scheduler));
             }
             
             template<typename ValueType>
@@ -669,13 +706,15 @@ namespace storm {
             template class SparseMdpPrctlHelper<double>;
             template std::vector<double> SparseMdpPrctlHelper<double>::computeInstantaneousRewards(OptimizationDirection dir, storm::storage::SparseMatrix<double> const& transitionMatrix, storm::models::sparse::StandardRewardModel<double> const& rewardModel, uint_fast64_t stepCount, storm::solver::MinMaxLinearEquationSolverFactory<double> const& minMaxLinearEquationSolverFactory);
             template std::vector<double> SparseMdpPrctlHelper<double>::computeCumulativeRewards(OptimizationDirection dir, storm::storage::SparseMatrix<double> const& transitionMatrix, storm::models::sparse::StandardRewardModel<double> const& rewardModel, uint_fast64_t stepBound, storm::solver::MinMaxLinearEquationSolverFactory<double> const& minMaxLinearEquationSolverFactory);
-            template std::vector<double> SparseMdpPrctlHelper<double>::computeReachabilityRewards(OptimizationDirection dir, storm::storage::SparseMatrix<double> const& transitionMatrix, storm::storage::SparseMatrix<double> const& backwardTransitions, storm::models::sparse::StandardRewardModel<double> const& rewardModel, storm::storage::BitVector const& targetStates, bool qualitative, storm::solver::MinMaxLinearEquationSolverFactory<double> const& minMaxLinearEquationSolverFactory, ModelCheckerHint const& hint);
+            template MDPSparseModelCheckingHelperReturnType<double> SparseMdpPrctlHelper<double>::computeReachabilityRewards(OptimizationDirection dir, storm::storage::SparseMatrix<double> const& transitionMatrix, storm::storage::SparseMatrix<double> const& backwardTransitions, storm::models::sparse::StandardRewardModel<double> const& rewardModel, storm::storage::BitVector const& targetStates, bool qualitative, bool produceScheduler, storm::solver::MinMaxLinearEquationSolverFactory<double> const& minMaxLinearEquationSolverFactory, ModelCheckerHint const& hint);
+            template MDPSparseModelCheckingHelperReturnType<double> SparseMdpPrctlHelper<double>::computeReachabilityRewards(storm::solver::SolveGoal const& goal, storm::storage::SparseMatrix<double> const& transitionMatrix, storm::storage::SparseMatrix<double> const& backwardTransitions, storm::models::sparse::StandardRewardModel<double> const& rewardModel, storm::storage::BitVector const& targetStates, bool qualitative, bool produceScheduler, storm::solver::MinMaxLinearEquationSolverFactory<double> const& minMaxLinearEquationSolverFactory, ModelCheckerHint const& hint);
 
 #ifdef STORM_HAVE_CARL
             template class SparseMdpPrctlHelper<storm::RationalNumber>;
             template std::vector<storm::RationalNumber> SparseMdpPrctlHelper<storm::RationalNumber>::computeInstantaneousRewards(OptimizationDirection dir, storm::storage::SparseMatrix<storm::RationalNumber> const& transitionMatrix, storm::models::sparse::StandardRewardModel<storm::RationalNumber> const& rewardModel, uint_fast64_t stepCount, storm::solver::MinMaxLinearEquationSolverFactory<storm::RationalNumber> const& minMaxLinearEquationSolverFactory);
             template std::vector<storm::RationalNumber> SparseMdpPrctlHelper<storm::RationalNumber>::computeCumulativeRewards(OptimizationDirection dir, storm::storage::SparseMatrix<storm::RationalNumber> const& transitionMatrix, storm::models::sparse::StandardRewardModel<storm::RationalNumber> const& rewardModel, uint_fast64_t stepBound, storm::solver::MinMaxLinearEquationSolverFactory<storm::RationalNumber> const& minMaxLinearEquationSolverFactory);
-            template std::vector<storm::RationalNumber> SparseMdpPrctlHelper<storm::RationalNumber>::computeReachabilityRewards(OptimizationDirection dir, storm::storage::SparseMatrix<storm::RationalNumber> const& transitionMatrix, storm::storage::SparseMatrix<storm::RationalNumber> const& backwardTransitions, storm::models::sparse::StandardRewardModel<storm::RationalNumber> const& rewardModel, storm::storage::BitVector const& targetStates, bool qualitative, storm::solver::MinMaxLinearEquationSolverFactory<storm::RationalNumber> const& minMaxLinearEquationSolverFactory, ModelCheckerHint const& hint);
+            template MDPSparseModelCheckingHelperReturnType<storm::RationalNumber> SparseMdpPrctlHelper<storm::RationalNumber>::computeReachabilityRewards(OptimizationDirection dir, storm::storage::SparseMatrix<storm::RationalNumber> const& transitionMatrix, storm::storage::SparseMatrix<storm::RationalNumber> const& backwardTransitions, storm::models::sparse::StandardRewardModel<storm::RationalNumber> const& rewardModel, storm::storage::BitVector const& targetStates, bool qualitative, bool produceScheduler, storm::solver::MinMaxLinearEquationSolverFactory<storm::RationalNumber> const& minMaxLinearEquationSolverFactory, ModelCheckerHint const& hint);
+            template MDPSparseModelCheckingHelperReturnType<storm::RationalNumber> SparseMdpPrctlHelper<storm::RationalNumber>::computeReachabilityRewards(storm::solver::SolveGoal const& goal, storm::storage::SparseMatrix<storm::RationalNumber> const& transitionMatrix, storm::storage::SparseMatrix<storm::RationalNumber> const& backwardTransitions, storm::models::sparse::StandardRewardModel<storm::RationalNumber> const& rewardModel, storm::storage::BitVector const& targetStates, bool qualitative, bool produceScheduler, storm::solver::MinMaxLinearEquationSolverFactory<storm::RationalNumber> const& minMaxLinearEquationSolverFactory, ModelCheckerHint const& hint);
 #endif
         }
     }

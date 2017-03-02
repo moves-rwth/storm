@@ -3,6 +3,7 @@
 #include "storm/logic/Formulas.h"
 #include "storm/modelchecker/CheckTask.h"
 #include "storm/modelchecker/results/CheckResult.h"
+#include "storm/modelchecker/hints/ModelCheckerHint.h"
 #include "storm/utility/parametric.h"
 
 namespace storm {
@@ -20,7 +21,10 @@ namespace storm {
                 void specifyFormula(CheckTask<storm::logic::Formula, typename SparseModelType::ValueType> const& checkTask);
                 
                 virtual std::unique_ptr<CheckResult> check(storm::utility::parametric::Valuation<typename SparseModelType::ValueType> const& valuation) = 0;
-
+                
+                storm::modelchecker::ModelCheckerHint& getHint();
+                storm::modelchecker::ModelCheckerHint const& getHint() const;
+                
             protected:
                 
                 SparseModelType const& parametricModel;
