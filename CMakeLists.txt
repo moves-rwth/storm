@@ -72,23 +72,25 @@ set(LIB_INSTALL_DIR lib/ CACHE PATH "Installation directory for libraries")
 set(BIN_INSTALL_DIR lib/ CACHE PATH "Installation directory for executables")
 
 
-# By default, we build a release version.
-if (NOT CMAKE_BUILD_TYPE)
-    set(CMAKE_BUILD_TYPE "RELEASE")
-endif()
 # Install dir for cmake files (info for other libraries that include storm)
 set(DEF_INSTALL_CMAKE_DIR "lib/CMake/storm")
 set(CMAKE_INSTALL_DIR ${DEF_INSTALL_CMAKE_DIR} CACHE PATH  "Installation directory for CMake files")
 
 message("CMAKE_INSTALL_DIR: ${CMAKE_INSTALL_DIR}")
 
-# If the STORM_DEVELOPER option was turned on, we target a debug version.
+# If the STORM_DEVELOPER option was turned on, by default we target a debug version, otherwise a release version.
 if (STORM_DEVELOPER)
-    set(CMAKE_BUILD_TYPE "DEBUG")
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DSTORM_DEV")
+    if (NOT CMAKE_BUILD_TYPE)
+        set(CMAKE_BUILD_TYPE "DEBUG")
+    endif()
+    add_definitions(-DSTORM_DEV)
 else()
     set(STORM_LOG_DISABLE_DEBUG ON)
+    if (NOT CMAKE_BUILD_TYPE)
+        set(CMAKE_BUILD_TYPE "RELEASE")
+    endif()
 endif()
+
 message(STATUS "storm - Building ${CMAKE_BUILD_TYPE} version.")
 
 if(STORM_COMPILE_WITH_CCACHE)
