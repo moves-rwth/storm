@@ -430,11 +430,11 @@ namespace storm {
         template<typename ValueType>
         void DFTModelChecker<ValueType>::printTimings(std::ostream& os) {
             os << "Times:" << std::endl;
-            os << "Exploration:\t" << explorationTimer << "s" << std::endl;
-            os << "Building:\t" << buildingTimer << "s" << std::endl;
-            os << "Bisimulation:\t" << bisimulationTimer<< "s" << std::endl;
-            os << "Modelchecking:\t" << modelCheckingTimer << "s" << std::endl;
-            os << "Total:\t\t" << totalTimer << "s" << std::endl;
+            os << "Exploration:\t" << explorationTimer << std::endl;
+            os << "Building:\t" << buildingTimer << std::endl;
+            os << "Bisimulation:\t" << bisimulationTimer<< std::endl;
+            os << "Modelchecking:\t" << modelCheckingTimer << std::endl;
+            os << "Total:\t\t" << totalTimer << std::endl;
         }
 
         template<typename ValueType>
