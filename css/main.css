@@ -15,3 +15,13 @@ body {
   /* Set the fixed height of the footer here */
   height: 60px;
 }
+
+.publication_table > table > tbody > tr > td {
+    padding-bottom: 10px;
+}
+
+.publication_table > table > tbody > tr > td:nth-of-type(2n+1) {
+    padding-right: 10px;
+    padding-left: 10px;
+}
+

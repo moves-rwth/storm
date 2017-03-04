@@ -6,15 +6,17 @@ category_weight: 2
 categories: [Usage]
 ---
 
+{% include toc.html %}
+
 # PRISM
 
 The PRISM language can be used to specify [DTMCs, CTMCs and MDPs](documentation/usage/models.html). Conceptually, it is a guarded command language using reactive modules. Storm supports (almost) the full PRISM language and extends it (in a straightforward way) to [Markov Automata](documentation/usage/models.html).
 
 For more information, please read the [PRISM manual](http://www.prismmodelchecker.org/manual/ThePRISMLanguage/Introduction). A rich collection of examples is available at the [PRISM benchmark suite](http://www.prismmodelchecker.org/benchmarks/).
 
-# Jani
+# JANI
 
-Jani is a recently introduced modeling language for the landscape of probabilistic models. To allow easy parsing, JANI is based on [JSON](http://www.json.org/). In general, JANI models can encode a variety of model types. Storm's support for JANI models covers DTMCs, CTMCs and MDPs.
+JANI is a recently introduced modeling language for the landscape of probabilistic models. To allow easy parsing, JANI is based on [JSON](http://www.json.org/). In general, JANI models can encode a variety of model types. Storm's support for JANI models covers DTMCs, CTMCs and MDPs.
 
 For more information, please visit the [Jani specification](http://www.jani-spec.org), where you can also find some [examples](https://github.com/ahartmanns/jani-models/).
 

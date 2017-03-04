@@ -6,17 +6,12 @@ category_weight: 3
 categories: [Usage]
 ---
 
-# Table of Contents
- {:.no_toc}
-- list
-{:toc}
+{% include toc.html %}
 
-# General
-
-Storm takes properties very similar to the PRISM property language, or alternatively as part of the JANI-specification language.
+Storm takes properties in a format that can be described as an "extended subset" of the [PRISM property language](http://www.prismmodelchecker.org/manual/PropertySpecification/Introduction). Alternatively, if the input is given in terms of a [JANI](languages.html) model, the properties are embedded in the model in the appropriate format.
 
 {:.alert .alert-info}
-For DFTs, GSPNs and probabilistic programs, domain specific properties can be given. These are typically mapped to the properties discussed here. Their meaning and syntax can be found below.
+For DFTs, GSPNs and probabilistic programs, domain-specific properties can be given. For this, we refer to the guide on how to [run Storm](running-storm.html) on those inputs.
 
 ## Identifying States
 
@@ -104,18 +99,3 @@ Coming soon.
 ## Naming Properties
 
 To allow referring to specific properties, they can be equipped with names. To give the name `name` to a property `P`, you can write `"name" : P`.
-
-# DFTs
-
-{:.alert .alert-info}
-Coming soon.
-
-# GSPNs
-
-{:.alert .alert-info}
-Coming soon.
-
-# cpGCL Programs
-
-{:.alert .alert-info}
-Coming soon.

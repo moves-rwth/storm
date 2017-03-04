@@ -80,6 +80,10 @@ and received significant contributions from
 - [Philipp Berger](https://moves.rwth-aachen.de/people/berger/)
 - [Tim Quatman](https://moves.rwth-aachen.de/people/quatmann/)
 
+Furthermore, we are grateful for the feedback and/or patches we received by:
+
+- Joachim Klein, TU Dresden, Germany
+
 # Miscellaneous
 
 Storm

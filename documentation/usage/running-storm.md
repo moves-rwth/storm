@@ -18,6 +18,29 @@ categories: [Usage]
 |------------------------|----------------+----------------|
 
 
+--------------------
+
+
+# Loading models
+
+There are various [input formats](languages.html) that Storm can handle. Some of them need to be transformed to other formats or need to be fed into a specialized binary. The main executable `storm` can treat PRISM, JANI and explicit [input formats](languages.html). Depending on its type, the model needs to be provided via one of the following switches.
+
+- `--prism <prism-file>`
+- `--jani <jani-file>`
+- `--explicit <tra-file> <lab-file>`
+
+# Specifying Properties
+
+Storm supports various [properties](properties.html). They can be passed to Storm by providing the `--prop <properties> <selection>` switch. The `<properties>` argument can be either a property as a string or the path to a file containing the properties. The `<selection>` argument is optional. If set, it can be used to indicate that only certain properties of the provided ones are to be checked. More specifically, this argument is either "all" or a comma-separated list of [names of properties](properties.html#naming-properties) and/or property indices. Note that named properties cannot be indexed by name, but need to be referred to by their name.
+
+# Help message
+
+To get an overview of the available options, you can provide the `--help <hint>` flag. If the `<hint>` is absent or `all`, the full help message is shown. Otherwise, only options matching the hint are displayed.
+
+-------------------------
+
+
+
 # Running storm
 
 We will now discuss some examples to get you started. While they should illustrate how the tool is run, there are many more features and options to explore. For more details, be sure to check the [usage](documentation/usage/usage.html) and consult the help message of Storm. In this tutorial, we assume that `storm` is in your `PATH` (if you installed Storm via [Homebrew](#homebrew) this is already the case; if you built Storm yourself, you need to add it [manually](#adding-storm-to-your-path)).
