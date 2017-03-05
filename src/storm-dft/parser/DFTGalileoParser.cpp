@@ -5,7 +5,6 @@
 #include <boost/algorithm/string.hpp>
 #include <boost/lexical_cast.hpp>
 #include <boost/algorithm/string/replace.hpp>
-#include "storm/storage/expressions/ExpressionManager.h"
 #include "storm/exceptions/NotImplementedException.h"
 #include "storm/exceptions/FileIoException.h"
 #include "storm/exceptions/NotSupportedException.h"

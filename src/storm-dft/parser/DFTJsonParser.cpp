@@ -5,7 +5,6 @@
 #include <boost/algorithm/string.hpp>
 #include <boost/lexical_cast.hpp>
 #include <boost/algorithm/string/replace.hpp>
-#include "storm/storage/expressions/ExpressionManager.h"
 #include "storm/exceptions/NotImplementedException.h"
 #include "storm/exceptions/FileIoException.h"
 #include "storm/exceptions/NotSupportedException.h"
@@ -42,9 +41,17 @@ namespace storm {
             parsedJson << file;
             storm::utility::closeFile(file);
 
-            storm::expressions::Variable var = manager->declareRationalVariable("x");
-            identifierMapping.emplace(var.getName(), var);
-            parser.setIdentifierMapping(identifierMapping);
+            json parameters = parsedJson.at("parameters");
+#ifdef STORM_HAVE_CARL
+            STORM_LOG_THROW((std::is_same<ValueType, storm::RationalFunction>::value), storm::exceptions::NotSupportedException, "Parameters only allowed when using rational functions.");
+            for (auto it = parameters.begin(); it != parameters.end(); ++it) {
+                std::string parameter = it.key();
+                storm::expressions::Variable var = manager->declareRationalVariable(parameter);
+                identifierMapping.emplace(var.getName(), var);
+                parser.setIdentifierMapping(identifierMapping);
+                STORM_LOG_TRACE("Added parameter: " << var.getName());
+            }
+#endif
 
             json nodes = parsedJson.at("nodes");
 
