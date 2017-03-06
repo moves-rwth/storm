@@ -912,7 +912,7 @@ s             * @param insertDiagonalEntries If set to true, the resulting matri
              * @param offset which row in the group
              * @return An object representing the given row.
              */
-            rows getRow(index_type rowGroup, index_type entryInGroup);
+            rows getRow(index_type rowGroup, index_type offset);
             
             /*!
              * Returns an object representing the given row group.

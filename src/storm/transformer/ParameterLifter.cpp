@@ -12,40 +12,44 @@ namespace storm {
         template<typename ParametricType, typename ConstantType>
         ParameterLifter<ParametricType, ConstantType>::ParameterLifter(storm::storage::SparseMatrix<ParametricType> const& pMatrix, std::vector<ParametricType> const& pVector, storm::storage::BitVector const& selectedRows, storm::storage::BitVector const& selectedColumns) {
         
-            // get a mapping from old column indices to new once
+            // get a mapping from old column indices to new ones
             std::vector<uint_fast64_t> oldToNewColumnIndexMapping(selectedColumns.size(), selectedColumns.size());
             uint_fast64_t newIndex = 0;
             for (auto const& oldColumn : selectedColumns) {
                 oldToNewColumnIndexMapping[oldColumn] = newIndex++;
             }
             
-            // Stores which entries of the original matrix/vector are non-constant
-            storm::storage::BitVector nonConstMatrixEntries(pMatrix.getEntryCount(), false);
-            storm::storage::BitVector nonConstVectorEntries(pVector.size(), false);
-            uint_fast64_t pMatrixEntryIndex = 0;
-            uint_fast64_t pVectorEntryIndex = 0;
+            // Stores which entries of the original matrix/vector are non-constant. Entries for non-selected rows/columns are omitted
+            storm::storage::BitVector nonConstMatrixEntries(pMatrix.getEntryCount(), false); // note that this vector is too large if there are non-selected rows/columns
+            storm::storage::BitVector nonConstVectorEntries(selectedRows.getNumberOfSetBits(), false);
+            // Counters for selected entries in the pMatrix and the pVector
+            uint_fast64_t pMatrixEntryCount = 0;
+            uint_fast64_t pVectorEntryCount = 0;
             
             // The matrix builder for the new matrix. The correct number of rows and entries is not known yet.
-            storm::storage::SparseMatrixBuilder<ConstantType> builder(0, pMatrix.getColumnCount(), 0, true, true, pMatrix.getRowCount());
+            storm::storage::SparseMatrixBuilder<ConstantType> builder(0, selectedColumns.getNumberOfSetBits(), 0, true, true, selectedRows.getNumberOfSetBits());
             uint_fast64_t newRowIndex = 0;
-            for (uint_fast64_t rowIndex = 0; rowIndex < pMatrix.getRowCount(); ++rowIndex) {
+            for (auto const& rowIndex : selectedRows) {
                 builder.newRowGroup(newRowIndex);
                 
                 // Gather the occurring variables within this row and set which entries are non-constant
                 std::set<VariableType> occurringVariables;
                 for (auto const& entry : pMatrix.getRow(rowIndex)) {
-                    if (!storm::utility::isConstant(entry.getValue())) {
-                        storm::utility::parametric::gatherOccurringVariables(entry.getValue(), occurringVariables);
-                        nonConstMatrixEntries.set(pMatrixEntryIndex++, true);
+                    if (selectedColumns.get(entry.getColumn())) {
+                        if (!storm::utility::isConstant(entry.getValue())) {
+                            storm::utility::parametric::gatherOccurringVariables(entry.getValue(), occurringVariables);
+                            nonConstMatrixEntries.set(pMatrixEntryCount, true);
+                        }
+                        ++pMatrixEntryCount;
                     }
                 }
-                
                 ParametricType const& pVectorEntry = pVector[rowIndex];
                 std::set<VariableType> vectorEntryVariables;
                 if (!storm::utility::isConstant(pVectorEntry)) {
                     storm::utility::parametric::gatherOccurringVariables(pVectorEntry, vectorEntryVariables);
-                    nonConstVectorEntries.set(pVectorEntryIndex++, true);
+                    nonConstVectorEntries.set(pVectorEntryCount, true);
                 }
+                ++pVectorEntryCount;
                 
                 // Compute the (abstract) valuation for each row
                 auto rowValuations = getVerticesOfAbstractRegion(occurringVariables);
@@ -54,12 +58,14 @@ namespace storm {
                     // Insert matrix entries for each valuation. For non-constant entries, a dummy value is inserted and the function and the valuation are collected.
                     // The placeholder for the collected function/valuation are stored in the matrixAssignment. The matrixAssignment is completed after the matrix is finished
                     for (auto const& entry: pMatrix.getRow(rowIndex)) {
-                        if(storm::utility::isConstant(entry.getValue())) {
-                            builder.addNextValue(newRowIndex, oldToNewColumnIndexMapping[entry.getColumn()], storm::utility::convertNumber<ConstantType>(entry.getValue()));
-                        } else {
-                            builder.addNextValue(newRowIndex, oldToNewColumnIndexMapping[entry.getColumn()], storm::utility::one<ConstantType>());
-                            ConstantType& placeholder = functionValuationCollector.add(entry.getValue(), val);
-                            matrixAssignment.push_back(std::pair<typename storm::storage::SparseMatrix<ConstantType>::iterator, ConstantType&>(matrix.begin(), placeholder));
+                        if(selectedColumns.get(entry.getColumn())) {
+                            if(storm::utility::isConstant(entry.getValue())) {
+                                builder.addNextValue(newRowIndex, oldToNewColumnIndexMapping[entry.getColumn()], storm::utility::convertNumber<ConstantType>(entry.getValue()));
+                            } else {
+                                builder.addNextValue(newRowIndex, oldToNewColumnIndexMapping[entry.getColumn()], storm::utility::one<ConstantType>());
+                                ConstantType& placeholder = functionValuationCollector.add(entry.getValue(), val);
+                                matrixAssignment.push_back(std::pair<typename storm::storage::SparseMatrix<ConstantType>::iterator, ConstantType&>(typename storm::storage::SparseMatrix<ConstantType>::iterator(), placeholder));
+                            }
                         }
                     }
                     
@@ -75,27 +81,28 @@ namespace storm {
                             }
                         }
                         ConstantType& placeholder = functionValuationCollector.add(pVectorEntry, vectorVal);
-                        vectorAssignment.push_back(std::pair<typename std::vector<ConstantType>::iterator, ConstantType&>(vector.begin(), placeholder));
+                        vectorAssignment.push_back(std::pair<typename std::vector<ConstantType>::iterator, ConstantType&>(typename std::vector<ConstantType>::iterator(), placeholder));
                     }
+
                     ++newRowIndex;
                 }
             }
             
             // Matrix and vector are now filled with constant results from constant functions and place holders for non-constant functions.
-            matrix = builder.build();
+            matrix = builder.build(newRowIndex);
             vector.shrink_to_fit();
             matrixAssignment.shrink_to_fit();
             vectorAssignment.shrink_to_fit();
+            nonConstMatrixEntries.resize(pMatrixEntryCount);
             
             // Now insert the correct iterators for the matrix and vector assignment
             auto matrixAssignmentIt = matrixAssignment.begin();
             uint_fast64_t startEntryOfRow = 0;
-            for (uint_fast64_t pMatrixRow = 0; pMatrixRow < pMatrix.getRowCount(); ++pMatrixRow) {
-                uint_fast64_t startEntryOfNextRow = startEntryOfRow + pMatrix.getRow(pMatrixRow).getNumberOfEntries();
-                for (uint_fast64_t matrixRow = matrix.getRowGroupIndices()[pMatrixRow]; matrixRow < matrix.getRowGroupIndices()[pMatrixRow + 1]; ++matrixRow) {
+            for (uint_fast64_t group = 0; group < matrix.getRowGroupCount(); ++group) {
+                uint_fast64_t startEntryOfNextRow = startEntryOfRow + matrix.getRow(group, 0).getNumberOfEntries();
+                for (uint_fast64_t matrixRow = matrix.getRowGroupIndices()[group]; matrixRow < matrix.getRowGroupIndices()[group + 1]; ++matrixRow) {
                     auto matrixEntryIt = matrix.getRow(matrixRow).begin();
                     for(uint_fast64_t nonConstEntryIndex = nonConstMatrixEntries.getNextSetIndex(startEntryOfRow); nonConstEntryIndex < startEntryOfNextRow; nonConstEntryIndex = nonConstMatrixEntries.getNextSetIndex(nonConstEntryIndex + 1)) {
-                        STORM_LOG_ASSERT(!storm::utility::isConstant((pMatrix.begin() + nonConstEntryIndex)->getValue()), "Expected a non-constant matrix entry.");
                         matrixAssignmentIt->first = matrixEntryIt + (nonConstEntryIndex - startEntryOfRow);
                         ++matrixAssignmentIt;
                     }
@@ -110,10 +117,8 @@ namespace storm {
                     vectorAssignmentIt->first = vector.begin() + vectorIndex;
                     ++vectorAssignmentIt;
                 }
-                STORM_LOG_ASSERT(!storm::utility::isConstant(pVector[nonConstVectorEntry]), "Expected a non-constant vector entry.");
             }
             STORM_LOG_ASSERT(vectorAssignmentIt == vectorAssignment.end(), "Unexpected number of entries in the vector assignment.");
-            
         }
     
         template<typename ParametricType, typename ConstantType>
@@ -223,7 +228,7 @@ namespace storm {
     
         template<typename ParametricType, typename ConstantType>
         void ParameterLifter<ParametricType, ConstantType>::FunctionValuationCollector::evaluateCollectedFunctions(storm::modelchecker::parametric::ParameterRegion<ParametricType> const& region, storm::solver::OptimizationDirection const& dirForUnspecifiedParameters) {
-            for(auto& collectedFunctionValuationPlaceholder : collectedFunctions) {
+            for (auto& collectedFunctionValuationPlaceholder : collectedFunctions) {
                 ParametricType const& function = collectedFunctionValuationPlaceholder.first.first;
                 AbstractValuation const& abstrValuation = collectedFunctionValuationPlaceholder.first.second;
                 ConstantType& placeholder = collectedFunctionValuationPlaceholder.second;

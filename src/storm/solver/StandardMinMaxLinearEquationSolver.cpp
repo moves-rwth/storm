@@ -400,11 +400,16 @@ namespace storm {
         
         template<typename ValueType>
         std::unique_ptr<MinMaxLinearEquationSolver<ValueType>> StandardMinMaxLinearEquationSolverFactory<ValueType>::create(storm::storage::SparseMatrix<ValueType> const& matrix) const {
+            std::unique_ptr<MinMaxLinearEquationSolver<ValueType>> result;
             if (linearEquationSolverFactory) {
-                return std::make_unique<StandardMinMaxLinearEquationSolver<ValueType>>(matrix, linearEquationSolverFactory->clone(), settings);
+                result = std::make_unique<StandardMinMaxLinearEquationSolver<ValueType>>(matrix, linearEquationSolverFactory->clone(), settings);
             } else {
-                return std::make_unique<StandardMinMaxLinearEquationSolver<ValueType>>(matrix, std::make_unique<GeneralLinearEquationSolverFactory<ValueType>>(), settings);
+                result = std::make_unique<StandardMinMaxLinearEquationSolver<ValueType>>(matrix, std::make_unique<GeneralLinearEquationSolverFactory<ValueType>>(), settings);
             }
+            if (this->isTrackSchedulerSet()) {
+                result->setTrackScheduler(true);
+            }
+            return result;
         }
         
         template<typename ValueType>

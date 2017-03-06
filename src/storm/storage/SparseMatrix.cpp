@@ -1367,7 +1367,7 @@ namespace storm {
         template<typename ValueType>
         typename SparseMatrix<ValueType>::const_rows SparseMatrix<ValueType>::getRow(index_type rowGroup, index_type offset) const {
             STORM_LOG_ASSERT(rowGroup < this->getRowGroupCount(), "Row group is out-of-bounds.");
-            STORM_LOG_ASSERT(offset < this->getRowGroupEntryCount(rowGroup), "Row offset in row-group is out-of-bounds.");
+            STORM_LOG_ASSERT(offset < this->getRowGroupSize(rowGroup), "Row offset in row-group is out-of-bounds.");
             if (!this->hasTrivialRowGrouping()) {
                 return getRow(this->getRowGroupIndices()[rowGroup] + offset);
             } else {
@@ -1378,7 +1378,7 @@ namespace storm {
         template<typename ValueType>
         typename SparseMatrix<ValueType>::rows SparseMatrix<ValueType>::getRow(index_type rowGroup, index_type offset) {
             STORM_LOG_ASSERT(rowGroup < this->getRowGroupCount(), "Row group is out-of-bounds.");
-            STORM_LOG_ASSERT(offset < this->getRowGroupEntryCount(rowGroup), "Row offset in row-group is out-of-bounds.");
+            STORM_LOG_ASSERT(offset < this->getRowGroupSize(rowGroup), "Row offset in row-group is out-of-bounds.");
             if (!this->hasTrivialRowGrouping()) {
                 return getRow(this->getRowGroupIndices()[rowGroup] + offset);
             } else {

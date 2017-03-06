@@ -19,12 +19,10 @@ namespace storm {
             
             template <typename SparseModelType, typename ConstantType>
             SparseDtmcParameterLiftingModelChecker<SparseModelType, ConstantType>::SparseDtmcParameterLiftingModelChecker(SparseModelType const& parametricModel) : SparseParameterLiftingModelChecker<SparseModelType, ConstantType>(parametricModel), solverFactory(std::make_unique<storm::solver::GeneralMinMaxLinearEquationSolverFactory<ConstantType>>()) {
-                solverFactory->setTrackScheduler(true);
             }
             
             template <typename SparseModelType, typename ConstantType>
             SparseDtmcParameterLiftingModelChecker<SparseModelType, ConstantType>::SparseDtmcParameterLiftingModelChecker(SparseModelType const& parametricModel, std::unique_ptr<storm::solver::MinMaxLinearEquationSolverFactory<ConstantType>>&& solverFactory) : SparseParameterLiftingModelChecker<SparseModelType, ConstantType>(parametricModel), solverFactory(std::move(solverFactory)) {
-                solverFactory->setTrackScheduler(true);
             }
     
             template <typename SparseModelType, typename ConstantType>
@@ -159,10 +157,15 @@ namespace storm {
             template <typename SparseModelType, typename ConstantType>
             std::unique_ptr<CheckResult> SparseDtmcParameterLiftingModelChecker<SparseModelType, ConstantType>::computeQuantitativeValues(ParameterRegion<typename SparseModelType::ValueType> const& region, storm::solver::OptimizationDirection const& dirForParameters) {
                 
+                if(maybeStates.empty()) {
+                    return std::make_unique<storm::modelchecker::ExplicitQuantitativeCheckResult<ConstantType>>(resultsForNonMaybeStates);
+                }
+                
                 parameterLifter->specifyRegion(region, dirForParameters);
                 
                 // Set up the solver
                 auto solver = solverFactory->create(parameterLifter->getMatrix());
+                solver->setTrackScheduler(true);
                 if(lowerResultBound) solver->setLowerBound(lowerResultBound.get());
                 if(upperResultBound) solver->setUpperBound(upperResultBound.get());
                 if(storm::solver::minimize(dirForParameters) && minSched && !stepBound) solver->setSchedulerHint(std::move(minSched.get()));

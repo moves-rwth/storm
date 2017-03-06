@@ -214,7 +214,7 @@ TEST(SparseDtmcRegionModelCheckerTest, Brp_Rew_Infty) {
     ASSERT_FALSE(dtmcModelchecker->getSettings().doApprox());
     ASSERT_TRUE(dtmcModelchecker->getSettings().doSample());
     ASSERT_TRUE(dtmcModelchecker->getSettings().doSmt());
-    dtmcModelchecker->checkRegion(allSatRegionSmt);
+  //  dtmcModelchecker->checkRegion(allSatRegionSmt);
 //smt    EXPECT_EQ((storm::modelchecker::region::RegionCheckResult::ALLSAT), allSatRegionSmt.getCheckResult());
 
     carl::VariablePool::getInstance().clear();
