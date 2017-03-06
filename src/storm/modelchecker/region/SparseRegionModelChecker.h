@@ -2,12 +2,15 @@
 
 #include <ostream>
 #include <boost/optional.hpp>
+#include <storm/modelchecker/parametric/SparseParameterLiftingModelChecker.h>
 
 #include "storm/utility/region.h"
 #include "storm/modelchecker/region/AbstractSparseRegionModelChecker.h"
 #include "storm/modelchecker/region/ParameterRegion.h"
 #include "storm/modelchecker/region/ApproximationModel.h"
 #include "storm/modelchecker/parametric/SparseInstantiationModelChecker.h"
+#include "storm/modelchecker/parametric/SparseParameterLiftingModelChecker.h"
+
 
 #include "storm/models/sparse/StandardRewardModel.h"
 #include "storm/models/sparse/Model.h"
@@ -39,7 +42,7 @@ namespace storm {
                 storm::settings::modules::RegionSettings::ApproxMode approxMode;
                 storm::settings::modules::RegionSettings::SmtMode    smtMode;
             };
-
+            
             template<typename ParametricSparseModelType, typename ConstantType>
             class SparseRegionModelChecker : public AbstractSparseRegionModelChecker<typename ParametricSparseModelType::ValueType, ConstantType> {
             public:
@@ -191,7 +194,7 @@ namespace storm {
                  * Returns the approximation model.
                  * If it is not yet available, it is computed.
                  */
-                std::shared_ptr<ApproximationModel<ParametricSparseModelType, ConstantType>> const& getApproximationModel();
+                std::shared_ptr<storm::modelchecker::parametric::SparseParameterLiftingModelChecker<ParametricSparseModelType, ConstantType>> const& getApproximationModel();
                 
                 /*!
                  * Checks the value of the function at some sampling points within the given region.
@@ -240,13 +243,18 @@ namespace storm {
                                 // the model that can be instantiated to check the value at a certain point
                 std::shared_ptr<storm::modelchecker::parametric::SparseInstantiationModelChecker<ParametricSparseModelType, ConstantType>> samplingModel;
                 
-            private:
-                /*!
+                                /*!
                  * initializes the Approximation Model
-                 * 
+                 *
                  * @note does not check whether approximation can be applied
                  */
-                void initializeApproximationModel(ParametricSparseModelType const& model, std::shared_ptr<storm::logic::OperatorFormula const> formula);
+                virtual void initializeApproximationModel(ParametricSparseModelType const& model, std::shared_ptr<storm::logic::OperatorFormula const> formula) = 0;
+                
+                // the model that  is used to approximate the reachability values
+                std::shared_ptr<storm::modelchecker::parametric::SparseParameterLiftingModelChecker<ParametricSparseModelType, ConstantType>> approximationModel;
+                
+            private:
+
 
                 
                 // The model this model checker is supposed to analyze.
@@ -261,8 +269,6 @@ namespace storm {
                 std::shared_ptr<storm::logic::OperatorFormula const> simpleFormula;
                 // a flag that is true if approximation is applicable, i.e., there are only linear functions at transitions of the model
                 bool isApproximationApplicable;
-                // the model that  is used to approximate the reachability values
-                std::shared_ptr<ApproximationModel<ParametricSparseModelType, ConstantType>> approximationModel;
 
                 // a flag that is true iff the resulting reachability function is constant
                 boost::optional<ConstantType> constantResult;

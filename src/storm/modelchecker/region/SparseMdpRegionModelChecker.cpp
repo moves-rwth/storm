@@ -316,6 +316,13 @@ namespace storm {
                 STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "checkSmt invoked but smt solving has not been implemented for MDPs.");
             }
 
+            
+                        
+            template<typename ParametricSparseModelType, typename ConstantType>
+            void SparseRegionModelChecker<ParametricSparseModelType, ConstantType>::initializeApproximationModel(ParametricSparseModelType const& model, std::shared_ptr<storm::logic::OperatorFormula const> formula) {
+                std::cout << "approx model for mdps not implemented" << std::endl;
+            }
+            
 #ifdef STORM_HAVE_CARL
             template class SparseMdpRegionModelChecker<storm::models::sparse::Mdp<storm::RationalFunction>, double>;
 #endif

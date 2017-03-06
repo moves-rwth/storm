@@ -62,6 +62,13 @@ namespace storm {
                  */
                 virtual void initializeSamplingModel(ParametricSparseModelType const& model, std::shared_ptr<storm::logic::OperatorFormula const> formula) override;
 
+                
+                /*!
+                 * initializes the Approx Model
+                 */
+                virtual void initializeApproximationModel(ParametricSparseModelType const& model, std::shared_ptr<storm::logic::OperatorFormula const> formula) override;
+                
+                
                 private:
                 /*!
                  * Does some sanity checks and preprocessing steps on the currently specified model and 

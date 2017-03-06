@@ -19,6 +19,9 @@
 #include "storm/exceptions/UnexpectedException.h"
 #include "modelchecker/results/CheckResult.h"
 #include "modelchecker/results/ExplicitQuantitativeCheckResult.h"
+#include "modelchecker/results/ExplicitQualitativeCheckResult.h"
+#include "storm/modelchecker/parametric/ParameterRegion.h"
+
 
 namespace storm {
     namespace modelchecker {
@@ -189,17 +192,6 @@ namespace storm {
                 std::chrono::high_resolution_clock::time_point timeSpecifyFormulaEnd = std::chrono::high_resolution_clock::now();
                 this->timeSpecifyFormula= timeSpecifyFormulaEnd - timeSpecifyFormulaStart;
                 this->timePreprocessing = timePreprocessingEnd - timePreprocessingStart;  
-            }
-            
-            template<typename ParametricSparseModelType, typename ConstantType>
-            void SparseRegionModelChecker<ParametricSparseModelType, ConstantType>::initializeApproximationModel(ParametricSparseModelType const& model, std::shared_ptr<storm::logic::OperatorFormula const> formula) {
-                std::chrono::high_resolution_clock::time_point timeInitApproxModelStart = std::chrono::high_resolution_clock::now();
-                STORM_LOG_DEBUG("Initializing the Approximation Model...");
-                STORM_LOG_THROW(this->isApproximationApplicable, storm::exceptions::UnexpectedException, "Approximation model requested but approximation is not applicable");
-                this->approximationModel=std::make_shared<ApproximationModel<ParametricSparseModelType, ConstantType>>(model, formula);
-                std::chrono::high_resolution_clock::time_point timeInitApproxModelEnd = std::chrono::high_resolution_clock::now();
-                this->timeInitApproxModel=timeInitApproxModelEnd - timeInitApproxModelStart;
-                STORM_LOG_DEBUG("Initialized Approximation Model");
             }
             
             template<typename ParametricSparseModelType, typename ConstantType>
@@ -408,12 +400,12 @@ namespace storm {
                     return (proveAllSat==this->checkFormulaOnSamplingPoint(region.getSomePoint()));
                 }
                 bool computeLowerBounds = (this->specifiedFormulaHasLowerBound() && proveAllSat) || (!this->specifiedFormulaHasLowerBound() && !proveAllSat);
-                bool formulaSatisfied = this->getApproximationModel()->checkFormulaOnRegion(region, computeLowerBounds);
+                bool formulaSatisfied = this->valueIsInBoundOfFormula(this->getApproximationModel()->check(storm::modelchecker::parametric::ParameterRegion<typename ParametricSparseModelType::ValueType>(region.getLowerBoundaries(), region.getUpperBoundaries()), computeLowerBounds ? storm::solver::OptimizationDirection::Minimize : storm::solver::OptimizationDirection::Maximize)->template asExplicitQuantitativeCheckResult<ConstantType>()[*this->simpleModel->getInitialStates().begin()]);
                 return (proveAllSat==formulaSatisfied);
             }
                 
             template<typename ParametricSparseModelType, typename ConstantType>
-            std::shared_ptr<ApproximationModel<ParametricSparseModelType, ConstantType>> const& SparseRegionModelChecker<ParametricSparseModelType, ConstantType>::getApproximationModel() {
+            std::shared_ptr<storm::modelchecker::parametric::SparseParameterLiftingModelChecker<ParametricSparseModelType, ConstantType>> const& SparseRegionModelChecker<ParametricSparseModelType, ConstantType>::getApproximationModel() {
                 if(this->approximationModel==nullptr){
                     STORM_LOG_WARN("Approximation model requested but it has not been initialized when specifying the formula. Will initialize it now.");
                     initializeApproximationModel(*this->getSimpleModel(), this->getSimpleFormula());
