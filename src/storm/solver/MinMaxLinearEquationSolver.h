@@ -70,7 +70,7 @@ namespace storm {
              * vector must be equal to the number of rows of A.
              * @return The result of the repeated matrix-vector multiplication as the content of the vector x.
              */
-            virtual void repeatedMultiply(OptimizationDirection d, std::vector<ValueType>& x, std::vector<ValueType>* b, uint_fast64_t n = 1) const = 0;
+            virtual void repeatedMultiply(OptimizationDirection d, std::vector<ValueType>& x, std::vector<ValueType> const* b, uint_fast64_t n = 1) const = 0;
             
             /*!
              * Behaves the same as the other variant of <code>multiply</code>, with the

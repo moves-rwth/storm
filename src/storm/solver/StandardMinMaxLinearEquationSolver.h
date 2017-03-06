@@ -39,7 +39,7 @@ namespace storm {
             StandardMinMaxLinearEquationSolver(storm::storage::SparseMatrix<ValueType>&& A, std::unique_ptr<LinearEquationSolverFactory<ValueType>>&& linearEquationSolverFactory, StandardMinMaxLinearEquationSolverSettings<ValueType> const& settings = StandardMinMaxLinearEquationSolverSettings<ValueType>());
             
             virtual bool solveEquations(OptimizationDirection dir, std::vector<ValueType>& x, std::vector<ValueType> const& b) const override;
-            virtual void repeatedMultiply(OptimizationDirection dir, std::vector<ValueType>& x, std::vector<ValueType>* b, uint_fast64_t n) const override;
+            virtual void repeatedMultiply(OptimizationDirection dir, std::vector<ValueType>& x, std::vector<ValueType> const* b, uint_fast64_t n) const override;
 
             StandardMinMaxLinearEquationSolverSettings<ValueType> const& getSettings() const;
             void setSettings(StandardMinMaxLinearEquationSolverSettings<ValueType> const& newSettings);
