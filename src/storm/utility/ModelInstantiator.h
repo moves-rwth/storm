@@ -1,10 +1,3 @@
-/* 
- * File:   ModelInstantiator.h
- * Author: Tim Quatmann
- *
- * Created on February 23, 2016
- */
-
 #ifndef STORM_UTILITY_MODELINSTANTIATOR_H
 #define	STORM_UTILITY_MODELINSTANTIATOR_H
 

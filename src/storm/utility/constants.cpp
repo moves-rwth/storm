@@ -393,6 +393,11 @@ namespace storm {
         RationalFunction convertNumber(double const& number){
             return RationalFunction(carl::rationalize<RationalNumber>(number));
         }
+        
+        template<>
+        double convertNumber(RationalFunction const& number){
+            return carl::toDouble(number.constantPart());
+        }
 
         template<>
         RationalFunction convertNumber(int_fast64_t const& number){

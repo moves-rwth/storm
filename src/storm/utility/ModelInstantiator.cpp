@@ -1,10 +1,3 @@
-/* 
- * File:   ModelInstantiator.cpp
- * Author: Tim Quatmann
- * 
- * Created on February 23, 2016
- */
-
 #include "storm/utility/ModelInstantiator.h"
 #include "storm/models/sparse/StandardRewardModel.h"
 

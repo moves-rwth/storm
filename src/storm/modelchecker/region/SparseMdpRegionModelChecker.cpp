@@ -319,7 +319,7 @@ namespace storm {
             
                         
             template<typename ParametricSparseModelType, typename ConstantType>
-            void SparseRegionModelChecker<ParametricSparseModelType, ConstantType>::initializeApproximationModel(ParametricSparseModelType const& model, std::shared_ptr<storm::logic::OperatorFormula const> formula) {
+            void SparseMdpRegionModelChecker<ParametricSparseModelType, ConstantType>::initializeApproximationModel(ParametricSparseModelType const& model, std::shared_ptr<storm::logic::OperatorFormula const> formula) {
                 std::cout << "approx model for mdps not implemented" << std::endl;
             }
             

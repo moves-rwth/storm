@@ -3,6 +3,7 @@
 
 #include <boost/optional.hpp>
 #include <memory>
+#include <storm/exceptions/InvalidTypeException.h>
 
 #include "storm/logic/Formulas.h"
 #include "storm/utility/constants.h"
@@ -83,6 +84,20 @@ namespace storm {
             template<typename NewFormulaType>
             CheckTask<NewFormulaType, ValueType> substituteFormula(NewFormulaType const& newFormula) const {
                 return CheckTask<NewFormulaType, ValueType>(newFormula, this->optimizationDirection, this->rewardModel, this->onlyInitialStatesRelevant, this->bound, this->qualitative, this->produceSchedulers, this->hint);
+            }
+                        
+            /*!
+             * Copies the check task from the source while replacing the considered ValueType the new one. In particular, this
+             * changes the formula type of the check task object.
+             */
+            template<typename NewValueType>
+            CheckTask<FormulaType, NewValueType> convertValueType() const {
+                boost::optional<storm::logic::Bound<NewValueType>> newBound;
+                if(this->bound.is_initialized()) {
+                    STORM_LOG_THROW(storm::utility::isConstant(this->getBoundThreshold()), storm::exceptions::InvalidTypeException, "Tried to convert a non-constant threshold ");
+                    newBound = storm::logic::Bound<NewValueType>(this->getBoundComparisonType(), storm::utility::convertNumber<NewValueType>(this->getBoundThreshold()));
+                }
+                return CheckTask<FormulaType, NewValueType>(this->formula, this->optimizationDirection, this->rewardModel, this->onlyInitialStatesRelevant, newBound, this->qualitative, this->produceSchedulers, this->hint);
             }
             
             /*!

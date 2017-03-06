@@ -1,10 +1,3 @@
-/* 
- * File:   parametric.cpp
- * Author: Tim Quatmann
- * 
- * Created by Tim Quatmann on 08/03/16.
- */
-
 #include <string>
 
 #include "storm/utility/parametric.h"
@@ -32,6 +25,11 @@ namespace storm {
             template<>
             typename CoefficientType<storm::RationalFunction>::type getConstantPart<storm::RationalFunction>(storm::RationalFunction const& function){
                 return function.constantPart();
+            }
+                        
+            template<>
+            void gatherOccurringVariables<storm::RationalFunction>(storm::RationalFunction const& function, std::set<typename VariableType<storm::RationalFunction>::type>& variableSet){
+                function.gatherVariables(variableSet);
             }
 #endif
         }

@@ -20,8 +20,7 @@ namespace storm {
             template <typename SparseModelType, typename ConstantType>
             void SparseInstantiationModelChecker<SparseModelType, ConstantType>::specifyFormula(storm::modelchecker::CheckTask<storm::logic::Formula, typename SparseModelType::ValueType> const& checkTask) {
                 currentFormula = checkTask.getFormula().asSharedPointer();
-                currentCheckTask = std::make_unique<storm::modelchecker::CheckTask<storm::logic::Formula, ConstantType>>(*currentFormula, checkTask.isOnlyInitialStatesRelevantSet());
-                currentCheckTask->setProduceSchedulers(checkTask.isProduceSchedulersSet());
+                currentCheckTask = std::make_unique<storm::modelchecker::CheckTask<storm::logic::Formula, ConstantType>>(checkTask.substituteFormula(*currentFormula).template convertValueType<ConstantType>());
             }
             
             template <typename SparseModelType, typename ConstantType>

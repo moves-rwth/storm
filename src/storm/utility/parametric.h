@@ -41,7 +41,13 @@ namespace storm {
              */
             template<typename FunctionType>
             typename CoefficientType<FunctionType>::type getConstantPart(FunctionType const& function);
-
+            
+            /*!
+             *  Add all variables that occur in the given function to the the given set
+             */
+            template<typename FunctionType>
+            void gatherOccurringVariables(FunctionType const& function, std::set<typename VariableType<FunctionType>::type>& variableSet);
+            
         }
         
     }
