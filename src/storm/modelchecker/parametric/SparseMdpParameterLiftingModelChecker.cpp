@@ -1,13 +1,14 @@
-#include "SparseDtmcParameterLiftingModelChecker.h"
+#include "SparseMdpParameterLiftingModelChecker.h"
 
 #include "storm/adapters/CarlAdapter.h"
 #include "storm/modelchecker/propositional/SparsePropositionalModelChecker.h"
 #include "storm/modelchecker/results/ExplicitQualitativeCheckResult.h"
 #include "storm/modelchecker/results/ExplicitQuantitativeCheckResult.h"
-#include "storm/models/sparse/Dtmc.h"
+#include "storm/models/sparse/Mdp.h"
 #include "storm/models/sparse/StandardRewardModel.h"
 #include "storm/utility/vector.h"
 #include "storm/utility/graph.h"
+#include "storm/solver/GameSolver.h"
 
 #include "storm/exceptions/InvalidArgumentException.h"
 #include "storm/exceptions/InvalidPropertyException.h"
@@ -18,15 +19,15 @@ namespace storm {
         namespace parametric {
             
             template <typename SparseModelType, typename ConstantType>
-            SparseDtmcParameterLiftingModelChecker<SparseModelType, ConstantType>::SparseDtmcParameterLiftingModelChecker(SparseModelType const& parametricModel) : SparseParameterLiftingModelChecker<SparseModelType, ConstantType>(parametricModel), solverFactory(std::make_unique<storm::solver::GeneralMinMaxLinearEquationSolverFactory<ConstantType>>()) {
+            SparseMdpParameterLiftingModelChecker<SparseModelType, ConstantType>::SparseMdpParameterLiftingModelChecker(SparseModelType const& parametricModel) : SparseParameterLiftingModelChecker<SparseModelType, ConstantType>(parametricModel), solverFactory(std::make_unique<storm::utility::solver::GameSolverFactory<ConstantType>>()) {
             }
             
             template <typename SparseModelType, typename ConstantType>
-            SparseDtmcParameterLiftingModelChecker<SparseModelType, ConstantType>::SparseDtmcParameterLiftingModelChecker(SparseModelType const& parametricModel, std::unique_ptr<storm::solver::MinMaxLinearEquationSolverFactory<ConstantType>>&& solverFactory) : SparseParameterLiftingModelChecker<SparseModelType, ConstantType>(parametricModel), solverFactory(std::move(solverFactory)) {
+            SparseMdpParameterLiftingModelChecker<SparseModelType, ConstantType>::SparseMdpParameterLiftingModelChecker(SparseModelType const& parametricModel, std::unique_ptr<storm::utility::solver::GameSolverFactory<ConstantType>>&& solverFactory) : SparseParameterLiftingModelChecker<SparseModelType, ConstantType>(parametricModel), solverFactory(std::move(solverFactory)) {
             }
     
             template <typename SparseModelType, typename ConstantType>
-            void SparseDtmcParameterLiftingModelChecker<SparseModelType, ConstantType>::specifyBoundedUntilFormula(CheckTask<logic::BoundedUntilFormula, ConstantType> const& checkTask) {
+            void SparseMdpParameterLiftingModelChecker<SparseModelType, ConstantType>::specifyBoundedUntilFormula(CheckTask<logic::BoundedUntilFormula, ConstantType> const& checkTask) {
                 
                 // get the step bound
                 STORM_LOG_THROW(!checkTask.getFormula().hasLowerBound(), storm::exceptions::NotSupportedException, "Lower step bounds are not supported.");
@@ -47,7 +48,9 @@ namespace storm {
                 storm::storage::BitVector psiStates = std::move(propositionalChecker.check(checkTask.getFormula().getRightSubformula())->asExplicitQualitativeCheckResult().getTruthValuesVector());
                 
                 // get the maybeStates
-                maybeStates = storm::utility::graph::performProbGreater0(this->parametricModel.getBackwardTransitions(), phiStates, psiStates, true, *stepBound);
+                maybeStates = storm::solver::minimize(checkTask.getOptimizationDirection()) ?
+                              storm::utility::graph::performProbGreater0A(this->parametricModel.getTransitionMatrix(), this->parametricModel.getTransitionMatrix().getRowGroupIndices(), this->parametricModel.getBackwardTransitions(), phiStates, psiStates, true, *stepBound) :
+                              storm::utility::graph::performProbGreater0E(this->parametricModel.getBackwardTransitions(), phiStates, psiStates, true, *stepBound);
                 maybeStates &= ~psiStates;
                 
                 // set the result for all non-maybe states
@@ -59,16 +62,19 @@ namespace storm {
                     // Create the vector of one-step probabilities to go to target states.
                     std::vector<typename SparseModelType::ValueType> b = this->parametricModel.getTransitionMatrix().getConstrainedRowSumVector(storm::storage::BitVector(this->parametricModel.getTransitionMatrix().getRowCount(), true), psiStates);
                     
-                    parameterLifter = std::make_unique<storm::transformer::ParameterLifter<typename SparseModelType::ValueType, ConstantType>>(this->parametricModel.getTransitionMatrix(), b, maybeStates, maybeStates);
+                    parameterLifter = std::make_unique<storm::transformer::ParameterLifter<typename SparseModelType::ValueType, ConstantType>>(this->parametricModel.getTransitionMatrix(), b, this->parametricModel.getTransitionMatrix().getRowIndicesOfRowGroups(maybeStates), maybeStates);
+                    computePlayer1Matrix();
+                    
+                    applyPreviousResultAsHint = false;
                 }
                 
-                // We know some bounds for the results so set them
+                // We know some bounds for the results
                 lowerResultBound = storm::utility::zero<ConstantType>();
                 upperResultBound = storm::utility::one<ConstantType>();
             }
     
             template <typename SparseModelType, typename ConstantType>
-            void SparseDtmcParameterLiftingModelChecker<SparseModelType, ConstantType>::specifyUntilFormula(CheckTask<logic::UntilFormula, ConstantType> const& checkTask) {
+            void SparseMdpParameterLiftingModelChecker<SparseModelType, ConstantType>::specifyUntilFormula(CheckTask<logic::UntilFormula, ConstantType> const& checkTask) {
                 
                 // get the results for the subformulas
                 storm::modelchecker::SparsePropositionalModelChecker<SparseModelType> propositionalChecker(this->parametricModel);
@@ -77,7 +83,9 @@ namespace storm {
                 storm::storage::BitVector psiStates = std::move(propositionalChecker.check(checkTask.getFormula().getRightSubformula())->asExplicitQualitativeCheckResult().getTruthValuesVector());
                 
                 // get the maybeStates
-                std::pair<storm::storage::BitVector, storm::storage::BitVector> statesWithProbability01 = storm::utility::graph::performProb01(this->parametricModel.getBackwardTransitions(), phiStates, psiStates);
+                std::pair<storm::storage::BitVector, storm::storage::BitVector> statesWithProbability01 = storm::solver::minimize(checkTask.getOptimizationDirection()) ?
+                                                                                                          storm::utility::graph::performProb01Min(this->parametricModel.getTransitionMatrix(), this->parametricModel.getTransitionMatrix().getRowGroupIndices(), this->parametricModel.getBackwardTransitions(), phiStates, psiStates) :
+                                                                                                          storm::utility::graph::performProb01Max(this->parametricModel.getTransitionMatrix(), this->parametricModel.getTransitionMatrix().getRowGroupIndices(), this->parametricModel.getBackwardTransitions(), phiStates, psiStates);
                 maybeStates = ~(statesWithProbability01.first | statesWithProbability01.second);
                 
                 // set the result for all non-maybe states
@@ -89,16 +97,21 @@ namespace storm {
                     // Create the vector of one-step probabilities to go to target states.
                     std::vector<typename SparseModelType::ValueType> b = this->parametricModel.getTransitionMatrix().getConstrainedRowSumVector(storm::storage::BitVector(this->parametricModel.getTransitionMatrix().getRowCount(), true), psiStates);
                     
-                    parameterLifter = std::make_unique<storm::transformer::ParameterLifter<typename SparseModelType::ValueType, ConstantType>>(this->parametricModel.getTransitionMatrix(), b, maybeStates, maybeStates);
+                    parameterLifter = std::make_unique<storm::transformer::ParameterLifter<typename SparseModelType::ValueType, ConstantType>>(this->parametricModel.getTransitionMatrix(), b, this->parametricModel.getTransitionMatrix().getRowIndicesOfRowGroups(maybeStates), maybeStates);
+                    computePlayer1Matrix();
+                    
+                    // Check whether there is an EC consisting of maybestates
+                    applyPreviousResultAsHint = storm::solver::minimize(checkTask.getOptimizationDirection()) || // when minimizing, there can not be an EC within the maybestates
+                                                storm::utility::graph::performProb1A(this->parametricModel.getTransitionMatrix(), this->parametricModel.getTransitionMatrix().getRowGroupIndices(), this->parametricModel.getBackwardTransitions(), maybeStates, ~maybeStates).full();
                 }
                                 
-                // We know some bounds for the results so set them
+                // We know some bounds for the results
                 lowerResultBound = storm::utility::zero<ConstantType>();
                 upperResultBound = storm::utility::one<ConstantType>();
             }
     
             template <typename SparseModelType, typename ConstantType>
-            void SparseDtmcParameterLiftingModelChecker<SparseModelType, ConstantType>::specifyReachabilityRewardFormula(CheckTask<logic::EventuallyFormula, ConstantType> const& checkTask) {
+            void SparseMdpParameterLiftingModelChecker<SparseModelType, ConstantType>::specifyReachabilityRewardFormula(CheckTask<logic::EventuallyFormula, ConstantType> const& checkTask) {
                 
                 // get the results for the subformula
                 storm::modelchecker::SparsePropositionalModelChecker<SparseModelType> propositionalChecker(this->parametricModel);
@@ -106,7 +119,9 @@ namespace storm {
                 storm::storage::BitVector targetStates = std::move(propositionalChecker.check(checkTask.getFormula().getSubformula())->asExplicitQualitativeCheckResult().getTruthValuesVector());
                 
                 // get the maybeStates
-                storm::storage::BitVector infinityStates = storm::utility::graph::performProb1(this->parametricModel.getBackwardTransitions(), storm::storage::BitVector(this->parametricModel.getNumberOfStates(), true), targetStates);
+                storm::storage::BitVector infinityStates = storm::solver::minimize(checkTask.getOptimizationDirection()) ?
+                                                           storm::utility::graph::performProb1E(this->parametricModel.getTransitionMatrix(), this->parametricModel.getTransitionMatrix().getRowGroupIndices(), this->parametricModel.getBackwardTransitions(), storm::storage::BitVector(this->parametricModel.getNumberOfStates(), true), targetStates) :
+                                                           storm::utility::graph::performProb1A(this->parametricModel.getTransitionMatrix(), this->parametricModel.getTransitionMatrix().getRowGroupIndices(), this->parametricModel.getBackwardTransitions(), storm::storage::BitVector(this->parametricModel.getNumberOfStates(), true), targetStates);
                 infinityStates.complement();
                 maybeStates = ~(targetStates | infinityStates);
                 
@@ -123,7 +138,24 @@ namespace storm {
 
                     std::vector<typename SparseModelType::ValueType> b = rewardModel.getTotalRewardVector(this->parametricModel.getTransitionMatrix());
                     
-                    parameterLifter = std::make_unique<storm::transformer::ParameterLifter<typename SparseModelType::ValueType, ConstantType>>(this->parametricModel.getTransitionMatrix(), b, maybeStates, maybeStates);
+                    // We need to handle choices that lead to an infinity state.
+                    // As a maybeState does not have reward infinity, such a choice will never be picked. Hence, we can unselect the corresponding rows
+                    storm::storage::BitVector selectedRows = this->parametricModel.getTransitionMatrix().getRowIndicesOfRowGroups(maybeStates);
+                    for (uint_fast64_t row : selectedRows) {
+                        for (auto const& element : this->parametricModel.getTransitionMatrix().getRow(row)) {
+                            if (infinityStates.get(element.getColumn())) {
+                                selectedRows.set(row, false);
+                                break;
+                            }
+                        }
+                    }
+                    
+                    parameterLifter = std::make_unique<storm::transformer::ParameterLifter<typename SparseModelType::ValueType, ConstantType>>(this->parametricModel.getTransitionMatrix(), b, selectedRows, maybeStates);
+                    computePlayer1Matrix();
+                    
+                    // Check whether there is an EC consisting of maybestates
+                    applyPreviousResultAsHint = !storm::solver::minimize(checkTask.getOptimizationDirection()) || // when maximizing, there can not be an EC within the maybestates
+                                                storm::utility::graph::performProb1A(this->parametricModel.getTransitionMatrix(), this->parametricModel.getTransitionMatrix().getRowGroupIndices(), this->parametricModel.getBackwardTransitions(), maybeStates, ~maybeStates).full();
                 }
                 
                 // We only know a lower bound for the result
@@ -132,7 +164,7 @@ namespace storm {
             }
     
             template <typename SparseModelType, typename ConstantType>
-            void SparseDtmcParameterLiftingModelChecker<SparseModelType, ConstantType>::specifyCumulativeRewardFormula(CheckTask<logic::CumulativeRewardFormula, ConstantType> const& checkTask) {
+            void SparseMdpParameterLiftingModelChecker<SparseModelType, ConstantType>::specifyCumulativeRewardFormula(CheckTask<logic::CumulativeRewardFormula, ConstantType> const& checkTask) {
                 
                 // Obtain the stepBound
                 stepBound = checkTask.getFormula().getBound().evaluateAsInt();
@@ -149,13 +181,14 @@ namespace storm {
                     
                 parameterLifter = std::make_unique<storm::transformer::ParameterLifter<typename SparseModelType::ValueType, ConstantType>>(this->parametricModel.getTransitionMatrix(), b, storm::storage::BitVector(this->parametricModel.getTransitionMatrix().getRowCount(), true), storm::storage::BitVector(this->parametricModel.getTransitionMatrix().getColumnCount(), true));
                 
-                                
+                applyPreviousResultAsHint = false;
+                
                 // We only know a lower bound for the result
                 lowerResultBound = storm::utility::zero<ConstantType>();
             }
             
             template <typename SparseModelType, typename ConstantType>
-            std::unique_ptr<CheckResult> SparseDtmcParameterLiftingModelChecker<SparseModelType, ConstantType>::computeQuantitativeValues(ParameterRegion<typename SparseModelType::ValueType> const& region, storm::solver::OptimizationDirection const& dirForParameters) {
+            std::unique_ptr<CheckResult> SparseMdpParameterLiftingModelChecker<SparseModelType, ConstantType>::computeQuantitativeValues(ParameterRegion<typename SparseModelType::ValueType> const& region, storm::solver::OptimizationDirection const& dirForParameters) {
                 
                 if(maybeStates.empty()) {
                     return std::make_unique<storm::modelchecker::ExplicitQuantitativeCheckResult<ConstantType>>(resultsForNonMaybeStates);
@@ -164,26 +197,30 @@ namespace storm {
                 parameterLifter->specifyRegion(region, dirForParameters);
                 
                 // Set up the solver
-                auto solver = solverFactory->create(parameterLifter->getMatrix());
+                auto solver = solverFactory->create(player1Matrix, parameterLifter->getMatrix());
                 solver->setTrackScheduler(true);
                 if(lowerResultBound) solver->setLowerBound(lowerResultBound.get());
                 if(upperResultBound) solver->setUpperBound(upperResultBound.get());
-                if(storm::solver::minimize(dirForParameters) && minSched && !stepBound) solver->setSchedulerHint(std::move(minSched.get()));
-                if(storm::solver::maximize(dirForParameters) && maxSched && !stepBound) solver->setSchedulerHint(std::move(maxSched.get()));
+                if(applyPreviousResultAsHint) {
+                    x.resize(maybeStates.getNumberOfSetBits(), storm::utility::zero<ConstantType>());
+                    if(storm::solver::minimize(dirForParameters) && minSched && player1Sched) solver->setSchedulerHint(std::move(player1Sched.get()), std::move(minSched.get()));
+                    if(storm::solver::maximize(dirForParameters) && maxSched && player1Sched) solver->setSchedulerHint(std::move(player1Sched.get()), std::move(maxSched.get()));
+                } else {
+                    x.assign(maybeStates.getNumberOfSetBits(), storm::utility::zero<ConstantType>());
+                }
                 
                 // Invoke the solver
                 if(stepBound) {
                     assert(*stepBound > 0);
-                    x = std::vector<ConstantType>(maybeStates.getNumberOfSetBits(), storm::utility::zero<ConstantType>());
-                    solver->repeatedMultiply(dirForParameters, x, &parameterLifter->getVector(), *stepBound);
+                    solver->repeatedMultiply(this->currentCheckTask->getOptimizationDirection(), dirForParameters, x, &parameterLifter->getVector(), *stepBound);
                 } else {
-                    x.resize(maybeStates.getNumberOfSetBits(), storm::utility::zero<ConstantType>());
-                    solver->solveEquations(dirForParameters, x, parameterLifter->getVector());
+                    solver->solveGame(this->currentCheckTask->getOptimizationDirection(), dirForParameters, x, parameterLifter->getVector());
                     if(storm::solver::minimize(dirForParameters)) {
-                        minSched = std::move(*solver->getScheduler());
+                        minSched = solver->getPlayer2Scheduler();
                     } else {
-                        maxSched = std::move(*solver->getScheduler());
+                        maxSched = solver->getPlayer2Scheduler();
                     }
+                    player1Sched = solver->getPlayer1Scheduler();
                 }
                 
                 // Get the result for the complete model (including maybestates)
@@ -196,22 +233,41 @@ namespace storm {
                 return std::make_unique<storm::modelchecker::ExplicitQuantitativeCheckResult<ConstantType>>(std::move(result));
             }
             
-                
             template <typename SparseModelType, typename ConstantType>
-            void SparseDtmcParameterLiftingModelChecker<SparseModelType, ConstantType>::reset() {
+            void SparseMdpParameterLiftingModelChecker<SparseModelType, ConstantType>::computePlayer1Matrix() {
+                uint_fast64_t n = 0;
+                for(auto const& maybeState : maybeStates) {
+                    n += this->parametricModel.getTransitionMatrix().getRowGroupSize(maybeState);
+                }
+                // The player 1 matrix is the identity matrix of size n with the row groups as given by the original matrix
+                storm::storage::SparseMatrixBuilder<storm::storage::sparse::state_type> matrixBuilder(n, n, n, true, true, maybeStates.getNumberOfSetBits());
+                uint_fast64_t p1MatrixRow = 0;
+                for (auto maybeState : maybeStates){
+                    matrixBuilder.newRowGroup(p1MatrixRow);
+                    for (uint_fast64_t row = this->parametricModel.getTransitionMatrix().getRowGroupIndices()[maybeState]; row < this->parametricModel.getTransitionMatrix().getRowGroupIndices()[maybeState + 1]; ++row){
+                        matrixBuilder.addNextValue(p1MatrixRow, p1MatrixRow, storm::utility::one<storm::storage::sparse::state_type>());
+                        ++p1MatrixRow;
+                    }
+                }
+                player1Matrix = matrixBuilder.build();
+            }
+    
+            template <typename SparseModelType, typename ConstantType>
+            void SparseMdpParameterLiftingModelChecker<SparseModelType, ConstantType>::reset() {
                 maybeStates.resize(0);
                 resultsForNonMaybeStates.clear();
                 stepBound = boost::none;
+                player1Matrix = storm::storage::SparseMatrix<storm::storage::sparse::state_type>();
                 parameterLifter = nullptr;
                 minSched = boost::none;
                 maxSched = boost::none;
                 x.clear();
                 lowerResultBound = boost::none;
                 upperResultBound = boost::none;
+                applyPreviousResultAsHint = false;
             }
     
-            template class SparseDtmcParameterLiftingModelChecker<storm::models::sparse::Dtmc<storm::RationalFunction>, double>;
-
+            template class SparseMdpParameterLiftingModelChecker<storm::models::sparse::Mdp<storm::RationalFunction>, double>;
         }
     }
 }

@@ -31,6 +31,25 @@ namespace storm {
             void gatherOccurringVariables<storm::RationalFunction>(storm::RationalFunction const& function, std::set<typename VariableType<storm::RationalFunction>::type>& variableSet){
                 function.gatherVariables(variableSet);
             }
+            
+            template<>
+            bool isLinear<storm::RationalFunction>(storm::RationalFunction const& function) {
+                return storm::utility::isConstant(function.denominator()) && function.nominator().isLinear();
+            }
+            
+            template<>
+            bool isMultiLinearPolynomial<storm::RationalFunction>(storm::RationalFunction const& function) {
+                if (!storm::utility::isConstant(function.denominator())) {
+                    return false;
+                }
+                auto varInfos = function.nominator().getVarInfo<false>();
+                for (auto const& varInfo : varInfos) {
+                    if (varInfo.second.maxDegree() > 1) {
+                        return false;
+                    }
+                }
+                return true;
+            }
 #endif
         }
     }

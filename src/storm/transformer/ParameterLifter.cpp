@@ -5,6 +5,8 @@
 
 #include "storm/utility/vector.h"
 
+#include "storm/exceptions/UnexpectedException.h"
+#include "storm/exceptions/NotSupportedException.h"
 
 namespace storm {
     namespace transformer {
@@ -204,6 +206,23 @@ namespace storm {
         }
     
         template<typename ParametricType, typename ConstantType>
+        typename ParameterLifter<ParametricType, ConstantType>::AbstractValuation ParameterLifter<ParametricType, ConstantType>::AbstractValuation::getSubValuation(std::set<VariableType> const& pars) const {
+            AbstractValuation result;
+            for (auto const& p : pars) {
+                if (std::find(lowerPars.begin(), lowerPars.end(), p) != lowerPars.end()) {
+                    result.addParameterLower(p);
+                } else if (std::find(upperPars.begin(), upperPars.end(), p) != upperPars.end()) {
+                    result.addParameterUpper(p);
+                } else if (std::find(unspecifiedPars.begin(), unspecifiedPars.end(), p) != unspecifiedPars.end()) {
+                    result.addParameterUnspecified(p);
+                } else {
+                    STORM_LOG_THROW(false, storm::exceptions::UnexpectedException, "Tried to obtain a subvaluation for parameters that are not specified by this valuation");
+                }
+            }
+            return result;
+        }
+            
+        template<typename ParametricType, typename ConstantType>
         std::vector<storm::utility::parametric::Valuation<ParametricType>> ParameterLifter<ParametricType, ConstantType>::AbstractValuation::getConcreteValuations(storm::modelchecker::parametric::ParameterRegion<ParametricType> const& region) const {
             auto result = region.getVerticesOfRegion(unspecifiedPars);
             for(auto& valuation : result) {
@@ -219,11 +238,18 @@ namespace storm {
         
         template<typename ParametricType, typename ConstantType>
         ConstantType& ParameterLifter<ParametricType, ConstantType>::FunctionValuationCollector::add(ParametricType const& function, AbstractValuation const& valuation) {
-            
+            ParametricType simplifiedFunction = function;
+            storm::utility::simplify(simplifiedFunction);
+            std::set<VariableType> variablesInFunction;
+            storm::utility::parametric::gatherOccurringVariables(simplifiedFunction, variablesInFunction);
+            AbstractValuation simplifiedValuation = valuation.getSubValuation(variablesInFunction);
             // insert the function and the valuation
-            auto functionsIt = collectedFunctions.insert(std::pair<FunctionValuation, ConstantType>(FunctionValuation(function, valuation), storm::utility::one<ConstantType>())).first;
+            auto insertionRes = collectedFunctions.insert(std::pair<FunctionValuation, ConstantType>(FunctionValuation(std::move(simplifiedFunction), std::move(simplifiedValuation)), storm::utility::one<ConstantType>()));
+            if(insertionRes.second) {
+                STORM_LOG_THROW(storm::utility::parametric::isMultiLinearPolynomial(insertionRes.first->first.first), storm::exceptions::NotSupportedException, "Parameter lifting for non-multilinear polynomial " << insertionRes.first->first.first << " is not supported");
+            }
             //Note that references to elements of an unordered map remain valid after calling unordered_map::insert.
-            return functionsIt->second;
+            return insertionRes.first->second;
         }
     
         template<typename ParametricType, typename ConstantType>
@@ -246,7 +272,6 @@ namespace storm {
                 }
             }
         }
-        
         
         template class ParameterLifter<storm::RationalFunction, double>;
     }

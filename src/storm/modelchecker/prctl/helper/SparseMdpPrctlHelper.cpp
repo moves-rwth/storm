@@ -252,7 +252,7 @@ namespace storm {
                 // Initialize result to either the state rewards of the model or the null vector.
                 std::vector<ValueType> result;
                 if (rewardModel.hasStateRewards()) {
-                    result = rewardModel.getStateRewardVector();
+                    result = rewardModel.getStateRewardVector(); // Whyyy?
                 } else {
                     result.resize(transitionMatrix.getRowGroupCount());
                 }

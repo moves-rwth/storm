@@ -71,6 +71,7 @@ namespace storm {
                 void addParameterUnspecified(VariableType const& var);
                 
                 std::size_t getHashValue() const;
+                AbstractValuation getSubValuation(std::set<VariableType> const& pars) const;
                 
                 /*!
                  * Returns the concrete valuation(s) (w.r.t. the provided region) represented by this abstract valuation.

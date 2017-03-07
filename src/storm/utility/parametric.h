@@ -48,6 +48,18 @@ namespace storm {
             template<typename FunctionType>
             void gatherOccurringVariables(FunctionType const& function, std::set<typename VariableType<FunctionType>::type>& variableSet);
             
+            /*!
+             *  Checks whether the function is linear (in one parameter)
+             */
+            template<typename FunctionType>
+            bool isLinear(FunctionType const& function);
+            
+            /*!
+             *  Checks whether the function is a multilinear polynomial, i.e., a polynomial which only considers variables with exponent at most 1
+             */
+            template<typename FunctionType>
+            bool isMultiLinearPolynomial(FunctionType const& function);
+            
         }
         
     }

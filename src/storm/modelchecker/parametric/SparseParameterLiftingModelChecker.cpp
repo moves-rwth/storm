@@ -23,6 +23,7 @@ namespace storm {
             template <typename SparseModelType, typename ConstantType>
             void SparseParameterLiftingModelChecker<SparseModelType, ConstantType>::specifyFormula(storm::modelchecker::CheckTask<storm::logic::Formula, typename SparseModelType::ValueType> const& checkTask) {
                 
+                reset();
                 currentFormula = checkTask.getFormula().asSharedPointer();
                 currentCheckTask = std::make_unique<storm::modelchecker::CheckTask<storm::logic::Formula, ConstantType>>(checkTask.substituteFormula(*currentFormula).template convertValueType<ConstantType>());
                 

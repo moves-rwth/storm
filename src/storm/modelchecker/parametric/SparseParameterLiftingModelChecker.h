@@ -42,6 +42,7 @@ namespace storm {
                 
                 virtual std::unique_ptr<CheckResult> computeQuantitativeValues(ParameterRegion<typename SparseModelType::ValueType> const& region, storm::solver::OptimizationDirection const& dirForParameters) = 0;
                 
+                virtual void reset() = 0;
                 
                 SparseModelType const& parametricModel;
                 std::unique_ptr<CheckTask<storm::logic::Formula, ConstantType>> currentCheckTask;

@@ -6,19 +6,21 @@
 
 #include "storm/modelchecker/parametric/SparseParameterLiftingModelChecker.h"
 #include "storm/storage/BitVector.h"
-#include "storm/storage/TotalScheduler.h"
-#include "storm/solver/MinMaxLinearEquationSolver.h"
+#include "storm/storage/SparseMatrix.h"
+#include "storm/storage/sparse/StateType.h"
+#include "storm/utility/solver.h"
 #include "storm/transformer/ParameterLifter.h"
+#include "storm/storage/TotalScheduler.h"
 
 namespace storm {
     namespace modelchecker {
         namespace parametric {
             
             template <typename SparseModelType, typename ConstantType>
-            class SparseDtmcParameterLiftingModelChecker : public SparseParameterLiftingModelChecker<SparseModelType, ConstantType> {
+            class SparseMdpParameterLiftingModelChecker : public SparseParameterLiftingModelChecker<SparseModelType, ConstantType> {
             public:
-                SparseDtmcParameterLiftingModelChecker(SparseModelType const& parametricModel);
-                SparseDtmcParameterLiftingModelChecker(SparseModelType const& parametricModel, std::unique_ptr<storm::solver::MinMaxLinearEquationSolverFactory<ConstantType>>&& solverFactory);
+                SparseMdpParameterLiftingModelChecker(SparseModelType const& parametricModel);
+                SparseMdpParameterLiftingModelChecker(SparseModelType const& parametricModel, std::unique_ptr<storm::utility::solver::GameSolverFactory<ConstantType>>&& solverFactory);
                 
             protected:
                 
@@ -31,18 +33,24 @@ namespace storm {
                 
                 virtual void reset() override;
                 
+
             private:
+                void computePlayer1Matrix();
+                
                 storm::storage::BitVector maybeStates;
                 std::vector<ConstantType> resultsForNonMaybeStates;
                 boost::optional<uint_fast64_t> stepBound;
                 
+                storm::storage::SparseMatrix<storm::storage::sparse::state_type> player1Matrix;
                 std::unique_ptr<storm::transformer::ParameterLifter<typename SparseModelType::ValueType, ConstantType>> parameterLifter;
-                std::unique_ptr<storm::solver::MinMaxLinearEquationSolverFactory<ConstantType>> solverFactory;
+                std::unique_ptr<storm::utility::solver::GameSolverFactory<ConstantType>> solverFactory;
                 
                 // Results from the most recent solver call.
                 boost::optional<storm::storage::TotalScheduler> minSched, maxSched;
+                boost::optional<storm::storage::TotalScheduler> player1Sched;
                 std::vector<ConstantType> x;
                 boost::optional<ConstantType> lowerResultBound, upperResultBound;
+                bool applyPreviousResultAsHint;
             };
         }
     }

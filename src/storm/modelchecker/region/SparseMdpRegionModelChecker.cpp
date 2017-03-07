@@ -33,6 +33,7 @@
 
 #include "storm/transformer/SparseParametricMdpSimplifier.h"
 #include "storm/modelchecker/parametric/SparseMdpInstantiationModelChecker.h"
+#include "storm/modelchecker/parametric/SparseMdpParameterLiftingModelChecker.h"
 
 
 namespace storm {
@@ -320,7 +321,22 @@ namespace storm {
                         
             template<typename ParametricSparseModelType, typename ConstantType>
             void SparseMdpRegionModelChecker<ParametricSparseModelType, ConstantType>::initializeApproximationModel(ParametricSparseModelType const& model, std::shared_ptr<storm::logic::OperatorFormula const> formula) {
-                std::cout << "approx model for mdps not implemented" << std::endl;
+                STORM_LOG_DEBUG("Initializing the Approx Model....");
+                std::chrono::high_resolution_clock::time_point timeInitApproximationModelStart = std::chrono::high_resolution_clock::now();
+                this->approximationModel = std::make_shared<storm::modelchecker::parametric::SparseMdpParameterLiftingModelChecker<ParametricSparseModelType, ConstantType>>(model);
+                // replace bounds by optimization direction to obtain a quantitative formula
+                if(formula->isProbabilityOperatorFormula()) {
+                    auto quantitativeFormula = std::make_shared<storm::logic::ProbabilityOperatorFormula const>(formula->getSubformula().asSharedPointer(), storm::logic::OperatorInformation(storm::logic::isLowerBound(formula->getComparisonType()) ? storm::solver::OptimizationDirection::Minimize : storm::solver::OptimizationDirection::Maximize));
+                    this->approximationModel->specifyFormula(*quantitativeFormula);
+                } else {
+                    auto quantitativeFormula = std::make_shared<storm::logic::RewardOperatorFormula>(formula->getSubformula().asSharedPointer(), formula->asRewardOperatorFormula().getOptionalRewardModelName(),  storm::logic::OperatorInformation(storm::logic::isLowerBound(formula->getComparisonType()) ? storm::solver::OptimizationDirection::Minimize : storm::solver::OptimizationDirection::Maximize));
+                    this->approximationModel->specifyFormula(*quantitativeFormula);
+                }
+                std::chrono::high_resolution_clock::time_point timeInitApproximationModelEnd = std::chrono::high_resolution_clock::now();
+                STORM_LOG_DEBUG("Initialized Approximation Model");
+                
+                
+                
             }
             
 #ifdef STORM_HAVE_CARL
