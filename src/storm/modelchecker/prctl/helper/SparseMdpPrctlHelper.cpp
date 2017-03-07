@@ -226,13 +226,8 @@ namespace storm {
                 // Compute the reward vector to add in each step based on the available reward models.
                 std::vector<ValueType> totalRewardVector = rewardModel.getTotalRewardVector(transitionMatrix);
                 
-                // Initialize result to either the state rewards of the model or the null vector.
-                std::vector<ValueType> result;
-                if (rewardModel.hasStateRewards()) {
-                    result = rewardModel.getStateRewardVector();
-                } else {
-                    result.resize(transitionMatrix.getRowGroupCount());
-                }
+                // Initialize result to the zero vector.
+                std::vector<ValueType> result(transitionMatrix.getRowGroupCount(), storm::utility::zero<ValueType>());
                 
                 std::unique_ptr<storm::solver::MinMaxLinearEquationSolver<ValueType>> solver = minMaxLinearEquationSolverFactory.create(transitionMatrix);
                 solver->repeatedMultiply(dir, result, &totalRewardVector, stepBound);
