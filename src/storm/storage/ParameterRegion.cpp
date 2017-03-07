@@ -1,4 +1,4 @@
-#include "storm/modelchecker/parametric/ParameterRegion.h"
+#include "ParameterRegion.h"
 
 #include "storm/utility/region.h"
 #include "storm/utility/macros.h"

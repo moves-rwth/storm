@@ -3,7 +3,7 @@
 #include "storm/logic/Formulas.h"
 #include "storm/modelchecker/CheckTask.h"
 #include "storm/modelchecker/results/CheckResult.h"
-#include "storm/modelchecker/parametric/ParameterRegion.h"
+#include "storm/storage/ParameterRegion.h"
 #include "storm/solver/OptimizationDirection.h"
 #include "storm/utility/parametric.h"
 
