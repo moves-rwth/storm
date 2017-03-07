@@ -24,9 +24,14 @@ namespace storm {
             template <typename SparseModelType, typename ConstantType>
             SparseDtmcParameterLiftingModelChecker<SparseModelType, ConstantType>::SparseDtmcParameterLiftingModelChecker(SparseModelType const& parametricModel, std::unique_ptr<storm::solver::MinMaxLinearEquationSolverFactory<ConstantType>>&& solverFactory) : SparseParameterLiftingModelChecker<SparseModelType, ConstantType>(parametricModel), solverFactory(std::move(solverFactory)) {
             }
-    
+            
             template <typename SparseModelType, typename ConstantType>
-            void SparseDtmcParameterLiftingModelChecker<SparseModelType, ConstantType>::specifyBoundedUntilFormula(CheckTask<logic::BoundedUntilFormula, ConstantType> const& checkTask) {
+            bool SparseDtmcParameterLiftingModelChecker<SparseModelType, ConstantType>::canHandle(CheckTask<storm::logic::Formula, ConstantType> const& checkTask) const {
+                return checkTask.getFormula().isInFragment(storm::logic::reachability().setReachabilityRewardFormulasAllowed(true).setBoundedUntilFormulasAllowed(true).setCumulativeRewardFormulasAllowed(true));
+            }
+            
+            template <typename SparseModelType, typename ConstantType>
+            void SparseDtmcParameterLiftingModelChecker<SparseModelType, ConstantType>::specifyBoundedUntilFormula(CheckTask<storm::logic::BoundedUntilFormula, ConstantType> const& checkTask) {
                 
                 // get the step bound
                 STORM_LOG_THROW(!checkTask.getFormula().hasLowerBound(), storm::exceptions::NotSupportedException, "Lower step bounds are not supported.");
@@ -68,7 +73,7 @@ namespace storm {
             }
     
             template <typename SparseModelType, typename ConstantType>
-            void SparseDtmcParameterLiftingModelChecker<SparseModelType, ConstantType>::specifyUntilFormula(CheckTask<logic::UntilFormula, ConstantType> const& checkTask) {
+            void SparseDtmcParameterLiftingModelChecker<SparseModelType, ConstantType>::specifyUntilFormula(CheckTask<storm::logic::UntilFormula, ConstantType> const& checkTask) {
                 
                 // get the results for the subformulas
                 storm::modelchecker::SparsePropositionalModelChecker<SparseModelType> propositionalChecker(this->parametricModel);
@@ -98,7 +103,7 @@ namespace storm {
             }
     
             template <typename SparseModelType, typename ConstantType>
-            void SparseDtmcParameterLiftingModelChecker<SparseModelType, ConstantType>::specifyReachabilityRewardFormula(CheckTask<logic::EventuallyFormula, ConstantType> const& checkTask) {
+            void SparseDtmcParameterLiftingModelChecker<SparseModelType, ConstantType>::specifyReachabilityRewardFormula(CheckTask<storm::logic::EventuallyFormula, ConstantType> const& checkTask) {
                 
                 // get the results for the subformula
                 storm::modelchecker::SparsePropositionalModelChecker<SparseModelType> propositionalChecker(this->parametricModel);
@@ -132,7 +137,7 @@ namespace storm {
             }
     
             template <typename SparseModelType, typename ConstantType>
-            void SparseDtmcParameterLiftingModelChecker<SparseModelType, ConstantType>::specifyCumulativeRewardFormula(CheckTask<logic::CumulativeRewardFormula, ConstantType> const& checkTask) {
+            void SparseDtmcParameterLiftingModelChecker<SparseModelType, ConstantType>::specifyCumulativeRewardFormula(CheckTask<storm::logic::CumulativeRewardFormula, ConstantType> const& checkTask) {
                 
                 // Obtain the stepBound
                 stepBound = checkTask.getFormula().getBound().evaluateAsInt();

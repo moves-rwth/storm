@@ -9,6 +9,8 @@
 #include "storm/storage/TotalScheduler.h"
 #include "storm/solver/MinMaxLinearEquationSolver.h"
 #include "storm/transformer/ParameterLifter.h"
+#include "storm/logic/FragmentSpecification.h"
+
 
 namespace storm {
     namespace modelchecker {
@@ -20,6 +22,8 @@ namespace storm {
                 SparseDtmcParameterLiftingModelChecker(SparseModelType const& parametricModel);
                 SparseDtmcParameterLiftingModelChecker(SparseModelType const& parametricModel, std::unique_ptr<storm::solver::MinMaxLinearEquationSolverFactory<ConstantType>>&& solverFactory);
                 
+                virtual bool canHandle(CheckTask<storm::logic::Formula, ConstantType> const& checkTask) const override;
+
             protected:
                 
                 virtual void specifyBoundedUntilFormula(CheckTask<storm::logic::BoundedUntilFormula, ConstantType> const& checkTask) override;

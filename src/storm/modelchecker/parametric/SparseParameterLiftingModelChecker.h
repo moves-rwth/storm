@@ -22,11 +22,14 @@ namespace storm {
             public:
                 SparseParameterLiftingModelChecker(SparseModelType const& parametricModel);
                 
+                virtual bool canHandle(CheckTask<storm::logic::Formula, ConstantType> const& checkTask) const = 0;
+                
                 void specifyFormula(CheckTask<storm::logic::Formula, typename SparseModelType::ValueType> const& checkTask);
     
                 /*!
                  * Checks the specified formula on the given region by applying parameter lifting (Parameter choices are lifted to nondeterministic choices)
-                 *
+                 * This yields a (sound) approximative model checking result.
+
                  * @param region the region on which parameter lifting is applied
                  * @param dirForParameters  The optimization direction for the parameter choices. If this is, e.g., minimize, then the returned result will be a lower bound for all results induced by the parameter evaluations inside the region.
                  */

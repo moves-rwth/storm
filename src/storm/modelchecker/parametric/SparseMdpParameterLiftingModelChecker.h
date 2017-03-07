@@ -22,6 +22,8 @@ namespace storm {
                 SparseMdpParameterLiftingModelChecker(SparseModelType const& parametricModel);
                 SparseMdpParameterLiftingModelChecker(SparseModelType const& parametricModel, std::unique_ptr<storm::utility::solver::GameSolverFactory<ConstantType>>&& solverFactory);
                 
+                virtual bool canHandle(CheckTask<storm::logic::Formula, ConstantType> const& checkTask) const override;
+                
             protected:
                 
                 virtual void specifyBoundedUntilFormula(CheckTask<storm::logic::BoundedUntilFormula, ConstantType> const& checkTask) override;
