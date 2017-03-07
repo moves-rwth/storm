@@ -50,7 +50,18 @@ namespace storm {
              */
             virtual void solveGame(OptimizationDirection player1Goal, OptimizationDirection player2Goal, std::vector<ValueType>& x, std::vector<ValueType> const& b) const;
             
-            
+            /*!
+             * Performs n multiplications of the form
+             *  reduce(player1Matrix * reduce(player2Matrix * x + b))
+             *
+            * @param player1Goal Sets whether player 1 wants to minimize or maximize.
+             * @param player2Goal Sets whether player 2 wants to minimize or maximize.
+             * @param x The initial guess of the solution. For correctness, the guess has to be less (or equal) to the final solution (unless both players minimize)
+             * @param b The vector to add after matrix-vector multiplication.
+             * @param n The number of times we perform the multiplication
+             */
+            virtual void repeatedMultiply(OptimizationDirection player1Goal, OptimizationDirection player2Goal, std::vector<ValueType>& x, std::vector<ValueType> const* b, uint_fast64_t n) const;
+
             storm::storage::SparseMatrix<ValueType> const& getPlayer2Matrix() const;
             storm::storage::SparseMatrix<storm::storage::sparse::state_type> const& getPlayer1Matrix() const;
             

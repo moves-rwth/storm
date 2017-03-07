@@ -33,6 +33,15 @@ namespace storm {
              */
             AbstractGameSolver(double precision, uint_fast64_t maximalNumberOfIterations, bool relative);
             
+            /*!
+             * Sets schedulers that might be considered by the solver as an initial guess
+             */
+            void setSchedulerHint(storm::storage::TotalScheduler&& player1Scheduler, storm::storage::TotalScheduler&& player2Scheduler);
+            bool hasSchedulerHints() const;
+            
+            void setLowerBound(ValueType const& value);
+            void setUpperBound(ValueType const& value);
+            
             void setTrackScheduler(bool trackScheduler = true);
             bool isTrackSchedulerSet() const;
             bool hasScheduler() const;
@@ -59,6 +68,16 @@ namespace storm {
             // The scheduler for the corresponding players (if it could be successfully generated).
             mutable boost::optional<std::unique_ptr<storm::storage::TotalScheduler>> player1Scheduler;
             mutable boost::optional<std::unique_ptr<storm::storage::TotalScheduler>> player2Scheduler;
+            
+            // schedulers that might be considered by the solver as an initial guess
+            boost::optional<storm::storage::TotalScheduler> player1SchedulerHint;
+            boost::optional<storm::storage::TotalScheduler> player2SchedulerHint;
+            
+            boost::optional<ValueType> lowerBound;
+            boost::optional<ValueType> upperBound;
+            
+            
+            
         };
     }
 }

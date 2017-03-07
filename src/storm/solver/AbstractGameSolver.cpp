@@ -60,7 +60,28 @@ namespace storm {
         bool AbstractGameSolver<ValueType>::getRelative() const {
             return relative;
         }
-        
+    
+        template <typename ValueType>
+        void AbstractGameSolver<ValueType>::setSchedulerHint(storm::storage::TotalScheduler&& player1Scheduler, storm::storage::TotalScheduler&& player2Scheduler) {
+            player1SchedulerHint = player1Scheduler;
+            player2SchedulerHint = player2Scheduler;
+        }
+    
+        template <typename ValueType>
+        bool AbstractGameSolver<ValueType>::hasSchedulerHints() const {
+            return player1SchedulerHint.is_initialized() && player2SchedulerHint.is_initialized();
+        }
+    
+        template <typename ValueType>
+        void AbstractGameSolver<ValueType>::setLowerBound(ValueType const& value) {
+            this->lowerBound = value;
+        }
+    
+        template <typename ValueType>
+        void AbstractGameSolver<ValueType>::setUpperBound(ValueType const& value) {
+            this->upperBound = value;
+        }
+    
         template class AbstractGameSolver<double>;
         
     }
