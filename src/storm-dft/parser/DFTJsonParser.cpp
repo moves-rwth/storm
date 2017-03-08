@@ -43,8 +43,8 @@ namespace storm {
 
             json parameters = parsedJson.at("parameters");
 #ifdef STORM_HAVE_CARL
-            STORM_LOG_THROW((std::is_same<ValueType, storm::RationalFunction>::value), storm::exceptions::NotSupportedException, "Parameters only allowed when using rational functions.");
             for (auto it = parameters.begin(); it != parameters.end(); ++it) {
+            STORM_LOG_THROW((std::is_same<ValueType, storm::RationalFunction>::value), storm::exceptions::NotSupportedException, "Parameters only allowed when using rational functions.");
                 std::string parameter = it.key();
                 storm::expressions::Variable var = manager->declareRationalVariable(parameter);
                 identifierMapping.emplace(var.getName(), var);
