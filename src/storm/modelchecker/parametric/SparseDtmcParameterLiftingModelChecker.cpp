@@ -26,7 +26,7 @@ namespace storm {
             }
             
             template <typename SparseModelType, typename ConstantType>
-            bool SparseDtmcParameterLiftingModelChecker<SparseModelType, ConstantType>::canHandle(CheckTask<storm::logic::Formula, ConstantType> const& checkTask) const {
+            bool SparseDtmcParameterLiftingModelChecker<SparseModelType, ConstantType>::canHandle(CheckTask<storm::logic::Formula, typename SparseModelType::ValueType> const& checkTask) const {
                 return checkTask.getFormula().isInFragment(storm::logic::reachability().setReachabilityRewardFormulasAllowed(true).setBoundedUntilFormulasAllowed(true).setCumulativeRewardFormulasAllowed(true));
             }
             
@@ -160,7 +160,7 @@ namespace storm {
             }
             
             template <typename SparseModelType, typename ConstantType>
-            std::unique_ptr<CheckResult> SparseDtmcParameterLiftingModelChecker<SparseModelType, ConstantType>::computeQuantitativeValues(ParameterRegion<typename SparseModelType::ValueType> const& region, storm::solver::OptimizationDirection const& dirForParameters) {
+            std::unique_ptr<CheckResult> SparseDtmcParameterLiftingModelChecker<SparseModelType, ConstantType>::computeQuantitativeValues(storm::storage::ParameterRegion<typename SparseModelType::ValueType> const& region, storm::solver::OptimizationDirection const& dirForParameters) {
                 
                 if(maybeStates.empty()) {
                     return std::make_unique<storm::modelchecker::ExplicitQuantitativeCheckResult<ConstantType>>(resultsForNonMaybeStates);

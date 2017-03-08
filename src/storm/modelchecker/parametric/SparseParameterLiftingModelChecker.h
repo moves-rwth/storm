@@ -22,7 +22,7 @@ namespace storm {
             public:
                 SparseParameterLiftingModelChecker(SparseModelType const& parametricModel);
                 
-                virtual bool canHandle(CheckTask<storm::logic::Formula, ConstantType> const& checkTask) const = 0;
+                virtual bool canHandle(CheckTask<storm::logic::Formula, typename SparseModelType::ValueType> const& checkTask) const = 0;
                 
                 void specifyFormula(CheckTask<storm::logic::Formula, typename SparseModelType::ValueType> const& checkTask);
     
@@ -33,7 +33,7 @@ namespace storm {
                  * @param region the region on which parameter lifting is applied
                  * @param dirForParameters  The optimization direction for the parameter choices. If this is, e.g., minimize, then the returned result will be a lower bound for all results induced by the parameter evaluations inside the region.
                  */
-                std::unique_ptr<CheckResult> check(ParameterRegion<typename SparseModelType::ValueType> const& region, storm::solver::OptimizationDirection const& dirForParameters);
+                std::unique_ptr<CheckResult> check(storm::storage::ParameterRegion<typename SparseModelType::ValueType> const& region, storm::solver::OptimizationDirection const& dirForParameters);
                 
             protected:
                 
@@ -43,7 +43,7 @@ namespace storm {
                 virtual void specifyReachabilityRewardFormula(CheckTask<storm::logic::EventuallyFormula, ConstantType> const& checkTask);
                 virtual void specifyCumulativeRewardFormula(CheckTask<storm::logic::CumulativeRewardFormula, ConstantType> const& checkTask);
                 
-                virtual std::unique_ptr<CheckResult> computeQuantitativeValues(ParameterRegion<typename SparseModelType::ValueType> const& region, storm::solver::OptimizationDirection const& dirForParameters) = 0;
+                virtual std::unique_ptr<CheckResult> computeQuantitativeValues(storm::storage::ParameterRegion<typename SparseModelType::ValueType> const& region, storm::solver::OptimizationDirection const& dirForParameters) = 0;
                 
                 virtual void reset() = 0;
                 

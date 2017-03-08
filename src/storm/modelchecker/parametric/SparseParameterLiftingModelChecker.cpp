@@ -49,7 +49,7 @@ namespace storm {
             }
             
             template <typename SparseModelType, typename ConstantType>
-            std::unique_ptr<CheckResult> SparseParameterLiftingModelChecker<SparseModelType, ConstantType>::check(ParameterRegion<typename SparseModelType::ValueType> const& region, storm::solver::OptimizationDirection const& dirForParameters) {
+            std::unique_ptr<CheckResult> SparseParameterLiftingModelChecker<SparseModelType, ConstantType>::check(storm::storage::ParameterRegion<typename SparseModelType::ValueType> const& region, storm::solver::OptimizationDirection const& dirForParameters) {
                 auto quantitativeResult = computeQuantitativeValues(region, dirForParameters);
                 if(currentCheckTask->getFormula().hasQuantitativeResult()) {
                     return quantitativeResult;

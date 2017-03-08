@@ -1,35 +1,29 @@
-/* 
- * File:   RegionCheckResult.cpp
- * Author: tim
- * 
- * Created on September 9, 2015, 1:56 PM
- */
+#include "storm/modelchecker/parametric/RegionCheckResult.h"
 
-#include "RegionCheckResult.h"
 #include "storm/utility/macros.h"
 #include "storm/exceptions/NotImplementedException.h"
 
 namespace storm {
     namespace modelchecker {
-        namespace region {
+        namespace parametric {
             std::ostream& operator<<(std::ostream& os, RegionCheckResult const& regionCheckResult) {
                 switch (regionCheckResult) {
-                    case RegionCheckResult::UNKNOWN:
+                    case RegionCheckResult::Unknown:
                         os << "Unknown";
                         break;
-                    case RegionCheckResult::EXISTSSAT:
+                    case RegionCheckResult::ExistsSat:
                         os << "ExistsSat";
                         break;
-                    case RegionCheckResult::EXISTSVIOLATED:
+                    case RegionCheckResult::ExistsViolated:
                         os << "ExistsViolated";
                         break;
-                    case RegionCheckResult::EXISTSBOTH:
+                    case RegionCheckResult::ExistsBoth:
                         os << "ExistsBoth";
                         break;
-                    case RegionCheckResult::ALLSAT:
+                    case RegionCheckResult::AllSat:
                         os << "AllSat";
                         break;
-                    case RegionCheckResult::ALLVIOLATED:
+                    case RegionCheckResult::AllViolated:
                         os << "AllViolated";
                         break;
                     default:

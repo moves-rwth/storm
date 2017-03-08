@@ -41,7 +41,7 @@ namespace storm {
              */
             ParameterLifter(storm::storage::SparseMatrix<ParametricType> const& pMatrix, std::vector<ParametricType> const& pVector, storm::storage::BitVector const& selectedRows, storm::storage::BitVector const& selectedColumns);
             
-            void specifyRegion(storm::modelchecker::parametric::ParameterRegion<ParametricType> const& region, storm::solver::OptimizationDirection const& dirForParameters);
+            void specifyRegion(storm::storage::ParameterRegion<ParametricType> const& region, storm::solver::OptimizationDirection const& dirForParameters);
             
             // Returns the resulting matrix. Should only be called AFTER specifying a region
             storm::storage::SparseMatrix<ConstantType> const& getMatrix() const;
@@ -77,7 +77,7 @@ namespace storm {
                  * Returns the concrete valuation(s) (w.r.t. the provided region) represented by this abstract valuation.
                  * Note that an abstract valuation represents 2^(#unspecified parameters) many concrete valuations.
                  */
-                std::vector<storm::utility::parametric::Valuation<ParametricType>> getConcreteValuations(storm::modelchecker::parametric::ParameterRegion<ParametricType> const& region) const;
+                std::vector<storm::utility::parametric::Valuation<ParametricType>> getConcreteValuations(storm::storage::ParameterRegion<ParametricType> const& region) const;
                 
             private:
                 std::set<VariableType> lowerPars, upperPars, unspecifiedPars;
@@ -97,7 +97,7 @@ namespace storm {
                  */
                 ConstantType& add(ParametricType const& function, AbstractValuation const& valuation);
                 
-                void evaluateCollectedFunctions(storm::modelchecker::parametric::ParameterRegion<ParametricType> const& region, storm::solver::OptimizationDirection const& dirForUnspecifiedParameters);
+                void evaluateCollectedFunctions(storm::storage::ParameterRegion<ParametricType> const& region, storm::solver::OptimizationDirection const& dirForUnspecifiedParameters);
                 
             private:
                 // Stores a function and a valuation. The valuation is stored as an index of the collectedValuations-vector.

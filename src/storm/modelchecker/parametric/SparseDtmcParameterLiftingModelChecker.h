@@ -22,7 +22,7 @@ namespace storm {
                 SparseDtmcParameterLiftingModelChecker(SparseModelType const& parametricModel);
                 SparseDtmcParameterLiftingModelChecker(SparseModelType const& parametricModel, std::unique_ptr<storm::solver::MinMaxLinearEquationSolverFactory<ConstantType>>&& solverFactory);
                 
-                virtual bool canHandle(CheckTask<storm::logic::Formula, ConstantType> const& checkTask) const override;
+                virtual bool canHandle(CheckTask<storm::logic::Formula, typename SparseModelType::ValueType> const& checkTask) const override;
 
             protected:
                 
@@ -31,7 +31,7 @@ namespace storm {
                 virtual void specifyReachabilityRewardFormula(CheckTask<storm::logic::EventuallyFormula, ConstantType> const& checkTask) override;
                 virtual void specifyCumulativeRewardFormula(CheckTask<storm::logic::CumulativeRewardFormula, ConstantType> const& checkTask) override;
                 
-                virtual std::unique_ptr<CheckResult> computeQuantitativeValues(ParameterRegion<typename SparseModelType::ValueType> const& region, storm::solver::OptimizationDirection const& dirForParameters) override;
+                virtual std::unique_ptr<CheckResult> computeQuantitativeValues(storm::storage::ParameterRegion<typename SparseModelType::ValueType> const& region, storm::solver::OptimizationDirection const& dirForParameters) override;
                 
                 virtual void reset() override;
                 

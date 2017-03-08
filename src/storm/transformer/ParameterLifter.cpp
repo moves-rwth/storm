@@ -124,7 +124,7 @@ namespace storm {
         }
     
         template<typename ParametricType, typename ConstantType>
-        void ParameterLifter<ParametricType, ConstantType>::specifyRegion(storm::modelchecker::parametric::ParameterRegion<ParametricType> const& region, storm::solver::OptimizationDirection const& dirForParameters) {
+        void ParameterLifter<ParametricType, ConstantType>::specifyRegion(storm::storage::ParameterRegion<ParametricType> const& region, storm::solver::OptimizationDirection const& dirForParameters) {
             // write the evaluation result of each function,evaluation pair into the placeholders
             functionValuationCollector.evaluateCollectedFunctions(region, dirForParameters);
             
@@ -223,7 +223,7 @@ namespace storm {
         }
             
         template<typename ParametricType, typename ConstantType>
-        std::vector<storm::utility::parametric::Valuation<ParametricType>> ParameterLifter<ParametricType, ConstantType>::AbstractValuation::getConcreteValuations(storm::modelchecker::parametric::ParameterRegion<ParametricType> const& region) const {
+        std::vector<storm::utility::parametric::Valuation<ParametricType>> ParameterLifter<ParametricType, ConstantType>::AbstractValuation::getConcreteValuations(storm::storage::ParameterRegion<ParametricType> const& region) const {
             auto result = region.getVerticesOfRegion(unspecifiedPars);
             for(auto& valuation : result) {
                 for (auto const& lowerPar : lowerPars) {
@@ -253,7 +253,7 @@ namespace storm {
         }
     
         template<typename ParametricType, typename ConstantType>
-        void ParameterLifter<ParametricType, ConstantType>::FunctionValuationCollector::evaluateCollectedFunctions(storm::modelchecker::parametric::ParameterRegion<ParametricType> const& region, storm::solver::OptimizationDirection const& dirForUnspecifiedParameters) {
+        void ParameterLifter<ParametricType, ConstantType>::FunctionValuationCollector::evaluateCollectedFunctions(storm::storage::ParameterRegion<ParametricType> const& region, storm::solver::OptimizationDirection const& dirForUnspecifiedParameters) {
             for (auto& collectedFunctionValuationPlaceholder : collectedFunctions) {
                 ParametricType const& function = collectedFunctionValuationPlaceholder.first.first;
                 AbstractValuation const& abstrValuation = collectedFunctionValuationPlaceholder.first.second;
