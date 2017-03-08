@@ -10,12 +10,14 @@
 #include "storm/transformer/SparseParametricMdpSimplifier.h"
 #include "storm/modelchecker/results/ExplicitQualitativeCheckResult.h"
 
+#include "storm/utility/vector.h"
 #include "storm/models/sparse/StandardRewardModel.h"
 #include "storm/models/sparse/Dtmc.h"
 #include "storm/models/sparse/Mdp.h"
 
 #include "storm/exceptions/NotSupportedException.h"
 #include "storm/exceptions/InvalidStateException.h"
+#include "storm/exceptions/InvalidArgumentException.h"
 
 namespace storm {
     namespace modelchecker {
@@ -41,39 +43,46 @@ namespace storm {
             }
     
             template <typename SparseModelType, typename ConstantType>
-            RegionCheckResult ParameterLifting<SparseModelType, ConstantType>::analyzeRegion(storm::storage::ParameterRegion<typename SparseModelType::ValueType> const& region, bool sampleVerticesOfRegion) const {
-                // First sample for one point to decide whether we should try to prove AllSat or AllViolated
-                if(instantiationChecker->check(region.getCenterPoint())->asExplicitQualitativeCheckResult()[*getConsideredParametricModel().getInitialStates().begin()]) {
-                    // try to prove AllSat
+            RegionCheckResult ParameterLifting<SparseModelType, ConstantType>::analyzeRegion(storm::storage::ParameterRegion<typename SparseModelType::ValueType> const& region, RegionCheckResult const& initialResult, bool sampleVerticesOfRegion) const {
+                RegionCheckResult result = initialResult;
+
+                // Check if we need to check the formula on one point to decide whether to show AllSat or AllViolated
+                if (result == RegionCheckResult::Unknown) {
+                     result = instantiationChecker->check(region.getCenterPoint())->asExplicitQualitativeCheckResult()[*getConsideredParametricModel().getInitialStates().begin()] ? RegionCheckResult::CenterSat : RegionCheckResult::CenterViolated;
+                }
+                
+                // try to prove AllSat or AllViolated, depending on the obtained result
+                if(result == RegionCheckResult::ExistsSat || result == RegionCheckResult::CenterSat) {
+                    // show AllSat:
                     if(parameterLiftingChecker->check(region, this->currentCheckTask->getOptimizationDirection())->asExplicitQualitativeCheckResult()[*getConsideredParametricModel().getInitialStates().begin()]) {
-                        return RegionCheckResult::AllSat;
+                        result = RegionCheckResult::AllSat;
                     } else if (sampleVerticesOfRegion) {
                         // Check if there is a point in the region for which the property is violated
                         auto vertices = region.getVerticesOfRegion(region.getVariables());
                         for (auto const& v : vertices) {
                             if (!instantiationChecker->check(v)->asExplicitQualitativeCheckResult()[*getConsideredParametricModel().getInitialStates().begin()]) {
-                                return  RegionCheckResult::ExistsBoth;
+                                result = RegionCheckResult::ExistsBoth;
                             }
                         }
                     }
-                    // Reaching this point means that we only know that there is (at least) one point in the region for which the property is satisfied
-                    return RegionCheckResult::ExistsSat;
-                } else {
-                    // try to prove AllViolated
+                } else if (result == RegionCheckResult::ExistsViolated || result == RegionCheckResult::CenterViolated) {
+                    // show AllViolated:
                     if(!parameterLiftingChecker->check(region, storm::solver::invert(this->currentCheckTask->getOptimizationDirection()))->asExplicitQualitativeCheckResult()[*getConsideredParametricModel().getInitialStates().begin()]) {
-                        return RegionCheckResult::AllViolated;
+                        result = RegionCheckResult::AllViolated;
                     } else if (sampleVerticesOfRegion) {
                         // Check if there is a point in the region for which the property is satisfied
                         auto vertices = region.getVerticesOfRegion(region.getVariables());
                         for (auto const& v : vertices) {
                             if (instantiationChecker->check(v)->asExplicitQualitativeCheckResult()[*getConsideredParametricModel().getInitialStates().begin()]) {
-                                return  RegionCheckResult::ExistsBoth;
+                                result = RegionCheckResult::ExistsBoth;
                             }
                         }
                     }
-                    // Reaching this point means that we only know that there is (at least) one point in the region for which the property is violated
-                    return RegionCheckResult::ExistsViolated;
+                } else {
+                    STORM_LOG_THROW(false, storm::exceptions::InvalidArgumentException, "When analyzing a region, an invalid initial result was given: " << initialResult);
                 }
+                
+                return result;
             }
     
             template <typename SparseModelType, typename ConstantType>
@@ -92,8 +101,10 @@ namespace storm {
                 
                 while (fractionOfUndiscoveredArea > threshold) {
                     STORM_LOG_THROW(indexOfCurrentRegion < regions.size(), storm::exceptions::InvalidStateException, "Threshold for undiscovered area not reached but no unprocessed regions left.");
-                    auto & currentRegion = regions[indexOfCurrentRegion];
-                    RegionCheckResult res = analyzeRegion(currentRegion.first, currentRegion.second, false);
+                    STORM_LOG_INFO("Analyzing region #" << regions.size() -1 << " (" << storm::utility::convertNumber<double>(fractionOfUndiscoveredArea) * 100 << "% still unknown");
+                    auto const& currentRegion = regions[indexOfCurrentRegion].first;
+                    auto& res = regions[indexOfCurrentRegion].second;
+                    res = analyzeRegion(currentRegion, res, false);
                     switch (res) {
                         case RegionCheckResult::AllSat:
                             fractionOfUndiscoveredArea -= currentRegion.area() / areaOfParameterSpace;
@@ -104,21 +115,22 @@ namespace storm {
                             fractionOfAllViolatedArea += currentRegion.area() / areaOfParameterSpace;
                             break;
                         default:
-                            uint_fast64_t oldNumOfRegions = regions.size();
                             std::vector<storm::storage::ParameterRegion<typename SparseModelType::ValueType>> newRegions;
-                            currentRegion.split(currentRegion.getCenterPoint(), regions);
-                            resultRegions.grow(regions.size());
-                            resultRegions.set(resultRegions.begin() + oldNumOfRegions-1?, resultRegions.begin() + regions.size()-1? );
+                            currentRegion.split(currentRegion.getCenterPoint(), newRegions);
+                            resultRegions.grow(regions.size() + newRegions.size(), true);
+                            RegionCheckResult initResForNewRegions = (res == RegionCheckResult::CenterSat) ? RegionCheckResult::ExistsSat :
+                                                                     ((res == RegionCheckResult::CenterViolated) ? RegionCheckResult::ExistsViolated :
+                                                                      RegionCheckResult::Unknown);
+                            for(auto& newRegion : newRegions) {
+                                regions.emplace_back(std::move(newRegion), initResForNewRegions);
+                            }
                             resultRegions.set(indexOfCurrentRegion, false);
                             break;
                     }
                     ++indexOfCurrentRegion;
                 }
-                std::cout << " done! " << std::endl << "Fraction of ALLSAT;ALLVIOLATED;UNDISCOVERED area:" << std::endl;
-                std::cout << "REFINEMENTRESULT;" <<storm::utility::convertNumber<double>(fractionOfAllSatArea) << ";" << storm::utility::convertNumber<double>(fractionOfAllViolatedArea) << ";" << storm::utility::convertNumber<double>(fractionOfUndiscoveredArea) << std::endl;
-                
-                ()
-                return ;
+                resultRegions.resize(regions.size());
+                return storm::utility::vector::filterVector(regions, resultRegions);
             }
     
             template <typename SparseModelType, typename ConstantType>

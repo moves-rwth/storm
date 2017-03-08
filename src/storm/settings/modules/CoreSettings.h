@@ -82,6 +82,23 @@ namespace storm {
                 bool isEquationSolverSet() const;
 
                 /*!
+                 * Retrieves whether parameter lifting should be applied.
+                 * @return True iff parameter lifting should be applied.
+                 */
+                bool isParameterLiftingSet() const;
+                
+                /*!
+                 * Retrieves a string that defines the parameter space considered for parameter lifting
+                 * @return A string that defines the parameter space considered for parameter lifting
+                 */
+                std::string getParameterLiftingParameterSpace() const;
+                
+                /*!
+                 * Retrieves the refinement threshold that is considered for parameter lifting
+                 */
+                 double getParameterLiftingThreshold() const;
+                
+                /*!
                  * Retrieves the selected LP solver.
                  *
                  * @return The selected LP solver.
@@ -144,6 +161,7 @@ namespace storm {
                 static const std::string dontFixDeadlockOptionShortName;
                 static const std::string eqSolverOptionName;
                 static const std::string lpSolverOptionName;
+                static const std::string parameterLiftingOptionName;
                 static const std::string smtSolverOptionName;
                 static const std::string statisticsOptionName;
                 static const std::string statisticsOptionShortName;

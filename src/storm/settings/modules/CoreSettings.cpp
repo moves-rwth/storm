@@ -24,6 +24,7 @@ namespace storm {
             const std::string CoreSettings::dontFixDeadlockOptionShortName = "ndl";
             const std::string CoreSettings::eqSolverOptionName = "eqsolver";
             const std::string CoreSettings::lpSolverOptionName = "lpsolver";
+            const std::string CoreSettings::parameterLiftingOptionName = "parameterlifting";
             const std::string CoreSettings::smtSolverOptionName = "smtsolver";
             const std::string CoreSettings::statisticsOptionName = "statistics";
             const std::string CoreSettings::statisticsOptionShortName = "stats";
@@ -51,6 +52,11 @@ namespace storm {
                 std::vector<std::string> lpSolvers = {"gurobi", "glpk", "z3"};
                 this->addOption(storm::settings::OptionBuilder(moduleName, lpSolverOptionName, false, "Sets which LP solver is preferred.")
                                 .addArgument(storm::settings::ArgumentBuilder::createStringArgument("name", "The name of an LP solver.").addValidatorString(ArgumentValidatorFactory::createMultipleChoiceValidator(lpSolvers)).setDefaultValueString("glpk").build()).build());
+                
+                this->addOption(storm::settings::OptionBuilder(moduleName, parameterLiftingOptionName, false, "Sets whether parameter lifting is applied.")
+                                .addArgument(storm::settings::ArgumentBuilder::createStringArgument("parameterspace", "The considered parameter-space given in format a<=x<=b,c<=y<=d").build())
+                                .addArgument(storm::settings::ArgumentBuilder::createDoubleArgument("threshold", "The refinement converges as soon as the fraction of unknown area falls below this threshold").setDefaultValueDouble(0.05).build()).build());
+                
                 std::vector<std::string> smtSolvers = {"z3", "mathsat"};
                 this->addOption(storm::settings::OptionBuilder(moduleName, smtSolverOptionName, false, "Sets which SMT solver is preferred.")
                                 .addArgument(storm::settings::ArgumentBuilder::createStringArgument("name", "The name of an SMT solver.").addValidatorString(ArgumentValidatorFactory::createMultipleChoiceValidator(smtSolvers)).setDefaultValueString("z3").build()).build());
@@ -86,6 +92,18 @@ namespace storm {
             
             bool CoreSettings::isEquationSolverSet() const {
                 return this->getOption(eqSolverOptionName).getHasOptionBeenSet();
+            }
+            
+            bool CoreSettings::isParameterLiftingSet() const {
+                return this->getOption(parameterLiftingOptionName).getHasOptionBeenSet();
+            }
+            
+            std::string CoreSettings::getParameterLiftingParameterSpace() const {
+                return this->getOption(parameterLiftingOptionName).getArgumentByName("parameterspace").getValueAsString();
+            }
+            
+            double CoreSettings::getParameterLiftingThreshold() const {
+                return this->getOption(parameterLiftingOptionName).getArgumentByName("threshold").getValueAsDouble();
             }
             
             storm::solver::LpSolverType CoreSettings::getLpSolver() const {

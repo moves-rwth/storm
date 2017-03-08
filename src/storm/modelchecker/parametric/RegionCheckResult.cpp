@@ -17,6 +17,12 @@ namespace storm {
                     case RegionCheckResult::ExistsViolated:
                         os << "ExistsViolated";
                         break;
+                    case RegionCheckResult::CenterSat:
+                        os << "CenterSat";
+                        break;
+                    case RegionCheckResult::CenterViolated:
+                        os << "CenterViolated";
+                        break;
                     case RegionCheckResult::ExistsBoth:
                         os << "ExistsBoth";
                         break;

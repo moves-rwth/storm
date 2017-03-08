@@ -1085,11 +1085,7 @@ namespace storm {
                 }
             }
             
-            // TODO: remove this assertion
-            auto result = storm::storage::SparseMatrix<ValueType>(std::move(columnCount), std::move(rowIndications), std::move(columnsAndValues), boost::none);
-            STORM_LOG_ASSERT(result == selectRowsFromRowGroups(rowGroupChoices, false).transpose(false, keepZeros), "Expected that the two matrices are equal");
-            return result;
-         //   return storm::storage::SparseMatrix<ValueType>(std::move(columnCount), std::move(rowIndications), std::move(columnsAndValues), boost::none);
+            return storm::storage::SparseMatrix<ValueType>(std::move(columnCount), std::move(rowIndications), std::move(columnsAndValues), boost::none);
         }
         
         template<typename ValueType>

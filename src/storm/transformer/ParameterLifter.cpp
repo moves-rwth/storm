@@ -131,6 +131,7 @@ namespace storm {
             //apply the matrix and vector assignments to write the contents of the placeholder into the matrix/vector
                             
             for(auto& assignment : matrixAssignment) {
+                STORM_LOG_WARN_COND(!storm::utility::isZero(assignment.second), "Parameter lifting on region " << region.toString() << " affects the underlying graph structure (the region is not strictly well defined). The result for this region might be incorrect.");
                 assignment.first->setValue(assignment.second);
             }
             for(auto& assignment : vectorAssignment) {

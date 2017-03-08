@@ -25,11 +25,14 @@ namespace storm {
                 void specifyFormula(CheckTask<storm::logic::Formula, typename SparseModelType::ValueType> const& checkTask);
                 
                 /*!
-                 * Analyzes the given region by applying parameter lifting.
-                 * We first check whether all points in the region violate/satisfy the property
+                 * Analyzes the given region by means of parameter lifting.
+                 * We first check whether there is one point in the region for which the property is satisfied/violated.
+                 * If the given initialResults already indicates that there is such a point, this step is skipped.
+                 * Then, we check whether ALL points in the region violate/satisfy the property
                  * If this does not yield a conclusive result and if the given flag is true, we also sample the vertices of the region
+                 *
                  */
-                RegionCheckResult analyzeRegion(storm::storage::ParameterRegion<typename SparseModelType::ValueType> const& region, bool sampleVerticesOfRegion) const;
+                RegionCheckResult analyzeRegion(storm::storage::ParameterRegion<typename SparseModelType::ValueType> const& region, RegionCheckResult const& initialResult = RegionCheckResult::Unknown, bool sampleVerticesOfRegion = false) const;
                 
                 /*!
                  * Iteratively refines the region until parameter lifting yields a conclusive result (AllSat or AllViolated).
