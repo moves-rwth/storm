@@ -55,7 +55,7 @@ namespace storm {
                         STORM_LOG_THROW(false, storm::exceptions::InvalidArgumentException, "Checking with hint is only implemented for probability or reward operator formulas");
                     }
                     std::unique_ptr<storm::modelchecker::CheckResult> qualitativeResult = quantitativeResult->template asExplicitQuantitativeCheckResult<ConstantType>().compareAgainstBound(this->currentCheckTask->getFormula().asOperatorFormula().getComparisonType(), this->currentCheckTask->getFormula().asOperatorFormula().template getThresholdAs<ConstantType>());
-                    storm::storage::Scheduler& scheduler = qualitativeResult->template asExplicitQuantitativeCheckResult<ConstantType>().getScheduler();
+                    storm::storage::Scheduler& scheduler = quantitativeResult->template asExplicitQuantitativeCheckResult<ConstantType>().getScheduler();
                     this->currentCheckTask->setHint(ExplicitModelCheckerHint<ConstantType>(std::move(quantitativeResult->template asExplicitQuantitativeCheckResult<ConstantType>().getValueVector()),
                                                                                            std::move(dynamic_cast<storm::storage::TotalScheduler const&>(scheduler))));
                     return qualitativeResult;

@@ -26,8 +26,7 @@ TEST(SparseDtmcParameterLiftingTest, Brp_Prob) {
     modelParameters.insert(rewParameters.begin(), rewParameters.end());
     
     storm::modelchecker::parametric::ParameterLifting<storm::models::sparse::Dtmc<storm::RationalFunction>, double> parameterLiftingContext(*model);
-    parameterLiftingContext.specifyFormula(*formulas[0]);
-    
+    parameterLiftingContext.specifyFormula(storm::modelchecker::CheckTask<storm::logic::Formula, storm::RationalFunction>(*formulas[0], true));
 
     //start testing
     auto allSatRegion=storm::storage::ParameterRegion<storm::RationalFunction>::parseRegion("0.7<=pL<=0.9,0.75<=pK<=0.95", modelParameters);
@@ -57,7 +56,7 @@ TEST(SparseDtmcParameterLiftingTest, Brp_Rew) {
     modelParameters.insert(rewParameters.begin(), rewParameters.end());
     
     storm::modelchecker::parametric::ParameterLifting<storm::models::sparse::Dtmc<storm::RationalFunction>, double> parameterLiftingContext(*model);
-    parameterLiftingContext.specifyFormula(*formulas[0]);
+    parameterLiftingContext.specifyFormula(storm::modelchecker::CheckTask<storm::logic::Formula, storm::RationalFunction>(*formulas[0], true));
     
     //start testing
     auto allSatRegion=storm::storage::ParameterRegion<storm::RationalFunction>::parseRegion("0.7<=pK<=0.875,0.75<=TOMsg<=0.95", modelParameters);
@@ -89,7 +88,7 @@ TEST(SparseDtmcParameterLiftingTest, Brp_Rew_Infty) {
     modelParameters.insert(rewParameters.begin(), rewParameters.end());
     
     storm::modelchecker::parametric::ParameterLifting<storm::models::sparse::Dtmc<storm::RationalFunction>, double> parameterLiftingContext(*model);
-    parameterLiftingContext.specifyFormula(*formulas[0]);
+    parameterLiftingContext.specifyFormula(storm::modelchecker::CheckTask<storm::logic::Formula, storm::RationalFunction>(*formulas[0], true));
 
     //start testing
     auto allSatRegion=storm::storage::ParameterRegion<storm::RationalFunction>::parseRegion("", modelParameters);
@@ -115,7 +114,7 @@ TEST(SparseDtmcParameterLiftingTest, Brp_Rew_4Par) {
     modelParameters.insert(rewParameters.begin(), rewParameters.end());
     
     storm::modelchecker::parametric::ParameterLifting<storm::models::sparse::Dtmc<storm::RationalFunction>, double> parameterLiftingContext(*model);
-    parameterLiftingContext.specifyFormula(*formulas[0]);
+    parameterLiftingContext.specifyFormula(storm::modelchecker::CheckTask<storm::logic::Formula, storm::RationalFunction>(*formulas[0], true));
     
     //start testing
     auto allSatRegion=storm::storage::ParameterRegion<storm::RationalFunction>::parseRegion("0.7<=pK<=0.9,0.6<=pL<=0.85,0.9<=TOMsg<=0.95,0.85<=TOAck<=0.9", modelParameters);
@@ -146,7 +145,7 @@ TEST(SparseDtmcParameterLiftingTest, Crowds_Prob) {
     modelParameters.insert(rewParameters.begin(), rewParameters.end());
    
     storm::modelchecker::parametric::ParameterLifting<storm::models::sparse::Dtmc<storm::RationalFunction>, double> parameterLiftingContext(*model);
-    parameterLiftingContext.specifyFormula(*formulas[0]);
+    parameterLiftingContext.specifyFormula(storm::modelchecker::CheckTask<storm::logic::Formula, storm::RationalFunction>(*formulas[0], true));
 
     //start testing
     auto allSatRegion=storm::storage::ParameterRegion<storm::RationalFunction>::parseRegion("0.1<=PF<=0.75,0.15<=badC<=0.2", modelParameters);
@@ -180,7 +179,7 @@ TEST(SparseDtmcParameterLiftingTest, Crowds_Prob_1Par) {
     modelParameters.insert(rewParameters.begin(), rewParameters.end());
     
     storm::modelchecker::parametric::ParameterLifting<storm::models::sparse::Dtmc<storm::RationalFunction>, double> parameterLiftingContext(*model);
-    parameterLiftingContext.specifyFormula(*formulas[0]);
+    parameterLiftingContext.specifyFormula(storm::modelchecker::CheckTask<storm::logic::Formula, storm::RationalFunction>(*formulas[0], true));
     
     //start testing
     auto allSatRegion=storm::storage::ParameterRegion<storm::RationalFunction>::parseRegion("0.9<=PF<=0.99", modelParameters);
@@ -211,7 +210,7 @@ TEST(SparseDtmcParameterLiftingTest, Crowds_Prob_Const) {
     modelParameters.insert(rewParameters.begin(), rewParameters.end());
     
     storm::modelchecker::parametric::ParameterLifting<storm::models::sparse::Dtmc<storm::RationalFunction>, double> parameterLiftingContext(*model);
-    parameterLiftingContext.specifyFormula(*formulas[0]);
+    parameterLiftingContext.specifyFormula(storm::modelchecker::CheckTask<storm::logic::Formula, storm::RationalFunction>(*formulas[0], true));
 
     //start testing
     auto allSatRegion=storm::storage::ParameterRegion<storm::RationalFunction>::parseRegion("", modelParameters);

@@ -25,7 +25,7 @@ TEST(SparseMdpParameterLiftingTest, two_dice_Prob) {
     modelParameters.insert(rewParameters.begin(), rewParameters.end());
     
     storm::modelchecker::parametric::ParameterLifting<storm::models::sparse::Mdp<storm::RationalFunction>, double> parameterLiftingContext(*model);
-    parameterLiftingContext.specifyFormula(*formulas[0]);
+    parameterLiftingContext.specifyFormula(storm::modelchecker::CheckTask<storm::logic::Formula, storm::RationalFunction>(*formulas[0], true));
     
     auto allSatRegion = storm::storage::ParameterRegion<storm::RationalFunction>::parseRegion("0.495<=p1<=0.5,0.5<=p2<=0.505", modelParameters);
     auto exBothRegion = storm::storage::ParameterRegion<storm::RationalFunction>::parseRegion("0.45<=p1<=0.55,0.45<=p2<=0.55", modelParameters);
@@ -55,7 +55,7 @@ TEST(SparseMdpParameterLiftingTest, coin_Prob) {
     modelParameters.insert(rewParameters.begin(), rewParameters.end());
     
     storm::modelchecker::parametric::ParameterLifting<storm::models::sparse::Mdp<storm::RationalFunction>, double> parameterLiftingContext(*model);
-    parameterLiftingContext.specifyFormula(*formulas[0]);
+    parameterLiftingContext.specifyFormula(storm::modelchecker::CheckTask<storm::logic::Formula, storm::RationalFunction>(*formulas[0], true));
     
     //start testing
     auto allSatRegion = storm::storage::ParameterRegion<storm::RationalFunction>::parseRegion("0.3<=p1<=0.45,0.2<=p2<=0.54", modelParameters);

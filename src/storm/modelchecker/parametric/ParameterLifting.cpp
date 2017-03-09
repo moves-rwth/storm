@@ -31,13 +31,14 @@ namespace storm {
     
             template <typename SparseModelType, typename ConstantType>
             void ParameterLifting<SparseModelType, ConstantType>::specifyFormula(CheckTask<storm::logic::Formula, typename SparseModelType::ValueType> const& checkTask) {
+                STORM_LOG_THROW(checkTask.isOnlyInitialStatesRelevantSet(), storm::exceptions::NotSupportedException, "Parameter lifting requires a property where only the value in the initial states is relevant.");
                 STORM_LOG_THROW(checkTask.isBoundSet(), storm::exceptions::NotSupportedException, "Parameter lifting requires a bounded property.");
-                STORM_LOG_THROW(parameterLiftingChecker->canHandle(checkTask), storm::exceptions::NotSupportedException, "Parameter lifting is not supported for this property.");
                 
                 simplifyParametricModel(checkTask);
                 initializeUnderlyingCheckers();
                 currentCheckTask = std::make_unique<storm::modelchecker::CheckTask<storm::logic::Formula, typename SparseModelType::ValueType>>(checkTask.substituteFormula(*currentFormula));
 
+                STORM_LOG_THROW(parameterLiftingChecker->canHandle(*currentCheckTask), storm::exceptions::NotSupportedException, "Parameter lifting is not supported for this property.");
                 instantiationChecker->specifyFormula(*currentCheckTask);
                 parameterLiftingChecker->specifyFormula(*currentCheckTask);
             }

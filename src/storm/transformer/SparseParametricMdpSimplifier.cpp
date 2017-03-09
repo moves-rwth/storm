@@ -150,7 +150,9 @@ namespace storm {
             this->simplifiedModel = this->eliminateConstantDeterministicStates(*this->simplifiedModel, rewardModelNameAsVector.front());
             
             // Eliminate the end components in which no reward is collected (only required if rewards are minimized)
-            this->simplifiedModel = this->eliminateNeutralEndComponents(*this->simplifiedModel, this->simplifiedModel->getStates("target") | this->simplifiedModel->getStates("sink"), rewardModelNameAsVector.front());
+            if (minimizing) {
+                this->simplifiedModel = this->eliminateNeutralEndComponents(*this->simplifiedModel, this->simplifiedModel->getStates("target") | this->simplifiedModel->getStates("sink"), rewardModelNameAsVector.front());
+            }
             return true;
         }
         

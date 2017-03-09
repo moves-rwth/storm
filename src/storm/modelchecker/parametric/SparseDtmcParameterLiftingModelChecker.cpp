@@ -27,7 +27,7 @@ namespace storm {
             
             template <typename SparseModelType, typename ConstantType>
             bool SparseDtmcParameterLiftingModelChecker<SparseModelType, ConstantType>::canHandle(CheckTask<storm::logic::Formula, typename SparseModelType::ValueType> const& checkTask) const {
-                return checkTask.getFormula().isInFragment(storm::logic::reachability().setReachabilityRewardFormulasAllowed(true).setBoundedUntilFormulasAllowed(true).setCumulativeRewardFormulasAllowed(true));
+                return checkTask.getFormula().isInFragment(storm::logic::reachability().setRewardOperatorsAllowed(true).setReachabilityRewardFormulasAllowed(true).setBoundedUntilFormulasAllowed(true).setCumulativeRewardFormulasAllowed(true));
             }
             
             template <typename SparseModelType, typename ConstantType>
