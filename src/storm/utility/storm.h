@@ -309,13 +309,13 @@ namespace storm {
     }
     
     template<typename ParametricType>
-    void performParameterLifting(std::shared_ptr<storm::models::sparse::Model<ParametricType>>, std::shared_ptr<storm::logic::Formula const> const&) {
+    inline void performParameterLifting(std::shared_ptr<storm::models::sparse::Model<ParametricType>>, std::shared_ptr<storm::logic::Formula const> const&) {
         STORM_LOG_THROW(false, storm::exceptions::InvalidSettingsException, "Unable to perform parameterLifting for non-parametric model.");
     }
 
 #ifdef STORM_HAVE_CARL
     template<>
-    void performParameterLifting(std::shared_ptr<storm::models::sparse::Model<storm::RationalFunction>> markovModel, std::shared_ptr<storm::logic::Formula const> const& formula) {
+    inline void performParameterLifting(std::shared_ptr<storm::models::sparse::Model<storm::RationalFunction>> markovModel, std::shared_ptr<storm::logic::Formula const> const& formula) {
         auto modelParameters = storm::models::sparse::getProbabilityParameters(*markovModel);
         auto rewParameters = storm::models::sparse::getRewardParameters(*markovModel);
         modelParameters.insert(rewParameters.begin(), rewParameters.end());
@@ -374,7 +374,7 @@ namespace storm {
 #endif
     
     template<typename ValueType>
-    void performParameterLifting(std::shared_ptr<storm::models::sparse::Model<ValueType>> markovModel, std::vector<std::shared_ptr<storm::logic::Formula const>> const& formulas) {
+    inline void performParameterLifting(std::shared_ptr<storm::models::sparse::Model<ValueType>> markovModel, std::vector<std::shared_ptr<storm::logic::Formula const>> const& formulas) {
         for (auto const& formula : formulas) {
             performParameterLifting(markovModel, formula);
         }

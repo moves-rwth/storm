@@ -320,7 +320,7 @@ namespace storm {
                 generateCounterexamples<ValueType>(model, sparseModel, formulas);
             } else if (storm::settings::getModule<storm::settings::modules::CoreSettings>().isParameterLiftingSet()) {
                 STORM_LOG_THROW(storm::settings::getModule<storm::settings::modules::GeneralSettings>().isParametricSet(), storm::exceptions::InvalidSettingsException, "Invoked parameter lifting without enabling the parametric engine.");
-                performParameterLifting<ValueType>(sparseModel, formulas);
+                storm::performParameterLifting<ValueType>(sparseModel, formulas);
             } else {
                 verifySparseModel<ValueType>(sparseModel, properties, onlyInitialStatesRelevant);
             }
