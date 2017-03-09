@@ -95,6 +95,16 @@ Storm
 - supported on most Unix platforms
 - would have been impossible without all the cool libraries around: [thank you](thanks.html)!
 
+# Website 
+
+Responsible for this website is
+
+```shell
+Software Modeling and Verification Group (MOVES)
+RWTH Aachen University, Aachen, Germany
+E-mail: storm-dev [at] i2 [dot] informatik [dot] rwth-aachen [dot] de
+Phone: +49 241 8021203
+```
 # References
 
 [^1]: [J.-P. Katoen, *The Probabilistic Model Checking Landscape*, 2016](http://www-i2.informatik.rwth-aachen.de/pub/index.php?type=download&pub_id=1296)
