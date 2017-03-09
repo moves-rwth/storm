@@ -70,7 +70,7 @@ git clone https://github.com/moves-rwth/storm.git STORM_DIR
 ```
 or download a zip archive with the latest snapshot of the master branch:
 ```shell
-wget https://github.com/moves-rwth/archive/master.zip
+wget https://github.com/moves-rwth/storm/archive/master.zip
 unzip master.zip
 ```
 In the following, we will use `STORM_DIR` to refer to the root directory of storm. If you want, you can set an environment variable to ease the following steps via
