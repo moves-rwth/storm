@@ -65,7 +65,7 @@ namespace storm {
         {
             // Intentionally left empty.
             // TODO Matthias: remove again
-            usedHeuristic = storm::builder::ApproximationHeuristic::NONE;
+            usedHeuristic = storm::builder::ApproximationHeuristic::DEPTH;
 
             // Compute independent subtrees
             if (dft.topLevelType() == storm::storage::DFTElementType::OR) {
@@ -349,8 +349,8 @@ namespace storm {
                 // Try to explore the next state
                 generator.load(currentState);
 
-                if (approximationThreshold > 0.0 && nrExpandedStates > approximationThreshold && !currentExplorationHeuristic->isExpand()) {
-                //if (currentExplorationHeuristic->isSkip(approximationThreshold)) {
+                //if (approximationThreshold > 0.0 && nrExpandedStates > approximationThreshold && !currentExplorationHeuristic->isExpand()) {
+                if (approximationThreshold > 0.0 && currentExplorationHeuristic->isSkip(approximationThreshold)) {
                     // Skip the current state
                     ++nrSkippedStates;
                     STORM_LOG_TRACE("Skip expansion of state: " << dft.getStateString(currentState));
@@ -397,6 +397,7 @@ namespace storm {
                                         STORM_LOG_ASSERT(!currentState->isPseudoState(), "State is pseudo state.");
 
                                         // Initialize bounds
+                                        // TODO Mathias: avoid hack
                                         ValueType lowerBound = getLowerBound(state);
                                         ValueType upperBound = getUpperBound(state);
                                         heuristic->setBounds(lowerBound, upperBound);
@@ -478,10 +479,70 @@ namespace storm {
         }
 
         template<typename ValueType, typename StateType>
-        std::shared_ptr<storm::models::sparse::Model<ValueType>> ExplicitDFTModelBuilderApprox<ValueType, StateType>::getModelApproximation(bool lowerBound) {
-            // TODO Matthias: handle case with no skipped states
-            changeMatrixBound(modelComponents.transitionMatrix, lowerBound);
-            return createModel(true);
+        std::shared_ptr<storm::models::sparse::Model<ValueType>> ExplicitDFTModelBuilderApprox<ValueType, StateType>::getModelApproximation(bool lowerBound, bool expectedTime) {
+            if (expectedTime) {
+                // TODO Matthias: handle case with no skipped states
+                changeMatrixBound(modelComponents.transitionMatrix, lowerBound);
+                return createModel(true);
+            } else {
+                // Change model for probabilities
+                // TODO Matthias: make nicer
+                storm::storage::SparseMatrix<ValueType> matrix = modelComponents.transitionMatrix;
+                storm::models::sparse::StateLabeling labeling = modelComponents.stateLabeling;
+                if (lowerBound) {
+                    // Set self loop for lower bound
+                    for (auto it = skippedStates.begin(); it != skippedStates.end(); ++it) {
+                        auto matrixEntry = matrix.getRow(it->first, 0).begin();
+                        STORM_LOG_ASSERT(matrixEntry->getColumn() == failedStateId, "Transition has wrong target state.");
+                        STORM_LOG_ASSERT(!it->second.first->isPseudoState(), "State is still pseudo state.");
+                        matrixEntry->setValue(storm::utility::one<ValueType>());
+                        matrixEntry->setColumn(it->first);
+                    }
+                } else {
+                    // Make skipped states failed states for upper bound
+                    storm::storage::BitVector failedStates = modelComponents.stateLabeling.getStates("failed");
+                    for (auto it = skippedStates.begin(); it != skippedStates.end(); ++it) {
+                        failedStates.set(it->first);
+                    }
+                    labeling.setStates("failed", failedStates);
+                }
+
+                std::shared_ptr<storm::models::sparse::Model<ValueType>> model;
+                if (modelComponents.deterministicModel) {
+                    model = std::make_shared<storm::models::sparse::Ctmc<ValueType>>(std::move(matrix), std::move(labeling));
+                } else {
+                    // Build MA
+                    // Compute exit rates
+                    // TODO Matthias: avoid computing multiple times
+                    modelComponents.exitRates = std::vector<ValueType>(modelComponents.markovianStates.size());
+                    std::vector<typename storm::storage::SparseMatrix<ValueType>::index_type> indices = matrix.getRowGroupIndices();
+                    for (StateType stateIndex = 0; stateIndex < modelComponents.markovianStates.size(); ++stateIndex) {
+                        if (modelComponents.markovianStates[stateIndex]) {
+                            modelComponents.exitRates[stateIndex] = matrix.getRowSum(indices[stateIndex]);
+                        } else {
+                            modelComponents.exitRates[stateIndex] = storm::utility::zero<ValueType>();
+                        }
+                    }
+                    STORM_LOG_TRACE("Exit rates: " << modelComponents.exitRates);
+
+                    std::shared_ptr<storm::models::sparse::MarkovAutomaton<ValueType>> ma = std::make_shared<storm::models::sparse::MarkovAutomaton<ValueType>>(std::move(matrix), std::move(labeling), modelComponents.markovianStates, modelComponents.exitRates);
+                    if (ma->hasOnlyTrivialNondeterminism()) {
+                        // Markov automaton can be converted into CTMC
+                        // TODO Matthias: change components which were not moved accordingly
+                        model = ma->convertToCTMC();
+                    } else {
+                        model = ma;
+                    }
+
+                }
+
+                if (model->getNumberOfStates() <= 15) {
+                    STORM_LOG_TRACE("Transition matrix: " << std::endl << model->getTransitionMatrix());
+                } else {
+                    STORM_LOG_TRACE("Transition matrix: too big to print");
+                }
+                return model;
+            }
         }
 
         template<typename ValueType, typename StateType>
@@ -573,6 +634,7 @@ namespace storm {
             if (state->hasFailed(dft.getTopLevelIndex())) {
                 return storm::utility::zero<ValueType>();
             }
+
             // Get the upper bound by considering the failure of all BEs
             ValueType upperBound = storm::utility::one<ValueType>();
             ValueType rateSum = storm::utility::zero<ValueType>();

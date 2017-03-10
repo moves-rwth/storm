@@ -29,7 +29,7 @@ namespace storm {
 
             using DFTStatePointer = std::shared_ptr<storm::storage::DFTState<ValueType>>;
             // TODO Matthias: make choosable
-            using ExplorationHeuristic = DFTExplorationHeuristicNone<ValueType>;
+            using ExplorationHeuristic = DFTExplorationHeuristicDepth<ValueType>;
             using ExplorationHeuristicPointer = std::shared_ptr<ExplorationHeuristic>;
 
 
@@ -197,11 +197,12 @@ namespace storm {
             /*!
              * Get the built approximation model for either the lower or upper bound.
              *
-             * @param lowerBound If true, the lower bound model is returned, else the upper bound model
+             * @param lowerBound   If true, the lower bound model is returned, else the upper bound model
+             * @param expectedTime If true, the bounds for expected time are computed, else the bounds for probabilities.
              *
              * @return The model built from the DFT.
              */
-            std::shared_ptr<storm::models::sparse::Model<ValueType>> getModelApproximation(bool lowerBound = true);
+            std::shared_ptr<storm::models::sparse::Model<ValueType>> getModelApproximation(bool lowerBound, bool expectedTime);
 
         private:
 
@@ -243,13 +244,15 @@ namespace storm {
             /**
              * Change matrix to reflect the lower or upper approximation bound.
              *
-             * @param matrix     Matrix to change. The change are reflected here.
-             * @param lowerBound Flag indicating if the lower bound should be used. Otherwise the upper bound is used.
+             * @param matrix       Matrix to change. The change are reflected here.
+             * @param lowerBound   Flag indicating if the lower bound should be used. Otherwise the upper bound is used.
              */
             void changeMatrixBound(storm::storage::SparseMatrix<ValueType> & matrix, bool lowerBound) const;
 
             /*!
              * Get lower bound approximation for state.
+             *
+             * @param state        The state.
              *
              * @return Lower bound approximation.
              */
@@ -257,6 +260,8 @@ namespace storm {
 
             /*!
              * Get upper bound approximation for state.
+             *
+             * @param state        The state.
              *
              * @return Upper bound approximation.
              */
@@ -310,7 +315,7 @@ namespace storm {
             bool enableDC = true;
 
             //TODO Matthias: make changeable
-            const bool mergeFailedStates = false;
+            const bool mergeFailedStates = true;
 
             // Heuristic used for approximation
             storm::builder::ApproximationHeuristic usedHeuristic;

@@ -303,7 +303,7 @@ namespace storm {
 
                     // Build model for lower bound
                     STORM_LOG_INFO("Getting model for lower bound...");
-                    model = builder.getModelApproximation(probabilityFormula ? false : true);
+                    model = builder.getModelApproximation(true, !probabilityFormula);
                     // We only output the info from the lower bound as the info for the upper bound is the same
                     model->printModelInformationToStream(std::cout);
                     buildingTimer.stop();
@@ -317,15 +317,16 @@ namespace storm {
                     // Build model for upper bound
                     STORM_LOG_INFO("Getting model for upper bound...");
                     buildingTimer.start();
-                    model = builder.getModelApproximation(probabilityFormula ? true : false);
+                    model = builder.getModelApproximation(false, !probabilityFormula);
                     buildingTimer.stop();
                     // Check upper bound
-                    newResult = checkModel(model, {properties});
+                    newResult = checkModel(model, {property});
                     STORM_LOG_ASSERT(newResult.size() == 1, "Wrong size for result vector.");
                     STORM_LOG_ASSERT(iteration == 0 || !comparator.isLess(approxResult.second, newResult[0]), "New over-approximation " << newResult[0] << " is greater than old result " << approxResult.second);
                     approxResult.second = newResult[0];
 
                     ++iteration;
+                    STORM_LOG_ASSERT(comparator.isLess(approxResult.first, approxResult.second) || comparator.isEqual(approxResult.first, approxResult.second), "Under-approximation " << approxResult.first << " is greater than over-approximation " << approxResult.second);
                     STORM_LOG_INFO("Result after iteration " << iteration << ": (" << std::setprecision(10) << approxResult.first << ", " << approxResult.second << ")");
                     totalTimer.stop();
                     printTimings();
