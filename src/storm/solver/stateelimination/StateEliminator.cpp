@@ -7,7 +7,7 @@
 #include "storm/utility/stateelimination.h"
 #include "storm/utility/macros.h"
 #include "storm/utility/constants.h"
-#include "storm/utility/macros.h"
+#include "storm/exceptions/IllegalArgumentException.h"
 #include "storm/exceptions/InvalidStateException.h"
 
 namespace storm {
@@ -24,7 +24,12 @@ namespace storm {
             template<typename ValueType>
             void StateEliminator<ValueType>::eliminateState(storm::storage::sparse::state_type state, bool removeForwardTransitions) {
                 STORM_LOG_TRACE("Eliminating state " << state << ".");
-                this->eliminate(state, state, removeForwardTransitions);
+                if(this->matrix.hasTrivialRowGrouping()) {
+                    this->eliminate(state, state, removeForwardTransitions);
+                } else {
+                    STORM_LOG_THROW(this->matrix.getRowGroupSize(state) == 1, storm::exceptions::IllegalArgumentException, "Invoked state elimination on a state with multiple choices. This is not supported.");
+                    this->eliminate(this->matrix.getRowGroupIndices()[state], state, removeForwardTransitions);
+                }
             }
             
             template class StateEliminator<double>;
