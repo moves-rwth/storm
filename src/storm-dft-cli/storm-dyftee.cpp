@@ -80,7 +80,7 @@ void analyzeWithSMT(std::string filename) {
  * Initialize the settings manager.
  */
 void initializeSettings() {
-    storm::settings::mutableManager().setName("storm-DyFTeE", "storm-dft");
+    storm::settings::mutableManager().setName("Storm-DyFTeE", "storm-dft");
     
     // Register all known settings modules.
     storm::settings::addModule<storm::settings::modules::GeneralSettings>();
@@ -118,7 +118,7 @@ void initializeSettings() {
 int main(const int argc, const char** argv) {
     try {
         storm::utility::setUp();
-        storm::cli::printHeader("storm-DyFTeE", argc, argv);
+        storm::cli::printHeader("Storm-DyFTeE", argc, argv);
         initializeSettings();
         
         bool optionsCorrect = storm::cli::parseOptions(argc, argv);

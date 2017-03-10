@@ -107,7 +107,7 @@ namespace storm {
 #ifdef STORM_HAVE_MSAT
 			msat_push_backtrack_point(env);
 #else
-			STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "storm is compiled without MathSAT support.");
+			STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Storm is compiled without MathSAT support.");
 #endif
 		}
 
@@ -115,7 +115,7 @@ namespace storm {
 #ifdef STORM_HAVE_MSAT
 			msat_pop_backtrack_point(env);
 #else
-			STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "storm is compiled without MathSAT support.");
+			STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Storm is compiled without MathSAT support.");
 #endif
 		}
 
@@ -123,7 +123,7 @@ namespace storm {
 #ifdef STORM_HAVE_MSAT
             SmtSolver::pop(n);
 #else
-            STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "storm is compiled without MathSAT support.");
+            STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Storm is compiled without MathSAT support.");
 #endif
         }
         
@@ -132,7 +132,7 @@ namespace storm {
 #ifdef STORM_HAVE_MSAT
 			msat_reset_env(env);
 #else
-			STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "storm is compiled without MathSAT support.");
+			STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Storm is compiled without MathSAT support.");
 #endif
 		}
 
@@ -141,7 +141,7 @@ namespace storm {
 #ifdef STORM_HAVE_MSAT
 			msat_assert_formula(env, expressionAdapter->translateExpression(e));
 #else
-			STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "storm is compiled without MathSAT support.");
+			STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Storm is compiled without MathSAT support.");
 #endif
 		}
 
@@ -162,7 +162,7 @@ namespace storm {
 			}
 			return this->lastResult;
 #else
-			STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "storm is compiled without MathSAT support.");
+			STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Storm is compiled without MathSAT support.");
 #endif
 		}
 
@@ -190,7 +190,7 @@ namespace storm {
 			}
 			return this->lastResult;
 #else
-			STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "storm is compiled without MathSAT support.");
+			STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Storm is compiled without MathSAT support.");
 #endif
 		}
 
@@ -219,7 +219,7 @@ namespace storm {
 			}
 			return this->lastResult;
 #else
-			STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "storm is compiled without MathSAT support.");
+			STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Storm is compiled without MathSAT support.");
 #endif
 		}
 #endif
@@ -230,7 +230,7 @@ namespace storm {
 			STORM_LOG_THROW(this->lastResult == SmtSolver::CheckResult::Sat, storm::exceptions::InvalidStateException, "Unable to create model for formula that was not determined to be satisfiable.");
 			return this->convertMathsatModelToValuation();
 #else
-			STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "storm is compiled without MathSAT support.");
+			STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Storm is compiled without MathSAT support.");
 #endif
 		}
         
@@ -239,7 +239,7 @@ namespace storm {
 			STORM_LOG_THROW(this->lastResult == SmtSolver::CheckResult::Sat, storm::exceptions::InvalidStateException, "Unable to create model for formula that was not determined to be satisfiable.");
             return std::shared_ptr<SmtSolver::ModelReference>(new MathsatModelReference(this->getManager(), env, *expressionAdapter));
 #else
-			STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "storm is compiled without MathSAT support.");
+			STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Storm is compiled without MathSAT support.");
 #endif
         }
 
@@ -279,7 +279,7 @@ namespace storm {
 			this->allSat(important, [&valuations](storm::expressions::SimpleValuation const& valuation) -> bool { valuations.push_back(valuation); return true; });
 			return valuations;
 #else
-			STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "storm is compiled without MathSAT support.");
+			STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Storm is compiled without MathSAT support.");
 #endif
 		}
 
@@ -379,7 +379,7 @@ namespace storm {
             this->pop();
 			return static_cast<uint_fast64_t>(numberOfModels);
 #else
-			STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "storm is compiled without MathSAT support.");
+			STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Storm is compiled without MathSAT support.");
 #endif
 		}
 
@@ -405,7 +405,7 @@ namespace storm {
             this->pop();
             return static_cast<uint_fast64_t>(numberOfModels);
 #else
-			STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "storm is compiled without MathSAT support.");
+			STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Storm is compiled without MathSAT support.");
 #endif
 		}
 
@@ -426,7 +426,7 @@ namespace storm {
 
 			return unsatAssumptions;
 #else
-			STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "storm is compiled without MathSAT support.");
+			STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Storm is compiled without MathSAT support.");
 #endif
 		}
 
@@ -440,7 +440,7 @@ namespace storm {
 			}
 			msat_set_itp_group(env, groupIter->second);
 #else
-			STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "storm is compiled without MathSAT support.");
+			STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Storm is compiled without MathSAT support.");
 #endif
 		}
 
@@ -462,7 +462,7 @@ namespace storm {
             
 			return this->expressionAdapter->translateExpression(interpolant);
 #else
-			STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "storm is compiled without MathSAT support.");
+			STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Storm is compiled without MathSAT support.");
 #endif
 		}
 	}

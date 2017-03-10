@@ -17,8 +17,8 @@ int main(const int argc, const char** argv) {
     try {
         storm::utility::Stopwatch totalTimer(true);
         storm::utility::setUp();
-        storm::cli::printHeader("storm", argc, argv);
-        storm::settings::initializeAll("storm", "storm");
+        storm::cli::printHeader("Storm", argc, argv);
+        storm::settings::initializeAll("Storm", "storm");
         bool optionsCorrect = storm::cli::parseOptions(argc, argv);
         if (!optionsCorrect) {
             return -1;

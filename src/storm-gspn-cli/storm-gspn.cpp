@@ -40,7 +40,7 @@
  * Initialize the settings manager.
  */
 void initializeSettings() {
-    storm::settings::mutableManager().setName("storm-GSPN", "storm-gspn");
+    storm::settings::mutableManager().setName("Storm-GSPN", "storm-gspn");
     
     // Register all known settings modules.
     storm::settings::addModule<storm::settings::modules::GeneralSettings>();
@@ -75,7 +75,7 @@ std::unordered_map<std::string, uint64_t> parseCapacitiesList(std::string const&
 int main(const int argc, const char **argv) {
     try {
         storm::utility::setUp();
-        storm::cli::printHeader("storm-GSPN", argc, argv);
+        storm::cli::printHeader("Storm-GSPN", argc, argv);
         initializeSettings();
         
         bool optionsCorrect = storm::cli::parseOptions(argc, argv);

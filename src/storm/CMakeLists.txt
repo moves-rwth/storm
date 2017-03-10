@@ -20,11 +20,11 @@ set(STORM_MAIN_SOURCES  ${STORM_MAIN_FILE})
 
 # Add custom additional include or link directories
 if (ADDITIONAL_INCLUDE_DIRS)
-	message(STATUS "storm - Using additional include directories ${ADDITIONAL_INCLUDE_DIRS}")
+	message(STATUS "Storm - Using additional include directories ${ADDITIONAL_INCLUDE_DIRS}")
 	include_directories(${ADDITIONAL_INCLUDE_DIRS})
 endif(ADDITIONAL_INCLUDE_DIRS)
 if (ADDITIONAL_LINK_DIRS)
-	message(STATUS "storm - Using additional link directories ${ADDITIONAL_LINK_DIRS}")
+	message(STATUS "Storm - Using additional link directories ${ADDITIONAL_LINK_DIRS}")
 	link_directories(${ADDITIONAL_LINK_DIRS})
 endif(ADDITIONAL_LINK_DIRS)
 
