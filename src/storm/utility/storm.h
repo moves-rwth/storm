@@ -324,17 +324,18 @@ namespace storm {
         auto refinementThreshold = storm::utility::convertNumber<typename storm::storage::ParameterRegion<storm::RationalFunction>::CoefficientType>(storm::settings::getModule<storm::settings::modules::CoreSettings>().getParameterLiftingThreshold());
         std::vector<std::pair<storm::storage::ParameterRegion<storm::RationalFunction>, storm::modelchecker::parametric::RegionCheckResult>> result;
         
-        std::cout << "Performing parameter lifting for property " << formula << " on initial region " << initialRegion.toString(true) << " with refinementThreshold " << storm::utility::convertNumber<double>(refinementThreshold) << " ...";
+        std::cout << "Performing parameter lifting for property " << *formula << " on initial region " << initialRegion.toString(true) << " with refinementThreshold " << storm::utility::convertNumber<double>(refinementThreshold) << " ...";
         std::cout.flush();
         
+        storm::modelchecker::CheckTask<storm::logic::Formula, storm::RationalFunction> task(*formula, true);
         
         if (markovModel->isOfType(storm::models::ModelType::Dtmc)) {
             storm::modelchecker::parametric::ParameterLifting <storm::models::sparse::Dtmc<storm::RationalFunction>, double> parameterLiftingContext(*markovModel->template as<storm::models::sparse::Dtmc<storm::RationalFunction>>());
-            parameterLiftingContext.specifyFormula(*formula);
+            parameterLiftingContext.specifyFormula(task);
             result = parameterLiftingContext.performRegionRefinement(initialRegion, refinementThreshold);
         } else if (markovModel->isOfType(storm::models::ModelType::Mdp)) {
             storm::modelchecker::parametric::ParameterLifting<storm::models::sparse::Mdp<storm::RationalFunction>, double> parameterLiftingContext(*markovModel->template as<storm::models::sparse::Mdp<storm::RationalFunction>>());
-            parameterLiftingContext.specifyFormula(*formula);
+            parameterLiftingContext.specifyFormula(task);
             result = parameterLiftingContext.performRegionRefinement(initialRegion, refinementThreshold);
         } else {
             STORM_LOG_THROW(false, storm::exceptions::InvalidSettingsException, "Unable to perform parameterLifting on the provided model type.");
