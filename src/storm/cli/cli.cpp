@@ -93,7 +93,7 @@ namespace storm {
 #endif
 #ifdef STORM_HAVE_CARL
             // TODO get version string
-            STORM_PRINT("Linked with CARL." << std::endl);
+            STORM_PRINT("Linked with CArL." << std::endl);
 #endif
             
 #ifdef STORM_HAVE_CUDA
