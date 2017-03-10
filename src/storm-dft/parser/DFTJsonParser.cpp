@@ -100,7 +100,11 @@ namespace storm {
                 } else if (type == "be") {
                     ValueType failureRate = parseRationalExpression(data.at("rate"));
                     ValueType dormancyFactor = parseRationalExpression(data.at("dorm"));
-                    success = builder.addBasicElement(name, failureRate, dormancyFactor);
+                    bool transient = false;
+                    if (data.count("transient") > 0) {
+                        transient = data.at("transient");
+                    }
+                    success = builder.addBasicElement(name, failureRate, dormancyFactor, transient);
                 } else {
                     STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Type name: " << type << "  not recognized.");
                     success = false;

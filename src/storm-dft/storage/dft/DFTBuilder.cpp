@@ -272,7 +272,7 @@ namespace storm {
                     if (be->canFail()) {
                         dormancyFactor = be->passiveFailureRate() / be->activeFailureRate();
                     }
-                    addBasicElement(be->name(), be->activeFailureRate(), dormancyFactor);
+                    addBasicElement(be->name(), be->activeFailureRate(), dormancyFactor, be->isTransient());
                     break;
                 }
                 case DFTElementType::CONSTF:

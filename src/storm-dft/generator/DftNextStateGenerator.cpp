@@ -112,7 +112,7 @@ namespace storm {
                     newState->updateFailableDependencies(next->id());
                 }
 
-                if(newState->isInvalid()) {
+                if(newState->isInvalid() || (nextBE->isTransient() && !newState->hasFailed(mDft.getTopLevelIndex()))) {
                     // Continue with next possible state
                     ++currentFailable;
                     continue;

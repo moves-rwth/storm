@@ -124,7 +124,7 @@ namespace storm {
                     } else if (boost::starts_with(tokens[1], "lambda=")) {
                         ValueType failureRate = parseRationalExpression(tokens[1].substr(7));
                         ValueType dormancyFactor = parseRationalExpression(tokens[2].substr(5));
-                        success = builder.addBasicElement(name, failureRate, dormancyFactor);
+                        success = builder.addBasicElement(name, failureRate, dormancyFactor, false); // TODO set transient BEs
                     } else {
                         STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Type name: " << tokens[1] << "  not recognized.");
                         success = false;
