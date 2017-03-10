@@ -77,9 +77,9 @@ namespace storm {
             bool sinkStateRequired = !originalModel.getInitialStates().isDisjointFrom(sinkStates);
             for( auto state : maybeStates) {
                 resNumActions += origMatrix.getRowGroupSize(state);
-                bool hasTransitionToTarget(false), hasTransitionToSink(false);
                 auto const& endOfRowGroup = origMatrix.getRowGroupIndices()[state+1];
                 for (uint_fast64_t row = origMatrix.getRowGroupIndices()[state]; row < endOfRowGroup; ++row) {
+                    bool hasTransitionToTarget(false), hasTransitionToSink(false);
                     for (auto const& entry : origMatrix.getRow(row)) {
                         if(maybeStates.get(entry.getColumn())) {
                             ++resNumTransitions;
@@ -120,8 +120,6 @@ namespace storm {
 
         }
         
-        
-        
         template <typename SparseModelType>
         storm::storage::SparseMatrix<typename SparseModelType::ValueType> GoalStateMerger<SparseModelType>::buildTransitionMatrix(storm::storage::BitVector const& maybeStates, storm::storage::BitVector const& targetStates, storm::storage::BitVector const& sinkStates, boost::optional<uint_fast64_t> const& newTargetState, boost::optional<uint_fast64_t>const& newSinkState, storm::storage::SparseMatrixBuilder<typename SparseModelType::ValueType>& builder) {
         
@@ -138,9 +136,9 @@ namespace storm {
             uint_fast64_t currRow = 0;
             for (auto state : maybeStates) {
                 builder.newRowGroup(currRow);
-                boost::optional<typename SparseModelType::ValueType> targetProbability, sinkProbability;
                 auto const& endOfRowGroup = origMatrix.getRowGroupIndices()[state+1];
                 for (uint_fast64_t row = origMatrix.getRowGroupIndices()[state]; row < endOfRowGroup; ++row) {
+                    boost::optional<typename SparseModelType::ValueType> targetProbability, sinkProbability;
                     for (auto const& entry : origMatrix.getRow(row)) {
                         if(maybeStates.get(entry.getColumn())) {
                             builder.addNextValue(currRow, oldToNewIndexMap[entry.getColumn()], entry.getValue());

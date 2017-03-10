@@ -20,6 +20,7 @@ namespace storm {
             std::unique_ptr<CheckResult> SparseMdpInstantiationModelChecker<SparseModelType, ConstantType>::check(storm::utility::parametric::Valuation<typename SparseModelType::ValueType> const& valuation) {
                 STORM_LOG_THROW(this->currentCheckTask, storm::exceptions::InvalidStateException, "Checking has been invoked but no property has been specified before.");
                 auto const& instantiatedModel = modelInstantiator.instantiate(valuation);
+                STORM_LOG_ASSERT(instantiatedModel.getTransitionMatrix().isProbabilistic(), "Instantiated matrix is not probabilistic!");
                 storm::modelchecker::SparseMdpPrctlModelChecker<storm::models::sparse::Mdp<ConstantType>> modelChecker(instantiatedModel);
 
                 // Check if there are some optimizations implemented for the specified property
@@ -57,7 +58,7 @@ namespace storm {
                     std::unique_ptr<storm::modelchecker::CheckResult> qualitativeResult = quantitativeResult->template asExplicitQuantitativeCheckResult<ConstantType>().compareAgainstBound(this->currentCheckTask->getFormula().asOperatorFormula().getComparisonType(), this->currentCheckTask->getFormula().asOperatorFormula().template getThresholdAs<ConstantType>());
                     storm::storage::Scheduler& scheduler = quantitativeResult->template asExplicitQuantitativeCheckResult<ConstantType>().getScheduler();
                     this->currentCheckTask->setHint(ExplicitModelCheckerHint<ConstantType>(std::move(quantitativeResult->template asExplicitQuantitativeCheckResult<ConstantType>().getValueVector()),
-                                                                                           std::move(dynamic_cast<storm::storage::TotalScheduler const&>(scheduler))));
+                                                                                           std::move(dynamic_cast<storm::storage::TotalScheduler&>(scheduler))));
                     return qualitativeResult;
                 }
             }

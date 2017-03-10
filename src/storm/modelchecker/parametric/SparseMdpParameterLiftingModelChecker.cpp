@@ -101,7 +101,7 @@ namespace storm {
                 // if there are maybestates, create the parameterLifter
                 if (!maybeStates.empty()) {
                     // Create the vector of one-step probabilities to go to target states.
-                    std::vector<typename SparseModelType::ValueType> b = this->parametricModel.getTransitionMatrix().getConstrainedRowSumVector(storm::storage::BitVector(this->parametricModel.getTransitionMatrix().getRowCount(), true), psiStates);
+                    std::vector<typename SparseModelType::ValueType> b = this->parametricModel.getTransitionMatrix().getConstrainedRowSumVector(storm::storage::BitVector(this->parametricModel.getTransitionMatrix().getRowCount(), true), statesWithProbability01.second);
                     
                     parameterLifter = std::make_unique<storm::transformer::ParameterLifter<typename SparseModelType::ValueType, ConstantType>>(this->parametricModel.getTransitionMatrix(), b, this->parametricModel.getTransitionMatrix().getRowIndicesOfRowGroups(maybeStates), maybeStates);
                     computePlayer1Matrix();
@@ -204,10 +204,10 @@ namespace storm {
                 
                 // Set up the solver
                 auto solver = solverFactory->create(player1Matrix, parameterLifter->getMatrix());
-                solver->setTrackScheduler(true);
                 if(lowerResultBound) solver->setLowerBound(lowerResultBound.get());
                 if(upperResultBound) solver->setUpperBound(upperResultBound.get());
                 if(applyPreviousResultAsHint) {
+                    solver->setTrackScheduler(true);
                     x.resize(maybeStates.getNumberOfSetBits(), storm::utility::zero<ConstantType>());
                     if(storm::solver::minimize(dirForParameters) && minSched && player1Sched) solver->setSchedulerHint(std::move(player1Sched.get()), std::move(minSched.get()));
                     if(storm::solver::maximize(dirForParameters) && maxSched && player1Sched) solver->setSchedulerHint(std::move(player1Sched.get()), std::move(maxSched.get()));
@@ -221,12 +221,14 @@ namespace storm {
                     solver->repeatedMultiply(this->currentCheckTask->getOptimizationDirection(), dirForParameters, x, &parameterLifter->getVector(), *stepBound);
                 } else {
                     solver->solveGame(this->currentCheckTask->getOptimizationDirection(), dirForParameters, x, parameterLifter->getVector());
-                    if(storm::solver::minimize(dirForParameters)) {
-                        minSched = solver->getPlayer2Scheduler();
-                    } else {
-                        maxSched = solver->getPlayer2Scheduler();
+                    if(applyPreviousResultAsHint) {
+                        if(storm::solver::minimize(dirForParameters)) {
+                            minSched = solver->getPlayer2Scheduler();
+                        } else {
+                            maxSched = solver->getPlayer2Scheduler();
+                        }
+                        player1Sched = solver->getPlayer1Scheduler();
                     }
-                    player1Sched = solver->getPlayer1Scheduler();
                 }
                 
                 // Get the result for the complete model (including maybestates)
