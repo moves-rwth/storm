@@ -47,7 +47,7 @@ and continue with the guide on how to [run Storm]({{ site.baseurl }}/documentati
 
 ## Building Storm from source
 
-This guide helps you building a standard version of storm. There are plenty of configuration options, please check our [configuration guide](manual-configuration.html) if you want to build a non-standard version. Most notably, you will have to set additional options if you want to include solvers that are not shipped with Storm (for example Gurobi or MathSAT). However, the defaults should be suitable in most cases.
+This guide helps you building a standard version of Storm. There are plenty of configuration options, please check our [configuration guide](manual-configuration.html) if you want to build a non-standard version. Most notably, you will have to set additional options if you want to include solvers that are not shipped with Storm (for example Gurobi or MathSAT). However, the defaults should be suitable in most cases.
 
 ### Obtaining the source code
 
@@ -67,7 +67,7 @@ If you want the most recent version of Storm rather than the stable version, you
 
 In the following, we will use `STORM_DIR` to refer to the root directory of Storm. If you want, you can set an environment variable to ease the following steps via
 ```shell
-export STORM_DIR=<path to storm root>
+export STORM_DIR=<path to Storm root>
 ```
 
 ### Configuration step

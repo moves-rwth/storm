@@ -46,7 +46,7 @@ A large number of dependencies contribute to the capabilities of Storm. We would
 
 # Website
 
-This website (including the website for [stormpy](https://moves-rwth.github.io/stormpy/) and for our benchmarks) is developed with the following libraries, which made this effort so much easier:
+This website (including the website for [Stormpy](https://moves-rwth.github.io/stormpy/) and for our benchmarks) is developed with the following libraries, which made this effort so much easier:
 
 - [Bootstrap](http://getbootstrap.com/){:target="_blank"}
 - [BootstrapCDN](https://www.bootstrapcdn.com/){:target="_blank"}
@@ -60,4 +60,3 @@ This website (including the website for [stormpy](https://moves-rwth.github.io/s
 # Development
 
 We are happy to use the [Xcode](https://developer.apple.com/xcode/){:target="_blank"}, [CLion](https://www.jetbrains.com/clion/){:target="_blank"}, [Valgrind](http://valgrind.org/){:target="_blank"}, [Git](https://en.wikipedia.org/wiki/Git){:target="_blank"} and [Jenkins](https://jenkins.io/){:target="_blank"} for development purposes.
-

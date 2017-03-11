@@ -42,7 +42,7 @@ should produce output similar to
 Storm 1.0.0
 
 ERROR (cli.cpp:309): No input model.
-ERROR (storm.cpp:39): An exception caused storm to terminate. The message of the exception is: No input model.
+ERROR (storm.cpp:39): An exception caused Storm to terminate. The message of the exception is: No input model.
 ```
 
 Of course your version may differ, but the general picture should be the same. In particular, `storm` should complain about a missing input model. More information about the Storm version can be obtained by providing `--version`.
@@ -549,7 +549,7 @@ choice labels: 	no
 
 Model checking property P=? [true U<=40 ((((s1 = 4) | (s2 = 4)) | (s3 = 4)) | (s4 = 4))] ...
 ERROR (SparseMdpPrctlModelChecker.cpp:60): Formula needs to specify whether minimal or maximal values are to be computed on nondeterministic model.
-ERROR (storm.cpp:39): An exception caused storm to terminate. The message of the exception is: Formula needs to specify whether minimal or maximal values are to be computed on nondeterministic model.
+ERROR (storm.cpp:39): An exception caused Storm to terminate. The message of the exception is: Formula needs to specify whether minimal or maximal values are to be computed on nondeterministic model.
 ```
 </div>
 </div>
