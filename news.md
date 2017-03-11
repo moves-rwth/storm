@@ -11,7 +11,7 @@ layout: default
     </div>
     <div class="panel-body">
         {{post.excerpt}}
-        <a href="{{ site.baseurl }}{{ post.url }}">Read more</a>
+        <a href="{{ post.url | prepend: site.baseurl }}">Read more</a>
     </div>
     {% if post.tags != empty %}
     <div class="panel-footer">
