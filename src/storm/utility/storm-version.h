@@ -24,7 +24,7 @@ namespace storm {
             /// How many commits passed since the tag was last set.
             const static unsigned commitsAhead;
             
-            /// 0 iff there no files were modified in the checkout, 1 otherwise.
+            /// 0 iff there no files were modified in the checkout, 1 otherwise. If none, no information about dirtyness is given.
             const static boost::optional<bool> dirty;
             
             /// The system which has compiled Storm.
@@ -53,6 +53,8 @@ namespace storm {
                 }
                 if (!gitRevisionHash.empty()) {
                     sstream << " build from revision " << gitRevisionHash;
+                } else {
+                    sstream << " built from archive";
                 }
                 if (dirty) {
                     if (dirty.get()) {
