@@ -61,7 +61,7 @@
                     <div class="jumbotron">
                         <h1>Easy.</h1>
                         <div class="pull-right">
-                            <a href="about.html" class="btn btn-default btn-md active" role="button" aria-pressed="true">Read more</a>
+                            <a href="{{ site.baseurl }}/about.html" class="btn btn-default btn-md active" role="button" aria-pressed="true">Read more</a>
                         </div>
                         <p>Enjoy access to the efficient core with the ease of python.</p>
                     </div>
@@ -80,7 +80,7 @@
                             <div class="panel-body">
                                 Storm is a tool for the analysis of systems involving random or probabilistic phenomena. Given an input model and a quantitative specification, it can determine whether the input model conforms to the specification. It has been designed with performance and modularity in mind.
                                 <div class="pull-right">
-                                    <a href="getting-started.html" class="btn btn-sm btn-default">Getting started</a>
+                                    <a href="{{ site.baseurl }}/getting-started.html" class="btn btn-sm btn-default">Getting started</a>
                                 </div>
                             </div>
                         </div>
@@ -100,7 +100,7 @@
                                     <li>Markov Automata</li>
                                 </ul>
                                 <div class="pull-right">
-                                    <a href="documentation/usage/models.html" class="btn btn-sm btn-default">Read more</a>
+                                    <a href="{{ site.baseurl }}/documentation/usage/models.html" class="btn btn-sm btn-default">Read more</a>
                                 </div>
                             </div>
                         </div>
@@ -124,7 +124,7 @@
                                     <li>explicit</li>
                                 </ul>
                                 <div class="pull-right">
-                                    <a href="documentation/usage/languages.html" class="btn btn-sm btn-default">Read more</a>
+                                    <a href="{{ site.baseurl }}/documentation/usage/languages.html" class="btn btn-sm btn-default">Read more</a>
                                 </div>
                             </div>
                         </div>
@@ -144,7 +144,7 @@
                                     <li>Conditional Probabilities</li>
                                 </ul>
                                 <div class="pull-right">
-                                    <a href="documentation/usage/properties.html" class="btn btn-sm btn-default">Read more</a>
+                                    <a href="{{ site.baseurl }}/documentation/usage/properties.html" class="btn btn-sm btn-default">Read more</a>
                                 </div>
                             </div>
                         </div>
@@ -165,7 +165,7 @@
                             <h4>{{ post.title }}</h4>
                             {{ post.excerpt }}
                             <div class="pull-right">
-                                <a href="{{ post.url }}" class="btn btn-sm btn-default">Read more</a>
+                                <a href="{{ post.url | prepend: site.baseurl }}" class="btn btn-sm btn-default">Read more</a>
                             </div>
                             </div>
                         </div>
@@ -181,7 +181,7 @@
                             <h4>{{ post.title }}</h4>
                             {{ post.excerpt }}
                             <div class="pull-right">
-                                <a href="{{ post.url }}" class="btn btn-sm btn-default">Read more</a>
+                                <a href="{{ post.url | prepend: site.baseurl}}" class="btn btn-sm btn-default">Read more</a>
                             </div>
                             </div>
                         </div>
