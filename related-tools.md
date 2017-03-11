@@ -14,7 +14,7 @@ There are various tools whose functionality overlaps or is closely related with 
 - [GreatSPN](http://www.di.unito.it/~greatspn/index.html){:target="_blank"}
 - [IMCA](http://www-i2.informatik.rwth-aachen.de/imca/index.html){:target="_blank"}
 - [IscasMC](http://iscasmc.ios.ac.cn/){:target="_blank"}
-- [Modest](http://modestchecker.org/){:target="_blank"}
+- [Modest](http://modestchecker.net/){:target="_blank"}
 - [MRMC](http://mrmc-tool.org/){:target="_blank"}
 - [PARAM](http://depend.cs.uni-sb.de/tools/param/){:target="_blank"}
 - [PASS](https://depend.cs.uni-sb.de/tools/pass/){:target="_blank"}

@@ -19,7 +19,7 @@ If you just want to run Storm and you want to run it natively on your machine, t
 
 ## Homebrew
 
-If you are running a version of macOS that is newer than Mavericks, you can use [homebrew](http://brew.sh/), the "missing package manager for macOS". Once you have installed homebrew, you need to make homebrew aware of how to install Storm. In brew-speak, you need to *tap* the Storm homebrew formulas
+If you are running a version of macOS that is newer than Mavericks, you can use [homebrew](https://brew.sh/), the "missing package manager for macOS". Once you have installed homebrew, you need to make homebrew aware of how to install Storm. In brew-speak, you need to *tap* the Storm homebrew formulas
 
 ```shell
 brew tap moves-rwth/storm

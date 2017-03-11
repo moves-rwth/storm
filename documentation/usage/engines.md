@@ -10,7 +10,7 @@ As with so many things, there is no one-size-fits-all in probabilistic model che
 
 ## Sparse
 
-Storm's main engine is the sparse engine in the sense that it tends to have the most features. It takes the model description and directly builds a representation based on *explicit data structures*, mainly [bit vectors](https://en.wikipedia.org/wiki/Bit_array) and [sparse matrices](https://en.wikipedia.org/wiki/Sparse_matrix). Then, model checking is performed using these data structures. Since these permit easy access to single elements, they are standard representations for many tasks involved in the solution procedure (like solving linear equations). This enables the use of off-the-shelf libraries, for instance [Eigen](http://eigen.tuxfamily.org/) or [gmm++](http://download.gna.org/getfem/html/homepage/gmm/), that implement sophisticated solution methods.
+Storm's main engine is the sparse engine in the sense that it tends to have the most features. It takes the model description and directly builds a representation based on *explicit data structures*, mainly [bit vectors](https://en.wikipedia.org/wiki/Bit_array) and [sparse matrices](https://en.wikipedia.org/wiki/Sparse_matrix). Then, model checking is performed using these data structures. Since these permit easy access to single elements, they are standard representations for many tasks involved in the solution procedure (like solving linear equations). This enables the use of off-the-shelf libraries, for instance [Eigen](http://eigen.tuxfamily.org/index.php?title=Main_Page) or [gmm++](http://download.gna.org/getfem/html/homepage/gmm/), that implement sophisticated solution methods.
 
 - able to use off-the-shelf libraries to solve equation systems (standard data structures), solving therefore tends to be fast
 - well-suited for moderately sized models without a lot of symmetry
@@ -75,7 +75,7 @@ The hybrid engine tries to combine the [sparse](#sparse) and [dd](#dd) engines. 
 - model is symmetrical
 
 ##### **Major restrictions**:
-- does not support [MAs](models.html#markov-automata)
+- does not support [MAs](models.html#markov-automata-mas)
 
 ## Exploration
 

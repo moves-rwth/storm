@@ -63,7 +63,7 @@ We collected some platform specific hints to ease the installation of Storm on t
 
 First of all, you need to download and install Xcode and its command line utilities to have the suitable command line tools. For more details, we refer to a [this tutorial](https://www.moncefbelyamani.com/how-to-install-xcode-homebrew-git-rvm-ruby-on-mac/).
 
-Furthermore, we recommend the usage of [Homebrew](http://brew.sh) to install the missing packages, but MacPorts might (at some point) have the desired dependencies as well.
+Furthermore, we recommend the usage of [Homebrew](https://brew.sh) to install the missing packages, but MacPorts might (at some point) have the desired dependencies as well.
 
 - Required:
 ```

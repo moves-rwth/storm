@@ -20,7 +20,7 @@ Storm takes [many languages](languages.html) as input. For some of these formats
     <tr><td><a href="languages.html#prism">PRISM</a>, <a href="languages.html#jani">JANI</a>, <a href="languages.html#explicit">explicit</a></td><td>storm</td><td>storm-main</td></tr>
     <tr><td><a href="languages.html#dfts">DFTs</a></td><td>storm-dft</td><td>storm-dft-cli</td></tr>
     <tr><td><a href="languages.html#gspns">GSPNs</a></td><td>storm-gspn</td><td>storm-gspn-cli</td></tr>
-    <tr><td><a href="languages.html#pgcl">pGCL</a></td><td>storm-pgcl</td><td>storm-pgcl-cli</td></tr>
+    <tr><td><a href="languages.html#cpgcl">pGCL</a></td><td>storm-pgcl</td><td>storm-pgcl-cli</td></tr>
   </tbody>
 </table>
 
@@ -30,7 +30,7 @@ Consequently, our guide on how to run Storm is structured accordingly. For every
 
 Many of Storm's executables have many options, only a fraction of which are covered in this guide. If you want to explore these options, invoke the executable with the `--help [hint]` option. If a hint is given, only those options are shown that match it.
 
-Before we get started, let us check whether everything is set up properly. In all command-line examples we assume that the executables are in your PATH and can therefore be invoked without prefixing them with their path. If you installed Storm via [homebrew]({{ site.baseurl }}/documentation/installation/installation.html#homebrew), this is automatically the case; if you built Storm yourself, you have to [manually add it to your PATH]({{ site.baseurl }}/documentation/installation/installation.html#adding-storm-to-your-path). Typing
+Before we get started, let us check whether everything is set up properly. In all command-line examples we assume that the executables are in your PATH and can therefore be invoked without prefixing them with their path. If you installed Storm via [homebrew]({{ site.baseurl }}/documentation/installation/installation.html#homebrew), this is automatically the case; if you built Storm yourself, you have to [manually add it to your PATH]({{ site.baseurl }}/documentation/installation/installation.html#adding-storm-to-your-path-optional). Typing
 
 ```shell
 storm
@@ -556,7 +556,7 @@ ERROR (storm.cpp:39): An exception caused Storm to terminate. The message of the
 </div>
 </div>
 
-Likely, Storm will tell you that there is an error and that for nondeterministic models you need to specify whether minimal or maximal probabilities are to be computed. Why is that? Since the model is a [Markov Decision Process](documentation/usage/models.html), there are (potentially) nondeterministic choices in the model that need to be resolved. Storm doesn't know how to resolve them unless you tell it to either minimize or maximize (wrt. to the probability of the objective) whenever there is a nondeterministic choice.
+Likely, Storm will tell you that there is an error and that for nondeterministic models you need to specify whether minimal or maximal probabilities are to be computed. Why is that? Since the model is a [Markov Decision Process](models.html), there are (potentially) nondeterministic choices in the model that need to be resolved. Storm doesn't know how to resolve them unless you tell it to either minimize or maximize (wrt. to the probability of the objective) whenever there is a nondeterministic choice.
 
 ```shell
 storm --prism leader4.nm --prop "Pmin=? [F<=40 (s1=4 | s2=4 | s3=4 | s4=4) ]"
