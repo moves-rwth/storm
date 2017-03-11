@@ -177,7 +177,7 @@ namespace storm {
                         approximationThreshold = dft.nrElements()+10;
                         break;
                     case storm::builder::ApproximationHeuristic::DEPTH:
-                        approximationThreshold = iteration;
+                        approximationThreshold = iteration + 1;
                         break;
                     case storm::builder::ApproximationHeuristic::PROBABILITY:
                     case storm::builder::ApproximationHeuristic::BOUNDDIFFERENCE:
