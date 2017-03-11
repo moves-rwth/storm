@@ -8,44 +8,44 @@ categories: [Usage]
 
 {% include toc.html %}
 
-# PRISM
+## PRISM
 
 The PRISM language can be used to specify [DTMCs, CTMCs and MDPs](documentation/usage/models.html). Conceptually, it is a guarded command language using reactive modules. Storm supports (almost) the full PRISM language and extends it (in a straightforward way) to [Markov Automata](documentation/usage/models.html).
 
 For more information, please read the [PRISM manual](http://www.prismmodelchecker.org/manual/ThePRISMLanguage/Introduction). A rich collection of examples is available at the [PRISM benchmark suite](http://www.prismmodelchecker.org/benchmarks/).
 
-# JANI
+## JANI
 
 JANI is a recently introduced modeling language for the landscape of probabilistic models. To allow easy parsing, JANI is based on [JSON](http://www.json.org/). In general, JANI models can encode a variety of model types. Storm's support for JANI models covers DTMCs, CTMCs and MDPs.
 
 For more information, please visit the [Jani specification](http://www.jani-spec.org), where you can also find some [examples](https://github.com/ahartmanns/jani-models/).
 
-# GSPNs
+## GSPNs
 
 [Generalized Stochastic Petri Nets](#) can be given in either of two formats. For both formats [examples](#) are available.
 
-## PNML
+### PNML
 
 The [Petri Net Markup Language](http://www.pnml.org/) is an ISO-standardized XML format to specify Petri nets.
 
-## GreatSPN editor projects
+### GreatSPN editor projects
 
 The [GreatSPN editor](http://www.di.unito.it/~amparore/mc4cslta/editor.html) is a GUI capable of specifying and verifying GSPNs. Project files (XML) specifying a single GSPN can be parsed directly by Storm.
 
-# DFTs
+## DFTs
 
 [Dynamic Fault Trees](#) are given in the so-called Galileo Format.
 The format is a simple textual format naming the root of the tree and then lists all nodes of the tree, together with the children of each node. A [rich collection](https://github.com/moves-rwth/dft-examples) of examples is available.
 
-# cpGCL
+## cpGCL
 
 The conditional probabilistic guarded command language, cpGCL for short, is an extension of Dijkstra's guarded command language and [pGCL](http://www.sciencedirect.com/science/article/pii/S0167642396000196) to also accommodate probabilistic choice and conditional observations. Examples can be found in some of the folders in the [JANI repository](#jani). For example, the famous coupon collector example encoded as a cpGCL program can be found [here](https://github.com/ahartmanns/jani-models/blob/master/CouponCollector/MultiAllowed/coupon_m_03_02.pgcl).
 
-# Explicit
+## Explicit
 
 In the spirit of [MRMC](http://www.mrmc-tool.org/), Storm also supports input models specified in an explicit format. While the format closely resembles that of MRMC, it does not match exactly. Likewise, at the moment the model export of PRISM generates files that can be easily modified to be handled by Storm, but they still need to be adapted by hand.
 
-## Transitions File
+### Transition File
 
 The main ingredient of an explicit model is a tra-file containing the transitions. For DTMCs, a tra file might look like this
 
@@ -72,7 +72,7 @@ mdp
 
 This specifies the behaviors of two states. State 0 has two nondeterministic choices (called 0 and 1). With the first one, choice 0, state 0 can probabilistically go to state 1 with probability 0.3 and to state 4 with probability 0.7. The second choice (1), is associated with a uniform distribution over the states 0 and 1.
 
-## Labeling File
+### Labeling File
 
 The labeling file format matches that of MRMC. That is, it looks similar to this:
 

@@ -39,13 +39,13 @@ storm
 should produce output similar to
 
 ```shell
-Storm 0.9.9
+Storm 1.0.0
 
 ERROR (cli.cpp:309): No input model.
 ERROR (storm.cpp:39): An exception caused storm to terminate. The message of the exception is: No input model.
 ```
 
-Of course, details like your version may differ, but the general picture should be the same. In particular, `storm` should complain about a missing input model. More information about the Storm version can be obtained by providing `--version`.
+Of course your version may differ, but the general picture should be the same. In particular, `storm` should complain about a missing input model. More information about the Storm version can be obtained by providing `--version`.
 
 ## Running Storm on PRISM, JANI or explicit input
 
@@ -124,10 +124,10 @@ storm --prism die.pm
 <div class="panel-collapse collapse" id="prism_die_dtmc_output_exploration">
 <div class="panel-body">
 ```shell
-Storm 0.9.9
+Storm 1.0.0
 
 Command line arguments: --prism die.pm
-Current working directory: /Users/chris/work/storm/build/bin
+Current working directory: ~/storm/build/bin
 
 Time for model construction: 0.287s.
 
@@ -167,10 +167,10 @@ storm --prism die.pm --buildfull
 <div class="panel-collapse collapse" id="prism_die_dtmc_output_exploration_buildfull">
 <div class="panel-body">
 ```shell
-Storm 0.9.9
+Storm 1.0.0
 
 Command line arguments: --prism die.pm --buildfull
-Current working directory: /Users/chris/work/storm/build/bin
+Current working directory: ~/storm/build/bin
 
 Time for model construction: 0.291s.
 
@@ -212,10 +212,10 @@ storm --prism die.pm --prop "P=? [F s=7&d=1]"
 <div class="panel-collapse collapse" id="prism_die_dtmc_output_prob_one">
 <div class="panel-body">
 ```shell
-Storm 0.9.9
+Storm 1.0.0
 
 Command line arguments: --prism die.pm --prop P=? [F s=7&d=1]
-Current working directory: /Users/chris/work/storm/build/bin
+Current working directory: ~/storm/build/bin
 
 Time for model construction: 0.292s.
 
@@ -265,10 +265,10 @@ storm --prism die.pm --prop "P=? [F s=7&d=1 || F s=7&d<4]"
 <div class="panel-collapse collapse" id="prism_die_dtmc_output_prob_one_conditional">
 <div class="panel-body">
 ```shell
-Storm 0.9.9
+Storm 1.0.0
 
 Command line arguments: --prism die.pm --prop P=? [F s=7&d=1 || F s=7&d<4]
-Current working directory: /Users/chris/work/storm/build/bin
+Current working directory: ~/storm/build/bin
 
 Time for model construction: 0.294s.
 
@@ -314,10 +314,10 @@ storm --prism die.pm --prop "R{\"coin_flips\"}=? [F s=7]"
 <div class="panel-collapse collapse" id="prism_die_dtmc_output_expected_coinflips">
 <div class="panel-body">
 ```shell
-Storm 0.9.9
+Storm 1.0.0
 
 Command line arguments: --prism die.pm --prop R{"coin_flips"}=? [F s=7]
-Current working directory: /Users/chris/work/storm/build/bin
+Current working directory: ~/storm/build/bin
 
 Time for model construction: 0.286s.
 
@@ -477,10 +477,10 @@ storm --prism leader4.nm --prop "P>=1 [F (s1=4 | s2=4 | s3=4 | s4=4) ]"
 <div class="panel-collapse collapse" id="prism_async_leader_mdp_eventually_elected">
 <div class="panel-body">
 ```shell
-Storm 0.9.9
+Storm 1.0.0
 
 Command line arguments: --prism leader4.nm --prop P>=1 [F (s1=4 | s2=4 | s3=4 | s4=4) ]
-Current working directory: /Users/chris/work/storm/build/bin
+Current working directory: ~/storm/build/bin
 
 Time for model construction: 0.403s.
 
@@ -527,10 +527,10 @@ storm --prism leader4.nm --prop "P=? [F<=40 (s1=4 | s2=4 | s3=4 | s4=4) ]"
 <div class="panel-collapse collapse" id="prism_async_leader_mdp_bounded_eventually_elected">
 <div class="panel-body">
 ```shell
-Storm 0.9.9
+Storm 1.0.0
 
 Command line arguments: --prism leader4.nm --prop P=? [F<=40 (s1=4 | s2=4 | s3=4 | s4=4) ]
-Current working directory: /Users/chris/work/storm/build/bin
+Current working directory: ~/storm/build/bin
 
 Time for model construction: 0.395s.
 
@@ -576,10 +576,10 @@ storm --prism leader4.nm --prop "Pmin=? [F<=40 (s1=4 | s2=4 | s3=4 | s4=4) ]"
 <div class="panel-collapse collapse" id="prism_async_leader_mdp_bounded_eventually_elected_min">
 <div class="panel-body">
 ```shell
-Storm 0.9.9
+Storm 1.0.0
 
 Command line arguments: --prism leader4.nm --prop Pmin=? [F<=40 (s1=4 | s2=4 | s3=4 | s4=4) ]
-Current working directory: /Users/chris/work/storm/build/bin
+Current working directory: ~/storm/build/bin
 
 Time for model construction: 0.393s.
 
@@ -1722,10 +1722,10 @@ storm --jani approx_pi_00100_010_full.jani --engine hybrid
 <div class="panel-collapse collapse" id="jani_approxpi_jani_output_exploration">
 <div class="panel-body">
 ```shell
-Storm 0.9.9
+Storm 1.0.0
 
 Command line arguments: --jani approx_pi_00100_010_full.jani --engine hybrid
-Current working directory: /Users/chris/work/storm/build/bin
+Current working directory: ~/storm/build/bin
 
 Time for model construction: 0.069s.
 
@@ -1766,10 +1766,10 @@ storm --jani approx_pi_00100_010_full.jani --engine hybrid --prop "Rmax=? [F \"_
 <div class="panel-collapse collapse" id="jani_approxpi_jani_output_expected_hits">
 <div class="panel-body">
 ```shell
-Storm 0.9.9
+Storm 1.0.0
 
 Command line arguments: --jani approx_pi_00100_010_full.jani --engine hybrid --prop Rmax=? [F "_ret0_"]
-Current working directory: /Users/chris/work/storm/build/bin
+Current working directory: ~/storm/build/bin
 
 Time for model construction: 0.067s.
 
@@ -1808,7 +1808,7 @@ Here, we take the same input model as for [Example 1](#example-1-analysis-of-a-p
 <div class="panel panel-primary">
 {::nomarkdown}
 <div class="panel-heading">
-<a href="#explicit_die_dtmc" data-toggle="collapse">Show/hide PRISM model of Knuth-Yao die</a>
+<a href="#explicit_die_dtmc" data-toggle="collapse">Show/hide explicit model of Knuth-Yao die</a>
 <div class="pull-right">
 <a href="#explicit_die_dtmc" data-toggle="collapse"><span class="glyphicon glyphicon-menu-down" aria-hidden="true"></span></a>
 </div>
@@ -1897,10 +1897,10 @@ storm --explicit die.tra die.lab --transrew die.tra.rew
 <div class="panel-collapse collapse" id="explicit_die_dtmc_exploration">
 <div class="panel-body">
 ```shell
-Storm 0.9.9
+Storm 1.0.0
 
 Command line arguments: --explicit die.tra die.lab --transrew die.tra.rew
-Current working directory: /Users/chris/work/storm/build/bin
+Current working directory: ~/storm/build/bin
 
 Time for model construction: 0.001s.
 --------------------------------------------------------------
@@ -1940,10 +1940,10 @@ storm --explicit die.tra die.lab --transrew die.tra.rew --prop "P=? [F \"one\"]"
 <div class="panel-collapse collapse" id="explicit_die_dtmc_output_prob_one">
 <div class="panel-body">
 ```shell
-Storm 0.9.9
+Storm 1.0.0
 
 Command line arguments: --explicit die.tra die.lab --transrew die.tra.rew --prop P=? [F "one"]
-Current working directory: /Users/chris/work/storm/build/bin
+Current working directory: ~/storm/build/bin
 
 Time for model construction: 0.000s.
 --------------------------------------------------------------
@@ -1991,10 +1991,10 @@ storm --explicit die.tra die.lab --transrew die.tra.rew --prop "R=? [F \"done\"]
 <div class="panel-collapse collapse" id="explicit_die_dtmc_output_expected_coinflips">
 <div class="panel-body">
 ```shell
-Storm 0.9.9
+Storm 1.0.0
 
 Command line arguments: --explicit die.tra die.lab --transrew die.tra.rew --prop P=? [F "one"]
-Current working directory: /Users/chris/work/storm/build/bin
+Current working directory: ~/storm/build/bin
 
 TTime for model construction: 0.000s.
 --------------------------------------------------------------
