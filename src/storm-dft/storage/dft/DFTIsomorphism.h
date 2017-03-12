@@ -249,7 +249,7 @@ namespace storage {
 
     protected:
         void colourize(std::shared_ptr<const DFTBE<ValueType>> const& be) {
-             beColour[be->id()] = BEColourClass<ValueType>(be->activeFailureRate(), be->passiveFailureRate(), be->nrParents());
+            beColour[be->id()] = BEColourClass<ValueType>(be->activeFailureRate(), be->passiveFailureRate(), be->nrParents());
         }
 
         void colourize(std::shared_ptr<const DFTGate<ValueType>> const& gate) {

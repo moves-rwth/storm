@@ -651,58 +651,72 @@ namespace storm {
             storm::utility::iota_n(std::back_inserter(vec), nrElements(), 0);
             BijectionCandidates<ValueType> completeCategories = colouring.colourSubdft(vec);
             std::map<size_t, std::vector<std::vector<size_t>>> res;
-            
+
+            // Find symmetries for gates
             for(auto const& colourClass : completeCategories.gateCandidates) {
-                if(colourClass.second.size() > 1) {
-                    std::set<size_t> foundEqClassFor;
-                    for(auto it1 = colourClass.second.cbegin(); it1 != colourClass.second.cend(); ++it1) {
-                        std::vector<std::vector<size_t>> symClass;
-                        if(foundEqClassFor.count(*it1) > 0) {
-                            // This item is already in a class.
-                            continue;
-                        }
-                        if(!getGate(*it1)->hasOnlyStaticParents()) {
-                            continue;
-                        }
-                        
-                        std::pair<std::vector<size_t>, std::vector<size_t>> influencedElem1Ids = getSortedParentAndOutDepIds(*it1);
-                        auto it2 = it1;
-                        for(++it2; it2 != colourClass.second.cend(); ++it2) {
-                            if(!getGate(*it2)->hasOnlyStaticParents()) {
-                                continue;
-                            }
-                            std::vector<size_t> sortedParent2Ids = getGate(*it2)->parentIds();
-                            std::sort(sortedParent2Ids.begin(), sortedParent2Ids.end());
-                            
-                            if(influencedElem1Ids == getSortedParentAndOutDepIds(*it2)) {
-                                std::map<size_t, size_t> bijection = findBijection(*it1, *it2, colouring, true);
-                                if (!bijection.empty()) {
-                                    STORM_LOG_TRACE("Subdfts are symmetric");
-                                    foundEqClassFor.insert(*it2);
-                                    if(symClass.empty()) {
-                                        for(auto const& i : bijection) {
-                                            symClass.push_back(std::vector<size_t>({i.first}));
-                                        }
-                                    }
-                                    auto symClassIt = symClass.begin();
-                                    for(auto const& i : bijection) {
-                                        symClassIt->emplace_back(i.second);
-                                        ++symClassIt;
-                                        
-                                    }
-                                }
-                            }
-                        }
-                        if(!symClass.empty()) {
-                            res.emplace(*it1, symClass);
-                        }
-                    }
-                    
-                }
+                findSymmetriesHelper(colourClass.second, colouring, res);
             }
+
+            // Find symmetries for BEs
+            for(auto const& colourClass : completeCategories.beCandidates) {
+                findSymmetriesHelper(colourClass.second, colouring, res);
+            }
+
             return DFTIndependentSymmetries(res);
         }
-        
+
+        template<typename ValueType>
+        void DFT<ValueType>::findSymmetriesHelper(std::vector<size_t> const& candidates, DFTColouring<ValueType> const& colouring, std::map<size_t, std::vector<std::vector<size_t>>>& result) const {
+            if(candidates.size() <= 0) {
+                return;
+            }
+
+            std::set<size_t> foundEqClassFor;
+            for(auto it1 = candidates.cbegin(); it1 != candidates.cend(); ++it1) {
+                std::vector<std::vector<size_t>> symClass;
+                if(foundEqClassFor.count(*it1) > 0) {
+                    // This item is already in a class.
+                    continue;
+                }
+                if(!getElement(*it1)->hasOnlyStaticParents()) {
+                    continue;
+                }
+
+                std::pair<std::vector<size_t>, std::vector<size_t>> influencedElem1Ids = getSortedParentAndOutDepIds(*it1);
+                auto it2 = it1;
+                for(++it2; it2 != candidates.cend(); ++it2) {
+                    if(!getElement(*it2)->hasOnlyStaticParents()) {
+                        continue;
+                    }
+                    std::vector<size_t> sortedParent2Ids = getElement(*it2)->parentIds();
+                    std::sort(sortedParent2Ids.begin(), sortedParent2Ids.end());
+
+                    if(influencedElem1Ids == getSortedParentAndOutDepIds(*it2)) {
+                        std::map<size_t, size_t> bijection = findBijection(*it1, *it2, colouring, true);
+                        if (!bijection.empty()) {
+                            STORM_LOG_TRACE("Subdfts are symmetric");
+                            foundEqClassFor.insert(*it2);
+                            if(symClass.empty()) {
+                                for(auto const& i : bijection) {
+                                    symClass.push_back(std::vector<size_t>({i.first}));
+                                }
+                            }
+                            auto symClassIt = symClass.begin();
+                            for(auto const& i : bijection) {
+                                symClassIt->emplace_back(i.second);
+                                ++symClassIt;
+
+                            }
+                        }
+                    }
+                }
+
+                if(!symClass.empty()) {
+                    result.emplace(*it1, symClass);
+                }
+            }
+        }
+
         template<typename ValueType>
         std::vector<size_t> DFT<ValueType>::findModularisationRewrite() const {
            for(auto const& e : mElements) {
