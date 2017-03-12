@@ -41,9 +41,9 @@ namespace storm {
                 // Initialize currently failable BE
                 if (mDft.isBasicElement(index) && isOperational(index)) {
                     std::shared_ptr<const DFTBE<ValueType>> be = mDft.getBasicElement(index);
-                    if ((!be->isColdBasicElement() && be->canFail()) || !mDft.hasRepresentant(index) || isActive(mDft.getRepresentant(index))) {
+                    if (be->canFail() && (!be->isColdBasicElement() || !mDft.hasRepresentant(index) || isActive(mDft.getRepresentant(index)))) {
                         mCurrentlyFailableBE.push_back(index);
-                        STORM_LOG_TRACE("Currently failable: " << mDft.getBasicElement(index)->toString());
+                        STORM_LOG_TRACE("Currently failable: " << be->toString());
                     }
                 } else if (mDft.getElement(index)->isSpareGate()) {
                     // Initialize used representants
@@ -257,7 +257,7 @@ namespace storm {
                 // Consider "normal" failure
                 STORM_LOG_ASSERT(index < nrFailableBEs(), "Index invalid.");
                 std::pair<std::shared_ptr<DFTBE<ValueType> const>,bool> res(mDft.getBasicElement(mCurrentlyFailableBE[index]), false);
-                STORM_LOG_ASSERT(res.first->canFail(), "Element cannot fail.");
+                STORM_LOG_ASSERT(res.first->canFail(), "Element " << *(res.first) << " cannot fail.");
                 mCurrentlyFailableBE.erase(mCurrentlyFailableBE.begin() + index);
                 setFailed(res.first->id());
                 return res;
