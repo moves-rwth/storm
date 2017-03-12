@@ -682,16 +682,14 @@ namespace storm {
                     continue;
                 }
 
-                std::pair<std::vector<size_t>, std::vector<size_t>> influencedElem1Ids = getSortedParentAndOutDepIds(*it1);
+                std::tuple<std::vector<size_t>, std::vector<size_t>, std::vector<size_t>> influencedElem1Ids = getSortedParentAndDependencyIds(*it1);
                 auto it2 = it1;
                 for(++it2; it2 != candidates.cend(); ++it2) {
                     if(!getElement(*it2)->hasOnlyStaticParents()) {
                         continue;
                     }
-                    std::vector<size_t> sortedParent2Ids = getElement(*it2)->parentIds();
-                    std::sort(sortedParent2Ids.begin(), sortedParent2Ids.end());
 
-                    if(influencedElem1Ids == getSortedParentAndOutDepIds(*it2)) {
+                    if(influencedElem1Ids == getSortedParentAndDependencyIds(*it2)) {
                         std::map<size_t, size_t> bijection = findBijection(*it1, *it2, colouring, true);
                         if (!bijection.empty()) {
                             STORM_LOG_TRACE("Subdfts are symmetric");
@@ -748,15 +746,25 @@ namespace storm {
     
 
         template<typename ValueType>
-        std::pair<std::vector<size_t>, std::vector<size_t>> DFT<ValueType>::getSortedParentAndOutDepIds(size_t index) const {
-            std::pair<std::vector<size_t>, std::vector<size_t>> res;
-            res.first = getElement(index)->parentIds();
-            std::sort(res.first.begin(), res.first.end());
-            for(auto const& dep : getElement(index)->outgoingDependencies()) {
-                res.second.push_back(dep->id());
+        std::tuple<std::vector<size_t>, std::vector<size_t>, std::vector<size_t>> DFT<ValueType>::getSortedParentAndDependencyIds(size_t index) const {
+            // Parents
+            std::vector<size_t> parents = getElement(index)->parentIds();
+            std::sort(parents.begin(), parents.end());
+            // Ingoing dependencies
+            std::vector<size_t> ingoingDeps;
+            if (isBasicElement(index)) {
+                for(auto const& dep : getBasicElement(index)->ingoingDependencies()) {
+                    ingoingDeps.push_back(dep->id());
+                }
+                std::sort(ingoingDeps.begin(), ingoingDeps.end());
             }
-            std::sort(res.second.begin(), res.second.end());
-            return res;
+            // Outgoing dependencies
+            std::vector<size_t> outgoingDeps;
+            for(auto const& dep : getElement(index)->outgoingDependencies()) {
+                outgoingDeps.push_back(dep->id());
+            }
+            std::sort(outgoingDeps.begin(), outgoingDeps.end());
+            return std::make_tuple(parents, ingoingDeps, outgoingDeps);
         }
         
         // Explicitly instantiate the class.
