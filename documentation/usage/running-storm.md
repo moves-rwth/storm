@@ -59,19 +59,9 @@ PRISM models can be provided with the `--prism <path/to/prism-file>` option.
 
 In our first example, we are going to analyze a small [DTMC](models.html) in the PRISM format. More specifically, the model represents a protocol to simulate a six-sided die with the use of a fair coin only. The model and more information can be found at the [PRISM website](http://www.prismmodelchecker.org/casestudies/dice.php), but for your convenience, you can view the model and the download link below.
 
-{::options parse_block_html="true" /}
-<div class="panel-group">
-<div class="panel panel-primary">
-{::nomarkdown}
-<div class="panel-heading">
-<a href="#prism_die_dtmc" data-toggle="collapse">Show/hide PRISM model of Knuth-Yao die</a>
-<div class="pull-right">
-<a href="#prism_die_dtmc" data-toggle="collapse"><span class="glyphicon glyphicon-menu-down" aria-hidden="true"></span></a>
-</div>
-</div>
-{:/nomarkdown}
-<div class="panel-collapse collapse" id="prism_die_dtmc">
-<div class="panel-body">
+{% include collapse-panel.html target="prism_die_dtmc" name="model" %}
+
+<div class="prism_die_dtmc collapse" markdown="1">
 Download link: [http://www.prismmodelchecker.org/casestudies/examples/die.pm](http://www.prismmodelchecker.org/casestudies/examples/die.pm)
 ```shell
 // Knuth's model of a fair die using only fair coins
@@ -100,9 +90,6 @@ rewards "coin_flips"
 endrewards
 ```
 </div>
-</div>
-</div>
-</div>
 
 From now on, we will assume that the model file is stored as `die.pm` in the current directory. Let us start with a simple (exhaustive) exploration of the state space of the model:
 
@@ -110,19 +97,9 @@ From now on, we will assume that the model file is stored as `die.pm` in the cur
 storm --prism die.pm
 ```
 
-{::options parse_block_html="true" /}
-<div class="panel-group">
-<div class="panel panel-primary">
-{::nomarkdown}
-<div class="panel-heading">
-<a href="#prism_die_dtmc_output_exploration" data-toggle="collapse">Show/hide output</a>
-<div class="pull-right">
-<a href="#prism_die_dtmc_output_exploration" data-toggle="collapse"><span class="glyphicon glyphicon-menu-down" aria-hidden="true"></span></a>
-</div>
-</div>
-{:/nomarkdown}
-<div class="panel-collapse collapse" id="prism_die_dtmc_output_exploration">
-<div class="panel-body">
+{% include collapse-panel.html target="prism_die_dtmc_output_exploration" name="output" %}
+
+<div class="prism_die_dtmc_output_exploration collapse" markdown="1">
 ```shell
 Storm 1.0.0
 
@@ -143,9 +120,6 @@ choice labels: 	no
 --------------------------------------------------------------
 ```
 </div>
-</div>
-</div>
-</div>
 
 This will tell you that the model is a [sparse](engines.html#sparse) [discrete-time Markov chain](models.html) with 13 states and 20 transitions, no reward model and two labels (`deadlock` and `init`). But wait, doesn't the PRISM model actually specify a reward model? Why does `storm` not find one? The reason is simple, `storm` doesn't build reward models or (custom) labels that are not referred to by properties unless you explicitly want all of them to be built:
 
@@ -153,19 +127,9 @@ This will tell you that the model is a [sparse](engines.html#sparse) [discrete-t
 storm --prism die.pm --buildfull
 ```
 
-{::options parse_block_html="true" /}
-<div class="panel-group">
-<div class="panel panel-primary">
-{::nomarkdown}
-<div class="panel-heading">
-<a href="#prism_die_dtmc_output_exploration_buildfull" data-toggle="collapse">Show/hide output</a>
-<div class="pull-right">
-<a href="#prism_die_dtmc_output_exploration_buildfull" data-toggle="collapse"><span class="glyphicon glyphicon-menu-down" aria-hidden="true"></span></a>
-</div>
-</div>
-{:/nomarkdown}
-<div class="panel-collapse collapse" id="prism_die_dtmc_output_exploration_buildfull">
-<div class="panel-body">
+{% include collapse-panel.html target="prism_die_dtmc_output_exploration_buildfull" name="output" %}
+
+<div class="prism_die_dtmc_output_exploration_buildfull collapse" markdown="1">
 ```shell
 Storm 1.0.0
 
@@ -186,9 +150,6 @@ choice labels: 	no
 --------------------------------------------------------------
 ```
 </div>
-</div>
-</div>
-</div>
 
 This gives you the same model, but this time there is a reward model `coin_flips` attached to it. Unless you want to know how many states satisfy a custom label, you can let `storm` take care of generating the needed reward models and labels. Note that by default, the model is stored in an *sparse matrix* representation (hence the `(sparse)` marker after the model type). There are other formats supported by Storm; please look at the [engines guide](engines.html) for more details.
 
@@ -198,19 +159,9 @@ Now, let's say we want to check whether the probability to roll a one with our s
 storm --prism die.pm --prop "P=? [F s=7&d=1]"
 ```
 
-{::options parse_block_html="true" /}
-<div class="panel-group">
-<div class="panel panel-primary">
-{::nomarkdown}
-<div class="panel-heading">
-<a href="#prism_die_dtmc_output_prob_one" data-toggle="collapse">Show/hide output</a>
-<div class="pull-right">
-<a href="#prism_die_dtmc_output_prob_one" data-toggle="collapse"><span class="glyphicon glyphicon-menu-down" aria-hidden="true"></span></a>
-</div>
-</div>
-{:/nomarkdown}
-<div class="panel-collapse collapse" id="prism_die_dtmc_output_prob_one">
-<div class="panel-body">
+{% include collapse-panel.html target="prism_die_dtmc_output_prob_one" name="output" %}
+
+<div class="prism_die_dtmc_output_prob_one collapse" markdown="1">
 ```shell
 Storm 1.0.0
 
@@ -236,9 +187,6 @@ Result (initial states): 0.1666666667
 Time for model checking: 0.003s.
 ```
 </div>
-</div>
-</div>
-</div>
 
 This will tell us that the probability for rolling a one is actually (very close to) 1/6.
 
@@ -251,19 +199,9 @@ Congratulations, you have now checked your first property with Storm! Now, say w
 storm --prism die.pm --prop "P=? [F s=7&d=1 || F s=7&d<4]"
 ```
 
-{::options parse_block_html="true" /}
-<div class="panel-group">
-<div class="panel panel-primary">
-{::nomarkdown}
-<div class="panel-heading">
-<a href="#prism_die_dtmc_output_prob_one_conditional" data-toggle="collapse">Show/hide output</a>
-<div class="pull-right">
-<a href="#prism_die_dtmc_output_prob_one_conditional" data-toggle="collapse"><span class="glyphicon glyphicon-menu-down" aria-hidden="true"></span></a>
-</div>
-</div>
-{:/nomarkdown}
-<div class="panel-collapse collapse" id="prism_die_dtmc_output_prob_one_conditional">
-<div class="panel-body">
+{% include collapse-panel.html target="prism_die_dtmc_output_prob_one_conditional" name="output" %}
+
+<div class="prism_die_dtmc_output_prob_one_conditional collapse" markdown="1">
 ```shell
 Storm 1.0.0
 
@@ -290,9 +228,6 @@ Result (initial states): 0.3333333333
 Time for model checking: 0.001s.
 ```
 </div>
-</div>
-</div>
-</div>
 
 which tells us that this probability is 1/3. So far the model seems to simulate a proper six-sided die! Finally, we are interested in the expected number of coin flips that need to be made until the simulated die returns an outcome:
 
@@ -300,19 +235,9 @@ which tells us that this probability is 1/3. So far the model seems to simulate 
 storm --prism die.pm --prop "R{\"coin_flips\"}=? [F s=7]"
 ```
 
-{::options parse_block_html="true" /}
-<div class="panel-group">
-<div class="panel panel-primary">
-{::nomarkdown}
-<div class="panel-heading">
-<a href="#prism_die_dtmc_output_expected_coinflips" data-toggle="collapse">Show/hide output</a>
-<div class="pull-right">
-<a href="#prism_die_dtmc_output_expected_coinflips" data-toggle="collapse"><span class="glyphicon glyphicon-menu-down" aria-hidden="true"></span></a>
-</div>
-</div>
-{:/nomarkdown}
-<div class="panel-collapse collapse" id="prism_die_dtmc_output_expected_coinflips">
-<div class="panel-body">
+{% include collapse-panel.html target="prism_die_dtmc_output_expected_coinflips" name="output" %}
+
+<div class="prism_die_dtmc_output_expected_coinflips collapse" markdown="1">
 ```shell
 Storm 1.0.0
 
@@ -338,9 +263,6 @@ Result (initial states): 3.666666667
 Time for model checking: 0.000s.
 ```
 </div>
-</div>
-</div>
-</div>
 
 `storm` tells us that -- on average -- we will have to flip our fair coin 11/3 times. Note that we had to escape the quotes around the reward model name in the property string. If the property is placed within a file, there is no need to escape them.
 
@@ -348,19 +270,9 @@ Time for model checking: 0.000s.
 
 In this example, we consider another model available from the [PRISM website](http://www.prismmodelchecker.org/casestudies/asynchronous_leader.php).
 
-{::options parse_block_html="true" /}
-<div class="panel-group">
-<div class="panel panel-primary">
-{::nomarkdown}
-<div class="panel-heading">
-<a href="#prism_async_leader_mdp" data-toggle="collapse">Show/hide PRISM model of asynchronous leader election protocol</a>
-<div class="pull-right">
-<a href="#prism_async_leader_mdp" data-toggle="collapse"><span class="glyphicon glyphicon-menu-down" aria-hidden="true"></span></a>
-</div>
-</div>
-{:/nomarkdown}
-<div class="panel-collapse collapse" id="prism_async_leader_mdp">
-<div class="panel-body">
+{% include collapse-panel.html target="prism_async_leader_mdp" name="PRISM model of asynchronous leader election protocol" %}
+
+<div class="prism_async_leader_mdp collapse" markdown="1">
 Download link: [http://www.prismmodelchecker.org/casestudies/examples/leader4.nm](http://www.prismmodelchecker.org/casestudies/examples/leader4.nm)
 ```shell
 // asynchronous leader election
@@ -451,9 +363,6 @@ rewards "rounds"
 endrewards
 ```
 </div>
-</div>
-</div>
-</div>
 
 Just like in [Example 1](#example-1-analysis-of-a-prism-model-of-the-knuth-yao-die), we will assume that the file `leader4.nm` is located in the current directory.
 
@@ -463,19 +372,9 @@ As the name of the protocol suggests, it is supposed to elect a leader among a s
 storm --prism leader4.nm --prop "P>=1 [F (s1=4 | s2=4 | s3=4 | s4=4) ]"
 ```
 
-{::options parse_block_html="true" /}
-<div class="panel-group">
-<div class="panel panel-primary">
-{::nomarkdown}
-<div class="panel-heading">
-<a href="#prism_async_leader_mdp_eventually_elected" data-toggle="collapse">Show/hide output</a>
-<div class="pull-right">
-<a href="#prism_async_leader_mdp_eventually_elected" data-toggle="collapse"><span class="glyphicon glyphicon-menu-down" aria-hidden="true"></span></a>
-</div>
-</div>
-{:/nomarkdown}
-<div class="panel-collapse collapse" id="prism_async_leader_mdp_eventually_elected">
-<div class="panel-body">
+{% include collapse-panel.html target="prism_async_leader_mdp_eventually_elected" name="output" %}
+
+<div class="prism_async_leader_mdp_eventually_elected collapse" markdown="1">
 ```shell
 Storm 1.0.0
 
@@ -503,9 +402,6 @@ Result (initial states): true
 Time for model checking: 0.008s.
 ```
 </div>
-</div>
-</div>
-</div>
 
 Apparently this is true. But what about the performance of the protocol? The property we just checked does not guarantee any upper bound on the number of steps that we need to make until a leader is elected. Suppose we have only 40 steps and want to know what's the probability to elect a leader *within this time bound*.
 
@@ -513,19 +409,9 @@ Apparently this is true. But what about the performance of the protocol? The pro
 storm --prism leader4.nm --prop "P=? [F<=40 (s1=4 | s2=4 | s3=4 | s4=4) ]"
 ```
 
-{::options parse_block_html="true" /}
-<div class="panel-group">
-<div class="panel panel-primary">
-{::nomarkdown}
-<div class="panel-heading">
-<a href="#prism_async_leader_mdp_bounded_eventually_elected" data-toggle="collapse">Show/hide output</a>
-<div class="pull-right">
-<a href="#prism_async_leader_mdp_bounded_eventually_elected" data-toggle="collapse"><span class="glyphicon glyphicon-menu-down" aria-hidden="true"></span></a>
-</div>
-</div>
-{:/nomarkdown}
-<div class="panel-collapse collapse" id="prism_async_leader_mdp_bounded_eventually_elected">
-<div class="panel-body">
+{% include collapse-panel.html target="prism_async_leader_mdp_bounded_eventually_elected" name="output" %}
+
+<div class="prism_async_leader_mdp_bounded_eventually_elected collapse" markdown="1">
 ```shell
 Storm 1.0.0
 
@@ -552,9 +438,7 @@ ERROR (SparseMdpPrctlModelChecker.cpp:60): Formula needs to specify whether mini
 ERROR (storm.cpp:39): An exception caused Storm to terminate. The message of the exception is: Formula needs to specify whether minimal or maximal values are to be computed on nondeterministic model.
 ```
 </div>
-</div>
-</div>
-</div>
+
 
 Likely, Storm will tell you that there is an error and that for nondeterministic models you need to specify whether minimal or maximal probabilities are to be computed. Why is that? Since the model is a [Markov Decision Process](models.html), there are (potentially) nondeterministic choices in the model that need to be resolved. Storm doesn't know how to resolve them unless you tell it to either minimize or maximize (wrt. to the probability of the objective) whenever there is a nondeterministic choice.
 
@@ -562,19 +446,9 @@ Likely, Storm will tell you that there is an error and that for nondeterministic
 storm --prism leader4.nm --prop "Pmin=? [F<=40 (s1=4 | s2=4 | s3=4 | s4=4) ]"
 ```
 
-{::options parse_block_html="true" /}
-<div class="panel-group">
-<div class="panel panel-primary">
-{::nomarkdown}
-<div class="panel-heading">
-<a href="#prism_async_leader_mdp_bounded_eventually_elected_min" data-toggle="collapse">Show/hide output</a>
-<div class="pull-right">
-<a href="#prism_async_leader_mdp_bounded_eventually_elected_min" data-toggle="collapse"><span class="glyphicon glyphicon-menu-down" aria-hidden="true"></span></a>
-</div>
-</div>
-{:/nomarkdown}
-<div class="panel-collapse collapse" id="prism_async_leader_mdp_bounded_eventually_elected_min">
-<div class="panel-body">
+{% include collapse-panel.html target="prism_async_leader_mdp_bounded_eventually_elected_min" name="output" %}
+
+<div class="prism_async_leader_mdp_bounded_eventually_elected_min collapse" markdown="1">
 ```shell
 Storm 1.0.0
 
@@ -601,9 +475,6 @@ Result (initial states): 0.375
 Time for model checking: 0.030s.
 ```
 </div>
-</div>
-</div>
-</div>
 
 Storm should tell you that this probability is 0.375. So what does it mean? It means that even in the worst of all cases, so when every nondeterministic choice in the model is chosen to minimize the probability to elect a leader quickly, then we will elect a leader within our time bound in about 3 out of 8 cases.
 
@@ -618,19 +489,9 @@ JANI models can be provided with the `--jani <path/to/jani-file>` option.
 
 Here, we are going to analyze a model of an algorithm that approximates $$\pi$$. It does so by repeated sampling according to a uniform distribution. While this model is a JANI model, the original model was written in [pGCL](languages.html) and has been translated to JANI by Storm's `storm-pgcl` binary. The JANI model and the original pGCL code is available from the [JANI models repository](https://github.com/ahartmanns/jani-models).
 
-{::options parse_block_html="true" /}
-<div class="panel-group">
-<div class="panel panel-primary">
-{::nomarkdown}
-<div class="panel-heading">
-<a href="#jani_approxpi_pgcl" data-toggle="collapse">Show/hide original pGCL program</a>
-<div class="pull-right">
-<a href="#jani_approxpi_pgcl" data-toggle="collapse"><span class="glyphicon glyphicon-menu-down" aria-hidden="true"></span></a>
-</div>
-</div>
-{:/nomarkdown}
-<div class="panel-collapse collapse" id="jani_approxpi_pgcl">
-<div class="panel-body">
+{% include collapse-panel.html target="jani_approxpi_pgcl" name="original pGCL program" %}
+
+<div class="jani_approxpi_pgcl collapse" markdown="1">
 Download link: [https://github.com/ahartmanns/jani-models/raw/master/ApproxPi/NaiveRejectionSampling/approx_pi_00100_010_full.pgcl](https://github.com/ahartmanns/jani-models/raw/master/ApproxPi/NaiveRejectionSampling/approx_pi_00100_010_full.pgcl)
 ```shell
 // Approximating Pi by Rejection Sampling / Monte Carlo.
@@ -654,23 +515,10 @@ function approachPi() {
 }
 ```
 </div>
-</div>
-</div>
-</div>
 
-{::options parse_block_html="true" /}
-<div class="panel-group">
-<div class="panel panel-primary">
-{::nomarkdown}
-<div class="panel-heading">
-<a href="#jani_approxpi_jani" data-toggle="collapse">Show/hide JANI model of rejection-sampling algorithm</a>
-<div class="pull-right">
-<a href="#jani_approxpi_jani" data-toggle="collapse"><span class="glyphicon glyphicon-menu-down" aria-hidden="true"></span></a>
-</div>
-</div>
-{:/nomarkdown}
-<div class="panel-collapse collapse" id="jani_approxpi_jani">
-<div class="panel-body">
+{% include collapse-panel.html target="jani_approxpi_jani" name="JANI model of rejection-sampling algorithm" %}
+
+<div class="jani_approxpi_jani collapse" markdown="1">
 Download link: [https://github.com/ahartmanns/jani-models/raw/master/ApproxPi/NaiveRejectionSampling/approx_pi_00100_010_full.jani](https://github.com/ahartmanns/jani-models/raw/master/ApproxPi/NaiveRejectionSampling/approx_pi_00100_010_full.jani)
 ```shell
 {
@@ -1698,9 +1546,6 @@ Download link: [https://github.com/ahartmanns/jani-models/raw/master/ApproxPi/Na
 }
 ```
 </div>
-</div>
-</div>
-</div>
 
 Again, we will assume that the file `approx_pi_00100_010_full.jani` is located in the current directory. Let's see how many states the underlying MDP has. For the sake of illustration, we are going to use the [hybrid engine](engines.html#hybrid) for this example.
 
@@ -1708,19 +1553,9 @@ Again, we will assume that the file `approx_pi_00100_010_full.jani` is located i
 storm --jani approx_pi_00100_010_full.jani --engine hybrid
 ```
 
-{::options parse_block_html="true" /}
-<div class="panel-group">
-<div class="panel panel-primary">
-{::nomarkdown}
-<div class="panel-heading">
-<a href="#jani_approxpi_jani_output_exploration" data-toggle="collapse">Show/hide output</a>
-<div class="pull-right">
-<a href="#jani_approxpi_jani_output_exploration" data-toggle="collapse"><span class="glyphicon glyphicon-menu-down" aria-hidden="true"></span></a>
-</div>
-</div>
-{:/nomarkdown}
-<div class="panel-collapse collapse" id="jani_approxpi_jani_output_exploration">
-<div class="panel-body">
+{% include collapse-panel.html target="jani_approxpi_jani_output_exploration" name="output" %}
+
+<div class="jani_approxpi_jani_output_exploration collapse" markdown="1">
 ```shell
 Storm 1.0.0
 
@@ -1740,9 +1575,6 @@ Labels: 	0
 --------------------------------------------------------------
 ```
 </div>
-</div>
-</div>
-</div>
 
 As we selected the *hybrid* engine, Storm builds the MDP in terms of a symbolic data structure ((MT)BDDs), hence the `(symbolic)` marker. For this representation, Storm also reports the sizes of the state and transition DDs in terms of the number of nodes.
 
@@ -1751,20 +1583,9 @@ The algorithm uses a sampling-based technique to approximate $$\pi$$. More speci
 ```shell
 storm --jani approx_pi_00100_010_full.jani --engine hybrid --prop "Rmax=? [F \"_ret0_\"]"
 ```
+{% include collapse-panel.html target="jani_approxpi_jani_output_expected_hits" name="output" %}
 
-{::options parse_block_html="true" /}
-<div class="panel-group">
-<div class="panel panel-primary">
-{::nomarkdown}
-<div class="panel-heading">
-<a href="#jani_approxpi_jani_output_expected_hits" data-toggle="collapse">Show/hide output</a>
-<div class="pull-right">
-<a href="#jani_approxpi_jani_output_expected_hits" data-toggle="collapse"><span class="glyphicon glyphicon-menu-down" aria-hidden="true"></span></a>
-</div>
-</div>
-{:/nomarkdown}
-<div class="panel-collapse collapse" id="jani_approxpi_jani_output_expected_hits">
-<div class="panel-body">
+<div class="jani_approxpi_jani_output_expected_hits collapse" markdown="1">
 ```shell
 Storm 1.0.0
 
@@ -1789,9 +1610,6 @@ Result (initial states): 72.60088512
 Time for model checking: 23.496s.
 ```
 </div>
-</div>
-</div>
-</div>
 
 Plugging this value in our formula yields $$\pi \approx 4 \frac{hits}{100} = 4 \frac{72.60088512}{100} \approx 2.90404$$. Of course, this is a crude approximation, but it can be refined by adjusting the size of the circle and the number of samples (see the other instances of this model in the [JANI models repository](https://github.com/ahartmanns/jani-models/tree/master/ApproxPi/NaiveRejectionSampling)).
 
@@ -1803,19 +1621,9 @@ Sometimes, it is convenient to specify your model in terms of an explicit enumer
 
 Here, we take the same input model as for [Example 1](#example-1-analysis-of-a-prism-model-of-the-knuth-yao-die) of the PRISM input section. However, this time the input model is given in the explicit format.
 
-{::options parse_block_html="true" /}
-<div class="panel-group">
-<div class="panel panel-primary">
-{::nomarkdown}
-<div class="panel-heading">
-<a href="#explicit_die_dtmc" data-toggle="collapse">Show/hide explicit model of Knuth-Yao die</a>
-<div class="pull-right">
-<a href="#explicit_die_dtmc" data-toggle="collapse"><span class="glyphicon glyphicon-menu-down" aria-hidden="true"></span></a>
-</div>
-</div>
-{:/nomarkdown}
-<div class="panel-collapse collapse" id="explicit_die_dtmc">
-<div class="panel-body">
+{% include collapse-panel.html target="explicit_die_dtmc" name="explicit model of Knuth-Yao die" %}
+
+<div class="explicit_die_dtmc panel-collapse collapse" markdown="1">
 Transition file, download link: [{{ site.baseurl }}/resources/input-examples/explicit/die.tra]({{ site.baseurl }}/resources/input-examples/explicit/die.tra)
 ```shell
 dtmc
@@ -1873,9 +1681,6 @@ init one done deadlock
 6 12 1
 ```
 </div>
-</div>
-</div>
-</div>
 
 Again, we assume that all three files are located in the current directory. We proceed analoguously to the example in the PRISM input section and start by loading the model:
 
@@ -1883,19 +1688,9 @@ Again, we assume that all three files are located in the current directory. We p
 storm --explicit die.tra die.lab --transrew die.tra.rew
 ```
 
-{::options parse_block_html="true" /}
-<div class="panel-group">
-<div class="panel panel-primary">
-{::nomarkdown}
-<div class="panel-heading">
-<a href="#explicit_die_dtmc_exploration" data-toggle="collapse">Show/hide output</a>
-<div class="pull-right">
-<a href="#explicit_die_dtmc_exploration" data-toggle="collapse"><span class="glyphicon glyphicon-menu-down" aria-hidden="true"></span></a>
-</div>
-</div>
-{:/nomarkdown}
-<div class="panel-collapse collapse" id="explicit_die_dtmc_exploration">
-<div class="panel-body">
+{% include collapse-panel.html target="explicit_die_dtmc_exploration" name="output" %}
+
+<div class="explicit_die_dtmc_exploration collapse" markdown="1">
 ```shell
 Storm 1.0.0
 
@@ -1916,9 +1711,6 @@ choice labels: 	no
 --------------------------------------------------------------
 ```
 </div>
-</div>
-</div>
-</div>
 
 Note that in contrast to the PRISM input model, the explicit version of the Knuth-Yao die does not have symbolic variables. Therefore, we need to rephrase the properties from before. Computing the probability of rolling a one thus becomes
 
@@ -1926,19 +1718,9 @@ Note that in contrast to the PRISM input model, the explicit version of the Knut
 storm --explicit die.tra die.lab --transrew die.tra.rew --prop "P=? [F \"one\"]"
 ```
 
-{::options parse_block_html="true" /}
-<div class="panel-group">
-<div class="panel panel-primary">
-{::nomarkdown}
-<div class="panel-heading">
-<a href="#explicit_die_dtmc_output_prob_one" data-toggle="collapse">Show/hide output</a>
-<div class="pull-right">
-<a href="#explicit_die_dtmc_output_prob_one" data-toggle="collapse"><span class="glyphicon glyphicon-menu-down" aria-hidden="true"></span></a>
-</div>
-</div>
-{:/nomarkdown}
-<div class="panel-collapse collapse" id="explicit_die_dtmc_output_prob_one">
-<div class="panel-body">
+{% include collapse-panel.html target="explicit_die_dtmc_output_prob_one" name="output" %}
+
+<div class="explicit_die_dtmc_output_prob_one collapse" markdown="1">
 ```shell
 Storm 1.0.0
 
@@ -1964,9 +1746,6 @@ Result (initial states): 0.1666666667
 Time for model checking: 0.000s.
 ```
 </div>
-</div>
-</div>
-</div>
 
 {:.alert .alert-danger}
 Unlike for PRISM and JANI models, there is no `--exact` mode for explicit input as it's already imprecise because of floating point numbers.
@@ -1977,19 +1756,9 @@ Note that the model defines two labels `one` and `done` that can be used in prop
 storm --explicit die.tra die.lab --transrew die.tra.rew --prop "R=? [F \"done\"]"
 ```
 
-{::options parse_block_html="true" /}
-<div class="panel-group">
-<div class="panel panel-primary">
-{::nomarkdown}
-<div class="panel-heading">
-<a href="#explicit_die_dtmc_output_expected_coinflips" data-toggle="collapse">Show/hide output</a>
-<div class="pull-right">
-<a href="#explicit_die_dtmc_output_expected_coinflips" data-toggle="collapse"><span class="glyphicon glyphicon-menu-down" aria-hidden="true"></span></a>
-</div>
-</div>
-{:/nomarkdown}
-<div class="panel-collapse collapse" id="explicit_die_dtmc_output_expected_coinflips">
-<div class="panel-body">
+{% include collapse-panel.html target="explicit_die_dtmc_output_expected_coinflips" name="output" %}
+
+<div class="explicit_die_dtmc_output_expected_coinflips collapse" markdown="1">
 ```shell
 Storm 1.0.0
 
@@ -2014,9 +1783,6 @@ Model checking property R[exp]=? [F "done"] ...
 Result (initial states): 3.666666667
 Time for model checking: 0.000s.
 ```
-</div>
-</div>
-</div>
 </div>
 
 ## Running Storm on DFTs
