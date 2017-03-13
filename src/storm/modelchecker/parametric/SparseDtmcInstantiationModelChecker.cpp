@@ -18,15 +18,25 @@ namespace storm {
             template <typename SparseModelType, typename ConstantType>
             std::unique_ptr<CheckResult> SparseDtmcInstantiationModelChecker<SparseModelType, ConstantType>::check(storm::utility::parametric::Valuation<typename SparseModelType::ValueType> const& valuation) {
                 STORM_LOG_THROW(this->currentCheckTask, storm::exceptions::InvalidStateException, "Checking has been invoked but no property has been specified before.");
+                this->swInstantiation.start();
                 auto const& instantiatedModel = modelInstantiator.instantiate(valuation);
+                this->swInstantiation.stop();
                 STORM_LOG_ASSERT(instantiatedModel.getTransitionMatrix().isProbabilistic(), "Instantiated matrix is not probabilistic!");
                 storm::modelchecker::SparseDtmcPrctlModelChecker<storm::models::sparse::Dtmc<ConstantType>> modelChecker(instantiatedModel);
 
                 // Check if there are some optimizations implemented for the specified property
+                this->swCheck.start();
                 if(!this->currentCheckTask->isQualitativeSet() && this->currentCheckTask->getFormula().isInFragment(storm::logic::reachability().setRewardOperatorsAllowed(true).setReachabilityRewardFormulasAllowed(true))) {
-                    return checkWithHint(modelChecker);
+                    auto result = checkWithHint(modelChecker);
+                    this->swCheck.stop();
+                    return result;
+                    //return checkWithHint(modelChecker);
                 } else {
-                    return modelChecker.check(*this->currentCheckTask);
+                    STORM_LOG_WARN("Checking without hint"); // todo:remove this warning
+                    auto result = modelChecker.check(*this->currentCheckTask);
+                    this->swCheck.stop();
+                    return result;
+                    //return modelChecker.check(*this->currentCheckTask);
                 }
             }
                 

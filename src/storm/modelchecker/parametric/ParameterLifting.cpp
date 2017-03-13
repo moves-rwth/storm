@@ -19,6 +19,12 @@
 #include "storm/exceptions/InvalidStateException.h"
 #include "storm/exceptions/InvalidArgumentException.h"
 
+#include "storm/utility/Stopwatch.h"
+#include "storm/settings/SettingsManager.h"
+#include "storm/settings/modules/IOSettings.h"
+#include "storm/settings/modules/DebugSettings.h"
+
+
 namespace storm {
     namespace modelchecker {
         namespace parametric {
@@ -34,7 +40,10 @@ namespace storm {
                 STORM_LOG_THROW(checkTask.isOnlyInitialStatesRelevantSet(), storm::exceptions::NotSupportedException, "Parameter lifting requires a property where only the value in the initial states is relevant.");
                 STORM_LOG_THROW(checkTask.isBoundSet(), storm::exceptions::NotSupportedException, "Parameter lifting requires a bounded property.");
                 
+                storm::utility::Stopwatch sw(true);
                 simplifyParametricModel(checkTask);
+                sw.stop();
+                std::cout << "SIStats: " << sw << std::endl;
                 initializeUnderlyingCheckers();
                 currentCheckTask = std::make_unique<storm::modelchecker::CheckTask<storm::logic::Formula, typename SparseModelType::ValueType>>(checkTask.substituteFormula(*currentFormula));
 
@@ -83,12 +92,44 @@ namespace storm {
                     STORM_LOG_THROW(false, storm::exceptions::InvalidArgumentException, "When analyzing a region, an invalid initial result was given: " << initialResult);
                 }
                 
+                // TODO remove this:
+                if(storm::settings::getModule<storm::settings::modules::DebugSettings>().isDebugSet() && storm::settings::getModule<storm::settings::modules::IOSettings>().isPrismInputSet() &&  storm::settings::getModule<storm::settings::modules::IOSettings>().isPropertySet()) {
+                    std::vector<storm::utility::parametric::Valuation<typename SparseModelType::ValueType>> points;
+                    if(result == RegionCheckResult::AllSat || result == RegionCheckResult::AllViolated) {
+                        points = region.getVerticesOfRegion(region.getVariables());
+                        points.push_back(region.getCenterPoint());
+                    } else if (result == RegionCheckResult::CenterSat ||  result == RegionCheckResult::CenterViolated) {
+                        points.push_back(region.getCenterPoint());
+                    }
+                    if(!points.empty()) std::cout << "VALIDATE_REGION:" << region.toString(true) << std::endl;
+                    for (auto const& p : points) {
+                        if((result == RegionCheckResult::AllSat) || (result == RegionCheckResult::CenterSat)) {
+                            std::cout << "EXPECTTRUE:";
+                        } else {
+                            std::cout << "EXPECTFALSE:";
+                        }
+                        std::cout << "STORMEXECUTABLE --prism " << storm::settings::getModule<storm::settings::modules::IOSettings>().getPrismInputFilename()
+                                  <<                 " --prop " <<  storm::settings::getModule<storm::settings::modules::IOSettings>().getProperty();
+                        if( storm::settings::getModule<storm::settings::modules::IOSettings>().isConstantsSet()) {
+                            std::cout <<             " -const " <<  storm::settings::getModule<storm::settings::modules::IOSettings>().getConstantDefinitionString();
+                        }
+                        for(auto varDef = p.begin(); varDef != p.end(); ++varDef) {
+                            if(varDef!=p.begin())  std::cout << ",";
+                            std::cout << varDef->first << "=" << storm::utility::convertNumber<double>(varDef->second);
+                        }
+                        std::cout << std::endl;
+                    }
+                }
+
+                
                 return result;
             }
     
             template <typename SparseModelType, typename ConstantType>
             std::vector<std::pair<storm::storage::ParameterRegion<typename SparseModelType::ValueType>, RegionCheckResult>> ParameterLifting<SparseModelType, ConstantType>::performRegionRefinement(storm::storage::ParameterRegion<typename SparseModelType::ValueType> const& region, typename storm::storage::ParameterRegion<typename SparseModelType::ValueType>::CoefficientType const& threshold) const {
                 STORM_LOG_INFO("Applying refinement on region: " << region.toString(true) << " .");
+                
+                storm::utility::Stopwatch sw(true);
                 
                 auto areaOfParameterSpace = region.area();
                 auto fractionOfUndiscoveredArea = storm::utility::one<typename storm::storage::ParameterRegion<typename SparseModelType::ValueType>::CoefficientType>();
@@ -131,6 +172,9 @@ namespace storm {
                     ++indexOfCurrentRegion;
                 }
                 resultRegions.resize(regions.size());
+                
+                sw.stop();
+                std::cout << "REStats: " << sw << std::endl;
                 return storm::utility::vector::filterVector(regions, resultRegions);
             }
     
