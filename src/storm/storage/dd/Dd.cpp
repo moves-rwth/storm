@@ -10,7 +10,7 @@
 namespace storm {
     namespace dd {
         template<DdType LibraryType>
-        Dd<LibraryType>::Dd(DdManager<LibraryType> const& ddManager, std::set<storm::expressions::Variable> const& containedMetaVariables) : ddManager(&ddManager), containedMetaVariables(containedMetaVariables) {
+        Dd<LibraryType>::Dd(DdManager<LibraryType> const& ddManager, std::set<storm::expressions::Variable> const& containedMetaVariables) : ddManager(const_cast<DdManager<LibraryType>*>(&ddManager)), containedMetaVariables(containedMetaVariables) {
             // Intentionally left empty.
         }
         
@@ -35,7 +35,7 @@ namespace storm {
         }
         
         template<DdType LibraryType>
-        DdManager<LibraryType> const& Dd<LibraryType>::getDdManager() const {
+        DdManager<LibraryType>& Dd<LibraryType>::getDdManager() const {
             return *this->ddManager;
         }
         

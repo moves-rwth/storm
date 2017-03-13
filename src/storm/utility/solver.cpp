@@ -3,6 +3,7 @@
 #include <vector>
 
 #include "storm/solver/SymbolicLinearEquationSolver.h"
+#include "storm/solver/SymbolicEliminationLinearEquationSolver.h"
 #include "storm/solver/SymbolicMinMaxLinearEquationSolver.h"
 #include "storm/solver/SymbolicGameSolver.h"
 #include "storm/solver/GameSolver.h"
@@ -27,7 +28,14 @@ namespace storm {
             
             template<storm::dd::DdType Type, typename ValueType>
             std::unique_ptr<storm::solver::SymbolicLinearEquationSolver<Type, ValueType>> SymbolicLinearEquationSolverFactory<Type, ValueType>::create(storm::dd::Add<Type, ValueType> const& A, storm::dd::Bdd<Type> const& allRows, std::set<storm::expressions::Variable> const& rowMetaVariables, std::set<storm::expressions::Variable> const& columnMetaVariables, std::vector<std::pair<storm::expressions::Variable, storm::expressions::Variable>> const& rowColumnMetaVariablePairs) const {
-                return std::unique_ptr<storm::solver::SymbolicLinearEquationSolver<Type, ValueType>>(new storm::solver::SymbolicLinearEquationSolver<Type, ValueType>(A, allRows, rowMetaVariables, columnMetaVariables, rowColumnMetaVariablePairs));
+                
+                storm::solver::EquationSolverType equationSolver = storm::settings::getModule<storm::settings::modules::CoreSettings>().getEquationSolver();
+                switch (equationSolver) {
+                    case storm::solver::EquationSolverType::Elimination: return std::make_unique<storm::solver::SymbolicEliminationLinearEquationSolver<Type, ValueType>>(A, allRows, rowMetaVariables, columnMetaVariables, rowColumnMetaVariablePairs);
+                        break;
+                    default:
+                        return std::make_unique<storm::solver::SymbolicLinearEquationSolver<Type, ValueType>>(A, allRows, rowMetaVariables, columnMetaVariables, rowColumnMetaVariablePairs);
+                }
             }
             
             template<storm::dd::DdType Type, typename ValueType>
@@ -71,7 +79,7 @@ namespace storm {
             std::unique_ptr<storm::solver::LpSolver> GurobiLpSolverFactory::create(std::string const& name) const {
                 return LpSolverFactory::create(name, storm::solver::LpSolverTypeSelection::Gurobi);
             }
-
+            
             std::unique_ptr<storm::solver::LpSolver> Z3LpSolverFactory::create(std::string const& name) const {
                 return LpSolverFactory::create(name, storm::solver::LpSolverTypeSelection::Z3);
             }

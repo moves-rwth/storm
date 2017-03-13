@@ -13,6 +13,8 @@
 
 #include "storm/models/symbolic/StandardRewardModel.h"
 
+#include "storm/utility/dd.h"
+
 #include "storm-config.h"
 #include "storm/adapters/CarlAdapter.h"
 
@@ -146,12 +148,7 @@ namespace storm {
             
             template<storm::dd::DdType Type, typename ValueType>
             storm::dd::Add<Type, ValueType> Model<Type, ValueType>::getRowColumnIdentity() const {
-                storm::dd::Add<Type, ValueType> result = this->getManager().template getAddOne<ValueType>();
-                for (auto const& pair : this->getRowColumnMetaVariablePairs()) {
-                    result *= this->getManager().template getIdentity<ValueType>(pair.first).equals(this->getManager().template getIdentity<ValueType>(pair.second)).template toAdd<ValueType>();
-                    result *= this->getManager().getRange(pair.first).template toAdd<ValueType>() * this->getManager().getRange(pair.second).template toAdd<ValueType>();
-                }
-                return result;
+                return storm::utility::dd::getRowColumnDiagonal<Type, ValueType>(this->getManager(), this->getRowColumnMetaVariablePairs());
             }
             
             template<storm::dd::DdType Type, typename ValueType>

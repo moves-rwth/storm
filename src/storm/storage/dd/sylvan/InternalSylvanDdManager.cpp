@@ -126,13 +126,17 @@ namespace storm {
 		}
 #endif
 
-        std::pair<InternalBdd<DdType::Sylvan>, InternalBdd<DdType::Sylvan>> InternalDdManager<DdType::Sylvan>::createNewDdVariablePair(boost::optional<uint_fast64_t> const& position) {
+        std::vector<InternalBdd<DdType::Sylvan>> InternalDdManager<DdType::Sylvan>::createDdVariables(uint64_t numberOfLayers, boost::optional<uint_fast64_t> const& position) {
             STORM_LOG_THROW(!position, storm::exceptions::NotSupportedException, "The manager does not support ordered insertion.");
 			
-            InternalBdd<DdType::Sylvan> first = InternalBdd<DdType::Sylvan>(this, sylvan::Bdd::bddVar(nextFreeVariableIndex));
-            InternalBdd<DdType::Sylvan> second = InternalBdd<DdType::Sylvan>(this, sylvan::Bdd::bddVar(nextFreeVariableIndex + 1));
-            nextFreeVariableIndex += 2;
-            return std::make_pair(first, second);
+            std::vector<InternalBdd<DdType::Sylvan>> result;
+            
+            for (uint64_t layer = 0; layer < numberOfLayers; ++layer) {
+                result.emplace_back(InternalBdd<DdType::Sylvan>(this, sylvan::Bdd::bddVar(nextFreeVariableIndex)));
+                ++nextFreeVariableIndex;
+            }
+            
+            return result;
         }
         
         bool InternalDdManager<DdType::Sylvan>::supportsOrderedInsertion() const {

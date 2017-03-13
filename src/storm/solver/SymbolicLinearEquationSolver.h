@@ -1,14 +1,11 @@
 #ifndef STORM_SOLVER_SYMBOLICLINEAREQUATIONSOLVER_H_
 #define STORM_SOLVER_SYMBOLICLINEAREQUATIONSOLVER_H_
 
-#include <memory>
 #include <set>
 #include <vector>
-#include <boost/variant.hpp>
 
 #include "storm/storage/expressions/Variable.h"
 #include "storm/storage/dd/DdType.h"
-
 
 namespace storm {
     namespace dd {
