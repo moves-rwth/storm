@@ -234,7 +234,7 @@ namespace storm {
                 oldToNewColumnIndexMapping[oldColumnIndex] = newColumnIndex++;
             }
             
-            storm::storage::SparseMatrixBuilder<ValueType> matrixBuilder(rowConstraint.getNumberOfSetBits(), newColumnIndex, numEntries, true, hasTrivialRowGrouping(), numRowGroups);
+            storm::storage::SparseMatrixBuilder<ValueType> matrixBuilder(rowConstraint.getNumberOfSetBits(), newColumnIndex, numEntries, true, !hasTrivialRowGrouping(), numRowGroups);
             uint_fast64_t currRowIndex = 0;
             auto rowGroupIndexIt = getRowGroupIndices().begin();
             for (auto const& oldRowIndex : rowConstraint) {

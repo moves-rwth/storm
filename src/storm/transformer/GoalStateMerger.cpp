@@ -47,8 +47,9 @@ namespace storm {
             std::unordered_map<std::string, typename SparseModelType::RewardModelType> rewardModels;
             for (auto rewardModelName : selectedRewardModels) {
                 auto origTotalRewards = originalModel.getRewardModel(rewardModelName).getTotalRewardVector(originalModel.getTransitionMatrix());
-                auto resTotalRewards = storm::utility::vector::filterVector(origTotalRewards, maybeStates);
-                resTotalRewards.resize(resNumStates, storm::utility::zero<typename SparseModelType::RewardModelType::ValueType>());
+                auto transitionsOfMaybeStates = originalModel.getTransitionMatrix().getRowIndicesOfRowGroups(maybeStates);
+                auto resTotalRewards = storm::utility::vector::filterVector(origTotalRewards, transitionsOfMaybeStates);
+                resTotalRewards.resize(transitionMatrix.getRowCount(), storm::utility::zero<typename SparseModelType::RewardModelType::ValueType>());
                 rewardModels.insert(std::make_pair(rewardModelName, typename SparseModelType::RewardModelType(boost::none, resTotalRewards)));
             }
                 
