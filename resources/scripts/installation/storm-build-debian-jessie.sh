@@ -108,7 +108,7 @@ git clone https://github.com/smtrat/carl.git carl.git
 mkdir carl-build
 cd carl-build
 # requires cmake tweak
-cmake ../carl.git -DCMAKE_INSTALL_PREFIX=$STORM_ROOT -DCMAKE_PREFIX_PATH=$STORM_ROOT -DUSE_GINAC=ON -DUSE_CLN=ON
+cmake ../carl.git -DCMAKE_INSTALL_PREFIX=$STORM_ROOT -DCMAKE_PREFIX_PATH=$STORM_ROOT -DUSE_GINAC=ON -DUSE_CLN_NUMBERS=ON
 make -j${PROCS} install
 )
 
