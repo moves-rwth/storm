@@ -36,8 +36,8 @@ For this, we assume that `a` and `b` are [state formulae](#state-formulae) and `
 
 - `a U b` to describe paths on which at some point `b` holds and in all prior steps `a` holds.
 - `F b` as a shortcut for `true U b.
-- `a U{p} k b` (where `k` is an expression evaluating to a number) to describe the paths on which b holds within `k` steps and `a` holds in all prior steps.
-- `F{p} k b` as a shortcut for `true U{p} k b`.
+- `a U{op} k b` (where `k` is an expression evaluating to a number) to describe the paths on which b holds within `k` steps and `a` holds in all prior steps.
+- `F{op} k b` as a shortcut for `true U{op} k b`.
 
 ### State Formulae
 
@@ -51,7 +51,7 @@ Here, we assume that `a` and `b` are state formulae, `phi` is a [path formula](#
 
 ### Obtaining Probabilities
 
-Although formally not allowed in PCTL/CSL, one can also request probability of of fulfilling a path formula from each state. Instead of comparing to a given value `P{op} b [ phi ]`, one can write `P=? [ phi ]` to obtain the actual values rather then obtaining a truth value.
+Although formally not allowed in PCTL/CSL, one can also request probability of fulfilling a path formula from each state. Instead of comparing to a given value `P{op} b [ phi ]`, one can write `P=? [ phi ]` to obtain the actual values rather then obtaining a truth value.
 
 ### Nondeterministic Models
 
