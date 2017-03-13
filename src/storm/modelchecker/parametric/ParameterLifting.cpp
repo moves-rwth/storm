@@ -111,7 +111,7 @@ namespace storm {
                         std::cout << "STORMEXECUTABLE --prism " << storm::settings::getModule<storm::settings::modules::IOSettings>().getPrismInputFilename()
                                   <<                 " --prop " <<  storm::settings::getModule<storm::settings::modules::IOSettings>().getProperty();
                         if( storm::settings::getModule<storm::settings::modules::IOSettings>().isConstantsSet()) {
-                            std::cout <<             " -const " <<  storm::settings::getModule<storm::settings::modules::IOSettings>().getConstantDefinitionString();
+                            std::cout <<             " -const " <<  storm::settings::getModule<storm::settings::modules::IOSettings>().getConstantDefinitionString() << ",";
                         }
                         for(auto varDef = p.begin(); varDef != p.end(); ++varDef) {
                             if(varDef!=p.begin())  std::cout << ",";
@@ -143,7 +143,7 @@ namespace storm {
                 
                 while (fractionOfUndiscoveredArea > threshold) {
                     STORM_LOG_THROW(indexOfCurrentRegion < regions.size(), storm::exceptions::InvalidStateException, "Threshold for undiscovered area not reached but no unprocessed regions left.");
-                    STORM_LOG_INFO("Analyzing region #" << regions.size() -1 << " (" << storm::utility::convertNumber<double>(fractionOfUndiscoveredArea) * 100 << "% still unknown");
+                    STORM_LOG_INFO("Analyzing region #" << regions.size() -1 << " (" << storm::utility::convertNumber<double>(fractionOfUndiscoveredArea) * 100 << "% still unknown)");
                     auto const& currentRegion = regions[indexOfCurrentRegion].first;
                     auto& res = regions[indexOfCurrentRegion].second;
                     res = analyzeRegion(currentRegion, res, false);
