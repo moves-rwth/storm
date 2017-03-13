@@ -207,7 +207,7 @@ namespace storm {
                             break;
                         }
                         if (first2->getColumn() < first1->getColumn()) {
-                            if (first2->getColumn() != column) {
+                            if (first2->getColumn() != row) {
                                 *result = *first2;
                             }
                             ++first2;
@@ -225,9 +225,9 @@ namespace storm {
                         }
                     }
                     if (isFilterPredecessor()) {
-                        std::copy_if(first2, last2, result, [&] (storm::storage::MatrixEntry<typename storm::storage::FlexibleSparseMatrix<ValueType>::index_type, typename storm::storage::FlexibleSparseMatrix<ValueType>::value_type> const& a) { return a.getColumn() != column && filterPredecessor(a.getColumn()); });
+                        std::copy_if(first2, last2, result, [&] (storm::storage::MatrixEntry<typename storm::storage::FlexibleSparseMatrix<ValueType>::index_type, typename storm::storage::FlexibleSparseMatrix<ValueType>::value_type> const& a) { return a.getColumn() != row && filterPredecessor(a.getColumn()); });
                     } else {
-                        std::copy_if(first2, last2, result, [&] (storm::storage::MatrixEntry<typename storm::storage::FlexibleSparseMatrix<ValueType>::index_type, typename storm::storage::FlexibleSparseMatrix<ValueType>::value_type> const& a) { return a.getColumn() != column; });
+                        std::copy_if(first2, last2, result, [&] (storm::storage::MatrixEntry<typename storm::storage::FlexibleSparseMatrix<ValueType>::index_type, typename storm::storage::FlexibleSparseMatrix<ValueType>::value_type> const& a) { return a.getColumn() != row; });
                     }
                     // Now move the new predecessors in place.
                     successorBackwardTransitions = std::move(newPredecessors);

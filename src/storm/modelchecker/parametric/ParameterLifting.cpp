@@ -143,7 +143,7 @@ namespace storm {
                 
                 while (fractionOfUndiscoveredArea > threshold) {
                     STORM_LOG_THROW(indexOfCurrentRegion < regions.size(), storm::exceptions::InvalidStateException, "Threshold for undiscovered area not reached but no unprocessed regions left.");
-                    STORM_LOG_INFO("Analyzing region #" << regions.size() -1 << " (" << storm::utility::convertNumber<double>(fractionOfUndiscoveredArea) * 100 << "% still unknown)");
+                    STORM_LOG_INFO("Analyzing region #" << indexOfCurrentRegion << " (" << storm::utility::convertNumber<double>(fractionOfUndiscoveredArea) * 100 << "% still unknown)");
                     auto const& currentRegion = regions[indexOfCurrentRegion].first;
                     auto& res = regions[indexOfCurrentRegion].second;
                     res = analyzeRegion(currentRegion, res, false);
