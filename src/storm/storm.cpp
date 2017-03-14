@@ -17,8 +17,8 @@ int main(const int argc, const char** argv) {
     try {
         storm::utility::Stopwatch totalTimer(true);
         storm::utility::setUp();
-        storm::cli::printHeader("storm", argc, argv);
-        storm::settings::initializeAll("storm", "storm");
+        storm::cli::printHeader("Storm", argc, argv);
+        storm::settings::initializeAll("Storm", "storm");
         bool optionsCorrect = storm::cli::parseOptions(argc, argv);
         if (!optionsCorrect) {
             return -1;
@@ -36,10 +36,10 @@ int main(const int argc, const char** argv) {
         }
         return 0;
     } catch (storm::exceptions::BaseException const& exception) {
-        STORM_LOG_ERROR("An exception caused storm to terminate. The message of the exception is: " << exception.what());
+        STORM_LOG_ERROR("An exception caused Storm to terminate. The message of the exception is: " << exception.what());
         return 1;
     } catch (std::exception const& exception) {
-        STORM_LOG_ERROR("An unexpected exception occurred and caused storm to terminate. The message of this exception is: " << exception.what());
+        STORM_LOG_ERROR("An unexpected exception occurred and caused Storm to terminate. The message of this exception is: " << exception.what());
         return 2;
     }
 }

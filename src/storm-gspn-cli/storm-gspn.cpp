@@ -40,7 +40,7 @@
  * Initialize the settings manager.
  */
 void initializeSettings() {
-    storm::settings::mutableManager().setName("storm-GSPN", "storm-gspn");
+    storm::settings::mutableManager().setName("Storm-GSPN", "storm-gspn");
     
     // Register all known settings modules.
     storm::settings::addModule<storm::settings::modules::GeneralSettings>();
@@ -75,7 +75,7 @@ std::unordered_map<std::string, uint64_t> parseCapacitiesList(std::string const&
 int main(const int argc, const char **argv) {
     try {
         storm::utility::setUp();
-        storm::cli::printHeader("storm-GSPN", argc, argv);
+        storm::cli::printHeader("Storm-GSPN", argc, argv);
         initializeSettings();
         
         bool optionsCorrect = storm::cli::parseOptions(argc, argv);
@@ -147,10 +147,10 @@ int main(const int argc, const char **argv) {
         storm::utility::cleanUp();
         return 0;
     } catch (storm::exceptions::BaseException const& exception) {
-        STORM_LOG_ERROR("An exception caused storm to terminate. The message of the exception is: " << exception.what());
+        STORM_LOG_ERROR("An exception caused Storm to terminate. The message of the exception is: " << exception.what());
         return 1;
     } catch (std::exception const& exception) {
-        STORM_LOG_ERROR("An unexpected exception occurred and caused storm to terminate. The message of this exception is: " << exception.what());
+        STORM_LOG_ERROR("An unexpected exception occurred and caused Storm to terminate. The message of this exception is: " << exception.what());
         return 2;
     }
 }

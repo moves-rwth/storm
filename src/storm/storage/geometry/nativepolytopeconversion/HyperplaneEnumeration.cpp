@@ -113,7 +113,6 @@ namespace storm {
                     relevantMatrix = EigenMatrix();
                     relevantVector = EigenVector();
                 }
-                STORM_LOG_DEBUG("Invoked generateVerticesFromHalfspaces with " << hPoly.getMatrix().rows() << " hyperplanes and " << resultVertices.size() << " vertices and " << relevantMatrix.rows() << " relevant hyperplanes. Dimension is " << hPoly.dimension());
             }
 
 

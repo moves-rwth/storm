@@ -49,10 +49,7 @@ namespace storm {
                 storm::storage::BitVector statesWithProbabilityGreater0NonPsi = statesWithProbabilityGreater0 & ~psiStates;
                 STORM_LOG_INFO("Found " << statesWithProbabilityGreater0NonPsi.getNumberOfSetBits() << " 'maybe' states.");
                 
-                if (statesWithProbabilityGreater0NonPsi.empty()) {
-                    result = std::vector<ValueType>(numberOfStates, storm::utility::zero<ValueType>());
-                    
-                } else {
+                if (!statesWithProbabilityGreater0NonPsi.empty()) {
                     if (storm::utility::isZero(upperBound)) {
                         // In this case, the interval is of the form [0, 0].
                         result = std::vector<ValueType>(numberOfStates, storm::utility::zero<ValueType>());
@@ -189,6 +186,8 @@ namespace storm {
                             }
                         }
                     }
+                } else {
+                    result = std::vector<ValueType>(numberOfStates, storm::utility::zero<ValueType>());
                 }
                 
                 return result;

@@ -183,7 +183,7 @@ namespace storm {
         }
         
         boost::any FormulaToJaniJson::visit(storm::logic::CumulativeRewardFormula const&, boost::any const&) const {
-            STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "storm currently does not support translating  cummulative reward formulae");
+            STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Storm currently does not support translating cumulative reward formulae");
         }
         
         boost::any FormulaToJaniJson::visit(storm::logic::EventuallyFormula const& f, boost::any const& data) const {
