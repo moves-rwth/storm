@@ -99,10 +99,11 @@ namespace storm {
 
                 // Check if the process converged and set up the new iteration in case we are not done.
                 converged = storm::utility::vector::equalModuloPrecision(x, tmpResult, this->precision, this->relative);
+                converged = converged || (this->hasCustomTerminationCondition() && this->getTerminationCondition().terminateNow(x));
                 std::swap(x, tmpResult);
 
                 ++iterations;
-            } while (!converged && iterations < this->maximalNumberOfIterations && !(this->hasCustomTerminationCondition() && this->getTerminationCondition().terminateNow(x)));
+            } while (!converged && iterations < this->maximalNumberOfIterations);
             
             STORM_LOG_WARN_COND(converged, "Iterative solver for stochastic two player games did not converge after " << iterations << " iterations.");
             
