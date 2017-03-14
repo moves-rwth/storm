@@ -180,12 +180,16 @@ namespace storm {
                 }
                 STORM_LOG_THROW(*stepBound > 0, storm::exceptions::NotSupportedException, "Can not apply parameter lifting on step bounded formula: The step bound has to be positive.");
                 
+                //Every state is a maybeState
+                maybeStates = storm::storage::BitVector(this->parametricModel.getTransitionMatrix().getColumnCount(), true);
+                resultsForNonMaybeStates = std::vector<ConstantType>(this->parametricModel.getNumberOfStates());
+
                 // Create the reward vector
                 STORM_LOG_THROW((checkTask.isRewardModelSet() && this->parametricModel.hasRewardModel(checkTask.getRewardModel())) || (!checkTask.isRewardModelSet() && this->parametricModel.hasUniqueRewardModel()), storm::exceptions::InvalidPropertyException, "The reward model specified by the CheckTask is not available in the given model.");
                 typename SparseModelType::RewardModelType const& rewardModel = checkTask.isRewardModelSet() ? this->parametricModel.getRewardModel(checkTask.getRewardModel()) : this->parametricModel.getUniqueRewardModel();
                 std::vector<typename SparseModelType::ValueType> b = rewardModel.getTotalRewardVector(this->parametricModel.getTransitionMatrix());
                     
-                parameterLifter = std::make_unique<storm::transformer::ParameterLifter<typename SparseModelType::ValueType, ConstantType>>(this->parametricModel.getTransitionMatrix(), b, storm::storage::BitVector(this->parametricModel.getTransitionMatrix().getRowCount(), true), storm::storage::BitVector(this->parametricModel.getTransitionMatrix().getColumnCount(), true));
+                parameterLifter = std::make_unique<storm::transformer::ParameterLifter<typename SparseModelType::ValueType, ConstantType>>(this->parametricModel.getTransitionMatrix(), b, maybeStates, maybeStates);
                 
                 applyPreviousResultAsHint = false;
                 
@@ -213,6 +217,19 @@ namespace storm {
                     if(storm::solver::maximize(dirForParameters) && maxSched && player1Sched) solver->setSchedulerHint(std::move(player1Sched.get()), std::move(maxSched.get()));
                 } else {
                     x.assign(maybeStates.getNumberOfSetBits(), storm::utility::zero<ConstantType>());
+                }
+                if (this->currentCheckTask->isBoundSet() && this->currentCheckTask->getOptimizationDirection() == dirForParameters && solver->hasSchedulerHints()) {
+                    // If we reach this point, we know that after applying the hints, the x-values can only become larger (if we maximize) or smaller (if we minimize).
+                    std::unique_ptr<storm::solver::TerminationCondition<ConstantType>> termCond;
+                    storm::storage::BitVector relevantStatesInSubsystem = this->currentCheckTask->isOnlyInitialStatesRelevantSet() ? this->parametricModel.getInitialStates() % maybeStates : storm::storage::BitVector(maybeStates.getNumberOfSetBits(), true);
+                    if (storm::solver::minimize(dirForParameters)) {
+                        // Terminate if the value for ALL relevant states is already below the threshold
+                        termCond = std::make_unique<storm::solver::TerminateIfFilteredExtremumBelowThreshold<ConstantType>> (relevantStatesInSubsystem, this->currentCheckTask->getBoundThreshold(), true, false);
+                    } else {
+                        // Terminate if the value for ALL relevant states is already above the threshold
+                        termCond = std::make_unique<storm::solver::TerminateIfFilteredExtremumExceedsThreshold<ConstantType>> (relevantStatesInSubsystem, this->currentCheckTask->getBoundThreshold(), true, true);
+                    }
+                    solver->setTerminationCondition(std::move(termCond));
                 }
                 
                 // Invoke the solver
