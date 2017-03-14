@@ -200,10 +200,7 @@ namespace storm {
                     return std::make_unique<storm::modelchecker::ExplicitQuantitativeCheckResult<ConstantType>>(resultsForNonMaybeStates);
                 }
                 
-                this->swInstantiation.start();
                 parameterLifter->specifyRegion(region, dirForParameters);
-                this->swInstantiation.stop();
-                this->swCheck.start();
                 
                 // Set up the solver
                 auto solver = solverFactory->create(player1Matrix, parameterLifter->getMatrix());
@@ -241,7 +238,6 @@ namespace storm {
                     result[maybeState] = *maybeStateResIt;
                     ++maybeStateResIt;
                 }
-                this->swCheck.stop();
                 return std::make_unique<storm::modelchecker::ExplicitQuantitativeCheckResult<ConstantType>>(std::move(result));
             }
             

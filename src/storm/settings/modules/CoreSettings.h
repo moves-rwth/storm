@@ -88,17 +88,6 @@ namespace storm {
                 bool isParameterLiftingSet() const;
                 
                 /*!
-                 * Retrieves a string that defines the parameter space considered for parameter lifting
-                 * @return A string that defines the parameter space considered for parameter lifting
-                 */
-                std::string getParameterLiftingParameterSpace() const;
-                
-                /*!
-                 * Retrieves the refinement threshold that is considered for parameter lifting
-                 */
-                 double getParameterLiftingThreshold() const;
-                
-                /*!
                  * Retrieves the selected LP solver.
                  *
                  * @return The selected LP solver.

@@ -11,8 +11,8 @@
 #include "storm/utility/graph.h"
 #include "storm/utility/vector.h"
 
-#include <storm/exceptions/NotSupportedException.h>
-#include <storm/exceptions/UnexpectedException.h>
+#include "storm/exceptions/NotSupportedException.h"
+#include "storm/exceptions/UnexpectedException.h"
 
 namespace storm {
     namespace transformer {

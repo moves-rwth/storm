@@ -7,8 +7,6 @@
 #include "storm/solver/OptimizationDirection.h"
 #include "storm/utility/parametric.h"
 
-#include "storm/utility/Stopwatch.h"
-
 namespace storm {
     namespace modelchecker {
         namespace parametric {
@@ -23,10 +21,6 @@ namespace storm {
             class SparseParameterLiftingModelChecker {
             public:
                 SparseParameterLiftingModelChecker(SparseModelType const& parametricModel);
-                
-                ~SparseParameterLiftingModelChecker() {
-                    std::cout << "PLStats (init/instantiation/check): " << swInit << "\t" << swInstantiation << "\t" << swCheck << std::endl;
-                }
                 
                 virtual bool canHandle(CheckTask<storm::logic::Formula, typename SparseModelType::ValueType> const& checkTask) const = 0;
                 
@@ -56,8 +50,6 @@ namespace storm {
                 SparseModelType const& parametricModel;
                 std::unique_ptr<CheckTask<storm::logic::Formula, ConstantType>> currentCheckTask;
               
-                storm::utility::Stopwatch swInit, swInstantiation, swCheck;
-
             private:
                 // store the current formula. Note that currentCheckTask only stores a reference to the formula.
                 std::shared_ptr<storm::logic::Formula const> currentFormula;

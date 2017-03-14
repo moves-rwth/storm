@@ -5,9 +5,9 @@
 #include "storm/modelchecker/parametric/RegionCheckResult.h"
 #include "storm/modelchecker/parametric/SparseInstantiationModelChecker.h"
 #include "storm/modelchecker/parametric/SparseParameterLiftingModelChecker.h"
-#include "storm/storage/ParameterRegion.h"
-
 #include "storm/modelchecker/CheckTask.h"
+#include "storm/storage/ParameterRegion.h"
+#include "storm/utility/Stopwatch.h"
 
 namespace storm {
     namespace modelchecker{
@@ -59,7 +59,7 @@ namespace storm {
                 std::unique_ptr<SparseParameterLiftingModelChecker<SparseModelType, ConstantType>> parameterLiftingChecker;
                 std::unique_ptr<SparseInstantiationModelChecker<SparseModelType, ConstantType>> instantiationChecker;
                 
-                
+                mutable storm::utility::Stopwatch initializationStopwatch, instantiationCheckerStopwatch, parameterLiftingCheckerStopwatch;
             };
     
         } //namespace parametric

@@ -6,8 +6,6 @@
 #include "storm/modelchecker/hints/ModelCheckerHint.h"
 #include "storm/utility/parametric.h"
 
-#include "storm/utility/Stopwatch.h"
-
 namespace storm {
     namespace modelchecker {
         namespace parametric {
@@ -19,11 +17,6 @@ namespace storm {
             class SparseInstantiationModelChecker {
             public:
                 SparseInstantiationModelChecker(SparseModelType const& parametricModel);
-                
-                                
-                ~SparseInstantiationModelChecker() {
-                    std::cout << "INStats (instantiation/check): " << swInstantiation << "\t" << swCheck << std::endl;
-                }
                 
                 void specifyFormula(CheckTask<storm::logic::Formula, typename SparseModelType::ValueType> const& checkTask);
                 
@@ -37,8 +30,6 @@ namespace storm {
                 SparseModelType const& parametricModel;
                 std::unique_ptr<CheckTask<storm::logic::Formula, ConstantType>> currentCheckTask;
                 
-                storm::utility::Stopwatch swInstantiation, swCheck;
-
             private:
                 // store the current formula. Note that currentCheckTask only stores a reference to the formula.
                 std::shared_ptr<storm::logic::Formula const> currentFormula;

@@ -316,61 +316,81 @@ namespace storm {
 #ifdef STORM_HAVE_CARL
     template<>
     inline void performParameterLifting(std::shared_ptr<storm::models::sparse::Model<storm::RationalFunction>> markovModel, std::shared_ptr<storm::logic::Formula const> const& formula) {
+        storm::utility::Stopwatch parameterLiftingStopWatch(true);
         auto modelParameters = storm::models::sparse::getProbabilityParameters(*markovModel);
         auto rewParameters = storm::models::sparse::getRewardParameters(*markovModel);
         modelParameters.insert(rewParameters.begin(), rewParameters.end());
         
-        auto initialRegion = storm::storage::ParameterRegion<storm::RationalFunction>::parseRegion(storm::settings::getModule<storm::settings::modules::CoreSettings>().getParameterLiftingParameterSpace(), modelParameters);
-        auto refinementThreshold = storm::utility::convertNumber<typename storm::storage::ParameterRegion<storm::RationalFunction>::CoefficientType>(storm::settings::getModule<storm::settings::modules::CoreSettings>().getParameterLiftingThreshold());
+        STORM_LOG_THROW(storm::settings::getModule<storm::settings::modules::ParametricSettings>().isParameterSpaceSet(), storm::exceptions::InvalidSettingsException, "Invoked Parameter lifting but no parameter space was defined.");
+        auto parameterSpaceAsString = storm::settings::getModule<storm::settings::modules::ParametricSettings>().getParameterSpace();
+        auto parameterSpace = storm::storage::ParameterRegion<storm::RationalFunction>::parseRegion(parameterSpaceAsString, modelParameters);
+        auto refinementThreshold = storm::utility::convertNumber<typename storm::storage::ParameterRegion<storm::RationalFunction>::CoefficientType>(storm::settings::getModule<storm::settings::modules::ParametricSettings>().getRefinementThreshold());
         std::vector<std::pair<storm::storage::ParameterRegion<storm::RationalFunction>, storm::modelchecker::parametric::RegionCheckResult>> result;
         
-        std::cout << "Performing parameter lifting for property " << *formula << " on initial region " << initialRegion.toString(true) << " with refinementThreshold " << storm::utility::convertNumber<double>(refinementThreshold) << " ...";
-        std::cout.flush();
+        STORM_PRINT_AND_LOG("Performing parameter lifting for property " << *formula << " with parameter space " << parameterSpace.toString(true) << " and refinement threshold " << storm::utility::convertNumber<double>(refinementThreshold) << " ..." << std::endl);
         
         storm::modelchecker::CheckTask<storm::logic::Formula, storm::RationalFunction> task(*formula, true);
         
         if (markovModel->isOfType(storm::models::ModelType::Dtmc)) {
             storm::modelchecker::parametric::ParameterLifting <storm::models::sparse::Dtmc<storm::RationalFunction>, double> parameterLiftingContext(*markovModel->template as<storm::models::sparse::Dtmc<storm::RationalFunction>>());
             parameterLiftingContext.specifyFormula(task);
-            result = parameterLiftingContext.performRegionRefinement(initialRegion, refinementThreshold);
+            result = parameterLiftingContext.performRegionRefinement(parameterSpace, refinementThreshold);
         } else if (markovModel->isOfType(storm::models::ModelType::Mdp)) {
             storm::modelchecker::parametric::ParameterLifting<storm::models::sparse::Mdp<storm::RationalFunction>, double> parameterLiftingContext(*markovModel->template as<storm::models::sparse::Mdp<storm::RationalFunction>>());
             parameterLiftingContext.specifyFormula(task);
-            result = parameterLiftingContext.performRegionRefinement(initialRegion, refinementThreshold);
+            result = parameterLiftingContext.performRegionRefinement(parameterSpace, refinementThreshold);
         } else {
             STORM_LOG_THROW(false, storm::exceptions::InvalidSettingsException, "Unable to perform parameterLifting on the provided model type.");
         }
         
-        std::cout << "done!" << std::endl;
+        
         auto satArea = storm::utility::zero<typename storm::storage::ParameterRegion<storm::RationalFunction>::CoefficientType>();
         auto unsatArea = storm::utility::zero<typename storm::storage::ParameterRegion<storm::RationalFunction>::CoefficientType>();
         uint_fast64_t numOfSatRegions = 0;
         uint_fast64_t numOfUnsatRegions = 0;
         for (auto const& res : result) {
-            // std::cout << res.first.toString(true) << "\t (";
             switch (res.second) {
                 case storm::modelchecker::parametric::RegionCheckResult::AllSat:
-                    // std::cout << "safe";
                     satArea += res.first.area();
                     ++numOfSatRegions;
                     break;
                 case storm::modelchecker::parametric::RegionCheckResult::AllViolated:
-                    // std::cout << "unsafe";
                     unsatArea += res.first.area();
                     ++numOfUnsatRegions;
                     break;
                 default:
-                    // std::cout << "unknown";
+                    STORM_LOG_ERROR("Unexpected result for region " << res.first.toString(true) << " : " << res.second << ".");
                     break;
             }
-            // std::cout << ")" << std::endl;
         }
-        std::cout << std::endl
-                  << "Found " << numOfSatRegions << " safe regions, "
-                  << numOfUnsatRegions << " unsafe regions, and "
-                  << result.size() - numOfSatRegions - numOfUnsatRegions << " unknown regions." << std::endl
-                  << storm::utility::convertNumber<double>(satArea / initialRegion.area()) * 100 << "% of the parameter space is safe, and "
-                  << storm::utility::convertNumber<double>(unsatArea / initialRegion.area()) * 100 << "% of the parameter space is unsafe." << std::endl;
+        
+        STORM_PRINT_AND_LOG("Done! Found " << numOfSatRegions << " safe regions, "
+                                     << numOfUnsatRegions << " unsafe regions, and "
+                                     << result.size() - numOfSatRegions - numOfUnsatRegions << " unknown regions." << std::endl);
+        STORM_PRINT_AND_LOG(storm::utility::convertNumber<double>(satArea / parameterSpace.area()) * 100 << "% of the parameter space is safe, and "
+                         << storm::utility::convertNumber<double>(unsatArea / parameterSpace.area()) * 100 << "% of the parameter space is unsafe." << std::endl);
+        parameterLiftingStopWatch.stop();
+        STORM_PRINT_AND_LOG("Model checking with parameter lifting took " << parameterLiftingStopWatch << " seconds." << std::endl);
+        
+        if (storm::settings::getModule<storm::settings::modules::ParametricSettings>().exportResultToFile()) {
+            std::string path = storm::settings::getModule<storm::settings::modules::ParametricSettings>().exportResultPath();
+            STORM_PRINT_AND_LOG("Exporting result to path " << path << "." << std::endl);
+            std::ofstream filestream;
+            storm::utility::openFile(path, filestream);
+                
+            for (auto const& res : result) {
+                switch (res.second) {
+                    case storm::modelchecker::parametric::RegionCheckResult::AllSat:
+                        filestream << "safe: " << res.first.toString(true) << std::endl;
+                        break;
+                    case storm::modelchecker::parametric::RegionCheckResult::AllViolated:
+                        filestream << "unsafe: " << res.first.toString(true) << std::endl;
+                        break;
+                    default:
+                        break;
+                }
+            }
+        }
     }
 #endif
     

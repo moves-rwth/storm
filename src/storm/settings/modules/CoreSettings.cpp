@@ -53,9 +53,7 @@ namespace storm {
                 this->addOption(storm::settings::OptionBuilder(moduleName, lpSolverOptionName, false, "Sets which LP solver is preferred.")
                                 .addArgument(storm::settings::ArgumentBuilder::createStringArgument("name", "The name of an LP solver.").addValidatorString(ArgumentValidatorFactory::createMultipleChoiceValidator(lpSolvers)).setDefaultValueString("glpk").build()).build());
                 
-                this->addOption(storm::settings::OptionBuilder(moduleName, parameterLiftingOptionName, false, "Sets whether parameter lifting is applied.")
-                                .addArgument(storm::settings::ArgumentBuilder::createStringArgument("parameterspace", "The considered parameter-space given in format a<=x<=b,c<=y<=d").build())
-                                .addArgument(storm::settings::ArgumentBuilder::createDoubleArgument("threshold", "The refinement converges as soon as the fraction of unknown area falls below this threshold").setDefaultValueDouble(0.05).build()).build());
+                this->addOption(storm::settings::OptionBuilder(moduleName, parameterLiftingOptionName, false, "Sets whether parameter lifting is applied.").build());
                 
                 std::vector<std::string> smtSolvers = {"z3", "mathsat"};
                 this->addOption(storm::settings::OptionBuilder(moduleName, smtSolverOptionName, false, "Sets which SMT solver is preferred.")
@@ -96,14 +94,6 @@ namespace storm {
             
             bool CoreSettings::isParameterLiftingSet() const {
                 return this->getOption(parameterLiftingOptionName).getHasOptionBeenSet();
-            }
-            
-            std::string CoreSettings::getParameterLiftingParameterSpace() const {
-                return this->getOption(parameterLiftingOptionName).getArgumentByName("parameterspace").getValueAsString();
-            }
-            
-            double CoreSettings::getParameterLiftingThreshold() const {
-                return this->getOption(parameterLiftingOptionName).getArgumentByName("threshold").getValueAsDouble();
             }
             
             storm::solver::LpSolverType CoreSettings::getLpSolver() const {
