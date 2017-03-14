@@ -66,8 +66,6 @@ namespace storm {
             Status updateStatusIfNotConverged(Status status, std::vector<ValueType> const& x, uint64_t iterations) const;
             void reportStatus(Status status, uint64_t iterations) const;
             
-            void setPrecisionRelativeOfLinearEquationSolver(std::unique_ptr<storm::solver::LinearEquationSolver<ValueType>>& linEqSolver, ValueType precision, bool relative) const;
-            
             /// The settings of this solver.
             StandardMinMaxLinearEquationSolverSettings<ValueType> settings;
             

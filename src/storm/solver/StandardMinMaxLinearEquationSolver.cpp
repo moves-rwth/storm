@@ -113,7 +113,6 @@ namespace storm {
 
             // Create a solver that we will use throughout the procedure. We will modify the matrix in each iteration.
             auto solver = linearEquationSolverFactory->create(std::move(submatrix));
-            setPrecisionRelativeOfLinearEquationSolver(solver, this->getPrecision(), this->getRelative());
             if (this->lowerBound) {
                 solver->setLowerBound(this->lowerBound.get());
             }
@@ -244,31 +243,7 @@ namespace storm {
                 submatrixSolver->setCachingEnabled(true);
                 if (this->lowerBound) { submatrixSolver->setLowerBound(this->lowerBound.get()); }
                 if (this->upperBound) { submatrixSolver->setUpperBound(this->upperBound.get()); }
-                ValueType linEqPrecision = this->getPrecision();
-                // Temporarily shrink the auxiliary row vector
-                auxiliaryRowVector->resize(A.getRowGroupCount());
-                auxiliaryRowVector->reserve(A.getRowCount());
-                uint_fast64_t hintIterations = 0;
-                bool vectorsNotEqual = false;
-                do {
-                    vectorsNotEqual = false;
-                    setPrecisionRelativeOfLinearEquationSolver(submatrixSolver, linEqPrecision, this->getRelative());
-                    submatrixSolver->solveEquations(x, *auxiliaryRowGroupVector);
-                    submatrixSolver->multiply(x, nullptr, *auxiliaryRowVector);
-                    linEqPrecision *= storm::utility::convertNumber<ValueType>(0.5);
-                    ++hintIterations;
-                    auto otherTmpResIt = auxiliaryRowVector->begin();
-                    auto xIt = x.begin();
-                    for(auto tmpResIt = auxiliaryRowGroupVector->begin(); tmpResIt != auxiliaryRowGroupVector->end(); ++tmpResIt) {
-                        if (!storm::utility::vector::equalModuloPrecision(*tmpResIt + *xIt, *otherTmpResIt + *xIt, this->getPrecision(), this->getRelative())) {
-                            vectorsNotEqual = true;
-                            break;
-                        }
-                        ++otherTmpResIt; ++xIt;
-                    }
-                } while (vectorsNotEqual);
-                STORM_LOG_WARN_COND(hintIterations == 1, "required " << hintIterations << " linear equation solver invokations to apply the scheduler hint");
-                auxiliaryRowVector->resize(A.getRowCount());
+                submatrixSolver->solveEquations(x, *auxiliaryRowGroupVector);
             }
             
             std::vector<ValueType>* newX = auxiliaryRowGroupVector.get();
@@ -375,38 +350,6 @@ namespace storm {
                 default:
                     STORM_LOG_THROW(false, storm::exceptions::InvalidStateException, "Iterative solver terminated unexpectedly.");
             }
-        }
-        
-        
-        template<typename ValueType>
-        void  StandardMinMaxLinearEquationSolver<ValueType>::setPrecisionRelativeOfLinearEquationSolver(std::unique_ptr<storm::solver::LinearEquationSolver<ValueType>>& linEqSolver, ValueType precision, bool relative) const {
-            auto* gmmSolver = dynamic_cast<storm::solver::GmmxxLinearEquationSolver<ValueType>*>(linEqSolver.get());
-            auto* nativeSolver = dynamic_cast<storm::solver::NativeLinearEquationSolver<ValueType>*>(linEqSolver.get());
-            auto* eigenSolver = dynamic_cast<storm::solver::EigenLinearEquationSolver<ValueType>*>(linEqSolver.get());
-            auto* eliminationSolver = dynamic_cast<storm::solver::EliminationLinearEquationSolver<ValueType>*>(linEqSolver.get());
-            if (gmmSolver) {
-                auto newSettings = gmmSolver->getSettings();
-                newSettings.setPrecision(precision);
-                newSettings.setRelativeTerminationCriterion(relative);
-                gmmSolver->setSettings(newSettings);
-            } else if (nativeSolver) {
-                auto newSettings = nativeSolver->getSettings();
-                newSettings.setPrecision(precision);
-                newSettings.setRelativeTerminationCriterion(relative);
-                nativeSolver->setSettings(newSettings);
-            } else if (eigenSolver) {
-                eigenSolver->getSettings().setPrecision(precision);
-                // no relative flag for eigen solver
-            } else if (eliminationSolver) {
-                // elimination solver does not consider a precision so nothing to do
-            } else {
-                STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "Changing the precision for the given linear equation solver type is not implemented");
-            }
-        }
-        
-        template<>
-        void  StandardMinMaxLinearEquationSolver<storm::RationalNumber>::setPrecisionRelativeOfLinearEquationSolver(std::unique_ptr<storm::solver::LinearEquationSolver<storm::RationalNumber>>& linEqSolver, storm::RationalNumber precision, bool relative) const {
-            // Intentionally left empty
         }
         
         template<typename ValueType>
