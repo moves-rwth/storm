@@ -3,7 +3,7 @@
 
 #include "storm/utility/macros.h"
 #include "storm/utility/solver.h"
-#include "storm/solver/Z3LPSolver.h"
+#include "storm/solver/Z3LpSolver.h"
 #include "storm/solver/SmtSolver.h"
 #include "storm/storage/geometry/nativepolytopeconversion/QuickHull.h"
 #include "storm/storage/geometry/nativepolytopeconversion/HyperplaneEnumeration.h"
@@ -42,7 +42,7 @@ namespace storm {
                 } else {
                     std::vector<EigenVector> eigenPoints;
                     eigenPoints.reserve(points.size());
-                    for(auto const& p : points){
+                    for (auto const& p : points){
                         eigenPoints.emplace_back(storm::adapters::EigenAdapter::toEigenVector(p));
                     }
 

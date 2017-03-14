@@ -6,6 +6,12 @@
 #include "storm/utility/vector.h"
 #include "storm/utility/graph.h"
 
+#include "storm/solver/GmmxxLinearEquationSolver.h"
+#include "storm/solver/EigenLinearEquationSolver.h"
+#include "storm/solver/NativeLinearEquationSolver.h"
+#include "storm/solver/EliminationLinearEquationSolver.h"
+
+#include "storm/exceptions/NotImplementedException.h"
 namespace storm {
     namespace solver {
         template <typename ValueType>
@@ -37,16 +43,62 @@ namespace storm {
                     auto const& pl1Row = player1Matrix.getRow(pl1State, this->player1SchedulerHint->getChoice(pl1State));
                     STORM_LOG_ASSERT(pl1Row.getNumberOfEntries()==1, "We assume that rows of player one have one entry.");
                     uint_fast64_t pl2State = pl1Row.begin()->getColumn();
-                    selectedRows[pl1State] = player2Matrix.getRowGroupIndices()[pl2State] + this->player2SchedulerHint->getChoice(pl1State);
+                    selectedRows[pl1State] = player2Matrix.getRowGroupIndices()[pl2State] + this->player2SchedulerHint->getChoice(pl2State);
                 }
                 //Get the matrix and the vector induced by this selection
                 auto inducedMatrix = player2Matrix.selectRowsFromRowIndexSequence(selectedRows, true);
                 inducedMatrix.convertToEquationSystem();
                 storm::utility::vector::selectVectorValues<ValueType>(tmpResult, selectedRows, b);
+                
+                // Solve the resulting equation system.
+                // Note that the linEqSolver might consider a slightly different interpretation of "equalModuloPrecision". Hence, we iteratively increase its precision.
                 auto submatrixSolver = storm::solver::GeneralLinearEquationSolverFactory<ValueType>().create(std::move(inducedMatrix));
+                submatrixSolver->setCachingEnabled(true);
                 if (this->lowerBound) { submatrixSolver->setLowerBound(this->lowerBound.get()); }
                 if (this->upperBound) { submatrixSolver->setUpperBound(this->upperBound.get()); }
-                submatrixSolver->solveEquations(x, tmpResult);
+                ValueType linEqPrecision = this->getPrecision();
+                uint_fast64_t hintIterations = 0;
+                std::vector<ValueType> otherTmpResult(tmpResult.size());
+                bool vectorsNotEqual = false;
+                do {
+                    vectorsNotEqual = false;
+                    // Set the precision of the underlying solver
+                    auto* gmmSolver = dynamic_cast<storm::solver::GmmxxLinearEquationSolver<ValueType>*>(submatrixSolver.get());
+                    auto* nativeSolver = dynamic_cast<storm::solver::NativeLinearEquationSolver<ValueType>*>(submatrixSolver.get());
+                    auto* eigenSolver = dynamic_cast<storm::solver::EigenLinearEquationSolver<ValueType>*>(submatrixSolver.get());
+                    auto* eliminationSolver = dynamic_cast<storm::solver::EliminationLinearEquationSolver<ValueType>*>(submatrixSolver.get());
+                    if (gmmSolver) {
+                        auto newSettings = gmmSolver->getSettings();
+                        newSettings.setPrecision(linEqPrecision);
+                        gmmSolver->setSettings(newSettings);
+                    } else if (nativeSolver) {
+                        auto newSettings = nativeSolver->getSettings();
+                        newSettings.setPrecision(linEqPrecision);
+                        nativeSolver->setSettings(newSettings);
+                    } else if (eigenSolver) {
+                        eigenSolver->getSettings().setPrecision(linEqPrecision);
+                    } else if (eliminationSolver) {
+                        // elimination solver does not consider a precision so nothing to do
+                    } else {
+                        STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "Changing the precision for the given linear equation solver type is not implemented");
+                    }
+                    
+                    // invoke the solver
+                    submatrixSolver->solveEquations(x, tmpResult);
+                    submatrixSolver->multiply(x, nullptr, otherTmpResult);
+                    linEqPrecision *= storm::utility::convertNumber<ValueType>(0.5);
+                    ++hintIterations;
+                    auto otherTmpResIt = otherTmpResult.begin();
+                    auto xIt = x.begin();
+                    for(auto tmpResIt = tmpResult.begin(); tmpResIt != tmpResult.end(); ++tmpResIt) {
+                        if (!storm::utility::vector::equalModuloPrecision(*tmpResIt + *xIt, *otherTmpResIt + *xIt, this->getPrecision(), this->getRelative())) {
+                            vectorsNotEqual = true;
+                            break;
+                        }
+                        ++otherTmpResIt; ++xIt;
+                    }
+                } while (vectorsNotEqual);
+                STORM_LOG_WARN_COND(hintIterations == 1, "required " << hintIterations << " linear equation solver invokations to apply the scheduler hints in GameSolver");
             }
 
             // Now perform the actual value iteration.
