@@ -364,9 +364,8 @@ namespace storm {
             }
         }
         
-        STORM_PRINT_AND_LOG("Done! Found " << numOfSatRegions << " safe regions, "
-                                     << numOfUnsatRegions << " unsafe regions, and "
-                                     << result.size() - numOfSatRegions - numOfUnsatRegions << " unknown regions." << std::endl);
+        STORM_PRINT_AND_LOG("Done! Found " << numOfSatRegions << " safe regions and "
+                                     << numOfUnsatRegions << " unsafe regions." << std::endl);
         STORM_PRINT_AND_LOG(storm::utility::convertNumber<double>(satArea / parameterSpace.area()) * 100 << "% of the parameter space is safe, and "
                          << storm::utility::convertNumber<double>(unsatArea / parameterSpace.area()) * 100 << "% of the parameter space is unsafe." << std::endl);
         parameterLiftingStopWatch.stop();
