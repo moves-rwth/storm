@@ -29,7 +29,7 @@ namespace storm {
     
             template <typename SparseModelType, typename ConstantType>
             bool SparseMdpParameterLiftingModelChecker<SparseModelType, ConstantType>::canHandle(CheckTask<storm::logic::Formula, typename SparseModelType::ValueType> const& checkTask) const {
-                return checkTask.getFormula().isInFragment(storm::logic::reachability().setRewardOperatorsAllowed(true).setReachabilityRewardFormulasAllowed(true).setBoundedUntilFormulasAllowed(true).setCumulativeRewardFormulasAllowed(true));
+                return checkTask.getFormula().isInFragment(storm::logic::reachability().setRewardOperatorsAllowed(true).setReachabilityRewardFormulasAllowed(true).setBoundedUntilFormulasAllowed(true).setStepBoundedUntilFormulasAllowed(true).setCumulativeRewardFormulasAllowed(true));
             }
             
             template <typename SparseModelType, typename ConstantType>
@@ -190,7 +190,8 @@ namespace storm {
                 std::vector<typename SparseModelType::ValueType> b = rewardModel.getTotalRewardVector(this->parametricModel.getTransitionMatrix());
                     
                 parameterLifter = std::make_unique<storm::transformer::ParameterLifter<typename SparseModelType::ValueType, ConstantType>>(this->parametricModel.getTransitionMatrix(), b, maybeStates, maybeStates);
-                
+                computePlayer1Matrix();
+
                 applyPreviousResultAsHint = false;
                 
                 // We only know a lower bound for the result

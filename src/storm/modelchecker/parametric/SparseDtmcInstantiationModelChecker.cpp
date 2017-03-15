@@ -26,7 +26,6 @@ namespace storm {
                 if(!this->currentCheckTask->isQualitativeSet() && this->currentCheckTask->getFormula().isInFragment(storm::logic::reachability().setRewardOperatorsAllowed(true).setReachabilityRewardFormulasAllowed(true))) {
                     return checkWithHint(modelChecker);
                 } else {
-                    STORM_LOG_WARN("Checking without hint"); // todo:remove this warning
                     return modelChecker.check(*this->currentCheckTask);
                 }
             }
