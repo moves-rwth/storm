@@ -43,6 +43,8 @@ namespace storm {
                 SparseParameterLiftingModelChecker<SparseModelType, ConstantType> const& getParameterLiftingChecker() const;
                 SparseInstantiationModelChecker<SparseModelType, ConstantType> const& getInstantiationChecker() const;
                 
+                static std::string visualizeResult(std::vector<std::pair<storm::storage::ParameterRegion<typename SparseModelType::ValueType>, RegionCheckResult>> const& result, storm::storage::ParameterRegion<typename SparseModelType::ValueType> const& parameterSpace, typename storm::storage::ParameterRegion<typename SparseModelType::ValueType>::VariableType const& x, typename storm::storage::ParameterRegion<typename SparseModelType::ValueType>::VariableType const& y);
+                
             private:
                 SparseModelType const& getConsideredParametricModel() const;
                 

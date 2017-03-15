@@ -1,3 +1,5 @@
+#include <sstream>
+
 #include "storm/modelchecker/parametric/ParameterLifting.h"
 
 #include "storm/adapters/CarlAdapter.h"
@@ -200,7 +202,7 @@ namespace storm {
                     currentFormula = checkTask.getFormula().asSharedPointer();
                 }
             }
-            
+    
             template <>
             void ParameterLifting<storm::models::sparse::Mdp<storm::RationalFunction>, double>::simplifyParametricModel(CheckTask<logic::Formula, storm::RationalFunction> const& checkTask) {
                 storm::transformer::SparseParametricMdpSimplifier<storm::models::sparse::Mdp<storm::RationalFunction>> simplifier(parametricModel);
@@ -213,6 +215,60 @@ namespace storm {
                 }
             }
     
+            template <typename SparseModelType, typename ConstantType>
+            std::string ParameterLifting<SparseModelType, ConstantType>::visualizeResult(std::vector<std::pair<storm::storage::ParameterRegion<typename SparseModelType::ValueType>, RegionCheckResult>> const& result, storm::storage::ParameterRegion<typename SparseModelType::ValueType> const& parameterSpace, typename storm::storage::ParameterRegion<typename SparseModelType::ValueType>::VariableType const& x, typename storm::storage::ParameterRegion<typename SparseModelType::ValueType>::VariableType const& y) {
+                
+                typedef typename storm::storage::ParameterRegion<typename SparseModelType::ValueType>::CoefficientType ValueType;
+                
+                std::stringstream stream;
+                
+                uint_fast64_t const size = 64;
+                
+                stream << "Parameter lifting result (visualization):" << std::endl;
+                stream << " \t x-axis: " << x << "  \t y-axis: " << y << "  \t S=safe, [ ]=unsafe, -=ambiguous " << std::endl;
+                for (uint_fast64_t i = 0; i < 2*size+2; ++i) stream << "#"; stream << std::endl;
+                
+                ValueType deltaX = (parameterSpace.getUpperBoundary(x) - parameterSpace.getLowerBoundary(x)) / storm::utility::convertNumber<ValueType>(size);
+                ValueType deltaY = (parameterSpace.getUpperBoundary(y) - parameterSpace.getLowerBoundary(y)) / storm::utility::convertNumber<ValueType>(size);
+                ValueType printedRegionArea = deltaX * deltaY;
+                for (ValueType yUpper = parameterSpace.getUpperBoundary(y); yUpper != parameterSpace.getLowerBoundary(y); yUpper -= deltaY) {
+                    ValueType yLower = yUpper - deltaY;
+                    stream << "#";
+                    for (ValueType xLower = parameterSpace.getLowerBoundary(x); xLower != parameterSpace.getUpperBoundary(x); xLower += deltaX) {
+                        ValueType xUpper = xLower + deltaX;
+                        bool currRegionSafe = false;
+                        bool currRegionUnSafe = false;
+                        bool currRegionComplete = false;
+                        ValueType coveredArea = storm::utility::zero<ValueType>();
+                        for (auto const& r : result) {
+                            ValueType instersectionArea = std::max(storm::utility::zero<ValueType>(), std::min(yUpper, r.first.getUpperBoundary(y)) - std::max(yLower, r.first.getLowerBoundary(y)));
+                            instersectionArea *= std::max(storm::utility::zero<ValueType>(), std::min(xUpper, r.first.getUpperBoundary(x)) - std::max(xLower, r.first.getLowerBoundary(x)));
+                            if(!storm::utility::isZero(instersectionArea)) {
+                                currRegionSafe = currRegionSafe || r.second == RegionCheckResult::AllSat;
+                                currRegionUnSafe = currRegionUnSafe || r.second == RegionCheckResult::AllViolated;
+                                coveredArea += instersectionArea;
+                                if(currRegionSafe && currRegionUnSafe) {
+                                    break;
+                                }
+                                if(coveredArea == printedRegionArea) {
+                                    currRegionComplete = true;
+                                    break;
+                                }
+                            }
+                        }
+                        if (currRegionComplete && currRegionSafe && !currRegionUnSafe) {
+                            stream << "SS";
+                        } else if (currRegionComplete && currRegionUnSafe && !currRegionSafe) {
+                            stream << "  ";
+                        } else {
+                            stream << "--";
+                        }
+                    }
+                    stream << "#" << std::endl;
+                }
+                for (uint_fast64_t i = 0; i < 2*size+2; ++i) stream << "#"; stream << std::endl;
+                return stream.str();
+            }
         
 #ifdef STORM_HAVE_CARL
         template class ParameterLifting<storm::models::sparse::Dtmc<storm::RationalFunction>, double>;

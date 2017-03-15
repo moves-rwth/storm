@@ -330,15 +330,24 @@ namespace storm {
         STORM_PRINT_AND_LOG("Performing parameter lifting for property " << *formula << " with parameter space " << parameterSpace.toString(true) << " and refinement threshold " << storm::utility::convertNumber<double>(refinementThreshold) << " ..." << std::endl);
         
         storm::modelchecker::CheckTask<storm::logic::Formula, storm::RationalFunction> task(*formula, true);
+        std::string resultVisualization;
         
         if (markovModel->isOfType(storm::models::ModelType::Dtmc)) {
             storm::modelchecker::parametric::ParameterLifting <storm::models::sparse::Dtmc<storm::RationalFunction>, double> parameterLiftingContext(*markovModel->template as<storm::models::sparse::Dtmc<storm::RationalFunction>>());
             parameterLiftingContext.specifyFormula(task);
             result = parameterLiftingContext.performRegionRefinement(parameterSpace, refinementThreshold);
+            parameterLiftingStopWatch.stop();
+            if (modelParameters.size() == 2) {
+                resultVisualization = parameterLiftingContext.visualizeResult(result, parameterSpace, *modelParameters.begin(), *(modelParameters.rbegin()));
+            }
         } else if (markovModel->isOfType(storm::models::ModelType::Mdp)) {
             storm::modelchecker::parametric::ParameterLifting<storm::models::sparse::Mdp<storm::RationalFunction>, double> parameterLiftingContext(*markovModel->template as<storm::models::sparse::Mdp<storm::RationalFunction>>());
             parameterLiftingContext.specifyFormula(task);
             result = parameterLiftingContext.performRegionRefinement(parameterSpace, refinementThreshold);
+            parameterLiftingStopWatch.stop();
+            if (modelParameters.size() == 2) {
+                resultVisualization = parameterLiftingContext.visualizeResult(result, parameterSpace, *modelParameters.begin(), *(modelParameters.rbegin()));
+            }
         } else {
             STORM_LOG_THROW(false, storm::exceptions::InvalidSettingsException, "Unable to perform parameterLifting on the provided model type.");
         }
@@ -363,13 +372,12 @@ namespace storm {
                     break;
             }
         }
-        
         STORM_PRINT_AND_LOG("Done! Found " << numOfSatRegions << " safe regions and "
                                      << numOfUnsatRegions << " unsafe regions." << std::endl);
         STORM_PRINT_AND_LOG(storm::utility::convertNumber<double>(satArea / parameterSpace.area()) * 100 << "% of the parameter space is safe, and "
                          << storm::utility::convertNumber<double>(unsatArea / parameterSpace.area()) * 100 << "% of the parameter space is unsafe." << std::endl);
-        parameterLiftingStopWatch.stop();
         STORM_PRINT_AND_LOG("Model checking with parameter lifting took " << parameterLiftingStopWatch << " seconds." << std::endl);
+        STORM_PRINT_AND_LOG(resultVisualization);
         
         if (storm::settings::getModule<storm::settings::modules::ParametricSettings>().exportResultToFile()) {
             std::string path = storm::settings::getModule<storm::settings::modules::ParametricSettings>().exportResultPath();
