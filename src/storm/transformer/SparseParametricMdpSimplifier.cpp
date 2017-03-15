@@ -2,6 +2,7 @@
 
 #include "storm/adapters/CarlAdapter.h"
 
+#include "storm/logic/CloneVisitor.h"
 #include "storm/modelchecker/propositional/SparsePropositionalModelChecker.h"
 #include "storm/modelchecker/results/ExplicitQualitativeCheckResult.h"
 #include "storm/models/sparse/Mdp.h"
@@ -68,7 +69,7 @@ namespace storm {
         bool SparseParametricMdpSimplifier<SparseModelType>::simplifyForBoundedUntilProbabilities(storm::logic::ProbabilityOperatorFormula const& formula) {
             STORM_LOG_THROW(!formula.getSubformula().asBoundedUntilFormula().hasLowerBound(), storm::exceptions::NotSupportedException, "Lower step bounds are not supported.");
             STORM_LOG_THROW(formula.getSubformula().asBoundedUntilFormula().hasUpperBound(), storm::exceptions::UnexpectedException, "Expected a bounded until formula with an upper bound.");
-            STORM_LOG_THROW(formula.getSubformula().asBoundedUntilFormula().isStepBounded(), storm::exceptions::UnexpectedException, "Expected a bounded until formula with step bounds.");
+            STORM_LOG_THROW(formula.getSubformula().asBoundedUntilFormula().getUpperBound().getBaseExpression().isIntegerLiteralExpression(), storm::exceptions::UnexpectedException, "Expected a bounded until formula with integral bounds.");
                         
             bool minimizing = formula.hasOptimalityType() ? storm::solver::minimize(formula.getOptimalityType()) : storm::logic::isLowerBound(formula.getBound().comparisonType);
             uint_fast64_t upperStepBound = formula.getSubformula().asBoundedUntilFormula().getUpperBound().evaluateAsInt();
@@ -88,11 +89,11 @@ namespace storm {
             storm::storage::BitVector probGreater0States = minimizing ?
                                                            storm::utility::graph::performProbGreater0A(this->originalModel.getTransitionMatrix(), this->originalModel.getTransitionMatrix().getRowGroupIndices(), this->originalModel.getBackwardTransitions(), phiStates, psiStates, true, upperStepBound) :
                                                            storm::utility::graph::performProbGreater0E(this->originalModel.getBackwardTransitions(), phiStates, psiStates, true, upperStepBound);
-            storm::storage::BitVector prob0States = ~probGreater0States;
             
             // Only consider the maybestates that are reachable from one initial probGreater0 state within the given amount of steps and without hopping over a target state
             storm::storage::BitVector reachableGreater0States = storm::utility::graph::getReachableStates(this->originalModel.getTransitionMatrix(), this->originalModel.getInitialStates() & probGreater0States, probGreater0States, psiStates, true, upperStepBound);
-            storm::storage::BitVector maybeStates = reachableGreater0States & ~psiStates;
+            storm::storage::BitVector maybeStates =  reachableGreater0States & ~psiStates;
+            storm::storage::BitVector prob0States = ~reachableGreater0States & ~psiStates;
             
             // obtain the resulting subsystem
             storm::transformer::GoalStateMerger<SparseModelType> goalStateMerger(this->originalModel);
@@ -158,7 +159,7 @@ namespace storm {
         
         template<typename SparseModelType>
         bool SparseParametricMdpSimplifier<SparseModelType>::simplifyForCumulativeRewards(storm::logic::RewardOperatorFormula const& formula) {
-            STORM_LOG_THROW(formula.getSubformula().asCumulativeRewardFormula().isStepBounded(), storm::exceptions::UnexpectedException, "Expected a cumulative reward formula with step bounds.");
+            STORM_LOG_THROW(formula.getSubformula().asCumulativeRewardFormula().getBound().getBaseExpression().isIntegerLiteralExpression(), storm::exceptions::UnexpectedException, "Expected a cumulative reward formula with integral bound.");
                         
             typename SparseModelType::RewardModelType const& originalRewardModel = formula.hasRewardModelName() ? this->originalModel.getRewardModel(formula.getRewardModelName()) : this->originalModel.getUniqueRewardModel();
 
@@ -182,7 +183,7 @@ namespace storm {
             this->simplifiedModel = goalStateMerger.mergeTargetAndSinkStates(maybeStates, noStates, zeroRewardStates, rewardModelNameAsVector);
             
             // obtain the simplified formula for the simplified model
-            this->simplifiedFormula = formula.asSharedPointer();
+            this->simplifiedFormula = storm::logic::CloneVisitor().clone(formula);
             
             return true;
         }
