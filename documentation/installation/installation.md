@@ -8,7 +8,7 @@ categories: [Installation]
 
 {% include toc.html %}
 
-This guide shows you the options you have to install Storm. For this, we are going to assume that all necessary [dependencies](requirements.html) have been installed on the machine in default locations so they can be found by our build machinery. Also, we are going to assume that your operating system is in the list of supported [operating systems](requirements.html#supported-os). If your operating system is not in this list but is Linux-based, chances are that you can install Storm but you may have to perform additional steps that we do not cover here. If you just want to quickly try Storm and/or are not able to install the dependencies, you might want to check out our [virtual machine]({{ site.baseurl }}/documentation/vm/vm.html) image.
+This guide shows you the options you have to install Storm. For this, we are going to assume that all necessary [dependencies](requirements.html) have been installed on the machine in default locations so they can be found by our build machinery. Also, we are going to assume that your operating system is in the list of supported [operating systems](requirements.html#supported-os). If your operating system is not in this list but is Linux-based, chances are that you can install Storm but you may have to perform additional steps that we do not cover here. If you just want to quickly try Storm and/or are not able to install the dependencies, you might want to check out our [virtual machine]({{ site.github.url }}/documentation/vm/vm.html) image.
 
 We currently provide two ways of installing Storm:
 
@@ -43,7 +43,7 @@ After installing the package, you should directly be able to invoke
 storm
 ```
 
-and continue with the guide on how to [run Storm]({{ site.baseurl }}/documentation/usage/running-storm.html).
+and continue with the guide on how to [run Storm]({{ site.github.url }}/documentation/usage/running-storm.html).
 
 ## Building Storm from source
 
@@ -99,7 +99,7 @@ make
 ```
 
 {:.alert .alert-info}
-If you just want to compile Storm's main command-line interface, typing `make storm-main` suffices. To see which targets you need to build, we refer to the table of [available executables]({{ site.baseurl }}/documentation/usage/running-storm.html#storms-executables)
+If you just want to compile Storm's main command-line interface, typing `make storm-main` suffices. To see which targets you need to build, we refer to the table of [available executables]({{ site.github.url }}/documentation/usage/running-storm.html#storms-executables)
 
 {:.alert .alert-info}
 If you have multiple cores at your disposal and at least 8GB of memory, you can execute
@@ -107,7 +107,7 @@ If you have multiple cores at your disposal and at least 8GB of memory, you can 
 
 ### Adding Storm to your path <span class="label label-info">optional</span>
 
-If you want to be able to run Storm from anywhere, you may want to add it to your path (in the tutorial on how to [run Storm]({{ site.baseurl }}/documentation/usage/running-storm.html) this is assumed). You can do so, by
+If you want to be able to run Storm from anywhere, you may want to add it to your path (in the tutorial on how to [run Storm]({{ site.github.url }}/documentation/usage/running-storm.html) this is assumed). You can do so, by
 
 ```shell
 export PATH=$PATH:$STORM_DIR/build/bin

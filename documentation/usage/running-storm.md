@@ -10,7 +10,7 @@ categories: [Usage]
 
 ## Storm's executables
 
-Storm takes [many languages](languages.html) as input. For some of these formats, domain-specific information is available and domain-specific properties are of key importance. Others are generic and require more flexibility in terms of options. As a result, there are several binaries that are each dedicated to a specific portion of the input languages. The following table gives an overview of the available executables and the targets that need to be built when compiling [Storm from source]({{ site.baseurl }}/documentation/installation/installation.html#build-step).
+Storm takes [many languages](languages.html) as input. For some of these formats, domain-specific information is available and domain-specific properties are of key importance. Others are generic and require more flexibility in terms of options. As a result, there are several binaries that are each dedicated to a specific portion of the input languages. The following table gives an overview of the available executables and the targets that need to be built when compiling [Storm from source]({{ site.github.url }}/documentation/installation/installation.html#build-step).
 
 <table class="table table-striped table-hover">
   <thead>
@@ -30,7 +30,7 @@ Consequently, our guide on how to run Storm is structured accordingly. For every
 
 Many of Storm's executables have many options, only a fraction of which are covered in this guide. If you want to explore these options, invoke the executable with the `--help [hint]` option. If a hint is given, only those options are shown that match it.
 
-Before we get started, let us check whether everything is set up properly. In all command-line examples we assume that the executables are in your PATH and can therefore be invoked without prefixing them with their path. If you installed Storm via [homebrew]({{ site.baseurl }}/documentation/installation/installation.html#homebrew), this is automatically the case; if you built Storm yourself, you have to [manually add it to your PATH]({{ site.baseurl }}/documentation/installation/installation.html#adding-storm-to-your-path-optional). Typing
+Before we get started, let us check whether everything is set up properly. In all command-line examples we assume that the executables are in your PATH and can therefore be invoked without prefixing them with their path. If you installed Storm via [homebrew]({{ site.github.url }}/documentation/installation/installation.html#homebrew), this is automatically the case; if you built Storm yourself, you have to [manually add it to your PATH]({{ site.github.url }}/documentation/installation/installation.html#adding-storm-to-your-path-optional). Typing
 
 ```shell
 storm
@@ -1624,7 +1624,7 @@ Here, we take the same input model as for [Example 1](#example-1-analysis-of-a-p
 {% include collapse-panel.html target="explicit_die_dtmc" name="explicit model of Knuth-Yao die" %}
 
 <div class="explicit_die_dtmc panel-collapse collapse" markdown="1">
-Transition file, download link: [{{ site.baseurl }}/resources/input-examples/explicit/die.tra]({{ site.baseurl }}/resources/input-examples/explicit/die.tra)
+Transition file, download link: [{{ site.github.url }}/resources/input-examples/explicit/die.tra]({{ site.github.url }}/resources/input-examples/explicit/die.tra)
 ```shell
 dtmc
 0 1 0.5
@@ -1649,7 +1649,7 @@ dtmc
 12 12 1
 ```
 <hr />
-Label file, download link: [{{ site.baseurl }}/resources/input-examples/explicit/die.lab]({{ site.baseurl }}/resources/input-examples/explicit/die.lab)
+Label file, download link: [{{ site.github.url }}/resources/input-examples/explicit/die.lab]({{ site.github.url }}/resources/input-examples/explicit/die.lab)
 ```shell
 #DECLARATION
 init one done deadlock
@@ -1663,7 +1663,7 @@ init one done deadlock
 12 done
 ```
 <hr />
-(Transition) reward file, download link: [{{ site.baseurl }}/resources/input-examples/explicit/die.tra.rew]({{ site.baseurl }}/resources/input-examples/explicit/die.tra.rew)
+(Transition) reward file, download link: [{{ site.github.url }}/resources/input-examples/explicit/die.tra.rew]({{ site.github.url }}/resources/input-examples/explicit/die.tra.rew)
 ```shell
 0 1 1
 0 2 1
