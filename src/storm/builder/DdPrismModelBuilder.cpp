@@ -26,6 +26,8 @@
 
 #include "storm/settings/modules/CoreSettings.h"
 
+#include "storm/adapters/CarlAdapter.h"
+
 namespace storm {
     namespace builder {
         
@@ -786,7 +788,7 @@ namespace storm {
                 }
             }
             
-            result.setValue(metaVariableNameToValueMap, ValueType(1));
+            result.setValue(metaVariableNameToValueMap, storm::utility::one<ValueType>());
             return result;
         }
         
@@ -799,12 +801,12 @@ namespace storm {
             std::set<storm::expressions::Variable> assignedGlobalVariables = equalizeAssignedGlobalVariables(generationInfo, commandDds);
             
             // Sum all guards, so we can read off the maximal number of nondeterministic choices in any given state.
-            storm::dd::Add<Type, ValueType> sumOfGuards = generationInfo.manager->template getAddZero<ValueType>();
+            storm::dd::Add<Type, uint_fast64_t> sumOfGuards = generationInfo.manager->template getAddZero<uint_fast64_t>();
             for (auto const& commandDd : commandDds) {
-                sumOfGuards += commandDd.guardDd.template toAdd<ValueType>();
+                sumOfGuards += commandDd.guardDd.template toAdd<uint_fast64_t>();
                 allGuards |= commandDd.guardDd;
             }
-            uint_fast64_t maxChoices = static_cast<uint_fast64_t>(sumOfGuards.getMax());
+            uint_fast64_t maxChoices = sumOfGuards.getMax();
             
             STORM_LOG_TRACE("Found " << maxChoices << " local choices.");
             
@@ -827,7 +829,7 @@ namespace storm {
                 
                 for (uint_fast64_t currentChoices = 1; currentChoices <= maxChoices; ++currentChoices) {
                     // Determine the set of states with exactly currentChoices choices.
-                    equalsNumberOfChoicesDd = sumOfGuards.equals(generationInfo.manager->getConstant(ValueType(currentChoices)));
+                    equalsNumberOfChoicesDd = sumOfGuards.equals(generationInfo.manager->getConstant(currentChoices));
                     
                     // If there is no such state, continue with the next possible number of choices.
                     if (equalsNumberOfChoicesDd.isZero()) {
@@ -880,7 +882,7 @@ namespace storm {
                     }
                     
                     // Delete currentChoices out of overlapping DD
-                    sumOfGuards = sumOfGuards * (!equalsNumberOfChoicesDd).template toAdd<ValueType>();
+                    sumOfGuards = sumOfGuards * (!equalsNumberOfChoicesDd).template toAdd<uint_fast64_t>();
                 }
                 
                 return ActionDecisionDiagram(allGuards, allCommands, assignedGlobalVariables, nondeterminismVariableOffset + numberOfBinaryVariables);
@@ -1112,6 +1114,17 @@ namespace storm {
         }
         
         template <storm::dd::DdType Type, typename ValueType>
+        void checkRewards(storm::dd::Add<Type, ValueType> const& rewards) {
+            STORM_LOG_WARN_COND(rewards.getMin() >= 0, "The reward model assigns negative rewards to some states.");
+            STORM_LOG_WARN_COND(!rewards.isZero(), "The reward model does not assign any non-zero rewards.");
+        }
+        
+        template <storm::dd::DdType Type>
+        void checkRewards(storm::dd::Add<Type, storm::RationalFunction> const& rewards) {
+            STORM_LOG_WARN_COND(!rewards.isZero(), "The reward model does not assign any non-zero rewards.");
+        }
+        
+        template <storm::dd::DdType Type, typename ValueType>
         storm::models::symbolic::StandardRewardModel<Type, ValueType> DdPrismModelBuilder<Type, ValueType>::createRewardModelDecisionDiagrams(GenerationInformation& generationInfo, storm::prism::RewardModel const& rewardModel, ModuleDecisionDiagram const& globalModule, storm::dd::Add<Type, ValueType> const& reachableStatesAdd, storm::dd::Add<Type, ValueType> const& transitionMatrix, boost::optional<storm::dd::Add<Type, ValueType>>& stateActionDd) {
             
             // Start by creating the state reward vector.
@@ -1127,8 +1140,7 @@ namespace storm {
                     rewards = reachableStatesAdd * states * rewards;
                     
                     // Perform some sanity checks.
-                    STORM_LOG_WARN_COND(rewards.getMin() >= 0, "The reward model assigns negative rewards to some states.");
-                    STORM_LOG_WARN_COND(!rewards.isZero(), "The reward model does not assign any non-zero rewards.");
+                    checkRewards(rewards);
                     
                     // Add the rewards to the global state reward vector.
                     stateRewards.get() += rewards;
@@ -1165,8 +1177,7 @@ namespace storm {
                     }
                     
                     // Perform some sanity checks.
-                    STORM_LOG_WARN_COND(stateActionRewardDd.getMin() >= 0, "The reward model assigns negative rewards to some states.");
-                    STORM_LOG_WARN_COND(!stateActionRewardDd.isZero(), "The reward model does not assign any non-zero rewards.");
+                    checkRewards(stateActionRewardDd);
                     
                     // Add the rewards to the global transition reward matrix.
                     stateActionRewards.get() += stateActionRewardDd;
@@ -1217,8 +1228,7 @@ namespace storm {
                     }
                     
                     // Perform some sanity checks.
-                    STORM_LOG_WARN_COND(transitionRewardDd.getMin() >= 0, "The reward model assigns negative rewards to some states.");
-                    STORM_LOG_WARN_COND(!transitionRewardDd.isZero(), "The reward model does not assign any non-zero rewards.");
+                    checkRewards(transitionRewardDd);
                     
                     // Add the rewards to the global transition reward matrix.
                     transitionRewards.get() += transitionRewardDd;
@@ -1427,7 +1437,9 @@ namespace storm {
         // Explicitly instantiate the symbolic model builder.
         template class DdPrismModelBuilder<storm::dd::DdType::CUDD>;
         template class DdPrismModelBuilder<storm::dd::DdType::Sylvan>;
-        
+
+        template class DdPrismModelBuilder<storm::dd::DdType::Sylvan, storm::RationalFunction>;
+
     } // namespace adapters
 } // namespace storm
 

@@ -2,7 +2,7 @@
 
 #include <vector>
 
-#include "storm/solver/SymbolicLinearEquationSolver.h"
+#include "storm/solver/SymbolicNativeLinearEquationSolver.h"
 #include "storm/solver/SymbolicEliminationLinearEquationSolver.h"
 #include "storm/solver/SymbolicMinMaxLinearEquationSolver.h"
 #include "storm/solver/SymbolicGameSolver.h"
@@ -25,7 +25,6 @@ namespace storm {
     namespace utility {
         namespace solver {
             
-            
             template<storm::dd::DdType Type, typename ValueType>
             std::unique_ptr<storm::solver::SymbolicLinearEquationSolver<Type, ValueType>> SymbolicLinearEquationSolverFactory<Type, ValueType>::create(storm::dd::Add<Type, ValueType> const& A, storm::dd::Bdd<Type> const& allRows, std::set<storm::expressions::Variable> const& rowMetaVariables, std::set<storm::expressions::Variable> const& columnMetaVariables, std::vector<std::pair<storm::expressions::Variable, storm::expressions::Variable>> const& rowColumnMetaVariablePairs) const {
                 
@@ -33,8 +32,10 @@ namespace storm {
                 switch (equationSolver) {
                     case storm::solver::EquationSolverType::Elimination: return std::make_unique<storm::solver::SymbolicEliminationLinearEquationSolver<Type, ValueType>>(A, allRows, rowMetaVariables, columnMetaVariables, rowColumnMetaVariablePairs);
                         break;
+                        case storm::solver::EquationSolverType::Native: return std::make_unique<storm::solver::SymbolicNativeLinearEquationSolver<Type, ValueType>>(A, allRows, rowMetaVariables, columnMetaVariables, rowColumnMetaVariablePairs);
                     default:
-                        return std::make_unique<storm::solver::SymbolicLinearEquationSolver<Type, ValueType>>(A, allRows, rowMetaVariables, columnMetaVariables, rowColumnMetaVariablePairs);
+                        STORM_LOG_WARN("The selected equation solver is not available in the DD setting. Falling back to native solver.");
+                        return std::make_unique<storm::solver::SymbolicNativeLinearEquationSolver<Type, ValueType>>(A, allRows, rowMetaVariables, columnMetaVariables, rowColumnMetaVariablePairs);
                 }
             }
             

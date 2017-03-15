@@ -406,6 +406,17 @@ namespace storm {
         }
         
         template<typename ValueType>
+        InternalAdd<DdType::Sylvan, ValueType> InternalAdd<DdType::Sylvan, ValueType>::permuteVariables(std::vector<InternalBdd<DdType::Sylvan>> const& from, std::vector<InternalBdd<DdType::Sylvan>> const& to) const {
+            std::vector<uint32_t> fromIndices;
+            std::vector<uint32_t> toIndices;
+            for (auto it1 = from.begin(), ite1 = from.end(), it2 = to.begin(); it1 != ite1; ++it1, ++it2) {
+                fromIndices.push_back(it1->getIndex());
+                toIndices.push_back(it2->getIndex());
+            }
+            return InternalAdd<DdType::Sylvan, ValueType>(ddManager, this->sylvanMtbdd.Permute(fromIndices, toIndices));
+        }
+        
+        template<typename ValueType>
         InternalAdd<DdType::Sylvan, ValueType> InternalAdd<DdType::Sylvan, ValueType>::multiplyMatrix(InternalAdd<DdType::Sylvan, ValueType> const& otherMatrix, std::vector<InternalBdd<DdType::Sylvan>> const& summationDdVariables) const {
             InternalBdd<DdType::Sylvan> summationVariables = ddManager->getBddOne();
             for (auto const& ddVariable : summationDdVariables) {

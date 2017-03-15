@@ -70,7 +70,6 @@ namespace storm {
         template<typename K, typename ValueType>
         ValueType maximum(std::map<K, ValueType> const& values);
         
-        
         template<typename IndexType, typename ValueType>
         storm::storage::MatrixEntry<IndexType, ValueType>& simplify(storm::storage::MatrixEntry<IndexType, ValueType>& matrixEntry);
 

@@ -189,6 +189,24 @@ namespace storm {
         }
         
         template<typename ValueType>
+        InternalAdd<DdType::CUDD, ValueType> InternalAdd<DdType::CUDD, ValueType>::permuteVariables(std::vector<InternalBdd<DdType::CUDD>> const& from, std::vector<InternalBdd<DdType::CUDD>> const& to) const {
+            // Build the full permutation.
+            uint64_t numberOfVariables = ddManager->getCuddManager().ReadSize();
+            int* permutation = new int[numberOfVariables];
+            for (uint64_t variable = 0; variable < numberOfVariables; ++variable) {
+                permutation[variable] = variable;
+            }
+            
+            for (auto it1 = from.begin(), ite1 = from.end(), it2 = to.begin(); it1 != ite1; ++it1, ++it2) {
+                permutation[it1->getIndex()] = it2->getIndex();
+            }
+            InternalAdd<DdType::CUDD, ValueType> result(ddManager, this->getCuddAdd().Permute(permutation));
+            
+            delete[] permutation;
+            return result;
+        }
+        
+        template<typename ValueType>
         InternalAdd<DdType::CUDD, ValueType> InternalAdd<DdType::CUDD, ValueType>::multiplyMatrix(InternalAdd<DdType::CUDD, ValueType> const& otherMatrix, std::vector<InternalBdd<DdType::CUDD>> const& summationDdVariables) const {
             // Create the CUDD summation variables.
             std::vector<cudd::ADD> summationAdds;

@@ -330,6 +330,15 @@ namespace storm {
             Add<LibraryType, ValueType> swapVariables(std::vector<std::pair<storm::expressions::Variable, storm::expressions::Variable>> const& metaVariablePairs) const;
             
             /*!
+             * Permutes the given pairs of meta variables in the ADD. The pairs of meta variables must be guaranteed to have
+             * the same number of underlying ADD variables. The first component of the i-th entry is substituted by the second component.
+             *
+             * @param metaVariablePairs A vector of meta variable pairs that are to be permuted.
+             * @return The resulting ADD.
+             */
+            Add<LibraryType, ValueType> permuteVariables(std::vector<std::pair<storm::expressions::Variable, storm::expressions::Variable>> const& metaVariablePairs) const;
+            
+            /*!
              * Multiplies the current ADD (representing a matrix) with the given matrix by summing over the given meta
              * variables.
              *

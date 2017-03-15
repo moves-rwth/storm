@@ -6,6 +6,8 @@
 
 #include "storm/models/symbolic/StandardRewardModel.h"
 
+#include "storm/adapters/CarlAdapter.h"
+
 namespace storm {
     namespace models {
         namespace symbolic {
@@ -56,6 +58,8 @@ namespace storm {
             // Explicitly instantiate the template class.
             template class Ctmc<storm::dd::DdType::CUDD, double>;
             template class Ctmc<storm::dd::DdType::Sylvan, double>;
+            
+            template class Ctmc<storm::dd::DdType::Sylvan, storm::RationalFunction>;
             
         } // namespace symbolic
     } // namespace models

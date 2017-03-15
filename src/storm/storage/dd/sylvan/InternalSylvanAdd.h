@@ -327,7 +327,17 @@ namespace storm {
              * @return The resulting ADD.
              */
             InternalAdd<DdType::Sylvan, ValueType> swapVariables(std::vector<InternalBdd<DdType::Sylvan>> const& from, std::vector<InternalBdd<DdType::Sylvan>> const& to) const;
-            
+
+            /*!
+             * Permutes the given pairs of DD variables in the ADD. The pairs of meta variables have to be represented by
+             * ADDs must have equal length.
+             *
+             * @param from The vector that specifies the 'from' part of the variable renaming.
+             * @param to The vector that specifies the 'to' part of the variable renaming.
+             * @return The resulting ADD.
+             */
+            InternalAdd<DdType::Sylvan, ValueType> permuteVariables(std::vector<InternalBdd<DdType::Sylvan>> const& from, std::vector<InternalBdd<DdType::Sylvan>> const& to) const;
+
             /*!
              * Multiplies the current ADD (representing a matrix) with the given matrix by summing over the given meta
              * variables.
