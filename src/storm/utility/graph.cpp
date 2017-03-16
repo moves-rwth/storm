@@ -43,9 +43,9 @@ namespace storm {
                 std::vector<uint_fast64_t> remainingSteps;
                 if (useStepBound) {
                     stepStack.reserve(numberOfStates);
-                    stepStack.insert(stepStack.begin(), targetStates.getNumberOfSetBits(), maximalSteps);
+                    stepStack.insert(stepStack.begin(), initialStates.getNumberOfSetBits(), maximalSteps);
                     remainingSteps.resize(numberOfStates);
-                    for (auto state : targetStates) {
+                    for (auto state : initialStates) {
                         remainingSteps[state] = maximalSteps;
                     }
                 }
@@ -59,12 +59,16 @@ namespace storm {
                     if (useStepBound) {
                         currentStepBound = stepStack.back();
                         stepStack.pop_back();
+                        
+                        if (currentStepBound == 0) {
+                            continue;
+                        }
                     }
                 
                     for (auto const& successor : transitionMatrix.getRowGroup(currentState)) {
                         // Only explore the state if the transition was actually there and the successor has not yet
                         // been visited.
-                        if (successor.getValue() != storm::utility::zero<T>() && !reachableStates.get(successor.getColumn()) && (!useStepBound || remainingSteps[successor.getColumn()] < currentStepBound - 1)) {
+                        if (!storm::utility::isZero(successor.getValue()) && !reachableStates.get(successor.getColumn()) || (useStepBound && remainingSteps[successor.getColumn()] < currentStepBound - 1)) {
                             // If the successor is one of the target states, we need to include it, but must not explore
                             // it further.
                             if (targetStates.get(successor.getColumn())) {
@@ -72,12 +76,9 @@ namespace storm {
                             } else if (constraintStates.get(successor.getColumn())) {
                                 // However, if the state is in the constrained set of states, we potentially need to follow it.
                                 if (useStepBound) {
+                                    // As there is at least one more step to go, we need to push the state and the new number of steps.
                                     remainingSteps[successor.getColumn()] = currentStepBound - 1;
                                     stepStack.push_back(currentStepBound - 1);
-                                    
-                                    if (currentStepBound == 0) {
-                                        continue;
-                                    }
                                 }
                                 reachableStates.set(successor.getColumn());
                                 stack.push_back(successor.getColumn());
@@ -168,20 +169,21 @@ namespace storm {
                     if (useStepBound) {
                         currentStepBound = stepStack.back();
                         stepStack.pop_back();
+                        if(currentStepBound == 0) {
+                            continue;
+                        }
+                        
                     }
                     
                     for (typename storm::storage::SparseMatrix<T>::const_iterator entryIt = backwardTransitions.begin(currentState), entryIte = backwardTransitions.end(currentState); entryIt != entryIte; ++entryIt) {
-                        if (phiStates[entryIt->getColumn()] && (!statesWithProbabilityGreater0.get(entryIt->getColumn()) && (!useStepBound || remainingSteps[entryIt->getColumn()] < currentStepBound))) {
+                        if (phiStates[entryIt->getColumn()] && (!statesWithProbabilityGreater0.get(entryIt->getColumn()) || (useStepBound && remainingSteps[entryIt->getColumn()] < currentStepBound - 1))) {
                             statesWithProbabilityGreater0.set(entryIt->getColumn(), true);
 
                             // If we don't have a bound on the number of steps to take, just add the state to the stack.
                             if (useStepBound) {
-                                // If there is at least one more step to go, we need to push the state and the new number of steps.
+                                // As there is at least one more step to go, we need to push the state and the new number of steps.
                                 remainingSteps[entryIt->getColumn()] = currentStepBound - 1;
                                 stepStack.push_back(currentStepBound - 1);
-                                if (currentStepBound == 0) {
-                                    continue;
-                                }
                             }
                             stack.push_back(entryIt->getColumn());
                         }
@@ -458,19 +460,18 @@ namespace storm {
                     if (useStepBound) {
                         currentStepBound = stepStack.back();
                         stepStack.pop_back();
+                        if (currentStepBound == 0) {
+                            continue;
+                        }
                     }
                     
                     for (typename storm::storage::SparseMatrix<T>::const_iterator entryIt = backwardTransitions.begin(currentState), entryIte = backwardTransitions.end(currentState); entryIt != entryIte; ++entryIt) {
-                        if (phiStates.get(entryIt->getColumn()) && (!statesWithProbabilityGreater0.get(entryIt->getColumn()) && (!useStepBound || remainingSteps[entryIt->getColumn()] < currentStepBound))) {
+                        if (phiStates.get(entryIt->getColumn()) && (!statesWithProbabilityGreater0.get(entryIt->getColumn()) || (useStepBound && remainingSteps[entryIt->getColumn()] < currentStepBound - 1))) {
                             // If we don't have a bound on the number of steps to take, just add the state to the stack.
                             if (useStepBound) {
                                 // If there is at least one more step to go, we need to push the state and the new number of steps.
                                 remainingSteps[entryIt->getColumn()] = currentStepBound - 1;
                                 stepStack.push_back(currentStepBound - 1);
-                                
-                                if (currentStepBound == 0) {
-                                    continue;
-                                }
                             }
                             statesWithProbabilityGreater0.set(entryIt->getColumn(), true);
                             stack.push_back(entryIt->getColumn());
@@ -602,41 +603,49 @@ namespace storm {
                     if (useStepBound) {
                         currentStepBound = stepStack.back();
                         stepStack.pop_back();
+                        if (currentStepBound == 0) {
+                            continue;
+                        }
                     }
                     
                     for(typename storm::storage::SparseMatrix<T>::const_iterator predecessorEntryIt = backwardTransitions.begin(currentState), predecessorEntryIte = backwardTransitions.end(currentState); predecessorEntryIt != predecessorEntryIte; ++predecessorEntryIt) {
-                        if (phiStates.get(predecessorEntryIt->getColumn()) && (!statesWithProbabilityGreater0.get(predecessorEntryIt->getColumn()) && (!useStepBound || remainingSteps[predecessorEntryIt->getColumn()] < currentStepBound))) {
-                            // Check whether the predecessor has at least one successor in the current state set for every
-                            // nondeterministic choice.
-                            bool addToStatesWithProbabilityGreater0 = true;
-                            for (uint_fast64_t row = nondeterministicChoiceIndices[predecessorEntryIt->getColumn()]; row < nondeterministicChoiceIndices[predecessorEntryIt->getColumn() + 1]; ++row) {
-                                bool hasAtLeastOneSuccessorWithProbabilityGreater0 = false;
-                                for (typename storm::storage::SparseMatrix<T>::const_iterator successorEntryIt = transitionMatrix.begin(row), successorEntryIte = transitionMatrix.end(row); successorEntryIt != successorEntryIte; ++successorEntryIt) {
-                                    if (statesWithProbabilityGreater0.get(successorEntryIt->getColumn())) {
-                                        hasAtLeastOneSuccessorWithProbabilityGreater0 = true;
+                        if (phiStates.get(predecessorEntryIt->getColumn())) {
+                            if (!statesWithProbabilityGreater0.get(predecessorEntryIt->getColumn())) {
+                                
+                                // Check whether the predecessor has at least one successor in the current state set for every
+                                // nondeterministic choice.
+                                bool addToStatesWithProbabilityGreater0 = true;
+                                for (uint_fast64_t row = nondeterministicChoiceIndices[predecessorEntryIt->getColumn()]; row < nondeterministicChoiceIndices[predecessorEntryIt->getColumn() + 1]; ++row) {
+                                    bool hasAtLeastOneSuccessorWithProbabilityGreater0 = false;
+                                    for (typename storm::storage::SparseMatrix<T>::const_iterator successorEntryIt = transitionMatrix.begin(row), successorEntryIte = transitionMatrix.end(row); successorEntryIt != successorEntryIte; ++successorEntryIt) {
+                                        if (statesWithProbabilityGreater0.get(successorEntryIt->getColumn())) {
+                                            hasAtLeastOneSuccessorWithProbabilityGreater0 = true;
+                                            break;
+                                        }
+                                    }
+                                    
+                                    if (!hasAtLeastOneSuccessorWithProbabilityGreater0) {
+                                        addToStatesWithProbabilityGreater0 = false;
                                         break;
                                     }
                                 }
                                 
-                                if (!hasAtLeastOneSuccessorWithProbabilityGreater0) {
-                                    addToStatesWithProbabilityGreater0 = false;
-                                    break;
-                                }
-                            }
-                            
-                            // If we need to add the state, then actually add it and perform further search from the state.
-                            if (addToStatesWithProbabilityGreater0) {
-                                // If we don't have a bound on the number of steps to take, just add the state to the stack.
-                                if (useStepBound) {
-                                    // If there is at least one more step to go, we need to push the state and the new number of steps.
-                                    remainingSteps[predecessorEntryIt->getColumn()] = currentStepBound - 1;
-                                    stepStack.push_back(currentStepBound - 1);
-                                    
-                                    if (currentStepBound == 0) {
-                                        continue;
+                                // If we need to add the state, then actually add it and perform further search from the state.
+                                if (addToStatesWithProbabilityGreater0) {
+                                    // If we don't have a bound on the number of steps to take, just add the state to the stack.
+                                    if (useStepBound) {
+                                        // If there is at least one more step to go, we need to push the state and the new number of steps.
+                                        remainingSteps[predecessorEntryIt->getColumn()] = currentStepBound - 1;
+                                        stepStack.push_back(currentStepBound - 1);
                                     }
+                                    statesWithProbabilityGreater0.set(predecessorEntryIt->getColumn(), true);
+                                    stack.push_back(predecessorEntryIt->getColumn());
                                 }
-                                statesWithProbabilityGreater0.set(predecessorEntryIt->getColumn(), true);
+                                
+                            } else if (useStepBound && remainingSteps[predecessorEntryIt->getColumn()] < currentStepBound - 1) {
+                                // We have found a shorter path to the predecessor. Hence, we need to explore it again
+                                remainingSteps[predecessorEntryIt->getColumn()] = currentStepBound - 1;
+                                stepStack.push_back(currentStepBound - 1);
                                 stack.push_back(predecessorEntryIt->getColumn());
                             }
                         }
