@@ -50,12 +50,12 @@ This website (including the website for [Stormpy](https://moves-rwth.github.io/s
 
 - [Bootstrap](http://getbootstrap.com/){:target="_blank"}
 - [BootstrapCDN](https://www.bootstrapcdn.com/){:target="_blank"}
-- [Flatly Theme](https://bootswatch.com/flatly/){:target="_blank"}
-- [Jekyll](https://jekyllrb.com){:target="_blank"}
 - [DataTables](https://datatables.net){:target="_blank"}
-- [Sphinx Doc](http://www.sphinx-doc.org/en/stable/){:target="_blank"}
+- [Flatly Theme](https://bootswatch.com/flatly/){:target="_blank"}
 - [Font awesome](http://fontawesome.io){:target="_blank"}
 - [Font mfizz](http://fizzed.com/oss/font-mfizz){:target="_blank"}
+- [Jekyll](https://jekyllrb.com){:target="_blank"}
+- [Sphinx Doc](http://www.sphinx-doc.org/en/stable/){:target="_blank"}
 
 # Development
 
