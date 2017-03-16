@@ -208,7 +208,7 @@ TEST(ModelInstantiatorTest, Brp_Rew) {
 TEST(ModelInstantiatorTest, Consensus) {
     carl::VariablePool::getInstance().clear();
     
-    std::string programFile = STORM_TEST_RESOURCES_DIR "/pmdp/coin2_2.pm";
+    std::string programFile = STORM_TEST_RESOURCES_DIR "/pmdp/coin2_2.nm";
     std::string formulaAsString = "Pmin=? [F \"finished\"&\"all_coins_equal_1\" ]";
     
     // Program and formula
