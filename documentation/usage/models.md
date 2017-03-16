@@ -16,7 +16,7 @@ In a discrete-time Markov chain, every state is equipped with a probability dist
 
 ### Continuous-time Markov chains (CTMCs)
 
-If the time in the model flows continuously and it is important to preserve this timing in the model, CTMCs can capture this. Just like in a CTMC, there is a probability distribution over successor states in each state. Additionally, every state is equipped with an *exit rate* lambda, that governs the sojourn time in that state. More specifically, the time spent in the state is negatively exponentially distributed with rate lambda.
+If the time in the model flows continuously and it is important to preserve this timing in the model, CTMCs can capture this. Just like in a DTMC, there is a probability distribution over successor states in each state. Additionally, every state is equipped with an *exit rate* lambda, that governs the sojourn time in that state. More specifically, the time spent in the state is negatively exponentially distributed with rate lambda.
 
 ## Models with nondeterminism
 

@@ -10,7 +10,7 @@ categories: [Usage]
 
 ## PRISM
 
-The PRISM language can be used to specify [DTMCs, CTMCs and MDPs]({{ site.github.url }}/documentation/usage/models.html). Conceptually, it is a guarded command language using reactive modules. Storm supports (almost) the full PRISM language and extends it (in a straightforward way) to [Markov Automata]({{ site.github.url }}/documentation/usage/models.html).
+The PRISM language can be used to specify [DTMCs, CTMCs and MDPs]({{ site.github.url }}/documentation/usage/models.html). Conceptually, it is a guarded command language using reactive modules. Storm supports (almost) the full PRISM language and extends it (in a straightforward way) to [Markov Automata]({{ site.github.url }}/documentation/usage/models.html#markov-automata-mas).
 
 For more information, please read the [PRISM manual](http://www.prismmodelchecker.org/manual/ThePRISMLanguage/Introduction). A rich collection of examples is available at the [PRISM benchmark suite](http://www.prismmodelchecker.org/benchmarks/).
 

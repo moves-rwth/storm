@@ -51,9 +51,9 @@ Required:
 - hwloc (on some systems)
 
 Recommended:
-- z3 (not strictly required, but already needed for standard tasks like PRISM/JANI model building)
+- Z3 (not strictly required, but already needed for standard tasks like PRISM/JANI model building)
 - xercesc (installation prevents an expensive part of the build step)
-- [MathSAT](http://mathsat.fbk.eu/) (needed by the abstraction refinement engine, needs to be configured manually during the [configuration](manual-configuration.html#mathsat)
+- [MathSAT](http://mathsat.fbk.eu/) (needed by the abstraction refinement engine, needs to be configured manually during the [configuration](manual-configuration.html#mathsat))
 
 ## OS specific preparations
 
@@ -61,7 +61,7 @@ We collected some platform specific hints to ease the installation of Storm on t
 
 ### macOS 10.12 "Sierra"
 
-First of all, you need to download and install Xcode and its command line utilities to have the suitable command line tools. For more details, we refer to a [this tutorial](https://www.moncefbelyamani.com/how-to-install-xcode-homebrew-git-rvm-ruby-on-mac/).
+First of all, you need to download and install Xcode and its command line utilities to have the suitable command line tools. For more details, we refer to [this tutorial](https://www.moncefbelyamani.com/how-to-install-xcode-homebrew-git-rvm-ruby-on-mac/).
 
 Furthermore, we recommend the usage of [Homebrew](https://brew.sh) to install the missing packages, but MacPorts might (at some point) have the desired dependencies as well.
 

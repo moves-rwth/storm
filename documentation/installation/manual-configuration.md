@@ -8,7 +8,7 @@ categories: [Installation]
 
 {% include toc.html %}
 
-Designed for users that need particular features and people developing under Storm, this guide will detail how perform a manual configuration of the build process.
+Designed for users that need particular features and people developing under Storm, this guide will detail how to perform a manual configuration of the build process.
 
 ## Manually installing dependencies
 
@@ -60,19 +60,19 @@ For developers, we offer the option `STORM_DEVELOPER`. If set to "on", this enab
 
 ### Link-time optimization
 
-By default, Storm uses link-time optimization (LTO) to enable even more optimizations that are done at link time. This, however, comes at a penalty in terms of both time and memory, as the linking step becomes very resource-intensive. Disabling LTO via `-DSTORM_USE_LTO=OFF` avoids this at the price of producing slower binaries.
+By default, Storm uses link-time optimization (LTO) to enable even more optimizations that are done at link time. This, however, comes at a penalty for building in terms of both time and memory, as the linking step becomes very resource-intensive. Disabling LTO via `-DSTORM_USE_LTO=OFF` avoids this at the price of producing slower binaries.
 
 ### Portability
 
-By default, the binaries will be built specifically for your machine, because this enables a wider range of optimizations to be enabled. If you need your binaries to be portable (in the sense that the could run on another machine that has all required dependencies in their right version), you can set `-DSTORM_PORTABLE=ON` at the cost of producing slower binaries.
+By default, the binaries will be built specifically for your machine, because this enables a wider range of optimizations to be enabled. If you need your binaries to be portable (in the sense that they could run on another machine that has all required dependencies in their right version), you can set `-DSTORM_PORTABLE=ON` at the cost of producing slower binaries.
 
 ### Enabling libraries
 
 Some libraries will not be enabled by default as they are not critical (or only for some tasks) and may not be easily available.
 
-#### Intel Thread Building Blocks (TBB)
+#### Intel Threading Building Blocks (TBB)
 
-[Intel's Thread Building Blocks](https://www.threadingbuildingblocks.org/) is a framework for parallelism. If available, Storm can use it to parallelize some operations like (some but not all) matrix-vector multiplications. If TBB is installed, you can enable it via `-DSTORM_USE_INTELTBB=ON`.
+[Intel's Threading Building Blocks](https://www.threadingbuildingblocks.org/) is a framework for parallelism. If available, Storm can use it to parallelize some operations like (some but not all) matrix-vector multiplications. If TBB is installed, you can enable it via `-DSTORM_USE_INTELTBB=ON`.
 
 #### Gurobi
 
