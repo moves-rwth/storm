@@ -63,7 +63,7 @@ unzip 1.0.0.zip
 ```
 
 {:.alert .alert-info}
-If you want the most recent version of Storm rather than the stable version, you can omit the `git checkout tags/1.0.0` when cloning the repository or use the archive `https://github.com/moves-rwth/archive/master.zip`, respectively.
+If you want the most recent version of Storm rather than the stable version, you can omit the `git checkout tags/1.0.0` when cloning the repository or use the archive [https://github.com/moves-rwth/archive/master.zip](https://github.com/moves-rwth/archive/master.zip){:.alert-link}, respectively.
 
 In the following, we will use `STORM_DIR` to refer to the root directory of Storm. If you want, you can set an environment variable to ease the following steps via
 ```shell
@@ -99,7 +99,7 @@ make
 ```
 
 {:.alert .alert-info}
-If you just want to compile Storm's main command-line interface, typing `make storm-main` suffices. To see which targets you need to build, we refer to the table of [available executables]({{ site.github.url }}/documentation/usage/running-storm.html#storms-executables)
+If you just want to compile Storm's main command-line interface, typing `make storm-main` suffices. To see which targets you need to build, we refer to the table of [available executables]({{ site.github.url }}/documentation/usage/running-storm.html#storms-executables){:.alert-link}
 
 {:.alert .alert-info}
 If you have multiple cores at your disposal and at least 8GB of memory, you can execute
