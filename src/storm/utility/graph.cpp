@@ -68,7 +68,7 @@ namespace storm {
                     for (auto const& successor : transitionMatrix.getRowGroup(currentState)) {
                         // Only explore the state if the transition was actually there and the successor has not yet
                         // been visited.
-                        if (!storm::utility::isZero(successor.getValue()) && !reachableStates.get(successor.getColumn()) || (useStepBound && remainingSteps[successor.getColumn()] < currentStepBound - 1)) {
+                        if (!storm::utility::isZero(successor.getValue()) && (!reachableStates.get(successor.getColumn()) || (useStepBound && remainingSteps[successor.getColumn()] < currentStepBound - 1))) {
                             // If the successor is one of the target states, we need to include it, but must not explore
                             // it further.
                             if (targetStates.get(successor.getColumn())) {
