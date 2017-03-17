@@ -53,11 +53,11 @@ These input languages can be treated by Storm's main executable `storm`. Storm s
 
 ### Running Storm on PRISM input
 
-PRISM models can be provided with the `--prism <path/to/prism-file>` option.
+[PRISM](languages.html#prism) models can be provided with the `--prism <path/to/prism-file>` option.
 
 #### Example 1 (Analysis of a PRISM model of the Knuth-Yao die)
 
-In our first example, we are going to analyze a small [DTMC](models.html) in the PRISM format. More specifically, the model represents a protocol to simulate a six-sided die with the use of a fair coin only. The model and more information can be found at the [PRISM website](http://www.prismmodelchecker.org/casestudies/dice.php){:target="_blank"}, but for your convenience, you can view the model and the download link below.
+In our first example, we are going to analyze a small [DTMC](models.html#discrete-time-markov-chains-dtmcs) in the PRISM format. More specifically, the model represents a protocol to simulate a six-sided die with the use of a fair coin only. The model and more information can be found at the [PRISM website](http://www.prismmodelchecker.org/casestudies/dice.php){:target="_blank"}, but for your convenience, you can view the model and the download link below.
 
 {% include collapse-panel.html target="prism_die_dtmc" name="model" %}
 
@@ -121,7 +121,7 @@ choice labels: 	no
 ```
 </div>
 
-This will tell you that the model is a [sparse](engines.html#sparse) [discrete-time Markov chain](models.html) with 13 states and 20 transitions, no reward model and two labels (`deadlock` and `init`). But wait, doesn't the PRISM model actually specify a reward model? Why does `storm` not find one? The reason is simple, `storm` doesn't build reward models or (custom) labels that are not referred to by properties unless you explicitly want all of them to be built:
+This will tell you that the model is a [sparse](engines.html#sparse) [discrete-time Markov chain](models.html#discrete-time-markov-chains-dtmcs) with 13 states and 20 transitions, no reward model and two labels (`deadlock` and `init`). But wait, doesn't the PRISM model actually specify a reward model? Why does `storm` not find one? The reason is simple, `storm` doesn't build reward models or (custom) labels that are not referred to by properties unless you explicitly want all of them to be built:
 
 ```shell
 storm --prism die.pm --buildfull
@@ -153,7 +153,7 @@ choice labels: 	no
 
 This gives you the same model, but this time there is a reward model `coin_flips` attached to it. Unless you want to know how many states satisfy a custom label, you can let `storm` take care of generating the needed reward models and labels. Note that by default, the model is stored in an *sparse matrix* representation (hence the `(sparse)` marker after the model type). There are other formats supported by Storm; please look at the [engines guide](engines.html) for more details.
 
-Now, let's say we want to check whether the probability to roll a one with our simulated die is as we'd expect. As the protocol states that the simulated die shows a one if it ends up in a state where `s=7&d=1`, we formulate a reachability property like this:
+Now, let's say we want to check whether the probability to roll a one with our simulated die is as we'd expect. As the protocol states the simulated die shows a one if it ends up in a state where `s=7&d=1`, we formulate a reachability property like this:
 
 ```shell
 storm --prism die.pm --prop "P=? [F s=7&d=1]"
@@ -265,6 +265,9 @@ Time for model checking: 0.000s.
 </div>
 
 `storm` tells us that -- on average -- we will have to flip our fair coin 11/3 times. Note that we had to escape the quotes around the reward model name in the property string. If the property is placed within a file, there is no need to escape them.
+
+{:.alert .alert-info}
+More information on how to define properties can be found [here](properties.html).
 
 #### Example 2 (Analysis of a PRISM model of an asynchronous leader election protocol)
 
@@ -440,7 +443,7 @@ ERROR (storm.cpp:39): An exception caused Storm to terminate. The message of the
 </div>
 
 
-Likely, Storm will tell you that there is an error and that for nondeterministic models you need to specify whether minimal or maximal probabilities are to be computed. Why is that? Since the model is a [Markov Decision Process](models.html), there are (potentially) nondeterministic choices in the model that need to be resolved. Storm doesn't know how to resolve them unless you tell it to either minimize or maximize (wrt. to the probability of the objective) whenever there is a nondeterministic choice.
+Likely, Storm will tell you that there is an error and that for nondeterministic models you need to specify whether minimal or maximal probabilities are to be computed. Why is that? Since the model is a [Markov Decision Process](models.html#discrete-time-markov-decision-processes-mdps), there are (potentially) nondeterministic choices in the model that need to be resolved. Storm doesn't know how to resolve them unless you tell it to either minimize or maximize (wrt. to the probability of the objective) whenever there is a nondeterministic choice.
 
 ```shell
 storm --prism leader4.nm --prop "Pmin=? [F<=40 (s1=4 | s2=4 | s3=4 | s4=4) ]"
@@ -479,15 +482,15 @@ Time for model checking: 0.030s.
 Storm should tell you that this probability is 0.375. So what does it mean? It means that even in the worst of all cases, so when every nondeterministic choice in the model is chosen to minimize the probability to elect a leader quickly, then we will elect a leader within our time bound in about 3 out of 8 cases.
 
 {:.alert .alert-info}
-For [nondeterministic models (MDPs and MAs)](models.html), you will have to specify in which direction the nondeterminism is going to be resolved.
+For [nondeterministic models (MDPs and MAs)](models.html#models-with-nondeterminism), you will have to specify in which direction the nondeterminism is going to be resolved.
 
 ### Running Storm on JANI input
 
-JANI models can be provided with the `--jani <path/to/jani-file>` option.
+[JANI](languages.html#jani) models can be provided with the `--jani <path/to/jani-file>` option.
 
 #### Example 3 (Analysis of a rejection-sampling algorithm to approximate $$\pi$$)
 
-Here, we are going to analyze a model of an algorithm that approximates $$\pi$$. It does so by repeated sampling according to a uniform distribution. While this model is a JANI model, the original model was written in [pGCL](languages.html) and has been translated to JANI by Storm's `storm-pgcl` binary. The JANI model and the original pGCL code is available from the [JANI models repository](https://github.com/ahartmanns/jani-models){:target="_blank"}.
+Here, we are going to analyze a model of an algorithm that approximates $$\pi$$. It does so by repeated sampling according to a uniform distribution. While this model is a JANI model, the original model was written in [pGCL](languages.html#cpgcl) and has been translated to JANI by Storm's `storm-pgcl` binary. The JANI model and the original pGCL code is available from the [JANI models repository](https://github.com/ahartmanns/jani-models){:target="_blank"}.
 
 {% include collapse-panel.html target="jani_approxpi_pgcl" name="original pGCL program" %}
 
@@ -1578,7 +1581,7 @@ Labels: 	0
 
 As we selected the *hybrid* engine, Storm builds the MDP in terms of a symbolic data structure ((MT)BDDs), hence the `(symbolic)` marker. For this representation, Storm also reports the sizes of the state and transition DDs in terms of the number of nodes.
 
-The algorithm uses a sampling-based technique to approximate $$\pi$$. More specifically, it repeatedly (100 times in this particular instance) samples points in a square and checks whether they are in a circle whose diameter is the edge length of the squre (which is called a hit). From this, we can derive $$\pi \approx 4 \frac{hits}{100}$$ (for more details, we refer to [https://theclevermachine.wordpress.com/tag/rejection-sampling/](https://theclevermachine.wordpress.com/tag/rejection-sampling/){:target="_blank"}). We are therefore interested in the expected number of hits until termination of the algorithm (as all JANI models obtained from `storm-pgcl`, it has a transient boolean variable `_ret0_` that marks termination of the pGCL program; this transient variable can be used as a label in properties):
+The algorithm uses a sampling-based technique to approximate $$\pi$$. More specifically, it repeatedly (100 times in this particular instance) samples points in a square and checks whether they are in a circle whose diameter is the edge length of the square (which is called a hit). From this, we can derive $$\pi \approx 4 \frac{hits}{100}$$ (for more details, we refer to [this explanation](https://theclevermachine.wordpress.com/tag/rejection-sampling/){:target="_blank"}). We are therefore interested in the expected number of hits until termination of the algorithm (as all JANI models obtained from `storm-pgcl`, it has a transient boolean variable `_ret0_` that marks termination of the pGCL program; this transient variable can be used as a label in properties):
 
 ```shell
 storm --jani approx_pi_00100_010_full.jani --engine hybrid --prop "Rmax=? [F \"_ret0_\"]"
