@@ -29,4 +29,6 @@ however just a displaying issue. Newer versions of Storm correctly display "inf"
 <a target="_blank" href="https://moves-rwth.github.io/storm-benchmark-logs/docs/index_ma.html" class="btn btn-primary btn-md active" role="button">Show MA table</a>
 <a target="_blank" href="https://www.github.com/moves-rwth/storm-benchmark-logs/" class="btn btn-primary btn-md active" role="button">Show log files</a>
 
-[^1]: [C. Dehnert, S. Junges, J.-P. Katoen, M. Volk *A Storm is Coming: A Modern Probabilistic Model Checker*, 2017](https://arxiv.org/abs/1702.04311){:target="_blank"}
+## References
+
+[^1]: [C. Dehnert, S. Junges, J.-P. Katoen, M. Volk: *A Storm is Coming: A Modern Probabilistic Model Checker*, 2017](https://arxiv.org/abs/1702.04311){:target="_blank"}

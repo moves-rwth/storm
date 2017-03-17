@@ -24,8 +24,6 @@ There are various tools whose functionality overlaps or is closely related with 
 
 If you feel there is a tool that we forgot about, do not hesitate to [contact us]({{ site.github.url }}/about.html#people).
 
-[^1]: [Budde, C.E., D’Argenio, P.R., Monti, R.E., Compositional construction of import- ance functions in fully automated importance splitting, 2016](http://dsg.famaf.unc.edu.ar/node/691){:target="_blank"}
-
 # Dependencies
 
 A large number of dependencies contribute to the capabilities of Storm. We would like to thank the developers of these tools (in lexicographic order):
@@ -60,3 +58,7 @@ This website (including the website for [Stormpy](https://moves-rwth.github.io/s
 # Development
 
 We are happy to use [Xcode](https://developer.apple.com/xcode/){:target="_blank"}, [CLion](https://www.jetbrains.com/clion/){:target="_blank"}, [Valgrind](http://valgrind.org/){:target="_blank"}, [Git](https://git-scm.com/){:target="_blank"} and [Jenkins](https://jenkins.io/){:target="_blank"} for development purposes.
+
+## References
+
+[^1]: [C.E. Budde, P.R. D’Argenio, R.E. Monti: *Compositional construction of importance functions in fully automated importance splitting*, 2016](http://dsg.famaf.unc.edu.ar/node/691){:target="_blank"}

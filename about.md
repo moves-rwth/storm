@@ -107,4 +107,4 @@ Phone: +49 241 8021203
 ```
 ## References
 
-[^1]: [J.-P. Katoen, *The Probabilistic Model Checking Landscape*, 2016](http://www-i2.informatik.rwth-aachen.de/pub/index.php?type=download&pub_id=1296)
+[^1]: [J.-P. Katoen: *The Probabilistic Model Checking Landscape*, 2016](http://www-i2.informatik.rwth-aachen.de/pub/index.php?type=download&pub_id=1296)

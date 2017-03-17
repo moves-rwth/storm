@@ -96,4 +96,4 @@ This engine relies heavily on SMT solving (more concretely an enumeration of all
 
 ## References
 
-[^1]: [Tomáš Brázdil, Krishnendu Chatterjee, Martin Chmelík, Vojtěch Forejt, Jan Křetínský, Marta Kwiatkowska, David Parker, Mateusz Ujma, *Verification of Markov Decision Processes Using Learning Algorithms*, 2014](https://link.springer.com/chapter/10.1007/978-3-319-11936-6_8){:target="_blank"}
+[^1]: [T. Brázdil, K. Chatterjee, M. Chmelík, V. Forejt, J. Křetínský, M. Kwiatkowska, D. Parker, M. Ujma: *Verification of Markov Decision Processes Using Learning Algorithms*, 2014](https://link.springer.com/chapter/10.1007/978-3-319-11936-6_8){:target="_blank"}
