@@ -12,9 +12,6 @@ As with so many things, there is no one-size-fits-all in probabilistic model che
 
 Storm's main engine is the sparse engine in the sense that it tends to have the most features. It takes the model description and directly builds a representation based on *explicit data structures*, mainly [bit vectors](https://en.wikipedia.org/wiki/Bit_array) and [sparse matrices](https://en.wikipedia.org/wiki/Sparse_matrix). Then, model checking is performed using these data structures. Since these permit easy access to single elements, they are standard representations for many tasks involved in the solution procedure (like solving linear equations). This enables the use of off-the-shelf libraries, for instance [Eigen](http://eigen.tuxfamily.org/index.php?title=Main_Page) or [gmm++](http://download.gna.org/getfem/html/homepage/gmm/), that implement sophisticated solution methods.
 
-- able to use off-the-shelf libraries to solve equation systems (standard data structures), solving therefore tends to be fast
-- well-suited for moderately sized models without a lot of symmetry
-
 **Select**: `--engine sparse` or `-e sparse`
 
 ##### **Characteristics**:
@@ -33,13 +30,6 @@ Storm's main engine is the sparse engine in the sense that it tends to have the 
 
 [Binary decision diagrams](https://en.wikipedia.org/wiki/Binary_decision_diagram) (BDDs) are a data structure to represent switching functions. They have proven to enable the verification of gigantic hardware circuits. Multi-terminal BDDs (MTBDDs) extend BDDs to allow representing functions that map to numbers rather than just true or false. The dd engine builds a representation of the model in terms of BDDs (state sets) and MTBDDs (matrices, vectors), which is often referred to as a *symbolic* representation (rather than an *explicit* representation as in the [sparse](#sparse) engine). As MTBDDs support certain arithmetical operations, they are also used in the quantitative model checking step. However, DDs do not allow for (efficient) random access, which limits the numerical solution techniques that are applicable.
 
-- builds model in terms of decision diagrams
-- model checking performed directly on these as they support arithmetical operations
-- because of the peculiarities of the data structure, there is no (efficient) random access
-- this means that this engine does not support many of the solution methods of the sparse engine
-- in general, DDs are well-suited to succinctly represent gigantic symmetric systems
-- numerical solutions involving a lot of iterations tend to be slower
-
 **Select**: `--engine dd` or `-e dd`
 
 ##### **Characteristics**:
@@ -57,11 +47,6 @@ Storm's main engine is the sparse engine in the sense that it tends to have the 
 ## Hybrid
 
 The hybrid engine tries to combine the [sparse](#sparse) and [dd](#dd) engines. It first builds a DD-based representation of the system. Then, however, the model checking is performed in a hybrid manner. That is, operations that are deemed to be more efficient on DDs (qualitative computations) are carried out in this realm, while the heavy numerical computations are performed on an explicit representation derived from the systems' DDs.
-
-- tries to combine the sparse and dd engines
-- first builds the dd-based representation of the system like the dd engine
-- however, the numerical computations of model checking tasks are performed on a sparse representation derived from the DDs
-- well-suited if the model is large but still fits into memory in a sparse representation
 
 **Select**: `--engine hybrid` or `-e hybrid`
 
