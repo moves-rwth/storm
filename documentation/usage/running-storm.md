@@ -482,7 +482,7 @@ Time for model checking: 0.030s.
 Storm should tell you that this probability is 0.375. So what does it mean? It means that even in the worst of all cases, so when every nondeterministic choice in the model is chosen to minimize the probability to elect a leader quickly, then we will elect a leader within our time bound in about 3 out of 8 cases.
 
 {:.alert .alert-info}
-For [nondeterministic models (MDPs and MAs)](models.html#models-with-nondeterminism), you will have to specify in which direction the nondeterminism is going to be resolved.
+For [nondeterministic models (MDPs and MAs)](models.html#models-with-nondeterminism){:.alert-link}, you will have to specify in which direction the nondeterminism is going to be resolved.
 
 ### Running Storm on JANI input
 
