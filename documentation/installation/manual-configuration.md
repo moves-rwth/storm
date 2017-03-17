@@ -14,7 +14,7 @@ Designed for users that need particular features and people developing under Sto
 
 ### CArL
 
-Storm makes use of [CArL](https://github.com/smtrat/carl) for the representation of rationals and rational functions. If you don't have it installed on your system, our build script will download and configure it automatically for you. However, under certain circumstances, you might want to install CArL yourself. This may for example be advantageous if you need to repeatedly build Storm from scratch or you want to change its source code. Installing CArL is as easy as
+Storm makes use of [CArL](https://github.com/smtrat/carl){:target="_blank"} for the representation of rationals and rational functions. If you don't have it installed on your system, our build script will download and configure it automatically for you. However, under certain circumstances, you might want to install CArL yourself. This may for example be advantageous if you need to repeatedly build Storm from scratch or you want to change its source code. Installing CArL is as easy as
 
 ```shell
 git clone https://github.com/smtrat/carl
@@ -32,7 +32,7 @@ There may be problems with this auto-detection mechanism if you have multiple ve
 
 ### Boost
 
-Storm requires [Boost](http://www.boost.org/) to be available in a version that is at least 1.61. On the [supported operating systems](requirements.html) this can be easily achieved with readily available package managers. If your system does not allow for an easy installation of this Boost version, you might need to build it yourself.
+Storm requires [Boost](http://www.boost.org/){:target="_blank"} to be available in a version that is at least 1.61. On the [supported operating systems](requirements.html) this can be easily achieved with readily available package managers. If your system does not allow for an easy installation of this Boost version, you might need to build it yourself.
 
 ```shell
 wget https://sourceforge.net/projects/boost/files/boost/1.63.0/boost_1_63_0.tar.gz
@@ -72,12 +72,12 @@ Some libraries will not be enabled by default as they are not critical (or only 
 
 #### Intel Threading Building Blocks (TBB)
 
-[Intel's Threading Building Blocks](https://www.threadingbuildingblocks.org/) is a framework for parallelism. If available, Storm can use it to parallelize some operations like (some but not all) matrix-vector multiplications. If TBB is installed, you can enable it via `-DSTORM_USE_INTELTBB=ON`.
+[Intel's Threading Building Blocks](https://www.threadingbuildingblocks.org/){:target="_blank"} is a framework for parallelism. If available, Storm can use it to parallelize some operations like (some but not all) matrix-vector multiplications. If TBB is installed, you can enable it via `-DSTORM_USE_INTELTBB=ON`.
 
 #### Gurobi
 
-[Gurobi](http://www.gurobi.com/) is a commercial high-performance solver for (mixed-integer) linear programs (and similar problems). A free license can be obtained for academic purposes. Storm provides an implementation of its (MI)LP solver interface that uses Gurobi (provided Storm has been compiled with support for it). To enable Gurobi, specify the option `-DSTORM_USE_GUROBI=ON` and set a hint at where to find Gurobi via `-DGUROBI_ROOT=/path/to/gurobi`.
+[Gurobi](http://www.gurobi.com/){:target="_blank"} is a commercial high-performance solver for (mixed-integer) linear programs (and similar problems). A free license can be obtained for academic purposes. Storm provides an implementation of its (MI)LP solver interface that uses Gurobi (provided Storm has been compiled with support for it). To enable Gurobi, specify the option `-DSTORM_USE_GUROBI=ON` and set a hint at where to find Gurobi via `-DGUROBI_ROOT=/path/to/gurobi`.
 
 #### MathSAT
 
-[MathSAT](http://mathsat.fbk.eu/) is a high-performance SMT solver that can be used as an alternative to [Z3](https://github.com/Z3Prover/z3). In contrast to Z3, it provides native support for AllSat (enumeration of all satisfying models of a formula) and may generate Craig interpolants. This makes MathSAT particularly useful in the [abstraction-refinement engine]({{ site.github.url }}/documentation/usage/engines.html#abstraction-refinement). To enable MathSAT, you need to set `-DMSAT_ROOT=/path/to/mathsat/root` where MathSAT's root directory is required to contain the `include` and `lib` folders with the appropriate files (if you download and unpack it, its the directory into which you unpacked it).
+[MathSAT](http://mathsat.fbk.eu/){:target="_blank"} is a high-performance SMT solver that can be used as an alternative to [Z3](https://github.com/Z3Prover/z3){:target="_blank"}. In contrast to Z3, it provides native support for AllSat (enumeration of all satisfying models of a formula) and may generate Craig interpolants. This makes MathSAT particularly useful in the [abstraction-refinement engine]({{ site.github.url }}/documentation/usage/engines.html#abstraction-refinement). To enable MathSAT, you need to set `-DMSAT_ROOT=/path/to/mathsat/root` where MathSAT's root directory is required to contain the `include` and `lib` folders with the appropriate files (if you download and unpack it, its the directory into which you unpacked it).

@@ -46,7 +46,7 @@ Storm's infrastructure is built around the notion of a *solver*. They are small 
 - (mixed-integer) linear programming (MILP)
 - satisfiability (modulo theories) (SMT)
 
-Encapsulating solvers like this has several key advantages. First of all, it provides easy and coherent access to the tasks commonly involved in probabilistic model checking. New functionality can often be implemented by reusing existing solvers and combining them in a suitable way. Second, it enables Storm to offer multiple performant solvers by backing them with different dedicated state-of-the-art libraries to solve the given task. As the structure of input models heavily influences the performances of the solvers and there is no one-size-fits-all solution, this allows to pick opportune solvers based on their strengths. Besides, it may not be possible to include and ship a library because of licensing problems. For example, Storm offers an implementation of the MILP interface using the high-performance yet commercial [Gurobi](https://www.gurobi.com) solver. With the flexibility introduced by solvers, users can select Gurobi when it is available to them but can still pick another "fallback" solver otherwise. Furthermore, communities like the SMT community are very active and state-of-the-art solvers of today may be outdated tomorrow. The flexibility in adding new solvers ensures that Storm is easily kept up-to-date without destroying backward compatibility. Finally, it allows to easily develop new solvers with new strengths without knowledge about the global code base. Complying with the interface will yield a solver that can be used anywhere in the existing code base.
+Encapsulating solvers like this has several key advantages. First of all, it provides easy and coherent access to the tasks commonly involved in probabilistic model checking. New functionality can often be implemented by reusing existing solvers and combining them in a suitable way. Second, it enables Storm to offer multiple performant solvers by backing them with different dedicated state-of-the-art libraries to solve the given task. As the structure of input models heavily influences the performances of the solvers and there is no one-size-fits-all solution, this allows to pick opportune solvers based on their strengths. Besides, it may not be possible to include and ship a library because of licensing problems. For example, Storm offers an implementation of the MILP interface using the high-performance yet commercial [Gurobi](https://www.gurobi.com){:target="_blank"} solver. With the flexibility introduced by solvers, users can select Gurobi when it is available to them but can still pick another "fallback" solver otherwise. Furthermore, communities like the SMT community are very active and state-of-the-art solvers of today may be outdated tomorrow. The flexibility in adding new solvers ensures that Storm is easily kept up-to-date without destroying backward compatibility. Finally, it allows to easily develop new solvers with new strengths without knowledge about the global code base. Complying with the interface will yield a solver that can be used anywhere in the existing code base.
 
 ### <i class="fa fa-language" aria-hidden="true"></i> Various Input Languages
 
@@ -56,29 +56,29 @@ Storm tries to mitigate this problem by offering support for several major input
 
 ### <i class="icon-python"></i> Easy Interface
 
-While Storm tries to make it easy to include new functionality, a developer still has to somewhat understand its architecture to make appropriate additions or changes. However, suppose a user just wants to combine functionality that is already there to create new algorithms. Optimally, he/she could abstract from some of C++'s intricacies and focus on the actual algorithm. This process is supported by [Stormpy](https://moves-rwth.github.io/stormpy/), which provides a python API for an ever growing part of Storm's code base. These bindings not only allow to utilize the high-performance routines of Storm in combination with the ease of python, but also make it possible to intertwine calls to Storm with calls to other useful libraries available in python, for example (but not limited to):
+While Storm tries to make it easy to include new functionality, a developer still has to somewhat understand its architecture to make appropriate additions or changes. However, suppose a user just wants to combine functionality that is already there to create new algorithms. Optimally, he/she could abstract from some of C++'s intricacies and focus on the actual algorithm. This process is supported by [Stormpy](https://moves-rwth.github.io/stormpy/){:target="_blank"}, which provides a python API for an ever growing part of Storm's code base. These bindings not only allow to utilize the high-performance routines of Storm in combination with the ease of python, but also make it possible to intertwine calls to Storm with calls to other useful libraries available in python, for example (but not limited to):
 
 - simple IO,
-- plotting (e.g. [matplotlib](http://matplotlib.org/)),
-- calling solvers such as [Z3](https://github.com/Z3Prover/z3) or [CPLEX](https://www-01.ibm.com/software/commerce/optimization/cplex-optimizer/),
+- plotting (e.g. [matplotlib](http://matplotlib.org/){:target="_blank"}),
+- calling solvers such as [Z3](https://github.com/Z3Prover/z3){:target="_blank"} or [CPLEX](https://www-01.ibm.com/software/commerce/optimization/cplex-optimizer/){:target="_blank"},
 - libraries from the area of artificial intelligence and machine learning,
-- rational function manipulation (via [pycarl](https://github.com/moves-rwth/pycarl)).
+- rational function manipulation (via [pycarl](https://github.com/moves-rwth/pycarl){:target="_blank"}).
 
 ## People
 
 The developers can be reached via storm-dev ```at``` i2.informatik.rwth-aachen.de. If you have general feedback, feature request or bug reports, please send us a mail.
 
-Storm has been developed at the [Chair for Software Modeling and Verification](http://moves.rwth-aachen.de) at RWTH Aachen University by
+Storm has been developed at the [Chair for Software Modeling and Verification](http://moves.rwth-aachen.de){:target="_blank"} at RWTH Aachen University by
 
-- [Christian Dehnert](https://moves.rwth-aachen.de/people/dehnert/)
-- [Sebastian Junges](https://moves.rwth-aachen.de/people/sebastian-junges/)
-- [Joost-Pieter Katoen](https://moves.rwth-aachen.de/people/katoen/)
-- [Matthias Volk](https://moves.rwth-aachen.de/people/volk/)
+- [Christian Dehnert](https://moves.rwth-aachen.de/people/dehnert/){:target="_blank"}
+- [Sebastian Junges](https://moves.rwth-aachen.de/people/sebastian-junges/){:target="_blank"}
+- [Joost-Pieter Katoen](https://moves.rwth-aachen.de/people/katoen/){:target="_blank"}
+- [Matthias Volk](https://moves.rwth-aachen.de/people/volk/){:target="_blank"}
 
 and received significant contributions from
 
-- [Philipp Berger](https://moves.rwth-aachen.de/people/berger/)
-- [Tim Quatman](https://moves.rwth-aachen.de/people/quatmann/)
+- [Philipp Berger](https://moves.rwth-aachen.de/people/berger/){:target="_blank"}
+- [Tim Quatman](https://moves.rwth-aachen.de/people/quatmann/){:target="_blank"}
 
 Furthermore, we are grateful for the feedback and/or patches we received by:
 

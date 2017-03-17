@@ -16,7 +16,7 @@ Currently, we provide support for
 - Debian 9 "Stretch"
 - Ubuntu 16.10 "Yakkety Yak"
 
-which are known to enable the easy installation of Storm. Other Linux distributions are likely to work too, but it may take significant effort to get the required versions of the dependencies up and running. For example, thanks to [Joachim Klein](http://www.inf.tu-dresden.de/index.php?node_id=1473), there is a [script]({{ site.github.url }}/resources/scripts/installation/storm-build-debian-jessie.sh) that installs Storm and some crucial dependencies on Debian 8 "Jessie".
+which are known to enable the easy installation of Storm. Other Linux distributions are likely to work too, but it may take significant effort to get the required versions of the dependencies up and running. For example, thanks to [Joachim Klein](http://www.inf.tu-dresden.de/index.php?node_id=1473){:target="_blank"}, there is a [script]({{ site.github.url }}/resources/scripts/installation/storm-build-debian-jessie.sh) that installs Storm and some crucial dependencies on Debian 8 "Jessie".
 
 In the following, we will detail all dependencies of Storm and how to install them on the supported platforms.
 
@@ -53,7 +53,7 @@ Required:
 Recommended:
 - Z3 (not strictly required, but already needed for standard tasks like PRISM/JANI model building)
 - xercesc (installation prevents an expensive part of the build step)
-- [MathSAT](http://mathsat.fbk.eu/) (needed by the abstraction refinement engine, needs to be configured manually during the [configuration](manual-configuration.html#mathsat))
+- [MathSAT](http://mathsat.fbk.eu/){:target="_blank"} (needed by the abstraction refinement engine, needs to be configured manually during the [configuration](manual-configuration.html#mathsat))
 
 ## OS specific preparations
 
@@ -61,9 +61,9 @@ We collected some platform specific hints to ease the installation of Storm on t
 
 ### macOS 10.12 "Sierra"
 
-First of all, you need to download and install Xcode and its command line utilities to have the suitable command line tools. For more details, we refer to [this tutorial](https://www.moncefbelyamani.com/how-to-install-xcode-homebrew-git-rvm-ruby-on-mac/).
+First of all, you need to download and install Xcode and its command line utilities to have the suitable command line tools. For more details, we refer to [this tutorial](https://www.moncefbelyamani.com/how-to-install-xcode-homebrew-git-rvm-ruby-on-mac/){:target="_blank"}.
 
-Furthermore, we recommend the usage of [Homebrew](https://brew.sh) to install the missing packages, but MacPorts might (at some point) have the desired dependencies as well.
+Furthermore, we recommend the usage of [Homebrew](https://brew.sh){:target="_blank"} to install the missing packages, but MacPorts might (at some point) have the desired dependencies as well.
 
 - Required:
 ```

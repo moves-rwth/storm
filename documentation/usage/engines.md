@@ -10,7 +10,7 @@ As with so many things, there is no one-size-fits-all in probabilistic model che
 
 ## Sparse
 
-Storm's main engine is the sparse engine in the sense that it tends to have the most features. It takes the model description and directly builds a representation based on *explicit data structures*, mainly [bit vectors](https://en.wikipedia.org/wiki/Bit_array) and [sparse matrices](https://en.wikipedia.org/wiki/Sparse_matrix). Then, model checking is performed using these data structures. Since these permit easy access to single elements, they are standard representations for many tasks involved in the solution procedure (like solving linear equations). This enables the use of off-the-shelf libraries, for instance [Eigen](http://eigen.tuxfamily.org/index.php?title=Main_Page) or [gmm++](http://download.gna.org/getfem/html/homepage/gmm/), that implement sophisticated solution methods.
+Storm's main engine is the sparse engine in the sense that it tends to have the most features. It takes the model description and directly builds a representation based on *explicit data structures*, mainly [bit vectors](https://en.wikipedia.org/wiki/Bit_array){:target="_blank"} and [sparse matrices](https://en.wikipedia.org/wiki/Sparse_matrix){:target="_blank"}. Then, model checking is performed using these data structures. Since these permit easy access to single elements, they are standard representations for many tasks involved in the solution procedure (like solving linear equations). This enables the use of off-the-shelf libraries, for instance [Eigen](http://eigen.tuxfamily.org/index.php){:target="_blank"} or [gmm++](http://download.gna.org/getfem/html/homepage/gmm/){:target="_blank"}, that implement sophisticated solution methods.
 
 **Select**: `--engine sparse` or `-e sparse`
 
@@ -28,7 +28,7 @@ Storm's main engine is the sparse engine in the sense that it tends to have the 
 
 ## DD
 
-[Binary decision diagrams](https://en.wikipedia.org/wiki/Binary_decision_diagram) (BDDs) are a data structure to represent switching functions. They have proven to enable the verification of gigantic hardware circuits. Multi-terminal BDDs (MTBDDs) extend BDDs to allow representing functions that map to numbers rather than just true or false. The dd engine builds a representation of the model in terms of BDDs (state sets) and MTBDDs (matrices, vectors), which is often referred to as a *symbolic* representation (rather than an *explicit* representation as in the [sparse](#sparse) engine). As MTBDDs support certain arithmetical operations, they are also used in the quantitative model checking step. However, DDs do not allow for (efficient) random access, which limits the numerical solution techniques that are applicable.
+[Binary decision diagrams](https://en.wikipedia.org/wiki/Binary_decision_diagram){:target="_blank"} (BDDs) are a data structure to represent switching functions. They have proven to enable the verification of gigantic hardware circuits. Multi-terminal BDDs (MTBDDs) extend BDDs to allow representing functions that map to numbers rather than just true or false. The dd engine builds a representation of the model in terms of BDDs (state sets) and MTBDDs (matrices, vectors), which is often referred to as a *symbolic* representation (rather than an *explicit* representation as in the [sparse](#sparse) engine). As MTBDDs support certain arithmetical operations, they are also used in the quantitative model checking step. However, DDs do not allow for (efficient) random access, which limits the numerical solution techniques that are applicable.
 
 **Select**: `--engine dd` or `-e dd`
 
@@ -82,7 +82,7 @@ All engines so far have the requirement that a representation of the model needs
 All other engines are not suited for models with an infinite state space. The approach of the abstraction-refinement engine is to start with a coarse over-approximation of the concrete model. This *abstract model* is then analyzed. Based on the result, one of two things happen: either the result carries over to the concrete model and and an answer can be returned or the abstraction needs to be refined. In the latter case, the abstraction is analyzed again and the loop is repeated until a conclusive answer can be given.
 
 {:.alert .alert-danger}
-This engine relies heavily on SMT solving (more concretely an enumeration of all satisfying assignments of a formula) and Craig interpolation. Therefore, this engine needs [MathSAT](http://mathsat.fbk.eu/) and Storm has to be built with MathSAT support, which requires a [manual setup]({{ site.github.url }}/documentation/installation/manual-configuration.html#mathsat).
+This engine relies heavily on SMT solving (more concretely an enumeration of all satisfying assignments of a formula) and Craig interpolation. Therefore, this engine needs [MathSAT](http://mathsat.fbk.eu/){:target="_blank"} and Storm has to be built with MathSAT support, which requires a [manual setup]({{ site.github.url }}/documentation/installation/manual-configuration.html#mathsat).
 
 **Select**: `--engine abs` or `-e abs`
 
@@ -96,4 +96,4 @@ This engine relies heavily on SMT solving (more concretely an enumeration of all
 
 ## References
 
-[^1]: [Tomáš Brázdil, Krishnendu Chatterjee, Martin Chmelík, Vojtěch Forejt, Jan Křetínský, Marta Kwiatkowska, David Parker, Mateusz Ujma, *Verification of Markov Decision Processes Using Learning Algorithms*, 2014](https://link.springer.com/chapter/10.1007/978-3-319-11936-6_8)
+[^1]: [Tomáš Brázdil, Krishnendu Chatterjee, Martin Chmelík, Vojtěch Forejt, Jan Křetínský, Marta Kwiatkowska, David Parker, Mateusz Ujma, *Verification of Markov Decision Processes Using Learning Algorithms*, 2014](https://link.springer.com/chapter/10.1007/978-3-319-11936-6_8){:target="_blank"}
