@@ -8,7 +8,7 @@ categories: [Usage]
 
 {% include toc.html %}
 
-Storm takes properties in a format that can be described as an "extended subset" of the [PRISM property language](http://www.prismmodelchecker.org/manual/PropertySpecification/Introduction). Alternatively, if the input is given in terms of a [JANI](languages.html) model, the properties are embedded in the model in the appropriate format.
+Storm takes properties in a format that can be described as an "extended subset" of the [PRISM property language](http://www.prismmodelchecker.org/manual/PropertySpecification/Introduction). Alternatively, if the input is given in terms of a [JANI](languages.html#jani) model, the properties are embedded in the model in the appropriate format.
 
 {:.alert .alert-info}
 For DFTs, GSPNs and probabilistic programs, domain-specific properties can be given. For this, we refer to the guide on how to [run Storm](running-storm.html) on those inputs.
@@ -35,23 +35,23 @@ The (probability) measure on Markov models is typically defined on paths. These 
 For this, we assume that `a` and `b` are [state formulae](#state-formulae) and `{op}` is any one of `<, <=, >, >=`. The available path formulae are:
 
 - `a U b` to describe paths on which at some point `b` holds and in all prior steps `a` holds.
-- `F b` as a shortcut for `true U b.
-- `a U{op} k b` (where `k` is an expression evaluating to a number) to describe the paths on which b holds within `k` steps and `a` holds in all prior steps.
-- `F{op} k b` as a shortcut for `true U{op} k b`.
+- `F b` as a shortcut for `true U b`.
+- `a U{op}k b` (where `k` is an expression evaluating to a number) to describe the paths on which `b` holds within `k` steps and `a` holds in all prior steps.
+- `F{op}k b` as a shortcut for `true U{op}k b`.
 
 ### State Formulae
 
 Here, we assume that `a` and `b` are state formulae, `phi` is a [path formula](#path-formulae) and `{op}` is any one of `<, <=, >, >=`. The available state formulae are:
 
 - `c` where `c` is either a [label](#labels) or an [expression](#propositional-expressions) over the model variables.
-- `a | b`, `a & b` to describe all states that satisfy `a` or `b` and `a` and `b`, respectively.
+- `a | b`, `a & b` to describe all states that satisfy `a` or `b`, `a` and `b`, respectively.
 - `!a` to describe the states *not* satisfying `a`.
-- `P{op} t [ phi ]` (where `t` is a threshold value) to describe the states in which the probability to satisfy `phi` conforms to the comparison `{op} t`.
-- `LRA{op} t [a]` to describe states in which the long-run average probability to be in a state satisfying `a` conforms to `{op} t`.
+- `P{op}t [ phi ]` (where `t` is a threshold value) to describe the states in which the probability to satisfy `phi` conforms to the comparison `{op} t`.
+- `LRA{op}t [a]` to describe states in which the long-run average probability to be in a state satisfying `a` conforms to `{op} t`.
 
 ### Obtaining Probabilities
 
-Although formally not allowed in PCTL/CSL, one can also request probability of fulfilling a path formula from each state. Instead of comparing to a given value `P{op} b [ phi ]`, one can write `P=? [ phi ]` to obtain the actual values rather then obtaining a truth value.
+Although formally not allowed in PCTL/CSL, one can also request the probability of fulfilling a path formula from each state. Instead of comparing to a given value `P{op}b [ phi ]`, one can write `P=? [ phi ]` to obtain the actual values rather then obtaining a truth value.
 
 ### Nondeterministic Models
 
@@ -59,7 +59,7 @@ For nondeterministic models, the formula can (and sometimes needs to) specify wh
 
 ## Reward extensions
 
-To measure rewards (or costs) in models, Storm supports extensions of the aforementioned logics. More specifically, there are the following reward formulae, where `a` is a [state formula](#state-formulae)
+To measure rewards (or costs) in models, Storm supports extensions of the aforementioned logics. More specifically, there are the following reward formulae, where `a` is a [state formula](#state-formulae):
 
 - `I=k` is the expected reward obtained in time point `k`.
 - `C<=k` is the expected reward obtained up until time point `k`.
@@ -68,7 +68,7 @@ To measure rewards (or costs) in models, Storm supports extensions of the aforem
 
 Just like path formulae, these reward formulae can be embedded in an `R` operator to allow for value comparison or value computation:
 
-- `R{op} t [ r ]` (where `r` is a reward formulae) describes the states in which the reward of `r` conforms to the comparison `{op} t`.
+- `R{op}t [ r ]` (where `r` is a reward formulae) describes the states in which the reward of `r` conforms to the comparison `{op} t`.
 - `R=? [ r ]`, `Rmin=? [ r ]` and `Rmax=? [ r ]` have the straightforward interpretation.
 
 ## Conditional Properties
