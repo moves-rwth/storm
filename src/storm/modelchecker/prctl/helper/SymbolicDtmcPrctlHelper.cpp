@@ -33,7 +33,7 @@ namespace storm {
                 // Check whether we need to compute exact probabilities for some states.
                 if (qualitative) {
                     // Set the values for all maybe-states to 0.5 to indicate that their probability values are neither 0 nor 1.
-                    return statesWithProbability01.second.template toAdd<ValueType>() + maybeStates.template toAdd<ValueType>() * model.getManager().getConstant(0.5);
+                    return statesWithProbability01.second.template toAdd<ValueType>() + maybeStates.template toAdd<ValueType>() * model.getManager().getConstant(ValueType(0.5));
                 } else {
                     // If there are maybe states, we need to solve an equation system.
                     if (!maybeStates.isZero()) {
@@ -58,7 +58,7 @@ namespace storm {
                         
                         // Solve the equation system.
                         std::unique_ptr<storm::solver::SymbolicLinearEquationSolver<DdType, ValueType>> solver = linearEquationSolverFactory.create(submatrix, maybeStates, model.getRowVariables(), model.getColumnVariables(), model.getRowColumnMetaVariablePairs());
-                        storm::dd::Add<DdType, ValueType> result = solver->solveEquations(model.getManager().getConstant(0.0), subvector);
+                        storm::dd::Add<DdType, ValueType> result = solver->solveEquations(model.getManager().template getAddZero<ValueType>(), subvector);
                         
                         return statesWithProbability01.second.template toAdd<ValueType>() + result;
                     } else {
@@ -175,7 +175,7 @@ namespace storm {
                         
                         // Solve the equation system.
                         std::unique_ptr<storm::solver::SymbolicLinearEquationSolver<DdType, ValueType>> solver = linearEquationSolverFactory.create(submatrix, maybeStates, model.getRowVariables(), model.getColumnVariables(), model.getRowColumnMetaVariablePairs());
-                        storm::dd::Add<DdType, ValueType> result = solver->solveEquations(model.getManager().getConstant(0.0), subvector);
+                        storm::dd::Add<DdType, ValueType> result = solver->solveEquations(model.getManager().template getAddZero<ValueType>(), subvector);
                         
                         return infinityStates.ite(model.getManager().getConstant(storm::utility::infinity<ValueType>()), result);
                     } else {
@@ -186,7 +186,8 @@ namespace storm {
             
             template class SymbolicDtmcPrctlHelper<storm::dd::DdType::CUDD, double>;
             template class SymbolicDtmcPrctlHelper<storm::dd::DdType::Sylvan, double>;
-            
+
+            template class SymbolicDtmcPrctlHelper<storm::dd::DdType::Sylvan, storm::RationalFunction>;
         }
     }
 }

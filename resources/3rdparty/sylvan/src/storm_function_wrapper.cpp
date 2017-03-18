@@ -8,7 +8,10 @@
 #include <mutex>
 
 #include "storm/adapters/CarlAdapter.h"
+#include "storm/utility/constants.h"
 #include "sylvan_storm_rational_function.h"
+
+#include "storm/exceptions/InvalidOperationException.h"
 
 #include <sylvan_config.h>
 #include <sylvan.h>
@@ -128,22 +131,140 @@ storm_rational_function_ptr storm_rational_function_divide(storm_rational_functi
 			std::cerr << "Could not allocate memory in storm_rational_function_divide()!" << std::endl;
 			return result;
 		}
-		
+		        
 		*result_srf /= srf_b;
 		result = (storm_rational_function_ptr)result_srf;
 	}
 	return result;
 }
 
+storm_rational_function_ptr storm_rational_function_pow(storm_rational_function_ptr a, storm_rational_function_ptr b) {
+    std::lock_guard<std::mutex> lock(carlMutex);
+    storm_rational_function_ptr result = (storm_rational_function_ptr)nullptr;
+    
+    {
+        storm::RationalFunction& srf_a = *(storm::RationalFunction*)a;
+        storm::RationalFunction& srf_b = *(storm::RationalFunction*)b;
+        
+        uint64_t exponentAsInteger = carl::toInt<unsigned long>(srf_b.nominatorAsNumber());
+        storm::RationalFunction* result_srf = new storm::RationalFunction(carl::pow(srf_a, exponentAsInteger));
+        if (result_srf == nullptr) {
+            std::cerr << "Could not allocate memory in storm_rational_function_pow()!" << std::endl;
+            return result;
+        }
+        result = (storm_rational_function_ptr)result_srf;
+    }
+    return result;
+}
+
+storm_rational_function_ptr storm_rational_function_mod(storm_rational_function_ptr a, storm_rational_function_ptr b) {
+    std::lock_guard<std::mutex> lock(carlMutex);
+    storm_rational_function_ptr result = (storm_rational_function_ptr)nullptr;
+    
+    {
+        storm::RationalFunction& srf_a = *(storm::RationalFunction*)a;
+        storm::RationalFunction& srf_b = *(storm::RationalFunction*)b;
+        if (!storm::utility::isInteger(srf_a) || !storm::utility::isInteger(srf_b)) {
+            throw storm::exceptions::InvalidOperationException() << "Operands of mod must not be rational function.";
+        }
+        throw storm::exceptions::InvalidOperationException() << "Modulo not supported for rationals.";
+        
+        // storm::RationalFunction* result_srf = new storm::RationalFunction(carl::mod(srf_a.nominatorAsNumber(), srf_b.nominatorAsNumber()));
+//        if (result_srf == nullptr) {
+//            std::cerr << "Could not allocate memory in storm_rational_function_pow()!" << std::endl;
+//            return result;
+//        }
+//        result = (storm_rational_function_ptr)result_srf;
+    
+    }
+    return result;
+}
+
+storm_rational_function_ptr storm_rational_function_min(storm_rational_function_ptr a, storm_rational_function_ptr b) {
+    std::lock_guard<std::mutex> lock(carlMutex);
+    storm_rational_function_ptr result = (storm_rational_function_ptr)nullptr;
+    
+    {
+        storm::RationalFunction& srf_a = *(storm::RationalFunction*)a;
+        storm::RationalFunction& srf_b = *(storm::RationalFunction*)b;
+        if (!storm::utility::isInteger(srf_a) || !storm::utility::isInteger(srf_b)) {
+            throw storm::exceptions::InvalidOperationException() << "Operands of min must not be rational function.";
+        }
+
+        storm::RationalFunction* result_srf = new storm::RationalFunction(std::min(srf_a.nominatorAsNumber(), srf_b.nominatorAsNumber()));
+        if (result_srf == nullptr) {
+            std::cerr << "Could not allocate memory in storm_rational_function_pow()!" << std::endl;
+            return result;
+        }
+        result = (storm_rational_function_ptr)result_srf;
+    
+    }
+    return result;
+}
+
+storm_rational_function_ptr storm_rational_function_max(storm_rational_function_ptr a, storm_rational_function_ptr b) {
+    std::lock_guard<std::mutex> lock(carlMutex);
+    storm_rational_function_ptr result = (storm_rational_function_ptr)nullptr;
+    
+    {
+        storm::RationalFunction& srf_a = *(storm::RationalFunction*)a;
+        storm::RationalFunction& srf_b = *(storm::RationalFunction*)b;
+        if (!storm::utility::isInteger(srf_a) || !storm::utility::isInteger(srf_b)) {
+            throw storm::exceptions::InvalidOperationException() << "Operands of max must not be rational function.";
+        }
+
+        storm::RationalFunction* result_srf = new storm::RationalFunction(std::max(srf_a.nominatorAsNumber(), srf_b.nominatorAsNumber()));
+        if (result_srf == nullptr) {
+            std::cerr << "Could not allocate memory in storm_rational_function_pow()!" << std::endl;
+            return result;
+        }
+        result = (storm_rational_function_ptr)result_srf;
+    }
+    return result;
+}
+
+int storm_rational_function_less(storm_rational_function_ptr a, storm_rational_function_ptr b) {
+    std::lock_guard<std::mutex> lock(carlMutex);
+    
+    storm::RationalFunction& srf_a = *(storm::RationalFunction*)a;
+    storm::RationalFunction& srf_b = *(storm::RationalFunction*)b;
+    if (!storm::utility::isInteger(srf_a) || !storm::utility::isInteger(srf_b)) {
+        throw storm::exceptions::InvalidOperationException() << "Operands of less must not be rational functions.";
+    }
+    
+    if (srf_a.nominatorAsNumber() < srf_b.nominatorAsNumber()) {
+        return 1;
+    } else {
+        return 0;
+    }
+    return -1;
+}
+
+int storm_rational_function_less_or_equal(storm_rational_function_ptr a, storm_rational_function_ptr b) {
+    std::lock_guard<std::mutex> lock(carlMutex);
+    
+    storm::RationalFunction& srf_a = *(storm::RationalFunction*)a;
+    storm::RationalFunction& srf_b = *(storm::RationalFunction*)b;
+    if (!storm::utility::isInteger(srf_a) || !storm::utility::isInteger(srf_b)) {
+        throw storm::exceptions::InvalidOperationException() << "Operands of less-or-equal must not be rational functions.";
+    }
+    if (srf_a.nominatorAsNumber() <= srf_b.nominatorAsNumber()) {
+        return 1;
+    } else {
+        return 0;
+    }
+    
+    return -1;
+}
+
 uint64_t storm_rational_function_hash(storm_rational_function_ptr const a, uint64_t const seed) {
 	std::lock_guard<std::mutex> lock(carlMutex);
 	
-	uint64_t result = 0;
+	uint64_t result = seed;
 	{
 		storm::RationalFunction& srf_a = *(storm::RationalFunction*)a;
-		size_t hash = carl::hash_value(srf_a);
-	
-		result = hash ^ seed;
+        // carl::hash_add(result, srf_a);
+        result = seed ^ (carl::hash_value(srf_a) + 0x9e3779b9 + (seed<<6) + (seed>>2));
 	}
 	return result;
 }
@@ -165,6 +286,51 @@ storm_rational_function_ptr storm_rational_function_negate(storm_rational_functi
 		result = (storm_rational_function_ptr)result_srf;
 	}
 	return result;
+}
+
+storm_rational_function_ptr storm_rational_function_floor(storm_rational_function_ptr a) {
+    std::lock_guard<std::mutex> lock(carlMutex);
+    storm_rational_function_ptr result = (storm_rational_function_ptr)nullptr;
+    
+    {
+        storm::RationalFunction& srf_a = *(storm::RationalFunction*)a;
+        if (!storm::utility::isInteger(srf_a)) {
+            throw storm::exceptions::InvalidOperationException() << "Operand of floor must not be rational function.";
+        }
+        storm::RationalFunction* result_srf = new storm::RationalFunction(srf_a);
+        
+        if (result_srf == nullptr) {
+            std::cerr << "Could not allocate memory in storm_rational_function_negate()!" << std::endl;
+            return result;
+        }
+        
+        *result_srf = storm::RationalFunction(carl::floor(srf_a.nominatorAsNumber()));
+        result = (storm_rational_function_ptr)result_srf;
+        
+    }
+    return result;
+}
+
+storm_rational_function_ptr storm_rational_function_ceil(storm_rational_function_ptr a) {
+    std::lock_guard<std::mutex> lock(carlMutex);
+    storm_rational_function_ptr result = (storm_rational_function_ptr)nullptr;
+    
+    {
+        storm::RationalFunction& srf_a = *(storm::RationalFunction*)a;
+        if (!storm::utility::isInteger(srf_a)) {
+            throw storm::exceptions::InvalidOperationException() << "Operand of ceil must not be rational function.";
+        }
+        storm::RationalFunction* result_srf = new storm::RationalFunction(srf_a);
+        
+        if (result_srf == nullptr) {
+            std::cerr << "Could not allocate memory in storm_rational_function_negate()!" << std::endl;
+            return result;
+        }
+        
+        *result_srf = storm::RationalFunction(carl::ceil(srf_a.nominatorAsNumber()));
+        result = (storm_rational_function_ptr)result_srf;
+    }
+    return result;
 }
 
 int storm_rational_function_is_zero(storm_rational_function_ptr a) {

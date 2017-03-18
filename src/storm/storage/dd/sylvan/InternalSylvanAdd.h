@@ -262,7 +262,8 @@ namespace storm {
              *
              * @return The resulting function represented as an ADD.
              */
-            InternalAdd<DdType::Sylvan, double> toDouble() const;
+            template<typename TargetValueType>
+            InternalAdd<DdType::Sylvan, TargetValueType> toValueType() const;
 #endif
 			
             /*!
@@ -278,13 +279,6 @@ namespace storm {
              * @param cube The cube from which to abstract.
              */
             InternalAdd<DdType::Sylvan, ValueType> minAbstract(InternalBdd<DdType::Sylvan> const& cube) const;
-
-            /*!
-             * Min-abstracts from the given cube, but treats 0 as the largest possible value.
-             *
-             * @param cube The cube from which to abstract.
-             */
-            InternalAdd<DdType::Sylvan, ValueType> minAbstractExcept0(InternalBdd<DdType::Sylvan> const& cube) const;
 			
 			/*!
              * Min-abstracts from the given cube and returns a representative.

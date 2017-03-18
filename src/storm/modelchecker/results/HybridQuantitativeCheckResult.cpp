@@ -35,7 +35,7 @@ namespace storm {
             }
             
             // Then translate the explicit part to a symbolic format and simultaneously to a qualitative result.
-            symbolicResult |= storm::dd::Bdd<Type>::fromVector(this->reachableStates.getDdManager(), this->explicitValues, this->odd, this->symbolicValues.getContainedMetaVariables(), comparisonType, bound);
+            symbolicResult |= storm::dd::Bdd<Type>::template fromVector<ValueType>(this->reachableStates.getDdManager(), this->explicitValues, this->odd, this->symbolicValues.getContainedMetaVariables(), comparisonType, storm::utility::convertNumber<ValueType>(bound));
             
             return std::unique_ptr<SymbolicQualitativeCheckResult<Type>>(new SymbolicQualitativeCheckResult<Type>(reachableStates, symbolicResult));
         }
@@ -98,9 +98,9 @@ namespace storm {
                 if (this->symbolicStates.isZero()) {
                     out << *this->explicitValues.begin();
                 } else {
-                    out << this->symbolicValues.getMax();
+                    out << this->symbolicValues.sumAbstract(this->symbolicValues.getContainedMetaVariables()).getValue();
                 }
-            } else if (totalNumberOfStates < 10) {
+            } else if (totalNumberOfStates < 10 || std::is_same<storm::RationalFunction, ValueType>::value) {
                 out << "{";
                 bool first = true;
                 if (!this->symbolicStates.isZero()) {
@@ -165,7 +165,7 @@ namespace storm {
         ValueType HybridQuantitativeCheckResult<Type, ValueType>::getMin() const {
             // In order to not get false zeros, we need to set the values of all states whose values is not stored
             // symbolically to infinity.
-            storm::dd::Add<Type, ValueType> tmp = symbolicStates.ite(this->symbolicValues, reachableStates.getDdManager().getConstant(storm::utility::infinity<double>()));
+            storm::dd::Add<Type, ValueType> tmp = symbolicStates.ite(this->symbolicValues, reachableStates.getDdManager().getConstant(storm::utility::infinity<ValueType>()));
             ValueType min = tmp.getMin();
             if (!explicitStates.isZero()) {
                 for (auto const& element : explicitValues) {
@@ -202,8 +202,8 @@ namespace storm {
         
         template<storm::dd::DdType Type, typename ValueType>
         void HybridQuantitativeCheckResult<Type, ValueType>::oneMinus() {
-            storm::dd::Add<Type> one = symbolicValues.getDdManager().template getAddOne<ValueType>();
-            storm::dd::Add<Type> zero = symbolicValues.getDdManager().template getAddZero<ValueType>();
+            storm::dd::Add<Type, ValueType> one = symbolicValues.getDdManager().template getAddOne<ValueType>();
+            storm::dd::Add<Type, ValueType> zero = symbolicValues.getDdManager().template getAddZero<ValueType>();
             symbolicValues = symbolicStates.ite(one - symbolicValues, zero);
 
             for (auto& element : explicitValues) {
@@ -215,5 +215,7 @@ namespace storm {
         // Explicitly instantiate the class.
         template class HybridQuantitativeCheckResult<storm::dd::DdType::CUDD>;
         template class HybridQuantitativeCheckResult<storm::dd::DdType::Sylvan>;
+
+        template class HybridQuantitativeCheckResult<storm::dd::DdType::Sylvan, storm::RationalFunction>;
     }
 }

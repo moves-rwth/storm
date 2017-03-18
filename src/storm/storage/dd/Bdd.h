@@ -46,7 +46,8 @@ namespace storm {
              * @param comparisonType The relation that needs to hold for the values (wrt. to the given value).
              * @param value The value to compare with.
              */
-            static Bdd<LibraryType> fromVector(DdManager<LibraryType> const& ddManager, std::vector<double> const& explicitValues, storm::dd::Odd const& odd, std::set<storm::expressions::Variable> const& metaVariables, storm::logic::ComparisonType comparisonType, double value);
+            template <typename ValueType>
+            static Bdd<LibraryType> fromVector(DdManager<LibraryType> const& ddManager, std::vector<ValueType> const& explicitValues, storm::dd::Odd const& odd, std::set<storm::expressions::Variable> const& metaVariables, storm::logic::ComparisonType comparisonType, ValueType value);
             
             /*!
              * Retrieves whether the two BDDs represent the same function.
@@ -335,6 +336,9 @@ namespace storm {
             
             friend struct std::hash<storm::dd::Bdd<LibraryType>>;
             
+            template<DdType LibraryTypePrime, typename ValueType>
+            friend struct FromVectorHelper;
+            
         private:
             /*!
              * We provide a conversion operator from the BDD to its internal type to ease calling the internal functions.
@@ -349,19 +353,6 @@ namespace storm {
              * @param containedMetaVariables The meta variables that appear in the DD.
              */
             Bdd(DdManager<LibraryType> const& ddManager, InternalBdd<LibraryType> const& internalBdd, std::set<storm::expressions::Variable> const& containedMetaVariables = std::set<storm::expressions::Variable>());
-            
-            /*!
-             * Builds a BDD representing the values that make the given filter function evaluate to true.
-             *
-             * @param ddManager The manager responsible for the BDD.
-             * @param values The values that are to be checked against the filter function.
-             * @param odd The ODD used for the translation.
-             * @param metaVariables The meta variables used for the translation.
-             * @param filter The filter that evaluates whether an encoding is to be mapped to 0 or 1.
-             * @return The resulting BDD.
-             */
-            template<typename ValueType>
-            static Bdd<LibraryType> fromVector(DdManager<LibraryType> const& ddManager, std::vector<ValueType> const& values, Odd const& odd, std::set<storm::expressions::Variable> const& metaVariables, std::function<bool (ValueType const&)> const& filter);
             
             // The internal BDD that depends on the chosen library.
             InternalBdd<LibraryType> internalBdd;

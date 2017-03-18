@@ -35,6 +35,11 @@ namespace storm {
         }
         
         template<storm::dd::DdType Type, typename ValueType>
+        void AddExpressionAdapter<Type, ValueType>::setValue(storm::expressions::Variable const& variable, ValueType const& value) {
+            valueMapping[variable] = value;
+        }
+        
+        template<storm::dd::DdType Type, typename ValueType>
         boost::any AddExpressionAdapter<Type, ValueType>::visit(storm::expressions::IfThenElseExpression const& expression, boost::any const& data) {
             if (expression.hasBooleanType()) {
                 storm::dd::Bdd<Type> elseDd = boost::any_cast<storm::dd::Bdd<Type>>(expression.getElseExpression()->accept(*this, data));
@@ -143,12 +148,17 @@ namespace storm {
         
         template<storm::dd::DdType Type, typename ValueType>
         boost::any AddExpressionAdapter<Type, ValueType>::visit(storm::expressions::VariableExpression const& expression, boost::any const&) {
-            auto const& variablePair = variableMapping->find(expression.getVariable());
-            STORM_LOG_THROW(variablePair != variableMapping->end(), storm::exceptions::InvalidArgumentException, "Cannot translate the given expression, because it contains the variable '" << expression.getVariableName() << "' for which no DD counterpart is known.");
-            if (expression.hasBooleanType()) {
-                return ddManager->template getIdentity<ValueType>(variablePair->second).toBdd();
+            auto valueIt = valueMapping.find(expression.getVariable());
+            if (valueIt != valueMapping.end()) {
+                return ddManager->getConstant(valueIt->second);
             } else {
-                return ddManager->template getIdentity<ValueType>(variablePair->second);
+                auto const& variablePair = variableMapping->find(expression.getVariable());
+                STORM_LOG_THROW(variablePair != variableMapping->end(), storm::exceptions::InvalidArgumentException, "Cannot translate the given expression, because it contains the variable '" << expression.getVariableName() << "' for which no DD counterpart is known.");
+                if (expression.hasBooleanType()) {
+                    return ddManager->template getIdentity<ValueType>(variablePair->second).toBdd();
+                } else {
+                    return ddManager->template getIdentity<ValueType>(variablePair->second);
+                }
             }
         }
         

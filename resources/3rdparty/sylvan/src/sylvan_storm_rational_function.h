@@ -33,6 +33,8 @@ uint32_t sylvan_storm_rational_function_get_type();
  */
 MTBDD mtbdd_storm_rational_function(storm_rational_function_ptr val);
 
+storm_rational_function_ptr mtbdd_getstorm_rational_function_ptr(MTBDD terminal);
+    
 /**
  * Monad that converts Boolean to a storm::RationalFunction MTBDD, translate terminals true to 1 and to 0 otherwise;
  */
@@ -40,6 +42,10 @@ TASK_DECL_2(MTBDD, mtbdd_op_bool_to_storm_rational_function, MTBDD, size_t)
 TASK_DECL_1(MTBDD, mtbdd_bool_to_storm_rational_function, MTBDD)
 #define mtbdd_bool_to_storm_rational_function(dd) CALL(mtbdd_bool_to_storm_rational_function, dd)
 
+// Operation "equals"
+TASK_DECL_2(MTBDD, sylvan_storm_rational_function_op_equals, MTBDD*, MTBDD*)
+#define mtbdd_equals_rational_function(a, b) mtbdd_apply(a, b, TASK(sylvan_storm_rational_function_op_equals))
+    
 /**
  * Operation "plus" for two storm::RationalFunction MTBDDs
  */
@@ -62,10 +68,22 @@ TASK_DECL_3(MTBDD, sylvan_storm_rational_function_abstract_op_times, MTBDD, MTBD
  */
 TASK_DECL_2(MTBDD, sylvan_storm_rational_function_op_divide, MTBDD*, MTBDD*)
 
+TASK_DECL_2(MTBDD, sylvan_storm_rational_function_op_less, MTBDD*, MTBDD*)
+TASK_DECL_2(MTBDD, sylvan_storm_rational_function_op_less_or_equal, MTBDD*, MTBDD*)
+
+TASK_DECL_2(MTBDD, sylvan_storm_rational_function_op_mod, MTBDD*, MTBDD*)
+TASK_DECL_2(MTBDD, sylvan_storm_rational_function_op_min, MTBDD*, MTBDD*)
+TASK_DECL_3(MTBDD, sylvan_storm_rational_function_abstract_op_min, MTBDD, MTBDD, int)
+TASK_DECL_2(MTBDD, sylvan_storm_rational_function_op_max, MTBDD*, MTBDD*)
+TASK_DECL_3(MTBDD, sylvan_storm_rational_function_abstract_op_max, MTBDD, MTBDD, int)
+
 /**
  * Operation "negate" for one storm::RationalFunction MTBDD
  */
 TASK_DECL_2(MTBDD, sylvan_storm_rational_function_op_neg, MTBDD, size_t)
+
+TASK_DECL_2(MTBDD, sylvan_storm_rational_function_op_floor, MTBDD, size_t)
+TASK_DECL_2(MTBDD, sylvan_storm_rational_function_op_ceil, MTBDD, size_t)
 
 /**
  * Compute a + b
@@ -88,10 +106,52 @@ TASK_DECL_2(MTBDD, sylvan_storm_rational_function_op_neg, MTBDD, size_t)
 #define sylvan_storm_rational_function_divide(a, b) mtbdd_apply(a, b, TASK(sylvan_storm_rational_function_op_divide))
 
 /**
+ * Compute a < b
+ */
+#define sylvan_storm_rational_function_less(a, b) mtbdd_apply(a, b, TASK(sylvan_storm_rational_function_op_less))
+
+/**
+ * Compute a <= b
+ */
+#define sylvan_storm_rational_function_less_or_equal(a, b) mtbdd_apply(a, b, TASK(sylvan_storm_rational_function_op_less_or_equal))
+
+/**
+ * Compute a mod b
+ */
+#define sylvan_storm_rational_function_mod(a, b) mtbdd_apply(a, b, TASK(sylvan_storm_rational_function_op_less_or_equal))
+
+/**
+ * Compute min(a, b)
+ */
+#define sylvan_storm_rational_function_min(a, b) mtbdd_apply(a, b, TASK(sylvan_storm_rational_function_op_min))
+
+/**
+ * Compute max(a, b)
+ */
+#define sylvan_storm_rational_function_max(a, b) mtbdd_apply(a, b, TASK(sylvan_storm_rational_function_op_max))
+
+/**
  * Compute -a
  */
 #define sylvan_storm_rational_function_neg(a) mtbdd_uapply(a, TASK(sylvan_storm_rational_function_op_neg), 0)
 
+/**
+ * Compute floor(a)
+ */
+#define sylvan_storm_rational_function_floor(a) mtbdd_uapply(a, TASK(sylvan_storm_rational_function_op_floor), 0)
+
+/**
+ * Compute ceil(a)
+ */
+#define sylvan_storm_rational_function_ceil(a) mtbdd_uapply(a, TASK(sylvan_storm_rational_function_op_ceil), 0)
+
+/**
+ * Compute a^b
+ */
+TASK_DECL_2(MTBDD, sylvan_storm_rational_function_op_pow, MTBDD*, MTBDD*)
+#define sylvan_storm_rational_function_pow(a, b) mtbdd_apply(a, b, TASK(sylvan_storm_rational_function_op_pow))
+
+    
 /**
  * Multiply <a> and <b>, and abstract variables <vars> using summation.
  * This is similar to the "and_exists" operation in BDDs.
@@ -103,7 +163,9 @@ TASK_DECL_3(MTBDD, sylvan_storm_rational_function_and_exists, MTBDD, MTBDD, MTBD
  * Abstract the variables in <v> from <a> by taking the sum of all values
  */
 #define sylvan_storm_rational_function_abstract_plus(dd, v) mtbdd_abstract(dd, v, TASK(sylvan_storm_rational_function_abstract_op_plus))
-
+#define sylvan_storm_rational_function_abstract_min(dd, v) mtbdd_abstract(dd, v, TASK(sylvan_storm_rational_function_abstract_op_min))
+#define sylvan_storm_rational_function_abstract_max(dd, v) mtbdd_abstract(dd, v, TASK(sylvan_storm_rational_function_abstract_op_max))
+    
 /**
  * Apply a unary operation <op> to <dd>.
  * Callback <op> is consulted after the cache, thus the application to a terminal is cached.
@@ -135,6 +197,24 @@ TASK_DECL_2(MTBDD, sylvan_storm_rational_function_op_to_double, MTBDD, size_t)
  */
 #define sylvan_storm_rational_function_to_double(a) mtbdd_uapply_nocache(a, TASK(sylvan_storm_rational_function_op_to_double), 0)
 
+    
+TASK_DECL_1(MTBDD, sylvan_storm_rational_function_minimum, MTBDD);
+#define sylvan_storm_rational_function_minimum(dd) CALL(sylvan_storm_rational_function_minimum, dd)
+    
+TASK_DECL_1(MTBDD, sylvan_storm_rational_function_maximum, MTBDD);
+#define sylvan_storm_rational_function_maximum(dd) CALL(sylvan_storm_rational_function_maximum, dd)
+
+    
+TASK_DECL_2(MTBDD, sylvan_storm_rational_function_op_threshold, MTBDD, size_t)
+TASK_DECL_2(MTBDD, sylvan_storm_rational_function_op_strict_threshold, MTBDD, size_t)
+
+TASK_DECL_2(MTBDD, sylvan_storm_rational_function_threshold, MTBDD, storm_rational_function_ptr);
+#define sylvan_storm_rational_function_threshold(dd, value) CALL(sylvan_storm_rational_function_strict_threshold, dd, value)
+    
+
+TASK_DECL_2(MTBDD, sylvan_storm_rational_function_strict_threshold, MTBDD, storm_rational_function_ptr);
+#define sylvan_storm_rational_function_strict_threshold(dd, value) CALL(sylvan_storm_rational_function_strict_threshold, dd, value)
+    
 #ifdef __cplusplus
 }
 #endif /* __cplusplus */

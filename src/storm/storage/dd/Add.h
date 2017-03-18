@@ -260,7 +260,8 @@ namespace storm {
              *
              * @return The resulting function represented as an ADD.
              */
-            Add<LibraryType, double> toDouble() const;
+            template<typename TargetValueType>
+            Add<LibraryType, TargetValueType> toValueType() const;
 #endif
 			
             /*!
@@ -276,13 +277,6 @@ namespace storm {
              * @param metaVariables The meta variables from which to abstract.
              */
             Add<LibraryType, ValueType> minAbstract(std::set<storm::expressions::Variable> const& metaVariables) const;
-
-            /*!
-             * Min-abstracts from the given meta variables but treats 0 as the largest possible value.
-             *
-             * @param metaVariables The meta variables from which to abstract.
-             */
-            Add<LibraryType, ValueType> minAbstractExcept0(std::set<storm::expressions::Variable> const& metaVariables) const;
 
 			/*!
              * Similar to <code>minAbstract</code>, but does not abstract from the variables but rather picks a

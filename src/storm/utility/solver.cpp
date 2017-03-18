@@ -33,12 +33,26 @@ namespace storm {
                     case storm::solver::EquationSolverType::Elimination: return std::make_unique<storm::solver::SymbolicEliminationLinearEquationSolver<Type, ValueType>>(A, allRows, rowMetaVariables, columnMetaVariables, rowColumnMetaVariablePairs);
                         break;
                         case storm::solver::EquationSolverType::Native: return std::make_unique<storm::solver::SymbolicNativeLinearEquationSolver<Type, ValueType>>(A, allRows, rowMetaVariables, columnMetaVariables, rowColumnMetaVariablePairs);
+                        break;
                     default:
                         STORM_LOG_WARN("The selected equation solver is not available in the DD setting. Falling back to native solver.");
                         return std::make_unique<storm::solver::SymbolicNativeLinearEquationSolver<Type, ValueType>>(A, allRows, rowMetaVariables, columnMetaVariables, rowColumnMetaVariablePairs);
                 }
             }
-            
+
+            template<storm::dd::DdType Type>
+            std::unique_ptr<storm::solver::SymbolicLinearEquationSolver<Type, storm::RationalFunction>> SymbolicLinearEquationSolverFactory<Type, storm::RationalFunction>::create(storm::dd::Add<Type, storm::RationalFunction> const& A, storm::dd::Bdd<Type> const& allRows, std::set<storm::expressions::Variable> const& rowMetaVariables, std::set<storm::expressions::Variable> const& columnMetaVariables, std::vector<std::pair<storm::expressions::Variable, storm::expressions::Variable>> const& rowColumnMetaVariablePairs) const {
+                
+                storm::solver::EquationSolverType equationSolver = storm::settings::getModule<storm::settings::modules::CoreSettings>().getEquationSolver();
+                switch (equationSolver) {
+                    case storm::solver::EquationSolverType::Elimination: return std::make_unique<storm::solver::SymbolicEliminationLinearEquationSolver<Type, storm::RationalFunction>>(A, allRows, rowMetaVariables, columnMetaVariables, rowColumnMetaVariablePairs);
+                        break;
+                    default:
+                        STORM_LOG_WARN("The selected equation solver is not available in the DD setting. Falling back to elimination solver.");
+                        return std::make_unique<storm::solver::SymbolicEliminationLinearEquationSolver<Type, storm::RationalFunction>>(A, allRows, rowMetaVariables, columnMetaVariables, rowColumnMetaVariablePairs);
+                }
+            }
+
             template<storm::dd::DdType Type, typename ValueType>
             std::unique_ptr<storm::solver::SymbolicMinMaxLinearEquationSolver<Type, ValueType>> SymbolicMinMaxLinearEquationSolverFactory<Type, ValueType>::create(storm::dd::Add<Type, ValueType> const& A, storm::dd::Bdd<Type> const& allRows, storm::dd::Bdd<Type> const& illegalMask, std::set<storm::expressions::Variable> const& rowMetaVariables, std::set<storm::expressions::Variable> const& columnMetaVariables, std::set<storm::expressions::Variable> const& choiceVariables, std::vector<std::pair<storm::expressions::Variable, storm::expressions::Variable>> const& rowColumnMetaVariablePairs) const {
                 return std::unique_ptr<storm::solver::SymbolicMinMaxLinearEquationSolver<Type, ValueType>>(new storm::solver::SymbolicMinMaxLinearEquationSolver<Type, ValueType>(A, allRows, illegalMask, rowMetaVariables, columnMetaVariables, choiceVariables, rowColumnMetaVariablePairs));
@@ -114,6 +128,7 @@ namespace storm {
             
             template class SymbolicLinearEquationSolverFactory<storm::dd::DdType::CUDD, double>;
             template class SymbolicLinearEquationSolverFactory<storm::dd::DdType::Sylvan, double>;
+            template class SymbolicLinearEquationSolverFactory<storm::dd::DdType::Sylvan, storm::RationalFunction>;
             template class SymbolicMinMaxLinearEquationSolverFactory<storm::dd::DdType::CUDD, double>;
             template class SymbolicMinMaxLinearEquationSolverFactory<storm::dd::DdType::Sylvan, double>;
             template class SymbolicGameSolverFactory<storm::dd::DdType::CUDD, double>;

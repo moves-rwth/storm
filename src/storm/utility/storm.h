@@ -580,31 +580,16 @@ namespace storm {
     
     template<storm::dd::DdType DdType>
     std::unique_ptr<storm::modelchecker::CheckResult> verifySymbolicModelWithHybridEngine(std::shared_ptr<storm::models::symbolic::Model<DdType, storm::RationalFunction>> model, std::shared_ptr<storm::logic::Formula const> const& formula, bool onlyInitialStatesRelevant = false) {
-//        std::unique_ptr<storm::modelchecker::CheckResult> result;
-//        storm::modelchecker::CheckTask<storm::logic::Formula, ValueType> task(*formula, onlyInitialStatesRelevant);
-//        if (model->getType() == storm::models::ModelType::Dtmc) {
-//            std::shared_ptr<storm::models::symbolic::Dtmc<DdType, ValueType>> dtmc = model->template as<storm::models::symbolic::Dtmc<DdType, ValueType>>();
-//            storm::modelchecker::HybridDtmcPrctlModelChecker<storm::models::symbolic::Dtmc<DdType, ValueType>> modelchecker(*dtmc);
-//            if (modelchecker.canHandle(task)) {
-//                result = modelchecker.check(task);
-//            }
-//        } else if (model->getType() == storm::models::ModelType::Ctmc) {
-//            std::shared_ptr<storm::models::symbolic::Ctmc<DdType, ValueType>> ctmc = model->template as<storm::models::symbolic::Ctmc<DdType, ValueType>>();
-//            storm::modelchecker::HybridCtmcCslModelChecker<storm::models::symbolic::Ctmc<DdType, ValueType>> modelchecker(*ctmc);
-//            if (modelchecker.canHandle(task)) {
-//                result = modelchecker.check(task);
-//            }
-//        } else if (model->getType() == storm::models::ModelType::Mdp) {
-//            std::shared_ptr<storm::models::symbolic::Mdp<DdType, ValueType>> mdp = model->template as<storm::models::symbolic::Mdp<DdType, ValueType>>();
-//            storm::modelchecker::HybridMdpPrctlModelChecker<storm::models::symbolic::Mdp<DdType, ValueType>> modelchecker(*mdp);
-//            if (modelchecker.canHandle(task)) {
-//                result = modelchecker.check(task);
-//            }
-//        } else {
-//            STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "This functionality is not yet implemented.");
-//        }
-//        return result;
-        return nullptr;
+        std::unique_ptr<storm::modelchecker::CheckResult> result;
+        storm::modelchecker::CheckTask<storm::logic::Formula, storm::RationalFunction> task(*formula, onlyInitialStatesRelevant);
+
+        STORM_LOG_THROW(model->getType() == storm::models::ModelType::Dtmc, storm::exceptions::NotSupportedException, "Only DTMCs are supported by this engine (in parametric mode).");
+        std::shared_ptr<storm::models::symbolic::Dtmc<DdType, storm::RationalFunction>> dtmc = model->template as<storm::models::symbolic::Dtmc<DdType, storm::RationalFunction>>();
+        storm::modelchecker::HybridDtmcPrctlModelChecker<storm::models::symbolic::Dtmc<DdType, storm::RationalFunction>> modelchecker(*dtmc);
+        if (modelchecker.canHandle(task)) {
+            result = modelchecker.check(task);
+        }
+        return result;
     }
 
     template<storm::dd::DdType DdType, typename ValueType = double>
@@ -631,25 +616,16 @@ namespace storm {
     
     template<storm::dd::DdType DdType>
     std::unique_ptr<storm::modelchecker::CheckResult> verifySymbolicModelWithDdEngine(std::shared_ptr<storm::models::symbolic::Model<DdType, storm::RationalFunction>> model, std::shared_ptr<storm::logic::Formula const> const& formula, bool onlyInitialStatesRelevant) {
-//        std::unique_ptr<storm::modelchecker::CheckResult> result;
-//        storm::modelchecker::CheckTask<storm::logic::Formula, ValueType> task(*formula, onlyInitialStatesRelevant);
-//        if (model->getType() == storm::models::ModelType::Dtmc) {
-//            std::shared_ptr<storm::models::symbolic::Dtmc<DdType, ValueType>> dtmc = model->template as<storm::models::symbolic::Dtmc<DdType, ValueType>>();
-//            storm::modelchecker::SymbolicDtmcPrctlModelChecker<storm::models::symbolic::Dtmc<DdType, ValueType>> modelchecker(*dtmc);
-//            if (modelchecker.canHandle(task)) {
-//                result = modelchecker.check(task);
-//            }
-//        } else if (model->getType() == storm::models::ModelType::Mdp) {
-//            std::shared_ptr<storm::models::symbolic::Mdp<DdType, ValueType>> mdp = model->template as<storm::models::symbolic::Mdp<DdType, ValueType>>();
-//            storm::modelchecker::SymbolicMdpPrctlModelChecker<storm::models::symbolic::Mdp<DdType, ValueType>> modelchecker(*mdp);
-//            if (modelchecker.canHandle(task)) {
-//                result = modelchecker.check(task);
-//            }
-//        } else {
-//            STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "This functionality is not yet implemented.");
-//        }
-//        return result;
-        return nullptr;
+        std::unique_ptr<storm::modelchecker::CheckResult> result;
+        storm::modelchecker::CheckTask<storm::logic::Formula, storm::RationalFunction> task(*formula, onlyInitialStatesRelevant);
+        
+        STORM_LOG_THROW(model->getType() == storm::models::ModelType::Dtmc, storm::exceptions::NotSupportedException, "Only DTMCs are supported by this engine (in parametric mode).");
+        std::shared_ptr<storm::models::symbolic::Dtmc<DdType, storm::RationalFunction>> dtmc = model->template as<storm::models::symbolic::Dtmc<DdType, storm::RationalFunction>>();
+        storm::modelchecker::SymbolicDtmcPrctlModelChecker<storm::models::symbolic::Dtmc<DdType, storm::RationalFunction>> modelchecker(*dtmc);
+        if (modelchecker.canHandle(task)) {
+            result = modelchecker.check(task);
+        }
+        return result;
     }
     
     template<storm::dd::DdType DdType, typename ValueType>

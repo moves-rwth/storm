@@ -32,11 +32,59 @@ namespace storm {
     namespace builder {
         
         template <storm::dd::DdType Type, typename ValueType>
+        class ParameterCreator {
+        public:
+            void create(storm::prism::Program const& program, storm::adapters::AddExpressionAdapter<Type, ValueType>& rowExpressionAdapter, storm::adapters::AddExpressionAdapter<Type, ValueType>& columnExpressionAdapter) {
+                // Intentionally left empty: no support for parameters for this data type.
+            }
+        };
+        
+        template <storm::dd::DdType Type>
+        class ParameterCreator<Type, storm::RationalFunction> {
+        public:
+            ParameterCreator() : cache(std::make_shared<carl::Cache<carl::PolynomialFactorizationPair<RawPolynomial>>>()) {
+                // Intentionally left empty.
+            }
+            
+            void create(storm::prism::Program const& program, storm::adapters::AddExpressionAdapter<Type, storm::RationalFunction>& rowExpressionAdapter, storm::adapters::AddExpressionAdapter<Type, storm::RationalFunction>& columnExpressionAdapter) {
+                for (auto const& constant : program.getConstants()) {
+                    if (!constant.isDefined()) {
+                        carl::Variable carlVariable = carl::freshRealVariable(constant.getExpressionVariable().getName());
+                        auto rf = convertVariableToPolynomial(carlVariable);
+                        rowExpressionAdapter.setValue(constant.getExpressionVariable(), rf);
+                        columnExpressionAdapter.setValue(constant.getExpressionVariable(), rf);
+                    }
+                }
+            }
+            
+            template<typename RationalFunctionType = storm::RationalFunction, typename TP = typename RationalFunctionType::PolyType, carl::EnableIf<carl::needs_cache<TP>> = carl::dummy>
+            RationalFunctionType convertVariableToPolynomial(carl::Variable const& variable) {
+                return RationalFunctionType(typename RationalFunctionType::PolyType(typename RationalFunctionType::PolyType::PolyType(variable), cache));
+            }
+            
+            template<typename RationalFunctionType = storm::RationalFunction, typename TP = typename RationalFunctionType::PolyType, carl::DisableIf<carl::needs_cache<TP>> = carl::dummy>
+            RationalFunctionType convertVariableToPolynomial(carl::Variable const& variable) {
+                return RationalFunctionType(variable);
+            }
+            
+            // A mapping from our variables to carl's.
+            std::unordered_map<storm::expressions::Variable, carl::Variable> variableToVariableMap;
+            
+            // The cache that is used in case the underlying type needs a cache.
+            std::shared_ptr<carl::Cache<carl::PolynomialFactorizationPair<RawPolynomial>>> cache;
+        };
+        
+        template <storm::dd::DdType Type, typename ValueType>
         class DdPrismModelBuilder<Type, ValueType>::GenerationInformation {
         public:
             GenerationInformation(storm::prism::Program const& program) : program(program), manager(std::make_shared<storm::dd::DdManager<Type>>()), rowMetaVariables(), variableToRowMetaVariableMap(std::make_shared<std::map<storm::expressions::Variable, storm::expressions::Variable>>()), rowExpressionAdapter(std::make_shared<storm::adapters::AddExpressionAdapter<Type, ValueType>>(manager, variableToRowMetaVariableMap)), columnMetaVariables(), variableToColumnMetaVariableMap((std::make_shared<std::map<storm::expressions::Variable, storm::expressions::Variable>>())), columnExpressionAdapter(std::make_shared<storm::adapters::AddExpressionAdapter<Type, ValueType>>(manager, variableToColumnMetaVariableMap)), rowColumnMetaVariablePairs(), nondeterminismMetaVariables(), variableToIdentityMap(), allGlobalVariables(), moduleToIdentityMap() {
+                
                 // Initializes variables and identity DDs.
                 createMetaVariablesAndIdentities();
+                
+                // Initialize the parameters (if any).
+                ParameterCreator<Type, ValueType> parameterCreator;
+                parameterCreator.create(this->program, *this->rowExpressionAdapter, *this->columnExpressionAdapter);
             }
             
             // The program that is currently translated.
@@ -84,6 +132,10 @@ namespace storm {
             std::map<std::string, storm::dd::Add<Type, ValueType>> moduleToRangeMap;
             
         private:
+            void createParameters() {
+                
+            }
+            
             /*!
              * Creates the required meta variables and variable/module identities.
              */
@@ -662,6 +714,8 @@ namespace storm {
                     storm::dd::Add<Type, ValueType> probabilityDd = generationInfo.rowExpressionAdapter->translateExpression(updateIt->getLikelihoodExpression());
                     commandDd += updateResultsIt->updateDd * probabilityDd;
                 }
+                
+                commandDd.exportToDot("command.dot");
                 
                 return ActionDecisionDiagram(guard, guard.template toAdd<ValueType>() * commandDd, globalVariablesInSomeUpdate);
             } else {
@@ -1245,7 +1299,7 @@ namespace storm {
         
         template <storm::dd::DdType Type, typename ValueType>
         std::shared_ptr<storm::models::symbolic::Model<Type, ValueType>> DdPrismModelBuilder<Type, ValueType>::build(storm::prism::Program const& program, Options const& options) {
-            if (program.hasUndefinedConstants()) {
+            if (!std::is_same<ValueType, storm::RationalFunction>::value && program.hasUndefinedConstants()) {
                 std::vector<std::reference_wrapper<storm::prism::Constant const>> undefinedConstants = program.getUndefinedConstants();
                 std::stringstream stream;
                 bool printComma = false;
@@ -1341,6 +1395,8 @@ namespace storm {
             // Detect deadlocks and 1) fix them if requested 2) throw an error otherwise.
             storm::dd::Bdd<Type> statesWithTransition = transitionMatrixBdd.existsAbstract(generationInfo.columnMetaVariables);
             storm::dd::Bdd<Type> deadlockStates = reachableStates && !statesWithTransition;
+            
+            transitionMatrix.exportToDot("trans.dot");
             
             // If there are deadlocks, either fix them or raise an error.
             if (!deadlockStates.isZero()) {

@@ -9,6 +9,14 @@
     Mtbdd Divide(const Mtbdd &other) const;
     
 #if defined(SYLVAN_HAVE_CARL) || defined(STORM_HAVE_CARL)
+
+    Bdd EqualsRF(const Mtbdd& other) const;
+    Bdd LessRF(const Mtbdd& other) const;
+    Bdd LessOrEqualRF(const Mtbdd& other) const;
+
+    Mtbdd MinRF(const Mtbdd& other) const;
+    Mtbdd MaxRF(const Mtbdd& other) const;
+
 	/**
      * @brief Computes f + g for Rational Functions
      */
@@ -18,7 +26,9 @@
      * @brief Computes f * g for Rational Functions
      */
     Mtbdd TimesRF(const Mtbdd &other) const;
-	
+
+    Mtbdd AndExistsRF(const Mtbdd &other, const BddSet &variables) const;
+
 	/**
      * @brief Computes f - g for Rational Functions
      */
@@ -28,11 +38,25 @@
      * @brief Computes f / g for Rational Functions
      */
     Mtbdd DivideRF(const Mtbdd &other) const;
-	
+
+    Mtbdd PowRF(const Mtbdd& other) const;
+
 	Mtbdd AbstractPlusRF(const BddSet &variables) const;
 	
 	Mtbdd ReplaceLeavesRF(void* context) const;
-	
+
+    Mtbdd FloorRF() const;
+    Mtbdd CeilRF() const;
+
+    Mtbdd AbstractMinRF(const BddSet &variables) const;
+    Mtbdd AbstractMaxRF(const BddSet &variables) const;
+
+    Bdd BddThresholdRF(storm::RationalFunction const& rf) const;
+    Bdd BddStrictThresholdRF(storm::RationalFunction const& rf) const;
+
+    Mtbdd MinimumRF() const;
+    Mtbdd MaximumRF() const;
+
 	Mtbdd ToDoubleRF() const;
 #endif
 	

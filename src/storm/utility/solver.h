@@ -63,6 +63,12 @@ namespace storm {
                 virtual std::unique_ptr<storm::solver::SymbolicLinearEquationSolver<Type, ValueType>> create(storm::dd::Add<Type, ValueType> const& A, storm::dd::Bdd<Type> const& allRows, std::set<storm::expressions::Variable> const& rowMetaVariables, std::set<storm::expressions::Variable> const& columnMetaVariables, std::vector<std::pair<storm::expressions::Variable, storm::expressions::Variable>> const& rowColumnMetaVariablePairs) const;
             };
             
+            template<storm::dd::DdType Type>
+            class SymbolicLinearEquationSolverFactory<Type, storm::RationalFunction> {
+            public:
+                virtual std::unique_ptr<storm::solver::SymbolicLinearEquationSolver<Type, storm::RationalFunction>> create(storm::dd::Add<Type, storm::RationalFunction> const& A, storm::dd::Bdd<Type> const& allRows, std::set<storm::expressions::Variable> const& rowMetaVariables, std::set<storm::expressions::Variable> const& columnMetaVariables, std::vector<std::pair<storm::expressions::Variable, storm::expressions::Variable>> const& rowColumnMetaVariablePairs) const;
+            };
+            
             template<storm::dd::DdType Type, typename ValueType>
             class SymbolicMinMaxLinearEquationSolverFactory {
                 public:

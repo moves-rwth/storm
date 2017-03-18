@@ -381,12 +381,11 @@ namespace storm {
                 auto ddlib = storm::settings::getModule<storm::settings::modules::CoreSettings>().getDdLibraryType();
                 STORM_LOG_THROW(ddlib == storm::dd::DdType::Sylvan, storm::exceptions::InvalidSettingsException, "This data-type is only available when selecting sylvan.");
                 buildAndCheckSymbolicModelWithSymbolicEngine<storm::dd::DdType::Sylvan, storm::RationalFunction>(engine == storm::settings::modules::CoreSettings::Engine::Hybrid, model, formulas, onlyInitialStatesRelevant);
-            } else {
-                STORM_LOG_THROW(engine == storm::settings::modules::CoreSettings::Engine::Sparse, storm::exceptions::InvalidSettingsException, "Illegal engine.");
+            } else if (engine == storm::settings::modules::CoreSettings::Engine::Sparse) {
                 buildAndCheckSymbolicModelWithSparseEngine<storm::RationalFunction>(model, formulas, onlyInitialStatesRelevant);
+            } else {
+                STORM_LOG_THROW(false, storm::exceptions::InvalidSettingsException, "Cannot use this data type with this engine.");
             }
-         
-            STORM_LOG_THROW(false, storm::exceptions::InvalidSettingsException, "Cannot use this data type with this engine.");
         }
 #endif
         

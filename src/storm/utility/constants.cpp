@@ -356,7 +356,7 @@ namespace storm {
             value.simplify();
             return std::move(value);
         }
-
+        
         template<>
         double convertNumber(RationalNumber const& number){
             return carl::toDouble(number);
@@ -413,6 +413,11 @@ namespace storm {
         template<>
         uint_fast64_t convertNumber(RationalFunction const& func) {
             return carl::toInt<unsigned long>(func.nominatorAsNumber());
+        }
+        
+        template<>
+        RationalFunction convertNumber(RationalFunction const& number){
+            return number;
         }
 
         template<>
@@ -603,6 +608,8 @@ namespace storm {
         template RationalFunction zero();
         template storm::RationalFunction infinity();
 
+        template storm::RationalFunction convertNumber(storm::RationalFunction const& number);
+        
         template RationalFunction pow(RationalFunction const& value, uint_fast64_t exponent);
         template RationalFunction simplify(RationalFunction value);
         template RationalFunction& simplify(RationalFunction& value);

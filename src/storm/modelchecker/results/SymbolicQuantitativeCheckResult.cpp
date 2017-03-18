@@ -60,8 +60,8 @@ namespace storm {
         template<storm::dd::DdType Type, typename ValueType>
         std::ostream& SymbolicQuantitativeCheckResult<Type, ValueType>::writeToStream(std::ostream& out) const {
             if (states.getNonZeroCount() == 1) {
-                out << this->values.getMax();
-            } else if (states.getNonZeroCount() < 10) {
+                out << this->values.sumAbstract(this->values.getContainedMetaVariables()).getValue();
+            } else if (states.getNonZeroCount() < 10 || std::is_same<storm::RationalFunction, ValueType>::value) {
                 out << "{";
                 if (this->values.isZero()) {
                     out << "0";
@@ -100,7 +100,7 @@ namespace storm {
         ValueType SymbolicQuantitativeCheckResult<Type, ValueType>::getMin() const {
             // In order to not get false zeros, we need to set the values of all states whose values is not stored
             // symbolically to infinity.
-            return states.ite(this->values, states.getDdManager().getConstant(storm::utility::infinity<double>())).getMin();
+            return states.ite(this->values, states.getDdManager().getConstant(storm::utility::infinity<ValueType>())).getMin();
         }
         
         template<storm::dd::DdType Type, typename ValueType>
@@ -120,12 +120,14 @@ namespace storm {
         
         template<storm::dd::DdType Type, typename ValueType>
         void SymbolicQuantitativeCheckResult<Type, ValueType>::oneMinus() {
-            storm::dd::Add<Type> one = values.getDdManager().template getAddOne<ValueType>();
+            storm::dd::Add<Type, ValueType> one = values.getDdManager().template getAddOne<ValueType>();
             values = one - values;
         }
         
         // Explicitly instantiate the class.
         template class SymbolicQuantitativeCheckResult<storm::dd::DdType::CUDD>;
         template class SymbolicQuantitativeCheckResult<storm::dd::DdType::Sylvan>;
+
+        template class SymbolicQuantitativeCheckResult<storm::dd::DdType::Sylvan, storm::RationalFunction>;
     }
 }

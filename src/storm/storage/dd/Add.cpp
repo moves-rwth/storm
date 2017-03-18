@@ -11,6 +11,7 @@
 #include "storm/utility/constants.h"
 #include "storm/utility/macros.h"
 #include "storm/exceptions/InvalidArgumentException.h"
+#include "storm/exceptions/InvalidOperationException.h"
 
 #include "storm-config.h"
 #include "storm/adapters/CarlAdapter.h"
@@ -166,12 +167,6 @@ namespace storm {
         Bdd<LibraryType> Add<LibraryType, ValueType>::minAbstractRepresentative(std::set<storm::expressions::Variable> const& metaVariables) const {
             Bdd<LibraryType> cube = Bdd<LibraryType>::getCube(this->getDdManager(), metaVariables);
             return Bdd<LibraryType>(this->getDdManager(), internalAdd.minAbstractRepresentative(cube), this->getContainedMetaVariables());
-        }
-        
-        template<DdType LibraryType, typename ValueType>
-        Add<LibraryType, ValueType> Add<LibraryType, ValueType>::minAbstractExcept0(std::set<storm::expressions::Variable> const& metaVariables) const {
-            Bdd<LibraryType> cube = Bdd<LibraryType>::getCube(this->getDdManager(), metaVariables);
-            return Add<LibraryType, ValueType>(this->getDdManager(), internalAdd.minAbstractExcept0(cube), Dd<LibraryType>::subtractMetaVariables(*this, cube));
         }
         
         template<DdType LibraryType, typename ValueType>
@@ -859,13 +854,18 @@ namespace storm {
 		}
 		
 		template<DdType LibraryType, typename ValueType>
-		Add<LibraryType, double> Add<LibraryType, ValueType>::toDouble() const {
-			STORM_LOG_THROW(false, storm::exceptions::InvalidArgumentException, "Not yet implemented: replaceLeaves");
+        template<typename TargetValueType>
+		Add<LibraryType, TargetValueType> Add<LibraryType, ValueType>::toValueType() const {
+            if (std::is_same<TargetValueType, ValueType>::value) {
+                return *this;
+            }
+			STORM_LOG_THROW(false, storm::exceptions::InvalidOperationException, "Cannot convert this ADD to the target type.");
 		}
 
 		template<>
-		Add<storm::dd::DdType::Sylvan, double> Add<storm::dd::DdType::Sylvan, storm::RationalFunction>::toDouble() const {
-			return Add<storm::dd::DdType::Sylvan, double>(this->getDdManager(), internalAdd.toDouble(), this->getContainedMetaVariables());
+        template<>
+		Add<storm::dd::DdType::Sylvan, double> Add<storm::dd::DdType::Sylvan, storm::RationalFunction>::toValueType() const {
+			return Add<storm::dd::DdType::Sylvan, double>(this->getDdManager(), internalAdd.toValueType<double>(), this->getContainedMetaVariables());
 		}
 #endif
 		

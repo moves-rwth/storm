@@ -1845,7 +1845,7 @@ namespace storm {
         
         template <storm::dd::DdType Type, typename ValueType>
         std::shared_ptr<storm::models::symbolic::Model<Type, ValueType>> DdJaniModelBuilder<Type, ValueType>::build(storm::jani::Model const& model, Options const& options) {
-            if (model.hasUndefinedConstants()) {
+            if (!std::is_same<ValueType, storm::RationalFunction>::value && model.hasUndefinedConstants()) {
                 std::vector<std::reference_wrapper<storm::jani::Constant const>> undefinedConstants = model.getUndefinedConstants();
                 std::vector<std::string> strings;
                 for (auto const& constant : undefinedConstants) {

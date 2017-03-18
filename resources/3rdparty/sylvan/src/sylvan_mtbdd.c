@@ -308,7 +308,7 @@ _mtbdd_hash_cb(uint64_t a, uint64_t b, uint64_t seed)
     if (type >= cl_registry_count) return llmsset_hash(a, b, seed);
     customleaf_t *c = cl_registry + type;
     if (c->hash_cb == NULL) return llmsset_hash(a, b, seed);
-    return c->hash_cb(b, seed ^ a);
+    return c->hash_cb(b, seed);
 }
 
 static int
