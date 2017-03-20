@@ -37,6 +37,16 @@ namespace storm {
             Bdd& operator=(Bdd<LibraryType>&& other) = default;
 
             /*!
+             * Constructs a BDD representation of all encodings whose value is true in the given list of truth values.
+             *
+             * @param ddManager The DD manager responsible for the resulting BDD.
+             * @param truthValues The truth values.
+             * @param odd The ODD used for the translation from the explicit representation to a symbolic one.
+             * @param metaVariables The meta variables to use for the symbolic encoding.
+             */
+            static Bdd<LibraryType> fromVector(DdManager<LibraryType> const& ddManager, storm::storage::BitVector const& truthValues, storm::dd::Odd const& odd, std::set<storm::expressions::Variable> const& metaVariables);
+            
+            /*!
              * Constructs a BDD representation of all encodings that are in the requested relation with the given value.
              *
              * @param ddManager The DD manager responsible for the resulting BDD.
@@ -327,12 +337,21 @@ namespace storm {
             /*!
              * Filters the given explicit vector using the symbolic representation of which values to select.
              *
-             * @param selectedValues A symbolic representation of which values to select.
+             * @param odd The ODD used for the translation from symbolic to explicit.
              * @param values The value vector from which to select the values.
              * @return The resulting vector.
              */
             template<typename ValueType>
             std::vector<ValueType> filterExplicitVector(Odd const& odd, std::vector<ValueType> const& values) const;
+            
+            /*!
+             * Filters the given explicit vector using the symbolic representation of which values to select.
+             *
+             * @param odd The ODD used for the translation from symbolic to explicit.
+             * @param values The value vector from which to select the values.
+             * @return The resulting vector.
+             */
+            storm::storage::BitVector filterExplicitVector(Odd const& odd, storm::storage::BitVector const& values) const;
             
             friend struct std::hash<storm::dd::Bdd<LibraryType>>;
             

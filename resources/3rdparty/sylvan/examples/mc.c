@@ -11,7 +11,7 @@
 #endif
 
 #include <sylvan.h>
-#include <llmsset.h>
+#include <sylvan_table.h>
 
 /* Configuration */
 static int report_levels = 0; // report states at end of every level
@@ -67,6 +67,9 @@ parse_opt(int key, char *arg, struct argp_state *state)
         break;
     case 2:
         report_table = 1;
+        break;
+    case 5:
+        report_nodes = 1;
         break;
     case 6:
         merge_relations = 1;
@@ -420,7 +423,7 @@ TASK_2(BDD, extend_relation, BDD, relation, BDDSET, variables)
     for (int i=0; i<statebits; i++) has[i] = 0;
     BDDSET s = variables;
     while (!sylvan_set_isempty(s)) {
-        BDDVAR v = sylvan_set_var(s);
+        BDDVAR v = sylvan_set_first(s);
         if (v/2 >= (unsigned)statebits) break; // action labels
         has[v/2] = 1;
         s = sylvan_set_next(s);
@@ -468,12 +471,12 @@ print_matrix(BDD vars)
             fprintf(stdout, "-");
         } else {
             BDDVAR next_s = 2*((i+1)*bits_per_integer);
-            if (sylvan_set_var(vars) < next_s) {
+            if (sylvan_set_first(vars) < next_s) {
                 fprintf(stdout, "+");
                 for (;;) {
                     vars = sylvan_set_next(vars);
                     if (sylvan_set_isempty(vars)) break;
-                    if (sylvan_set_var(vars) >= next_s) break;
+                    if (sylvan_set_first(vars) >= next_s) break;
                 }
             } else {
                 fprintf(stdout, "-");
@@ -515,10 +518,12 @@ main(int argc, char **argv)
     // Nodes table size: 24 bytes * 2**N_nodes
     // Cache table size: 36 bytes * 2**N_cache
     // With: N_nodes=25, N_cache=24: 1.3 GB memory
-    sylvan_init_package(1LL<<21, 1LL<<27, 1LL<<20, 1LL<<26);
-    sylvan_init_bdd(6); // granularity 6 is decent default value - 1 means "use cache for every operation"
-    sylvan_gc_add_mark(0, TASK(gc_start));
-    sylvan_gc_add_mark(40, TASK(gc_end));
+    sylvan_set_sizes(1LL<<21, 1LL<<27, 1LL<<20, 1LL<<26);
+    sylvan_init_package();
+    sylvan_set_granularity(6); // granularity 6 is decent default value - 1 means "use cache for every operation"
+    sylvan_init_bdd();
+    sylvan_gc_hook_pregc(TASK(gc_start));
+    sylvan_gc_hook_postgc(TASK(gc_end));
 
     /* Load domain information */
     if ((fread(&vector_size, sizeof(int), 1, f) != 1) ||
@@ -610,7 +615,7 @@ main(int argc, char **argv)
         INFO("Final states: %'zu BDD nodes\n", sylvan_nodecount(states->bdd));
     }
 
-    sylvan_stats_report(stdout, 1);
+    sylvan_stats_report(stdout);
 
     return 0;
 }

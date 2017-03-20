@@ -462,3 +462,14 @@ MTBDD storm_rational_function_leaf_parameter_replacement(MTBDD dd, storm_rationa
 	std::map<uint32_t, std::pair<storm::RationalFunctionVariable, std::pair<storm::RationalNumber, storm::RationalNumber>>>* replacements = (std::map<uint32_t, std::pair<storm::RationalFunctionVariable, std::pair<storm::RationalNumber, storm::RationalNumber>>>*)context;
 	return testiTest(srf_a, *replacements);
 }
+
+char* storm_rational_function_to_str(storm_rational_function_ptr val, char *buf, size_t buflen) {
+    std::lock_guard<std::mutex> lock(carlMutex);
+    std::stringstream ss;
+    storm::RationalFunction& srf_a = *(storm::RationalFunction*)val;
+    ss << srf_a;
+    std::string s = ss.str();
+    char* result = (char*)malloc(s.size() + 1);
+    std::memcpy(result, s.c_str(), s.size() + 1);
+    return result;
+}

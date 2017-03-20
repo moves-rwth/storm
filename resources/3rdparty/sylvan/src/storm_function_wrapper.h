@@ -49,6 +49,8 @@ MTBDD storm_rational_function_leaf_parameter_replacement(MTBDD dd, storm_rationa
 
 double storm_rational_function_get_constant(storm_rational_function_ptr a);
 
+char* storm_rational_function_to_str(storm_rational_function_ptr val, char *buf, size_t buflen);
+    
 #ifdef __cplusplus
 }
 #endif

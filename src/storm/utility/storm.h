@@ -54,6 +54,7 @@
 // Headers for model processing.
 #include "storm/storage/bisimulation/DeterministicModelBisimulationDecomposition.h"
 #include "storm/storage/bisimulation/NondeterministicModelBisimulationDecomposition.h"
+#include "storm/transformer/SymbolicToSparseTransformer.h"
 #include "storm/storage/ModelFormulasPair.h"
 #include "storm/storage/SymbolicModelDescription.h"
 #include "storm/storage/jani/JSONExporter.h"
@@ -78,6 +79,8 @@
 #include "storm/modelchecker/csl/HybridCtmcCslModelChecker.h"
 #include "storm/modelchecker/csl/SparseMarkovAutomatonCslModelChecker.h"
 #include "storm/modelchecker/results/ExplicitQualitativeCheckResult.h"
+#include "storm/modelchecker/results/SymbolicQualitativeCheckResult.h"
+#include "storm/modelchecker/results/HybridQuantitativeCheckResult.h"
 #include "storm/modelchecker/results/SymbolicQualitativeCheckResult.h"
 
 // Headers for counterexample generation.
@@ -258,7 +261,7 @@ namespace storm {
             }
             
             STORM_LOG_THROW(model->isSparseModel(), storm::exceptions::InvalidSettingsException, "Bisimulation minimization is currently only available for sparse models.");
-            return performBisimulationMinimization<ModelType>(model->template as<storm::models::sparse::Model<typename ModelType::ValueType>>(), formulas, bisimType);
+            model = performBisimulationMinimization<ModelType>(model->template as<storm::models::sparse::Model<typename ModelType::ValueType>>(), formulas, bisimType);
         }
 
         preprocessingWatch.stop();
@@ -585,10 +588,58 @@ namespace storm {
 
         STORM_LOG_THROW(model->getType() == storm::models::ModelType::Dtmc, storm::exceptions::NotSupportedException, "Only DTMCs are supported by this engine (in parametric mode).");
         std::shared_ptr<storm::models::symbolic::Dtmc<DdType, storm::RationalFunction>> dtmc = model->template as<storm::models::symbolic::Dtmc<DdType, storm::RationalFunction>>();
-        storm::modelchecker::HybridDtmcPrctlModelChecker<storm::models::symbolic::Dtmc<DdType, storm::RationalFunction>> modelchecker(*dtmc);
-        if (modelchecker.canHandle(task)) {
-            result = modelchecker.check(task);
+        
+        if (storm::settings::getModule<storm::settings::modules::CoreSettings>().getEquationSolver() == storm::solver::EquationSolverType::Elimination && storm::settings::getModule<storm::settings::modules::EliminationSettings>().isUseDedicatedModelCheckerSet()) {
+            storm::transformer::SymbolicMdpToSparseDtmcTransformer<DdType, storm::RationalFunction> transformer;
+            std::shared_ptr<storm::models::sparse::Dtmc<storm::RationalFunction>> sparseDtmc = transformer.translate(*dtmc);
+            
+            // Optimally, we could preprocess the model here and apply, for example, bisimulation minimization. However,
+            // with the current structure of functions in storm.h and entrypoints.h this is not possible, because later
+            // the filters will be applied wrt. to states of the original model, which is problematic.
+            // sparseDtmc = preprocessModel<storm::models::sparse::Dtmc<storm::RationalFunction>>(sparseDtmc, {formula})->template as<storm::models::sparse::Dtmc<storm::RationalFunction>>();
+            storm::modelchecker::SparseDtmcEliminationModelChecker<storm::models::sparse::Dtmc<storm::RationalFunction>> modelchecker(*sparseDtmc);
+            if (modelchecker.canHandle(task)) {
+                result = modelchecker.check(task);
+
+                // Now translate the sparse result to hybrid one, so it can be filtered with the symbolic initial states of the model later.
+                if (result->isQualitative()) {
+                    storm::modelchecker::ExplicitQualitativeCheckResult const& explicitResult = result->asExplicitQualitativeCheckResult();
+                    
+                    if (explicitResult.isResultForAllStates()) {
+                        result = std::make_unique<storm::modelchecker::SymbolicQualitativeCheckResult<DdType>>(model->getReachableStates(), storm::dd::Bdd<DdType>::fromVector(model->getManager(), explicitResult.getTruthValuesVector(), transformer.getOdd(), model->getRowVariables()));
+                    } else {
+                        storm::dd::Odd oldOdd = transformer.getOdd();
+                        storm::dd::Odd newOdd = model->getInitialStates().createOdd();
+                        storm::storage::BitVector tmp(oldOdd.getTotalOffset());
+                        for (auto const& entry : explicitResult.getTruthValuesMap()) {
+                            tmp.set(entry.first, entry.second);
+                        }
+                        result = std::make_unique<storm::modelchecker::SymbolicQualitativeCheckResult<DdType>>(model->getReachableStates(), storm::dd::Bdd<DdType>::fromVector(model->getManager(), tmp, oldOdd, model->getRowVariables()));
+                    }
+                } else if (result->isQuantitative()) {
+                    storm::modelchecker::ExplicitQuantitativeCheckResult<storm::RationalFunction> const& explicitResult = result->asExplicitQuantitativeCheckResult<storm::RationalFunction>();
+                    
+                    if (explicitResult.isResultForAllStates()) {
+                        result = std::make_unique<storm::modelchecker::HybridQuantitativeCheckResult<DdType, storm::RationalFunction>>(model->getReachableStates(), model->getManager().getBddZero(), model->getManager().template getAddZero<storm::RationalFunction>(), model->getReachableStates(), transformer.getOdd(), explicitResult.getValueVector());
+                    } else {
+                        storm::dd::Odd oldOdd = transformer.getOdd();
+                        storm::dd::Odd newOdd = model->getInitialStates().createOdd();
+                        std::vector<storm::RationalFunction> tmp(oldOdd.getTotalOffset(), storm::utility::zero<storm::RationalFunction>());
+                        for (auto const& entry : explicitResult.getValueMap()) {
+                            tmp[entry.first] = entry.second;
+                        }
+                        std::vector<storm::RationalFunction> newValues = model->getInitialStates().filterExplicitVector(oldOdd, tmp);
+                        result = std::make_unique<storm::modelchecker::HybridQuantitativeCheckResult<DdType, storm::RationalFunction>>(model->getReachableStates(), model->getManager().getBddZero(), model->getManager().template getAddZero<storm::RationalFunction>(), model->getInitialStates(), newOdd, newValues);
+                    }
+                }
+            }
+        } else {
+            storm::modelchecker::HybridDtmcPrctlModelChecker<storm::models::symbolic::Dtmc<DdType, storm::RationalFunction>> modelchecker(*dtmc);
+            if (modelchecker.canHandle(task)) {
+                result = modelchecker.check(task);
+            }
         }
+        
         return result;
     }
 

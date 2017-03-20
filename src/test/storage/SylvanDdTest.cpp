@@ -464,8 +464,8 @@ TEST(SylvanDd, RationalFunctionLeaveReplacementSimpleVariable) {
     EXPECT_EQ(3ul, replacedAddSimpleX.getNodeCount());
 	EXPECT_TRUE(replacedAddSimpleX == complexAdd);
 	
-	storm::dd::Add<storm::dd::DdType::Sylvan, double> abstractedAddMax = replacedAddSimpleX.toDouble().maxAbstract({xExpr.first});
-	storm::dd::Add<storm::dd::DdType::Sylvan, double> abstractedAddMin = replacedAddSimpleX.toDouble().minAbstract({xExpr.first});
+	storm::dd::Add<storm::dd::DdType::Sylvan, double> abstractedAddMax = replacedAddSimpleX.toValueType<double>().maxAbstract({xExpr.first});
+	storm::dd::Add<storm::dd::DdType::Sylvan, double> abstractedAddMin = replacedAddSimpleX.toValueType<double>().minAbstract({xExpr.first});
 	EXPECT_TRUE(abstractedAddMax == manager->template getConstant<double>(0.66666666666666666666));
 	EXPECT_TRUE(abstractedAddMin == manager->template getConstant<double>(0.33333333333333333333));
 }
@@ -532,7 +532,7 @@ TEST(SylvanDd, RationalFunctionCarlSubstituteTest) {
 	EXPECT_EQ(polySub, parser.template parseMultivariatePolynomial<storm::RationalNumber>("4+2*y") + parser.template parseMultivariatePolynomial<storm::RationalNumber>("z") / storm::RationalNumber(2));
 }
 
-TEST(SylvanDd, RationalFunctionLeaveReplacementComplexFunction) {
+TEST(DISABLED_SylvanDd, RationalFunctionLeaveReplacementComplexFunction) {
 	std::shared_ptr<storm::dd::DdManager<storm::dd::DdType::Sylvan>> manager(new storm::dd::DdManager<storm::dd::DdType::Sylvan>());
 	
 	storm::dd::Add<storm::dd::DdType::Sylvan, storm::RationalFunction> function;
@@ -694,7 +694,7 @@ TEST(SylvanDd, RationalFunctionToDouble) {
     EXPECT_EQ(7ul, complexAdd.getLeafCount());
     EXPECT_EQ(14ul, complexAdd.getNodeCount());
 	
-	storm::dd::Add<storm::dd::DdType::Sylvan, double> doubleAdd = complexAdd.toDouble();
+	storm::dd::Add<storm::dd::DdType::Sylvan, double> doubleAdd = complexAdd.toValueType<double>();
     
     EXPECT_EQ(6ul, doubleAdd.getNonZeroCount());
     EXPECT_EQ(7ul, doubleAdd.getLeafCount());

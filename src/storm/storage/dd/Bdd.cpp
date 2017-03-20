@@ -32,19 +32,15 @@ namespace storm {
             static Bdd<LibraryType> fromVector(DdManager<LibraryType> const& ddManager, std::vector<ValueType> const& explicitValues, storm::dd::Odd const& odd, std::set<storm::expressions::Variable> const& metaVariables, storm::logic::ComparisonType comparisonType, ValueType value) {
                 switch (comparisonType) {
                     case storm::logic::ComparisonType::Less:
-                        return fromVector(ddManager, explicitValues, odd, metaVariables, std::bind(std::greater<ValueType>(), value, std::placeholders::_1));
+                        return Bdd<LibraryType>(ddManager, InternalBdd<LibraryType>::fromVector(&ddManager.getInternalDdManager(), odd, ddManager.getSortedVariableIndices(metaVariables), [&value, &explicitValues] (uint64_t offset) { return explicitValues[offset] < value; }), metaVariables);
                     case storm::logic::ComparisonType::LessEqual:
-                        return fromVector(ddManager, explicitValues, odd, metaVariables, std::bind(std::greater_equal<ValueType>(), value, std::placeholders::_1));
+                        return Bdd<LibraryType>(ddManager, InternalBdd<LibraryType>::fromVector(&ddManager.getInternalDdManager(), odd, ddManager.getSortedVariableIndices(metaVariables), [&value, &explicitValues] (uint64_t offset) { return explicitValues[offset] <= value; }), metaVariables);
                     case storm::logic::ComparisonType::Greater:
-                        return fromVector(ddManager, explicitValues, odd, metaVariables, std::bind(std::less<ValueType>(), value, std::placeholders::_1));
+                        return Bdd<LibraryType>(ddManager, InternalBdd<LibraryType>::fromVector(&ddManager.getInternalDdManager(), odd, ddManager.getSortedVariableIndices(metaVariables), [&value, &explicitValues] (uint64_t offset) { return explicitValues[offset] > value; }), metaVariables);
                     case storm::logic::ComparisonType::GreaterEqual:
-                        return fromVector(ddManager, explicitValues, odd, metaVariables, std::bind(std::less_equal<ValueType>(), value, std::placeholders::_1));
+                        return Bdd<LibraryType>(ddManager, InternalBdd<LibraryType>::fromVector(&ddManager.getInternalDdManager(), odd, ddManager.getSortedVariableIndices(metaVariables), [&value, &explicitValues] (uint64_t offset) { return explicitValues[offset] >= value; }), metaVariables);
                 }
                 return Bdd<LibraryType>();
-            }
-            
-            static Bdd<LibraryType> fromVector(DdManager<LibraryType> const& ddManager, std::vector<ValueType> const& values, Odd const& odd, std::set<storm::expressions::Variable> const& metaVariables, std::function<bool (ValueType const&)> const& filter) {
-                return Bdd<LibraryType>(ddManager, InternalBdd<LibraryType>::fromVector(&ddManager.getInternalDdManager(), values, odd, ddManager.getSortedVariableIndices(metaVariables), filter), metaVariables);
             }
         };
         
@@ -60,6 +56,11 @@ namespace storm {
         template<typename ValueType>
         Bdd<LibraryType> Bdd<LibraryType>::fromVector(DdManager<LibraryType> const& ddManager, std::vector<ValueType> const& explicitValues, storm::dd::Odd const& odd, std::set<storm::expressions::Variable> const& metaVariables, storm::logic::ComparisonType comparisonType, ValueType value) {
             return FromVectorHelper<LibraryType, ValueType>::fromVector(ddManager, explicitValues, odd, metaVariables, comparisonType, value);
+        }
+        
+        template<DdType LibraryType>
+        Bdd<LibraryType> Bdd<LibraryType>::fromVector(DdManager<LibraryType> const& ddManager, storm::storage::BitVector const& truthValues, storm::dd::Odd const& odd, std::set<storm::expressions::Variable> const& metaVariables) {
+            return Bdd<LibraryType>(ddManager, InternalBdd<LibraryType>::fromVector(&ddManager.getInternalDdManager(), odd, ddManager.getSortedVariableIndices(metaVariables), [&truthValues] (uint64_t offset) { return truthValues[offset]; } ), metaVariables);
         }
         
         template<DdType LibraryType>
@@ -359,6 +360,13 @@ namespace storm {
         template<typename ValueType>
         std::vector<ValueType> Bdd<LibraryType>::filterExplicitVector(Odd const& odd, std::vector<ValueType> const& values) const {
             std::vector<ValueType> result(this->getNonZeroCount());
+            internalBdd.filterExplicitVector(odd, this->getSortedVariableIndices(), values, result);
+            return result;
+        }
+        
+        template<DdType LibraryType>
+        storm::storage::BitVector Bdd<LibraryType>::filterExplicitVector(Odd const& odd, storm::storage::BitVector const& values) const {
+            storm::storage::BitVector result(this->getNonZeroCount());
             internalBdd.filterExplicitVector(odd, this->getSortedVariableIndices(), values, result);
             return result;
         }

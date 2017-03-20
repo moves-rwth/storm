@@ -1,5 +1,6 @@
 /*
- * Copyright 2011-2015 Formal Methods and Tools, University of Twente
+ * Copyright 2011-2016 Formal Methods and Tools, University of Twente
+ * Copyright 2016 Tom van Dijk, Johannes Kepler University Linz
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,7 +16,6 @@
  */
 
 #include <sylvan_obj.hpp>
-#include <sylvan_storm_rational_function.h>
 
 using namespace sylvan;
 
@@ -35,7 +35,7 @@ Bdd::operator!=(const Bdd& other) const
     return bdd != other.bdd;
 }
 
-Bdd
+Bdd&
 Bdd::operator=(const Bdd& right)
 {
     bdd = right.bdd;
@@ -89,7 +89,7 @@ Bdd::operator*(const Bdd& other) const
     return Bdd(sylvan_and(bdd, other.bdd));
 }
 
-Bdd
+Bdd&
 Bdd::operator*=(const Bdd& other)
 {
     LACE_ME;
@@ -104,7 +104,7 @@ Bdd::operator&(const Bdd& other) const
     return Bdd(sylvan_and(bdd, other.bdd));
 }
 
-Bdd
+Bdd&
 Bdd::operator&=(const Bdd& other)
 {
     LACE_ME;
@@ -119,7 +119,7 @@ Bdd::operator+(const Bdd& other) const
     return Bdd(sylvan_or(bdd, other.bdd));
 }
 
-Bdd
+Bdd&
 Bdd::operator+=(const Bdd& other)
 {
     LACE_ME;
@@ -134,7 +134,7 @@ Bdd::operator|(const Bdd& other) const
     return Bdd(sylvan_or(bdd, other.bdd));
 }
 
-Bdd
+Bdd&
 Bdd::operator|=(const Bdd& other)
 {
     LACE_ME;
@@ -149,7 +149,7 @@ Bdd::operator^(const Bdd& other) const
     return Bdd(sylvan_xor(bdd, other.bdd));
 }
 
-Bdd
+Bdd&
 Bdd::operator^=(const Bdd& other)
 {
     LACE_ME;
@@ -164,7 +164,7 @@ Bdd::operator-(const Bdd& other) const
     return Bdd(sylvan_and(bdd, sylvan_not(other.bdd)));
 }
 
-Bdd
+Bdd&
 Bdd::operator-=(const Bdd& other)
 {
     LACE_ME;
@@ -373,7 +373,7 @@ Bdd::PickOneCube(const BddSet &variables) const
     if (bdd == sylvan_false) return result;
 
     for (; !sylvan_set_isempty(vars); vars = sylvan_set_next(vars)) {
-        uint32_t var = sylvan_set_var(vars);
+        uint32_t var = sylvan_set_first(vars);
         if (bdd == sylvan_true) {
             // pick 0
             result.push_back(false);
@@ -544,7 +544,7 @@ BddMap::operator+(const Bdd& other) const
     return BddMap(sylvan_map_addall(bdd, other.bdd));
 }
 
-BddMap
+BddMap&
 BddMap::operator+=(const Bdd& other)
 {
     bdd = sylvan_map_addall(bdd, other.bdd);
@@ -557,7 +557,7 @@ BddMap::operator-(const Bdd& other) const
     return BddMap(sylvan_map_removeall(bdd, other.bdd));
 }
 
-BddMap
+BddMap&
 BddMap::operator-=(const Bdd& other)
 {
     bdd = sylvan_map_removeall(bdd, other.bdd);
@@ -604,15 +604,6 @@ Mtbdd::doubleTerminal(double value)
 {
     return mtbdd_double(value);
 }
-
-#if defined(SYLVAN_HAVE_CARL) || defined(STORM_HAVE_CARL)
-Mtbdd
-Mtbdd::stormRationalFunctionTerminal(storm::RationalFunction const& value)
-{
-	storm_rational_function_ptr ptr = (storm_rational_function_ptr)(&value);
-    return mtbdd_storm_rational_function(ptr);
-}
-#endif
 
 Mtbdd
 Mtbdd::fractionTerminal(int64_t nominator, uint64_t denominator)
@@ -811,7 +802,7 @@ Mtbdd::operator!=(const Mtbdd& other) const
     return mtbdd != other.mtbdd;
 }
 
-Mtbdd
+Mtbdd&
 Mtbdd::operator=(const Mtbdd& right)
 {
     mtbdd = right.mtbdd;
@@ -837,7 +828,7 @@ Mtbdd::operator*(const Mtbdd& other) const
     return mtbdd_times(mtbdd, other.mtbdd);
 }
 
-Mtbdd
+Mtbdd&
 Mtbdd::operator*=(const Mtbdd& other)
 {
     LACE_ME;
@@ -852,7 +843,7 @@ Mtbdd::operator+(const Mtbdd& other) const
     return mtbdd_plus(mtbdd, other.mtbdd);
 }
 
-Mtbdd
+Mtbdd&
 Mtbdd::operator+=(const Mtbdd& other)
 {
     LACE_ME;
@@ -867,7 +858,7 @@ Mtbdd::operator-(const Mtbdd& other) const
     return mtbdd_minus(mtbdd, other.mtbdd);
 }
 
-Mtbdd
+Mtbdd&
 Mtbdd::operator-=(const Mtbdd& other)
 {
     LACE_ME;
@@ -973,7 +964,7 @@ MtbddMap::operator+(const Mtbdd& other) const
     return MtbddMap(mtbdd_map_addall(mtbdd, other.mtbdd));
 }
 
-MtbddMap
+MtbddMap&
 MtbddMap::operator+=(const Mtbdd& other)
 {
     mtbdd = mtbdd_map_addall(mtbdd, other.mtbdd);
@@ -986,7 +977,7 @@ MtbddMap::operator-(const Mtbdd& other) const
     return MtbddMap(mtbdd_map_removeall(mtbdd, other.mtbdd));
 }
 
-MtbddMap
+MtbddMap&
 MtbddMap::operator-=(const Mtbdd& other)
 {
     mtbdd = mtbdd_map_removeall(mtbdd, other.mtbdd);
@@ -1025,20 +1016,32 @@ MtbddMap::isEmpty()
 void
 Sylvan::initPackage(size_t initialTableSize, size_t maxTableSize, size_t initialCacheSize, size_t maxCacheSize)
 {
-    sylvan_init_package(initialTableSize, maxTableSize, initialCacheSize, maxCacheSize);
+    sylvan_set_sizes(initialTableSize, maxTableSize, initialCacheSize, maxCacheSize);
+    sylvan_init_package();
 }
 
 void
-Sylvan::initBdd(int granularity)
+Sylvan::setGranularity(int granularity)
 {
-    sylvan_init_bdd(granularity);
+    sylvan_set_granularity(granularity);
+}
+
+int
+Sylvan::getGranularity()
+{
+    return sylvan_get_granularity();
+}
+
+void
+Sylvan::initBdd()
+{
+    sylvan_init_bdd();
 }
 
 void
 Sylvan::initMtbdd()
 {
     sylvan_init_mtbdd();
-	sylvan_storm_rational_function_init();
 }
 
 void
@@ -1047,4 +1050,5 @@ Sylvan::quitPackage()
     sylvan_quit();
 }
 
-#include "sylvan_obj_storm.cpp"
+#include <sylvan_obj_storm.cpp>
+

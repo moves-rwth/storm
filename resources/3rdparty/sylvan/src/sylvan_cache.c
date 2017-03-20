@@ -1,5 +1,6 @@
 /*
- * Copyright 2011-2015 Formal Methods and Tools, University of Twente
+ * Copyright 2011-2016 Formal Methods and Tools, University of Twente
+ * Copyright 2016 Tom van Dijk, Johannes Kepler University Linz
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -43,6 +44,18 @@
  * Therefore, size 2^N = 36*(2^N) bytes.
  */
 
+struct __attribute__((packed)) cache6_entry {
+    uint64_t            a;
+    uint64_t            b;
+    uint64_t            c;
+    uint64_t            res;
+    uint64_t            d;
+    uint64_t            e;
+    uint64_t            f;
+    uint64_t            res2;
+};
+typedef struct cache6_entry *cache6_entry_t;
+
 struct __attribute__((packed)) cache_entry {
     uint64_t            a;
     uint64_t            b;
@@ -83,6 +96,84 @@ cache_hash(uint64_t a, uint64_t b, uint64_t c)
     return hash;
 }
 
+static uint64_t
+cache_hash6(uint64_t a, uint64_t b, uint64_t c, uint64_t d, uint64_t e, uint64_t f)
+{
+    const uint64_t prime = 1099511628211;
+    uint64_t hash = 14695981039346656037LLU;
+    hash = (hash ^ (a>>32));
+    hash = (hash ^ a) * prime;
+    hash = (hash ^ b) * prime;
+    hash = (hash ^ c) * prime;
+    hash = (hash ^ d) * prime;
+    hash = (hash ^ e) * prime;
+    hash = (hash ^ f) * prime;
+    return hash;
+}
+
+int
+cache_get6(uint64_t a, uint64_t b, uint64_t c, uint64_t d, uint64_t e, uint64_t f, uint64_t *res1, uint64_t *res2)
+{
+    const uint64_t hash = cache_hash6(a, b, c, d, e, f);
+#if CACHE_MASK
+    volatile uint64_t *s_bucket = (uint64_t*)cache_status + (hash & cache_mask)/2;
+    cache6_entry_t bucket = (cache6_entry_t)cache_table + (hash & cache_mask)/2;
+#else
+    volatile uint64_t *s_bucket = (uint64_t*)cache_status + (hash % cache_size)/2;
+    cache6_entry_t bucket = (cache6_entry_t)cache_table + (hash % cache_size)/2;
+#endif
+    const uint64_t s = *s_bucket;
+    compiler_barrier();
+    // abort if locked or second part of 2-part entry or if different hash
+    uint64_t x = ((hash>>32) & 0x7fff0000) | 0x04000000;
+    x = x | (x<<32);
+    if ((s & 0xffff0000ffff0000) != x) return 0;
+    // abort if key different
+    if (bucket->a != a || bucket->b != b || bucket->c != c) return 0;
+    if (bucket->d != d || bucket->e != e || bucket->f != f) return 0;
+    *res1 = bucket->res;
+    if (res2) *res2 = bucket->res2;
+    compiler_barrier();
+    // abort if status field changed after compiler_barrier()
+    return *s_bucket == s ? 1 : 0;
+}
+
+int
+cache_put6(uint64_t a, uint64_t b, uint64_t c, uint64_t d, uint64_t e, uint64_t f, uint64_t res1, uint64_t res2)
+{
+    const uint64_t hash = cache_hash6(a, b, c, d, e, f);
+#if CACHE_MASK
+    volatile uint64_t *s_bucket = (uint64_t*)cache_status + (hash & cache_mask)/2;
+    cache6_entry_t bucket = (cache6_entry_t)cache_table + (hash & cache_mask)/2;
+#else
+    volatile uint64_t *s_bucket = (uint64_t*)cache_status + (hash % cache_size)/2;
+    cache6_entry_t bucket = (cache6_entry_t)cache_table + (hash % cache_size)/2;
+#endif
+    const uint64_t s = *s_bucket;
+    // abort if locked
+    if (s & 0x8000000080000000LL) return 0;
+    // create new
+    uint64_t new_s = ((hash>>32) & 0x7fff0000) | 0x04000000;
+    new_s |= (new_s<<32);
+    new_s |= (((s>>32)+1)&0xffff)<<32;
+    new_s |= (s+1)&0xffff;
+    // use cas to claim bucket
+    if (!cas(s_bucket, s, new_s | 0x8000000080000000LL)) return 0;
+    // cas succesful: write data
+    bucket->a = a;
+    bucket->b = b;
+    bucket->c = c;
+    bucket->d = d;
+    bucket->e = e;
+    bucket->f = f;
+    bucket->res = res1;
+    bucket->res2 = res2;
+    compiler_barrier();
+    // after compiler_barrier(), unlock status field
+    *s_bucket = new_s;
+    return 1;
+}
+
 int
 cache_get(uint64_t a, uint64_t b, uint64_t c, uint64_t *res)
 {
@@ -96,10 +187,10 @@ cache_get(uint64_t a, uint64_t b, uint64_t c, uint64_t *res)
 #endif
     const uint32_t s = *s_bucket;
     compiler_barrier();
-    // abort if locked
-    if (s & 0x80000000) return 0;
+    // abort if locked or if part of a 2-part cache entry
+    if (s & 0xc0000000) return 0;
     // abort if different hash
-    if ((s ^ (hash>>32)) & 0x7fff0000) return 0;
+    if ((s ^ (hash>>32)) & 0x3fff0000) return 0;
     // abort if key different
     if (bucket->a != a || bucket->b != b || bucket->c != c) return 0;
     *res = bucket->res;
@@ -123,7 +214,7 @@ cache_put(uint64_t a, uint64_t b, uint64_t c, uint64_t res)
     // abort if locked
     if (s & 0x80000000) return 0;
     // abort if hash identical -> no: in iscasmc this occasionally causes timeouts?!
-    const uint32_t hash_mask = (hash>>32) & 0x7fff0000;
+    const uint32_t hash_mask = (hash>>32) & 0x3fff0000;
     // if ((s & 0x7fff0000) == hash_mask) return 0;
     // use cas to claim bucket
     const uint32_t new_s = ((s+1) & 0x0000ffff) | hash_mask;

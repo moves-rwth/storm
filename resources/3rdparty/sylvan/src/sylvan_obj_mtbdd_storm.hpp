@@ -1,3 +1,5 @@
+
+
     /**
      * @brief Computes f - g
      */
@@ -9,6 +11,10 @@
     Mtbdd Divide(const Mtbdd &other) const;
     
 #if defined(SYLVAN_HAVE_CARL) || defined(STORM_HAVE_CARL)
+    /**
+     * @brief Creates a Mtbdd leaf representing the rational function value <value>
+     */
+    static Mtbdd stormRationalFunctionTerminal(storm::RationalFunction const& value);
 
     Bdd EqualsRF(const Mtbdd& other) const;
     Bdd LessRF(const Mtbdd& other) const;

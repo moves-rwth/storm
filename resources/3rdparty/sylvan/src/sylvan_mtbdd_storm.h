@@ -1,5 +1,3 @@
-void mtbdd_getsha(MTBDD mtbdd, char *target); // target must be at least 65 bytes...
-
 /**
  * Binary operation Divide (for MTBDDs of same type)
  * Only for MTBDDs where all leaves are Integer or Double.
@@ -120,7 +118,6 @@ int mtbdd_isnonzero(MTBDD);
 #define mtbdd_regular(dd) (dd & ~mtbdd_complement)
 
 #define GETNODE_BDD(bdd) ((bddnode_t)llmsset_index_to_ptr(nodes, bdd&0x000000ffffffffff))
-#define mtbdd_set_next(set) (mtbdd_gethigh(set))
 #define mtbdd_set_isempty(set) (set == mtbdd_true)
 
 /* Create a MTBDD representing just <var> or the negation of <var> */

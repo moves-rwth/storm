@@ -45,7 +45,7 @@ namespace storm {
             virtual void complement() override;
 
             vector_type const& getTruthValuesVector() const;
-            map_type const& getTruthValuesVectorMap() const;
+            map_type const& getTruthValuesMap() const;
             
             
             virtual bool existsTrue() const override;

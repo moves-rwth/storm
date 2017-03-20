@@ -48,8 +48,9 @@ namespace storm {
                 uint_fast64_t powerOfTwo = findLargestPowerOfTwoFitting(totalNodesToStore);
                 
                 sylvan::Sylvan::initPackage(1ull << std::max(16ull, powerOfTwo > 24 ? powerOfTwo - 8 : 0ull), 1ull << (powerOfTwo - 1), 1ull << std::max(16ull, powerOfTwo > 24 ? powerOfTwo - 12 : 0ull), 1ull << (powerOfTwo - 1));
-                sylvan::Sylvan::initBdd(1);
+                sylvan::Sylvan::initBdd();
                 sylvan::Sylvan::initMtbdd();
+                sylvan::Sylvan::initCustomMtbdd();
             }
             ++numberOfInstances;
         }

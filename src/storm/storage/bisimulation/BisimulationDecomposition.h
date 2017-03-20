@@ -135,7 +135,6 @@ namespace storm {
                 bool buildQuotient;
                 
             private:
-                
                 boost::optional<OptimizationDirection> optimalityType;
 
                 /// A flag that indicates whether or not the state-rewards of the model are to be respected (and should

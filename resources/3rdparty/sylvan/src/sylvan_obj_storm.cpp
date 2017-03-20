@@ -1,3 +1,13 @@
+#include "storm_function_wrapper.h"
+#include "sylvan_storm_rational_function.h"
+
+void
+Sylvan::initCustomMtbdd()
+{
+    sylvan_init_mt();
+    sylvan_storm_rational_function_init();
+}
+
 Bdd
 Bdd::ExistAbstractRepresentative(const BddSet& cube) const {
 	LACE_ME;
@@ -17,6 +27,13 @@ Bdd::toInt64Mtbdd() const {
 }
 
 #if defined(SYLVAN_HAVE_CARL) || defined(STORM_HAVE_CARL)
+Mtbdd
+Mtbdd::stormRationalFunctionTerminal(storm::RationalFunction const& value)
+{
+    storm_rational_function_ptr ptr = (storm_rational_function_ptr)(&value);
+    return mtbdd_storm_rational_function(ptr);
+}
+
 Mtbdd
 Bdd::toStormRationalFunctionMtbdd() const {
     LACE_ME;
@@ -279,7 +296,7 @@ Mtbdd::Maximum() const {
 
 void
 Mtbdd::PrintDot(FILE *out) const {
-    mtbdd_fprintdot(out, mtbdd, NULL);
+    mtbdd_fprintdot(out, mtbdd);
 }
 
 std::string

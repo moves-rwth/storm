@@ -23,7 +23,7 @@ TASK_IMPL_3(BDD, sylvan_existsRepresentative, BDD, a, BDD, variables, BDDVAR, pr
 				}
 				sylvan_ref(res);
 
-				BDD res1 = sylvan_ite(sylvan_ithvar(bddnode_getvariable(BDD_GETNODE(variables))), sylvan_false, res);
+				BDD res1 = sylvan_ite(sylvan_ithvar(bddnode_getvariable(MTBDD_GETNODE(variables))), sylvan_false, res);
 				if (res1 == sylvan_invalid) {
 					sylvan_deref(res);
 					return sylvan_invalid;
@@ -39,10 +39,10 @@ TASK_IMPL_3(BDD, sylvan_existsRepresentative, BDD, a, BDD, variables, BDDVAR, pr
 		return a;
 	}
 	/* From now on, f and cube are non-constant. */
-	bddnode_t na = BDD_GETNODE(a);
+	bddnode_t na = MTBDD_GETNODE(a);
     BDDVAR level = bddnode_getvariable(na);
 
-    bddnode_t nv = BDD_GETNODE(variables);
+    bddnode_t nv = MTBDD_GETNODE(variables);
     BDDVAR vv = bddnode_getvariable(nv);
 
 	//printf("a level %i and cube level %i\n", level, vv);

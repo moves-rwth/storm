@@ -104,7 +104,7 @@ namespace storm {
                 matrix = matrix.swapVariables(columnHelperMetaVariablePairs);
                 
                 ++iterations;
-                std::cout << "iteration: " << iterations << std::endl;
+                STORM_LOG_TRACE("Completed iteration " << iterations << " of elimination process.");
             }
             
             STORM_LOG_DEBUG("Elimination completed in " << iterations << " iterations.");

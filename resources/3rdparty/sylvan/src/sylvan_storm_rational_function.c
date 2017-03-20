@@ -10,6 +10,8 @@
 
 #include <sylvan.h>
 #include <sylvan_common.h>
+#include <sylvan_cache.h>
+#include <sylvan_int.h>
 #include <sylvan_mtbdd_int.h>
 #include <sylvan_storm_rational_function.h>
 
@@ -26,6 +28,8 @@ int depth = 0;
 #define LOG_I(funcName)
 #define LOG_O(funcName)
 #endif
+
+uint32_t srf_type;
 
 /**
  * helper function for hash
@@ -115,11 +119,13 @@ sylvan_storm_rational_function_destroy(uint64_t val)
 	LOG_O("i-destroy")
 }
 
-static uint32_t sylvan_storm_rational_function_type;
+static char*
+sylvan_storm_rational_function_to_str(int comp, uint64_t val, char *buf, size_t buflen)
+{
+    return storm_rational_function_to_str((storm_rational_function_ptr)(size_t)val, *buf, buflen);
+    (void)comp;
+}
 
-static uint64_t CACHE_MTBDD_AND_EXISTS_RF;
-static uint64_t CACHE_MTBDD_MINIMUM_RF;
-static uint64_t CACHE_MTBDD_MAXIMUM_RF;
 
 /**
  * Initialize storm::RationalFunction custom leaves
@@ -127,21 +133,19 @@ static uint64_t CACHE_MTBDD_MAXIMUM_RF;
 void
 sylvan_storm_rational_function_init()
 {
-    /* Register custom leaf 3 */
-    sylvan_storm_rational_function_type = mtbdd_register_custom_leaf(sylvan_storm_rational_function_hash, sylvan_storm_rational_function_equals, sylvan_storm_rational_function_create, sylvan_storm_rational_function_destroy);
-	
-	if (SYLVAN_STORM_RATIONAL_FUNCTION_TYPE_ID != sylvan_storm_rational_function_type) {
-		printf("ERROR - ERROR - ERROR\nThe Sylvan Type ID is NOT correct.\nIt was assumed to be %u, but it is actually %u!\nYou NEED to fix this by changing the macro \"SYLVAN_STORM_RATIONAL_FUNCTION_TYPE_ID\" and recompiling Storm!\n\n", SYLVAN_STORM_RATIONAL_FUNCTION_TYPE_ID, sylvan_storm_rational_function_type);
-		assert(0);
-	}	
-	
-	CACHE_MTBDD_AND_EXISTS_RF = cache_next_opid();
-    CACHE_MTBDD_MINIMUM_RF = cache_next_opid();
-    CACHE_MTBDD_MAXIMUM_RF = cache_next_opid();
+    /* Register custom leaf */
+    srf_type = sylvan_mt_create_type();
+    sylvan_mt_set_hash(srf_type, sylvan_storm_rational_function_hash);
+    sylvan_mt_set_equals(srf_type, sylvan_storm_rational_function_equals);
+    sylvan_mt_set_create(srf_type, sylvan_storm_rational_function_create);
+    sylvan_mt_set_destroy(srf_type, sylvan_storm_rational_function_destroy);
+    sylvan_mt_set_to_str(srf_type, sylvan_storm_rational_function_to_str);
+    // sylvan_mt_set_write_binary(srf_type, gmp_write_binary);
+    // sylvan_mt_set_read_binary(srf_type, gmp_read_binary);
 }
 
 uint32_t sylvan_storm_rational_function_get_type() {
-	return sylvan_storm_rational_function_type;
+    return srf_type;
 }
 
 /**
@@ -159,7 +163,7 @@ mtbdd_storm_rational_function(storm_rational_function_ptr val)
 	printf(")\n");
 #endif
 	
-	MTBDD result = mtbdd_makeleaf(sylvan_storm_rational_function_type, terminalValue);
+	MTBDD result = mtbdd_makeleaf(srf_type, terminalValue);
 	
 	LOG_O("i-mtbdd_")
 	return result;
@@ -685,7 +689,7 @@ TASK_IMPL_2(MTBDD, sylvan_storm_rational_function_op_replace_leaves, MTBDD, dd, 
 
     /* Compute result for leaf */
     if (mtbdd_isleaf(dd)) {
-		if (mtbdd_gettype(dd) != sylvan_storm_rational_function_type) {
+		if (mtbdd_gettype(dd) != srf_type) {
 			assert(0);
 		}
 		
@@ -706,7 +710,7 @@ TASK_IMPL_2(MTBDD, sylvan_storm_rational_function_op_to_double, MTBDD, dd, size_
 
     /* Compute result for leaf */
     if (mtbdd_isleaf(dd)) {
-		if (mtbdd_gettype(dd) != sylvan_storm_rational_function_type) {
+		if (mtbdd_gettype(dd) != srf_type) {
 			printf("Can not convert to double, this has type %u!\n", mtbdd_gettype(dd));
 			assert(0);
 		}
