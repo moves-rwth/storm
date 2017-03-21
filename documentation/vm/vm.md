@@ -20,8 +20,8 @@ The VM is periodically updated to include bug fixes, new versions, and so on. Wh
 
 #### Update on March 21, 2017
 
-- added scripts to re-run all benchmarks from paper submission "A Storm is Coming: A Modern Probabilistic Model Checker."
-- added description to README that details how to use the scripts
+- added scripts to re-run all benchmarks from paper submission "A Storm is Coming: A Modern Probabilistic Model Checker"
+- added description to README how to use the scripts
 
 #### Update on Feb 1, 2017
 
