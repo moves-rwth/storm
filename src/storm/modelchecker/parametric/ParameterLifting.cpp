@@ -222,14 +222,15 @@ namespace storm {
                 
                 std::stringstream stream;
                 
-                uint_fast64_t const size = 64;
+                uint_fast64_t const sizeX = 128;
+                uint_fast64_t const sizeY = 64;
                 
                 stream << "Parameter lifting result (visualization):" << std::endl;
                 stream << " \t x-axis: " << x << "  \t y-axis: " << y << "  \t S=safe, [ ]=unsafe, -=ambiguous " << std::endl;
-                for (uint_fast64_t i = 0; i < 2*size+2; ++i) stream << "#"; stream << std::endl;
+                for (uint_fast64_t i = 0; i < sizeX+2; ++i) stream << "#"; stream << std::endl;
                 
-                ValueType deltaX = (parameterSpace.getUpperBoundary(x) - parameterSpace.getLowerBoundary(x)) / storm::utility::convertNumber<ValueType>(size);
-                ValueType deltaY = (parameterSpace.getUpperBoundary(y) - parameterSpace.getLowerBoundary(y)) / storm::utility::convertNumber<ValueType>(size);
+                ValueType deltaX = (parameterSpace.getUpperBoundary(x) - parameterSpace.getLowerBoundary(x)) / storm::utility::convertNumber<ValueType>(sizeX);
+                ValueType deltaY = (parameterSpace.getUpperBoundary(y) - parameterSpace.getLowerBoundary(y)) / storm::utility::convertNumber<ValueType>(sizeY);
                 ValueType printedRegionArea = deltaX * deltaY;
                 for (ValueType yUpper = parameterSpace.getUpperBoundary(y); yUpper != parameterSpace.getLowerBoundary(y); yUpper -= deltaY) {
                     ValueType yLower = yUpper - deltaY;
@@ -257,16 +258,16 @@ namespace storm {
                             }
                         }
                         if (currRegionComplete && currRegionSafe && !currRegionUnSafe) {
-                            stream << "SS";
+                            stream << "S";
                         } else if (currRegionComplete && currRegionUnSafe && !currRegionSafe) {
-                            stream << "  ";
+                            stream << " ";
                         } else {
-                            stream << "--";
+                            stream << "-";
                         }
                     }
                     stream << "#" << std::endl;
                 }
-                for (uint_fast64_t i = 0; i < 2*size+2; ++i) stream << "#"; stream << std::endl;
+                for (uint_fast64_t i = 0; i < sizeX+2; ++i) stream << "#"; stream << std::endl;
                 return stream.str();
             }
         

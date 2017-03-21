@@ -24,9 +24,9 @@ namespace storm {
                 this->addOption(storm::settings::OptionBuilder(moduleName, encodeSmt2StrategyOptionName, true, "Set the smt2 encoding strategy.")
                                 .addArgument(storm::settings::ArgumentBuilder::createStringArgument("strategy", "the used strategy").build()).build());
                 this->addOption(storm::settings::OptionBuilder(moduleName, exportSmt2DestinationPathOptionName, true, "A path to a file where the result should be saved.")
-                                .addArgument(storm::settings::ArgumentBuilder::createStringArgument("path", "the location.").build()).build());
+                                .addArgument(storm::settings::ArgumentBuilder::createStringArgument("path", "the location.").addValidatorString(ArgumentValidatorFactory::createWritableFileValidator()).build()).build());
                 this->addOption(storm::settings::OptionBuilder(moduleName, exportResultDestinationPathOptionName, true, "A path to a file where the smt2 encoding should be saved.")
-                                .addArgument(storm::settings::ArgumentBuilder::createStringArgument("path", "the location.").build()).build());
+                                .addArgument(storm::settings::ArgumentBuilder::createStringArgument("path", "the location.").addValidatorString(ArgumentValidatorFactory::createWritableFileValidator()).build()).build());
                 this->addOption(storm::settings::OptionBuilder(moduleName, parameterSpaceOptionName, true, "Sets the considered parameter-space (i.e., the initial region) for parameter lifting.")
                                 .addArgument(storm::settings::ArgumentBuilder::createStringArgument("region", "The parameter-space (given in format a<=x<=b,c<=y<=d).").build()).build());
                 this->addOption(storm::settings::OptionBuilder(moduleName, refinementThresholdOptionName, true, "Parameter space refinement converges if the fraction of unknown area falls below this threshold.")
