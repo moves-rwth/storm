@@ -1,6 +1,6 @@
 #! /bin/bash
 
-# v2017-04-16
+# v2017-04-21
 # This is a hacky build script for building Storm on Debian Jessie.
 # As both the GCC compiler and other dependencies are not current enough,
 # we build our own versions inside a user directory.
@@ -31,6 +31,13 @@
 #  of the git repository
 #
 #
+# export DONT_CLEAN_DEPENDENCIES=1
+#  Optional. If this environment variable is set, don't clean the build
+#  artefacts of the dependencies after they have been installed to the $STORM_ROOT
+#  directory.
+#  The Carl library and Storm will not be cleaned, as you might want to change things there.
+#
+#
 #
 # - IMPORTANT ---------------------------------------------------------------------------
 # Before running the script, you should ensure that the folloing packages are installed,
@@ -43,7 +50,7 @@
 # The dependencies will be built in the src subdirectory of $STORM_ROOT.
 #
 # Run with 
-#   storm-build-debian-jessie.sh
+#   storm-build-debian-jessie.sh run
 #
 # Once a particular dependency has been built, a file of the form .have-foo will be created.
 # If such a file exists, on subsequent runs this dependency will not be rebuilt. This might
@@ -66,7 +73,44 @@
 # - zlib1g-dev libbz2-dev: Compression libraries for boost
 # - libpython-dev: Python for boost
 # - libhwloc-dev: Dependency of storm
-#
+
+
+if [ -z "$1" ]; then
+    cat <<HERE
+-----------------------------------------------------------------------------------
+Build script for Storm and dependencies on Debian Jessie.
+-----------------------------------------------------------------------------------
+
+First, ensure that the required dependencies available in the Debian package
+system are installed, e.g., using
+
+$ sudo apt update
+$ sudo apt install build-essential libmpfr-dev libgmp-dev libmpc-dev m4 pkg-config git libcurl4-openssl-dev zlib1g-dev libbz2-dev automake libhwloc-dev libpython-dev
+
+Then, run the build script with the 'run' parameter, i.e., with
+
+$ ./storm-build-debian-jessie.sh run
+
+By default, this will install Storm and various dependencies in the ${HOME}/storm-root directory.
+You can change this by specifying the STORM_ROOT environment variable before running this script:
+
+$ export STORM_ROOT=/path/to/storm-root
+
+To use multiple CPUs for parallel building, you can specify the number of CPUs via the
+PROCS environment variable before running the script, e.g.,
+
+$ export PROCS=4
+
+For further documentation and configuration options, have a look at the beginning of the script file.
+
+-----------------------------------------------------------------------------------
+HERE
+    exit 1
+elif [ "$1" != "run" ]; then
+    echo "Unknown argument '$1', run script without arguments for a brief description."
+    exit 1
+fi
+
 
 PROCS=${PROCS-1}
 echo "Using $PROCS CPUs for parallel compilation"
@@ -74,19 +118,28 @@ echo "Using $PROCS CPUs for parallel compilation"
 set -x    # We want to see what commands are executed
 set -e    # We want the script to abort, if any command fails
 
+# regularize DONT_CLEAN_DEPENDENCIES
+if [ ! -z "$DONT_CLEAN_DEPENDENCIES" ]; then
+    DONT_CLEAN_DEPENDENCIES=1;
+else
+    DONT_CLEAN_DEPENDENCIES='';
+fi
+
 STORM_ROOT=${STORM_ROOT:-$HOME/storm-root}
 
-#
+####################################################################
 # The following environment variables provide configuration
 # for the build steps. If you want to manually perform
 # the build steps, please set these variables beforehand
 # as well.
-#
+####################################################################
 export STORM_ROOT
 export PATH=$STORM_ROOT/bin:"$PATH"
 export PKG_CONFIG_PATH=$STORM_ROOT/lib/pkgconfig
 
 echo "Using STORM_ROOT = $STORM_ROOT"
+
+
 
 mkdir -p $STORM_ROOT
 cd $STORM_ROOT
@@ -111,7 +164,9 @@ tar xzf cmake-3.7.2.tar.gz   &&
 cd cmake-3.7.2               &&
 ./configure --prefix=$STORM_ROOT --system-curl &&
 make -j${PROCS} install      &&
-touch $STORM_ROOT/.have-cmake
+cd $STORM_ROOT               &&
+touch $STORM_ROOT/.have-cmake && 
+([ -n "$DONT_CLEAN_DEPENDENCIES" ] || rm -rf src/cmake-3.7.2 src/cmake-3.7.2.tar.gz)
 ) || exit 1
 
 
@@ -131,7 +186,10 @@ cd obj-gcc-6.3.0             &&
 `pwd`/../gcc-6.3.0/configure --prefix=$STORM_ROOT --enable-lto --enable-languages=c,c++ --disable-bootstrap --disable-multilib  &&
 make -j${PROCS}              &&
 make install                 &&
-touch $STORM_ROOT/.have-gcc
+ln -s $STORM_ROOT/bin/gcc $STORM_ROOT/bin/cc &&     # GCC seems to not install cc, so we add a link...
+cd $STORM_ROOT               &&
+touch $STORM_ROOT/.have-gcc  &&
+([ -n "$DONT_CLEAN_DEPENDENCIES" ] || rm -rf src/gcc-6.3.0.tar.bz2 src/obj-gcc-6.3.0 src/gcc-6.3.0)
 ) || exit 1
 
 
@@ -148,7 +206,9 @@ tar xf gmp-6.1.2.tar.xz      &&
 cd gmp-6.1.2                 &&
 ./configure --prefix=$STORM_ROOT --enable-cxx  &&
 make -j${PROCS} install      &&
-touch $STORM_ROOT/.have-gmp
+cd $STORM_ROOT               &&
+touch $STORM_ROOT/.have-gmp  &&
+([ -n "$DONT_CLEAN_DEPENDENCIES" ] || rm -rf src/gmp-6.1.2.tar.xz src/gmp-6.1.2)
 ) || exit 1
 
 
@@ -165,7 +225,9 @@ tar xjf cln-1.3.4.tar.bz2    &&
 cd cln-1.3.4                 &&
 ./configure --prefix=$STORM_ROOT  &&
 make -j${PROCS} install      &&
-touch $STORM_ROOT/.have-cln
+cd $STORM_ROOT               &&
+touch $STORM_ROOT/.have-cln  &&
+([ -n "$DONT_CLEAN_DEPENDENCIES" ] || rm -rf src/cln-1.3.4.tar.bz2 src/cln-1.3.4)
 ) || exit 1
 
 
@@ -182,7 +244,9 @@ tar xjf ginac-1.7.2.tar.bz2   &&
 cd ginac-1.7.2                && 
 ./configure --prefix=$STORM_ROOT  &&
 make -j${PROCS} install     &&
-touch $STORM_ROOT/.have-ginac
+cd $STORM_ROOT               &&
+touch $STORM_ROOT/.have-ginac &&
+([ -n "$DONT_CLEAN_DEPENDENCIES" ] || rm -rf src/ginac-1.7.2.tar.bz2 src/ginac-1.7.2)
 ) || exit 1
 
 
@@ -199,7 +263,9 @@ tar xzf glpk-4.61.tar.gz   &&
 cd glpk-4.61               &&
 ./configure --prefix=$STORM_ROOT --with-gmp  &&
 make -j${PROCS} install    &&
-touch $STORM_ROOT/.have-glpk
+cd $STORM_ROOT               &&
+touch $STORM_ROOT/.have-glpk &&
+([ -n "$DONT_CLEAN_DEPENDENCIES" ] || rm -rf src/glpk-4.61.tar.gz src/glpk-4.61)
 ) || exit 1
 
 
@@ -216,7 +282,9 @@ tar xzf xerces-c-3.1.4.tar.gz  &&
 cd xerces-c-3.1.4              &&
 ./configure --prefix=$STORM_ROOT  &&
 make -j${PROCS} install     &&
-touch $STORM_ROOT/.have-xerces
+cd $STORM_ROOT               &&
+touch $STORM_ROOT/.have-xerces &&
+([ -n "$DONT_CLEAN_DEPENDENCIES" ] || rm -rf src/xerces-c-3.1.4.tar.gz src/xerces-c-3.1.4)
 ) || exit 1
 
 #
@@ -235,7 +303,9 @@ cd z3-z3-4.5.0              &&
 LANG=C ./configure --prefix=$STORM_ROOT  &&
 cd build                   &&
 make -j${PROCS} install    &&
-touch $STORM_ROOT/.have-z3
+cd $STORM_ROOT               &&
+touch $STORM_ROOT/.have-z3 &&
+([ -n "$DONT_CLEAN_DEPENDENCIES" ] || rm -rf src/z3-4.5.0.tar.gz src/z3-z3-4.5.0)
 ) || exit 1
 
 
@@ -252,7 +322,9 @@ tar xjf boost_1_61_0.tar.bz2  &&
 cd boost_1_61_0               &&
 ./bootstrap.sh --prefix=$STORM_ROOT  &&
 ./b2 install -j${PROCS} --layout=tagged  &&
-touch $STORM_ROOT/.have-boost
+cd $STORM_ROOT               &&
+touch $STORM_ROOT/.have-boost &&
+([ -n "$DONT_CLEAN_DEPENDENCIES" ] || rm -rf src/boost_1_61_0.tar.bz2 src/boost_1_61_0)
 ) || exit 1
 
 
