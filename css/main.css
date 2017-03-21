@@ -25,3 +25,17 @@ body {
     padding-left: 10px;
 }
 
+.bg-front {
+  position: relative;
+  z-index: 1;
+}
+
+.bg-symbol {
+  position: absolute;
+  font-size: 220px;
+  opacity: 0.25;
+  top: 50%;
+  left: 80%;
+  transform: translate(-80%, -50%);
+  z-index: -1;
+}
