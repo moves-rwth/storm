@@ -18,13 +18,18 @@ When you have downloaded the OVA image, you can import it into, for example, [Vi
 
 The VM is periodically updated to include bug fixes, new versions, and so on. When the image was most recently updated and what changes were made to the VM can be taken from the following changelog.
 
+#### Update on March 21, 2017
+
+- added scripts to re-run all benchmarks from paper submission "A Storm is Coming: A Modern Probabilistic Model Checker."
+- added description to README that details how to use the scripts
+
 #### Update on Feb 1, 2017
 
 - updated to newest Storm version
 - added files containing all tool invocations used in [benchmarks]({{ site.github.url }}/benchmarks.html)
 - installed latest version of [IMCA](https://github.com/buschko/imca){:target="_blank"} and added its benchmark files
 
-#### Update on Jan 22, 2017
+#### Update on January 22, 2017
 
 - installed Storm
 - installed [PRISM v4.3.1](http://www.prismmodelchecker.org/download.php){:target="_blank"}
