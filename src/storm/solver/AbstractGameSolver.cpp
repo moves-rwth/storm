@@ -2,6 +2,7 @@
 
 #include "storm/settings/SettingsManager.h"
 #include "storm/settings/modules/NativeEquationSolverSettings.h"
+#include "storm/adapters/CarlAdapter.h"
 
 #include "storm/exceptions/InvalidSettingsException.h"
 
@@ -14,12 +15,12 @@ namespace storm {
 
             // Get appropriate settings.
             maximalNumberOfIterations = settings.getMaximalIterationCount();
-            precision = settings.getPrecision();
+            precision = storm::utility::convertNumber<ValueType>(settings.getPrecision());
             relative = settings.getConvergenceCriterion() == storm::settings::modules::NativeEquationSolverSettings::ConvergenceCriterion::Relative;
         }
 
         template <typename ValueType>
-        AbstractGameSolver<ValueType>::AbstractGameSolver(double precision, uint_fast64_t maximalNumberOfIterations, bool relative) : precision(precision), maximalNumberOfIterations(maximalNumberOfIterations), relative(relative) {
+        AbstractGameSolver<ValueType>::AbstractGameSolver(ValueType precision, uint_fast64_t maximalNumberOfIterations, bool relative) : precision(precision), maximalNumberOfIterations(maximalNumberOfIterations), relative(relative) {
             // Intentionally left empty.
         }
         
@@ -52,7 +53,7 @@ namespace storm {
 
         
         template <typename ValueType>
-        double AbstractGameSolver<ValueType>::getPrecision() const {
+        ValueType AbstractGameSolver<ValueType>::getPrecision() const {
             return precision;
         }
         
@@ -83,6 +84,7 @@ namespace storm {
         }
     
         template class AbstractGameSolver<double>;
+        template class AbstractGameSolver<storm::RationalNumber>;
         
     }
 }

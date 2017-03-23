@@ -20,7 +20,7 @@ namespace storm {
         }
 
         template <typename ValueType>
-        GameSolver<ValueType>::GameSolver(storm::storage::SparseMatrix<storm::storage::sparse::state_type> const& player1Matrix, storm::storage::SparseMatrix<ValueType> const& player2Matrix, double precision, uint_fast64_t maximalNumberOfIterations, bool relative) : AbstractGameSolver<ValueType>(precision, maximalNumberOfIterations, relative), player1Matrix(player1Matrix), player2Matrix(player2Matrix) {
+        GameSolver<ValueType>::GameSolver(storm::storage::SparseMatrix<storm::storage::sparse::state_type> const& player1Matrix, storm::storage::SparseMatrix<ValueType> const& player2Matrix, ValueType precision, uint_fast64_t maximalNumberOfIterations, bool relative) : AbstractGameSolver<ValueType>(precision, maximalNumberOfIterations, relative), player1Matrix(player1Matrix), player2Matrix(player2Matrix) {
             // Intentionally left empty.
         }
 
@@ -202,5 +202,6 @@ namespace storm {
         }
     
         template class GameSolver<double>;
+        template class GameSolver<storm::RationalNumber>;
     }
 }

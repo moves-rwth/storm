@@ -36,7 +36,7 @@ namespace storm {
              * @param maximalNumberOfIterations The maximal number of iterations.
              * @param relative Sets whether or not to detect convergence with a relative or absolute criterion.
              */
-            GameSolver(storm::storage::SparseMatrix<storm::storage::sparse::state_type> const& player1Matrix, storm::storage::SparseMatrix<ValueType> const& player2Matrix, double precision, uint_fast64_t maximalNumberOfIterations, bool relative);
+            GameSolver(storm::storage::SparseMatrix<storm::storage::sparse::state_type> const& player1Matrix, storm::storage::SparseMatrix<ValueType> const& player2Matrix, ValueType precision, uint_fast64_t maximalNumberOfIterations, bool relative);
 
             /*!
              * Solves the equation system defined by the game matrices. Note that the game matrices have to be given upon

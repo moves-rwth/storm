@@ -31,7 +31,7 @@ namespace storm {
              * @param maximalNumberOfIterations The maximal number of iterations to perform.
              * @param relative A flag indicating whether a relative or an absolute stopping criterion is to be used.
              */
-            AbstractGameSolver(double precision, uint_fast64_t maximalNumberOfIterations, bool relative);
+            AbstractGameSolver(ValueType precision, uint_fast64_t maximalNumberOfIterations, bool relative);
             
             /*!
              * Sets schedulers that might be considered by the solver as an initial guess
@@ -49,12 +49,12 @@ namespace storm {
             storm::storage::TotalScheduler const& getPlayer1Scheduler() const;
             storm::storage::TotalScheduler const& getPlayer2Scheduler() const;
             
-            double getPrecision() const;
+            ValueType getPrecision() const;
             bool getRelative() const;
 
         protected:
             // The precision to achieve.
-            double precision;
+            ValueType precision;
 
             // The maximal number of iterations to perform.
             uint_fast64_t maximalNumberOfIterations;

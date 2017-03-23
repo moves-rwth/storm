@@ -110,6 +110,7 @@ namespace storm {
             template class SymbolicGameSolverFactory<storm::dd::DdType::CUDD, double>;
             template class SymbolicGameSolverFactory<storm::dd::DdType::Sylvan, double>;
             template class GameSolverFactory<double>;
+            template class GameSolverFactory<storm::RationalNumber>;
         }
     }
 }
