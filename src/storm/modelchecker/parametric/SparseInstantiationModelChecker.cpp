@@ -36,6 +36,9 @@ namespace storm {
             
             template class SparseInstantiationModelChecker<storm::models::sparse::Dtmc<storm::RationalFunction>, double>;
             template class SparseInstantiationModelChecker<storm::models::sparse::Mdp<storm::RationalFunction>, double>;
+            
+            template class SparseInstantiationModelChecker<storm::models::sparse::Dtmc<storm::RationalFunction>, storm::RationalNumber>;
+            template class SparseInstantiationModelChecker<storm::models::sparse::Mdp<storm::RationalFunction>, storm::RationalNumber>;
 
         }
     }

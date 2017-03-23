@@ -24,6 +24,10 @@ namespace storm {
                 
                 virtual bool canHandle(CheckTask<storm::logic::Formula, typename SparseModelType::ValueType> const& checkTask) const override;
                 
+                boost::optional<storm::storage::TotalScheduler>& getCurrentMinScheduler();
+                boost::optional<storm::storage::TotalScheduler>& getCurrentMaxScheduler();
+                boost::optional<storm::storage::TotalScheduler>& getCurrentPlayer1Scheduler();
+                
             protected:
                 
                 virtual void specifyBoundedUntilFormula(CheckTask<storm::logic::BoundedUntilFormula, ConstantType> const& checkTask) override;

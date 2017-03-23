@@ -1,0 +1,61 @@
+#include "storm/modelchecker/parametric/SparseDtmcParameterLifting.h"
+
+#include "storm/adapters/CarlAdapter.h"
+
+#include "storm/modelchecker/parametric/SparseDtmcParameterLiftingModelChecker.h"
+#include "storm/modelchecker/parametric/SparseDtmcInstantiationModelChecker.h"
+#include "storm/transformer/SparseParametricDtmcSimplifier.h"
+#include "storm/models/sparse/StandardRewardModel.h"
+#include "storm/models/sparse/Dtmc.h"
+#include "SparseMdpParameterLifting.h"
+
+namespace storm {
+    namespace modelchecker {
+        namespace parametric {
+
+            template <typename SparseModelType, typename ConstantType>
+            SparseDtmcParameterLifting<SparseModelType, ConstantType>::SparseDtmcParameterLifting(SparseModelType const& parametricModel) : ParameterLifting<SparseModelType, ConstantType>(parametricModel) {
+                // Intentionally left empty
+            }
+    
+            template <typename SparseModelType, typename ConstantType>
+            void SparseDtmcParameterLifting<SparseModelType, ConstantType>::simplifyParametricModel(CheckTask<storm::logic::Formula, typename SparseModelType::ValueType> const& checkTask) {
+                storm::transformer::SparseParametricDtmcSimplifier<SparseModelType> simplifier(this->parametricModel);
+                if(simplifier.simplify(checkTask.getFormula())) {
+                    this->simplifiedModel = simplifier.getSimplifiedModel();
+                    this->currentFormula = simplifier.getSimplifiedFormula();
+                } else {
+                    this->simplifiedModel = nullptr;
+                    this->currentFormula = checkTask.getFormula().asSharedPointer();
+                }
+            }
+            
+            template <typename SparseModelType, typename ConstantType>
+            void SparseDtmcParameterLifting<SparseModelType, ConstantType>::initializeUnderlyingCheckers() {
+                if (this->settings.applyExactValidation) {
+                    STORM_LOG_WARN_COND((std::is_same<ConstantType, typename ParameterLifting<SparseModelType, ConstantType>::CoefficientType>::value) , "Exact validation is not necessarry if the original computation is already exact");
+                    this->exactParameterLiftingChecker = std::make_unique<SparseDtmcParameterLiftingModelChecker<SparseModelType, typename ParameterLifting<SparseModelType, ConstantType>::CoefficientType>>(this->getConsideredParametricModel());
+                }
+                this->parameterLiftingChecker = std::make_unique<SparseDtmcParameterLiftingModelChecker<SparseModelType, ConstantType>>(this->getConsideredParametricModel());
+                this->instantiationChecker = std::make_unique<SparseDtmcInstantiationModelChecker<SparseModelType, ConstantType>>(this->getConsideredParametricModel());
+            }
+    
+            template <typename SparseModelType, typename ConstantType>
+            void SparseDtmcParameterLifting<SparseModelType, ConstantType>::applyHintsToExactChecker() {
+                auto dtmcPLChecker = dynamic_cast<storm::modelchecker::parametric::SparseDtmcParameterLiftingModelChecker<SparseModelType, ConstantType>*>(this->parameterLiftingChecker.get());
+                STORM_LOG_ASSERT(dtmcPLChecker, "Underlying Parameter lifting checker has unexpected type");
+                auto exactDtmcPLChecker = dynamic_cast<storm::modelchecker::parametric::SparseDtmcParameterLiftingModelChecker<SparseModelType, typename ParameterLifting<SparseModelType, ConstantType>::CoefficientType>*>(this->exactParameterLiftingChecker.get());
+                STORM_LOG_ASSERT(exactDtmcPLChecker, "Underlying exact parameter lifting checker has unexpected type");
+                exactDtmcPLChecker->getCurrentMaxScheduler() = dtmcPLChecker->getCurrentMaxScheduler();
+                exactDtmcPLChecker->getCurrentMinScheduler() = dtmcPLChecker->getCurrentMinScheduler();
+            }
+            
+       
+#ifdef STORM_HAVE_CARL
+            template class SparseDtmcParameterLifting<storm::models::sparse::Dtmc<storm::RationalFunction>, double>;
+            template class SparseDtmcParameterLifting<storm::models::sparse::Dtmc<storm::RationalFunction>, storm::RationalNumber>;
+#endif
+        } // namespace parametric
+    } //namespace modelchecker
+} //namespace storm
+

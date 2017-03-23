@@ -23,6 +23,9 @@ namespace storm {
                 SparseDtmcParameterLiftingModelChecker(SparseModelType const& parametricModel, std::unique_ptr<storm::solver::MinMaxLinearEquationSolverFactory<ConstantType>>&& solverFactory);
                 
                 virtual bool canHandle(CheckTask<storm::logic::Formula, typename SparseModelType::ValueType> const& checkTask) const override;
+                
+                boost::optional<storm::storage::TotalScheduler>& getCurrentMinScheduler();
+                boost::optional<storm::storage::TotalScheduler>& getCurrentMaxScheduler();
 
             protected:
                 

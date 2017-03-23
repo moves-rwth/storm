@@ -154,6 +154,12 @@ namespace storm {
             template class ModelInstantiator<storm::models::sparse::Ctmc<storm::RationalFunction>, storm::models::sparse::Ctmc<double>>;
             template class ModelInstantiator<storm::models::sparse::MarkovAutomaton<storm::RationalFunction>, storm::models::sparse::MarkovAutomaton<double>>;
             template class ModelInstantiator<storm::models::sparse::StochasticTwoPlayerGame<storm::RationalFunction>, storm::models::sparse::StochasticTwoPlayerGame<double>>;
+        
+            template class ModelInstantiator<storm::models::sparse::Dtmc<storm::RationalFunction>, storm::models::sparse::Dtmc<storm::RationalNumber>>;
+            template class ModelInstantiator<storm::models::sparse::Mdp<storm::RationalFunction>, storm::models::sparse::Mdp<storm::RationalNumber>>;
+            template class ModelInstantiator<storm::models::sparse::Ctmc<storm::RationalFunction>, storm::models::sparse::Ctmc<storm::RationalNumber>>;
+            template class ModelInstantiator<storm::models::sparse::MarkovAutomaton<storm::RationalFunction>, storm::models::sparse::MarkovAutomaton<storm::RationalNumber>>;
+            template class ModelInstantiator<storm::models::sparse::StochasticTwoPlayerGame<storm::RationalFunction>, storm::models::sparse::StochasticTwoPlayerGame<storm::RationalNumber>>;
 #endif
     } //namespace utility
 } //namespace storm

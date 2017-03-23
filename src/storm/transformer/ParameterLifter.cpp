@@ -275,5 +275,6 @@ namespace storm {
         }
         
         template class ParameterLifter<storm::RationalFunction, double>;
+        template class ParameterLifter<storm::RationalFunction, storm::RationalNumber>;
     }
 }

@@ -414,6 +414,12 @@ namespace storm {
         RationalFunction convertNumber(RationalNumber const& number) {
             return RationalFunction(number);
         }
+        
+        template<>
+        RationalNumber convertNumber(RationalFunction const& number) {
+            STORM_LOG_ASSERT(isConstant(number), "Tried to convert a non-constant number to a constant type.");
+            return number.constantPart();
+        }
 
         template<>
         uint_fast64_t convertNumber(RationalFunction const& func) {

@@ -55,6 +55,11 @@ namespace storm {
 				 */
 				double getRefinementThreshold() const;
 				
+				/*!
+				 * Retrieves whether exact validation should be performed
+				 */
+				bool isExactValidationSet() const;
+				
 				/**
 				 * Retrieves whether the encoding of the transition system should be exported to a file. 
 				 * @return True iff the smt file should be encoded.
@@ -88,6 +93,7 @@ namespace storm {
 				const static std::string exportResultDestinationPathOptionName;
 				const static std::string parameterSpaceOptionName;
 				const static std::string refinementThresholdOptionName;
+				const static std::string exactValidationOptionName;
                 const static std::string derivativesOptionName;
             };
             

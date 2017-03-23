@@ -51,7 +51,6 @@ namespace storm {
                 storm::utility::vector::selectVectorValues<ValueType>(tmpResult, selectedRows, b);
                 
                 // Solve the resulting equation system.
-                // Note that the linEqSolver might consider a slightly different interpretation of "equalModuloPrecision". Hence, we iteratively increase its precision.
                 auto submatrixSolver = storm::solver::GeneralLinearEquationSolverFactory<ValueType>().create(std::move(inducedMatrix));
                 submatrixSolver->setCachingEnabled(true);
                 if (this->lowerBound) { submatrixSolver->setLowerBound(this->lowerBound.get()); }

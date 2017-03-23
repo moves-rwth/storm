@@ -1,4 +1,4 @@
-#include "SparseMdpParameterLiftingModelChecker.h"
+#include "storm/modelchecker/parametric/SparseMdpParameterLiftingModelChecker.h"
 
 #include "storm/adapters/CarlAdapter.h"
 #include "storm/modelchecker/propositional/SparsePropositionalModelChecker.h"
@@ -228,7 +228,7 @@ namespace storm {
                         termCond = std::make_unique<storm::solver::TerminateIfFilteredExtremumBelowThreshold<ConstantType>> (relevantStatesInSubsystem, this->currentCheckTask->getBoundThreshold(), true, false);
                     } else {
                         // Terminate if the value for ALL relevant states is already above the threshold
-                        termCond = std::make_unique<storm::solver::TerminateIfFilteredExtremumExceedsThreshold<ConstantType>> (relevantStatesInSubsystem, this->currentCheckTask->getBoundThreshold(), true, true);
+                        termCond = std::make_unique<storm::solver::TerminateIfFilteredExtremumExceedsThreshold<ConstantType>> (relevantStatesInSubsystem, true, this->currentCheckTask->getBoundThreshold(), true);
                     }
                     solver->setTerminationCondition(std::move(termCond));
                 }
@@ -292,8 +292,24 @@ namespace storm {
                 upperResultBound = boost::none;
                 applyPreviousResultAsHint = false;
             }
+            
+            template <typename SparseModelType, typename ConstantType>
+            boost::optional<storm::storage::TotalScheduler>& SparseMdpParameterLiftingModelChecker<SparseModelType, ConstantType>::getCurrentMinScheduler() {
+                return minSched;
+            }
+                    
+            template <typename SparseModelType, typename ConstantType>
+            boost::optional<storm::storage::TotalScheduler>& SparseMdpParameterLiftingModelChecker<SparseModelType, ConstantType>::getCurrentMaxScheduler() {
+                return maxSched;
+            }
+            
+            template <typename SparseModelType, typename ConstantType>
+            boost::optional<storm::storage::TotalScheduler>& SparseMdpParameterLiftingModelChecker<SparseModelType, ConstantType>::getCurrentPlayer1Scheduler() {
+                return player1Sched;
+            }
     
             template class SparseMdpParameterLiftingModelChecker<storm::models::sparse::Mdp<storm::RationalFunction>, double>;
+            template class SparseMdpParameterLiftingModelChecker<storm::models::sparse::Mdp<storm::RationalFunction>, storm::RationalNumber>;
         }
     }
 }

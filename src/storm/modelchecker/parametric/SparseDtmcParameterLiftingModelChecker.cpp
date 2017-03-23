@@ -1,4 +1,4 @@
-#include "SparseDtmcParameterLiftingModelChecker.h"
+#include "storm/modelchecker/parametric/SparseDtmcParameterLiftingModelChecker.h"
 
 #include "storm/adapters/CarlAdapter.h"
 #include "storm/modelchecker/propositional/SparsePropositionalModelChecker.h"
@@ -6,6 +6,7 @@
 #include "storm/modelchecker/results/ExplicitQuantitativeCheckResult.h"
 #include "storm/models/sparse/Dtmc.h"
 #include "storm/models/sparse/StandardRewardModel.h"
+#include "storm/solver/StandardMinMaxLinearEquationSolver.h"
 #include "storm/utility/vector.h"
 #include "storm/utility/graph.h"
 
@@ -175,6 +176,13 @@ namespace storm {
                 // Set up the solver
                 auto solver = solverFactory->create(parameterLifter->getMatrix());
                 solver->setTrackScheduler(true);
+                if (std::is_same<ConstantType, storm::RationalNumber>::value && dynamic_cast<storm::solver::StandardMinMaxLinearEquationSolver<ConstantType>*>(solver.get())) {
+                    STORM_LOG_INFO("Parameter Lifting: Setting solution method for exact MinMaxSolver to policy iteration");
+                    auto* standardSolver = dynamic_cast<storm::solver::StandardMinMaxLinearEquationSolver<ConstantType>*>(solver.get());
+                    auto settings = standardSolver->getSettings();
+                    settings.setSolutionMethod(storm::solver::StandardMinMaxLinearEquationSolverSettings<ConstantType>::SolutionMethod::PolicyIteration);
+                    standardSolver->setSettings(settings);
+                }
                 if(lowerResultBound) solver->setLowerBound(lowerResultBound.get());
                 if(upperResultBound) solver->setUpperBound(upperResultBound.get());
                 if(storm::solver::minimize(dirForParameters) && minSched && !stepBound) solver->setSchedulerHint(std::move(minSched.get()));
@@ -188,7 +196,7 @@ namespace storm {
                         termCond = std::make_unique<storm::solver::TerminateIfFilteredExtremumBelowThreshold<ConstantType>> (relevantStatesInSubsystem, this->currentCheckTask->getBoundThreshold(), true, false);
                     } else {
                         // Terminate if the value for ALL relevant states is already above the threshold
-                        termCond = std::make_unique<storm::solver::TerminateIfFilteredExtremumExceedsThreshold<ConstantType>> (relevantStatesInSubsystem, this->currentCheckTask->getBoundThreshold(), true, true);
+                        termCond = std::make_unique<storm::solver::TerminateIfFilteredExtremumExceedsThreshold<ConstantType>> (relevantStatesInSubsystem, true, this->currentCheckTask->getBoundThreshold(), true);
                     }
                     solver->setTerminationCondition(std::move(termCond));
                 }
@@ -231,8 +239,19 @@ namespace storm {
                 lowerResultBound = boost::none;
                 upperResultBound = boost::none;
             }
-    
+            
+            template <typename SparseModelType, typename ConstantType>
+            boost::optional<storm::storage::TotalScheduler>& SparseDtmcParameterLiftingModelChecker<SparseModelType, ConstantType>::getCurrentMinScheduler() {
+                return minSched;
+            }
+                    
+            template <typename SparseModelType, typename ConstantType>
+            boost::optional<storm::storage::TotalScheduler>& SparseDtmcParameterLiftingModelChecker<SparseModelType, ConstantType>::getCurrentMaxScheduler() {
+                return maxSched;
+            }
+            
             template class SparseDtmcParameterLiftingModelChecker<storm::models::sparse::Dtmc<storm::RationalFunction>, double>;
+            template class SparseDtmcParameterLiftingModelChecker<storm::models::sparse::Dtmc<storm::RationalFunction>, storm::RationalNumber>;
 
         }
     }

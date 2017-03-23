@@ -67,7 +67,8 @@
 #include "storm/modelchecker/reachability/SparseDtmcEliminationModelChecker.h"
 #include "storm/modelchecker/abstraction/GameBasedMdpModelChecker.h"
 #include "storm/modelchecker/exploration/SparseExplorationModelChecker.h"
-#include "storm/modelchecker/parametric/ParameterLifting.h"
+#include "storm/modelchecker/parametric/SparseDtmcParameterLifting.h"
+#include "storm/modelchecker/parametric/SparseMdpParameterLifting.h"
 
 #include "storm/modelchecker/csl/SparseCtmcCslModelChecker.h"
 #include "storm/modelchecker/csl/helper/SparseCtmcCslHelper.h"
@@ -333,20 +334,40 @@ namespace storm {
         std::string resultVisualization;
         
         if (markovModel->isOfType(storm::models::ModelType::Dtmc)) {
-            storm::modelchecker::parametric::ParameterLifting <storm::models::sparse::Dtmc<storm::RationalFunction>, double> parameterLiftingContext(*markovModel->template as<storm::models::sparse::Dtmc<storm::RationalFunction>>());
-            parameterLiftingContext.specifyFormula(task);
-            result = parameterLiftingContext.performRegionRefinement(parameterSpace, refinementThreshold);
-            parameterLiftingStopWatch.stop();
-            if (modelParameters.size() == 2) {
-                resultVisualization = parameterLiftingContext.visualizeResult(result, parameterSpace, *modelParameters.begin(), *(modelParameters.rbegin()));
+            if (storm::settings::getModule<storm::settings::modules::GeneralSettings>().isExactSet()) {
+                storm::modelchecker::parametric::SparseDtmcParameterLifting <storm::models::sparse::Dtmc<storm::RationalFunction>, storm::RationalNumber> parameterLiftingContext(*markovModel->template as<storm::models::sparse::Dtmc<storm::RationalFunction>>());
+                parameterLiftingContext.specifyFormula(task);
+                result = parameterLiftingContext.performRegionRefinement(parameterSpace, refinementThreshold);
+                parameterLiftingStopWatch.stop();
+                if (modelParameters.size() == 2) {
+                    resultVisualization = parameterLiftingContext.visualizeResult(result, parameterSpace, *modelParameters.begin(), *(modelParameters.rbegin()));
+                }
+            } else {
+                storm::modelchecker::parametric::SparseDtmcParameterLifting <storm::models::sparse::Dtmc<storm::RationalFunction>, double> parameterLiftingContext(*markovModel->template as<storm::models::sparse::Dtmc<storm::RationalFunction>>());
+                parameterLiftingContext.specifyFormula(task);
+                result = parameterLiftingContext.performRegionRefinement(parameterSpace, refinementThreshold);
+                parameterLiftingStopWatch.stop();
+                if (modelParameters.size() == 2) {
+                    resultVisualization = parameterLiftingContext.visualizeResult(result, parameterSpace, *modelParameters.begin(), *(modelParameters.rbegin()));
+                }
             }
         } else if (markovModel->isOfType(storm::models::ModelType::Mdp)) {
-            storm::modelchecker::parametric::ParameterLifting<storm::models::sparse::Mdp<storm::RationalFunction>, double> parameterLiftingContext(*markovModel->template as<storm::models::sparse::Mdp<storm::RationalFunction>>());
-            parameterLiftingContext.specifyFormula(task);
-            result = parameterLiftingContext.performRegionRefinement(parameterSpace, refinementThreshold);
-            parameterLiftingStopWatch.stop();
-            if (modelParameters.size() == 2) {
-                resultVisualization = parameterLiftingContext.visualizeResult(result, parameterSpace, *modelParameters.begin(), *(modelParameters.rbegin()));
+            if (storm::settings::getModule<storm::settings::modules::GeneralSettings>().isExactSet()) {
+                storm::modelchecker::parametric::SparseMdpParameterLifting<storm::models::sparse::Mdp<storm::RationalFunction>, storm::RationalNumber> parameterLiftingContext(*markovModel->template as<storm::models::sparse::Mdp<storm::RationalFunction>>());
+                parameterLiftingContext.specifyFormula(task);
+                result = parameterLiftingContext.performRegionRefinement(parameterSpace, refinementThreshold);
+                parameterLiftingStopWatch.stop();
+                if (modelParameters.size() == 2) {
+                    resultVisualization = parameterLiftingContext.visualizeResult(result, parameterSpace, *modelParameters.begin(), *(modelParameters.rbegin()));
+                }
+            } else {
+                storm::modelchecker::parametric::SparseMdpParameterLifting<storm::models::sparse::Mdp<storm::RationalFunction>, double> parameterLiftingContext(*markovModel->template as<storm::models::sparse::Mdp<storm::RationalFunction>>());
+                parameterLiftingContext.specifyFormula(task);
+                result = parameterLiftingContext.performRegionRefinement(parameterSpace, refinementThreshold);
+                parameterLiftingStopWatch.stop();
+                if (modelParameters.size() == 2) {
+                    resultVisualization = parameterLiftingContext.visualizeResult(result, parameterSpace, *modelParameters.begin(), *(modelParameters.rbegin()));
+                }
             }
         } else {
             STORM_LOG_THROW(false, storm::exceptions::InvalidSettingsException, "Unable to perform parameterLifting on the provided model type.");
