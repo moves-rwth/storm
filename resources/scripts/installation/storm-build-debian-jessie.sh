@@ -337,13 +337,14 @@ cd src                   &&
 rm -rf carl.git          &&
 rm -rf carl-build        &&
 git clone https://github.com/smtrat/carl.git carl.git   &&
+git checkout tags/17.02  &&
 mkdir carl-build         &&
 cd carl-build            &&
 #
 # carl currently does not search for ginac in CMAKE_PREFIX_PATH, so we have to provide the paths...
 #
 cmake ../carl.git -DCMAKE_INSTALL_PREFIX=$STORM_ROOT -DCMAKE_PREFIX_PATH=$STORM_ROOT -DUSE_GINAC=ON -DUSE_CLN_NUMBERS=ON -DGINAC_INCLUDE_DIR=$STORM_ROOT/include/ginac -DGINAC_LIBRARY=$STORM_ROOT/lib/libginac.so &&
-make -j${PROCS} install  &&
+make -j${PROCS} install lib_carl  &&
 touch $STORM_ROOT/.have-carl
 ) || exit 1
 
