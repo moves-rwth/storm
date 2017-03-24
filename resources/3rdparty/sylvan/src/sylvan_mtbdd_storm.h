@@ -146,3 +146,5 @@ TASK_DECL_3(BDD, mtbdd_minExistsRepresentative, MTBDD, MTBDD, uint32_t);
 TASK_DECL_3(BDD, mtbdd_maxExistsRepresentative, MTBDD, MTBDD, uint32_t);
 #define mtbdd_maxExistsRepresentative(a, vars) (CALL(mtbdd_maxExistsRepresentative, a, vars, 0))
 
+TASK_DECL_3(MTBDD, mtbdd_uapply_nocache, MTBDD, mtbdd_uapply_op, size_t);
+#define mtbdd_uapply_nocache(dd, op, param) CALL(mtbdd_uapply_nocache, dd, op, param)

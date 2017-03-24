@@ -416,6 +416,11 @@ namespace storm {
         }
         
         template<>
+        double convertNumber(RationalFunction const& func) {
+            return carl::toDouble(func.nominatorAsNumber());
+        }
+        
+        template<>
         RationalFunction convertNumber(RationalFunction const& number){
             return number;
         }

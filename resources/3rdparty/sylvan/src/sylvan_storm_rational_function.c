@@ -15,207 +15,88 @@
 #include <sylvan_mtbdd_int.h>
 #include <sylvan_storm_rational_function.h>
 
-#include <storm_function_wrapper.h>
-
-#undef SYLVAN_STORM_RATIONAL_FUNCTION_DEBUG
-
-#ifdef SYLVAN_STORM_RATIONAL_FUNCTION_DEBUG
-int depth = 0;
-
-#define LOG_I(funcName) do { for (int i = 0; i < depth; ++i) { printf(" "); } ++depth; printf("Entering function " funcName "\n"); } while (0 != 0);
-#define LOG_O(funcName) do { --depth; for (int i = 0; i < depth; ++i) { printf(" "); } printf("Leaving function " funcName "\n"); } while (0 != 0);
-#else
-#define LOG_I(funcName)
-#define LOG_O(funcName)
-#endif
-
 uint32_t srf_type;
 
-/**
- * helper function for hash
- */
-#ifndef rotl64
-//static inline uint64_t
-//rotl64(uint64_t x, int8_t r)
-//{
-//    return ((x<<r) | (x>>(64-r)));
-//}
-#endif
-
-storm_rational_function_ptr mtbdd_getstorm_rational_function_ptr(MTBDD terminal) {
-    uint64_t value = mtbdd_getvalue(terminal);
-    return (storm_rational_function_ptr*)value;
+static uint64_t sylvan_storm_rational_function_hash(const uint64_t v, const uint64_t seed) {
+    storm_rational_function_ptr x = (storm_rational_function_ptr)v;
+    return storm_rational_function_hash(x, seed);
 }
 
-static uint64_t
-sylvan_storm_rational_function_hash(const uint64_t v, const uint64_t seed)
-{
-	LOG_I("i-hash")
-    /* Hash the storm::RationalFunction in pointer v */
-    
-	storm_rational_function_ptr x = (storm_rational_function_ptr)v;
-
-	uint64_t hash = storm_rational_function_hash(x, seed);
-
-#ifdef SYLVAN_STORM_RATIONAL_FUNCTION_DEBUG
-	printf("Hashing ptr %p with contents ", x);
-	print_storm_rational_function(x);
-	printf(" with seed %zu, hash = %zu\n", seed, hash);
-#endif
-
-	LOG_O("i-hash")
-	return hash;
+static int sylvan_storm_rational_function_equals(const uint64_t left, const uint64_t right) {
+    return storm_rational_function_equals((storm_rational_function_ptr)(size_t)left, (storm_rational_function_ptr)(size_t)right);
 }
 
-static int
-sylvan_storm_rational_function_equals(const uint64_t left, const uint64_t right)
-{
-	LOG_I("i-equals")
-    /* This function is called by the unique table when comparing a new
-       leaf with an existing leaf */
-	storm_rational_function_ptr a = (storm_rational_function_ptr)(size_t)left;
-	storm_rational_function_ptr b = (storm_rational_function_ptr)(size_t)right;
-
-    /* Just compare x and y */
-	int result = storm_rational_function_equals(a, b);
-	
-	LOG_O("i-equals")
-    return result;
+static void sylvan_storm_rational_function_create(uint64_t *val) {
+    // This function is called by the unique table when a leaf does not yet exist. We make a copy, which will be stored in the hash table.
+    storm_rational_function_ptr* x = (storm_rational_function_ptr*)(size_t)val;
+    storm_rational_function_init(x);
 }
 
-static void
-sylvan_storm_rational_function_create(uint64_t *val)
-{
-	LOG_I("i-create")
-	
-#ifdef SYLVAN_STORM_RATIONAL_FUNCTION_DEBUG
-	void* tmp = (void*)*val;
-	printf("sylvan_storm_rational_function_create(ptr = %p, value = ", tmp);
-	print_storm_rational_function(*((storm_rational_function_ptr*)(size_t)val));
-	printf(")\n");
-#endif
-	
-    /* This function is called by the unique table when a leaf does not yet exist.
-       We make a copy, which will be stored in the hash table. */
-	storm_rational_function_ptr* x = (storm_rational_function_ptr*)(size_t)val;
-	storm_rational_function_init(x);
-	
-#ifdef SYLVAN_STORM_RATIONAL_FUNCTION_DEBUG
-	tmp = (void*)*val;
-	printf("sylvan_storm_rational_function_create_2(ptr = %p)\n", tmp);
-#endif
-	
-	LOG_O("i-create")
+static void sylvan_storm_rational_function_destroy(uint64_t val) {
+    // This function is called by the unique table when a leaf is removed during garbage collection.
+    storm_rational_function_ptr x = (storm_rational_function_ptr)(size_t)val;
+    storm_rational_function_destroy(x);
 }
 
-static void
-sylvan_storm_rational_function_destroy(uint64_t val)
-{
-	LOG_I("i-destroy")
-    /* This function is called by the unique table
-       when a leaf is removed during garbage collection. */
-	storm_rational_function_ptr x = (storm_rational_function_ptr)(size_t)val;
-	storm_rational_function_destroy(x);
-	LOG_O("i-destroy")
-}
-
-static char*
-sylvan_storm_rational_function_to_str(int comp, uint64_t val, char *buf, size_t buflen)
-{
+static char* sylvan_storm_rational_function_to_str(int comp, uint64_t val, char *buf, size_t buflen) {
     return storm_rational_function_to_str((storm_rational_function_ptr)(size_t)val, *buf, buflen);
     (void)comp;
 }
 
-
-/**
- * Initialize storm::RationalFunction custom leaves
- */
-void
-sylvan_storm_rational_function_init()
-{
-    /* Register custom leaf */
+void sylvan_storm_rational_function_init() {
+    // Register custom leaf type storing rational functions.
     srf_type = sylvan_mt_create_type();
     sylvan_mt_set_hash(srf_type, sylvan_storm_rational_function_hash);
     sylvan_mt_set_equals(srf_type, sylvan_storm_rational_function_equals);
     sylvan_mt_set_create(srf_type, sylvan_storm_rational_function_create);
     sylvan_mt_set_destroy(srf_type, sylvan_storm_rational_function_destroy);
     sylvan_mt_set_to_str(srf_type, sylvan_storm_rational_function_to_str);
-    // sylvan_mt_set_write_binary(srf_type, gmp_write_binary);
-    // sylvan_mt_set_read_binary(srf_type, gmp_read_binary);
+    // sylvan_mt_set_write_binary(srf_type, sylvan_storm_rational_function_write_binary);
+    // sylvan_mt_set_read_binary(srf_type, sylvan_storm_rational_function_read_binary);
 }
 
 uint32_t sylvan_storm_rational_function_get_type() {
     return srf_type;
 }
 
-/**
- * Create storm::RationalFunction leaf
- */
-MTBDD
-mtbdd_storm_rational_function(storm_rational_function_ptr val)
-{
-	LOG_I("i-mtbdd_")
-	uint64_t terminalValue = (uint64_t)val;
-	
-#ifdef SYLVAN_STORM_RATIONAL_FUNCTION_DEBUG
-	printf("mtbdd_storm_rational_function(ptr = %p, value = ", val);
-	print_storm_rational_function(val);
-	printf(")\n");
-#endif
-	
-	MTBDD result = mtbdd_makeleaf(srf_type, terminalValue);
-	
-	LOG_O("i-mtbdd_")
-	return result;
+MTBDD mtbdd_storm_rational_function(storm_rational_function_ptr val) {
+    uint64_t terminalValue = (uint64_t)val;
+    return mtbdd_makeleaf(srf_type, terminalValue);
 }
 
-/**
- * Converts a BDD to a MTBDD with storm::RationalFunction leaves
- */
-TASK_IMPL_2(MTBDD, mtbdd_op_bool_to_storm_rational_function, MTBDD, a, size_t, v)
-{
-	LOG_I("task_impl_2 to_srf")
+storm_rational_function_ptr mtbdd_getstorm_rational_function_ptr(MTBDD terminal) {
+    uint64_t value = mtbdd_getvalue(terminal);
+    return (storm_rational_function_ptr*)value;
+}
+
+TASK_IMPL_2(MTBDD, mtbdd_op_bool_to_storm_rational_function, MTBDD, a, size_t, v) {
 	if (a == mtbdd_false) {
-		MTBDD result = mtbdd_storm_rational_function(storm_rational_function_get_zero());
-		LOG_O("task_impl_2 to_srf - ZERO")
-		return result;
+		return mtbdd_storm_rational_function(storm_rational_function_get_zero());
 	}
 	if (a == mtbdd_true) {
-		MTBDD result = mtbdd_storm_rational_function(storm_rational_function_get_one());
-		LOG_O("task_impl_2 to_srf - ONE")
-		return result;
+		return mtbdd_storm_rational_function(storm_rational_function_get_one());
 	}
     
     // Ugly hack to get rid of the error "unused variable v" (because there is no version of uapply without a parameter).
     (void)v;
 	
-    LOG_O("task_impl_2 to_srf - INVALID")
     return mtbdd_invalid;
 }
 
-TASK_IMPL_1(MTBDD, mtbdd_bool_to_storm_rational_function, MTBDD, dd)
-{
+TASK_IMPL_1(MTBDD, mtbdd_bool_to_storm_rational_function, MTBDD, dd) {
     return mtbdd_uapply(dd, TASK(mtbdd_op_bool_to_storm_rational_function), 0);
 }
 
-TASK_IMPL_2(MTBDD, sylvan_storm_rational_function_op_equals, MTBDD*, pa, MTBDD*, pb)
-{
-    LOG_I("task_impl_2 op_equals")
+TASK_IMPL_2(MTBDD, sylvan_storm_rational_function_op_equals, MTBDD*, pa, MTBDD*, pb) {
     MTBDD a = *pa, b = *pb;
     
     /* Check for partial functions */
-    if (a == mtbdd_false) return b;
-    if (b == mtbdd_false) return a;
-    
-    /* If both leaves, compute plus */
+    if (a == mtbdd_false || b == mtbdd_false) return mtbdd_false;
+
     if (mtbdd_isleaf(a) && mtbdd_isleaf(b)) {
-        storm_rational_function_ptr ma = (storm_rational_function_ptr)mtbdd_getvalue(a);
-        storm_rational_function_ptr mb = (storm_rational_function_ptr)mtbdd_getvalue(b);
-        if (storm_rational_function_equals(ma, mb)) {
-            return mtbdd_true;
-        } else {
-            return mtbdd_false;   
-        }
+        storm_rational_function_ptr ma = mtbdd_getstorm_rational_function_ptr(a);
+        storm_rational_function_ptr mb = mtbdd_getstorm_rational_function_ptr(b);
+        return storm_rational_function_equals(ma, mb) ? mtbdd_true : mtbdd_false;
     }
     
     /* Commutative, so swap a,b for better cache performance */
@@ -227,13 +108,7 @@ TASK_IMPL_2(MTBDD, sylvan_storm_rational_function_op_equals, MTBDD*, pa, MTBDD*,
     return mtbdd_invalid;
 }
 
-/**
- * Operation "plus" for two storm::RationalFunction MTBDDs
- * Interpret partial function as "0"
- */
-TASK_IMPL_2(MTBDD, sylvan_storm_rational_function_op_plus, MTBDD*, pa, MTBDD*, pb)
-{
-	LOG_I("task_impl_2 op_plus")
+TASK_IMPL_2(MTBDD, sylvan_storm_rational_function_op_plus, MTBDD*, pa, MTBDD*, pb) {
     MTBDD a = *pa, b = *pb;
 
     /* Check for partial functions */
@@ -242,12 +117,11 @@ TASK_IMPL_2(MTBDD, sylvan_storm_rational_function_op_plus, MTBDD*, pa, MTBDD*, p
 
     /* If both leaves, compute plus */
     if (mtbdd_isleaf(a) && mtbdd_isleaf(b)) {
-		storm_rational_function_ptr ma = (storm_rational_function_ptr)mtbdd_getvalue(a);
-		storm_rational_function_ptr mb = (storm_rational_function_ptr)mtbdd_getvalue(b);
+		storm_rational_function_ptr ma = mtbdd_getstorm_rational_function_ptr(a);
+		storm_rational_function_ptr mb = mtbdd_getstorm_rational_function_ptr(b);
 
 		storm_rational_function_ptr mres = storm_rational_function_plus(ma, mb);
         MTBDD res = mtbdd_storm_rational_function(mres);
-        
 		storm_rational_function_destroy(mres);
 
         return res;
@@ -262,27 +136,20 @@ TASK_IMPL_2(MTBDD, sylvan_storm_rational_function_op_plus, MTBDD*, pa, MTBDD*, p
     return mtbdd_invalid;
 }
 
-/**
- * Operation "minus" for two storm::RationalFunction MTBDDs
- * Interpret partial function as "0"
- */
-TASK_IMPL_2(MTBDD, sylvan_storm_rational_function_op_minus, MTBDD*, pa, MTBDD*, pb)
-{
-    LOG_I("task_impl_2 op_minus")
+TASK_IMPL_2(MTBDD, sylvan_storm_rational_function_op_minus, MTBDD*, pa, MTBDD*, pb) {
 	MTBDD a = *pa, b = *pb;
 
     /* Check for partial functions */
     if (a == mtbdd_false) return sylvan_storm_rational_function_neg(b);
     if (b == mtbdd_false) return a;
 
-    /* If both leaves, compute plus */
+    /* If both leaves, compute minus */
     if (mtbdd_isleaf(a) && mtbdd_isleaf(b)) {
-		storm_rational_function_ptr ma = (storm_rational_function_ptr)mtbdd_getvalue(a);
-		storm_rational_function_ptr mb = (storm_rational_function_ptr)mtbdd_getvalue(b);
+		storm_rational_function_ptr ma = mtbdd_getstorm_rational_function_ptr(a);
+		storm_rational_function_ptr mb = mtbdd_getstorm_rational_function_ptr(b);
 
 		storm_rational_function_ptr mres = storm_rational_function_minus(ma, mb);
 		MTBDD res = mtbdd_storm_rational_function(mres);
-
 		storm_rational_function_destroy(mres);
 
         return res;
@@ -291,31 +158,19 @@ TASK_IMPL_2(MTBDD, sylvan_storm_rational_function_op_minus, MTBDD*, pa, MTBDD*, 
     return mtbdd_invalid;
 }
 
-/**
- * Operation "times" for two storm::RationalFunction MTBDDs.
- * One of the parameters can be a BDD, then it is interpreted as a filter.
- * For partial functions, domain is intersection
- */
-TASK_IMPL_2(MTBDD, sylvan_storm_rational_function_op_times, MTBDD*, pa, MTBDD*, pb)
-{
-	LOG_I("task_impl_2 op_times")
+TASK_IMPL_2(MTBDD, sylvan_storm_rational_function_op_times, MTBDD*, pa, MTBDD*, pb) {
     MTBDD a = *pa, b = *pb;
 
-    /* Check for partial functions and for Boolean (filter) */
+    /* Check for partial functions */
     if (a == mtbdd_false || b == mtbdd_false) return mtbdd_false;
 
-    /* If one of Boolean, interpret as filter */
-    if (a == mtbdd_true) return b;
-    if (b == mtbdd_true) return a;
-
-    /* Handle multiplication of leaves */
+    /* If both leaves, compute multiplication */
     if (mtbdd_isleaf(a) && mtbdd_isleaf(b)) {
-		storm_rational_function_ptr ma = (storm_rational_function_ptr)mtbdd_getvalue(a);
-		storm_rational_function_ptr mb = (storm_rational_function_ptr)mtbdd_getvalue(b);
+		storm_rational_function_ptr ma = mtbdd_getstorm_rational_function_ptr(a);
+		storm_rational_function_ptr mb = mtbdd_getstorm_rational_function_ptr(b);
 
 		storm_rational_function_ptr mres = storm_rational_function_times(ma, mb);		
 		MTBDD res = mtbdd_storm_rational_function(mres);
-
 		storm_rational_function_destroy(mres);
 
         return res;
@@ -330,26 +185,20 @@ TASK_IMPL_2(MTBDD, sylvan_storm_rational_function_op_times, MTBDD*, pa, MTBDD*, 
     return mtbdd_invalid;
 }
 
-/**
- * Operation "divide" for two storm::RationalFunction MTBDDs.
- * For partial functions, domain is intersection
- */
-TASK_IMPL_2(MTBDD, sylvan_storm_rational_function_op_divide, MTBDD*, pa, MTBDD*, pb)
-{
-	LOG_I("task_impl_2 op_divide")
+TASK_IMPL_2(MTBDD, sylvan_storm_rational_function_op_divide, MTBDD*, pa, MTBDD*, pb) {
     MTBDD a = *pa, b = *pb;
 
     /* Check for partial functions */
     if (a == mtbdd_false || b == mtbdd_false) return mtbdd_false;
 
-    /* Handle division of leaves */
+    /* If both leaves, compute division */
     if (mtbdd_isleaf(a) && mtbdd_isleaf(b)) {
-		storm_rational_function_ptr ma = (storm_rational_function_ptr)mtbdd_getvalue(a);
+		storm_rational_function_ptr ma = mtbdd_getstorm_rational_function_ptr(a);
         storm_rational_function_ptr mres;
         if (storm_rational_function_is_zero(ma)) {
             mres = storm_rational_function_get_zero();
         } else {
-            storm_rational_function_ptr mb = (storm_rational_function_ptr)mtbdd_getvalue(b);
+            storm_rational_function_ptr mb = mtbdd_getstorm_rational_function_ptr(b);
             mres = storm_rational_function_divide(ma, mb);
         }
 		MTBDD res = mtbdd_storm_rational_function(mres);
@@ -361,80 +210,53 @@ TASK_IMPL_2(MTBDD, sylvan_storm_rational_function_op_divide, MTBDD*, pa, MTBDD*,
     return mtbdd_invalid;
 }
 
-TASK_IMPL_2(MTBDD, sylvan_storm_rational_function_op_less, MTBDD*, pa, MTBDD*, pb)
-{
-    LOG_I("task_impl_2 op_less")
+TASK_IMPL_2(MTBDD, sylvan_storm_rational_function_op_less, MTBDD*, pa, MTBDD*, pb) {
     MTBDD a = *pa, b = *pb;
     
     /* Check for partial functions and for Boolean (filter) */
     if (a == mtbdd_false || b == mtbdd_false) return mtbdd_false;
     
-    /* If one of Boolean, interpret as filter */
-    if (a == mtbdd_true) return b;
-    if (b == mtbdd_true) return a;
-    
-    /* Handle multiplication of leaves */
+    /* If both leaves, compute less */
     if (mtbdd_isleaf(a) && mtbdd_isleaf(b)) {
-        storm_rational_function_ptr ma = (storm_rational_function_ptr)mtbdd_getvalue(a);
-        storm_rational_function_ptr mb = (storm_rational_function_ptr)mtbdd_getvalue(b);
+        storm_rational_function_ptr ma = mtbdd_getstorm_rational_function_ptr(a);
+        storm_rational_function_ptr mb = mtbdd_getstorm_rational_function_ptr(b);
         
-        if (storm_rational_function_less(ma, mb)) {
-            return mtbdd_true;
-        } else {
-            return mtbdd_false;
-        }
+        return storm_rational_function_less(ma, mb) ? mtbdd_true : mtbdd_false;
     }
     
     return mtbdd_invalid;
 }
 
-TASK_IMPL_2(MTBDD, sylvan_storm_rational_function_op_less_or_equal, MTBDD*, pa, MTBDD*, pb)
-{
-    LOG_I("task_impl_2 op_less_or_equal")
+TASK_IMPL_2(MTBDD, sylvan_storm_rational_function_op_less_or_equal, MTBDD*, pa, MTBDD*, pb) {
     MTBDD a = *pa, b = *pb;
     
     /* Check for partial functions and for Boolean (filter) */
     if (a == mtbdd_false || b == mtbdd_false) return mtbdd_false;
-    
-    /* If one of Boolean, interpret as filter */
-    if (a == mtbdd_true) return b;
-    if (b == mtbdd_true) return a;
-    
-    /* Handle multiplication of leaves */
+
+    /* If both leaves, compute less or equal */
     if (mtbdd_isleaf(a) && mtbdd_isleaf(b)) {
-        storm_rational_function_ptr ma = (storm_rational_function_ptr)mtbdd_getvalue(a);
-        storm_rational_function_ptr mb = (storm_rational_function_ptr)mtbdd_getvalue(b);
+        storm_rational_function_ptr ma = mtbdd_getstorm_rational_function_ptr(a);
+        storm_rational_function_ptr mb = mtbdd_getstorm_rational_function_ptr(b);
         
-        if (storm_rational_function_less_or_equal(ma, mb)) {
-            return mtbdd_true;
-        } else {
-            return mtbdd_false;
-        }
+        return storm_rational_function_less_or_equal(ma, mb) ? mtbdd_true : mtbdd_false;
     }
     
     return mtbdd_invalid;
 }
 
-TASK_IMPL_2(MTBDD, sylvan_storm_rational_function_op_mod, MTBDD*, pa, MTBDD*, pb)
-{
-    LOG_I("task_impl_2 op_mod")
+TASK_IMPL_2(MTBDD, sylvan_storm_rational_function_op_mod, MTBDD*, pa, MTBDD*, pb) {
     MTBDD a = *pa, b = *pb;
     
     /* Check for partial functions and for Boolean (filter) */
     if (a == mtbdd_false || b == mtbdd_false) return mtbdd_false;
     
-    /* If one of Boolean, interpret as filter */
-    if (a == mtbdd_true) return b;
-    if (b == mtbdd_true) return a;
-    
-    /* Handle multiplication of leaves */
+    /* If both leaves, compute modulo */
     if (mtbdd_isleaf(a) && mtbdd_isleaf(b)) {
-        storm_rational_function_ptr ma = (storm_rational_function_ptr)mtbdd_getvalue(a);
-        storm_rational_function_ptr mb = (storm_rational_function_ptr)mtbdd_getvalue(b);
+        storm_rational_function_ptr ma = mtbdd_getstorm_rational_function_ptr(a);
+        storm_rational_function_ptr mb = mtbdd_getstorm_rational_function_ptr(b);
         
         storm_rational_function_ptr mres = storm_rational_function_mod(ma, mb);
         MTBDD res = mtbdd_storm_rational_function(mres);
-        
         storm_rational_function_destroy(mres);
         
         return res;
@@ -443,26 +265,19 @@ TASK_IMPL_2(MTBDD, sylvan_storm_rational_function_op_mod, MTBDD*, pa, MTBDD*, pb
     return mtbdd_invalid;
 }
 
-TASK_IMPL_2(MTBDD, sylvan_storm_rational_function_op_min, MTBDD*, pa, MTBDD*, pb)
-{
-    LOG_I("task_impl_2 op_mod")
+TASK_IMPL_2(MTBDD, sylvan_storm_rational_function_op_min, MTBDD*, pa, MTBDD*, pb) {
     MTBDD a = *pa, b = *pb;
     
     /* Check for partial functions and for Boolean (filter) */
     if (a == mtbdd_false || b == mtbdd_false) return mtbdd_false;
     
-    /* If one of Boolean, interpret as filter */
-    if (a == mtbdd_true) return b;
-    if (b == mtbdd_true) return a;
-    
-    /* Handle multiplication of leaves */
+    /* If both leaves, compute min */
     if (mtbdd_isleaf(a) && mtbdd_isleaf(b)) {
-        storm_rational_function_ptr ma = (storm_rational_function_ptr)mtbdd_getvalue(a);
-        storm_rational_function_ptr mb = (storm_rational_function_ptr)mtbdd_getvalue(b);
+        storm_rational_function_ptr ma = mtbdd_getstorm_rational_function_ptr(a);
+        storm_rational_function_ptr mb = mtbdd_getstorm_rational_function_ptr(b);
         
         storm_rational_function_ptr mres = storm_rational_function_min(ma, mb);
         MTBDD res = mtbdd_storm_rational_function(mres);
-        
         storm_rational_function_destroy(mres);
         
         return res;
@@ -477,9 +292,7 @@ TASK_IMPL_2(MTBDD, sylvan_storm_rational_function_op_min, MTBDD*, pa, MTBDD*, pb
     return mtbdd_invalid;
 }
 
-TASK_IMPL_3(MTBDD, sylvan_storm_rational_function_abstract_op_min, MTBDD, a, MTBDD, b, int, k)
-{
-    LOG_I("task_impl_3 abstract_op_min")
+TASK_IMPL_3(MTBDD, sylvan_storm_rational_function_abstract_op_min, MTBDD, a, MTBDD, b, int, k) {
     if (k==0) {
         return mtbdd_apply(a, b, TASK(sylvan_storm_rational_function_op_min));
     } else {
@@ -493,26 +306,19 @@ TASK_IMPL_3(MTBDD, sylvan_storm_rational_function_abstract_op_min, MTBDD, a, MTB
     }
 }
 
-TASK_IMPL_2(MTBDD, sylvan_storm_rational_function_op_max, MTBDD*, pa, MTBDD*, pb)
-{
-    LOG_I("task_impl_2 op_mod")
+TASK_IMPL_2(MTBDD, sylvan_storm_rational_function_op_max, MTBDD*, pa, MTBDD*, pb) {
     MTBDD a = *pa, b = *pb;
     
     /* Check for partial functions and for Boolean (filter) */
     if (a == mtbdd_false || b == mtbdd_false) return mtbdd_false;
     
-    /* If one of Boolean, interpret as filter */
-    if (a == mtbdd_true) return b;
-    if (b == mtbdd_true) return a;
-    
-    /* Handle multiplication of leaves */
+    /* If both leaves, compute max */
     if (mtbdd_isleaf(a) && mtbdd_isleaf(b)) {
-        storm_rational_function_ptr ma = (storm_rational_function_ptr)mtbdd_getvalue(a);
-        storm_rational_function_ptr mb = (storm_rational_function_ptr)mtbdd_getvalue(b);
+        storm_rational_function_ptr ma = mtbdd_getstorm_rational_function_ptr(a);
+        storm_rational_function_ptr mb = mtbdd_getstorm_rational_function_ptr(b);
         
         storm_rational_function_ptr mres = storm_rational_function_max(ma, mb);
         MTBDD res = mtbdd_storm_rational_function(mres);
-        
         storm_rational_function_destroy(mres);
         
         return res;
@@ -527,9 +333,7 @@ TASK_IMPL_2(MTBDD, sylvan_storm_rational_function_op_max, MTBDD*, pa, MTBDD*, pb
     return mtbdd_invalid;
 }
 
-TASK_IMPL_3(MTBDD, sylvan_storm_rational_function_abstract_op_max, MTBDD, a, MTBDD, b, int, k)
-{
-    LOG_I("task_impl_3 abstract_op_max")
+TASK_IMPL_3(MTBDD, sylvan_storm_rational_function_abstract_op_max, MTBDD, a, MTBDD, b, int, k) {
     if (k==0) {
         return mtbdd_apply(a, b, TASK(sylvan_storm_rational_function_op_max));
     } else {
@@ -543,26 +347,19 @@ TASK_IMPL_3(MTBDD, sylvan_storm_rational_function_abstract_op_max, MTBDD, a, MTB
     }
 }
 
-TASK_IMPL_2(MTBDD, sylvan_storm_rational_function_op_pow, MTBDD*, pa, MTBDD*, pb)
-{
-    LOG_I("task_impl_2 op_pow")
+TASK_IMPL_2(MTBDD, sylvan_storm_rational_function_op_pow, MTBDD*, pa, MTBDD*, pb) {
     MTBDD a = *pa, b = *pb;
     
     /* Check for partial functions and for Boolean (filter) */
     if (a == mtbdd_false || b == mtbdd_false) return mtbdd_false;
     
-    /* If one of Boolean, interpret as filter */
-    if (a == mtbdd_true) return b;
-    if (b == mtbdd_true) return a;
-    
     /* Handle multiplication of leaves */
     if (mtbdd_isleaf(a) && mtbdd_isleaf(b)) {
-        storm_rational_function_ptr ma = (storm_rational_function_ptr)mtbdd_getvalue(a);
-        storm_rational_function_ptr mb = (storm_rational_function_ptr)mtbdd_getvalue(b);
+        storm_rational_function_ptr ma = mtbdd_getstorm_rational_function_ptr(a);
+        storm_rational_function_ptr mb = mtbdd_getstorm_rational_function_ptr(b);
         
         storm_rational_function_ptr mres = storm_rational_function_pow(ma, mb);
         MTBDD res = mtbdd_storm_rational_function(mres);
-        
         storm_rational_function_destroy(mres);
         
         return res;
@@ -571,15 +368,7 @@ TASK_IMPL_2(MTBDD, sylvan_storm_rational_function_op_pow, MTBDD*, pa, MTBDD*, pb
     return mtbdd_invalid;
 }
 
-/**
- * The abstraction operators are called in either of two ways:
- * - with k=0, then just calculate "a op b"
- * - with k<>0, then just calculate "a := a op a", k times
- */
-
-TASK_IMPL_3(MTBDD, sylvan_storm_rational_function_abstract_op_plus, MTBDD, a, MTBDD, b, int, k)
-{
-	LOG_I("task_impl_3 abstract_op_plus")
+TASK_IMPL_3(MTBDD, sylvan_storm_rational_function_abstract_op_plus, MTBDD, a, MTBDD, b, int, k) {
     if (k==0) {
         return mtbdd_apply(a, b, TASK(sylvan_storm_rational_function_op_plus));
     } else {
@@ -593,9 +382,7 @@ TASK_IMPL_3(MTBDD, sylvan_storm_rational_function_abstract_op_plus, MTBDD, a, MT
     }
 }
 
-TASK_IMPL_3(MTBDD, sylvan_storm_rational_function_abstract_op_times, MTBDD, a, MTBDD, b, int, k)
-{
-	LOG_I("task_impl_3 abstract_op_times")
+TASK_IMPL_3(MTBDD, sylvan_storm_rational_function_abstract_op_times, MTBDD, a, MTBDD, b, int, k) {
     if (k==0) {
         return mtbdd_apply(a, b, TASK(sylvan_storm_rational_function_op_times));
     } else {
@@ -609,22 +396,16 @@ TASK_IMPL_3(MTBDD, sylvan_storm_rational_function_abstract_op_times, MTBDD, a, M
     }
 }
 
-/**
- * Operation "neg" for one storm::RationalFunction MTBDD
- */
-TASK_IMPL_2(MTBDD, sylvan_storm_rational_function_op_neg, MTBDD, dd, size_t, p)
-{
-	LOG_I("task_impl_2 op_neg")
+TASK_IMPL_2(MTBDD, sylvan_storm_rational_function_op_neg, MTBDD, dd, size_t, p) {
     /* Handle partial functions */
     if (dd == mtbdd_false) return mtbdd_false;
 
     /* Compute result for leaf */
     if (mtbdd_isleaf(dd)) {
-		storm_rational_function_ptr mdd = (storm_rational_function_ptr)mtbdd_getvalue(dd);
+		storm_rational_function_ptr mdd = mtbdd_getstorm_rational_function_ptr(dd);
 
 		storm_rational_function_ptr mres = storm_rational_function_negate(mdd);
 		MTBDD res = mtbdd_storm_rational_function(mres);
-
 		storm_rational_function_destroy(mres);
 
         return res;
@@ -634,19 +415,16 @@ TASK_IMPL_2(MTBDD, sylvan_storm_rational_function_op_neg, MTBDD, dd, size_t, p)
     (void)p;
 }
 
-TASK_IMPL_2(MTBDD, sylvan_storm_rational_function_op_floor, MTBDD, dd, size_t, p)
-{
-    LOG_I("task_impl_2 op_neg")
+TASK_IMPL_2(MTBDD, sylvan_storm_rational_function_op_floor, MTBDD, dd, size_t, p) {
     /* Handle partial functions */
     if (dd == mtbdd_false) return mtbdd_false;
     
     /* Compute result for leaf */
     if (mtbdd_isleaf(dd)) {
-        storm_rational_function_ptr mdd = (storm_rational_function_ptr)mtbdd_getvalue(dd);
+        storm_rational_function_ptr mdd = mtbdd_getstorm_rational_function_ptr(dd);
         
         storm_rational_function_ptr mres = storm_rational_function_floor(mdd);
         MTBDD res = mtbdd_storm_rational_function(mres);
-        
         storm_rational_function_destroy(mres);
         
         return res;
@@ -656,19 +434,16 @@ TASK_IMPL_2(MTBDD, sylvan_storm_rational_function_op_floor, MTBDD, dd, size_t, p
     (void)p;
 }
 
-TASK_IMPL_2(MTBDD, sylvan_storm_rational_function_op_ceil, MTBDD, dd, size_t, p)
-{
-    LOG_I("task_impl_2 op_neg")
+TASK_IMPL_2(MTBDD, sylvan_storm_rational_function_op_ceil, MTBDD, dd, size_t, p) {
     /* Handle partial functions */
     if (dd == mtbdd_false) return mtbdd_false;
     
     /* Compute result for leaf */
     if (mtbdd_isleaf(dd)) {
-        storm_rational_function_ptr mdd = (storm_rational_function_ptr)mtbdd_getvalue(dd);
+        storm_rational_function_ptr mdd = mtbdd_getstorm_rational_function_ptr(dd);
         
         storm_rational_function_ptr mres = storm_rational_function_ceil(mdd);
         MTBDD res = mtbdd_storm_rational_function(mres);
-        
         storm_rational_function_destroy(mres);
         
         return res;
@@ -678,45 +453,14 @@ TASK_IMPL_2(MTBDD, sylvan_storm_rational_function_op_ceil, MTBDD, dd, size_t, p)
     (void)p;
 }
 
-/**
- * Operation "replace leaves" for one storm::RationalFunction MTBDD
- */
-TASK_IMPL_2(MTBDD, sylvan_storm_rational_function_op_replace_leaves, MTBDD, dd, size_t, context)
-{
-	LOG_I("task_impl_2 op_replace")
+TASK_IMPL_2(MTBDD, sylvan_storm_rational_function_op_to_double, MTBDD, dd, size_t, p) {
     /* Handle partial functions */
     if (dd == mtbdd_false) return mtbdd_false;
 
     /* Compute result for leaf */
     if (mtbdd_isleaf(dd)) {
-		if (mtbdd_gettype(dd) != srf_type) {
-			assert(0);
-		}
-		
-		storm_rational_function_ptr mdd = (storm_rational_function_ptr)mtbdd_getvalue(dd);
-		return storm_rational_function_leaf_parameter_replacement(dd, mdd, (void*)context);
-    }
-
-    return mtbdd_invalid;
-}
-/**
- * Operation to double for one storm::RationalFunction MTBDD
- */
-TASK_IMPL_2(MTBDD, sylvan_storm_rational_function_op_to_double, MTBDD, dd, size_t, p)
-{
-	LOG_I("task_impl_2 op_toDouble")
-    /* Handle partial functions */
-    if (dd == mtbdd_false) return mtbdd_false;
-
-    /* Compute result for leaf */
-    if (mtbdd_isleaf(dd)) {
-		if (mtbdd_gettype(dd) != srf_type) {
-			printf("Can not convert to double, this has type %u!\n", mtbdd_gettype(dd));
-			assert(0);
-		}
-
-		storm_rational_function_ptr mdd = (storm_rational_function_ptr)mtbdd_getvalue(dd);
-		MTBDD result = mtbdd_double(storm_rational_function_get_constant(mdd));
+		storm_rational_function_ptr mdd = mtbdd_getstorm_rational_function_ptr(dd);
+		MTBDD result = mtbdd_double(storm_rational_function_get_value_double(mdd));
 		return result;
     }
 
@@ -724,12 +468,7 @@ TASK_IMPL_2(MTBDD, sylvan_storm_rational_function_op_to_double, MTBDD, dd, size_
 	(void)p;
 }
 
-/**
- * Multiply <a> and <b>, and abstract variables <vars> using summation.
- * This is similar to the "and_exists" operation in BDDs.
- */
-TASK_IMPL_3(MTBDD, sylvan_storm_rational_function_and_exists, MTBDD, a, MTBDD, b, MTBDD, v)
-{
+TASK_IMPL_3(MTBDD, sylvan_storm_rational_function_and_exists, MTBDD, a, MTBDD, b, MTBDD, v) {
     /* Check terminal cases */
 
     /* If v == true, then <vars> is an empty set */
@@ -803,80 +542,24 @@ TASK_IMPL_3(MTBDD, sylvan_storm_rational_function_and_exists, MTBDD, a, MTBDD, b
     return result;
 }
 
-/**
- * Apply a unary operation <op> to <dd>.
- */
-TASK_IMPL_3(MTBDD, mtbdd_uapply_nocache, MTBDD, dd, mtbdd_uapply_op, op, size_t, param)
-{
-    /* Maybe perform garbage collection */
-    sylvan_gc_test();
-
-    /* Check cache */
-    MTBDD result;
-    //if (cache_get3(CACHE_MTBDD_UAPPLY, dd, (size_t)op, param, &result)) return result;
-
-    /* Check terminal case */
-    result = WRAP(op, dd, param);
-    if (result != mtbdd_invalid) {
-        /* Store in cache */
-        //cache_put3(CACHE_MTBDD_UAPPLY, dd, (size_t)op, param, result);
-        return result;
-    }
-
-    /* Get cofactors */
-    mtbddnode_t ndd = MTBDD_GETNODE(dd);
-    MTBDD ddlow = node_getlow(dd, ndd);
-    MTBDD ddhigh = node_gethigh(dd, ndd);
-
-    /* Recursive */
-    mtbdd_refs_spawn(SPAWN(mtbdd_uapply_nocache, ddhigh, op, param));
-    MTBDD low = mtbdd_refs_push(CALL(mtbdd_uapply_nocache, ddlow, op, param));
-    MTBDD high = mtbdd_refs_sync(SYNC(mtbdd_uapply_nocache));
-    mtbdd_refs_pop(1);
-    result = mtbdd_makenode(mtbddnode_getvariable(ndd), low, high);
-
-    /* Store in cache */
-    //cache_put3(CACHE_MTBDD_UAPPLY, dd, (size_t)op, param, result);
-    return result;
-}
-
-/**
- * Monad that converts double/fraction to a Boolean MTBDD, translate terminals >= value to 1 and to 0 otherwise;
- */
-TASK_IMPL_2(MTBDD, sylvan_storm_rational_function_op_threshold, MTBDD, a, size_t, svalue)
-{
-    LOG_I("task_impl_2 op_threshold")
+TASK_IMPL_2(MTBDD, sylvan_storm_rational_function_op_threshold, MTBDD, a, size_t, svalue) {
     storm_rational_function_ptr value = (storm_rational_function_ptr)svalue;
     
     if (mtbdd_isleaf(a)) {
-        storm_rational_function_ptr ma = (storm_rational_function_ptr)mtbdd_getvalue(a);
-        
-        if (storm_rational_function_less_or_equal(ma, value)) {
-            return mtbdd_false;
-        } else {
-            return mtbdd_true;
-        }
+        storm_rational_function_ptr ma = mtbdd_getstorm_rational_function_ptr(a);
+        return storm_rational_function_less_or_equal(ma, value) ? mtbdd_false : mtbdd_true;
     }
     
     return mtbdd_invalid;
 }
 
-/**
- * Monad that converts double/fraction to a Boolean BDD, translate terminals > value to 1 and to 0 otherwise;
- */
-TASK_IMPL_2(MTBDD, sylvan_storm_rational_function_op_strict_threshold, MTBDD, a, size_t, svalue)
-{
-    LOG_I("task_impl_2 op_strict_threshold")
+TASK_IMPL_2(MTBDD, sylvan_storm_rational_function_op_strict_threshold, MTBDD, a, size_t, svalue) {
     storm_rational_function_ptr value = (storm_rational_function_ptr)svalue;
 
     if (mtbdd_isleaf(a)) {
-        storm_rational_function_ptr ma = (storm_rational_function_ptr)mtbdd_getvalue(a);
+        storm_rational_function_ptr ma = mtbdd_getstorm_rational_function_ptr(a);
         
-        if (storm_rational_function_less(ma, value)) {
-            return mtbdd_false;
-        } else {
-            return mtbdd_true;
-        }
+        return storm_rational_function_less(ma, value) ? mtbdd_false : mtbdd_true;
     }
     
     return mtbdd_invalid;
@@ -892,8 +575,7 @@ TASK_IMPL_2(MTBDD, sylvan_storm_rational_function_strict_threshold, MTBDD, dd, s
     return mtbdd_uapply(dd, TASK(sylvan_storm_rational_function_op_strict_threshold), *(size_t*)value);
 }
 
-TASK_IMPL_1(MTBDD, sylvan_storm_rational_function_minimum, MTBDD, a)
-{
+TASK_IMPL_1(MTBDD, sylvan_storm_rational_function_minimum, MTBDD, a) {
     /* Check terminal case */
     if (a == mtbdd_false) return mtbdd_false;
     mtbddnode_t na = MTBDD_GETNODE(a);

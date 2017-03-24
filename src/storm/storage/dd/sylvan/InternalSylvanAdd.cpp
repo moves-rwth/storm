@@ -49,6 +49,21 @@ namespace storm {
             }
         }
         
+        template<>
+        storm::RationalNumber InternalAdd<DdType::Sylvan, storm::RationalNumber>::getValue(MTBDD const& node) {
+            STORM_LOG_ASSERT(mtbdd_isleaf(node), "Expected leaf, but got variable " << mtbdd_getvar(node) << ".");
+            
+            bool negated = mtbdd_hascomp(node);
+            
+            STORM_LOG_ASSERT(mtbdd_gettype(node) == sylvan_storm_rational_number_get_type(), "Expected a storm::RationalNumber value.");
+            uint64_t value = mtbdd_getvalue(node);
+            storm_rational_number_ptr ptr = (storm_rational_number_ptr)value;
+            
+            storm::RationalNumber* rationalNumber = (storm::RationalNumber*)(ptr);
+            
+            return negated ? -(*rationalNumber) : (*rationalNumber);
+        }
+        
 #ifdef STORM_HAVE_CARL
         template<>
         storm::RationalFunction InternalAdd<DdType::Sylvan, storm::RationalFunction>::getValue(MTBDD const& node) {
@@ -81,6 +96,11 @@ namespace storm {
             return InternalAdd<DdType::Sylvan, ValueType>(ddManager, this->sylvanMtbdd.Plus(other.sylvanMtbdd));
         }
 
+        template<>
+        InternalAdd<DdType::Sylvan, storm::RationalNumber> InternalAdd<DdType::Sylvan, storm::RationalNumber>::operator+(InternalAdd<DdType::Sylvan, storm::RationalNumber> const& other) const {
+            return InternalAdd<DdType::Sylvan, storm::RationalNumber>(ddManager, this->sylvanMtbdd.PlusRN(other.sylvanMtbdd));
+        }
+        
 #ifdef STORM_HAVE_CARL
 		template<>
         InternalAdd<DdType::Sylvan, storm::RationalFunction> InternalAdd<DdType::Sylvan, storm::RationalFunction>::operator+(InternalAdd<DdType::Sylvan, storm::RationalFunction> const& other) const {
@@ -94,6 +114,12 @@ namespace storm {
             return *this;
         }
 
+        template<>
+        InternalAdd<DdType::Sylvan, storm::RationalNumber>& InternalAdd<DdType::Sylvan, storm::RationalNumber>::operator+=(InternalAdd<DdType::Sylvan, storm::RationalNumber> const& other) {
+            this->sylvanMtbdd = this->sylvanMtbdd.PlusRN(other.sylvanMtbdd);
+            return *this;
+        }
+        
 #ifdef STORM_HAVE_CARL
 		template<>
         InternalAdd<DdType::Sylvan, storm::RationalFunction>& InternalAdd<DdType::Sylvan, storm::RationalFunction>::operator+=(InternalAdd<DdType::Sylvan, storm::RationalFunction> const& other) {
@@ -107,6 +133,11 @@ namespace storm {
             return InternalAdd<DdType::Sylvan, ValueType>(ddManager, this->sylvanMtbdd.Times(other.sylvanMtbdd));
         }
 
+        template<>
+        InternalAdd<DdType::Sylvan, storm::RationalNumber> InternalAdd<DdType::Sylvan, storm::RationalNumber>::operator*(InternalAdd<DdType::Sylvan, storm::RationalNumber> const& other) const {
+            return InternalAdd<DdType::Sylvan, storm::RationalNumber>(ddManager, this->sylvanMtbdd.TimesRN(other.sylvanMtbdd));
+        }
+        
 #ifdef STORM_HAVE_CARL
 		template<>
         InternalAdd<DdType::Sylvan, storm::RationalFunction> InternalAdd<DdType::Sylvan, storm::RationalFunction>::operator*(InternalAdd<DdType::Sylvan, storm::RationalFunction> const& other) const {
@@ -117,6 +148,12 @@ namespace storm {
         template<typename ValueType>
         InternalAdd<DdType::Sylvan, ValueType>& InternalAdd<DdType::Sylvan, ValueType>::operator*=(InternalAdd<DdType::Sylvan, ValueType> const& other) {
             this->sylvanMtbdd = this->sylvanMtbdd.Times(other.sylvanMtbdd);
+            return *this;
+        }
+
+        template<>
+        InternalAdd<DdType::Sylvan, storm::RationalNumber>& InternalAdd<DdType::Sylvan, storm::RationalNumber>::operator*=(InternalAdd<DdType::Sylvan, storm::RationalNumber> const& other) {
+            this->sylvanMtbdd = this->sylvanMtbdd.TimesRN(other.sylvanMtbdd);
             return *this;
         }
 
@@ -133,6 +170,11 @@ namespace storm {
             return InternalAdd<DdType::Sylvan, ValueType>(ddManager,  this->sylvanMtbdd.Minus(other.sylvanMtbdd));
         }
 
+        template<>
+        InternalAdd<DdType::Sylvan, storm::RationalNumber> InternalAdd<DdType::Sylvan, storm::RationalNumber>::operator-(InternalAdd<DdType::Sylvan, storm::RationalNumber> const& other) const {
+            return InternalAdd<DdType::Sylvan, storm::RationalNumber>(ddManager,  this->sylvanMtbdd.MinusRN(other.sylvanMtbdd));
+        }
+        
 #ifdef STORM_HAVE_CARL
 		template<>
         InternalAdd<DdType::Sylvan, storm::RationalFunction> InternalAdd<DdType::Sylvan, storm::RationalFunction>::operator-(InternalAdd<DdType::Sylvan, storm::RationalFunction> const& other) const {
@@ -146,6 +188,12 @@ namespace storm {
             return *this;
         }
 
+        template<>
+        InternalAdd<DdType::Sylvan, storm::RationalNumber>& InternalAdd<DdType::Sylvan, storm::RationalNumber>::operator-=(InternalAdd<DdType::Sylvan, storm::RationalNumber> const& other) {
+            this->sylvanMtbdd = this->sylvanMtbdd.MinusRN(other.sylvanMtbdd);
+            return *this;
+        }
+        
 #ifdef STORM_HAVE_CARL
 		template<>
         InternalAdd<DdType::Sylvan, storm::RationalFunction>& InternalAdd<DdType::Sylvan, storm::RationalFunction>::operator-=(InternalAdd<DdType::Sylvan, storm::RationalFunction> const& other) {
@@ -159,6 +207,11 @@ namespace storm {
             return InternalAdd<DdType::Sylvan, ValueType>(ddManager,  this->sylvanMtbdd.Divide(other.sylvanMtbdd));
         }
 
+        template<>
+        InternalAdd<DdType::Sylvan, storm::RationalNumber> InternalAdd<DdType::Sylvan, storm::RationalNumber>::operator/(InternalAdd<DdType::Sylvan, storm::RationalNumber> const& other) const {
+            return InternalAdd<DdType::Sylvan, storm::RationalNumber>(ddManager,  this->sylvanMtbdd.DivideRN(other.sylvanMtbdd));
+        }
+        
 #ifdef STORM_HAVE_CARL
 		template<>
         InternalAdd<DdType::Sylvan, storm::RationalFunction> InternalAdd<DdType::Sylvan, storm::RationalFunction>::operator/(InternalAdd<DdType::Sylvan, storm::RationalFunction> const& other) const {
@@ -172,6 +225,12 @@ namespace storm {
             return *this;
         }
 
+        template<>
+        InternalAdd<DdType::Sylvan, storm::RationalNumber>& InternalAdd<DdType::Sylvan, storm::RationalNumber>::operator/=(InternalAdd<DdType::Sylvan, storm::RationalNumber> const& other) {
+            this->sylvanMtbdd = this->sylvanMtbdd.DivideRN(other.sylvanMtbdd);
+            return *this;
+        }
+        
 #ifdef STORM_HAVE_CARL
 		template<>
         InternalAdd<DdType::Sylvan, storm::RationalFunction>& InternalAdd<DdType::Sylvan, storm::RationalFunction>::operator/=(InternalAdd<DdType::Sylvan, storm::RationalFunction> const& other) {
@@ -185,6 +244,11 @@ namespace storm {
             return InternalBdd<DdType::Sylvan>(ddManager,  this->sylvanMtbdd.Equals(other.sylvanMtbdd));
         }
 
+        template<>
+        InternalBdd<DdType::Sylvan> InternalAdd<DdType::Sylvan, storm::RationalNumber>::equals(InternalAdd<DdType::Sylvan, storm::RationalNumber> const& other) const {
+            return InternalBdd<DdType::Sylvan>(ddManager,  this->sylvanMtbdd.EqualsRN(other.sylvanMtbdd));
+        }
+        
 #ifdef STORM_HAVE_CARL
 		template<>
         InternalBdd<DdType::Sylvan> InternalAdd<DdType::Sylvan, storm::RationalFunction>::equals(InternalAdd<DdType::Sylvan, storm::RationalFunction> const& other) const {
@@ -202,6 +266,11 @@ namespace storm {
             return InternalBdd<DdType::Sylvan>(ddManager, this->sylvanMtbdd.Less(other.sylvanMtbdd));
         }
 
+        template<>
+        InternalBdd<DdType::Sylvan> InternalAdd<DdType::Sylvan, storm::RationalNumber>::less(InternalAdd<DdType::Sylvan, storm::RationalNumber> const& other) const {
+            return InternalBdd<DdType::Sylvan>(ddManager, this->sylvanMtbdd.LessRN(other.sylvanMtbdd));
+        }
+        
 #ifdef STORM_HAVE_CARL
 		template<>
         InternalBdd<DdType::Sylvan> InternalAdd<DdType::Sylvan, storm::RationalFunction>::less(InternalAdd<DdType::Sylvan, storm::RationalFunction> const& other) const {
@@ -212,6 +281,11 @@ namespace storm {
         template<typename ValueType>
         InternalBdd<DdType::Sylvan> InternalAdd<DdType::Sylvan, ValueType>::lessOrEqual(InternalAdd<DdType::Sylvan, ValueType> const& other) const {
             return InternalBdd<DdType::Sylvan>(ddManager, this->sylvanMtbdd.LessOrEqual(other.sylvanMtbdd));
+        }
+
+        template<>
+        InternalBdd<DdType::Sylvan> InternalAdd<DdType::Sylvan, storm::RationalNumber>::lessOrEqual(InternalAdd<DdType::Sylvan, storm::RationalNumber> const& other) const {
+            return InternalBdd<DdType::Sylvan>(ddManager, this->sylvanMtbdd.LessOrEqualRN(other.sylvanMtbdd));
         }
 
 #ifdef STORM_HAVE_CARL
@@ -236,6 +310,11 @@ namespace storm {
             return InternalAdd<DdType::Sylvan, ValueType>(ddManager, this->sylvanMtbdd.Pow(other.sylvanMtbdd));
         }
 
+        template<>
+        InternalAdd<DdType::Sylvan, storm::RationalNumber> InternalAdd<DdType::Sylvan, storm::RationalNumber>::pow(InternalAdd<DdType::Sylvan, storm::RationalNumber> const& other) const {
+            return InternalAdd<DdType::Sylvan, storm::RationalNumber>(ddManager, this->sylvanMtbdd.PowRN(other.sylvanMtbdd));
+        }
+        
 #ifdef STORM_HAVE_CARL
 		template<>
         InternalAdd<DdType::Sylvan, storm::RationalFunction> InternalAdd<DdType::Sylvan, storm::RationalFunction>::pow(InternalAdd<DdType::Sylvan, storm::RationalFunction> const& other) const {
@@ -248,6 +327,11 @@ namespace storm {
             return InternalAdd<DdType::Sylvan, ValueType>(ddManager, this->sylvanMtbdd.Mod(other.sylvanMtbdd));
         }
 
+        template<>
+        InternalAdd<DdType::Sylvan, storm::RationalNumber> InternalAdd<DdType::Sylvan, storm::RationalNumber>::mod(InternalAdd<DdType::Sylvan, storm::RationalNumber> const&) const {
+            STORM_LOG_THROW(false, storm::exceptions::InvalidOperationException, "Operation (mod) not supported by rational numbers.");
+        }
+        
 #ifdef STORM_HAVE_CARL
 		template<>
         InternalAdd<DdType::Sylvan, storm::RationalFunction> InternalAdd<DdType::Sylvan, storm::RationalFunction>::mod(InternalAdd<DdType::Sylvan, storm::RationalFunction> const&) const {
@@ -258,6 +342,11 @@ namespace storm {
         template<typename ValueType>
         InternalAdd<DdType::Sylvan, ValueType> InternalAdd<DdType::Sylvan, ValueType>::logxy(InternalAdd<DdType::Sylvan, ValueType> const& other) const {
             return InternalAdd<DdType::Sylvan, ValueType>(ddManager, this->sylvanMtbdd.Logxy(other.sylvanMtbdd));
+        }
+
+        template<>
+        InternalAdd<DdType::Sylvan, storm::RationalNumber> InternalAdd<DdType::Sylvan, storm::RationalNumber>::logxy(InternalAdd<DdType::Sylvan, storm::RationalNumber> const&) const {
+            STORM_LOG_THROW(false, storm::exceptions::InvalidOperationException, "Operation (logxy) not supported by rational numbers.");
         }
 
 #ifdef STORM_HAVE_CARL
@@ -272,6 +361,11 @@ namespace storm {
             return InternalAdd<DdType::Sylvan, ValueType>(ddManager, this->sylvanMtbdd.Floor());
         }
 
+        template<>
+        InternalAdd<DdType::Sylvan, storm::RationalNumber> InternalAdd<DdType::Sylvan, storm::RationalNumber>::floor() const {
+            return InternalAdd<DdType::Sylvan, storm::RationalNumber>(ddManager, this->sylvanMtbdd.FloorRN());
+        }
+        
 #ifdef STORM_HAVE_CARL
 		template<>
         InternalAdd<DdType::Sylvan, storm::RationalFunction> InternalAdd<DdType::Sylvan, storm::RationalFunction>::floor() const {
@@ -284,6 +378,11 @@ namespace storm {
             return InternalAdd<DdType::Sylvan, ValueType>(ddManager, this->sylvanMtbdd.Ceil());
         }
 
+        template<>
+        InternalAdd<DdType::Sylvan, storm::RationalNumber> InternalAdd<DdType::Sylvan, storm::RationalNumber>::ceil() const {
+            return InternalAdd<DdType::Sylvan, storm::RationalNumber>(ddManager, this->sylvanMtbdd.CeilRN());
+        }
+        
 #ifdef STORM_HAVE_CARL
 		template<>
         InternalAdd<DdType::Sylvan, storm::RationalFunction> InternalAdd<DdType::Sylvan, storm::RationalFunction>::ceil() const {
@@ -296,6 +395,11 @@ namespace storm {
             return InternalAdd<DdType::Sylvan, ValueType>(ddManager, this->sylvanMtbdd.Min(other.sylvanMtbdd));
         }
 
+        template<>
+        InternalAdd<DdType::Sylvan, storm::RationalNumber> InternalAdd<DdType::Sylvan, storm::RationalNumber>::minimum(InternalAdd<DdType::Sylvan, storm::RationalNumber> const& other) const {
+            return InternalAdd<DdType::Sylvan, storm::RationalNumber>(ddManager, this->sylvanMtbdd.MinRN(other.sylvanMtbdd));
+        }
+        
 #ifdef STORM_HAVE_CARL
 		template<>
         InternalAdd<DdType::Sylvan, storm::RationalFunction> InternalAdd<DdType::Sylvan, storm::RationalFunction>::minimum(InternalAdd<DdType::Sylvan, storm::RationalFunction> const& other) const {
@@ -308,22 +412,15 @@ namespace storm {
             return InternalAdd<DdType::Sylvan, ValueType>(ddManager, this->sylvanMtbdd.Max(other.sylvanMtbdd));
         }
 
+        template<>
+        InternalAdd<DdType::Sylvan, storm::RationalNumber> InternalAdd<DdType::Sylvan, storm::RationalNumber>::maximum(InternalAdd<DdType::Sylvan, storm::RationalNumber> const& other) const {
+            return InternalAdd<DdType::Sylvan, storm::RationalNumber>(ddManager, this->sylvanMtbdd.MaxRN(other.sylvanMtbdd));
+        }
+        
 #ifdef STORM_HAVE_CARL
 		template<>
         InternalAdd<DdType::Sylvan, storm::RationalFunction> InternalAdd<DdType::Sylvan, storm::RationalFunction>::maximum(InternalAdd<DdType::Sylvan, storm::RationalFunction> const& other) const {
             return InternalAdd<DdType::Sylvan, storm::RationalFunction>(ddManager, this->sylvanMtbdd.MaxRF(other.sylvanMtbdd));
-        }
-#endif
-
-        template<typename ValueType>
-        InternalAdd<DdType::Sylvan, ValueType> InternalAdd<DdType::Sylvan, ValueType>::replaceLeaves(std::map<uint32_t, std::pair<storm::RationalFunctionVariable, std::pair<storm::RationalNumber, storm::RationalNumber>>> const&) const {
-            STORM_LOG_THROW(false, storm::exceptions::InvalidOperationException, "Replacing leaves is not supported for types other than rational functions.");
-        }
-
-#ifdef STORM_HAVE_CARL
-		template<>
-        InternalAdd<DdType::Sylvan, storm::RationalFunction> InternalAdd<DdType::Sylvan, storm::RationalFunction>::replaceLeaves(std::map<uint32_t, std::pair<storm::RationalFunctionVariable, std::pair<storm::RationalNumber, storm::RationalNumber>>> const& replacementMap) const {
-            return InternalAdd<DdType::Sylvan, storm::RationalFunction>(ddManager, this->sylvanMtbdd.ReplaceLeavesRF((void*)&replacementMap));
         }
 #endif
 
@@ -335,6 +432,13 @@ namespace storm {
             }
             STORM_LOG_THROW(false, storm::exceptions::InvalidOperationException, "Cannot convert this ADD to the target type.");
         }
+
+        template<>
+        template<>
+        InternalAdd<DdType::Sylvan, double> InternalAdd<DdType::Sylvan, storm::RationalNumber>::toValueType() const {
+            return InternalAdd<DdType::Sylvan, double>(ddManager, this->sylvanMtbdd.ToDoubleRN());
+        }
+
         
 #ifdef STORM_HAVE_CARL
 		template<>
@@ -349,6 +453,11 @@ namespace storm {
             return InternalAdd<DdType::Sylvan, ValueType>(ddManager, this->sylvanMtbdd.AbstractPlus(cube.sylvanBdd));
         }
 
+        template<>
+        InternalAdd<DdType::Sylvan, storm::RationalNumber> InternalAdd<DdType::Sylvan, storm::RationalNumber>::sumAbstract(InternalBdd<DdType::Sylvan> const& cube) const {
+            return InternalAdd<DdType::Sylvan, storm::RationalNumber>(ddManager, this->sylvanMtbdd.AbstractPlusRN(cube.sylvanBdd));
+        }
+        
 #ifdef STORM_HAVE_CARL
 		template<>
         InternalAdd<DdType::Sylvan, storm::RationalFunction> InternalAdd<DdType::Sylvan, storm::RationalFunction>::sumAbstract(InternalBdd<DdType::Sylvan> const& cube) const {
@@ -366,6 +475,11 @@ namespace storm {
             return InternalBdd<DdType::Sylvan>(ddManager, this->sylvanMtbdd.AbstractMinRepresentative(cube.sylvanBdd));
         }
 
+        template<>
+        InternalAdd<DdType::Sylvan, storm::RationalNumber> InternalAdd<DdType::Sylvan, storm::RationalNumber>::minAbstract(InternalBdd<DdType::Sylvan> const& cube) const {
+            return InternalAdd<DdType::Sylvan, storm::RationalNumber>(ddManager, this->sylvanMtbdd.AbstractMinRN(cube.sylvanBdd));
+        }
+        
 #ifdef STORM_HAVE_CARL
 		template<>
         InternalAdd<DdType::Sylvan, storm::RationalFunction> InternalAdd<DdType::Sylvan, storm::RationalFunction>::minAbstract(InternalBdd<DdType::Sylvan> const& cube) const {
@@ -383,6 +497,11 @@ namespace storm {
             return InternalBdd<DdType::Sylvan>(ddManager, this->sylvanMtbdd.AbstractMaxRepresentative(cube.sylvanBdd));
         }
 
+        template<>
+        InternalAdd<DdType::Sylvan, storm::RationalNumber> InternalAdd<DdType::Sylvan, storm::RationalNumber>::maxAbstract(InternalBdd<DdType::Sylvan> const& cube) const {
+            return InternalAdd<DdType::Sylvan, storm::RationalNumber>(ddManager, this->sylvanMtbdd.AbstractMaxRN(cube.sylvanBdd));
+        }
+        
 #ifdef STORM_HAVE_CARL
 		template<>
         InternalAdd<DdType::Sylvan, storm::RationalFunction> InternalAdd<DdType::Sylvan, storm::RationalFunction>::maxAbstract(InternalBdd<DdType::Sylvan> const& cube) const {
@@ -439,6 +558,16 @@ namespace storm {
             
             return InternalAdd<DdType::Sylvan, ValueType>(ddManager, this->sylvanMtbdd.AndExists(otherMatrix.sylvanMtbdd, summationVariables.getSylvanBdd()));
         }
+
+        template<>
+        InternalAdd<DdType::Sylvan, storm::RationalNumber> InternalAdd<DdType::Sylvan, storm::RationalNumber>::multiplyMatrix(InternalAdd<DdType::Sylvan, storm::RationalNumber> const& otherMatrix, std::vector<InternalBdd<DdType::Sylvan>> const& summationDdVariables) const {
+            InternalBdd<DdType::Sylvan> summationVariables = ddManager->getBddOne();
+            for (auto const& ddVariable : summationDdVariables) {
+                summationVariables &= ddVariable;
+            }
+            
+            return InternalAdd<DdType::Sylvan, storm::RationalNumber>(ddManager, this->sylvanMtbdd.AndExistsRN(otherMatrix.sylvanMtbdd, summationVariables.getSylvanBdd()));
+        }
         
 #ifdef STORM_HAVE_CARL
         template<>
@@ -457,20 +586,34 @@ namespace storm {
             return InternalBdd<DdType::Sylvan>(ddManager, this->sylvanMtbdd.BddStrictThreshold(value));
         }
 
+        template<>
+        InternalBdd<DdType::Sylvan> InternalAdd<DdType::Sylvan, storm::RationalNumber>::greater(storm::RationalNumber const& value) const {
+            return InternalBdd<DdType::Sylvan>(ddManager, this->sylvanMtbdd.BddStrictThresholdRN(value));
+        }
+
+#ifdef STORM_HAVE_CARL
 		template<>
 		InternalBdd<DdType::Sylvan> InternalAdd<DdType::Sylvan, storm::RationalFunction>::greater(storm::RationalFunction const& value) const {
             return InternalBdd<DdType::Sylvan>(ddManager, this->sylvanMtbdd.BddStrictThresholdRF(value));
 		}
+#endif
         
         template<typename ValueType>
         InternalBdd<DdType::Sylvan> InternalAdd<DdType::Sylvan, ValueType>::greaterOrEqual(ValueType const& value) const {
             return InternalBdd<DdType::Sylvan>(ddManager, this->sylvanMtbdd.BddThreshold(value));
         }
+
+        template<>
+        InternalBdd<DdType::Sylvan> InternalAdd<DdType::Sylvan, storm::RationalNumber>::greaterOrEqual(storm::RationalNumber const& value) const {
+            return InternalBdd<DdType::Sylvan>(ddManager, this->sylvanMtbdd.BddThresholdRN(value));
+        }
         
+#ifdef STORM_HAVE_CARL
 		template<>
 		InternalBdd<DdType::Sylvan> InternalAdd<DdType::Sylvan, storm::RationalFunction>::greaterOrEqual(storm::RationalFunction const& value) const {
             return InternalBdd<DdType::Sylvan>(ddManager, this->sylvanMtbdd.BddThresholdRF(value));
 		}
+#endif
 
         template<typename ValueType>
         InternalBdd<DdType::Sylvan> InternalAdd<DdType::Sylvan, ValueType>::less(ValueType const& value) const {
@@ -524,11 +667,18 @@ namespace storm {
         ValueType InternalAdd<DdType::Sylvan, ValueType>::getMin() const {
             return getValue(this->sylvanMtbdd.Minimum().GetMTBDD());
         }
+
+        template <>
+        storm::RationalNumber InternalAdd<DdType::Sylvan, storm::RationalNumber>::getMin() const {
+            return getValue(this->sylvanMtbdd.MinimumRN().GetMTBDD());
+        }
         
+#ifdef STORM_HAVE_CARL
         template <>
         storm::RationalFunction InternalAdd<DdType::Sylvan, storm::RationalFunction>::getMin() const {
             return getValue(this->sylvanMtbdd.MinimumRF().GetMTBDD());
         }
+#endif
         
         template<typename ValueType>
         ValueType InternalAdd<DdType::Sylvan, ValueType>::getMax() const {
@@ -536,9 +686,16 @@ namespace storm {
         }
 
         template<>
+        storm::RationalNumber InternalAdd<DdType::Sylvan, storm::RationalNumber>::getMax() const {
+            return getValue(this->sylvanMtbdd.MaximumRN().GetMTBDD());
+        }
+        
+#ifdef STORM_HAVE_CARL
+        template<>
         storm::RationalFunction InternalAdd<DdType::Sylvan, storm::RationalFunction>::getMax() const {
             return getValue(this->sylvanMtbdd.MaximumRF().GetMTBDD());
         }
+#endif
         
         template<typename ValueType>
         ValueType InternalAdd<DdType::Sylvan, ValueType>::getValue() const {
@@ -904,9 +1061,14 @@ namespace storm {
 		template<typename ValueType>
 		MTBDD InternalAdd<DdType::Sylvan, ValueType>::getLeaf(storm::RationalFunction const& value) {
 			storm_rational_function_ptr ptr = (storm_rational_function_ptr)(&value);
-
 			return mtbdd_storm_rational_function(ptr);
 		}
+
+        template<typename ValueType>
+        MTBDD InternalAdd<DdType::Sylvan, ValueType>::getLeaf(storm::RationalNumber const& value) {
+            storm_rational_function_ptr ptr = (storm_rational_number_ptr)(&value);
+            return mtbdd_storm_rational_number(ptr);
+        }
 
         template<typename ValueType>
         sylvan::Mtbdd InternalAdd<DdType::Sylvan, ValueType>::getSylvanMtbdd() const {
@@ -915,7 +1077,9 @@ namespace storm {
         
         template class InternalAdd<DdType::Sylvan, double>;
         template class InternalAdd<DdType::Sylvan, uint_fast64_t>;
-        
+
+        template class InternalAdd<DdType::Sylvan, storm::RationalNumber>;
+
 #ifdef STORM_HAVE_CARL
 		template class InternalAdd<DdType::Sylvan, storm::RationalFunction>;
 #endif

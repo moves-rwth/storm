@@ -1,6 +1,10 @@
-#include "storm_function_wrapper.h"
+#include "storm_wrapper.h"
+#include "sylvan_storm_rational_number.h"
 #include "sylvan_storm_rational_function.h"
 
+/*********************************************
+ Functions added to sylvan's Sylvan class.
+ *********************************************/
 void
 Sylvan::initCustomMtbdd()
 {
@@ -8,11 +12,9 @@ Sylvan::initCustomMtbdd()
     sylvan_storm_rational_function_init();
 }
 
-Bdd
-Bdd::ExistAbstractRepresentative(const BddSet& cube) const {
-	LACE_ME;
-    return sylvan_existsRepresentative(bdd, cube.set.bdd);
-}
+/*********************************************
+ Functions added to sylvan's Bdd class.
+ *********************************************/
 
 Mtbdd
 Bdd::toDoubleMtbdd() const {
@@ -26,18 +28,317 @@ Bdd::toInt64Mtbdd() const {
     return mtbdd_bool_to_int64(bdd);
 }
 
+Mtbdd
+Bdd::toStormRationalNumberMtbdd() const {
+    LACE_ME;
+    return mtbdd_bool_to_storm_rational_number(bdd);
+}
+
+#if defined(SYLVAN_HAVE_CARL) || defined(STORM_HAVE_CARL)
+Mtbdd
+Bdd::toStormRationalFunctionMtbdd() const {
+    LACE_ME;
+    return mtbdd_bool_to_storm_rational_function(bdd);
+}
+#endif
+
+Mtbdd
+Bdd::Ite(Mtbdd const& thenDd, Mtbdd const& elseDd) const {
+    LACE_ME;
+    return mtbdd_ite(bdd, thenDd.GetMTBDD(), elseDd.GetMTBDD());
+}
+
+Bdd
+Bdd::ExistAbstractRepresentative(const BddSet& cube) const {
+    LACE_ME;
+    return sylvan_existsRepresentative(bdd, cube.set.bdd);
+}
+
+/*********************************************
+ Functions added to sylvan's Mtbdd class.
+ *********************************************/
+
+Bdd
+Mtbdd::NotZero() const
+{
+    LACE_ME;
+    return mtbdd_not_zero(mtbdd);
+}
+
+size_t
+Mtbdd::CountLeaves() const {
+    LACE_ME;
+    return mtbdd_leafcount(mtbdd);
+}
+
+double
+Mtbdd::NonZeroCount(size_t variableCount) const {
+    LACE_ME;
+    return mtbdd_non_zero_count(mtbdd, variableCount);
+}
+
+bool
+Mtbdd::isValid() const {
+    LACE_ME;
+    return mtbdd_test_isvalid(mtbdd) == 1;
+}
+
+void
+Mtbdd::PrintDot(FILE *out) const {
+    mtbdd_fprintdot(out, mtbdd);
+}
+
+std::string
+Mtbdd::GetShaHash() const {
+    char buf[65];
+    mtbdd_getsha(mtbdd, buf);
+    return std::string(buf);
+}
+
+Mtbdd
+Mtbdd::Minus(const Mtbdd &other) const
+{
+    LACE_ME;
+    return mtbdd_minus(mtbdd, other.mtbdd);
+}
+
+Mtbdd
+Mtbdd::Divide(const Mtbdd &other) const
+{
+    LACE_ME;
+    return mtbdd_divide(mtbdd, other.mtbdd);
+}
+
+Bdd
+Mtbdd::Equals(const Mtbdd& other) const {
+    LACE_ME;
+    return mtbdd_equals(mtbdd, other.mtbdd);
+}
+
+Bdd
+Mtbdd::Less(const Mtbdd& other) const {
+    LACE_ME;
+    return mtbdd_less_as_bdd(mtbdd, other.mtbdd);
+}
+
+Bdd
+Mtbdd::LessOrEqual(const Mtbdd& other) const {
+    LACE_ME;
+    return mtbdd_less_or_equal_as_bdd(mtbdd, other.mtbdd);
+}
+
+Bdd
+Mtbdd::AbstractMinRepresentative(const BddSet &variables) const
+{
+    LACE_ME;
+    return mtbdd_minExistsRepresentative(mtbdd, variables.set.bdd);
+}
+
+Bdd
+Mtbdd::AbstractMaxRepresentative(const BddSet &variables) const
+{
+    LACE_ME;
+    return mtbdd_maxExistsRepresentative(mtbdd, variables.set.bdd);
+}
+
+Mtbdd
+Mtbdd::Pow(const Mtbdd& other) const {
+    LACE_ME;
+    return mtbdd_pow(mtbdd, other.mtbdd);
+}
+
+Mtbdd
+Mtbdd::Mod(const Mtbdd& other) const {
+    LACE_ME;
+    return mtbdd_mod(mtbdd, other.mtbdd);
+}
+
+Mtbdd
+Mtbdd::Logxy(const Mtbdd& other) const {
+    LACE_ME;
+    return mtbdd_logxy(mtbdd, other.mtbdd);
+}
+
+Mtbdd
+Mtbdd::Floor() const {
+    LACE_ME;
+    return mtbdd_floor(mtbdd);
+}
+
+Mtbdd
+Mtbdd::Ceil() const {
+    LACE_ME;
+    return mtbdd_ceil(mtbdd);
+}
+
+Mtbdd
+Mtbdd::Minimum() const {
+    LACE_ME;
+    return mtbdd_minimum(mtbdd);
+}
+
+Mtbdd
+Mtbdd::Maximum() const {
+    LACE_ME;
+    return mtbdd_maximum(mtbdd);
+}
+
+bool
+Mtbdd::EqualNorm(const Mtbdd& other, double epsilon) const {
+    LACE_ME;
+    return mtbdd_equal_norm_d(mtbdd, other.mtbdd, epsilon);
+}
+
+bool
+Mtbdd::EqualNormRel(const Mtbdd& other, double epsilon) const {
+    LACE_ME;
+    return mtbdd_equal_norm_rel_d(mtbdd, other.mtbdd, epsilon);
+}
+
+// Functions for Mtbdds over rational numbers.
+Mtbdd
+Mtbdd::stormRationalNumberTerminal(storm::RationalNumber const& value)
+{
+    storm_rational_number_ptr ptr = (storm_rational_number_ptr)(&value);
+    return mtbdd_storm_rational_number(ptr);
+}
+
+Bdd
+Mtbdd::EqualsRN(const Mtbdd& other) const {
+    LACE_ME;
+    return mtbdd_equals_rational_number(mtbdd, other.mtbdd);
+}
+
+Bdd
+Mtbdd::LessRN(const Mtbdd& other) const {
+    LACE_ME;
+    return sylvan_storm_rational_number_less(mtbdd, other.mtbdd);
+}
+
+Bdd
+Mtbdd::LessOrEqualRN(const Mtbdd& other) const {
+    LACE_ME;
+    return sylvan_storm_rational_number_less_or_equal(mtbdd, other.mtbdd);
+}
+
+Mtbdd
+Mtbdd::MinRN(const Mtbdd& other) const {
+    LACE_ME;
+    return sylvan_storm_rational_number_min(mtbdd, other.mtbdd);
+}
+
+Mtbdd
+Mtbdd::MaxRN(const Mtbdd& other) const {
+    LACE_ME;
+    return sylvan_storm_rational_number_max(mtbdd, other.mtbdd);
+}
+
+Mtbdd
+Mtbdd::PlusRN(const Mtbdd &other) const
+{
+    LACE_ME;
+    return sylvan_storm_rational_number_plus(mtbdd, other.mtbdd);
+}
+
+Mtbdd
+Mtbdd::MinusRN(const Mtbdd &other) const
+{
+    LACE_ME;
+    return sylvan_storm_rational_number_minus(mtbdd, other.mtbdd);
+}
+
+Mtbdd
+Mtbdd::TimesRN(const Mtbdd &other) const
+{
+    LACE_ME;
+    return sylvan_storm_rational_number_times(mtbdd, other.mtbdd);
+}
+
+Mtbdd
+Mtbdd::DivideRN(const Mtbdd &other) const
+{
+    LACE_ME;
+    return sylvan_storm_rational_number_divide(mtbdd, other.mtbdd);
+}
+
+Mtbdd
+Mtbdd::FloorRN() const {
+    LACE_ME;
+    return sylvan_storm_rational_number_floor(mtbdd);
+}
+
+Mtbdd
+Mtbdd::CeilRN() const {
+    LACE_ME;
+    return sylvan_storm_rational_number_ceil(mtbdd);
+}
+
+Mtbdd
+Mtbdd::PowRN(const Mtbdd& other) const {
+    LACE_ME;
+    return sylvan_storm_rational_number_pow(mtbdd, other.mtbdd);
+}
+
+Mtbdd
+Mtbdd::MinimumRN() const {
+    LACE_ME;
+    return sylvan_storm_rational_number_minimum(mtbdd);
+}
+
+Mtbdd
+Mtbdd::MaximumRN() const {
+    LACE_ME;
+    return sylvan_storm_rational_number_maximum(mtbdd);
+}
+
+Mtbdd
+Mtbdd::AndExistsRN(const Mtbdd &other, const BddSet &variables) const {
+    LACE_ME;
+    return sylvan_storm_rational_number_and_exists(mtbdd, other.mtbdd, variables.set.bdd);
+}
+
+Mtbdd Mtbdd::AbstractPlusRN(const BddSet &variables) const {
+    LACE_ME;
+    return sylvan_storm_rational_number_abstract_plus(mtbdd, variables.set.bdd);
+}
+
+Mtbdd Mtbdd::AbstractMinRN(const BddSet &variables) const {
+    LACE_ME;
+    return sylvan_storm_rational_number_abstract_min(mtbdd, variables.set.bdd);
+}
+
+Mtbdd Mtbdd::AbstractMaxRN(const BddSet &variables) const {
+    LACE_ME;
+    return sylvan_storm_rational_number_abstract_max(mtbdd, variables.set.bdd);
+}
+
+Bdd
+Mtbdd::BddThresholdRN(storm::RationalNumber const& rn) const {
+    LACE_ME;
+    return sylvan_storm_rational_number_threshold(mtbdd, (void*)&rn);
+}
+
+Bdd
+Mtbdd::BddStrictThresholdRN(storm::RationalNumber const& rn) const {
+    LACE_ME;
+    return sylvan_storm_rational_number_strict_threshold(mtbdd, (void*)&rn);
+}
+
+Mtbdd
+Mtbdd::ToDoubleRN() const {
+    LACE_ME;
+    return sylvan_storm_rational_number_to_double(mtbdd);
+}
+
+
+
+// Functions for Mtbdds over rational functions.
 #if defined(SYLVAN_HAVE_CARL) || defined(STORM_HAVE_CARL)
 Mtbdd
 Mtbdd::stormRationalFunctionTerminal(storm::RationalFunction const& value)
 {
     storm_rational_function_ptr ptr = (storm_rational_function_ptr)(&value);
     return mtbdd_storm_rational_function(ptr);
-}
-
-Mtbdd
-Bdd::toStormRationalFunctionMtbdd() const {
-    LACE_ME;
-    return mtbdd_bool_to_storm_rational_function(bdd);
 }
 
 Bdd
@@ -71,30 +372,10 @@ Mtbdd::MaxRF(const Mtbdd& other) const {
 }
 
 Mtbdd
-Mtbdd::ToDoubleRF() const {
-    LACE_ME;
-    return sylvan_storm_rational_function_to_double(mtbdd);
-}
-
-Mtbdd
 Mtbdd::PlusRF(const Mtbdd &other) const
 {
     LACE_ME;
     return sylvan_storm_rational_function_plus(mtbdd, other.mtbdd);
-}
-
-
-Mtbdd
-Mtbdd::TimesRF(const Mtbdd &other) const
-{
-    LACE_ME;
-    return sylvan_storm_rational_function_times(mtbdd, other.mtbdd);
-}
-
-Mtbdd
-Mtbdd::AndExistsRF(const Mtbdd &other, const BddSet &variables) const {
-    LACE_ME;
-    return sylvan_storm_rational_function_and_exists(mtbdd, other.mtbdd, variables.set.bdd);
 }
 
 Mtbdd
@@ -105,29 +386,18 @@ Mtbdd::MinusRF(const Mtbdd &other) const
 }
 
 Mtbdd
+Mtbdd::TimesRF(const Mtbdd &other) const
+{
+    LACE_ME;
+    return sylvan_storm_rational_function_times(mtbdd, other.mtbdd);
+}
+
+Mtbdd
 Mtbdd::DivideRF(const Mtbdd &other) const
 {
     LACE_ME;
     return sylvan_storm_rational_function_divide(mtbdd, other.mtbdd);
 }
-
-Mtbdd
-Mtbdd::PowRF(const Mtbdd& other) const {
-    LACE_ME;
-    return sylvan_storm_rational_function_pow(mtbdd, other.mtbdd);
-}
-
-
-Mtbdd Mtbdd::AbstractPlusRF(const BddSet &variables) const {
-	LACE_ME;
-    return sylvan_storm_rational_function_abstract_plus(mtbdd, variables.set.bdd);
-}
-
-Mtbdd Mtbdd::ReplaceLeavesRF(void* context) const {
-	LACE_ME;
-    return sylvan_storm_rational_function_replace_leaves(mtbdd, (size_t)context);
-}
-
 
 Mtbdd
 Mtbdd::FloorRF() const {
@@ -141,26 +411,10 @@ Mtbdd::CeilRF() const {
     return sylvan_storm_rational_function_ceil(mtbdd);
 }
 
-Mtbdd Mtbdd::AbstractMinRF(const BddSet &variables) const {
+Mtbdd
+Mtbdd::PowRF(const Mtbdd& other) const {
     LACE_ME;
-    return sylvan_storm_rational_function_abstract_min(mtbdd, variables.set.bdd);
-}
-
-Mtbdd Mtbdd::AbstractMaxRF(const BddSet &variables) const {
-    LACE_ME;
-    return sylvan_storm_rational_function_abstract_max(mtbdd, variables.set.bdd);
-}
-
-Bdd
-Mtbdd::BddStrictThresholdRF(storm::RationalFunction const& rf) const {
-    LACE_ME;
-    return sylvan_storm_rational_function_strict_threshold(mtbdd, (void*)&rf);
-}
-
-Bdd
-Mtbdd::BddThresholdRF(storm::RationalFunction const& rf) const {
-    LACE_ME;
-    return sylvan_storm_rational_function_threshold(mtbdd, (void*)&rf);
+    return sylvan_storm_rational_function_pow(mtbdd, other.mtbdd);
 }
 
 Mtbdd
@@ -175,147 +429,53 @@ Mtbdd::MaximumRF() const {
     return sylvan_storm_rational_function_maximum(mtbdd);
 }
 
+Mtbdd
+Mtbdd::AndExistsRF(const Mtbdd &other, const BddSet &variables) const {
+    LACE_ME;
+    return sylvan_storm_rational_function_and_exists(mtbdd, other.mtbdd, variables.set.bdd);
+}
+
+Mtbdd Mtbdd::AbstractPlusRF(const BddSet &variables) const {
+    LACE_ME;
+    return sylvan_storm_rational_function_abstract_plus(mtbdd, variables.set.bdd);
+}
+
+Mtbdd Mtbdd::AbstractMinRF(const BddSet &variables) const {
+    LACE_ME;
+    return sylvan_storm_rational_function_abstract_min(mtbdd, variables.set.bdd);
+}
+
+Mtbdd Mtbdd::AbstractMaxRF(const BddSet &variables) const {
+    LACE_ME;
+    return sylvan_storm_rational_function_abstract_max(mtbdd, variables.set.bdd);
+}
+
+Bdd
+Mtbdd::BddThresholdRF(storm::RationalFunction const& rf) const {
+    LACE_ME;
+    return sylvan_storm_rational_function_threshold(mtbdd, (void*)&rf);
+}
+
+Bdd
+Mtbdd::BddStrictThresholdRF(storm::RationalFunction const& rf) const {
+    LACE_ME;
+    return sylvan_storm_rational_function_strict_threshold(mtbdd, (void*)&rf);
+}
+
+Mtbdd
+Mtbdd::ToDoubleRF() const {
+    LACE_ME;
+    return sylvan_storm_rational_function_to_double(mtbdd);
+}
 #endif
 
-Mtbdd
-Bdd::Ite(Mtbdd const& thenDd, Mtbdd const& elseDd) const {
-    LACE_ME;
-    return mtbdd_ite(bdd, thenDd.GetMTBDD(), elseDd.GetMTBDD());
-}
 
-Mtbdd
-Mtbdd::Minus(const Mtbdd &other) const
-{
-    LACE_ME;
-    return mtbdd_minus(mtbdd, other.mtbdd);
-}
 
-Mtbdd
-Mtbdd::Divide(const Mtbdd &other) const
-{
-    LACE_ME;
-    return mtbdd_divide(mtbdd, other.mtbdd);
-}
 
-Bdd
-Mtbdd::NotZero() const
-{
-    LACE_ME;
-    return mtbdd_not_zero(mtbdd);
-}
 
-Bdd
-Mtbdd::Equals(const Mtbdd& other) const {
-    LACE_ME;
-    return mtbdd_equals(mtbdd, other.mtbdd);
-}
 
-Bdd
-Mtbdd::Less(const Mtbdd& other) const {
-    LACE_ME;
-    return mtbdd_less_as_bdd(mtbdd, other.mtbdd);
-}
 
-Bdd
-Mtbdd::LessOrEqual(const Mtbdd& other) const {
-    LACE_ME;
-    return mtbdd_less_or_equal_as_bdd(mtbdd, other.mtbdd);
-}
 
-bool
-Mtbdd::EqualNorm(const Mtbdd& other, double epsilon) const {
-    LACE_ME;
-    return mtbdd_equal_norm_d(mtbdd, other.mtbdd, epsilon);
-}
 
-bool
-Mtbdd::EqualNormRel(const Mtbdd& other, double epsilon) const {
-    LACE_ME;
-    return mtbdd_equal_norm_rel_d(mtbdd, other.mtbdd, epsilon);
-}
 
-Mtbdd
-Mtbdd::Floor() const {
-    LACE_ME;
-    return mtbdd_floor(mtbdd);
-}
 
-Mtbdd
-Mtbdd::Ceil() const {
-    LACE_ME;
-    return mtbdd_ceil(mtbdd);
-}
-
-Mtbdd
-Mtbdd::Pow(const Mtbdd& other) const {
-    LACE_ME;
-    return mtbdd_pow(mtbdd, other.mtbdd);
-}
-
-Mtbdd
-Mtbdd::Mod(const Mtbdd& other) const {
-    LACE_ME;
-    return mtbdd_mod(mtbdd, other.mtbdd);
-}
-
-Mtbdd
-Mtbdd::Logxy(const Mtbdd& other) const {
-    LACE_ME;
-    return mtbdd_logxy(mtbdd, other.mtbdd);
-}
-
-size_t
-Mtbdd::CountLeaves() const {
-    LACE_ME;
-    return mtbdd_leafcount(mtbdd);
-}
-
-double
-Mtbdd::NonZeroCount(size_t variableCount) const {
-    LACE_ME;
-    return mtbdd_non_zero_count(mtbdd, variableCount);
-}
-
-bool
-Mtbdd::isValid() const {
-    LACE_ME;
-    return mtbdd_test_isvalid(mtbdd) == 1;
-}
-
-Mtbdd
-Mtbdd::Minimum() const {
-    LACE_ME;
-    return mtbdd_minimum(mtbdd);
-}
-
-Mtbdd
-Mtbdd::Maximum() const {
-    LACE_ME;
-    return mtbdd_maximum(mtbdd);
-}
-
-void
-Mtbdd::PrintDot(FILE *out) const {
-    mtbdd_fprintdot(out, mtbdd);
-}
-
-std::string
-Mtbdd::GetShaHash() const {
-    char buf[65];
-    mtbdd_getsha(mtbdd, buf);
-    return std::string(buf);
-}
-
-Bdd
-Mtbdd::AbstractMinRepresentative(const BddSet &variables) const
-{
-    LACE_ME;
-    return mtbdd_minExistsRepresentative(mtbdd, variables.set.bdd);
-}
-
-Bdd
-Mtbdd::AbstractMaxRepresentative(const BddSet &variables) const
-{
-    LACE_ME;
-    return mtbdd_maxExistsRepresentative(mtbdd, variables.set.bdd);
-}

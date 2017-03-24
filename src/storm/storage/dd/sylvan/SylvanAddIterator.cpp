@@ -190,6 +190,9 @@ namespace storm {
         
         template class AddIterator<DdType::Sylvan, double>;
         template class AddIterator<DdType::Sylvan, uint_fast64_t>;
+
+        template class AddIterator<DdType::Sylvan, storm::RationalNumber>;
+
 #ifdef STORM_HAVE_CARL
 		template class AddIterator<DdType::Sylvan, storm::RationalFunction>;
 #endif

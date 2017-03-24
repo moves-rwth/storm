@@ -25,7 +25,7 @@ namespace storm {
                     uint_fast64_t maxCol = halfspaces.front().normalVector().size();
                     uint_fast64_t maxRow = halfspaces.size();
                     A = EigenMatrix(maxRow, maxCol);
-                    b = EigenVector(maxRow);
+                    b = EigenVector(static_cast<unsigned long int>(maxRow));
                     for ( uint_fast64_t row = 0; row < maxRow; ++row ){
                         assert(halfspaces[row].normalVector().size() == maxCol);
                         b(row) = halfspaces[row].offset();

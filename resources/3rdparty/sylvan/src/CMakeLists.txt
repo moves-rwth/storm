@@ -13,8 +13,9 @@ set(SOURCES
     sylvan_sl.c
     sylvan_stats.c
     sylvan_table.c
-    storm_function_wrapper.cpp
+    storm_wrapper.cpp
     sylvan_storm_rational_function.c
+    sylvan_storm_rational_number.c
 )
 
 set(HEADERS
@@ -35,8 +36,9 @@ set(HEADERS
     sylvan_stats.h
     sylvan_table.h
     sylvan_tls.h
-    storm_function_wrapper.h
+    storm_wrapper.h
     sylvan_storm_rational_function.h
+    sylvan_storm_rational_number.h
 )
 
 option(BUILD_SHARED_LIBS "Enable/disable creation of shared libraries" ON)
