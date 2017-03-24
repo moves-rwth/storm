@@ -66,37 +66,37 @@ First of all, you need to download and install Xcode and its command line utilit
 Furthermore, we recommend the usage of [Homebrew](https://brew.sh){:target="_blank"} to install the missing packages, but MacPorts might (at some point) have the desired dependencies as well.
 
 - Required:
-```
-brew install cln ginac boost autoconf cmake doxygen
-brew tap homebrew/science
-brew install homebrew/science/glpk
+``` console
+$ brew install cln ginac boost autoconf cmake doxygen
+$ brew tap homebrew/science
+$ brew install homebrew/science/glpk
 ```
 
 - Recommended:
-```
-brew install z3 xerces-c
+``` console
+$ brew install z3 xerces-c
 ```
 
 ### Debian 9 "Stretch"
 
 - Required:
-```
-sudo apt-get install git cmake libboost-all-dev libcln-dev libginac-dev automake doxygen libglpk-dev
+``` console
+$ sudo apt-get install git cmake libboost-all-dev libcln-dev libginac-dev automake doxygen libglpk-dev
 ```
 
 - Recommended
-```
-sudo apt-get install libz3-dev libxerces-c-dev
+``` console
+$ sudo apt-get install libz3-dev libxerces-c-dev
 ```
 
 ### Ubuntu 16.10 "Yakkety Yak"
 
 - Required:
-```
-sudo apt-get install git cmake libboost-all-dev libcln-dev libginac-dev automake doxygen libglpk-dev libhwloc-dev
+``` console
+$ sudo apt-get install git cmake libboost-all-dev libcln-dev libginac-dev automake doxygen libglpk-dev libhwloc-dev
 ```
 
 - Recommended:
-```
-sudo apt-get install libz3-dev libxerces-c-dev
+``` console
+$ sudo apt-get install libz3-dev libxerces-c-dev
 ```

@@ -99,7 +99,7 @@ Storm
 
 Responsible for this website is
 
-```shell
+```text
 Software Modeling and Verification Group (MOVES)
 RWTH Aachen University, Aachen, Germany
 E-mail: storm-dev [at] i2 [dot] informatik [dot] rwth-aachen [dot] de

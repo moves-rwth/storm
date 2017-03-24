@@ -16,13 +16,13 @@ Designed for users that need particular features and people developing under Sto
 
 Storm makes use of [CArL](https://github.com/smtrat/carl){:target="_blank"} for the representation of rationals and rational functions. If you don't have it installed on your system, our build script will download and configure it automatically for you. However, under certain circumstances, you might want to install CArL yourself. This may for example be advantageous if you need to repeatedly build Storm from scratch or you want to change its source code. Installing CArL is as easy as
 
-```shell
-git clone https://github.com/smtrat/carl
-cd carl
-mkdir build
-cd build
-cmake -DUSE_CLN_NUMBERS=ON -DUSE_GINAC=ON ..
-make
+```console
+$ git clone https://github.com/smtrat/carl
+$ cd carl
+$ mkdir build
+$ cd build
+$ cmake -DUSE_CLN_NUMBERS=ON -DUSE_GINAC=ON ..
+$ make
 ```
 
 Once it is build, it will register itself to cmake so Storm can find your build automatically.
@@ -34,12 +34,12 @@ There may be problems with this auto-detection mechanism if you have multiple ve
 
 Storm requires [Boost](http://www.boost.org/){:target="_blank"} to be available in a version that is at least 1.61. On the [supported operating systems](requirements.html) this can be easily achieved with readily available package managers. If your system does not allow for an easy installation of this Boost version, you might need to build it yourself.
 
-```shell
-wget https://sourceforge.net/projects/boost/files/boost/1.63.0/boost_1_63_0.tar.gz
-tar -xzf boost_1_63_0.tar.gz
-cd boost_1_63_0
-./bootstrap.sh
-./bjam
+```console
+$ wget https://sourceforge.net/projects/boost/files/boost/1.63.0/boost_1_63_0.tar.gz
+$ tar -xzf boost_1_63_0.tar.gz
+$ cd boost_1_63_0
+$ ./bootstrap.sh
+$ ./bjam
 ```
 
 If you want to install Boost in some other location, you can provide a `--prefix=path/to/installation/prefix` to bootstrap.

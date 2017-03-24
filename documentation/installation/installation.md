@@ -21,26 +21,26 @@ If you just want to run Storm and you want to run it natively on your machine, t
 
 If you are running a version of macOS that is newer than Mavericks, you can use [homebrew](https://brew.sh/){:target="_blank"}, the "missing package manager for macOS". Once you have installed homebrew, you need to make homebrew aware of how to install Storm. In brew-speak, you need to *tap* the Storm homebrew formulas
 
-```shell
-brew tap moves-rwth/storm
+```console
+$ brew tap moves-rwth/storm
 ```
 
 Then, installing Storm is as easy as
 
-```shell
-brew install stormchecker
+```console
+$ brew install stormchecker
 ```
 
 This will install Storm and all necessary and some recommended dependencies. More options provided by the package can be seen by invoking
 
-```shell
-brew info stormchecker
+```console
+$ brew info stormchecker
 ```
 
 After installing the package, you should directly be able to invoke
 
-```shell
-storm
+```console
+$ storm
 ```
 
 and continue with the guide on how to [run Storm]({{ site.github.url }}/documentation/usage/running-storm.html).
@@ -52,38 +52,38 @@ This guide helps you building a standard version of Storm. There are plenty of c
 ### Obtaining the source code
 
 The source code can be downloaded from [GitHub](https://github.com/moves-rwth/storm){:target="_blank"}. You can either clone the git repository
-```shell
-git clone https://github.com/moves-rwth/storm.git
-git checkout tags/1.0.0
+```console
+$ git clone https://github.com/moves-rwth/storm.git
+$ git checkout tags/1.0.0
 ```
 or download a zip archive with the latest stable release:
-```shell
-wget https://github.com/moves-rwth/archive/1.0.0.zip
-unzip 1.0.0.zip
+```console
+$ wget https://github.com/moves-rwth/archive/1.0.0.zip
+$ unzip 1.0.0.zip
 ```
 
 {:.alert .alert-info}
 If you want the most recent version of Storm rather than the stable version, you can omit the `git checkout tags/1.0.0` when cloning the repository or use the archive [https://github.com/moves-rwth/archive/master.zip](https://github.com/moves-rwth/archive/master.zip){:.alert-link}, respectively.
 
 In the following, we will use `STORM_DIR` to refer to the root directory of Storm. If you want, you can set an environment variable to ease the following steps via
-```shell
-export STORM_DIR=<path to Storm root>
+```console
+$ export STORM_DIR=<path to Storm root>
 ```
 
 ### Configuration step
 
 Switch to the directory `STORM_DIR` and create a build folder that will hold all files related to the build (in other words, building is done out-of source, in-source builds are strongly discouraged and are likely to break). Finally change to the `build` directory.
 
-```shell
-cd STORM_DIR
-mkdir build
-cd build
+```console
+$ cd STORM_DIR
+$ mkdir build
+$ cd build
 ```
 
 Then, use cmake to configure the build of Storm on your system by invoking
 
-```shell
-cmake ..
+```console
+$ cmake ..
 ```
 
 Check the output carefully for errors and warnings. If all requirements are properly installed and found, you are ready to build Storm and move to the next step. In case of errors, check the [requirements](requirements.html), consult the [troubleshooting guide](troubleshooting.html) and, if necessary, [file an issue](troubleshooting.html#file-an-issue).
@@ -94,8 +94,8 @@ If the configuration step went smoothly, the compilation step should run through
 
 To compile all of Storm's binaries, enter
 
-```shell
-make
+```console
+$ make
 ```
 
 {:.alert .alert-info}
@@ -109,8 +109,8 @@ If you have multiple cores at your disposal and at least 8GB of memory, you can 
 
 If you want to be able to run Storm from anywhere, you may want to add it to your path (in the tutorial on how to [run Storm]({{ site.github.url }}/documentation/usage/running-storm.html) this is assumed). You can do so, by
 
-```shell
-export PATH=$PATH:$STORM_DIR/build/bin
+```console
+$ export PATH=$PATH:$STORM_DIR/build/bin
 ```
 
 where `$STORM_DIR` is the environment variable set [earlier](#obtaining-the-source-code).
@@ -119,8 +119,8 @@ where `$STORM_DIR` is the environment variable set [earlier](#obtaining-the-sour
 
 We recommend to execute it to verify that Storm produces correct results on your platform. Invoking
 
-```shell
-make check
+```console
+$ make check
 ```
 
 will build and run the tests. In case of errors, please do not hesistate to [file an issue](troubleshooting.html#file-an-issue).

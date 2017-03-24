@@ -32,13 +32,13 @@ Many of Storm's executables have many options, only a fraction of which are cove
 
 Before we get started, let us check whether everything is set up properly. In all command-line examples we assume that the executables are in your PATH and can therefore be invoked without prefixing them with their path. If you installed Storm via [homebrew]({{ site.github.url }}/documentation/installation/installation.html#homebrew), this is automatically the case; if you built Storm yourself, you have to [manually add it to your PATH]({{ site.github.url }}/documentation/installation/installation.html#adding-storm-to-your-path-optional). Typing
 
-```shell
-storm
+```console
+$ storm
 ```
 
 should produce output similar to
 
-```shell
+```text
 Storm 1.0.0
 
 ERROR (cli.cpp:309): No input model.
@@ -63,7 +63,7 @@ In our first example, we are going to analyze a small [DTMC](models.html#discret
 
 <div class="prism_die_dtmc collapse" markdown="1">
 Download link: [http://www.prismmodelchecker.org/casestudies/examples/die.pm](http://www.prismmodelchecker.org/casestudies/examples/die.pm){:target="_blank"}
-```shell
+```text
 // Knuth's model of a fair die using only fair coins
 dtmc
 
@@ -93,14 +93,14 @@ endrewards
 
 From now on, we will assume that the model file is stored as `die.pm` in the current directory. Let us start with a simple (exhaustive) exploration of the state space of the model:
 
-```shell
-storm --prism die.pm
+```console
+$ storm --prism die.pm
 ```
 
 {% include collapse-panel.html target="prism_die_dtmc_output_exploration" name="output" %}
 
 <div class="prism_die_dtmc_output_exploration collapse" markdown="1">
-```shell
+```text
 Storm 1.0.0
 
 Command line arguments: --prism die.pm
@@ -123,14 +123,14 @@ choice labels: 	no
 
 This will tell you that the model is a [sparse](engines.html#sparse) [discrete-time Markov chain](models.html#discrete-time-markov-chains-dtmcs) with 13 states and 20 transitions, no reward model and two labels (`deadlock` and `init`). But wait, doesn't the PRISM model actually specify a reward model? Why does `storm` not find one? The reason is simple, `storm` doesn't build reward models or (custom) labels that are not referred to by properties unless you explicitly want all of them to be built:
 
-```shell
-storm --prism die.pm --buildfull
+```console
+$ storm --prism die.pm --buildfull
 ```
 
 {% include collapse-panel.html target="prism_die_dtmc_output_exploration_buildfull" name="output" %}
 
 <div class="prism_die_dtmc_output_exploration_buildfull collapse" markdown="1">
-```shell
+```text
 Storm 1.0.0
 
 Command line arguments: --prism die.pm --buildfull
@@ -155,14 +155,14 @@ This gives you the same model, but this time there is a reward model `coin_flips
 
 Now, let's say we want to check whether the probability to roll a one with our simulated die is as we'd expect. As the protocol states the simulated die shows a one if it ends up in a state where `s=7&d=1`, we formulate a reachability property like this:
 
-```shell
-storm --prism die.pm --prop "P=? [F s=7&d=1]"
+```console
+$ storm --prism die.pm --prop "P=? [F s=7&d=1]"
 ```
 
 {% include collapse-panel.html target="prism_die_dtmc_output_prob_one" name="output" %}
 
 <div class="prism_die_dtmc_output_prob_one collapse" markdown="1">
-```shell
+```text
 Storm 1.0.0
 
 Command line arguments: --prism die.pm --prop P=? [F s=7&d=1]
@@ -195,14 +195,14 @@ If, from the floating point figure, you are not convinced that the result is act
 
 Congratulations, you have now checked your first property with Storm! Now, say we are interested in the probability of rolling a one, provided that one of the outcomes "one", "two" or "three" were obtained, we can obtain this figure by using a conditional probability formula like this
 
-```shell
-storm --prism die.pm --prop "P=? [F s=7&d=1 || F s=7&d<4]"
+```console
+$ storm --prism die.pm --prop "P=? [F s=7&d=1 || F s=7&d<4]"
 ```
 
 {% include collapse-panel.html target="prism_die_dtmc_output_prob_one_conditional" name="output" %}
 
 <div class="prism_die_dtmc_output_prob_one_conditional collapse" markdown="1">
-```shell
+```text
 Storm 1.0.0
 
 Command line arguments: --prism die.pm --prop P=? [F s=7&d=1 || F s=7&d<4]
@@ -231,14 +231,14 @@ Time for model checking: 0.001s.
 
 which tells us that this probability is 1/3. So far the model seems to simulate a proper six-sided die! Finally, we are interested in the expected number of coin flips that need to be made until the simulated die returns an outcome:
 
-```shell
-storm --prism die.pm --prop "R{\"coin_flips\"}=? [F s=7]"
+```console
+$ storm --prism die.pm --prop "R{\"coin_flips\"}=? [F s=7]"
 ```
 
 {% include collapse-panel.html target="prism_die_dtmc_output_expected_coinflips" name="output" %}
 
 <div class="prism_die_dtmc_output_expected_coinflips collapse" markdown="1">
-```shell
+```text
 Storm 1.0.0
 
 Command line arguments: --prism die.pm --prop R{"coin_flips"}=? [F s=7]
@@ -277,7 +277,7 @@ In this example, we consider another model available from the [PRISM website](ht
 
 <div class="prism_async_leader_mdp collapse" markdown="1">
 Download link: [http://www.prismmodelchecker.org/casestudies/examples/leader4.nm](http://www.prismmodelchecker.org/casestudies/examples/leader4.nm){:target="_blank"}
-```shell
+```text
 // asynchronous leader election
 // 4 processes
 // gxn/dxp 29/01/01
@@ -371,14 +371,14 @@ Just like in [Example 1](#example-1-analysis-of-a-prism-model-of-the-knuth-yao-d
 
 As the name of the protocol suggests, it is supposed to elect a leader among a set of communicating agents (four in this particular instance). Well, let's see whether it lives up to it's name and check that almost surely (i.e. with probability 1) a leader will be elected eventually.
 
-```shell
-storm --prism leader4.nm --prop "P>=1 [F (s1=4 | s2=4 | s3=4 | s4=4) ]"
+```console
+$ storm --prism leader4.nm --prop "P>=1 [F (s1=4 | s2=4 | s3=4 | s4=4) ]"
 ```
 
 {% include collapse-panel.html target="prism_async_leader_mdp_eventually_elected" name="output" %}
 
 <div class="prism_async_leader_mdp_eventually_elected collapse" markdown="1">
-```shell
+```text
 Storm 1.0.0
 
 Command line arguments: --prism leader4.nm --prop P>=1 [F (s1=4 | s2=4 | s3=4 | s4=4) ]
@@ -408,14 +408,14 @@ Time for model checking: 0.008s.
 
 Apparently this is true. But what about the performance of the protocol? The property we just checked does not guarantee any upper bound on the number of steps that we need to make until a leader is elected. Suppose we have only 40 steps and want to know what's the probability to elect a leader *within this time bound*.
 
-```shell
-storm --prism leader4.nm --prop "P=? [F<=40 (s1=4 | s2=4 | s3=4 | s4=4) ]"
+```console
+$ storm --prism leader4.nm --prop "P=? [F<=40 (s1=4 | s2=4 | s3=4 | s4=4) ]"
 ```
 
 {% include collapse-panel.html target="prism_async_leader_mdp_bounded_eventually_elected" name="output" %}
 
 <div class="prism_async_leader_mdp_bounded_eventually_elected collapse" markdown="1">
-```shell
+```text
 Storm 1.0.0
 
 Command line arguments: --prism leader4.nm --prop P=? [F<=40 (s1=4 | s2=4 | s3=4 | s4=4) ]
@@ -445,14 +445,14 @@ ERROR (storm.cpp:39): An exception caused Storm to terminate. The message of the
 
 Likely, Storm will tell you that there is an error and that for nondeterministic models you need to specify whether minimal or maximal probabilities are to be computed. Why is that? Since the model is a [Markov Decision Process](models.html#discrete-time-markov-decision-processes-mdps), there are (potentially) nondeterministic choices in the model that need to be resolved. Storm doesn't know how to resolve them unless you tell it to either minimize or maximize (wrt. to the probability of the objective) whenever there is a nondeterministic choice.
 
-```shell
-storm --prism leader4.nm --prop "Pmin=? [F<=40 (s1=4 | s2=4 | s3=4 | s4=4) ]"
+```console
+$ storm --prism leader4.nm --prop "Pmin=? [F<=40 (s1=4 | s2=4 | s3=4 | s4=4) ]"
 ```
 
 {% include collapse-panel.html target="prism_async_leader_mdp_bounded_eventually_elected_min" name="output" %}
 
 <div class="prism_async_leader_mdp_bounded_eventually_elected_min collapse" markdown="1">
-```shell
+```text
 Storm 1.0.0
 
 Command line arguments: --prism leader4.nm --prop Pmin=? [F<=40 (s1=4 | s2=4 | s3=4 | s4=4) ]
@@ -496,7 +496,7 @@ Here, we are going to analyze a model of an algorithm that approximates $$\pi$$.
 
 <div class="jani_approxpi_pgcl collapse" markdown="1">
 Download link: [https://github.com/ahartmanns/jani-models/raw/master/ApproxPi/NaiveRejectionSampling/approx_pi_00100_010_full.pgcl](https://github.com/ahartmanns/jani-models/raw/master/ApproxPi/NaiveRejectionSampling/approx_pi_00100_010_full.pgcl){:target="_blank"}
-```shell
+```javascript
 // Approximating Pi by Rejection Sampling / Monte Carlo.
 // Automatically Generated by: storm-pgcl-BG
 // Sebastian Junges; RWTH Aachen University
@@ -523,7 +523,7 @@ function approachPi() {
 
 <div class="jani_approxpi_jani collapse" markdown="1">
 Download link: [https://github.com/ahartmanns/jani-models/raw/master/ApproxPi/NaiveRejectionSampling/approx_pi_00100_010_full.jani](https://github.com/ahartmanns/jani-models/raw/master/ApproxPi/NaiveRejectionSampling/approx_pi_00100_010_full.jani){:target="_blank"}
-```shell
+```json
 {
     "actions": [],
     "automata": [
@@ -1552,14 +1552,14 @@ Download link: [https://github.com/ahartmanns/jani-models/raw/master/ApproxPi/Na
 
 Again, we will assume that the file `approx_pi_00100_010_full.jani` is located in the current directory. Let's see how many states the underlying MDP has. For the sake of illustration, we are going to use the [hybrid engine](engines.html#hybrid) for this example.
 
-```shell
-storm --jani approx_pi_00100_010_full.jani --engine hybrid
+```console
+$ storm --jani approx_pi_00100_010_full.jani --engine hybrid
 ```
 
 {% include collapse-panel.html target="jani_approxpi_jani_output_exploration" name="output" %}
 
 <div class="jani_approxpi_jani_output_exploration collapse" markdown="1">
-```shell
+```text
 Storm 1.0.0
 
 Command line arguments: --jani approx_pi_00100_010_full.jani --engine hybrid
@@ -1583,13 +1583,13 @@ As we selected the *hybrid* engine, Storm builds the MDP in terms of a symbolic 
 
 The algorithm uses a sampling-based technique to approximate $$\pi$$. More specifically, it repeatedly (100 times in this particular instance) samples points in a square and checks whether they are in a circle whose diameter is the edge length of the square (which is called a hit). From this, we can derive $$\pi \approx 4 \frac{hits}{100}$$ (for more details, we refer to [this explanation](https://theclevermachine.wordpress.com/tag/rejection-sampling/){:target="_blank"}). We are therefore interested in the expected number of hits until termination of the algorithm (as all JANI models obtained from `storm-pgcl`, it has a transient boolean variable `_ret0_` that marks termination of the pGCL program; this transient variable can be used as a label in properties):
 
-```shell
-storm --jani approx_pi_00100_010_full.jani --engine hybrid --prop "Rmax=? [F \"_ret0_\"]"
+```console
+$ storm --jani approx_pi_00100_010_full.jani --engine hybrid --prop "Rmax=? [F \"_ret0_\"]"
 ```
 {% include collapse-panel.html target="jani_approxpi_jani_output_expected_hits" name="output" %}
 
 <div class="jani_approxpi_jani_output_expected_hits collapse" markdown="1">
-```shell
+```text
 Storm 1.0.0
 
 Command line arguments: --jani approx_pi_00100_010_full.jani --engine hybrid --prop Rmax=? [F "_ret0_"]
@@ -1628,7 +1628,7 @@ Here, we take the same input model as for [Example 1](#example-1-analysis-of-a-p
 
 <div class="explicit_die_dtmc panel-collapse collapse" markdown="1">
 Transition file, download link: [{{ site.github.url }}/resources/input-examples/explicit/die.tra]({{ site.github.url }}/resources/input-examples/explicit/die.tra)
-```shell
+```text
 dtmc
 0 1 0.5
 0 2 0.5
@@ -1653,7 +1653,7 @@ dtmc
 ```
 <hr />
 Label file, download link: [{{ site.github.url }}/resources/input-examples/explicit/die.lab]({{ site.github.url }}/resources/input-examples/explicit/die.lab)
-```shell
+```text
 #DECLARATION
 init one done deadlock
 #END
@@ -1667,7 +1667,7 @@ init one done deadlock
 ```
 <hr />
 (Transition) reward file, download link: [{{ site.github.url }}/resources/input-examples/explicit/die.tra.rew]({{ site.github.url }}/resources/input-examples/explicit/die.tra.rew)
-```shell
+```text
 0 1 1
 0 2 1
 1 3 1
@@ -1687,14 +1687,14 @@ init one done deadlock
 
 Again, we assume that all three files are located in the current directory. We proceed analoguously to the example in the PRISM input section and start by loading the model:
 
-```shell
-storm --explicit die.tra die.lab --transrew die.tra.rew
+```console
+$ storm --explicit die.tra die.lab --transrew die.tra.rew
 ```
 
 {% include collapse-panel.html target="explicit_die_dtmc_exploration" name="output" %}
 
 <div class="explicit_die_dtmc_exploration collapse" markdown="1">
-```shell
+```text
 Storm 1.0.0
 
 Command line arguments: --explicit die.tra die.lab --transrew die.tra.rew
@@ -1717,14 +1717,14 @@ choice labels: 	no
 
 Note that in contrast to the PRISM input model, the explicit version of the Knuth-Yao die does not have symbolic variables. Therefore, we need to rephrase the properties from before. Computing the probability of rolling a one thus becomes
 
-```shell
-storm --explicit die.tra die.lab --transrew die.tra.rew --prop "P=? [F \"one\"]"
+```console
+$ storm --explicit die.tra die.lab --transrew die.tra.rew --prop "P=? [F \"one\"]"
 ```
 
 {% include collapse-panel.html target="explicit_die_dtmc_output_prob_one" name="output" %}
 
 <div class="explicit_die_dtmc_output_prob_one collapse" markdown="1">
-```shell
+```text
 Storm 1.0.0
 
 Command line arguments: --explicit die.tra die.lab --transrew die.tra.rew --prop P=? [F "one"]
@@ -1755,14 +1755,14 @@ Unlike for PRISM and JANI models, there is no `--exact` mode for explicit input 
 
 Note that the model defines two labels `one` and `done` that can be used in properties. For reward properties, the only difference in property specification is that formulae must not refer to a specific reward model but rather to the implicit default one. This is because in the explicit input format, every model can have only up to one reward model and there is no way to specify its name in the input format. Consequently, computing the expected number of coin flips that are necessary until the simulated die has terminated with an outcome in {1, ..., 6} can be done like this:
 
-```shell
-storm --explicit die.tra die.lab --transrew die.tra.rew --prop "R=? [F \"done\"]"
+```console
+$ storm --explicit die.tra die.lab --transrew die.tra.rew --prop "R=? [F \"done\"]"
 ```
 
 {% include collapse-panel.html target="explicit_die_dtmc_output_expected_coinflips" name="output" %}
 
 <div class="explicit_die_dtmc_output_expected_coinflips collapse" markdown="1">
-```shell
+```text
 Storm 1.0.0
 
 Command line arguments: --explicit die.tra die.lab --transrew die.tra.rew --prop P=? [F "one"]
