@@ -33,7 +33,7 @@ namespace storm {
             template <typename SparseModelType, typename ConstantType>
             void SparseMdpParameterLifting<SparseModelType, ConstantType>::initializeUnderlyingCheckers() {
                 if (this->settings.applyExactValidation) {
-                    STORM_LOG_WARN_COND((std::is_same<ConstantType, typename ParameterLifting<SparseModelType, ConstantType>::CoefficientType>::value), "Exact validation is not necessarry if the original computation is already exact");
+                    STORM_LOG_WARN_COND(!(std::is_same<ConstantType, typename ParameterLifting<SparseModelType, ConstantType>::CoefficientType>::value), "Exact validation is not necessarry if the original computation is already exact");
                     this->exactParameterLiftingChecker = std::make_unique<SparseMdpParameterLiftingModelChecker<SparseModelType, typename ParameterLifting<SparseModelType, ConstantType>::CoefficientType>>(this->getConsideredParametricModel());
                 }
                 this->parameterLiftingChecker = std::make_unique<SparseMdpParameterLiftingModelChecker<SparseModelType, ConstantType>>(this->getConsideredParametricModel());

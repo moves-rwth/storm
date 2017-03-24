@@ -17,6 +17,7 @@
 
 #include "storm/settings/SettingsManager.h"
 #include "storm/settings/modules/CoreSettings.h"
+#include "storm/settings/modules/ParametricSettings.h"
 
 
 namespace storm {
@@ -24,8 +25,7 @@ namespace storm {
         namespace parametric {
 
             ParameterLiftingSettings::ParameterLiftingSettings() {
-                // todo: get this form settings
-                this->applyExactValidation = false;
+                this->applyExactValidation = storm::settings::getModule<storm::settings::modules::ParametricSettings>().isExactValidationSet();
             }
             
             template <typename SparseModelType, typename ConstantType>
@@ -126,20 +126,24 @@ namespace storm {
                 if (numericResult == RegionCheckResult::AllSat) {
                     if(!exactParameterLiftingChecker->check(region, this->currentCheckTask->getOptimizationDirection())->asExplicitQualitativeCheckResult()[*getConsideredParametricModel().getInitialStates().begin()]) {
                         // Numerical result is wrong; Check whether the region is AllViolated!
+                        STORM_LOG_INFO("Numerical result was wrong for one region... Applying exact methods to obtain the actual result...");
                         if(!exactParameterLiftingChecker->check(region, storm::solver::invert(this->currentCheckTask->getOptimizationDirection()))->asExplicitQualitativeCheckResult()[*getConsideredParametricModel().getInitialStates().begin()]) {
                             parameterLiftingCheckerStopwatch.stop();
                             return RegionCheckResult::AllViolated;
                         } else {
+                            parameterLiftingCheckerStopwatch.stop();
                             return RegionCheckResult::Unknown;
                         }
                     }
                 } else if (numericResult == RegionCheckResult::AllViolated) {
                     if(exactParameterLiftingChecker->check(region, storm::solver::invert(this->currentCheckTask->getOptimizationDirection()))->asExplicitQualitativeCheckResult()[*getConsideredParametricModel().getInitialStates().begin()]) {
                         // Numerical result is wrong; Check whether the region is AllSat!
+                        STORM_LOG_INFO("Numerical result was wrong for one region... Applying exact methods to obtain the actual result...");
                         if(exactParameterLiftingChecker->check(region, this->currentCheckTask->getOptimizationDirection())->asExplicitQualitativeCheckResult()[*getConsideredParametricModel().getInitialStates().begin()]) {
                             parameterLiftingCheckerStopwatch.stop();
                             return RegionCheckResult::AllSat;
                         } else {
+                            parameterLiftingCheckerStopwatch.stop();
                             return RegionCheckResult::Unknown;
                         }
                     }
