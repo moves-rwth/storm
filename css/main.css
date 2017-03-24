@@ -39,3 +39,8 @@ body {
   transform: translate(-80%, -50%);
   z-index: -1;
 }
+
+.symbol-storm {
+  top: 0%;
+  transform: translate(-80%, -0%);
+}
