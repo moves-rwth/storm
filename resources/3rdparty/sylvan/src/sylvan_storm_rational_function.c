@@ -38,8 +38,8 @@ static void sylvan_storm_rational_function_destroy(uint64_t val) {
     storm_rational_function_destroy(x);
 }
 
-static char* sylvan_storm_rational_function_to_str(int comp, uint64_t val, char *buf, size_t buflen) {
-    return storm_rational_function_to_str((storm_rational_function_ptr)(size_t)val, *buf, buflen);
+static char* sylvan_storm_rational_function_to_str(int comp, uint64_t val, char* buf, size_t buflen) {
+    return storm_rational_function_to_str((storm_rational_function_ptr)(size_t)val, buf, buflen);
     (void)comp;
 }
 
@@ -66,7 +66,7 @@ MTBDD mtbdd_storm_rational_function(storm_rational_function_ptr val) {
 
 storm_rational_function_ptr mtbdd_getstorm_rational_function_ptr(MTBDD terminal) {
     uint64_t value = mtbdd_getvalue(terminal);
-    return (storm_rational_function_ptr*)value;
+    return (storm_rational_function_ptr)value;
 }
 
 TASK_IMPL_2(MTBDD, mtbdd_op_bool_to_storm_rational_function, MTBDD, a, size_t, v) {

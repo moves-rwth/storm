@@ -523,7 +523,7 @@ namespace storm {
      * @return true iff the specified formula is satisfied (i.e., iff the reachability value is within the bound of the formula)
      */
     inline bool checkSamplingPoint(std::shared_ptr<storm::modelchecker::region::AbstractSparseRegionModelChecker<storm::RationalFunction, double>> regionModelChecker,
-                                   std::map<storm::RationalFunctionVariable, storm::RationalNumber> const& point){
+                                   std::map<storm::RationalFunctionVariable, storm::RationalFunctionCoefficient> const& point){
         return regionModelChecker->valueIsInBoundOfFormula(regionModelChecker->getReachabilityValue(point));
     }
 
@@ -543,8 +543,8 @@ namespace storm {
      * proveAllSat=false, return=false ==> the approximative value IS within the bound of the formula (either the approximation is too bad or there are points in the region that satisfy the property)
      */
     inline bool checkRegionApproximation(std::shared_ptr<storm::modelchecker::region::AbstractSparseRegionModelChecker<storm::RationalFunction, double>> regionModelChecker,
-                                         std::map<storm::RationalFunctionVariable, storm::RationalNumber> const& lowerBoundaries,
-                                         std::map<storm::RationalFunctionVariable, storm::RationalNumber> const& upperBoundaries,
+                                         std::map<storm::RationalFunctionVariable, storm::RationalFunctionCoefficient> const& lowerBoundaries,
+                                         std::map<storm::RationalFunctionVariable, storm::RationalFunctionCoefficient> const& upperBoundaries,
                                          bool proveAllSat){
         storm::modelchecker::region::ParameterRegion<storm::RationalFunction> region(lowerBoundaries, upperBoundaries);
         return regionModelChecker->checkRegionWithApproximation(region, proveAllSat);

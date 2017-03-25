@@ -11,7 +11,6 @@
 #include <cmath>
 
 #include "storm/adapters/CarlAdapter.h"
-#include "storm-config.h"
 
 namespace storm {
     namespace dd {

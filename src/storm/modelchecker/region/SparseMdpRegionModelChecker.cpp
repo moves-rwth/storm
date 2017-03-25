@@ -248,7 +248,7 @@ namespace storm {
                 }
                 if(isResultConstant){
                     STORM_LOG_WARN("For the given property, the reachability Value is constant, i.e., independent of the region");
-                    constantResult = storm::utility::region::convertNumber<ConstantType>(-1.0); //-1 denotes that the result is constant but not yet computed
+                    constantResult = storm::utility::convertNumber<ConstantType>(-1.0); //-1 denotes that the result is constant but not yet computed
                 }
             }
 

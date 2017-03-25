@@ -206,11 +206,11 @@ namespace storm {
             std::string ParameterRegion<ParametricType>::toString() const {
                 std::stringstream regionstringstream;
                 for (auto var : this->getVariables()) {
-                    regionstringstream << storm::utility::region::convertNumber<double>(this->getLowerBoundary(var));
+                    regionstringstream << storm::utility::convertNumber<double>(this->getLowerBoundary(var));
                     regionstringstream << "<=";
                     regionstringstream << storm::utility::region::getVariableName(var);
                     regionstringstream << "<=";
-                    regionstringstream << storm::utility::region::convertNumber<double>(this->getUpperBoundary(var));
+                    regionstringstream << storm::utility::convertNumber<double>(this->getUpperBoundary(var));
                     regionstringstream << ",";
                 }
                 std::string regionstring = regionstringstream.str();
@@ -238,8 +238,8 @@ namespace storm {
                     STORM_LOG_THROW(parameter.length()>0, storm::exceptions::InvalidArgumentException, "When parsing the region" << parameterBoundariesString << " I could not find a parameter");
 
                     VariableType var = storm::utility::region::getVariableFromString<VariableType>(parameter);
-                    CoefficientType lb = storm::utility::region::convertNumber<CoefficientType>(parameterBoundariesString.substr(0,positionOfFirstRelation));
-                    CoefficientType ub = storm::utility::region::convertNumber<CoefficientType>(parameterBoundariesString.substr(positionOfSecondRelation+2));
+                    CoefficientType lb = storm::utility::convertNumber<CoefficientType>(parameterBoundariesString.substr(0,positionOfFirstRelation));
+                    CoefficientType ub = storm::utility::convertNumber<CoefficientType>(parameterBoundariesString.substr(positionOfSecondRelation+2));
                     lowerBoundaries.emplace(std::make_pair(var, lb));  
                     upperBoundaries.emplace(std::make_pair(var, ub));
                 }

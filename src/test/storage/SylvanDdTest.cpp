@@ -442,8 +442,8 @@ TEST(SylvanDd, RationalFunctionConstants) {
 	carl::StringParser parser;
 	parser.setVariables({"x", "y", "z"});
 	
-	storm::RationalFunction partA = storm::RationalFunction(storm::Polynomial(parser.template parseMultivariatePolynomial<storm::RationalNumber>("2*x+x*y"), cache));
-	storm::RationalFunction partB = storm::RationalFunction(storm::Polynomial(parser.template parseMultivariatePolynomial<storm::RationalNumber>("z"), cache), storm::Polynomial(parser.template parseMultivariatePolynomial<storm::RationalNumber>("2*y"), cache));
+	storm::RationalFunction partA = storm::RationalFunction(storm::Polynomial(parser.template parseMultivariatePolynomial<storm::RationalFunctionCoefficient>("2*x+x*y"), cache));
+	storm::RationalFunction partB = storm::RationalFunction(storm::Polynomial(parser.template parseMultivariatePolynomial<storm::RationalFunctionCoefficient>("z"), cache), storm::Polynomial(parser.template parseMultivariatePolynomial<storm::RationalFunctionCoefficient>("2*y"), cache));
 
 	storm::RationalFunction rationalFunction = storm::RationalFunction(partA + partB);
 	
@@ -472,14 +472,14 @@ TEST(SylvanDd, RationalFunctionToDouble) {
 	storm::dd::Bdd<storm::dd::DdType::Sylvan> bddZ1 = manager->getEncoding(zExpr.first, 1);
 	
 	storm::dd::Add<storm::dd::DdType::Sylvan, storm::RationalFunction> complexAdd = 
-          ((bddX0 && (bddY0 && bddZ0)).template toAdd<storm::RationalFunction>() * manager->template getConstant<storm::RationalFunction>(storm::RationalFunction(storm::RationalNumber(-1))))
-		+ ((bddX0 && (bddY0 && bddZ1)).template toAdd<storm::RationalFunction>() * manager->template getConstant<storm::RationalFunction>(storm::RationalFunction(storm::RationalNumber(0))))
-		+ ((bddX0 && (bddY1 && bddZ0)).template toAdd<storm::RationalFunction>() * manager->template getConstant<storm::RationalFunction>(storm::RationalFunction(storm::RationalNumber(1) / storm::RationalNumber(2))))
-		+ ((bddX0 && (bddY1 && bddZ1)).template toAdd<storm::RationalFunction>() * manager->template getConstant<storm::RationalFunction>(storm::RationalFunction(storm::RationalNumber(1) / storm::RationalNumber(3))))
-		+ ((bddX1 && (bddY0 && bddZ0)).template toAdd<storm::RationalFunction>() * manager->template getConstant<storm::RationalFunction>(storm::RationalFunction(storm::RationalNumber(100000))))
-		+ ((bddX1 && (bddY0 && bddZ1)).template toAdd<storm::RationalFunction>() * manager->template getConstant<storm::RationalFunction>(storm::RationalFunction(storm::RationalNumber(3))))
-		+ ((bddX1 && (bddY1 && bddZ0)).template toAdd<storm::RationalFunction>() * manager->template getConstant<storm::RationalFunction>(storm::RationalFunction(storm::RationalNumber(4))))
-		+ ((bddX1 && (bddY1 && bddZ1)).template toAdd<storm::RationalFunction>() * manager->template getConstant<storm::RationalFunction>(storm::RationalFunction(storm::RationalNumber(0))));
+          ((bddX0 && (bddY0 && bddZ0)).template toAdd<storm::RationalFunction>() * manager->template getConstant<storm::RationalFunction>(storm::RationalFunction(storm::RationalFunctionCoefficient(-1))))
+		+ ((bddX0 && (bddY0 && bddZ1)).template toAdd<storm::RationalFunction>() * manager->template getConstant<storm::RationalFunction>(storm::RationalFunction(storm::RationalFunctionCoefficient(0))))
+		+ ((bddX0 && (bddY1 && bddZ0)).template toAdd<storm::RationalFunction>() * manager->template getConstant<storm::RationalFunction>(storm::RationalFunction(storm::RationalFunctionCoefficient(1) / storm::RationalFunctionCoefficient(2))))
+		+ ((bddX0 && (bddY1 && bddZ1)).template toAdd<storm::RationalFunction>() * manager->template getConstant<storm::RationalFunction>(storm::RationalFunction(storm::RationalFunctionCoefficient(1) / storm::RationalFunctionCoefficient(3))))
+		+ ((bddX1 && (bddY0 && bddZ0)).template toAdd<storm::RationalFunction>() * manager->template getConstant<storm::RationalFunction>(storm::RationalFunction(storm::RationalFunctionCoefficient(100000))))
+		+ ((bddX1 && (bddY0 && bddZ1)).template toAdd<storm::RationalFunction>() * manager->template getConstant<storm::RationalFunction>(storm::RationalFunction(storm::RationalFunctionCoefficient(3))))
+		+ ((bddX1 && (bddY1 && bddZ0)).template toAdd<storm::RationalFunction>() * manager->template getConstant<storm::RationalFunction>(storm::RationalFunction(storm::RationalFunctionCoefficient(4))))
+		+ ((bddX1 && (bddY1 && bddZ1)).template toAdd<storm::RationalFunction>() * manager->template getConstant<storm::RationalFunction>(storm::RationalFunction(storm::RationalFunctionCoefficient(0))));
 	EXPECT_EQ(6ul, complexAdd.getNonZeroCount());
     EXPECT_EQ(7ul, complexAdd.getLeafCount());
     EXPECT_EQ(14ul, complexAdd.getNodeCount());

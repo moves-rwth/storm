@@ -715,8 +715,6 @@ namespace storm {
                     commandDd += updateResultsIt->updateDd * probabilityDd;
                 }
                 
-                commandDd.exportToDot("command.dot");
-                
                 return ActionDecisionDiagram(guard, guard.template toAdd<ValueType>() * commandDd, globalVariablesInSomeUpdate);
             } else {
                 return ActionDecisionDiagram(*generationInfo.manager);
@@ -1395,9 +1393,7 @@ namespace storm {
             // Detect deadlocks and 1) fix them if requested 2) throw an error otherwise.
             storm::dd::Bdd<Type> statesWithTransition = transitionMatrixBdd.existsAbstract(generationInfo.columnMetaVariables);
             storm::dd::Bdd<Type> deadlockStates = reachableStates && !statesWithTransition;
-            
-            transitionMatrix.exportToDot("trans.dot");
-            
+                        
             // If there are deadlocks, either fix them or raise an error.
             if (!deadlockStates.isZero()) {
                 // If we need to fix deadlocks, we do so now.
