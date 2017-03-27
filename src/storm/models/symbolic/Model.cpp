@@ -272,6 +272,7 @@ namespace storm {
             template class Model<storm::dd::DdType::CUDD, double>;
             template class Model<storm::dd::DdType::Sylvan, double>;
             
+            template class Model<storm::dd::DdType::Sylvan, storm::RationalNumber>;
 			template class Model<storm::dd::DdType::Sylvan, storm::RationalFunction>;
         } // namespace symbolic
     } // namespace models

@@ -59,6 +59,9 @@ Mtbdd AbstractMaxRN(const BddSet &variables) const;
 Bdd BddThresholdRN(storm::RationalNumber const& rn) const;
 Bdd BddStrictThresholdRN(storm::RationalNumber const& rn) const;
 
+bool EqualNormRN(const Mtbdd& other, storm::RationalNumber const& epsilon) const;
+bool EqualNormRelRN(const Mtbdd& other, storm::RationalNumber const& epsilon) const;
+
 Mtbdd ToDoubleRN() const;
 
 // Functions that operate on Mtbdds over rational functions.
@@ -90,6 +93,9 @@ Mtbdd AbstractMaxRF(const BddSet &variables) const;
 
 Bdd BddThresholdRF(storm::RationalFunction const& rf) const;
 Bdd BddStrictThresholdRF(storm::RationalFunction const& rf) const;
+
+bool EqualNormRF(const Mtbdd& other, storm::RationalFunction const& epsilon) const;
+bool EqualNormRelRF(const Mtbdd& other, storm::RationalFunction const& epsilon) const;
 
 Mtbdd ToDoubleRF() const;
 #endif

@@ -510,7 +510,7 @@ namespace storm {
 #endif
 
         template<typename ValueType>
-        bool InternalAdd<DdType::Sylvan, ValueType>::equalModuloPrecision(InternalAdd<DdType::Sylvan, ValueType> const& other, double precision, bool relative) const {
+        bool InternalAdd<DdType::Sylvan, ValueType>::equalModuloPrecision(InternalAdd<DdType::Sylvan, ValueType> const& other, ValueType const& precision, bool relative) const {
             if (relative) {
                 return this->sylvanMtbdd.EqualNormRel(other.sylvanMtbdd, precision);
             } else {
@@ -519,9 +519,22 @@ namespace storm {
         }
 
 #ifdef STORM_HAVE_CARL
-		template<>
-        bool InternalAdd<DdType::Sylvan, storm::RationalFunction>::equalModuloPrecision(InternalAdd<DdType::Sylvan, storm::RationalFunction> const&, double, bool) const {
-            STORM_LOG_THROW(false, storm::exceptions::InvalidOperationException, "Operation (equal modulo precision) not supported by rational functions.");
+        template<>
+        bool InternalAdd<DdType::Sylvan, storm::RationalNumber>::equalModuloPrecision(InternalAdd<DdType::Sylvan, storm::RationalNumber> const& other, storm::RationalNumber const& precision, bool relative) const {
+            if (relative) {
+                return this->sylvanMtbdd.EqualNormRelRN(other.sylvanMtbdd, precision);
+            } else {
+                return this->sylvanMtbdd.EqualNormRN(other.sylvanMtbdd, precision);
+            }
+        }
+        
+        template<>
+        bool InternalAdd<DdType::Sylvan, storm::RationalFunction>::equalModuloPrecision(InternalAdd<DdType::Sylvan, storm::RationalFunction> const& other, storm::RationalFunction const& precision, bool relative) const {
+            if (relative) {
+                return this->sylvanMtbdd.EqualNormRelRF(other.sylvanMtbdd, precision);
+            } else {
+                return this->sylvanMtbdd.EqualNormRF(other.sylvanMtbdd, precision);
+            }
         }
 #endif
 

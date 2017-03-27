@@ -182,7 +182,7 @@ namespace storm {
         }
 
         template<DdType LibraryType, typename ValueType>
-        bool Add<LibraryType, ValueType>::equalModuloPrecision(Add<LibraryType, ValueType> const& other, double precision, bool relative) const {
+        bool Add<LibraryType, ValueType>::equalModuloPrecision(Add<LibraryType, ValueType> const& other, ValueType const& precision, bool relative) const {
             return internalAdd.equalModuloPrecision(other, precision, relative);
         }
         
@@ -839,7 +839,9 @@ namespace storm {
 
         template class Add<storm::dd::DdType::Sylvan, double>;
         template class Add<storm::dd::DdType::Sylvan, uint_fast64_t>;
+        
 #ifdef STORM_HAVE_CARL
+        template class Add<storm::dd::DdType::Sylvan, storm::RationalNumber>;
 		template class Add<storm::dd::DdType::Sylvan, storm::RationalFunction>;
 #endif
     }

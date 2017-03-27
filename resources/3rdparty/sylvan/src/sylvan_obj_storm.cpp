@@ -9,6 +9,7 @@ void
 Sylvan::initCustomMtbdd()
 {
     sylvan_init_mt();
+    sylvan_storm_rational_number_init();
     sylvan_storm_rational_function_init();
 }
 
@@ -131,14 +132,14 @@ Bdd
 Mtbdd::AbstractMinRepresentative(const BddSet &variables) const
 {
     LACE_ME;
-    return mtbdd_minExistsRepresentative(mtbdd, variables.set.bdd);
+    return mtbdd_min_abstract_representative(mtbdd, variables.set.bdd);
 }
 
 Bdd
 Mtbdd::AbstractMaxRepresentative(const BddSet &variables) const
 {
     LACE_ME;
-    return mtbdd_maxExistsRepresentative(mtbdd, variables.set.bdd);
+    return mtbdd_max_abstract_representative(mtbdd, variables.set.bdd);
 }
 
 Mtbdd
@@ -315,13 +316,25 @@ Mtbdd Mtbdd::AbstractMaxRN(const BddSet &variables) const {
 Bdd
 Mtbdd::BddThresholdRN(storm::RationalNumber const& rn) const {
     LACE_ME;
-    return sylvan_storm_rational_number_threshold(mtbdd, (void*)&rn);
+    return sylvan_storm_rational_number_threshold(mtbdd, (storm_rational_number_ptr)&rn);
 }
 
 Bdd
 Mtbdd::BddStrictThresholdRN(storm::RationalNumber const& rn) const {
     LACE_ME;
-    return sylvan_storm_rational_number_strict_threshold(mtbdd, (void*)&rn);
+    return sylvan_storm_rational_number_strict_threshold(mtbdd, (storm_rational_number_ptr)&rn);
+}
+
+bool
+Mtbdd::EqualNormRN(const Mtbdd& other, storm::RationalNumber const& epsilon) const {
+    LACE_ME;
+    return sylvan_storm_rational_number_equal_norm_d(mtbdd, other.mtbdd, (storm_rational_number_ptr)&epsilon);
+}
+
+bool
+Mtbdd::EqualNormRelRN(const Mtbdd& other, storm::RationalNumber const& epsilon) const {
+    LACE_ME;
+    return sylvan_storm_rational_number_equal_norm_rel_d(mtbdd, other.mtbdd, (storm_rational_number_ptr)&epsilon);
 }
 
 Mtbdd
@@ -329,8 +342,6 @@ Mtbdd::ToDoubleRN() const {
     LACE_ME;
     return sylvan_storm_rational_number_to_double(mtbdd);
 }
-
-
 
 // Functions for Mtbdds over rational functions.
 #if defined(SYLVAN_HAVE_CARL) || defined(STORM_HAVE_CARL)
@@ -453,13 +464,25 @@ Mtbdd Mtbdd::AbstractMaxRF(const BddSet &variables) const {
 Bdd
 Mtbdd::BddThresholdRF(storm::RationalFunction const& rf) const {
     LACE_ME;
-    return sylvan_storm_rational_function_threshold(mtbdd, (void*)&rf);
+    return sylvan_storm_rational_function_threshold(mtbdd, (storm_rational_function_ptr)&rf);
 }
 
 Bdd
 Mtbdd::BddStrictThresholdRF(storm::RationalFunction const& rf) const {
     LACE_ME;
-    return sylvan_storm_rational_function_strict_threshold(mtbdd, (void*)&rf);
+    return sylvan_storm_rational_function_strict_threshold(mtbdd, (storm_rational_function_ptr)&rf);
+}
+
+bool
+Mtbdd::EqualNormRF(const Mtbdd& other, storm::RationalFunction const& epsilon) const {
+    LACE_ME;
+    return sylvan_storm_rational_function_equal_norm_d(mtbdd, other.mtbdd, (storm_rational_number_ptr)&epsilon);
+}
+
+bool
+Mtbdd::EqualNormRelRF(const Mtbdd& other, storm::RationalFunction const& epsilon) const {
+    LACE_ME;
+    return sylvan_storm_rational_function_equal_norm_rel_d(mtbdd, other.mtbdd, (storm_rational_number_ptr)&epsilon);
 }
 
 Mtbdd

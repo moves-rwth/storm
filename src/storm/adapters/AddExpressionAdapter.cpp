@@ -11,6 +11,8 @@
 #include "storm-config.h"
 #include "storm/adapters/CarlAdapter.h"
 
+#include "storm/utility/constants.h"
+
 namespace storm {
     namespace adapters {
         
@@ -203,12 +205,12 @@ namespace storm {
         
         template<storm::dd::DdType Type, typename ValueType>
         boost::any AddExpressionAdapter<Type, ValueType>::visit(storm::expressions::IntegerLiteralExpression const& expression, boost::any const&) {
-            return ddManager->getConstant(static_cast<ValueType>(expression.getValue()));
+            return ddManager->getConstant(storm::utility::convertNumber<ValueType>(expression.getValue()));
         }
         
         template<storm::dd::DdType Type, typename ValueType>
         boost::any AddExpressionAdapter<Type, ValueType>::visit(storm::expressions::RationalLiteralExpression const& expression, boost::any const&) {
-            return ddManager->getConstant(static_cast<ValueType>(expression.getValueAsDouble()));
+            return ddManager->getConstant(storm::utility::convertNumber<ValueType>(expression.getValue()));
         }
         
         // Explicitly instantiate the symbolic expression adapter
@@ -216,6 +218,7 @@ namespace storm {
         template class AddExpressionAdapter<storm::dd::DdType::Sylvan, double>;
         
 #ifdef STORM_HAVE_CARL
+        template class AddExpressionAdapter<storm::dd::DdType::Sylvan, storm::RationalNumber>;
 		template class AddExpressionAdapter<storm::dd::DdType::Sylvan, storm::RationalFunction>;
 #endif
     } // namespace adapters

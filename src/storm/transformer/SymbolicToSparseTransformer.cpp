@@ -12,7 +12,7 @@ namespace storm {
     namespace transformer {
 
         template<storm::dd::DdType Type, typename ValueType>
-        std::shared_ptr<storm::models::sparse::Dtmc<ValueType>> SymbolicMdpToSparseDtmcTransformer<Type, ValueType>::translate(storm::models::symbolic::Dtmc<Type, ValueType> const& symbolicDtmc) {
+        std::shared_ptr<storm::models::sparse::Dtmc<ValueType>> SymbolicDtmcToSparseDtmcTransformer<Type, ValueType>::translate(storm::models::symbolic::Dtmc<Type, ValueType> const& symbolicDtmc) {
             this->odd = symbolicDtmc.getReachableStates().createOdd();
             storm::storage::SparseMatrix<ValueType> transitionMatrix = symbolicDtmc.getTransitionMatrix().toMatrix(this->odd, this->odd);
             std::unordered_map<std::string, storm::models::sparse::StandardRewardModel<ValueType>> rewardModels;
@@ -42,7 +42,7 @@ namespace storm {
         }
         
         template<storm::dd::DdType Type, typename ValueType>
-        storm::dd::Odd const& SymbolicMdpToSparseDtmcTransformer<Type, ValueType>::getOdd() const {
+        storm::dd::Odd const& SymbolicDtmcToSparseDtmcTransformer<Type, ValueType>::getOdd() const {
             return this->odd;
         }
         
@@ -76,12 +76,16 @@ namespace storm {
             return std::make_shared<storm::models::sparse::Mdp<ValueType>>(transitionMatrix, labelling, rewardModels);
         }
 
-        template class SymbolicMdpToSparseDtmcTransformer<storm::dd::DdType::CUDD, double>;
-        template class SymbolicMdpToSparseDtmcTransformer<storm::dd::DdType::Sylvan, double>;
+        template class SymbolicDtmcToSparseDtmcTransformer<storm::dd::DdType::CUDD, double>;
+        template class SymbolicDtmcToSparseDtmcTransformer<storm::dd::DdType::Sylvan, double>;
         
-        template class SymbolicMdpToSparseDtmcTransformer<storm::dd::DdType::Sylvan, storm::RationalFunction>;
+        template class SymbolicDtmcToSparseDtmcTransformer<storm::dd::DdType::Sylvan, storm::RationalNumber>;
+        template class SymbolicDtmcToSparseDtmcTransformer<storm::dd::DdType::Sylvan, storm::RationalFunction>;
         
         template class SymbolicMdpToSparseMdpTransformer<storm::dd::DdType::CUDD, double>;
         template class SymbolicMdpToSparseMdpTransformer<storm::dd::DdType::Sylvan, double>;
+
+        template class SymbolicMdpToSparseMdpTransformer<storm::dd::DdType::Sylvan, storm::RationalNumber>;
+
     }
 }

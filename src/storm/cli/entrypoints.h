@@ -370,8 +370,16 @@ namespace storm {
 #ifdef STORM_HAVE_CARL
         template<>
         void buildAndCheckSymbolicModel<storm::RationalNumber>(storm::storage::SymbolicModelDescription const& model, std::vector<storm::jani::Property> const& formulas, bool onlyInitialStatesRelevant) {
-            STORM_LOG_THROW(storm::settings::getModule<storm::settings::modules::CoreSettings>().getEngine() == storm::settings::modules::CoreSettings::Engine::Sparse, storm::exceptions::InvalidSettingsException, "Cannot use this data type with an engine different than the sparse one.");
-            buildAndCheckSymbolicModelWithSparseEngine<storm::RationalNumber>(model, formulas, onlyInitialStatesRelevant);
+            auto engine = storm::settings::getModule<storm::settings::modules::CoreSettings>().getEngine();
+            if (engine == storm::settings::modules::CoreSettings::Engine::Dd || engine == storm::settings::modules::CoreSettings::Engine::Hybrid) {
+                auto ddlib = storm::settings::getModule<storm::settings::modules::CoreSettings>().getDdLibraryType();
+                STORM_LOG_THROW(ddlib == storm::dd::DdType::Sylvan, storm::exceptions::InvalidSettingsException, "This data-type is only available when selecting sylvan.");
+                buildAndCheckSymbolicModelWithSymbolicEngine<storm::dd::DdType::Sylvan, storm::RationalNumber>(engine == storm::settings::modules::CoreSettings::Engine::Hybrid, model, formulas, onlyInitialStatesRelevant);
+            } else if (engine == storm::settings::modules::CoreSettings::Engine::Sparse) {
+                buildAndCheckSymbolicModelWithSparseEngine<storm::RationalNumber>(model, formulas, onlyInitialStatesRelevant);
+            } else {
+                STORM_LOG_THROW(false, storm::exceptions::InvalidSettingsException, "Cannot use this data type with this engine.");
+            }
         }
         
         template<>

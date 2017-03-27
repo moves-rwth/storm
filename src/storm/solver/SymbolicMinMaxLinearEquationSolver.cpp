@@ -95,10 +95,11 @@ namespace storm {
         ValueType const& SymbolicMinMaxLinearEquationSolver<DdType, ValueType>::getPrecision() const {
             return precision;
         }
-
         
         template class SymbolicMinMaxLinearEquationSolver<storm::dd::DdType::CUDD, double>;
         template class SymbolicMinMaxLinearEquationSolver<storm::dd::DdType::Sylvan, double>;
+
+        template class SymbolicMinMaxLinearEquationSolver<storm::dd::DdType::Sylvan, storm::RationalNumber>;
         
     }
 }

@@ -300,7 +300,7 @@ namespace storm {
              * @param relative If set to true, not the absolute values have to be within the precision, but the relative
              * values.
              */
-            bool equalModuloPrecision(InternalAdd<DdType::Sylvan, ValueType> const& other, double precision, bool relative = true) const;
+            bool equalModuloPrecision(InternalAdd<DdType::Sylvan, ValueType> const& other, ValueType const& precision, bool relative = true) const;
             
             /*!
              * Swaps the given pairs of DD variables in the ADD. The pairs of meta variables have to be represented by

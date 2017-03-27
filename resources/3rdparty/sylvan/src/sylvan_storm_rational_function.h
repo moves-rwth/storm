@@ -85,6 +85,12 @@ TASK_DECL_2(MTBDD, sylvan_storm_rational_function_threshold, MTBDD, storm_ration
 TASK_DECL_2(MTBDD, sylvan_storm_rational_function_strict_threshold, MTBDD, storm_rational_function_ptr);
 #define sylvan_storm_rational_function_strict_threshold(dd, value) CALL(sylvan_storm_rational_function_strict_threshold, dd, value)
     
+TASK_DECL_3(MTBDD, sylvan_storm_rational_function_equal_norm_d, MTBDD, MTBDD, storm_rational_function_ptr);
+#define sylvan_storm_rational_function_equal_norm_d(a, b, epsilon) CALL(sylvan_storm_rational_function_equal_norm_d, a, b, epsilon)
+    
+TASK_DECL_3(MTBDD, sylvan_storm_rational_function_equal_norm_rel_d, MTBDD, MTBDD, storm_rational_function_ptr);
+#define sylvan_storm_rational_function_equal_norm_rel_d(a, b, epsilon) CALL(sylvan_storm_rational_function_equal_norm_rel_d, a, b, epsilon)
+    
 #ifdef __cplusplus
 }
 #endif /* __cplusplus */

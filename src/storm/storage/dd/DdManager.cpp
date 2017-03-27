@@ -104,7 +104,7 @@ namespace storm {
             
             Add<LibraryType, ValueType> result = this->getAddZero<ValueType>();
             for (int_fast64_t value = metaVariable.getLow(); value <= metaVariable.getHigh(); ++value) {
-                result += this->getEncoding(variable, value).template toAdd<ValueType>() * this->getConstant(static_cast<ValueType>(value));
+                result += this->getEncoding(variable, value).template toAdd<ValueType>() * this->getConstant(storm::utility::convertNumber<ValueType>(value));
             }
             return result;
         }
@@ -446,18 +446,21 @@ namespace storm {
         template Add<DdType::Sylvan, double> DdManager<DdType::Sylvan>::getAddZero() const;
         template Add<DdType::Sylvan, uint_fast64_t> DdManager<DdType::Sylvan>::getAddZero() const;
 #ifdef STORM_HAVE_CARL
+        template Add<DdType::Sylvan, storm::RationalNumber> DdManager<DdType::Sylvan>::getAddZero() const;
 		template Add<DdType::Sylvan, storm::RationalFunction> DdManager<DdType::Sylvan>::getAddZero() const;
 #endif
         
         template Add<DdType::Sylvan, double> DdManager<DdType::Sylvan>::getAddOne() const;
         template Add<DdType::Sylvan, uint_fast64_t> DdManager<DdType::Sylvan>::getAddOne() const;
 #ifdef STORM_HAVE_CARL
+        template Add<DdType::Sylvan, storm::RationalNumber> DdManager<DdType::Sylvan>::getAddOne() const;
 		template Add<DdType::Sylvan, storm::RationalFunction> DdManager<DdType::Sylvan>::getAddOne() const;
 #endif
 
         template Add<DdType::Sylvan, double> DdManager<DdType::Sylvan>::getInfinity<double>() const;
         template Add<DdType::Sylvan, uint_fast64_t> DdManager<DdType::Sylvan>::getInfinity<uint_fast64_t>() const;
 #ifdef STORM_HAVE_CARL
+        template Add<DdType::Sylvan, storm::RationalNumber> DdManager<DdType::Sylvan>::getInfinity<storm::RationalNumber>() const;
 		template Add<DdType::Sylvan, storm::RationalFunction> DdManager<DdType::Sylvan>::getInfinity<storm::RationalFunction>() const;
 #endif
         
@@ -470,6 +473,7 @@ namespace storm {
         template Add<DdType::Sylvan, double> DdManager<DdType::Sylvan>::getIdentity(storm::expressions::Variable const& variable) const;
         template Add<DdType::Sylvan, uint_fast64_t> DdManager<DdType::Sylvan>::getIdentity(storm::expressions::Variable const& variable) const;
 #ifdef STORM_HAVE_CARL
+        template Add<DdType::Sylvan, storm::RationalNumber> DdManager<DdType::Sylvan>::getIdentity(storm::expressions::Variable const& variable) const;
 		template Add<DdType::Sylvan, storm::RationalFunction> DdManager<DdType::Sylvan>::getIdentity(storm::expressions::Variable const& variable) const;
 #endif
     }

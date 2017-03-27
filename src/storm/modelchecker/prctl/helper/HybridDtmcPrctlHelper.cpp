@@ -71,7 +71,7 @@ namespace storm {
                         // Translate the symbolic matrix/vector to their explicit representations and solve the equation system.
                         storm::storage::SparseMatrix<ValueType> explicitSubmatrix = submatrix.toMatrix(odd, odd);
                         std::vector<ValueType> b = subvector.toVector(odd);
-                        
+                            
                         std::unique_ptr<storm::solver::LinearEquationSolver<ValueType>> solver = linearEquationSolverFactory.create(std::move(explicitSubmatrix));
                         solver->setBounds(storm::utility::zero<ValueType>(), storm::utility::one<ValueType>());
                         solver->solveEquations(x, b);
@@ -272,6 +272,7 @@ namespace storm {
             template class HybridDtmcPrctlHelper<storm::dd::DdType::CUDD, double>;
             template class HybridDtmcPrctlHelper<storm::dd::DdType::Sylvan, double>;
 
+            template class HybridDtmcPrctlHelper<storm::dd::DdType::Sylvan, storm::RationalNumber>;
             template class HybridDtmcPrctlHelper<storm::dd::DdType::Sylvan, storm::RationalFunction>;
         }
     }

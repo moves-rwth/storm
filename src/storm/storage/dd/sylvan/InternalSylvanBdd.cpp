@@ -254,6 +254,9 @@ namespace storm {
                 return InternalAdd<DdType::Sylvan, ValueType>(ddManager, this->sylvanBdd.toInt64Mtbdd());
 			} 
 #ifdef STORM_HAVE_CARL
+            else if (std::is_same<ValueType, storm::RationalNumber>::value) {
+                return InternalAdd<DdType::Sylvan, ValueType>(ddManager, this->sylvanBdd.toStormRationalNumberMtbdd());
+            } 
 			else if (std::is_same<ValueType, storm::RationalFunction>::value) {
 				return InternalAdd<DdType::Sylvan, ValueType>(ddManager, this->sylvanBdd.toStormRationalFunctionMtbdd());
 			} 
@@ -526,14 +529,17 @@ namespace storm {
         
         template InternalAdd<DdType::Sylvan, double> InternalBdd<DdType::Sylvan>::toAdd() const;
         template InternalAdd<DdType::Sylvan, uint_fast64_t> InternalBdd<DdType::Sylvan>::toAdd() const;
+        template InternalAdd<DdType::Sylvan, storm::RationalNumber> InternalBdd<DdType::Sylvan>::toAdd() const;
 		template InternalAdd<DdType::Sylvan, storm::RationalFunction> InternalBdd<DdType::Sylvan>::toAdd() const;
                 
         template void InternalBdd<DdType::Sylvan>::filterExplicitVector(Odd const& odd, std::vector<uint_fast64_t> const& ddVariableIndices, std::vector<double> const& sourceValues, std::vector<double>& targetValues) const;
         template void InternalBdd<DdType::Sylvan>::filterExplicitVector(Odd const& odd, std::vector<uint_fast64_t> const& ddVariableIndices, std::vector<uint_fast64_t> const& sourceValues, std::vector<uint_fast64_t>& targetValues) const;
+        template void InternalBdd<DdType::Sylvan>::filterExplicitVector(Odd const& odd, std::vector<uint_fast64_t> const& ddVariableIndices, std::vector<storm::RationalNumber> const& sourceValues, std::vector<storm::RationalNumber>& targetValues) const;
 		template void InternalBdd<DdType::Sylvan>::filterExplicitVector(Odd const& odd, std::vector<uint_fast64_t> const& ddVariableIndices, std::vector<storm::RationalFunction> const& sourceValues, std::vector<storm::RationalFunction>& targetValues) const;
         
         template InternalAdd<DdType::Sylvan, double> InternalBdd<DdType::Sylvan>::ite(InternalAdd<DdType::Sylvan, double> const& thenAdd, InternalAdd<DdType::Sylvan, double> const& elseAdd) const;
         template InternalAdd<DdType::Sylvan, uint_fast64_t> InternalBdd<DdType::Sylvan>::ite(InternalAdd<DdType::Sylvan, uint_fast64_t> const& thenAdd, InternalAdd<DdType::Sylvan, uint_fast64_t> const& elseAdd) const;
+        template InternalAdd<DdType::Sylvan, storm::RationalNumber> InternalBdd<DdType::Sylvan>::ite(InternalAdd<DdType::Sylvan, storm::RationalNumber> const& thenAdd, InternalAdd<DdType::Sylvan, storm::RationalNumber> const& elseAdd) const;
 		template InternalAdd<DdType::Sylvan, storm::RationalFunction> InternalBdd<DdType::Sylvan>::ite(InternalAdd<DdType::Sylvan, storm::RationalFunction> const& thenAdd, InternalAdd<DdType::Sylvan, storm::RationalFunction> const& elseAdd) const;
     }
 }

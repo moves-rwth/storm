@@ -34,6 +34,7 @@ namespace storm {
             template class Mdp<storm::dd::DdType::CUDD, double>;
             template class Mdp<storm::dd::DdType::Sylvan, double>;
 
+            template class Mdp<storm::dd::DdType::Sylvan, storm::RationalNumber>;
             template class Mdp<storm::dd::DdType::Sylvan, storm::RationalFunction>;
             
         } // namespace symbolic

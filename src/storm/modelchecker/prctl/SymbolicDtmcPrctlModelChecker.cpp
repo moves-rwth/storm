@@ -23,12 +23,12 @@
 namespace storm {
     namespace modelchecker {
         template<typename ModelType>
-        SymbolicDtmcPrctlModelChecker<ModelType>::SymbolicDtmcPrctlModelChecker(ModelType const& model, std::unique_ptr<storm::utility::solver::SymbolicLinearEquationSolverFactory<DdType, ValueType>>&& linearEquationSolverFactory) : SymbolicPropositionalModelChecker<ModelType>(model), linearEquationSolverFactory(std::move(linearEquationSolverFactory)) {
+        SymbolicDtmcPrctlModelChecker<ModelType>::SymbolicDtmcPrctlModelChecker(ModelType const& model, std::unique_ptr<storm::solver::SymbolicLinearEquationSolverFactory<DdType, ValueType>>&& linearEquationSolverFactory) : SymbolicPropositionalModelChecker<ModelType>(model), linearEquationSolverFactory(std::move(linearEquationSolverFactory)) {
             // Intentionally left empty.
         }
         
         template<typename ModelType>
-        SymbolicDtmcPrctlModelChecker<ModelType>::SymbolicDtmcPrctlModelChecker(ModelType const& model) : SymbolicPropositionalModelChecker<ModelType>(model), linearEquationSolverFactory(std::make_unique<storm::utility::solver::SymbolicLinearEquationSolverFactory<DdType, ValueType>>()) {
+        SymbolicDtmcPrctlModelChecker<ModelType>::SymbolicDtmcPrctlModelChecker(ModelType const& model) : SymbolicPropositionalModelChecker<ModelType>(model), linearEquationSolverFactory(std::make_unique<storm::solver::GeneralSymbolicLinearEquationSolverFactory<DdType, ValueType>>()) {
             // Intentionally left empty.
         }
         
@@ -109,6 +109,7 @@ namespace storm {
         template class SymbolicDtmcPrctlModelChecker<storm::models::symbolic::Dtmc<storm::dd::DdType::CUDD, double>>;
         template class SymbolicDtmcPrctlModelChecker<storm::models::symbolic::Dtmc<storm::dd::DdType::Sylvan, double>>;
 
+        template class SymbolicDtmcPrctlModelChecker<storm::models::symbolic::Dtmc<storm::dd::DdType::Sylvan, storm::RationalNumber>>;
         template class SymbolicDtmcPrctlModelChecker<storm::models::symbolic::Dtmc<storm::dd::DdType::Sylvan, storm::RationalFunction>>;
     }
 }

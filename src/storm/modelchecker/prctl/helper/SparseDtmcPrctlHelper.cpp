@@ -55,7 +55,7 @@ namespace storm {
                 std::pair<storm::storage::BitVector, storm::storage::BitVector> statesWithProbability01 = storm::utility::graph::performProb01(backwardTransitions, phiStates, psiStates);
                 storm::storage::BitVector statesWithProbability0 = std::move(statesWithProbability01.first);
                 storm::storage::BitVector statesWithProbability1 = std::move(statesWithProbability01.second);
-                
+                                
                 // Perform some logging.
                 storm::storage::BitVector maybeStates = ~(statesWithProbability0 | statesWithProbability1);
                 STORM_LOG_INFO("Found " << statesWithProbability0.getNumberOfSetBits() << " 'no' states.");

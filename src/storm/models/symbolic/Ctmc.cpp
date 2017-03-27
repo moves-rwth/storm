@@ -59,6 +59,7 @@ namespace storm {
             template class Ctmc<storm::dd::DdType::CUDD, double>;
             template class Ctmc<storm::dd::DdType::Sylvan, double>;
             
+            template class Ctmc<storm::dd::DdType::Sylvan, storm::RationalNumber>;
             template class Ctmc<storm::dd::DdType::Sylvan, storm::RationalFunction>;
             
         } // namespace symbolic

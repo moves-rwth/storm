@@ -44,7 +44,7 @@ static char* sylvan_storm_rational_number_to_str(int comp, uint64_t val, char* b
 }
 
 void sylvan_storm_rational_number_init() {
-    // Register custom leaf type storing rational functions.
+    // Register custom leaf type storing rational numbers.
     srn_type = sylvan_mt_create_type();
     sylvan_mt_set_hash(srn_type, sylvan_storm_rational_number_hash);
     sylvan_mt_set_equals(srn_type, sylvan_storm_rational_number_equals);
@@ -490,7 +490,7 @@ TASK_IMPL_3(MTBDD, sylvan_storm_rational_number_and_exists, MTBDD, a, MTBDD, b, 
     sylvan_gc_test();
 
     /* Check cache. Note that we do this now, since the times operator might swap a and b (commutative) */
-    if (cache_get3(CACHE_MTBDD_AND_EXISTS_RF, a, b, v, &result)) return result;
+    if (cache_get3(CACHE_MTBDD_AND_EXISTS_RN, a, b, v, &result)) return result;
 
     /* Now, v is not a constant, and either a or b is not a constant */
 
@@ -538,7 +538,7 @@ TASK_IMPL_3(MTBDD, sylvan_storm_rational_number_and_exists, MTBDD, a, MTBDD, b, 
     }
 
     /* Store in cache */
-    cache_put3(CACHE_MTBDD_AND_EXISTS_RF, a, b, v, result);
+    cache_put3(CACHE_MTBDD_AND_EXISTS_RN, a, b, v, result);
     return result;
 }
 
@@ -586,7 +586,7 @@ TASK_IMPL_1(MTBDD, sylvan_storm_rational_number_minimum, MTBDD, a) {
     
     /* Check cache */
     MTBDD result;
-    if (cache_get3(CACHE_MTBDD_MINIMUM_RF, a, 0, 0, &result)) return result;
+    if (cache_get3(CACHE_MTBDD_MINIMUM_RN, a, 0, 0, &result)) return result;
     
     /* Call recursive */
     SPAWN(mtbdd_minimum, node_getlow(a, na));
@@ -603,7 +603,7 @@ TASK_IMPL_1(MTBDD, sylvan_storm_rational_number_minimum, MTBDD, a) {
     }
     
     /* Store in cache */
-    cache_put3(CACHE_MTBDD_MINIMUM_RF, a, 0, 0, result);
+    cache_put3(CACHE_MTBDD_MINIMUM_RN, a, 0, 0, result);
     return result;
 }
 
@@ -619,7 +619,7 @@ TASK_IMPL_1(MTBDD, sylvan_storm_rational_number_maximum, MTBDD, a)
     
     /* Check cache */
     MTBDD result;
-    if (cache_get3(CACHE_MTBDD_MAXIMUM_RF, a, 0, 0, &result)) return result;
+    if (cache_get3(CACHE_MTBDD_MAXIMUM_RN, a, 0, 0, &result)) return result;
     
     /* Call recursive */
     SPAWN(mtbdd_minimum, node_getlow(a, na));
@@ -636,6 +636,155 @@ TASK_IMPL_1(MTBDD, sylvan_storm_rational_number_maximum, MTBDD, a)
     }
     
     /* Store in cache */
-    cache_put3(CACHE_MTBDD_MAXIMUM_RF, a, 0, 0, result);
+    cache_put3(CACHE_MTBDD_MAXIMUM_RN, a, 0, 0, result);
     return result;
 }
+
+TASK_4(MTBDD, sylvan_storm_rational_number_equal_norm_d2, MTBDD, a, MTBDD, b, storm_rational_number_ptr, svalue, int*, shortcircuit)
+{
+    /* Check short circuit */
+    if (*shortcircuit) return mtbdd_false;
+    
+    /* Check terminal case */
+    if (a == b) return mtbdd_true;
+    if (a == mtbdd_false) return mtbdd_false;
+    if (b == mtbdd_false) return mtbdd_false;
+    
+    mtbddnode_t na = MTBDD_GETNODE(a);
+    mtbddnode_t nb = MTBDD_GETNODE(b);
+    int la = mtbddnode_isleaf(na);
+    int lb = mtbddnode_isleaf(nb);
+    
+    if (la && lb) {
+        storm_rational_number_ptr fa = mtbdd_getstorm_rational_number_ptr(a);
+        storm_rational_number_ptr fb = mtbdd_getstorm_rational_number_ptr(b);
+        
+        return storm_rational_number_equal_modulo_precision(0, fa, fb, svalue) ? mtbdd_true : mtbdd_false;
+    }
+    
+    if (b < a) {
+        MTBDD t = a;
+        a = b;
+        b = t;
+    }
+    
+    /* Maybe perform garbage collection */
+    sylvan_gc_test();
+    
+    /* Count operation */
+    sylvan_stats_count(MTBDD_EQUAL_NORM);
+    
+    /* Check cache */
+    MTBDD result;
+    if (cache_get3(CACHE_MTBDD_EQUAL_NORM_RN, a, b, svalue, &result)) {
+        sylvan_stats_count(MTBDD_EQUAL_NORM_CACHED);
+        return result;
+    }
+    
+    /* Get top variable */
+    uint32_t va = la ? 0xffffffff : mtbddnode_getvariable(na);
+    uint32_t vb = lb ? 0xffffffff : mtbddnode_getvariable(nb);
+    uint32_t var = va < vb ? va : vb;
+    
+    /* Get cofactors */
+    MTBDD alow, ahigh, blow, bhigh;
+    alow  = va == var ? node_getlow(a, na)  : a;
+    ahigh = va == var ? node_gethigh(a, na) : a;
+    blow  = vb == var ? node_getlow(b, nb)  : b;
+    bhigh = vb == var ? node_gethigh(b, nb) : b;
+    
+    SPAWN(sylvan_storm_rational_number_equal_norm_d2, ahigh, bhigh, svalue, shortcircuit);
+    result = CALL(sylvan_storm_rational_number_equal_norm_d2, alow, blow, svalue, shortcircuit);
+    if (result == mtbdd_false) *shortcircuit = 1;
+    if (result != SYNC(sylvan_storm_rational_number_equal_norm_d2)) result = mtbdd_false;
+    if (result == mtbdd_false) *shortcircuit = 1;
+    
+    /* Store in cache */
+    if (cache_put3(CACHE_MTBDD_EQUAL_NORM_RN, a, b, svalue, result)) {
+        sylvan_stats_count(MTBDD_EQUAL_NORM_CACHEDPUT);
+    }
+    
+    return result;
+}
+
+TASK_IMPL_3(MTBDD, sylvan_storm_rational_number_equal_norm_d, MTBDD, a, MTBDD, b, storm_rational_number_ptr, d)
+{
+    /* the implementation checks shortcircuit in every task and if the two
+     MTBDDs are not equal module epsilon, then the computation tree quickly aborts */
+    int shortcircuit = 0;
+    return CALL(sylvan_storm_rational_number_equal_norm_d2, a, b, d, &shortcircuit);
+}
+
+/**
+ * Compare two Double MTBDDs, returns Boolean True if they are equal within some value epsilon
+ * This version computes the relative difference vs the value in a.
+ */
+TASK_4(MTBDD, sylvan_storm_rational_number_equal_norm_rel_d2, MTBDD, a, MTBDD, b, storm_rational_number_ptr, svalue, int*, shortcircuit)
+{
+    /* Check short circuit */
+    if (*shortcircuit) return mtbdd_false;
+    
+    /* Check terminal case */
+    if (a == b) return mtbdd_true;
+    if (a == mtbdd_false) return mtbdd_false;
+    if (b == mtbdd_false) return mtbdd_false;
+    
+    mtbddnode_t na = MTBDD_GETNODE(a);
+    mtbddnode_t nb = MTBDD_GETNODE(b);
+    int la = mtbddnode_isleaf(na);
+    int lb = mtbddnode_isleaf(nb);
+    
+    if (la && lb) {
+        storm_rational_number_ptr fa = mtbdd_getstorm_rational_number_ptr(a);
+        storm_rational_number_ptr fb = mtbdd_getstorm_rational_number_ptr(b);
+        
+        return storm_rational_number_equal_modulo_precision(1, fa, fb, svalue) ? mtbdd_true : mtbdd_false;
+    }
+    
+    /* Maybe perform garbage collection */
+    sylvan_gc_test();
+    
+    /* Count operation */
+    sylvan_stats_count(MTBDD_EQUAL_NORM_REL);
+    
+    /* Check cache */
+    MTBDD result;
+    if (cache_get3(CACHE_MTBDD_EQUAL_NORM_REL_RN, a, b, svalue, &result)) {
+        sylvan_stats_count(MTBDD_EQUAL_NORM_REL_CACHED);
+        return result;
+    }
+    
+    /* Get top variable */
+    uint32_t va = la ? 0xffffffff : mtbddnode_getvariable(na);
+    uint32_t vb = lb ? 0xffffffff : mtbddnode_getvariable(nb);
+    uint32_t var = va < vb ? va : vb;
+    
+    /* Get cofactors */
+    MTBDD alow, ahigh, blow, bhigh;
+    alow  = va == var ? node_getlow(a, na)  : a;
+    ahigh = va == var ? node_gethigh(a, na) : a;
+    blow  = vb == var ? node_getlow(b, nb)  : b;
+    bhigh = vb == var ? node_gethigh(b, nb) : b;
+    
+    SPAWN(sylvan_storm_rational_number_equal_norm_rel_d2, ahigh, bhigh, svalue, shortcircuit);
+    result = CALL(sylvan_storm_rational_number_equal_norm_rel_d2, alow, blow, svalue, shortcircuit);
+    if (result == mtbdd_false) *shortcircuit = 1;
+    if (result != SYNC(sylvan_storm_rational_number_equal_norm_rel_d2)) result = mtbdd_false;
+    if (result == mtbdd_false) *shortcircuit = 1;
+    
+    /* Store in cache */
+    if (cache_put3(CACHE_MTBDD_EQUAL_NORM_REL_RN, a, b, svalue, result)) {
+        sylvan_stats_count(MTBDD_EQUAL_NORM_REL_CACHEDPUT);
+    }
+    
+    return result;
+}
+
+TASK_IMPL_3(MTBDD, sylvan_storm_rational_number_equal_norm_rel_d, MTBDD, a, MTBDD, b, storm_rational_number_ptr, d)
+{
+    /* the implementation checks shortcircuit in every task and if the two
+     MTBDDs are not equal module epsilon, then the computation tree quickly aborts */
+    int shortcircuit = 0;
+    return CALL(sylvan_storm_rational_number_equal_norm_rel_d2, a, b, d, &shortcircuit);
+}
+

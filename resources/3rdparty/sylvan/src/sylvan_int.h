@@ -92,10 +92,17 @@ extern llmsset_t nodes;
 #define CACHE_MTBDD_GREATER             (55LL<<40)
 #define CACHE_MTBDD_EVAL_COMPOSE        (56LL<<40)
 #define CACHE_MTBDD_NONZERO_COUNT       (57LL<<40)
-#define CACHE_MTBDD_AND_EXISTS_RF       (58LL<<40)
-#define CACHE_MTBDD_MINIMUM_RF          (59LL<<40)
-#define CACHE_MTBDD_MAXIMUM_RF          (60LL<<40)
-
+#define CACHE_MTBDD_AND_EXISTS_RN       (58LL<<40)
+#define CACHE_MTBDD_MINIMUM_RN          (59LL<<40)
+#define CACHE_MTBDD_MAXIMUM_RN          (60LL<<40)
+#define CACHE_MTBDD_EQUAL_NORM_RN       (61LL<<40)
+#define CACHE_MTBDD_EQUAL_NORM_REL_RN   (62LL<<40)
+#define CACHE_MTBDD_AND_EXISTS_RF       (63LL<<40)
+#define CACHE_MTBDD_MINIMUM_RF          (64LL<<40)
+#define CACHE_MTBDD_MAXIMUM_RF          (65LL<<40)
+#define CACHE_MTBDD_EQUAL_NORM_RF       (66LL<<40)
+#define CACHE_MTBDD_EQUAL_NORM_REL_RF   (67LL<<40)
+    
 #ifdef __cplusplus
 }
 #endif /* __cplusplus */

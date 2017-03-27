@@ -12,7 +12,7 @@ namespace storm {
     namespace transformer {
 
         template<storm::dd::DdType Type, typename ValueType>
-        class SymbolicMdpToSparseDtmcTransformer {
+        class SymbolicDtmcToSparseDtmcTransformer {
         public:
             std::shared_ptr<storm::models::sparse::Dtmc<ValueType>> translate(storm::models::symbolic::Dtmc<Type, ValueType> const& symbolicDtmc);
             storm::dd::Odd const& getOdd() const;

@@ -34,6 +34,7 @@ namespace storm {
             template class DeterministicModel<storm::dd::DdType::CUDD>;
             template class DeterministicModel<storm::dd::DdType::Sylvan>;
 
+            template class DeterministicModel<storm::dd::DdType::Sylvan, storm::RationalNumber>;
             template class DeterministicModel<storm::dd::DdType::Sylvan, storm::RationalFunction>;
 
         } // namespace symbolic

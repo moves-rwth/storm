@@ -110,7 +110,7 @@ namespace storm {
         
         template<storm::dd::DdType Type, typename ValueType>
         ValueType SymbolicQuantitativeCheckResult<Type, ValueType>::average() const {
-            return this->sum() / this->states.getNonZeroCount();
+            return this->sum() / storm::utility::convertNumber<ValueType>(this->states.getNonZeroCount());
         }
         
         template<storm::dd::DdType Type, typename ValueType>
@@ -128,6 +128,7 @@ namespace storm {
         template class SymbolicQuantitativeCheckResult<storm::dd::DdType::CUDD>;
         template class SymbolicQuantitativeCheckResult<storm::dd::DdType::Sylvan>;
 
+        template class SymbolicQuantitativeCheckResult<storm::dd::DdType::Sylvan, storm::RationalNumber>;
         template class SymbolicQuantitativeCheckResult<storm::dd::DdType::Sylvan, storm::RationalFunction>;
     }
 }

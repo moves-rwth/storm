@@ -113,7 +113,7 @@ namespace storm {
             std::vector<std::pair<storm::expressions::Variable, storm::expressions::Variable>> rowColumnMetaVariablePairs;
             
             // The precision to achieve.
-            double precision;
+            ValueType precision;
             
             // The maximal number of iterations to perform.
             uint_fast64_t maximalNumberOfIterations;

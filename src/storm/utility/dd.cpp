@@ -74,6 +74,7 @@ namespace storm {
             template storm::dd::Bdd<storm::dd::DdType::CUDD> getRowColumnDiagonal(storm::dd::DdManager<storm::dd::DdType::CUDD> const& ddManager, std::vector<std::pair<storm::expressions::Variable, storm::expressions::Variable>> const& rowColumnMetaVariablePairs);
             template storm::dd::Bdd<storm::dd::DdType::Sylvan> getRowColumnDiagonal(storm::dd::DdManager<storm::dd::DdType::Sylvan> const& ddManager, std::vector<std::pair<storm::expressions::Variable, storm::expressions::Variable>> const& rowColumnMetaVariablePairs);
 
+            template storm::dd::Add<storm::dd::DdType::Sylvan, storm::RationalNumber> getRowColumnDiagonal(storm::dd::DdManager<storm::dd::DdType::Sylvan> const& ddManager, std::vector<std::pair<storm::expressions::Variable, storm::expressions::Variable>> const& rowColumnMetaVariablePairs);
             template storm::dd::Add<storm::dd::DdType::Sylvan, storm::RationalFunction> getRowColumnDiagonal(storm::dd::DdManager<storm::dd::DdType::Sylvan> const& ddManager, std::vector<std::pair<storm::expressions::Variable, storm::expressions::Variable>> const& rowColumnMetaVariablePairs);
 
         }

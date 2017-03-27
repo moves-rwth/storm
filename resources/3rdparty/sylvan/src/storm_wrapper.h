@@ -48,6 +48,9 @@ extern "C" {
     storm_rational_number_ptr storm_rational_number_floor(storm_rational_number_ptr a);
     storm_rational_number_ptr storm_rational_number_ceil(storm_rational_number_ptr a);
     
+    // Other operations.
+    int storm_rational_number_equal_modulo_precision(int relative, storm_rational_number_ptr a, storm_rational_number_ptr b, storm_rational_number_ptr precision);
+    
     // Printing functions.
     void print_storm_rational_number(storm_rational_number_ptr a);
     void print_storm_rational_number_to_file(storm_rational_number_ptr a, FILE* out);
@@ -90,6 +93,9 @@ extern "C" {
     storm_rational_function_ptr storm_rational_function_negate(storm_rational_function_ptr a);
     storm_rational_function_ptr storm_rational_function_floor(storm_rational_function_ptr a);
     storm_rational_function_ptr storm_rational_function_ceil(storm_rational_function_ptr a);
+    
+    // Other operations.
+    int storm_rational_function_equal_modulo_precision(int relative, storm_rational_function_ptr a, storm_rational_function_ptr b, storm_rational_function_ptr precision);
     
     // Printing functions.
     void print_storm_rational_function(storm_rational_function_ptr a);

@@ -16,8 +16,9 @@
 #include <sylvan_common.h>
 #include <sylvan_mtbdd.h>
 
-// TODO: remove and replace by proper detection in cmake
+#if defined(STORM_HAVE_GMP) && !defined(STORM_USE_CLN_EA)
 #define RATIONAL_NUMBER_THREAD_SAFE
+#endif
 
 // A mutex that is used to lock all operations accessing rational numbers as they are not necessarily thread-safe.
 #ifndef RATIONAL_NUMBER_THREAD_SAFE
@@ -47,7 +48,7 @@ void storm_rational_number_destroy(storm_rational_number_ptr a) {
     std::lock_guard<std::mutex> lock(rationalNumberMutex);
 #endif
     
-    storm::RationalFunction* srn_ptr = (storm::RationalFunction*)a;
+    storm::RationalNumber* srn_ptr = (storm::RationalNumber*)a;
     delete srn_ptr;
 }
 
@@ -224,9 +225,6 @@ storm_rational_number_ptr storm_rational_number_max(storm_rational_number_ptr a,
     return storm_rational_number_less(a, b) ? storm_rational_number_clone(b) : storm_rational_number_clone(a);
 }
 
-
-
-
 int storm_rational_number_less(storm_rational_number_ptr a, storm_rational_number_ptr b) {
 #ifndef RATIONAL_NUMBER_THREAD_SAFE
     std::lock_guard<std::mutex> lock(rationalNumberMutex);
@@ -234,6 +232,12 @@ int storm_rational_number_less(storm_rational_number_ptr a, storm_rational_numbe
     
     storm::RationalNumber const& srn_a = *(storm::RationalNumber const*)a;
     storm::RationalNumber const& srn_b = *(storm::RationalNumber const*)b;
+    
+    if (storm::utility::isInfinity<storm::RationalNumber>(srn_b)) {
+        return storm::utility::isInfinity<storm::RationalNumber>(srn_a) ? 0 : 1;
+    } else if (storm::utility::isInfinity<storm::RationalNumber>(srn_a)) {
+        return 0;
+    }
     
     return srn_a < srn_b ? 1 : 0;
 }
@@ -245,6 +249,12 @@ int storm_rational_number_less_or_equal(storm_rational_number_ptr a, storm_ratio
     
     storm::RationalNumber const& srn_a = *(storm::RationalNumber const*)a;
     storm::RationalNumber const& srn_b = *(storm::RationalNumber const*)b;
+    
+    if (storm::utility::isInfinity<storm::RationalNumber>(srn_b)) {
+        return 1;
+    } else if (storm::utility::isInfinity<storm::RationalNumber>(srn_a)) {
+        return 0;
+    }
     
     return srn_a <= srn_b ? 1 : 0;
 }
@@ -279,6 +289,21 @@ storm_rational_number_ptr storm_rational_number_ceil(storm_rational_number_ptr a
     return (storm_rational_number_ptr)result_srn;
 }
 
+int storm_rational_number_equal_modulo_precision(int relative, storm_rational_number_ptr a, storm_rational_number_ptr b, storm_rational_number_ptr precision) {
+#ifndef RATIONAL_NUMBER_THREAD_SAFE
+    std::lock_guard<std::mutex> lock(rationalNumberMutex);
+#endif
+
+    storm::RationalNumber const& srn_a = *(storm::RationalNumber const*)a;
+    storm::RationalNumber const& srn_b = *(storm::RationalNumber const*)b;
+    storm::RationalNumber const& srn_p = *(storm::RationalNumber const*)precision;
+
+    if (relative) {
+        return carl::abs(srn_a - srn_b)/srn_a < srn_p ? 1 : 0;
+    } else {
+        return carl::abs(srn_a - srn_b) < srn_p ? 1 : 0;
+    }
+}
 
 void print_storm_rational_number(storm_rational_number_ptr a) {
 #ifndef RATIONAL_NUMBER_THREAD_SAFE
@@ -525,12 +550,16 @@ int storm_rational_function_less(storm_rational_function_ptr a, storm_rational_f
         throw storm::exceptions::InvalidOperationException() << "Operands of less must not be non-constant rational functions.";
     }
     
-    if (storm::utility::convertNumber<storm::RationalFunctionCoefficient>(srf_a) < storm::utility::convertNumber<storm::RationalFunctionCoefficient>(srf_b)) {
-        return 1;
-    } else {
+    storm::RationalFunctionCoefficient srn_a = storm::utility::convertNumber<storm::RationalFunctionCoefficient>(srf_a);
+    storm::RationalFunctionCoefficient srn_b = storm::utility::convertNumber<storm::RationalFunctionCoefficient>(srf_b);
+    
+    if (storm::utility::isInfinity<storm::RationalFunctionCoefficient>(srn_b)) {
+        return storm::utility::isInfinity<storm::RationalFunctionCoefficient>(srn_a) ? 0 : 1;
+    } else if (storm::utility::isInfinity<storm::RationalFunctionCoefficient>(srn_a)) {
         return 0;
     }
-    return -1;
+
+    return (srn_a < srn_b) ? 1 : 0;
 }
 
 int storm_rational_function_less_or_equal(storm_rational_function_ptr a, storm_rational_function_ptr b) {
@@ -544,12 +573,16 @@ int storm_rational_function_less_or_equal(storm_rational_function_ptr a, storm_r
         throw storm::exceptions::InvalidOperationException() << "Operands of less-or-equal must not be non-constant rational functions.";
     }
     
-    if (storm::utility::convertNumber<storm::RationalFunctionCoefficient>(srf_a) <= storm::utility::convertNumber<storm::RationalFunctionCoefficient>(srf_b)) {
+    storm::RationalFunctionCoefficient srn_a = storm::utility::convertNumber<storm::RationalFunctionCoefficient>(srf_a);
+    storm::RationalFunctionCoefficient srn_b = storm::utility::convertNumber<storm::RationalFunctionCoefficient>(srf_b);
+    
+    if (storm::utility::isInfinity<storm::RationalFunctionCoefficient>(srn_b)) {
         return 1;
-    } else {
+    } else if (storm::utility::isInfinity<storm::RationalFunctionCoefficient>(srn_a)) {
         return 0;
     }
-    return -1;
+    
+    return (srn_a <= srn_b) ? 1 : 0;
 }
 
 storm_rational_function_ptr storm_rational_function_negate(storm_rational_function_ptr a) {
@@ -588,6 +621,29 @@ storm_rational_function_ptr storm_rational_function_ceil(storm_rational_function
     return (storm_rational_function_ptr)result_srf;
 }
 
+int storm_rational_function_equal_modulo_precision(int relative, storm_rational_function_ptr a, storm_rational_function_ptr b, storm_rational_function_ptr precision) {
+#ifndef RATIONAL_FUNCTION_THREAD_SAFE
+    std::lock_guard<std::mutex> lock(rationalFunctionMutex);
+#endif
+    
+    storm::RationalFunction const& srf_a = *(storm::RationalFunction const*)a;
+    storm::RationalFunction const& srf_b = *(storm::RationalFunction const*)b;
+    storm::RationalFunction const& srf_p = *(storm::RationalFunction const*)precision;
+    
+    if (!storm::utility::isConstant(srf_a) || !storm::utility::isConstant(srf_b) || !storm::utility::isConstant(srf_p)) {
+        throw storm::exceptions::InvalidOperationException() << "Operands of equal-modulo-precision must not be non-constant rational functions.";
+    }
+    
+    storm::RationalFunctionCoefficient srn_a = storm::utility::convertNumber<storm::RationalFunctionCoefficient>(srf_a);
+    storm::RationalFunctionCoefficient srn_b = storm::utility::convertNumber<storm::RationalFunctionCoefficient>(srf_b);
+    storm::RationalFunctionCoefficient srn_p = storm::utility::convertNumber<storm::RationalFunctionCoefficient>(srf_p);
+
+    if (relative) {
+        return carl::abs(srn_a - srn_b)/srn_a < srn_p ? 1 : 0;
+    } else {
+        return carl::abs(srn_a - srn_b) < srn_p ? 1 : 0;
+    }
+}
 
 void print_storm_rational_function(storm_rational_function_ptr a) {
 #ifndef RATIONAL_FUNCTION_THREAD_SAFE

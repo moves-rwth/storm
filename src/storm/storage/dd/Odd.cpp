@@ -146,6 +146,7 @@ namespace storm {
         }
         
         template void Odd::expandExplicitVector(storm::dd::Odd const& newOdd, std::vector<double> const& oldValues, std::vector<double>& newValues) const;
+        template void Odd::expandExplicitVector(storm::dd::Odd const& newOdd, std::vector<storm::RationalNumber> const& oldValues, std::vector<storm::RationalNumber>& newValues) const;
         template void Odd::expandExplicitVector(storm::dd::Odd const& newOdd, std::vector<storm::RationalFunction> const& oldValues, std::vector<storm::RationalFunction>& newValues) const;
     }
 }

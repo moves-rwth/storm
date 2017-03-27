@@ -1377,7 +1377,7 @@ namespace storm {
             
             // Cut the transitions and rewards to the reachable fragment of the state space.
             storm::dd::Bdd<Type> initialStates = createInitialStatesDecisionDiagram(generationInfo);
-                        
+            
             storm::dd::Bdd<Type> transitionMatrixBdd = transitionMatrix.notZero();
             if (program.getModelType() == storm::prism::Program::ModelType::MDP) {
                 transitionMatrixBdd = transitionMatrixBdd.existsAbstract(generationInfo.allNondeterminismVariables);
@@ -1490,6 +1490,7 @@ namespace storm {
         template class DdPrismModelBuilder<storm::dd::DdType::CUDD>;
         template class DdPrismModelBuilder<storm::dd::DdType::Sylvan>;
 
+        template class DdPrismModelBuilder<storm::dd::DdType::Sylvan, storm::RationalNumber>;
         template class DdPrismModelBuilder<storm::dd::DdType::Sylvan, storm::RationalFunction>;
 
     } // namespace adapters

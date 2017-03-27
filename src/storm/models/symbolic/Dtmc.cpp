@@ -33,6 +33,7 @@ namespace storm {
             template class Dtmc<storm::dd::DdType::CUDD, double>;
             template class Dtmc<storm::dd::DdType::Sylvan, double>;
 
+            template class Dtmc<storm::dd::DdType::Sylvan, storm::RationalNumber>;
             template class Dtmc<storm::dd::DdType::Sylvan, storm::RationalFunction>;
 
         } // namespace symbolic

@@ -1928,6 +1928,7 @@ namespace storm {
         template class DdJaniModelBuilder<storm::dd::DdType::CUDD, double>;
         template class DdJaniModelBuilder<storm::dd::DdType::Sylvan, double>;
 
+        template class DdJaniModelBuilder<storm::dd::DdType::Sylvan, storm::RationalNumber>;
         template class DdJaniModelBuilder<storm::dd::DdType::Sylvan, storm::RationalFunction>;
     }
 }

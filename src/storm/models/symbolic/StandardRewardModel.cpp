@@ -160,6 +160,7 @@ namespace storm {
             template class StandardRewardModel<storm::dd::DdType::CUDD, double>;
             template class StandardRewardModel<storm::dd::DdType::Sylvan, double>;
 
+            template class StandardRewardModel<storm::dd::DdType::Sylvan, storm::RationalNumber>;
             template class StandardRewardModel<storm::dd::DdType::Sylvan, storm::RationalFunction>;
 
         }

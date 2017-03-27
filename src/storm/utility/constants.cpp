@@ -72,6 +72,11 @@ namespace storm {
             return true;
         }
 
+        template<typename TargetType, typename SourceType>
+        TargetType convertNumber(SourceType const& number) {
+            return static_cast<TargetType>(number);
+        }
+        
         template<>
         uint_fast64_t convertNumber(double const& number){
             return std::llround(number);
@@ -86,7 +91,17 @@ namespace storm {
         double convertNumber(double const& number){
             return number;
         }
-        
+
+        template<>
+        double convertNumber(long long const& number){
+            return static_cast<double>(number);
+        }
+
+        template<>
+        storm::storage::sparse::state_type convertNumber(long long const& number){
+            return static_cast<double>(number);
+        }
+
         template<typename ValueType>
         ValueType simplify(ValueType value) {
             // In the general case, we don't do anything here, but merely return the value. If something else is
@@ -240,39 +255,39 @@ namespace storm {
         }
 
         template<>
-        uint_fast64_t convertNumber(ClnRationalNumber const& number){
+        uint_fast64_t convertNumber(ClnRationalNumber const& number) {
             return carl::toInt<unsigned long>(number);
         }
         
         template<>
-        ClnRationalNumber convertNumber(ClnRationalNumber const& number){
+        ClnRationalNumber convertNumber(ClnRationalNumber const& number) {
             return number;
         }
         
         template<>
-        ClnRationalNumber convertNumber(double const& number){
+        ClnRationalNumber convertNumber(double const& number) {
             return carl::rationalize<ClnRationalNumber>(number);
         }
 
         template<>
-        ClnRationalNumber convertNumber(int const& number){
+        ClnRationalNumber convertNumber(int const& number) {
             return carl::rationalize<ClnRationalNumber>(number);
         }
 
         template<>
-        ClnRationalNumber convertNumber(uint_fast64_t const& number){
+        ClnRationalNumber convertNumber(uint_fast64_t const& number) {
             STORM_LOG_ASSERT(static_cast<carl::uint>(number) == number, "Rationalizing failed, because the number is too large.");
             return carl::rationalize<ClnRationalNumber>(static_cast<carl::uint>(number));
         }
         
         template<>
-        ClnRationalNumber convertNumber(int_fast64_t const& number){
+        ClnRationalNumber convertNumber(int_fast64_t const& number) {
             STORM_LOG_ASSERT(static_cast<carl::sint>(number) == number, "Rationalizing failed, because the number is too large.");
             return carl::rationalize<ClnRationalNumber>(static_cast<carl::sint>(number));
         }
         
         template<>
-        double convertNumber(ClnRationalNumber const& number){
+        double convertNumber(ClnRationalNumber const& number) {
             return carl::toDouble(number);
         }
         
@@ -541,7 +556,12 @@ namespace storm {
         RationalFunctionCoefficient convertNumber(RationalFunction const& number){
             return number.nominatorAsNumber() / number.denominatorAsNumber();
         }
-        
+
+        template<>
+        RationalFunction convertNumber(storm::storage::sparse::state_type const& number) {
+            return RationalFunction(convertNumber<RationalFunctionCoefficient>(number));
+        }
+
         template<>
         RationalFunction& simplify(RationalFunction& value);
         
@@ -705,6 +725,12 @@ namespace storm {
         template bool isInfinity(storm::storage::sparse::state_type const& value);
         template bool isInteger(storm::storage::sparse::state_type const& number);
         
+        // other instantiations
+        template double convertNumber(long long const&);
+        template storm::storage::sparse::state_type convertNumber(long long const& number);
+        template unsigned long convertNumber(long const&);
+        template double convertNumber(long const&);
+        
 #if defined(STORM_HAVE_CLN)
         // Instantiations for (CLN) rational number.
         template storm::ClnRationalNumber one();
@@ -789,6 +815,8 @@ namespace storm {
         template storm::RationalFunction convertNumber(storm::RationalFunction const& number);
         template RationalFunctionCoefficient convertNumber(RationalFunction const& number);
         template RationalFunction convertNumber(storm::RationalFunctionCoefficient const& number);
+        template RationalFunction convertNumber(storm::storage::sparse::state_type const& number);
+        template RationalFunction convertNumber(double const& number);
         template RationalFunction simplify(RationalFunction value);
         template RationalFunction& simplify(RationalFunction& value);
         template RationalFunction&& simplify(RationalFunction&& value);

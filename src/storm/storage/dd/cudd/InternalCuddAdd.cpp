@@ -163,7 +163,7 @@ namespace storm {
         }
         
         template<typename ValueType>
-        bool InternalAdd<DdType::CUDD, ValueType>::equalModuloPrecision(InternalAdd<DdType::CUDD, ValueType> const& other, double precision, bool relative) const {
+        bool InternalAdd<DdType::CUDD, ValueType>::equalModuloPrecision(InternalAdd<DdType::CUDD, ValueType> const& other, ValueType const& precision, bool relative) const {
             if (relative) {
                 return this->getCuddAdd().EqualSupNormRel(other.getCuddAdd(), precision);
             } else {

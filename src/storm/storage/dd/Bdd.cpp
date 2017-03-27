@@ -395,25 +395,32 @@ namespace storm {
         template Bdd<DdType::Sylvan> Bdd<DdType::Sylvan>::fromVector(DdManager<DdType::Sylvan> const& ddManager, std::vector<double> const& explicitValues, storm::dd::Odd const& odd, std::set<storm::expressions::Variable> const& metaVariables, storm::logic::ComparisonType comparisonType, double value);
 
 #ifdef STORM_HAVE_CARL
+        template Bdd<DdType::Sylvan> Bdd<DdType::Sylvan>::fromVector(DdManager<DdType::Sylvan> const& ddManager, std::vector<storm::RationalNumber> const& explicitValues, storm::dd::Odd const& odd, std::set<storm::expressions::Variable> const& metaVariables, storm::logic::ComparisonType comparisonType, storm::RationalNumber value);
         template Bdd<DdType::Sylvan> Bdd<DdType::Sylvan>::fromVector(DdManager<DdType::Sylvan> const& ddManager, std::vector<storm::RationalFunction> const& explicitValues, storm::dd::Odd const& odd, std::set<storm::expressions::Variable> const& metaVariables, storm::logic::ComparisonType comparisonType, storm::RationalFunction value);
 #endif
         
         template Add<DdType::Sylvan, double> Bdd<DdType::Sylvan>::toAdd() const;
         template Add<DdType::Sylvan, uint_fast64_t> Bdd<DdType::Sylvan>::toAdd() const;
+
 #ifdef STORM_HAVE_CARL
+        template Add<DdType::Sylvan, storm::RationalNumber> Bdd<DdType::Sylvan>::toAdd() const;
 		template Add<DdType::Sylvan, storm::RationalFunction> Bdd<DdType::Sylvan>::toAdd() const;
 #endif
         
         template std::vector<double> Bdd<DdType::Sylvan>::filterExplicitVector(Odd const& odd, std::vector<double> const& values) const;
         template std::vector<uint_fast64_t> Bdd<DdType::Sylvan>::filterExplicitVector(Odd const& odd, std::vector<uint_fast64_t> const& values) const;
+
 #ifdef STORM_HAVE_CARL
+        template std::vector<storm::RationalNumber> Bdd<DdType::Sylvan>::filterExplicitVector(Odd const& odd, std::vector<storm::RationalNumber> const& values) const;
 		template std::vector<storm::RationalFunction> Bdd<DdType::Sylvan>::filterExplicitVector(Odd const& odd, std::vector<storm::RationalFunction> const& values) const;
 #endif
 		
         
         template Add<DdType::Sylvan, double> Bdd<DdType::Sylvan>::ite(Add<DdType::Sylvan, double> const& thenAdd, Add<DdType::Sylvan, double> const& elseAdd) const;
         template Add<DdType::Sylvan, uint_fast64_t> Bdd<DdType::Sylvan>::ite(Add<DdType::Sylvan, uint_fast64_t> const& thenAdd, Add<DdType::Sylvan, uint_fast64_t> const& elseAdd) const;
+        
 #ifdef STORM_HAVE_CARL
+        template Add<DdType::Sylvan, storm::RationalNumber> Bdd<DdType::Sylvan>::ite(Add<DdType::Sylvan, storm::RationalNumber> const& thenAdd, Add<DdType::Sylvan, storm::RationalNumber> const& elseAdd) const;
 		template Add<DdType::Sylvan, storm::RationalFunction> Bdd<DdType::Sylvan>::ite(Add<DdType::Sylvan, storm::RationalFunction> const& thenAdd, Add<DdType::Sylvan, storm::RationalFunction> const& elseAdd) const;
 #endif
     }
