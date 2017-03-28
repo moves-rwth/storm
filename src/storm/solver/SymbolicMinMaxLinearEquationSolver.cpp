@@ -156,6 +156,8 @@ namespace storm {
                 
                 // Policy improvement step.
                 storm::dd::Add<DdType, ValueType> tmp = this->A.multiplyMatrix(schedulerX.swapVariables(this->rowColumnMetaVariablePairs), this->columnMetaVariables);
+                tmp += b;
+                
                 storm::dd::Bdd<DdType> nextScheduler;
                 if (minimize) {
                     tmp += illegalMaskAdd;
