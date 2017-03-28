@@ -56,6 +56,9 @@ Mtbdd AbstractPlusRN(const BddSet &variables) const;
 Mtbdd AbstractMinRN(const BddSet &variables) const;
 Mtbdd AbstractMaxRN(const BddSet &variables) const;
 
+Bdd AbstractMinRepresentativeRN(const BddSet &variables) const;
+Bdd AbstractMaxRepresentativeRN(const BddSet &variables) const;
+
 Bdd BddThresholdRN(storm::RationalNumber const& rn) const;
 Bdd BddStrictThresholdRN(storm::RationalNumber const& rn) const;
 

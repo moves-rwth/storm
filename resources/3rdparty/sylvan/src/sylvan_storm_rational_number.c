@@ -227,6 +227,23 @@ TASK_IMPL_2(MTBDD, sylvan_storm_rational_number_op_less, MTBDD*, pa, MTBDD*, pb)
     return mtbdd_invalid;
 }
 
+TASK_IMPL_2(MTBDD, sylvan_storm_rational_number_op_greater, MTBDD*, pa, MTBDD*, pb) {
+    MTBDD a = *pa, b = *pb;
+    
+    /* Check for partial functions and for Boolean (filter) */
+    if (a == mtbdd_false || b == mtbdd_false) return mtbdd_false;
+    
+    /* If both leaves, compute less */
+    if (mtbdd_isleaf(a) && mtbdd_isleaf(b)) {
+        storm_rational_number_ptr ma = mtbdd_getstorm_rational_number_ptr(a);
+        storm_rational_number_ptr mb = mtbdd_getstorm_rational_number_ptr(b);
+        
+        return storm_rational_number_less_or_equal(ma, mb) ? mtbdd_false : mtbdd_true;
+    }
+    
+    return mtbdd_invalid;
+}
+
 TASK_IMPL_2(MTBDD, sylvan_storm_rational_number_op_less_or_equal, MTBDD*, pa, MTBDD*, pb) {
     MTBDD a = *pa, b = *pb;
     
@@ -239,6 +256,23 @@ TASK_IMPL_2(MTBDD, sylvan_storm_rational_number_op_less_or_equal, MTBDD*, pa, MT
         storm_rational_number_ptr mb = mtbdd_getstorm_rational_number_ptr(b);
         
         return storm_rational_number_less_or_equal(ma, mb) ? mtbdd_true : mtbdd_false;
+    }
+    
+    return mtbdd_invalid;
+}
+
+TASK_IMPL_2(MTBDD, sylvan_storm_rational_number_op_greater_or_equal, MTBDD*, pa, MTBDD*, pb) {
+    MTBDD a = *pa, b = *pb;
+    
+    /* Check for partial functions and for Boolean (filter) */
+    if (a == mtbdd_false || b == mtbdd_false) return mtbdd_false;
+    
+    /* If both leaves, compute less or equal */
+    if (mtbdd_isleaf(a) && mtbdd_isleaf(b)) {
+        storm_rational_number_ptr ma = mtbdd_getstorm_rational_number_ptr(a);
+        storm_rational_number_ptr mb = mtbdd_getstorm_rational_number_ptr(b);
+        
+        return storm_rational_number_less(ma, mb) ? mtbdd_false : mtbdd_true;
     }
     
     return mtbdd_invalid;
@@ -788,3 +822,360 @@ TASK_IMPL_3(MTBDD, sylvan_storm_rational_number_equal_norm_rel_d, MTBDD, a, MTBD
     return CALL(sylvan_storm_rational_number_equal_norm_rel_d2, a, b, d, &shortcircuit);
 }
 
+TASK_IMPL_3(BDD, sylvan_storm_rational_number_min_abstract_representative, MTBDD, a, BDD, v, BDDVAR, prev_level) {
+    /* Maybe perform garbage collection */
+    sylvan_gc_test();
+    
+    if (sylvan_set_isempty(v)) {
+        return sylvan_true;
+    }
+    
+    /* Cube is guaranteed to be a cube at this point. */
+    if (mtbdd_isleaf(a)) {
+        BDD _v = sylvan_set_next(v);
+        BDD res = CALL(sylvan_storm_rational_number_min_abstract_representative, a, _v, prev_level);
+        if (res == sylvan_invalid) {
+            return sylvan_invalid;
+        }
+        sylvan_ref(res);
+        
+        BDD res1 = sylvan_not(sylvan_ite(sylvan_ithvar(bddnode_getvariable(MTBDD_GETNODE(v))), sylvan_true, sylvan_not(res)));
+        if (res1 == sylvan_invalid) {
+            sylvan_deref(res);
+            return sylvan_invalid;
+        }
+        sylvan_deref(res);
+        return res1;
+    }
+    
+    mtbddnode_t na = MTBDD_GETNODE(a);
+    uint32_t va = mtbddnode_getvariable(na);
+    bddnode_t nv = MTBDD_GETNODE(v);
+    BDDVAR vv = bddnode_getvariable(nv);
+    
+    /* Abstract a variable that does not appear in a. */
+    if (va > vv) {
+        BDD _v = sylvan_set_next(v);
+        BDD res = CALL(sylvan_storm_rational_number_min_abstract_representative, a, _v, va);
+        if (res == sylvan_invalid) {
+            return sylvan_invalid;
+        }
+        
+        // Fill in the missing variables to make representative unique.
+        sylvan_ref(res);
+        BDD res1 = sylvan_ite(sylvan_ithvar(vv), sylvan_false, res);
+        if (res1 == sylvan_invalid) {
+            sylvan_deref(res);
+            return sylvan_invalid;
+        }
+        sylvan_deref(res);
+       	return res1;
+    }
+    
+    /* Check cache */
+    MTBDD result;
+    if (cache_get3(CACHE_MTBDD_ABSTRACT_REPRESENTATIVE, a, v, (size_t)1, &result)) {
+        sylvan_stats_count(MTBDD_ABSTRACT_CACHED);
+        return result;
+    }
+    
+    MTBDD E = mtbdd_getlow(a);
+    MTBDD T = mtbdd_gethigh(a);
+    
+    /* If the two indices are the same, so are their levels. */
+    if (va == vv) {
+        BDD _v = sylvan_set_next(v);
+        BDD res1 = CALL(sylvan_storm_rational_number_min_abstract_representative, E, _v, va);
+        if (res1 == sylvan_invalid) {
+            return sylvan_invalid;
+        }
+        sylvan_ref(res1);
+        
+        BDD res2 = CALL(sylvan_storm_rational_number_min_abstract_representative, T, _v, va);
+        if (res2 == sylvan_invalid) {
+            sylvan_deref(res1);
+            return sylvan_invalid;
+        }
+        sylvan_ref(res2);
+        
+        MTBDD left = sylvan_storm_rational_number_abstract_min(E, _v);
+        if (left == mtbdd_invalid) {
+            sylvan_deref(res1);
+            sylvan_deref(res2);
+            return sylvan_invalid;
+        }
+        mtbdd_ref(left);
+        
+        MTBDD right = sylvan_storm_rational_number_abstract_min(T, _v);
+        if (right == mtbdd_invalid) {
+            sylvan_deref(res1);
+            sylvan_deref(res2);
+            mtbdd_deref(left);
+            return sylvan_invalid;
+        }
+        mtbdd_ref(right);
+        
+        BDD tmp = sylvan_storm_rational_number_less_or_equal(left, right);
+        if (tmp == sylvan_invalid) {
+            sylvan_deref(res1);
+            sylvan_deref(res2);
+            mtbdd_deref(left);
+            mtbdd_deref(right);
+            return sylvan_invalid;
+        }
+        sylvan_ref(tmp);
+        
+        mtbdd_deref(left);
+        mtbdd_deref(right);
+        
+        BDD res1Inf = sylvan_ite(tmp, res1, sylvan_false);
+        if (res1Inf == sylvan_invalid) {
+            sylvan_deref(res1);
+            sylvan_deref(res2);
+            sylvan_deref(tmp);
+            return sylvan_invalid;
+        }
+        sylvan_ref(res1Inf);
+        sylvan_deref(res1);
+        
+        BDD res2Inf = sylvan_ite(tmp, sylvan_false, res2);
+        if (res2Inf == sylvan_invalid) {
+            sylvan_deref(res2);
+            sylvan_deref(res1Inf);
+            sylvan_deref(tmp);
+            return sylvan_invalid;
+        }
+        sylvan_ref(res2Inf);
+        sylvan_deref(res2);
+        sylvan_deref(tmp);
+        
+        BDD res = (res1Inf == res2Inf) ? sylvan_ite(sylvan_ithvar(va), sylvan_false, res1Inf) : sylvan_ite(sylvan_ithvar(va), res2Inf, res1Inf);
+        
+        if (res == sylvan_invalid) {
+            sylvan_deref(res1Inf);
+            sylvan_deref(res2Inf);
+            return sylvan_invalid;
+        }
+        sylvan_ref(res);
+        sylvan_deref(res1Inf);
+        sylvan_deref(res2Inf);
+        
+        /* Store in cache */
+        if (cache_put3(CACHE_MTBDD_ABSTRACT_REPRESENTATIVE, a, v, (size_t)1, res)) {
+            sylvan_stats_count(MTBDD_ABSTRACT_CACHEDPUT);
+        }
+        
+        sylvan_deref(res);
+        return res;
+    }
+    else { /* if (va < vv) */
+        BDD res1 = CALL(sylvan_storm_rational_number_min_abstract_representative, E, v, va);
+        if (res1 == sylvan_invalid) {
+            return sylvan_invalid;
+        }
+        sylvan_ref(res1);
+        BDD res2 = CALL(sylvan_storm_rational_number_min_abstract_representative, T, v, va);
+        if (res2 == sylvan_invalid) {
+            sylvan_deref(res1);
+            return sylvan_invalid;
+        }
+        sylvan_ref(res2);
+        
+        BDD res = (res1 == res2) ? res1 : sylvan_ite(sylvan_ithvar(va), res2, res1);
+        if (res == sylvan_invalid) {
+            sylvan_deref(res1);
+            sylvan_deref(res2);
+            return sylvan_invalid;
+        }
+        sylvan_deref(res1);
+        sylvan_deref(res2);
+        
+        /* Store in cache */
+        if (cache_put3(CACHE_MTBDD_ABSTRACT_REPRESENTATIVE, a, v, (size_t)1, res)) {
+            sylvan_stats_count(MTBDD_ABSTRACT_CACHEDPUT);
+        }
+        return res;
+    }
+}
+
+TASK_IMPL_3(BDD, sylvan_storm_rational_number_max_abstract_representative, MTBDD, a, MTBDD, v, uint32_t, prev_level) {
+    /* Maybe perform garbage collection */
+    sylvan_gc_test();
+    
+    if (sylvan_set_isempty(v)) {
+        return sylvan_true;
+    }
+    
+    /* Count operation */
+    sylvan_stats_count(MTBDD_ABSTRACT);
+    
+    /* Cube is guaranteed to be a cube at this point. */
+    if (mtbdd_isleaf(a)) {
+        /* Compute result */
+        BDD _v = sylvan_set_next(v);
+        BDD res = CALL(sylvan_storm_rational_number_max_abstract_representative, a, _v, prev_level);
+        if (res == sylvan_invalid) {
+            return sylvan_invalid;
+        }
+        sylvan_ref(res);
+        
+        BDD res1 = sylvan_not(sylvan_ite(sylvan_ithvar(bddnode_getvariable(MTBDD_GETNODE(v))), sylvan_true, sylvan_not(res)));
+        if (res1 == sylvan_invalid) {
+            sylvan_deref(res);
+            return sylvan_invalid;
+        }
+        sylvan_deref(res);
+        
+        return res1;
+    }
+    
+    mtbddnode_t na = MTBDD_GETNODE(a);
+    uint32_t va = mtbddnode_getvariable(na);
+    bddnode_t nv = MTBDD_GETNODE(v);
+    BDDVAR vv = bddnode_getvariable(nv);
+    
+    /* Abstract a variable that does not appear in a. */
+    if (vv < va) {
+        BDD _v = sylvan_set_next(v);
+        BDD res = CALL(sylvan_storm_rational_number_max_abstract_representative, a, _v, va);
+        if (res == sylvan_invalid) {
+            return sylvan_invalid;
+        }
+        
+        // Fill in the missing variables to make representative unique.
+        sylvan_ref(res);
+        BDD res1 = sylvan_ite(sylvan_ithvar(vv), sylvan_false, res);
+        if (res1 == sylvan_invalid) {
+            sylvan_deref(res);
+            return sylvan_invalid;
+        }
+        sylvan_deref(res);
+       	return res1;
+    }
+    
+    /* Check cache */
+    MTBDD result;
+    if (cache_get3(CACHE_MTBDD_ABSTRACT_REPRESENTATIVE, a, v, (size_t)0, &result)) {
+        sylvan_stats_count(MTBDD_ABSTRACT_CACHED);
+        return result;
+    }
+    
+    MTBDD E = mtbdd_getlow(a);
+    MTBDD T = mtbdd_gethigh(a);
+    
+    /* If the two indices are the same, so are their levels. */
+    if (va == vv) {
+        BDD _v = sylvan_set_next(v);
+        BDD res1 = CALL(sylvan_storm_rational_number_max_abstract_representative, E, _v, va);
+        if (res1 == sylvan_invalid) {
+            return sylvan_invalid;
+        }
+        sylvan_ref(res1);
+        
+        BDD res2 = CALL(sylvan_storm_rational_number_max_abstract_representative, T, _v, va);
+        if (res2 == sylvan_invalid) {
+            sylvan_deref(res1);
+            return sylvan_invalid;
+        }
+        sylvan_ref(res2);
+        
+        MTBDD left = sylvan_storm_rational_number_abstract_max(E, _v);
+        if (left == mtbdd_invalid) {
+            sylvan_deref(res1);
+            sylvan_deref(res2);
+            return sylvan_invalid;
+        }
+        mtbdd_ref(left);
+        
+        MTBDD right = sylvan_storm_rational_number_abstract_max(T, _v);
+        if (right == mtbdd_invalid) {
+            sylvan_deref(res1);
+            sylvan_deref(res2);
+            mtbdd_deref(left);
+            return sylvan_invalid;
+        }
+        mtbdd_ref(right);
+        
+        BDD tmp = sylvan_storm_rational_number_greater_or_equal(left, right);
+        if (tmp == sylvan_invalid) {
+            sylvan_deref(res1);
+            sylvan_deref(res2);
+            mtbdd_deref(left);
+            mtbdd_deref(right);
+            return sylvan_invalid;
+        }
+        sylvan_ref(tmp);
+        
+        mtbdd_deref(left);
+        mtbdd_deref(right);
+        
+        BDD res1Inf = sylvan_ite(tmp, res1, sylvan_false);
+        if (res1Inf == sylvan_invalid) {
+            sylvan_deref(res1);
+            sylvan_deref(res2);
+            sylvan_deref(tmp);
+            return sylvan_invalid;
+        }
+        sylvan_ref(res1Inf);
+        sylvan_deref(res1);
+        
+        BDD res2Inf = sylvan_ite(tmp, sylvan_false, res2);
+        if (res2Inf == sylvan_invalid) {
+            sylvan_deref(res2);
+            sylvan_deref(res1Inf);
+            sylvan_deref(tmp);
+            return sylvan_invalid;
+        }
+        sylvan_ref(res2Inf);
+        sylvan_deref(res2);
+        sylvan_deref(tmp);
+        
+        BDD res = (res1Inf == res2Inf) ? sylvan_ite(sylvan_ithvar(va), sylvan_false, res1Inf) : sylvan_ite(sylvan_ithvar(va), res2Inf, res1Inf);
+        
+        if (res == sylvan_invalid) {
+            sylvan_deref(res1Inf);
+            sylvan_deref(res2Inf);
+            return sylvan_invalid;
+        }
+        sylvan_ref(res);
+        sylvan_deref(res1Inf);
+        sylvan_deref(res2Inf);
+        
+        /* Store in cache */
+        if (cache_put3(CACHE_MTBDD_ABSTRACT_REPRESENTATIVE, a, v, (size_t)0, res)) {
+            sylvan_stats_count(MTBDD_ABSTRACT_CACHEDPUT);
+        }
+        
+        sylvan_deref(res);
+        return res;
+    }
+    else { /* if (va < vv) */
+        BDD res1 = CALL(sylvan_storm_rational_number_max_abstract_representative, E, v, va);
+        if (res1 == sylvan_invalid) {
+            return sylvan_invalid;
+        }
+        sylvan_ref(res1);
+        BDD res2 = CALL(sylvan_storm_rational_number_max_abstract_representative, T, v, va);
+        if (res2 == sylvan_invalid) {
+            sylvan_deref(res1);
+            return sylvan_invalid;
+        }
+        sylvan_ref(res2);
+        
+        BDD res = (res1 == res2) ? res1 : sylvan_ite(sylvan_ithvar(va), res2, res1);
+        if (res == sylvan_invalid) {
+            sylvan_deref(res1);
+            sylvan_deref(res2);
+            return sylvan_invalid;
+        }
+        sylvan_deref(res1);
+        sylvan_deref(res2);
+        
+        /* Store in cache */
+        if (cache_put3(CACHE_MTBDD_ABSTRACT_REPRESENTATIVE, a, v, (size_t)0, res)) {
+            sylvan_stats_count(MTBDD_ABSTRACT_CACHEDPUT);
+        }
+        
+        return res;
+    }	
+}

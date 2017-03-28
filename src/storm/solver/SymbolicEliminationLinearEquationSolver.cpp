@@ -12,27 +12,14 @@ namespace storm {
      
         template<storm::dd::DdType DdType, typename ValueType>
         SymbolicEliminationLinearEquationSolver<DdType, ValueType>::SymbolicEliminationLinearEquationSolver(storm::dd::Add<DdType, ValueType> const& A, storm::dd::Bdd<DdType> const& allRows, std::set<storm::expressions::Variable> const& rowMetaVariables, std::set<storm::expressions::Variable> const& columnMetaVariables, std::vector<std::pair<storm::expressions::Variable, storm::expressions::Variable>> const& rowColumnMetaVariablePairs) : SymbolicLinearEquationSolver<DdType, ValueType>(A, allRows, rowMetaVariables, columnMetaVariables, rowColumnMetaVariablePairs) {
-            // Intentionally left empty.
-        }
-        
-        template<storm::dd::DdType DdType, typename ValueType>
-        storm::dd::Add<DdType, ValueType> SymbolicEliminationLinearEquationSolver<DdType, ValueType>::solveEquations(storm::dd::Add<DdType, ValueType> const& x, storm::dd::Add<DdType, ValueType> const& b) const {
-            storm::dd::DdManager<DdType>& ddManager = x.getDdManager();
+            storm::dd::DdManager<DdType>& ddManager = A.getDdManager();
             
-            // We start by creating triple-layered meta variables for all original meta variables. We will use them later in the elimination process.
-            std::vector<std::vector<storm::expressions::Variable>> oldToNewMapping;
-            std::set<storm::expressions::Variable> newRowVariables;
-            std::set<storm::expressions::Variable> newColumnVariables;
-            std::set<storm::expressions::Variable> helperVariables;
-            std::vector<std::pair<storm::expressions::Variable, storm::expressions::Variable>> newRowColumnMetaVariablePairs;
-            std::vector<std::pair<storm::expressions::Variable, storm::expressions::Variable>> columnHelperMetaVariablePairs;
-            std::vector<std::pair<storm::expressions::Variable, storm::expressions::Variable>> rowRowMetaVariablePairs;
-            std::vector<std::pair<storm::expressions::Variable, storm::expressions::Variable>> columnColumnMetaVariablePairs;
+            // Create triple-layered meta variables for all original meta variables. We will use them later in the elimination process.
             for (auto const& metaVariablePair : this->rowColumnMetaVariablePairs) {
                 auto rowVariable = metaVariablePair.first;
                 
                 storm::dd::DdMetaVariable<DdType> const& metaVariable = ddManager.getMetaVariable(rowVariable);
-
+                
                 std::vector<storm::expressions::Variable> newMetaVariables;
                 if (metaVariable.getType() == storm::dd::MetaVariableType::Bool) {
                     newMetaVariables = ddManager.addMetaVariable("tmp_" + metaVariable.getName(), 3);
@@ -43,7 +30,7 @@ namespace storm {
                 newRowVariables.insert(newMetaVariables[0]);
                 newColumnVariables.insert(newMetaVariables[1]);
                 helperVariables.insert(newMetaVariables[2]);
-
+                
                 newRowColumnMetaVariablePairs.emplace_back(newMetaVariables[0], newMetaVariables[1]);
                 columnHelperMetaVariablePairs.emplace_back(newMetaVariables[1], newMetaVariables[2]);
                 
@@ -53,21 +40,25 @@ namespace storm {
                 oldToNewMapping.emplace_back(std::move(newMetaVariables));
             }
             
-            std::vector<std::pair<storm::expressions::Variable, storm::expressions::Variable>> oldNewMetaVariablePairs = rowRowMetaVariablePairs;
+            oldNewMetaVariablePairs = rowRowMetaVariablePairs;
             for (auto const& entry : columnColumnMetaVariablePairs) {
                 oldNewMetaVariablePairs.emplace_back(entry.first, entry.second);
             }
             
-            std::vector<std::pair<storm::expressions::Variable, storm::expressions::Variable>> shiftMetaVariablePairs = newRowColumnMetaVariablePairs;
+            shiftMetaVariablePairs = newRowColumnMetaVariablePairs;
             for (auto const& entry : columnHelperMetaVariablePairs) {
                 shiftMetaVariablePairs.emplace_back(entry.first, entry.second);
             }
-
+        }
+        
+        template<storm::dd::DdType DdType, typename ValueType>
+        storm::dd::Add<DdType, ValueType> SymbolicEliminationLinearEquationSolver<DdType, ValueType>::solveEquations(storm::dd::Add<DdType, ValueType> const& x, storm::dd::Add<DdType, ValueType> const& b) const {
+            storm::dd::DdManager<DdType>& ddManager = x.getDdManager();
+            
             // Build diagonal BDD over new meta variables.
             storm::dd::Bdd<DdType> diagonal = storm::utility::dd::getRowColumnDiagonal(x.getDdManager(), this->rowColumnMetaVariablePairs);
             diagonal &= this->allRows;
-            diagonal = diagonal.swapVariables(oldNewMetaVariablePairs);
-            
+            diagonal = diagonal.swapVariables(this->oldNewMetaVariablePairs);
 
             storm::dd::Add<DdType, ValueType> rowsAdd = this->allRows.swapVariables(rowRowMetaVariablePairs).template toAdd<ValueType>();
             storm::dd::Add<DdType, ValueType> diagonalAdd = diagonal.template toAdd<ValueType>();

@@ -476,6 +476,11 @@ namespace storm {
         }
 
         template<>
+        InternalBdd<DdType::Sylvan> InternalAdd<DdType::Sylvan, storm::RationalNumber>::minAbstractRepresentative(InternalBdd<DdType::Sylvan> const& cube) const {
+            return InternalBdd<DdType::Sylvan>(ddManager, this->sylvanMtbdd.AbstractMinRepresentativeRN(cube.sylvanBdd));
+        }
+
+        template<>
         InternalAdd<DdType::Sylvan, storm::RationalNumber> InternalAdd<DdType::Sylvan, storm::RationalNumber>::minAbstract(InternalBdd<DdType::Sylvan> const& cube) const {
             return InternalAdd<DdType::Sylvan, storm::RationalNumber>(ddManager, this->sylvanMtbdd.AbstractMinRN(cube.sylvanBdd));
         }
@@ -495,6 +500,11 @@ namespace storm {
 		template<typename ValueType>
         InternalBdd<DdType::Sylvan> InternalAdd<DdType::Sylvan, ValueType>::maxAbstractRepresentative(InternalBdd<DdType::Sylvan> const& cube) const {
             return InternalBdd<DdType::Sylvan>(ddManager, this->sylvanMtbdd.AbstractMaxRepresentative(cube.sylvanBdd));
+        }
+
+        template<>
+        InternalBdd<DdType::Sylvan> InternalAdd<DdType::Sylvan, storm::RationalNumber>::maxAbstractRepresentative(InternalBdd<DdType::Sylvan> const& cube) const {
+            return InternalBdd<DdType::Sylvan>(ddManager, this->sylvanMtbdd.AbstractMaxRepresentativeRN(cube.sylvanBdd));
         }
 
         template<>

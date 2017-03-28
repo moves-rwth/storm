@@ -103,6 +103,8 @@ extern llmsset_t nodes;
 #define CACHE_MTBDD_EQUAL_NORM_RF       (66LL<<40)
 #define CACHE_MTBDD_EQUAL_NORM_REL_RF   (67LL<<40)
     
+#define CACHE_MTBDD_ABSTRACT_REPRESENTATIVE (68LL<<40)
+    
 #ifdef __cplusplus
 }
 #endif /* __cplusplus */

@@ -41,7 +41,7 @@ TEST(SymbolicMdpPrctlModelCheckerTest, Dice_Cudd) {
     
     std::shared_ptr<storm::models::symbolic::Mdp<storm::dd::DdType::CUDD>> mdp = model->as<storm::models::symbolic::Mdp<storm::dd::DdType::CUDD>>();
     
-    storm::modelchecker::SymbolicMdpPrctlModelChecker<storm::models::symbolic::Mdp<storm::dd::DdType::CUDD, double>> checker(*mdp, std::unique_ptr<storm::utility::solver::SymbolicMinMaxLinearEquationSolverFactory<storm::dd::DdType::CUDD, double>>(new storm::utility::solver::SymbolicMinMaxLinearEquationSolverFactory<storm::dd::DdType::CUDD, double>()));
+    storm::modelchecker::SymbolicMdpPrctlModelChecker<storm::models::symbolic::Mdp<storm::dd::DdType::CUDD, double>> checker(*mdp, std::unique_ptr<storm::solver::SymbolicGeneralMinMaxLinearEquationSolverFactory<storm::dd::DdType::CUDD, double>>(new storm::solver::SymbolicGeneralMinMaxLinearEquationSolverFactory<storm::dd::DdType::CUDD, double>()));
     
     std::shared_ptr<storm::logic::Formula const> formula = formulaParser.parseSingleFormulaFromString("Pmin=? [F \"two\"]");
     
@@ -139,7 +139,7 @@ TEST(SymbolicMdpPrctlModelCheckerTest, Dice_Sylvan) {
     
     std::shared_ptr<storm::models::symbolic::Mdp<storm::dd::DdType::Sylvan>> mdp = model->as<storm::models::symbolic::Mdp<storm::dd::DdType::Sylvan>>();
     
-    storm::modelchecker::SymbolicMdpPrctlModelChecker<storm::models::symbolic::Mdp<storm::dd::DdType::Sylvan, double>> checker(*mdp, std::unique_ptr<storm::utility::solver::SymbolicMinMaxLinearEquationSolverFactory<storm::dd::DdType::Sylvan, double>>(new storm::utility::solver::SymbolicMinMaxLinearEquationSolverFactory<storm::dd::DdType::Sylvan, double>()));
+    storm::modelchecker::SymbolicMdpPrctlModelChecker<storm::models::symbolic::Mdp<storm::dd::DdType::Sylvan, double>> checker(*mdp, std::unique_ptr<storm::solver::SymbolicGeneralMinMaxLinearEquationSolverFactory<storm::dd::DdType::Sylvan, double>>(new storm::solver::SymbolicGeneralMinMaxLinearEquationSolverFactory<storm::dd::DdType::Sylvan, double>()));
     
     std::shared_ptr<storm::logic::Formula const> formula = formulaParser.parseSingleFormulaFromString("Pmin=? [F \"two\"]");
     
@@ -237,7 +237,7 @@ TEST(SymbolicMdpPrctlModelCheckerTest, AsynchronousLeader_Cudd) {
     
     std::shared_ptr<storm::models::symbolic::Mdp<storm::dd::DdType::CUDD>> mdp = model->as<storm::models::symbolic::Mdp<storm::dd::DdType::CUDD>>();
     
-    storm::modelchecker::SymbolicMdpPrctlModelChecker<storm::models::symbolic::Mdp<storm::dd::DdType::CUDD, double>> checker(*mdp, std::unique_ptr<storm::utility::solver::SymbolicMinMaxLinearEquationSolverFactory<storm::dd::DdType::CUDD, double>>(new storm::utility::solver::SymbolicMinMaxLinearEquationSolverFactory<storm::dd::DdType::CUDD, double>()));
+    storm::modelchecker::SymbolicMdpPrctlModelChecker<storm::models::symbolic::Mdp<storm::dd::DdType::CUDD, double>> checker(*mdp, std::unique_ptr<storm::solver::SymbolicGeneralMinMaxLinearEquationSolverFactory<storm::dd::DdType::CUDD, double>>(new storm::solver::SymbolicGeneralMinMaxLinearEquationSolverFactory<storm::dd::DdType::CUDD, double>()));
     
     std::shared_ptr<storm::logic::Formula const> formula = formulaParser.parseSingleFormulaFromString("Pmin=? [F \"elected\"]");
     
@@ -317,7 +317,7 @@ TEST(SymbolicMdpPrctlModelCheckerTest, AsynchronousLeader_Sylvan) {
     
     std::shared_ptr<storm::models::symbolic::Mdp<storm::dd::DdType::Sylvan>> mdp = model->as<storm::models::symbolic::Mdp<storm::dd::DdType::Sylvan>>();
     
-    storm::modelchecker::SymbolicMdpPrctlModelChecker<storm::models::symbolic::Mdp<storm::dd::DdType::Sylvan, double>> checker(*mdp, std::unique_ptr<storm::utility::solver::SymbolicMinMaxLinearEquationSolverFactory<storm::dd::DdType::Sylvan, double>>(new storm::utility::solver::SymbolicMinMaxLinearEquationSolverFactory<storm::dd::DdType::Sylvan, double>()));
+    storm::modelchecker::SymbolicMdpPrctlModelChecker<storm::models::symbolic::Mdp<storm::dd::DdType::Sylvan, double>> checker(*mdp, std::unique_ptr<storm::solver::SymbolicGeneralMinMaxLinearEquationSolverFactory<storm::dd::DdType::Sylvan, double>>(new storm::solver::SymbolicGeneralMinMaxLinearEquationSolverFactory<storm::dd::DdType::Sylvan, double>()));
     
     std::shared_ptr<storm::logic::Formula const> formula = formulaParser.parseSingleFormulaFromString("Pmin=? [F \"elected\"]");
     

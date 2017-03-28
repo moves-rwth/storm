@@ -60,11 +60,13 @@ namespace storm {
         
         template<storm::dd::DdType DdType, typename ValueType>
         storm::dd::Add<DdType, ValueType>  SymbolicNativeLinearEquationSolver<DdType, ValueType>::solveEquations(storm::dd::Add<DdType, ValueType> const& x, storm::dd::Add<DdType, ValueType> const& b) const {
+            storm::dd::DdManager<DdType>& manager = this->A.getDdManager();
+            
             // Start by computing the Jacobi decomposition of the matrix A.
             storm::dd::Bdd<DdType> diagonal = storm::utility::dd::getRowColumnDiagonal(x.getDdManager(), this->rowColumnMetaVariablePairs);
             diagonal &= this->allRows;
             
-            storm::dd::Add<DdType, ValueType> lu = diagonal.ite(this->A.getDdManager().template getAddZero<ValueType>(), this->A);
+            storm::dd::Add<DdType, ValueType> lu = diagonal.ite(manager.template getAddZero<ValueType>(), this->A);
             storm::dd::Add<DdType, ValueType> diagonalAdd = diagonal.template toAdd<ValueType>();
             storm::dd::Add<DdType, ValueType> diag = diagonalAdd.multiplyMatrix(this->A, this->columnMetaVariables);
             

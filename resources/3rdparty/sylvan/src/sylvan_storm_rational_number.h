@@ -31,7 +31,9 @@ TASK_DECL_3(MTBDD, sylvan_storm_rational_number_abstract_op_min, MTBDD, MTBDD, i
 TASK_DECL_3(MTBDD, sylvan_storm_rational_number_abstract_op_max, MTBDD, MTBDD, int)
 
 TASK_DECL_2(MTBDD, sylvan_storm_rational_number_op_less, MTBDD*, MTBDD*)
+TASK_DECL_2(MTBDD, sylvan_storm_rational_number_op_greater, MTBDD*, MTBDD*)
 TASK_DECL_2(MTBDD, sylvan_storm_rational_number_op_less_or_equal, MTBDD*, MTBDD*)
+TASK_DECL_2(MTBDD, sylvan_storm_rational_number_op_greater_or_equal, MTBDD*, MTBDD*)
 
 TASK_DECL_2(MTBDD, sylvan_storm_rational_number_op_mod, MTBDD*, MTBDD*)
 TASK_DECL_2(MTBDD, sylvan_storm_rational_number_op_pow, MTBDD*, MTBDD*)
@@ -47,8 +49,10 @@ TASK_DECL_2(MTBDD, sylvan_storm_rational_number_op_ceil, MTBDD, size_t)
 #define sylvan_storm_rational_number_times(a, b) mtbdd_apply(a, b, TASK(sylvan_storm_rational_number_op_times))
 #define sylvan_storm_rational_number_divide(a, b) mtbdd_apply(a, b, TASK(sylvan_storm_rational_number_op_divide))
 #define sylvan_storm_rational_number_less(a, b) mtbdd_apply(a, b, TASK(sylvan_storm_rational_number_op_less))
+#define sylvan_storm_rational_number_greater(a, b) mtbdd_apply(a, b, TASK(sylvan_storm_rational_number_op_greater))
 #define sylvan_storm_rational_number_less_or_equal(a, b) mtbdd_apply(a, b, TASK(sylvan_storm_rational_number_op_less_or_equal))
-#define sylvan_storm_rational_number_mod(a, b) mtbdd_apply(a, b, TASK(sylvan_storm_rational_number_op_less_or_equal))
+#define sylvan_storm_rational_number_greater_or_equal(a, b) mtbdd_apply(a, b, TASK(sylvan_storm_rational_number_op_greater_or_equal))
+#define sylvan_storm_rational_number_mod(a, b) mtbdd_apply(a, b, TASK(sylvan_storm_rational_number_op_mod))
 #define sylvan_storm_rational_number_min(a, b) mtbdd_apply(a, b, TASK(sylvan_storm_rational_number_op_min))
 #define sylvan_storm_rational_number_max(a, b) mtbdd_apply(a, b, TASK(sylvan_storm_rational_number_op_max))
 #define sylvan_storm_rational_number_neg(a) mtbdd_uapply(a, TASK(sylvan_storm_rational_number_op_neg), 0)
@@ -87,6 +91,12 @@ TASK_DECL_3(MTBDD, sylvan_storm_rational_number_equal_norm_d, MTBDD, MTBDD, stor
 TASK_DECL_3(MTBDD, sylvan_storm_rational_number_equal_norm_rel_d, MTBDD, MTBDD, storm_rational_number_ptr);
 #define sylvan_storm_rational_number_equal_norm_rel_d(a, b, epsilon) CALL(sylvan_storm_rational_number_equal_norm_rel_d, a, b, epsilon)
     
+TASK_DECL_3(BDD, sylvan_storm_rational_number_min_abstract_representative, MTBDD, MTBDD, uint32_t);
+#define sylvan_storm_rational_number_min_abstract_representative(a, vars) (CALL(sylvan_storm_rational_number_min_abstract_representative, a, vars, 0))
+    
+TASK_DECL_3(BDD, sylvan_storm_rational_number_max_abstract_representative, MTBDD, MTBDD, uint32_t);
+#define sylvan_storm_rational_number_max_abstract_representative(a, vars) (CALL(sylvan_storm_rational_number_max_abstract_representative, a, vars, 0))
+
 #ifdef __cplusplus
 }
 #endif /* __cplusplus */

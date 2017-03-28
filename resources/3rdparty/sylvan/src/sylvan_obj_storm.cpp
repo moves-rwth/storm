@@ -298,19 +298,34 @@ Mtbdd::AndExistsRN(const Mtbdd &other, const BddSet &variables) const {
     return sylvan_storm_rational_number_and_exists(mtbdd, other.mtbdd, variables.set.bdd);
 }
 
-Mtbdd Mtbdd::AbstractPlusRN(const BddSet &variables) const {
+Mtbdd
+Mtbdd::AbstractPlusRN(const BddSet &variables) const {
     LACE_ME;
     return sylvan_storm_rational_number_abstract_plus(mtbdd, variables.set.bdd);
 }
 
-Mtbdd Mtbdd::AbstractMinRN(const BddSet &variables) const {
+Mtbdd
+Mtbdd::AbstractMinRN(const BddSet &variables) const {
     LACE_ME;
     return sylvan_storm_rational_number_abstract_min(mtbdd, variables.set.bdd);
 }
 
-Mtbdd Mtbdd::AbstractMaxRN(const BddSet &variables) const {
+Mtbdd
+Mtbdd::AbstractMaxRN(const BddSet &variables) const {
     LACE_ME;
     return sylvan_storm_rational_number_abstract_max(mtbdd, variables.set.bdd);
+}
+
+Bdd
+Mtbdd::AbstractMinRepresentativeRN(const BddSet &variables) const {
+    LACE_ME;
+    return sylvan_storm_rational_number_min_abstract_representative(mtbdd, variables.set.bdd);
+}
+
+Bdd
+Mtbdd::AbstractMaxRepresentativeRN(const BddSet &variables) const {
+    LACE_ME;
+    return sylvan_storm_rational_number_max_abstract_representative(mtbdd, variables.set.bdd);
 }
 
 Bdd

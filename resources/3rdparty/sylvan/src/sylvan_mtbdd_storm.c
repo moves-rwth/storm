@@ -586,24 +586,24 @@ TASK_IMPL_2(MTBDD, mtbdd_op_complement, MTBDD, a, size_t, k)
     (void)k; // unused variable
 }
 
-TASK_IMPL_3(BDD, mtbdd_min_abstract_representative, MTBDD, a, BDD, variables, BDDVAR, prev_level) {
+TASK_IMPL_3(BDD, mtbdd_min_abstract_representative, MTBDD, a, BDD, v, BDDVAR, prev_level) {
 	/* Maybe perform garbage collection */
     sylvan_gc_test();
 
-	if (sylvan_set_isempty(variables)) {
+	if (sylvan_set_isempty(v)) {
 		return sylvan_true;
 	}
 
 	/* Cube is guaranteed to be a cube at this point. */
     if (mtbdd_isleaf(a)) {
-		BDD _v = sylvan_set_next(variables);
+		BDD _v = sylvan_set_next(v);
 		BDD res = CALL(mtbdd_min_abstract_representative, a, _v, prev_level);
 		if (res == sylvan_invalid) {
 			return sylvan_invalid;
 		}
 		sylvan_ref(res);
 
-		BDD res1 = sylvan_not(sylvan_ite(sylvan_ithvar(bddnode_getvariable(MTBDD_GETNODE(variables))), sylvan_true, sylvan_not(res)));
+		BDD res1 = sylvan_not(sylvan_ite(sylvan_ithvar(bddnode_getvariable(MTBDD_GETNODE(v))), sylvan_true, sylvan_not(res)));
 		if (res1 == sylvan_invalid) {
 			sylvan_deref(res);
 			return sylvan_invalid;
@@ -614,12 +614,12 @@ TASK_IMPL_3(BDD, mtbdd_min_abstract_representative, MTBDD, a, BDD, variables, BD
 	
 	mtbddnode_t na = MTBDD_GETNODE(a);
 	uint32_t va = mtbddnode_getvariable(na);
-	bddnode_t nv = MTBDD_GETNODE(variables);
+	bddnode_t nv = MTBDD_GETNODE(v);
 	BDDVAR vv = bddnode_getvariable(nv);
 
     /* Abstract a variable that does not appear in a. */
     if (va > vv) {
-		BDD _v = sylvan_set_next(variables);
+		BDD _v = sylvan_set_next(v);
         BDD res = CALL(mtbdd_min_abstract_representative, a, _v, va);
         if (res == sylvan_invalid) {
             return sylvan_invalid;
@@ -636,18 +636,19 @@ TASK_IMPL_3(BDD, mtbdd_min_abstract_representative, MTBDD, a, BDD, variables, BD
        	return res1;
     }
     
-	/* TODO: Caching here. */
-    /*if ((res = cuddCacheLookup2(manager, Cudd_addMinAbstractRepresentative, f, cube)) != NULL) {
-        return(res);
-    }*/
-    
+    /* Check cache */
+    MTBDD result;
+    if (cache_get3(CACHE_MTBDD_ABSTRACT_REPRESENTATIVE, a, v, (size_t)1, &result)) {
+        sylvan_stats_count(MTBDD_ABSTRACT_CACHED);
+        return result;
+    }
     
     MTBDD E = mtbdd_getlow(a);
     MTBDD T = mtbdd_gethigh(a);
     
     /* If the two indices are the same, so are their levels. */
     if (va == vv) {
-		BDD _v = sylvan_set_next(variables);
+		BDD _v = sylvan_set_next(v);
         BDD res1 = CALL(mtbdd_min_abstract_representative, E, _v, va);
         if (res1 == sylvan_invalid) {
             return sylvan_invalid;
@@ -723,19 +724,21 @@ TASK_IMPL_3(BDD, mtbdd_min_abstract_representative, MTBDD, a, BDD, variables, BD
         sylvan_deref(res1Inf);
         sylvan_deref(res2Inf);
         
-		/* TODO: Caching here. */
-		//cuddCacheInsert2(manager, Cudd_addMinAbstractRepresentative, f, cube, res);
-		
+        /* Store in cache */
+        if (cache_put3(CACHE_MTBDD_ABSTRACT_REPRESENTATIVE, a, v, (size_t)1, res)) {
+            sylvan_stats_count(MTBDD_ABSTRACT_CACHEDPUT);
+        }
+        
         sylvan_deref(res);
         return res;
     }
     else { /* if (va < vv) */
-		BDD res1 = CALL(mtbdd_min_abstract_representative, E, variables, va);
+		BDD res1 = CALL(mtbdd_min_abstract_representative, E, v, va);
         if (res1 == sylvan_invalid) {
 			return sylvan_invalid;
 		}
         sylvan_ref(res1);
-        BDD res2 = CALL(mtbdd_min_abstract_representative, T, variables, va);
+        BDD res2 = CALL(mtbdd_min_abstract_representative, T, v, va);
         if (res2 == sylvan_invalid) {
             sylvan_deref(res1);
             return sylvan_invalid;
@@ -750,46 +753,54 @@ TASK_IMPL_3(BDD, mtbdd_min_abstract_representative, MTBDD, a, BDD, variables, BD
         }
         sylvan_deref(res1);
         sylvan_deref(res2);
-		/* TODO: Caching here. */
-        //cuddCacheInsert2(manager, Cudd_addMinAbstractRepresentative, f, cube, res);
+
+        /* Store in cache */
+        if (cache_put3(CACHE_MTBDD_ABSTRACT_REPRESENTATIVE, a, v, (size_t)1, res)) {
+            sylvan_stats_count(MTBDD_ABSTRACT_CACHEDPUT);
+        }
         return res;
     }
 }
 
-TASK_IMPL_3(BDD, mtbdd_max_abstract_representative, MTBDD, a, MTBDD, variables, uint32_t, prev_level) {
+TASK_IMPL_3(BDD, mtbdd_max_abstract_representative, MTBDD, a, MTBDD, v, uint32_t, prev_level) {
 	/* Maybe perform garbage collection */
     sylvan_gc_test();
 
-	if (sylvan_set_isempty(variables)) {
+	if (sylvan_set_isempty(v)) {
 		return sylvan_true;
 	}
 
+    /* Count operation */
+    sylvan_stats_count(MTBDD_ABSTRACT);
+    
 	/* Cube is guaranteed to be a cube at this point. */
     if (mtbdd_isleaf(a)) {
-		BDD _v = sylvan_set_next(variables);
+        /* Compute result */
+		BDD _v = sylvan_set_next(v);
 		BDD res = CALL(mtbdd_max_abstract_representative, a, _v, prev_level);
 		if (res == sylvan_invalid) {
 			return sylvan_invalid;
 		}
 		sylvan_ref(res);
 
-		BDD res1 = sylvan_not(sylvan_ite(sylvan_ithvar(bddnode_getvariable(MTBDD_GETNODE(variables))), sylvan_true, sylvan_not(res)));
+		BDD res1 = sylvan_not(sylvan_ite(sylvan_ithvar(bddnode_getvariable(MTBDD_GETNODE(v))), sylvan_true, sylvan_not(res)));
 		if (res1 == sylvan_invalid) {
 			sylvan_deref(res);
 			return sylvan_invalid;
 		}
 		sylvan_deref(res);
+        
 		return res1;
     }
 	
 	mtbddnode_t na = MTBDD_GETNODE(a);
 	uint32_t va = mtbddnode_getvariable(na);
-	bddnode_t nv = MTBDD_GETNODE(variables);
+	bddnode_t nv = MTBDD_GETNODE(v);
 	BDDVAR vv = bddnode_getvariable(nv);
 
     /* Abstract a variable that does not appear in a. */
-    if (va > vv) {
-		BDD _v = sylvan_set_next(variables);
+    if (vv < va) {
+		BDD _v = sylvan_set_next(v);
         BDD res = CALL(mtbdd_max_abstract_representative, a, _v, va);
         if (res == sylvan_invalid) {
             return sylvan_invalid;
@@ -806,18 +817,19 @@ TASK_IMPL_3(BDD, mtbdd_max_abstract_representative, MTBDD, a, MTBDD, variables, 
        	return res1;
     }
     
-	/* TODO: Caching here. */
-    /*if ((res = cuddCacheLookup2(manager, Cudd_addMinAbstractRepresentative, f, cube)) != NULL) {
-        return(res);
-    }*/
-    
+    /* Check cache */
+    MTBDD result;
+    if (cache_get3(CACHE_MTBDD_ABSTRACT_REPRESENTATIVE, a, v, (size_t)0, &result)) {
+        sylvan_stats_count(MTBDD_ABSTRACT_CACHED);
+        return result;
+    }
     
     MTBDD E = mtbdd_getlow(a);
     MTBDD T = mtbdd_gethigh(a);
     
     /* If the two indices are the same, so are their levels. */
     if (va == vv) {
-		BDD _v = sylvan_set_next(variables);
+		BDD _v = sylvan_set_next(v);
         BDD res1 = CALL(mtbdd_max_abstract_representative, E, _v, va);
         if (res1 == sylvan_invalid) {
             return sylvan_invalid;
@@ -893,19 +905,21 @@ TASK_IMPL_3(BDD, mtbdd_max_abstract_representative, MTBDD, a, MTBDD, variables, 
         sylvan_deref(res1Inf);
         sylvan_deref(res2Inf);
         
-		/* TODO: Caching here. */
-		//cuddCacheInsert2(manager, Cudd_addMinAbstractRepresentative, f, cube, res);
-		
+        /* Store in cache */
+        if (cache_put3(CACHE_MTBDD_ABSTRACT_REPRESENTATIVE, a, v, (size_t)0, res)) {
+            sylvan_stats_count(MTBDD_ABSTRACT_CACHEDPUT);
+        }
+
         sylvan_deref(res);
         return res;
     }
     else { /* if (va < vv) */
-		BDD res1 = CALL(mtbdd_max_abstract_representative, E, variables, va);
+		BDD res1 = CALL(mtbdd_max_abstract_representative, E, v, va);
         if (res1 == sylvan_invalid) {
 			return sylvan_invalid;
 		}
         sylvan_ref(res1);
-        BDD res2 = CALL(mtbdd_max_abstract_representative, T, variables, va);
+        BDD res2 = CALL(mtbdd_max_abstract_representative, T, v, va);
         if (res2 == sylvan_invalid) {
             sylvan_deref(res1);
             return sylvan_invalid;
@@ -920,8 +934,12 @@ TASK_IMPL_3(BDD, mtbdd_max_abstract_representative, MTBDD, a, MTBDD, variables, 
         }
         sylvan_deref(res1);
         sylvan_deref(res2);
-		/* TODO: Caching here. */
-        //cuddCacheInsert2(manager, Cudd_addMinAbstractRepresentative, f, cube, res);
+
+        /* Store in cache */
+        if (cache_put3(CACHE_MTBDD_ABSTRACT_REPRESENTATIVE, a, v, (size_t)0, res)) {
+            sylvan_stats_count(MTBDD_ABSTRACT_CACHEDPUT);
+        }
+
         return res;
     }	
 }

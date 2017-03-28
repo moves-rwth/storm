@@ -57,11 +57,62 @@ namespace storm {
             return values;
         }
         
+        template<typename ValueType>
+        void print(std::ostream& out, ValueType const& value) {
+            if (value == storm::utility::infinity<ValueType>()) {
+                out << "inf";
+            } else {
+                out << value;
+                if (std::is_same<ValueType, storm::RationalNumber>::value) {
+                    out << " (approx. " << storm::utility::convertNumber<double>(value) << ")";
+                }
+            }
+        }
+        
+        template<typename ValueType>
+        void printRange(std::ostream& out, ValueType const& min, ValueType const& max) {
+            out << "[";
+            if (min == storm::utility::infinity<ValueType>()) {
+                out << "inf";
+            } else {
+                out << min;
+            }
+            out << ", ";
+            if (max == storm::utility::infinity<ValueType>()) {
+                out << "inf";
+            } else {
+                out << max;
+            }
+            out << "]";
+            if (std::is_same<ValueType, storm::RationalNumber>::value) {
+                out << " (approx. [";
+                if (min == storm::utility::infinity<ValueType>()) {
+                    out << "inf";
+                } else {
+                    out << storm::utility::convertNumber<double>(min);
+                }
+                out << ", ";
+                if (max == storm::utility::infinity<ValueType>()) {
+                    out << "inf";
+                } else {
+                    out << storm::utility::convertNumber<double>(max);
+                }
+                out << "])";
+            }
+            out << " (range)";
+        }
+        
         template<storm::dd::DdType Type, typename ValueType>
         std::ostream& SymbolicQuantitativeCheckResult<Type, ValueType>::writeToStream(std::ostream& out) const {
-            if (states.getNonZeroCount() == 1) {
-                out << this->values.sumAbstract(this->values.getContainedMetaVariables()).getValue();
-            } else if (states.getNonZeroCount() < 10 || std::is_same<storm::RationalFunction, ValueType>::value) {
+            uint64_t totalNumberOfStates = states.getNonZeroCount();
+            bool minMaxSupported = std::is_same<ValueType, double>::value || std::is_same<ValueType, storm::RationalNumber>::value;
+            bool printAsRange = false;
+            
+            if (totalNumberOfStates == 1) {
+                print(out, this->values.sumAbstract(this->values.getContainedMetaVariables()).getValue());
+            } else if (states.getNonZeroCount() >= 10 || !minMaxSupported) {
+                printAsRange = true;
+            } else {
                 out << "{";
                 if (this->values.isZero()) {
                     out << "0";
@@ -73,18 +124,17 @@ namespace storm {
                         } else {
                             first = false;
                         }
-                        out << valuationValuePair.second;
+                        print(out, valuationValuePair.second);
                     }
                     if (states.getNonZeroCount() != this->values.getNonZeroCount()) {
                         out << ", 0";
                     }
                 }
                 out << "}";
-            } else {
-                ValueType min = this->getMin();
-                ValueType max = this->getMax();
-                
-                out << "[" << min << ", " << max << "] (range)";
+            }
+            
+            if (printAsRange) {
+                printRange(out, this->getMin(), this->getMax());
             }
             return out;
         }

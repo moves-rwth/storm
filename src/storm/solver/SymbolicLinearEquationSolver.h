@@ -71,6 +71,8 @@ namespace storm {
              */
             virtual storm::dd::Add<DdType, ValueType> multiply(storm::dd::Add<DdType, ValueType> const& x, storm::dd::Add<DdType, ValueType> const* b = nullptr, uint_fast64_t n = 1) const;
             
+            void setMatrix(storm::dd::Add<DdType, ValueType> const& newA);
+            
         protected:
             // The matrix defining the coefficients of the linear equation system.
             storm::dd::Add<DdType, ValueType> A;
