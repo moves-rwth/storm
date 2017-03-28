@@ -120,28 +120,15 @@ is_custom_bucket(const llmsset_t dbs, uint64_t index)
     return (*ptr & mask) ? 1 : 0;
 }
 
-#ifndef rotl64
-static inline uint64_t
-rotl64(uint64_t x, int8_t r)
-{
-    return ((x<<r) | (x>>(64-r)));
-}
-#endif
-
 uint64_t
 llmsset_hash(const uint64_t a, const uint64_t b, const uint64_t seed)
 {
+    // The FNV-1a hash for 64 bits
     const uint64_t prime = 1099511628211;
-
     uint64_t hash = seed;
-    hash = hash ^ a;
-    hash = rotl64(hash, 47);
-    hash = hash * prime;
-    hash = hash ^ b;
-    hash = rotl64(hash, 31);
-    hash = hash * prime;
-
-    return hash ^ (hash >> 32);
+    hash = (hash ^ a) * prime;
+    hash = (hash ^ b) * prime;
+    return hash;
 }
 
 /*
@@ -163,6 +150,7 @@ llmsset_lookup2(const llmsset_t dbs, uint64_t a, uint64_t b, int* created, const
     if (custom) hash_rehash = dbs->hash_cb(a, b, hash_rehash);
     else hash_rehash = llmsset_hash(a, b, hash_rehash);
 
+    const uint64_t step = (((hash_rehash >> 20) | 1) << 3);
     const uint64_t hash = hash_rehash & MASK_HASH;
     uint64_t idx, last, cidx = 0;
     int i=0;
@@ -179,6 +167,7 @@ llmsset_lookup2(const llmsset_t dbs, uint64_t a, uint64_t b, int* created, const
 
         if (v == 0) {
             if (cidx == 0) {
+                // Claim data bucket and write data
                 cidx = claim_data_bucket(dbs);
                 if (cidx == (uint64_t)-1) return 0; // failed to claim a data bucket
                 if (custom) dbs->create_cb(&a, &b);
@@ -224,8 +213,7 @@ llmsset_lookup2(const llmsset_t dbs, uint64_t a, uint64_t b, int* created, const
             if (++i == dbs->threshold) return 0; // failed to find empty spot in probe sequence
 
             // go to next cache line in probe sequence
-            if (custom) hash_rehash = dbs->hash_cb(a, b, hash_rehash);
-            else hash_rehash = llmsset_hash(a, b, hash_rehash);
+            hash_rehash += step;
 
 #if LLMSSET_MASK
             last = idx = hash_rehash & dbs->mask;
