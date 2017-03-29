@@ -338,7 +338,7 @@ rm -rf carl.git          &&
 rm -rf carl-build        &&
 git clone https://github.com/smtrat/carl.git carl.git   &&
 cd carl.git              &&
-git checkout tags/17.02  &&
+git checkout 8391970879463e46d581291c3bbfbceee6d013c5  &&
 cd ..                    &&
 mkdir carl-build         &&
 cd carl-build            &&
