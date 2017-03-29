@@ -81,7 +81,8 @@ namespace storm {
                 parameterLiftingCheckerStopwatch.start();
                 if(result == RegionCheckResult::ExistsSat || result == RegionCheckResult::CenterSat) {
                     // show AllSat:
-                    if(parameterLiftingChecker->check(region, this->currentCheckTask->getOptimizationDirection())->asExplicitQualitativeCheckResult()[*getConsideredParametricModel().getInitialStates().begin()]) {
+                    storm::solver::OptimizationDirection parameterOptimizationDirection = isLowerBound(this->currentCheckTask->getBound().comparisonType) ? storm::solver::OptimizationDirection::Minimize : storm::solver::OptimizationDirection::Maximize;
+                    if(parameterLiftingChecker->check(region, parameterOptimizationDirection)->asExplicitQualitativeCheckResult()[*getConsideredParametricModel().getInitialStates().begin()]) {
                         result = RegionCheckResult::AllSat;
                     } else if (sampleVerticesOfRegion) {
                         parameterLiftingCheckerStopwatch.stop(); instantiationCheckerStopwatch.start();
@@ -96,7 +97,8 @@ namespace storm {
                     }
                 } else if (result == RegionCheckResult::ExistsViolated || result == RegionCheckResult::CenterViolated) {
                     // show AllViolated:
-                    if(!parameterLiftingChecker->check(region, storm::solver::invert(this->currentCheckTask->getOptimizationDirection()))->asExplicitQualitativeCheckResult()[*getConsideredParametricModel().getInitialStates().begin()]) {
+                    storm::solver::OptimizationDirection parameterOptimizationDirection = isLowerBound(this->currentCheckTask->getBound().comparisonType) ? storm::solver::OptimizationDirection::Maximize : storm::solver::OptimizationDirection::Minimize;
+                    if(!parameterLiftingChecker->check(region, parameterOptimizationDirection)->asExplicitQualitativeCheckResult()[*getConsideredParametricModel().getInitialStates().begin()]) {
                         result = RegionCheckResult::AllViolated;
                     } else if (sampleVerticesOfRegion) {
                         parameterLiftingCheckerStopwatch.stop(); instantiationCheckerStopwatch.start();

@@ -78,6 +78,8 @@
 #include "storm/modelchecker/results/ExplicitQualitativeCheckResult.h"
 #include "storm/modelchecker/results/SymbolicQualitativeCheckResult.h"
 
+#include "storm/transformer/ContinuousToDiscreteTimeModelTransformer.h"
+
 // Headers for counterexample generation.
 #include "storm/counterexamples/MILPMinimalLabelSetGenerator.h"
 #include "storm/counterexamples/SMTMinimalCommandSetGenerator.h"
@@ -318,6 +320,14 @@ namespace storm {
     template<>
     inline void performParameterLifting(std::shared_ptr<storm::models::sparse::Model<storm::RationalFunction>> markovModel, std::shared_ptr<storm::logic::Formula const> const& formula) {
         storm::utility::Stopwatch parameterLiftingStopWatch(true);
+        std::shared_ptr<storm::logic::Formula const> consideredFormula = formula;
+        
+        if (markovModel->isOfType(storm::models::ModelType::Ctmc) || markovModel->isOfType(storm::models::ModelType::MarkovAutomaton)) {
+            STORM_PRINT_AND_LOG("Transforming continuous model to discrete model...");
+            storm::transformer::transformContinuousToDiscreteModelInPlace(markovModel, consideredFormula);
+            STORM_PRINT_AND_LOG(" done!" << std::endl);
+        }
+        
         auto modelParameters = storm::models::sparse::getProbabilityParameters(*markovModel);
         auto rewParameters = storm::models::sparse::getRewardParameters(*markovModel);
         modelParameters.insert(rewParameters.begin(), rewParameters.end());
@@ -327,10 +337,10 @@ namespace storm {
         auto parameterSpace = storm::storage::ParameterRegion<storm::RationalFunction>::parseRegion(parameterSpaceAsString, modelParameters);
         auto refinementThreshold = storm::utility::convertNumber<typename storm::storage::ParameterRegion<storm::RationalFunction>::CoefficientType>(storm::settings::getModule<storm::settings::modules::ParametricSettings>().getRefinementThreshold());
         std::vector<std::pair<storm::storage::ParameterRegion<storm::RationalFunction>, storm::modelchecker::parametric::RegionCheckResult>> result;
+                
+        STORM_PRINT_AND_LOG("Performing parameter lifting for property " << *consideredFormula << " with parameter space " << parameterSpace.toString(true) << " and refinement threshold " << storm::utility::convertNumber<double>(refinementThreshold) << " ..." << std::endl);
         
-        STORM_PRINT_AND_LOG("Performing parameter lifting for property " << *formula << " with parameter space " << parameterSpace.toString(true) << " and refinement threshold " << storm::utility::convertNumber<double>(refinementThreshold) << " ..." << std::endl);
-        
-        storm::modelchecker::CheckTask<storm::logic::Formula, storm::RationalFunction> task(*formula, true);
+        storm::modelchecker::CheckTask<storm::logic::Formula, storm::RationalFunction> task(*consideredFormula, true);
         std::string resultVisualization;
         
         if (markovModel->isOfType(storm::models::ModelType::Dtmc)) {

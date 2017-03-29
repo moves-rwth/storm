@@ -392,6 +392,18 @@ namespace storm {
             }
             
             /*!
+             * Divides the two given vectors (pointwise) and writes the result to the target vector.
+             *
+             * @param firstOperand The first operand.
+             * @param secondOperand The second operand
+             * @param target The target vector.
+             */
+            template<class InValueType1, class InValueType2, class OutValueType>
+            void divideVectorsPointwise(std::vector<InValueType1> const& firstOperand, std::vector<InValueType2> const& secondOperand, std::vector<OutValueType>& target) {
+                applyPointwise<InValueType1, InValueType2, OutValueType>(firstOperand, secondOperand, target, std::divides<>());
+            }
+            
+            /*!
              * Multiplies each element of the given vector with the given factor and writes the result into the vector.
              *
              * @param target The operand and target vector.

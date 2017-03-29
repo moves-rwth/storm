@@ -22,7 +22,7 @@ namespace storm {
             }
             
             // Stores which entries of the original matrix/vector are non-constant. Entries for non-selected rows/columns are omitted
-            storm::storage::BitVector nonConstMatrixEntries(pMatrix.getEntryCount(), false); // note that this vector is too large if there are non-selected rows/columns
+            storm::storage::BitVector nonConstMatrixEntries(pMatrix.getEntryCount(), false); //this vector has to be resized later
             storm::storage::BitVector nonConstVectorEntries(selectedRows.getNumberOfSetBits(), false);
             // Counters for selected entries in the pMatrix and the pVector
             uint_fast64_t pMatrixEntryCount = 0;
@@ -247,7 +247,7 @@ namespace storm {
             // insert the function and the valuation
             auto insertionRes = collectedFunctions.insert(std::pair<FunctionValuation, ConstantType>(FunctionValuation(std::move(simplifiedFunction), std::move(simplifiedValuation)), storm::utility::one<ConstantType>()));
             if(insertionRes.second) {
-                STORM_LOG_THROW(storm::utility::parametric::isMultiLinearPolynomial(insertionRes.first->first.first), storm::exceptions::NotSupportedException, "Parameter lifting for non-multilinear polynomial " << insertionRes.first->first.first << " is not supported");
+                STORM_LOG_WARN_COND(storm::utility::parametric::isMultiLinearPolynomial(insertionRes.first->first.first), "Parameter lifting for non-multilinear polynomial " << insertionRes.first->first.first << " invoked. This might not be sound...");
             }
             //Note that references to elements of an unordered map remain valid after calling unordered_map::insert.
             return insertionRes.first->second;

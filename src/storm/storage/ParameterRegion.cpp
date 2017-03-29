@@ -188,7 +188,7 @@ namespace storm {
                     var = std::make_unique<VariableType>(v);
                 }
             }
-            STORM_LOG_ASSERT(var, "Could not find parameter " << parameter << "in the set of considered variables");
+            STORM_LOG_ASSERT(var, "Could not find parameter " << parameter << " in the set of considered variables");
             
             CoefficientType lb = storm::utility::convertNumber<CoefficientType>(parameterBoundariesString.substr(0,positionOfFirstRelation));
             CoefficientType ub = storm::utility::convertNumber<CoefficientType>(parameterBoundariesString.substr(positionOfSecondRelation+2));

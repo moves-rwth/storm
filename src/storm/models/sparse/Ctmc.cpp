@@ -37,6 +37,11 @@ namespace storm {
             }
             
             template <typename ValueType, typename RewardModelType>
+            std::vector<ValueType>& Ctmc<ValueType, RewardModelType>::getExitRateVector() {
+                return exitRates;
+            }
+            
+            template <typename ValueType, typename RewardModelType>
             std::vector<ValueType> Ctmc<ValueType, RewardModelType>::createExitRateVector(storm::storage::SparseMatrix<ValueType> const& rateMatrix) {
                 std::vector<ValueType> exitRates(rateMatrix.getRowCount());
                 for (uint_fast64_t row = 0; row < rateMatrix.getRowCount(); ++row) {

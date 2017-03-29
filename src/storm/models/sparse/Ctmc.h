@@ -65,6 +65,7 @@ namespace storm {
                  * @return The exit rate vector.
                  */
                 std::vector<ValueType> const& getExitRateVector() const;
+                std::vector<ValueType>& getExitRateVector();
                 
             private:
                 /*!
