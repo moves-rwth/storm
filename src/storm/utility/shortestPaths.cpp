@@ -1,3 +1,4 @@
+#include <ostream>
 #include <queue>
 #include <set>
 #include <string>
@@ -373,6 +374,16 @@ namespace storm {
 
 
             template class ShortestPathsGenerator<double>;
+
+            // only prints the info stored in the Path struct;
+            // does not traverse the actual path (see printKShortestPath for that)
+            template <typename T>
+            std::ostream& operator<<(std::ostream& out, Path<T> const& p) {
+                out << "Path with predecessorNode: " << ((p.predecessorNode) ? std::to_string(p.predecessorNode.get()) : "None");
+                out << " predecessorK: " << p.predecessorK << " distance: " << p.distance;
+                return out;
+            }
+            template std::ostream& operator<<(std::ostream& out, Path<double> const& p);
         }
     }
 }

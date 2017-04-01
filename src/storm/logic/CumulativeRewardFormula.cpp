@@ -64,6 +64,24 @@ namespace storm {
             return value;
         }
         
+        template <>
+        double CumulativeRewardFormula::getNonStrictBound() const {
+            double bound = getBound<double>();
+            STORM_LOG_THROW(bound > 0, storm::exceptions::InvalidPropertyException, "Cannot retrieve non-strict bound from strict zero-bound.");
+            return bound;
+        }
+        
+        template <>
+        uint64_t CumulativeRewardFormula::getNonStrictBound() const {
+            int_fast64_t bound = getBound<uint64_t>();
+            if (isBoundStrict()) {
+                STORM_LOG_THROW(bound > 0, storm::exceptions::InvalidPropertyException, "Cannot retrieve non-strict bound from strict zero-bound.");
+                return bound - 1;
+            } else {
+                return bound;
+            }
+        }
+        
         void CumulativeRewardFormula::checkNoVariablesInBound(storm::expressions::Expression const& bound) {
             STORM_LOG_THROW(!bound.containsVariables(), storm::exceptions::InvalidOperationException, "Cannot evaluate time-bound '" << bound << "' as it contains undefined constants.");
         }

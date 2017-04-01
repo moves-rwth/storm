@@ -99,7 +99,7 @@ namespace exprtk
             return (('a' <= c) && (c <= 'z')) ||
             (('A' <= c) && (c <= 'Z'))
 #ifdef MODIFICATION
-            || ('.' == c) || ('_' == c)
+            || ('_' == c)
 #endif
             ;
         }

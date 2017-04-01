@@ -186,7 +186,7 @@ namespace storm {
                     return std::make_shared<storm::logic::AtomicLabelFormula>(propertyStructure.get<std::string>());
                 }
             }
-            storm::expressions::Expression expr = parseExpression(propertyStructure, "expression in property", {}, true);
+            storm::expressions::Expression expr = parseExpression(propertyStructure, "expression in property", std::unordered_map<std::string, std::shared_ptr<storm::jani::Variable>>(), true);
             if(expr.isInitialized()) {
                 assert(bound == boost::none);
                 return std::make_shared<storm::logic::AtomicExpressionFormula>(expr);

@@ -76,16 +76,16 @@ namespace storm {
             std::unique_ptr<CheckResult> rightResultPointer = this->check(pathFormula.getRightSubformula());
             SymbolicQualitativeCheckResult<DdType> const& leftResult = leftResultPointer->asSymbolicQualitativeCheckResult<DdType>();
             SymbolicQualitativeCheckResult<DdType> const& rightResult = rightResultPointer->asSymbolicQualitativeCheckResult<DdType>();
-            storm::dd::Add<DdType, ValueType> numericResult = storm::modelchecker::helper::SymbolicDtmcPrctlHelper<DdType, ValueType>::computeBoundedUntilProbabilities(this->getModel(), this->getModel().getTransitionMatrix(), leftResult.getTruthValuesVector(), rightResult.getTruthValuesVector(), pathFormula.getUpperBound<uint64_t>() + (pathFormula.isUpperBoundStrict() ? 1ull : 0ull), *this->linearEquationSolverFactory);
-            return std::make_unique<SymbolicQuantitativeCheckResult<DdType, ValueType>>(this->getModel().getReachableStates(), numericResult);
+            storm::dd::Add<DdType, ValueType> numericResult = storm::modelchecker::helper::SymbolicDtmcPrctlHelper<DdType, ValueType>::computeBoundedUntilProbabilities(this->getModel(), this->getModel().getTransitionMatrix(), leftResult.getTruthValuesVector(), rightResult.getTruthValuesVector(), pathFormula.getNonStrictUpperBound<uint64_t>(), *this->linearEquationSolverFactory);
+            return std::unique_ptr<SymbolicQuantitativeCheckResult<DdType, ValueType>>(new SymbolicQuantitativeCheckResult<DdType, ValueType>(this->getModel().getReachableStates(), numericResult));
         }
         
         template<typename ModelType>
         std::unique_ptr<CheckResult> SymbolicDtmcPrctlModelChecker<ModelType>::computeCumulativeRewards(storm::logic::RewardMeasureType, CheckTask<storm::logic::CumulativeRewardFormula, ValueType> const& checkTask) {
             storm::logic::CumulativeRewardFormula const& rewardPathFormula = checkTask.getFormula();
             STORM_LOG_THROW(rewardPathFormula.hasIntegerBound(), storm::exceptions::InvalidPropertyException, "Formula needs to have a discrete time bound.");
-            storm::dd::Add<DdType, ValueType> numericResult = storm::modelchecker::helper::SymbolicDtmcPrctlHelper<DdType, ValueType>::computeCumulativeRewards(this->getModel(), this->getModel().getTransitionMatrix(), checkTask.isRewardModelSet() ? this->getModel().getRewardModel(checkTask.getRewardModel()) : this->getModel().getRewardModel(""), rewardPathFormula.getBound<uint64_t>() + (rewardPathFormula.isBoundStrict() ? 1ull : 0ull), *this->linearEquationSolverFactory);
-            return std::make_unique<SymbolicQuantitativeCheckResult<DdType, ValueType>>(this->getModel().getReachableStates(), numericResult);
+            storm::dd::Add<DdType, ValueType> numericResult = storm::modelchecker::helper::SymbolicDtmcPrctlHelper<DdType, ValueType>::computeCumulativeRewards(this->getModel(), this->getModel().getTransitionMatrix(), checkTask.isRewardModelSet() ? this->getModel().getRewardModel(checkTask.getRewardModel()) : this->getModel().getRewardModel(""), rewardPathFormula.getNonStrictBound<uint64_t>(), *this->linearEquationSolverFactory);
+            return std::unique_ptr<SymbolicQuantitativeCheckResult<DdType, ValueType>>(new SymbolicQuantitativeCheckResult<DdType, ValueType>(this->getModel().getReachableStates(), numericResult));
         }
         
         template<typename ModelType>
