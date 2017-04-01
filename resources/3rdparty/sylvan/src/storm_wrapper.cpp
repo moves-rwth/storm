@@ -484,7 +484,7 @@ storm_rational_function_ptr storm_rational_function_divide(storm_rational_functi
     storm::RationalFunction const& srf_b = *(storm::RationalFunction const*)b;
     
     storm::RationalFunction* result_srf = new storm::RationalFunction(srf_a);
-    *result_srf *= srf_b;
+    *result_srf /= srf_b;
     return (storm_rational_function_ptr)result_srf;
 }
 

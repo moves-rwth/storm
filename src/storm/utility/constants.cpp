@@ -216,7 +216,7 @@ namespace storm {
         template<>
         storm::ClnRationalNumber infinity() {
             // FIXME: this should be treated more properly.
-            return storm::ClnRationalNumber(-1);
+            return storm::ClnRationalNumber(100000000000);
         }
 
         template<>
@@ -326,7 +326,7 @@ namespace storm {
         template<>
         storm::GmpRationalNumber infinity() {
             // FIXME: this should be treated more properly.
-            return storm::GmpRationalNumber(-1);
+            return storm::GmpRationalNumber(100000000000);
         }
         
         template<>
@@ -468,7 +468,7 @@ namespace storm {
         template<>
         storm::RationalFunction infinity() {
             // FIXME: this should be treated more properly.
-            return storm::RationalFunction(-1.0);
+            return storm::RationalFunction(convertNumber<RationalFunctionCoefficient>(100000000000));
         }
         
         template<>

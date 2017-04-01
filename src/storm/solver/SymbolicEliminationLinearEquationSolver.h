@@ -32,7 +32,7 @@ namespace storm {
         };
         
         template<storm::dd::DdType DdType, typename ValueType>
-        class SymbolicEliminationLinearEquationSolverFactory {
+        class SymbolicEliminationLinearEquationSolverFactory : public SymbolicLinearEquationSolverFactory<DdType, ValueType> {
         public:
             virtual std::unique_ptr<storm::solver::SymbolicLinearEquationSolver<DdType, ValueType>> create(storm::dd::Add<DdType, ValueType> const& A, storm::dd::Bdd<DdType> const& allRows, std::set<storm::expressions::Variable> const& rowMetaVariables, std::set<storm::expressions::Variable> const& columnMetaVariables, std::vector<std::pair<storm::expressions::Variable, storm::expressions::Variable>> const& rowColumnMetaVariablePairs) const;
             

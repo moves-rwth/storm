@@ -623,7 +623,7 @@ TASK_IMPL_1(MTBDD, sylvan_storm_rational_number_minimum, MTBDD, a) {
     if (cache_get3(CACHE_MTBDD_MINIMUM_RN, a, 0, 0, &result)) return result;
     
     /* Call recursive */
-    SPAWN(mtbdd_minimum, node_getlow(a, na));
+    SPAWN(sylvan_storm_rational_number_minimum, node_getlow(a, na));
     MTBDD high = CALL(sylvan_storm_rational_number_minimum, node_gethigh(a, na));
     MTBDD low = SYNC(sylvan_storm_rational_number_minimum);
     
@@ -656,7 +656,7 @@ TASK_IMPL_1(MTBDD, sylvan_storm_rational_number_maximum, MTBDD, a)
     if (cache_get3(CACHE_MTBDD_MAXIMUM_RN, a, 0, 0, &result)) return result;
     
     /* Call recursive */
-    SPAWN(mtbdd_minimum, node_getlow(a, na));
+    SPAWN(sylvan_storm_rational_number_maximum, node_getlow(a, na));
     MTBDD high = CALL(sylvan_storm_rational_number_maximum, node_gethigh(a, na));
     MTBDD low = SYNC(sylvan_storm_rational_number_maximum);
     

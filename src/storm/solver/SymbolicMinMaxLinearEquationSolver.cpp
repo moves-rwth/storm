@@ -155,15 +155,14 @@ namespace storm {
                 storm::dd::Add<DdType, ValueType> schedulerX = linearEquationSolver->solveEquations(currentSolution, schedulerB);
                 
                 // Policy improvement step.
-                storm::dd::Add<DdType, ValueType> tmp = this->A.multiplyMatrix(schedulerX.swapVariables(this->rowColumnMetaVariablePairs), this->columnMetaVariables);
-                tmp += b;
+                storm::dd::Add<DdType, ValueType> choiceValues = this->A.multiplyMatrix(schedulerX.swapVariables(this->rowColumnMetaVariablePairs), this->columnMetaVariables) + b;
                 
                 storm::dd::Bdd<DdType> nextScheduler;
                 if (minimize) {
-                    tmp += illegalMaskAdd;
-                    nextScheduler = tmp.minAbstractRepresentative(this->choiceVariables);
+                    choiceValues += illegalMaskAdd;
+                    nextScheduler = choiceValues.minAbstractRepresentative(this->choiceVariables);
                 } else {
-                    nextScheduler = tmp.maxAbstractRepresentative(this->choiceVariables);
+                    nextScheduler = choiceValues.maxAbstractRepresentative(this->choiceVariables);
                 }
                 
                 // Check for convergence.

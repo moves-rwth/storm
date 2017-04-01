@@ -21,10 +21,18 @@ namespace storm {
                 storm::dd::DdMetaVariable<DdType> const& metaVariable = ddManager.getMetaVariable(rowVariable);
                 
                 std::vector<storm::expressions::Variable> newMetaVariables;
+                
+                // Find a suitable name for the temporary variable.
+                uint64_t counter = 0;
+                std::string newMetaVariableName = "tmp_" + metaVariable.getName();
+                while (ddManager.hasMetaVariable(newMetaVariableName + std::to_string(counter))) {
+                    ++counter;
+                }
+                
                 if (metaVariable.getType() == storm::dd::MetaVariableType::Bool) {
-                    newMetaVariables = ddManager.addMetaVariable("tmp_" + metaVariable.getName(), 3);
+                    newMetaVariables = ddManager.addMetaVariable(newMetaVariableName + std::to_string(counter), 3);
                 } else {
-                    newMetaVariables = ddManager.addMetaVariable("tmp_" + metaVariable.getName(), metaVariable.getLow(), metaVariable.getHigh(), 3);
+                    newMetaVariables = ddManager.addMetaVariable(newMetaVariableName + std::to_string(counter), metaVariable.getLow(), metaVariable.getHigh(), 3);
                 }
                 
                 newRowVariables.insert(newMetaVariables[0]);
@@ -56,7 +64,7 @@ namespace storm {
             storm::dd::DdManager<DdType>& ddManager = x.getDdManager();
             
             // Build diagonal BDD over new meta variables.
-            storm::dd::Bdd<DdType> diagonal = storm::utility::dd::getRowColumnDiagonal(x.getDdManager(), this->rowColumnMetaVariablePairs);
+            storm::dd::Bdd<DdType> diagonal = storm::utility::dd::getRowColumnDiagonal(ddManager, this->rowColumnMetaVariablePairs);
             diagonal &= this->allRows;
             diagonal = diagonal.swapVariables(this->oldNewMetaVariablePairs);
 
@@ -72,11 +80,12 @@ namespace storm {
             // As long as there are transitions, we eliminate them.
             uint64_t iterations = 0;
             while (!matrix.isZero()) {
-                // Determine inverse loop probabilies
+                // Determine inverse loop probabilies.
                 storm::dd::Add<DdType, ValueType> inverseLoopProbabilities = rowsAdd / (rowsAdd - (diagonalAdd * matrix).sumAbstract(newColumnVariables));
                 
                 // Scale all transitions with the inverse loop probabilities.
                 matrix *= inverseLoopProbabilities;
+                
                 solution *= inverseLoopProbabilities;
                 
                 // Delete diagonal elements, i.e. remove self-loops.

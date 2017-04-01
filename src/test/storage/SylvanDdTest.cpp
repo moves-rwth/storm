@@ -520,7 +520,7 @@ TEST(SylvanDd, RationalFunctionEncodingTest) {
     
     storm::dd::Add<storm::dd::DdType::Sylvan, storm::RationalFunction> add;
     ASSERT_NO_THROW(add = encoding.template toAdd<storm::RationalFunction>());
-
+    
     // As an MTBDD, the 0-leaf is there, so the count is actually 2 and the node count is 6.
     EXPECT_EQ(6ul, add.getNodeCount());
     EXPECT_EQ(2ul, add.getLeafCount());

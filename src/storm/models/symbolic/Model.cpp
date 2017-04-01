@@ -13,10 +13,10 @@
 
 #include "storm/models/symbolic/StandardRewardModel.h"
 
+#include "storm/utility/macros.h"
 #include "storm/utility/dd.h"
 
-#include "storm-config.h"
-#include "storm/adapters/CarlAdapter.h"
+#include "storm/exceptions/NotSupportedException.h"
 
 namespace storm {
     namespace models {
@@ -268,6 +268,26 @@ namespace storm {
                 return true;
             }
             
+            template<storm::dd::DdType Type, typename ValueType>
+            void Model<Type, ValueType>::addParameters(std::set<storm::RationalFunctionVariable> const& parameters) {
+                STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "This value type does not support parameters.");
+            }
+            
+            template<storm::dd::DdType Type, typename ValueType>
+            std::set<storm::RationalFunctionVariable> const& Model<Type, ValueType>::getParameters() const {
+                STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "This value type does not support parameters.");
+            }
+
+            template<>
+            void Model<storm::dd::DdType::Sylvan, storm::RationalFunction>::addParameters(std::set<storm::RationalFunctionVariable> const& parameters) {
+                this->parameters.insert(parameters.begin(), parameters.end());
+            }
+            
+            template<>
+            std::set<storm::RationalFunctionVariable> const& Model<storm::dd::DdType::Sylvan, storm::RationalFunction>::getParameters() const {
+                return parameters;
+            }
+
             // Explicitly instantiate the template class.
             template class Model<storm::dd::DdType::CUDD, double>;
             template class Model<storm::dd::DdType::Sylvan, double>;

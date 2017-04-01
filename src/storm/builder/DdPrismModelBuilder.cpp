@@ -37,6 +37,13 @@ namespace storm {
             void create(storm::prism::Program const& program, storm::adapters::AddExpressionAdapter<Type, ValueType>& rowExpressionAdapter, storm::adapters::AddExpressionAdapter<Type, ValueType>& columnExpressionAdapter) {
                 // Intentionally left empty: no support for parameters for this data type.
             }
+            
+            std::set<storm::RationalFunctionVariable> const& getParameters() const {
+                STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Creating parameters for non-parametric model is not supported.");
+            }
+
+        private:
+            
         };
         
         template <storm::dd::DdType Type>
@@ -50,6 +57,7 @@ namespace storm {
                 for (auto const& constant : program.getConstants()) {
                     if (!constant.isDefined()) {
                         carl::Variable carlVariable = carl::freshRealVariable(constant.getExpressionVariable().getName());
+                        parameters.insert(carlVariable);
                         auto rf = convertVariableToPolynomial(carlVariable);
                         rowExpressionAdapter.setValue(constant.getExpressionVariable(), rf);
                         columnExpressionAdapter.setValue(constant.getExpressionVariable(), rf);
@@ -67,17 +75,25 @@ namespace storm {
                 return RationalFunctionType(variable);
             }
             
+            std::set<storm::RationalFunctionVariable> const& getParameters() const {
+                return parameters;
+            }
+            
+        private:
             // A mapping from our variables to carl's.
             std::unordered_map<storm::expressions::Variable, carl::Variable> variableToVariableMap;
             
             // The cache that is used in case the underlying type needs a cache.
             std::shared_ptr<carl::Cache<carl::PolynomialFactorizationPair<RawPolynomial>>> cache;
+            
+            // All created parameters.
+            std::set<storm::RationalFunctionVariable> parameters;
         };
         
         template <storm::dd::DdType Type, typename ValueType>
         class DdPrismModelBuilder<Type, ValueType>::GenerationInformation {
         public:
-            GenerationInformation(storm::prism::Program const& program) : program(program), manager(std::make_shared<storm::dd::DdManager<Type>>()), rowMetaVariables(), variableToRowMetaVariableMap(std::make_shared<std::map<storm::expressions::Variable, storm::expressions::Variable>>()), rowExpressionAdapter(std::make_shared<storm::adapters::AddExpressionAdapter<Type, ValueType>>(manager, variableToRowMetaVariableMap)), columnMetaVariables(), variableToColumnMetaVariableMap((std::make_shared<std::map<storm::expressions::Variable, storm::expressions::Variable>>())), columnExpressionAdapter(std::make_shared<storm::adapters::AddExpressionAdapter<Type, ValueType>>(manager, variableToColumnMetaVariableMap)), rowColumnMetaVariablePairs(), nondeterminismMetaVariables(), variableToIdentityMap(), allGlobalVariables(), moduleToIdentityMap() {
+            GenerationInformation(storm::prism::Program const& program) : program(program), manager(std::make_shared<storm::dd::DdManager<Type>>()), rowMetaVariables(), variableToRowMetaVariableMap(std::make_shared<std::map<storm::expressions::Variable, storm::expressions::Variable>>()), rowExpressionAdapter(std::make_shared<storm::adapters::AddExpressionAdapter<Type, ValueType>>(manager, variableToRowMetaVariableMap)), columnMetaVariables(), variableToColumnMetaVariableMap((std::make_shared<std::map<storm::expressions::Variable, storm::expressions::Variable>>())), columnExpressionAdapter(std::make_shared<storm::adapters::AddExpressionAdapter<Type, ValueType>>(manager, variableToColumnMetaVariableMap)), rowColumnMetaVariablePairs(), nondeterminismMetaVariables(), variableToIdentityMap(), allGlobalVariables(), moduleToIdentityMap(), parameters() {
                 
                 // Initializes variables and identity DDs.
                 createMetaVariablesAndIdentities();
@@ -85,6 +101,9 @@ namespace storm {
                 // Initialize the parameters (if any).
                 ParameterCreator<Type, ValueType> parameterCreator;
                 parameterCreator.create(this->program, *this->rowExpressionAdapter, *this->columnExpressionAdapter);
+                if (std::is_same<ValueType, storm::RationalFunction>::value) {
+                    this->parameters = parameterCreator.getParameters();
+                }
             }
             
             // The program that is currently translated.
@@ -131,11 +150,10 @@ namespace storm {
             // DDs representing the valid ranges of the variables of each module.
             std::map<std::string, storm::dd::Add<Type, ValueType>> moduleToRangeMap;
             
-        private:
-            void createParameters() {
-                
-            }
+            // The parameters appearing in the model.
+            std::set<storm::RationalFunctionVariable> parameters;
             
+        private:
             /*!
              * Creates the required meta variables and variable/module identities.
              */
@@ -1464,15 +1482,22 @@ namespace storm {
                 labelToExpressionMapping.emplace(label.getName(), label.getStatePredicateExpression());
             }
             
+            std::shared_ptr<storm::models::symbolic::Model<Type, ValueType>> result;
             if (program.getModelType() == storm::prism::Program::ModelType::DTMC) {
-                return std::shared_ptr<storm::models::symbolic::Model<Type, ValueType>>(new storm::models::symbolic::Dtmc<Type, ValueType>(generationInfo.manager, reachableStates, initialStates, deadlockStates, transitionMatrix, generationInfo.rowMetaVariables, generationInfo.rowExpressionAdapter, generationInfo.columnMetaVariables, generationInfo.columnExpressionAdapter, generationInfo.rowColumnMetaVariablePairs, labelToExpressionMapping, rewardModels));
+                result = std::shared_ptr<storm::models::symbolic::Model<Type, ValueType>>(new storm::models::symbolic::Dtmc<Type, ValueType>(generationInfo.manager, reachableStates, initialStates, deadlockStates, transitionMatrix, generationInfo.rowMetaVariables, generationInfo.rowExpressionAdapter, generationInfo.columnMetaVariables, generationInfo.columnExpressionAdapter, generationInfo.rowColumnMetaVariablePairs, labelToExpressionMapping, rewardModels));
             } else if (program.getModelType() == storm::prism::Program::ModelType::CTMC) {
-                return std::shared_ptr<storm::models::symbolic::Model<Type, ValueType>>(new storm::models::symbolic::Ctmc<Type, ValueType>(generationInfo.manager, reachableStates, initialStates, deadlockStates, transitionMatrix, system.stateActionDd, generationInfo.rowMetaVariables, generationInfo.rowExpressionAdapter, generationInfo.columnMetaVariables, generationInfo.columnExpressionAdapter, generationInfo.rowColumnMetaVariablePairs, labelToExpressionMapping, rewardModels));
+                result = std::shared_ptr<storm::models::symbolic::Model<Type, ValueType>>(new storm::models::symbolic::Ctmc<Type, ValueType>(generationInfo.manager, reachableStates, initialStates, deadlockStates, transitionMatrix, system.stateActionDd, generationInfo.rowMetaVariables, generationInfo.rowExpressionAdapter, generationInfo.columnMetaVariables, generationInfo.columnExpressionAdapter, generationInfo.rowColumnMetaVariablePairs, labelToExpressionMapping, rewardModels));
             } else if (program.getModelType() == storm::prism::Program::ModelType::MDP) {
-                return std::shared_ptr<storm::models::symbolic::Model<Type, ValueType>>(new storm::models::symbolic::Mdp<Type, ValueType>(generationInfo.manager, reachableStates, initialStates, deadlockStates, transitionMatrix, generationInfo.rowMetaVariables, generationInfo.rowExpressionAdapter, generationInfo.columnMetaVariables, generationInfo.columnExpressionAdapter, generationInfo.rowColumnMetaVariablePairs, generationInfo.allNondeterminismVariables, labelToExpressionMapping, rewardModels));
+                result = std::shared_ptr<storm::models::symbolic::Model<Type, ValueType>>(new storm::models::symbolic::Mdp<Type, ValueType>(generationInfo.manager, reachableStates, initialStates, deadlockStates, transitionMatrix, generationInfo.rowMetaVariables, generationInfo.rowExpressionAdapter, generationInfo.columnMetaVariables, generationInfo.columnExpressionAdapter, generationInfo.rowColumnMetaVariablePairs, generationInfo.allNondeterminismVariables, labelToExpressionMapping, rewardModels));
             } else {
                 STORM_LOG_THROW(false, storm::exceptions::InvalidArgumentException, "Invalid model type.");
             }
+            
+            if (std::is_same<ValueType, storm::RationalFunction>::value) {
+                result->addParameters(generationInfo.parameters);
+            }
+            
+            return result;
         }
         
         template <storm::dd::DdType Type, typename ValueType>
