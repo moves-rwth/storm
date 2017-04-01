@@ -70,6 +70,7 @@ Furthermore, we recommend the usage of [Homebrew](https://brew.sh){:target="_bla
 brew install cln ginac boost autoconf cmake doxygen
 brew tap homebrew/science
 brew install homebrew/science/glpk
+brew install homebrew/science/hwloc
 ```
 
 - Recommended:

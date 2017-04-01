@@ -10,7 +10,7 @@
 # Jessie would work. This way, we have libraries with known version numbers,
 # which provides a more stable base for benchmarking.
 #
-# All the dependencies will be built and installed in a single 
+# All the dependencies will be built and installed in a single
 # directory (default $HOME/storm-root), the rest of your installation should
 # hopefully not be affected. Note that the resulting directory will take
 #  several GB of space.
@@ -18,7 +18,7 @@
 #
 # Configuration:
 # You can set several environment variables on the command-line before running
-# 
+#
 #
 # export STORM_ROOT=/directory/where/to/build/and/install/storm/and/dependencies
 #  Default = $HOME/storm-root
@@ -49,7 +49,7 @@
 #
 # The dependencies will be built in the src subdirectory of $STORM_ROOT.
 #
-# Run with 
+# Run with
 #   storm-build-debian-jessie.sh run
 #
 # Once a particular dependency has been built, a file of the form .have-foo will be created.
@@ -165,7 +165,7 @@ cd cmake-3.7.2               &&
 ./configure --prefix=$STORM_ROOT --system-curl &&
 make -j${PROCS} install      &&
 cd $STORM_ROOT               &&
-touch $STORM_ROOT/.have-cmake && 
+touch $STORM_ROOT/.have-cmake &&
 ([ -n "$DONT_CLEAN_DEPENDENCIES" ] || rm -rf src/cmake-3.7.2 src/cmake-3.7.2.tar.gz)
 ) || exit 1
 
@@ -241,7 +241,7 @@ rm -f ginac-1.7.2.tar.bz2   &&
 rm -rf ginac-1.7.2          &&
 wget http://www.ginac.de/ginac-1.7.2.tar.bz2   &&
 tar xjf ginac-1.7.2.tar.bz2   &&
-cd ginac-1.7.2                && 
+cd ginac-1.7.2                &&
 ./configure --prefix=$STORM_ROOT  &&
 make -j${PROCS} install     &&
 cd $STORM_ROOT               &&
@@ -345,7 +345,7 @@ cd carl-build            &&
 #
 # carl currently does not search for ginac in CMAKE_PREFIX_PATH, so we have to provide the paths...
 #
-cmake ../carl.git -DCMAKE_INSTALL_PREFIX=$STORM_ROOT -DCMAKE_PREFIX_PATH=$STORM_ROOT -DUSE_GINAC=ON -DUSE_CLN_NUMBERS=ON -DGINAC_INCLUDE_DIR=$STORM_ROOT/include/ginac -DGINAC_LIBRARY=$STORM_ROOT/lib/libginac.so &&
+cmake ../carl.git -DCMAKE_INSTALL_PREFIX=$STORM_ROOT -DCMAKE_PREFIX_PATH=$STORM_ROOT -DUSE_GINAC=ON -DUSE_CLN_NUMBERS=ON -DTHREAD_SAFE=ON -DGINAC_INCLUDE_DIR=$STORM_ROOT/include/ginac -DGINAC_LIBRARY=$STORM_ROOT/lib/libginac.so &&
 make -j${PROCS} install lib_carl  &&
 touch $STORM_ROOT/.have-carl
 ) || exit 1
@@ -370,7 +370,7 @@ mkdir storm-build     &&
 cd storm-build        &&
 cmake ../storm.git -DCMAKE_INSTALL_PREFIX=$STORM_ROOT -DCMAKE_PREFIX_PATH=$STORM_ROOT  &&
 make -j${PROCS} install  &&
-touch $STORM_ROOT/.have-storm 
+touch $STORM_ROOT/.have-storm
 ) || exit 1
 
 
