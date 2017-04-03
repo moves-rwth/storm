@@ -58,7 +58,7 @@ namespace storm {
              * Helper for parsing the actions of a model.
              */
             void parseActions(json const& actionStructure, storm::jani::Model& parentModel);
-            std::shared_ptr<storm::logic::Formula const> parseFormula(json const& propertyStructure, storm::logic::FormulaContext formulaContext, std::string const& context, boost::optional<storm::logic::Bound<storm::RationalNumber>> bound = boost::none);
+            std::shared_ptr<storm::logic::Formula const> parseFormula(json const& propertyStructure, storm::logic::FormulaContext formulaContext, std::string const& context, boost::optional<storm::logic::Bound> bound = boost::none);
             std::vector<storm::expressions::Expression> parseUnaryExpressionArguments(json const& expressionStructure, std::string const& opstring, std::string const& scopeDescription, std::unordered_map<std::string, std::shared_ptr<storm::jani::Variable>> const& localVars = std::unordered_map<std::string, std::shared_ptr<storm::jani::Variable>>(), bool returnNoneOnUnknownOpString = false);
             std::vector<storm::expressions::Expression> parseBinaryExpressionArguments(json const& expressionStructure, std::string const& opstring,  std::string const& scopeDescription, std::unordered_map<std::string, std::shared_ptr<storm::jani::Variable>> const& localVars = std::unordered_map<std::string, std::shared_ptr<storm::jani::Variable>>(), bool returnNoneOnUnknownOpString = false);
 

@@ -9,6 +9,9 @@
 #include "storm/solver/OptimizationDirection.h"
 #include "storm/logic/ComparisonType.h"
 
+#include "storm/exceptions/InvalidOperationException.h"
+
+
 namespace storm {
     namespace logic {
         class Formula;
@@ -45,7 +48,7 @@ namespace storm {
                     
                     if (operatorFormula.hasBound()) {
                         if (onlyInitialStatesRelevant) {
-                            this->bound = operatorFormula.getBound().convertToOtherValueType<ValueType>();
+                            this->bound = operatorFormula.getBound();
                         }
 
                         if (!optimizationDirection) {
@@ -58,7 +61,7 @@ namespace storm {
                     storm::logic::ProbabilityOperatorFormula const& probabilityOperatorFormula = formula.asProbabilityOperatorFormula();
                     
                     if (probabilityOperatorFormula.hasBound()) {
-                        if (storm::utility::isZero(probabilityOperatorFormula.getThreshold()) || storm::utility::isOne(probabilityOperatorFormula.getThreshold())) {
+                        if (storm::utility::isZero(probabilityOperatorFormula.template getThresholdAs<ValueType>()) || storm::utility::isOne(probabilityOperatorFormula.template getThresholdAs<ValueType>())) {
                             this->qualitative = true;
                         }
                     }
@@ -67,7 +70,7 @@ namespace storm {
                     this->rewardModel = rewardOperatorFormula.getOptionalRewardModelName();
                     
                     if (rewardOperatorFormula.hasBound()) {
-                        if (storm::utility::isZero(rewardOperatorFormula.getThreshold())) {
+                        if (storm::utility::isZero(rewardOperatorFormula.template getThresholdAs<ValueType>())) {
                             this->qualitative = true;
                         }
                     }
@@ -143,8 +146,9 @@ namespace storm {
             /*!
              * Retrieves the value of the bound (if set).
              */
-            ValueType const& getBoundThreshold() const {
-                return bound.get().threshold;
+            ValueType getBoundThreshold() const {
+                STORM_LOG_THROW(!bound.get().threshold.containsVariables(), storm::exceptions::InvalidOperationException, "Cannot evaluate threshold '" << bound.get().threshold << "' as it contains undefined constants.");
+                return storm::utility::convertNumber<ValueType>(bound.get().threshold.evaluateAsRational());
             }
             
             /*!
@@ -157,14 +161,14 @@ namespace storm {
             /*!
              * Retrieves the bound (if set).
              */
-            storm::logic::Bound<ValueType> const& getBound() const {
+            storm::logic::Bound const& getBound() const {
                 return bound.get();
             }
 
             /*!
              * Retrieves the bound (if set).
              */
-            boost::optional<storm::logic::Bound<ValueType>> const& getOptionalBound() const {
+            boost::optional<storm::logic::Bound> const& getOptionalBound() const {
                 return bound;
             }
 
@@ -236,7 +240,7 @@ namespace storm {
              * @param produceSchedulers If supported by the model checker and the model formalism, schedulers to achieve
              * a value will be produced if this flag is set.
              */
-            CheckTask(std::reference_wrapper<FormulaType const> const& formula, boost::optional<storm::OptimizationDirection> const& optimizationDirection, boost::optional<std::string> const& rewardModel, bool onlyInitialStatesRelevant, boost::optional<storm::logic::Bound<ValueType>> const& bound, bool qualitative, bool produceSchedulers, boost::optional<std::vector<ValueType>> const& resultHint) : formula(formula), optimizationDirection(optimizationDirection), rewardModel(rewardModel), onlyInitialStatesRelevant(onlyInitialStatesRelevant), bound(bound), qualitative(qualitative), produceSchedulers(produceSchedulers), resultHint(resultHint) {
+            CheckTask(std::reference_wrapper<FormulaType const> const& formula, boost::optional<storm::OptimizationDirection> const& optimizationDirection, boost::optional<std::string> const& rewardModel, bool onlyInitialStatesRelevant, boost::optional<storm::logic::Bound> const& bound, bool qualitative, bool produceSchedulers, boost::optional<std::vector<ValueType>> const& resultHint) : formula(formula), optimizationDirection(optimizationDirection), rewardModel(rewardModel), onlyInitialStatesRelevant(onlyInitialStatesRelevant), bound(bound), qualitative(qualitative), produceSchedulers(produceSchedulers), resultHint(resultHint) {
                 // Intentionally left empty.
             }
             
@@ -253,7 +257,7 @@ namespace storm {
             bool onlyInitialStatesRelevant;
 
             // The bound with which the states will be compared.
-            boost::optional<storm::logic::Bound<ValueType>> bound;
+            boost::optional<storm::logic::Bound> bound;
             
             // A flag specifying whether the property needs to be checked qualitatively, i.e. compared with bounds 0/1.
             bool qualitative;

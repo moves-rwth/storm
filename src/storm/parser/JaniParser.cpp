@@ -177,7 +177,7 @@ namespace storm {
         }
 
         
-        std::shared_ptr<storm::logic::Formula const> JaniParser::parseFormula(json const& propertyStructure, storm::logic::FormulaContext formulaContext, std::string const& context, boost::optional<storm::logic::Bound<storm::RationalNumber>> bound) {
+        std::shared_ptr<storm::logic::Formula const> JaniParser::parseFormula(json const& propertyStructure, storm::logic::FormulaContext formulaContext, std::string const& context, boost::optional<storm::logic::Bound> bound) {
             if (propertyStructure.is_boolean()) {
                 return std::make_shared<storm::logic::BooleanLiteralFormula>(propertyStructure.get<bool>());
             }
@@ -403,13 +403,11 @@ namespace storm {
                     if (propertyStructure.at("left").count("op") > 0 && (propertyStructure.at("left").at("op") == "Pmin" || propertyStructure.at("left").at("op") == "Pmax" || propertyStructure.at("left").at("op") == "Emin" || propertyStructure.at("left").at("op") == "Emax" || propertyStructure.at("left").at("op") == "Smin" || propertyStructure.at("left").at("op") == "Smax")) {
                         auto expr = parseExpression(propertyStructure.at("right"), "Threshold for operator " + propertyStructure.at("left").at("op").get<std::string>());
                         STORM_LOG_THROW(expr.getVariables().empty(), storm::exceptions::NotSupportedException, "Only constant thresholds supported");
-                        // TODO evaluate this expression directly as rational number
-                        return parseFormula(propertyStructure.at("left"), formulaContext, "", storm::logic::Bound<storm::RationalNumber>(ct, storm::utility::convertNumber<storm::RationalNumber>(expr.evaluateAsDouble())));
+                        return parseFormula(propertyStructure.at("left"), formulaContext, "", storm::logic::Bound(ct, expr));
                     } else if(propertyStructure.at("right").count("op") > 0 && (propertyStructure.at("right").at("op") == "Pmin" || propertyStructure.at("right").at("op") == "Pmax" || propertyStructure.at("right").at("op") == "Emin" || propertyStructure.at("right").at("op") == "Emax" || propertyStructure.at("right").at("op") == "Smin" || propertyStructure.at("right").at("op") == "Smax")) {
                         auto expr = parseExpression(propertyStructure.at("left"), "Threshold for operator " + propertyStructure.at("right").at("op").get<std::string>());
                         STORM_LOG_THROW(expr.getVariables().empty(), storm::exceptions::NotSupportedException, "Only constant thresholds supported");
-                        // TODO evaluate this expression directly as rational number
-                        return parseFormula(propertyStructure.at("right"),formulaContext, "", storm::logic::Bound<storm::RationalNumber>(ct, storm::utility::convertNumber<storm::RationalNumber>(expr.evaluateAsDouble())));
+                        return parseFormula(propertyStructure.at("right"),formulaContext, "", storm::logic::Bound(ct, expr));
                         
                     } else {
                          STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "No complex comparisons are allowed.");

@@ -111,7 +111,7 @@ namespace storm {
                 
                 bool formulaMinimizes = false;
                 if(formula.hasBound()) {
-                    currentObjective.threshold = storm::utility::convertNumber<ValueType>(formula.getBound().threshold);
+                    currentObjective.threshold = formula.template getThresholdAs<ValueType>();
                     currentObjective.thresholdIsStrict = storm::logic::isStrict(formula.getBound().comparisonType);
                     //Note that we minimize for upper bounds since we are looking for the EXISTENCE of a satisfying scheduler
                     formulaMinimizes = !storm::logic::isLowerBound(formula.getBound().comparisonType);

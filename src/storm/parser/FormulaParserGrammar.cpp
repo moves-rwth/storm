@@ -286,7 +286,7 @@ namespace storm {
         storm::logic::OperatorInformation FormulaParserGrammar::createOperatorInformation(boost::optional<storm::OptimizationDirection> const& optimizationDirection, boost::optional<storm::logic::ComparisonType> const& comparisonType, boost::optional<storm::expressions::Expression> const& threshold) const {
             if (comparisonType && threshold) {
                 storm::expressions::ExpressionEvaluator<storm::RationalNumber> evaluator(*constManager);
-                return storm::logic::OperatorInformation(optimizationDirection, storm::logic::Bound<RationalNumber>(comparisonType.get(), evaluator.asRational(threshold.get())));
+                return storm::logic::OperatorInformation(optimizationDirection, storm::logic::Bound(comparisonType.get(), threshold.get()));
             } else {
                 return storm::logic::OperatorInformation(optimizationDirection, boost::none);
             }

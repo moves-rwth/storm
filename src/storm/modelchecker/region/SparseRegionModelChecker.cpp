@@ -79,7 +79,7 @@ namespace storm {
 
             template<typename ParametricSparseModelType, typename ConstantType>
             ConstantType SparseRegionModelChecker<ParametricSparseModelType, ConstantType>::getSpecifiedFormulaBound() const {
-                return storm::utility::convertNumber<ConstantType>(this->getSpecifiedFormula()->getThreshold());
+                return this->getSpecifiedFormula()->template getThresholdAs<ConstantType>();
             }
 
             template<typename ParametricSparseModelType, typename ConstantType>

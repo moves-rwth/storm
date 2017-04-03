@@ -210,7 +210,7 @@ namespace storm {
                 }
                 opDecl["left"]["exp"] = modernjson::json(1);
                 opDecl["left"]["accumulate"] = modernjson::json(tvec);
-                opDecl["right"] = numberToJson(bound.threshold);
+                opDecl["right"] = ExpressionToJson::translate(bound.threshold);
             } else {
                 if(f.hasOptimalityType()) {
                     opDecl["op"] = f.getOptimalityType() == storm::solver::OptimizationDirection::Minimize ? "Emin" : "Emax";
@@ -247,7 +247,7 @@ namespace storm {
                     opDecl["left"]["op"] = (bound.comparisonType == storm::logic::ComparisonType::Less || bound.comparisonType == storm::logic::ComparisonType::LessEqual) ? "Smax" : "Smin";
                     opDecl["left"]["exp"] = boost::any_cast<modernjson::json>(f.getSubformula().accept(*this, data));
                 }
-                opDecl["right"] = numberToJson(bound.threshold);
+                opDecl["right"] = ExpressionToJson::translate(bound.threshold);
             } else {
                 if(f.hasOptimalityType()) {
                     opDecl["op"] = f.getOptimalityType() == storm::solver::OptimizationDirection::Minimize ? "Smin" : "Smax";
@@ -275,7 +275,7 @@ namespace storm {
 //                    opDecl["left"]["op"] = (bound.comparisonType == storm::logic::ComparisonType::Less || bound.comparisonType == storm::logic::ComparisonType::LessEqual) ? "Smax" : "Smin";
 //                    opDecl["left"]["exp"] = boost::any_cast<modernjson::json>(f.getSubformula().accept(*this, boost::none));
 //                }
-//                opDecl["right"] = numberToJson(bound.threshold);
+//                opDecl["right"] = ExpressionToJson::translate(bound.threshold);
 //            } else {
 //                if(f.hasOptimalityType()) {
 //                    opDecl["op"] = f.getOptimalityType() == storm::solver::OptimizationDirection::Minimize ? "Smin" : "Smax";
@@ -322,7 +322,7 @@ namespace storm {
                     opDecl["left"]["op"] = (bound.comparisonType == storm::logic::ComparisonType::Less || bound.comparisonType == storm::logic::ComparisonType::LessEqual) ? "Pmax" : "Pmin";
                     opDecl["left"]["exp"] = boost::any_cast<modernjson::json>(f.getSubformula().accept(*this, data));
                 }
-                opDecl["right"] = numberToJson(bound.threshold);
+                opDecl["right"] = ExpressionToJson::translate(bound.threshold);
             } else {
                 if(f.hasOptimalityType()) {
                     opDecl["op"] = f.getOptimalityType() == storm::solver::OptimizationDirection::Minimize ? "Pmin" : "Pmax";
@@ -358,7 +358,7 @@ namespace storm {
                 STORM_LOG_THROW(f.hasRewardModelName(), storm::exceptions::NotSupportedException, "Reward name has to be specified for Jani-conversion");
                 opDecl["left"]["exp"] = f.getRewardModelName();
                 opDecl["left"]["accumulate"] = modernjson::json(accvec);
-                opDecl["right"] = numberToJson(bound.threshold);
+                opDecl["right"] = ExpressionToJson::translate(bound.threshold);
             } else {
                 if(f.hasOptimalityType()) {
                     opDecl["op"] = f.getOptimalityType() == storm::solver::OptimizationDirection::Minimize ? "Emin" : "Emax";

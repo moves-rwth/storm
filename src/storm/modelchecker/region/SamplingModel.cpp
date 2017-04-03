@@ -89,7 +89,7 @@ namespace storm {
                 filter.set(this->solverData.initialStateIndex, true);
                 this->solverData.solveGoal = std::make_unique<storm::solver::BoundedGoal<ConstantType>>(
                             storm::logic::isLowerBound(formula->getComparisonType()) ? storm::solver::OptimizationDirection::Minimize : storm::solver::OptimizationDirection::Maximize,
-                            formula->getBound().convertToOtherValueType<ConstantType>(),
+                            formula->getComparisonType(), formula->getThresholdAs<ConstantType>(),
                             filter
                         );
             }
