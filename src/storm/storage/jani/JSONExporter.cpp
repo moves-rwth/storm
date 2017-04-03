@@ -22,6 +22,7 @@
 #include "storm/storage/expressions/IfThenElseExpression.h"
 #include "storm/storage/expressions/BinaryRelationExpression.h"
 #include "storm/storage/expressions/VariableExpression.h"
+#include "storm/storage/expressions/ExpressionManager.h"
 
 #include "storm/logic/Formulas.h"
 
@@ -126,17 +127,24 @@ namespace storm {
         }
         
         
-        modernjson::json constructPropertyInterval(uint64_t lower, uint64_t upper) {
+        modernjson::json constructPropertyInterval(boost::optional<storm::expressions::Expression> const& lower, boost::optional<bool> const& lowerExclusive, boost::optional<storm::expressions::Expression> const& upper, boost::optional<bool> const& upperExclusive) {
+            STORM_LOG_THROW((lower.is_initialized() || upper.is_initialized()), storm::exceptions::InvalidJaniException, "PropertyInterval needs either a lower or an upper bound, but none was given.");
+            STORM_LOG_THROW((lower.is_initialized() || !lowerExclusive.is_initialized()), storm::exceptions::InvalidJaniException, "PropertyInterval defines wether the lower bound is exclusive but no lower bound is given.");
+            STORM_LOG_THROW((upper.is_initialized() || !upperExclusive.is_initialized()), storm::exceptions::InvalidJaniException, "PropertyInterval defines wether the upper bound is exclusive but no upper bound is given.");
+            
             modernjson::json iDecl;
-            iDecl["lower"] = lower;
-            iDecl["upper"] = upper;
-            return iDecl;
-        }
-        
-        modernjson::json constructPropertyInterval(double lower, double upper) {
-            modernjson::json iDecl;
-            iDecl["lower"] = lower;
-            iDecl["upper"] = upper;
+            if (lower) {
+                iDecl["lower"] = ExpressionToJson::translate(*lower);
+                if (lowerExclusive) {
+                    iDecl["lower-exclusive"] = *lowerExclusive;
+                }
+            }
+            if (upper) {
+                iDecl["upper"] = ExpressionToJson::translate(*upper);
+                if (upperExclusive) {
+                    iDecl["upper-exclusive"] = *upperExclusive;
+                }
+            }
             return iDecl;
         }
         
@@ -170,10 +178,23 @@ namespace storm {
             opDecl["op"] = "U";
             opDecl["left"] = boost::any_cast<modernjson::json>(f.getLeftSubformula().accept(*this, data));
             opDecl["right"] = boost::any_cast<modernjson::json>(f.getRightSubformula().accept(*this, data));
+            
+            boost::optional<storm::expressions::Expression> lower, upper;
+            boost::optional<bool> lowerExclusive, upperExclusive;
+            if (f.hasLowerBound()) {
+                lower = f.getLowerBound();
+                lowerExclusive = f.isLowerBoundStrict();
+            }
+            if (f.hasUpperBound()) {
+                upper = f.getUpperBound();
+                upperExclusive = f.isUpperBoundStrict();
+            }
+            modernjson::json propertyInterval = constructPropertyInterval(lower, lowerExclusive, upper, upperExclusive);
+            
             if(f.isStepBounded()) {
-                opDecl["step-bounds"] = constructPropertyInterval(0, f.getUpperBound<uint64_t>());
+                opDecl["step-bounds"] = propertyInterval;
             } else {
-                opDecl["time-bounds"] = constructPropertyInterval(f.getLowerBound<double>(), f.getUpperBound<double>());
+                opDecl["time-bounds"] = propertyInterval;
             }
             return opDecl;
         }
@@ -302,7 +323,8 @@ namespace storm {
             opDecl["op"] = "U";
             opDecl["left"] = boost::any_cast<modernjson::json>(f.getTrueFormula()->accept(*this, data));
             opDecl["right"] = boost::any_cast<modernjson::json>(f.getSubformula().accept(*this, data));
-            opDecl["step-bounds"] = constructPropertyInterval((uint64_t)1, (uint64_t)1);
+            auto intervalExpressionManager = std::make_shared<storm::expressions::ExpressionManager>();
+            opDecl["step-bounds"] = constructPropertyInterval(intervalExpressionManager->integer(1), false, intervalExpressionManager->integer(1), false);
             return opDecl;
         }
         
