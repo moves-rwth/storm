@@ -70,6 +70,7 @@
 #include "storm/modelchecker/exploration/SparseExplorationModelChecker.h"
 #include "storm/modelchecker/parametric/SparseDtmcParameterLifting.h"
 #include "storm/modelchecker/parametric/SparseMdpParameterLifting.h"
+#include "storm/utility/parameterlifting.h"
 
 #include "storm/modelchecker/csl/SparseCtmcCslModelChecker.h"
 #include "storm/modelchecker/csl/helper/SparseCtmcCslHelper.h"
@@ -324,6 +325,8 @@ namespace storm {
     inline void performParameterLifting(std::shared_ptr<storm::models::sparse::Model<storm::RationalFunction>> markovModel, std::shared_ptr<storm::logic::Formula const> const& formula) {
         storm::utility::Stopwatch parameterLiftingStopWatch(true);
         std::shared_ptr<storm::logic::Formula const> consideredFormula = formula;
+        
+        STORM_LOG_WARN_COND(storm::utility::parameterlifting::validateParameterLiftingSound(*markovModel, *formula), "Could not validate whether parameter lifting is sound on the input model and the formula " << *formula);
         
         if (markovModel->isOfType(storm::models::ModelType::Ctmc) || markovModel->isOfType(storm::models::ModelType::MarkovAutomaton)) {
             STORM_PRINT_AND_LOG("Transforming continuous model to discrete model...");
