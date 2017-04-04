@@ -77,13 +77,13 @@ namespace storm {
             InternalAdd<DdType::Sylvan, ValueType> getConstant(ValueType const& value) const;
             
             /*!
-             * Creates a new pair of DD variables and returns the two cubes as a result.
+             * Creates new layered DD variables and returns the cubes as a result.
              *
-             * @param position An optional position at which to insert the new variable pair. This may only be given, if
-             * the manager supports ordered insertion.
-             * @return The two cubes belonging to the DD variables.
+             * @param position An optional position at which to insert the new variable. This may only be given, if the
+             * manager supports ordered insertion.
+             * @return The cubes belonging to the DD variables.
              */
-            std::pair<InternalBdd<DdType::Sylvan>, InternalBdd<DdType::Sylvan>> createNewDdVariablePair(boost::optional<uint_fast64_t> const& position = boost::none);
+            std::vector<InternalBdd<DdType::Sylvan>> createDdVariables(uint64_t numberOfLayers, boost::optional<uint_fast64_t> const& position = boost::none);
             
             /*!
              * Checks whether this manager supports the ordered insertion of variables, i.e. inserting variables at

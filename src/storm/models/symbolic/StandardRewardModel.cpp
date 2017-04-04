@@ -4,6 +4,8 @@
 #include "storm/storage/dd/Add.h"
 #include "storm/storage/dd/Bdd.h"
 
+#include "storm/adapters/CarlAdapter.h"
+
 namespace storm {
     namespace models {
         namespace symbolic {
@@ -157,6 +159,10 @@ namespace storm {
             
             template class StandardRewardModel<storm::dd::DdType::CUDD, double>;
             template class StandardRewardModel<storm::dd::DdType::Sylvan, double>;
+
+            template class StandardRewardModel<storm::dd::DdType::Sylvan, storm::RationalNumber>;
+            template class StandardRewardModel<storm::dd::DdType::Sylvan, storm::RationalFunction>;
+
         }
     }
 }

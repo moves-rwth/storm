@@ -3,7 +3,6 @@
 
 #include <boost/optional.hpp>
 #include <memory>
-#include <storm/exceptions/InvalidTypeException.h>
 
 #include "storm/logic/Formulas.h"
 #include "storm/utility/constants.h"
@@ -11,6 +10,9 @@
 #include "storm/solver/OptimizationDirection.h"
 #include "storm/logic/ComparisonType.h"
 #include "storm/modelchecker/hints/ModelCheckerHint.h"
+
+#include "storm/exceptions/InvalidOperationException.h"
+
 
 namespace storm {
     namespace logic {
@@ -40,41 +42,7 @@ namespace storm {
                 this->produceSchedulers = false;
                 this->qualitative = false;
                 
-                if (formula.isOperatorFormula()) {
-                    storm::logic::OperatorFormula const& operatorFormula = formula.asOperatorFormula();
-                    if (operatorFormula.hasOptimalityType()) {
-                        this->optimizationDirection = operatorFormula.getOptimalityType();
-                    }
-                    
-                    if (operatorFormula.hasBound()) {
-                        if (onlyInitialStatesRelevant) {
-                            this->bound = operatorFormula.getBound().convertToOtherValueType<ValueType>();
-                        }
-
-                        if (!optimizationDirection) {
-                            this->optimizationDirection = operatorFormula.getComparisonType() == storm::logic::ComparisonType::Less || operatorFormula.getComparisonType() == storm::logic::ComparisonType::LessEqual ? OptimizationDirection::Maximize : OptimizationDirection::Minimize;
-                        }
-                    }
-                }
-                
-                if (formula.isProbabilityOperatorFormula()) {
-                    storm::logic::ProbabilityOperatorFormula const& probabilityOperatorFormula = formula.asProbabilityOperatorFormula();
-                    
-                    if (probabilityOperatorFormula.hasBound()) {
-                        if (storm::utility::isZero(probabilityOperatorFormula.getThreshold()) || storm::utility::isOne(probabilityOperatorFormula.getThreshold())) {
-                            this->qualitative = true;
-                        }
-                    }
-                } else if (formula.isRewardOperatorFormula()) {
-                    storm::logic::RewardOperatorFormula const& rewardOperatorFormula = formula.asRewardOperatorFormula();
-                    this->rewardModel = rewardOperatorFormula.getOptionalRewardModelName();
-                    
-                    if (rewardOperatorFormula.hasBound()) {
-                        if (storm::utility::isZero(rewardOperatorFormula.getThreshold())) {
-                            this->qualitative = true;
-                        }
-                    }
-                }
+                updateOperatorInformation();
             }
             
             /*!
@@ -83,21 +51,60 @@ namespace storm {
              */
             template<typename NewFormulaType>
             CheckTask<NewFormulaType, ValueType> substituteFormula(NewFormulaType const& newFormula) const {
-                return CheckTask<NewFormulaType, ValueType>(newFormula, this->optimizationDirection, this->rewardModel, this->onlyInitialStatesRelevant, this->bound, this->qualitative, this->produceSchedulers, this->hint);
+                CheckTask<NewFormulaType, ValueType> result(newFormula, this->optimizationDirection, this->rewardModel, this->onlyInitialStatesRelevant, this->bound, this->qualitative, this->produceSchedulers, this->hint);
+                result.updateOperatorInformation();
+                return result;
             }
+            
+            /*!
+             * If the currently specified formula is an OperatorFormula, this method updates the information that is given in the Operator formula.
+             * Calling this method has no effect if the provided formula is not an operator formula.
+             */
+            void updateOperatorInformation() {
+                if (formula.get().isOperatorFormula()) {
+                    storm::logic::OperatorFormula const& operatorFormula = formula.get().asOperatorFormula();
+                    if (operatorFormula.hasOptimalityType()) {
+                        this->optimizationDirection = operatorFormula.getOptimalityType();
+                    }
+                    
+                    if (operatorFormula.hasBound()) {
+                        if (onlyInitialStatesRelevant) {
+                            this->bound = operatorFormula.getBound();
+                        }
+
+                        if (!optimizationDirection) {
+                            this->optimizationDirection = operatorFormula.getComparisonType() == storm::logic::ComparisonType::Less || operatorFormula.getComparisonType() == storm::logic::ComparisonType::LessEqual ? OptimizationDirection::Maximize : OptimizationDirection::Minimize;
+                        }
+                    }
+                
+                    if (formula.get().isProbabilityOperatorFormula()) {
+                        storm::logic::ProbabilityOperatorFormula const& probabilityOperatorFormula = formula.get().asProbabilityOperatorFormula();
                         
+                        if (probabilityOperatorFormula.hasBound()) {
+                            if (storm::utility::isZero(probabilityOperatorFormula.template getThresholdAs<ValueType>()) || storm::utility::isOne(probabilityOperatorFormula.template getThresholdAs<ValueType>())) {
+                                this->qualitative = true;
+                            }
+                        }
+                    } else if (formula.get().isRewardOperatorFormula()) {
+                        storm::logic::RewardOperatorFormula const& rewardOperatorFormula = formula.get().asRewardOperatorFormula();
+                        this->rewardModel = rewardOperatorFormula.getOptionalRewardModelName();
+                        
+                        if (rewardOperatorFormula.hasBound()) {
+                            if (storm::utility::isZero(rewardOperatorFormula.template getThresholdAs<ValueType>())) {
+                                this->qualitative = true;
+                            }
+                        }
+                    }
+                }
+            }
+
             /*!
              * Copies the check task from the source while replacing the considered ValueType the new one. In particular, this
              * changes the formula type of the check task object.
              */
             template<typename NewValueType>
             CheckTask<FormulaType, NewValueType> convertValueType() const {
-                boost::optional<storm::logic::Bound<NewValueType>> newBound;
-                if(this->bound.is_initialized()) {
-                    STORM_LOG_THROW(storm::utility::isConstant(this->getBoundThreshold()), storm::exceptions::InvalidTypeException, "Tried to convert a non-constant threshold ");
-                    newBound = storm::logic::Bound<NewValueType>(this->getBoundComparisonType(), storm::utility::convertNumber<NewValueType>(this->getBoundThreshold()));
-                }
-                return CheckTask<FormulaType, NewValueType>(this->formula, this->optimizationDirection, this->rewardModel, this->onlyInitialStatesRelevant, newBound, this->qualitative, this->produceSchedulers, this->hint);
+                return CheckTask<FormulaType, NewValueType>(this->formula, this->optimizationDirection, this->rewardModel, this->onlyInitialStatesRelevant, this->bound, this->qualitative, this->produceSchedulers, this->hint);
             }
             
             /*!
@@ -160,8 +167,9 @@ namespace storm {
             /*!
              * Retrieves the value of the bound (if set).
              */
-            ValueType const& getBoundThreshold() const {
-                return bound.get().threshold;
+            ValueType getBoundThreshold() const {
+                STORM_LOG_THROW(!bound.get().threshold.containsVariables(), storm::exceptions::InvalidOperationException, "Cannot evaluate threshold '" << bound.get().threshold << "' as it contains undefined constants.");
+                return storm::utility::convertNumber<ValueType>(bound.get().threshold.evaluateAsRational());
             }
             
             /*!
@@ -174,14 +182,14 @@ namespace storm {
             /*!
              * Retrieves the bound (if set).
              */
-            storm::logic::Bound<ValueType> const& getBound() const {
+            storm::logic::Bound const& getBound() const {
                 return bound.get();
             }
 
             /*!
              * Retrieves the bound (if set).
              */
-            boost::optional<storm::logic::Bound<ValueType>> const& getOptionalBound() const {
+            boost::optional<storm::logic::Bound> const& getOptionalBound() const {
                 return bound;
             }
 
@@ -242,7 +250,7 @@ namespace storm {
              * @param produceSchedulers If supported by the model checker and the model formalism, schedulers to achieve
              * a value will be produced if this flag is set.
              */
-            CheckTask(std::reference_wrapper<FormulaType const> const& formula, boost::optional<storm::OptimizationDirection> const& optimizationDirection, boost::optional<std::string> const& rewardModel, bool onlyInitialStatesRelevant, boost::optional<storm::logic::Bound<ValueType>> const& bound, bool qualitative, bool produceSchedulers, std::shared_ptr<ModelCheckerHint> const& hint) : formula(formula), optimizationDirection(optimizationDirection), rewardModel(rewardModel), onlyInitialStatesRelevant(onlyInitialStatesRelevant), bound(bound), qualitative(qualitative), produceSchedulers(produceSchedulers), hint(hint) {
+            CheckTask(std::reference_wrapper<FormulaType const> const& formula, boost::optional<storm::OptimizationDirection> const& optimizationDirection, boost::optional<std::string> const& rewardModel, bool onlyInitialStatesRelevant, boost::optional<storm::logic::Bound> const& bound, bool qualitative, bool produceSchedulers, std::shared_ptr<ModelCheckerHint> const& hint) : formula(formula), optimizationDirection(optimizationDirection), rewardModel(rewardModel), onlyInitialStatesRelevant(onlyInitialStatesRelevant), bound(bound), qualitative(qualitative), produceSchedulers(produceSchedulers), hint(hint) {
                 // Intentionally left empty.
             }
             
@@ -259,7 +267,7 @@ namespace storm {
             bool onlyInitialStatesRelevant;
 
             // The bound with which the states will be compared.
-            boost::optional<storm::logic::Bound<ValueType>> bound;
+            boost::optional<storm::logic::Bound> bound;
             
             // A flag specifying whether the property needs to be checked qualitatively, i.e. compared with bounds 0/1.
             bool qualitative;

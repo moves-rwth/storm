@@ -260,13 +260,6 @@ namespace storm {
              */
             InternalAdd<DdType::CUDD, ValueType> minAbstract(InternalBdd<DdType::CUDD> const& cube) const;
 
-            /*!
-             * Min-abstracts from the given cube, but treats 0 as the largest possible value.
-             *
-             * @param cube The cube from which to abstract.
-             */
-            InternalAdd<DdType::CUDD, ValueType> minAbstractExcept0(InternalBdd<DdType::CUDD> const& cube) const;
-
 			/*!
              * Min-abstracts from the given cube and returns a representative.
              *
@@ -297,7 +290,7 @@ namespace storm {
              * @param relative If set to true, not the absolute values have to be within the precision, but the relative
              * values.
              */
-            bool equalModuloPrecision(InternalAdd<DdType::CUDD, ValueType> const& other, double precision, bool relative = true) const;
+            bool equalModuloPrecision(InternalAdd<DdType::CUDD, ValueType> const& other, ValueType const& precision, bool relative = true) const;
             
             /*!
              * Swaps the given pairs of DD variables in the ADD. The pairs of meta variables have to be represented by
@@ -308,6 +301,16 @@ namespace storm {
              * @return The resulting ADD.
              */
             InternalAdd<DdType::CUDD, ValueType> swapVariables(std::vector<InternalBdd<DdType::CUDD>> const& from, std::vector<InternalBdd<DdType::CUDD>> const& to) const;
+            
+            /*!
+             * Permutes the given pairs of DD variables in the ADD. The pairs of meta variables have to be represented by
+             * ADDs must have equal length.
+             *
+             * @param from The vector that specifies the 'from' part of the variable renaming.
+             * @param to The vector that specifies the 'to' part of the variable renaming.
+             * @return The resulting ADD.
+             */
+            InternalAdd<DdType::CUDD, ValueType> permuteVariables(std::vector<InternalBdd<DdType::CUDD>> const& from, std::vector<InternalBdd<DdType::CUDD>> const& to) const;
             
             /*!
              * Multiplies the current ADD (representing a matrix) with the given matrix by summing over the given meta

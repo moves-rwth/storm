@@ -2,37 +2,29 @@
 #define	STORM_LOGIC_BOUND_H_
 
 #include "storm/logic/ComparisonType.h"
+#include "storm/storage/expressions/Expression.h"
 #include "storm/utility/constants.h"
+
 
 namespace storm {
     namespace logic {
-        template<typename ValueType>
         struct Bound {
-            Bound(ComparisonType comparisonType, ValueType const& threshold) : comparisonType(comparisonType), threshold(threshold) {
+            Bound(ComparisonType comparisonType, storm::expressions::Expression const& threshold) : comparisonType(comparisonType), threshold(threshold) {
                 // Intentionally left empty.
             }
 
-            template<typename OtherValueType>
-            Bound<OtherValueType> convertToOtherValueType() const {
-                return Bound<OtherValueType>(comparisonType, storm::utility::convertNumber<OtherValueType>(threshold));
-            }
-            
             ComparisonType comparisonType;
-            ValueType threshold;
+            storm::expressions::Expression threshold;
 
-            template<typename ValueTypePrime>
-            friend std::ostream& operator<<(std::ostream& out, Bound<ValueTypePrime> const& bound);
+            friend std::ostream& operator<<(std::ostream& out, Bound const& bound);
         };
 
-        template<typename ValueType>
-        std::ostream& operator<<(std::ostream& out, Bound<ValueType> const& bound) {
+        inline std::ostream& operator<<(std::ostream& out, Bound const& bound) {
             out << bound.comparisonType << bound.threshold;
             return out;
         }
     }
     
-    template<typename ValueType>
-    using Bound = typename logic::Bound<ValueType>;
 }
 
 #endif	/* STORM_LOGIC_BOUND_H_ */

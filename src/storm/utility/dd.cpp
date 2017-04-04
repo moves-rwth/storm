@@ -1,7 +1,10 @@
 #include "storm/utility/dd.h"
 
+#include "storm/storage/dd/DdManager.h"
 #include "storm/storage/dd/Add.h"
 #include "storm/storage/dd/Bdd.h"
+
+#include "storm/adapters/CarlAdapter.h"
 
 #include "storm/utility/macros.h"
 
@@ -42,9 +45,38 @@ namespace storm {
                 return reachableStates;
             }
             
+            template <storm::dd::DdType Type, typename ValueType>
+            storm::dd::Add<Type, ValueType> getRowColumnDiagonal(storm::dd::DdManager<Type> const& ddManager, std::vector<std::pair<storm::expressions::Variable, storm::expressions::Variable>> const& rowColumnMetaVariablePairs) {
+                storm::dd::Add<Type, ValueType> result = ddManager.template getAddOne<ValueType>();
+                for (auto const& pair : rowColumnMetaVariablePairs) {
+                    result *= ddManager.template getIdentity<ValueType>(pair.first).equals(ddManager.template getIdentity<ValueType>(pair.second)).template toAdd<ValueType>();
+                    result *= ddManager.getRange(pair.first).template toAdd<ValueType>() * ddManager.getRange(pair.second).template toAdd<ValueType>();
+                }
+                return result;
+            }
+            
+            template <storm::dd::DdType Type>
+            storm::dd::Bdd<Type> getRowColumnDiagonal(storm::dd::DdManager<Type> const& ddManager, std::vector<std::pair<storm::expressions::Variable, storm::expressions::Variable>> const& rowColumnMetaVariablePairs) {
+                storm::dd::Bdd<Type> diagonal = ddManager.getBddOne();
+                for (auto const& pair : rowColumnMetaVariablePairs) {
+                    diagonal &= ddManager.template getIdentity<uint64_t>(pair.first).equals(ddManager.template getIdentity<uint64_t>(pair.second));
+                    diagonal &= ddManager.getRange(pair.first) && ddManager.getRange(pair.second);
+                }
+                return diagonal;
+            }
+            
             template storm::dd::Bdd<storm::dd::DdType::CUDD> computeReachableStates(storm::dd::Bdd<storm::dd::DdType::CUDD> const& initialStates, storm::dd::Bdd<storm::dd::DdType::CUDD> const& transitions, std::set<storm::expressions::Variable> const& rowMetaVariables, std::set<storm::expressions::Variable> const& columnMetaVariables);
             template storm::dd::Bdd<storm::dd::DdType::Sylvan> computeReachableStates(storm::dd::Bdd<storm::dd::DdType::Sylvan> const& initialStates, storm::dd::Bdd<storm::dd::DdType::Sylvan> const& transitions, std::set<storm::expressions::Variable> const& rowMetaVariables, std::set<storm::expressions::Variable> const& columnMetaVariables);
-            
+
+            template storm::dd::Add<storm::dd::DdType::CUDD, double> getRowColumnDiagonal(storm::dd::DdManager<storm::dd::DdType::CUDD> const& ddManager, std::vector<std::pair<storm::expressions::Variable, storm::expressions::Variable>> const& rowColumnMetaVariablePairs);
+            template storm::dd::Add<storm::dd::DdType::Sylvan, double> getRowColumnDiagonal(storm::dd::DdManager<storm::dd::DdType::Sylvan> const& ddManager, std::vector<std::pair<storm::expressions::Variable, storm::expressions::Variable>> const& rowColumnMetaVariablePairs);
+
+            template storm::dd::Bdd<storm::dd::DdType::CUDD> getRowColumnDiagonal(storm::dd::DdManager<storm::dd::DdType::CUDD> const& ddManager, std::vector<std::pair<storm::expressions::Variable, storm::expressions::Variable>> const& rowColumnMetaVariablePairs);
+            template storm::dd::Bdd<storm::dd::DdType::Sylvan> getRowColumnDiagonal(storm::dd::DdManager<storm::dd::DdType::Sylvan> const& ddManager, std::vector<std::pair<storm::expressions::Variable, storm::expressions::Variable>> const& rowColumnMetaVariablePairs);
+
+            template storm::dd::Add<storm::dd::DdType::Sylvan, storm::RationalNumber> getRowColumnDiagonal(storm::dd::DdManager<storm::dd::DdType::Sylvan> const& ddManager, std::vector<std::pair<storm::expressions::Variable, storm::expressions::Variable>> const& rowColumnMetaVariablePairs);
+            template storm::dd::Add<storm::dd::DdType::Sylvan, storm::RationalFunction> getRowColumnDiagonal(storm::dd::DdManager<storm::dd::DdType::Sylvan> const& ddManager, std::vector<std::pair<storm::expressions::Variable, storm::expressions::Variable>> const& rowColumnMetaVariablePairs);
+
         }
     }
 }

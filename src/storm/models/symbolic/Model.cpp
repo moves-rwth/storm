@@ -13,8 +13,10 @@
 
 #include "storm/models/symbolic/StandardRewardModel.h"
 
-#include "storm-config.h"
-#include "storm/adapters/CarlAdapter.h"
+#include "storm/utility/macros.h"
+#include "storm/utility/dd.h"
+
+#include "storm/exceptions/NotSupportedException.h"
 
 namespace storm {
     namespace models {
@@ -146,12 +148,7 @@ namespace storm {
             
             template<storm::dd::DdType Type, typename ValueType>
             storm::dd::Add<Type, ValueType> Model<Type, ValueType>::getRowColumnIdentity() const {
-                storm::dd::Add<Type, ValueType> result = this->getManager().template getAddOne<ValueType>();
-                for (auto const& pair : this->getRowColumnMetaVariablePairs()) {
-                    result *= this->getManager().template getIdentity<ValueType>(pair.first).equals(this->getManager().template getIdentity<ValueType>(pair.second)).template toAdd<ValueType>();
-                    result *= this->getManager().getRange(pair.first).template toAdd<ValueType>() * this->getManager().getRange(pair.second).template toAdd<ValueType>();
-                }
-                return result;
+                return storm::utility::dd::getRowColumnDiagonal<Type, ValueType>(this->getManager(), this->getRowColumnMetaVariablePairs());
             }
             
             template<storm::dd::DdType Type, typename ValueType>
@@ -271,12 +268,32 @@ namespace storm {
                 return true;
             }
             
+            template<storm::dd::DdType Type, typename ValueType>
+            void Model<Type, ValueType>::addParameters(std::set<storm::RationalFunctionVariable> const& parameters) {
+                STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "This value type does not support parameters.");
+            }
+            
+            template<storm::dd::DdType Type, typename ValueType>
+            std::set<storm::RationalFunctionVariable> const& Model<Type, ValueType>::getParameters() const {
+                STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "This value type does not support parameters.");
+            }
+
+            template<>
+            void Model<storm::dd::DdType::Sylvan, storm::RationalFunction>::addParameters(std::set<storm::RationalFunctionVariable> const& parameters) {
+                this->parameters.insert(parameters.begin(), parameters.end());
+            }
+            
+            template<>
+            std::set<storm::RationalFunctionVariable> const& Model<storm::dd::DdType::Sylvan, storm::RationalFunction>::getParameters() const {
+                return parameters;
+            }
+
             // Explicitly instantiate the template class.
             template class Model<storm::dd::DdType::CUDD, double>;
             template class Model<storm::dd::DdType::Sylvan, double>;
-#ifdef STORM_HAVE_CARL
+            
+            template class Model<storm::dd::DdType::Sylvan, storm::RationalNumber>;
 			template class Model<storm::dd::DdType::Sylvan, storm::RationalFunction>;
-#endif
         } // namespace symbolic
     } // namespace models
 } // namespace storm

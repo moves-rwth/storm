@@ -1,27 +1,7 @@
-#ifndef STORM_ADAPTERS_CARLADAPTER_H_
-#define STORM_ADAPTERS_CARLADAPTER_H_
+#pragma once
 
-// Include config to know whether CARL is available or not.
-#include "storm-config.h"
+#include "storm/adapters/NumberAdapter.h"
 
-#include <boost/multiprecision/gmp.hpp>
-
-#ifdef STORM_HAVE_CLN
-#pragma clang diagnostic push
-#pragma clang diagnostic ignored "-Wmismatched-tags"
-
-#pragma GCC diagnostic push
-
-#include <cln/cln.h>
-
-#pragma GCC diagnostic pop
-#pragma clang diagnostic pop
-
-#endif
-
-#ifdef STORM_HAVE_CARL
-
-#include <carl/numbers/numbers.h>
 #include <carl/core/MultivariatePolynomial.h>
 #include <carl/core/RationalFunction.h>
 #include <carl/core/VariablePool.h>
@@ -58,27 +38,20 @@ namespace carl {
 
 }
 
-inline size_t hash_value(mpq_class const& q) {
-    std::hash<mpq_class> h;
-    return h(q);
-}
-
-
-#if defined STORM_HAVE_CLN && defined STORM_USE_CLN_NUMBERS
-namespace cln {
-    inline size_t hash_value(cl_RA const& n) {
-        std::hash<cln::cl_RA> h;
-        return h(n);
-    }
-}
-#endif
-
-
-#include "NumberAdapter.h"
-
 namespace storm {
     typedef carl::Variable RationalFunctionVariable;
-    typedef carl::MultivariatePolynomial<RationalNumber> RawPolynomial;
+
+#if defined(STORM_HAVE_CLN) && defined(STORM_USE_CLN_RF)
+    typedef cln::cl_RA RationalFunctionCoefficient;
+#elif defined(STORM_HAVE_GMP) && !defined(STORM_USE_CLN_RF)
+    typedef mpq_class RationalFunctionCoefficient;
+#elif defined(STORM_USE_CLN_RF)
+#error CLN is to be used, but is not available.
+#else
+#error GMP is to be used, but is not available.
+#endif
+    
+    typedef carl::MultivariatePolynomial<RationalFunctionCoefficient> RawPolynomial;
     typedef carl::FactorizedPolynomial<RawPolynomial> Polynomial;
 	typedef carl::Cache<carl::PolynomialFactorizationPair<RawPolynomial>> RawPolynomialCache;
     typedef carl::Relation CompareRelation;
@@ -87,7 +60,3 @@ namespace storm {
     typedef carl::Interval<double> Interval;
     template<typename T> using ArithConstraint = carl::SimpleConstraint<T>;
 }
-
-#endif
-
-#endif /* STORM_ADAPTERS_CARLADAPTER_H_ */

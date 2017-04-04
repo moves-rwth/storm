@@ -109,7 +109,7 @@ namespace storm {
             // After having solved the system, we need to revert the transition system if we kept it local.
             if (localA) {
                 localA->convertToEquationSystem();
-            };
+            }
 
             return true;
         }

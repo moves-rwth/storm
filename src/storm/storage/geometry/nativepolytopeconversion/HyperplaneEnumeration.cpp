@@ -27,7 +27,7 @@ namespace storm {
                         std::vector<uint_fast64_t> const& subset = subsetEnum.getCurrentSubset();
 
                         EigenMatrix subMatrix(dimension, dimension);
-                        EigenVector subVector(dimension);
+                        EigenVector subVector(static_cast<unsigned long>(dimension));
                         for (uint_fast64_t i = 0; i < dimension; ++i){
                             subMatrix.row(i) = constraintMatrix.row(subset[i]);
                             subVector(i) = constraintVector(subset[i]);
@@ -35,7 +35,7 @@ namespace storm {
 
                         EigenVector point = subMatrix.fullPivLu().solve(subVector);
                         bool pointContained = true;
-                        for(uint_fast64_t row=0; row < constraintMatrix.rows(); ++row){
+                        for(int_fast64_t row=0; row < constraintMatrix.rows(); ++row){
                             if((constraintMatrix.row(row) * point)(0) > constraintVector(row)){
                                 pointContained = false;
                                 break;

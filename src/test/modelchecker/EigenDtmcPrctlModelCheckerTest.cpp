@@ -132,10 +132,10 @@ TEST(EigenDtmcPrctlModelCheckerTest, Die_RationalFunction) {
     ASSERT_EQ(dtmc->getNumberOfStates(), 13ull);
     ASSERT_EQ(dtmc->getNumberOfTransitions(), 20ull);
     
-    std::map<storm::RationalFunctionVariable, storm::RationalNumber> instantiation;
+    std::map<storm::RationalFunctionVariable, storm::RationalFunctionCoefficient> instantiation;
     std::set<storm::RationalFunctionVariable> variables = storm::models::sparse::getProbabilityParameters(*dtmc);
     ASSERT_EQ(variables.size(), 1ull);
-    instantiation.emplace(*variables.begin(), storm::RationalNumber(1) / storm::RationalNumber(2));
+    instantiation.emplace(*variables.begin(), storm::utility::one<storm::RationalFunctionCoefficient>() / storm::utility::convertNumber<storm::RationalFunctionCoefficient>(2));
     
     storm::modelchecker::SparseDtmcPrctlModelChecker<storm::models::sparse::Dtmc<storm::RationalFunction>> checker(*dtmc, std::make_unique<storm::solver::EigenLinearEquationSolverFactory<storm::RationalFunction>>());
     
@@ -144,28 +144,28 @@ TEST(EigenDtmcPrctlModelCheckerTest, Die_RationalFunction) {
     std::unique_ptr<storm::modelchecker::CheckResult> result = checker.check(*formula);
     storm::modelchecker::ExplicitQuantitativeCheckResult<storm::RationalFunction>& quantitativeResult1 = result->asExplicitQuantitativeCheckResult<storm::RationalFunction>();
     
-    EXPECT_EQ(storm::RationalNumber(1) / storm::RationalNumber(6), quantitativeResult1[0].evaluate(instantiation));
+    EXPECT_EQ(storm::utility::one<storm::RationalFunctionCoefficient>() / storm::utility::convertNumber<storm::RationalFunctionCoefficient>(6), quantitativeResult1[0].evaluate(instantiation));
     
     formula = formulaParser.parseSingleFormulaFromString("P=? [F \"two\"]");
     
     result = checker.check(*formula);
     storm::modelchecker::ExplicitQuantitativeCheckResult<storm::RationalFunction>& quantitativeResult2 = result->asExplicitQuantitativeCheckResult<storm::RationalFunction>();
     
-    EXPECT_EQ(storm::RationalNumber(1) / storm::RationalNumber(6), quantitativeResult2[0].evaluate(instantiation));
+    EXPECT_EQ(storm::utility::one<storm::RationalFunctionCoefficient>() / storm::utility::convertNumber<storm::RationalFunctionCoefficient>(6), quantitativeResult2[0].evaluate(instantiation));
     
     formula = formulaParser.parseSingleFormulaFromString("P=? [F \"three\"]");
     
     result = checker.check(*formula);
     storm::modelchecker::ExplicitQuantitativeCheckResult<storm::RationalFunction>& quantitativeResult3 = result->asExplicitQuantitativeCheckResult<storm::RationalFunction>();
     
-    EXPECT_EQ(storm::RationalNumber(1) / storm::RationalNumber(6), quantitativeResult3[0].evaluate(instantiation));
+    EXPECT_EQ(storm::utility::one<storm::RationalFunctionCoefficient>() / storm::utility::convertNumber<storm::RationalFunctionCoefficient>(6), quantitativeResult3[0].evaluate(instantiation));
     
     formula = formulaParser.parseSingleFormulaFromString("R=? [F \"done\"]");
     
     result = checker.check(*formula);
     storm::modelchecker::ExplicitQuantitativeCheckResult<storm::RationalFunction>& quantitativeResult4 = result->asExplicitQuantitativeCheckResult<storm::RationalFunction>();
     
-    EXPECT_EQ(storm::RationalNumber(11) / storm::RationalNumber(3), quantitativeResult4[0].evaluate(instantiation));
+    EXPECT_EQ(storm::utility::convertNumber<storm::RationalFunctionCoefficient>(11) / storm::utility::convertNumber<storm::RationalFunctionCoefficient>(3), quantitativeResult4[0].evaluate(instantiation));
 }
 #endif
 

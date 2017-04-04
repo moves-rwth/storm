@@ -1,5 +1,6 @@
 /*
- * Copyright 2011-2015 Formal Methods and Tools, University of Twente
+ * Copyright 2011-2016 Formal Methods and Tools, University of Twente
+ * Copyright 2016 Tom van Dijk, Johannes Kepler University Linz
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,7 +25,7 @@
 #include <string.h> // for strerror
 #include <sys/mman.h> // for mmap
 
-#include <refs.h>
+#include <sylvan_refs.h>
 
 #ifndef compiler_barrier
 #define compiler_barrier() { asm volatile("" ::: "memory"); }

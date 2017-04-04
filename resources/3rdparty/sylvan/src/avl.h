@@ -1,5 +1,6 @@
 /*
- * Copyright 2011-2014 Formal Methods and Tools, University of Twente
+ * Copyright 2011-2016 Formal Methods and Tools, University of Twente
+ * Copyright 2016 Tom van Dijk, Johannes Kepler University Linz
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -282,7 +283,7 @@ NAME##_put(avl_node_t **root, TYPE *data, int *inserted)                        
 static __attribute__((unused)) int                                                          \
 NAME##_insert(avl_node_t **root, TYPE *data)                                                \
 {                                                                                           \
-    int inserted;                                                                           \
+    int inserted = 0;                                                                       \
     NAME##_put(root, data, &inserted);                                                      \
     return inserted;                                                                        \
 }                                                                                           \

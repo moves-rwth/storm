@@ -412,216 +412,6 @@ TEST(SylvanDd, EncodingTest) {
     EXPECT_EQ(2ul, add.getLeafCount());
 }
 
-#ifdef STORM_HAVE_CARL
-TEST(SylvanDd, RationalFunctionLeaveReplacementNonVariable) {
-	std::shared_ptr<storm::dd::DdManager<storm::dd::DdType::Sylvan>> manager(new storm::dd::DdManager<storm::dd::DdType::Sylvan>());
-	storm::dd::Add<storm::dd::DdType::Sylvan, storm::RationalFunction> zero;
-    ASSERT_NO_THROW(zero = manager->template getAddZero<storm::RationalFunction>());
-	
-	std::map<storm::RationalFunctionVariable, std::pair<storm::expressions::Variable, std::pair<storm::RationalNumber, storm::RationalNumber>>> replacementMap;
-	storm::dd::Add<storm::dd::DdType::Sylvan, storm::RationalFunction> zeroReplacementResult = zero.replaceLeaves(replacementMap);
-	
-	EXPECT_EQ(0ul, zeroReplacementResult.getNonZeroCount());
-    EXPECT_EQ(1ul, zeroReplacementResult.getLeafCount());
-    EXPECT_EQ(1ul, zeroReplacementResult.getNodeCount());
-	EXPECT_TRUE(zeroReplacementResult == zero);
-}
-
-TEST(SylvanDd, RationalFunctionLeaveReplacementSimpleVariable) {
-	std::shared_ptr<storm::dd::DdManager<storm::dd::DdType::Sylvan>> manager(new storm::dd::DdManager<storm::dd::DdType::Sylvan>());
-	
-	storm::dd::Add<storm::dd::DdType::Sylvan, storm::RationalFunction> function;
-	
-	std::shared_ptr<storm::RawPolynomialCache> cache = std::make_shared<storm::RawPolynomialCache>();
-	
-	carl::StringParser parser;
-	parser.setVariables({"x"});
-	
-	storm::RawPolynomial polyX = parser.parseMultivariatePolynomial<storm::RationalNumber>("x");	
-	storm::RationalFunction variableX = storm::RationalFunction(storm::Polynomial(polyX, cache));
-	
-	ASSERT_NO_THROW(function = manager->template getConstant<storm::RationalFunction>(variableX));
-	
-	std::pair<storm::expressions::Variable, storm::expressions::Variable> xExpr;
-	ASSERT_NO_THROW(xExpr = manager->addMetaVariable("x", 0, 1));
-	
-	std::map<storm::RationalFunctionVariable, std::pair<storm::expressions::Variable, std::pair<storm::RationalNumber, storm::RationalNumber>>> replacementMap;
-	storm::RationalNumber rnOneThird = storm::RationalNumber(1) / storm::RationalNumber(3);
-	storm::RationalNumber rnTwoThird = storm::RationalNumber(2) / storm::RationalNumber(3);
-	replacementMap.insert(std::make_pair(parser.variables().find("x")->second, std::make_pair(xExpr.first, std::make_pair(rnOneThird, rnTwoThird))));
-	
-	storm::dd::Add<storm::dd::DdType::Sylvan, storm::RationalFunction> replacedAddSimpleX = function.replaceLeaves(replacementMap);
-	
-	storm::dd::Bdd<storm::dd::DdType::Sylvan> bddX0 = manager->getEncoding(xExpr.first, 0);
-	storm::dd::Bdd<storm::dd::DdType::Sylvan> bddX1 = manager->getEncoding(xExpr.first, 1);
-
-	storm::dd::Add<storm::dd::DdType::Sylvan, storm::RationalFunction> complexAdd = 
-          (bddX0.template toAdd<storm::RationalFunction>() * manager->template getConstant<storm::RationalFunction>(storm::RationalFunction(rnTwoThird)))
-        + (bddX1.template toAdd<storm::RationalFunction>() * manager->template getConstant<storm::RationalFunction>(storm::RationalFunction(rnOneThird)));
-	
-	EXPECT_EQ(2ul, replacedAddSimpleX.getNonZeroCount());
-    EXPECT_EQ(2ul, replacedAddSimpleX.getLeafCount());
-    EXPECT_EQ(3ul, replacedAddSimpleX.getNodeCount());
-	EXPECT_TRUE(replacedAddSimpleX == complexAdd);
-	
-	storm::dd::Add<storm::dd::DdType::Sylvan, double> abstractedAddMax = replacedAddSimpleX.toDouble().maxAbstract({xExpr.first});
-	storm::dd::Add<storm::dd::DdType::Sylvan, double> abstractedAddMin = replacedAddSimpleX.toDouble().minAbstract({xExpr.first});
-	EXPECT_TRUE(abstractedAddMax == manager->template getConstant<double>(0.66666666666666666666));
-	EXPECT_TRUE(abstractedAddMin == manager->template getConstant<double>(0.33333333333333333333));
-}
-
-TEST(SylvanDd, RationalFunctionLeaveReplacementTwoVariables) {
-	std::shared_ptr<storm::dd::DdManager<storm::dd::DdType::Sylvan>> manager(new storm::dd::DdManager<storm::dd::DdType::Sylvan>());
-	
-	storm::dd::Add<storm::dd::DdType::Sylvan, storm::RationalFunction> function;
-	std::shared_ptr<storm::RawPolynomialCache> cache = std::make_shared<storm::RawPolynomialCache>();
-	carl::StringParser parser;
-	parser.setVariables({"x", "y"});
-	
-	storm::RationalFunction variableX(storm::Polynomial(parser.template parseMultivariatePolynomial<storm::RationalNumber>("x"), cache));
-	storm::RationalFunction variableY(storm::Polynomial(parser.template parseMultivariatePolynomial<storm::RationalNumber>("y"), cache));
-	ASSERT_NO_THROW(function = manager->template getConstant<storm::RationalFunction>(variableX * variableY));
-	
-	std::pair<storm::expressions::Variable, storm::expressions::Variable> xExpr;
-	std::pair<storm::expressions::Variable, storm::expressions::Variable> yExpr;
-	ASSERT_NO_THROW(xExpr = manager->addMetaVariable("x", 0, 1));
-	ASSERT_NO_THROW(yExpr = manager->addMetaVariable("y", 0, 1));
-	
-	std::map<storm::RationalFunctionVariable, std::pair<storm::expressions::Variable, std::pair<storm::RationalNumber, storm::RationalNumber>>> replacementMap;
-	storm::RationalNumber rnOneThird = storm::RationalNumber(1) / storm::RationalNumber(3);
-	storm::RationalNumber rnTwoThird = storm::RationalNumber(2) / storm::RationalNumber(3);
-	storm::RationalNumber rnOne = storm::RationalNumber(1);
-	storm::RationalNumber rnTen = storm::RationalNumber(10);
-	replacementMap.insert(std::make_pair(parser.variables().find("x")->second, std::make_pair(xExpr.first, std::make_pair(rnOneThird, rnTwoThird))));
-	replacementMap.insert(std::make_pair(parser.variables().find("y")->second, std::make_pair(yExpr.first, std::make_pair(rnOne, rnTen))));
-	
-	storm::dd::Add<storm::dd::DdType::Sylvan, storm::RationalFunction> replacedAdd = function.replaceLeaves(replacementMap);
-	
-	storm::dd::Bdd<storm::dd::DdType::Sylvan> bddX0 = manager->getEncoding(xExpr.first, 0);
-	storm::dd::Bdd<storm::dd::DdType::Sylvan> bddX1 = manager->getEncoding(xExpr.first, 1);
-	storm::dd::Bdd<storm::dd::DdType::Sylvan> bddY0 = manager->getEncoding(yExpr.first, 0);
-	storm::dd::Bdd<storm::dd::DdType::Sylvan> bddY1 = manager->getEncoding(yExpr.first, 1);
-
-	storm::dd::Add<storm::dd::DdType::Sylvan, storm::RationalFunction> complexAdd = 
-          ((bddX0 && bddY0).template toAdd<storm::RationalFunction>() * manager->template getConstant<storm::RationalFunction>(storm::RationalFunction(rnTwoThird * rnTen)))
-        + ((bddX0 && bddY1).template toAdd<storm::RationalFunction>() * manager->template getConstant<storm::RationalFunction>(storm::RationalFunction(rnTwoThird)))
-		+ ((bddX1 && bddY0).template toAdd<storm::RationalFunction>() * manager->template getConstant<storm::RationalFunction>(storm::RationalFunction(rnOneThird * rnTen)))
-		+ ((bddX1 && bddY1).template toAdd<storm::RationalFunction>() * manager->template getConstant<storm::RationalFunction>(storm::RationalFunction(rnOneThird)));
-	
-	EXPECT_EQ(4ul, replacedAdd.getNonZeroCount());
-    EXPECT_EQ(4ul, replacedAdd.getLeafCount());
-    EXPECT_EQ(7ul, replacedAdd.getNodeCount());
-	EXPECT_TRUE(replacedAdd == complexAdd);
-}
-
-TEST(SylvanDd, RationalFunctionCarlSubstituteTest) {
-	std::shared_ptr<storm::RawPolynomialCache> cache = std::make_shared<storm::RawPolynomialCache>();
-	carl::StringParser parser;
-	parser.setVariables({"x", "y", "z"});
-	storm::RationalFunction zHalfed = storm::RationalFunction(storm::Polynomial(parser.template parseMultivariatePolynomial<storm::RationalNumber>("z"), cache), storm::Polynomial(parser.template parseMultivariatePolynomial<storm::RationalNumber>("2"), cache));
-	storm::RationalFunction rationalFunction = storm::RationalFunction(storm::Polynomial(parser.parseMultivariatePolynomial<storm::RationalNumber>("2*x+x*y"), cache), storm::Polynomial(parser.parseMultivariatePolynomial<storm::RationalNumber>("1"), cache)) + zHalfed;
-	
-	std::map<storm::RationalFunctionVariable, storm::RationalNumber> replacement = {{parser.variables().find("x")->second, storm::RationalNumber(2)}};
-	storm::RationalFunction subX = rationalFunction.substitute(replacement);
-	
-	storm::RationalFunction cmp = storm::RationalFunction(storm::Polynomial(parser.template parseMultivariatePolynomial<storm::RationalNumber>("4+2*y"), cache), storm::Polynomial(parser.template parseMultivariatePolynomial<storm::RationalNumber>("1"), cache)) + zHalfed;
-	EXPECT_EQ(subX, cmp);
-	
-	storm::RawPolynomial poly(parser.template parseMultivariatePolynomial<storm::RationalNumber>("2*x+x*y") + parser.template parseMultivariatePolynomial<storm::RationalNumber>("z") / storm::RationalNumber(2));
-	storm::RawPolynomial polySub = poly.substitute(replacement);
-	EXPECT_EQ(polySub, parser.template parseMultivariatePolynomial<storm::RationalNumber>("4+2*y") + parser.template parseMultivariatePolynomial<storm::RationalNumber>("z") / storm::RationalNumber(2));
-}
-
-TEST(SylvanDd, RationalFunctionLeaveReplacementComplexFunction) {
-	std::shared_ptr<storm::dd::DdManager<storm::dd::DdType::Sylvan>> manager(new storm::dd::DdManager<storm::dd::DdType::Sylvan>());
-	
-	storm::dd::Add<storm::dd::DdType::Sylvan, storm::RationalFunction> function;
-	std::shared_ptr<storm::RawPolynomialCache> cache = std::make_shared<storm::RawPolynomialCache>();
-	carl::StringParser parser;
-	parser.setVariables({"x", "y", "z"});
-	storm::RationalFunction zDivTwoY = storm::RationalFunction(storm::Polynomial(parser.template parseMultivariatePolynomial<storm::RationalNumber>("z"), cache), storm::Polynomial(parser.template parseMultivariatePolynomial<storm::RationalNumber>("2*y"), cache));
-
-	storm::RationalFunction rationalFunction = storm::RationalFunction(storm::Polynomial(parser.parseMultivariatePolynomial<storm::RationalNumber>("2*x+x*y"), cache), storm::Polynomial(parser.parseMultivariatePolynomial<storm::RationalNumber>("1"), cache)) + zDivTwoY;	
-	ASSERT_NO_THROW(function = manager->template getConstant<storm::RationalFunction>(rationalFunction));
-	
-	std::pair<storm::expressions::Variable, storm::expressions::Variable> xExpr;
-	std::pair<storm::expressions::Variable, storm::expressions::Variable> yExpr;
-	std::pair<storm::expressions::Variable, storm::expressions::Variable> zExpr;
-	ASSERT_NO_THROW(xExpr = manager->addMetaVariable("x", 0, 1));
-	ASSERT_NO_THROW(yExpr = manager->addMetaVariable("y", 0, 1));
-	ASSERT_NO_THROW(zExpr = manager->addMetaVariable("z", 0, 1));
-	
-	std::map<storm::RationalFunctionVariable, std::pair<storm::expressions::Variable, std::pair<storm::RationalNumber, storm::RationalNumber>>> replacementMap;
-	storm::RationalNumber rnTwo(2);
-	storm::RationalNumber rnThree(3);
-	storm::RationalNumber rnFive(5);
-	storm::RationalNumber rnSeven(7);
-	storm::RationalNumber rnEleven(11);
-	storm::RationalNumber rnThirteen(13);
-	replacementMap.insert(std::make_pair(parser.variables().find("x")->second, std::make_pair(xExpr.first, std::make_pair(rnTwo, rnSeven))));
-	replacementMap.insert(std::make_pair(parser.variables().find("y")->second, std::make_pair(yExpr.first, std::make_pair(rnThree, rnEleven))));
-	replacementMap.insert(std::make_pair(parser.variables().find("z")->second, std::make_pair(zExpr.first, std::make_pair(rnFive, rnThirteen))));
-	
-	storm::dd::Add<storm::dd::DdType::Sylvan, storm::RationalFunction> replacedAdd = function.replaceLeaves(replacementMap);
-	
-	storm::dd::Bdd<storm::dd::DdType::Sylvan> bddX0 = manager->getEncoding(xExpr.first, 0);
-	storm::dd::Bdd<storm::dd::DdType::Sylvan> bddX1 = manager->getEncoding(xExpr.first, 1);
-	storm::dd::Bdd<storm::dd::DdType::Sylvan> bddY0 = manager->getEncoding(yExpr.first, 0);
-	storm::dd::Bdd<storm::dd::DdType::Sylvan> bddY1 = manager->getEncoding(yExpr.first, 1);
-	storm::dd::Bdd<storm::dd::DdType::Sylvan> bddZ0 = manager->getEncoding(zExpr.first, 0);
-	storm::dd::Bdd<storm::dd::DdType::Sylvan> bddZ1 = manager->getEncoding(zExpr.first, 1);
-
-	auto f = [&](bool x, bool y, bool z) {
-		storm::RationalNumber result(2);
-		if (!x) {
-			result *= rnSeven;
-		} else {
-			result *= rnTwo;
-		}
-		
-		storm::RationalNumber partTwo(1);
-		if (!x) {
-			partTwo *= rnSeven;
-		} else {
-			partTwo *= rnTwo;
-		}
-		if (!y) {
-			partTwo *= rnEleven;
-		} else {
-			partTwo *= rnThree;
-		}
-		
-		storm::RationalNumber partThree(1);
-		if (!z) {
-			partThree *= rnThirteen;
-		} else {
-			partThree *= rnFive;
-		}
-		if (!y) {
-			partThree /= storm::RationalNumber(2) * rnEleven;
-		} else {
-			partThree /= storm::RationalNumber(2) * rnThree;
-		}
-		
-		return result + partTwo + partThree;
-	};
-	
-	storm::dd::Add<storm::dd::DdType::Sylvan, storm::RationalFunction> complexAdd = 
-          ((bddX0 && (bddY0 && bddZ0)).template toAdd<storm::RationalFunction>() * manager->template getConstant<storm::RationalFunction>(storm::RationalFunction(f(false, false, false))))
-		+ ((bddX0 && (bddY0 && bddZ1)).template toAdd<storm::RationalFunction>() * manager->template getConstant<storm::RationalFunction>(storm::RationalFunction(f(false, false, true))))
-		+ ((bddX0 && (bddY1 && bddZ0)).template toAdd<storm::RationalFunction>() * manager->template getConstant<storm::RationalFunction>(storm::RationalFunction(f(false, true, false))))
-		+ ((bddX0 && (bddY1 && bddZ1)).template toAdd<storm::RationalFunction>() * manager->template getConstant<storm::RationalFunction>(storm::RationalFunction(f(false, true, true))))
-		+ ((bddX1 && (bddY0 && bddZ0)).template toAdd<storm::RationalFunction>() * manager->template getConstant<storm::RationalFunction>(storm::RationalFunction(f(true, false, false))))
-		+ ((bddX1 && (bddY0 && bddZ1)).template toAdd<storm::RationalFunction>() * manager->template getConstant<storm::RationalFunction>(storm::RationalFunction(f(true, false, true))))
-		+ ((bddX1 && (bddY1 && bddZ0)).template toAdd<storm::RationalFunction>() * manager->template getConstant<storm::RationalFunction>(storm::RationalFunction(f(true, true, false))))
-		+ ((bddX1 && (bddY1 && bddZ1)).template toAdd<storm::RationalFunction>() * manager->template getConstant<storm::RationalFunction>(storm::RationalFunction(f(true, true, true))));
-	
-	EXPECT_EQ(8ul, replacedAdd.getNonZeroCount());
-    EXPECT_EQ(8ul, replacedAdd.getLeafCount());
-    EXPECT_EQ(15ul, replacedAdd.getNodeCount());
-	EXPECT_TRUE(replacedAdd == complexAdd);
-}
-
 TEST(SylvanDd, RationalFunctionConstants) {
     std::shared_ptr<storm::dd::DdManager<storm::dd::DdType::Sylvan>> manager(new storm::dd::DdManager<storm::dd::DdType::Sylvan>());
     storm::dd::Add<storm::dd::DdType::Sylvan, storm::RationalFunction> zero;
@@ -652,8 +442,8 @@ TEST(SylvanDd, RationalFunctionConstants) {
 	carl::StringParser parser;
 	parser.setVariables({"x", "y", "z"});
 	
-	storm::RationalFunction partA = storm::RationalFunction(storm::Polynomial(parser.template parseMultivariatePolynomial<storm::RationalNumber>("2*x+x*y"), cache));
-	storm::RationalFunction partB = storm::RationalFunction(storm::Polynomial(parser.template parseMultivariatePolynomial<storm::RationalNumber>("z"), cache), storm::Polynomial(parser.template parseMultivariatePolynomial<storm::RationalNumber>("2*y"), cache));
+	storm::RationalFunction partA = storm::RationalFunction(storm::Polynomial(parser.template parseMultivariatePolynomial<storm::RationalFunctionCoefficient>("2*x+x*y"), cache));
+	storm::RationalFunction partB = storm::RationalFunction(storm::Polynomial(parser.template parseMultivariatePolynomial<storm::RationalFunctionCoefficient>("z"), cache), storm::Polynomial(parser.template parseMultivariatePolynomial<storm::RationalFunctionCoefficient>("2*y"), cache));
 
 	storm::RationalFunction rationalFunction = storm::RationalFunction(partA + partB);
 	
@@ -682,19 +472,19 @@ TEST(SylvanDd, RationalFunctionToDouble) {
 	storm::dd::Bdd<storm::dd::DdType::Sylvan> bddZ1 = manager->getEncoding(zExpr.first, 1);
 	
 	storm::dd::Add<storm::dd::DdType::Sylvan, storm::RationalFunction> complexAdd = 
-          ((bddX0 && (bddY0 && bddZ0)).template toAdd<storm::RationalFunction>() * manager->template getConstant<storm::RationalFunction>(storm::RationalFunction(storm::RationalNumber(-1))))
-		+ ((bddX0 && (bddY0 && bddZ1)).template toAdd<storm::RationalFunction>() * manager->template getConstant<storm::RationalFunction>(storm::RationalFunction(storm::RationalNumber(0))))
-		+ ((bddX0 && (bddY1 && bddZ0)).template toAdd<storm::RationalFunction>() * manager->template getConstant<storm::RationalFunction>(storm::RationalFunction(storm::RationalNumber(1) / storm::RationalNumber(2))))
-		+ ((bddX0 && (bddY1 && bddZ1)).template toAdd<storm::RationalFunction>() * manager->template getConstant<storm::RationalFunction>(storm::RationalFunction(storm::RationalNumber(1) / storm::RationalNumber(3))))
-		+ ((bddX1 && (bddY0 && bddZ0)).template toAdd<storm::RationalFunction>() * manager->template getConstant<storm::RationalFunction>(storm::RationalFunction(storm::RationalNumber(100000))))
-		+ ((bddX1 && (bddY0 && bddZ1)).template toAdd<storm::RationalFunction>() * manager->template getConstant<storm::RationalFunction>(storm::RationalFunction(storm::RationalNumber(3))))
-		+ ((bddX1 && (bddY1 && bddZ0)).template toAdd<storm::RationalFunction>() * manager->template getConstant<storm::RationalFunction>(storm::RationalFunction(storm::RationalNumber(4))))
-		+ ((bddX1 && (bddY1 && bddZ1)).template toAdd<storm::RationalFunction>() * manager->template getConstant<storm::RationalFunction>(storm::RationalFunction(storm::RationalNumber(0))));
+          ((bddX0 && (bddY0 && bddZ0)).template toAdd<storm::RationalFunction>() * manager->template getConstant<storm::RationalFunction>(storm::RationalFunction(storm::RationalFunctionCoefficient(-1))))
+		+ ((bddX0 && (bddY0 && bddZ1)).template toAdd<storm::RationalFunction>() * manager->template getConstant<storm::RationalFunction>(storm::RationalFunction(storm::RationalFunctionCoefficient(0))))
+		+ ((bddX0 && (bddY1 && bddZ0)).template toAdd<storm::RationalFunction>() * manager->template getConstant<storm::RationalFunction>(storm::RationalFunction(storm::RationalFunctionCoefficient(1) / storm::RationalFunctionCoefficient(2))))
+		+ ((bddX0 && (bddY1 && bddZ1)).template toAdd<storm::RationalFunction>() * manager->template getConstant<storm::RationalFunction>(storm::RationalFunction(storm::RationalFunctionCoefficient(1) / storm::RationalFunctionCoefficient(3))))
+		+ ((bddX1 && (bddY0 && bddZ0)).template toAdd<storm::RationalFunction>() * manager->template getConstant<storm::RationalFunction>(storm::RationalFunction(storm::RationalFunctionCoefficient(100000))))
+		+ ((bddX1 && (bddY0 && bddZ1)).template toAdd<storm::RationalFunction>() * manager->template getConstant<storm::RationalFunction>(storm::RationalFunction(storm::RationalFunctionCoefficient(3))))
+		+ ((bddX1 && (bddY1 && bddZ0)).template toAdd<storm::RationalFunction>() * manager->template getConstant<storm::RationalFunction>(storm::RationalFunction(storm::RationalFunctionCoefficient(4))))
+		+ ((bddX1 && (bddY1 && bddZ1)).template toAdd<storm::RationalFunction>() * manager->template getConstant<storm::RationalFunction>(storm::RationalFunction(storm::RationalFunctionCoefficient(0))));
 	EXPECT_EQ(6ul, complexAdd.getNonZeroCount());
     EXPECT_EQ(7ul, complexAdd.getLeafCount());
     EXPECT_EQ(14ul, complexAdd.getNodeCount());
 	
-	storm::dd::Add<storm::dd::DdType::Sylvan, double> doubleAdd = complexAdd.toDouble();
+	storm::dd::Add<storm::dd::DdType::Sylvan, double> doubleAdd = complexAdd.toValueType<double>();
     
     EXPECT_EQ(6ul, doubleAdd.getNonZeroCount());
     EXPECT_EQ(7ul, doubleAdd.getLeafCount());
@@ -730,7 +520,7 @@ TEST(SylvanDd, RationalFunctionEncodingTest) {
     
     storm::dd::Add<storm::dd::DdType::Sylvan, storm::RationalFunction> add;
     ASSERT_NO_THROW(add = encoding.template toAdd<storm::RationalFunction>());
-
+    
     // As an MTBDD, the 0-leaf is there, so the count is actually 2 and the node count is 6.
     EXPECT_EQ(6ul, add.getNodeCount());
     EXPECT_EQ(2ul, add.getLeafCount());
@@ -747,7 +537,6 @@ TEST(SylvanDd, RationalFunctionIdentityTest) {
     EXPECT_EQ(10ul, identity.getLeafCount());
     EXPECT_EQ(21ul, identity.getNodeCount());
 }
-#endif
 
 TEST(SylvanDd, RangeTest) {
     std::shared_ptr<storm::dd::DdManager<storm::dd::DdType::Sylvan>> manager(new storm::dd::DdManager<storm::dd::DdType::Sylvan>());

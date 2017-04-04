@@ -26,20 +26,18 @@ namespace storm {
             // Intentionally left empty.
         }
         
-        template<typename ValueType>
-        InternalBdd<DdType::Sylvan> InternalBdd<DdType::Sylvan>::fromVector(InternalDdManager<DdType::Sylvan> const* ddManager, std::vector<ValueType> const& values, Odd const& odd, std::vector<uint_fast64_t> const& sortedDdVariableIndices, std::function<bool (ValueType const&)> const& filter) {
+        InternalBdd<DdType::Sylvan> InternalBdd<DdType::Sylvan>::fromVector(InternalDdManager<DdType::Sylvan> const* ddManager, Odd const& odd, std::vector<uint_fast64_t> const& sortedDdVariableIndices, std::function<bool (uint64_t)> const& filter) {
             uint_fast64_t offset = 0;
-            return InternalBdd<DdType::Sylvan>(ddManager, sylvan::Bdd(fromVectorRec(offset, 0, sortedDdVariableIndices.size(), values, odd, sortedDdVariableIndices, filter)));
+            return InternalBdd<DdType::Sylvan>(ddManager, sylvan::Bdd(fromVectorRec(offset, 0, sortedDdVariableIndices.size(), odd, sortedDdVariableIndices, filter)));
         }
         
-        template<typename ValueType>
-        BDD InternalBdd<DdType::Sylvan>::fromVectorRec(uint_fast64_t& currentOffset, uint_fast64_t currentLevel, uint_fast64_t maxLevel, std::vector<ValueType> const& values, Odd const& odd, std::vector<uint_fast64_t> const& ddVariableIndices, std::function<bool (ValueType const&)> const& filter) {
+        BDD InternalBdd<DdType::Sylvan>::fromVectorRec(uint_fast64_t& currentOffset, uint_fast64_t currentLevel, uint_fast64_t maxLevel, Odd const& odd, std::vector<uint_fast64_t> const& ddVariableIndices, std::function<bool (uint64_t)> const& filter) {
             if (currentLevel == maxLevel) {
                 // If we are in a terminal node of the ODD, we need to check whether the then-offset of the ODD is one
                 // (meaning the encoding is a valid one) or zero (meaning the encoding is not valid). Consequently, we
                 // need to copy the next value of the vector iff the then-offset is greater than zero.
                 if (odd.getThenOffset() > 0) {
-                    if (filter(values[currentOffset++])) {
+                    if (filter(currentOffset++)) {
                         return sylvan_true;
                     } else {
                         return sylvan_false;
@@ -56,7 +54,7 @@ namespace storm {
                 // Determine the new else-successor.
                 BDD elseSuccessor;
                 if (odd.getElseOffset() > 0) {
-                    elseSuccessor = fromVectorRec(currentOffset, currentLevel + 1, maxLevel, values, odd.getElseSuccessor(), ddVariableIndices, filter);
+                    elseSuccessor = fromVectorRec(currentOffset, currentLevel + 1, maxLevel, odd.getElseSuccessor(), ddVariableIndices, filter);
                 } else {
                     elseSuccessor = sylvan_false;
                 }
@@ -65,7 +63,7 @@ namespace storm {
                 // Determine the new then-successor.
                 BDD thenSuccessor;
                 if (odd.getThenOffset() > 0) {
-                    thenSuccessor = fromVectorRec(currentOffset, currentLevel + 1, maxLevel, values, odd.getThenSuccessor(), ddVariableIndices, filter);
+                    thenSuccessor = fromVectorRec(currentOffset, currentLevel + 1, maxLevel, odd.getThenSuccessor(), ddVariableIndices, filter);
                 } else {
                     thenSuccessor = sylvan_false;
                 }
@@ -256,6 +254,9 @@ namespace storm {
                 return InternalAdd<DdType::Sylvan, ValueType>(ddManager, this->sylvanBdd.toInt64Mtbdd());
 			} 
 #ifdef STORM_HAVE_CARL
+            else if (std::is_same<ValueType, storm::RationalNumber>::value) {
+                return InternalAdd<DdType::Sylvan, ValueType>(ddManager, this->sylvanBdd.toStormRationalNumberMtbdd());
+            } 
 			else if (std::is_same<ValueType, storm::RationalFunction>::value) {
 				return InternalAdd<DdType::Sylvan, ValueType>(ddManager, this->sylvanBdd.toStormRationalFunctionMtbdd());
 			} 
@@ -408,6 +409,40 @@ namespace storm {
             }
         }
         
+        void InternalBdd<DdType::Sylvan>::filterExplicitVector(Odd const& odd, std::vector<uint_fast64_t> const& ddVariableIndices, storm::storage::BitVector const& sourceValues, storm::storage::BitVector& targetValues) const {
+            uint_fast64_t currentIndex = 0;
+            filterExplicitVectorRec(bdd_regular(this->getSylvanBdd().GetBDD()), 0, bdd_isnegated(this->getSylvanBdd().GetBDD()), ddVariableIndices.size(), ddVariableIndices, 0, odd, targetValues, currentIndex, sourceValues);
+        }
+        
+        void InternalBdd<DdType::Sylvan>::filterExplicitVectorRec(BDD dd, uint_fast64_t currentLevel, bool complement, uint_fast64_t maxLevel, std::vector<uint_fast64_t> const& ddVariableIndices, uint_fast64_t currentOffset, storm::dd::Odd const& odd, storm::storage::BitVector& result, uint_fast64_t& currentIndex, storm::storage::BitVector const& values) {
+            // If there are no more values to select, we can directly return.
+            if (dd == sylvan_false && !complement) {
+                return;
+            } else if (dd == sylvan_true && complement) {
+                return;
+            }
+            
+            if (currentLevel == maxLevel) {
+                result.set(currentIndex++, values.get(currentOffset));
+            } else if (ddVariableIndices[currentLevel] < sylvan_var(dd)) {
+                // If we skipped a level, we need to enumerate the explicit entries for the case in which the bit is set
+                // and for the one in which it is not set.
+                filterExplicitVectorRec(dd, currentLevel + 1, complement, maxLevel, ddVariableIndices, currentOffset, odd.getElseSuccessor(), result, currentIndex, values);
+                filterExplicitVectorRec(dd, currentLevel + 1, complement, maxLevel, ddVariableIndices, currentOffset + odd.getElseOffset(), odd.getThenSuccessor(), result, currentIndex, values);
+            } else {
+                // Otherwise, we compute the ODDs for both the then- and else successors.
+                BDD thenDdNode = sylvan_high(dd);
+                BDD elseDdNode = sylvan_low(dd);
+                
+                // Determine whether we have to evaluate the successors as if they were complemented.
+                bool elseComplemented = bdd_isnegated(elseDdNode) ^ complement;
+                bool thenComplemented = bdd_isnegated(thenDdNode) ^ complement;
+                
+                filterExplicitVectorRec(bdd_regular(elseDdNode), currentLevel + 1, elseComplemented, maxLevel, ddVariableIndices, currentOffset, odd.getElseSuccessor(), result, currentIndex, values);
+                filterExplicitVectorRec(bdd_regular(thenDdNode), currentLevel + 1, thenComplemented, maxLevel, ddVariableIndices, currentOffset + odd.getElseOffset(), odd.getThenSuccessor(), result, currentIndex, values);
+            }
+        }
+        
         std::pair<std::vector<storm::expressions::Expression>, std::unordered_map<uint_fast64_t, storm::expressions::Variable>> InternalBdd<DdType::Sylvan>::toExpression(storm::expressions::ExpressionManager& manager) const {
             std::pair<std::vector<storm::expressions::Expression>, std::unordered_map<uint_fast64_t, storm::expressions::Variable>> result;
             
@@ -492,20 +527,19 @@ namespace storm {
             return newNodeVariable;
         }
         
-        template InternalBdd<DdType::Sylvan> InternalBdd<DdType::Sylvan>::fromVector(InternalDdManager<DdType::Sylvan> const* ddManager, std::vector<double> const& values, Odd const& odd, std::vector<uint_fast64_t> const& sortedDdVariableIndices, std::function<bool (double const&)> const& filter);
-        template InternalBdd<DdType::Sylvan> InternalBdd<DdType::Sylvan>::fromVector(InternalDdManager<DdType::Sylvan> const* ddManager, std::vector<uint_fast64_t> const& values, Odd const& odd, std::vector<uint_fast64_t> const& sortedDdVariableIndices, std::function<bool (uint_fast64_t const&)> const& filter);
-		template InternalBdd<DdType::Sylvan> InternalBdd<DdType::Sylvan>::fromVector(InternalDdManager<DdType::Sylvan> const* ddManager, std::vector<storm::RationalFunction> const& values, Odd const& odd, std::vector<uint_fast64_t> const& sortedDdVariableIndices, std::function<bool(storm::RationalFunction const&)> const& filter);
-        
         template InternalAdd<DdType::Sylvan, double> InternalBdd<DdType::Sylvan>::toAdd() const;
         template InternalAdd<DdType::Sylvan, uint_fast64_t> InternalBdd<DdType::Sylvan>::toAdd() const;
+        template InternalAdd<DdType::Sylvan, storm::RationalNumber> InternalBdd<DdType::Sylvan>::toAdd() const;
 		template InternalAdd<DdType::Sylvan, storm::RationalFunction> InternalBdd<DdType::Sylvan>::toAdd() const;
                 
         template void InternalBdd<DdType::Sylvan>::filterExplicitVector(Odd const& odd, std::vector<uint_fast64_t> const& ddVariableIndices, std::vector<double> const& sourceValues, std::vector<double>& targetValues) const;
         template void InternalBdd<DdType::Sylvan>::filterExplicitVector(Odd const& odd, std::vector<uint_fast64_t> const& ddVariableIndices, std::vector<uint_fast64_t> const& sourceValues, std::vector<uint_fast64_t>& targetValues) const;
+        template void InternalBdd<DdType::Sylvan>::filterExplicitVector(Odd const& odd, std::vector<uint_fast64_t> const& ddVariableIndices, std::vector<storm::RationalNumber> const& sourceValues, std::vector<storm::RationalNumber>& targetValues) const;
 		template void InternalBdd<DdType::Sylvan>::filterExplicitVector(Odd const& odd, std::vector<uint_fast64_t> const& ddVariableIndices, std::vector<storm::RationalFunction> const& sourceValues, std::vector<storm::RationalFunction>& targetValues) const;
         
         template InternalAdd<DdType::Sylvan, double> InternalBdd<DdType::Sylvan>::ite(InternalAdd<DdType::Sylvan, double> const& thenAdd, InternalAdd<DdType::Sylvan, double> const& elseAdd) const;
         template InternalAdd<DdType::Sylvan, uint_fast64_t> InternalBdd<DdType::Sylvan>::ite(InternalAdd<DdType::Sylvan, uint_fast64_t> const& thenAdd, InternalAdd<DdType::Sylvan, uint_fast64_t> const& elseAdd) const;
+        template InternalAdd<DdType::Sylvan, storm::RationalNumber> InternalBdd<DdType::Sylvan>::ite(InternalAdd<DdType::Sylvan, storm::RationalNumber> const& thenAdd, InternalAdd<DdType::Sylvan, storm::RationalNumber> const& elseAdd) const;
 		template InternalAdd<DdType::Sylvan, storm::RationalFunction> InternalBdd<DdType::Sylvan>::ite(InternalAdd<DdType::Sylvan, storm::RationalFunction> const& thenAdd, InternalAdd<DdType::Sylvan, storm::RationalFunction> const& elseAdd) const;
     }
 }

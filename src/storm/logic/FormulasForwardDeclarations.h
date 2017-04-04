@@ -23,6 +23,7 @@ namespace storm {
         class MultiObjectiveFormula;
         class NextFormula;
         class OperatorFormula;
+        struct OperatorInformation;
         class PathFormula;
         class ProbabilityOperatorFormula;
         class RewardOperatorFormula;

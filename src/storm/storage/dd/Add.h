@@ -245,24 +245,15 @@ namespace storm {
              * @return The resulting function represented as an ADD.
              */
             Add<LibraryType, ValueType> maximum(Add<LibraryType, ValueType> const& other) const;
-            
-#ifdef STORM_HAVE_CARL
-			/*!
-             * Replaces the leaves in this MTBDD, using the supplied variable replacement map.
-             *
-             * @param replacementMap The variable replacement map.
-             * @return The resulting function represented as an ADD.
-             */
-            Add<LibraryType, ValueType> replaceLeaves(std::map<storm::RationalFunctionVariable, std::pair<storm::expressions::Variable, std::pair<storm::RationalNumber, storm::RationalNumber>>> const& replacementMap) const;
-			
-			/*!
+
+            /*!
              * Replaces the leaves in this MTBDD, converting them to double if possible, and -1.0 else.
              *
              * @return The resulting function represented as an ADD.
              */
-            Add<LibraryType, double> toDouble() const;
-#endif
-			
+            template<typename TargetValueType>
+            Add<LibraryType, TargetValueType> toValueType() const;
+
             /*!
              * Sum-abstracts from the given meta variables.
              *
@@ -276,13 +267,6 @@ namespace storm {
              * @param metaVariables The meta variables from which to abstract.
              */
             Add<LibraryType, ValueType> minAbstract(std::set<storm::expressions::Variable> const& metaVariables) const;
-
-            /*!
-             * Min-abstracts from the given meta variables but treats 0 as the largest possible value.
-             *
-             * @param metaVariables The meta variables from which to abstract.
-             */
-            Add<LibraryType, ValueType> minAbstractExcept0(std::set<storm::expressions::Variable> const& metaVariables) const;
 
 			/*!
              * Similar to <code>minAbstract</code>, but does not abstract from the variables but rather picks a
@@ -318,7 +302,7 @@ namespace storm {
              * @param relative If set to true, not the absolute values have to be within the precision, but the relative
              * values.
              */
-            bool equalModuloPrecision(Add<LibraryType, ValueType> const& other, double precision, bool relative = true) const;
+            bool equalModuloPrecision(Add<LibraryType, ValueType> const& other, ValueType const& precision, bool relative = true) const;
             
             /*!
              * Swaps the given pairs of meta variables in the ADD. The pairs of meta variables must be guaranteed to have
@@ -328,6 +312,15 @@ namespace storm {
              * @return The resulting ADD.
              */
             Add<LibraryType, ValueType> swapVariables(std::vector<std::pair<storm::expressions::Variable, storm::expressions::Variable>> const& metaVariablePairs) const;
+            
+            /*!
+             * Permutes the given pairs of meta variables in the ADD. The pairs of meta variables must be guaranteed to have
+             * the same number of underlying ADD variables. The first component of the i-th entry is substituted by the second component.
+             *
+             * @param metaVariablePairs A vector of meta variable pairs that are to be permuted.
+             * @return The resulting ADD.
+             */
+            Add<LibraryType, ValueType> permuteVariables(std::vector<std::pair<storm::expressions::Variable, storm::expressions::Variable>> const& metaVariablePairs) const;
             
             /*!
              * Multiplies the current ADD (representing a matrix) with the given matrix by summing over the given meta

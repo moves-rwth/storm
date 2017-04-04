@@ -108,7 +108,8 @@ namespace storm {
              * @param oldValues The old vector of values (which is being read).
              * @param newValues The new vector of values (which is being written).
              */
-            void expandExplicitVector(storm::dd::Odd const& newOdd, std::vector<double> const& oldValues, std::vector<double>& newValues) const;
+            template <typename ValueType>
+            void expandExplicitVector(storm::dd::Odd const& newOdd, std::vector<ValueType> const& oldValues, std::vector<ValueType>& newValues) const;
             
             /*!
              * Exports the ODD in the dot format to the given file.
@@ -137,7 +138,8 @@ namespace storm {
              * @param newOdd The ODD to use for the new explicit values.
              * @param newValues The vector of new values.
              */
-            static void expandValuesToVectorRec(uint_fast64_t oldOffset, storm::dd::Odd const& oldOdd, std::vector<double> const& oldValues, uint_fast64_t newOffset, storm::dd::Odd const& newOdd, std::vector<double>& newValues);
+            template <typename ValueType>
+            static void expandValuesToVectorRec(uint_fast64_t oldOffset, storm::dd::Odd const& oldOdd, std::vector<ValueType> const& oldValues, uint_fast64_t newOffset, storm::dd::Odd const& newOdd, std::vector<ValueType>& newValues);
             
             // The then- and else-nodes.
             std::shared_ptr<Odd> elseNode;

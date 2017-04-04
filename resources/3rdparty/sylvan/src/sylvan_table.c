@@ -1,5 +1,6 @@
 /*
- * Copyright 2011-2015 Formal Methods and Tools, University of Twente
+ * Copyright 2011-2016 Formal Methods and Tools, University of Twente
+ * Copyright 2016 Tom van Dijk, Johannes Kepler University Linz
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,19 +24,13 @@
 #include <string.h> // memset
 #include <sys/mman.h> // for mmap
 
-#include <llmsset.h>
-#include <stats.h>
-#include <tls.h>
+#include <sylvan_table.h>
+#include <sylvan_stats.h>
+#include <sylvan_tls.h>
 
-#ifndef USE_HWLOC
-#define USE_HWLOC 0
-#endif
-
-#if USE_HWLOC
 #include <hwloc.h>
 
 static hwloc_topology_t topo;
-#endif
 
 #ifndef MAP_ANONYMOUS
 #define MAP_ANONYMOUS MAP_ANON
@@ -118,35 +113,22 @@ set_custom_bucket(const llmsset_t dbs, uint64_t index, int on)
 }
 
 static int
-get_custom_bucket(const llmsset_t dbs, uint64_t index)
+is_custom_bucket(const llmsset_t dbs, uint64_t index)
 {
     uint64_t *ptr = dbs->bitmapc + (index/64);
     uint64_t mask = 0x8000000000000000LL >> (index&63);
     return (*ptr & mask) ? 1 : 0;
 }
 
-#ifndef rotl64
-static inline uint64_t
-rotl64(uint64_t x, int8_t r)
-{
-    return ((x<<r) | (x>>(64-r)));
-}
-#endif
-
 uint64_t
 llmsset_hash(const uint64_t a, const uint64_t b, const uint64_t seed)
 {
+    // The FNV-1a hash for 64 bits
     const uint64_t prime = 1099511628211;
-
     uint64_t hash = seed;
-    hash = hash ^ a;
-    hash = rotl64(hash, 47);
-    hash = hash * prime;
-    hash = hash ^ b;
-    hash = rotl64(hash, 31);
-    hash = hash * prime;
-
-    return hash ^ (hash >> 32);
+    hash = (hash ^ a) * prime;
+    hash = (hash ^ b) * prime;
+    return hash;
 }
 
 /*
@@ -168,6 +150,7 @@ llmsset_lookup2(const llmsset_t dbs, uint64_t a, uint64_t b, int* created, const
     if (custom) hash_rehash = dbs->hash_cb(a, b, hash_rehash);
     else hash_rehash = llmsset_hash(a, b, hash_rehash);
 
+    const uint64_t step = (((hash_rehash >> 20) | 1) << 3);
     const uint64_t hash = hash_rehash & MASK_HASH;
     uint64_t idx, last, cidx = 0;
     int i=0;
@@ -184,6 +167,7 @@ llmsset_lookup2(const llmsset_t dbs, uint64_t a, uint64_t b, int* created, const
 
         if (v == 0) {
             if (cidx == 0) {
+                // Claim data bucket and write data
                 cidx = claim_data_bucket(dbs);
                 if (cidx == (uint64_t)-1) return 0; // failed to claim a data bucket
                 if (custom) dbs->create_cb(&a, &b);
@@ -203,7 +187,7 @@ llmsset_lookup2(const llmsset_t dbs, uint64_t a, uint64_t b, int* created, const
         if (hash == (v & MASK_HASH)) {
             uint64_t d_idx = v & MASK_INDEX;
             uint64_t *d_ptr = ((uint64_t*)dbs->data) + 2*d_idx;
-            if (custom) {
+            if (custom && is_custom_bucket(dbs, d_idx)) {
                 if (dbs->equals_cb(a, b, d_ptr[0], d_ptr[1])) {
                     if (cidx != 0) {
                         dbs->destroy_cb(a, b);
@@ -229,8 +213,7 @@ llmsset_lookup2(const llmsset_t dbs, uint64_t a, uint64_t b, int* created, const
             if (++i == dbs->threshold) return 0; // failed to find empty spot in probe sequence
 
             // go to next cache line in probe sequence
-            if (custom) hash_rehash = dbs->hash_cb(a, b, hash_rehash);
-            else hash_rehash = llmsset_hash(a, b, hash_rehash);
+            hash_rehash += step;
 
 #if LLMSSET_MASK
             last = idx = hash_rehash & dbs->mask;
@@ -253,7 +236,7 @@ llmsset_lookupc(const llmsset_t dbs, const uint64_t a, const uint64_t b, int* cr
     return llmsset_lookup2(dbs, a, b, created, 1);
 }
 
-static inline int
+int
 llmsset_rehash_bucket(const llmsset_t dbs, uint64_t d_idx)
 {
     const uint64_t * const d_ptr = ((uint64_t*)dbs->data) + 2*d_idx;
@@ -261,7 +244,7 @@ llmsset_rehash_bucket(const llmsset_t dbs, uint64_t d_idx)
     const uint64_t b = d_ptr[1];
 
     uint64_t hash_rehash = 14695981039346656037LLU;
-    const int custom = get_custom_bucket(dbs, d_idx) ? 1 : 0;
+    const int custom = is_custom_bucket(dbs, d_idx) ? 1 : 0;
     if (custom) hash_rehash = dbs->hash_cb(a, b, hash_rehash);
     else hash_rehash = llmsset_hash(a, b, hash_rehash);
     const uint64_t new_v = (hash_rehash & MASK_HASH) | d_idx;
@@ -281,7 +264,11 @@ llmsset_rehash_bucket(const llmsset_t dbs, uint64_t d_idx)
         // find next idx on probe sequence
         idx = (idx & CL_MASK) | ((idx+1) & CL_MASK_R);
         if (idx == last) {
-            if (++i == dbs->threshold) return 0; // failed to find empty spot in probe sequence
+            if (++i == *(volatile int16_t*)&dbs->threshold) {
+                // failed to find empty spot in probe sequence
+                // solution: increase probe sequence length...
+                __sync_fetch_and_add(&dbs->threshold, 1);
+            }
 
             // go to next cache line in probe sequence
             if (custom) hash_rehash = dbs->hash_cb(a, b, hash_rehash);
@@ -299,10 +286,8 @@ llmsset_rehash_bucket(const llmsset_t dbs, uint64_t d_idx)
 llmsset_t
 llmsset_create(size_t initial_size, size_t max_size)
 {
-#if USE_HWLOC
     hwloc_topology_init(&topo);
     hwloc_topology_load(topo);
-#endif
 
     llmsset_t dbs = NULL;
     if (posix_memalign((void**)&dbs, LINE_SIZE, sizeof(struct llmsset)) != 0) {
@@ -362,13 +347,11 @@ llmsset_create(size_t initial_size, size_t max_size)
     madvise(dbs->table, dbs->max_size * 8, MADV_RANDOM);
 #endif
 
-#if USE_HWLOC
     hwloc_set_area_membind(topo, dbs->table, dbs->max_size * 8, hwloc_topology_get_allowed_cpuset(topo), HWLOC_MEMBIND_INTERLEAVE, 0);
     hwloc_set_area_membind(topo, dbs->data, dbs->max_size * 16, hwloc_topology_get_allowed_cpuset(topo), HWLOC_MEMBIND_FIRSTTOUCH, 0);
     hwloc_set_area_membind(topo, dbs->bitmap1, dbs->max_size / (512*8), hwloc_topology_get_allowed_cpuset(topo), HWLOC_MEMBIND_INTERLEAVE, 0);
     hwloc_set_area_membind(topo, dbs->bitmap2, dbs->max_size / 8, hwloc_topology_get_allowed_cpuset(topo), HWLOC_MEMBIND_FIRSTTOUCH, 0);
     hwloc_set_area_membind(topo, dbs->bitmapc, dbs->max_size / 8, hwloc_topology_get_allowed_cpuset(topo), HWLOC_MEMBIND_FIRSTTOUCH, 0);
-#endif
 
     // forbid first two positions (index 0 and 1)
     dbs->bitmap2[0] = 0xc000000000000000LL;
@@ -402,31 +385,20 @@ llmsset_free(llmsset_t dbs)
 
 VOID_TASK_IMPL_1(llmsset_clear, llmsset_t, dbs)
 {
-    // just reallocate...
-    if (mmap(dbs->table, dbs->max_size * 8, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANONYMOUS | MAP_FIXED, -1, 0) != (void*)-1) {
-#if defined(madvise) && defined(MADV_RANDOM)
-        madvise(dbs->table, sizeof(uint64_t[dbs->max_size]), MADV_RANDOM);
-#endif
-#if USE_HWLOC
-        hwloc_set_area_membind(topo, dbs->table, sizeof(uint64_t[dbs->max_size]), hwloc_topology_get_allowed_cpuset(topo), HWLOC_MEMBIND_INTERLEAVE, 0);
-#endif
-    } else {
-        // reallocate failed... expensive fallback
-        memset(dbs->table, 0, dbs->max_size * 8);
-    }
+    CALL(llmsset_clear_data, dbs);
+    CALL(llmsset_clear_hashes, dbs);
+}
 
+VOID_TASK_IMPL_1(llmsset_clear_data, llmsset_t, dbs)
+{
     if (mmap(dbs->bitmap1, dbs->max_size / (512*8), PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANONYMOUS | MAP_FIXED, -1, 0) != (void*)-1) {
-#if USE_HWLOC
         hwloc_set_area_membind(topo, dbs->bitmap1, dbs->max_size / (512*8), hwloc_topology_get_allowed_cpuset(topo), HWLOC_MEMBIND_INTERLEAVE, 0);
-#endif
     } else {
         memset(dbs->bitmap1, 0, dbs->max_size / (512*8));
     }
 
     if (mmap(dbs->bitmap2, dbs->max_size / 8, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANONYMOUS | MAP_FIXED, -1, 0) != (void*)-1) {
-#if USE_HWLOC
         hwloc_set_area_membind(topo, dbs->bitmap2, dbs->max_size / 8, hwloc_topology_get_allowed_cpuset(topo), HWLOC_MEMBIND_FIRSTTOUCH, 0);
-#endif
     } else {
         memset(dbs->bitmap2, 0, dbs->max_size / 8);
     }
@@ -435,6 +407,20 @@ VOID_TASK_IMPL_1(llmsset_clear, llmsset_t, dbs)
     dbs->bitmap2[0] = 0xc000000000000000LL;
 
     TOGETHER(llmsset_reset_region);
+}
+
+VOID_TASK_IMPL_1(llmsset_clear_hashes, llmsset_t, dbs)
+{
+    // just reallocate...
+    if (mmap(dbs->table, dbs->max_size * 8, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANONYMOUS | MAP_FIXED, -1, 0) != (void*)-1) {
+#if defined(madvise) && defined(MADV_RANDOM)
+        madvise(dbs->table, sizeof(uint64_t[dbs->max_size]), MADV_RANDOM);
+#endif
+        hwloc_set_area_membind(topo, dbs->table, sizeof(uint64_t[dbs->max_size]), hwloc_topology_get_allowed_cpuset(topo), HWLOC_MEMBIND_INTERLEAVE, 0);
+    } else {
+        // reallocate failed... expensive fallback
+        memset(dbs->table, 0, dbs->max_size * 8);
+    }
 }
 
 int
@@ -457,30 +443,33 @@ llmsset_mark(const llmsset_t dbs, uint64_t index)
     }
 }
 
-VOID_TASK_3(llmsset_rehash_par, llmsset_t, dbs, size_t, first, size_t, count)
+TASK_3(int, llmsset_rehash_par, llmsset_t, dbs, size_t, first, size_t, count)
 {
     if (count > 512) {
-        size_t split = count/2;
-        SPAWN(llmsset_rehash_par, dbs, first, split);
-        CALL(llmsset_rehash_par, dbs, first + split, count - split);
-        SYNC(llmsset_rehash_par);
+        SPAWN(llmsset_rehash_par, dbs, first, count/2);
+        int bad = CALL(llmsset_rehash_par, dbs, first + count/2, count - count/2);
+        return bad + SYNC(llmsset_rehash_par);
     } else {
+        int bad = 0;
         uint64_t *ptr = dbs->bitmap2 + (first / 64);
         uint64_t mask = 0x8000000000000000LL >> (first & 63);
         for (size_t k=0; k<count; k++) {
-            if (*ptr & mask) llmsset_rehash_bucket(dbs, first+k);
+            if (*ptr & mask) {
+                if (llmsset_rehash_bucket(dbs, first+k) == 0) bad++;
+            }
             mask >>= 1;
             if (mask == 0) {
                 ptr++;
                 mask = 0x8000000000000000LL;
             }
         }
+        return bad;
     }
 }
 
-VOID_TASK_IMPL_1(llmsset_rehash, llmsset_t, dbs)
+TASK_IMPL_1(int, llmsset_rehash, llmsset_t, dbs)
 {
-    CALL(llmsset_rehash_par, dbs, 0, dbs->table_size);
+    return CALL(llmsset_rehash_par, dbs, 0, dbs->table_size);
 }
 
 TASK_3(size_t, llmsset_count_marked_par, llmsset_t, dbs, size_t, first, size_t, count)

@@ -35,6 +35,8 @@
 #include "storm/exceptions/InvalidStateException.h"
 #include "storm/exceptions/NotSupportedException.h"
 
+#include "storm/adapters/CarlAdapter.h"
+
 namespace storm {
     namespace builder {
         
@@ -132,12 +134,71 @@ namespace storm {
         }
 
         template <storm::dd::DdType Type, typename ValueType>
+        class ParameterCreator {
+        public:
+            void create(storm::jani::Model const& model, storm::adapters::AddExpressionAdapter<Type, ValueType>& rowExpressionAdapter, storm::adapters::AddExpressionAdapter<Type, ValueType>& columnExpressionAdapter) {
+                // Intentionally left empty: no support for parameters for this data type.
+            }
+            
+            std::set<storm::RationalFunctionVariable> const& getParameters() const {
+                STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Creating parameters for non-parametric model is not supported.");
+            }
+            
+        private:
+            
+        };
+        
+        template <storm::dd::DdType Type>
+        class ParameterCreator<Type, storm::RationalFunction> {
+        public:
+            ParameterCreator() : cache(std::make_shared<carl::Cache<carl::PolynomialFactorizationPair<RawPolynomial>>>()) {
+                // Intentionally left empty.
+            }
+            
+            void create(storm::jani::Model const& model, storm::adapters::AddExpressionAdapter<Type, storm::RationalFunction>& rowExpressionAdapter, storm::adapters::AddExpressionAdapter<Type, storm::RationalFunction>& columnExpressionAdapter) {
+                for (auto const& constant : model.getConstants()) {
+                    if (!constant.isDefined()) {
+                        carl::Variable carlVariable = carl::freshRealVariable(constant.getExpressionVariable().getName());
+                        parameters.insert(carlVariable);
+                        auto rf = convertVariableToPolynomial(carlVariable);
+                        rowExpressionAdapter.setValue(constant.getExpressionVariable(), rf);
+                        columnExpressionAdapter.setValue(constant.getExpressionVariable(), rf);
+                    }
+                }
+            }
+            
+            template<typename RationalFunctionType = storm::RationalFunction, typename TP = typename RationalFunctionType::PolyType, carl::EnableIf<carl::needs_cache<TP>> = carl::dummy>
+            RationalFunctionType convertVariableToPolynomial(carl::Variable const& variable) {
+                return RationalFunctionType(typename RationalFunctionType::PolyType(typename RationalFunctionType::PolyType::PolyType(variable), cache));
+            }
+            
+            template<typename RationalFunctionType = storm::RationalFunction, typename TP = typename RationalFunctionType::PolyType, carl::DisableIf<carl::needs_cache<TP>> = carl::dummy>
+            RationalFunctionType convertVariableToPolynomial(carl::Variable const& variable) {
+                return RationalFunctionType(variable);
+            }
+            
+            std::set<storm::RationalFunctionVariable> const& getParameters() const {
+                return parameters;
+            }
+            
+        private:
+            // A mapping from our variables to carl's.
+            std::unordered_map<storm::expressions::Variable, carl::Variable> variableToVariableMap;
+            
+            // The cache that is used in case the underlying type needs a cache.
+            std::shared_ptr<carl::Cache<carl::PolynomialFactorizationPair<RawPolynomial>>> cache;
+            
+            // All created parameters.
+            std::set<storm::RationalFunctionVariable> parameters;
+        };
+        
+        template <storm::dd::DdType Type, typename ValueType>
         struct CompositionVariables {
             CompositionVariables() : manager(std::make_shared<storm::dd::DdManager<Type>>()),
             variableToRowMetaVariableMap(std::make_shared<std::map<storm::expressions::Variable, storm::expressions::Variable>>()),
-            rowExpressionAdapter(std::make_shared<storm::adapters::AddExpressionAdapter<Type>>(manager, variableToRowMetaVariableMap)),
+            rowExpressionAdapter(std::make_shared<storm::adapters::AddExpressionAdapter<Type, ValueType>>(manager, variableToRowMetaVariableMap)),
             variableToColumnMetaVariableMap(std::make_shared<std::map<storm::expressions::Variable, storm::expressions::Variable>>()),
-            columnExpressionAdapter(std::make_shared<storm::adapters::AddExpressionAdapter<Type>>(manager, variableToColumnMetaVariableMap)) {
+            columnExpressionAdapter(std::make_shared<storm::adapters::AddExpressionAdapter<Type, ValueType>>(manager, variableToColumnMetaVariableMap)) {
                 // Intentionally left empty.
             }
             
@@ -146,12 +207,12 @@ namespace storm {
             // The meta variables for the row encoding.
             std::set<storm::expressions::Variable> rowMetaVariables;
             std::shared_ptr<std::map<storm::expressions::Variable, storm::expressions::Variable>> variableToRowMetaVariableMap;
-            std::shared_ptr<storm::adapters::AddExpressionAdapter<Type>> rowExpressionAdapter;
+            std::shared_ptr<storm::adapters::AddExpressionAdapter<Type, ValueType>> rowExpressionAdapter;
             
             // The meta variables for the column encoding.
             std::set<storm::expressions::Variable> columnMetaVariables;
             std::shared_ptr<std::map<storm::expressions::Variable, storm::expressions::Variable>> variableToColumnMetaVariableMap;
-            std::shared_ptr<storm::adapters::AddExpressionAdapter<Type>> columnExpressionAdapter;
+            std::shared_ptr<storm::adapters::AddExpressionAdapter<Type, ValueType>> columnExpressionAdapter;
             
             // All pairs of row/column meta variables.
             std::vector<std::pair<storm::expressions::Variable, storm::expressions::Variable>> rowColumnMetaVariablePairs;
@@ -189,6 +250,9 @@ namespace storm {
             
             // A DD representing the valid ranges of the global variables.
             storm::dd::Add<Type, ValueType> globalVariableRanges;
+            
+            // The parameters that appear in the model.
+            std::set<storm::RationalFunctionVariable> parameters;
         };
         
         // A class responsible for creating the necessary variables for a subsequent composition of automata.
@@ -322,6 +386,12 @@ namespace storm {
                     result.automatonToRangeMap[automaton.getName()] = (range && globalVariableRanges).template toAdd<ValueType>();
                 }
                 
+                ParameterCreator<Type, ValueType> parameterCreator;
+                parameterCreator.create(model, *result.rowExpressionAdapter, *result.columnExpressionAdapter);
+                if (std::is_same<ValueType, storm::RationalFunction>::value) {
+                    result.parameters = parameterCreator.getParameters();
+                }
+                
                 return result;
             }
             
@@ -429,7 +499,7 @@ namespace storm {
         };
         
         template <storm::dd::DdType Type, typename ValueType>
-        EdgeDestinationDd<Type, ValueType> buildEdgeDestinationDd(storm::jani::Automaton const& automaton, storm::jani::EdgeDestination const& destination, storm::dd::Add<Type, ValueType> const& guard, CompositionVariables<Type, ValueType> const& variables) {
+        EdgeDestinationDd<Type, ValueType> buildEdgeDestinationDd(storm::jani::Automaton const& automaton, storm::jani::EdgeDestination const& destination, storm::dd::Bdd<Type> const& guard, CompositionVariables<Type, ValueType> const& variables) {
             storm::dd::Add<Type, ValueType> transitions = variables.rowExpressionAdapter->translateExpression(destination.getProbability());
             
             STORM_LOG_TRACE("Translating edge destination.");
@@ -449,11 +519,11 @@ namespace storm {
                 storm::dd::Add<Type, ValueType> assignedExpression = variables.rowExpressionAdapter->translateExpression(assignment.getAssignedExpression());
                 
                 // Combine the assigned expression with the guard.
-                storm::dd::Add<Type, ValueType> result = assignedExpression * guard;
+                storm::dd::Add<Type, ValueType> result = assignedExpression * guard.template toAdd<ValueType>();
                 
                 // Combine the variable and the assigned expression.
                 result = result.equals(writtenVariable).template toAdd<ValueType>();
-                result *= guard;
+                result *= guard.template toAdd<ValueType>();
 
                 // Restrict the transitions to the range of the written variable.
                 result = result * variables.variableToRangeMap.at(primedMetaVariable).template toAdd<ValueType>();
@@ -515,7 +585,7 @@ namespace storm {
                 }
             }
             
-            result.setValue(metaVariableNameToValueMap, 1);
+            result.setValue(metaVariableNameToValueMap, storm::utility::one<ValueType>());
             return result;
         }
         
@@ -524,15 +594,15 @@ namespace storm {
         public:
             // This structure represents an edge.
             struct EdgeDd {
-                EdgeDd(bool isMarkovian, storm::dd::Add<Type> const& guard, storm::dd::Add<Type, ValueType> const& transitions, std::map<storm::expressions::Variable, storm::dd::Add<Type, ValueType>> const& transientEdgeAssignments, std::set<storm::expressions::Variable> const& writtenGlobalVariables) : isMarkovian(isMarkovian), guard(guard), transitions(transitions), transientEdgeAssignments(transientEdgeAssignments), variableToWritingFragment() {
+                EdgeDd(bool isMarkovian, storm::dd::Bdd<Type> const& guard, storm::dd::Add<Type, ValueType> const& transitions, std::map<storm::expressions::Variable, storm::dd::Add<Type, ValueType>> const& transientEdgeAssignments, std::set<storm::expressions::Variable> const& writtenGlobalVariables) : isMarkovian(isMarkovian), guard(guard), transitions(transitions), transientEdgeAssignments(transientEdgeAssignments), variableToWritingFragment() {
                     
                     // Convert the set of written variables to a mapping from variable to the writing fragments.
                     for (auto const& variable : writtenGlobalVariables) {
-                        variableToWritingFragment[variable] = guard.toBdd();
+                        variableToWritingFragment[variable] = guard;
                     }
                 }
 
-                EdgeDd(bool isMarkovian, storm::dd::Add<Type> const& guard, storm::dd::Add<Type, ValueType> const& transitions, std::map<storm::expressions::Variable, storm::dd::Add<Type, ValueType>> const& transientEdgeAssignments, std::map<storm::expressions::Variable, storm::dd::Bdd<Type>> const& variableToWritingFragment) : isMarkovian(isMarkovian), guard(guard), transitions(transitions), transientEdgeAssignments(transientEdgeAssignments), variableToWritingFragment(variableToWritingFragment) {
+                EdgeDd(bool isMarkovian, storm::dd::Bdd<Type> const& guard, storm::dd::Add<Type, ValueType> const& transitions, std::map<storm::expressions::Variable, storm::dd::Add<Type, ValueType>> const& transientEdgeAssignments, std::map<storm::expressions::Variable, storm::dd::Bdd<Type>> const& variableToWritingFragment) : isMarkovian(isMarkovian), guard(guard), transitions(transitions), transientEdgeAssignments(transientEdgeAssignments), variableToWritingFragment(variableToWritingFragment) {
                     // Intentionally left empty.
                 }
 
@@ -540,7 +610,7 @@ namespace storm {
                 bool isMarkovian;
                 
                 // A DD that represents all states that have this edge enabled.
-                storm::dd::Add<Type, ValueType> guard;
+                storm::dd::Bdd<Type> guard;
                 
                 // A DD that represents the transitions of this edge.
                 storm::dd::Add<Type, ValueType> transitions;
@@ -554,7 +624,7 @@ namespace storm {
             
             // This structure represents an edge.
             struct ActionDd {
-                ActionDd(storm::dd::Add<Type> const& guard = storm::dd::Add<Type>(), storm::dd::Add<Type, ValueType> const& transitions = storm::dd::Add<Type, ValueType>(), std::map<storm::expressions::Variable, storm::dd::Add<Type, ValueType>> const& transientEdgeAssignments = {}, std::pair<uint64_t, uint64_t> localNondeterminismVariables = std::pair<uint64_t, uint64_t>(0, 0), std::map<storm::expressions::Variable, storm::dd::Bdd<Type>> const& variableToWritingFragment = {}, storm::dd::Bdd<Type> const& illegalFragment = storm::dd::Bdd<Type>()) : guard(guard), transitions(transitions), transientEdgeAssignments(transientEdgeAssignments), localNondeterminismVariables(localNondeterminismVariables), variableToWritingFragment(variableToWritingFragment), illegalFragment(illegalFragment), inputEnabled(false) {
+                ActionDd(storm::dd::Bdd<Type> const& guard = storm::dd::Bdd<Type>(), storm::dd::Add<Type, ValueType> const& transitions = storm::dd::Add<Type, ValueType>(), std::map<storm::expressions::Variable, storm::dd::Add<Type, ValueType>> const& transientEdgeAssignments = {}, std::pair<uint64_t, uint64_t> localNondeterminismVariables = std::pair<uint64_t, uint64_t>(0, 0), std::map<storm::expressions::Variable, storm::dd::Bdd<Type>> const& variableToWritingFragment = {}, storm::dd::Bdd<Type> const& illegalFragment = storm::dd::Bdd<Type>()) : guard(guard), transitions(transitions), transientEdgeAssignments(transientEdgeAssignments), localNondeterminismVariables(localNondeterminismVariables), variableToWritingFragment(variableToWritingFragment), illegalFragment(illegalFragment), inputEnabled(false) {
                     // Intentionally left empty.
                 }
                 
@@ -583,7 +653,7 @@ namespace storm {
                 }
                 
                 // A DD that represents all states that have this edge enabled.
-                storm::dd::Add<Type, ValueType> guard;
+                storm::dd::Bdd<Type> guard;
                 
                 // A DD that represents the transitions of this edge.
                 storm::dd::Add<Type, ValueType> transitions;
@@ -909,9 +979,8 @@ namespace storm {
                 for (auto const& actionIndexPair : actions) {
                     auto componentIndex = actionIndexPair.first;
                     auto const& action = actionIndexPair.second.get();
-                    storm::dd::Bdd<Type> actionGuard = action.guard.toBdd();
                     if (guardDisjunction) {
-                        guardDisjunction.get() |= actionGuard;
+                        guardDisjunction.get() |= action.guard;
                     }
                     
                     lowestNondeterminismVariable = std::min(lowestNondeterminismVariable, action.getLowestLocalNondeterminismVariable());
@@ -920,7 +989,7 @@ namespace storm {
                     
                     if (action.isInputEnabled()) {
                         // If the action is input-enabled, we add self-loops to all states.
-                        transitions *= actionGuard.ite(action.transitions, encodeIndex(0, action.getLowestLocalNondeterminismVariable(), action.getHighestLocalNondeterminismVariable() - action.getLowestLocalNondeterminismVariable(), this->variables) * subautomata[componentIndex].identity);
+                        transitions *= action.guard.ite(action.transitions, encodeIndex(0, action.getLowestLocalNondeterminismVariable(), action.getHighestLocalNondeterminismVariable() - action.getLowestLocalNondeterminismVariable(), this->variables) * subautomata[componentIndex].identity);
                     } else {
                         transitions *= action.transitions;
                     }
@@ -956,12 +1025,12 @@ namespace storm {
                     // guard of the current action if the current action is not input enabled.
                     for (auto& entry : globalVariableToWritingFragment) {
                         if (action.variableToWritingFragment.find(entry.first) == action.variableToWritingFragment.end() && !action.isInputEnabled()) {
-                            entry.second &= actionGuard;
+                            entry.second &= action.guard;
                         }
                     }
                     
                     if (!action.isInputEnabled()) {
-                        inputEnabledGuard &= actionGuard;
+                        inputEnabledGuard &= action.guard;
                     }
                 }
                 
@@ -976,7 +1045,7 @@ namespace storm {
                 // such a combined transition.
                 illegalFragment &= inputEnabledGuard;
                 
-                return ActionDd(inputEnabledGuard.template toAdd<ValueType>(), transitions * nonSynchronizingIdentity, transientEdgeAssignments, std::make_pair(lowestNondeterminismVariable, highestNondeterminismVariable), globalVariableToWritingFragment, illegalFragment);
+                return ActionDd(inputEnabledGuard, transitions * nonSynchronizingIdentity, transientEdgeAssignments, std::make_pair(lowestNondeterminismVariable, highestNondeterminismVariable), globalVariableToWritingFragment, illegalFragment);
             }
             
             ActionDd combineUnsynchronizedActions(ActionDd action1, ActionDd action2, storm::dd::Add<Type, ValueType> const& identity1, storm::dd::Add<Type, ValueType> const& identity2) {
@@ -1001,7 +1070,7 @@ namespace storm {
                     ActionDd result(*actionIt);
                     
                     for (++actionIt; actionIt != actions.end(); ++actionIt) {
-                        result = ActionDd(result.guard + actionIt->guard, result.transitions + actionIt->transitions, joinTransientAssignmentMaps(result.transientEdgeAssignments, actionIt->transientEdgeAssignments), std::make_pair<uint64_t, uint64_t>(0, 0), joinVariableWritingFragmentMaps(result.variableToWritingFragment, actionIt->variableToWritingFragment), result.illegalFragment || actionIt->illegalFragment);
+                        result = ActionDd(result.guard || actionIt->guard, result.transitions + actionIt->transitions, joinTransientAssignmentMaps(result.transientEdgeAssignments, actionIt->transientEdgeAssignments), std::make_pair<uint64_t, uint64_t>(0, 0), joinVariableWritingFragmentMaps(result.variableToWritingFragment, actionIt->variableToWritingFragment), result.illegalFragment || actionIt->illegalFragment);
                     }
                     return result;
                 } else if (this->model.getModelType() == storm::jani::ModelType::MDP) {
@@ -1041,7 +1110,7 @@ namespace storm {
                     for (uint64_t actionIndex = 0; actionIndex < actions.size(); ++actionIndex) {
                         ActionDd& action = actions[actionIndex];
 
-                        guard |= action.guard.toBdd();
+                        guard |= action.guard;
 
                         storm::dd::Add<Type, ValueType> nondeterminismEncoding = encodeIndex(actionIndex, highestLocalNondeterminismVariable, numberOfLocalNondeterminismVariables, this->variables);
                         transitions += nondeterminismEncoding * action.transitions;
@@ -1056,7 +1125,7 @@ namespace storm {
                         illegalFragment |= action.illegalFragment;
                     }
                     
-                    return ActionDd(guard.template toAdd<ValueType>(), transitions, transientEdgeAssignments, std::make_pair(lowestLocalNondeterminismVariable, highestLocalNondeterminismVariable + numberOfLocalNondeterminismVariables), variableToWritingFragment, illegalFragment);
+                    return ActionDd(guard, transitions, transientEdgeAssignments, std::make_pair(lowestLocalNondeterminismVariable, highestLocalNondeterminismVariable + numberOfLocalNondeterminismVariables), variableToWritingFragment, illegalFragment);
                 } else {
                     STORM_LOG_THROW(false, storm::exceptions::InvalidStateException, "Illegal model type.");
                 }
@@ -1084,8 +1153,8 @@ namespace storm {
                 
                 // We keep the guard and a "ranged" version seperate, because building the destinations tends to be
                 // slower when the full range is applied.
-                storm::dd::Add<Type, ValueType> guard = this->variables.rowExpressionAdapter->translateExpression(edge.getGuard());
-                storm::dd::Add<Type, ValueType> rangedGuard = guard * this->variables.automatonToRangeMap.at(automaton.getName());
+                storm::dd::Bdd<Type> guard = this->variables.rowExpressionAdapter->translateBooleanExpression(edge.getGuard());
+                storm::dd::Bdd<Type> rangedGuard = guard && this->variables.automatonToRangeMap.at(automaton.getName()).toBdd();
                 STORM_LOG_WARN_COND(!rangedGuard.isZero(), "The guard '" << edge.getGuard() << "' is unsatisfiable.");
                 
                 if (!rangedGuard.isZero()) {
@@ -1132,7 +1201,7 @@ namespace storm {
                     }
                     
                     // Add the source location and the guard.
-                    storm::dd::Add<Type, ValueType> sourceLocationAndGuard = this->variables.manager->getEncoding(this->variables.automatonToLocationDdVariableMap.at(automaton.getName()).first, edge.getSourceLocationIndex()).template toAdd<ValueType>() * guard;
+                    storm::dd::Add<Type, ValueType> sourceLocationAndGuard = this->variables.manager->getEncoding(this->variables.automatonToLocationDdVariableMap.at(automaton.getName()).first, edge.getSourceLocationIndex()).template toAdd<ValueType>() * guard.template toAdd<ValueType>();
                     transitions *= sourceLocationAndGuard;
                     
                     // If we multiply the ranges of global variables, make sure everything stays within its bounds.
@@ -1155,9 +1224,9 @@ namespace storm {
                         } );
                     }
                     
-                    return EdgeDd(isMarkovian, guard, guard * transitions, transientEdgeAssignments, globalVariablesInSomeDestination);
+                    return EdgeDd(isMarkovian, guard, guard.template toAdd<ValueType>() * transitions, transientEdgeAssignments, globalVariablesInSomeDestination);
                 } else {
-                    return EdgeDd(false, rangedGuard, rangedGuard, std::map<storm::expressions::Variable, storm::dd::Add<Type, ValueType>>(), std::set<storm::expressions::Variable>());
+                    return EdgeDd(false, rangedGuard, rangedGuard.template toAdd<ValueType>(), std::map<storm::expressions::Variable, storm::dd::Add<Type, ValueType>>(), std::set<storm::expressions::Variable>());
                 }
             }
             
@@ -1172,10 +1241,10 @@ namespace storm {
                     STORM_LOG_THROW(edge.isMarkovian, storm::exceptions::WrongFormatException, "Can only combine Markovian edges.");
                     
                     if (!overlappingGuards) {
-                        overlappingGuards |= !(guard && edge.guard.toBdd()).isZero();
+                        overlappingGuards |= !(guard && edge.guard).isZero();
                     }
                     
-                    guard |= edge.guard.toBdd();
+                    guard |= edge.guard;
                     transitions += edge.transitions;
                     variableToWritingFragment = joinVariableWritingFragmentMaps(variableToWritingFragment, edge.variableToWritingFragment);
                     joinTransientAssignmentMaps(transientEdgeAssignments, edge.transientEdgeAssignments);
@@ -1184,7 +1253,7 @@ namespace storm {
                 // Currently, we can only combine the transient edge assignments if there is no overlap of the guards of the edges.
                 STORM_LOG_THROW(!overlappingGuards || transientEdgeAssignments.empty(), storm::exceptions::NotSupportedException, "Cannot have transient edge assignments when combining Markovian edges with overlapping guards.");
                 
-                return EdgeDd(true, guard.template toAdd<ValueType>(), transitions, transientEdgeAssignments, variableToWritingFragment);
+                return EdgeDd(true, guard, transitions, transientEdgeAssignments, variableToWritingFragment);
             }
             
             ActionDd buildActionDdForActionIndex(storm::jani::Automaton const& automaton, uint64_t actionIndex, uint64_t localNondeterminismVariableOffset) {
@@ -1228,7 +1297,7 @@ namespace storm {
                         STORM_LOG_THROW(false, storm::exceptions::WrongFormatException, "Cannot translate model of this type.");
                     }
                 } else {
-                    return ActionDd(this->variables.manager->template getAddZero<ValueType>(), this->variables.manager->template getAddZero<ValueType>(), {}, std::make_pair<uint64_t, uint64_t>(0, 0), {}, this->variables.manager->getBddZero());
+                    return ActionDd(this->variables.manager->template getBddZero(), this->variables.manager->template getAddZero<ValueType>(), {}, std::make_pair<uint64_t, uint64_t>(0, 0), {}, this->variables.manager->getBddZero());
                 }
             }
             
@@ -1279,14 +1348,13 @@ namespace storm {
                     STORM_LOG_THROW((this->model.getModelType() == storm::jani::ModelType::CTMC) == edgeDd.isMarkovian, storm::exceptions::WrongFormatException, "Unexpected non-Markovian edge in CTMC.");
                     
                     // Check for overlapping guards.
-                    storm::dd::Bdd<Type> guardBdd = edgeDd.guard.toBdd();
-                    overlappingGuards = !(guardBdd && allGuards).isZero();
+                    overlappingGuards = !(edgeDd.guard && allGuards).isZero();
                     
                     // Issue a warning if there are overlapping guards in a DTMC.
                     STORM_LOG_WARN_COND(!overlappingGuards || this->model.getModelType() == storm::jani::ModelType::CTMC, "Guard of an edge in a DTMC overlaps with previous guards.");
                     
                     // Add the elements of the current edge to the global ones.
-                    allGuards |= guardBdd;
+                    allGuards |= edgeDd.guard;
                     allTransitions += edgeDd.transitions;
                     
                     // Add the transient variable assignments to the resulting one. This transformation is illegal for
@@ -1300,7 +1368,7 @@ namespace storm {
 
                 STORM_LOG_THROW(this->model.getModelType() == storm::jani::ModelType::DTMC || !overlappingGuards || transientEdgeAssignments.empty(), storm::exceptions::NotSupportedException, "Cannot have transient edge assignments when combining Markovian edges with overlapping guards.");
                 
-                return ActionDd(allGuards.template toAdd<ValueType>(), allTransitions, transientEdgeAssignments, std::make_pair<uint64_t, uint64_t>(0, 0), globalVariableToWritingFragment, this->variables.manager->getBddZero());
+                return ActionDd(allGuards, allTransitions, transientEdgeAssignments, std::make_pair<uint64_t, uint64_t>(0, 0), globalVariableToWritingFragment, this->variables.manager->getBddZero());
             }
             
             void addToVariableWritingFragmentMap(std::map<storm::expressions::Variable, storm::dd::Bdd<Type>>& globalVariableToWritingFragment, storm::expressions::Variable const& variable, storm::dd::Bdd<Type> const& partToAdd) const {
@@ -1333,7 +1401,7 @@ namespace storm {
                 return result;
             }
             
-            ActionDd combineEdgesBySummation(storm::dd::Add<Type, ValueType> const& guard, std::vector<EdgeDd> const& edges, boost::optional<EdgeDd> const& markovianEdge) {
+            ActionDd combineEdgesBySummation(storm::dd::Bdd<Type> const& guard, std::vector<EdgeDd> const& edges, boost::optional<EdgeDd> const& markovianEdge) {
                 bool addMarkovianFlag = this->model.getModelType() == storm::jani::ModelType::MA;
                 STORM_LOG_ASSERT(addMarkovianFlag || !markovianEdge, "Illegally adding Markovian edge without marker.");
                 
@@ -1374,18 +1442,18 @@ namespace storm {
             ActionDd combineEdgesToActionNondeterministic(std::vector<EdgeDd> const& nonMarkovianEdges, boost::optional<EdgeDd> const& markovianEdge, uint64_t localNondeterminismVariableOffset) {
                 // Sum all guards, so we can read off the maximal number of nondeterministic choices in any given state.
                 storm::dd::Bdd<Type> allGuards = this->variables.manager->getBddZero();
-                storm::dd::Add<Type, ValueType> sumOfGuards = this->variables.manager->template getAddZero<ValueType>();
+                storm::dd::Add<Type, uint_fast64_t> sumOfGuards = this->variables.manager->template getAddZero<uint_fast64_t>();
                 for (auto const& edge : nonMarkovianEdges) {
                     STORM_LOG_ASSERT(!edge.isMarkovian, "Unexpected Markovian edge.");
-                    sumOfGuards += edge.guard;
-                    allGuards |= edge.guard.toBdd();
+                    sumOfGuards += edge.guard.template toAdd<uint_fast64_t>();
+                    allGuards |= edge.guard;
                 }
-                uint_fast64_t maxChoices = static_cast<uint_fast64_t>(sumOfGuards.getMax());
+                uint_fast64_t maxChoices = sumOfGuards.getMax();
                 STORM_LOG_TRACE("Found " << maxChoices << " non-Markovian local choices.");
                 
                 // Depending on the maximal number of nondeterminstic choices, we need to use some variables to encode the nondeterminism.
                 if (maxChoices <= 1) {
-                    return combineEdgesBySummation(allGuards.template toAdd<ValueType>(), nonMarkovianEdges, markovianEdge);
+                    return combineEdgesBySummation(allGuards, nonMarkovianEdges, markovianEdge);
                 } else {
                     // Calculate number of required variables to encode the nondeterminism.
                     uint_fast64_t numberOfBinaryVariables = static_cast<uint_fast64_t>(std::ceil(storm::utility::math::log2(maxChoices)));
@@ -1405,7 +1473,7 @@ namespace storm {
                     
                     for (uint_fast64_t currentChoices = 1; currentChoices <= maxChoices; ++currentChoices) {
                         // Determine the set of states with exactly currentChoices choices.
-                        equalsNumberOfChoicesDd = sumOfGuards.equals(this->variables.manager->getConstant(static_cast<double>(currentChoices)));
+                        equalsNumberOfChoicesDd = sumOfGuards.equals(this->variables.manager->getConstant(currentChoices));
                         
                         // If there is no such state, continue with the next possible number of choices.
                         if (equalsNumberOfChoicesDd.isZero()) {
@@ -1423,7 +1491,7 @@ namespace storm {
                             
                             // Check if edge guard overlaps with equalsNumberOfChoicesDd. That is, there are states with exactly currentChoices
                             // choices such that one outgoing choice is given by the j-th edge.
-                            storm::dd::Bdd<Type> guardChoicesIntersection = currentEdge.guard.toBdd() && equalsNumberOfChoicesDd;
+                            storm::dd::Bdd<Type> guardChoicesIntersection = currentEdge.guard && equalsNumberOfChoicesDd;
                             
                             // If there is no such state, continue with the next command.
                             if (guardChoicesIntersection.isZero()) {
@@ -1470,7 +1538,7 @@ namespace storm {
                         }
                         
                         // Delete currentChoices out of overlapping DD
-                        sumOfGuards = sumOfGuards * (!equalsNumberOfChoicesDd).template toAdd<ValueType>();
+                        sumOfGuards = sumOfGuards * (!equalsNumberOfChoicesDd).template toAdd<uint_fast64_t>();
                     }
                     
                     // Extend the transitions with the appropriate flag if needed.
@@ -1503,7 +1571,7 @@ namespace storm {
                         }
                     }
                     
-                    return ActionDd(allGuards.template toAdd<ValueType>(), allEdges, transientAssignments, std::make_pair(localNondeterminismVariableOffset, localNondeterminismVariableOffset + numberOfBinaryVariables), globalVariableToWritingFragment, this->variables.manager->getBddZero());
+                    return ActionDd(allGuards, allEdges, transientAssignments, std::make_pair(localNondeterminismVariableOffset, localNondeterminismVariableOffset + numberOfBinaryVariables), globalVariableToWritingFragment, this->variables.manager->getBddZero());
                 }
             }
             
@@ -1631,16 +1699,22 @@ namespace storm {
         
         template <storm::dd::DdType Type, typename ValueType>
         std::shared_ptr<storm::models::symbolic::Model<Type, ValueType>> createModel(storm::jani::ModelType const& modelType, CompositionVariables<Type, ValueType> const& variables, ModelComponents<Type, ValueType> const& modelComponents) {
-            
+            std::shared_ptr<storm::models::symbolic::Model<Type, ValueType>> result;
             if (modelType == storm::jani::ModelType::DTMC) {
-                return std::shared_ptr<storm::models::symbolic::Model<Type, ValueType>>(new storm::models::symbolic::Dtmc<Type, ValueType>(variables.manager, modelComponents.reachableStates, modelComponents.initialStates, modelComponents.deadlockStates, modelComponents.transitionMatrix, variables.rowMetaVariables, variables.rowExpressionAdapter, variables.columnMetaVariables, variables.columnExpressionAdapter, variables.rowColumnMetaVariablePairs, modelComponents.labelToExpressionMap, modelComponents.rewardModels));
+                result = std::make_shared<storm::models::symbolic::Dtmc<Type, ValueType>>(variables.manager, modelComponents.reachableStates, modelComponents.initialStates, modelComponents.deadlockStates, modelComponents.transitionMatrix, variables.rowMetaVariables, variables.rowExpressionAdapter, variables.columnMetaVariables, variables.columnExpressionAdapter, variables.rowColumnMetaVariablePairs, modelComponents.labelToExpressionMap, modelComponents.rewardModels);
             } else if (modelType == storm::jani::ModelType::CTMC) {
-                return std::shared_ptr<storm::models::symbolic::Model<Type, ValueType>>(new storm::models::symbolic::Ctmc<Type, ValueType>(variables.manager, modelComponents.reachableStates, modelComponents.initialStates, modelComponents.deadlockStates, modelComponents.transitionMatrix, variables.rowMetaVariables, variables.rowExpressionAdapter, variables.columnMetaVariables, variables.columnExpressionAdapter, variables.rowColumnMetaVariablePairs, modelComponents.labelToExpressionMap, modelComponents.rewardModels));
+                result = std::make_shared<storm::models::symbolic::Ctmc<Type, ValueType>>(variables.manager, modelComponents.reachableStates, modelComponents.initialStates, modelComponents.deadlockStates, modelComponents.transitionMatrix, variables.rowMetaVariables, variables.rowExpressionAdapter, variables.columnMetaVariables, variables.columnExpressionAdapter, variables.rowColumnMetaVariablePairs, modelComponents.labelToExpressionMap, modelComponents.rewardModels);
             } else if (modelType == storm::jani::ModelType::MDP) {
-                return std::shared_ptr<storm::models::symbolic::Model<Type, ValueType>>(new storm::models::symbolic::Mdp<Type, ValueType>(variables.manager, modelComponents.reachableStates, modelComponents.initialStates, modelComponents.deadlockStates, modelComponents.transitionMatrix, variables.rowMetaVariables, variables.rowExpressionAdapter, variables.columnMetaVariables, variables.columnExpressionAdapter, variables.rowColumnMetaVariablePairs, variables.allNondeterminismVariables, modelComponents.labelToExpressionMap, modelComponents.rewardModels));
+                result = std::make_shared<storm::models::symbolic::Mdp<Type, ValueType>>(variables.manager, modelComponents.reachableStates, modelComponents.initialStates, modelComponents.deadlockStates, modelComponents.transitionMatrix, variables.rowMetaVariables, variables.rowExpressionAdapter, variables.columnMetaVariables, variables.columnExpressionAdapter, variables.rowColumnMetaVariablePairs, variables.allNondeterminismVariables, modelComponents.labelToExpressionMap, modelComponents.rewardModels);
             } else {
                 STORM_LOG_THROW(false, storm::exceptions::WrongFormatException, "Invalid model type.");
             }
+            
+            if (std::is_same<ValueType, storm::RationalFunction>::value) {
+                result->addParameters(variables.parameters);
+            }
+            
+            return result;
         }
         
         template <storm::dd::DdType Type, typename ValueType>
@@ -1845,7 +1919,7 @@ namespace storm {
         
         template <storm::dd::DdType Type, typename ValueType>
         std::shared_ptr<storm::models::symbolic::Model<Type, ValueType>> DdJaniModelBuilder<Type, ValueType>::build(storm::jani::Model const& model, Options const& options) {
-            if (model.hasUndefinedConstants()) {
+            if (!std::is_same<ValueType, storm::RationalFunction>::value && model.hasUndefinedConstants()) {
                 std::vector<std::reference_wrapper<storm::jani::Constant const>> undefinedConstants = model.getUndefinedConstants();
                 std::vector<std::string> strings;
                 for (auto const& constant : undefinedConstants) {
@@ -1927,5 +2001,8 @@ namespace storm {
         
         template class DdJaniModelBuilder<storm::dd::DdType::CUDD, double>;
         template class DdJaniModelBuilder<storm::dd::DdType::Sylvan, double>;
+
+        template class DdJaniModelBuilder<storm::dd::DdType::Sylvan, storm::RationalNumber>;
+        template class DdJaniModelBuilder<storm::dd::DdType::Sylvan, storm::RationalFunction>;
     }
 }
