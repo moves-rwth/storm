@@ -528,6 +528,11 @@ namespace storm {
         RationalFunction convertNumber(ClnRationalNumber const& number) {
             return RationalFunction(convertNumber<storm::RationalFunctionCoefficient>(number));
         }
+        
+        template<>
+        ClnRationalNumber convertNumber(RationalFunction const& number){
+            return convertNumber<ClnRationalNumber>(number.nominatorAsNumber() / number.denominatorAsNumber());
+        }
 #endif
         
 #if defined(STORM_HAVE_GMP)
@@ -535,26 +540,26 @@ namespace storm {
         RationalFunction convertNumber(GmpRationalNumber const& number) {
             return RationalFunction(convertNumber<storm::RationalFunctionCoefficient>(number));
         }
+        
+        template<>
+        GmpRationalNumber convertNumber(RationalFunction const& number){
+            return convertNumber<GmpRationalNumber>(number.nominatorAsNumber() / number.denominatorAsNumber());
+        }
 #endif
         
         template<>
         uint_fast64_t convertNumber(RationalFunction const& func) {
-            return carl::toInt<unsigned long>(func.nominatorAsNumber());
+            return carl::toInt<unsigned long>(convertNumber<RationalFunctionCoefficient>(func));
         }
         
         template<>
         double convertNumber(RationalFunction const& func) {
-            return carl::toDouble(func.nominatorAsNumber()) / carl::toDouble(func.denominatorAsNumber());
+            return carl::toDouble(convertNumber<RationalFunctionCoefficient>(func));
         }
         
         template<>
         RationalFunction convertNumber(RationalFunction const& number){
             return number;
-        }
-
-        template<>
-        RationalFunctionCoefficient convertNumber(RationalFunction const& number){
-            return number.nominatorAsNumber() / number.denominatorAsNumber();
         }
 
         template<>
