@@ -40,8 +40,27 @@ namespace storm {
                 this->produceSchedulers = false;
                 this->qualitative = false;
                 
-                if (formula.isOperatorFormula()) {
-                    storm::logic::OperatorFormula const& operatorFormula = formula.asOperatorFormula();
+                updateOperatorInformation();
+            }
+            
+            /*!
+             * Copies the check task from the source while replacing the formula with the new one. In particular, this
+             * changes the formula type of the check task object.
+             */
+            template<typename NewFormulaType>
+            CheckTask<NewFormulaType, ValueType> substituteFormula(NewFormulaType const& newFormula) const {
+                CheckTask<NewFormulaType, ValueType> result(newFormula, this->optimizationDirection, this->rewardModel, this->onlyInitialStatesRelevant, this->bound, this->qualitative, this->produceSchedulers, this->resultHint);
+                result.updateOperatorInformation();
+                return result;
+            }
+            
+            /*!
+             * If the currently specified formula is an OperatorFormula, this method updates the information that is given in the Operator formula.
+             * Calling this method has no effect if the provided formula is not an operator formula.
+             */
+            void updateOperatorInformation() {
+                if (formula.get().isOperatorFormula()) {
+                    storm::logic::OperatorFormula const& operatorFormula = formula.get().asOperatorFormula();
                     if (operatorFormula.hasOptimalityType()) {
                         this->optimizationDirection = operatorFormula.getOptimalityType();
                     }
@@ -55,35 +74,26 @@ namespace storm {
                             this->optimizationDirection = operatorFormula.getComparisonType() == storm::logic::ComparisonType::Less || operatorFormula.getComparisonType() == storm::logic::ComparisonType::LessEqual ? OptimizationDirection::Maximize : OptimizationDirection::Minimize;
                         }
                     }
-                }
                 
-                if (formula.isProbabilityOperatorFormula()) {
-                    storm::logic::ProbabilityOperatorFormula const& probabilityOperatorFormula = formula.asProbabilityOperatorFormula();
-                    
-                    if (probabilityOperatorFormula.hasBound()) {
-                        if (storm::utility::isZero(probabilityOperatorFormula.template getThresholdAs<ValueType>()) || storm::utility::isOne(probabilityOperatorFormula.template getThresholdAs<ValueType>())) {
-                            this->qualitative = true;
+                    if (formula.get().isProbabilityOperatorFormula()) {
+                        storm::logic::ProbabilityOperatorFormula const& probabilityOperatorFormula = formula.get().asProbabilityOperatorFormula();
+                        
+                        if (probabilityOperatorFormula.hasBound()) {
+                            if (storm::utility::isZero(probabilityOperatorFormula.template getThresholdAs<ValueType>()) || storm::utility::isOne(probabilityOperatorFormula.template getThresholdAs<ValueType>())) {
+                                this->qualitative = true;
+                            }
                         }
-                    }
-                } else if (formula.isRewardOperatorFormula()) {
-                    storm::logic::RewardOperatorFormula const& rewardOperatorFormula = formula.asRewardOperatorFormula();
-                    this->rewardModel = rewardOperatorFormula.getOptionalRewardModelName();
-                    
-                    if (rewardOperatorFormula.hasBound()) {
-                        if (storm::utility::isZero(rewardOperatorFormula.template getThresholdAs<ValueType>())) {
-                            this->qualitative = true;
+                    } else if (formula.get().isRewardOperatorFormula()) {
+                        storm::logic::RewardOperatorFormula const& rewardOperatorFormula = formula.get().asRewardOperatorFormula();
+                        this->rewardModel = rewardOperatorFormula.getOptionalRewardModelName();
+                        
+                        if (rewardOperatorFormula.hasBound()) {
+                            if (storm::utility::isZero(rewardOperatorFormula.template getThresholdAs<ValueType>())) {
+                                this->qualitative = true;
+                            }
                         }
                     }
                 }
-            }
-            
-            /*!
-             * Copies the check task from the source while replacing the formula with the new one. In particular, this
-             * changes the formula type of the check task object.
-             */
-            template<typename NewFormulaType>
-            CheckTask<NewFormulaType, ValueType> substituteFormula(NewFormulaType const& newFormula) const {
-                return CheckTask<NewFormulaType, ValueType>(newFormula, this->optimizationDirection, this->rewardModel, this->onlyInitialStatesRelevant, this->bound, this->qualitative, this->produceSchedulers, this->resultHint);
             }
             
             /*!
