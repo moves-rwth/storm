@@ -33,8 +33,10 @@ namespace storm {
             template <typename SparseModelType, typename ConstantType>
             void SparseDtmcParameterLifting<SparseModelType, ConstantType>::initializeUnderlyingCheckers() {
                 if (this->settings.applyExactValidation) {
-                    STORM_LOG_WARN_COND(!(std::is_same<ConstantType, typename ParameterLifting<SparseModelType, ConstantType>::CoefficientType>::value) , "Exact validation is not necessarry if the original computation is already exact");
-                    this->exactParameterLiftingChecker = std::make_unique<SparseDtmcParameterLiftingModelChecker<SparseModelType, typename ParameterLifting<SparseModelType, ConstantType>::CoefficientType>>(this->getConsideredParametricModel());
+                    //STORM_LOG_WARN_COND(!(std::is_same<ConstantType, typename ParameterLifting<SparseModelType, ConstantType>::CoefficientType) , "Exact validation is not necessarry if the original computation is already exact");
+                    STORM_LOG_WARN_COND(!(std::is_same<ConstantType, storm::RationalNumber>::value) , "Exact validation is not necessarry if the original computation is already exact");
+                    //this->exactParameterLiftingChecker = std::make_unique<SparseDtmcParameterLiftingModelChecker<SparseModelType, typename ParameterLifting<SparseModelType, ConstantType>::CoefficientType>>(this->getConsideredParametricModel()); // todo: use template argument instead of storm::Rational
+                    this->exactParameterLiftingChecker = std::make_unique<SparseDtmcParameterLiftingModelChecker<SparseModelType, storm::RationalNumber>>(this->getConsideredParametricModel());
                 }
                 this->parameterLiftingChecker = std::make_unique<SparseDtmcParameterLiftingModelChecker<SparseModelType, ConstantType>>(this->getConsideredParametricModel());
                 this->instantiationChecker = std::make_unique<SparseDtmcInstantiationModelChecker<SparseModelType, ConstantType>>(this->getConsideredParametricModel());
@@ -44,7 +46,8 @@ namespace storm {
             void SparseDtmcParameterLifting<SparseModelType, ConstantType>::applyHintsToExactChecker() {
                 auto dtmcPLChecker = dynamic_cast<storm::modelchecker::parametric::SparseDtmcParameterLiftingModelChecker<SparseModelType, ConstantType>*>(this->parameterLiftingChecker.get());
                 STORM_LOG_ASSERT(dtmcPLChecker, "Underlying Parameter lifting checker has unexpected type");
-                auto exactDtmcPLChecker = dynamic_cast<storm::modelchecker::parametric::SparseDtmcParameterLiftingModelChecker<SparseModelType, typename ParameterLifting<SparseModelType, ConstantType>::CoefficientType>*>(this->exactParameterLiftingChecker.get());
+                auto exactDtmcPLChecker = dynamic_cast<storm::modelchecker::parametric::SparseDtmcParameterLiftingModelChecker<SparseModelType, storm::RationalNumber>*>(this->exactParameterLiftingChecker.get());
+                //auto exactDtmcPLChecker = dynamic_cast<storm::modelchecker::parametric::SparseDtmcParameterLiftingModelChecker<SparseModelType, typename ParameterLifting<SparseModelType, ConstantType>::CoefficientType>*>(this->exactParameterLiftingChecker.get()); // todo: use template argument instead of storm::Rational
                 STORM_LOG_ASSERT(exactDtmcPLChecker, "Underlying exact parameter lifting checker has unexpected type");
                 exactDtmcPLChecker->getCurrentMaxScheduler() = dtmcPLChecker->getCurrentMaxScheduler();
                 exactDtmcPLChecker->getCurrentMinScheduler() = dtmcPLChecker->getCurrentMinScheduler();

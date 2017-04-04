@@ -33,8 +33,10 @@ namespace storm {
             template <typename SparseModelType, typename ConstantType>
             void SparseMdpParameterLifting<SparseModelType, ConstantType>::initializeUnderlyingCheckers() {
                 if (this->settings.applyExactValidation) {
-                    STORM_LOG_WARN_COND(!(std::is_same<ConstantType, typename ParameterLifting<SparseModelType, ConstantType>::CoefficientType>::value), "Exact validation is not necessarry if the original computation is already exact");
-                    this->exactParameterLiftingChecker = std::make_unique<SparseMdpParameterLiftingModelChecker<SparseModelType, typename ParameterLifting<SparseModelType, ConstantType>::CoefficientType>>(this->getConsideredParametricModel());
+                    //STORM_LOG_WARN_COND(!(std::is_same<ConstantType, typename ParameterLifting<SparseModelType, ConstantType>::CoefficientType>::value), "Exact validation is not necessarry if the original computation is already exact"); // todo: use templated argument instead of storm::RationalNumber
+                    STORM_LOG_WARN_COND(!(std::is_same<ConstantType, storm::RationalNumber>::value), "Exact validation is not necessarry if the original computation is already exact");
+                    //this->exactParameterLiftingChecker = std::make_unique<SparseMdpParameterLiftingModelChecker<SparseModelType, typename ParameterLifting<SparseModelType, ConstantType>::CoefficientType>>(this->getConsideredParametricModel()); // todo: use templated argument instead of storm::RationalNumber
+                    this->exactParameterLiftingChecker = std::make_unique<SparseMdpParameterLiftingModelChecker<SparseModelType, storm::RationalNumber>>(this->getConsideredParametricModel());
                 }
                 this->parameterLiftingChecker = std::make_unique<SparseMdpParameterLiftingModelChecker<SparseModelType, ConstantType>>(this->getConsideredParametricModel());
                 this->instantiationChecker = std::make_unique<SparseMdpInstantiationModelChecker<SparseModelType, ConstantType>>(this->getConsideredParametricModel());
@@ -44,7 +46,8 @@ namespace storm {
             void SparseMdpParameterLifting<SparseModelType, ConstantType>::applyHintsToExactChecker() {
                 auto MdpPLChecker = dynamic_cast<storm::modelchecker::parametric::SparseMdpParameterLiftingModelChecker<SparseModelType, ConstantType>*>(this->parameterLiftingChecker.get());
                 STORM_LOG_ASSERT(MdpPLChecker, "Underlying Parameter lifting checker has unexpected type");
-                auto exactMdpPLChecker = dynamic_cast<storm::modelchecker::parametric::SparseMdpParameterLiftingModelChecker<SparseModelType, typename ParameterLifting<SparseModelType, ConstantType>::CoefficientType>*>(this->exactParameterLiftingChecker.get());
+                auto exactMdpPLChecker = dynamic_cast<storm::modelchecker::parametric::SparseMdpParameterLiftingModelChecker<SparseModelType, storm::RationalNumber>*>(this->exactParameterLiftingChecker.get());
+//                auto exactMdpPLChecker = dynamic_cast<storm::modelchecker::parametric::SparseMdpParameterLiftingModelChecker<SparseModelType, typename ParameterLifting<SparseModelType, ConstantType>::CoefficientType>*>(this->exactParameterLiftingChecker.get()); // todo: use template argument instead of storm::RationalNumber
                 STORM_LOG_ASSERT(exactMdpPLChecker, "Underlying exact parameter lifting checker has unexpected type");
                 exactMdpPLChecker->getCurrentMaxScheduler() = MdpPLChecker->getCurrentMaxScheduler();
                 exactMdpPLChecker->getCurrentMinScheduler() = MdpPLChecker->getCurrentMinScheduler();

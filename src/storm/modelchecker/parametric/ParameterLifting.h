@@ -69,7 +69,8 @@ namespace storm {
                 
 
                 std::unique_ptr<SparseParameterLiftingModelChecker<SparseModelType, ConstantType>> parameterLiftingChecker;
-                std::unique_ptr<SparseParameterLiftingModelChecker<SparseModelType, CoefficientType>> exactParameterLiftingChecker;
+                std::unique_ptr<SparseParameterLiftingModelChecker<SparseModelType, storm::RationalNumber>> exactParameterLiftingChecker; // todo: use template argument instead of rational number
+                //std::unique_ptr<SparseParameterLiftingModelChecker<SparseModelType, CoefficientType>> exactParameterLiftingChecker;
                 std::unique_ptr<SparseInstantiationModelChecker<SparseModelType, ConstantType>> instantiationChecker;
                 
                 mutable storm::utility::Stopwatch initializationStopwatch, instantiationCheckerStopwatch, parameterLiftingCheckerStopwatch;
