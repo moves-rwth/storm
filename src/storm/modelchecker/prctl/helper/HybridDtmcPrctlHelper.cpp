@@ -66,7 +66,7 @@ namespace storm {
                         submatrix = (model.getRowColumnIdentity() * maybeStatesAdd) - submatrix;
                         
                         // Create the solution vector.
-                        std::vector<ValueType> x(maybeStates.getNonZeroCount(), ValueType(0.5));
+                        std::vector<ValueType> x(maybeStates.getNonZeroCount(), storm::utility::convertNumber<ValueType>(0.5));
                         
                         // Translate the symbolic matrix/vector to their explicit representations and solve the equation system.
                         storm::storage::SparseMatrix<ValueType> explicitSubmatrix = submatrix.toMatrix(odd, odd);
@@ -230,7 +230,7 @@ namespace storm {
                         submatrix = (model.getRowColumnIdentity() * maybeStatesAdd) - submatrix;
                         
                         // Create the solution vector.
-                        std::vector<ValueType> x(maybeStates.getNonZeroCount(), ValueType(0.5));
+                        std::vector<ValueType> x(maybeStates.getNonZeroCount(), storm::utility::convertNumber<ValueType>(0.5));
                         
                         // Translate the symbolic matrix/vector to their explicit representations.
                         storm::storage::SparseMatrix<ValueType> explicitSubmatrix = submatrix.toMatrix(odd, odd);

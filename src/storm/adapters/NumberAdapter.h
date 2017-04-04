@@ -16,7 +16,7 @@
 
 #include <carl/numbers/numbers.h>
 
-#if defined(STORM_HAVE_CLN) && (defined(STORM_USE_CLN_EA) || defined(STORM_USE_CLN_RF))
+#if defined(STORM_HAVE_CLN)
 namespace cln {
     inline size_t hash_value(cl_RA const& n) {
         std::hash<cln::cl_RA> h;
@@ -25,7 +25,7 @@ namespace cln {
 }
 #endif
 
-#if defined(STORM_HAVE_GMP) && (!defined(STORM_USE_CLN_EA) || !defined(STORM_USE_CLN_RF))
+#if defined(STORM_HAVE_GMP)
 inline size_t hash_value(mpq_class const& q) {
     std::hash<mpq_class> h;
     return h(q);
