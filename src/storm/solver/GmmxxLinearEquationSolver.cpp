@@ -139,7 +139,7 @@ namespace storm {
         bool GmmxxLinearEquationSolver<ValueType>::solveEquations(std::vector<ValueType>& x, std::vector<ValueType> const& b) const {
             auto method = this->getSettings().getSolutionMethod();
             auto preconditioner = this->getSettings().getPreconditioner();
-            STORM_LOG_DEBUG("Using method '" << method << "' with preconditioner '" << preconditioner << "' (max. " << this->getSettings().getMaximalNumberOfIterations() << " iterations).");
+            STORM_LOG_INFO("Solving linear equation system (" << x.size() << " rows) with Gmmxx linear equation solver with method '" << method << "' and preconditioner '" << preconditioner << "' (max. " << this->getSettings().getMaximalNumberOfIterations() << " iterations).");
             if (method == GmmxxLinearEquationSolverSettings<ValueType>::SolutionMethod::Jacobi && preconditioner != GmmxxLinearEquationSolverSettings<ValueType>::Preconditioner::None) {
                 STORM_LOG_WARN("Jacobi method currently does not support preconditioners. The requested preconditioner will be ignored.");
             }
@@ -197,7 +197,7 @@ namespace storm {
                 
                 // Check if the solver converged and issue a warning otherwise.
                 if (iter.converged()) {
-                    STORM_LOG_DEBUG("Iterative solver converged after " << iter.get_iteration() << " iterations.");
+                    STORM_LOG_INFO("Iterative solver converged after " << iter.get_iteration() << " iterations.");
                     return true;
                 } else {
                     STORM_LOG_WARN("Iterative solver did not converge.");
@@ -211,7 +211,7 @@ namespace storm {
                 
                 // Check if the solver converged and issue a warning otherwise.
                 if (iterations < this->getSettings().getMaximalNumberOfIterations()) {
-                    STORM_LOG_DEBUG("Iterative solver converged after " << iterations << " iterations.");
+                    STORM_LOG_INFO("Iterative solver converged after " << iterations << " iterations.");
                     return true;
                 } else {
                     STORM_LOG_WARN("Iterative solver did not converge.");

@@ -113,7 +113,7 @@ namespace storm {
                 
                 ++iterations;
             } while (!converged && iterations < this->maximalNumberOfIterations);
-            STORM_LOG_TRACE("Numerically solving the game took " << iterations << " iterations.");
+            STORM_LOG_INFO("Numerically solving the game took " << iterations << " iterations.");
             
             return xCopy;
         }

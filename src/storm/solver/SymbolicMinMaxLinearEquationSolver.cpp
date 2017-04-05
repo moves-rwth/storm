@@ -123,7 +123,7 @@ namespace storm {
             }
             
             if (converged) {
-                STORM_LOG_TRACE("Iterative solver (value iteration) converged in " << iterations << " iterations.");
+                STORM_LOG_INFO("Iterative solver (value iteration) converged in " << iterations << " iterations.");
             } else {
                 STORM_LOG_WARN("Iterative solver (value iteration) did not converge in " << iterations << " iterations.");
             }
@@ -181,7 +181,7 @@ namespace storm {
             }
             
             if (converged) {
-                STORM_LOG_TRACE("Iterative solver (policy iteration) converged in " << iterations << " iterations.");
+                STORM_LOG_INFO("Iterative solver (policy iteration) converged in " << iterations << " iterations.");
             } else {
                 STORM_LOG_WARN("Iterative solver (policy iteration) did not converge in " << iterations << " iterations.");
             }
