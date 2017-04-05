@@ -22,7 +22,7 @@ namespace storm {
         }
         
         template<typename ValueType, typename StateType>
-        PrismNextStateGenerator<ValueType, StateType>::PrismNextStateGenerator(storm::prism::Program const& program, NextStateGeneratorOptions const& options, bool) : NextStateGenerator<ValueType, StateType>(program.getManager(), options), program(program), rewardModels() {
+        PrismNextStateGenerator<ValueType, StateType>::PrismNextStateGenerator(storm::prism::Program const& program, NextStateGeneratorOptions const& options, bool) : NextStateGenerator<ValueType, StateType>(program.getManager(), options), program(program), rewardModels(), hasStateActionRewards(false) {
             STORM_LOG_TRACE("Creating next-state generator for PRISM program: " << program);
             STORM_LOG_THROW(!this->program.specifiesSystemComposition(), storm::exceptions::WrongFormatException, "The explicit next-state generator currently does not support custom system compositions.");
                         
@@ -262,7 +262,9 @@ namespace storm {
                             
                         }
                     }
-                    globalChoice.addReward(stateActionRewardValue / totalExitRate);
+                    if (hasStateActionRewards) {
+                        globalChoice.addReward(stateActionRewardValue / totalExitRate);
+                    }
                 }
                 
                 // Move the newly fused choice in place.
