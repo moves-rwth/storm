@@ -477,11 +477,6 @@ namespace storm {
         }
         
         template<>
-        double convertNumber(RationalFunction const& number){
-            return carl::toDouble(number.constantPart());
-        }
-
-        template<>
         bool isOne(storm::Polynomial const& a) {
             return a.isOne();
         }
@@ -496,12 +491,6 @@ namespace storm {
             return a.isZero();
         }
         
-        template<>
-        RationalNumber convertNumber(RationalFunction const& number) {
-            STORM_LOG_ASSERT(isConstant(number), "Tried to convert a non-constant number to a constant type.");
-            return number.constantPart();
-        }
-
         template<>
         bool isConstant(storm::RationalFunction const& a) {
             return a.isConstant();

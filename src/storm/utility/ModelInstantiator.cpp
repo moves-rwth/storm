@@ -93,7 +93,7 @@ namespace storm {
                     STORM_LOG_ASSERT(parametricEntryIt->getColumn() == constantEntryIt->getColumn(), "Entries of parametric and constant matrix are not at the same position");
                     if(storm::utility::isConstant(parametricEntryIt->getValue())){
                         //Constant entries can be inserted directly
-                        constantEntryIt->setValue(storm::utility::convertNumber<ConstantType>(storm::utility::parametric::getConstantPart(parametricEntryIt->getValue())));
+                        constantEntryIt->setValue(storm::utility::convertNumber<ConstantType>(parametricEntryIt->getValue()));
                     } else {
                         //insert the new function and store that the current constantMatrix entry needs to be set to the value of this function
                         auto functionsIt = functions.insert(std::make_pair(parametricEntryIt->getValue(), dummyValue)).first;
@@ -118,7 +118,7 @@ namespace storm {
                 while(parametricEntryIt != parametricVector.end()){
                     if(storm::utility::isConstant(storm::utility::simplify(*parametricEntryIt))){
                         //Constant entries can be inserted directly
-                        *constantEntryIt = storm::utility::convertNumber<ConstantType>(storm::utility::parametric::getConstantPart(*parametricEntryIt));
+                        *constantEntryIt = storm::utility::convertNumber<ConstantType>(*parametricEntryIt);
                     } else {
                         //insert the new function and store that the current constantVector entry needs to be set to the value of this function
                         auto functionsIt = functions.insert(std::make_pair(*parametricEntryIt, dummyValue)).first;

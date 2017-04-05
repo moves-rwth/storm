@@ -37,12 +37,6 @@ namespace storm {
             typename CoefficientType<FunctionType>::type evaluate(FunctionType const& function, Valuation<FunctionType> const& valuation);
             
             /*!
-             * Retrieves the constant part of the given function.
-             */
-            template<typename FunctionType>
-            typename CoefficientType<FunctionType>::type getConstantPart(FunctionType const& function);
-            
-            /*!
              *  Add all variables that occur in the given function to the the given set
              */
             template<typename FunctionType>

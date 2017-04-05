@@ -23,11 +23,6 @@ namespace storm {
             }
             
             template<>
-            typename CoefficientType<storm::RationalFunction>::type getConstantPart<storm::RationalFunction>(storm::RationalFunction const& function){
-                return function.constantPart();
-            }
-                        
-            template<>
             void gatherOccurringVariables<storm::RationalFunction>(storm::RationalFunction const& function, std::set<typename VariableType<storm::RationalFunction>::type>& variableSet){
                 function.gatherVariables(variableSet);
             }
