@@ -26,6 +26,12 @@
 #include <unistd.h>
 #include <assert.h>
 
+// work around for missing MAP_ANONYMOUS definition in sys/mman.h on
+// older OS X versions
+#if !(defined MAP_ANONYMOUS) && defined MAP_ANON
+#define MAP_ANONYMOUS MAP_ANON
+#endif
+
 #include <lace.h>
 #include <hwloc.h>
 
