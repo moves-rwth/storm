@@ -245,11 +245,8 @@ namespace storm {
             storm::utility::parametric::gatherOccurringVariables(simplifiedFunction, variablesInFunction);
             AbstractValuation simplifiedValuation = valuation.getSubValuation(variablesInFunction);
             // insert the function and the valuation
-            auto insertionRes = collectedFunctions.insert(std::pair<FunctionValuation, ConstantType>(FunctionValuation(std::move(simplifiedFunction), std::move(simplifiedValuation)), storm::utility::one<ConstantType>()));
-            if(insertionRes.second) {
-                STORM_LOG_WARN_COND(storm::utility::parametric::isMultiLinearPolynomial(insertionRes.first->first.first), "Parameter lifting for non-multilinear polynomial " << insertionRes.first->first.first << " invoked. This might not be sound...");
-            }
             //Note that references to elements of an unordered map remain valid after calling unordered_map::insert.
+            auto insertionRes = collectedFunctions.insert(std::pair<FunctionValuation, ConstantType>(FunctionValuation(std::move(simplifiedFunction), std::move(simplifiedValuation)), storm::utility::one<ConstantType>()));
             return insertionRes.first->second;
         }
     
