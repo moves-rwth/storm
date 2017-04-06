@@ -13,18 +13,27 @@
 
 #include "storm/exceptions/InvalidStateException.h"
 #include "storm/exceptions/InvalidPropertyException.h"
+#include "storm/exceptions/IllegalArgumentException.h"
 
 namespace storm {
     namespace modelchecker {
         namespace helper {
             template<typename ValueType, typename RewardModelType>
-            std::vector<ValueType> SparseDtmcPrctlHelper<ValueType, RewardModelType>::computeBoundedUntilProbabilities(storm::storage::SparseMatrix<ValueType> const& transitionMatrix, storm::storage::SparseMatrix<ValueType> const& backwardTransitions, storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates, uint_fast64_t stepBound, storm::solver::LinearEquationSolverFactory<ValueType> const& linearEquationSolverFactory) {
+            std::vector<ValueType> SparseDtmcPrctlHelper<ValueType, RewardModelType>::computeBoundedUntilProbabilities(storm::storage::SparseMatrix<ValueType> const& transitionMatrix, storm::storage::SparseMatrix<ValueType> const& backwardTransitions, storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates, uint_fast64_t stepBound, storm::solver::LinearEquationSolverFactory<ValueType> const& linearEquationSolverFactory, ModelCheckerHint const& hint) {
                 std::vector<ValueType> result(transitionMatrix.getRowCount(), storm::utility::zero<ValueType>());
                 
                 // If we identify the states that have probability 0 of reaching the target states, we can exclude them in the further analysis.
-                storm::storage::BitVector maybeStates = storm::utility::graph::performProbGreater0(backwardTransitions, phiStates, psiStates, true, stepBound);
-                maybeStates &= ~psiStates;
-                STORM_LOG_INFO("Found " << maybeStates.getNumberOfSetBits() << " 'maybe' states.");
+                storm::storage::BitVector maybeStates;
+                  
+                if (hint.isExplicitModelCheckerHint() && hint.template asExplicitModelCheckerHint<ValueType>().getComputeOnlyMaybeStates()) {
+                    maybeStates = hint.template asExplicitModelCheckerHint<ValueType>().getMaybeStates();
+                } else {
+                    maybeStates = storm::utility::graph::performProbGreater0(backwardTransitions, phiStates, psiStates, true, stepBound);
+                    maybeStates &= ~psiStates;
+                    STORM_LOG_INFO("Found " << maybeStates.getNumberOfSetBits() << " 'maybe' states.");
+                }
+                
+                storm::utility::vector::setVectorValues<ValueType>(result, psiStates, storm::utility::one<ValueType>());
                 
                 if (!maybeStates.empty()) {
                     // We can eliminate the rows and columns from the original transition probability matrix that have probability 0.
@@ -43,7 +52,6 @@ namespace storm {
                     // Set the values of the resulting vector accordingly.
                     storm::utility::vector::setVectorValues(result, maybeStates, subresult);
                 }
-                storm::utility::vector::setVectorValues<ValueType>(result, psiStates, storm::utility::one<ValueType>());
                 
                 return result;
             }
@@ -51,20 +59,44 @@ namespace storm {
             template<typename ValueType, typename RewardModelType>
 
             std::vector<ValueType> SparseDtmcPrctlHelper<ValueType, RewardModelType>::computeUntilProbabilities(storm::storage::SparseMatrix<ValueType> const& transitionMatrix, storm::storage::SparseMatrix<ValueType> const& backwardTransitions, storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates, bool qualitative, storm::solver::LinearEquationSolverFactory<ValueType> const& linearEquationSolverFactory, ModelCheckerHint const& hint) {
-                // We need to identify the states which have to be taken out of the matrix, i.e.
-                // all states that have probability 0 and 1 of satisfying the until-formula.
-                std::pair<storm::storage::BitVector, storm::storage::BitVector> statesWithProbability01 = storm::utility::graph::performProb01(backwardTransitions, phiStates, psiStates);
-                storm::storage::BitVector statesWithProbability0 = std::move(statesWithProbability01.first);
-                storm::storage::BitVector statesWithProbability1 = std::move(statesWithProbability01.second);
-                                
-                // Perform some logging.
-                storm::storage::BitVector maybeStates = ~(statesWithProbability0 | statesWithProbability1);
-                STORM_LOG_INFO("Found " << statesWithProbability0.getNumberOfSetBits() << " 'no' states.");
-                STORM_LOG_INFO("Found " << statesWithProbability1.getNumberOfSetBits() << " 'yes' states.");
-                STORM_LOG_INFO("Found " << maybeStates.getNumberOfSetBits() << " 'maybe' states.");
                 
-                // Create resulting vector.
-                std::vector<ValueType> result(transitionMatrix.getRowCount());
+                std::vector<ValueType> result(transitionMatrix.getRowCount(), storm::utility::zero<ValueType>());
+                
+                // We need to identify the maybe states (states which have a probability for satisfying the until formula
+                // that is strictly between 0 and 1) and the states that satisfy the formula with probablity 1.
+                storm::storage::BitVector maybeStates, statesWithProbability1;
+                
+                if (hint.isExplicitModelCheckerHint() && hint.template asExplicitModelCheckerHint<ValueType>().getComputeOnlyMaybeStates()) {
+                    maybeStates = hint.template asExplicitModelCheckerHint<ValueType>().getMaybeStates();
+                    
+                    // Treat the states with probability one
+                    std::vector<ValueType> const& resultsForNonMaybeStates = hint.template asExplicitModelCheckerHint<ValueType>().getResultHint();
+                    statesWithProbability1 = storm::storage::BitVector(maybeStates.size(), false);
+                    storm::storage::BitVector nonMaybeStates = ~maybeStates;
+                    for (auto const& state : nonMaybeStates) {
+                        if (storm::utility::isOne(resultsForNonMaybeStates[state])) {
+                            statesWithProbability1.set(state, true);
+                            result[state] = storm::utility::one<ValueType>();
+                        } else {
+                            STORM_LOG_THROW(storm::utility::isZero(resultsForNonMaybeStates[state]), storm::exceptions::IllegalArgumentException, "Expected that the result hint specifies probabilities in {0,1} for non-maybe states");
+                        }
+                    }
+                } else {
+                
+                    // Get all states that have probability 0 and 1 of satisfying the until-formula.
+                    std::pair<storm::storage::BitVector, storm::storage::BitVector> statesWithProbability01 = storm::utility::graph::performProb01(backwardTransitions, phiStates, psiStates);
+                    storm::storage::BitVector statesWithProbability0 = std::move(statesWithProbability01.first);
+                    statesWithProbability1 = std::move(statesWithProbability01.second);
+                    maybeStates = ~(statesWithProbability0 | statesWithProbability1);
+                                    
+                    STORM_LOG_INFO("Found " << statesWithProbability0.getNumberOfSetBits() << " 'no' states.");
+                    STORM_LOG_INFO("Found " << statesWithProbability1.getNumberOfSetBits() << " 'yes' states.");
+                    STORM_LOG_INFO("Found " << maybeStates.getNumberOfSetBits() << " 'maybe' states.");
+                    
+                    // Set values of resulting vector that are known exactly.
+                    storm::utility::vector::setVectorValues<ValueType>(result, statesWithProbability0, storm::utility::zero<ValueType>());
+                    storm::utility::vector::setVectorValues<ValueType>(result, statesWithProbability1, storm::utility::one<ValueType>());
+                }
                 
                 // Check whether we need to compute exact probabilities for some states.
                 if (qualitative) {
@@ -84,9 +116,11 @@ namespace storm {
                         // Initialize the x vector with the hint (if available) or with 0.5 for each element.
                         // This is the initial guess for the iterative solvers. It should be safe as for all
                         // 'maybe' states we know that the probability is strictly larger than 0.
-                        std::vector<ValueType> x(maybeStates.getNumberOfSetBits(), storm::utility::convertNumber<ValueType>(0.5));
+                        std::vector<ValueType> x;
                         if(hint.isExplicitModelCheckerHint() && hint.template asExplicitModelCheckerHint<ValueType>().hasResultHint()) {
-                            storm::utility::vector::selectVectorValues(x, maybeStates, hint.template asExplicitModelCheckerHint<ValueType>().getResultHint());
+                            x = storm::utility::vector::filterVector(hint.template asExplicitModelCheckerHint<ValueType>().getResultHint(), maybeStates);
+                        } else {
+                            x = std::vector<ValueType>(maybeStates.getNumberOfSetBits(), storm::utility::convertNumber<ValueType>(0.5));
                         }
 
                         // Prepare the right-hand side of the equation system. For entry i this corresponds to
@@ -102,11 +136,6 @@ namespace storm {
                         storm::utility::vector::setVectorValues<ValueType>(result, maybeStates, x);
                     }
                 }
-                
-                // Set values of resulting vector that are known exactly.
-                storm::utility::vector::setVectorValues<ValueType>(result, statesWithProbability0, storm::utility::zero<ValueType>());
-                storm::utility::vector::setVectorValues<ValueType>(result, statesWithProbability1, storm::utility::one<ValueType>());
-                
                 return result;
             }
             
@@ -180,17 +209,26 @@ namespace storm {
             
             template<typename ValueType, typename RewardModelType>
             std::vector<ValueType> SparseDtmcPrctlHelper<ValueType, RewardModelType>::computeReachabilityRewards(storm::storage::SparseMatrix<ValueType> const& transitionMatrix, storm::storage::SparseMatrix<ValueType> const& backwardTransitions, std::function<std::vector<ValueType>(uint_fast64_t, storm::storage::SparseMatrix<ValueType> const&, storm::storage::BitVector const&)> const& totalStateRewardVectorGetter, storm::storage::BitVector const& targetStates, bool qualitative, storm::solver::LinearEquationSolverFactory<ValueType> const& linearEquationSolverFactory, ModelCheckerHint const& hint) {
-                // Determine which states have a reward of infinity by definition.
-                storm::storage::BitVector trueStates(transitionMatrix.getRowCount(), true);
-                storm::storage::BitVector infinityStates = storm::utility::graph::performProb1(backwardTransitions, trueStates, targetStates);
-                infinityStates.complement();
-                storm::storage::BitVector maybeStates = ~targetStates & ~infinityStates;
-                STORM_LOG_INFO("Found " << infinityStates.getNumberOfSetBits() << " 'infinity' states.");
-                STORM_LOG_INFO("Found " << targetStates.getNumberOfSetBits() << " 'target' states.");
-                STORM_LOG_INFO("Found " << maybeStates.getNumberOfSetBits() << " 'maybe' states.");
                 
-                // Create resulting vector.
                 std::vector<ValueType> result(transitionMatrix.getRowCount(), storm::utility::zero<ValueType>());
+                
+                // Determine which states have a reward that is less than infinity.
+                storm::storage::BitVector maybeStates;
+                if (hint.isExplicitModelCheckerHint() && hint.template asExplicitModelCheckerHint<ValueType>().getComputeOnlyMaybeStates()) {
+                    maybeStates = hint.template asExplicitModelCheckerHint<ValueType>().getMaybeStates();
+                    storm::utility::vector::setVectorValues(result, ~(maybeStates | targetStates), storm::utility::infinity<ValueType>());
+                } else {
+                    storm::storage::BitVector trueStates(transitionMatrix.getRowCount(), true);
+                    storm::storage::BitVector infinityStates = storm::utility::graph::performProb1(backwardTransitions, trueStates, targetStates);
+                    infinityStates.complement();
+                    maybeStates = ~(targetStates | infinityStates);
+                    
+                    STORM_LOG_INFO("Found " << infinityStates.getNumberOfSetBits() << " 'infinity' states.");
+                    STORM_LOG_INFO("Found " << targetStates.getNumberOfSetBits() << " 'target' states.");
+                    STORM_LOG_INFO("Found " << maybeStates.getNumberOfSetBits() << " 'maybe' states.");
+                    
+                    storm::utility::vector::setVectorValues(result, infinityStates, storm::utility::infinity<ValueType>());
+                }
                 
                 // Check whether we need to compute exact rewards for some states.
                 if (qualitative) {
@@ -209,9 +247,11 @@ namespace storm {
                         
                         // Initialize the x vector with the hint (if available) or with 1 for each element.
                         // This is the initial guess for the iterative solvers.
-                        std::vector<ValueType> x(submatrix.getColumnCount(), storm::utility::one<ValueType>());
+                        std::vector<ValueType> x;
                         if(hint.isExplicitModelCheckerHint() && hint.template asExplicitModelCheckerHint<ValueType>().hasResultHint()) {
-                            storm::utility::vector::selectVectorValues(x, maybeStates, hint.template asExplicitModelCheckerHint<ValueType>().getResultHint());
+                            x = storm::utility::vector::filterVector(hint.template asExplicitModelCheckerHint<ValueType>().getResultHint(), maybeStates);
+                        } else {
+                            x = std::vector<ValueType>(submatrix.getColumnCount(), storm::utility::one<ValueType>());
                         }
                         
                         // Prepare the right-hand side of the equation system.
@@ -226,10 +266,6 @@ namespace storm {
                         storm::utility::vector::setVectorValues<ValueType>(result, maybeStates, x);
                     }
                 }
-                
-                // Set values of resulting vector that are known exactly.
-                storm::utility::vector::setVectorValues(result, infinityStates, storm::utility::infinity<ValueType>());
-                
                 return result;
             }
             

@@ -22,8 +22,10 @@ namespace storm {
                 
                 virtual std::unique_ptr<CheckResult> check(storm::utility::parametric::Valuation<typename SparseModelType::ValueType> const& valuation) = 0;
                 
-                storm::modelchecker::ModelCheckerHint& getHint();
-                storm::modelchecker::ModelCheckerHint const& getHint() const;
+                // If set, it is assumed that all considered model instantiations have the same underlying graph structure.
+                // This bypasses the graph analysis for the different instantiations.
+                void setInstantiationsAreGraphPreserving(bool value);
+                bool getInstantiationsAreGraphPreserving() const;
                 
             protected:
                 
@@ -34,6 +36,7 @@ namespace storm {
                 // store the current formula. Note that currentCheckTask only stores a reference to the formula.
                 std::shared_ptr<storm::logic::Formula const> currentFormula;
 
+                bool instantiationsAreGraphPreserving;
             };
         }
     }

@@ -45,7 +45,7 @@ namespace storm {
                     }
                 } else if (model->isOfType(storm::models::ModelType::MarkovAutomaton)) {
                     // Markov Automata store the probability matrix and the exit rate vector. However, we need to considert the rate matrix.
-                    if (model->template as<storm::models::sparse::MarkovAutomaton<ValueType>>()->isClosed()) {
+                    if (!model->template as<storm::models::sparse::MarkovAutomaton<ValueType>>()->isClosed()) {
                         STORM_LOG_ERROR("parameter lifting requires a closed Markov automaton.");
                         return false;
                     }
@@ -56,7 +56,7 @@ namespace storm {
                             auto const& exitRate = rateVector[state];
                             for (auto const& entry : model->getTransitionMatrix().getRowGroup(state)) {
                                 if (!storm::utility::parametric::isMultiLinearPolynomial(storm::utility::simplify(entry.getValue() * exitRate))) {
-                                    STORM_LOG_WARN("The input model contains a non-linear polynomial as transition: '" << entry.getValue() << "'. Can not validate that parameter lifting is sound on this model.");
+                                    STORM_LOG_WARN("The input model contains a non-linear polynomial as transition rate: '" << storm::utility::simplify(entry.getValue() * exitRate) << "'. Can not validate that parameter lifting is sound on this model.");
                                     return false;
                                 }
                             }

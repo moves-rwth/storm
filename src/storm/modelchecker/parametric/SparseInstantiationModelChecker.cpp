@@ -12,7 +12,7 @@ namespace storm {
         namespace parametric {
             
             template <typename SparseModelType, typename ConstantType>
-            SparseInstantiationModelChecker<SparseModelType, ConstantType>::SparseInstantiationModelChecker(SparseModelType const& parametricModel) : parametricModel(parametricModel) {
+            SparseInstantiationModelChecker<SparseModelType, ConstantType>::SparseInstantiationModelChecker(SparseModelType const& parametricModel) : parametricModel(parametricModel), instantiationsAreGraphPreserving(false) {
                 //Intentionally left empty
             }
             
@@ -24,15 +24,14 @@ namespace storm {
             }
             
             template <typename SparseModelType, typename ConstantType>
-            storm::modelchecker::ModelCheckerHint& SparseInstantiationModelChecker<SparseModelType, ConstantType>::getHint() {
-                return currentCheckTask->getHint();
+            void SparseInstantiationModelChecker<SparseModelType, ConstantType>::setInstantiationsAreGraphPreserving(bool value) {
+                instantiationsAreGraphPreserving = value;
             }
             
             template <typename SparseModelType, typename ConstantType>
-            storm::modelchecker::ModelCheckerHint const& SparseInstantiationModelChecker<SparseModelType, ConstantType>::getHint() const {
-                return currentCheckTask->getHint();
+            bool SparseInstantiationModelChecker<SparseModelType, ConstantType>::getInstantiationsAreGraphPreserving() const {
+                return instantiationsAreGraphPreserving;
             }
-            
             
             template class SparseInstantiationModelChecker<storm::models::sparse::Dtmc<storm::RationalFunction>, double>;
             template class SparseInstantiationModelChecker<storm::models::sparse::Mdp<storm::RationalFunction>, double>;

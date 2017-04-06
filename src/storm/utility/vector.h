@@ -482,6 +482,17 @@ namespace storm {
             storm::storage::BitVector filterZero(std::vector<T> const& values) {
                 return filter<T>(values, storm::utility::isZero<T>);
             }
+                        
+            /*!
+             * Retrieves a bit vector containing all the indices for which the value at this position is equal to one
+             *
+             * @param values The vector of values.
+             * @return The resulting bit vector.
+             */
+            template<class T>
+            storm::storage::BitVector filterOne(std::vector<T> const& values) {
+                return filter<T>(values, storm::utility::isOne<T>);
+            }
             
             /**
              * Sum the entries from values that are set to one in the filter vector.

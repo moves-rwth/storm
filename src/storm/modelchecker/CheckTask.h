@@ -218,11 +218,8 @@ namespace storm {
             /*!
              * sets a hint that might contain information that speeds up the modelchecking process (if supported by the model checker)
              */
-            void setHint(ModelCheckerHint const& hint) {
-                this->hint = std::make_shared<ModelCheckerHint>(hint);
-            }
-            void setHint(ModelCheckerHint&& hint){
-                this->hint = std::make_shared<ModelCheckerHint>(hint);
+            void setHint(std::shared_ptr<ModelCheckerHint> const& hint) {
+                this->hint = hint;
             }
             
             /*!

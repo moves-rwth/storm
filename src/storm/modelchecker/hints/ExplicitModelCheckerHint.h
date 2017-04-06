@@ -18,10 +18,9 @@ namespace storm {
         class ExplicitModelCheckerHint : public ModelCheckerHint {
         public:
             
+            ExplicitModelCheckerHint() = default;
             ExplicitModelCheckerHint(ExplicitModelCheckerHint<ValueType> const& other) = default;
             ExplicitModelCheckerHint(ExplicitModelCheckerHint<ValueType>&& other) = default;
-            ExplicitModelCheckerHint(boost::optional<std::vector<ValueType>> const& resultHint = boost::none, boost::optional<storm::storage::TotalScheduler> const& schedulerHint = boost::none);
-            ExplicitModelCheckerHint(boost::optional<std::vector<ValueType>>&& resultHint, boost::optional<storm::storage::TotalScheduler>&& schedulerHint = boost::none);
             
             // Returns true iff this hint does not contain any information
             virtual bool isEmpty() const override;
@@ -35,22 +34,35 @@ namespace storm {
             void setResultHint(boost::optional<std::vector<ValueType>> const& resultHint);
             void setResultHint(boost::optional<std::vector<ValueType>>&& resultHint);
     
+            // Set whether only the maybestates need to be computed, i.e., skips the qualitative check.
+            // The result for non-maybe states is taken from the result hint.
+            // Hence, this option may only be enabled iff a resultHint and a set of maybestates are given.
+            bool getComputeOnlyMaybeStates() const;
+            void setComputeOnlyMaybeStates(bool value);
+            bool hasMaybeStates() const;
+            storm::storage::BitVector const& getMaybeStates() const;
+            storm::storage::BitVector& getMaybeStates();
+            void setMaybeStates(storm::storage::BitVector const& maybeStates);
+            void setMaybeStates(storm::storage::BitVector&& maybeStates);
+            
             bool hasSchedulerHint() const;
             storm::storage::TotalScheduler const& getSchedulerHint() const;
             storm::storage::TotalScheduler& getSchedulerHint();
             void setSchedulerHint(boost::optional<storage::TotalScheduler> const& schedulerHint);
             void setSchedulerHint(boost::optional<storage::TotalScheduler>&& schedulerHint);
             
-            // If set, this option forces the application of the specified hints. This means that the model checker may skip some checks to increase performance.
-            // This might yield wrong results on certain models, e.g., when computing maximal probabilities on an MDP that has an end component consisting only of maybestates.
-            bool getForceApplicationOfHints() const;
-            void setForceApplicationOfHints(bool value);
+            // If set, it is assumed that there are no end components that consist only of maybestates.
+            // May only be enabled iff maybestates are given.
+            bool getNoEndComponentsInMaybeStates() const;
+            void setNoEndComponentsInMaybeStates(bool value);
             
         private:
             boost::optional<std::vector<ValueType>> resultHint;
             boost::optional<storm::storage::TotalScheduler> schedulerHint;
             
-            bool forceApplicationOfHints;
+            bool computeOnlyMaybeStates;
+            boost::optional<storm::storage::BitVector> maybeStates;
+            bool noEndComponentsInMaybeStates;
         };
         
     }

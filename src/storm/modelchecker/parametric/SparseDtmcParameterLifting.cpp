@@ -40,6 +40,7 @@ namespace storm {
                 }
                 this->parameterLiftingChecker = std::make_unique<SparseDtmcParameterLiftingModelChecker<SparseModelType, ConstantType>>(this->getConsideredParametricModel());
                 this->instantiationChecker = std::make_unique<SparseDtmcInstantiationModelChecker<SparseModelType, ConstantType>>(this->getConsideredParametricModel());
+                this->instantiationChecker->setInstantiationsAreGraphPreserving(true);
             }
     
             template <typename SparseModelType, typename ConstantType>

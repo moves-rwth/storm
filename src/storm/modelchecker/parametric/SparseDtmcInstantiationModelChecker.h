@@ -25,8 +25,10 @@ namespace storm {
 
             protected:
                 
-                // Considers the result of the last check as a hint for the current check
-                std::unique_ptr<CheckResult> checkWithHint(storm::modelchecker::SparseDtmcPrctlModelChecker<storm::models::sparse::Dtmc<ConstantType>>& modelChecker);
+                // Optimizations for the different formula types
+                std::unique_ptr<CheckResult> checkReachabilityProbabilityFormula(storm::modelchecker::SparseDtmcPrctlModelChecker<storm::models::sparse::Dtmc<ConstantType>>& modelChecker);
+                std::unique_ptr<CheckResult> checkReachabilityRewardFormula(storm::modelchecker::SparseDtmcPrctlModelChecker<storm::models::sparse::Dtmc<ConstantType>>& modelChecker);
+                std::unique_ptr<CheckResult> checkBoundedUntilFormula(storm::modelchecker::SparseDtmcPrctlModelChecker<storm::models::sparse::Dtmc<ConstantType>>& modelChecker);
                 
                 storm::utility::ModelInstantiator<SparseModelType, storm::models::sparse::Dtmc<ConstantType>> modelInstantiator;
             };

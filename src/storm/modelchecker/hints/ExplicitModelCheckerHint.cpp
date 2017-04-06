@@ -1,21 +1,15 @@
 #include "storm/modelchecker/hints/ExplicitModelCheckerHint.h"
 #include "storm/adapters/CarlAdapter.h"
+#include "storm/utility/macros.h"
+
+#include "storm/exceptions/InvalidOperationException.h"
+
 namespace storm {
     namespace modelchecker {
            
         template<typename ValueType>
-        ExplicitModelCheckerHint<ValueType>::ExplicitModelCheckerHint(boost::optional<std::vector<ValueType>> const& resultHint, boost::optional<storm::storage::TotalScheduler> const& schedulerHint) : resultHint(resultHint), schedulerHint(schedulerHint), forceApplicationOfHints(false) {
-            // Intentionally left empty
-        }
-        
-        template<typename ValueType>
-        ExplicitModelCheckerHint<ValueType>::ExplicitModelCheckerHint(boost::optional<std::vector<ValueType>>&& resultHint, boost::optional<storm::storage::TotalScheduler>&& schedulerHint) : resultHint(resultHint), schedulerHint(schedulerHint), forceApplicationOfHints(false) {
-            // Intentionally left empty
-        }
-        
-        template<typename ValueType>
         bool ExplicitModelCheckerHint<ValueType>::isEmpty() const {
-            return !resultHint.is_initialized() && !schedulerHint.is_initialized();
+            return !hasResultHint() && !hasSchedulerHint() && !hasMaybeStates();
         }
         
         template<typename ValueType>
@@ -49,6 +43,43 @@ namespace storm {
         }
         
         template<typename ValueType>
+        bool ExplicitModelCheckerHint<ValueType>::getComputeOnlyMaybeStates() const {
+            STORM_LOG_THROW(!computeOnlyMaybeStates || (hasMaybeStates() && hasResultHint()), storm::exceptions::InvalidOperationException, "Computing only maybestates is activated but no maybestates or no result hint is specified.");
+            return computeOnlyMaybeStates;
+        }
+        
+        template<typename ValueType>
+        void ExplicitModelCheckerHint<ValueType>::setComputeOnlyMaybeStates(bool value) {
+            STORM_LOG_THROW(!value || (hasMaybeStates() && hasResultHint()), storm::exceptions::InvalidOperationException, "Tried to activate that only maybestates need to be computed, but no maybestates or no result hint was given before.");
+            this->computeOnlyMaybeStates = value;
+        }
+        
+        template<typename ValueType>
+        bool ExplicitModelCheckerHint<ValueType>::hasMaybeStates() const {
+            return maybeStates.is_initialized();
+        }
+        
+        template<typename ValueType>
+        storm::storage::BitVector const& ExplicitModelCheckerHint<ValueType>::getMaybeStates() const {
+            return maybeStates.get();
+        }
+        
+        template<typename ValueType>
+        storm::storage::BitVector& ExplicitModelCheckerHint<ValueType>::getMaybeStates() {
+            return maybeStates.get();
+        }
+        
+        template<typename ValueType>
+        void ExplicitModelCheckerHint<ValueType>::setMaybeStates(storm::storage::BitVector const& newMaybeStates) {
+            this->maybeStates = newMaybeStates;
+        }
+        
+        template<typename ValueType>
+        void ExplicitModelCheckerHint<ValueType>::setMaybeStates(storm::storage::BitVector&& newMaybeStates) {
+            this->maybeStates = std::move(newMaybeStates);
+        }
+        
+        template<typename ValueType>
         bool ExplicitModelCheckerHint<ValueType>::hasSchedulerHint() const {
             return schedulerHint.is_initialized();
         }
@@ -74,13 +105,13 @@ namespace storm {
         }
     
         template<typename ValueType>
-        bool ExplicitModelCheckerHint<ValueType>::getForceApplicationOfHints() const {
-            return forceApplicationOfHints;
+        bool ExplicitModelCheckerHint<ValueType>::getNoEndComponentsInMaybeStates() const {
+            return noEndComponentsInMaybeStates;
         }
     
         template<typename ValueType>
-        void ExplicitModelCheckerHint<ValueType>::setForceApplicationOfHints(bool value) {
-            forceApplicationOfHints = value;
+        void ExplicitModelCheckerHint<ValueType>::setNoEndComponentsInMaybeStates(bool value) {
+            noEndComponentsInMaybeStates = value;
         }
     
         template class ExplicitModelCheckerHint<double>;

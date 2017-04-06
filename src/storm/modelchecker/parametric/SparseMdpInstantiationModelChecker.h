@@ -25,8 +25,10 @@ namespace storm {
                 virtual std::unique_ptr<CheckResult> check(storm::utility::parametric::Valuation<typename SparseModelType::ValueType> const& valuation) override;
 
             protected:
-                // Considers the result of the last check as a hint for the current check
-                std::unique_ptr<CheckResult> checkWithResultHint(storm::modelchecker::SparseMdpPrctlModelChecker<storm::models::sparse::Mdp<ConstantType>>& modelChecker);
+                // Optimizations for the different formula types
+                std::unique_ptr<CheckResult> checkReachabilityProbabilityFormula(storm::modelchecker::SparseMdpPrctlModelChecker<storm::models::sparse::Mdp<ConstantType>>& modelChecker, storm::models::sparse::Mdp<ConstantType> const& instantiatedModel);
+                std::unique_ptr<CheckResult> checkReachabilityRewardFormula(storm::modelchecker::SparseMdpPrctlModelChecker<storm::models::sparse::Mdp<ConstantType>>& modelChecker, storm::models::sparse::Mdp<ConstantType> const& instantiatedModel);
+                std::unique_ptr<CheckResult> checkBoundedUntilFormula(storm::modelchecker::SparseMdpPrctlModelChecker<storm::models::sparse::Mdp<ConstantType>>& modelChecker);
                 
                 storm::utility::ModelInstantiator<SparseModelType, storm::models::sparse::Mdp<ConstantType>> modelInstantiator;
             };
