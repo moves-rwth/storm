@@ -265,8 +265,15 @@ if(USE_CARL)
     if(STORM_USE_CLN_RF AND NOT STORM_HAVE_CLN)
 		message(FATAL_ERROR "Cannot use CLN numbers if carl is build without.")
 	endif()
-	
-	list(APPEND STORM_DEP_IMP_TARGETS lib_carl) 
+
+    #The library that needs symbols must be first, then the library that resolves the symbol.
+
+    list(APPEND STORM_DEP_IMP_TARGETS lib_carl)
+    if(STORM_USE_CLN_EA OR STORM_USE_CLN_RF)
+        list(APPEND STORM_DEP_IMP_TARGETS CLN_SHARED)
+    endif()
+    list(APPEND STORM_DEP_IMP_TARGETS GMPXX_SHARED GMP_SHARED)
+
 endif()
 
 
@@ -314,26 +321,13 @@ endif()
 ##	gmp
 ##
 #############################################################
-
-if (NOT STORM_USE_CLN_EA OR NOT "${MSAT_ROOT}" STREQUAL "")
-    find_package(GMP QUIET REQUIRED)
-else()
-    # GMP is optional in this case
-    find_package(GMP QUIET)
-endif()
-
-if(GMP_FOUND)
-    set(STORM_HAVE_GMP ON)
-    message(STATUS "Storm - Linking with gmp.")
-    include_directories("${GMP_INCLUDE_DIR}")
-    list(APPEND STORM_LINK_LIBRARIES ${GMP_LIBRARY})
-elseif(MPIR_FOUND)
-    set(STORM_HAVE_GMP ON)
-    message(STATUS "Storm - Linking with mpir (gmp).")
-    include_directories("${GMP_INCLUDE_DIR}")
-    list(APPEND STORM_LINK_LIBRARIES ${GMP_MPIR_LIBRARY})
-    list(APPEND STORM_LINK_LIBRARIES ${GMP_MPIRXX_LIBRARY})
-endif(GMP_FOUND)
+#
+#find_package(GMP QUIET REQUIRED)
+#
+set(STORM_HAVE_GMP ON)
+#message(STATUS "Storm - Linking with gmp.")
+#include_directories("${GMP_INCLUDE_DIR}")
+#list(APPEND STORM_LINK_LIBRARIES ${GMP_LIBRARY})
 
 #############################################################
 ##
