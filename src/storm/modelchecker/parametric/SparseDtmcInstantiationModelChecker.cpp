@@ -4,6 +4,7 @@
 #include "storm/modelchecker/results/ExplicitQuantitativeCheckResult.h"
 #include "storm/modelchecker/results/ExplicitQualitativeCheckResult.h"
 #include "storm/modelchecker/hints/ExplicitModelCheckerHint.h"
+#include "storm/utility/vector.h"
 
 #include "storm/exceptions/InvalidArgumentException.h"
 #include "storm/exceptions/InvalidStateException.h"
@@ -59,14 +60,8 @@ namespace storm {
                 if (this->getInstantiationsAreGraphPreserving() && !hint.hasMaybeStates()) {
                     // Extract the maybe states from the current result.
                     assert(hint.hasResultHint());
-                    storm::storage::BitVector maybeStates(hint.getResultHint().size(), true);
-                    uint_fast64_t stateIndex = 0;
-                    for (auto const& value : hint.getResultHint()) {
-                        if (storm::utility::isZero(value) || storm::utility::isOne(value)) {
-                            maybeStates.set(stateIndex, false);
-                        }
-                        ++stateIndex;
-                    }
+                    storm::storage::BitVector maybeStates = ~storm::utility::vector::filter<ConstantType>(hint.getResultHint(),
+                                    [] (ConstantType const& value) -> bool { return storm::utility::isZero<ConstantType>(value) || storm::utility::isOne<ConstantType>(value); });
                     hint.setMaybeStates(std::move(maybeStates));
                     hint.setComputeOnlyMaybeStates(true);
                 }
@@ -98,14 +93,7 @@ namespace storm {
                 if (this->getInstantiationsAreGraphPreserving() && !hint.hasMaybeStates()) {
                     // Extract the maybe states from the current result.
                     assert(hint.hasResultHint());
-                    storm::storage::BitVector maybeStates(hint.getResultHint().size(), true);
-                    uint_fast64_t stateIndex = 0;
-                    for (auto const& value : hint.getResultHint()) {
-                        if (storm::utility::isInfinity(value)) {
-                            maybeStates.set(stateIndex, false);
-                        }
-                        ++stateIndex;
-                    }
+                    storm::storage::BitVector maybeStates = ~storm::utility::vector::filterInfinity(hint.getResultHint());
                     // We need to exclude the target states from the maybe states.
                     // Note that we can not consider the states with reward zero since a valuation might set a reward to zero
                     std::unique_ptr<CheckResult> subFormulaResult = modelChecker.check(this->currentCheckTask->getFormula().asOperatorFormula().getSubformula().asEventuallyFormula().getSubformula());
@@ -138,14 +126,8 @@ namespace storm {
                         result = quantitativeResult->template asExplicitQuantitativeCheckResult<ConstantType>().compareAgainstBound(this->currentCheckTask->getFormula().asOperatorFormula().getComparisonType(), this->currentCheckTask->getFormula().asOperatorFormula().template getThresholdAs<ConstantType>());
                         hint.setResultHint(std::move(quantitativeResult->template asExplicitQuantitativeCheckResult<ConstantType>().getValueVector()));
                     }
-                    storm::storage::BitVector maybeStates(hint.getResultHint().size(), true);
-                    uint_fast64_t stateIndex = 0;
-                    for (auto const& value : hint.getResultHint()) {
-                        if (storm::utility::isZero(value)) {
-                            maybeStates.set(stateIndex, false);
-                        }
-                        ++stateIndex;
-                    }
+                    
+                    storm::storage::BitVector maybeStates = storm::utility::vector::filterGreaterZero(hint.getResultHint());
                     // We need to exclude the target states from the maybe states.
                     // Note that we can not consider the states with probability one since a state might reach a target state with prob 1 within >0 steps
                     std::unique_ptr<CheckResult> subFormulaResult = modelChecker.check(this->currentCheckTask->getFormula().asOperatorFormula().getSubformula().asBoundedUntilFormula().getRightSubformula());

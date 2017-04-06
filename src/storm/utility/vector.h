@@ -448,11 +448,13 @@ namespace storm {
              */
             template<class T>
             storm::storage::BitVector filter(std::vector<T> const& values, std::function<bool (T const& value)> const& function) {
-                storm::storage::BitVector result(values.size());
+                storm::storage::BitVector result(values.size(), false);
                 
                 uint_fast64_t currentIndex = 0;
                 for (auto const& value : values) {
-                    result.set(currentIndex, function(value));
+                    if (function(value)) {
+                        result.set(currentIndex, true);
+                    }
                     ++currentIndex;
                 }
                 
@@ -468,8 +470,7 @@ namespace storm {
              */
             template<class T>
             storm::storage::BitVector filterGreaterZero(std::vector<T> const& values) {
-                std::function<bool (T const&)> fnc = [] (T const& value) -> bool { return value > storm::utility::zero<T>(); };
-                return filter(values,  fnc);
+                return filter<T>(values,  [] (T const& value) -> bool { return value > storm::utility::zero<T>(); });
             }
             
             /*!
@@ -492,6 +493,17 @@ namespace storm {
             template<class T>
             storm::storage::BitVector filterOne(std::vector<T> const& values) {
                 return filter<T>(values, storm::utility::isOne<T>);
+            }
+            
+            /*!
+             * Retrieves a bit vector containing all the indices for which the value at this position is equal to one
+             *
+             * @param values The vector of values.
+             * @return The resulting bit vector.
+             */
+            template<class T>
+            storm::storage::BitVector filterInfinity(std::vector<T> const& values) {
+                return filter<T>(values, storm::utility::isInfinity<T>);
             }
             
             /**
