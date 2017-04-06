@@ -1,9 +1,9 @@
 #include "SparseMdpInstantiationModelChecker.h"
 
 #include "storm/logic/FragmentSpecification.h"
-#include "storm/modelChecker/results/ExplicitQuantitativeCheckResult.h"
-#include "storm/modelChecker/results/ExplicitQualitativeCheckResult.h"
-#include "storm/modelChecker/hints/ExplicitModelCheckerHint.h"
+#include "storm/modelchecker/results/ExplicitQuantitativeCheckResult.h"
+#include "storm/modelchecker/results/ExplicitQualitativeCheckResult.h"
+#include "storm/modelchecker/hints/ExplicitModelCheckerHint.h"
 #include "storm/utility/graph.h"
 #include "storm/utility/vector.h"
 

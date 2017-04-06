@@ -189,7 +189,7 @@ namespace storm {
                 typename SparseModelType::RewardModelType const& rewardModel = checkTask.isRewardModelSet() ? this->parametricModel.getRewardModel(checkTask.getRewardModel()) : this->parametricModel.getUniqueRewardModel();
                 std::vector<typename SparseModelType::ValueType> b = rewardModel.getTotalRewardVector(this->parametricModel.getTransitionMatrix());
                     
-                parameterLifter = std::make_unique<storm::transformer::ParameterLifter<typename SparseModelType::ValueType, ConstantType>>(this->parametricModel.getTransitionMatrix(), b, maybeStates, maybeStates);
+                parameterLifter = std::make_unique<storm::transformer::ParameterLifter<typename SparseModelType::ValueType, ConstantType>>(this->parametricModel.getTransitionMatrix(), b, storm::storage::BitVector(this->parametricModel.getTransitionMatrix().getRowCount(), true), maybeStates);
                 computePlayer1Matrix();
 
                 applyPreviousResultAsHint = false;
