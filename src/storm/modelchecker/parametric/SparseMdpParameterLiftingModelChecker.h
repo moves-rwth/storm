@@ -8,7 +8,7 @@
 #include "storm/storage/BitVector.h"
 #include "storm/storage/SparseMatrix.h"
 #include "storm/storage/sparse/StateType.h"
-#include "storm/utility/solver.h"
+#include "storm/solver/GameSolver.h"
 #include "storm/transformer/ParameterLifter.h"
 #include "storm/storage/TotalScheduler.h"
 
@@ -20,7 +20,7 @@ namespace storm {
             class SparseMdpParameterLiftingModelChecker : public SparseParameterLiftingModelChecker<SparseModelType, ConstantType> {
             public:
                 SparseMdpParameterLiftingModelChecker(SparseModelType const& parametricModel);
-                SparseMdpParameterLiftingModelChecker(SparseModelType const& parametricModel, std::unique_ptr<storm::utility::solver::GameSolverFactory<ConstantType>>&& solverFactory);
+                SparseMdpParameterLiftingModelChecker(SparseModelType const& parametricModel, std::unique_ptr<storm::solver::GameSolverFactory<ConstantType>>&& solverFactory);
                 
                 virtual bool canHandle(CheckTask<storm::logic::Formula, typename SparseModelType::ValueType> const& checkTask) const override;
                 
@@ -49,7 +49,7 @@ namespace storm {
                 
                 storm::storage::SparseMatrix<storm::storage::sparse::state_type> player1Matrix;
                 std::unique_ptr<storm::transformer::ParameterLifter<typename SparseModelType::ValueType, ConstantType>> parameterLifter;
-                std::unique_ptr<storm::utility::solver::GameSolverFactory<ConstantType>> solverFactory;
+                std::unique_ptr<storm::solver::GameSolverFactory<ConstantType>> solverFactory;
                 
                 // Results from the most recent solver call.
                 boost::optional<storm::storage::TotalScheduler> minSched, maxSched;

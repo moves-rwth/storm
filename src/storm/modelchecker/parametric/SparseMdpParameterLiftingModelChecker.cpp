@@ -8,7 +8,6 @@
 #include "storm/models/sparse/StandardRewardModel.h"
 #include "storm/utility/vector.h"
 #include "storm/utility/graph.h"
-#include "storm/solver/GameSolver.h"
 #include "storm/logic/FragmentSpecification.h"
 
 #include "storm/exceptions/InvalidArgumentException.h"
@@ -20,11 +19,11 @@ namespace storm {
         namespace parametric {
             
             template <typename SparseModelType, typename ConstantType>
-            SparseMdpParameterLiftingModelChecker<SparseModelType, ConstantType>::SparseMdpParameterLiftingModelChecker(SparseModelType const& parametricModel) : SparseParameterLiftingModelChecker<SparseModelType, ConstantType>(parametricModel), solverFactory(std::make_unique<storm::utility::solver::GameSolverFactory<ConstantType>>()) {
+            SparseMdpParameterLiftingModelChecker<SparseModelType, ConstantType>::SparseMdpParameterLiftingModelChecker(SparseModelType const& parametricModel) : SparseParameterLiftingModelChecker<SparseModelType, ConstantType>(parametricModel), solverFactory(std::make_unique<storm::solver::GameSolverFactory<ConstantType>>()) {
             }
             
             template <typename SparseModelType, typename ConstantType>
-            SparseMdpParameterLiftingModelChecker<SparseModelType, ConstantType>::SparseMdpParameterLiftingModelChecker(SparseModelType const& parametricModel, std::unique_ptr<storm::utility::solver::GameSolverFactory<ConstantType>>&& solverFactory) : SparseParameterLiftingModelChecker<SparseModelType, ConstantType>(parametricModel), solverFactory(std::move(solverFactory)) {
+            SparseMdpParameterLiftingModelChecker<SparseModelType, ConstantType>::SparseMdpParameterLiftingModelChecker(SparseModelType const& parametricModel, std::unique_ptr<storm::solver::GameSolverFactory<ConstantType>>&& solverFactory) : SparseParameterLiftingModelChecker<SparseModelType, ConstantType>(parametricModel), solverFactory(std::move(solverFactory)) {
             }
     
             template <typename SparseModelType, typename ConstantType>
@@ -212,10 +211,10 @@ namespace storm {
                 if(lowerResultBound) solver->setLowerBound(lowerResultBound.get());
                 if(upperResultBound) solver->setUpperBound(upperResultBound.get());
                 if(applyPreviousResultAsHint) {
-                    solver->setTrackScheduler(true);
+                    solver->setTrackSchedulers(true);
                     x.resize(maybeStates.getNumberOfSetBits(), storm::utility::zero<ConstantType>());
-                    if(storm::solver::minimize(dirForParameters) && minSched && player1Sched) solver->setSchedulerHint(std::move(player1Sched.get()), std::move(minSched.get()));
-                    if(storm::solver::maximize(dirForParameters) && maxSched && player1Sched) solver->setSchedulerHint(std::move(player1Sched.get()), std::move(maxSched.get()));
+                    if(storm::solver::minimize(dirForParameters) && minSched && player1Sched) solver->setSchedulerHints(std::move(player1Sched.get()), std::move(minSched.get()));
+                    if(storm::solver::maximize(dirForParameters) && maxSched && player1Sched) solver->setSchedulerHints(std::move(player1Sched.get()), std::move(maxSched.get()));
                 } else {
                     x.assign(maybeStates.getNumberOfSetBits(), storm::utility::zero<ConstantType>());
                 }
@@ -241,11 +240,11 @@ namespace storm {
                     solver->solveGame(this->currentCheckTask->getOptimizationDirection(), dirForParameters, x, parameterLifter->getVector());
                     if(applyPreviousResultAsHint) {
                         if(storm::solver::minimize(dirForParameters)) {
-                            minSched = solver->getPlayer2Scheduler();
+                            minSched = std::move(*solver->getPlayer2Scheduler());
                         } else {
-                            maxSched = solver->getPlayer2Scheduler();
+                            maxSched = std::move(*solver->getPlayer2Scheduler());
                         }
-                        player1Sched = solver->getPlayer1Scheduler();
+                        player1Sched = std::move(*solver->getPlayer1Scheduler());
                     }
                 }
                 

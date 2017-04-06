@@ -4,7 +4,6 @@
 #include <set>
 #include <vector>
 
-#include "storm/solver/AbstractGameSolver.h"
 #include "storm/solver/OptimizationDirection.h"
 
 #include "storm/storage/expressions/Variable.h"
@@ -18,7 +17,7 @@ namespace storm {
          * An interface that represents an abstract symbolic game solver.
          */
         template<storm::dd::DdType Type, typename ValueType = double>
-        class SymbolicGameSolver : public AbstractGameSolver<ValueType> {
+        class SymbolicGameSolver {
         public:
             /*!
              * Constructs a symbolic game solver with the given meta variable sets and pairs.
@@ -120,7 +119,15 @@ namespace storm {
 
             // A player 1 strategy if one was generated.
             boost::optional<storm::dd::Bdd<Type>> player2Strategy;
+            
+            // The precision to achieve.
+            ValueType precision;
 
+            // The maximal number of iterations to perform.
+            uint_fast64_t maximalNumberOfIterations;
+
+            // A flag indicating whether a relative or an absolute stopping criterion is to be used.
+            bool relative;
         };
         
     } // namespace solver
