@@ -102,7 +102,7 @@ namespace storm {
                 STORM_LOG_TRACE("Completed iteration " << iterations << " of elimination process.");
             }
             
-            STORM_LOG_DEBUG("Elimination completed in " << iterations << " iterations.");
+            STORM_LOG_INFO("Elimination completed in " << iterations << " iterations.");
             
             return solution.swapVariables(rowRowMetaVariablePairs);
         }

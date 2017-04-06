@@ -196,7 +196,7 @@ namespace storm {
         storm::storage::DeterministicModelBisimulationDecomposition<ModelType> bisimulationDecomposition(*model, options);
         bisimulationDecomposition.computeBisimulationDecomposition();
         model = bisimulationDecomposition.getQuotient();
-        STORM_LOG_INFO("Bisimulation done. ");
+        STORM_LOG_INFO("Bisimulation done, quotient model has " << model->getNumberOfStates() << " states and " << model->getNumberOfTransitions() << " transitions.");
         return model;
     }
     
@@ -212,7 +212,7 @@ namespace storm {
         storm::storage::NondeterministicModelBisimulationDecomposition<ModelType> bisimulationDecomposition(*model, options);
         bisimulationDecomposition.computeBisimulationDecomposition();
         model = bisimulationDecomposition.getQuotient();
-        STORM_LOG_INFO("Bisimulation done.");
+        STORM_LOG_INFO("Bisimulation done, quotient model has " << model->getNumberOfStates() << " states and " << model->getNumberOfTransitions() << " transitions.");
         return model;
     }
     
