@@ -18,26 +18,28 @@ namespace storm {
         class DFTModelChecker {
 
             typedef std::pair<ValueType, ValueType> approximation_result;
-            typedef boost::variant<ValueType, approximation_result> dft_result;
+            typedef std::vector<boost::variant<ValueType, approximation_result>> dft_results;
+            typedef std::vector<std::shared_ptr<storm::logic::Formula const>> property_vector;
 
         public:
 
             /*!
              * Constructor.
              */
-            DFTModelChecker();
+            DFTModelChecker() {
+            }
 
             /*!
              * Main method for checking DFTs.
              *
              * @param origDft             Original DFT
-             * @param formula             Formula to check for
+             * @param properties          Properties to check for
              * @param symred              Flag indicating if symmetry reduction should be used
              * @param allowModularisation Flag indication if modularisation is allowed
              * @param enableDC            Flag indicating if dont care propagation should be used
              * @param approximationError  Error allowed for approximation. Value 0 indicates no approximation
              */
-            void check(storm::storage::DFT<ValueType> const& origDft, std::shared_ptr<const storm::logic::Formula> const& formula, bool symred = true, bool allowModularisation = true, bool enableDC = true, double approximationError = 0.0);
+            void check(storm::storage::DFT<ValueType> const& origDft, property_vector const& properties, bool symred = true, bool allowModularisation = true, bool enableDC = true, double approximationError = 0.0);
 
             /*!
              * Print timings of all operations to stream.
@@ -51,7 +53,7 @@ namespace storm {
              *
              * @param os Output stream to write to.
              */
-            void printResult(std::ostream& os = std::cout);
+            void printResults(std::ostream& os = std::cout);
 
         private:
 
@@ -62,8 +64,8 @@ namespace storm {
             storm::utility::Stopwatch modelCheckingTimer;
             storm::utility::Stopwatch totalTimer;
 
-            // Model checking result
-            dft_result checkResult;
+            // Model checking results
+            dft_results checkResults;
 
             // Allowed error bound for approximation
             double approximationError;
@@ -72,21 +74,21 @@ namespace storm {
              * Internal helper for model checking a DFT.
              *
              * @param dft                 DFT
-             * @param formula             Formula to check for
+             * @param properties          Properties to check for
              * @param symred              Flag indicating if symmetry reduction should be used
              * @param allowModularisation Flag indication if modularisation is allowed
              * @param enableDC            Flag indicating if dont care propagation should be used
              * @param approximationError  Error allowed for approximation. Value 0 indicates no approximation
              *
-             * @return Model checking result (or in case of approximation two results for lower and upper bound)
+             * @return Model checking results (or in case of approximation two results for lower and upper bound)
              */
-            dft_result checkHelper(storm::storage::DFT<ValueType> const& dft, std::shared_ptr<const storm::logic::Formula> const& formula, bool symred, bool allowModularisation, bool enableDC, double approximationError);
+            dft_results checkHelper(storm::storage::DFT<ValueType> const& dft, property_vector const& properties, bool symred, bool allowModularisation, bool enableDC, double approximationError);
 
             /*!
              * Internal helper for building a CTMC from a DFT via parallel composition.
              *
              * @param dft                 DFT
-             * @param formula             Formula to check for
+             * @param properties          Properties to check for
              * @param symred              Flag indicating if symmetry reduction should be used
              * @param allowModularisation Flag indication if modularisation is allowed
              * @param enableDC            Flag indicating if dont care propagation should be used
@@ -94,30 +96,30 @@ namespace storm {
              *
              * @return CTMC representing the DFT
              */
-            std::shared_ptr<storm::models::sparse::Ctmc<ValueType>> buildModelComposition(storm::storage::DFT<ValueType> const& dft, std::shared_ptr<const storm::logic::Formula> const& formula, bool symred, bool allowModularisation, bool enableDC);
+            std::shared_ptr<storm::models::sparse::Ctmc<ValueType>> buildModelViaComposition(storm::storage::DFT<ValueType> const& dft, property_vector const& properties, bool symred, bool allowModularisation, bool enableDC, double approximationError);
 
             /*!
              * Check model generated from DFT.
              *
              * @param dft                The DFT
-             * @param formula            Formula to check for
+             * @param properties         Properties to check for
              * @param symred             Flag indicating if symmetry reduction should be used
              * @param enableDC           Flag indicating if dont care propagation should be used
              * @param approximationError Error allowed for approximation. Value 0 indicates no approximation
              *
              * @return Model checking result
              */
-            dft_result checkDFT(storm::storage::DFT<ValueType> const& dft, std::shared_ptr<const storm::logic::Formula> const& formula, bool symred, bool enableDC, double approximationError = 0.0);
+            dft_results checkDFT(storm::storage::DFT<ValueType> const& dft, property_vector const& properties, bool symred, bool enableDC, double approximationError = 0.0);
 
             /*!
-             * Check the given markov model for the given property.
+             * Check the given markov model for the given properties.
              *
-             * @param model   Model to check
-             * @param formula Formula to check for
+             * @param model      Model to check
+             * @param properties Properties to check for
              *
              * @return Model checking result
              */
-            std::unique_ptr<storm::modelchecker::CheckResult> checkModel(std::shared_ptr<storm::models::sparse::Model<ValueType>>& model, std::shared_ptr<const storm::logic::Formula> const& formula);
+            std::vector<ValueType> checkModel(std::shared_ptr<storm::models::sparse::Model<ValueType>>& model, property_vector const& properties);
 
             /*!
              * Checks if the computed approximation is sufficient, i.e.

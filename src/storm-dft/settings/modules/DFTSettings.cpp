@@ -29,10 +29,13 @@ namespace storm {
             const std::string DFTSettings::propExpectedTimeOptionName = "expectedtime";
             const std::string DFTSettings::propExpectedTimeOptionShortName = "mttf";
             const std::string DFTSettings::propProbabilityOptionName = "probability";
-            const std::string DFTSettings::propTimeBoundOptionName = "timebound";
+            const std::string DFTSettings::propTimeboundOptionName = "timebound";
+            const std::string DFTSettings::propTimepointsOptionName = "timepoints";
             const std::string DFTSettings::minValueOptionName = "min";
             const std::string DFTSettings::maxValueOptionName = "max";
+            const std::string DFTSettings::firstDependencyOptionName = "firstdep";
             const std::string DFTSettings::transformToGspnOptionName = "gspn";
+            const std::string DFTSettings::exportToJsonOptionName = "export-json";
 #ifdef STORM_HAVE_Z3
             const std::string DFTSettings::solveWithSmtOptionName = "smt";
 #endif
@@ -45,19 +48,22 @@ namespace storm {
                 this->addOption(storm::settings::OptionBuilder(moduleName, symmetryReductionOptionName, false, "Exploit symmetric structure of model.").setShortName(symmetryReductionOptionShortName).build());
                 this->addOption(storm::settings::OptionBuilder(moduleName, modularisationOptionName, false, "Use modularisation (not applicable for expected time).").build());
                 this->addOption(storm::settings::OptionBuilder(moduleName, disableDCOptionName, false, "Disable Dont Care propagation.").build());
+                this->addOption(storm::settings::OptionBuilder(moduleName, firstDependencyOptionName, false, "Avoid non-determinism by always taking the first possible dependency.").build());
                 this->addOption(storm::settings::OptionBuilder(moduleName, approximationErrorOptionName, false, "Approximation error allowed.").setShortName(approximationErrorOptionShortName).addArgument(storm::settings::ArgumentBuilder::createDoubleArgument("error", "The relative approximation error to use.").addValidatorDouble(ArgumentValidatorFactory::createDoubleGreaterEqualValidator(0.0)).build()).build());
                 this->addOption(storm::settings::OptionBuilder(moduleName, approximationHeuristicOptionName, false, "Set the heuristic used for approximation.").addArgument(storm::settings::ArgumentBuilder::createStringArgument("heuristic", "Sets which heuristic is used for approximation. Must be in {depth, probability}. Default is").setDefaultValueString("depth").addValidatorString(ArgumentValidatorFactory::createMultipleChoiceValidator({"depth", "rateratio"})).build()).build());
                 this->addOption(storm::settings::OptionBuilder(moduleName, propExpectedTimeOptionName, false, "Compute expected time of system failure.").setShortName(propExpectedTimeOptionShortName).build());
                 this->addOption(storm::settings::OptionBuilder(moduleName, propProbabilityOptionName, false, "Compute probability of system failure.").build());
-                this->addOption(storm::settings::OptionBuilder(moduleName, propTimeBoundOptionName, false, "Compute probability of system failure up to given timebound.").addArgument(storm::settings::ArgumentBuilder::createDoubleArgument("time", "The timebound to use.").addValidatorDouble(ArgumentValidatorFactory::createDoubleGreaterValidator(0.0)).build()).build());
+                this->addOption(storm::settings::OptionBuilder(moduleName, propTimeboundOptionName, false, "Compute probability of system failure up to given timebound.").addArgument(storm::settings::ArgumentBuilder::createDoubleArgument("time", "The timebound to use.").addValidatorDouble(ArgumentValidatorFactory::createDoubleGreaterValidator(0.0)).build()).build());
+                this->addOption(storm::settings::OptionBuilder(moduleName, propTimepointsOptionName, false, "Compute probability of system failure up to given timebound for a set of given timepoints [starttime, starttime+inc, starttime+2inc, ... ,endtime]").addArgument(storm::settings::ArgumentBuilder::createDoubleArgument("starttime", "The timebound to start from.").addValidatorDouble(ArgumentValidatorFactory::createDoubleGreaterEqualValidator(0.0)).build()).addArgument(storm::settings::ArgumentBuilder::createDoubleArgument("endtime", "The timebound to end with.").addValidatorDouble(ArgumentValidatorFactory::createDoubleGreaterEqualValidator(0.0)).build()).addArgument(storm::settings::ArgumentBuilder::createDoubleArgument("inc", "The value to increment with to get the next timepoint.").addValidatorDouble(ArgumentValidatorFactory::createDoubleGreaterEqualValidator(0.0)).build()).build());
                 this->addOption(storm::settings::OptionBuilder(moduleName, minValueOptionName, false, "Compute minimal value in case of non-determinism.").build());
                 this->addOption(storm::settings::OptionBuilder(moduleName, maxValueOptionName, false, "Compute maximal value in case of non-determinism.").build());
 #ifdef STORM_HAVE_Z3
                 this->addOption(storm::settings::OptionBuilder(moduleName, solveWithSmtOptionName, true, "Solve the DFT with SMT.").build());
 #endif
                 this->addOption(storm::settings::OptionBuilder(moduleName, transformToGspnOptionName, false, "Transform DFT to GSPN.").build());
+                this->addOption(storm::settings::OptionBuilder(moduleName, exportToJsonOptionName, false,  "Export the model to the Cytoscape JSON format.").addArgument(storm::settings::ArgumentBuilder::createStringArgument("filename", "The name of the JSON file to export to.").build()).build());
             }
-            
+
             bool DFTSettings::isDftFileSet() const {
                 return this->getOption(dftFileOptionName).getHasOptionBeenSet();
             }
@@ -117,13 +123,28 @@ namespace storm {
             }
             
             bool DFTSettings::usePropTimebound() const {
-                return this->getOption(propTimeBoundOptionName).getHasOptionBeenSet();
+                return this->getOption(propTimeboundOptionName).getHasOptionBeenSet();
             }
-            
+
             double DFTSettings::getPropTimebound() const {
-                return this->getOption(propTimeBoundOptionName).getArgumentByName("time").getValueAsDouble();
+                return this->getOption(propTimeboundOptionName).getArgumentByName("time").getValueAsDouble();
             }
-            
+
+            bool DFTSettings::usePropTimepoints() const {
+                return this->getOption(propTimepointsOptionName).getHasOptionBeenSet();
+            }
+
+            std::vector<double> DFTSettings::getPropTimepoints() const {
+                double starttime = this->getOption(propTimepointsOptionName).getArgumentByName("starttime").getValueAsDouble();
+                double endtime = this->getOption(propTimepointsOptionName).getArgumentByName("endtime").getValueAsDouble();
+                double inc = this->getOption(propTimepointsOptionName).getArgumentByName("inc").getValueAsDouble();
+                std::vector<double> timepoints;
+                for (double time = starttime; time <= endtime; time += inc) {
+                    timepoints.push_back(time);
+                }
+                return timepoints;
+            }
+
             bool DFTSettings::isComputeMinimalValue() const {
                 return this->getOption(minValueOptionName).getHasOptionBeenSet();
             }
@@ -132,6 +153,10 @@ namespace storm {
                 return this->getOption(maxValueOptionName).getHasOptionBeenSet();
             }
             
+            bool DFTSettings::isTakeFirstDependency() const {
+                return this->getOption(firstDependencyOptionName).getHasOptionBeenSet();
+            }
+
 #ifdef STORM_HAVE_Z3
             bool DFTSettings::solveWithSMT() const {
                 return this->getOption(solveWithSmtOptionName).getHasOptionBeenSet();
@@ -142,17 +167,18 @@ namespace storm {
                 return this->getOption(transformToGspnOptionName).getHasOptionBeenSet();
             }
 
+            bool DFTSettings::isExportToJson() const {
+                return this->getOption(exportToJsonOptionName).getHasOptionBeenSet();
+            }
+
+            std::string DFTSettings::getExportJsonFilename() const {
+                return this->getOption(exportToJsonOptionName).getArgumentByName("filename").getValueAsString();
+            }
+
             void DFTSettings::finalize() {
             }
 
             bool DFTSettings::check() const {
-                // Ensure that only one property is given.
-                if (usePropExpectedTime()) {
-                    STORM_LOG_THROW(!usePropProbability() && !usePropTimebound(), storm::exceptions::InvalidSettingsException, "More than one property given.");
-                } else if (usePropProbability()) {
-                    STORM_LOG_THROW(!usePropTimebound(), storm::exceptions::InvalidSettingsException, "More than one property given.");
-                }
-                
                 // Ensure that at most one of min or max is set
                 STORM_LOG_THROW(!isComputeMinimalValue() || !isComputeMaximalValue(), storm::exceptions::InvalidSettingsException, "Min and max can not both be set.");
                 return true;

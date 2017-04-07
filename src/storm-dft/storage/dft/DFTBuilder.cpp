@@ -46,7 +46,7 @@ namespace storm {
                     auto itFind = mElements.find(childName);
                     STORM_LOG_ASSERT(itFind != mElements.end(), "Child not found.");
                     DFTElementPointer childElement = itFind->second;
-                    STORM_LOG_ASSERT(!childElement->isDependency() && !childElement->isRestriction(), "Child has invalid type.");
+                    STORM_LOG_ASSERT(!childElement->isDependency() && !childElement->isRestriction(), "Child '" << childElement->name() << "' has invalid type.");
                     elem.first->pushBackChild(childElement);
                     childElement->addRestriction(elem.first);
                 }
@@ -60,6 +60,7 @@ namespace storm {
                     STORM_LOG_ASSERT(itFind != mElements.end(), "Child '" << childName << "' not found");
                     DFTElementPointer childElement = itFind->second;
                     if (!first) {
+                        STORM_LOG_ASSERT(childElement->isBasicElement(), "Child '" << childName << "' of dependency '" << elem.first->name() << "' must be BE.");
                         dependencies.push_back(std::static_pointer_cast<DFTBE<ValueType>>(childElement));
                     } else {
                         elem.first->setTriggerElement(std::static_pointer_cast<DFTGate<ValueType>>(childElement));
@@ -159,7 +160,7 @@ namespace storm {
 
         template<typename ValueType>
         bool DFTBuilder<ValueType>::addStandardGate(std::string const& name, std::vector<std::string> const& children, DFTElementType tp) {
-            STORM_LOG_ASSERT(children.size() > 0, "No child.");
+            STORM_LOG_ASSERT(children.size() > 0, "No child for " << name);
             if(mElements.count(name) != 0) {
                 // Element with that name already exists.
                 return false;
@@ -271,7 +272,7 @@ namespace storm {
                     if (be->canFail()) {
                         dormancyFactor = be->passiveFailureRate() / be->activeFailureRate();
                     }
-                    addBasicElement(be->name(), be->activeFailureRate(), dormancyFactor);
+                    addBasicElement(be->name(), be->activeFailureRate(), dormancyFactor, be->isTransient());
                     break;
                 }
                 case DFTElementType::CONSTF:

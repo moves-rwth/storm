@@ -9,6 +9,8 @@ namespace storm {
         enum class ModelType {
             Dtmc, Ctmc, Mdp, MarkovAutomaton, S2pg
         };
+
+        ModelType getModelType(std::string const& type);
         
         std::ostream& operator<<(std::ostream& os, ModelType const& type);
     }

@@ -261,6 +261,8 @@ namespace storm {
 
             DFTIndependentSymmetries findSymmetries(DFTColouring<ValueType> const& colouring) const;
 
+            void findSymmetriesHelper(std::vector<size_t> const& candidates, DFTColouring<ValueType> const& colouring, std::map<size_t, std::vector<std::vector<size_t>>>& result) const;
+
             std::vector<size_t> immediateFailureCauses(size_t index) const;
             
             std::vector<size_t> findModularisationRewrite() const;
@@ -274,7 +276,7 @@ namespace storm {
             }
 
         private:
-            std::pair<std::vector<size_t>, std::vector<size_t>> getSortedParentAndOutDepIds(size_t index) const;
+            std::tuple<std::vector<size_t>, std::vector<size_t>, std::vector<size_t>> getSortedParentAndDependencyIds(size_t index) const;
             
             bool elementIndicesCorrect() const {
                 for(size_t i = 0; i < mElements.size(); ++i) {

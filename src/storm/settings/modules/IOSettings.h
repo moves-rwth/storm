@@ -73,6 +73,20 @@ namespace storm {
                 std::string getLabelingFilename() const;
 
                 /*!
+                 * Retrieves whether the explicit option with DRN was set.
+                 *
+                 * @return True if the explicit option with DRN was set.
+                 */
+                bool isExplicitDRNSet() const;
+
+                /*!
+                 * Retrieves the name of the file that contains the model in the DRN format.
+                 *
+                 * @return The name of the DRN file that contains the model.
+                 */
+                std::string getExplicitDRNFilename() const;
+
+                /*!
                  * Retrieves whether the PRISM language option was set.
                  *
                  * @return True if the PRISM input option was set.
@@ -275,6 +289,8 @@ namespace storm {
                 static const std::string exportExplicitOptionName;
                 static const std::string explicitOptionName;
                 static const std::string explicitOptionShortName;
+                static const std::string explicitDrnOptionName;
+                static const std::string explicitDrnOptionShortName;
                 static const std::string prismInputOptionName;
                 static const std::string janiInputOptionName;
                 static const std::string prismToJaniOptionName;

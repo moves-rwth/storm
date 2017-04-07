@@ -5,7 +5,6 @@
 #include <boost/algorithm/string.hpp>
 #include <boost/lexical_cast.hpp>
 #include <boost/algorithm/string/replace.hpp>
-#include "storm/storage/expressions/ExpressionManager.h"
 #include "storm/exceptions/NotImplementedException.h"
 #include "storm/exceptions/FileIoException.h"
 #include "storm/exceptions/NotSupportedException.h"
@@ -25,27 +24,11 @@ namespace storm {
         }
 
         template<typename ValueType>
-        std::string DFTJsonParser<ValueType>::stripQuotsFromName(std::string const& name) {
-            size_t firstQuots = name.find("\"");
-            size_t secondQuots = name.find("\"", firstQuots+1);
-            
-            if(firstQuots == std::string::npos) {
-                return name;
-            } else {
-                STORM_LOG_THROW(secondQuots != std::string::npos, storm::exceptions::FileIoException, "No ending quotation mark found in " << name);
-                return name.substr(firstQuots+1,secondQuots-1);
-            }
-        }
-
-        template<typename ValueType>
-        std::string DFTJsonParser<ValueType>::getString(json const& structure, std::string const& errorInfo) {
-            STORM_LOG_THROW(structure.is_string(), storm::exceptions::FileIoException, "Expected a string in " << errorInfo << ", got '" << structure.dump() << "'");
-            return structure.front();
-        }
-
-        template<typename ValueType>
-        std::string DFTJsonParser<ValueType>::parseNodeIdentifier(std::string const& name) {
-            return boost::replace_all_copy(name, "'", "__prime__");
+        std::string DFTJsonParser<ValueType>::generateUniqueName(std::string const& id, std::string const& name) {
+            std::string newId = name;
+            std::replace(newId.begin(), newId.end(), ' ', '_');
+            std::replace(newId.begin(), newId.end(), '-', '_');
+            return newId + "_" + id;
         }
 
         template<typename ValueType>
@@ -58,40 +41,49 @@ namespace storm {
             parsedJson << file;
             storm::utility::closeFile(file);
 
-            // Start by building mapping from ids to names
+            json parameters = parsedJson.at("parameters");
+#ifdef STORM_HAVE_CARL
+            for (auto it = parameters.begin(); it != parameters.end(); ++it) {
+            STORM_LOG_THROW((std::is_same<ValueType, storm::RationalFunction>::value), storm::exceptions::NotSupportedException, "Parameters only allowed when using rational functions.");
+                std::string parameter = it.key();
+                storm::expressions::Variable var = manager->declareRationalVariable(parameter);
+                identifierMapping.emplace(var.getName(), var);
+                parser.setIdentifierMapping(identifierMapping);
+                STORM_LOG_TRACE("Added parameter: " << var.getName());
+            }
+#endif
+
+            json nodes = parsedJson.at("nodes");
+
+            // Start by building mapping from ids to their unique names
             std::map<std::string, std::string> nameMapping;
-            for (auto& element: parsedJson) {
-                if (element.at("classes") != "") {
-                    json data = element.at("data");
-                    std::string id = data.at("id");
-                    std::string name = data.at("name");
-                    nameMapping[id] = name;
-                }
+            for (auto& element: nodes) {
+                json data = element.at("data");
+                std::string id = data.at("id");
+                nameMapping[id] = generateUniqueName(id, data.at("name"));
             }
 
-            // TODO: avoid hack
-            std::string toplevelId = nameMapping["1"];
-
-            for (auto& element : parsedJson) {
+            for (auto& element : nodes) {
+                STORM_LOG_TRACE("Parsing: " << element);
                 bool success = true;
-                if (element.at("classes") == "") {
-                    continue;
-                }
                 json data = element.at("data");
-                std::string name = data.at("name");
+                std::string name = generateUniqueName(data.at("id"), data.at("name"));
                 std::vector<std::string> childNames;
                 if (data.count("children") > 0) {
-                    for (auto& child : data.at("children")) {
+                    for (std::string const& child : data.at("children")) {
                         childNames.push_back(nameMapping[child]);
                     }
                 }
 
-                std::string type = getString(element.at("classes"), "classes");
+                std::string type = data.at("type");
 
                 if(type == "and") {
                     success = builder.addAndElement(name, childNames);
                 } else if (type == "or") {
                     success = builder.addOrElement(name, childNames);
+                } else if (type == "vot") {
+                    std::string votThreshold = data.at("voting");
+                    success = builder.addVotElement(name, boost::lexical_cast<unsigned>(votThreshold), childNames);
                 } else if (type == "pand") {
                     success = builder.addPandElement(name, childNames);
                 } else if (type == "por") {
@@ -108,21 +100,31 @@ namespace storm {
                 } else if (type == "be") {
                     ValueType failureRate = parseRationalExpression(data.at("rate"));
                     ValueType dormancyFactor = parseRationalExpression(data.at("dorm"));
-                    success = builder.addBasicElement(name, failureRate, dormancyFactor);
+                    bool transient = false;
+                    if (data.count("transient") > 0) {
+                        transient = data.at("transient");
+                    }
+                    success = builder.addBasicElement(name, failureRate, dormancyFactor, transient);
                 } else {
                     STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Type name: " << type << "  not recognized.");
                     success = false;
                 }
 
-                // Set layout positions
-                json position = element.at("position");
-                double x = position.at("x");
-                double y = position.at("y");
-                builder.addLayoutInfo(name, x / 7, y / 7);
+                // Do not set layout for dependencies
+                // This does not work because dependencies might be splitted
+                // TODO: do splitting later in rewriting step
+                if (type != "fdep" && type != "pdep") {
+                    // Set layout positions
+                    json position = element.at("position");
+                    double x = position.at("x");
+                    double y = position.at("y");
+                    builder.addLayoutInfo(name, x / 7, y / 7);
+                }
                 STORM_LOG_THROW(success, storm::exceptions::FileIoException, "Error while adding element '" << element << "'.");
             }
 
-            if(!builder.setTopLevel(toplevelId)) {
+            std::string toplevelName = nameMapping[parsedJson.at("toplevel")];
+            if(!builder.setTopLevel(toplevelName)) {
                 STORM_LOG_THROW(false, storm::exceptions::FileIoException, "Top level id unknown.");
             }
         }

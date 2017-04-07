@@ -103,9 +103,9 @@ namespace storm {
                 //TODO Matthias: collect constraints for SMT solving
                 //0 <= probability <= 1
                 if (binaryDependencies && !storm::utility::isOne(probability) && children.size() > 2) {
-                    // Introduce additional element for first capturing the proabilistic dependency
+                    // Introduce additional element for first capturing the probabilistic dependency
                     std::string nameAdditional = name + "_additional";
-                    addBasicElement(nameAdditional, storm::utility::zero<ValueType>(), storm::utility::zero<ValueType>());
+                    addBasicElement(nameAdditional, storm::utility::zero<ValueType>(), storm::utility::zero<ValueType>(), false);
                     // First consider probabilistic dependency
                     addDepElement(name + "_pdep", {children.front(), nameAdditional}, probability);
                     // Then consider dependencies to the children if probabilistic dependency failed
@@ -168,12 +168,12 @@ namespace storm {
                 return true;
             }
             
-            bool addBasicElement(std::string const& name, ValueType failureRate, ValueType dormancyFactor) {
+            bool addBasicElement(std::string const& name, ValueType failureRate, ValueType dormancyFactor, bool transient = false) {
                 //TODO Matthias: collect constraints for SMT solving
                 //failureRate > 0
                 //0 <= dormancyFactor <= 1
 
-                mElements[name] = std::make_shared<DFTBE<ValueType>>(mNextId++, name, failureRate, dormancyFactor);
+                mElements[name] = std::make_shared<DFTBE<ValueType>>(mNextId++, name, failureRate, dormancyFactor, transient);
                 return true;
             }
 

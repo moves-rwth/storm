@@ -3,6 +3,8 @@
 #include "storm/utility/constants.h"
 #include "storm/utility/macros.h"
 #include "storm/exceptions/NotImplementedException.h"
+#include "storm/settings/SettingsManager.h"
+#include "storm-dft/settings/modules/DFTSettings.h"
 
 namespace storm {
     namespace generator {
@@ -43,7 +45,7 @@ namespace storm {
         
         template<typename ValueType, typename StateType>
         StateBehavior<ValueType, StateType> DftNextStateGenerator<ValueType, StateType>::expand(StateToIdCallback const& stateToIdCallback) {
-            STORM_LOG_TRACE("Explore state: " << mDft.getStateString(state));
+            STORM_LOG_DEBUG("Explore state: " << mDft.getStateString(state));
 
             // Prepare the result, in case we return early.
             StateBehavior<ValueType, StateType> result;
@@ -52,10 +54,10 @@ namespace storm {
             bool hasDependencies = state->nrFailableDependencies() > 0;
             size_t failableCount = hasDependencies ? state->nrFailableDependencies() : state->nrFailableBEs();
             size_t currentFailable = 0;
-            Choice<ValueType, StateType> choice(0, !hasDependencies);
 
             // Check for absorbing state
             if (mDft.hasFailed(state) || mDft.isFailsafe(state) || failableCount == 0) {
+                Choice<ValueType, StateType> choice(0, true);
                 // Add self loop
                 choice.addProbability(state->getId(), storm::utility::one<ValueType>());
                 STORM_LOG_TRACE("Added self loop for " << state->getId());
@@ -65,8 +67,14 @@ namespace storm {
                 return result;
             }
 
+            Choice<ValueType, StateType> choice(0, !hasDependencies);
+
             // Let BE fail
             while (currentFailable < failableCount) {
+                if (storm::settings::getModule<storm::settings::modules::DFTSettings>().isTakeFirstDependency() && hasDependencies && currentFailable > 0) {
+                    // We discard further exploration as we already chose one dependent event
+                    break;
+                }
                 STORM_LOG_ASSERT(!mDft.hasFailed(state), "Dft has failed.");
 
                 // Construct new state as copy from original one
@@ -104,7 +112,7 @@ namespace storm {
                     newState->updateFailableDependencies(next->id());
                 }
 
-                if(newState->isInvalid()) {
+                if(newState->isInvalid() || (nextBE->isTransient() && !newState->hasFailed(mDft.getTopLevelIndex()))) {
                     // Continue with next possible state
                     ++currentFailable;
                     continue;
