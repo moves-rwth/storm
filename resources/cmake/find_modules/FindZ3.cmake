@@ -16,7 +16,7 @@ find_path(Z3_INCLUDE_DIR
 # find library
 find_library(Z3_LIBRARY 
 		NAMES z3
-                PATHS ENV PATH INCLUDE "${Z3_ROOT}/bin"
+                PATHS ENV PATH INCLUDE "${Z3_ROOT}/lib"
             )
 
 find_program(Z3_EXEC
@@ -44,4 +44,4 @@ ENDIF (NOT Z3_FIND_QUIETLY)
 #message(${Z3_LIBRARY})
 
 # make the set variables only visible in advanced mode
-mark_as_advanced(Z3_LIBRARY Z3_INCLUDE_DIR Z3_SOLVER)
+mark_as_advanced(Z3_LIBRARY Z3_INCLUDE_DIR Z3_SOLVER, Z3_EXEC)
