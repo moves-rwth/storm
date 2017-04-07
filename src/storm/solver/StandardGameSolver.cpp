@@ -91,85 +91,53 @@ namespace storm {
                     return solveGameValueIteration(player1Dir, player2Dir, x, b);
                 case StandardGameSolverSettings<ValueType>::SolutionMethod::PolicyIteration:
                     return solveGamePolicyIteration(player1Dir, player2Dir, x, b);
+                default:
+                    STORM_LOG_THROW(false, storm::exceptions::InvalidSettingsException, "This solver does not implement the selected solution method");
             }
-            return true;
+            return false;
         }
         
         template<typename ValueType>
         bool StandardGameSolver<ValueType>::solveGamePolicyIteration(OptimizationDirection player1Dir, OptimizationDirection player2Dir, std::vector<ValueType>& x, std::vector<ValueType> const& b) const {
             
-
+            // Create the initial choice selections.
+            std::vector<storm::storage::sparse::state_type> player1Choices = this->hasSchedulerHints() ? this->player1SchedulerHint->getChoices() : std::vector<storm::storage::sparse::state_type>(this->player1Matrix.getRowGroupCount(), 0);
+            std::vector<storm::storage::sparse::state_type> player2Choices = this->hasSchedulerHints() ? this->player2SchedulerHint->getChoices() : std::vector<storm::storage::sparse::state_type>(this->player2Matrix.getRowGroupCount(), 0);
             
-            
-            
-           /* // Create the initial scheduler.
-            std::vector<storm::storage::sparse::state_type> scheduler = this->schedulerHint ? this->schedulerHint->getChoices() : std::vector<storm::storage::sparse::state_type>(this->A.getRowGroupCount());
-            
-            // Get a vector for storing the right-hand side of the inner equation system.
-            if(!auxiliaryRowGroupVector) {
-                auxiliaryRowGroupVector = std::make_unique<std::vector<ValueType>>(this->A.getRowGroupCount());
+            if(!auxiliaryP2RowGroupVector) {
+                auxiliaryP2RowGroupVector = std::make_unique<std::vector<ValueType>>(this->player2Matrix.getRowGroupCount());
             }
-            std::vector<ValueType>& subB = *auxiliaryRowGroupVector;
+            if(!auxiliaryP1RowGroupVector) {
+                auxiliaryP1RowGroupVector = std::make_unique<std::vector<ValueType>>(this->player1Matrix.getRowGroupCount());
+            }
+            std::vector<ValueType>& subB = *auxiliaryP1RowGroupVector;
 
-            // Resolve the nondeterminism according to the current scheduler.
-            storm::storage::SparseMatrix<ValueType> submatrix = this->A.selectRowsFromRowGroups(scheduler, true);
+            // Solve the equation system induced by the two schedulers.
+            storm::storage::SparseMatrix<ValueType> submatrix;
+            getInducedMatrixVector(x, b, player1Choices, player2Choices, submatrix, subB);
             submatrix.convertToEquationSystem();
-            storm::utility::vector::selectVectorValues<ValueType>(subB, scheduler, this->A.getRowGroupIndices(), b);
-
-            // Create a solver that we will use throughout the procedure. We will modify the matrix in each iteration.
-            auto solver = linearEquationSolverFactory->create(std::move(submatrix));
-            if (this->lowerBound) {
-                solver->setLowerBound(this->lowerBound.get());
-            }
-            if (this->upperBound) {
-                solver->setUpperBound(this->upperBound.get());
-            }
-            solver->setCachingEnabled(true);
+            auto submatrixSolver = linearEquationSolverFactory->create(std::move(submatrix));
+            if (this->lowerBound) { submatrixSolver->setLowerBound(this->lowerBound.get()); }
+            if (this->upperBound) { submatrixSolver->setUpperBound(this->upperBound.get()); }
+            submatrixSolver->setCachingEnabled(true);
             
             Status status = Status::InProgress;
             uint64_t iterations = 0;
             do {
                 // Solve the equation system for the 'DTMC'.
                 // FIXME: we need to remove the 0- and 1- states to make the solution unique.
-                // HOWEVER: if we start with a valid scheduler, then we will never get an illegal one, because staying
-                // within illegal MECs will never strictly improve the value. Is this true?
-                solver->solveEquations(x, subB);
+                submatrixSolver->solveEquations(x, subB);
                 
-                // Go through the multiplication result and see whether we can improve any of the choices.
-                bool schedulerImproved = false;
-                for (uint_fast64_t group = 0; group < this->A.getRowGroupCount(); ++group) {
-                    for (uint_fast64_t choice = this->A.getRowGroupIndices()[group]; choice < this->A.getRowGroupIndices()[group + 1]; ++choice) {
-                        // If the choice is the currently selected one, we can skip it.
-                        if (choice - this->A.getRowGroupIndices()[group] == scheduler[group]) {
-                            continue;
-                        }
-                        
-                        // Create the value of the choice.
-                        ValueType choiceValue = storm::utility::zero<ValueType>();
-                        for (auto const& entry : this->A.getRow(choice)) {
-                            choiceValue += entry.getValue() * x[entry.getColumn()];
-                        }
-                        choiceValue += b[choice];
-                        
-                        // If the value is strictly better than the solution of the inner system, we need to improve the scheduler.
-                        // TODO: If the underlying solver is not precise, this might run forever (i.e. when a state has two choices where the (exact) values are equal).
-                        // only changing the scheduler if the values are not equal (modulo precision) would make this unsound.
-                        if (valueImproved(dir, x[group], choiceValue)) {
-                            schedulerImproved = true;
-                            scheduler[group] = choice - this->A.getRowGroupIndices()[group];
-                        }
-                    }
-                }
+                bool schedulerImproved = extractChoices(player1Dir, player2Dir, x, b, *auxiliaryP2RowGroupVector, player1Choices, player2Choices);
                 
                 // If the scheduler did not improve, we are done.
                 if (!schedulerImproved) {
                     status = Status::Converged;
                 } else {
-                    // Update the scheduler and the solver.
-                    submatrix = this->A.selectRowsFromRowGroups(scheduler, true);
+                    // Update the solver.
+                    getInducedMatrixVector(x, b, player1Choices, player2Choices, submatrix, subB);
                     submatrix.convertToEquationSystem();
-                    storm::utility::vector::selectVectorValues<ValueType>(subB, scheduler, this->A.getRowGroupIndices(), b);
-                    solver->setMatrix(std::move(submatrix));
+                    submatrixSolver->setMatrix(std::move(submatrix));
                 }
                 
                 // Update environment variables.
@@ -180,27 +148,24 @@ namespace storm {
             reportStatus(status, iterations);
             
             // If requested, we store the scheduler for retrieval.
-            if (this->isTrackSchedulerSet()) {
-                this->scheduler = std::make_unique<storm::storage::TotalScheduler>(std::move(scheduler));
+            if (this->isTrackSchedulersSet()) {
+                this->player1Scheduler = std::make_unique<storm::storage::TotalScheduler>(std::move(player1Choices));
+                this->player2Scheduler = std::make_unique<storm::storage::TotalScheduler>(std::move(player2Choices));
             }
             
             if(!this->isCachingEnabled()) {
                 clearCache();
             }
             
-            if(status == Status::Converged || status == Status::TerminatedEarly) {
-                return true;
-            } else{
-                return false;
-            }*/
+            return status == Status::Converged || status == Status::TerminatedEarly;
         }
         
         template<typename ValueType>
         bool StandardGameSolver<ValueType>::valueImproved(OptimizationDirection dir, ValueType const& value1, ValueType const& value2) const {
             if (dir == OptimizationDirection::Minimize) {
-                return value1 > value2;
+                return value2 < value1;
             } else {
-                return value1 < value2;
+                return value2 > value1;
             }
         }
 
@@ -237,9 +202,16 @@ namespace storm {
             std::vector<ValueType>& multiplyResult = *auxiliaryP2RowVector;
             std::vector<ValueType>& reducedMultiplyResult = *auxiliaryP2RowGroupVector;
              
-             
-            // if this->schedulerHint ...
-             
+            if (this->hasSchedulerHints()) {
+                // Solve the equation system induced by the two schedulers.
+                storm::storage::SparseMatrix<ValueType> submatrix;
+                getInducedMatrixVector(x, b, this->player1SchedulerHint->getChoices(), this->player2SchedulerHint->getChoices(), submatrix, *auxiliaryP1RowGroupVector);
+                submatrix.convertToEquationSystem();
+                auto submatrixSolver = linearEquationSolverFactory->create(std::move(submatrix));
+                if (this->lowerBound) { submatrixSolver->setLowerBound(this->lowerBound.get()); }
+                if (this->upperBound) { submatrixSolver->setUpperBound(this->upperBound.get()); }
+                submatrixSolver->solveEquations(x, *auxiliaryP1RowGroupVector);
+            }
              
             std::vector<ValueType>* newX = auxiliaryP1RowGroupVector.get();
             std::vector<ValueType>* currentX = &x;
@@ -274,204 +246,16 @@ namespace storm {
             if (this->isTrackSchedulersSet()) {
                 std::vector<uint_fast64_t> player1Choices(player1Matrix.getRowGroupCount(), 0);
                 std::vector<uint_fast64_t> player2Choices(player2Matrix.getRowGroupCount(), 0);
-                multiplyAndReduce(player1Dir, player2Dir, x, &b, *linEqSolverPlayer2Matrix, multiplyResult, reducedMultiplyResult, *auxiliaryP1RowGroupVector, &player1Choices, &player2Choices);
+                extractChoices(player1Dir, player2Dir, x, b, *auxiliaryP2RowGroupVector, player1Choices, player2Choices);
                 this->player1Scheduler = std::make_unique<storm::storage::TotalScheduler>(std::move(player1Choices));
                 this->player2Scheduler = std::make_unique<storm::storage::TotalScheduler>(std::move(player2Choices));
- 
             }
             
             if(!this->isCachingEnabled()) {
                 clearCache();
             }
             
-            if(status == Status::Converged || status == Status::TerminatedEarly) {
-                return true;
-            } else{
-                return false;
-            }
-             
-             
-             
-             
-                         /*      // Set up the environment for value iteration.
-            bool converged = false;
-            uint_fast64_t numberOfPlayer1States = x.size();
-            std::vector<ValueType> tmpResult(numberOfPlayer1States);
-            std::vector<ValueType> nondetResult(player2Matrix.getRowCount());
-            std::vector<ValueType> player2Result(player2Matrix.getRowGroupCount());
-
-            // Now perform the actual value iteration.
-            uint_fast64_t iterations = 0;
-            do {
-                player2Matrix.multiplyWithVector(x, nondetResult);
-                storm::utility::vector::addVectors(b, nondetResult, nondetResult);
-
-                if (player2Goal == OptimizationDirection::Minimize) {
-                    storm::utility::vector::reduceVectorMin(nondetResult, player2Result, player2Matrix.getRowGroupIndices());
-                } else {
-                    storm::utility::vector::reduceVectorMax(nondetResult, player2Result, player2Matrix.getRowGroupIndices());
-                }
-
-                for (uint_fast64_t pl1State = 0; pl1State < numberOfPlayer1States; ++pl1State) {
-                    storm::storage::SparseMatrix<storm::storage::sparse::state_type>::const_rows relevantRows = player1Matrix.getRowGroup(pl1State);
-                    if (relevantRows.getNumberOfEntries() > 0) {
-                        storm::storage::SparseMatrix<storm::storage::sparse::state_type>::const_iterator it = relevantRows.begin();
-                        storm::storage::SparseMatrix<storm::storage::sparse::state_type>::const_iterator ite = relevantRows.end();
-
-                        // Set the first value.
-                        tmpResult[pl1State] = player2Result[it->getColumn()];
-                        ++it;
-
-                        // Now iterate through the different values and pick the extremal one.
-                        if (player1Goal == OptimizationDirection::Minimize) {
-                            for (; it != ite; ++it) {
-                                tmpResult[pl1State] = std::min(tmpResult[pl1State], player2Result[it->getColumn()]);
-                            }
-                        } else {
-                            for (; it != ite; ++it) {
-                                tmpResult[pl1State] = std::max(tmpResult[pl1State], player2Result[it->getColumn()]);
-                            }
-                        }
-                    } else {
-                        tmpResult[pl1State] = storm::utility::zero<ValueType>();
-                    }
-                }
-
-                // Check if the process converged and set up the new iteration in case we are not done.
-                converged = storm::utility::vector::equalModuloPrecision(x, tmpResult, this->precision, this->relative);
-                std::swap(x, tmpResult);
-
-                ++iterations;
-            } while (!converged && iterations < this->maximalNumberOfIterations && !(this->hasCustomTerminationCondition() && this->getTerminationCondition().terminateNow(x)));
-            
-            STORM_LOG_WARN_COND(converged, "Iterative solver for stochastic two player games did not converge after " << iterations << " iterations.");
-            
-            if(this->trackScheduler){
-                std::vector<uint_fast64_t> player2Choices(player2Matrix.getRowGroupCount());
-                storm::utility::vector::reduceVectorMinOrMax(player2Goal, nondetResult, player2Result, player2Matrix.getRowGroupIndices(), &player2Choices);
-                this->player2Scheduler = std::make_unique<storm::storage::TotalScheduler>(std::move(player2Choices));
-
-                std::vector<uint_fast64_t> player1Choices(numberOfPlayer1States, 0);
-                for (uint_fast64_t pl1State = 0; pl1State < numberOfPlayer1States; ++pl1State) {
-                    storm::storage::SparseMatrix<storm::storage::sparse::state_type>::const_rows relevantRows = player1Matrix.getRowGroup(pl1State);
-                    if (relevantRows.getNumberOfEntries() > 0) {
-                        storm::storage::SparseMatrix<storm::storage::sparse::state_type>::const_iterator it = relevantRows.begin();
-                        storm::storage::SparseMatrix<storm::storage::sparse::state_type>::const_iterator ite = relevantRows.end();
-                        // Set the first value.
-                        tmpResult[pl1State] = player2Result[it->getColumn()];
-                        ++it;
-                        storm::storage::sparse::state_type localChoice = 1;
-                        // Now iterate through the different values and pick the extremal one.
-                        if (player1Goal == OptimizationDirection::Minimize) {
-                            for (; it != ite; ++it, ++localChoice) {
-                                if(player2Result[it->getColumn()] < tmpResult[pl1State]){
-                                    tmpResult[pl1State] = player2Result[it->getColumn()];
-                                    player1Choices[pl1State] = localChoice;
-                                }
-                            }
-                        } else {
-                            for (; it != ite; ++it, ++localChoice) {
-                                if(player2Result[it->getColumn()] > tmpResult[pl1State]){
-                                    tmpResult[pl1State] = player2Result[it->getColumn()];
-                                    player1Choices[pl1State] = localChoice;
-                                }
-                            }
-                        }
-                    } else {
-                        STORM_LOG_ERROR("There is no choice for Player 1 at state " << pl1State << " in the stochastic two player game. This is not expected!");
-                    }
-                }
-                this->player1Scheduler = std::make_unique<storm::storage::TotalScheduler>(std::move(player1Choices));
-            }
-            
-             
-             
-             * if(!linEqSolverA) {
-                linEqSolverA = linearEquationSolverFactory->create(A);
-                linEqSolverA->setCachingEnabled(true);
-            }
-            
-            if (!auxiliaryRowVector.get()) {
-                auxiliaryRowVector = std::make_unique<std::vector<ValueType>>(A.getRowCount());
-            }
-            std::vector<ValueType>& multiplyResult = *auxiliaryRowVector;
-            
-            if (!auxiliaryRowGroupVector.get()) {
-                auxiliaryRowGroupVector = std::make_unique<std::vector<ValueType>>(A.getRowGroupCount());
-            }
-            
-            if(this->schedulerHint) {
-                // Resolve the nondeterminism according to the scheduler hint
-                storm::storage::SparseMatrix<ValueType> submatrix = this->A.selectRowsFromRowGroups(this->schedulerHint->getChoices(), true);
-                submatrix.convertToEquationSystem();
-                storm::utility::vector::selectVectorValues<ValueType>(*auxiliaryRowGroupVector, this->schedulerHint->getChoices(), this->A.getRowGroupIndices(), b);
-
-                // Solve the resulting equation system.
-                // Note that the linEqSolver might consider a slightly different interpretation of "equalModuloPrecision". Hence, we iteratively increase its precision.
-                auto submatrixSolver = linearEquationSolverFactory->create(std::move(submatrix));
-                submatrixSolver->setCachingEnabled(true);
-                if (this->lowerBound) { submatrixSolver->setLowerBound(this->lowerBound.get()); }
-                if (this->upperBound) { submatrixSolver->setUpperBound(this->upperBound.get()); }
-                submatrixSolver->solveEquations(x, *auxiliaryRowGroupVector);
-            }
-            
-            std::vector<ValueType>* newX = auxiliaryRowGroupVector.get();
-            
-            std::vector<ValueType>* currentX = &x;
-            
-            // Proceed with the iterations as long as the method did not converge or reach the maximum number of iterations.
-            uint64_t iterations = 0;
-            
-            Status status = Status::InProgress;
-            while (status == Status::InProgress) {
-                // Compute x' = A*x + b.
-                linEqSolverA->multiply(*currentX, &b, multiplyResult);
-                
-                // Reduce the vector x' by applying min/max for all non-deterministic choices.
-                storm::utility::vector::reduceVectorMinOrMax(dir, multiplyResult, *newX, this->A.getRowGroupIndices());
-                
-                // Determine whether the method converged.
-                if (storm::utility::vector::equalModuloPrecision<ValueType>(*currentX, *newX, this->getSettings().getPrecision(), this->getSettings().getRelativeTerminationCriterion())) {
-                    status = Status::Converged;
-                }
-                
-                // Update environment variables.
-                std::swap(currentX, newX);
-                ++iterations;
-                status = updateStatusIfNotConverged(status, *currentX, iterations);
-            }
-            
-            reportStatus(status, iterations);
-            
-            // If we performed an odd number of iterations, we need to swap the x and currentX, because the newest result
-            // is currently stored in currentX, but x is the output vector.
-            if (currentX == auxiliaryRowGroupVector.get()) {
-                std::swap(x, *currentX);
-            }
-            
-            // If requested, we store the scheduler for retrieval.
-            if (this->isTrackSchedulerSet()) {
-                // Due to a custom termination condition, it may be the case that no iterations are performed. In this
-                // case we need to compute x'= A*x+b once.
-                if (iterations==0) {
-                    linEqSolverA->multiply(x, &b, multiplyResult);
-                }
-                std::vector<storm::storage::sparse::state_type> choices(this->A.getRowGroupCount());
-                // Reduce the multiplyResult and keep track of the choices made
-                storm::utility::vector::reduceVectorMinOrMax(dir, multiplyResult, x, this->A.getRowGroupIndices(), &choices);
-                this->scheduler = std::make_unique<storm::storage::TotalScheduler>(std::move(choices));
-            }
-
-            if(!this->isCachingEnabled()) {
-                clearCache();
-            }
-            
-            if(status == Status::Converged || status == Status::TerminatedEarly) {
-                return true;
-            } else{
-                return false;
-            }
-             */
+            return (status == Status::Converged || status == Status::TerminatedEarly);
         }
         
         template<typename ValueType>
@@ -502,17 +286,13 @@ namespace storm {
         }
         
         template<typename ValueType>
-        void StandardGameSolver<ValueType>::multiplyAndReduce(OptimizationDirection player1Dir, OptimizationDirection player2Dir, std::vector<ValueType>& x, std::vector<ValueType> const* b, storm::solver::LinearEquationSolver<ValueType>& linEqSolver, std::vector<ValueType>& multiplyResult, std::vector<ValueType>& p2ReducedMultiplyResult, std::vector<ValueType>& p1ReducedMultiplyResult, std::vector<uint_fast64_t>* player1Choices, std::vector<uint_fast64_t>* player2Choices) const {
+        void StandardGameSolver<ValueType>::multiplyAndReduce(OptimizationDirection player1Dir, OptimizationDirection player2Dir, std::vector<ValueType>& x, std::vector<ValueType> const* b, storm::solver::LinearEquationSolver<ValueType> const& linEqSolver, std::vector<ValueType>& multiplyResult, std::vector<ValueType>& p2ReducedMultiplyResult, std::vector<ValueType>& p1ReducedMultiplyResult) const {
             
             linEqSolver.multiply(x, b, multiplyResult);
                 
-            storm::utility::vector::reduceVectorMinOrMax(player2Dir, multiplyResult, p2ReducedMultiplyResult, player2Matrix.getRowGroupIndices(), player2Choices);
+            storm::utility::vector::reduceVectorMinOrMax(player2Dir, multiplyResult, p2ReducedMultiplyResult, player2Matrix.getRowGroupIndices());
 
             uint_fast64_t pl1State = 0;
-            std::vector<uint_fast64_t>::iterator choiceIt;
-            if (player1Choices) {
-                choiceIt = player1Choices->begin();
-            }
             for (auto& result : p1ReducedMultiplyResult) {
                 storm::storage::SparseMatrix<storm::storage::sparse::state_type>::const_rows relevantRows = player1Matrix.getRowGroup(pl1State);
                 STORM_LOG_ASSERT(relevantRows.getNumberOfEntries() != 0, "There is a choice of player 1 that does not lead to any player 2 choice");
@@ -521,40 +301,103 @@ namespace storm {
 
                 // Set the first value.
                 result = p2ReducedMultiplyResult[it->getColumn()];
-                if (player1Choices) {
-                    *choiceIt = 0;
-                }
-                uint_fast64_t localChoice = 1;
                 ++it;
                 
                 // Now iterate through the different values and pick the extremal one.
                 if (player1Dir == OptimizationDirection::Minimize) {
-                    for (; it != ite; ++it, ++localChoice) {
-                        ValueType& val = p2ReducedMultiplyResult[it->getColumn()];
-                        if (val < result) {
-                            result = val;
-                            if (player1Choices) {
-                                *choiceIt = localChoice;
-                            }
-                        }
+                    for (; it != ite; ++it) {
+                        result = std::min(result, p2ReducedMultiplyResult[it->getColumn()]);
                     }
                 } else {
-                    for (; it != ite; ++it, ++localChoice) {
-                        ValueType& val = p2ReducedMultiplyResult[it->getColumn()];
-                        if (val > result) {
-                            result = val;
-                            if (player1Choices) {
-                                *choiceIt = localChoice;
-                            }
-                        }
+                    for (; it != ite; ++it) {
+                        result = std::max(result, p2ReducedMultiplyResult[it->getColumn()]);
                     }
                 }
                 ++pl1State;
-                if (player1Choices) {
-                    ++choiceIt;
-                }
             }
         }
+
+        template<typename ValueType>
+        bool StandardGameSolver<ValueType>::extractChoices(OptimizationDirection player1Dir, OptimizationDirection player2Dir, std::vector<ValueType> const& x, std::vector<ValueType> const& b, std::vector<ValueType>& player2ChoiceValues, std::vector<uint_fast64_t>& player1Choices, std::vector<uint_fast64_t>& player2Choices) const {
+            
+            // get the choices of player 2 and the corresponding values.
+            bool schedulerImproved = false;
+            auto currentValueIt = player2ChoiceValues.begin();
+            for (uint_fast64_t p2Group = 0; p2Group < this->player2Matrix.getRowGroupCount(); ++p2Group) {
+                uint_fast64_t firstRowInGroup = this->player2Matrix.getRowGroupIndices()[p2Group];
+                uint_fast64_t rowGroupSize = this->player2Matrix.getRowGroupIndices()[p2Group + 1] - firstRowInGroup;
+                
+                // We need to check whether the scheduler improved. Therefore, we first have to evaluate the current choice
+                uint_fast64_t currentP2Choice = player2Choices[p2Group];
+                *currentValueIt = storm::utility::zero<ValueType>();
+                for (auto const& entry : this->player2Matrix.getRow(firstRowInGroup + currentP2Choice)) {
+                    *currentValueIt += entry.getValue() * x[entry.getColumn()];
+                }
+                *currentValueIt += b[firstRowInGroup + currentP2Choice];
+                
+                // now check the other choices
+                for (uint_fast64_t p2Choice = 0; p2Choice < rowGroupSize; ++p2Choice) {
+                    if (p2Choice == currentP2Choice) {
+                        continue;
+                    }
+                    ValueType choiceValue = storm::utility::zero<ValueType>();
+                    for (auto const& entry : this->player2Matrix.getRow(firstRowInGroup + p2Choice)) {
+                        choiceValue += entry.getValue() * x[entry.getColumn()];
+                    }
+                    choiceValue += b[firstRowInGroup + p2Choice];
+                        
+                    if (valueImproved(player2Dir, *currentValueIt, choiceValue)) {
+                        schedulerImproved = true;
+                        player2Choices[p2Group] = p2Choice;
+                        *currentValueIt = std::move(choiceValue);
+                    }
+                }
+            }
+            
+            // Now extract the choices of player 1
+            for (uint_fast64_t p1Group = 0; p1Group < this->player1Matrix.getRowGroupCount(); ++p1Group) {
+                uint_fast64_t firstRowInGroup = this->player1Matrix.getRowGroupIndices()[p1Group];
+                uint_fast64_t rowGroupSize = this->player1Matrix.getRowGroupIndices()[p1Group + 1] - firstRowInGroup;
+                uint_fast64_t currentChoice = player1Choices[p1Group];
+                ValueType currentValue = player2ChoiceValues[this->player1Matrix.getRow(firstRowInGroup + currentChoice).begin()->getColumn()];
+                for (uint_fast64_t p1Choice = 0; p1Choice < rowGroupSize; ++p1Choice) {
+                    // If the choice is the currently selected one, we can skip it.
+                    if (p1Choice == currentChoice) {
+                        continue;
+                    }
+                    ValueType const& choiceValue = player2ChoiceValues[this->player1Matrix.getRow(firstRowInGroup + p1Choice).begin()->getColumn()];
+                    if (valueImproved(player1Dir, currentValue, choiceValue)) {
+                        schedulerImproved = true;
+                        player1Choices[p1Group] = p1Choice;
+                        currentValue = choiceValue;
+                    }
+                }
+            }
+            
+            return schedulerImproved;
+        }
+        
+        template<typename ValueType>
+        void StandardGameSolver<ValueType>::getInducedMatrixVector(std::vector<ValueType>& x, std::vector<ValueType> const& b, std::vector<uint_fast64_t> const& player1Choices, std::vector<uint_fast64_t> const& player2Choices, storm::storage::SparseMatrix<ValueType>& inducedMatrix, std::vector<ValueType>& inducedVector) const {
+            //Get the rows of the player2matrix that are selected by the schedulers
+            //Note that rows can be selected more then once and in an arbitrary order.
+            std::vector<storm::storage::sparse::state_type> selectedRows;
+            selectedRows.reserve(player1Matrix.getRowGroupCount());
+            uint_fast64_t pl1State = 0;
+            for (auto const& pl1Choice : player1Choices){
+                auto const& pl1Row = player1Matrix.getRow(pl1State, pl1Choice);
+                STORM_LOG_ASSERT(pl1Row.getNumberOfEntries() == 1, "It is assumed that rows of player one have one entry, but this is not the case.");
+                uint_fast64_t const& pl2State = pl1Row.begin()->getColumn();
+                selectedRows.push_back(player2Matrix.getRowGroupIndices()[pl2State] + player2Choices[pl2State]);
+                ++pl1State;
+            }
+            
+            //Get the matrix and the vector induced by this selection. Note that we add entries at the diagonal
+            inducedMatrix = player2Matrix.selectRowsFromRowIndexSequence(selectedRows, true);
+            inducedVector.resize(inducedMatrix.getRowCount());
+            storm::utility::vector::selectVectorValues<ValueType>(inducedVector, selectedRows, b);
+        }
+
 
         
         template<typename ValueType>

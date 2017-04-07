@@ -91,8 +91,10 @@ namespace storm {
                     return solveEquationsValueIteration(dir, x, b);
                 case StandardMinMaxLinearEquationSolverSettings<ValueType>::SolutionMethod::PolicyIteration:
                     return solveEquationsPolicyIteration(dir, x, b);
+                default:
+                    STORM_LOG_THROW(false, storm::exceptions::InvalidSettingsException, "This solver does not implement the selected solution method");
             }
-            return true;
+            return false;
         }
         
         template<typename ValueType>
@@ -133,9 +135,10 @@ namespace storm {
                 // Go through the multiplication result and see whether we can improve any of the choices.
                 bool schedulerImproved = false;
                 for (uint_fast64_t group = 0; group < this->A.getRowGroupCount(); ++group) {
+                    uint_fast64_t currentChoice = scheduler[group];
                     for (uint_fast64_t choice = this->A.getRowGroupIndices()[group]; choice < this->A.getRowGroupIndices()[group + 1]; ++choice) {
                         // If the choice is the currently selected one, we can skip it.
-                        if (choice - this->A.getRowGroupIndices()[group] == scheduler[group]) {
+                        if (choice - this->A.getRowGroupIndices()[group] == currentChoice) {
                             continue;
                         }
                         
@@ -152,6 +155,7 @@ namespace storm {
                         if (valueImproved(dir, x[group], choiceValue)) {
                             schedulerImproved = true;
                             scheduler[group] = choice - this->A.getRowGroupIndices()[group];
+                            x[group] = std::move(choiceValue);
                         }
                     }
                 }
@@ -183,25 +187,15 @@ namespace storm {
                 clearCache();
             }
             
-            if(status == Status::Converged || status == Status::TerminatedEarly) {
-                return true;
-            } else{
-                return false;
-            }
+            return status == Status::Converged || status == Status::TerminatedEarly;
         }
         
         template<typename ValueType>
         bool StandardMinMaxLinearEquationSolver<ValueType>::valueImproved(OptimizationDirection dir, ValueType const& value1, ValueType const& value2) const {
             if (dir == OptimizationDirection::Minimize) {
-                if (value1 > value2) {
-                    return true;
-                }
-                return false;
+                return value2 < value1;
             } else {
-                if (value1 < value2) {
-                    return true;
-                }
-                return false;
+                return value2 > value1;
             }
         }
 
@@ -297,11 +291,7 @@ namespace storm {
                 clearCache();
             }
             
-            if(status == Status::Converged || status == Status::TerminatedEarly) {
-                return true;
-            } else{
-                return false;
-            }
+            return status == Status::Converged || status == Status::TerminatedEarly;
         }
         
         template<typename ValueType>
