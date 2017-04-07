@@ -1,7 +1,7 @@
 #include "DftJsonExporter.h"
 
 #include "storm/exceptions/NotImplementedException.h"
-#include "storm/exceptions/FileIOException.h"
+#include "storm/exceptions/FileIoException.h"
 
 #include <algorithm>
 #include <string>
