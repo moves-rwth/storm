@@ -30,7 +30,7 @@ Consequently, our guide on how to run Storm is structured accordingly. For every
 
 Many of Storm's executables have many options, only a fraction of which are covered in this guide. If you want to explore these options, invoke the executable with the `--help [hint]` option. If a hint is given, only those options are shown that match it.
 
-Before we get started, let us check whether everything is set up properly. In all command-line examples we assume that the executables are in your PATH and can therefore be invoked without prefixing them with their path. If you installed Storm via [homebrew]({{ site.github.url }}/documentation/installation/installation.html#homebrew), this is automatically the case; if you built Storm yourself, you have to [manually add it to your PATH]({{ site.github.url }}/documentation/installation/installation.html#adding-storm-to-your-path-optional). Typing
+Before we get started, let us check whether everything is set up properly. In all command-line examples we assume that the executables are in your PATH and can therefore be invoked without prefixing them with their path. If you installed Storm via [Homebrew]({{ site.github.url }}/documentation/installation/installation.html#homebrew), this is automatically the case; if you built Storm yourself, you have to [manually add it to your PATH]({{ site.github.url }}/documentation/installation/installation.html#adding-storm-to-your-path-optional). Typing
 
 ```shell
 storm
@@ -443,7 +443,7 @@ ERROR (storm.cpp:39): An exception caused Storm to terminate. The message of the
 </div>
 
 
-Likely, Storm will tell you that there is an error and that for nondeterministic models you need to specify whether minimal or maximal probabilities are to be computed. Why is that? Since the model is a [Markov Decision Process](models.html#discrete-time-markov-decision-processes-mdps), there are (potentially) nondeterministic choices in the model that need to be resolved. Storm doesn't know how to resolve them unless you tell it to either minimize or maximize (wrt. to the probability of the objective) whenever there is a nondeterministic choice.
+Likely, Storm will tell you that there is an error and that for nondeterministic models you need to specify whether minimal or maximal probabilities are to be computed. Why is that? Since the model is a [Markov Decision Process](models.html#discrete-time-markov-decision-processes-mdps), there are (potentially) nondeterministic choices in the model that need to be resolved. Storm doesn't know how to resolve them unless you tell it to either minimize or maximize (w.r.t. the probability of the objective) whenever there is a nondeterministic choice.
 
 ```shell
 storm --prism leader4.nm --prop "Pmin=? [F<=40 (s1=4 | s2=4 | s3=4 | s4=4) ]"
@@ -1581,7 +1581,7 @@ Labels: 	0
 
 As we selected the *hybrid* engine, Storm builds the MDP in terms of a symbolic data structure ((MT)BDDs), hence the `(symbolic)` marker. For this representation, Storm also reports the sizes of the state and transition DDs in terms of the number of nodes.
 
-The algorithm uses a sampling-based technique to approximate $$\pi$$. More specifically, it repeatedly (100 times in this particular instance) samples points in a square and checks whether they are in a circle whose diameter is the edge length of the square (which is called a hit). From this, we can derive $$\pi \approx 4 \frac{hits}{100}$$ (for more details, we refer to [this explanation](https://theclevermachine.wordpress.com/tag/rejection-sampling/){:target="_blank"}). We are therefore interested in the expected number of hits until termination of the algorithm (as all JANI models obtained from `storm-pgcl`, it has a transient boolean variable `_ret0_` that marks termination of the pGCL program; this transient variable can be used as a label in properties):
+The algorithm uses a sampling-based technique to approximate $$\pi$$. More specifically, it repeatedly (100 times in this particular instance) samples points in a square and checks whether they are in a circle whose diameter is the edge length of the square (which is called a hit). From this, we can derive $$\pi \approx 4 \frac{hits}{100}$$ (for more details, we refer to [this explanation](https://theclevermachine.wordpress.com/tag/rejection-sampling/){:target="_blank"}). We are therefore interested in the expected number of hits until termination of the algorithm (as all JANI models obtained from `storm-pgcl`, it has a transient Boolean variable `_ret0_` that marks termination of the pGCL program; this transient variable can be used as a label in properties):
 
 ```shell
 storm --jani approx_pi_00100_010_full.jani --engine hybrid --prop "Rmax=? [F \"_ret0_\"]"
@@ -1685,7 +1685,7 @@ init one done deadlock
 ```
 </div>
 
-Again, we assume that all three files are located in the current directory. We proceed analoguously to the example in the PRISM input section and start by loading the model:
+Again, we assume that all three files are located in the current directory. We proceed analogously to the example in the PRISM input section and start by loading the model:
 
 ```shell
 storm --explicit die.tra die.lab --transrew die.tra.rew
