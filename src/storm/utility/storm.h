@@ -332,6 +332,7 @@ namespace storm {
             STORM_PRINT_AND_LOG("Transforming continuous model to discrete model...");
             storm::transformer::transformContinuousToDiscreteModelInPlace(markovModel, consideredFormula);
             STORM_PRINT_AND_LOG(" done!" << std::endl);
+            markovModel->printModelInformationToStream(std::cout);
         }
         
         auto modelParameters = storm::models::sparse::getProbabilityParameters(*markovModel);
