@@ -1,4 +1,5 @@
 #include <sstream>
+#include <queue>
 
 #include "storm/modelchecker/parametric/ParameterLifting.h"
 
@@ -164,16 +165,30 @@ namespace storm {
                 auto fractionOfAllSatArea = storm::utility::zero<CoefficientType>();
                 auto fractionOfAllViolatedArea = storm::utility::zero<CoefficientType>();
                 
-                std::vector<std::pair<storm::storage::ParameterRegion<typename SparseModelType::ValueType>, RegionCheckResult>> regions;
-                regions.emplace_back(region, RegionCheckResult::Unknown);
-                storm::storage::BitVector resultRegions(1, false);
-                uint_fast64_t indexOfCurrentRegion = 0;
-                
+                std::queue<std::pair<storm::storage::ParameterRegion<typename SparseModelType::ValueType>, RegionCheckResult>> unprocessedRegions;
+                std::vector<std::pair<storm::storage::ParameterRegion<typename SparseModelType::ValueType>, RegionCheckResult>> result;
+                unprocessedRegions.emplace(region, RegionCheckResult::Unknown);
+                uint_fast64_t numOfAnalyzedRegions = 0;
+                CoefficientType displayedProgress = storm::utility::zero<CoefficientType>();
+                if (storm::settings::getModule<storm::settings::modules::CoreSettings>().isShowStatisticsSet()) {
+                    STORM_PRINT_AND_LOG("Progress (solved fraction) :" << std::endl <<  "0% [");
+                    while (displayedProgress < storm::utility::one<CoefficientType>() - threshold) {
+                        STORM_PRINT_AND_LOG(" ");
+                        displayedProgress += storm::utility::convertNumber<CoefficientType>(0.01);
+                    }
+                    while (displayedProgress < storm::utility::one<CoefficientType>()) {
+                        STORM_PRINT_AND_LOG("-");
+                        displayedProgress += storm::utility::convertNumber<CoefficientType>(0.01);
+                    }
+                    STORM_PRINT_AND_LOG("] 100%" << std::endl << "   [");
+                    displayedProgress = storm::utility::zero<CoefficientType>();
+                }
+
                 while (fractionOfUndiscoveredArea > threshold) {
-                    STORM_LOG_THROW(indexOfCurrentRegion < regions.size(), storm::exceptions::InvalidStateException, "Threshold for undiscovered area not reached but no unprocessed regions left.");
-                    STORM_LOG_INFO("Analyzing region #" << indexOfCurrentRegion << " (" << storm::utility::convertNumber<double>(fractionOfUndiscoveredArea) * 100 << "% still unknown)");
-                    auto const& currentRegion = regions[indexOfCurrentRegion].first;
-                    auto& res = regions[indexOfCurrentRegion].second;
+                    STORM_LOG_THROW(!unprocessedRegions.empty(), storm::exceptions::InvalidStateException, "Threshold for undiscovered area not reached but no unprocessed regions left.");
+                    STORM_LOG_INFO("Analyzing region #" << numOfAnalyzedRegions << " (" << storm::utility::convertNumber<double>(fractionOfUndiscoveredArea) * 100 << "% still unknown)");
+                    auto& currentRegion = unprocessedRegions.front().first;
+                    auto& res = unprocessedRegions.front().second;
                     if (settings.applyExactValidation) {
                         res = analyzeRegionExactValidation(currentRegion, res);
                     } else {
@@ -183,37 +198,48 @@ namespace storm {
                         case RegionCheckResult::AllSat:
                             fractionOfUndiscoveredArea -= currentRegion.area() / areaOfParameterSpace;
                             fractionOfAllSatArea += currentRegion.area() / areaOfParameterSpace;
-                            resultRegions.set(indexOfCurrentRegion, true);
+                            result.push_back(std::move(unprocessedRegions.front()));
                             break;
                         case RegionCheckResult::AllViolated:
                             fractionOfUndiscoveredArea -= currentRegion.area() / areaOfParameterSpace;
                             fractionOfAllViolatedArea += currentRegion.area() / areaOfParameterSpace;
-                            resultRegions.set(indexOfCurrentRegion, true);
+                            result.push_back(std::move(unprocessedRegions.front()));
                             break;
                         default:
                             std::vector<storm::storage::ParameterRegion<typename SparseModelType::ValueType>> newRegions;
                             currentRegion.split(currentRegion.getCenterPoint(), newRegions);
-                            resultRegions.grow(regions.size() + newRegions.size(), false);
                             RegionCheckResult initResForNewRegions = (res == RegionCheckResult::CenterSat) ? RegionCheckResult::ExistsSat :
                                                                      ((res == RegionCheckResult::CenterViolated) ? RegionCheckResult::ExistsViolated :
                                                                       RegionCheckResult::Unknown);
                             for(auto& newRegion : newRegions) {
-                                regions.emplace_back(std::move(newRegion), initResForNewRegions);
+                                unprocessedRegions.emplace(std::move(newRegion), initResForNewRegions);
                             }
                             break;
                     }
-                    ++indexOfCurrentRegion;
+                    ++numOfAnalyzedRegions;
+                    unprocessedRegions.pop();
+                    if (storm::settings::getModule<storm::settings::modules::CoreSettings>().isShowStatisticsSet()) {
+                        while (displayedProgress < storm::utility::one<CoefficientType>() - fractionOfUndiscoveredArea) {
+                            STORM_PRINT_AND_LOG("#");
+                            displayedProgress += storm::utility::convertNumber<CoefficientType>(0.01);
+                        }
+                    }
                 }
-                resultRegions.resize(regions.size());
                 
                 if (storm::settings::getModule<storm::settings::modules::CoreSettings>().isShowStatisticsSet()) {
+                    while (displayedProgress < storm::utility::one<CoefficientType>()) {
+                        STORM_PRINT_AND_LOG("-");
+                        displayedProgress += storm::utility::convertNumber<CoefficientType>(0.01);
+                    }
+                    STORM_PRINT_AND_LOG("]" << std::endl);
+                    
                     STORM_PRINT_AND_LOG("Parameter Lifting Statistics:" << std::endl);
-                    STORM_PRINT_AND_LOG("    Analyzed a total of " << indexOfCurrentRegion << " regions." << std::endl);
+                    STORM_PRINT_AND_LOG("    Analyzed a total of " << numOfAnalyzedRegions << " regions." << std::endl);
                     STORM_PRINT_AND_LOG("    Initialization took " << initializationStopwatch << " seconds." << std::endl);
                     STORM_PRINT_AND_LOG("    Checking sampled models took " << instantiationCheckerStopwatch << " seconds." << std::endl);
                     STORM_PRINT_AND_LOG("    Checking lifted models took " << parameterLiftingCheckerStopwatch << " seconds." << std::endl);
                 }
-                return storm::utility::vector::filterVector(regions, resultRegions);
+                return result;
             }
     
             template <typename SparseModelType, typename ConstantType>
