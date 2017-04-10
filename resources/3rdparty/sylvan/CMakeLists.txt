@@ -1,12 +1,11 @@
 cmake_minimum_required(VERSION 3.1)
 
-project(sylvan VERSION 1.2.0)
+project(sylvan LANGUAGES C CXX VERSION 1.2.0)
 
 set(PROJECT_DESCRIPTION "Sylvan, a parallel decision diagram library")
 set(PROJECT_URL "https://github.com/trolando/sylvan")
 
 message(STATUS "CMake build configuration for Sylvan ${PROJECT_VERSION}")
-enable_language(C CXX)
 
 set(CMAKE_C_STANDARD 11)
 set(CMAKE_C_STANDARD_REQUIRED ON)
@@ -32,6 +31,20 @@ set(CMAKE_CXX_FLAGS "-O2 -Wextra -Wall -fno-strict-aliasing -Wno-deprecated -fPI
 if (NOT SYLVAN_PORTABLE)
     set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -march=native")
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -march=native")
+endif()
+
+if (SYLVAN_USE_LTO)
+    message(STATUS "Sylvan - Enabling LTO.")
+    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -flto -flto-partition=none")
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -flto -flto-partition=none")
+    
+    # For GCC, we need to set the ar/ranlib commands to use the gcc wrappers to account for LTO.
+    if ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")
+        message(STATUS "Sylvan - Setting ar/ranlib to account for LTO.")
+        set(CMAKE_AR gcc-ar CACHE FILEPATH "Archiver" FORCE)
+        set(CMAKE_RANLIB gcc-ranlib CACHE FILEPATH "Ranlib" FORCE)
+        message(STATUS "Sylvan - ar/ranlib are ${CMAKE_AR} and ${CMAKE_RANLIB}, respectively.")
+    endif()
 endif()
 
 option(WITH_COVERAGE "Add generation of test coverage" OFF)

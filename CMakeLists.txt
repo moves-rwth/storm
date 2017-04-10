@@ -234,6 +234,13 @@ endif ()
 
 if (STORM_USE_LTO)
     set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -flto")
+    
+    # Fix for problems that occured when using LTO on gcc. This should be removed when it's
+    # not needed anymore as it makes the the already long link-step potentially longer.
+    if (STORM_COMPILER_GCC)
+        set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -flto-partition=none")
+    endif()
+    
     message(STATUS "Storm - Enabling link-time optimizations.")
 else()
     message(STATUS "Storm - Disabling link-time optimizations.")
