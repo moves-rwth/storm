@@ -9,8 +9,8 @@ namespace storm {
         namespace parametric{
             
 
-            template<typename SparseModelType, typename ConstantType>
-            class SparseDtmcRegionChecker : public RegionChecker<SparseModelType, ConstantType> {
+            template <typename SparseModelType, typename ConstantType, typename ExactConstantType = ConstantType>
+            class SparseDtmcRegionChecker : public RegionChecker<SparseModelType, ConstantType, ExactConstantType> {
 
             public:
                 SparseDtmcRegionChecker(SparseModelType const& parametricModel);

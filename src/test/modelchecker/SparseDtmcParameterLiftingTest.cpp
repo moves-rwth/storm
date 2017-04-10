@@ -5,9 +5,7 @@
 
 #include "storm/adapters/CarlAdapter.h"
 
-#include "utility/storm.h"
-#include "storm/models/sparse/Model.h"
-#include "modelchecker/parametric/SparseDtmcRegionChecker.h"
+#include "storm/utility/storm.h"
 
 TEST(SparseDtmcParameterLiftingTest, Brp_Prob) {
     
@@ -25,7 +23,7 @@ TEST(SparseDtmcParameterLiftingTest, Brp_Prob) {
     auto rewParameters = storm::models::sparse::getRewardParameters(*model);
     modelParameters.insert(rewParameters.begin(), rewParameters.end());
     
-    storm::modelchecker::parametric::SparseDtmcRegionChecker<storm::models::sparse::Dtmc<storm::RationalFunction>, double> regionChecker(*model);
+    storm::modelchecker::parametric::SparseDtmcRegionChecker<storm::models::sparse::Dtmc<storm::RationalFunction>, double, storm::RationalNumber> regionChecker(*model);
     regionChecker.specifyFormula(storm::modelchecker::CheckTask<storm::logic::Formula, storm::RationalFunction>(*formulas[0], true));
 
     //start testing
@@ -55,7 +53,7 @@ TEST(SparseDtmcParameterLiftingTest, Brp_Rew) {
     auto rewParameters = storm::models::sparse::getRewardParameters(*model);
     modelParameters.insert(rewParameters.begin(), rewParameters.end());
     
-    storm::modelchecker::parametric::SparseDtmcRegionChecker<storm::models::sparse::Dtmc<storm::RationalFunction>, double> regionChecker(*model);
+    storm::modelchecker::parametric::SparseDtmcRegionChecker<storm::models::sparse::Dtmc<storm::RationalFunction>, double, storm::RationalNumber> regionChecker(*model);
     regionChecker.specifyFormula(storm::modelchecker::CheckTask<storm::logic::Formula, storm::RationalFunction>(*formulas[0], true));
     
     //start testing
@@ -85,7 +83,7 @@ TEST(SparseDtmcParameterLiftingTest, Brp_Rew_Bounded) {
     auto rewParameters = storm::models::sparse::getRewardParameters(*model);
     modelParameters.insert(rewParameters.begin(), rewParameters.end());
     
-    storm::modelchecker::parametric::SparseDtmcRegionChecker<storm::models::sparse::Dtmc<storm::RationalFunction>, double> regionChecker(*model);
+    storm::modelchecker::parametric::SparseDtmcRegionChecker<storm::models::sparse::Dtmc<storm::RationalFunction>, double, storm::RationalNumber> regionChecker(*model);
     regionChecker.specifyFormula(storm::modelchecker::CheckTask<storm::logic::Formula, storm::RationalFunction>(*formulas[0], true));
     
     //start testing
@@ -116,7 +114,7 @@ TEST(SparseDtmcParameterLiftingTest, Brp_Prob_exactValidation) {
     auto rewParameters = storm::models::sparse::getRewardParameters(*model);
     modelParameters.insert(rewParameters.begin(), rewParameters.end());
     
-    storm::modelchecker::parametric::SparseDtmcRegionChecker<storm::models::sparse::Dtmc<storm::RationalFunction>, double> regionChecker(*model);
+    storm::modelchecker::parametric::SparseDtmcRegionChecker<storm::models::sparse::Dtmc<storm::RationalFunction>, double, storm::RationalNumber> regionChecker(*model);
     auto settings = regionChecker.getSettings();
     settings.applyExactValidation = true;
     regionChecker.setSettings(settings);
@@ -149,7 +147,7 @@ TEST(SparseDtmcParameterLiftingTest, Brp_Rew_exactValidation) {
     auto rewParameters = storm::models::sparse::getRewardParameters(*model);
     modelParameters.insert(rewParameters.begin(), rewParameters.end());
     
-    storm::modelchecker::parametric::SparseDtmcRegionChecker<storm::models::sparse::Dtmc<storm::RationalFunction>, double> regionChecker(*model);
+    storm::modelchecker::parametric::SparseDtmcRegionChecker<storm::models::sparse::Dtmc<storm::RationalFunction>, double, storm::RationalNumber> regionChecker(*model);
     auto settings = regionChecker.getSettings();
     settings.applyExactValidation = true;
     regionChecker.setSettings(settings);
@@ -182,7 +180,7 @@ TEST(SparseDtmcParameterLiftingTest, Brp_Rew_Bounded_exactValidation) {
     auto rewParameters = storm::models::sparse::getRewardParameters(*model);
     modelParameters.insert(rewParameters.begin(), rewParameters.end());
     
-    storm::modelchecker::parametric::SparseDtmcRegionChecker<storm::models::sparse::Dtmc<storm::RationalFunction>, double> regionChecker(*model);
+    storm::modelchecker::parametric::SparseDtmcRegionChecker<storm::models::sparse::Dtmc<storm::RationalFunction>, double, storm::RationalNumber> regionChecker(*model);
     auto settings = regionChecker.getSettings();
     settings.applyExactValidation = true;
     regionChecker.setSettings(settings);
@@ -215,7 +213,7 @@ TEST(SparseDtmcParameterLiftingTest, Brp_Rew_Infty) {
     auto rewParameters = storm::models::sparse::getRewardParameters(*model);
     modelParameters.insert(rewParameters.begin(), rewParameters.end());
     
-    storm::modelchecker::parametric::SparseDtmcRegionChecker<storm::models::sparse::Dtmc<storm::RationalFunction>, double> regionChecker(*model);
+    storm::modelchecker::parametric::SparseDtmcRegionChecker<storm::models::sparse::Dtmc<storm::RationalFunction>, double, storm::RationalNumber> regionChecker(*model);
     regionChecker.specifyFormula(storm::modelchecker::CheckTask<storm::logic::Formula, storm::RationalFunction>(*formulas[0], true));
 
     //start testing
@@ -241,7 +239,7 @@ TEST(SparseDtmcParameterLiftingTest, Brp_Rew_4Par) {
     auto rewParameters = storm::models::sparse::getRewardParameters(*model);
     modelParameters.insert(rewParameters.begin(), rewParameters.end());
     
-    storm::modelchecker::parametric::SparseDtmcRegionChecker<storm::models::sparse::Dtmc<storm::RationalFunction>, double> regionChecker(*model);
+    storm::modelchecker::parametric::SparseDtmcRegionChecker<storm::models::sparse::Dtmc<storm::RationalFunction>, double, storm::RationalNumber> regionChecker(*model);
     regionChecker.specifyFormula(storm::modelchecker::CheckTask<storm::logic::Formula, storm::RationalFunction>(*formulas[0], true));
     
     //start testing
@@ -272,7 +270,7 @@ TEST(SparseDtmcParameterLiftingTest, Crowds_Prob) {
     auto rewParameters = storm::models::sparse::getRewardParameters(*model);
     modelParameters.insert(rewParameters.begin(), rewParameters.end());
    
-    storm::modelchecker::parametric::SparseDtmcRegionChecker<storm::models::sparse::Dtmc<storm::RationalFunction>, double> regionChecker(*model);
+    storm::modelchecker::parametric::SparseDtmcRegionChecker<storm::models::sparse::Dtmc<storm::RationalFunction>, double, storm::RationalNumber> regionChecker(*model);
     regionChecker.specifyFormula(storm::modelchecker::CheckTask<storm::logic::Formula, storm::RationalFunction>(*formulas[0], true));
 
     //start testing
@@ -305,7 +303,7 @@ TEST(SparseDtmcParameterLiftingTest, Crowds_Prob_stepBounded) {
     auto rewParameters = storm::models::sparse::getRewardParameters(*model);
     modelParameters.insert(rewParameters.begin(), rewParameters.end());
    
-    storm::modelchecker::parametric::SparseDtmcRegionChecker<storm::models::sparse::Dtmc<storm::RationalFunction>, double> regionChecker(*model);
+    storm::modelchecker::parametric::SparseDtmcRegionChecker<storm::models::sparse::Dtmc<storm::RationalFunction>, double, storm::RationalNumber> regionChecker(*model);
     regionChecker.specifyFormula(storm::modelchecker::CheckTask<storm::logic::Formula, storm::RationalFunction>(*formulas[0], true));
 
     //start testing
@@ -339,7 +337,7 @@ TEST(SparseDtmcParameterLiftingTest, Crowds_Prob_1Par) {
     auto rewParameters = storm::models::sparse::getRewardParameters(*model);
     modelParameters.insert(rewParameters.begin(), rewParameters.end());
     
-    storm::modelchecker::parametric::SparseDtmcRegionChecker<storm::models::sparse::Dtmc<storm::RationalFunction>, double> regionChecker(*model);
+    storm::modelchecker::parametric::SparseDtmcRegionChecker<storm::models::sparse::Dtmc<storm::RationalFunction>, double, storm::RationalNumber> regionChecker(*model);
     regionChecker.specifyFormula(storm::modelchecker::CheckTask<storm::logic::Formula, storm::RationalFunction>(*formulas[0], true));
     
     //start testing
@@ -370,7 +368,7 @@ TEST(SparseDtmcParameterLiftingTest, Crowds_Prob_Const) {
     auto rewParameters = storm::models::sparse::getRewardParameters(*model);
     modelParameters.insert(rewParameters.begin(), rewParameters.end());
     
-    storm::modelchecker::parametric::SparseDtmcRegionChecker<storm::models::sparse::Dtmc<storm::RationalFunction>, double> regionChecker(*model);
+    storm::modelchecker::parametric::SparseDtmcRegionChecker<storm::models::sparse::Dtmc<storm::RationalFunction>, double, storm::RationalNumber> regionChecker(*model);
     regionChecker.specifyFormula(storm::modelchecker::CheckTask<storm::logic::Formula, storm::RationalFunction>(*formulas[0], true));
 
     //start testing

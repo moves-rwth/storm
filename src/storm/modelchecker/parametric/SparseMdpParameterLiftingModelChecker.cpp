@@ -8,6 +8,8 @@
 #include "storm/models/sparse/StandardRewardModel.h"
 #include "storm/utility/vector.h"
 #include "storm/utility/graph.h"
+#include "storm/utility/NumberTraits.h"
+#include "storm/solver/StandardGameSolver.h"
 #include "storm/logic/FragmentSpecification.h"
 
 #include "storm/exceptions/InvalidArgumentException.h"
@@ -208,9 +210,16 @@ namespace storm {
                 
                 // Set up the solver
                 auto solver = solverFactory->create(player1Matrix, parameterLifter->getMatrix());
-                if(lowerResultBound) solver->setLowerBound(lowerResultBound.get());
-                if(upperResultBound) solver->setUpperBound(upperResultBound.get());
-                if(applyPreviousResultAsHint) {
+                if (storm::NumberTraits<ConstantType>::IsExact && dynamic_cast<storm::solver::StandardGameSolver<ConstantType>*>(solver.get())) {
+                    STORM_LOG_INFO("Parameter Lifting: Setting solution method for exact Game Solver to policy iteration");
+                    auto* standardSolver = dynamic_cast<storm::solver::StandardGameSolver<ConstantType>*>(solver.get());
+                    auto settings = standardSolver->getSettings();
+                    settings.setSolutionMethod(storm::solver::StandardGameSolverSettings<ConstantType>::SolutionMethod::PolicyIteration);
+                    standardSolver->setSettings(settings);
+                }
+                if (lowerResultBound) solver->setLowerBound(lowerResultBound.get());
+                if (upperResultBound) solver->setUpperBound(upperResultBound.get());
+                if (applyPreviousResultAsHint) {
                     solver->setTrackSchedulers(true);
                     x.resize(maybeStates.getNumberOfSetBits(), storm::utility::zero<ConstantType>());
                     if(storm::solver::minimize(dirForParameters) && minSched && player1Sched) solver->setSchedulerHints(std::move(player1Sched.get()), std::move(minSched.get()));

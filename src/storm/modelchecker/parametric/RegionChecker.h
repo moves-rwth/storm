@@ -8,6 +8,7 @@
 #include "storm/modelchecker/CheckTask.h"
 #include "storm/storage/ParameterRegion.h"
 #include "storm/utility/Stopwatch.h"
+#include "storm/utility/NumberTraits.h"
 
 namespace storm {
     namespace modelchecker{
@@ -19,8 +20,9 @@ namespace storm {
                 bool applyExactValidation;
             };
 
-            template<typename SparseModelType, typename ConstantType>
+            template<typename SparseModelType, typename ConstantType, typename ExactConstantType = ConstantType>
             class RegionChecker {
+                static_assert(storm::NumberTraits<ExactConstantType>::IsExact, "Specified type for exact computations is not exact.");
 
             public:
                 

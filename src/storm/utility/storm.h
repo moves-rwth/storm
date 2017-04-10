@@ -360,7 +360,7 @@ namespace storm {
                     resultVisualization = regionChecker.visualizeResult(result, parameterSpace, *modelParameters.begin(), *(modelParameters.rbegin()));
                 }
             } else {
-                storm::modelchecker::parametric::SparseDtmcRegionChecker <storm::models::sparse::Dtmc<storm::RationalFunction>, double> regionChecker(*markovModel->template as<storm::models::sparse::Dtmc<storm::RationalFunction>>());
+                storm::modelchecker::parametric::SparseDtmcRegionChecker <storm::models::sparse::Dtmc<storm::RationalFunction>, double, storm::RationalNumber> regionChecker(*markovModel->template as<storm::models::sparse::Dtmc<storm::RationalFunction>>());
                 regionChecker.specifyFormula(task);
                 result = regionChecker.performRegionRefinement(parameterSpace, refinementThreshold);
                 parameterLiftingStopWatch.stop();
@@ -378,7 +378,7 @@ namespace storm {
                     resultVisualization = regionChecker.visualizeResult(result, parameterSpace, *modelParameters.begin(), *(modelParameters.rbegin()));
                 }
             } else {
-                storm::modelchecker::parametric::SparseMdpRegionChecker<storm::models::sparse::Mdp<storm::RationalFunction>, double> regionChecker(*markovModel->template as<storm::models::sparse::Mdp<storm::RationalFunction>>());
+                storm::modelchecker::parametric::SparseMdpRegionChecker<storm::models::sparse::Mdp<storm::RationalFunction>, double, storm::RationalNumber> regionChecker(*markovModel->template as<storm::models::sparse::Mdp<storm::RationalFunction>>());
                 regionChecker.specifyFormula(task);
                 result = regionChecker.performRegionRefinement(parameterSpace, refinementThreshold);
                 parameterLiftingStopWatch.stop();

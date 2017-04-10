@@ -9,6 +9,7 @@
 #include "storm/solver/StandardMinMaxLinearEquationSolver.h"
 #include "storm/utility/vector.h"
 #include "storm/utility/graph.h"
+#include "storm/utility/NumberTraits.h"
 
 #include "storm/exceptions/InvalidArgumentException.h"
 #include "storm/exceptions/InvalidPropertyException.h"
@@ -175,18 +176,18 @@ namespace storm {
                 
                 // Set up the solver
                 auto solver = solverFactory->create(parameterLifter->getMatrix());
-                solver->setTrackScheduler(true);
-                if (std::is_same<ConstantType, storm::RationalNumber>::value && dynamic_cast<storm::solver::StandardMinMaxLinearEquationSolver<ConstantType>*>(solver.get())) {
+                if (storm::NumberTraits<ConstantType>::IsExact && dynamic_cast<storm::solver::StandardMinMaxLinearEquationSolver<ConstantType>*>(solver.get())) {
                     STORM_LOG_INFO("Parameter Lifting: Setting solution method for exact MinMaxSolver to policy iteration");
                     auto* standardSolver = dynamic_cast<storm::solver::StandardMinMaxLinearEquationSolver<ConstantType>*>(solver.get());
                     auto settings = standardSolver->getSettings();
                     settings.setSolutionMethod(storm::solver::StandardMinMaxLinearEquationSolverSettings<ConstantType>::SolutionMethod::PolicyIteration);
                     standardSolver->setSettings(settings);
                 }
-                if(lowerResultBound) solver->setLowerBound(lowerResultBound.get());
-                if(upperResultBound) solver->setUpperBound(upperResultBound.get());
-                if(storm::solver::minimize(dirForParameters) && minSched && !stepBound) solver->setSchedulerHint(std::move(minSched.get()));
-                if(storm::solver::maximize(dirForParameters) && maxSched && !stepBound) solver->setSchedulerHint(std::move(maxSched.get()));
+                if (lowerResultBound) solver->setLowerBound(lowerResultBound.get());
+                if (upperResultBound) solver->setUpperBound(upperResultBound.get());
+                if (!stepBound) solver->setTrackScheduler(true);
+                if (storm::solver::minimize(dirForParameters) && minSched && !stepBound) solver->setSchedulerHint(std::move(minSched.get()));
+                if (storm::solver::maximize(dirForParameters) && maxSched && !stepBound) solver->setSchedulerHint(std::move(maxSched.get()));
                 if (this->currentCheckTask->isBoundSet() && solver->hasSchedulerHint()) {
                     // If we reach this point, we know that after applying the hint, the x-values can only become larger (if we maximize) or smaller (if we minimize).
                     std::unique_ptr<storm::solver::TerminationCondition<ConstantType>> termCond;

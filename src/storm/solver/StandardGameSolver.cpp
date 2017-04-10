@@ -397,8 +397,6 @@ namespace storm {
             inducedVector.resize(inducedMatrix.getRowCount());
             storm::utility::vector::selectVectorValues<ValueType>(inducedVector, selectedRows, b);
         }
-
-
         
         template<typename ValueType>
         typename StandardGameSolver<ValueType>::Status StandardGameSolver<ValueType>::updateStatusIfNotConverged(Status status, std::vector<ValueType> const& x, uint64_t iterations) const {
