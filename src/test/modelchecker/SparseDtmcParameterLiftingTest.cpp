@@ -100,6 +100,106 @@ TEST(SparseDtmcParameterLiftingTest, Brp_Rew_Bounded) {
     carl::VariablePool::getInstance().clear();
 }
 
+TEST(SparseDtmcParameterLiftingTest, Brp_Prob_exactValidation) {
+    
+    std::string programFile = STORM_TEST_RESOURCES_DIR "/pdtmc/brp16_2.pm";
+    std::string formulaAsString = "P<=0.84 [F s=5 ]";
+    std::string constantsAsString = ""; //e.g. pL=0.9,TOACK=0.5
+
+    // Program and formula
+    storm::prism::Program program = storm::parseProgram(programFile);
+    program = storm::utility::prism::preprocess(program, constantsAsString);
+    std::vector<std::shared_ptr<const storm::logic::Formula>> formulas = storm::extractFormulasFromProperties(storm::parsePropertiesForPrismProgram(formulaAsString, program));
+    std::shared_ptr<storm::models::sparse::Dtmc<storm::RationalFunction>> model = storm::buildSparseModel<storm::RationalFunction>(program, formulas)->as<storm::models::sparse::Dtmc<storm::RationalFunction>>();
+    
+    auto modelParameters = storm::models::sparse::getProbabilityParameters(*model);
+    auto rewParameters = storm::models::sparse::getRewardParameters(*model);
+    modelParameters.insert(rewParameters.begin(), rewParameters.end());
+    
+    storm::modelchecker::parametric::SparseDtmcParameterLifting<storm::models::sparse::Dtmc<storm::RationalFunction>, double> parameterLiftingContext(*model);
+    auto settings = parameterLiftingContext.getSettings();
+    settings.applyExactValidation = true;
+    parameterLiftingContext.setSettings(settings);
+    parameterLiftingContext.specifyFormula(storm::modelchecker::CheckTask<storm::logic::Formula, storm::RationalFunction>(*formulas[0], true));
+
+    //start testing
+    auto allSatRegion=storm::storage::ParameterRegion<storm::RationalFunction>::parseRegion("0.7<=pL<=0.9,0.75<=pK<=0.95", modelParameters);
+    auto exBothRegion=storm::storage::ParameterRegion<storm::RationalFunction>::parseRegion("0.4<=pL<=0.65,0.75<=pK<=0.95", modelParameters);
+    auto allVioRegion=storm::storage::ParameterRegion<storm::RationalFunction>::parseRegion("0.1<=pL<=0.73,0.2<=pK<=0.715", modelParameters);
+
+    EXPECT_EQ(storm::modelchecker::parametric::RegionCheckResult::AllSat, parameterLiftingContext.analyzeRegion(allSatRegion, storm::modelchecker::parametric::RegionCheckResult::Unknown, true));
+    EXPECT_EQ(storm::modelchecker::parametric::RegionCheckResult::ExistsBoth, parameterLiftingContext.analyzeRegion(exBothRegion, storm::modelchecker::parametric::RegionCheckResult::Unknown, true));
+    EXPECT_EQ(storm::modelchecker::parametric::RegionCheckResult::AllViolated, parameterLiftingContext.analyzeRegion(allVioRegion, storm::modelchecker::parametric::RegionCheckResult::Unknown, true));
+
+    carl::VariablePool::getInstance().clear();
+}
+
+TEST(SparseDtmcParameterLiftingTest, Brp_Rew_exactValidation) {
+    std::string programFile = STORM_TEST_RESOURCES_DIR "/pdtmc/brp_rewards16_2.pm";
+    std::string formulaAsString = "R>2.5 [F ((s=5) | (s=0&srep=3)) ]";
+    std::string constantsAsString = "pL=0.9,TOAck=0.5";
+    carl::VariablePool::getInstance().clear();
+    
+    storm::prism::Program program = storm::parseProgram(programFile);
+    program = storm::utility::prism::preprocess(program, constantsAsString);
+    std::vector<std::shared_ptr<const storm::logic::Formula>> formulas = storm::extractFormulasFromProperties(storm::parsePropertiesForPrismProgram(formulaAsString, program));
+    std::shared_ptr<storm::models::sparse::Dtmc<storm::RationalFunction>> model = storm::buildSparseModel<storm::RationalFunction>(program, formulas)->as<storm::models::sparse::Dtmc<storm::RationalFunction>>();
+    
+    auto modelParameters = storm::models::sparse::getProbabilityParameters(*model);
+    auto rewParameters = storm::models::sparse::getRewardParameters(*model);
+    modelParameters.insert(rewParameters.begin(), rewParameters.end());
+    
+    storm::modelchecker::parametric::SparseDtmcParameterLifting<storm::models::sparse::Dtmc<storm::RationalFunction>, double> parameterLiftingContext(*model);
+    auto settings = parameterLiftingContext.getSettings();
+    settings.applyExactValidation = true;
+    parameterLiftingContext.setSettings(settings);
+    parameterLiftingContext.specifyFormula(storm::modelchecker::CheckTask<storm::logic::Formula, storm::RationalFunction>(*formulas[0], true));
+    
+    //start testing
+    auto allSatRegion=storm::storage::ParameterRegion<storm::RationalFunction>::parseRegion("0.7<=pK<=0.875,0.75<=TOMsg<=0.95", modelParameters);
+    auto exBothRegion=storm::storage::ParameterRegion<storm::RationalFunction>::parseRegion("0.6<=pK<=0.9,0.5<=TOMsg<=0.95", modelParameters);
+    auto allVioRegion=storm::storage::ParameterRegion<storm::RationalFunction>::parseRegion("0.1<=pK<=0.3,0.2<=TOMsg<=0.3", modelParameters);
+
+    EXPECT_EQ(storm::modelchecker::parametric::RegionCheckResult::AllSat, parameterLiftingContext.analyzeRegion(allSatRegion, storm::modelchecker::parametric::RegionCheckResult::Unknown, true));
+    EXPECT_EQ(storm::modelchecker::parametric::RegionCheckResult::ExistsBoth, parameterLiftingContext.analyzeRegion(exBothRegion, storm::modelchecker::parametric::RegionCheckResult::Unknown, true));
+    EXPECT_EQ(storm::modelchecker::parametric::RegionCheckResult::AllViolated, parameterLiftingContext.analyzeRegion(allVioRegion, storm::modelchecker::parametric::RegionCheckResult::Unknown, true));
+    
+    carl::VariablePool::getInstance().clear();
+}
+
+TEST(SparseDtmcParameterLiftingTest, Brp_Rew_Bounded_exactValidation) {
+    std::string programFile = STORM_TEST_RESOURCES_DIR "/pdtmc/brp_rewards16_2.pm";
+    std::string formulaAsString = "R>2.5 [ C<=300]";
+    std::string constantsAsString = "pL=0.9,TOAck=0.5";
+    carl::VariablePool::getInstance().clear();
+    
+    storm::prism::Program program = storm::parseProgram(programFile);
+    program = storm::utility::prism::preprocess(program, constantsAsString);
+    std::vector<std::shared_ptr<const storm::logic::Formula>> formulas = storm::extractFormulasFromProperties(storm::parsePropertiesForPrismProgram(formulaAsString, program));
+    std::shared_ptr<storm::models::sparse::Dtmc<storm::RationalFunction>> model = storm::buildSparseModel<storm::RationalFunction>(program, formulas)->as<storm::models::sparse::Dtmc<storm::RationalFunction>>();
+    
+    auto modelParameters = storm::models::sparse::getProbabilityParameters(*model);
+    auto rewParameters = storm::models::sparse::getRewardParameters(*model);
+    modelParameters.insert(rewParameters.begin(), rewParameters.end());
+    
+    storm::modelchecker::parametric::SparseDtmcParameterLifting<storm::models::sparse::Dtmc<storm::RationalFunction>, double> parameterLiftingContext(*model);
+    auto settings = parameterLiftingContext.getSettings();
+    settings.applyExactValidation = true;
+    parameterLiftingContext.setSettings(settings);
+    parameterLiftingContext.specifyFormula(storm::modelchecker::CheckTask<storm::logic::Formula, storm::RationalFunction>(*formulas[0], true));
+    
+    //start testing
+    auto allSatRegion=storm::storage::ParameterRegion<storm::RationalFunction>::parseRegion("0.7<=pK<=0.875,0.75<=TOMsg<=0.95", modelParameters);
+    auto exBothRegion=storm::storage::ParameterRegion<storm::RationalFunction>::parseRegion("0.6<=pK<=0.9,0.5<=TOMsg<=0.95", modelParameters);
+    auto allVioRegion=storm::storage::ParameterRegion<storm::RationalFunction>::parseRegion("0.1<=pK<=0.3,0.2<=TOMsg<=0.3", modelParameters);
+
+    EXPECT_EQ(storm::modelchecker::parametric::RegionCheckResult::AllSat, parameterLiftingContext.analyzeRegion(allSatRegion, storm::modelchecker::parametric::RegionCheckResult::Unknown, true));
+    EXPECT_EQ(storm::modelchecker::parametric::RegionCheckResult::ExistsBoth, parameterLiftingContext.analyzeRegion(exBothRegion, storm::modelchecker::parametric::RegionCheckResult::Unknown, true));
+    EXPECT_EQ(storm::modelchecker::parametric::RegionCheckResult::AllViolated, parameterLiftingContext.analyzeRegion(allVioRegion, storm::modelchecker::parametric::RegionCheckResult::Unknown, true));
+    
+    carl::VariablePool::getInstance().clear();
+}
+
 TEST(SparseDtmcParameterLiftingTest, Brp_Rew_Infty) {
     
     std::string programFile = STORM_TEST_RESOURCES_DIR "/pdtmc/brp_rewards16_2.pm";
