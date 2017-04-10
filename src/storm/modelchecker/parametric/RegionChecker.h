@@ -13,24 +13,24 @@ namespace storm {
     namespace modelchecker{
         namespace parametric{
             
-            struct ParameterLiftingSettings {
-                ParameterLiftingSettings();
+            struct RegionCheckerSettings {
+                RegionCheckerSettings();
                 
                 bool applyExactValidation;
             };
 
             template<typename SparseModelType, typename ConstantType>
-            class ParameterLifting {
+            class RegionChecker {
 
             public:
                 
                 typedef typename storm::storage::ParameterRegion<typename SparseModelType::ValueType>::CoefficientType CoefficientType;
 
-                ParameterLifting(SparseModelType const& parametricModel);
-                virtual ~ParameterLifting() = default;
+                RegionChecker(SparseModelType const& parametricModel);
+                virtual ~RegionChecker() = default;
                 
-                ParameterLiftingSettings const& getSettings() const;
-                void setSettings(ParameterLiftingSettings const& newSettings);
+                RegionCheckerSettings const& getSettings() const;
+                void setSettings(RegionCheckerSettings const& newSettings);
                 
                 void specifyFormula(CheckTask<storm::logic::Formula, typename SparseModelType::ValueType> const& checkTask);
                 
@@ -63,7 +63,7 @@ namespace storm {
                 virtual void applyHintsToExactChecker() = 0;
                 
                 SparseModelType const& parametricModel;
-                ParameterLiftingSettings settings;
+                RegionCheckerSettings settings;
                 std::unique_ptr<CheckTask<storm::logic::Formula, typename SparseModelType::ValueType>> currentCheckTask;
                 std::shared_ptr<storm::logic::Formula const> currentFormula;
                 std::shared_ptr<SparseModelType> simplifiedModel;

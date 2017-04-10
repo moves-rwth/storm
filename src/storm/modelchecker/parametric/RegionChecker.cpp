@@ -1,7 +1,7 @@
 #include <sstream>
 #include <queue>
 
-#include "storm/modelchecker/parametric/ParameterLifting.h"
+#include "storm/modelchecker/parametric/RegionChecker.h"
 
 #include "storm/adapters/CarlAdapter.h"
 
@@ -25,29 +25,29 @@ namespace storm {
     namespace modelchecker {
         namespace parametric {
 
-            ParameterLiftingSettings::ParameterLiftingSettings() {
+            RegionCheckerSettings::RegionCheckerSettings() {
                 this->applyExactValidation = storm::settings::getModule<storm::settings::modules::ParametricSettings>().isExactValidationSet();
             }
             
             template <typename SparseModelType, typename ConstantType>
-            ParameterLifting<SparseModelType, ConstantType>::ParameterLifting(SparseModelType const& parametricModel) : parametricModel(parametricModel) {
+            RegionChecker<SparseModelType, ConstantType>::RegionChecker(SparseModelType const& parametricModel) : parametricModel(parametricModel) {
                 initializationStopwatch.start();
                 STORM_LOG_THROW(parametricModel.getInitialStates().getNumberOfSetBits() == 1, storm::exceptions::NotSupportedException, "Parameter lifting requires models with only one initial state");
                 initializationStopwatch.stop();
             }
         
             template <typename SparseModelType, typename ConstantType>
-            ParameterLiftingSettings const& ParameterLifting<SparseModelType, ConstantType>::getSettings() const {
+            RegionCheckerSettings const& RegionChecker<SparseModelType, ConstantType>::getSettings() const {
                 return settings;
             }
             
             template <typename SparseModelType, typename ConstantType>
-            void ParameterLifting<SparseModelType, ConstantType>::setSettings(ParameterLiftingSettings const& newSettings) {
+            void RegionChecker<SparseModelType, ConstantType>::setSettings(RegionCheckerSettings const& newSettings) {
                 settings = newSettings;
             }
             
             template <typename SparseModelType, typename ConstantType>
-            void ParameterLifting<SparseModelType, ConstantType>::specifyFormula(CheckTask<storm::logic::Formula, typename SparseModelType::ValueType> const& checkTask) {
+            void RegionChecker<SparseModelType, ConstantType>::specifyFormula(CheckTask<storm::logic::Formula, typename SparseModelType::ValueType> const& checkTask) {
                 initializationStopwatch.start();
                 STORM_LOG_THROW(checkTask.isOnlyInitialStatesRelevantSet(), storm::exceptions::NotSupportedException, "Parameter lifting requires a property where only the value in the initial states is relevant.");
                 STORM_LOG_THROW(checkTask.isBoundSet(), storm::exceptions::NotSupportedException, "Parameter lifting requires a bounded property.");
@@ -68,7 +68,7 @@ namespace storm {
             }
     
             template <typename SparseModelType, typename ConstantType>
-            RegionCheckResult ParameterLifting<SparseModelType, ConstantType>::analyzeRegion(storm::storage::ParameterRegion<typename SparseModelType::ValueType> const& region, RegionCheckResult const& initialResult, bool sampleVerticesOfRegion) {
+            RegionCheckResult RegionChecker<SparseModelType, ConstantType>::analyzeRegion(storm::storage::ParameterRegion<typename SparseModelType::ValueType> const& region, RegionCheckResult const& initialResult, bool sampleVerticesOfRegion) {
                       RegionCheckResult result = initialResult;
 
                 // Check if we need to check the formula on one point to decide whether to show AllSat or AllViolated
@@ -120,7 +120,7 @@ namespace storm {
             }
             
             template <typename SparseModelType, typename ConstantType>
-            RegionCheckResult ParameterLifting<SparseModelType, ConstantType>::analyzeRegionExactValidation(storm::storage::ParameterRegion<typename SparseModelType::ValueType> const& region, RegionCheckResult const& initialResult) {
+            RegionCheckResult RegionChecker<SparseModelType, ConstantType>::analyzeRegionExactValidation(storm::storage::ParameterRegion<typename SparseModelType::ValueType> const& region, RegionCheckResult const& initialResult) {
                 RegionCheckResult numericResult = analyzeRegion(region, initialResult, false);
                 parameterLiftingCheckerStopwatch.start();
                 if (numericResult == RegionCheckResult::AllSat || numericResult == RegionCheckResult::AllViolated) {
@@ -157,7 +157,7 @@ namespace storm {
 
     
             template <typename SparseModelType, typename ConstantType>
-            std::vector<std::pair<storm::storage::ParameterRegion<typename SparseModelType::ValueType>, RegionCheckResult>> ParameterLifting<SparseModelType, ConstantType>::performRegionRefinement(storm::storage::ParameterRegion<typename SparseModelType::ValueType> const& region, CoefficientType const& threshold) {
+            std::vector<std::pair<storm::storage::ParameterRegion<typename SparseModelType::ValueType>, RegionCheckResult>> RegionChecker<SparseModelType, ConstantType>::performRegionRefinement(storm::storage::ParameterRegion<typename SparseModelType::ValueType> const& region, CoefficientType const& threshold) {
                 STORM_LOG_INFO("Applying refinement on region: " << region.toString(true) << " .");
                 
                 auto areaOfParameterSpace = region.area();
@@ -243,7 +243,7 @@ namespace storm {
             }
     
             template <typename SparseModelType, typename ConstantType>
-            SparseModelType const& ParameterLifting<SparseModelType, ConstantType>::getConsideredParametricModel() const {
+            SparseModelType const& RegionChecker<SparseModelType, ConstantType>::getConsideredParametricModel() const {
                 if (simplifiedModel) {
                     return *simplifiedModel;
                 } else {
@@ -252,7 +252,7 @@ namespace storm {
             }
     
             template <typename SparseModelType, typename ConstantType>
-            std::string ParameterLifting<SparseModelType, ConstantType>::visualizeResult(std::vector<std::pair<storm::storage::ParameterRegion<typename SparseModelType::ValueType>, RegionCheckResult>> const& result, storm::storage::ParameterRegion<typename SparseModelType::ValueType> const& parameterSpace, typename storm::storage::ParameterRegion<typename SparseModelType::ValueType>::VariableType const& x, typename storm::storage::ParameterRegion<typename SparseModelType::ValueType>::VariableType const& y) {
+            std::string RegionChecker<SparseModelType, ConstantType>::visualizeResult(std::vector<std::pair<storm::storage::ParameterRegion<typename SparseModelType::ValueType>, RegionCheckResult>> const& result, storm::storage::ParameterRegion<typename SparseModelType::ValueType> const& parameterSpace, typename storm::storage::ParameterRegion<typename SparseModelType::ValueType>::VariableType const& x, typename storm::storage::ParameterRegion<typename SparseModelType::ValueType>::VariableType const& y) {
                 
                 std::stringstream stream;
                 
@@ -306,10 +306,10 @@ namespace storm {
             }
         
 #ifdef STORM_HAVE_CARL
-            template class ParameterLifting<storm::models::sparse::Dtmc<storm::RationalFunction>, double>;
-            template class ParameterLifting<storm::models::sparse::Mdp<storm::RationalFunction>, double>;
-            template class ParameterLifting<storm::models::sparse::Dtmc<storm::RationalFunction>, storm::RationalNumber>;
-            template class ParameterLifting<storm::models::sparse::Mdp<storm::RationalFunction>, storm::RationalNumber>;
+            template class RegionChecker<storm::models::sparse::Dtmc<storm::RationalFunction>, double>;
+            template class RegionChecker<storm::models::sparse::Mdp<storm::RationalFunction>, double>;
+            template class RegionChecker<storm::models::sparse::Dtmc<storm::RationalFunction>, storm::RationalNumber>;
+            template class RegionChecker<storm::models::sparse::Mdp<storm::RationalFunction>, storm::RationalNumber>;
 #endif
         } // namespace parametric
     } //namespace modelchecker

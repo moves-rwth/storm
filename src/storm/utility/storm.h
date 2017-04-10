@@ -68,8 +68,8 @@
 #include "storm/modelchecker/reachability/SparseDtmcEliminationModelChecker.h"
 #include "storm/modelchecker/abstraction/GameBasedMdpModelChecker.h"
 #include "storm/modelchecker/exploration/SparseExplorationModelChecker.h"
-#include "storm/modelchecker/parametric/SparseDtmcParameterLifting.h"
-#include "storm/modelchecker/parametric/SparseMdpParameterLifting.h"
+#include "storm/modelchecker/parametric/SparseDtmcRegionChecker.h"
+#include "storm/modelchecker/parametric/SparseMdpRegionChecker.h"
 #include "storm/utility/parameterlifting.h"
 
 #include "storm/modelchecker/csl/SparseCtmcCslModelChecker.h"
@@ -352,38 +352,38 @@ namespace storm {
         
         if (markovModel->isOfType(storm::models::ModelType::Dtmc)) {
             if (storm::settings::getModule<storm::settings::modules::GeneralSettings>().isExactSet()) {
-                storm::modelchecker::parametric::SparseDtmcParameterLifting <storm::models::sparse::Dtmc<storm::RationalFunction>, storm::RationalNumber> parameterLiftingContext(*markovModel->template as<storm::models::sparse::Dtmc<storm::RationalFunction>>());
-                parameterLiftingContext.specifyFormula(task);
-                result = parameterLiftingContext.performRegionRefinement(parameterSpace, refinementThreshold);
+                storm::modelchecker::parametric::SparseDtmcRegionChecker <storm::models::sparse::Dtmc<storm::RationalFunction>, storm::RationalNumber> regionChecker(*markovModel->template as<storm::models::sparse::Dtmc<storm::RationalFunction>>());
+                regionChecker.specifyFormula(task);
+                result = regionChecker.performRegionRefinement(parameterSpace, refinementThreshold);
                 parameterLiftingStopWatch.stop();
                 if (modelParameters.size() == 2) {
-                    resultVisualization = parameterLiftingContext.visualizeResult(result, parameterSpace, *modelParameters.begin(), *(modelParameters.rbegin()));
+                    resultVisualization = regionChecker.visualizeResult(result, parameterSpace, *modelParameters.begin(), *(modelParameters.rbegin()));
                 }
             } else {
-                storm::modelchecker::parametric::SparseDtmcParameterLifting <storm::models::sparse::Dtmc<storm::RationalFunction>, double> parameterLiftingContext(*markovModel->template as<storm::models::sparse::Dtmc<storm::RationalFunction>>());
-                parameterLiftingContext.specifyFormula(task);
-                result = parameterLiftingContext.performRegionRefinement(parameterSpace, refinementThreshold);
+                storm::modelchecker::parametric::SparseDtmcRegionChecker <storm::models::sparse::Dtmc<storm::RationalFunction>, double> regionChecker(*markovModel->template as<storm::models::sparse::Dtmc<storm::RationalFunction>>());
+                regionChecker.specifyFormula(task);
+                result = regionChecker.performRegionRefinement(parameterSpace, refinementThreshold);
                 parameterLiftingStopWatch.stop();
                 if (modelParameters.size() == 2) {
-                    resultVisualization = parameterLiftingContext.visualizeResult(result, parameterSpace, *modelParameters.begin(), *(modelParameters.rbegin()));
+                    resultVisualization = regionChecker.visualizeResult(result, parameterSpace, *modelParameters.begin(), *(modelParameters.rbegin()));
                 }
             }
         } else if (markovModel->isOfType(storm::models::ModelType::Mdp)) {
             if (storm::settings::getModule<storm::settings::modules::GeneralSettings>().isExactSet()) {
-                storm::modelchecker::parametric::SparseMdpParameterLifting<storm::models::sparse::Mdp<storm::RationalFunction>, storm::RationalNumber> parameterLiftingContext(*markovModel->template as<storm::models::sparse::Mdp<storm::RationalFunction>>());
-                parameterLiftingContext.specifyFormula(task);
-                result = parameterLiftingContext.performRegionRefinement(parameterSpace, refinementThreshold);
+                storm::modelchecker::parametric::SparseMdpRegionChecker<storm::models::sparse::Mdp<storm::RationalFunction>, storm::RationalNumber> regionChecker(*markovModel->template as<storm::models::sparse::Mdp<storm::RationalFunction>>());
+                regionChecker.specifyFormula(task);
+                result = regionChecker.performRegionRefinement(parameterSpace, refinementThreshold);
                 parameterLiftingStopWatch.stop();
                 if (modelParameters.size() == 2) {
-                    resultVisualization = parameterLiftingContext.visualizeResult(result, parameterSpace, *modelParameters.begin(), *(modelParameters.rbegin()));
+                    resultVisualization = regionChecker.visualizeResult(result, parameterSpace, *modelParameters.begin(), *(modelParameters.rbegin()));
                 }
             } else {
-                storm::modelchecker::parametric::SparseMdpParameterLifting<storm::models::sparse::Mdp<storm::RationalFunction>, double> parameterLiftingContext(*markovModel->template as<storm::models::sparse::Mdp<storm::RationalFunction>>());
-                parameterLiftingContext.specifyFormula(task);
-                result = parameterLiftingContext.performRegionRefinement(parameterSpace, refinementThreshold);
+                storm::modelchecker::parametric::SparseMdpRegionChecker<storm::models::sparse::Mdp<storm::RationalFunction>, double> regionChecker(*markovModel->template as<storm::models::sparse::Mdp<storm::RationalFunction>>());
+                regionChecker.specifyFormula(task);
+                result = regionChecker.performRegionRefinement(parameterSpace, refinementThreshold);
                 parameterLiftingStopWatch.stop();
                 if (modelParameters.size() == 2) {
-                    resultVisualization = parameterLiftingContext.visualizeResult(result, parameterSpace, *modelParameters.begin(), *(modelParameters.rbegin()));
+                    resultVisualization = regionChecker.visualizeResult(result, parameterSpace, *modelParameters.begin(), *(modelParameters.rbegin()));
                 }
             }
         } else {

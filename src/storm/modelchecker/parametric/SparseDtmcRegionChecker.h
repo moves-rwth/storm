@@ -2,7 +2,7 @@
 
 #include <memory>
 
-#include "storm/modelchecker/parametric/ParameterLifting.h"
+#include "storm/modelchecker/parametric/RegionChecker.h"
 
 namespace storm {
     namespace modelchecker{
@@ -10,10 +10,10 @@ namespace storm {
             
 
             template<typename SparseModelType, typename ConstantType>
-            class SparseDtmcParameterLifting : public ParameterLifting<SparseModelType, ConstantType> {
+            class SparseDtmcRegionChecker : public RegionChecker<SparseModelType, ConstantType> {
 
             public:
-                SparseDtmcParameterLifting(SparseModelType const& parametricModel);
+                SparseDtmcRegionChecker(SparseModelType const& parametricModel);
                 
             protected:
                 virtual void simplifyParametricModel(CheckTask<storm::logic::Formula, typename SparseModelType::ValueType> const& checkTask) override;

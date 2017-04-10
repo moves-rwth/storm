@@ -7,7 +7,7 @@
 
 #include "utility/storm.h"
 #include "storm/models/sparse/Model.h"
-#include "modelchecker/parametric/SparseDtmcParameterLifting.h"
+#include "modelchecker/parametric/SparseDtmcRegionChecker.h"
 
 TEST(SparseDtmcParameterLiftingTest, Brp_Prob) {
     
@@ -25,17 +25,17 @@ TEST(SparseDtmcParameterLiftingTest, Brp_Prob) {
     auto rewParameters = storm::models::sparse::getRewardParameters(*model);
     modelParameters.insert(rewParameters.begin(), rewParameters.end());
     
-    storm::modelchecker::parametric::SparseDtmcParameterLifting<storm::models::sparse::Dtmc<storm::RationalFunction>, double> parameterLiftingContext(*model);
-    parameterLiftingContext.specifyFormula(storm::modelchecker::CheckTask<storm::logic::Formula, storm::RationalFunction>(*formulas[0], true));
+    storm::modelchecker::parametric::SparseDtmcRegionChecker<storm::models::sparse::Dtmc<storm::RationalFunction>, double> regionChecker(*model);
+    regionChecker.specifyFormula(storm::modelchecker::CheckTask<storm::logic::Formula, storm::RationalFunction>(*formulas[0], true));
 
     //start testing
     auto allSatRegion=storm::storage::ParameterRegion<storm::RationalFunction>::parseRegion("0.7<=pL<=0.9,0.75<=pK<=0.95", modelParameters);
     auto exBothRegion=storm::storage::ParameterRegion<storm::RationalFunction>::parseRegion("0.4<=pL<=0.65,0.75<=pK<=0.95", modelParameters);
     auto allVioRegion=storm::storage::ParameterRegion<storm::RationalFunction>::parseRegion("0.1<=pL<=0.73,0.2<=pK<=0.715", modelParameters);
 
-    EXPECT_EQ(storm::modelchecker::parametric::RegionCheckResult::AllSat, parameterLiftingContext.analyzeRegion(allSatRegion, storm::modelchecker::parametric::RegionCheckResult::Unknown, true));
-    EXPECT_EQ(storm::modelchecker::parametric::RegionCheckResult::ExistsBoth, parameterLiftingContext.analyzeRegion(exBothRegion, storm::modelchecker::parametric::RegionCheckResult::Unknown, true));
-    EXPECT_EQ(storm::modelchecker::parametric::RegionCheckResult::AllViolated, parameterLiftingContext.analyzeRegion(allVioRegion, storm::modelchecker::parametric::RegionCheckResult::Unknown, true));
+    EXPECT_EQ(storm::modelchecker::parametric::RegionCheckResult::AllSat, regionChecker.analyzeRegion(allSatRegion, storm::modelchecker::parametric::RegionCheckResult::Unknown, true));
+    EXPECT_EQ(storm::modelchecker::parametric::RegionCheckResult::ExistsBoth, regionChecker.analyzeRegion(exBothRegion, storm::modelchecker::parametric::RegionCheckResult::Unknown, true));
+    EXPECT_EQ(storm::modelchecker::parametric::RegionCheckResult::AllViolated, regionChecker.analyzeRegion(allVioRegion, storm::modelchecker::parametric::RegionCheckResult::Unknown, true));
 
     carl::VariablePool::getInstance().clear();
 }
@@ -55,17 +55,17 @@ TEST(SparseDtmcParameterLiftingTest, Brp_Rew) {
     auto rewParameters = storm::models::sparse::getRewardParameters(*model);
     modelParameters.insert(rewParameters.begin(), rewParameters.end());
     
-    storm::modelchecker::parametric::SparseDtmcParameterLifting<storm::models::sparse::Dtmc<storm::RationalFunction>, double> parameterLiftingContext(*model);
-    parameterLiftingContext.specifyFormula(storm::modelchecker::CheckTask<storm::logic::Formula, storm::RationalFunction>(*formulas[0], true));
+    storm::modelchecker::parametric::SparseDtmcRegionChecker<storm::models::sparse::Dtmc<storm::RationalFunction>, double> regionChecker(*model);
+    regionChecker.specifyFormula(storm::modelchecker::CheckTask<storm::logic::Formula, storm::RationalFunction>(*formulas[0], true));
     
     //start testing
     auto allSatRegion=storm::storage::ParameterRegion<storm::RationalFunction>::parseRegion("0.7<=pK<=0.875,0.75<=TOMsg<=0.95", modelParameters);
     auto exBothRegion=storm::storage::ParameterRegion<storm::RationalFunction>::parseRegion("0.6<=pK<=0.9,0.5<=TOMsg<=0.95", modelParameters);
     auto allVioRegion=storm::storage::ParameterRegion<storm::RationalFunction>::parseRegion("0.1<=pK<=0.3,0.2<=TOMsg<=0.3", modelParameters);
 
-    EXPECT_EQ(storm::modelchecker::parametric::RegionCheckResult::AllSat, parameterLiftingContext.analyzeRegion(allSatRegion, storm::modelchecker::parametric::RegionCheckResult::Unknown, true));
-    EXPECT_EQ(storm::modelchecker::parametric::RegionCheckResult::ExistsBoth, parameterLiftingContext.analyzeRegion(exBothRegion, storm::modelchecker::parametric::RegionCheckResult::Unknown, true));
-    EXPECT_EQ(storm::modelchecker::parametric::RegionCheckResult::AllViolated, parameterLiftingContext.analyzeRegion(allVioRegion, storm::modelchecker::parametric::RegionCheckResult::Unknown, true));
+    EXPECT_EQ(storm::modelchecker::parametric::RegionCheckResult::AllSat, regionChecker.analyzeRegion(allSatRegion, storm::modelchecker::parametric::RegionCheckResult::Unknown, true));
+    EXPECT_EQ(storm::modelchecker::parametric::RegionCheckResult::ExistsBoth, regionChecker.analyzeRegion(exBothRegion, storm::modelchecker::parametric::RegionCheckResult::Unknown, true));
+    EXPECT_EQ(storm::modelchecker::parametric::RegionCheckResult::AllViolated, regionChecker.analyzeRegion(allVioRegion, storm::modelchecker::parametric::RegionCheckResult::Unknown, true));
     
     carl::VariablePool::getInstance().clear();
 }
@@ -85,17 +85,17 @@ TEST(SparseDtmcParameterLiftingTest, Brp_Rew_Bounded) {
     auto rewParameters = storm::models::sparse::getRewardParameters(*model);
     modelParameters.insert(rewParameters.begin(), rewParameters.end());
     
-    storm::modelchecker::parametric::SparseDtmcParameterLifting<storm::models::sparse::Dtmc<storm::RationalFunction>, double> parameterLiftingContext(*model);
-    parameterLiftingContext.specifyFormula(storm::modelchecker::CheckTask<storm::logic::Formula, storm::RationalFunction>(*formulas[0], true));
+    storm::modelchecker::parametric::SparseDtmcRegionChecker<storm::models::sparse::Dtmc<storm::RationalFunction>, double> regionChecker(*model);
+    regionChecker.specifyFormula(storm::modelchecker::CheckTask<storm::logic::Formula, storm::RationalFunction>(*formulas[0], true));
     
     //start testing
     auto allSatRegion=storm::storage::ParameterRegion<storm::RationalFunction>::parseRegion("0.7<=pK<=0.875,0.75<=TOMsg<=0.95", modelParameters);
     auto exBothRegion=storm::storage::ParameterRegion<storm::RationalFunction>::parseRegion("0.6<=pK<=0.9,0.5<=TOMsg<=0.95", modelParameters);
     auto allVioRegion=storm::storage::ParameterRegion<storm::RationalFunction>::parseRegion("0.1<=pK<=0.3,0.2<=TOMsg<=0.3", modelParameters);
 
-    EXPECT_EQ(storm::modelchecker::parametric::RegionCheckResult::AllSat, parameterLiftingContext.analyzeRegion(allSatRegion, storm::modelchecker::parametric::RegionCheckResult::Unknown, true));
-    EXPECT_EQ(storm::modelchecker::parametric::RegionCheckResult::ExistsBoth, parameterLiftingContext.analyzeRegion(exBothRegion, storm::modelchecker::parametric::RegionCheckResult::Unknown, true));
-    EXPECT_EQ(storm::modelchecker::parametric::RegionCheckResult::AllViolated, parameterLiftingContext.analyzeRegion(allVioRegion, storm::modelchecker::parametric::RegionCheckResult::Unknown, true));
+    EXPECT_EQ(storm::modelchecker::parametric::RegionCheckResult::AllSat, regionChecker.analyzeRegion(allSatRegion, storm::modelchecker::parametric::RegionCheckResult::Unknown, true));
+    EXPECT_EQ(storm::modelchecker::parametric::RegionCheckResult::ExistsBoth, regionChecker.analyzeRegion(exBothRegion, storm::modelchecker::parametric::RegionCheckResult::Unknown, true));
+    EXPECT_EQ(storm::modelchecker::parametric::RegionCheckResult::AllViolated, regionChecker.analyzeRegion(allVioRegion, storm::modelchecker::parametric::RegionCheckResult::Unknown, true));
     
     carl::VariablePool::getInstance().clear();
 }
@@ -116,20 +116,20 @@ TEST(SparseDtmcParameterLiftingTest, Brp_Prob_exactValidation) {
     auto rewParameters = storm::models::sparse::getRewardParameters(*model);
     modelParameters.insert(rewParameters.begin(), rewParameters.end());
     
-    storm::modelchecker::parametric::SparseDtmcParameterLifting<storm::models::sparse::Dtmc<storm::RationalFunction>, double> parameterLiftingContext(*model);
-    auto settings = parameterLiftingContext.getSettings();
+    storm::modelchecker::parametric::SparseDtmcRegionChecker<storm::models::sparse::Dtmc<storm::RationalFunction>, double> regionChecker(*model);
+    auto settings = regionChecker.getSettings();
     settings.applyExactValidation = true;
-    parameterLiftingContext.setSettings(settings);
-    parameterLiftingContext.specifyFormula(storm::modelchecker::CheckTask<storm::logic::Formula, storm::RationalFunction>(*formulas[0], true));
+    regionChecker.setSettings(settings);
+    regionChecker.specifyFormula(storm::modelchecker::CheckTask<storm::logic::Formula, storm::RationalFunction>(*formulas[0], true));
 
     //start testing
     auto allSatRegion=storm::storage::ParameterRegion<storm::RationalFunction>::parseRegion("0.7<=pL<=0.9,0.75<=pK<=0.95", modelParameters);
     auto exBothRegion=storm::storage::ParameterRegion<storm::RationalFunction>::parseRegion("0.4<=pL<=0.65,0.75<=pK<=0.95", modelParameters);
     auto allVioRegion=storm::storage::ParameterRegion<storm::RationalFunction>::parseRegion("0.1<=pL<=0.73,0.2<=pK<=0.715", modelParameters);
 
-    EXPECT_EQ(storm::modelchecker::parametric::RegionCheckResult::AllSat, parameterLiftingContext.analyzeRegion(allSatRegion, storm::modelchecker::parametric::RegionCheckResult::Unknown, true));
-    EXPECT_EQ(storm::modelchecker::parametric::RegionCheckResult::ExistsBoth, parameterLiftingContext.analyzeRegion(exBothRegion, storm::modelchecker::parametric::RegionCheckResult::Unknown, true));
-    EXPECT_EQ(storm::modelchecker::parametric::RegionCheckResult::AllViolated, parameterLiftingContext.analyzeRegion(allVioRegion, storm::modelchecker::parametric::RegionCheckResult::Unknown, true));
+    EXPECT_EQ(storm::modelchecker::parametric::RegionCheckResult::AllSat, regionChecker.analyzeRegion(allSatRegion, storm::modelchecker::parametric::RegionCheckResult::Unknown, true));
+    EXPECT_EQ(storm::modelchecker::parametric::RegionCheckResult::ExistsBoth, regionChecker.analyzeRegion(exBothRegion, storm::modelchecker::parametric::RegionCheckResult::Unknown, true));
+    EXPECT_EQ(storm::modelchecker::parametric::RegionCheckResult::AllViolated, regionChecker.analyzeRegion(allVioRegion, storm::modelchecker::parametric::RegionCheckResult::Unknown, true));
 
     carl::VariablePool::getInstance().clear();
 }
@@ -149,20 +149,20 @@ TEST(SparseDtmcParameterLiftingTest, Brp_Rew_exactValidation) {
     auto rewParameters = storm::models::sparse::getRewardParameters(*model);
     modelParameters.insert(rewParameters.begin(), rewParameters.end());
     
-    storm::modelchecker::parametric::SparseDtmcParameterLifting<storm::models::sparse::Dtmc<storm::RationalFunction>, double> parameterLiftingContext(*model);
-    auto settings = parameterLiftingContext.getSettings();
+    storm::modelchecker::parametric::SparseDtmcRegionChecker<storm::models::sparse::Dtmc<storm::RationalFunction>, double> regionChecker(*model);
+    auto settings = regionChecker.getSettings();
     settings.applyExactValidation = true;
-    parameterLiftingContext.setSettings(settings);
-    parameterLiftingContext.specifyFormula(storm::modelchecker::CheckTask<storm::logic::Formula, storm::RationalFunction>(*formulas[0], true));
+    regionChecker.setSettings(settings);
+    regionChecker.specifyFormula(storm::modelchecker::CheckTask<storm::logic::Formula, storm::RationalFunction>(*formulas[0], true));
     
     //start testing
     auto allSatRegion=storm::storage::ParameterRegion<storm::RationalFunction>::parseRegion("0.7<=pK<=0.875,0.75<=TOMsg<=0.95", modelParameters);
     auto exBothRegion=storm::storage::ParameterRegion<storm::RationalFunction>::parseRegion("0.6<=pK<=0.9,0.5<=TOMsg<=0.95", modelParameters);
     auto allVioRegion=storm::storage::ParameterRegion<storm::RationalFunction>::parseRegion("0.1<=pK<=0.3,0.2<=TOMsg<=0.3", modelParameters);
 
-    EXPECT_EQ(storm::modelchecker::parametric::RegionCheckResult::AllSat, parameterLiftingContext.analyzeRegion(allSatRegion, storm::modelchecker::parametric::RegionCheckResult::Unknown, true));
-    EXPECT_EQ(storm::modelchecker::parametric::RegionCheckResult::ExistsBoth, parameterLiftingContext.analyzeRegion(exBothRegion, storm::modelchecker::parametric::RegionCheckResult::Unknown, true));
-    EXPECT_EQ(storm::modelchecker::parametric::RegionCheckResult::AllViolated, parameterLiftingContext.analyzeRegion(allVioRegion, storm::modelchecker::parametric::RegionCheckResult::Unknown, true));
+    EXPECT_EQ(storm::modelchecker::parametric::RegionCheckResult::AllSat, regionChecker.analyzeRegion(allSatRegion, storm::modelchecker::parametric::RegionCheckResult::Unknown, true));
+    EXPECT_EQ(storm::modelchecker::parametric::RegionCheckResult::ExistsBoth, regionChecker.analyzeRegion(exBothRegion, storm::modelchecker::parametric::RegionCheckResult::Unknown, true));
+    EXPECT_EQ(storm::modelchecker::parametric::RegionCheckResult::AllViolated, regionChecker.analyzeRegion(allVioRegion, storm::modelchecker::parametric::RegionCheckResult::Unknown, true));
     
     carl::VariablePool::getInstance().clear();
 }
@@ -182,20 +182,20 @@ TEST(SparseDtmcParameterLiftingTest, Brp_Rew_Bounded_exactValidation) {
     auto rewParameters = storm::models::sparse::getRewardParameters(*model);
     modelParameters.insert(rewParameters.begin(), rewParameters.end());
     
-    storm::modelchecker::parametric::SparseDtmcParameterLifting<storm::models::sparse::Dtmc<storm::RationalFunction>, double> parameterLiftingContext(*model);
-    auto settings = parameterLiftingContext.getSettings();
+    storm::modelchecker::parametric::SparseDtmcRegionChecker<storm::models::sparse::Dtmc<storm::RationalFunction>, double> regionChecker(*model);
+    auto settings = regionChecker.getSettings();
     settings.applyExactValidation = true;
-    parameterLiftingContext.setSettings(settings);
-    parameterLiftingContext.specifyFormula(storm::modelchecker::CheckTask<storm::logic::Formula, storm::RationalFunction>(*formulas[0], true));
+    regionChecker.setSettings(settings);
+    regionChecker.specifyFormula(storm::modelchecker::CheckTask<storm::logic::Formula, storm::RationalFunction>(*formulas[0], true));
     
     //start testing
     auto allSatRegion=storm::storage::ParameterRegion<storm::RationalFunction>::parseRegion("0.7<=pK<=0.875,0.75<=TOMsg<=0.95", modelParameters);
     auto exBothRegion=storm::storage::ParameterRegion<storm::RationalFunction>::parseRegion("0.6<=pK<=0.9,0.5<=TOMsg<=0.95", modelParameters);
     auto allVioRegion=storm::storage::ParameterRegion<storm::RationalFunction>::parseRegion("0.1<=pK<=0.3,0.2<=TOMsg<=0.3", modelParameters);
 
-    EXPECT_EQ(storm::modelchecker::parametric::RegionCheckResult::AllSat, parameterLiftingContext.analyzeRegion(allSatRegion, storm::modelchecker::parametric::RegionCheckResult::Unknown, true));
-    EXPECT_EQ(storm::modelchecker::parametric::RegionCheckResult::ExistsBoth, parameterLiftingContext.analyzeRegion(exBothRegion, storm::modelchecker::parametric::RegionCheckResult::Unknown, true));
-    EXPECT_EQ(storm::modelchecker::parametric::RegionCheckResult::AllViolated, parameterLiftingContext.analyzeRegion(allVioRegion, storm::modelchecker::parametric::RegionCheckResult::Unknown, true));
+    EXPECT_EQ(storm::modelchecker::parametric::RegionCheckResult::AllSat, regionChecker.analyzeRegion(allSatRegion, storm::modelchecker::parametric::RegionCheckResult::Unknown, true));
+    EXPECT_EQ(storm::modelchecker::parametric::RegionCheckResult::ExistsBoth, regionChecker.analyzeRegion(exBothRegion, storm::modelchecker::parametric::RegionCheckResult::Unknown, true));
+    EXPECT_EQ(storm::modelchecker::parametric::RegionCheckResult::AllViolated, regionChecker.analyzeRegion(allVioRegion, storm::modelchecker::parametric::RegionCheckResult::Unknown, true));
     
     carl::VariablePool::getInstance().clear();
 }
@@ -215,13 +215,13 @@ TEST(SparseDtmcParameterLiftingTest, Brp_Rew_Infty) {
     auto rewParameters = storm::models::sparse::getRewardParameters(*model);
     modelParameters.insert(rewParameters.begin(), rewParameters.end());
     
-    storm::modelchecker::parametric::SparseDtmcParameterLifting<storm::models::sparse::Dtmc<storm::RationalFunction>, double> parameterLiftingContext(*model);
-    parameterLiftingContext.specifyFormula(storm::modelchecker::CheckTask<storm::logic::Formula, storm::RationalFunction>(*formulas[0], true));
+    storm::modelchecker::parametric::SparseDtmcRegionChecker<storm::models::sparse::Dtmc<storm::RationalFunction>, double> regionChecker(*model);
+    regionChecker.specifyFormula(storm::modelchecker::CheckTask<storm::logic::Formula, storm::RationalFunction>(*formulas[0], true));
 
     //start testing
     auto allSatRegion=storm::storage::ParameterRegion<storm::RationalFunction>::parseRegion("0.7<=pK<=0.9,0.6<=pL<=0.85,0.9<=TOMsg<=0.95,0.85<=TOAck<=0.9", modelParameters);
     
-    EXPECT_EQ(storm::modelchecker::parametric::RegionCheckResult::AllSat, parameterLiftingContext.analyzeRegion(allSatRegion, storm::modelchecker::parametric::RegionCheckResult::Unknown, true));
+    EXPECT_EQ(storm::modelchecker::parametric::RegionCheckResult::AllSat, regionChecker.analyzeRegion(allSatRegion, storm::modelchecker::parametric::RegionCheckResult::Unknown, true));
 
     carl::VariablePool::getInstance().clear();
 }
@@ -241,17 +241,17 @@ TEST(SparseDtmcParameterLiftingTest, Brp_Rew_4Par) {
     auto rewParameters = storm::models::sparse::getRewardParameters(*model);
     modelParameters.insert(rewParameters.begin(), rewParameters.end());
     
-    storm::modelchecker::parametric::SparseDtmcParameterLifting<storm::models::sparse::Dtmc<storm::RationalFunction>, double> parameterLiftingContext(*model);
-    parameterLiftingContext.specifyFormula(storm::modelchecker::CheckTask<storm::logic::Formula, storm::RationalFunction>(*formulas[0], true));
+    storm::modelchecker::parametric::SparseDtmcRegionChecker<storm::models::sparse::Dtmc<storm::RationalFunction>, double> regionChecker(*model);
+    regionChecker.specifyFormula(storm::modelchecker::CheckTask<storm::logic::Formula, storm::RationalFunction>(*formulas[0], true));
     
     //start testing
     auto allSatRegion=storm::storage::ParameterRegion<storm::RationalFunction>::parseRegion("0.7<=pK<=0.9,0.6<=pL<=0.85,0.9<=TOMsg<=0.95,0.85<=TOAck<=0.9", modelParameters);
     auto exBothRegion=storm::storage::ParameterRegion<storm::RationalFunction>::parseRegion("0.1<=pK<=0.7,0.2<=pL<=0.8,0.15<=TOMsg<=0.65,0.3<=TOAck<=0.9", modelParameters);
     auto allVioRegion=storm::storage::ParameterRegion<storm::RationalFunction>::parseRegion("0.1<=pK<=0.4,0.2<=pL<=0.3,0.15<=TOMsg<=0.3,0.1<=TOAck<=0.2", modelParameters);
 
-    EXPECT_EQ(storm::modelchecker::parametric::RegionCheckResult::AllSat, parameterLiftingContext.analyzeRegion(allSatRegion, storm::modelchecker::parametric::RegionCheckResult::Unknown, true));
-    EXPECT_EQ(storm::modelchecker::parametric::RegionCheckResult::ExistsBoth, parameterLiftingContext.analyzeRegion(exBothRegion, storm::modelchecker::parametric::RegionCheckResult::Unknown, true));
-    EXPECT_EQ(storm::modelchecker::parametric::RegionCheckResult::AllViolated, parameterLiftingContext.analyzeRegion(allVioRegion, storm::modelchecker::parametric::RegionCheckResult::Unknown, true));
+    EXPECT_EQ(storm::modelchecker::parametric::RegionCheckResult::AllSat, regionChecker.analyzeRegion(allSatRegion, storm::modelchecker::parametric::RegionCheckResult::Unknown, true));
+    EXPECT_EQ(storm::modelchecker::parametric::RegionCheckResult::ExistsBoth, regionChecker.analyzeRegion(exBothRegion, storm::modelchecker::parametric::RegionCheckResult::Unknown, true));
+    EXPECT_EQ(storm::modelchecker::parametric::RegionCheckResult::AllViolated, regionChecker.analyzeRegion(allVioRegion, storm::modelchecker::parametric::RegionCheckResult::Unknown, true));
     
     carl::VariablePool::getInstance().clear();
 }
@@ -272,8 +272,8 @@ TEST(SparseDtmcParameterLiftingTest, Crowds_Prob) {
     auto rewParameters = storm::models::sparse::getRewardParameters(*model);
     modelParameters.insert(rewParameters.begin(), rewParameters.end());
    
-    storm::modelchecker::parametric::SparseDtmcParameterLifting<storm::models::sparse::Dtmc<storm::RationalFunction>, double> parameterLiftingContext(*model);
-    parameterLiftingContext.specifyFormula(storm::modelchecker::CheckTask<storm::logic::Formula, storm::RationalFunction>(*formulas[0], true));
+    storm::modelchecker::parametric::SparseDtmcRegionChecker<storm::models::sparse::Dtmc<storm::RationalFunction>, double> regionChecker(*model);
+    regionChecker.specifyFormula(storm::modelchecker::CheckTask<storm::logic::Formula, storm::RationalFunction>(*formulas[0], true));
 
     //start testing
     auto allSatRegion=storm::storage::ParameterRegion<storm::RationalFunction>::parseRegion("0.1<=PF<=0.75,0.15<=badC<=0.2", modelParameters);
@@ -281,10 +281,10 @@ TEST(SparseDtmcParameterLiftingTest, Crowds_Prob) {
     auto allVioRegion=storm::storage::ParameterRegion<storm::RationalFunction>::parseRegion("0.8<=PF<=0.95,0.2<=badC<=0.2", modelParameters);
     auto allVioHardRegion=storm::storage::ParameterRegion<storm::RationalFunction>::parseRegion("0.8<=PF<=0.95,0.2<=badC<=0.9", modelParameters);
 
-    EXPECT_EQ(storm::modelchecker::parametric::RegionCheckResult::AllSat, parameterLiftingContext.analyzeRegion(allSatRegion, storm::modelchecker::parametric::RegionCheckResult::Unknown, true));
-    EXPECT_EQ(storm::modelchecker::parametric::RegionCheckResult::ExistsBoth, parameterLiftingContext.analyzeRegion(exBothRegion, storm::modelchecker::parametric::RegionCheckResult::Unknown, true));
-    EXPECT_EQ(storm::modelchecker::parametric::RegionCheckResult::AllViolated, parameterLiftingContext.analyzeRegion(allVioRegion, storm::modelchecker::parametric::RegionCheckResult::Unknown, true));
-    EXPECT_EQ(storm::modelchecker::parametric::RegionCheckResult::CenterViolated, parameterLiftingContext.analyzeRegion(allVioHardRegion, storm::modelchecker::parametric::RegionCheckResult::Unknown, true));
+    EXPECT_EQ(storm::modelchecker::parametric::RegionCheckResult::AllSat, regionChecker.analyzeRegion(allSatRegion, storm::modelchecker::parametric::RegionCheckResult::Unknown, true));
+    EXPECT_EQ(storm::modelchecker::parametric::RegionCheckResult::ExistsBoth, regionChecker.analyzeRegion(exBothRegion, storm::modelchecker::parametric::RegionCheckResult::Unknown, true));
+    EXPECT_EQ(storm::modelchecker::parametric::RegionCheckResult::AllViolated, regionChecker.analyzeRegion(allVioRegion, storm::modelchecker::parametric::RegionCheckResult::Unknown, true));
+    EXPECT_EQ(storm::modelchecker::parametric::RegionCheckResult::CenterViolated, regionChecker.analyzeRegion(allVioHardRegion, storm::modelchecker::parametric::RegionCheckResult::Unknown, true));
 
     carl::VariablePool::getInstance().clear();
 }
@@ -305,8 +305,8 @@ TEST(SparseDtmcParameterLiftingTest, Crowds_Prob_stepBounded) {
     auto rewParameters = storm::models::sparse::getRewardParameters(*model);
     modelParameters.insert(rewParameters.begin(), rewParameters.end());
    
-    storm::modelchecker::parametric::SparseDtmcParameterLifting<storm::models::sparse::Dtmc<storm::RationalFunction>, double> parameterLiftingContext(*model);
-    parameterLiftingContext.specifyFormula(storm::modelchecker::CheckTask<storm::logic::Formula, storm::RationalFunction>(*formulas[0], true));
+    storm::modelchecker::parametric::SparseDtmcRegionChecker<storm::models::sparse::Dtmc<storm::RationalFunction>, double> regionChecker(*model);
+    regionChecker.specifyFormula(storm::modelchecker::CheckTask<storm::logic::Formula, storm::RationalFunction>(*formulas[0], true));
 
     //start testing
     auto allSatRegion=storm::storage::ParameterRegion<storm::RationalFunction>::parseRegion("0.1<=PF<=0.75,0.15<=badC<=0.2", modelParameters);
@@ -314,10 +314,10 @@ TEST(SparseDtmcParameterLiftingTest, Crowds_Prob_stepBounded) {
     auto allVioRegion=storm::storage::ParameterRegion<storm::RationalFunction>::parseRegion("0.8<=PF<=0.95,0.2<=badC<=0.2", modelParameters);
     auto allVioHardRegion=storm::storage::ParameterRegion<storm::RationalFunction>::parseRegion("0.8<=PF<=0.95,0.2<=badC<=0.9", modelParameters);
 
-    EXPECT_EQ(storm::modelchecker::parametric::RegionCheckResult::AllSat, parameterLiftingContext.analyzeRegion(allSatRegion, storm::modelchecker::parametric::RegionCheckResult::Unknown, true));
-    EXPECT_EQ(storm::modelchecker::parametric::RegionCheckResult::ExistsBoth, parameterLiftingContext.analyzeRegion(exBothRegion, storm::modelchecker::parametric::RegionCheckResult::Unknown, true));
-    EXPECT_EQ(storm::modelchecker::parametric::RegionCheckResult::AllViolated, parameterLiftingContext.analyzeRegion(allVioRegion, storm::modelchecker::parametric::RegionCheckResult::Unknown, true));
-    EXPECT_EQ(storm::modelchecker::parametric::RegionCheckResult::CenterViolated, parameterLiftingContext.analyzeRegion(allVioHardRegion, storm::modelchecker::parametric::RegionCheckResult::Unknown, true));
+    EXPECT_EQ(storm::modelchecker::parametric::RegionCheckResult::AllSat, regionChecker.analyzeRegion(allSatRegion, storm::modelchecker::parametric::RegionCheckResult::Unknown, true));
+    EXPECT_EQ(storm::modelchecker::parametric::RegionCheckResult::ExistsBoth, regionChecker.analyzeRegion(exBothRegion, storm::modelchecker::parametric::RegionCheckResult::Unknown, true));
+    EXPECT_EQ(storm::modelchecker::parametric::RegionCheckResult::AllViolated, regionChecker.analyzeRegion(allVioRegion, storm::modelchecker::parametric::RegionCheckResult::Unknown, true));
+    EXPECT_EQ(storm::modelchecker::parametric::RegionCheckResult::CenterViolated, regionChecker.analyzeRegion(allVioHardRegion, storm::modelchecker::parametric::RegionCheckResult::Unknown, true));
 
     carl::VariablePool::getInstance().clear();
 }
@@ -339,17 +339,17 @@ TEST(SparseDtmcParameterLiftingTest, Crowds_Prob_1Par) {
     auto rewParameters = storm::models::sparse::getRewardParameters(*model);
     modelParameters.insert(rewParameters.begin(), rewParameters.end());
     
-    storm::modelchecker::parametric::SparseDtmcParameterLifting<storm::models::sparse::Dtmc<storm::RationalFunction>, double> parameterLiftingContext(*model);
-    parameterLiftingContext.specifyFormula(storm::modelchecker::CheckTask<storm::logic::Formula, storm::RationalFunction>(*formulas[0], true));
+    storm::modelchecker::parametric::SparseDtmcRegionChecker<storm::models::sparse::Dtmc<storm::RationalFunction>, double> regionChecker(*model);
+    regionChecker.specifyFormula(storm::modelchecker::CheckTask<storm::logic::Formula, storm::RationalFunction>(*formulas[0], true));
     
     //start testing
     auto allSatRegion=storm::storage::ParameterRegion<storm::RationalFunction>::parseRegion("0.9<=PF<=0.99", modelParameters);
     auto exBothRegion=storm::storage::ParameterRegion<storm::RationalFunction>::parseRegion("0.8<=PF<=0.9", modelParameters);
     auto allVioRegion=storm::storage::ParameterRegion<storm::RationalFunction>::parseRegion("0.01<=PF<=0.8", modelParameters);
 
-    EXPECT_EQ(storm::modelchecker::parametric::RegionCheckResult::AllSat, parameterLiftingContext.analyzeRegion(allSatRegion, storm::modelchecker::parametric::RegionCheckResult::Unknown, true));
-    EXPECT_EQ(storm::modelchecker::parametric::RegionCheckResult::ExistsBoth, parameterLiftingContext.analyzeRegion(exBothRegion, storm::modelchecker::parametric::RegionCheckResult::Unknown, true));
-    EXPECT_EQ(storm::modelchecker::parametric::RegionCheckResult::AllViolated, parameterLiftingContext.analyzeRegion(allVioRegion, storm::modelchecker::parametric::RegionCheckResult::Unknown, true));
+    EXPECT_EQ(storm::modelchecker::parametric::RegionCheckResult::AllSat, regionChecker.analyzeRegion(allSatRegion, storm::modelchecker::parametric::RegionCheckResult::Unknown, true));
+    EXPECT_EQ(storm::modelchecker::parametric::RegionCheckResult::ExistsBoth, regionChecker.analyzeRegion(exBothRegion, storm::modelchecker::parametric::RegionCheckResult::Unknown, true));
+    EXPECT_EQ(storm::modelchecker::parametric::RegionCheckResult::AllViolated, regionChecker.analyzeRegion(allVioRegion, storm::modelchecker::parametric::RegionCheckResult::Unknown, true));
     
     carl::VariablePool::getInstance().clear();
 }
@@ -370,13 +370,13 @@ TEST(SparseDtmcParameterLiftingTest, Crowds_Prob_Const) {
     auto rewParameters = storm::models::sparse::getRewardParameters(*model);
     modelParameters.insert(rewParameters.begin(), rewParameters.end());
     
-    storm::modelchecker::parametric::SparseDtmcParameterLifting<storm::models::sparse::Dtmc<storm::RationalFunction>, double> parameterLiftingContext(*model);
-    parameterLiftingContext.specifyFormula(storm::modelchecker::CheckTask<storm::logic::Formula, storm::RationalFunction>(*formulas[0], true));
+    storm::modelchecker::parametric::SparseDtmcRegionChecker<storm::models::sparse::Dtmc<storm::RationalFunction>, double> regionChecker(*model);
+    regionChecker.specifyFormula(storm::modelchecker::CheckTask<storm::logic::Formula, storm::RationalFunction>(*formulas[0], true));
 
     //start testing
     auto allSatRegion=storm::storage::ParameterRegion<storm::RationalFunction>::parseRegion("", modelParameters);
     
-    EXPECT_EQ(storm::modelchecker::parametric::RegionCheckResult::AllSat, parameterLiftingContext.analyzeRegion(allSatRegion, storm::modelchecker::parametric::RegionCheckResult::Unknown, true));
+    EXPECT_EQ(storm::modelchecker::parametric::RegionCheckResult::AllSat, regionChecker.analyzeRegion(allSatRegion, storm::modelchecker::parametric::RegionCheckResult::Unknown, true));
 
     carl::VariablePool::getInstance().clear();
 }
