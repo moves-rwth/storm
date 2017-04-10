@@ -216,12 +216,12 @@ namespace storm {
                 linEqSolverA->setCachingEnabled(true);
             }
             
-            if (!auxiliaryRowVector.get()) {
+            if (!auxiliaryRowVector) {
                 auxiliaryRowVector = std::make_unique<std::vector<ValueType>>(A.getRowCount());
             }
             std::vector<ValueType>& multiplyResult = *auxiliaryRowVector;
             
-            if (!auxiliaryRowGroupVector.get()) {
+            if (!auxiliaryRowGroupVector) {
                 auxiliaryRowGroupVector = std::make_unique<std::vector<ValueType>>(A.getRowGroupCount());
             }
             
@@ -301,7 +301,7 @@ namespace storm {
                 linEqSolverA->setCachingEnabled(true);
             }
             
-            if (!auxiliaryRowVector.get()) {
+            if (!auxiliaryRowVector) {
                 auxiliaryRowVector = std::make_unique<std::vector<ValueType>>(A.getRowCount());
             }
             std::vector<ValueType>& multiplyResult = *auxiliaryRowVector;

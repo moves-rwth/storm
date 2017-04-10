@@ -25,6 +25,8 @@ namespace storm {
         template<class ValueType>
         class GameSolver : public AbstractEquationSolver<ValueType> {
         public:
+            
+            virtual ~GameSolver() = default;
 
             /*!
              * Solves the equation system defined by the game matrices. Note that the game matrices have to be given upon
@@ -137,6 +139,9 @@ namespace storm {
             void setBounds(ValueType const& lower, ValueType const& upper);
 
         protected:
+            
+            GameSolver();
+            
             /// Whether we generate schedulers during solving.
             bool trackSchedulers;
 

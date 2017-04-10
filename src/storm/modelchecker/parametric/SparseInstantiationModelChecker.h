@@ -17,6 +17,7 @@ namespace storm {
             class SparseInstantiationModelChecker {
             public:
                 SparseInstantiationModelChecker(SparseModelType const& parametricModel);
+                virtual ~SparseInstantiationModelChecker() = default;
                 
                 void specifyFormula(CheckTask<storm::logic::Formula, typename SparseModelType::ValueType> const& checkTask);
                 

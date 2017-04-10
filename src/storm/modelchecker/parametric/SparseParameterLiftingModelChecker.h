@@ -21,6 +21,7 @@ namespace storm {
             class SparseParameterLiftingModelChecker {
             public:
                 SparseParameterLiftingModelChecker(SparseModelType const& parametricModel);
+                virtual ~SparseParameterLiftingModelChecker() = default;
                 
                 virtual bool canHandle(CheckTask<storm::logic::Formula, typename SparseModelType::ValueType> const& checkTask) const = 0;
                 

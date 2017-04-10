@@ -187,15 +187,15 @@ namespace storm {
                 linEqSolverPlayer2Matrix->setCachingEnabled(true);
             }
             
-            if (!auxiliaryP2RowVector.get()) {
+            if (!auxiliaryP2RowVector) {
                 auxiliaryP2RowVector = std::make_unique<std::vector<ValueType>>(player2Matrix.getRowCount());
             }
                
-            if (!auxiliaryP2RowGroupVector.get()) {
+            if (!auxiliaryP2RowGroupVector) {
                 auxiliaryP2RowGroupVector = std::make_unique<std::vector<ValueType>>(player2Matrix.getRowGroupCount());
             }
              
-            if (!auxiliaryP1RowGroupVector.get()) {
+            if (!auxiliaryP1RowGroupVector) {
                 auxiliaryP1RowGroupVector = std::make_unique<std::vector<ValueType>>(player1Matrix.getRowGroupCount());
             }
              
@@ -266,11 +266,11 @@ namespace storm {
                 linEqSolverPlayer2Matrix->setCachingEnabled(true);
             }
             
-            if (!auxiliaryP2RowVector.get()) {
+            if (!auxiliaryP2RowVector) {
                 auxiliaryP2RowVector = std::make_unique<std::vector<ValueType>>(player2Matrix.getRowCount());
             }
                
-            if (!auxiliaryP2RowGroupVector.get()) {
+            if (!auxiliaryP2RowGroupVector) {
                 auxiliaryP2RowGroupVector = std::make_unique<std::vector<ValueType>>(player2Matrix.getRowGroupCount());
             }
             std::vector<ValueType>& multiplyResult = *auxiliaryP2RowVector;

@@ -27,7 +27,8 @@ namespace storm {
                 typedef typename storm::storage::ParameterRegion<typename SparseModelType::ValueType>::CoefficientType CoefficientType;
 
                 ParameterLifting(SparseModelType const& parametricModel);
-
+                virtual ~ParameterLifting() = default;
+                
                 ParameterLiftingSettings const& getSettings() const;
                 void setSettings(ParameterLiftingSettings const& newSettings);
                 

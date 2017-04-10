@@ -10,6 +10,11 @@ namespace storm {
     namespace solver {
         
         template<typename ValueType>
+        GameSolver<ValueType>::GameSolver() : trackSchedulers(false), cachingEnabled(false) {
+            // Intentionally left empty
+        }
+        
+        template<typename ValueType>
         void GameSolver<ValueType>::setTrackSchedulers(bool value) {
             trackSchedulers = value;
             if (!trackSchedulers) {

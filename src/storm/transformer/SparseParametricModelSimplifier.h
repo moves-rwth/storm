@@ -19,6 +19,7 @@ namespace storm {
         class SparseParametricModelSimplifier {
         public:
             SparseParametricModelSimplifier(SparseModelType const& model);
+            virtual ~SparseParametricModelSimplifier() = default;
             
             /*
              * Invokes the simplification of the model w.r.t. the given formula.
