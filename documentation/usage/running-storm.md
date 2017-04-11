@@ -484,11 +484,36 @@ Storm should tell you that this probability is 0.375. So what does it mean? It m
 {:.alert .alert-info}
 For [nondeterministic models (MDPs and MAs)](models.html#models-with-nondeterminism){:.alert-link}, you will have to specify in which direction the nondeterminism is going to be resolved.
 
+
+### Multi-objective Model Checking of a Markov Automaton
+
+Storm supports multi-objective model checking: In non-deterministic models, different objectives might require different choices of actions in order to satisfy the property.
+This induces trade-offs between different strategies. Multi-objective model checking reveals such trade-offs by computing the Pareto curve. An example is given below.
+
+#### Example 3 (Pareto Curves)
+Consider an instance of stochastic job scheduling, where a number of jobs with exponential run time needs to be handled by a number of servers.
+On one hand, we are interested in reducing the expected time until all jobs are done. On the other hand, we want to maximize the probability that a first
+batch of jobs has been treated within an hour. This yields a trade-off, as the optimal strategy for minimizing the expected time is to run the slowest jobs first.
+
+The trade-off is depicted by the following curve: 
+
+![Pareto Curve]({{ site.github.url }}/pics/multi-objective.png 'Pareto Curve'){:class="img-thumbnail col-sm" height="220" width="220"}
+
+
+{% include collapse-panel.html target="job_sched_file" name="Prism file for Stochastic Job Scheduling" %}
+<div class="job_sched_file collapse" markdown="1">
+Download link:
+
+```shell
+
+```
+</div>
+
 ### Running Storm on JANI input
 
 [JANI](languages.html#jani) models can be provided with the `--jani <path/to/jani-file>` option.
 
-#### Example 3 (Analysis of a rejection-sampling algorithm to approximate $$\pi$$)
+#### Example 4 (Analysis of a rejection-sampling algorithm to approximate $$\pi$$)
 
 Here, we are going to analyze a model of an algorithm that approximates $$\pi$$. It does so by repeated sampling according to a uniform distribution. While this model is a JANI model, the original model was written in [pGCL](languages.html#cpgcl) and has been translated to JANI by Storm's `storm-pgcl` binary. The JANI model and the original pGCL code is available from the [JANI models repository](https://github.com/ahartmanns/jani-models){:target="_blank"}.
 
@@ -1768,7 +1793,7 @@ Storm 1.0.0
 Command line arguments: --explicit die.tra die.lab --transrew die.tra.rew --prop P=? [F "one"]
 Current working directory: ~/storm/build/bin
 
-TTime for model construction: 0.000s.
+Time for model construction: 0.000s.
 --------------------------------------------------------------
 Model type: 	DTMC (sparse)
 States: 	13
