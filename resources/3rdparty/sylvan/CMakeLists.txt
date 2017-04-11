@@ -33,20 +33,6 @@ if (NOT SYLVAN_PORTABLE)
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -march=native")
 endif()
 
-if (SYLVAN_USE_LTO)
-    message(STATUS "Sylvan - Enabling LTO.")
-    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -flto -flto-partition=none")
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -flto -flto-partition=none")
-    
-    # For GCC, we need to set the ar/ranlib commands to use the gcc wrappers to account for LTO.
-    if ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")
-        message(STATUS "Sylvan - Setting ar/ranlib to account for LTO.")
-        set(CMAKE_AR gcc-ar CACHE FILEPATH "Archiver" FORCE)
-        set(CMAKE_RANLIB gcc-ranlib CACHE FILEPATH "Ranlib" FORCE)
-        message(STATUS "Sylvan - ar/ranlib are ${CMAKE_AR} and ${CMAKE_RANLIB}, respectively.")
-    endif()
-endif()
-
 option(WITH_COVERAGE "Add generation of test coverage" OFF)
 if(WITH_COVERAGE)
     set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -O0 -g -coverage")
