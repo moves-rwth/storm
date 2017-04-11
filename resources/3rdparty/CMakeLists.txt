@@ -192,13 +192,6 @@ include(${STORM_3RDPARTY_SOURCE_DIR}/include_cudd.cmake)
 
 #############################################################
 ##
-##	cpptemplate
-##
-#############################################################
-include(${STORM_3RDPARTY_SOURCE_DIR}/include_cpptemplate.cmake)
-
-#############################################################
-##
 ##      carl
 ##
 #############################################################
@@ -377,7 +370,6 @@ ExternalProject_Add(
         LOG_CONFIGURE ON
         LOG_BUILD ON
         BUILD_BYPRODUCTS ${STORM_3RDPARTY_BINARY_DIR}/sylvan/src/libsylvan${STATIC_EXT}
-        BUILD_ALWAYS 1
 )
 
 ExternalProject_Get_Property(sylvan source_dir)
@@ -403,6 +395,15 @@ else()
         message(FATAL_ERROR "HWLOC is required on Linux but was not found.")
     endif()
 endif()
+
+#############################################################
+##
+##	cpptemplate
+##
+#############################################################
+
+include_directories(${STORM_3RDPARTY_SOURCE_DIR}/cpptemplate)
+list(APPEND STORM_3RDPARTY_SOURCES ${STORM_3RDPARTY_SOURCE_DIR}/cpptemplate/cpptempl.cpp)
 
 #############################################################
 ##
