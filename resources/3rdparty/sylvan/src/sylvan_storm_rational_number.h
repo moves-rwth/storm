@@ -76,8 +76,8 @@ TASK_DECL_3(MTBDD, sylvan_storm_rational_number_and_exists, MTBDD, MTBDD, MTBDD)
 TASK_DECL_2(MTBDD, sylvan_storm_rational_number_op_to_double, MTBDD, size_t)
 #define sylvan_storm_rational_number_to_double(a) mtbdd_uapply_nocache(a, TASK(sylvan_storm_rational_number_op_to_double), 0)
     
-TASK_DECL_2(MTBDD, sylvan_storm_rational_number_op_threshold, MTBDD, size_t)
-TASK_DECL_2(MTBDD, sylvan_storm_rational_number_op_strict_threshold, MTBDD, size_t)
+TASK_DECL_2(MTBDD, sylvan_storm_rational_number_op_threshold, MTBDD, size_t*)
+TASK_DECL_2(MTBDD, sylvan_storm_rational_number_op_strict_threshold, MTBDD, size_t*)
 
 TASK_DECL_2(MTBDD, sylvan_storm_rational_number_threshold, MTBDD, storm_rational_number_ptr);
 #define sylvan_storm_rational_number_threshold(dd, value) CALL(sylvan_storm_rational_number_strict_threshold, dd, value)

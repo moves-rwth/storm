@@ -21,17 +21,17 @@ namespace storm {
         
         template<storm::dd::DdType Type, typename ValueType>
         std::unique_ptr<CheckResult> HybridQuantitativeCheckResult<Type, ValueType>::compareAgainstBound(storm::logic::ComparisonType comparisonType, ValueType const& bound) const {
-            storm::dd::Bdd<Type> symbolicResult;
-
+            storm::dd::Bdd<Type> symbolicResult = symbolicStates;
+            
             // First compute the symbolic part of the result.
             if (comparisonType == storm::logic::ComparisonType::Less) {
-                symbolicResult = symbolicValues.less(bound);
+                symbolicResult &= symbolicValues.less(bound);
             } else if (comparisonType == storm::logic::ComparisonType::LessEqual) {
-                symbolicResult = symbolicValues.lessOrEqual(bound);
+                symbolicResult &= symbolicValues.lessOrEqual(bound);
             } else if (comparisonType == storm::logic::ComparisonType::Greater) {
-                symbolicResult = symbolicValues.greater(bound);
+                symbolicResult &= symbolicValues.greater(bound);
             } else if (comparisonType == storm::logic::ComparisonType::GreaterEqual) {
-                symbolicResult = symbolicValues.greaterOrEqual(bound);
+                symbolicResult &= symbolicValues.greaterOrEqual(bound);
             }
             
             // Then translate the explicit part to a symbolic format and simultaneously to a qualitative result.
