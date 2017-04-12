@@ -9,8 +9,10 @@
 #include "storm/modelchecker/multiobjective/pcaa/SparsePcaaAchievabilityQuery.h"
 #include "storm/modelchecker/multiobjective/pcaa/SparsePcaaQuantitativeQuery.h"
 #include "storm/modelchecker/multiobjective/pcaa/SparsePcaaParetoQuery.h"
-#include "storm/settings//SettingsManager.h"
+#include "storm/settings/SettingsManager.h"
 #include "storm/settings/modules/MultiObjectiveSettings.h"
+#include "storm/settings/modules/CoreSettings.h"
+#include "storm/utility/Stopwatch.h"
 
 #include "storm/exceptions/InvalidArgumentException.h"
 
@@ -21,6 +23,8 @@ namespace storm {
             
             template<typename SparseModelType>
             std::unique_ptr<CheckResult> performPcaa(SparseModelType const& model, storm::logic::MultiObjectiveFormula const& formula) {
+                storm::utility::Stopwatch swTotal(true);
+                storm::utility::Stopwatch swPreprocessing(true);
                 STORM_LOG_ASSERT(model.getInitialStates().getNumberOfSetBits() == 1, "Multi-objective Model checking on model with multiple initial states is not supported.");
                 
 #ifdef STORM_HAVE_CARL
@@ -31,8 +35,13 @@ namespace storm {
                 }
                 
                 auto preprocessorResult = SparsePcaaPreprocessor<SparseModelType>::preprocess(model, formula);
-                STORM_LOG_INFO("Preprocessing done. Result: " << preprocessorResult);
-                
+                swPreprocessing.stop();
+                if (storm::settings::getModule<storm::settings::modules::CoreSettings>().isShowStatisticsSet()) {
+                    STORM_PRINT_AND_LOG("Preprocessing done in " << swPreprocessing << " seconds." << std::endl << " Result: " << preprocessorResult << std::endl);
+                } else {
+                    STORM_LOG_INFO("Preprocessing done in " << swPreprocessing << " seconds." << std::endl << " Result: " << preprocessorResult << std::endl);
+                }
+                storm::utility::Stopwatch swValueIterations(true);
                 std::unique_ptr<SparsePcaaQuery<SparseModelType, storm::RationalNumber>> query;
                 switch (preprocessorResult.queryType) {
                     case SparsePcaaPreprocessorReturnType<SparseModelType>::QueryType::Achievability:
@@ -50,8 +59,14 @@ namespace storm {
                 }
 
                 auto result = query->check();
+                swValueIterations.stop();
+                swTotal.stop();
+                if (storm::settings::getModule<storm::settings::modules::CoreSettings>().isShowStatisticsSet()) {
+                    STORM_PRINT_AND_LOG("Solving multi-objective query took " << swTotal << " seconds (consisting of " << swPreprocessing << " seconds for preprocessing and " << swValueIterations << " seconds for value iteration-based exploration of achievable points)." << std::endl);
+                }
+
                 
-                if(settings::getModule<storm::settings::modules::MultiObjectiveSettings>().isExportPlotSet()) {
+                if(storm::settings::getModule<storm::settings::modules::MultiObjectiveSettings>().isExportPlotSet()) {
                     query->exportPlotOfCurrentApproximation(storm::settings::getModule<storm::settings::modules::MultiObjectiveSettings>().getExportPlotDirectory());
                 }
                 return result;
