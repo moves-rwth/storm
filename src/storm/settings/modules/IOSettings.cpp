@@ -21,6 +21,8 @@ namespace storm {
             const std::string IOSettings::exportExplicitOptionName = "exportexplicit";
             const std::string IOSettings::explicitOptionName = "explicit";
             const std::string IOSettings::explicitOptionShortName = "exp";
+            const std::string IOSettings::explicitDrnOptionName = "explicit-drn";
+            const std::string IOSettings::explicitDrnOptionShortName = "drn";
             const std::string IOSettings::prismInputOptionName = "prism";
             const std::string IOSettings::janiInputOptionName = "jani";
             const std::string IOSettings::prismToJaniOptionName = "prism2jani";
@@ -53,6 +55,9 @@ namespace storm {
                 this->addOption(storm::settings::OptionBuilder(moduleName, explicitOptionName, false, "Parses the model given in an explicit (sparse) representation.").setShortName(explicitOptionShortName)
                                 .addArgument(storm::settings::ArgumentBuilder::createStringArgument("transition filename", "The name of the file from which to read the transitions.").addValidatorString(ArgumentValidatorFactory::createExistingFileValidator()).build())
                                 .addArgument(storm::settings::ArgumentBuilder::createStringArgument("labeling filename", "The name of the file from which to read the state labeling.").addValidatorString(ArgumentValidatorFactory::createExistingFileValidator()).build()).build());
+                this->addOption(storm::settings::OptionBuilder(moduleName, explicitDrnOptionName, false, "Parses the model given in the DRN format.").setShortName(explicitDrnOptionShortName)
+                                .addArgument(storm::settings::ArgumentBuilder::createStringArgument("drn filename", "The name of the DRN file containing the model.").addValidatorString(ArgumentValidatorFactory::createExistingFileValidator()).build())
+                                .build());
                 this->addOption(storm::settings::OptionBuilder(moduleName, prismInputOptionName, false, "Parses the model given in the PRISM format.")
                                 .addArgument(storm::settings::ArgumentBuilder::createStringArgument("filename", "The name of the file from which to read the PRISM input.").addValidatorString(ArgumentValidatorFactory::createExistingFileValidator()).build()).build());
                 this->addOption(storm::settings::OptionBuilder(moduleName, janiInputOptionName, false, "Parses the model given in the JANI format.")
@@ -109,7 +114,15 @@ namespace storm {
             std::string IOSettings::getLabelingFilename() const {
                 return this->getOption(explicitOptionName).getArgumentByName("labeling filename").getValueAsString();
             }
-            
+
+            bool IOSettings::isExplicitDRNSet() const {
+                return this->getOption(explicitDrnOptionName).getHasOptionBeenSet();
+            }
+
+            std::string IOSettings::getExplicitDRNFilename() const {
+                return this->getOption(explicitDrnOptionName).getArgumentByName("drn filename").getValueAsString();
+            }
+
             bool IOSettings::isPrismInputSet() const {
                 return this->getOption(prismInputOptionName).getHasOptionBeenSet();
             }
@@ -230,9 +243,12 @@ namespace storm {
             bool IOSettings::check() const {
                 // Ensure that not two symbolic input models were given.
                 STORM_LOG_THROW(!isJaniInputSet() || !isPrismInputSet(), storm::exceptions::InvalidSettingsException, "Symbolic model ");
-                
+
+                // Ensure that not two explicit input models were given.
+                STORM_LOG_THROW(!isExplicitSet() || !isExplicitDRNSet(), storm::exceptions::InvalidSettingsException, "Explicit model ");
+
                 // Ensure that the model was given either symbolically or explicitly.
-                STORM_LOG_THROW(!isJaniInputSet() || !isPrismInputSet() || !isExplicitSet(), storm::exceptions::InvalidSettingsException, "The model may be either given in an explicit or a symbolic format (PRISM or JANI), but not both.");
+                STORM_LOG_THROW(!isJaniInputSet() || !isPrismInputSet() || !isExplicitSet() || !isExplicitDRNSet(), storm::exceptions::InvalidSettingsException, "The model may be either given in an explicit or a symbolic format (PRISM or JANI), but not both.");
                 
                 // Make sure PRISM-to-JANI conversion is only set if the actual input is in PRISM format.
                 STORM_LOG_THROW(!isPrismToJaniSet() || isPrismInputSet(), storm::exceptions::InvalidSettingsException, "For the transformation from PRISM to JANI, the input model must be given in the prism format.");

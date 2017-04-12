@@ -20,7 +20,7 @@
 #include "storm-dft/modelchecker/dft/DFTModelChecker.h"
 #include "storm-dft/modelchecker/dft/DFTASFChecker.h"
 #include "storm-dft/transformations/DftToGspnTransformator.h"
-
+#include "storm-dft/storage/dft/DftJsonExporter.h"
 
 #include "storm-dft/settings/modules/DFTSettings.h"
 
@@ -34,27 +34,44 @@
 #include <memory>
 
 /*!
- * Load DFT from filename, build corresponding Model and check against given property.
+ * Analyse the given DFT according to the given properties.
+ * We first load the DFT from the given file, then build the corresponding model and last check against the given properties.
  *
- * @param filename Path to DFT file in Galileo format.
- * @param property PCTC formula capturing the property to check.
+ * @param properties PCTL formulas capturing the properties to check.
  * @param symred Flag whether symmetry reduction should be used.
  * @param allowModularisation Flag whether modularisation should be applied if possible.
  * @param enableDC Flag whether Don't Care propagation should be used.
+ * @param approximationError Allowed approximation error.
  */
 template <typename ValueType>
-void analyzeDFT(std::string filename, std::string property, bool symred, bool allowModularisation, bool enableDC, double approximationError) {
-    std::cout << "Running DFT analysis on file " << filename << " with property " << property << std::endl;
+void analyzeDFT(std::vector<std::string> const& properties, bool symred, bool allowModularisation, bool enableDC, double approximationError) {
+    storm::settings::modules::DFTSettings const& dftSettings = storm::settings::getModule<storm::settings::modules::DFTSettings>();
+    std::shared_ptr<storm::storage::DFT<ValueType>> dft;
 
-    storm::parser::DFTGalileoParser<ValueType> parser;
-    storm::storage::DFT<ValueType> dft = parser.parseDFT(filename);
-    std::vector<std::shared_ptr<storm::logic::Formula const>> formulas = storm::extractFormulasFromProperties(storm::parsePropertiesForExplicit(property));
-    STORM_LOG_ASSERT(formulas.size() == 1, "Wrong number of formulas.");
+    // Build DFT from given file.
+    if (dftSettings.isDftJsonFileSet()) {
+        storm::parser::DFTJsonParser<ValueType> parser;
+        std::cout << "Loading DFT from file " << dftSettings.getDftJsonFilename() << std::endl;
+        dft = std::make_shared<storm::storage::DFT<ValueType>>(parser.parseJson(dftSettings.getDftJsonFilename()));
+    } else {
+        storm::parser::DFTGalileoParser<ValueType> parser;
+        std::cout << "Loading DFT from file " << dftSettings.getDftFilename() << std::endl;
+        dft = std::make_shared<storm::storage::DFT<ValueType>>(parser.parseDFT(dftSettings.getDftFilename()));
+    }
 
+    // Build properties
+    std::string propString = properties[0];
+    for (size_t i = 1; i < properties.size(); ++i) {
+        propString += ";" + properties[i];
+    }
+    std::vector<std::shared_ptr<storm::logic::Formula const>> props = storm::extractFormulasFromProperties(storm::parsePropertiesForExplicit(propString));
+    STORM_LOG_ASSERT(props.size() > 0, "No properties found.");
+
+    // Check model
     storm::modelchecker::DFTModelChecker<ValueType> modelChecker;
-    modelChecker.check(dft, formulas[0], symred, allowModularisation, enableDC, approximationError);
+    modelChecker.check(*dft, props, symred, allowModularisation, enableDC, approximationError);
     modelChecker.printTimings();
-    modelChecker.printResult();
+    modelChecker.printResults();
 }
 
 /*!
@@ -133,6 +150,16 @@ int main(const int argc, const char** argv) {
             STORM_LOG_THROW(false, storm::exceptions::InvalidSettingsException, "No input model.");
         }
 
+        if (dftSettings.isExportToJson()) {
+            STORM_LOG_THROW(dftSettings.isDftFileSet(), storm::exceptions::InvalidSettingsException, "No input model in Galileo format given.");
+            storm::parser::DFTGalileoParser<double> parser;
+            storm::storage::DFT<double> dft = parser.parseDFT(dftSettings.getDftFilename());
+            // Export to json
+            storm::storage::DftJsonExporter<double>::toFile(dft, dftSettings.getExportJsonFilename());
+            storm::utility::cleanUp();
+            return 0;
+        }
+
         
         if (dftSettings.isTransformToGspn()) {
             std::shared_ptr<storm::storage::DFT<double>> dft;
@@ -194,43 +221,42 @@ int main(const int argc, const char** argv) {
 #endif
         
         // Set min or max
-        bool minimal = true;
+        std::string optimizationDirection = "min";
         if (dftSettings.isComputeMaximalValue()) {
             STORM_LOG_THROW(!dftSettings.isComputeMinimalValue(), storm::exceptions::InvalidSettingsException, "Cannot compute minimal and maximal values at the same time.");
-            minimal = false;
+            optimizationDirection = "max";
         }
         
-        // Construct pctlFormula
-        std::string pctlFormula = "";
-        std::string operatorType = "";
-        std::string targetFormula = "";
+        // Construct properties to check for
+        std::vector<std::string> properties;
         
         if (ioSettings.isPropertySet()) {
-            STORM_LOG_THROW(!dftSettings.usePropExpectedTime() && !dftSettings.usePropProbability() && !dftSettings.usePropTimebound(), storm::exceptions::InvalidSettingsException, "More than one property given.");
-            pctlFormula = ioSettings.getProperty();
-        } else if (dftSettings.usePropExpectedTime()) {
-            STORM_LOG_THROW(!dftSettings.usePropProbability() && !dftSettings.usePropTimebound(), storm::exceptions::InvalidSettingsException, "More than one property given.");
-            operatorType = "T";
-            targetFormula = "F \"failed\"";
-        } else if (dftSettings.usePropProbability()) {
-            STORM_LOG_THROW(!dftSettings.usePropTimebound(), storm::exceptions::InvalidSettingsException, "More than one property given.");
-            operatorType = "P";;
-            targetFormula = "F \"failed\"";
-        } else {
-            STORM_LOG_THROW(dftSettings.usePropTimebound(), storm::exceptions::InvalidSettingsException, "No property given.");
+            properties.push_back(ioSettings.getProperty());
+        }
+        if (dftSettings.usePropExpectedTime()) {
+            properties.push_back("T" + optimizationDirection + "=? [F \"failed\"]");
+        }
+        if (dftSettings.usePropProbability()) {
+            properties.push_back("P" + optimizationDirection + "=? [F \"failed\"]");
+        }
+        if (dftSettings.usePropTimebound()) {
             std::stringstream stream;
-            stream << "F<=" << dftSettings.getPropTimebound() << " \"failed\"";
-            operatorType = "P";
-            targetFormula = stream.str();
+            stream << "P" << optimizationDirection << "=? [F<=" << dftSettings.getPropTimebound() << " \"failed\"]";
+            properties.push_back(stream.str());
         }
-        
-        if (!targetFormula.empty()) {
-            STORM_LOG_ASSERT(pctlFormula.empty(), "Pctl formula not empty.");
-            pctlFormula = operatorType + (minimal ? "min" : "max") + "=?[" + targetFormula + "]";
+        if (dftSettings.usePropTimepoints()) {
+            for (double timepoint : dftSettings.getPropTimepoints()) {
+                std::stringstream stream;
+                stream << "P" << optimizationDirection << "=? [F<=" << timepoint << " \"failed\"]";
+                properties.push_back(stream.str());
+            }
         }
-        
-        STORM_LOG_ASSERT(!pctlFormula.empty(), "Pctl formula empty.");
 
+        if (properties.empty()) {
+            STORM_LOG_THROW(false, storm::exceptions::InvalidSettingsException, "No property given.");
+        }
+
+        // Set possible approximation error
         double approximationError = 0.0;
         if (dftSettings.isApproximationErrorSet()) {
             approximationError = dftSettings.getApproximationError();
@@ -239,12 +265,12 @@ int main(const int argc, const char** argv) {
         // From this point on we are ready to carry out the actual computations.
         if (parametric) {
 #ifdef STORM_HAVE_CARL
-            analyzeDFT<storm::RationalFunction>(dftSettings.getDftFilename(), pctlFormula, dftSettings.useSymmetryReduction(), dftSettings.useModularisation(), !dftSettings.isDisableDC(), approximationError);
+            analyzeDFT<storm::RationalFunction>(properties, dftSettings.useSymmetryReduction(), dftSettings.useModularisation(), !dftSettings.isDisableDC(), approximationError);
 #else
             STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Parameters are not supported in this build.");
 #endif
         } else {
-            analyzeDFT<double>(dftSettings.getDftFilename(), pctlFormula, dftSettings.useSymmetryReduction(), dftSettings.useModularisation(), !dftSettings.isDisableDC(), approximationError);
+            analyzeDFT<double>(properties, dftSettings.useSymmetryReduction(), dftSettings.useModularisation(), !dftSettings.isDisableDC(), approximationError);
         }
         
         // All operations have now been performed, so we clean up everything and terminate.

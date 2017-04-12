@@ -107,8 +107,8 @@ namespace storm {
             }
 
             bool updateHeuristicValues(DFTExplorationHeuristic<ValueType> const& predecessor, ValueType, ValueType) override {
-                if (predecessor.getDepth() < this->depth) {
-                    this->depth = predecessor.getDepth();
+                if (predecessor.getDepth() + 1 < this->depth) {
+                    this->depth = predecessor.getDepth() + 1;
                     return true;
                 }
                 return false;

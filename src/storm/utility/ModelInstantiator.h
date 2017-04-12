@@ -67,15 +67,28 @@ namespace storm {
                 template<typename PMT = ParametricSparseModelType>
                 typename std::enable_if<
                             std::is_same<PMT,storm::models::sparse::Dtmc<typename ParametricSparseModelType::ValueType>>::value ||
-                            std::is_same<PMT,storm::models::sparse::Mdp<typename ParametricSparseModelType::ValueType>>::value ||
-                            std::is_same<PMT,storm::models::sparse::Ctmc<typename ParametricSparseModelType::ValueType>>::value
+                            std::is_same<PMT,storm::models::sparse::Mdp<typename ParametricSparseModelType::ValueType>>::value
                 >::type
                 initializeModelSpecificData(PMT const& parametricModel) {
                     auto stateLabelingCopy = parametricModel.getStateLabeling();
                     auto choiceLabelingCopy = parametricModel.getOptionalChoiceLabeling();
                     this->instantiatedModel = std::make_shared<ConstantSparseModelType>(buildDummyMatrix(parametricModel.getTransitionMatrix()), std::move(stateLabelingCopy), buildDummyRewardModels(parametricModel.getRewardModels()), std::move(choiceLabelingCopy));
                 }
-                
+
+                template<typename PMT = ParametricSparseModelType>
+                typename std::enable_if<
+                std::is_same<PMT,storm::models::sparse::Ctmc<typename ParametricSparseModelType::ValueType>>::value
+                >::type
+                initializeModelSpecificData(PMT const& parametricModel) {
+                    auto stateLabelingCopy = parametricModel.getStateLabeling();
+                    auto choiceLabelingCopy = parametricModel.getOptionalChoiceLabeling();
+                    std::vector<ConstantType> exitRates(parametricModel.getExitRateVector().size(), storm::utility::one<ConstantType>());
+                    this->instantiatedModel = std::make_shared<ConstantSparseModelType>(buildDummyMatrix(parametricModel.getTransitionMatrix()), std::move(exitRates), std::move(stateLabelingCopy), buildDummyRewardModels(parametricModel.getRewardModels()), std::move(choiceLabelingCopy));
+
+                    initializeVectorMapping(this->instantiatedModel->getExitRateVector(), this->functions, this->vectorMapping, parametricModel.getExitRateVector());
+                }
+
+
                 template<typename PMT = ParametricSparseModelType>
                 typename std::enable_if<
                             std::is_same<PMT,storm::models::sparse::MarkovAutomaton<typename ParametricSparseModelType::ValueType>>::value
