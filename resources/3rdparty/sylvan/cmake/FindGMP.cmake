@@ -8,13 +8,16 @@
 find_package(PkgConfig)
 pkg_check_modules(PC_GMP QUIET gmp)
 
+set(GMP_INCLUDE "" CACHE PATH "include dir")
+set(GMP_LOCATION "" CACHE PATH "location dir")
+
 set(GMP_DEFINITIONS ${PC_GMP_CFLAGS_OTHER})
 
 find_path(GMP_INCLUDE_DIR gmp.h
-          HINTS ${PC_GMP_INCLUDEDIR} ${PC_GMP_INCLUDE_DIRS})
+          HINTS ${GMP_INCLUDE} ${PC_GMP_INCLUDEDIR} ${PC_GMP_INCLUDE_DIRS})
 
 find_library(GMP_LIBRARIES NAMES gmp libgmp
-             HINTS ${PC_GMP_LIBDIR} ${PC_GMP_LIBRARY_DIRS})
+             HINTS ${GMP_LOCATION} ${PC_GMP_LIBDIR} ${PC_GMP_LIBRARY_DIRS} NO_CMAKE_PATH NO_CMAKE_ENVIRONMENT_PATH)
 
 include(FindPackageHandleStandardArgs)
 # handle the QUIETLY and REQUIRED arguments and set GMP_FOUND to TRUE
