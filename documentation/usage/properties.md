@@ -38,6 +38,7 @@ For this, we assume that `a` and `b` are [state formulae](#state-formulae) and `
 - `F b` as a shortcut for `true U b`.
 - `a U{op}k b` (where `k` is an expression evaluating to a number) to describe the paths on which `b` holds within `k` time (where time in discrete models means steps) and `a` holds before.
 - `F{op}k b` as a shortcut for `true U{op}k b`.
+- `G a` to describe paths on which `a` holds in every step.
 
 ### State Formulae
 
