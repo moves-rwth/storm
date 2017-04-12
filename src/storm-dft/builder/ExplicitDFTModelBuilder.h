@@ -60,7 +60,7 @@ namespace storm {
             storm::storage::BitVectorHashMap<uint_fast64_t> mStates;
             std::vector<std::pair<uint_fast64_t, storm::storage::BitVector>> mPseudoStatesMapping; // vector of (id to concrete state, bitvector)
             size_t newIndex = 0;
-            bool mergeFailedStates = true;
+            bool mergeFailedStates = false;
             bool enableDC = true;
             size_t failedIndex = 0;
             size_t initialStateIndex = 0;

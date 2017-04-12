@@ -152,7 +152,16 @@ namespace storm {
                  * @param out The stream the information is to be printed to.
                  */
                 void printLabelingInformationToStream(std::ostream& out) const;
-                
+
+                /*!
+                 * Prints the complete labeling to the specified stream.
+                 *
+                 * @param out The stream the information is to be printed to.
+                 */
+                void printCompleteLabelingInformationToStream(std::ostream& out) const;
+
+                friend std::ostream& operator<<(std::ostream& out, StateLabeling const& labeling);
+
             private:
                 // The number of states for which this object can hold the labeling.
                 uint_fast64_t stateCount;

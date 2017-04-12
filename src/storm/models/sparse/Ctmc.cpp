@@ -35,7 +35,12 @@ namespace storm {
             std::vector<ValueType> const& Ctmc<ValueType, RewardModelType>::getExitRateVector() const {
                 return exitRates;
             }
-            
+
+            template <typename ValueType, typename RewardModelType>
+            std::vector<ValueType>& Ctmc<ValueType, RewardModelType>::getExitRateVector() {
+                return exitRates;
+            }
+
             template <typename ValueType, typename RewardModelType>
             std::vector<ValueType>& Ctmc<ValueType, RewardModelType>::getExitRateVector() {
                 return exitRates;
