@@ -1073,7 +1073,7 @@ namespace storm {
                         result = ActionDd(result.guard || actionIt->guard, result.transitions + actionIt->transitions, joinTransientAssignmentMaps(result.transientEdgeAssignments, actionIt->transientEdgeAssignments), std::make_pair<uint64_t, uint64_t>(0, 0), joinVariableWritingFragmentMaps(result.variableToWritingFragment, actionIt->variableToWritingFragment), result.illegalFragment || actionIt->illegalFragment);
                     }
                     return result;
-                } else if (this->model.getModelType() == storm::jani::ModelType::MDP) {
+                } else if (this->model.getModelType() == storm::jani::ModelType::MDP || this->model.getModelType() == storm::jani::ModelType::LTS ) {
                     // Ensure that all actions start at the same local nondeterminism variable.
                     uint_fast64_t lowestLocalNondeterminismVariable = actions.front().getLowestLocalNondeterminismVariable();
                     uint_fast64_t highestLocalNondeterminismVariable = actions.front().getHighestLocalNondeterminismVariable();
@@ -1282,7 +1282,7 @@ namespace storm {
                     } else if (modelType == storm::jani::ModelType::CTMC) {
                         STORM_LOG_THROW(nonMarkovianEdges.empty(), storm::exceptions::WrongFormatException, "Illegal non-Markovian edges in CTMC.");
                         return combineEdgesToActionDeterministic(markovianEdges);
-                    } else if (modelType == storm::jani::ModelType::MDP) {
+                    } else if (modelType == storm::jani::ModelType::MDP || modelType == storm::jani::ModelType::LTS) {
                         STORM_LOG_THROW(markovianEdges.empty(), storm::exceptions::WrongFormatException, "Illegal Markovian edges in MDP.");
                         return combineEdgesToActionNondeterministic(nonMarkovianEdges, boost::none, localNondeterminismVariableOffset);
                     } else if (modelType == storm::jani::ModelType::MA) {
@@ -1294,7 +1294,7 @@ namespace storm {
                         }
                         return combineEdgesToActionNondeterministic(nonMarkovianEdges, markovianEdge, localNondeterminismVariableOffset);
                     } else {
-                        STORM_LOG_THROW(false, storm::exceptions::WrongFormatException, "Cannot translate model of this type.");
+                        STORM_LOG_THROW(false, storm::exceptions::WrongFormatException, "Cannot translate model of type " << modelType << ".");
                     }
                 } else {
                     return ActionDd(this->variables.manager->template getBddZero(), this->variables.manager->template getAddZero<ValueType>(), {}, std::make_pair<uint64_t, uint64_t>(0, 0), {}, this->variables.manager->getBddZero());
@@ -1635,7 +1635,7 @@ namespace storm {
             
             ComposerResult<Type, ValueType> buildSystemFromAutomaton(AutomatonDd& automaton) {
                 // If the model is an MDP, we need to encode the nondeterminism using additional variables.
-                if (this->model.getModelType() == storm::jani::ModelType::MDP) {
+                if (this->model.getModelType() == storm::jani::ModelType::MDP || this->model.getModelType() == storm::jani::ModelType::LTS) {
                     storm::dd::Add<Type, ValueType> result = this->variables.manager->template getAddZero<ValueType>();
                     storm::dd::Bdd<Type> illegalFragment = this->variables.manager->getBddZero();
                     
@@ -1682,7 +1682,7 @@ namespace storm {
 
                     return ComposerResult<Type, ValueType>(result, automaton.transientLocationAssignments, transientEdgeAssignments, illegalFragment, 0);
                 } else {
-                    STORM_LOG_THROW(false, storm::exceptions::WrongFormatException, "Illegal model type.");
+                    STORM_LOG_THROW(false, storm::exceptions::WrongFormatException, "Model type '" << this->model.getModelType() << "' not supported.");
                 }
             }
         };
@@ -1704,10 +1704,10 @@ namespace storm {
                 result = std::make_shared<storm::models::symbolic::Dtmc<Type, ValueType>>(variables.manager, modelComponents.reachableStates, modelComponents.initialStates, modelComponents.deadlockStates, modelComponents.transitionMatrix, variables.rowMetaVariables, variables.rowExpressionAdapter, variables.columnMetaVariables, variables.columnExpressionAdapter, variables.rowColumnMetaVariablePairs, modelComponents.labelToExpressionMap, modelComponents.rewardModels);
             } else if (modelType == storm::jani::ModelType::CTMC) {
                 result = std::make_shared<storm::models::symbolic::Ctmc<Type, ValueType>>(variables.manager, modelComponents.reachableStates, modelComponents.initialStates, modelComponents.deadlockStates, modelComponents.transitionMatrix, variables.rowMetaVariables, variables.rowExpressionAdapter, variables.columnMetaVariables, variables.columnExpressionAdapter, variables.rowColumnMetaVariablePairs, modelComponents.labelToExpressionMap, modelComponents.rewardModels);
-            } else if (modelType == storm::jani::ModelType::MDP) {
+            } else if (modelType == storm::jani::ModelType::MDP || modelType == storm::jani::ModelType::LTS) {
                 result = std::make_shared<storm::models::symbolic::Mdp<Type, ValueType>>(variables.manager, modelComponents.reachableStates, modelComponents.initialStates, modelComponents.deadlockStates, modelComponents.transitionMatrix, variables.rowMetaVariables, variables.rowExpressionAdapter, variables.columnMetaVariables, variables.columnExpressionAdapter, variables.rowColumnMetaVariablePairs, variables.allNondeterminismVariables, modelComponents.labelToExpressionMap, modelComponents.rewardModels);
             } else {
-                STORM_LOG_THROW(false, storm::exceptions::WrongFormatException, "Invalid model type.");
+                STORM_LOG_THROW(false, storm::exceptions::WrongFormatException, "Model type '" << modelType << "' not supported.");
             }
             
             if (std::is_same<ValueType, storm::RationalFunction>::value) {
@@ -1725,7 +1725,7 @@ namespace storm {
             system.transitions.addMetaVariables(variables.columnMetaVariables);
             
             // If the model is an MDP, we also add all action variables.
-            if (modelType == storm::jani::ModelType::MDP) {
+            if (modelType == storm::jani::ModelType::MDP || modelType == storm::jani::ModelType::LTS ) {
                 for (auto const& actionVariablePair : variables.actionVariablesMap) {
                     system.transitions.addMetaVariable(actionVariablePair.second);
                 }
@@ -1822,7 +1822,7 @@ namespace storm {
                     if (modelType == storm::jani::ModelType::DTMC || modelType == storm::jani::ModelType::CTMC) {
                         // For DTMCs, we can simply add the identity of the global module for all deadlock states.
                         transitionMatrix += deadlockStatesAdd * globalIdentity;
-                    } else if (modelType == storm::jani::ModelType::MDP) {
+                    } else if (modelType == storm::jani::ModelType::MDP || modelType == storm::jani::ModelType::LTS ) {
                         // For MDPs, however, we need to select an action associated with the self-loop, if we do not
                         // want to attach a lot of self-loops to the deadlock states.
                         storm::dd::Add<Type, ValueType> action = variables.manager->template getAddOne<ValueType>();
@@ -1970,7 +1970,7 @@ namespace storm {
             
             // Perform reachability analysis to obtain reachable states.
             storm::dd::Bdd<Type> transitionMatrixBdd = system.transitions.notZero();
-            if (preparedModel.getModelType() == storm::jani::ModelType::MDP) {
+            if (preparedModel.getModelType() == storm::jani::ModelType::MDP || preparedModel.getModelType() == storm::jani::ModelType::LTS) {
                 transitionMatrixBdd = transitionMatrixBdd.existsAbstract(variables.allNondeterminismVariables);
             }
             modelComponents.reachableStates = storm::utility::dd::computeReachableStates(modelComponents.initialStates, transitionMatrixBdd, variables.rowMetaVariables, variables.columnMetaVariables);
