@@ -445,7 +445,7 @@ namespace storm {
         }
         
         void Automaton::finalize(Model const& containingModel) {
-            simplifyIndexedAssignments();
+            //simplifyIndexedAssignments();
             templateEdges.clear();
             for (auto& edge : edges) {
                 templateEdges.insert(edge.getTemplateEdge());
@@ -500,6 +500,7 @@ namespace storm {
         }
 
         void Automaton::simplifyIndexedAssignments() {
+            // TODO has to be fixed.
             for (auto& edge : edges) {
                 edge.simplifyIndexedAssignments(variables);
             }
