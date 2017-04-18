@@ -126,7 +126,7 @@ namespace storm {
             return boost::get<vector_type>(truthValues);
         }
         
-        ExplicitQualitativeCheckResult::map_type const& ExplicitQualitativeCheckResult::getTruthValuesVectorMap() const {
+        ExplicitQualitativeCheckResult::map_type const& ExplicitQualitativeCheckResult::getTruthValuesMap() const {
             return boost::get<map_type>(truthValues);
         }
         

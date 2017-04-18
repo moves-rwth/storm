@@ -94,8 +94,15 @@ namespace storm {
         }
         
         template<typename RationalFunctionType>
-        boost::any ToRationalFunctionVisitor<RationalFunctionType>::visit(UnaryNumericalFunctionExpression const&, boost::any const&) {
-            STORM_LOG_THROW(false, storm::exceptions::InvalidArgumentException, "Expression cannot be translated into a rational function.");
+        boost::any ToRationalFunctionVisitor<RationalFunctionType>::visit(UnaryNumericalFunctionExpression const& expression, boost::any const& data) {
+            RationalFunctionType operandAsRationalFunction = boost::any_cast<RationalFunctionType>(expression.getOperand()->accept(*this, data));
+            switch (expression.getOperatorType()) {
+                case UnaryNumericalFunctionExpression::OperatorType::Minus:
+                    return -operandAsRationalFunction;
+                default:
+                    STORM_LOG_THROW(false, storm::exceptions::InvalidArgumentException, "Expression cannot be translated into a rational function.");
+            }
+            return boost::any();
         }
         
         template<typename RationalFunctionType>

@@ -29,7 +29,7 @@ namespace storm {
 
             using DFTStatePointer = std::shared_ptr<storm::storage::DFTState<ValueType>>;
             // TODO Matthias: make choosable
-            using ExplorationHeuristic = DFTExplorationHeuristicBoundDifference<ValueType>;
+            using ExplorationHeuristic = DFTExplorationHeuristicDepth<ValueType>;
             using ExplorationHeuristicPointer = std::shared_ptr<ExplorationHeuristic>;
 
 
@@ -116,6 +116,18 @@ namespace storm {
                     return currentRowGroup;
                 }
 
+                /*!
+                 * Get the remapped state for the given id.
+                 *
+                 * @param id State.
+                 *
+                 * @return Remapped index.
+                 */
+                StateType getRemapping(StateType id) {
+                    STORM_LOG_ASSERT(id < stateRemapping.size(), "Invalid index for remapping.");
+                    return stateRemapping[id];
+                }
+
                 // Matrix builder.
                 storm::storage::SparseMatrixBuilder<ValueType> builder;
 
@@ -141,9 +153,20 @@ namespace storm {
         public:
             // A structure holding the labeling options.
             struct LabelOptions {
-                bool buildFailLabel = true;
-                bool buildFailSafeLabel = false;
-                std::set<std::string> beLabels = {};
+                // Constructor
+                LabelOptions(std::vector<std::shared_ptr<storm::logic::Formula const>> properties, bool buildAllLabels = false);
+
+                // Flag indicating if the general fail label should be included.
+                bool buildFailLabel;
+
+                // Flag indicating if the general failsafe label should be included.
+                bool buildFailSafeLabel;
+
+                // Flag indicating if all possible labels should be included.
+                bool buildAllLabels;
+
+                // Set of element names whose fail label to include.
+                std::set<std::string> elementLabels;
             };
 
             /*!
@@ -174,11 +197,12 @@ namespace storm {
             /*!
              * Get the built approximation model for either the lower or upper bound.
              *
-             * @param lowerBound If true, the lower bound model is returned, else the upper bound model
+             * @param lowerBound   If true, the lower bound model is returned, else the upper bound model
+             * @param expectedTime If true, the bounds for expected time are computed, else the bounds for probabilities.
              *
              * @return The model built from the DFT.
              */
-            std::shared_ptr<storm::models::sparse::Model<ValueType>> getModelApproximation(bool lowerBound = true);
+            std::shared_ptr<storm::models::sparse::Model<ValueType>> getModelApproximation(bool lowerBound, bool expectedTime);
 
         private:
 
@@ -220,13 +244,15 @@ namespace storm {
             /**
              * Change matrix to reflect the lower or upper approximation bound.
              *
-             * @param matrix     Matrix to change. The change are reflected here.
-             * @param lowerBound Flag indicating if the lower bound should be used. Otherwise the upper bound is used.
+             * @param matrix       Matrix to change. The change are reflected here.
+             * @param lowerBound   Flag indicating if the lower bound should be used. Otherwise the upper bound is used.
              */
             void changeMatrixBound(storm::storage::SparseMatrix<ValueType> & matrix, bool lowerBound) const;
 
             /*!
              * Get lower bound approximation for state.
+             *
+             * @param state        The state.
              *
              * @return Lower bound approximation.
              */
@@ -234,6 +260,8 @@ namespace storm {
 
             /*!
              * Get upper bound approximation for state.
+             *
+             * @param state        The state.
              *
              * @return Upper bound approximation.
              */
@@ -315,7 +343,6 @@ namespace storm {
 
             // A priority queue of states that still need to be explored.
             storm::storage::BucketPriorityQueue<ValueType> explorationQueue;
-            //storm::storage::DynamicPriorityQueue<ExplorationHeuristicPointer, std::vector<ExplorationHeuristicPointer>, std::function<bool(ExplorationHeuristicPointer, ExplorationHeuristicPointer)>> explorationQueue;
 
             // A mapping of not yet explored states from the id to the tuple (state object, heuristic values).
             std::map<StateType, std::pair<DFTStatePointer, ExplorationHeuristicPointer>> statesNotExplored;

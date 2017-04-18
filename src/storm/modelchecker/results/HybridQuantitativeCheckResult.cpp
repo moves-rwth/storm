@@ -21,21 +21,21 @@ namespace storm {
         
         template<storm::dd::DdType Type, typename ValueType>
         std::unique_ptr<CheckResult> HybridQuantitativeCheckResult<Type, ValueType>::compareAgainstBound(storm::logic::ComparisonType comparisonType, ValueType const& bound) const {
-            storm::dd::Bdd<Type> symbolicResult;
-
+            storm::dd::Bdd<Type> symbolicResult = symbolicStates;
+            
             // First compute the symbolic part of the result.
             if (comparisonType == storm::logic::ComparisonType::Less) {
-                symbolicResult = symbolicValues.less(bound);
+                symbolicResult &= symbolicValues.less(bound);
             } else if (comparisonType == storm::logic::ComparisonType::LessEqual) {
-                symbolicResult = symbolicValues.lessOrEqual(bound);
+                symbolicResult &= symbolicValues.lessOrEqual(bound);
             } else if (comparisonType == storm::logic::ComparisonType::Greater) {
-                symbolicResult = symbolicValues.greater(bound);
+                symbolicResult &= symbolicValues.greater(bound);
             } else if (comparisonType == storm::logic::ComparisonType::GreaterEqual) {
-                symbolicResult = symbolicValues.greaterOrEqual(bound);
+                symbolicResult &= symbolicValues.greaterOrEqual(bound);
             }
             
             // Then translate the explicit part to a symbolic format and simultaneously to a qualitative result.
-            symbolicResult |= storm::dd::Bdd<Type>::fromVector(this->reachableStates.getDdManager(), this->explicitValues, this->odd, this->symbolicValues.getContainedMetaVariables(), comparisonType, bound);
+            symbolicResult |= storm::dd::Bdd<Type>::template fromVector<ValueType>(this->reachableStates.getDdManager(), this->explicitValues, this->odd, this->symbolicValues.getContainedMetaVariables(), comparisonType, storm::utility::convertNumber<ValueType>(bound));
             
             return std::unique_ptr<SymbolicQualitativeCheckResult<Type>>(new SymbolicQualitativeCheckResult<Type>(reachableStates, symbolicResult));
         }
@@ -90,17 +90,66 @@ namespace storm {
             return explicitValues;
         }
         
+        template<typename ValueType>
+        void print(std::ostream& out, ValueType const& value) {
+            if (value == storm::utility::infinity<ValueType>()) {
+                out << "inf";
+            } else {
+                out << value;
+                if (std::is_same<ValueType, storm::RationalNumber>::value) {
+                    out << " (approx. " << storm::utility::convertNumber<double>(value) << ")";
+                }
+            }
+        }
+        
+        template<typename ValueType>
+        void printRange(std::ostream& out, ValueType const& min, ValueType const& max) {
+            out << "[";
+            if (min == storm::utility::infinity<ValueType>()) {
+                out << "inf";
+            } else {
+                out << min;
+            }
+            out << ", ";
+            if (max == storm::utility::infinity<ValueType>()) {
+                out << "inf";
+            } else {
+                out << max;
+            }
+            out << "]";
+            if (std::is_same<ValueType, storm::RationalNumber>::value) {
+                out << " (approx. [";
+                if (min == storm::utility::infinity<ValueType>()) {
+                    out << "inf";
+                } else {
+                    out << storm::utility::convertNumber<double>(min);
+                }
+                out << ", ";
+                if (max == storm::utility::infinity<ValueType>()) {
+                    out << "inf";
+                } else {
+                    out << storm::utility::convertNumber<double>(max);
+                }
+                out << "])";
+            }
+            out << " (range)";
+        }
+        
         template<storm::dd::DdType Type, typename ValueType>
         std::ostream& HybridQuantitativeCheckResult<Type, ValueType>::writeToStream(std::ostream& out) const {
             uint64_t totalNumberOfStates = this->symbolicStates.getNonZeroCount() + this->explicitStates.getNonZeroCount();
-            
+            bool minMaxSupported = std::is_same<ValueType, double>::value || std::is_same<ValueType, storm::RationalNumber>::value;
+            bool printAsRange = false;
+
             if (totalNumberOfStates == 1) {
                 if (this->symbolicStates.isZero()) {
-                    out << *this->explicitValues.begin();
+                    print(out, *this->explicitValues.begin());
                 } else {
-                    out << this->symbolicValues.getMax();
+                    print(out, this->symbolicValues.sumAbstract(this->symbolicValues.getContainedMetaVariables()).getValue());
                 }
-            } else if (totalNumberOfStates < 10) {
+            } else if (totalNumberOfStates >= 10 && minMaxSupported) {
+                printAsRange = true;
+            } else {
                 out << "{";
                 bool first = true;
                 if (!this->symbolicStates.isZero()) {
@@ -114,7 +163,7 @@ namespace storm {
                             } else {
                                 first = false;
                             }
-                            out << valuationValuePair.second;
+                            print(out, valuationValuePair.second);
                         }
                         if (symbolicStates.getNonZeroCount() != this->symbolicValues.getNonZeroCount()) {
                             out << ", 0";
@@ -128,15 +177,16 @@ namespace storm {
                         } else {
                             first = false;
                         }
-                        out << element;
+                        print(out, element);
                     }
                 }
                 out << "}";
-            } else {
+            }
+            
+            if (printAsRange) {
                 ValueType min = this->getMin();
                 ValueType max = this->getMax();
-                
-                out << "[" << min << ", " << max << "] (range)";
+                printRange(out, min, max);
             }
             return out;
         }
@@ -165,7 +215,7 @@ namespace storm {
         ValueType HybridQuantitativeCheckResult<Type, ValueType>::getMin() const {
             // In order to not get false zeros, we need to set the values of all states whose values is not stored
             // symbolically to infinity.
-            storm::dd::Add<Type, ValueType> tmp = symbolicStates.ite(this->symbolicValues, reachableStates.getDdManager().getConstant(storm::utility::infinity<double>()));
+            storm::dd::Add<Type, ValueType> tmp = symbolicStates.ite(this->symbolicValues, reachableStates.getDdManager().getConstant(storm::utility::infinity<ValueType>()));
             ValueType min = tmp.getMin();
             if (!explicitStates.isZero()) {
                 for (auto const& element : explicitValues) {
@@ -197,13 +247,13 @@ namespace storm {
         
         template<storm::dd::DdType Type, typename ValueType>
         ValueType HybridQuantitativeCheckResult<Type, ValueType>::average() const {
-            return this->sum() / (symbolicStates || explicitStates).getNonZeroCount();
+            return this->sum() / storm::utility::convertNumber<ValueType>((symbolicStates || explicitStates).getNonZeroCount());
         }
         
         template<storm::dd::DdType Type, typename ValueType>
         void HybridQuantitativeCheckResult<Type, ValueType>::oneMinus() {
-            storm::dd::Add<Type> one = symbolicValues.getDdManager().template getAddOne<ValueType>();
-            storm::dd::Add<Type> zero = symbolicValues.getDdManager().template getAddZero<ValueType>();
+            storm::dd::Add<Type, ValueType> one = symbolicValues.getDdManager().template getAddOne<ValueType>();
+            storm::dd::Add<Type, ValueType> zero = symbolicValues.getDdManager().template getAddZero<ValueType>();
             symbolicValues = symbolicStates.ite(one - symbolicValues, zero);
 
             for (auto& element : explicitValues) {
@@ -215,5 +265,8 @@ namespace storm {
         // Explicitly instantiate the class.
         template class HybridQuantitativeCheckResult<storm::dd::DdType::CUDD>;
         template class HybridQuantitativeCheckResult<storm::dd::DdType::Sylvan>;
+
+        template class HybridQuantitativeCheckResult<storm::dd::DdType::Sylvan, storm::RationalNumber>;
+        template class HybridQuantitativeCheckResult<storm::dd::DdType::Sylvan, storm::RationalFunction>;
     }
 }

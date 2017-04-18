@@ -81,7 +81,7 @@ namespace storm {
             delete errHandler;
             xercesc::XMLPlatformUtils::Terminate();
 #else
-            STORM_LOG_THROW(false, storm::exceptions::UnexpectedException, "storm is not compiled with XML support: " << filename << " can not be parsed");
+            STORM_LOG_THROW(false, storm::exceptions::UnexpectedException, "Storm is not compiled with XML support: " << filename << " can not be parsed");
 #endif
         }
     }

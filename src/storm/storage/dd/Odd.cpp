@@ -8,6 +8,8 @@
 #include "storm/exceptions/InvalidArgumentException.h"
 #include "storm/utility/file.h"
 
+#include "storm/adapters/CarlAdapter.h"
+
 namespace storm {
     namespace dd {
         Odd::Odd(std::shared_ptr<Odd> elseNode, uint_fast64_t elseOffset, std::shared_ptr<Odd> thenNode, uint_fast64_t thenOffset) : elseNode(elseNode), thenNode(thenNode), elseOffset(elseOffset), thenOffset(thenOffset) {
@@ -69,11 +71,13 @@ namespace storm {
             return this->elseNode == nullptr && this->thenNode == nullptr;
         }
         
-        void Odd::expandExplicitVector(storm::dd::Odd const& newOdd, std::vector<double> const& oldValues, std::vector<double>& newValues) const {
+        template <typename ValueType>
+        void Odd::expandExplicitVector(storm::dd::Odd const& newOdd, std::vector<ValueType> const& oldValues, std::vector<ValueType>& newValues) const {
             expandValuesToVectorRec(0, *this, oldValues, 0, newOdd, newValues);
         }
         
-        void Odd::expandValuesToVectorRec(uint_fast64_t oldOffset, storm::dd::Odd const& oldOdd, std::vector<double> const& oldValues, uint_fast64_t newOffset, storm::dd::Odd const& newOdd, std::vector<double>& newValues) {
+        template <typename ValueType>
+        void Odd::expandValuesToVectorRec(uint_fast64_t oldOffset, storm::dd::Odd const& oldOdd, std::vector<ValueType> const& oldValues, uint_fast64_t newOffset, storm::dd::Odd const& newOdd, std::vector<ValueType>& newValues) {
             if (oldOdd.isTerminalNode()) {
                 STORM_LOG_THROW(newOdd.isTerminalNode(), storm::exceptions::InvalidArgumentException, "The ODDs for the translation must have the same height.");
                 if (oldOdd.getThenOffset() != 0) {
@@ -140,5 +144,9 @@ namespace storm {
                 this->getThenSuccessor().addToLevelToOddNodesMap(levelToOddNodesMap, level + 1);
             }
         }
+        
+        template void Odd::expandExplicitVector(storm::dd::Odd const& newOdd, std::vector<double> const& oldValues, std::vector<double>& newValues) const;
+        template void Odd::expandExplicitVector(storm::dd::Odd const& newOdd, std::vector<storm::RationalNumber> const& oldValues, std::vector<storm::RationalNumber>& newValues) const;
+        template void Odd::expandExplicitVector(storm::dd::Odd const& newOdd, std::vector<storm::RationalFunction> const& oldValues, std::vector<storm::RationalFunction>& newValues) const;
     }
 }

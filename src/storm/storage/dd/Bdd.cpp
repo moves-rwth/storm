@@ -14,6 +14,7 @@
 
 #include "storm/utility/macros.h"
 #include "storm/exceptions/InvalidArgumentException.h"
+#include "storm/exceptions/InvalidOperationException.h"
 
 #include "storm-config.h"
 #include "storm/adapters/CarlAdapter.h"
@@ -26,25 +27,40 @@ namespace storm {
             // Intentionally left empty.
         }
         
-        template<DdType LibraryType>
-        Bdd<LibraryType> Bdd<LibraryType>::fromVector(DdManager<LibraryType> const& ddManager, std::vector<double> const& explicitValues, storm::dd::Odd const& odd, std::set<storm::expressions::Variable> const& metaVariables, storm::logic::ComparisonType comparisonType, double value) {
-            switch (comparisonType) {
-                case storm::logic::ComparisonType::Less:
-                    return fromVector<double>(ddManager, explicitValues, odd, metaVariables, std::bind(std::greater<double>(), value, std::placeholders::_1));
-                case storm::logic::ComparisonType::LessEqual:
-                    return fromVector<double>(ddManager, explicitValues, odd, metaVariables, std::bind(std::greater_equal<double>(), value, std::placeholders::_1));
-                case storm::logic::ComparisonType::Greater:
-                    return fromVector<double>(ddManager, explicitValues, odd, metaVariables, std::bind(std::less<double>(), value, std::placeholders::_1));
-                case storm::logic::ComparisonType::GreaterEqual:
-                    return fromVector<double>(ddManager, explicitValues, odd, metaVariables, std::bind(std::less_equal<double>(), value, std::placeholders::_1));
+        template<DdType LibraryType, typename ValueType>
+        struct FromVectorHelper {
+            static Bdd<LibraryType> fromVector(DdManager<LibraryType> const& ddManager, std::vector<ValueType> const& explicitValues, storm::dd::Odd const& odd, std::set<storm::expressions::Variable> const& metaVariables, storm::logic::ComparisonType comparisonType, ValueType value) {
+                switch (comparisonType) {
+                    case storm::logic::ComparisonType::Less:
+                        return Bdd<LibraryType>(ddManager, InternalBdd<LibraryType>::fromVector(&ddManager.getInternalDdManager(), odd, ddManager.getSortedVariableIndices(metaVariables), [&value, &explicitValues] (uint64_t offset) { return explicitValues[offset] < value; }), metaVariables);
+                    case storm::logic::ComparisonType::LessEqual:
+                        return Bdd<LibraryType>(ddManager, InternalBdd<LibraryType>::fromVector(&ddManager.getInternalDdManager(), odd, ddManager.getSortedVariableIndices(metaVariables), [&value, &explicitValues] (uint64_t offset) { return explicitValues[offset] <= value; }), metaVariables);
+                    case storm::logic::ComparisonType::Greater:
+                        return Bdd<LibraryType>(ddManager, InternalBdd<LibraryType>::fromVector(&ddManager.getInternalDdManager(), odd, ddManager.getSortedVariableIndices(metaVariables), [&value, &explicitValues] (uint64_t offset) { return explicitValues[offset] > value; }), metaVariables);
+                    case storm::logic::ComparisonType::GreaterEqual:
+                        return Bdd<LibraryType>(ddManager, InternalBdd<LibraryType>::fromVector(&ddManager.getInternalDdManager(), odd, ddManager.getSortedVariableIndices(metaVariables), [&value, &explicitValues] (uint64_t offset) { return explicitValues[offset] >= value; }), metaVariables);
+                }
+                return Bdd<LibraryType>();
             }
-            return Bdd<LibraryType>();
-        }
+        };
+        
+        template<DdType LibraryType>
+        struct FromVectorHelper<LibraryType, storm::RationalFunction> {
+            static Bdd<LibraryType> fromVector(DdManager<LibraryType> const& ddManager, std::vector<storm::RationalFunction> const& explicitValues, storm::dd::Odd const& odd, std::set<storm::expressions::Variable> const& metaVariables, storm::logic::ComparisonType comparisonType, storm::RationalFunction value) {
+                STORM_LOG_THROW(false, storm::exceptions::InvalidOperationException, "Cannot compare rational functions to bound.");
+                return Bdd<LibraryType>();
+            }
+        };
         
         template<DdType LibraryType>
         template<typename ValueType>
-        Bdd<LibraryType> Bdd<LibraryType>::fromVector(DdManager<LibraryType> const& ddManager, std::vector<ValueType> const& values, Odd const& odd, std::set<storm::expressions::Variable> const& metaVariables, std::function<bool (ValueType const&)> const& filter) {
-            return Bdd<LibraryType>(ddManager, InternalBdd<LibraryType>::fromVector(&ddManager.internalDdManager, values, odd, ddManager.getSortedVariableIndices(metaVariables), filter), metaVariables);
+        Bdd<LibraryType> Bdd<LibraryType>::fromVector(DdManager<LibraryType> const& ddManager, std::vector<ValueType> const& explicitValues, storm::dd::Odd const& odd, std::set<storm::expressions::Variable> const& metaVariables, storm::logic::ComparisonType comparisonType, ValueType value) {
+            return FromVectorHelper<LibraryType, ValueType>::fromVector(ddManager, explicitValues, odd, metaVariables, comparisonType, value);
+        }
+        
+        template<DdType LibraryType>
+        Bdd<LibraryType> Bdd<LibraryType>::fromVector(DdManager<LibraryType> const& ddManager, storm::storage::BitVector const& truthValues, storm::dd::Odd const& odd, std::set<storm::expressions::Variable> const& metaVariables) {
+            return Bdd<LibraryType>(ddManager, InternalBdd<LibraryType>::fromVector(&ddManager.getInternalDdManager(), odd, ddManager.getSortedVariableIndices(metaVariables), [&truthValues] (uint64_t offset) { return truthValues[offset]; } ), metaVariables);
         }
         
         template<DdType LibraryType>
@@ -349,14 +365,20 @@ namespace storm {
         }
         
         template<DdType LibraryType>
+        storm::storage::BitVector Bdd<LibraryType>::filterExplicitVector(Odd const& odd, storm::storage::BitVector const& values) const {
+            storm::storage::BitVector result(this->getNonZeroCount());
+            internalBdd.filterExplicitVector(odd, this->getSortedVariableIndices(), values, result);
+            return result;
+        }
+        
+        template<DdType LibraryType>
         Bdd<LibraryType>::operator InternalBdd<LibraryType>() const {
             return internalBdd;
         }
         
         template class Bdd<DdType::CUDD>;
         
-        template Bdd<DdType::CUDD> Bdd<DdType::CUDD>::fromVector(DdManager<DdType::CUDD> const& ddManager, std::vector<double> const& values, Odd const& odd, std::set<storm::expressions::Variable> const& metaVariables, std::function<bool (double const&)> const& filter);
-        template Bdd<DdType::CUDD> Bdd<DdType::CUDD>::fromVector(DdManager<DdType::CUDD> const& ddManager, std::vector<uint_fast64_t> const& values, Odd const& odd, std::set<storm::expressions::Variable> const& metaVariables, std::function<bool (uint_fast64_t const&)> const& filter);
+        template Bdd<DdType::CUDD> Bdd<DdType::CUDD>::fromVector(DdManager<DdType::CUDD> const& ddManager, std::vector<double> const& explicitValues, storm::dd::Odd const& odd, std::set<storm::expressions::Variable> const& metaVariables, storm::logic::ComparisonType comparisonType, double value);
         
         template Add<DdType::CUDD, double> Bdd<DdType::CUDD>::toAdd() const;
         template Add<DdType::CUDD, uint_fast64_t> Bdd<DdType::CUDD>::toAdd() const;
@@ -370,28 +392,35 @@ namespace storm {
         
         template class Bdd<DdType::Sylvan>;
 
-        template Bdd<DdType::Sylvan> Bdd<DdType::Sylvan>::fromVector(DdManager<DdType::Sylvan> const& ddManager, std::vector<double> const& values, Odd const& odd, std::set<storm::expressions::Variable> const& metaVariables, std::function<bool (double const&)> const& filter);
-        template Bdd<DdType::Sylvan> Bdd<DdType::Sylvan>::fromVector(DdManager<DdType::Sylvan> const& ddManager, std::vector<uint_fast64_t> const& values, Odd const& odd, std::set<storm::expressions::Variable> const& metaVariables, std::function<bool (uint_fast64_t const&)> const& filter);
+        template Bdd<DdType::Sylvan> Bdd<DdType::Sylvan>::fromVector(DdManager<DdType::Sylvan> const& ddManager, std::vector<double> const& explicitValues, storm::dd::Odd const& odd, std::set<storm::expressions::Variable> const& metaVariables, storm::logic::ComparisonType comparisonType, double value);
+
 #ifdef STORM_HAVE_CARL
-		template Bdd<DdType::Sylvan> Bdd<DdType::Sylvan>::fromVector(DdManager<DdType::Sylvan> const& ddManager, std::vector<storm::RationalFunction> const& values, Odd const& odd, std::set<storm::expressions::Variable> const& metaVariables, std::function<bool (storm::RationalFunction const&)> const& filter);
+        template Bdd<DdType::Sylvan> Bdd<DdType::Sylvan>::fromVector(DdManager<DdType::Sylvan> const& ddManager, std::vector<storm::RationalNumber> const& explicitValues, storm::dd::Odd const& odd, std::set<storm::expressions::Variable> const& metaVariables, storm::logic::ComparisonType comparisonType, storm::RationalNumber value);
+        template Bdd<DdType::Sylvan> Bdd<DdType::Sylvan>::fromVector(DdManager<DdType::Sylvan> const& ddManager, std::vector<storm::RationalFunction> const& explicitValues, storm::dd::Odd const& odd, std::set<storm::expressions::Variable> const& metaVariables, storm::logic::ComparisonType comparisonType, storm::RationalFunction value);
 #endif
         
         template Add<DdType::Sylvan, double> Bdd<DdType::Sylvan>::toAdd() const;
         template Add<DdType::Sylvan, uint_fast64_t> Bdd<DdType::Sylvan>::toAdd() const;
+
 #ifdef STORM_HAVE_CARL
+        template Add<DdType::Sylvan, storm::RationalNumber> Bdd<DdType::Sylvan>::toAdd() const;
 		template Add<DdType::Sylvan, storm::RationalFunction> Bdd<DdType::Sylvan>::toAdd() const;
 #endif
         
         template std::vector<double> Bdd<DdType::Sylvan>::filterExplicitVector(Odd const& odd, std::vector<double> const& values) const;
         template std::vector<uint_fast64_t> Bdd<DdType::Sylvan>::filterExplicitVector(Odd const& odd, std::vector<uint_fast64_t> const& values) const;
+
 #ifdef STORM_HAVE_CARL
+        template std::vector<storm::RationalNumber> Bdd<DdType::Sylvan>::filterExplicitVector(Odd const& odd, std::vector<storm::RationalNumber> const& values) const;
 		template std::vector<storm::RationalFunction> Bdd<DdType::Sylvan>::filterExplicitVector(Odd const& odd, std::vector<storm::RationalFunction> const& values) const;
 #endif
 		
         
         template Add<DdType::Sylvan, double> Bdd<DdType::Sylvan>::ite(Add<DdType::Sylvan, double> const& thenAdd, Add<DdType::Sylvan, double> const& elseAdd) const;
         template Add<DdType::Sylvan, uint_fast64_t> Bdd<DdType::Sylvan>::ite(Add<DdType::Sylvan, uint_fast64_t> const& thenAdd, Add<DdType::Sylvan, uint_fast64_t> const& elseAdd) const;
+        
 #ifdef STORM_HAVE_CARL
+        template Add<DdType::Sylvan, storm::RationalNumber> Bdd<DdType::Sylvan>::ite(Add<DdType::Sylvan, storm::RationalNumber> const& thenAdd, Add<DdType::Sylvan, storm::RationalNumber> const& elseAdd) const;
 		template Add<DdType::Sylvan, storm::RationalFunction> Bdd<DdType::Sylvan>::ite(Add<DdType::Sylvan, storm::RationalFunction> const& thenAdd, Add<DdType::Sylvan, storm::RationalFunction> const& elseAdd) const;
 #endif
     }

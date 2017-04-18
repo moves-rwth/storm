@@ -9,6 +9,7 @@
 #include "storm/utility/vector.h"
 
 #include "storm/exceptions/InvalidOperationException.h"
+#include "storm/exceptions/InvalidPropertyException.h"
 
 namespace storm {
     namespace modelchecker {
@@ -48,9 +49,8 @@ namespace storm {
                 digitize(MS, digitizationConstant);
                 
                 // Get for each occurring (digitized) timeBound the indices of the objectives with that bound.
-                TimeBoundMap lowerTimeBounds;
                 TimeBoundMap upperTimeBounds;
-                digitizeTimeBounds(lowerTimeBounds, upperTimeBounds, digitizationConstant);
+                digitizeTimeBounds(upperTimeBounds, digitizationConstant);
                 
                 // Initialize a minMaxSolver to compute an optimal scheduler (w.r.t. PS) for each epoch
                 // No EC elimination is necessary as we assume non-zenoness
@@ -66,12 +66,11 @@ namespace storm {
                 // Stores the objectives for which we need to compute values in the current time epoch.
                 storm::storage::BitVector consideredObjectives = this->objectivesWithNoUpperTimeBound;
                 
-                auto lowerTimeBoundIt = lowerTimeBounds.begin();
                 auto upperTimeBoundIt = upperTimeBounds.begin();
-                uint_fast64_t currentEpoch = std::max(lowerTimeBounds.empty() ? 0 : lowerTimeBoundIt->first, upperTimeBounds.empty() ? 0 : upperTimeBoundIt->first);
-                while(true) {
+                uint_fast64_t currentEpoch = upperTimeBounds.empty() ? 0 : upperTimeBoundIt->first;
+                while (true) {
                     // Update the objectives that are considered at the current time epoch as well as the (weighted) reward vectors.
-                    updateDataToCurrentEpoch(MS, PS, *minMax, consideredObjectives, currentEpoch, weightVector, lowerTimeBoundIt, lowerTimeBounds, upperTimeBoundIt, upperTimeBounds);
+                    updateDataToCurrentEpoch(MS, PS, *minMax, consideredObjectives, currentEpoch, weightVector, upperTimeBoundIt, upperTimeBounds);
                     
                     // Compute the values that can be obtained at probabilistic states in the current time epoch
                     performPSStep(PS, MS, *minMax, *linEq, optimalChoicesAtCurrentEpoch,  consideredObjectives, weightVector);
@@ -156,20 +155,19 @@ namespace storm {
                 
                 // Initialize some data for fast and easy access
                 VT const maxRate = this->model.getMaximalExitRate();
-                std::vector<std::pair<VT, VT>> eToPowerOfMinusMaxRateTimesBound;
+                std::vector<VT> timeBounds;
+                std::vector<VT> eToPowerOfMinusMaxRateTimesBound;
                 VT smallestNonZeroBound = storm::utility::zero<VT>();
                 for(auto const& obj : this->objectives) {
-                    eToPowerOfMinusMaxRateTimesBound.emplace_back();
-                    if(obj.lowerTimeBound){
-                        STORM_LOG_ASSERT(!storm::utility::isZero(*obj.lowerTimeBound), "Got zero-valued lower bound."); // should have been handled in preprocessing
-                        STORM_LOG_ASSERT(!obj.upperTimeBound || *obj.lowerTimeBound < *obj.upperTimeBound, "Got point intervall or empty intervall on time bounded property which is not supported"); // should also have been handled in preprocessing
-                        eToPowerOfMinusMaxRateTimesBound.back().first = std::exp(-maxRate * (*obj.lowerTimeBound));
-                        smallestNonZeroBound = storm::utility::isZero(smallestNonZeroBound) ? *obj.lowerTimeBound : std::min(smallestNonZeroBound, *obj.lowerTimeBound);
-                    }
                     if(obj.upperTimeBound){
-                        STORM_LOG_ASSERT(!storm::utility::isZero(*obj.upperTimeBound), "Got zero-valued upper bound."); // should have been handled in preprocessing
-                        eToPowerOfMinusMaxRateTimesBound.back().second = std::exp(-maxRate * (*obj.upperTimeBound));
-                        smallestNonZeroBound = storm::utility::isZero(smallestNonZeroBound) ? *obj.upperTimeBound : std::min(smallestNonZeroBound, *obj.upperTimeBound);
+                        STORM_LOG_THROW(!obj.upperTimeBound->containsVariables(), storm::exceptions::InvalidOperationException, "The time bound '" << *obj.upperTimeBound << " contains undefined variables");
+                        timeBounds.push_back(storm::utility::convertNumber<VT>(obj.upperTimeBound->evaluateAsRational()));
+                        STORM_LOG_ASSERT(!storm::utility::isZero(timeBounds.back()), "Got zero-valued upper time bound.");
+                        eToPowerOfMinusMaxRateTimesBound.push_back(std::exp(-maxRate * timeBounds.back()));
+                        smallestNonZeroBound = storm::utility::isZero(smallestNonZeroBound) ? timeBounds.back() : std::min(smallestNonZeroBound, timeBounds.back());
+                    } else {
+                        timeBounds.push_back(storm::utility::zero<VT>());
+                        eToPowerOfMinusMaxRateTimesBound.push_back(storm::utility::zero<VT>());
                     }
                 }
                 if(storm::utility::isZero(smallestNonZeroBound)) {
@@ -181,13 +179,14 @@ namespace storm {
                 // We brute-force a delta, since a direct computation is apparently not easy.
                 // Also note that the number of times this loop runs is a lower bound for the number of minMaxSolver invocations.
                 // Hence, this brute-force approach will most likely not be a bottleneck.
+                storm::storage::BitVector objectivesWithTimeBound = ~this->objectivesWithNoUpperTimeBound;
                 uint_fast64_t smallestStepBound = 1;
                 VT delta = smallestNonZeroBound / smallestStepBound;
                 while(true) {
                     bool deltaValid = true;
-                    for(auto const& obj : this->objectives) {
-                        if((obj.lowerTimeBound && *obj.lowerTimeBound/delta != std::floor(*obj.lowerTimeBound/delta)) ||
-                           (obj.upperTimeBound && *obj.upperTimeBound/delta != std::floor(*obj.upperTimeBound/delta))) {
+                    for(auto const& objIndex : objectivesWithTimeBound) {
+                        auto const& timeBound = timeBounds[objIndex];
+                        if(timeBound/delta != std::floor(timeBound/delta)) {
                             deltaValid = false;
                             break;
                         }
@@ -195,14 +194,9 @@ namespace storm {
                     if(deltaValid) {
                         VT weightedPrecisionForCurrentDelta = storm::utility::zero<VT>();
                         for(uint_fast64_t objIndex = 0; objIndex < this->objectives.size(); ++objIndex) {
-                            auto const& obj = this->objectives[objIndex];
                             VT precisionOfObj = storm::utility::zero<VT>();
-                            if(obj.lowerTimeBound) {
-                                precisionOfObj += storm::utility::one<VT>() - (eToPowerOfMinusMaxRateTimesBound[objIndex].first * storm::utility::pow(storm::utility::one<VT>() + maxRate * delta, *obj.lowerTimeBound / delta) )
-                                + storm::utility::one<VT>() - std::exp(-maxRate * delta);
-                            }
-                            if(obj.upperTimeBound) {
-                                precisionOfObj += storm::utility::one<VT>() - (eToPowerOfMinusMaxRateTimesBound[objIndex].second * storm::utility::pow(storm::utility::one<VT>() + maxRate * delta, *obj.upperTimeBound / delta) );
+                            if (objectivesWithTimeBound.get(objIndex)) {
+                                precisionOfObj += storm::utility::one<VT>() - (eToPowerOfMinusMaxRateTimesBound[objIndex] * storm::utility::pow(storm::utility::one<VT>() + maxRate * delta, timeBounds[objIndex] / delta) );
                             }
                             weightedPrecisionForCurrentDelta += weightVector[objIndex] * precisionOfObj;
                         }
@@ -256,31 +250,21 @@ namespace storm {
 
             template <class SparseMaModelType>
             template <typename VT, typename std::enable_if<storm::NumberTraits<VT>::SupportsExponential, int>::type>
-            void SparseMaPcaaWeightVectorChecker<SparseMaModelType>::digitizeTimeBounds(TimeBoundMap& lowerTimeBounds, TimeBoundMap& upperTimeBounds, VT const& digitizationConstant) {
+            void SparseMaPcaaWeightVectorChecker<SparseMaModelType>::digitizeTimeBounds(TimeBoundMap& upperTimeBounds, VT const& digitizationConstant) {
                 
                 VT const maxRate = this->model.getMaximalExitRate();
                 for(uint_fast64_t objIndex = 0; objIndex < this->objectives.size(); ++objIndex) {
                     auto const& obj = this->objectives[objIndex];
-                    VT errorTowardsZero;
-                    VT errorAwayFromZero;
-                    if(obj.lowerTimeBound) {
-                        uint_fast64_t digitizedBound = storm::utility::convertNumber<uint_fast64_t>((*obj.lowerTimeBound)/digitizationConstant);
-                        auto timeBoundIt = lowerTimeBounds.insert(std::make_pair(digitizedBound, storm::storage::BitVector(this->objectives.size(), false))).first;
-                        timeBoundIt->second.set(objIndex);
-                        VT digitizationError = storm::utility::one<VT>();
-                        digitizationError -= std::exp(-maxRate * (*obj.lowerTimeBound)) * storm::utility::pow(storm::utility::one<VT>() + maxRate * digitizationConstant, digitizedBound);
-                        errorTowardsZero = -digitizationError;
-                        errorAwayFromZero = storm::utility::one<VT>() - std::exp(-maxRate * digitizationConstant);;
-                    } else {
-                        errorTowardsZero = storm::utility::zero<VT>();
-                        errorAwayFromZero = storm::utility::zero<VT>();
-                    }
+                    STORM_LOG_THROW(!obj.lowerTimeBound, storm::exceptions::InvalidPropertyException, "Lower time bounds are not supported by this model checker");
+                    VT errorTowardsZero = storm::utility::zero<VT>();
+                    VT errorAwayFromZero = storm::utility::zero<VT>();
                     if(obj.upperTimeBound) {
-                        uint_fast64_t digitizedBound = storm::utility::convertNumber<uint_fast64_t>((*obj.upperTimeBound)/digitizationConstant);
+                        VT timeBound = storm::utility::convertNumber<VT>(obj.upperTimeBound->evaluateAsRational());
+                        uint_fast64_t digitizedBound = storm::utility::convertNumber<uint_fast64_t>(timeBound/digitizationConstant);
                         auto timeBoundIt = upperTimeBounds.insert(std::make_pair(digitizedBound, storm::storage::BitVector(this->objectives.size(), false))).first;
                         timeBoundIt->second.set(objIndex);
                         VT digitizationError = storm::utility::one<VT>();
-                        digitizationError -= std::exp(-maxRate * (*obj.upperTimeBound)) * storm::utility::pow(storm::utility::one<VT>() + maxRate * digitizationConstant, digitizedBound);
+                        digitizationError -= std::exp(-maxRate * timeBound) * storm::utility::pow(storm::utility::one<VT>() + maxRate * digitizationConstant, digitizedBound);
                         errorAwayFromZero += digitizationError;
                     }
                     if (obj.rewardsArePositive) {
@@ -295,7 +279,7 @@ namespace storm {
             
             template <class SparseMaModelType>
             template <typename VT, typename std::enable_if<!storm::NumberTraits<VT>::SupportsExponential, int>::type>
-            void SparseMaPcaaWeightVectorChecker<SparseMaModelType>::digitizeTimeBounds(TimeBoundMap& lowerTimeBounds, TimeBoundMap& upperTimeBounds, VT const& digitizationConstant) {
+            void SparseMaPcaaWeightVectorChecker<SparseMaModelType>::digitizeTimeBounds(TimeBoundMap& upperTimeBounds, VT const& digitizationConstant) {
                 STORM_LOG_THROW(false, storm::exceptions::InvalidOperationException, "Computing bounded probabilities of MAs is unsupported for this value type.");
             }
             
@@ -324,19 +308,7 @@ namespace storm {
             }
             
             template <class SparseMaModelType>
-            void SparseMaPcaaWeightVectorChecker<SparseMaModelType>::updateDataToCurrentEpoch(SubModel& MS, SubModel& PS, MinMaxSolverData& minMax, storm::storage::BitVector& consideredObjectives, uint_fast64_t const& currentEpoch, std::vector<ValueType> const& weightVector, TimeBoundMap::iterator& lowerTimeBoundIt, TimeBoundMap const& lowerTimeBounds, TimeBoundMap::iterator& upperTimeBoundIt, TimeBoundMap const& upperTimeBounds) {
-                
-                //Note that lower time bounds are always strict. Hence, we need to react when the current epoch equals the stored bound.
-                if(lowerTimeBoundIt != lowerTimeBounds.end() && currentEpoch == lowerTimeBoundIt->first) {
-                    for(auto objIndex : lowerTimeBoundIt->second) {
-                        // No more reward is earned for this objective.
-                        storm::utility::vector::addScaledVector(MS.weightedRewardVector, MS.objectiveRewardVectors[objIndex], -weightVector[objIndex]);
-                        storm::utility::vector::addScaledVector(PS.weightedRewardVector, PS.objectiveRewardVectors[objIndex], -weightVector[objIndex]);
-                        MS.objectiveRewardVectors[objIndex] = std::vector<ValueType>(MS.objectiveRewardVectors[objIndex].size(), storm::utility::zero<ValueType>());
-                        PS.objectiveRewardVectors[objIndex] = std::vector<ValueType>(PS.objectiveRewardVectors[objIndex].size(), storm::utility::zero<ValueType>());
-                    }
-                    ++lowerTimeBoundIt;
-                }
+            void SparseMaPcaaWeightVectorChecker<SparseMaModelType>::updateDataToCurrentEpoch(SubModel& MS, SubModel& PS, MinMaxSolverData& minMax, storm::storage::BitVector& consideredObjectives, uint_fast64_t const& currentEpoch, std::vector<ValueType> const& weightVector, TimeBoundMap::iterator& upperTimeBoundIt, TimeBoundMap const& upperTimeBounds) {
                 
                 if(upperTimeBoundIt != upperTimeBounds.end() && currentEpoch == upperTimeBoundIt->first) {
                     consideredObjectives |= upperTimeBoundIt->second;
@@ -420,12 +392,12 @@ namespace storm {
             template class SparseMaPcaaWeightVectorChecker<storm::models::sparse::MarkovAutomaton<double>>;
             template double SparseMaPcaaWeightVectorChecker<storm::models::sparse::MarkovAutomaton<double>>::getDigitizationConstant<double>(std::vector<double> const& direction) const;
             template void SparseMaPcaaWeightVectorChecker<storm::models::sparse::MarkovAutomaton<double>>::digitize<double>(SparseMaPcaaWeightVectorChecker<storm::models::sparse::MarkovAutomaton<double>>::SubModel& subModel, double const& digitizationConstant) const;
-            template void SparseMaPcaaWeightVectorChecker<storm::models::sparse::MarkovAutomaton<double>>::digitizeTimeBounds<double>(SparseMaPcaaWeightVectorChecker<storm::models::sparse::MarkovAutomaton<double>>::TimeBoundMap& lowerTimeBounds, SparseMaPcaaWeightVectorChecker<storm::models::sparse::MarkovAutomaton<double>>::TimeBoundMap& upperTimeBounds, double const& digitizationConstant);
+            template void SparseMaPcaaWeightVectorChecker<storm::models::sparse::MarkovAutomaton<double>>::digitizeTimeBounds<double>( SparseMaPcaaWeightVectorChecker<storm::models::sparse::MarkovAutomaton<double>>::TimeBoundMap& upperTimeBounds, double const& digitizationConstant);
 #ifdef STORM_HAVE_CARL
 //            template class SparseMaPcaaWeightVectorChecker<storm::models::sparse::MarkovAutomaton<storm::RationalNumber>>;
    //         template storm::RationalNumber SparseMaPcaaWeightVectorChecker<storm::models::sparse::MarkovAutomaton<storm::RationalNumber>>::getDigitizationConstant<storm::RationalNumber>(std::vector<double> const& direction) const;
  //           template void SparseMaPcaaWeightVectorChecker<storm::models::sparse::MarkovAutomaton<storm::RationalNumber>>::digitize<storm::RationalNumber>(SparseMaPcaaWeightVectorChecker<storm::models::sparse::MarkovAutomaton<storm::RationalNumber>>::SubModel& subModel, storm::RationalNumber const& digitizationConstant) const;
-//            template void SparseMaPcaaWeightVectorChecker<storm::models::sparse::MarkovAutomaton<storm::RationalNumber>>::digitizeTimeBounds<storm::RationalNumber>(SparseMaPcaaWeightVectorChecker<storm::models::sparse::MarkovAutomaton<double>>::TimeBoundMap& lowerTimeBounds, SparseMaPcaaWeightVectorChecker<storm::models::sparse::MarkovAutomaton<double>>::TimeBoundMap& upperTimeBounds, storm::RationalNumber const& digitizationConstant);
+//            template void SparseMaPcaaWeightVectorChecker<storm::models::sparse::MarkovAutomaton<storm::RationalNumber>>::digitizeTimeBounds<storm::RationalNumber>(SparseMaPcaaWeightVectorChecker<storm::models::sparse::MarkovAutomaton<double>>::TimeBoundMap& upperTimeBounds, storm::RationalNumber const& digitizationConstant);
 #endif
             
         }

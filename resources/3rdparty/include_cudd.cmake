@@ -54,4 +54,4 @@ else()
     list(APPEND STORM_DEP_TARGETS cudd_STATIC)
 endif()
 
-message(STATUS "storm - Linking with CUDD ${CUDD_VERSION_STRING}.")
+message(STATUS "Storm - Linking with CUDD ${CUDD_VERSION_STRING}.")

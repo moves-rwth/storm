@@ -186,6 +186,8 @@ namespace storm {
                             }
                         }
                     }
+                } else {
+                    result = std::vector<ValueType>(numberOfStates, storm::utility::zero<ValueType>());
                 }
                 
                 return result;

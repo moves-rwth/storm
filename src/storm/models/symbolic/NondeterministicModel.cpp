@@ -79,7 +79,9 @@ namespace storm {
             // Explicitly instantiate the template class.
             template class NondeterministicModel<storm::dd::DdType::CUDD, double>;
             template class NondeterministicModel<storm::dd::DdType::Sylvan, double>;
+            
 #ifdef STORM_HAVE_CARL
+            template class NondeterministicModel<storm::dd::DdType::Sylvan, storm::RationalNumber>;
 			template class NondeterministicModel<storm::dd::DdType::Sylvan, storm::RationalFunction>;
 #endif
         } // namespace symbolic

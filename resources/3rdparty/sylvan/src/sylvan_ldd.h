@@ -1,5 +1,6 @@
 /*
- * Copyright 2011-2014 Formal Methods and Tools, University of Twente
+ * Copyright 2011-2016 Formal Methods and Tools, University of Twente
+ * Copyright 2016 Tom van Dijk, Johannes Kepler University Linz
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -30,7 +31,7 @@ typedef uint64_t MDD;       // Note: low 40 bits only
 #define lddmc_true          ((MDD)1)
 
 /* Initialize LDD functionality */
-void sylvan_init_ldd();
+void sylvan_init_ldd(void);
 
 /* Primitives */
 MDD lddmc_makenode(uint32_t value, MDD ifeq, MDD ifneq);
@@ -61,7 +62,7 @@ VOID_TASK_DECL_1(lddmc_gc_mark_rec, MDD)
 #define lddmc_gc_mark_rec(mdd) CALL(lddmc_gc_mark_rec, mdd)
 
 /* Return the number of external references */
-size_t lddmc_count_refs();
+size_t lddmc_count_refs(void);
 
 /* Mark MDD for "notify on dead" */
 #define lddmc_notify_ondead(mdd) llmsset_notify_ondead(nodes, mdd)
@@ -227,7 +228,7 @@ TASK_DECL_4(MDD, lddmc_compose, MDD, lddmc_compose_cb, void*, int);
 size_t lddmc_serialize_add(MDD mdd);
 size_t lddmc_serialize_get(MDD mdd);
 MDD lddmc_serialize_get_reversed(size_t value);
-void lddmc_serialize_reset();
+void lddmc_serialize_reset(void);
 void lddmc_serialize_totext(FILE *out);
 void lddmc_serialize_tofile(FILE *out);
 void lddmc_serialize_fromfile(FILE *in);

@@ -16,10 +16,9 @@ namespace storm {
             // Intentionally left empty.
         }
         
-        template<typename ValueType>
-        InternalBdd<DdType::CUDD> InternalBdd<DdType::CUDD>::fromVector(InternalDdManager<DdType::CUDD> const* ddManager, std::vector<ValueType> const& values, Odd const& odd, std::vector<uint_fast64_t> const& sortedDdVariableIndices, std::function<bool (ValueType const&)> const& filter) {
+        InternalBdd<DdType::CUDD> InternalBdd<DdType::CUDD>::fromVector(InternalDdManager<DdType::CUDD> const* ddManager, Odd const& odd, std::vector<uint_fast64_t> const& sortedDdVariableIndices, std::function<bool (uint64_t)> const& filter) {
             uint_fast64_t offset = 0;
-            return InternalBdd<DdType::CUDD>(ddManager, cudd::BDD(ddManager->getCuddManager(), fromVectorRec(ddManager->getCuddManager().getManager(), offset, 0, sortedDdVariableIndices.size(), values, odd, sortedDdVariableIndices, filter)));
+            return InternalBdd<DdType::CUDD>(ddManager, cudd::BDD(ddManager->getCuddManager(), fromVectorRec(ddManager->getCuddManager().getManager(), offset, 0, sortedDdVariableIndices.size(), odd, sortedDdVariableIndices, filter)));
         }
         
         bool InternalBdd<DdType::CUDD>::operator==(InternalBdd<DdType::CUDD> const& other) const {
@@ -222,14 +221,13 @@ namespace storm {
             return InternalAdd<DdType::CUDD, ValueType>(ddManager, this->getCuddBdd().Add());
         }
         
-        template<typename ValueType>
-        DdNode* InternalBdd<DdType::CUDD>::fromVectorRec(::DdManager* manager, uint_fast64_t& currentOffset, uint_fast64_t currentLevel, uint_fast64_t maxLevel, std::vector<ValueType> const& values, Odd const& odd, std::vector<uint_fast64_t> const& ddVariableIndices, std::function<bool (ValueType const&)> const& filter) {
+        DdNode* InternalBdd<DdType::CUDD>::fromVectorRec(::DdManager* manager, uint_fast64_t& currentOffset, uint_fast64_t currentLevel, uint_fast64_t maxLevel, Odd const& odd, std::vector<uint_fast64_t> const& ddVariableIndices, std::function<bool (uint64_t)> const& filter) {
             if (currentLevel == maxLevel) {
                 // If we are in a terminal node of the ODD, we need to check whether the then-offset of the ODD is one
                 // (meaning the encoding is a valid one) or zero (meaning the encoding is not valid). Consequently, we
                 // need to copy the next value of the vector iff the then-offset is greater than zero.
                 if (odd.getThenOffset() > 0) {
-                    if (filter(values[currentOffset++])) {
+                    if (filter(currentOffset++)) {
                         return Cudd_ReadOne(manager);
                     } else {
                         return Cudd_ReadLogicZero(manager);
@@ -246,7 +244,7 @@ namespace storm {
                 // Determine the new else-successor.
                 DdNode* elseSuccessor = nullptr;
                 if (odd.getElseOffset() > 0) {
-                    elseSuccessor = fromVectorRec(manager, currentOffset, currentLevel + 1, maxLevel, values, odd.getElseSuccessor(), ddVariableIndices, filter);
+                    elseSuccessor = fromVectorRec(manager, currentOffset, currentLevel + 1, maxLevel, odd.getElseSuccessor(), ddVariableIndices, filter);
                 } else {
                     elseSuccessor = Cudd_ReadLogicZero(manager);
                 }
@@ -255,7 +253,7 @@ namespace storm {
                 // Determine the new then-successor.
                 DdNode* thenSuccessor = nullptr;
                 if (odd.getThenOffset() > 0) {
-                    thenSuccessor = fromVectorRec(manager, currentOffset, currentLevel + 1, maxLevel, values, odd.getThenSuccessor(), ddVariableIndices, filter);
+                    thenSuccessor = fromVectorRec(manager, currentOffset, currentLevel + 1, maxLevel, odd.getThenSuccessor(), ddVariableIndices, filter);
                 } else {
                     thenSuccessor = Cudd_ReadLogicZero(manager);
                 }
@@ -423,6 +421,40 @@ namespace storm {
             }
         }
         
+        void InternalBdd<DdType::CUDD>::filterExplicitVector(Odd const& odd, std::vector<uint_fast64_t> const& ddVariableIndices, storm::storage::BitVector const& sourceValues, storm::storage::BitVector& targetValues) const {
+            uint_fast64_t currentIndex = 0;
+            filterExplicitVectorRec(Cudd_Regular(this->getCuddDdNode()), ddManager->getCuddManager(), 0, Cudd_IsComplement(this->getCuddDdNode()), ddVariableIndices.size(), ddVariableIndices, 0, odd, targetValues, currentIndex, sourceValues);
+        }
+        
+        void InternalBdd<DdType::CUDD>::filterExplicitVectorRec(DdNode const* dd, cudd::Cudd const& manager, uint_fast64_t currentLevel, bool complement, uint_fast64_t maxLevel, std::vector<uint_fast64_t> const& ddVariableIndices, uint_fast64_t currentOffset, storm::dd::Odd const& odd, storm::storage::BitVector& result, uint_fast64_t& currentIndex, storm::storage::BitVector const& values) {
+            // If there are no more values to select, we can directly return.
+            if (dd == Cudd_ReadLogicZero(manager.getManager()) && !complement) {
+                return;
+            } else if (dd == Cudd_ReadOne(manager.getManager()) && complement) {
+                return;
+            }
+            
+            if (currentLevel == maxLevel) {
+                result.set(currentIndex++, values.get(currentOffset));
+            } else if (ddVariableIndices[currentLevel] < Cudd_NodeReadIndex(dd)) {
+                // If we skipped a level, we need to enumerate the explicit entries for the case in which the bit is set
+                // and for the one in which it is not set.
+                filterExplicitVectorRec(dd, manager, currentLevel + 1, complement, maxLevel, ddVariableIndices, currentOffset, odd.getElseSuccessor(), result, currentIndex, values);
+                filterExplicitVectorRec(dd, manager, currentLevel + 1, complement, maxLevel, ddVariableIndices, currentOffset + odd.getElseOffset(), odd.getThenSuccessor(), result, currentIndex, values);
+            } else {
+                // Otherwise, we compute the ODDs for both the then- and else successors.
+                DdNode const* thenDdNode = Cudd_T_const(dd);
+                DdNode const* elseDdNode = Cudd_E_const(dd);
+                
+                // Determine whether we have to evaluate the successors as if they were complemented.
+                bool elseComplemented = Cudd_IsComplement(elseDdNode) ^ complement;
+                bool thenComplemented = Cudd_IsComplement(thenDdNode) ^ complement;
+                
+                filterExplicitVectorRec(Cudd_Regular(elseDdNode), manager, currentLevel + 1, elseComplemented, maxLevel, ddVariableIndices, currentOffset, odd.getElseSuccessor(), result, currentIndex, values);
+                filterExplicitVectorRec(Cudd_Regular(thenDdNode), manager, currentLevel + 1, thenComplemented, maxLevel, ddVariableIndices, currentOffset + odd.getElseOffset(), odd.getThenSuccessor(), result, currentIndex, values);
+            }
+        }
+        
         std::pair<std::vector<storm::expressions::Expression>, std::unordered_map<uint_fast64_t, storm::expressions::Variable>> InternalBdd<DdType::CUDD>::toExpression(storm::expressions::ExpressionManager& manager) const {
             std::pair<std::vector<storm::expressions::Expression>, std::unordered_map<uint_fast64_t, storm::expressions::Variable>> result;
             
@@ -502,10 +534,7 @@ namespace storm {
             // Return the variable for this node.
             return newNodeVariable;
         }
-        
-        template InternalBdd<DdType::CUDD> InternalBdd<DdType::CUDD>::fromVector(InternalDdManager<DdType::CUDD> const* ddManager, std::vector<double> const& values, Odd const& odd, std::vector<uint_fast64_t> const& sortedDdVariableIndices, std::function<bool (double const&)> const& filter);
-        template InternalBdd<DdType::CUDD> InternalBdd<DdType::CUDD>::fromVector(InternalDdManager<DdType::CUDD> const* ddManager, std::vector<uint_fast64_t> const& values, Odd const& odd, std::vector<uint_fast64_t> const& sortedDdVariableIndices, std::function<bool (uint_fast64_t const&)> const& filter);
-        
+                
         template InternalAdd<DdType::CUDD, double> InternalBdd<DdType::CUDD>::toAdd() const;
         template InternalAdd<DdType::CUDD, uint_fast64_t> InternalBdd<DdType::CUDD>::toAdd() const;
         

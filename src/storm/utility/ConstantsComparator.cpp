@@ -111,10 +111,17 @@ namespace storm {
         template class ConstantsComparator<storm::storage::sparse::state_type>;
 
 #ifdef STORM_HAVE_CARL
+#if defined(STORM_HAVE_CLN)
+        template class ConstantsComparator<ClnRationalNumber>;
+#endif
+        
+#if defined(STORM_HAVE_GMP)
+        template class ConstantsComparator<GmpRationalNumber>;
+#endif
+        
         template class ConstantsComparator<RationalFunction>;
         template class ConstantsComparator<Polynomial>;
         template class ConstantsComparator<Interval>;
-        template class ConstantsComparator<RationalNumber>;
 #endif
     }
 }

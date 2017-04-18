@@ -5,7 +5,7 @@
 
 #include "storm/models/symbolic/Mdp.h"
 
-#include "storm/utility/solver.h"
+#include "storm/solver/SymbolicMinMaxLinearEquationSolver.h"
 
 namespace storm {
     namespace modelchecker {
@@ -16,7 +16,7 @@ namespace storm {
             static const storm::dd::DdType DdType = ModelType::DdType;
 
             explicit SymbolicMdpPrctlModelChecker(ModelType const& model);
-            explicit SymbolicMdpPrctlModelChecker(ModelType const& model, std::unique_ptr<storm::utility::solver::SymbolicMinMaxLinearEquationSolverFactory<DdType, ValueType>>&& linearEquationSolverFactory);
+            explicit SymbolicMdpPrctlModelChecker(ModelType const& model, std::unique_ptr<storm::solver::SymbolicGeneralMinMaxLinearEquationSolverFactory<DdType, ValueType>>&& linearEquationSolverFactory);
             
             // The implemented methods of the AbstractModelChecker interface.
             virtual bool canHandle(CheckTask<storm::logic::Formula, ValueType> const& checkTask) const override;
@@ -31,7 +31,7 @@ namespace storm {
 
             private:
             // An object that is used for retrieving linear equation solvers.
-            std::unique_ptr<storm::utility::solver::SymbolicMinMaxLinearEquationSolverFactory<DdType, ValueType>> linearEquationSolverFactory;
+            std::unique_ptr<storm::solver::SymbolicGeneralMinMaxLinearEquationSolverFactory<DdType, ValueType>> linearEquationSolverFactory;
         };
         
     } // namespace modelchecker

@@ -59,6 +59,10 @@ namespace storm {
             return this->getBaseExpression().evaluateAsDouble(valuation);
         }
         
+        storm::RationalNumber Expression::evaluateAsRational() const {
+            return this->getBaseExpression().evaluateAsRational();
+        }
+        
         Expression Expression::simplify() const {
             return Expression(this->getBaseExpression().simplify());
         }

@@ -219,9 +219,9 @@ namespace storm {
             storm::logic::ProbabilityOperatorFormula const& stateFormula = checkTask.getFormula();
             std::unique_ptr<CheckResult> result = this->computeProbabilities(checkTask.substituteFormula(stateFormula.getSubformula()));
             
-            if (stateFormula.hasBound()) {
+            if (checkTask.isBoundSet()) {
                 STORM_LOG_THROW(result->isQuantitative(), storm::exceptions::InvalidOperationException, "Unable to perform comparison operation on non-quantitative result.");
-                return result->asQuantitativeCheckResult<ValueType>().compareAgainstBound(stateFormula.getComparisonType(), stateFormula.getThresholdAs<ValueType>());
+                return result->asQuantitativeCheckResult<ValueType>().compareAgainstBound(checkTask.getBoundComparisonType(), checkTask.getBoundThreshold());
             } else {
                 return result;
             }
@@ -316,9 +316,15 @@ namespace storm {
         // DD
         template class AbstractModelChecker<storm::models::symbolic::Dtmc<storm::dd::DdType::CUDD, double>>;
         template class AbstractModelChecker<storm::models::symbolic::Dtmc<storm::dd::DdType::Sylvan, double>>;
+        template class AbstractModelChecker<storm::models::symbolic::Dtmc<storm::dd::DdType::Sylvan, storm::RationalNumber>>;
+        template class AbstractModelChecker<storm::models::symbolic::Dtmc<storm::dd::DdType::Sylvan, storm::RationalFunction>>;
         template class AbstractModelChecker<storm::models::symbolic::Mdp<storm::dd::DdType::CUDD, double>>;
         template class AbstractModelChecker<storm::models::symbolic::Mdp<storm::dd::DdType::Sylvan, double>>;
+        template class AbstractModelChecker<storm::models::symbolic::Mdp<storm::dd::DdType::Sylvan, storm::RationalNumber>>;
+        template class AbstractModelChecker<storm::models::symbolic::Mdp<storm::dd::DdType::Sylvan, storm::RationalFunction>>;
         template class AbstractModelChecker<storm::models::symbolic::Ctmc<storm::dd::DdType::CUDD, double>>;
         template class AbstractModelChecker<storm::models::symbolic::Ctmc<storm::dd::DdType::Sylvan, double>>;
+        template class AbstractModelChecker<storm::models::symbolic::Ctmc<storm::dd::DdType::Sylvan, storm::RationalNumber>>;
+        template class AbstractModelChecker<storm::models::symbolic::Ctmc<storm::dd::DdType::Sylvan, storm::RationalFunction>>;
     }
 }

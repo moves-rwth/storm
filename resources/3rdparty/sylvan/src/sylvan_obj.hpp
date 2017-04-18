@@ -27,9 +27,9 @@
 
 namespace sylvan {
 
+class Mtbdd;
 class BddSet;
 class BddMap;
-class Mtbdd;
 
 class Bdd {
     friend class Sylvan;
@@ -84,7 +84,7 @@ public:
 
     int operator==(const Bdd& other) const;
     int operator!=(const Bdd& other) const;
-    Bdd operator=(const Bdd& right);
+    Bdd& operator=(const Bdd& right);
     int operator<=(const Bdd& other) const;
     int operator>=(const Bdd& other) const;
     int operator<(const Bdd& other) const;
@@ -92,17 +92,17 @@ public:
     Bdd operator!() const;
     Bdd operator~() const;
     Bdd operator*(const Bdd& other) const;
-    Bdd operator*=(const Bdd& other);
+    Bdd& operator*=(const Bdd& other);
     Bdd operator&(const Bdd& other) const;
-    Bdd operator&=(const Bdd& other);
+    Bdd& operator&=(const Bdd& other);
     Bdd operator+(const Bdd& other) const;
-    Bdd operator+=(const Bdd& other);
+    Bdd& operator+=(const Bdd& other);
     Bdd operator|(const Bdd& other) const;
-    Bdd operator|=(const Bdd& other);
+    Bdd& operator|=(const Bdd& other);
     Bdd operator^(const Bdd& other) const;
-    Bdd operator^=(const Bdd& other);
+    Bdd& operator^=(const Bdd& other);
     Bdd operator-(const Bdd& other) const;
-    Bdd operator-=(const Bdd& other);
+    Bdd& operator-=(const Bdd& other);
 
     /**
      * @brief Returns non-zero if this Bdd is bddOne() or bddZero()
@@ -328,7 +328,7 @@ public:
     size_t NodeCount() const;
 
 #include "sylvan_obj_bdd_storm.hpp"
-
+    
 private:
     BDD bdd;
 };
@@ -496,9 +496,9 @@ public:
     BddMap(uint32_t key_variable, const Bdd value);
 
     BddMap operator+(const Bdd& other) const;
-    BddMap operator+=(const Bdd& other);
+    BddMap& operator+=(const Bdd& other);
     BddMap operator-(const Bdd& other) const;
-    BddMap operator-=(const Bdd& other);
+    BddMap& operator-=(const Bdd& other);
 
     /**
      * @brief Adds a key-value pair to the map
@@ -544,13 +544,6 @@ public:
      */
     static Mtbdd doubleTerminal(double value);
 
-#if defined(SYLVAN_HAVE_CARL) || defined(STORM_HAVE_CARL)
-	/**
-     * @brief Creates a Mtbdd leaf representing the rational function value <value>
-     */
-    static Mtbdd stormRationalFunctionTerminal(storm::RationalFunction const& value);
-#endif
-	
     /**
      * @brief Creates a Mtbdd leaf representing the fraction value <nominator>/<denominator>
      * Internally, Sylvan uses 32-bit values and reports overflows to stderr.
@@ -605,15 +598,15 @@ public:
 
     int operator==(const Mtbdd& other) const;
     int operator!=(const Mtbdd& other) const;
-    Mtbdd operator=(const Mtbdd& right);
+    Mtbdd& operator=(const Mtbdd& right);
     Mtbdd operator!() const;
     Mtbdd operator~() const;
     Mtbdd operator*(const Mtbdd& other) const;
-    Mtbdd operator*=(const Mtbdd& other);
+    Mtbdd& operator*=(const Mtbdd& other);
     Mtbdd operator+(const Mtbdd& other) const;
-    Mtbdd operator+=(const Mtbdd& other);
+    Mtbdd& operator+=(const Mtbdd& other);
     Mtbdd operator-(const Mtbdd& other) const;
-    Mtbdd operator-=(const Mtbdd& other);
+    Mtbdd& operator-=(const Mtbdd& other);
 
     // not implemented (compared to Bdd): <=, >=, <, >, &, &=, |, |=, ^, ^=
 
@@ -785,7 +778,7 @@ public:
     size_t NodeCount() const;
 
 #include "sylvan_obj_mtbdd_storm.hpp"
-
+    
 private:
     MTBDD mtbdd;
 };
@@ -803,9 +796,9 @@ public:
     MtbddMap(uint32_t key_variable, Mtbdd value);
 
     MtbddMap operator+(const Mtbdd& other) const;
-    MtbddMap operator+=(const Mtbdd& other);
+    MtbddMap& operator+=(const Mtbdd& other);
     MtbddMap operator-(const Mtbdd& other) const;
-    MtbddMap operator-=(const Mtbdd& other);
+    MtbddMap& operator-=(const Mtbdd& other);
 
     /**
      * @brief Adds a key-value pair to the map
@@ -840,18 +833,30 @@ public:
     static void initPackage(size_t initialTableSize, size_t maxTableSize, size_t initialCacheSize, size_t maxCacheSize);
 
     /**
-     * @brief Initializes the BDD module of the Sylvan framework.
+     * @brief Set the granularity for the BDD operations.
      * @param granularity determins operation cache behavior; for higher values (2+) it will use the operation cache less often.
      * Values of 3-7 may result in better performance, since occasionally not using the operation cache is fine in practice.
      * A granularity of 1 means that every BDD operation will be cached at every variable level.
      */
-    static void initBdd(int granularity);
+    static void setGranularity(int granularity);
+
+    /**
+     * @brief Retrieve the granularity for the BDD operations.
+     */
+    static int getGranularity();
+
+    /**
+     * @brief Initializes the BDD module of the Sylvan framework.
+     */
+    static void initBdd();
 
     /**
      * @brief Initializes the MTBDD module of the Sylvan framework.
      */
     static void initMtbdd();
 
+#include "sylvan_obj_sylvan_storm.hpp"
+    
     /**
      * @brief Frees all memory in use by Sylvan.
      * Warning: if you have any Bdd objects which are not bddZero() or bddOne() after this, your program may crash!

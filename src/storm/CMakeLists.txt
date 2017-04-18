@@ -14,17 +14,17 @@ file(GLOB_RECURSE STORM_MAIN_FILE ${PROJECT_SOURCE_DIR}/src/storm/storm.cpp)
 # Additional include files like the storm-config.h
 file(GLOB_RECURSE STORM_BUILD_HEADERS ${PROJECT_BINARY_DIR}/include/*.h)
 
-set(STORM_LIB_SOURCES ${STORM_SOURCES_WITHOUT_MAIN})
+set(STORM_LIB_SOURCES ${STORM_3RDPARTY_SOURCES} ${STORM_SOURCES_WITHOUT_MAIN})
 set(STORM_LIB_HEADERS ${STORM_HEADERS})
 set(STORM_MAIN_SOURCES  ${STORM_MAIN_FILE})
 
 # Add custom additional include or link directories
 if (ADDITIONAL_INCLUDE_DIRS)
-	message(STATUS "storm - Using additional include directories ${ADDITIONAL_INCLUDE_DIRS}")
+	message(STATUS "Storm - Using additional include directories ${ADDITIONAL_INCLUDE_DIRS}")
 	include_directories(${ADDITIONAL_INCLUDE_DIRS})
 endif(ADDITIONAL_INCLUDE_DIRS)
 if (ADDITIONAL_LINK_DIRS)
-	message(STATUS "storm - Using additional link directories ${ADDITIONAL_LINK_DIRS}")
+	message(STATUS "Storm - Using additional link directories ${ADDITIONAL_LINK_DIRS}")
 	link_directories(${ADDITIONAL_LINK_DIRS})
 endif(ADDITIONAL_LINK_DIRS)
 
@@ -42,13 +42,14 @@ add_library(storm SHARED ${STORM_LIB_SOURCES} ${STORM_LIB_HEADERS})
 # Remove define symbol for shared libstorm.
 set_target_properties(storm PROPERTIES DEFINE_SYMBOL "")
 add_dependencies(storm resources)
-target_link_libraries(storm PUBLIC ${STORM_DEP_TARGETS}  ${STORM_DEP_IMP_TARGETS} ${STORM_LINK_LIBRARIES})
+#The library that needs symbols must be first, then the library that resolves the symbol.
+target_link_libraries(storm PUBLIC ${STORM_DEP_TARGETS} ${STORM_DEP_IMP_TARGETS} ${STORM_LINK_LIBRARIES})
 list(APPEND STORM_TARGETS storm)
 set(STORM_TARGETS ${STORM_TARGETS} PARENT_SCOPE)
 
 # Create storm.
 add_executable(storm-main ${STORM_MAIN_SOURCES} ${STORM_MAIN_HEADERS})
-target_link_libraries(storm-main storm)
+target_link_libraries(storm-main PUBLIC storm)
 set_target_properties(storm-main PROPERTIES OUTPUT_NAME "storm")
 
 # Install storm headers to include directory.

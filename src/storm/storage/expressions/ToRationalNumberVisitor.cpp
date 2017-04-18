@@ -47,29 +47,37 @@ namespace storm {
         boost::any ToRationalNumberVisitor<RationalNumberType>::visit(BinaryNumericalFunctionExpression const& expression, boost::any const& data) {
             RationalNumberType firstOperandAsRationalNumber = boost::any_cast<RationalNumberType>(expression.getFirstOperand()->accept(*this, data));
             RationalNumberType secondOperandAsRationalNumber = boost::any_cast<RationalNumberType>(expression.getSecondOperand()->accept(*this, data));
+            RationalNumberType result;
             switch(expression.getOperatorType()) {
                 case BinaryNumericalFunctionExpression::OperatorType::Plus:
-                    return firstOperandAsRationalNumber + secondOperandAsRationalNumber;
+                    result = firstOperandAsRationalNumber + secondOperandAsRationalNumber;
+                    return result;
                     break;
                 case BinaryNumericalFunctionExpression::OperatorType::Minus:
-                    return firstOperandAsRationalNumber - secondOperandAsRationalNumber;
+                    result = firstOperandAsRationalNumber - secondOperandAsRationalNumber;
+                    return result;
                     break;
                 case BinaryNumericalFunctionExpression::OperatorType::Times:
-                    return firstOperandAsRationalNumber * secondOperandAsRationalNumber;
+                    result = firstOperandAsRationalNumber * secondOperandAsRationalNumber;
+                    return result;
                     break;
                 case BinaryNumericalFunctionExpression::OperatorType::Divide:
-                    return firstOperandAsRationalNumber / secondOperandAsRationalNumber;
+                    result = firstOperandAsRationalNumber / secondOperandAsRationalNumber;
+                    return result;
                     break;
                 case BinaryNumericalFunctionExpression::OperatorType::Min:
-                    return std::min(firstOperandAsRationalNumber, secondOperandAsRationalNumber);
+                    result = std::min(firstOperandAsRationalNumber, secondOperandAsRationalNumber);
+                    return result;
                     break;
                 case BinaryNumericalFunctionExpression::OperatorType::Max:
-                    return std::max(firstOperandAsRationalNumber, secondOperandAsRationalNumber);
+                    result = std::max(firstOperandAsRationalNumber, secondOperandAsRationalNumber);
+                    return result;
                     break;
                 case BinaryNumericalFunctionExpression::OperatorType::Power:
                     STORM_LOG_THROW(storm::utility::isInteger(secondOperandAsRationalNumber), storm::exceptions::InvalidArgumentException, "Exponent of power operator must be a positive integer.");
                     uint_fast64_t exponentAsInteger = storm::utility::convertNumber<uint_fast64_t>(secondOperandAsRationalNumber);
-                    return storm::utility::pow(firstOperandAsRationalNumber, exponentAsInteger);
+                    result = storm::utility::pow(firstOperandAsRationalNumber, exponentAsInteger);
+                    return result;
                     break;
             }
             
@@ -96,10 +104,20 @@ namespace storm {
         template<typename RationalNumberType>
         boost::any ToRationalNumberVisitor<RationalNumberType>::visit(UnaryNumericalFunctionExpression const& expression, boost::any const& data) {
             RationalNumberType operandAsRationalNumber = boost::any_cast<RationalNumberType>(expression.getOperand()->accept(*this, data));
+            RationalNumberType result;
             switch (expression.getOperatorType()) {
-                case UnaryNumericalFunctionExpression::OperatorType::Minus: return -operandAsRationalNumber;
-                case UnaryNumericalFunctionExpression::OperatorType::Floor: return storm::utility::floor(operandAsRationalNumber);
-                case UnaryNumericalFunctionExpression::OperatorType::Ceil: return storm::utility::ceil(operandAsRationalNumber);
+                case UnaryNumericalFunctionExpression::OperatorType::Minus:
+                    result = -operandAsRationalNumber;
+                    return result;
+                    break;
+                case UnaryNumericalFunctionExpression::OperatorType::Floor:
+                    result = storm::utility::floor(operandAsRationalNumber);
+                    return result;
+                    break;
+                case UnaryNumericalFunctionExpression::OperatorType::Ceil:
+                    result = storm::utility::ceil(operandAsRationalNumber);
+                    return result;
+                    break;
             }
         }
         

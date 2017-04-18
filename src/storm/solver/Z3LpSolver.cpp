@@ -24,7 +24,7 @@ namespace storm {
         
 #ifdef STORM_HAVE_Z3_OPTIMIZE
         Z3LpSolver::Z3LpSolver(std::string const& name, OptimizationDirection const& optDir) : LpSolver(optDir) {
-            STORM_LOG_WARN_COND(name != "", "Z3 does not support names for solvers");
+            STORM_LOG_WARN_COND(name == "", "Z3 does not support names for solvers");
             z3::config config;
             config.set("model", true);
             context = std::unique_ptr<z3::context>(new z3::context(config));
@@ -120,7 +120,7 @@ namespace storm {
         void Z3LpSolver::addConstraint(std::string const& name, storm::expressions::Expression const& constraint) {            
             STORM_LOG_THROW(constraint.isRelationalExpression(), storm::exceptions::InvalidArgumentException, "Illegal constraint is not a relational expression.");
             STORM_LOG_THROW(constraint.getOperator() != storm::expressions::OperatorType::NotEqual, storm::exceptions::InvalidArgumentException, "Illegal constraint uses inequality operator.");
-            STORM_LOG_WARN_COND(name != "", "Z3 does not support names for constraints");
+            STORM_LOG_WARN_COND(name == "", "Z3 does not support names for constraints");
             solver->add(expressionAdapter->translateExpression(constraint));
         }
         
@@ -188,7 +188,7 @@ namespace storm {
             z3::expr z3Var = this->expressionAdapter->translateExpression(variable);
 			return this->expressionAdapter->translateExpression(lastCheckModel->eval(z3Var, true));
         }
-
+        
         double Z3LpSolver::getContinuousValue(storm::expressions::Variable const& variable) const {
             storm::expressions::Expression value = getValue(variable);
             if(value.getBaseExpression().isIntegerLiteralExpression()) {
@@ -396,6 +396,10 @@ namespace storm {
             }
 
             bool Z3LpSolver::isOptimal() const {
+                throw storm::exceptions::NotImplementedException() << "This version of storm was compiled without Z3 or the version of Z3 does not support optimization. Yet, a method was called that requires this support.";
+            }
+            
+            storm::expressions::Expression Z3LpSolver::getValue(storm::expressions::Variable const& variable) const {
                 throw storm::exceptions::NotImplementedException() << "This version of storm was compiled without Z3 or the version of Z3 does not support optimization. Yet, a method was called that requires this support.";
             }
 

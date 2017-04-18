@@ -1,5 +1,6 @@
 /*
- * Copyright 2011-2015 Formal Methods and Tools, University of Twente
+ * Copyright 2011-2016 Formal Methods and Tools, University of Twente
+ * Copyright 2016 Tom van Dijk, Johannes Kepler University Linz
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,8 +15,8 @@
  * limitations under the License.
  */
 
-#include <lace.h>
 #include <sylvan_config.h>
+#include <lace.h>
 
 #ifndef SYLVAN_STATS_H
 #define SYLVAN_STATS_H
@@ -24,100 +25,71 @@
 extern "C" {
 #endif /* __cplusplus */
 
+#define OPCOUNTER(NAME) NAME, NAME ## _CACHEDPUT, NAME ## _CACHED
+
 typedef enum {
-    BDD_ITE,
-    BDD_AND,
-    BDD_XOR,
-    BDD_EXISTS,
-    BDD_AND_EXISTS,
-    BDD_RELNEXT,
-    BDD_RELPREV,
-    BDD_SATCOUNT,
-    BDD_COMPOSE,
-    BDD_RESTRICT,
-    BDD_CONSTRAIN,
-    BDD_CLOSURE,
-    BDD_ISBDD,
-    BDD_SUPPORT,
-    BDD_PATHCOUNT,
-    BDD_ITE_CACHEDPUT,
-    BDD_AND_CACHEDPUT,
-    BDD_XOR_CACHEDPUT,
-    BDD_EXISTS_CACHEDPUT,
-    BDD_AND_EXISTS_CACHEDPUT,
-    BDD_RELNEXT_CACHEDPUT,
-    BDD_RELPREV_CACHEDPUT,
-    BDD_SATCOUNT_CACHEDPUT,
-    BDD_COMPOSE_CACHEDPUT,
-    BDD_RESTRICT_CACHEDPUT,
-    BDD_CONSTRAIN_CACHEDPUT,
-    BDD_CLOSURE_CACHEDPUT,
-    BDD_ISBDD_CACHEDPUT,
-    BDD_SUPPORT_CACHEDPUT,
-    BDD_PATHCOUNT_CACHEDPUT,
-    BDD_ITE_CACHED,
-    BDD_AND_CACHED,
-    BDD_XOR_CACHED,
-    BDD_EXISTS_CACHED,
-    BDD_AND_EXISTS_CACHED,
-    BDD_RELNEXT_CACHED,
-    BDD_RELPREV_CACHED,
-    BDD_SATCOUNT_CACHED,
-    BDD_COMPOSE_CACHED,
-    BDD_RESTRICT_CACHED,
-    BDD_CONSTRAIN_CACHED,
-    BDD_CLOSURE_CACHED,
-    BDD_ISBDD_CACHED,
-    BDD_SUPPORT_CACHED,
-    BDD_PATHCOUNT_CACHED,
+    /* Creating nodes */
     BDD_NODES_CREATED,
     BDD_NODES_REUSED,
-
-    LDD_UNION,
-    LDD_MINUS,
-    LDD_INTERSECT,
-    LDD_RELPROD,
-    LDD_RELPREV,
-    LDD_PROJECT,
-    LDD_JOIN,
-    LDD_MATCH,
-    LDD_SATCOUNT,
-    LDD_SATCOUNTL,
-    LDD_ZIP,
-    LDD_RELPROD_UNION,
-    LDD_PROJECT_MINUS,
-    LDD_UNION_CACHEDPUT,
-    LDD_MINUS_CACHEDPUT,
-    LDD_INTERSECT_CACHEDPUT,
-    LDD_RELPROD_CACHEDPUT,
-    LDD_RELPREV_CACHEDPUT,
-    LDD_PROJECT_CACHEDPUT,
-    LDD_JOIN_CACHEDPUT,
-    LDD_MATCH_CACHEDPUT,
-    LDD_SATCOUNT_CACHEDPUT,
-    LDD_SATCOUNTL_CACHEDPUT,
-    LDD_ZIP_CACHEDPUT,
-    LDD_RELPROD_UNION_CACHEDPUT,
-    LDD_PROJECT_MINUS_CACHEDPUT,
-    LDD_UNION_CACHED,
-    LDD_MINUS_CACHED,
-    LDD_INTERSECT_CACHED,
-    LDD_RELPROD_CACHED,
-    LDD_RELPREV_CACHED,
-    LDD_PROJECT_CACHED,
-    LDD_JOIN_CACHED,
-    LDD_MATCH_CACHED,
-    LDD_SATCOUNT_CACHED,
-    LDD_SATCOUNTL_CACHED,
-    LDD_ZIP_CACHED,
-    LDD_RELPROD_UNION_CACHED,
-    LDD_PROJECT_MINUS_CACHED,
     LDD_NODES_CREATED,
     LDD_NODES_REUSED,
 
+    /* BDD operations */
+    OPCOUNTER(BDD_ITE),
+    OPCOUNTER(BDD_AND),
+    OPCOUNTER(BDD_XOR),
+    OPCOUNTER(BDD_EXISTS),
+    OPCOUNTER(BDD_PROJECT),
+    OPCOUNTER(BDD_AND_EXISTS),
+    OPCOUNTER(BDD_AND_PROJECT),
+    OPCOUNTER(BDD_RELNEXT),
+    OPCOUNTER(BDD_RELPREV),
+    OPCOUNTER(BDD_SATCOUNT),
+    OPCOUNTER(BDD_COMPOSE),
+    OPCOUNTER(BDD_RESTRICT),
+    OPCOUNTER(BDD_CONSTRAIN),
+    OPCOUNTER(BDD_CLOSURE),
+    OPCOUNTER(BDD_ISBDD),
+    OPCOUNTER(BDD_SUPPORT),
+    OPCOUNTER(BDD_PATHCOUNT),
+
+    /* MTBDD operations */
+    OPCOUNTER(MTBDD_APPLY),
+    OPCOUNTER(MTBDD_UAPPLY),
+    OPCOUNTER(MTBDD_ABSTRACT),
+    OPCOUNTER(MTBDD_ITE),
+    OPCOUNTER(MTBDD_EQUAL_NORM),
+    OPCOUNTER(MTBDD_EQUAL_NORM_REL),
+    OPCOUNTER(MTBDD_LEQ),
+    OPCOUNTER(MTBDD_LESS),
+    OPCOUNTER(MTBDD_GEQ),
+    OPCOUNTER(MTBDD_GREATER),
+    OPCOUNTER(MTBDD_AND_ABSTRACT_PLUS),
+    OPCOUNTER(MTBDD_AND_ABSTRACT_MAX),
+    OPCOUNTER(MTBDD_COMPOSE),
+    OPCOUNTER(MTBDD_MINIMUM),
+    OPCOUNTER(MTBDD_MAXIMUM),
+    OPCOUNTER(MTBDD_EVAL_COMPOSE),
+
+    /* LDD operations */
+    OPCOUNTER(LDD_UNION),
+    OPCOUNTER(LDD_MINUS),
+    OPCOUNTER(LDD_INTERSECT),
+    OPCOUNTER(LDD_RELPROD),
+    OPCOUNTER(LDD_RELPREV),
+    OPCOUNTER(LDD_PROJECT),
+    OPCOUNTER(LDD_JOIN),
+    OPCOUNTER(LDD_MATCH),
+    OPCOUNTER(LDD_SATCOUNT),
+    OPCOUNTER(LDD_SATCOUNTL),
+    OPCOUNTER(LDD_ZIP),
+    OPCOUNTER(LDD_RELPROD_UNION),
+    OPCOUNTER(LDD_PROJECT_MINUS),
+
+    /* Other counters */
+    SYLVAN_GC_COUNT,
     LLMSSET_LOOKUP,
 
-    SYLVAN_GC_COUNT,
     SYLVAN_COUNTER_COUNTER
 } Sylvan_Counters;
 
@@ -127,32 +99,39 @@ typedef enum
     SYLVAN_TIMER_COUNTER
 } Sylvan_Timers;
 
+typedef struct
+{
+    uint64_t counters[SYLVAN_COUNTER_COUNTER];
+    /* the timers are in ns */
+    uint64_t timers[SYLVAN_TIMER_COUNTER];
+    /* startstop is for internal use */
+    uint64_t timers_startstop[SYLVAN_TIMER_COUNTER];
+} sylvan_stats_t;
+
 /**
  * Initialize stats system (done by sylvan_init_package)
  */
+VOID_TASK_DECL_0(sylvan_stats_init);
 #define sylvan_stats_init() CALL(sylvan_stats_init)
-VOID_TASK_DECL_0(sylvan_stats_init)
 
 /**
  * Reset all counters (for statistics)
  */
+VOID_TASK_DECL_0(sylvan_stats_reset);
 #define sylvan_stats_reset() CALL(sylvan_stats_reset)
-VOID_TASK_DECL_0(sylvan_stats_reset)
+
+/**
+ * Obtain current counts (this stops the world during counting)
+ */
+VOID_TASK_DECL_1(sylvan_stats_snapshot, sylvan_stats_t*);
+#define sylvan_stats_snapshot(target) CALL(sylvan_stats_snapshot, target)
 
 /**
  * Write statistic report to file (stdout, stderr, etc)
  */
-void sylvan_stats_report(FILE* target, int color);
+void sylvan_stats_report(FILE* target);
 
 #if SYLVAN_STATS
-
-/* Infrastructure for internal markings */
-typedef struct
-{
-    uint64_t counters[SYLVAN_COUNTER_COUNTER];
-    uint64_t timers[SYLVAN_TIMER_COUNTER];
-    uint64_t timers_startstop[SYLVAN_TIMER_COUNTER];
-} sylvan_stats_t;
 
 #ifdef __MACH__
 #include <mach/mach_time.h>
@@ -160,7 +139,7 @@ typedef struct
 #else
 #include <time.h>
 static uint64_t
-getabstime()
+getabstime(void)
 {
     struct timespec ts;
     clock_gettime(CLOCK_MONOTONIC, &ts);

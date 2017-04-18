@@ -53,5 +53,7 @@ namespace storm {
 
         template class SymbolicParetoCurveCheckResult<storm::dd::DdType::CUDD, double>;
         template class SymbolicParetoCurveCheckResult<storm::dd::DdType::Sylvan, double>;
+
+        template class SymbolicParetoCurveCheckResult<storm::dd::DdType::Sylvan, storm::RationalNumber>;
     }
 }

@@ -97,7 +97,11 @@ namespace exprtk
         inline bool is_letter(const char_t c)
         {
             return (('a' <= c) && (c <= 'z')) ||
-            (('A' <= c) && (c <= 'Z')) ;
+            (('A' <= c) && (c <= 'Z'))
+#ifdef MODIFICATION
+            || ('_' == c)
+#endif
+            ;
         }
         
         inline bool is_digit(const char_t c)

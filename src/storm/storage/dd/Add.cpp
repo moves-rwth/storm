@@ -11,6 +11,7 @@
 #include "storm/utility/constants.h"
 #include "storm/utility/macros.h"
 #include "storm/exceptions/InvalidArgumentException.h"
+#include "storm/exceptions/InvalidOperationException.h"
 
 #include "storm-config.h"
 #include "storm/adapters/CarlAdapter.h"
@@ -169,12 +170,6 @@ namespace storm {
         }
         
         template<DdType LibraryType, typename ValueType>
-        Add<LibraryType, ValueType> Add<LibraryType, ValueType>::minAbstractExcept0(std::set<storm::expressions::Variable> const& metaVariables) const {
-            Bdd<LibraryType> cube = Bdd<LibraryType>::getCube(this->getDdManager(), metaVariables);
-            return Add<LibraryType, ValueType>(this->getDdManager(), internalAdd.minAbstractExcept0(cube), Dd<LibraryType>::subtractMetaVariables(*this, cube));
-        }
-        
-        template<DdType LibraryType, typename ValueType>
         Add<LibraryType, ValueType> Add<LibraryType, ValueType>::maxAbstract(std::set<storm::expressions::Variable> const& metaVariables) const {
             Bdd<LibraryType> cube = Bdd<LibraryType>::getCube(this->getDdManager(), metaVariables);
             return Add<LibraryType, ValueType>(this->getDdManager(), internalAdd.maxAbstract(cube), Dd<LibraryType>::subtractMetaVariables(*this, cube));
@@ -187,7 +182,7 @@ namespace storm {
         }
 
         template<DdType LibraryType, typename ValueType>
-        bool Add<LibraryType, ValueType>::equalModuloPrecision(Add<LibraryType, ValueType> const& other, double precision, bool relative) const {
+        bool Add<LibraryType, ValueType>::equalModuloPrecision(Add<LibraryType, ValueType> const& other, ValueType const& precision, bool relative) const {
             return internalAdd.equalModuloPrecision(other, precision, relative);
         }
         
@@ -217,6 +212,31 @@ namespace storm {
             }
             STORM_LOG_THROW(from.size() == to.size(), storm::exceptions::InvalidArgumentException, "Unable to swap mismatching meta variables.");
             return Add<LibraryType, ValueType>(this->getDdManager(), internalAdd.swapVariables(from, to), newContainedMetaVariables);
+        }
+        
+        template<DdType LibraryType, typename ValueType>
+        Add<LibraryType, ValueType> Add<LibraryType, ValueType>::permuteVariables(std::vector<std::pair<storm::expressions::Variable, storm::expressions::Variable>> const& metaVariablePairs) const {
+            std::set<storm::expressions::Variable> newContainedMetaVariables;
+            std::vector<InternalBdd<LibraryType>> from;
+            std::vector<InternalBdd<LibraryType>> to;
+            for (auto const& metaVariablePair : metaVariablePairs) {
+                DdMetaVariable<LibraryType> const& variable1 = this->getDdManager().getMetaVariable(metaVariablePair.first);
+                DdMetaVariable<LibraryType> const& variable2 = this->getDdManager().getMetaVariable(metaVariablePair.second);
+                
+                // Keep track of the contained meta variables in the DD.
+                if (this->containsMetaVariable(metaVariablePair.first)) {
+                    newContainedMetaVariables.insert(metaVariablePair.second);
+                }
+                
+                for (auto const& ddVariable : variable1.getDdVariables()) {
+                    from.push_back(ddVariable);
+                }
+                for (auto const& ddVariable : variable2.getDdVariables()) {
+                    to.push_back(ddVariable);
+                }
+            }
+            STORM_LOG_THROW(from.size() == to.size(), storm::exceptions::InvalidArgumentException, "Unable to swap mismatching meta variables.");
+            return Add<LibraryType, ValueType>(this->getDdManager(), internalAdd.permuteVariables(from, to), newContainedMetaVariables);
         }
         
         template<DdType LibraryType, typename ValueType>
@@ -797,50 +817,20 @@ namespace storm {
             return internalAdd;
         }
         
+		template<DdType LibraryType, typename ValueType>
+        template<typename TargetValueType>
+		Add<LibraryType, TargetValueType> Add<LibraryType, ValueType>::toValueType() const {
+            if (std::is_same<TargetValueType, ValueType>::value) {
+                return *this;
+            }
+			STORM_LOG_THROW(false, storm::exceptions::InvalidOperationException, "Cannot convert this ADD to the target type.");
+		}
+
 #ifdef STORM_HAVE_CARL
-		template<DdType LibraryType, typename ValueType>
-        Add<LibraryType, ValueType> Add<LibraryType, ValueType>::replaceLeaves(std::map<storm::RationalFunctionVariable, std::pair<storm::expressions::Variable, std::pair<storm::RationalNumber, storm::RationalNumber>>> const&) const {
-			STORM_LOG_THROW(false, storm::exceptions::InvalidArgumentException, "Not yet implemented: replaceLeaves");
-		}
-
 		template<>
-		Add<storm::dd::DdType::Sylvan, storm::RationalFunction> Add<storm::dd::DdType::Sylvan, storm::RationalFunction>::replaceLeaves(std::map<storm::RationalFunctionVariable, std::pair<storm::expressions::Variable, std::pair<storm::RationalNumber, storm::RationalNumber>>> const& replacementMap) const {
-			std::map<uint32_t, std::pair<storm::RationalFunctionVariable, std::pair<storm::RationalNumber, storm::RationalNumber>>> internalReplacementMap;
-			std::set<storm::expressions::Variable> containedMetaVariables = this->getContainedMetaVariables();
-			
-			uint32_t highestIndex = 0;
-			for (storm::expressions::Variable const& var: containedMetaVariables) {
-				uint32_t index = this->getDdManager().getMetaVariable(var).getDdVariables().at(0).getIndex();
-				if (index > highestIndex) {
-					highestIndex = index;
-				}
-			}
-			
-			std::map<storm::RationalFunctionVariable, std::pair<storm::expressions::Variable, std::pair<storm::RationalNumber, storm::RationalNumber>>>::const_iterator it = replacementMap.cbegin();
-			std::map<storm::RationalFunctionVariable, std::pair<storm::expressions::Variable, std::pair<storm::RationalNumber, storm::RationalNumber>>>::const_iterator end = replacementMap.cend();
-			
-			for (; it != end; ++it) {
-				DdMetaVariable<storm::dd::DdType::Sylvan> const& metaVariable = this->getDdManager().getMetaVariable(it->second.first);
-				STORM_LOG_THROW(metaVariable.getNumberOfDdVariables() == 1, storm::exceptions::InvalidArgumentException, "Cannot use MetaVariable with more then one internal DD variable.");
-				
-				auto const& ddVariable = metaVariable.getDdVariables().at(0);
-				STORM_LOG_ASSERT(ddVariable.getIndex() > highestIndex, "Can not replace leaves with DD variable that would not be at the bottom!");
-				
-				internalReplacementMap.insert(std::make_pair(ddVariable.getIndex(), std::make_pair(it->first, it->second.second)));
-				containedMetaVariables.insert(it->second.first);
-			}
-			
-			return Add<storm::dd::DdType::Sylvan, storm::RationalFunction>(this->getDdManager(), internalAdd.replaceLeaves(internalReplacementMap), containedMetaVariables);
-		}
-		
-		template<DdType LibraryType, typename ValueType>
-		Add<LibraryType, double> Add<LibraryType, ValueType>::toDouble() const {
-			STORM_LOG_THROW(false, storm::exceptions::InvalidArgumentException, "Not yet implemented: replaceLeaves");
-		}
-
-		template<>
-		Add<storm::dd::DdType::Sylvan, double> Add<storm::dd::DdType::Sylvan, storm::RationalFunction>::toDouble() const {
-			return Add<storm::dd::DdType::Sylvan, double>(this->getDdManager(), internalAdd.toDouble(), this->getContainedMetaVariables());
+        template<>
+		Add<storm::dd::DdType::Sylvan, double> Add<storm::dd::DdType::Sylvan, storm::RationalFunction>::toValueType() const {
+			return Add<storm::dd::DdType::Sylvan, double>(this->getDdManager(), internalAdd.toValueType<double>(), this->getContainedMetaVariables());
 		}
 #endif
 		
@@ -849,7 +839,9 @@ namespace storm {
 
         template class Add<storm::dd::DdType::Sylvan, double>;
         template class Add<storm::dd::DdType::Sylvan, uint_fast64_t>;
+        
 #ifdef STORM_HAVE_CARL
+        template class Add<storm::dd::DdType::Sylvan, storm::RationalNumber>;
 		template class Add<storm::dd::DdType::Sylvan, storm::RationalFunction>;
 #endif
     }

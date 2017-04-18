@@ -60,11 +60,7 @@ namespace storm {
         template<typename ValueType>
         class BoundedGoal : public SolveGoal {
         public:
-            BoundedGoal(OptimizationDirection optimizationDirection, storm::logic::ComparisonType comparisonType, ValueType const& threshold, storm::storage::BitVector const& relevantValues) : SolveGoal(optimizationDirection), bound(comparisonType, threshold), relevantValueVector(relevantValues) {
-                // Intentionally left empty.
-            }
-            
-            BoundedGoal(OptimizationDirection optimizationDirection, storm::logic::Bound<ValueType> const& bound, storm::storage::BitVector const& relevantValues) : SolveGoal(optimizationDirection), bound(bound), relevantValueVector(relevantValues) {
+            BoundedGoal(OptimizationDirection optimizationDirection, storm::logic::ComparisonType boundComparisonType, ValueType const& boundThreshold, storm::storage::BitVector const& relevantValues) : SolveGoal(optimizationDirection), comparisonType(boundComparisonType), threshold(boundThreshold), relevantValueVector(relevantValues) {
                 // Intentionally left empty.
             }
             
@@ -77,31 +73,31 @@ namespace storm {
             }
             
             bool boundIsALowerBound() const { 
-                return (bound.comparisonType == storm::logic::ComparisonType::Greater || bound.comparisonType == storm::logic::ComparisonType::GreaterEqual);
+                return (comparisonType == storm::logic::ComparisonType::Greater || comparisonType == storm::logic::ComparisonType::GreaterEqual);
             }
             
             bool boundIsStrict() const {
-                return (bound.comparisonType == storm::logic::ComparisonType::Greater || bound.comparisonType == storm::logic::ComparisonType::Less);
+                return (comparisonType == storm::logic::ComparisonType::Greater || comparisonType == storm::logic::ComparisonType::Less);
             }
             
             ValueType const& thresholdValue() const {
-                return bound.threshold;
+                return threshold;
             }
 
-            bool achieved(std::vector<ValueType> const& result) const{
-                for(std::size_t i : relevantValueVector){
-                    switch(bound.comparisonType) {
+            bool achieved(std::vector<ValueType> const& result) const {
+                for (auto const& i : relevantValueVector) {
+                    switch(comparisonType) {
                     case storm::logic::ComparisonType::Greater:
-                        if( result[i] <= bound.threshold) return false;
+                        if( result[i] <= threshold) return false;
                         break;
                     case storm::logic::ComparisonType::GreaterEqual:
-                        if( result[i] < bound.threshold) return false;
+                        if( result[i] < threshold) return false;
                         break;
                     case storm::logic::ComparisonType::Less:
-                        if( result[i] >= bound.threshold) return false;
+                        if( result[i] >= threshold) return false;
                         break;
                     case storm::logic::ComparisonType::LessEqual:
-                        if( result[i] > bound.threshold) return false;
+                        if( result[i] > threshold) return false;
                         break;
                     }
                 }
@@ -113,7 +109,8 @@ namespace storm {
             }
             
         private:
-            Bound<ValueType> bound;
+            storm::logic::ComparisonType comparisonType;
+            ValueType threshold;
             storm::storage::BitVector relevantValueVector;
         };
         

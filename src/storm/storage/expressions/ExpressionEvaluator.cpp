@@ -54,7 +54,8 @@ namespace storm {
         }
 
         RationalNumber ExpressionEvaluator<RationalNumber>::asRational(Expression const& expression) const {
-            return this->rationalNumberVisitor.toRationalNumber(expression);
+            RationalNumber result = this->rationalNumberVisitor.toRationalNumber(expression);
+            return result;
         }
         
         ExpressionEvaluator<RationalFunction>::ExpressionEvaluator(storm::expressions::ExpressionManager const& manager) : ExprtkExpressionEvaluatorBase<RationalFunction>(manager), rationalFunctionVisitor(*this) {

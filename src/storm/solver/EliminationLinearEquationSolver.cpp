@@ -63,7 +63,7 @@ namespace storm {
             // not work for systems that have a 0 on the diagonal. This is not a restriction of this technique in general
             // but arbitrary matrices require pivoting, which is not currently implemented.
             
-            STORM_LOG_DEBUG("Solving equation system using elimination.");
+            STORM_LOG_INFO("Solving linear equation system (" << x.size() << " rows) with elimination");
             
             // We need to revert the transformation into an equation system matrix, because the elimination procedure
             // and the distance computation is based on the probability matrix instead.
@@ -109,7 +109,7 @@ namespace storm {
             // After having solved the system, we need to revert the transition system if we kept it local.
             if (localA) {
                 localA->convertToEquationSystem();
-            };
+            }
 
             return true;
         }

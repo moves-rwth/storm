@@ -6,18 +6,18 @@
 #include "storm/logic/UnaryStateFormula.h"
 #include "storm/logic/Bound.h"
 #include "storm/solver/OptimizationDirection.h"
+#include "storm/storage/expressions/Expression.h"
 
-#include "storm/adapters/CarlAdapter.h"
 #include "storm/utility/constants.h"
 
 namespace storm {
     namespace logic {
 
         struct OperatorInformation {
-            OperatorInformation(boost::optional<storm::solver::OptimizationDirection> const& optimizationDirection = boost::none, boost::optional<Bound<RationalNumber>> const& bound = boost::none);
+            OperatorInformation(boost::optional<storm::solver::OptimizationDirection> const& optimizationDirection = boost::none, boost::optional<Bound> const& bound = boost::none);
 
             boost::optional<storm::solver::OptimizationDirection> optimalityType;
-            boost::optional<Bound<RationalNumber>> bound;
+            boost::optional<Bound> bound;
         };
         
         class OperatorFormula : public UnaryStateFormula {
@@ -32,14 +32,12 @@ namespace storm {
             bool hasBound() const;
             ComparisonType getComparisonType() const;
             void setComparisonType(ComparisonType newComparisonType);
-            RationalNumber const& getThreshold() const;
-            template<typename ValueType=RationalNumber>
-            ValueType getThresholdAs() const {
-                return storm::utility::convertNumber<ValueType>(this->getThreshold());
-            }
-            void setThreshold(RationalNumber const& newThreshold);
-            Bound<RationalNumber> const& getBound() const;
-            void setBound(Bound<RationalNumber> const& newBound);
+            storm::expressions::Expression const& getThreshold() const;
+            template <typename ValueType>
+            ValueType getThresholdAs() const;
+            void setThreshold(storm::expressions::Expression const& newThreshold);
+            Bound const& getBound() const;
+            void setBound(Bound const& newBound);
             
             // Optimality-type-related accessors.
             bool hasOptimalityType() const;

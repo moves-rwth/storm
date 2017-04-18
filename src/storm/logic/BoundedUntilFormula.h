@@ -40,6 +40,9 @@ namespace storm {
 
             template <typename ValueType>
             ValueType getUpperBound() const;
+            
+            template <typename ValueType>
+            ValueType getNonStrictUpperBound() const;
 
             virtual std::ostream& writeToStream(std::ostream& out) const override;
             

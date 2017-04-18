@@ -61,7 +61,7 @@ namespace storm {
                 lowerBound = pathFormula.getLowerBound<double>();
             }
             if (pathFormula.hasUpperBound()) {
-                upperBound = pathFormula.getUpperBound<double>();
+                upperBound = pathFormula.getNonStrictUpperBound<double>();
             } else {
                 upperBound = storm::utility::infinity<double>();
             }

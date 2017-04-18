@@ -19,13 +19,13 @@ namespace storm {
             const static unsigned versionPatch;
             
             /// The short hash of the git commit this build is based on
-            const static boost::optional<std::string> gitRevisionHash;
+            const static std::string gitRevisionHash;
             
             /// How many commits passed since the tag was last set.
-            const static boost::optional<unsigned> commitsAhead;
+            const static unsigned commitsAhead;
             
-            /// 0 iff there no files were modified in the checkout, 1 otherwise.
-            const static boost::optional<unsigned> dirty;
+            /// 0 iff there no files were modified in the checkout, 1 otherwise. If none, no information about dirtyness is given.
+            const static boost::optional<bool> dirty;
             
             /// The system which has compiled Storm.
             const static std::string systemName;
@@ -48,14 +48,22 @@ namespace storm {
             static std::string longVersionString() {
                 std::stringstream sstream;
                 sstream << "Version " << versionMajor << "." <<  versionMinor << "." << versionPatch;
-                if (commitsAhead && commitsAhead.get() > 0) {
-                    sstream << " (+" << commitsAhead.get() << " commits)";
+                if (commitsAhead) {
+                    sstream << " (+ " << commitsAhead << " commits)";
                 }
-                if (gitRevisionHash) {
-                    sstream << " build from revision " << gitRevisionHash.get();
+                if (!gitRevisionHash.empty()) {
+                    sstream << " build from revision " << gitRevisionHash;
+                } else {
+                    sstream << " built from archive";
                 }
-                if (dirty && dirty.get() == 1) {
-                    sstream << " (dirty)";
+                if (dirty) {
+                    if (dirty.get()) {
+                        sstream << " (dirty)";
+                    } else {
+                        sstream << " (clean)";
+                    }
+                } else {
+                    sstream << " (potentially dirty)";
                 }
                 return sstream.str();
             }

@@ -131,12 +131,11 @@ namespace storm {
         std::unique_ptr<CheckResult> checkForResultAfterQualitativeCheck(CheckTask<storm::logic::Formula> const& checkTask, storm::OptimizationDirection player2Direction, storm::dd::Bdd<Type> const& initialStates, storm::dd::Bdd<Type> const& prob0, storm::dd::Bdd<Type> const& prob1) {
             std::unique_ptr<CheckResult> result;
             
-            boost::optional<storm::logic::Bound<ValueType>> const& bound = checkTask.getOptionalBound();
-            if (bound) {
+            if (checkTask.isBoundSet()) {
                 // Despite having a bound, we create a quanitative result so that the next layer can perform the comparison.
                 
                 if (player2Direction == storm::OptimizationDirection::Minimize) {
-                    if (storm::logic::isLowerBound(bound.get().comparisonType)) {
+                    if (storm::logic::isLowerBound(checkTask.getBoundComparisonType())) {
                         if ((prob1 && initialStates) == initialStates) {
                             result = std::make_unique<storm::modelchecker::ExplicitQuantitativeCheckResult<ValueType>>(storm::storage::sparse::state_type(0), storm::utility::one<ValueType>());
                         }
@@ -146,7 +145,7 @@ namespace storm {
                         }
                     }
                 } else if (player2Direction == storm::OptimizationDirection::Maximize) {
-                    if (!storm::logic::isLowerBound(bound.get().comparisonType)) {
+                    if (!storm::logic::isLowerBound(checkTask.getBoundComparisonType())) {
                         if ((prob0 && initialStates) == initialStates) {
                             result = std::make_unique<storm::modelchecker::ExplicitQuantitativeCheckResult<ValueType>>(storm::storage::sparse::state_type(0), storm::utility::zero<ValueType>());
                         }
@@ -183,16 +182,15 @@ namespace storm {
             // return the value because the property will definitely hold. Vice versa, if the minimum value exceeds an
             // upper bound or the maximum value is below a lower bound, the property will definitely not hold and we can
             // return the value.
-            boost::optional<storm::logic::Bound<ValueType>> const& bound = checkTask.getOptionalBound();
-            if (!bound) {
+            if (!checkTask.isBoundSet()) {
                 return result;
             }
             
             ValueType const& lowerValue = initialValueRange.first;
             ValueType const& upperValue = initialValueRange.second;
             
-            storm::logic::ComparisonType comparisonType = bound.get().comparisonType;
-            ValueType threshold = bound.get().threshold;
+            storm::logic::ComparisonType comparisonType = checkTask.getBoundComparisonType();
+            ValueType threshold = checkTask.getBoundThreshold();
             
             if (storm::logic::isLowerBound(comparisonType)) {
                 if (player2Direction == storm::OptimizationDirection::Minimize) {

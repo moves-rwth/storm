@@ -35,6 +35,9 @@ namespace storm {
             template <typename ValueType>
             ValueType getBound() const;
             
+            template <typename ValueType>
+            ValueType getNonStrictBound() const;
+            
         private:
             static void checkNoVariablesInBound(storm::expressions::Expression const& bound);
 

@@ -1,5 +1,6 @@
 /* 
- * Copyright 2013-2015 Formal Methods and Tools, University of Twente
+ * Copyright 2013-2016 Formal Methods and Tools, University of Twente
+ * Copyright 2016-2017 Tom van Dijk, Johannes Kepler University Linz
  *
  * Licensed under the Apache License, Version 2.0 (the License);
  * you may not use this file except in compliance with the License.
@@ -33,7 +34,7 @@ extern "C" {
 #endif
 
 #ifndef LACE_LEAP_RANDOM /* Use random leaping when leapfrogging fails */
-#define LACE_LEAP_RANDOM 1
+#define LACE_LEAP_RANDOM 0
 #endif
 
 #ifndef LACE_PIE_TIMES /* Record time spent stealing and leapfrogging */
@@ -212,8 +213,9 @@ typedef struct _WorkerP {
     Task *end;                  // dq+dq_size
     Worker *_public;            // pointer to public Worker struct
     size_t stack_trigger;       // for stack overflow detection
+    uint64_t rng;               // my random seed (for lace_trng)
+    uint32_t seed;              // my random seed (for lace_steal_random)
     int16_t worker;             // what is my worker id?
-    int16_t pu;                 // my pu (for HWLOC)
     uint8_t allstolen;          // my allstolen
     volatile int8_t enabled;    // if this worker is enabled
 
@@ -223,11 +225,32 @@ typedef struct _WorkerP {
     volatile int level;
 #endif
 
-    uint32_t seed;              // my random seed (for lace_steal_random)
+    int16_t pu;                 // my pu (for HWLOC)
 } WorkerP;
 
 #define LACE_TYPEDEF_CB(t, f, ...) typedef t (*f)(WorkerP *, Task *, ##__VA_ARGS__);
 LACE_TYPEDEF_CB(void, lace_startup_cb, void*);
+
+/**
+ * Using Lace.
+ *
+ * Optionally set the verbosity level with lace_set_verbosity.
+ * Call lace_init to allocate all data structures.
+ *
+ * You can create threads yourself or let Lace create threads with lace_startup.
+ *
+ * When creating threads yourself:
+ * - call lace_init_main for worker 0
+ *   this method returns when all other workers have started
+ * - call lace_run_worker for all other workers
+ *   workers perform work-stealing until worker 0 calls lace_exit
+ *
+ * When letting Lace create threads with lace_startup
+ * - calling with startup callback creates N threads and returns
+ *   after the callback has returned, and all created threads are destroyed
+ * - calling without a startup callback creates N-1 threads and returns
+ *   control to the caller. When lace_exit is called, all created threads are terminated.
+ */
 
 /**
  * Set verbosity level (0 = no startup messages, 1 = startup messages)
@@ -247,35 +270,31 @@ void lace_init(int n_workers, size_t dqsize);
  * After lace_init, start all worker threads.
  * If cb,arg are set, suspend this thread, call cb(arg) in a new thread
  * and exit Lace upon return
- * Otherwise, the current thread is initialized as a Lace thread.
+ * Otherwise, the current thread is initialized as worker 0.
  */
 void lace_startup(size_t stacksize, lace_startup_cb, void* arg);
 
 /**
- * Initialize current thread as worker <idx> and allocate a deque with size <dqsize>.
- * Use this when manually creating worker threads.
+ * Initialize worker 0. This method returns when all other workers are initialized
+ * (using lace_run_worker).
+ *
+ * When done, run lace_exit so all worker threads return from lace_run_worker.
  */
-void lace_init_worker(int idx, size_t dqsize);
+void lace_init_main();
 
 /**
- * Manually spawn worker <idx> with (optional) program stack size <stacksize>.
- * If fun,arg are set, overrides default startup method.
- * Typically: for workers 1...(n_workers-1): lace_spawn_worker(i, stack_size, 0, 0);
+ * Initialize the current thread as the Lace thread of worker <worker>, and perform
+ * work-stealing until lace_exit is called.
+ *
+ * For worker 0, call lace_init_main instead.
  */
-pthread_t lace_spawn_worker(int idx, size_t stacksize, void *(*fun)(void*), void* arg);
+void lace_run_worker(int worker);
 
 /**
  * Steal a random task.
  */
 #define lace_steal_random() CALL(lace_steal_random)
 void lace_steal_random_CALL(WorkerP*, Task*);
-
-/**
- * Steal random tasks until parameter *quit is set
- * Note: task declarations at end; quit is of type int*
- */
-#define lace_steal_random_loop(quit) CALL(lace_steal_random_loop, quit)
-#define lace_steal_loop(quit) CALL(lace_steal_loop, quit)
 
 /**
  * Barrier (all workers must enter it before progressing)
@@ -364,6 +383,8 @@ static inline void CHECKSTACK(WorkerP *w)
 #define CHECKSTACK(w) {}
 #endif
 
+void lace_abort_stack_overflow(void) __attribute__((noreturn));
+
 typedef struct
 {
     Task *t;
@@ -382,7 +403,25 @@ void lace_do_together(WorkerP *__lace_worker, Task *__lace_dq_head, Task *task);
 void lace_do_newframe(WorkerP *__lace_worker, Task *__lace_dq_head, Task *task);
 
 void lace_yield(WorkerP *__lace_worker, Task *__lace_dq_head);
-#define YIELD_NEWFRAME() { if (unlikely((*(volatile Task**)&lace_newframe.t) != NULL)) lace_yield(__lace_worker, __lace_dq_head); }
+#define YIELD_NEWFRAME() { if (unlikely((*(Task* volatile *)&lace_newframe.t) != NULL)) lace_yield(__lace_worker, __lace_dq_head); }
+
+/**
+ * Compute a random number, thread-local
+ */
+#define LACE_TRNG (__lace_worker->rng = 2862933555777941757ULL * __lace_worker->rng + 3037000493ULL)
+
+/**
+ * Make all tasks of the current worker shared.
+ */
+#define LACE_MAKE_ALL_SHARED() lace_make_all_shared(__lace_worker, __lace_dq_head)
+static inline void __attribute__((unused))
+lace_make_all_shared( WorkerP *w, Task *__lace_dq_head)
+{
+    if (w->split != __lace_dq_head) {
+        w->split = __lace_dq_head;
+        w->_public->ts.ts.split = __lace_dq_head - w->dq;
+    }
+}
 
 #if LACE_PIE_TIMES
 static void lace_time_event( WorkerP *w, int event )
@@ -620,7 +659,7 @@ typedef struct _TD_##NAME {                                                     
 } TD_##NAME;                                                                          \
                                                                                       \
 /* If this line generates an error, please manually set the define LACE_TASKSIZE to a higher value */\
-typedef char assertion_failed_task_descriptor_out_of_bounds_##NAME[(sizeof(TD_##NAME)<=sizeof(Task)) ? 1 : -1];\
+typedef char assertion_failed_task_descriptor_out_of_bounds_##NAME[(sizeof(TD_##NAME)<=sizeof(Task)) ? 0 : -1];\
                                                                                       \
 void NAME##_WRAP(WorkerP *, Task *, TD_##NAME *);                                     \
 RTYPE NAME##_CALL(WorkerP *, Task * );                                                \
@@ -636,7 +675,7 @@ void NAME##_SPAWN(WorkerP *w, Task *__dq_head )                                 
     TailSplit ts;                                                                     \
     uint32_t head, split, newsplit;                                                   \
                                                                                       \
-    /* assert(__dq_head < w->end); */ /* Assuming to be true */                       \
+    if (__dq_head == w->end) lace_abort_stack_overflow();                             \
                                                                                       \
     t = (TD_##NAME *)__dq_head;                                                       \
     t->f = &NAME##_WRAP;                                                              \
@@ -770,7 +809,7 @@ typedef struct _TD_##NAME {                                                     
 } TD_##NAME;                                                                          \
                                                                                       \
 /* If this line generates an error, please manually set the define LACE_TASKSIZE to a higher value */\
-typedef char assertion_failed_task_descriptor_out_of_bounds_##NAME[(sizeof(TD_##NAME)<=sizeof(Task)) ? 1 : -1];\
+typedef char assertion_failed_task_descriptor_out_of_bounds_##NAME[(sizeof(TD_##NAME)<=sizeof(Task)) ? 0 : -1];\
                                                                                       \
 void NAME##_WRAP(WorkerP *, Task *, TD_##NAME *);                                     \
 void NAME##_CALL(WorkerP *, Task * );                                                 \
@@ -786,7 +825,7 @@ void NAME##_SPAWN(WorkerP *w, Task *__dq_head )                                 
     TailSplit ts;                                                                     \
     uint32_t head, split, newsplit;                                                   \
                                                                                       \
-    /* assert(__dq_head < w->end); */ /* Assuming to be true */                       \
+    if (__dq_head == w->end) lace_abort_stack_overflow();                             \
                                                                                       \
     t = (TD_##NAME *)__dq_head;                                                       \
     t->f = &NAME##_WRAP;                                                              \
@@ -923,7 +962,7 @@ typedef struct _TD_##NAME {                                                     
 } TD_##NAME;                                                                          \
                                                                                       \
 /* If this line generates an error, please manually set the define LACE_TASKSIZE to a higher value */\
-typedef char assertion_failed_task_descriptor_out_of_bounds_##NAME[(sizeof(TD_##NAME)<=sizeof(Task)) ? 1 : -1];\
+typedef char assertion_failed_task_descriptor_out_of_bounds_##NAME[(sizeof(TD_##NAME)<=sizeof(Task)) ? 0 : -1];\
                                                                                       \
 void NAME##_WRAP(WorkerP *, Task *, TD_##NAME *);                                     \
 RTYPE NAME##_CALL(WorkerP *, Task * , ATYPE_1 arg_1);                                 \
@@ -939,7 +978,7 @@ void NAME##_SPAWN(WorkerP *w, Task *__dq_head , ATYPE_1 arg_1)                  
     TailSplit ts;                                                                     \
     uint32_t head, split, newsplit;                                                   \
                                                                                       \
-    /* assert(__dq_head < w->end); */ /* Assuming to be true */                       \
+    if (__dq_head == w->end) lace_abort_stack_overflow();                             \
                                                                                       \
     t = (TD_##NAME *)__dq_head;                                                       \
     t->f = &NAME##_WRAP;                                                              \
@@ -1073,7 +1112,7 @@ typedef struct _TD_##NAME {                                                     
 } TD_##NAME;                                                                          \
                                                                                       \
 /* If this line generates an error, please manually set the define LACE_TASKSIZE to a higher value */\
-typedef char assertion_failed_task_descriptor_out_of_bounds_##NAME[(sizeof(TD_##NAME)<=sizeof(Task)) ? 1 : -1];\
+typedef char assertion_failed_task_descriptor_out_of_bounds_##NAME[(sizeof(TD_##NAME)<=sizeof(Task)) ? 0 : -1];\
                                                                                       \
 void NAME##_WRAP(WorkerP *, Task *, TD_##NAME *);                                     \
 void NAME##_CALL(WorkerP *, Task * , ATYPE_1 arg_1);                                  \
@@ -1089,7 +1128,7 @@ void NAME##_SPAWN(WorkerP *w, Task *__dq_head , ATYPE_1 arg_1)                  
     TailSplit ts;                                                                     \
     uint32_t head, split, newsplit;                                                   \
                                                                                       \
-    /* assert(__dq_head < w->end); */ /* Assuming to be true */                       \
+    if (__dq_head == w->end) lace_abort_stack_overflow();                             \
                                                                                       \
     t = (TD_##NAME *)__dq_head;                                                       \
     t->f = &NAME##_WRAP;                                                              \
@@ -1226,7 +1265,7 @@ typedef struct _TD_##NAME {                                                     
 } TD_##NAME;                                                                          \
                                                                                       \
 /* If this line generates an error, please manually set the define LACE_TASKSIZE to a higher value */\
-typedef char assertion_failed_task_descriptor_out_of_bounds_##NAME[(sizeof(TD_##NAME)<=sizeof(Task)) ? 1 : -1];\
+typedef char assertion_failed_task_descriptor_out_of_bounds_##NAME[(sizeof(TD_##NAME)<=sizeof(Task)) ? 0 : -1];\
                                                                                       \
 void NAME##_WRAP(WorkerP *, Task *, TD_##NAME *);                                     \
 RTYPE NAME##_CALL(WorkerP *, Task * , ATYPE_1 arg_1, ATYPE_2 arg_2);                  \
@@ -1242,7 +1281,7 @@ void NAME##_SPAWN(WorkerP *w, Task *__dq_head , ATYPE_1 arg_1, ATYPE_2 arg_2)   
     TailSplit ts;                                                                     \
     uint32_t head, split, newsplit;                                                   \
                                                                                       \
-    /* assert(__dq_head < w->end); */ /* Assuming to be true */                       \
+    if (__dq_head == w->end) lace_abort_stack_overflow();                             \
                                                                                       \
     t = (TD_##NAME *)__dq_head;                                                       \
     t->f = &NAME##_WRAP;                                                              \
@@ -1376,7 +1415,7 @@ typedef struct _TD_##NAME {                                                     
 } TD_##NAME;                                                                          \
                                                                                       \
 /* If this line generates an error, please manually set the define LACE_TASKSIZE to a higher value */\
-typedef char assertion_failed_task_descriptor_out_of_bounds_##NAME[(sizeof(TD_##NAME)<=sizeof(Task)) ? 1 : -1];\
+typedef char assertion_failed_task_descriptor_out_of_bounds_##NAME[(sizeof(TD_##NAME)<=sizeof(Task)) ? 0 : -1];\
                                                                                       \
 void NAME##_WRAP(WorkerP *, Task *, TD_##NAME *);                                     \
 void NAME##_CALL(WorkerP *, Task * , ATYPE_1 arg_1, ATYPE_2 arg_2);                   \
@@ -1392,7 +1431,7 @@ void NAME##_SPAWN(WorkerP *w, Task *__dq_head , ATYPE_1 arg_1, ATYPE_2 arg_2)   
     TailSplit ts;                                                                     \
     uint32_t head, split, newsplit;                                                   \
                                                                                       \
-    /* assert(__dq_head < w->end); */ /* Assuming to be true */                       \
+    if (__dq_head == w->end) lace_abort_stack_overflow();                             \
                                                                                       \
     t = (TD_##NAME *)__dq_head;                                                       \
     t->f = &NAME##_WRAP;                                                              \
@@ -1529,7 +1568,7 @@ typedef struct _TD_##NAME {                                                     
 } TD_##NAME;                                                                          \
                                                                                       \
 /* If this line generates an error, please manually set the define LACE_TASKSIZE to a higher value */\
-typedef char assertion_failed_task_descriptor_out_of_bounds_##NAME[(sizeof(TD_##NAME)<=sizeof(Task)) ? 1 : -1];\
+typedef char assertion_failed_task_descriptor_out_of_bounds_##NAME[(sizeof(TD_##NAME)<=sizeof(Task)) ? 0 : -1];\
                                                                                       \
 void NAME##_WRAP(WorkerP *, Task *, TD_##NAME *);                                     \
 RTYPE NAME##_CALL(WorkerP *, Task * , ATYPE_1 arg_1, ATYPE_2 arg_2, ATYPE_3 arg_3);   \
@@ -1545,7 +1584,7 @@ void NAME##_SPAWN(WorkerP *w, Task *__dq_head , ATYPE_1 arg_1, ATYPE_2 arg_2, AT
     TailSplit ts;                                                                     \
     uint32_t head, split, newsplit;                                                   \
                                                                                       \
-    /* assert(__dq_head < w->end); */ /* Assuming to be true */                       \
+    if (__dq_head == w->end) lace_abort_stack_overflow();                             \
                                                                                       \
     t = (TD_##NAME *)__dq_head;                                                       \
     t->f = &NAME##_WRAP;                                                              \
@@ -1679,7 +1718,7 @@ typedef struct _TD_##NAME {                                                     
 } TD_##NAME;                                                                          \
                                                                                       \
 /* If this line generates an error, please manually set the define LACE_TASKSIZE to a higher value */\
-typedef char assertion_failed_task_descriptor_out_of_bounds_##NAME[(sizeof(TD_##NAME)<=sizeof(Task)) ? 1 : -1];\
+typedef char assertion_failed_task_descriptor_out_of_bounds_##NAME[(sizeof(TD_##NAME)<=sizeof(Task)) ? 0 : -1];\
                                                                                       \
 void NAME##_WRAP(WorkerP *, Task *, TD_##NAME *);                                     \
 void NAME##_CALL(WorkerP *, Task * , ATYPE_1 arg_1, ATYPE_2 arg_2, ATYPE_3 arg_3);    \
@@ -1695,7 +1734,7 @@ void NAME##_SPAWN(WorkerP *w, Task *__dq_head , ATYPE_1 arg_1, ATYPE_2 arg_2, AT
     TailSplit ts;                                                                     \
     uint32_t head, split, newsplit;                                                   \
                                                                                       \
-    /* assert(__dq_head < w->end); */ /* Assuming to be true */                       \
+    if (__dq_head == w->end) lace_abort_stack_overflow();                             \
                                                                                       \
     t = (TD_##NAME *)__dq_head;                                                       \
     t->f = &NAME##_WRAP;                                                              \
@@ -1832,7 +1871,7 @@ typedef struct _TD_##NAME {                                                     
 } TD_##NAME;                                                                          \
                                                                                       \
 /* If this line generates an error, please manually set the define LACE_TASKSIZE to a higher value */\
-typedef char assertion_failed_task_descriptor_out_of_bounds_##NAME[(sizeof(TD_##NAME)<=sizeof(Task)) ? 1 : -1];\
+typedef char assertion_failed_task_descriptor_out_of_bounds_##NAME[(sizeof(TD_##NAME)<=sizeof(Task)) ? 0 : -1];\
                                                                                       \
 void NAME##_WRAP(WorkerP *, Task *, TD_##NAME *);                                     \
 RTYPE NAME##_CALL(WorkerP *, Task * , ATYPE_1 arg_1, ATYPE_2 arg_2, ATYPE_3 arg_3, ATYPE_4 arg_4);\
@@ -1848,7 +1887,7 @@ void NAME##_SPAWN(WorkerP *w, Task *__dq_head , ATYPE_1 arg_1, ATYPE_2 arg_2, AT
     TailSplit ts;                                                                     \
     uint32_t head, split, newsplit;                                                   \
                                                                                       \
-    /* assert(__dq_head < w->end); */ /* Assuming to be true */                       \
+    if (__dq_head == w->end) lace_abort_stack_overflow();                             \
                                                                                       \
     t = (TD_##NAME *)__dq_head;                                                       \
     t->f = &NAME##_WRAP;                                                              \
@@ -1982,7 +2021,7 @@ typedef struct _TD_##NAME {                                                     
 } TD_##NAME;                                                                          \
                                                                                       \
 /* If this line generates an error, please manually set the define LACE_TASKSIZE to a higher value */\
-typedef char assertion_failed_task_descriptor_out_of_bounds_##NAME[(sizeof(TD_##NAME)<=sizeof(Task)) ? 1 : -1];\
+typedef char assertion_failed_task_descriptor_out_of_bounds_##NAME[(sizeof(TD_##NAME)<=sizeof(Task)) ? 0 : -1];\
                                                                                       \
 void NAME##_WRAP(WorkerP *, Task *, TD_##NAME *);                                     \
 void NAME##_CALL(WorkerP *, Task * , ATYPE_1 arg_1, ATYPE_2 arg_2, ATYPE_3 arg_3, ATYPE_4 arg_4);\
@@ -1998,7 +2037,7 @@ void NAME##_SPAWN(WorkerP *w, Task *__dq_head , ATYPE_1 arg_1, ATYPE_2 arg_2, AT
     TailSplit ts;                                                                     \
     uint32_t head, split, newsplit;                                                   \
                                                                                       \
-    /* assert(__dq_head < w->end); */ /* Assuming to be true */                       \
+    if (__dq_head == w->end) lace_abort_stack_overflow();                             \
                                                                                       \
     t = (TD_##NAME *)__dq_head;                                                       \
     t->f = &NAME##_WRAP;                                                              \
@@ -2135,7 +2174,7 @@ typedef struct _TD_##NAME {                                                     
 } TD_##NAME;                                                                          \
                                                                                       \
 /* If this line generates an error, please manually set the define LACE_TASKSIZE to a higher value */\
-typedef char assertion_failed_task_descriptor_out_of_bounds_##NAME[(sizeof(TD_##NAME)<=sizeof(Task)) ? 1 : -1];\
+typedef char assertion_failed_task_descriptor_out_of_bounds_##NAME[(sizeof(TD_##NAME)<=sizeof(Task)) ? 0 : -1];\
                                                                                       \
 void NAME##_WRAP(WorkerP *, Task *, TD_##NAME *);                                     \
 RTYPE NAME##_CALL(WorkerP *, Task * , ATYPE_1 arg_1, ATYPE_2 arg_2, ATYPE_3 arg_3, ATYPE_4 arg_4, ATYPE_5 arg_5);\
@@ -2151,7 +2190,7 @@ void NAME##_SPAWN(WorkerP *w, Task *__dq_head , ATYPE_1 arg_1, ATYPE_2 arg_2, AT
     TailSplit ts;                                                                     \
     uint32_t head, split, newsplit;                                                   \
                                                                                       \
-    /* assert(__dq_head < w->end); */ /* Assuming to be true */                       \
+    if (__dq_head == w->end) lace_abort_stack_overflow();                             \
                                                                                       \
     t = (TD_##NAME *)__dq_head;                                                       \
     t->f = &NAME##_WRAP;                                                              \
@@ -2285,7 +2324,7 @@ typedef struct _TD_##NAME {                                                     
 } TD_##NAME;                                                                          \
                                                                                       \
 /* If this line generates an error, please manually set the define LACE_TASKSIZE to a higher value */\
-typedef char assertion_failed_task_descriptor_out_of_bounds_##NAME[(sizeof(TD_##NAME)<=sizeof(Task)) ? 1 : -1];\
+typedef char assertion_failed_task_descriptor_out_of_bounds_##NAME[(sizeof(TD_##NAME)<=sizeof(Task)) ? 0 : -1];\
                                                                                       \
 void NAME##_WRAP(WorkerP *, Task *, TD_##NAME *);                                     \
 void NAME##_CALL(WorkerP *, Task * , ATYPE_1 arg_1, ATYPE_2 arg_2, ATYPE_3 arg_3, ATYPE_4 arg_4, ATYPE_5 arg_5);\
@@ -2301,7 +2340,7 @@ void NAME##_SPAWN(WorkerP *w, Task *__dq_head , ATYPE_1 arg_1, ATYPE_2 arg_2, AT
     TailSplit ts;                                                                     \
     uint32_t head, split, newsplit;                                                   \
                                                                                       \
-    /* assert(__dq_head < w->end); */ /* Assuming to be true */                       \
+    if (__dq_head == w->end) lace_abort_stack_overflow();                             \
                                                                                       \
     t = (TD_##NAME *)__dq_head;                                                       \
     t->f = &NAME##_WRAP;                                                              \
@@ -2438,7 +2477,7 @@ typedef struct _TD_##NAME {                                                     
 } TD_##NAME;                                                                          \
                                                                                       \
 /* If this line generates an error, please manually set the define LACE_TASKSIZE to a higher value */\
-typedef char assertion_failed_task_descriptor_out_of_bounds_##NAME[(sizeof(TD_##NAME)<=sizeof(Task)) ? 1 : -1];\
+typedef char assertion_failed_task_descriptor_out_of_bounds_##NAME[(sizeof(TD_##NAME)<=sizeof(Task)) ? 0 : -1];\
                                                                                       \
 void NAME##_WRAP(WorkerP *, Task *, TD_##NAME *);                                     \
 RTYPE NAME##_CALL(WorkerP *, Task * , ATYPE_1 arg_1, ATYPE_2 arg_2, ATYPE_3 arg_3, ATYPE_4 arg_4, ATYPE_5 arg_5, ATYPE_6 arg_6);\
@@ -2454,7 +2493,7 @@ void NAME##_SPAWN(WorkerP *w, Task *__dq_head , ATYPE_1 arg_1, ATYPE_2 arg_2, AT
     TailSplit ts;                                                                     \
     uint32_t head, split, newsplit;                                                   \
                                                                                       \
-    /* assert(__dq_head < w->end); */ /* Assuming to be true */                       \
+    if (__dq_head == w->end) lace_abort_stack_overflow();                             \
                                                                                       \
     t = (TD_##NAME *)__dq_head;                                                       \
     t->f = &NAME##_WRAP;                                                              \
@@ -2588,7 +2627,7 @@ typedef struct _TD_##NAME {                                                     
 } TD_##NAME;                                                                          \
                                                                                       \
 /* If this line generates an error, please manually set the define LACE_TASKSIZE to a higher value */\
-typedef char assertion_failed_task_descriptor_out_of_bounds_##NAME[(sizeof(TD_##NAME)<=sizeof(Task)) ? 1 : -1];\
+typedef char assertion_failed_task_descriptor_out_of_bounds_##NAME[(sizeof(TD_##NAME)<=sizeof(Task)) ? 0 : -1];\
                                                                                       \
 void NAME##_WRAP(WorkerP *, Task *, TD_##NAME *);                                     \
 void NAME##_CALL(WorkerP *, Task * , ATYPE_1 arg_1, ATYPE_2 arg_2, ATYPE_3 arg_3, ATYPE_4 arg_4, ATYPE_5 arg_5, ATYPE_6 arg_6);\
@@ -2604,7 +2643,7 @@ void NAME##_SPAWN(WorkerP *w, Task *__dq_head , ATYPE_1 arg_1, ATYPE_2 arg_2, AT
     TailSplit ts;                                                                     \
     uint32_t head, split, newsplit;                                                   \
                                                                                       \
-    /* assert(__dq_head < w->end); */ /* Assuming to be true */                       \
+    if (__dq_head == w->end) lace_abort_stack_overflow();                             \
                                                                                       \
     t = (TD_##NAME *)__dq_head;                                                       \
     t->f = &NAME##_WRAP;                                                              \
@@ -2731,10 +2770,6 @@ void NAME##_WORK(WorkerP *__lace_worker __attribute__((unused)), Task *__lace_dq
 #define VOID_TASK_6(NAME, ATYPE_1, ARG_1, ATYPE_2, ARG_2, ATYPE_3, ARG_3, ATYPE_4, ARG_4, ATYPE_5, ARG_5, ATYPE_6, ARG_6) VOID_TASK_DECL_6(NAME, ATYPE_1, ATYPE_2, ATYPE_3, ATYPE_4, ATYPE_5, ATYPE_6) VOID_TASK_IMPL_6(NAME, ATYPE_1, ARG_1, ATYPE_2, ARG_2, ATYPE_3, ARG_3, ATYPE_4, ARG_4, ATYPE_5, ARG_5, ATYPE_6, ARG_6)
 
 
-VOID_TASK_DECL_0(lace_steal_random);
-VOID_TASK_DECL_1(lace_steal_random_loop, int*);
-VOID_TASK_DECL_1(lace_steal_loop, int*);
-VOID_TASK_DECL_2(lace_steal_loop_root, Task *, int*);
 
 #ifdef __cplusplus
 }

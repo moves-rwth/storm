@@ -102,6 +102,24 @@ namespace storm {
             return static_cast<uint64_t>(bound);
         }
         
+        template <>
+        double BoundedUntilFormula::getNonStrictUpperBound() const {
+            double bound = getUpperBound<double>();
+            STORM_LOG_THROW(bound > 0, storm::exceptions::InvalidPropertyException, "Cannot retrieve non-strict bound from strict zero-bound.");
+            return bound;
+        }
+
+        template <>
+        uint64_t BoundedUntilFormula::getNonStrictUpperBound() const {
+            int_fast64_t bound = getUpperBound<uint64_t>();
+            if (isUpperBoundStrict()) {
+                STORM_LOG_THROW(bound > 0, storm::exceptions::InvalidPropertyException, "Cannot retrieve non-strict bound from strict zero-bound.");
+                return bound - 1;
+            } else {
+                return bound;
+            }
+        }
+        
         void BoundedUntilFormula::checkNoVariablesInBound(storm::expressions::Expression const& bound) {
             STORM_LOG_THROW(!bound.containsVariables(), storm::exceptions::InvalidOperationException, "Cannot evaluate time-bound '" << bound << "' as it contains undefined constants.");
         }

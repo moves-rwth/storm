@@ -12,7 +12,7 @@
 
 #include <getrss.h>
 #include <sylvan.h>
-#include <llmsset.h>
+#include <sylvan_table.h>
 
 /* Configuration */
 static int report_levels = 0; // report states at start of every level
@@ -22,6 +22,7 @@ static int check_deadlocks = 0; // set to 1 to check for deadlocks
 static int print_transition_matrix = 1; // print transition relation matrix
 static int workers = 0; // autodetect
 static char* model_filename = NULL; // filename of model
+static char* out_filename = NULL; // filename of output BDD
 #ifdef HAVE_PROFILER
 static char* profile_filename = NULL; // filename for profiling
 #endif
@@ -39,6 +40,7 @@ static struct argp_option options[] =
     {"count-table", 2, 0, 0, "Report table usage at each level", 1},
     {0, 0, 0, 0, 0, 0}
 };
+
 static error_t
 parse_opt(int key, char *arg, struct argp_state *state)
 {
@@ -67,8 +69,9 @@ parse_opt(int key, char *arg, struct argp_state *state)
         break;
 #endif
     case ARGP_KEY_ARG:
-        if (state->arg_num >= 1) argp_usage(state);
-        model_filename = arg;
+        if (state->arg_num == 0) model_filename = arg;
+        if (state->arg_num == 1) out_filename = arg;
+        if (state->arg_num >= 2) argp_usage(state);
         break; 
     case ARGP_KEY_END:
         if (state->arg_num < 1) argp_usage(state);
@@ -78,7 +81,8 @@ parse_opt(int key, char *arg, struct argp_state *state)
     }
     return 0;
 }
-static struct argp argp = { options, parse_opt, "<model>", 0, 0, 0, 0 };
+
+static struct argp argp = { options, parse_opt, "<model> [<output-bdd>]", 0, 0, 0, 0 };
 
 /* Globals */
 typedef struct set
@@ -122,6 +126,38 @@ set_load(FILE* f)
     set->proj = lddmc_ref(lddmc_serialize_get_reversed(proj));
     set->size = size;
 
+    return set;
+}
+
+/* Save a set to file */
+static void
+set_save(FILE* f, set_t set)
+{
+    size_t mdd = lddmc_serialize_add(set->mdd);
+    size_t proj = lddmc_serialize_add(set->proj);
+    lddmc_serialize_tofile(f);
+    fwrite(&mdd, sizeof(size_t), 1, f);
+    fwrite(&proj, sizeof(size_t), 1, f);
+    fwrite(&set->size, sizeof(int), 1, f);;
+}
+
+static void
+rel_save(FILE* f, rel_t rel)
+{
+    size_t mdd = lddmc_serialize_add(rel->mdd);
+    size_t meta = lddmc_serialize_add(rel->meta);
+    lddmc_serialize_tofile(f);
+    fwrite(&mdd, sizeof(size_t), 1, f);
+    fwrite(&meta, sizeof(size_t), 1, f);
+}
+
+static set_t
+set_clone(set_t source)
+{
+    set_t set = (set_t)malloc(sizeof(struct set));
+    set->mdd = lddmc_ref(source->mdd);
+    set->proj = lddmc_ref(source->proj);
+    set->size = source->size;
     return set;
 }
 
@@ -424,8 +460,10 @@ main(int argc, char **argv)
     // Nodes table size: 24 bytes * 2**N_nodes
     // Cache table size: 36 bytes * 2**N_cache
     // With: N_nodes=25, N_cache=24: 1.3 GB memory
-    sylvan_init_package(1LL<<21, 1LL<<27, 1LL<<20, 1LL<<26);
+    sylvan_set_sizes(1LL<<21, 1LL<<27, 1LL<<20, 1LL<<26);
+    sylvan_init_package();
     sylvan_init_ldd();
+    sylvan_init_mtbdd();
 
     // Read and report domain info (integers per vector and bits per integer)
     if (fread(&vector_size, sizeof(size_t), 1, f) != 1) Abort("Invalid input file!\n");
@@ -435,7 +473,8 @@ main(int argc, char **argv)
     // Read initial state
     printf("Loading initial state... ");
     fflush(stdout);
-    set_t states = set_load(f);
+    set_t initial = set_load(f);
+    set_t states = set_clone(initial);
     printf("done.\n");
 
     // Read transitions
@@ -493,7 +532,37 @@ main(int argc, char **argv)
     printf("Final states: %zu states\n", (size_t)lddmc_satcount_cached(states->mdd));
     printf("Final states: %zu MDD nodes\n", lddmc_nodecount(states->mdd));
 
-    sylvan_stats_report(stdout, 1);
+    if (out_filename != NULL) {
+        printf("Writing to %s.\n", out_filename);
+
+        // Create LDD file
+        FILE *f = fopen(out_filename, "w");
+        lddmc_serialize_reset();
+
+        // Write domain...
+        fwrite(&vector_size, sizeof(size_t), 1, f);
+
+        // Write initial state...
+        set_save(f, initial);
+
+        // Write number of transitions
+        fwrite(&next_count, sizeof(int), 1, f);
+
+        // Write transitions
+        for (int i=0; i<next_count; i++) {
+            rel_save(f, next[i]);
+        }
+
+        // Write reachable states
+        int has_reachable = 1;
+        fwrite(&has_reachable, sizeof(int), 1, f);
+        set_save(f, states);
+
+        // Write action labels
+        fclose(f);
+    }
+
+    sylvan_stats_report(stdout);
 
     return 0;
 }

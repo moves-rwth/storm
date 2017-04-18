@@ -79,7 +79,7 @@ namespace storm {
 
             template<typename ParametricSparseModelType, typename ConstantType>
             ConstantType SparseRegionModelChecker<ParametricSparseModelType, ConstantType>::getSpecifiedFormulaBound() const {
-                return storm::utility::region::convertNumber<ConstantType>(this->getSpecifiedFormula()->getThreshold());
+                return this->getSpecifiedFormula()->template getThresholdAs<ConstantType>();
             }
 
             template<typename ParametricSparseModelType, typename ConstantType>
@@ -177,7 +177,7 @@ namespace storm {
                             (!settings.doSample() && settings.getApproxMode()==storm::settings::modules::RegionSettings::ApproxMode::TESTFIRST)){
                         initializeSamplingModel(*this->getSimpleModel(), this->getSimpleFormula());
                     }
-                } else if (this->isResultConstant() && this->constantResult.get() == storm::utility::region::convertNumber<ConstantType>(-1.0)){
+                } else if (this->isResultConstant() && this->constantResult.get() == storm::utility::convertNumber<ConstantType>(-1.0)){
                     //In this case, the result is constant but has not been computed yet. so do it now!
                     STORM_LOG_DEBUG("The Result is constant and will be computed now.");
                     initializeSamplingModel(*this->getSimpleModel(), this->getSimpleFormula());
@@ -241,7 +241,7 @@ namespace storm {
                 CoefficientType fractionOfUndiscoveredArea = storm::utility::one<CoefficientType>();
                 CoefficientType fractionOfAllSatArea = storm::utility::zero<CoefficientType>();
                 CoefficientType fractionOfAllViolatedArea = storm::utility::zero<CoefficientType>();
-                while(fractionOfUndiscoveredArea > storm::utility::region::convertNumber<CoefficientType>(refinementThreshold)){
+                while(fractionOfUndiscoveredArea > storm::utility::convertNumber<CoefficientType>(refinementThreshold)){
                     STORM_LOG_THROW(indexOfCurrentRegion < regions.size(), storm::exceptions::InvalidStateException, "Threshold for undiscovered area not reached but no unprocessed regions left.");
                     ParameterRegion<ParametricType>& currentRegion = regions[indexOfCurrentRegion];
                     this->checkRegion(currentRegion);
@@ -263,7 +263,7 @@ namespace storm {
                     ++indexOfCurrentRegion;
                 }
                 std::cout << " done! " << std::endl << "Fraction of ALLSAT;ALLVIOLATED;UNDISCOVERED area:" << std::endl;
-                std::cout << "REFINEMENTRESULT;" <<storm::utility::region::convertNumber<double>(fractionOfAllSatArea) << ";" << storm::utility::region::convertNumber<double>(fractionOfAllViolatedArea) << ";" << storm::utility::region::convertNumber<double>(fractionOfUndiscoveredArea) << std::endl;
+                std::cout << "REFINEMENTRESULT;" <<storm::utility::convertNumber<double>(fractionOfAllSatArea) << ";" << storm::utility::convertNumber<double>(fractionOfAllViolatedArea) << ";" << storm::utility::convertNumber<double>(fractionOfUndiscoveredArea) << std::endl;
                 
             }
             
@@ -487,7 +487,7 @@ namespace storm {
             
             template<typename ParametricSparseModelType, typename ConstantType>
             bool SparseRegionModelChecker<ParametricSparseModelType, ConstantType>::valueIsInBoundOfFormula(CoefficientType const& value){
-                return valueIsInBoundOfFormula(storm::utility::region::convertNumber<ConstantType>(value));
+                return valueIsInBoundOfFormula(storm::utility::convertNumber<ConstantType>(value));
             }
 
             template<typename ParametricSparseModelType, typename ConstantType>

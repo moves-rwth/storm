@@ -53,17 +53,15 @@ namespace storm {
             InternalBdd& operator=(InternalBdd<DdType::CUDD>&& other) = default;
 
             /*!
-             * Builds a BDD representing the values that make the given filter function evaluate to true.
+             * Builds a BDD representing the indices that make the given filter function evaluate to true.
              *
              * @param ddManager The manager responsible for the BDD.
-             * @param values The values that are to be checked against the filter function.
              * @param odd The ODD used for the translation.
              * @param metaVariables The meta variables used for the translation.
              * @param filter The filter that evaluates whether an encoding is to be mapped to 0 or 1.
              * @return The resulting BDD.
              */
-            template<typename ValueType>
-            static InternalBdd<storm::dd::DdType::CUDD> fromVector(InternalDdManager<DdType::CUDD> const* ddManager, std::vector<ValueType> const& values, Odd const& odd, std::vector<uint_fast64_t> const& sortedDdVariableIndices, std::function<bool (ValueType const&)> const& filter);
+            static InternalBdd<storm::dd::DdType::CUDD> fromVector(InternalDdManager<DdType::CUDD> const* ddManager, Odd const& odd, std::vector<uint_fast64_t> const& sortedDdVariableIndices, std::function<bool (uint64_t)> const& filter);
             
             /*!
              * Retrieves whether the two BDDs represent the same function.
@@ -376,6 +374,16 @@ namespace storm {
              */
             template<typename ValueType>
             void filterExplicitVector(Odd const& odd, std::vector<uint_fast64_t> const& ddVariableIndices, std::vector<ValueType> const& sourceValues, std::vector<ValueType>& targetValues) const;
+
+            /*!
+             * Uses the current BDD to filter values from the explicit vector.
+             *
+             * @param odd The ODD used to determine which entries to select.
+             * @param ddVariableIndices The indices of the DD variables contained in this BDD.
+             * @param sourceValues The source vector.
+             * @param targetValues The vector to which to write the selected values.
+             */
+            void filterExplicitVector(Odd const& odd, std::vector<uint_fast64_t> const& ddVariableIndices, storm::storage::BitVector const& sourceValues, storm::storage::BitVector& targetValues) const;
             
             friend struct std::hash<storm::dd::InternalBdd<storm::dd::DdType::CUDD>>;
             
@@ -401,14 +409,12 @@ namespace storm {
              * @param currentOffset The current offset in the vector.
              * @param currentLevel The current level in the DD.
              * @param maxLevel The maximal level in the DD.
-             * @param values The values that are to be checked against the filter function.
              * @param odd The ODD used for the translation.
              * @param ddVariableIndices The (sorted) list of DD variable indices to use.
              * @param filter A function that determines which encodings are to be mapped to true.
              * @return The resulting (CUDD) BDD node.
              */
-            template<typename ValueType>
-            static DdNode* fromVectorRec(::DdManager* manager, uint_fast64_t& currentOffset, uint_fast64_t currentLevel, uint_fast64_t maxLevel, std::vector<ValueType> const& values, Odd const& odd, std::vector<uint_fast64_t> const& ddVariableIndices, std::function<bool (ValueType const&)> const& filter);
+            static DdNode* fromVectorRec(::DdManager* manager, uint_fast64_t& currentOffset, uint_fast64_t currentLevel, uint_fast64_t maxLevel,  Odd const& odd, std::vector<uint_fast64_t> const& ddVariableIndices, std::function<bool (uint64_t)> const& filter);
             
             /*!
              * Helper function to convert the DD into a bit vector.
@@ -462,6 +468,22 @@ namespace storm {
              */
             template<typename ValueType>
             static void filterExplicitVectorRec(DdNode const* dd, cudd::Cudd const& manager, uint_fast64_t currentLevel, bool complement, uint_fast64_t maxLevel, std::vector<uint_fast64_t> const& ddVariableIndices, uint_fast64_t currentOffset, storm::dd::Odd const& odd, std::vector<ValueType>& result, uint_fast64_t& currentIndex, std::vector<ValueType> const& values);
+            
+            /*!
+             * Adds the selected values the target vector.
+             *
+             * @param dd The current node of the DD representing the selected values.
+             * @param manager The manager responsible for the DD.
+             * @param currentLevel The currently considered level in the DD.
+             * @param maxLevel The number of levels that need to be considered.
+             * @param ddVariableIndices The sorted list of variable indices to use.
+             * @param currentOffset The offset along the path taken in the DD representing the selected values.
+             * @param odd The current ODD node.
+             * @param result The target vector to which to write the values.
+             * @param currentIndex The index at which the next element is to be written.
+             * @param values The value vector from which to select the values.
+             */
+            static void filterExplicitVectorRec(DdNode const* dd, cudd::Cudd const& manager, uint_fast64_t currentLevel, bool complement, uint_fast64_t maxLevel, std::vector<uint_fast64_t> const& ddVariableIndices, uint_fast64_t currentOffset, storm::dd::Odd const& odd, storm::storage::BitVector& result, uint_fast64_t& currentIndex, storm::storage::BitVector const& values);
             
             /*!
              * Creates a vector of expressions that represent the function of the given BDD node.

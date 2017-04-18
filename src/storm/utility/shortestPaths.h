@@ -55,6 +55,9 @@ namespace storm {
                 }
             };
 
+            template <typename T>
+            std::ostream& operator<<(std::ostream& out, Path<T> const& p);
+
             // when using the raw matrix/vector invocation, this enum parameter
             // forces the caller to declare whether the matrix has the evil I-P
             // format, which requires back-conversion of the entries

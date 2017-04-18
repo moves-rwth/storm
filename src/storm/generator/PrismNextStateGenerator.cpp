@@ -22,7 +22,7 @@ namespace storm {
         }
         
         template<typename ValueType, typename StateType>
-        PrismNextStateGenerator<ValueType, StateType>::PrismNextStateGenerator(storm::prism::Program const& program, NextStateGeneratorOptions const& options, bool) : NextStateGenerator<ValueType, StateType>(program.getManager(), options), program(program), rewardModels() {
+        PrismNextStateGenerator<ValueType, StateType>::PrismNextStateGenerator(storm::prism::Program const& program, NextStateGeneratorOptions const& options, bool) : NextStateGenerator<ValueType, StateType>(program.getManager(), options), program(program), rewardModels(), hasStateActionRewards(false) {
             STORM_LOG_TRACE("Creating next-state generator for PRISM program: " << program);
             STORM_LOG_THROW(!this->program.specifiesSystemComposition(), storm::exceptions::WrongFormatException, "The explicit next-state generator currently does not support custom system compositions.");
                         
@@ -205,7 +205,7 @@ namespace storm {
                     }
                 }
             }
-            
+
             // Get all choices for the state.
             result.setExpanded();
             std::vector<Choice<ValueType>> allChoices = getUnlabeledChoices(*this->state, stateToIdCallback);
@@ -262,7 +262,9 @@ namespace storm {
                             
                         }
                     }
-                    globalChoice.addReward(stateActionRewardValue / totalExitRate);
+                    if (hasStateActionRewards) {
+                        globalChoice.addReward(stateActionRewardValue / totalExitRate);
+                    }
                 }
                 
                 // Move the newly fused choice in place.
@@ -439,7 +441,7 @@ namespace storm {
         template<typename ValueType, typename StateType>
         std::vector<Choice<ValueType>> PrismNextStateGenerator<ValueType, StateType>::getLabeledChoices(CompressedState const& state, StateToIdCallback stateToIdCallback) {
             std::vector<Choice<ValueType>> result;
-            
+
             for (uint_fast64_t actionIndex : program.getSynchronizingActionIndices()) {
                 boost::optional<std::vector<std::vector<std::reference_wrapper<storm::prism::Command const>>>> optionalActiveCommandLists = getActiveCommandsByActionIndex(actionIndex);
                 
@@ -467,9 +469,9 @@ namespace storm {
                                 storm::prism::Update const& update = command.getUpdate(j);
                                 
                                 for (auto const& stateProbabilityPair : *currentTargetStates) {
-                                    auto probability = stateProbabilityPair.second * this->evaluator->asRational(update.getLikelihoodExpression());
-                                    
-                                    if (probability != storm::utility::zero<ValueType>()) {
+                                    ValueType probability = stateProbabilityPair.second * this->evaluator->asRational(update.getLikelihoodExpression());
+
+                                    if (!storm::utility::isZero<ValueType>(probability)) {
                                         // Compute the new state under the current update and add it to the set of new target states.
                                         CompressedState newTargetState = applyUpdate(stateProbabilityPair.first, update);
                                         

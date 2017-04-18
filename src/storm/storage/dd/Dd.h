@@ -109,7 +109,7 @@ namespace storm {
              *
              * A pointer to the manager that is responsible for this DD.
              */
-            DdManager<LibraryType> const& getDdManager() const;
+            DdManager<LibraryType>& getDdManager() const;
             
             /*!
              * Retrieves the set of all meta variables contained in the DD.
@@ -182,7 +182,7 @@ namespace storm {
             
         private:
             // A pointer to the manager responsible for this DD.
-            DdManager<LibraryType> const* ddManager;
+            DdManager<LibraryType>* ddManager;
             
             // The meta variables that appear in this DD.
             std::set<storm::expressions::Variable> containedMetaVariables;

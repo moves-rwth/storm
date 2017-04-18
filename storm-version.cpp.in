@@ -1,4 +1,4 @@
-//AUTO GENERATED -- DO NOT CHANGE 
+//AUTO GENERATED -- DO NOT CHANGE
 // TODO resolve issues when placing this in the build order directly.
 #include "storm/utility/storm-version.h"
 
@@ -8,9 +8,9 @@ namespace storm {
         const unsigned StormVersion::versionMajor = @STORM_VERSION_MAJOR@;
         const unsigned StormVersion::versionMinor = @STORM_VERSION_MINOR@;
         const unsigned StormVersion::versionPatch = @STORM_VERSION_PATCH@;
-        const boost::optional<std::string> StormVersion::gitRevisionHash = @STORM_VERSION_GIT_HASH@;
-        const boost::optional<unsigned> StormVersion::commitsAhead = @STORM_VERSION_COMMITS_AHEAD@;
-        const boost::optional<unsigned> StormVersion::dirty = @STORM_VERSION_DIRTY@;
+        const std::string StormVersion::gitRevisionHash = "@STORM_VERSION_GIT_HASH@";
+        const unsigned StormVersion::commitsAhead = @STORM_VERSION_COMMITS_AHEAD@;
+        const boost::optional<bool> StormVersion::dirty = @STORM_VERSION_DIRTY@;
         const std::string StormVersion::systemName = "@CMAKE_SYSTEM_NAME@";
         const std::string StormVersion::systemVersion = "@CMAKE_SYSTEM_VERSION@";
         const std::string StormVersion::cxxCompiler = "@STORM_COMPILER_ID@ @CMAKE_CXX_COMPILER_VERSION@";

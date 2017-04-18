@@ -58,9 +58,10 @@ namespace storm {
              * Helper for parsing the actions of a model.
              */
             void parseActions(json const& actionStructure, storm::jani::Model& parentModel);
-            std::shared_ptr<storm::logic::Formula const> parseFormula(json const& propertyStructure,   storm::logic::FormulaContext formulaContext, std::unordered_map<std::string, std::shared_ptr<storm::jani::Variable>> const& globalVars, std::unordered_map<std::string, std::shared_ptr<storm::jani::Constant>> const& constants, std::string const& context,  boost::optional<storm::logic::Bound<storm::RationalNumber>> bound = boost::none);
+            std::shared_ptr<storm::logic::Formula const> parseFormula(json const& propertyStructure,   storm::logic::FormulaContext formulaContext, std::unordered_map<std::string, std::shared_ptr<storm::jani::Variable>> const& globalVars, std::unordered_map<std::string, std::shared_ptr<storm::jani::Constant>> const& constants, std::string const& context,  boost::optional<storm::logic::Bound> bound = boost::none);
             std::vector<storm::expressions::Expression> parseUnaryExpressionArguments(json const& expressionStructure, std::string const& opstring, std::string const& scopeDescription, std::unordered_map<std::string, std::shared_ptr<storm::jani::Variable>> const& globalVars, std::unordered_map<std::string, std::shared_ptr<storm::jani::Constant>> const& constants,  std::unordered_map<std::string, std::shared_ptr<storm::jani::Variable>> const& localVars= {}, bool returnNoneOnUnknownOpString = false);
             std::vector<storm::expressions::Expression> parseBinaryExpressionArguments(json const& expressionStructure, std::string const& opstring,  std::string const& scopeDescription, std::unordered_map<std::string, std::shared_ptr<storm::jani::Variable>> const& globalVars, std::unordered_map<std::string, std::shared_ptr<storm::jani::Constant>> const& constants,  std::unordered_map<std::string, std::shared_ptr<storm::jani::Variable>> const& localVars = {}, bool returnNoneOnUnknownOpString = false);
+
 
             std::vector<std::shared_ptr<storm::logic::Formula const>> parseUnaryFormulaArgument(json const& propertyStructure, storm::logic::FormulaContext formulaContext,  std::string const& opstring, std::unordered_map<std::string, std::shared_ptr<storm::jani::Variable>> const& globalVars, std::unordered_map<std::string, std::shared_ptr<storm::jani::Constant>> const& constants, std::string const& context);
             std::vector<std::shared_ptr<storm::logic::Formula const>> parseBinaryFormulaArguments(json const& propertyStructure, storm::logic::FormulaContext formulaContext, std::string const& opstring, std::unordered_map<std::string, std::shared_ptr<storm::jani::Variable>> const& globalVars, std::unordered_map<std::string, std::shared_ptr<storm::jani::Constant>> const& constants, std::string const& context);
@@ -69,6 +70,7 @@ namespace storm {
             
             std::shared_ptr<storm::jani::Composition> parseComposition(json const& compositionStructure);
             storm::expressions::Variable getVariableOrConstantExpression(std::string const& ident, std::string const& scopeDescription, std::unordered_map<std::string, std::shared_ptr<storm::jani::Variable>> const& globalVars, std::unordered_map<std::string, std::shared_ptr<storm::jani::Constant>> const& constants,  std::unordered_map<std::string, std::shared_ptr<storm::jani::Variable>> const& localVars = {});
+
 
             
             /**

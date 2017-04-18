@@ -11,6 +11,8 @@
 #include "storm-config.h"
 #include "storm/adapters/CarlAdapter.h"
 
+#include "storm/utility/constants.h"
+
 namespace storm {
     namespace adapters {
         
@@ -32,6 +34,11 @@ namespace storm {
         storm::dd::Bdd<Type> AddExpressionAdapter<Type, ValueType>::translateBooleanExpression(storm::expressions::Expression const& expression) {
             STORM_LOG_THROW(expression.hasBooleanType(), storm::exceptions::InvalidArgumentException, "Expected expression of boolean type.");
             return boost::any_cast<storm::dd::Bdd<Type>>(expression.accept(*this, boost::none));
+        }
+        
+        template<storm::dd::DdType Type, typename ValueType>
+        void AddExpressionAdapter<Type, ValueType>::setValue(storm::expressions::Variable const& variable, ValueType const& value) {
+            valueMapping[variable] = value;
         }
         
         template<storm::dd::DdType Type, typename ValueType>
@@ -143,12 +150,17 @@ namespace storm {
         
         template<storm::dd::DdType Type, typename ValueType>
         boost::any AddExpressionAdapter<Type, ValueType>::visit(storm::expressions::VariableExpression const& expression, boost::any const&) {
-            auto const& variablePair = variableMapping->find(expression.getVariable());
-            STORM_LOG_THROW(variablePair != variableMapping->end(), storm::exceptions::InvalidArgumentException, "Cannot translate the given expression, because it contains the variable '" << expression.getVariableName() << "' for which no DD counterpart is known.");
-            if (expression.hasBooleanType()) {
-                return ddManager->template getIdentity<ValueType>(variablePair->second).toBdd();
+            auto valueIt = valueMapping.find(expression.getVariable());
+            if (valueIt != valueMapping.end()) {
+                return ddManager->getConstant(valueIt->second);
             } else {
-                return ddManager->template getIdentity<ValueType>(variablePair->second);
+                auto const& variablePair = variableMapping->find(expression.getVariable());
+                STORM_LOG_THROW(variablePair != variableMapping->end(), storm::exceptions::InvalidArgumentException, "Cannot translate the given expression, because it contains the variable '" << expression.getVariableName() << "' for which no DD counterpart is known.");
+                if (expression.hasBooleanType()) {
+                    return ddManager->template getIdentity<ValueType>(variablePair->second).toBdd();
+                } else {
+                    return ddManager->template getIdentity<ValueType>(variablePair->second);
+                }
             }
         }
         
@@ -193,18 +205,20 @@ namespace storm {
         
         template<storm::dd::DdType Type, typename ValueType>
         boost::any AddExpressionAdapter<Type, ValueType>::visit(storm::expressions::IntegerLiteralExpression const& expression, boost::any const&) {
-            return ddManager->getConstant(static_cast<ValueType>(expression.getValue()));
+            return ddManager->getConstant(storm::utility::convertNumber<ValueType>(expression.getValue()));
         }
         
         template<storm::dd::DdType Type, typename ValueType>
         boost::any AddExpressionAdapter<Type, ValueType>::visit(storm::expressions::RationalLiteralExpression const& expression, boost::any const&) {
-            return ddManager->getConstant(static_cast<ValueType>(expression.getValueAsDouble()));
+            return ddManager->getConstant(storm::utility::convertNumber<ValueType>(expression.getValue()));
         }
         
         // Explicitly instantiate the symbolic expression adapter
         template class AddExpressionAdapter<storm::dd::DdType::CUDD, double>;
         template class AddExpressionAdapter<storm::dd::DdType::Sylvan, double>;
+        
 #ifdef STORM_HAVE_CARL
+        template class AddExpressionAdapter<storm::dd::DdType::Sylvan, storm::RationalNumber>;
 		template class AddExpressionAdapter<storm::dd::DdType::Sylvan, storm::RationalFunction>;
 #endif
     } // namespace adapters

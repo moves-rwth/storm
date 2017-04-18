@@ -296,7 +296,7 @@ namespace storm {
                 }
                 if(isResultConstant){
                     STORM_LOG_WARN("For the given property, the reachability Value is constant, i.e., independent of the region");
-                    constantResult = storm::utility::region::convertNumber<ConstantType>(-1.0);
+                    constantResult = storm::utility::convertNumber<ConstantType>(-1.0);
                 }
             }
 
@@ -392,7 +392,7 @@ namespace storm {
                 }
                 if(isResultConstant){
                     STORM_LOG_WARN("For the given property, the reachability Value is constant, i.e., independent of the region");
-                    constantResult = storm::utility::region::convertNumber<ConstantType>(-1.0);
+                    constantResult = storm::utility::convertNumber<ConstantType>(-1.0);
                 }
             }
 
@@ -597,7 +597,7 @@ namespace storm {
                 storm::expressions::ExpressionManager manager; //this manager will do nothing as we will use carl expressions..
                 this->smtSolver = std::shared_ptr<storm::solver::SmtlibSmtSolver>(new storm::solver::SmtlibSmtSolver(manager, true));
 
-                ParametricType bound= storm::utility::region::convertNumber<ParametricType>(this->getSpecifiedFormulaBound());
+                ParametricType bound= storm::utility::convertNumber<ParametricType>(this->getSpecifiedFormulaBound());
 
                 // To prove that the property is satisfied in the initial state for all parameters,
                 // we ask the solver whether the negation of the property is satisfiable and invert the answer.

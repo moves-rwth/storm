@@ -39,7 +39,7 @@ namespace storm {
                 // Check whether we need to compute exact probabilities for some states.
                 if (qualitative) {
                     // Set the values for all maybe-states to 0.5 to indicate that their probability values are neither 0 nor 1.
-                    return std::unique_ptr<CheckResult>(new storm::modelchecker::SymbolicQuantitativeCheckResult<DdType>(model.getReachableStates(), statesWithProbability01.second.template toAdd<ValueType>() + maybeStates.template toAdd<ValueType>() * model.getManager().getConstant(0.5)));
+                    return std::unique_ptr<CheckResult>(new storm::modelchecker::SymbolicQuantitativeCheckResult<DdType, ValueType>(model.getReachableStates(), statesWithProbability01.second.template toAdd<ValueType>() + maybeStates.template toAdd<ValueType>() * model.getManager().template getConstant<ValueType>(storm::utility::convertNumber<ValueType>(0.5))));
                 } else {
                     // If there are maybe states, we need to solve an equation system.
                     if (!maybeStates.isZero()) {
@@ -66,20 +66,20 @@ namespace storm {
                         submatrix = (model.getRowColumnIdentity() * maybeStatesAdd) - submatrix;
                         
                         // Create the solution vector.
-                        std::vector<ValueType> x(maybeStates.getNonZeroCount(), ValueType(0.5));
+                        std::vector<ValueType> x(maybeStates.getNonZeroCount(), storm::utility::convertNumber<ValueType>(0.5));
                         
                         // Translate the symbolic matrix/vector to their explicit representations and solve the equation system.
                         storm::storage::SparseMatrix<ValueType> explicitSubmatrix = submatrix.toMatrix(odd, odd);
                         std::vector<ValueType> b = subvector.toVector(odd);
-                        
+                            
                         std::unique_ptr<storm::solver::LinearEquationSolver<ValueType>> solver = linearEquationSolverFactory.create(std::move(explicitSubmatrix));
                         solver->setBounds(storm::utility::zero<ValueType>(), storm::utility::one<ValueType>());
                         solver->solveEquations(x, b);
                         
                         // Return a hybrid check result that stores the numerical values explicitly.
-                        return std::unique_ptr<CheckResult>(new storm::modelchecker::HybridQuantitativeCheckResult<DdType>(model.getReachableStates(), model.getReachableStates() && !maybeStates, statesWithProbability01.second.template toAdd<ValueType>(), maybeStates, odd, x));
+                        return std::unique_ptr<CheckResult>(new storm::modelchecker::HybridQuantitativeCheckResult<DdType, ValueType>(model.getReachableStates(), model.getReachableStates() && !maybeStates, statesWithProbability01.second.template toAdd<ValueType>(), maybeStates, odd, x));
                     } else {
-                        return std::unique_ptr<CheckResult>(new storm::modelchecker::SymbolicQuantitativeCheckResult<DdType>(model.getReachableStates(), statesWithProbability01.second.template toAdd<ValueType>()));
+                        return std::unique_ptr<CheckResult>(new storm::modelchecker::SymbolicQuantitativeCheckResult<DdType, ValueType>(model.getReachableStates(), statesWithProbability01.second.template toAdd<ValueType>()));
                     }
                 }
             }
@@ -94,7 +94,7 @@ namespace storm {
             template<storm::dd::DdType DdType, typename ValueType>
             std::unique_ptr<CheckResult> HybridDtmcPrctlHelper<DdType, ValueType>::computeNextProbabilities(storm::models::symbolic::Model<DdType, ValueType> const& model, storm::dd::Add<DdType, ValueType> const& transitionMatrix, storm::dd::Bdd<DdType> const& nextStates) {
                 storm::dd::Add<DdType, ValueType> result = transitionMatrix * nextStates.swapVariables(model.getRowColumnMetaVariablePairs()).template toAdd<ValueType>();
-                return std::unique_ptr<CheckResult>(new SymbolicQuantitativeCheckResult<DdType>(model.getReachableStates(), result.sumAbstract(model.getColumnVariables())));
+                return std::unique_ptr<CheckResult>(new SymbolicQuantitativeCheckResult<DdType, ValueType>(model.getReachableStates(), result.sumAbstract(model.getColumnVariables())));
             }
 
             template<storm::dd::DdType DdType, typename ValueType>
@@ -135,9 +135,9 @@ namespace storm {
                     solver->repeatedMultiply(x, &b, stepBound);
                     
                     // Return a hybrid check result that stores the numerical values explicitly.
-                    return std::unique_ptr<CheckResult>(new storm::modelchecker::HybridQuantitativeCheckResult<DdType>(model.getReachableStates(), model.getReachableStates() && !maybeStates, psiStates.template toAdd<ValueType>(), maybeStates, odd, x));
+                    return std::unique_ptr<CheckResult>(new storm::modelchecker::HybridQuantitativeCheckResult<DdType, ValueType>(model.getReachableStates(), model.getReachableStates() && !maybeStates, psiStates.template toAdd<ValueType>(), maybeStates, odd, x));
                 } else {
-                    return std::unique_ptr<CheckResult>(new storm::modelchecker::SymbolicQuantitativeCheckResult<DdType>(model.getReachableStates(), psiStates.template toAdd<ValueType>()));
+                    return std::unique_ptr<CheckResult>(new storm::modelchecker::SymbolicQuantitativeCheckResult<DdType, ValueType>(model.getReachableStates(), psiStates.template toAdd<ValueType>()));
                 }
             }
 
@@ -160,7 +160,7 @@ namespace storm {
                 solver->repeatedMultiply(x, nullptr, stepBound);
                 
                 // Return a hybrid check result that stores the numerical values explicitly.
-                return std::unique_ptr<CheckResult>(new HybridQuantitativeCheckResult<DdType>(model.getReachableStates(), model.getManager().getBddZero(), model.getManager().template getAddZero<ValueType>(), model.getReachableStates(), odd, x));
+                return std::unique_ptr<CheckResult>(new HybridQuantitativeCheckResult<DdType, ValueType>(model.getReachableStates(), model.getManager().getBddZero(), model.getManager().template getAddZero<ValueType>(), model.getReachableStates(), odd, x));
             }
             
             template<storm::dd::DdType DdType, typename ValueType>
@@ -186,7 +186,7 @@ namespace storm {
                 solver->repeatedMultiply(x, &b, stepBound);
                 
                 // Return a hybrid check result that stores the numerical values explicitly.
-                return std::unique_ptr<CheckResult>(new HybridQuantitativeCheckResult<DdType>(model.getReachableStates(), model.getManager().getBddZero(), model.getManager().template getAddZero<ValueType>(), model.getReachableStates(), odd, x));
+                return std::unique_ptr<CheckResult>(new HybridQuantitativeCheckResult<DdType, ValueType>(model.getReachableStates(), model.getManager().getBddZero(), model.getManager().template getAddZero<ValueType>(), model.getReachableStates(), odd, x));
             }
             
             template<storm::dd::DdType DdType, typename ValueType>
@@ -207,7 +207,7 @@ namespace storm {
                 if (qualitative) {
                     // Set the values for all maybe-states to 1 to indicate that their reward values
                     // are neither 0 nor infinity.
-                    return std::unique_ptr<CheckResult>(new SymbolicQuantitativeCheckResult<DdType>(model.getReachableStates(), infinityStates.ite(model.getManager().getConstant(storm::utility::infinity<ValueType>()), model.getManager().template getAddZero<ValueType>()) + maybeStates.template toAdd<ValueType>() * model.getManager().template getAddOne<ValueType>()));
+                    return std::unique_ptr<CheckResult>(new SymbolicQuantitativeCheckResult<DdType, ValueType>(model.getReachableStates(), infinityStates.ite(model.getManager().getConstant(storm::utility::infinity<ValueType>()), model.getManager().template getAddZero<ValueType>()) + maybeStates.template toAdd<ValueType>() * model.getManager().template getAddOne<ValueType>()));
                 } else {
                     // If there are maybe states, we need to solve an equation system.
                     if (!maybeStates.isZero()) {
@@ -230,7 +230,7 @@ namespace storm {
                         submatrix = (model.getRowColumnIdentity() * maybeStatesAdd) - submatrix;
                         
                         // Create the solution vector.
-                        std::vector<ValueType> x(maybeStates.getNonZeroCount(), ValueType(0.5));
+                        std::vector<ValueType> x(maybeStates.getNonZeroCount(), storm::utility::convertNumber<ValueType>(0.5));
                         
                         // Translate the symbolic matrix/vector to their explicit representations.
                         storm::storage::SparseMatrix<ValueType> explicitSubmatrix = submatrix.toMatrix(odd, odd);
@@ -242,9 +242,9 @@ namespace storm {
                         solver->solveEquations(x, b);
                         
                         // Return a hybrid check result that stores the numerical values explicitly.
-                        return std::unique_ptr<CheckResult>(new storm::modelchecker::HybridQuantitativeCheckResult<DdType>(model.getReachableStates(), model.getReachableStates() && !maybeStates, infinityStates.ite(model.getManager().getConstant(storm::utility::infinity<ValueType>()), model.getManager().template getAddZero<ValueType>()), maybeStates, odd, x));
+                        return std::unique_ptr<CheckResult>(new storm::modelchecker::HybridQuantitativeCheckResult<DdType, ValueType>(model.getReachableStates(), model.getReachableStates() && !maybeStates, infinityStates.ite(model.getManager().getConstant(storm::utility::infinity<ValueType>()), model.getManager().template getAddZero<ValueType>()), maybeStates, odd, x));
                     } else {
-                        return std::unique_ptr<CheckResult>(new storm::modelchecker::SymbolicQuantitativeCheckResult<DdType>(model.getReachableStates(), infinityStates.ite(model.getManager().getConstant(storm::utility::infinity<ValueType>()), model.getManager().template getAddZero<ValueType>())));
+                        return std::unique_ptr<CheckResult>(new storm::modelchecker::SymbolicQuantitativeCheckResult<DdType, ValueType>(model.getReachableStates(), infinityStates.ite(model.getManager().getConstant(storm::utility::infinity<ValueType>()), model.getManager().template getAddZero<ValueType>())));
                     }
                 }
             }
@@ -256,7 +256,7 @@ namespace storm {
                 storm::storage::SparseMatrix<ValueType> explicitProbabilityMatrix = model.getTransitionMatrix().toMatrix(odd, odd);
 
                 std::vector<ValueType> result = storm::modelchecker::helper::SparseDtmcPrctlHelper<ValueType>::computeLongRunAverageProbabilities(explicitProbabilityMatrix, targetStates.toVector(odd), linearEquationSolverFactory);
-                return std::unique_ptr<CheckResult>(new HybridQuantitativeCheckResult<DdType>(model.getReachableStates(), model.getManager().getBddZero(), model.getManager().template getAddZero<ValueType>(), model.getReachableStates(), std::move(odd), std::move(result)));
+                return std::unique_ptr<CheckResult>(new HybridQuantitativeCheckResult<DdType, ValueType>(model.getReachableStates(), model.getManager().getBddZero(), model.getManager().template getAddZero<ValueType>(), model.getReachableStates(), std::move(odd), std::move(result)));
             }
 
             template<storm::dd::DdType DdType, typename ValueType>
@@ -266,11 +266,14 @@ namespace storm {
                 storm::storage::SparseMatrix<ValueType> explicitProbabilityMatrix = model.getTransitionMatrix().toMatrix(odd, odd);
                 
                 std::vector<ValueType> result = storm::modelchecker::helper::SparseDtmcPrctlHelper<ValueType>::computeLongRunAverageRewards(explicitProbabilityMatrix, rewardModel.getTotalRewardVector(model.getTransitionMatrix(), model.getColumnVariables()).toVector(odd), linearEquationSolverFactory);
-                return std::unique_ptr<CheckResult>(new HybridQuantitativeCheckResult<DdType>(model.getReachableStates(), model.getManager().getBddZero(), model.getManager().template getAddZero<ValueType>(), model.getReachableStates(), std::move(odd), std::move(result)));
+                return std::unique_ptr<CheckResult>(new HybridQuantitativeCheckResult<DdType, ValueType>(model.getReachableStates(), model.getManager().getBddZero(), model.getManager().template getAddZero<ValueType>(), model.getReachableStates(), std::move(odd), std::move(result)));
             }
             
             template class HybridDtmcPrctlHelper<storm::dd::DdType::CUDD, double>;
             template class HybridDtmcPrctlHelper<storm::dd::DdType::Sylvan, double>;
+
+            template class HybridDtmcPrctlHelper<storm::dd::DdType::Sylvan, storm::RationalNumber>;
+            template class HybridDtmcPrctlHelper<storm::dd::DdType::Sylvan, storm::RationalFunction>;
         }
     }
 }

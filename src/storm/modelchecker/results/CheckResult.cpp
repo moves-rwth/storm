@@ -173,6 +173,10 @@ namespace storm {
         template SymbolicQualitativeCheckResult<storm::dd::DdType::Sylvan> const& CheckResult::asSymbolicQualitativeCheckResult() const;
         template SymbolicQuantitativeCheckResult<storm::dd::DdType::Sylvan, double>& CheckResult::asSymbolicQuantitativeCheckResult();
         template SymbolicQuantitativeCheckResult<storm::dd::DdType::Sylvan, double> const& CheckResult::asSymbolicQuantitativeCheckResult() const;
+        template SymbolicQuantitativeCheckResult<storm::dd::DdType::Sylvan, storm::RationalNumber>& CheckResult::asSymbolicQuantitativeCheckResult();
+        template SymbolicQuantitativeCheckResult<storm::dd::DdType::Sylvan, storm::RationalNumber> const& CheckResult::asSymbolicQuantitativeCheckResult() const;
+        template SymbolicQuantitativeCheckResult<storm::dd::DdType::Sylvan, storm::RationalFunction>& CheckResult::asSymbolicQuantitativeCheckResult();
+        template SymbolicQuantitativeCheckResult<storm::dd::DdType::Sylvan, storm::RationalFunction> const& CheckResult::asSymbolicQuantitativeCheckResult() const;
         template SymbolicParetoCurveCheckResult<storm::dd::DdType::Sylvan, double>& CheckResult::asSymbolicParetoCurveCheckResult();
         template SymbolicParetoCurveCheckResult<storm::dd::DdType::Sylvan, double> const& CheckResult::asSymbolicParetoCurveCheckResult() const;
         template HybridQuantitativeCheckResult<storm::dd::DdType::Sylvan, double>& CheckResult::asHybridQuantitativeCheckResult();

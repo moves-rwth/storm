@@ -104,7 +104,7 @@ namespace storm {
             
             Add<LibraryType, ValueType> result = this->getAddZero<ValueType>();
             for (int_fast64_t value = metaVariable.getLow(); value <= metaVariable.getHigh(); ++value) {
-                result += this->getEncoding(variable, value).template toAdd<ValueType>() * this->getConstant(static_cast<ValueType>(value));
+                result += this->getEncoding(variable, value).template toAdd<ValueType>() * this->getConstant(storm::utility::convertNumber<ValueType>(value));
             }
             return result;
         }
@@ -126,6 +126,15 @@ namespace storm {
         
         template<DdType LibraryType>
         std::pair<storm::expressions::Variable, storm::expressions::Variable> DdManager<LibraryType>::addMetaVariable(std::string const& name, int_fast64_t low, int_fast64_t high, boost::optional<std::pair<MetaVariablePosition, storm::expressions::Variable>> const& position) {
+            std::vector<storm::expressions::Variable> result = addMetaVariable(name, low, high, 2, position);
+            return std::make_pair(result[0], result[1]);
+        }
+        
+        template<DdType LibraryType>
+        std::vector<storm::expressions::Variable> DdManager<LibraryType>::addMetaVariable(std::string const& name, int_fast64_t low, int_fast64_t high, uint64_t numberOfLayers, boost::optional<std::pair<MetaVariablePosition, storm::expressions::Variable>> const& position) {
+            // Check whether number of layers is legal.
+            STORM_LOG_THROW(numberOfLayers >= 1, storm::exceptions::InvalidArgumentException, "Layers must be at least 1.");
+            
             // Check whether the variable name is legal.
             STORM_LOG_THROW(name != "" && name.back() != '\'', storm::exceptions::InvalidArgumentException, "Illegal name of meta variable: '" << name << "'.");
             
@@ -155,31 +164,48 @@ namespace storm {
                 ++numberOfBits;
             }
             
-            storm::expressions::Variable unprimed = manager->declareBitVectorVariable(name, numberOfBits);
-            storm::expressions::Variable primed = manager->declareBitVectorVariable(name + "'", numberOfBits);
+            std::stringstream tmp1;
+            std::vector<storm::expressions::Variable> result;
+            for (uint64 layer = 0; layer < numberOfLayers; ++layer) {
+                result.emplace_back(manager->declareBitVectorVariable(name + tmp1.str(), numberOfBits));
+                tmp1 << "'";
+            }
             
-            std::vector<Bdd<LibraryType>> variables;
-            std::vector<Bdd<LibraryType>> variablesPrime;
+            std::vector<std::vector<Bdd<LibraryType>>> variables(numberOfLayers);
+            
             for (std::size_t i = 0; i < numberOfBits; ++i) {
-                auto ddVariablePair = internalDdManager.createNewDdVariablePair(level);
-                variables.emplace_back(Bdd<LibraryType>(*this, ddVariablePair.first, {unprimed}));
-                variablesPrime.emplace_back(Bdd<LibraryType>(*this, ddVariablePair.second, {primed}));
+                std::vector<InternalBdd<LibraryType>> ddVariables = internalDdManager.createDdVariables(numberOfLayers, level);
+                for (uint64 layer = 0; layer < numberOfLayers; ++layer) {
+                    variables[layer].emplace_back(Bdd<LibraryType>(*this, ddVariables[layer], {result[layer]}));
+                }
                 
                 // If we are inserting the variable at a specific level, we need to prepare the level for the next pair
                 // of variables.
                 if (level) {
-                    level.get() += 2;
+                    level.get() += numberOfLayers;
                 }
             }
-
-            metaVariableMap.emplace(unprimed, DdMetaVariable<LibraryType>(name, low, high, variables));
-            metaVariableMap.emplace(primed, DdMetaVariable<LibraryType>(name + "'", low, high, variablesPrime));
             
-            return std::make_pair(unprimed, primed);
+            std::stringstream tmp2;
+            for (uint64_t layer = 0; layer < numberOfLayers; ++layer) {
+                metaVariableMap.emplace(result[layer], DdMetaVariable<LibraryType>(name + tmp2.str(), low, high, variables[layer]));
+                tmp2 << "'";
+            }
+            
+            return result;
         }
         
         template<DdType LibraryType>
         std::pair<storm::expressions::Variable, storm::expressions::Variable> DdManager<LibraryType>::addMetaVariable(std::string const& name, boost::optional<std::pair<MetaVariablePosition, storm::expressions::Variable>> const& position) {
+            std::vector<storm::expressions::Variable> result = addMetaVariable(name, 2, position);
+            return std::make_pair(result[0], result[1]);
+        }
+        
+        template<DdType LibraryType>
+        std::vector<storm::expressions::Variable> DdManager<LibraryType>::addMetaVariable(std::string const& name, uint64_t numberOfLayers, boost::optional<std::pair<MetaVariablePosition, storm::expressions::Variable>> const& position) {
+            // Check whether number of layers is legal.
+            STORM_LOG_THROW(numberOfLayers >= 1, storm::exceptions::InvalidArgumentException, "Layers must be at least 1.");
+
             // Check whether the variable name is legal.
             STORM_LOG_THROW(name != "" && name.back() != '\'', storm::exceptions::InvalidArgumentException, "Illegal name of meta variable: '" << name << "'.");
             
@@ -200,19 +226,28 @@ namespace storm {
                 }
             }
             
-            storm::expressions::Variable unprimed = manager->declareBooleanVariable(name);
-            storm::expressions::Variable primed = manager->declareBooleanVariable(name + "'");
+            std::stringstream tmp1;
+            std::vector<storm::expressions::Variable> result;
+            for (uint64 layer = 0; layer < numberOfLayers; ++layer) {
+                result.emplace_back(manager->declareBooleanVariable(name + tmp1.str()));
+                tmp1 << "'";
+            }
             
-            std::vector<Bdd<LibraryType>> variables;
-            std::vector<Bdd<LibraryType>> variablesPrime;
-            auto ddVariablePair = internalDdManager.createNewDdVariablePair(level);
-            variables.emplace_back(Bdd<LibraryType>(*this, ddVariablePair.first, {unprimed}));
-            variablesPrime.emplace_back(Bdd<LibraryType>(*this, ddVariablePair.second, {primed}));
+            std::vector<std::vector<Bdd<LibraryType>>> variables(numberOfLayers);
             
-            metaVariableMap.emplace(unprimed, DdMetaVariable<LibraryType>(name, variables));
-            metaVariableMap.emplace(primed, DdMetaVariable<LibraryType>(name + "'", variablesPrime));
+            std::vector<InternalBdd<LibraryType>> ddVariables = internalDdManager.createDdVariables(numberOfLayers, level);
             
-            return std::make_pair(unprimed, primed);
+            for (uint64_t layer = 0; layer < numberOfLayers; ++layer) {
+                variables[layer].emplace_back(Bdd<LibraryType>(*this, ddVariables[layer], {result[layer]}));
+            }
+            
+            std::stringstream tmp2;
+            for (uint64_t layer = 0; layer < numberOfLayers; ++layer) {
+                metaVariableMap.emplace(result[layer], DdMetaVariable<LibraryType>(name + tmp2.str(), variables[layer]));
+                tmp2 << "'";
+            }
+
+            return result;
         }
         
         template<DdType LibraryType>
@@ -411,30 +446,35 @@ namespace storm {
         template Add<DdType::Sylvan, double> DdManager<DdType::Sylvan>::getAddZero() const;
         template Add<DdType::Sylvan, uint_fast64_t> DdManager<DdType::Sylvan>::getAddZero() const;
 #ifdef STORM_HAVE_CARL
+        template Add<DdType::Sylvan, storm::RationalNumber> DdManager<DdType::Sylvan>::getAddZero() const;
 		template Add<DdType::Sylvan, storm::RationalFunction> DdManager<DdType::Sylvan>::getAddZero() const;
 #endif
         
         template Add<DdType::Sylvan, double> DdManager<DdType::Sylvan>::getAddOne() const;
         template Add<DdType::Sylvan, uint_fast64_t> DdManager<DdType::Sylvan>::getAddOne() const;
 #ifdef STORM_HAVE_CARL
+        template Add<DdType::Sylvan, storm::RationalNumber> DdManager<DdType::Sylvan>::getAddOne() const;
 		template Add<DdType::Sylvan, storm::RationalFunction> DdManager<DdType::Sylvan>::getAddOne() const;
 #endif
 
         template Add<DdType::Sylvan, double> DdManager<DdType::Sylvan>::getInfinity<double>() const;
         template Add<DdType::Sylvan, uint_fast64_t> DdManager<DdType::Sylvan>::getInfinity<uint_fast64_t>() const;
 #ifdef STORM_HAVE_CARL
+        template Add<DdType::Sylvan, storm::RationalNumber> DdManager<DdType::Sylvan>::getInfinity<storm::RationalNumber>() const;
 		template Add<DdType::Sylvan, storm::RationalFunction> DdManager<DdType::Sylvan>::getInfinity<storm::RationalFunction>() const;
 #endif
         
         template Add<DdType::Sylvan, double> DdManager<DdType::Sylvan>::getConstant(double const& value) const;
         template Add<DdType::Sylvan, uint_fast64_t> DdManager<DdType::Sylvan>::getConstant(uint_fast64_t const& value) const;
 #ifdef STORM_HAVE_CARL
+        template Add<DdType::Sylvan, storm::RationalNumber> DdManager<DdType::Sylvan>::getConstant(storm::RationalNumber const& value) const;
 		template Add<DdType::Sylvan, storm::RationalFunction> DdManager<DdType::Sylvan>::getConstant(storm::RationalFunction const& value) const;
 #endif
 
         template Add<DdType::Sylvan, double> DdManager<DdType::Sylvan>::getIdentity(storm::expressions::Variable const& variable) const;
         template Add<DdType::Sylvan, uint_fast64_t> DdManager<DdType::Sylvan>::getIdentity(storm::expressions::Variable const& variable) const;
 #ifdef STORM_HAVE_CARL
+        template Add<DdType::Sylvan, storm::RationalNumber> DdManager<DdType::Sylvan>::getIdentity(storm::expressions::Variable const& variable) const;
 		template Add<DdType::Sylvan, storm::RationalFunction> DdManager<DdType::Sylvan>::getIdentity(storm::expressions::Variable const& variable) const;
 #endif
     }

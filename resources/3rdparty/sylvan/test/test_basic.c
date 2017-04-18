@@ -9,9 +9,9 @@
 #include <sys/time.h>
 #include <inttypes.h>
 
-#include "llmsset.h"
 #include "sylvan.h"
 #include "test_assert.h"
+#include "sylvan_int.h"
 
 __thread uint64_t seed = 1;
 
@@ -37,6 +37,69 @@ int
 rng(int low, int high)
 {
     return low + uniform_deviate(xorshift_rand()) * (high-low);
+}
+
+static int
+test_cache()
+{
+    test_assert(cache_getused() == 0);
+
+    /**
+     * Test cache for large number of random entries
+     */
+
+    size_t number_add = 4000000;
+    uint64_t *arr = (uint64_t*)malloc(sizeof(uint64_t)*4*number_add);
+    for (size_t i=0; i<number_add*4; i++) arr[i] = xorshift_rand();
+    for (size_t i=0; i<number_add; i++) {
+        test_assert(cache_put(arr[4*i], arr[4*i+1], arr[4*i+2], arr[4*i+3]));
+        uint64_t val;
+        int res = cache_get(arr[4*i], arr[4*i+1], arr[4*i+2], &val);
+        test_assert(res == 1);
+        test_assert(val == arr[4*i+3]);
+    }
+    size_t count = 0;
+    for (size_t i=0; i<number_add; i++) {
+        uint64_t val;
+        int res = cache_get(arr[4*i], arr[4*i+1], arr[4*i+2], &val);
+        test_assert(res == 0 || val == arr[4*i+3]);
+        if (res) count++;
+    }
+    test_assert(count == cache_getused());
+
+    /**
+     * Now also test for double entries
+     */
+
+    for (size_t i=0; i<number_add/2; i++) {
+        test_assert(cache_put6(arr[8*i], arr[8*i+1], arr[8*i+2], arr[8*i+3], arr[8*i+4], arr[8*i+5], arr[8*i+6], arr[8*i+7]));
+        uint64_t val1, val2;
+        int res = cache_get6(arr[8*i], arr[8*i+1], arr[8*i+2], arr[8*i+3], arr[8*i+4], arr[8*i+5], &val1, &val2);
+        test_assert(res == 1);
+        test_assert(val1 == arr[8*i+6]);
+        test_assert(val2 == arr[8*i+7]);
+    }
+    for (size_t i=0; i<number_add/2; i++) {
+        uint64_t val1, val2;
+        int res = cache_get6(arr[8*i], arr[8*i+1], arr[8*i+2], arr[8*i+3], arr[8*i+4], arr[8*i+5], &val1, &val2);
+        test_assert(res == 0 || (val1 == arr[8*i+6] && val2 == arr[8*i+7]));
+    }
+
+    /**
+     * And test that single entries are not corrupted
+     */
+    for (size_t i=0; i<number_add; i++) {
+        uint64_t val;
+        int res = cache_get(arr[4*i], arr[4*i+1], arr[4*i+2], &val);
+        test_assert(res == 0 || val == arr[4*i+3]);
+    }
+
+    /**
+     * TODO: multithreaded test
+     */
+
+    free(arr);
+    return 0;
 }
 
 static inline BDD
@@ -73,26 +136,42 @@ make_random(int i, int j)
     return result;
 }
 
+static MDD
+make_random_ldd_set(int depth, int maxvalue, int elements)
+{
+    uint32_t values[depth];
+    MDD result = mtbdd_false; // empty set
+    for (int i=0; i<elements; i++) {
+        lddmc_refs_push(result);
+        for (int j=0; j<depth; j++) {
+            values[j] = rng(0, maxvalue);
+        }
+        result = lddmc_union_cube(result, values, depth);
+        lddmc_refs_pop(1);
+    }
+    return result;
+}
+
 int testEqual(BDD a, BDD b)
 {
-	if (a == b) return 1;
+    if (a == b) return 1;
 
-	if (a == sylvan_invalid) {
-		fprintf(stderr, "a is invalid!\n");
-		return 0;
-	}
+    if (a == sylvan_invalid) {
+        fprintf(stderr, "a is invalid!\n");
+        return 0;
+    }
 
-	if (b == sylvan_invalid) {
-		fprintf(stderr, "b is invalid!\n");
-		return 0;
-	}
+    if (b == sylvan_invalid) {
+        fprintf(stderr, "b is invalid!\n");
+        return 0;
+    }
 
     fprintf(stderr, "a and b are not equal!\n");
 
     sylvan_fprint(stderr, a);fprintf(stderr, "\n");
     sylvan_fprint(stderr, b);fprintf(stderr, "\n");
 
-	return 0;
+    return 0;
 }
 
 int
@@ -110,7 +189,7 @@ int
 test_cube()
 {
     LACE_ME;
-    BDDSET vars = sylvan_set_fromarray(((BDDVAR[]){1,2,3,4,6,8}), 6);
+    const BDDSET vars = sylvan_set_fromarray(((BDDVAR[]){1,2,3,4,6,8}), 6);
 
     uint8_t cube[6], check[6];
     int i, j;
@@ -119,6 +198,10 @@ test_cube()
 
     sylvan_sat_one(bdd, vars, check);
     for (i=0; i<6;i++) test_assert(cube[i] == check[i] || (cube[i] == 2 && check[i] == 0));
+
+    BDD picked_single = sylvan_pick_single_cube(bdd, vars);
+    test_assert(testEqual(sylvan_and(picked_single, bdd), picked_single));
+    assert(sylvan_satcount(picked_single, vars)==1);
 
     BDD picked = sylvan_pick_cube(bdd);
     test_assert(testEqual(sylvan_and(picked, bdd), picked));
@@ -142,6 +225,34 @@ test_cube()
         picked = sylvan_pick_cube(bdd);
         test_assert(testEqual(sylvan_and(picked, bdd), picked));
     }
+
+    // simple test for mtbdd_enum_all
+    uint8_t arr[6];
+    MTBDD leaf = mtbdd_enum_all_first(mtbdd_true, vars, arr, NULL);
+    test_assert(leaf == mtbdd_true);
+    test_assert(mtbdd_enum_all_first(mtbdd_true, vars, arr, NULL) == mtbdd_true);
+    test_assert(arr[0] == 0 && arr[1] == 0 && arr[2] == 0 && arr[3] == 0 && arr[4] == 0 && arr[5] == 0);
+    test_assert(mtbdd_enum_all_next(mtbdd_true, vars, arr, NULL) == mtbdd_true);
+    test_assert(arr[0] == 0 && arr[1] == 0 && arr[2] == 0 && arr[3] == 0 && arr[4] == 0 && arr[5] == 1);
+    test_assert(mtbdd_enum_all_next(mtbdd_true, vars, arr, NULL) == mtbdd_true);
+    test_assert(arr[0] == 0 && arr[1] == 0 && arr[2] == 0 && arr[3] == 0 && arr[4] == 1 && arr[5] == 0);
+    test_assert(mtbdd_enum_all_next(mtbdd_true, vars, arr, NULL) == mtbdd_true);
+    test_assert(arr[0] == 0 && arr[1] == 0 && arr[2] == 0 && arr[3] == 0 && arr[4] == 1 && arr[5] == 1);
+    test_assert(mtbdd_enum_all_next(mtbdd_true, vars, arr, NULL) == mtbdd_true);
+    test_assert(arr[0] == 0 && arr[1] == 0 && arr[2] == 0 && arr[3] == 1 && arr[4] == 0 && arr[5] == 0);
+    test_assert(mtbdd_enum_all_next(mtbdd_true, vars, arr, NULL) == mtbdd_true);
+    test_assert(arr[0] == 0 && arr[1] == 0 && arr[2] == 0 && arr[3] == 1 && arr[4] == 0 && arr[5] == 1);
+    test_assert(mtbdd_enum_all_next(mtbdd_true, vars, arr, NULL) == mtbdd_true);
+    test_assert(arr[0] == 0 && arr[1] == 0 && arr[2] == 0 && arr[3] == 1 && arr[4] == 1 && arr[5] == 0);
+
+    mtbdd_enum_all_first(mtbdd_true, vars, arr, NULL);
+    size_t count = 1;
+    while (mtbdd_enum_all_next(mtbdd_true, vars, arr, NULL) != mtbdd_false) {
+        test_assert(count < 64);
+        count++;
+    }
+    test_assert(count == 64);
+
     return 0;
 }
 
@@ -296,6 +407,112 @@ test_compose()
     test_assert(testEqual(sylvan_or(one, two), sylvan_compose(a_or_b, map)));
 
     test_assert(testEqual(sylvan_and(one, two), sylvan_compose(sylvan_and(a, b), map)));
+
+    // test that composing [0:=true] on "0" yields true
+    map = sylvan_map_add(sylvan_map_empty(), 1, sylvan_true);
+    test_assert(testEqual(sylvan_compose(a, map), sylvan_true));
+
+    // test that composing [0:=false] on "0" yields false
+    map = sylvan_map_add(sylvan_map_empty(), 1, sylvan_false);
+    test_assert(testEqual(sylvan_compose(a, map), sylvan_false));
+
+    return 0;
+}
+
+int
+test_ldd()
+{
+    // very basic testing of makenode
+    for (int i=0; i<10; i++) {
+        uint32_t value = rng(0, 100);
+        MDD m = lddmc_makenode(value, lddmc_true, lddmc_false);
+        test_assert(lddmc_getvalue(m) == value);
+        test_assert(lddmc_getdown(m) == lddmc_true);
+        test_assert(lddmc_getright(m) == lddmc_false);
+        test_assert(lddmc_iscopy(m) == 0);
+        test_assert(lddmc_follow(m, value) == lddmc_true);
+        for (int j=0; j<100; j++) {
+            uint32_t other_value = rng(0, 100);
+            if (value != other_value) test_assert(lddmc_follow(m, other_value) == lddmc_false);
+        }
+    }
+
+    // test handling of the copy node by primitives
+    MDD m = lddmc_make_copynode(lddmc_true, lddmc_false);
+    test_assert(lddmc_iscopy(m) == 1);
+    test_assert(lddmc_getvalue(m) == 0);
+    test_assert(lddmc_getdown(m) == lddmc_true);
+    test_assert(lddmc_getright(m) == lddmc_false);
+    m = lddmc_extendnode(m, 0, lddmc_true);
+    test_assert(lddmc_iscopy(m) == 1);
+    test_assert(lddmc_getvalue(m) == 0);
+    test_assert(lddmc_getdown(m) == lddmc_true);
+    test_assert(lddmc_getright(m) != lddmc_false);
+    test_assert(lddmc_follow(m, 0) == lddmc_true);
+    test_assert(lddmc_getvalue(lddmc_getright(m)) == 0);
+    test_assert(lddmc_iscopy(lddmc_getright(m)) == 0);
+    test_assert(lddmc_makenode(0, lddmc_true, lddmc_false) == lddmc_getright(m));
+
+    LACE_ME;
+    // test union_cube
+    for (int i=0; i<100; i++) {
+        int depth = rng(1, 6);
+        int elements = rng(1, 30);
+        m = make_random_ldd_set(depth, 10, elements);
+        assert(m != lddmc_true);
+        assert(m != lddmc_false);
+        assert(lddmc_satcount(m) <= elements);
+        assert(lddmc_satcount(m) >= 1);
+    }
+
+    // test simply transition relation
+    {
+        MDD states, rel, meta, expected;
+
+        // relation: (0,0) to (1,1)
+        rel = lddmc_cube((uint32_t[]){0,1,0,1}, 4);
+        test_assert(lddmc_satcount(rel) == 1);
+        // relation: (0,0) to (2,2)
+        rel = lddmc_union_cube(rel, (uint32_t[]){0,2,0,2}, 4);
+        test_assert(lddmc_satcount(rel) == 2);
+        // meta: read write read write
+        meta = lddmc_cube((uint32_t[]){1,2,1,2}, 4);
+        test_assert(lddmc_satcount(meta) == 1);
+        // initial state: (0,0)
+        states = lddmc_cube((uint32_t[]){0,0}, 2);
+        test_assert(lddmc_satcount(states) == 1);
+        // relprod should give two states
+        states = lddmc_relprod(states, rel, meta);
+        test_assert(lddmc_satcount(states) == 2);
+        // relprod should give states (1,1) and (2,2)
+        expected = lddmc_cube((uint32_t[]){1,1}, 2);
+        expected = lddmc_union_cube(expected, (uint32_t[]){2,2}, 2);
+        test_assert(states == expected);
+
+        // now test relprod union on the simple example
+        states = lddmc_cube((uint32_t[]){0,0}, 2);
+        states = lddmc_relprod_union(states, rel, meta, states);
+        test_assert(lddmc_satcount(states) == 3);
+        test_assert(states == lddmc_union(states, expected));
+
+        // now create transition (1,1) --> (1,1) (using copy nodes)
+        rel = lddmc_cube_copy((uint32_t[]){1,0,1,0}, (int[]){0,1,0,1}, 4);
+        states = lddmc_relprod(states, rel, meta);
+        // the result should be just state (1,1)
+        test_assert(states == lddmc_cube((uint32_t[]){1,1}, 2));
+
+        MDD statezero = lddmc_cube((uint32_t[]){0,0}, 2);
+        states = lddmc_union_cube(statezero, (uint32_t[]){1,1}, 2);
+        test_assert(lddmc_relprod_union(states, rel, meta, statezero) == states);
+
+        // now create transition (*,*) --> (*,*) (copy nodes)
+        rel = lddmc_cube_copy((uint32_t[]){0,0}, (int[]){1,1}, 2);
+        meta = lddmc_cube((uint32_t[]){4,4}, 2);
+        states = make_random_ldd_set(2, 10, 10);
+        MDD states2 = make_random_ldd_set(2, 10, 10);
+        test_assert(lddmc_union(states, states2) == lddmc_relprod_union(states, rel, meta, states2));
+    }
+
     return 0;
 }
 
@@ -304,23 +521,30 @@ int runtests()
     // we are not testing garbage collection
     sylvan_gc_disable();
 
+    if (test_cache()) return 1;
     if (test_bdd()) return 1;
     for (int j=0;j<10;j++) if (test_cube()) return 1;
     for (int j=0;j<10;j++) if (test_relprod()) return 1;
     for (int j=0;j<10;j++) if (test_compose()) return 1;
     for (int j=0;j<10;j++) if (test_operators()) return 1;
+
+    if (test_ldd()) return 1;
+
     return 0;
 }
 
 int main()
 {
     // Standard Lace initialization with 1 worker
-	lace_init(1, 0);
-	lace_startup(0, NULL, NULL);
+    lace_init(1, 0);
+    lace_startup(0, NULL, NULL);
 
-    // Simple Sylvan initialization, also initialize BDD support
-	sylvan_init_package(1LL<<20, 1LL<<20, 1LL<<16, 1LL<<16);
-	sylvan_init_bdd(1);
+    // Simple Sylvan initialization, also initialize BDD, MTBDD and LDD support
+    sylvan_set_sizes(1LL<<20, 1LL<<20, 1LL<<16, 1LL<<16);
+    sylvan_init_package();
+    sylvan_init_bdd();
+    sylvan_init_mtbdd();
+    sylvan_init_ldd();
 
     int res = runtests();
 

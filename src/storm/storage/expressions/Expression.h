@@ -134,6 +134,15 @@ namespace storm {
              * @return The double value of the expression under the given valuation.
              */
             double evaluateAsDouble(Valuation const* valuation = nullptr) const;
+                        
+            /*!
+             * Evaluates the expression and returns the resulting rational number.
+             * If the return type of the expression is not a rational an exception is thrown.
+             *
+             * @param valuation The valuation of unknowns under which to evaluate the expression.
+             * @return The double value of the expression under the given valuation.
+             */
+            storm::RationalNumber evaluateAsRational() const;
             
             /*!
              * Simplifies the expression according to some basic rules.

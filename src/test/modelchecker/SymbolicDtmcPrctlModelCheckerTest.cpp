@@ -8,6 +8,7 @@
 #include "storm/modelchecker/prctl/SymbolicDtmcPrctlModelChecker.h"
 #include "storm/modelchecker/results/SymbolicQualitativeCheckResult.h"
 #include "storm/modelchecker/results/SymbolicQuantitativeCheckResult.h"
+#include "storm/solver/SymbolicEliminationLinearEquationSolver.h"
 #include "storm/parser/PrismParser.h"
 #include "storm/builder/DdPrismModelBuilder.h"
 #include "storm/models/symbolic/StandardRewardModel.h"
@@ -41,7 +42,7 @@ TEST(SymbolicDtmcPrctlModelCheckerTest, Die_Cudd) {
     
     std::shared_ptr<storm::models::symbolic::Dtmc<storm::dd::DdType::CUDD>> dtmc = model->as<storm::models::symbolic::Dtmc<storm::dd::DdType::CUDD>>();
     
-    storm::modelchecker::SymbolicDtmcPrctlModelChecker<storm::models::symbolic::Dtmc<storm::dd::DdType::CUDD, double>> checker(*dtmc, std::unique_ptr<storm::utility::solver::SymbolicLinearEquationSolverFactory<storm::dd::DdType::CUDD, double>>(new storm::utility::solver::SymbolicLinearEquationSolverFactory<storm::dd::DdType::CUDD, double>()));
+    storm::modelchecker::SymbolicDtmcPrctlModelChecker<storm::models::symbolic::Dtmc<storm::dd::DdType::CUDD, double>> checker(*dtmc, std::unique_ptr<storm::solver::SymbolicLinearEquationSolverFactory<storm::dd::DdType::CUDD, double>>(new storm::solver::GeneralSymbolicLinearEquationSolverFactory<storm::dd::DdType::CUDD, double>()));
     
     std::shared_ptr<storm::logic::Formula const> formula = formulaParser.parseSingleFormulaFromString("P=? [F \"one\"]");
     
@@ -103,7 +104,7 @@ TEST(SymbolicDtmcPrctlModelCheckerTest, Die_Sylvan) {
     
     std::shared_ptr<storm::models::symbolic::Dtmc<storm::dd::DdType::Sylvan>> dtmc = model->as<storm::models::symbolic::Dtmc<storm::dd::DdType::Sylvan>>();
     
-    storm::modelchecker::SymbolicDtmcPrctlModelChecker<storm::models::symbolic::Dtmc<storm::dd::DdType::Sylvan, double>> checker(*dtmc, std::unique_ptr<storm::utility::solver::SymbolicLinearEquationSolverFactory<storm::dd::DdType::Sylvan, double>>(new storm::utility::solver::SymbolicLinearEquationSolverFactory<storm::dd::DdType::Sylvan, double>()));
+    storm::modelchecker::SymbolicDtmcPrctlModelChecker<storm::models::symbolic::Dtmc<storm::dd::DdType::Sylvan, double>> checker(*dtmc, std::unique_ptr<storm::solver::SymbolicLinearEquationSolverFactory<storm::dd::DdType::Sylvan, double>>(new storm::solver::GeneralSymbolicLinearEquationSolverFactory<storm::dd::DdType::Sylvan, double>()));
     
     std::shared_ptr<storm::logic::Formula const> formula = formulaParser.parseSingleFormulaFromString("P=? [F \"one\"]");
     
@@ -143,6 +144,122 @@ TEST(SymbolicDtmcPrctlModelCheckerTest, Die_Sylvan) {
     EXPECT_NEAR(3.6666622161865234, quantitativeResult4.getMax(), 10 * storm::settings::getModule<storm::settings::modules::NativeEquationSolverSettings>().getPrecision());
 }
 
+TEST(SymbolicDtmcPrctlModelCheckerTest, Die_RationalNumber_Sylvan) {
+    storm::storage::SymbolicModelDescription modelDescription = storm::parser::PrismParser::parse(STORM_TEST_RESOURCES_DIR "/dtmc/die.pm");
+    storm::prism::Program program = modelDescription.preprocess().asPrismProgram();
+    
+    // A parser that we use for conveniently constructing the formulas.
+    storm::parser::FormulaParser formulaParser;
+    
+    // Build the die model with its reward model.
+    typename storm::builder::DdPrismModelBuilder<storm::dd::DdType::Sylvan, storm::RationalNumber>::Options options;
+    options.buildAllRewardModels = false;
+    options.rewardModelsToBuild.insert("coin_flips");
+    std::shared_ptr<storm::models::symbolic::Model<storm::dd::DdType::Sylvan, storm::RationalNumber>> model = storm::builder::DdPrismModelBuilder<storm::dd::DdType::Sylvan, storm::RationalNumber>().build(program, options);
+    EXPECT_EQ(13ul, model->getNumberOfStates());
+    EXPECT_EQ(20ul, model->getNumberOfTransitions());
+    
+    ASSERT_EQ(model->getType(), storm::models::ModelType::Dtmc);
+    
+    std::shared_ptr<storm::models::symbolic::Dtmc<storm::dd::DdType::Sylvan, storm::RationalNumber>> dtmc = model->as<storm::models::symbolic::Dtmc<storm::dd::DdType::Sylvan, storm::RationalNumber>>();
+    
+    storm::modelchecker::SymbolicDtmcPrctlModelChecker<storm::models::symbolic::Dtmc<storm::dd::DdType::Sylvan, storm::RationalNumber>> checker(*dtmc, std::unique_ptr<storm::solver::SymbolicLinearEquationSolverFactory<storm::dd::DdType::Sylvan, storm::RationalNumber>>(new storm::solver::SymbolicEliminationLinearEquationSolverFactory<storm::dd::DdType::Sylvan, storm::RationalNumber>()));
+    
+    std::shared_ptr<storm::logic::Formula const> formula = formulaParser.parseSingleFormulaFromString("P=? [F \"one\"]");
+    
+    std::unique_ptr<storm::modelchecker::CheckResult> result = checker.check(*formula);
+    result->filter(storm::modelchecker::SymbolicQualitativeCheckResult<storm::dd::DdType::Sylvan>(model->getReachableStates(), model->getInitialStates()));
+    storm::modelchecker::SymbolicQuantitativeCheckResult<storm::dd::DdType::Sylvan, storm::RationalNumber>& quantitativeResult1 = result->asSymbolicQuantitativeCheckResult<storm::dd::DdType::Sylvan, storm::RationalNumber>();
+    
+    EXPECT_EQ(quantitativeResult1.getMin(), storm::utility::convertNumber<storm::RationalNumber>(std::string("1/6")));
+    EXPECT_EQ(quantitativeResult1.getMax(), storm::utility::convertNumber<storm::RationalNumber>(std::string("1/6")));
+    
+    formula = formulaParser.parseSingleFormulaFromString("P=? [F \"two\"]");
+    
+    result = checker.check(*formula);
+    result->filter(storm::modelchecker::SymbolicQualitativeCheckResult<storm::dd::DdType::Sylvan>(model->getReachableStates(), model->getInitialStates()));
+    storm::modelchecker::SymbolicQuantitativeCheckResult<storm::dd::DdType::Sylvan, storm::RationalNumber>& quantitativeResult2 = result->asSymbolicQuantitativeCheckResult<storm::dd::DdType::Sylvan, storm::RationalNumber>();
+    
+    EXPECT_EQ(quantitativeResult2.getMin(), storm::utility::convertNumber<storm::RationalNumber>(std::string("1/6")));
+    EXPECT_EQ(quantitativeResult2.getMax(), storm::utility::convertNumber<storm::RationalNumber>(std::string("1/6")));
+    
+    formula = formulaParser.parseSingleFormulaFromString("P=? [F \"three\"]");
+    
+    result = checker.check(*formula);
+    result->filter(storm::modelchecker::SymbolicQualitativeCheckResult<storm::dd::DdType::Sylvan>(model->getReachableStates(), model->getInitialStates()));
+    storm::modelchecker::SymbolicQuantitativeCheckResult<storm::dd::DdType::Sylvan, storm::RationalNumber>& quantitativeResult3 = result->asSymbolicQuantitativeCheckResult<storm::dd::DdType::Sylvan, storm::RationalNumber>();
+    
+    EXPECT_EQ(quantitativeResult3.getMin(), storm::utility::convertNumber<storm::RationalNumber>(std::string("1/6")));
+    EXPECT_EQ(quantitativeResult3.getMax(), storm::utility::convertNumber<storm::RationalNumber>(std::string("1/6")));
+    
+    formula = formulaParser.parseSingleFormulaFromString("R=? [F \"done\"]");
+    
+    result = checker.check(*formula);
+    result->filter(storm::modelchecker::SymbolicQualitativeCheckResult<storm::dd::DdType::Sylvan>(model->getReachableStates(), model->getInitialStates()));
+    storm::modelchecker::SymbolicQuantitativeCheckResult<storm::dd::DdType::Sylvan, storm::RationalNumber>& quantitativeResult4 = result->asSymbolicQuantitativeCheckResult<storm::dd::DdType::Sylvan, storm::RationalNumber>();
+    
+    EXPECT_EQ(quantitativeResult4.getMin(), storm::utility::convertNumber<storm::RationalNumber>(std::string("11/3")));
+    EXPECT_EQ(quantitativeResult4.getMax(), storm::utility::convertNumber<storm::RationalNumber>(std::string("11/3")));
+}
+
+TEST(SymbolicDtmcPrctlModelCheckerTest, Die_RationalFunction_Sylvan) {
+    storm::storage::SymbolicModelDescription modelDescription = storm::parser::PrismParser::parse(STORM_TEST_RESOURCES_DIR "/pdtmc/parametric_die.pm");
+    storm::prism::Program program = modelDescription.preprocess().asPrismProgram();
+    
+    // A parser that we use for conveniently constructing the formulas.
+    storm::parser::FormulaParser formulaParser;
+    
+    // Build the die model with its reward model.
+    typename storm::builder::DdPrismModelBuilder<storm::dd::DdType::Sylvan, storm::RationalFunction>::Options options;
+    options.buildAllRewardModels = false;
+    options.rewardModelsToBuild.insert("coin_flips");
+    std::shared_ptr<storm::models::symbolic::Model<storm::dd::DdType::Sylvan, storm::RationalFunction>> model = storm::builder::DdPrismModelBuilder<storm::dd::DdType::Sylvan, storm::RationalFunction>().build(program, options);
+    EXPECT_EQ(13ul, model->getNumberOfStates());
+    EXPECT_EQ(20ul, model->getNumberOfTransitions());
+    ASSERT_EQ(model->getType(), storm::models::ModelType::Dtmc);
+    
+    std::map<storm::RationalFunctionVariable, storm::RationalFunctionCoefficient> instantiation;
+    std::set<storm::RationalFunctionVariable> variables = model->getParameters();
+    ASSERT_EQ(1ull, variables.size());
+    instantiation.emplace(*variables.begin(), storm::utility::convertNumber<storm::RationalFunctionCoefficient>(std::string("1/2")));
+    
+    std::shared_ptr<storm::models::symbolic::Dtmc<storm::dd::DdType::Sylvan, storm::RationalFunction>> dtmc = model->as<storm::models::symbolic::Dtmc<storm::dd::DdType::Sylvan, storm::RationalFunction>>();
+    
+    storm::modelchecker::SymbolicDtmcPrctlModelChecker<storm::models::symbolic::Dtmc<storm::dd::DdType::Sylvan, storm::RationalFunction>> checker(*dtmc, std::unique_ptr<storm::solver::SymbolicLinearEquationSolverFactory<storm::dd::DdType::Sylvan, storm::RationalFunction>>(new storm::solver::SymbolicEliminationLinearEquationSolverFactory<storm::dd::DdType::Sylvan, storm::RationalFunction>()));
+    
+    std::shared_ptr<storm::logic::Formula const> formula = formulaParser.parseSingleFormulaFromString("P=? [F \"one\"]");
+    
+    std::unique_ptr<storm::modelchecker::CheckResult> result = checker.check(*formula);
+    result->filter(storm::modelchecker::SymbolicQualitativeCheckResult<storm::dd::DdType::Sylvan>(model->getReachableStates(), model->getInitialStates()));
+    storm::modelchecker::SymbolicQuantitativeCheckResult<storm::dd::DdType::Sylvan, storm::RationalFunction>& quantitativeResult1 = result->asSymbolicQuantitativeCheckResult<storm::dd::DdType::Sylvan, storm::RationalFunction>();
+    
+    EXPECT_EQ(storm::utility::convertNumber<storm::RationalFunctionCoefficient>(quantitativeResult1.sum().evaluate(instantiation)), storm::utility::convertNumber<storm::RationalFunctionCoefficient>(std::string("1/6")));
+    
+    formula = formulaParser.parseSingleFormulaFromString("P=? [F \"two\"]");
+    
+    result = checker.check(*formula);
+    result->filter(storm::modelchecker::SymbolicQualitativeCheckResult<storm::dd::DdType::Sylvan>(model->getReachableStates(), model->getInitialStates()));
+    storm::modelchecker::SymbolicQuantitativeCheckResult<storm::dd::DdType::Sylvan, storm::RationalFunction>& quantitativeResult2 = result->asSymbolicQuantitativeCheckResult<storm::dd::DdType::Sylvan, storm::RationalFunction>();
+    
+    EXPECT_EQ(storm::utility::convertNumber<storm::RationalFunctionCoefficient>(quantitativeResult2.sum().evaluate(instantiation)), storm::utility::convertNumber<storm::RationalFunctionCoefficient>(std::string("1/6")));
+    
+    formula = formulaParser.parseSingleFormulaFromString("P=? [F \"three\"]");
+    
+    result = checker.check(*formula);
+    result->filter(storm::modelchecker::SymbolicQualitativeCheckResult<storm::dd::DdType::Sylvan>(model->getReachableStates(), model->getInitialStates()));
+    storm::modelchecker::SymbolicQuantitativeCheckResult<storm::dd::DdType::Sylvan, storm::RationalFunction>& quantitativeResult3 = result->asSymbolicQuantitativeCheckResult<storm::dd::DdType::Sylvan, storm::RationalFunction>();
+    
+    EXPECT_EQ(storm::utility::convertNumber<storm::RationalFunctionCoefficient>(quantitativeResult3.sum().evaluate(instantiation)), storm::utility::convertNumber<storm::RationalFunctionCoefficient>(std::string("1/6")));
+    
+    formula = formulaParser.parseSingleFormulaFromString("R=? [F \"done\"]");
+    
+    result = checker.check(*formula);
+    result->filter(storm::modelchecker::SymbolicQualitativeCheckResult<storm::dd::DdType::Sylvan>(model->getReachableStates(), model->getInitialStates()));
+    storm::modelchecker::SymbolicQuantitativeCheckResult<storm::dd::DdType::Sylvan, storm::RationalFunction>& quantitativeResult4 = result->asSymbolicQuantitativeCheckResult<storm::dd::DdType::Sylvan, storm::RationalFunction>();
+    
+    EXPECT_EQ(storm::utility::convertNumber<storm::RationalFunctionCoefficient>(quantitativeResult4.sum().evaluate(instantiation)), storm::utility::convertNumber<storm::RationalFunctionCoefficient>(std::string("11/3")));
+}
+
 TEST(SymbolicDtmcPrctlModelCheckerTest, Crowds_Cudd) {
     storm::storage::SymbolicModelDescription modelDescription = storm::parser::PrismParser::parse(STORM_TEST_RESOURCES_DIR "/dtmc/crowds-5-5.pm");
     storm::prism::Program program = modelDescription.preprocess().asPrismProgram();
@@ -158,7 +275,7 @@ TEST(SymbolicDtmcPrctlModelCheckerTest, Crowds_Cudd) {
     
     std::shared_ptr<storm::models::symbolic::Dtmc<storm::dd::DdType::CUDD>> dtmc = model->as<storm::models::symbolic::Dtmc<storm::dd::DdType::CUDD>>();
     
-    storm::modelchecker::SymbolicDtmcPrctlModelChecker<storm::models::symbolic::Dtmc<storm::dd::DdType::CUDD, double>> checker(*dtmc, std::unique_ptr<storm::utility::solver::SymbolicLinearEquationSolverFactory<storm::dd::DdType::CUDD, double>>(new storm::utility::solver::SymbolicLinearEquationSolverFactory<storm::dd::DdType::CUDD, double>()));
+    storm::modelchecker::SymbolicDtmcPrctlModelChecker<storm::models::symbolic::Dtmc<storm::dd::DdType::CUDD, double>> checker(*dtmc, std::unique_ptr<storm::solver::SymbolicLinearEquationSolverFactory<storm::dd::DdType::CUDD, double>>(new storm::solver::GeneralSymbolicLinearEquationSolverFactory<storm::dd::DdType::CUDD, double>()));
     
     std::shared_ptr<storm::logic::Formula const> formula = formulaParser.parseSingleFormulaFromString("P=? [F \"observe0Greater1\"]");
     
@@ -203,7 +320,7 @@ TEST(SymbolicDtmcPrctlModelCheckerTest, Crowds_Sylvan) {
     
     std::shared_ptr<storm::models::symbolic::Dtmc<storm::dd::DdType::Sylvan>> dtmc = model->as<storm::models::symbolic::Dtmc<storm::dd::DdType::Sylvan>>();
     
-    storm::modelchecker::SymbolicDtmcPrctlModelChecker<storm::models::symbolic::Dtmc<storm::dd::DdType::Sylvan, double>> checker(*dtmc, std::unique_ptr<storm::utility::solver::SymbolicLinearEquationSolverFactory<storm::dd::DdType::Sylvan, double>>(new storm::utility::solver::SymbolicLinearEquationSolverFactory<storm::dd::DdType::Sylvan, double>()));
+    storm::modelchecker::SymbolicDtmcPrctlModelChecker<storm::models::symbolic::Dtmc<storm::dd::DdType::Sylvan, double>> checker(*dtmc, std::unique_ptr<storm::solver::SymbolicLinearEquationSolverFactory<storm::dd::DdType::Sylvan, double>>(new storm::solver::GeneralSymbolicLinearEquationSolverFactory<storm::dd::DdType::Sylvan, double>()));
     
     std::shared_ptr<storm::logic::Formula const> formula = formulaParser.parseSingleFormulaFromString("P=? [F \"observe0Greater1\"]");
     
@@ -259,7 +376,7 @@ TEST(SymbolicDtmcPrctlModelCheckerTest, SynchronousLeader_Cudd) {
     
     std::shared_ptr<storm::models::symbolic::Dtmc<storm::dd::DdType::CUDD>> dtmc = model->as<storm::models::symbolic::Dtmc<storm::dd::DdType::CUDD>>();
     
-    storm::modelchecker::SymbolicDtmcPrctlModelChecker<storm::models::symbolic::Dtmc<storm::dd::DdType::CUDD, double>> checker(*dtmc, std::unique_ptr<storm::utility::solver::SymbolicLinearEquationSolverFactory<storm::dd::DdType::CUDD, double>>(new storm::utility::solver::SymbolicLinearEquationSolverFactory<storm::dd::DdType::CUDD, double>()));
+    storm::modelchecker::SymbolicDtmcPrctlModelChecker<storm::models::symbolic::Dtmc<storm::dd::DdType::CUDD, double>> checker(*dtmc, std::unique_ptr<storm::solver::SymbolicLinearEquationSolverFactory<storm::dd::DdType::CUDD, double>>(new storm::solver::GeneralSymbolicLinearEquationSolverFactory<storm::dd::DdType::CUDD, double>()));
     
     std::shared_ptr<storm::logic::Formula const> formula = formulaParser.parseSingleFormulaFromString("P=? [F \"elected\"]");
     
@@ -312,7 +429,7 @@ TEST(SymbolicDtmcPrctlModelCheckerTest, SynchronousLeader_Sylvan) {
     
     std::shared_ptr<storm::models::symbolic::Dtmc<storm::dd::DdType::Sylvan>> dtmc = model->as<storm::models::symbolic::Dtmc<storm::dd::DdType::Sylvan>>();
     
-    storm::modelchecker::SymbolicDtmcPrctlModelChecker<storm::models::symbolic::Dtmc<storm::dd::DdType::Sylvan, double>> checker(*dtmc, std::unique_ptr<storm::utility::solver::SymbolicLinearEquationSolverFactory<storm::dd::DdType::Sylvan, double>>(new storm::utility::solver::SymbolicLinearEquationSolverFactory<storm::dd::DdType::Sylvan, double>()));
+    storm::modelchecker::SymbolicDtmcPrctlModelChecker<storm::models::symbolic::Dtmc<storm::dd::DdType::Sylvan, double>> checker(*dtmc, std::unique_ptr<storm::solver::SymbolicLinearEquationSolverFactory<storm::dd::DdType::Sylvan, double>>(new storm::solver::GeneralSymbolicLinearEquationSolverFactory<storm::dd::DdType::Sylvan, double>()));
     
     std::shared_ptr<storm::logic::Formula const> formula = formulaParser.parseSingleFormulaFromString("P=? [F \"elected\"]");
     

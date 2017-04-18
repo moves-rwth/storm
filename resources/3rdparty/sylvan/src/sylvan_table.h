@@ -1,5 +1,6 @@
 /*
- * Copyright 2011-2014 Formal Methods and Tools, University of Twente
+ * Copyright 2011-2016 Formal Methods and Tools, University of Twente
+ * Copyright 2016 Tom van Dijk, Johannes Kepler University Linz
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,6 +16,7 @@
  */
 
 #include <sylvan_config.h>
+
 #include <stdint.h>
 #include <unistd.h>
 
@@ -38,6 +40,10 @@ extern "C" {
  * The set has support for stop-the-world garbage collection.
  * Methods llmsset_clear, llmsset_mark and llmsset_rehash implement garbage collection.
  * During their execution, llmsset_lookup is not allowed.
+ *
+ * WARNING: Originally, this table is designed to allow multiple tables.
+ * However, this is not compatible with thread local storage for now.
+ * Do not use multiple tables.
  */
 
 /**
@@ -126,7 +132,8 @@ llmsset_set_size(llmsset_t dbs, size_t size)
         /* Warning: if size is not a power of two, you will get interesting behavior */
         dbs->mask = dbs->table_size - 1;
 #endif
-        dbs->threshold = (64 - __builtin_clzll(dbs->table_size)) + 4; // doubling table_size increases threshold by 1
+        /* Set threshold: number of cache lines to probe before giving up on node insertion */
+        dbs->threshold = 192 - 2 * __builtin_clzll(dbs->table_size);
     }
 }
 
@@ -153,6 +160,12 @@ uint64_t llmsset_lookupc(const llmsset_t dbs, const uint64_t a, const uint64_t b
 VOID_TASK_DECL_1(llmsset_clear, llmsset_t);
 #define llmsset_clear(dbs) CALL(llmsset_clear, dbs)
 
+VOID_TASK_DECL_1(llmsset_clear_data, llmsset_t);
+#define llmsset_clear_data(dbs) CALL(llmsset_clear_data, dbs)
+
+VOID_TASK_DECL_1(llmsset_clear_hashes, llmsset_t);
+#define llmsset_clear_hashes(dbs) CALL(llmsset_clear_hashes, dbs)
+
 /**
  * Check if a certain data bucket is marked (in use).
  */
@@ -167,9 +180,16 @@ int llmsset_mark(const llmsset_t dbs, uint64_t index);
 
 /**
  * Rehash all marked buckets.
+ * Returns 0 if successful, or the number of buckets not rehashed if not.
  */
-VOID_TASK_DECL_1(llmsset_rehash, llmsset_t);
+TASK_DECL_1(int, llmsset_rehash, llmsset_t);
 #define llmsset_rehash(dbs) CALL(llmsset_rehash, dbs)
+
+/**
+ * Rehash a single bucket.
+ * Returns 0 if successful, or 1 if not.
+ */
+int llmsset_rehash_bucket(const llmsset_t dbs, uint64_t d_idx);
 
 /**
  * Retrieve number of marked buckets.

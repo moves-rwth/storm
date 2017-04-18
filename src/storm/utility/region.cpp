@@ -17,53 +17,7 @@ namespace storm {
     namespace utility{
         namespace region {
             
-            template<>
-            double convertNumber<double, double>(double const& number){
-                return number;
-            }
-            
-            template<>
-            double&& convertNumber<double>(double&& number){
-                return std::move(number);
-           }
-            
-            template<>
-            double convertNumber<double, std::string>(std::string const& number){
-                return std::stod(number);
-            }
-            
 #ifdef STORM_HAVE_CARL
-            template<>
-            storm::RationalNumber convertNumber<storm::RationalNumber, double>(double const& number){
-                return carl::rationalize<storm::RationalNumber>(number);
-            }
-            
-            template<>
-            storm::RationalFunction convertNumber<storm::RationalFunction, double>(double const& number){
-                return storm::RationalFunction(convertNumber<storm::RationalNumber>(number));
-            }
-            
-            template<>
-            double convertNumber<double, storm::RationalNumber>(storm::RationalNumber const& number){
-                return carl::toDouble(number);
-            }
-            
-            template<>
-            storm::RationalNumber convertNumber<storm::RationalNumber, storm::RationalNumber>(storm::RationalNumber const& number){
-                return number;
-            }
-            
-            template<>
-            storm::RationalNumber&& convertNumber<storm::RationalNumber>(storm::RationalNumber&& number){
-                return std::move(number);
-            }
-            
-            template<>
-            storm::RationalNumber convertNumber<storm::RationalNumber, std::string>(std::string const& number){
-                //We parse the number as double and then convert it to a a rational number.
-                return convertNumber<storm::RationalNumber>(convertNumber<double>(number));
-            }
-            
             template<>
             storm::RationalFunctionVariable getVariableFromString<storm::RationalFunctionVariable>(std::string variableString){
                 storm::RationalFunctionVariable const& var = carl::VariablePool::getInstance().findVariableWithName(variableString);
@@ -154,7 +108,7 @@ namespace storm {
             }
             
             template<>
-            void addParameterBoundsToSmtSolver<storm::solver::SmtlibSmtSolver, storm::RationalFunctionVariable, storm::RationalNumber>(std::shared_ptr<storm::solver::SmtlibSmtSolver> solver, storm::RationalFunctionVariable const& variable, storm::logic::ComparisonType relation, storm::RationalNumber const& bound){
+            void addParameterBoundsToSmtSolver<storm::solver::SmtlibSmtSolver, storm::RationalFunctionVariable, storm::RationalFunctionCoefficient>(std::shared_ptr<storm::solver::SmtlibSmtSolver> solver, storm::RationalFunctionVariable const& variable, storm::logic::ComparisonType relation, storm::RationalFunctionCoefficient const& bound){
                 storm::CompareRelation compRel;
                 switch (relation){
                     case storm::logic::ComparisonType::Greater:
@@ -184,7 +138,7 @@ namespace storm {
             }
             
             template<>
-            storm::RationalFunction getNewFunction<storm::RationalFunction, storm::RationalNumber>(storm::RationalNumber initialValue) {
+            storm::RationalFunction getNewFunction<storm::RationalFunction, storm::RationalFunctionCoefficient>(storm::RationalFunctionCoefficient initialValue) {
                 std::shared_ptr<carl::Cache<carl::PolynomialFactorizationPair<storm::RawPolynomial>>> cache(new carl::Cache<carl::PolynomialFactorizationPair<storm::RawPolynomial>>());
                 return storm::RationalFunction(storm::RationalFunction::PolyType(storm::RationalFunction::PolyType::PolyType(initialValue), cache));
             }

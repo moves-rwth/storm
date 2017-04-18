@@ -31,7 +31,7 @@ namespace storm {
             template<>
             struct VariableType<storm::RationalFunction> { typedef storm::RationalFunctionVariable type; };
             template<>
-            struct CoefficientType<storm::RationalFunction> { typedef storm::RationalNumber type; };
+            struct CoefficientType<storm::RationalFunction> { typedef storm::RationalFunctionCoefficient type; };
 #endif
             
             /*!

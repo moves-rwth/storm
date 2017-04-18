@@ -95,7 +95,7 @@ namespace storm {
 #endif
 #ifdef STORM_HAVE_CARL
             // TODO get version string
-            STORM_PRINT("Linked with CARL." << std::endl);
+            STORM_PRINT("Linked with CArL." << std::endl);
 #endif
             
 #ifdef STORM_HAVE_CUDA
@@ -299,7 +299,7 @@ namespace storm {
                 } else {
                     buildAndCheckSymbolicModel<double>(model, properties, true);
                 }
-            } else if (ioSettings.isExplicitSet()) {
+            } else if (ioSettings.isExplicitSet() || ioSettings.isExplicitDRNSet()) {
                 STORM_LOG_THROW(coreSettings.getEngine() == storm::settings::modules::CoreSettings::Engine::Sparse, storm::exceptions::InvalidSettingsException, "Only the sparse engine supports explicit model input.");
                 
                 // If the model is given in an explicit format, we parse the properties without allowing expressions
@@ -308,9 +308,18 @@ namespace storm {
                 if (ioSettings.isPropertySet()) {
                     properties = storm::parsePropertiesForExplicit(ioSettings.getProperty(), propertyFilter);
                 }
-                
-                buildAndCheckExplicitModel<double>(properties, true);
+
+                if (generalSettings.isParametricSet()) {
+#ifdef STORM_HAVE_CARL
+                    buildAndCheckExplicitModel<storm::RationalFunction>(properties, true);
+#else
+                    STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "No parameters are supported in this build.");
+#endif
+                } else {
+                    buildAndCheckExplicitModel<double>(properties, true);
+                }
             } else {
+
                 STORM_LOG_THROW(false, storm::exceptions::InvalidSettingsException, "No input model.");
             }
         }

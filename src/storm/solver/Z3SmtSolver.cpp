@@ -19,7 +19,7 @@ namespace storm {
 			z3::expr z3ExprValuation = model.eval(z3Expr, true);
 			return this->expressionAdapter.translateExpression(z3ExprValuation).isTrue();
 #else
-			STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "storm is compiled without Z3 support.");
+			STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Storm is compiled without Z3 support.");
 #endif
 		}
 
@@ -30,7 +30,7 @@ namespace storm {
 			z3::expr z3ExprValuation = model.eval(z3Expr, true);
 			return this->expressionAdapter.translateExpression(z3ExprValuation).evaluateAsInt();
 #else
-			STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "storm is compiled without Z3 support.");
+			STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Storm is compiled without Z3 support.");
 #endif
 		}
 
@@ -41,7 +41,7 @@ namespace storm {
 			z3::expr z3ExprValuation = model.eval(z3Expr, true);
 			return this->expressionAdapter.translateExpression(z3ExprValuation).evaluateAsDouble();
 #else
-			STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "storm is compiled without Z3 support.");
+			STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Storm is compiled without Z3 support.");
 #endif
 		}
         
@@ -68,7 +68,7 @@ namespace storm {
 #ifdef STORM_HAVE_Z3
 			this->solver->push();
 #else
-			STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "storm is compiled without Z3 support.");
+			STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Storm is compiled without Z3 support.");
 #endif
 		}
 
@@ -77,7 +77,7 @@ namespace storm {
 #ifdef STORM_HAVE_Z3
 			this->solver->pop();
 #else
-			STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "storm is compiled without Z3 support.");
+			STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Storm is compiled without Z3 support.");
 #endif
 		}
 
@@ -86,7 +86,7 @@ namespace storm {
 #ifdef STORM_HAVE_Z3
 			this->solver->pop(static_cast<unsigned int>(n));
 #else
-			STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "storm is compiled without Z3 support.");
+			STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Storm is compiled without Z3 support.");
 #endif
 		}
 
@@ -95,7 +95,7 @@ namespace storm {
 #ifdef STORM_HAVE_Z3
 			this->solver->reset();
 #else
-			STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "storm is compiled without Z3 support.");
+			STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Storm is compiled without Z3 support.");
 #endif
 		}
 
@@ -104,7 +104,7 @@ namespace storm {
 #ifdef STORM_HAVE_Z3
 			this->solver->add(expressionAdapter->translateExpression(assertion));
 #else
-			STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "storm is compiled without Z3 support.");
+			STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Storm is compiled without Z3 support.");
 #endif
 		}
 
@@ -125,7 +125,7 @@ namespace storm {
 			}
 			return this->lastResult;
 #else
-			STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "storm is compiled without Z3 support.");
+			STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Storm is compiled without Z3 support.");
 #endif
 		}
 
@@ -152,7 +152,7 @@ namespace storm {
 			}
 			return this->lastResult;
 #else
-			STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "storm is compiled without Z3 support.");
+			STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Storm is compiled without Z3 support.");
 #endif
 		}
 
@@ -180,7 +180,7 @@ namespace storm {
 			}
 			return this->lastResult;
 #else
-			STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "storm is compiled without Z3 support.");
+			STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Storm is compiled without Z3 support.");
 #endif
 		}
 #endif
@@ -190,7 +190,7 @@ namespace storm {
 			STORM_LOG_THROW(this->lastResult == SmtSolver::CheckResult::Sat, storm::exceptions::InvalidStateException, "Unable to create model for formula that was not determined to be satisfiable.");
 			return this->convertZ3ModelToValuation(this->solver->get_model());
 #else
-			STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "storm is compiled without Z3 support.");
+			STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Storm is compiled without Z3 support.");
 #endif
 		}
         
@@ -199,7 +199,7 @@ namespace storm {
 			STORM_LOG_THROW(this->lastResult == SmtSolver::CheckResult::Sat, storm::exceptions::InvalidStateException, "Unable to create model for formula that was not determined to be satisfiable.");
             return std::shared_ptr<SmtSolver::ModelReference>(new Z3ModelReference(this->getManager(), this->solver->get_model(), *this->expressionAdapter));
 #else
-            STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "storm is compiled without Z3 support.");
+            STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Storm is compiled without Z3 support.");
 #endif
         }
 
@@ -234,7 +234,7 @@ namespace storm {
 			this->allSat(important, static_cast<std::function<bool(storm::expressions::SimpleValuation&)>>([&valuations](storm::expressions::SimpleValuation const& valuation) -> bool { valuations.push_back(valuation); return true; }));
 			return valuations;
 #else
-			STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "storm is compiled without Z3 support.");
+			STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Storm is compiled without Z3 support.");
 #endif
 		}
 
@@ -276,7 +276,7 @@ namespace storm {
 			this->pop();
 			return numberOfModels;
 #else
-			STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "storm is compiled without Z3 support.");
+			STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Storm is compiled without Z3 support.");
 #endif
 		}
 
@@ -317,7 +317,7 @@ namespace storm {
 			this->pop();
 			return numberOfModels;
 #else
-			STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "storm is compiled without Z3 support.");
+			STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Storm is compiled without Z3 support.");
 #endif
 		}
 
@@ -335,7 +335,7 @@ namespace storm {
 
 			return unsatAssumptions;
 #else
-			STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "storm is compiled without Z3 support.");
+			STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Storm is compiled without Z3 support.");
 #endif
 		}
         
@@ -346,7 +346,7 @@ namespace storm {
             solver->set(paramObject);
             return true;
 #else
-            STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "storm is compiled without Z3 support.");
+            STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Storm is compiled without Z3 support.");
 #endif
         }
         
@@ -357,7 +357,7 @@ namespace storm {
             solver->set(paramObject);
             return true;
 #else
-            STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "storm is compiled without Z3 support.");
+            STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Storm is compiled without Z3 support.");
 #endif
         }
 

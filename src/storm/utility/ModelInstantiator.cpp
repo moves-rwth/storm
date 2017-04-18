@@ -40,16 +40,24 @@ namespace storm {
                 storm::storage::SparseMatrixBuilder<ConstantType> matrixBuilder(parametricMatrix.getRowCount(),
                                                                                 parametricMatrix.getColumnCount(),
                                                                                 parametricMatrix.getEntryCount(),
-                                                                                true, // no force dimensions
-                                                                                true, //Custom row grouping
-                                                                                parametricMatrix.getRowGroupCount());
-                for(std::size_t rowGroup = 0; rowGroup < parametricMatrix.getRowGroupCount(); ++rowGroup){
-                    matrixBuilder.newRowGroup(parametricMatrix.getRowGroupIndices()[rowGroup]);
-                    for(std::size_t row = parametricMatrix.getRowGroupIndices()[rowGroup]; row < parametricMatrix.getRowGroupIndices()[rowGroup+1]; ++row){
-                        ConstantType dummyValue = storm::utility::one<ConstantType>();
-                        for(auto const& paramEntry : parametricMatrix.getRow(row)){
+                                                                                true,
+                                                                                !parametricMatrix.hasTrivialRowGrouping(),
+                                                                                parametricMatrix.hasTrivialRowGrouping() ? 0 : parametricMatrix.getRowGroupCount());
+                ConstantType dummyValue = storm::utility::one<ConstantType>();
+                if (parametricMatrix.hasTrivialRowGrouping()) {
+                    for (uint_fast64_t row = 0; row < parametricMatrix.getRowCount(); ++row) {
+                        for (auto const& paramEntry : parametricMatrix.getRow(row)) {
                             matrixBuilder.addNextValue(row, paramEntry.getColumn(), dummyValue);
-                            dummyValue = storm::utility::zero<ConstantType>();
+                        }
+                    }
+                }
+                else {
+                    for(uint_fast64_t rowGroup = 0; rowGroup < parametricMatrix.getRowGroupCount(); ++rowGroup){
+                        matrixBuilder.newRowGroup(parametricMatrix.getRowGroupIndices()[rowGroup]);
+                        for (uint_fast64_t row = parametricMatrix.getRowGroupIndices()[rowGroup]; row < parametricMatrix.getRowGroupIndices()[rowGroup+1]; ++row) {
+                            for(auto const& paramEntry : parametricMatrix.getRow(row)){
+                                matrixBuilder.addNextValue(row, paramEntry.getColumn(), dummyValue);
+                            }
                         }
                     }
                 }
@@ -103,7 +111,6 @@ namespace storm {
                     ++parametricEntryIt;
                 }
                 STORM_LOG_ASSERT(constantEntryIt == constantMatrix.end(), "Parametric matrix seems to have more or less entries then the constant matrix");
-                //TODO: is this necessary?
                 constantMatrix.updateNonzeroEntryCount();
             }
             

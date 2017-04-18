@@ -25,7 +25,7 @@
  * Initialize the settings manager.
  */
 void initializeSettings() {
-    storm::settings::mutableManager().setName("storm-PGCL", "storm-pgcl");
+    storm::settings::mutableManager().setName("Storm-PGCL", "storm-pgcl");
     
     // Register all known settings modules.
     storm::settings::addModule<storm::settings::modules::GeneralSettings>();
@@ -56,7 +56,7 @@ void programGraphToDotFile(storm::ppg::ProgramGraph const& prog) {
 int main(const int argc, const char** argv) {
     try {
         storm::utility::setUp();
-        storm::cli::printHeader("storm-PGCL", argc, argv);
+        storm::cli::printHeader("Storm-PGCL", argc, argv);
         initializeSettings();
         
         bool optionsCorrect = storm::cli::parseOptions(argc, argv);
@@ -93,10 +93,10 @@ int main(const int argc, const char** argv) {
             
         }
     }catch (storm::exceptions::BaseException const& exception) {
-        STORM_LOG_ERROR("An exception caused storm-PGCL to terminate. The message of the exception is: " << exception.what());
+        STORM_LOG_ERROR("An exception caused Storm-PGCL to terminate. The message of the exception is: " << exception.what());
         return 1;
     } catch (std::exception const& exception) {
-        STORM_LOG_ERROR("An unexpected exception occurred and caused storm-PGCL to terminate. The message of this exception is: " << exception.what());
+        STORM_LOG_ERROR("An unexpected exception occurred and caused Storm-PGCL to terminate. The message of this exception is: " << exception.what());
         return 2;
     }
 }

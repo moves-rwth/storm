@@ -117,7 +117,9 @@ namespace storm {
             if (this->getSettings().getSolutionMethod() == NativeLinearEquationSolverSettings<ValueType>::SolutionMethod::SOR || this->getSettings().getSolutionMethod() == NativeLinearEquationSolverSettings<ValueType>::SolutionMethod::GaussSeidel) {
                 // Define the omega used for SOR.
                 ValueType omega = this->getSettings().getSolutionMethod() == NativeLinearEquationSolverSettings<ValueType>::SolutionMethod::SOR ? this->getSettings().getOmega() : storm::utility::one<ValueType>();
-                
+
+                STORM_LOG_INFO("Solving linear equation system (" << x.size() << " rows) with NativeLinearEquationSolver (Gauss-Seidel, SOR omega = " << omega << ")");
+
                 // Set up additional environment variables.
                 uint_fast64_t iterationCount = 0;
                 bool converged = false;
@@ -141,9 +143,17 @@ namespace storm {
                     clearCache();
                 }
 
+                if (converged) {
+                    STORM_LOG_INFO("Iterative solver converged in " << iterationCount << " iterations.");
+                } else {
+                    STORM_LOG_WARN("Iterative solver did not converge in " << iterationCount << " iterations.");
+                }
+
                 return converged;
                 
             } else {
+                STORM_LOG_INFO("Solving linear equation system (" << x.size() << " rows) with NativeLinearEquationSolver (Jacobi)");
+
                 // Get a Jacobi decomposition of the matrix A.
                 if(!jacobiDecomposition) {
                     jacobiDecomposition = std::make_unique<std::pair<storm::storage::SparseMatrix<ValueType>, std::vector<ValueType>>>(A->getJacobiDecomposition());
@@ -183,7 +193,13 @@ namespace storm {
                 if (!this->isCachingEnabled()) {
                     clearCache();
                 }
-                
+
+                if (converged) {
+                    STORM_LOG_INFO("Iterative solver converged in " << iterationCount << " iterations.");
+                } else {
+                    STORM_LOG_WARN("Iterative solver did not converge in " << iterationCount << " iterations.");
+                }
+
                 return iterationCount < this->getSettings().getMaximalNumberOfIterations();
             }
         }

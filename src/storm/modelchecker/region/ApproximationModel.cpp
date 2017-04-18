@@ -75,7 +75,7 @@ namespace storm {
                 filter.set(this->solverData.initialStateIndex, true);
                 this->solverData.player1Goal = std::make_unique<storm::solver::BoundedGoal<ConstantType>>(
                             storm::logic::isLowerBound(formula->getComparisonType()) ? storm::solver::OptimizationDirection::Minimize : storm::solver::OptimizationDirection::Maximize,
-                            formula->getBound().convertToOtherValueType<ConstantType>(),
+                            formula->getComparisonType(), formula->getThresholdAs<ConstantType>(),
                             filter
                         );
             }                
@@ -166,7 +166,7 @@ namespace storm {
                                 if(this->maybeStates.get(oldEntry.getColumn())){
                                     STORM_LOG_THROW(eqSysMatrixEntry->getColumn()==newIndices[oldEntry.getColumn()], storm::exceptions::UnexpectedException, "old and new entries do not match");
                                     if(storm::utility::isConstant(oldEntry.getValue())){
-                                        eqSysMatrixEntry->setValue(storm::utility::region::convertNumber<ConstantType>(storm::utility::region::getConstantPart(oldEntry.getValue())));
+                                        eqSysMatrixEntry->setValue(storm::utility::convertNumber<ConstantType>(storm::utility::region::getConstantPart(oldEntry.getValue())));
                                     } else {
                                         auto functionsIt = this->funcSubData.functions.insert(FunctionEntry(FunctionSubstitution(oldEntry.getValue(), this->matrixData.rowSubstitutions[curRow]), dummyNonZeroValue)).first;
                                         this->matrixData.assignment.emplace_back(eqSysMatrixEntry, functionsIt->second);
@@ -181,7 +181,7 @@ namespace storm {
                             }
                             if(!this->computeRewards){
                                 if(storm::utility::isConstant(storm::utility::simplify(targetProbability))){
-                                    *vectorIt = storm::utility::region::convertNumber<ConstantType>(storm::utility::region::getConstantPart(targetProbability));
+                                    *vectorIt = storm::utility::convertNumber<ConstantType>(storm::utility::region::getConstantPart(targetProbability));
                                 } else {
                                     auto functionsIt = this->funcSubData.functions.insert(FunctionEntry(FunctionSubstitution(targetProbability, this->matrixData.rowSubstitutions[curRow]), dummyNonZeroValue)).first;
                                     this->vectorData.assignment.emplace_back(vectorIt, functionsIt->second);
@@ -212,7 +212,7 @@ namespace storm {
                 auto vectorIt = this->vectorData.vector.begin();
                 for(auto oldState : this->maybeStates){
                     if(storm::utility::isConstant(parametricModel.getUniqueRewardModel().getStateRewardVector()[oldState])){
-                        ConstantType reward = storm::utility::region::convertNumber<ConstantType>(storm::utility::region::getConstantPart(parametricModel.getUniqueRewardModel().getStateRewardVector()[oldState]));
+                        ConstantType reward = storm::utility::convertNumber<ConstantType>(storm::utility::region::getConstantPart(parametricModel.getUniqueRewardModel().getStateRewardVector()[oldState]));
                         //Add one of these entries for every row in the row group of oldState
                         for(auto matrixRow=this->matrixData.matrix.getRowGroupIndices()[oldState]; matrixRow<this->matrixData.matrix.getRowGroupIndices()[oldState+1]; ++matrixRow){
                             *vectorIt = reward;
@@ -334,7 +334,7 @@ namespace storm {
                             instantiatedSubs[funcSub.second][vertexSub.first]=vertexSub.second;
                         }
                         //evaluate the function
-                        ConstantType currValue = storm::utility::region::convertNumber<ConstantType>(
+                        ConstantType currValue = storm::utility::convertNumber<ConstantType>(
                                 storm::utility::region::evaluateFunction(
                                     funcSub.first,
                                     instantiatedSubs[funcSub.second]

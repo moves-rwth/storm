@@ -22,6 +22,10 @@ int runtest()
     Bdd v2 = Bdd::bddVar(2);
 
     Bdd t = v1 + v2;
+    Bdd u = v1;
+    u += v2;
+
+    test_assert(t == u);
 
     BddMap map;
     map.put(2, t);
@@ -35,12 +39,13 @@ int runtest()
 int main()
 {
     // Standard Lace initialization with 1 worker
-	lace_init(1, 0);
-	lace_startup(0, NULL, NULL);
+    lace_init(1, 0);
+    lace_startup(0, NULL, NULL);
 
     // Simple Sylvan initialization, also initialize BDD support
-	sylvan_init_package(1LL<<16, 1LL<<16, 1LL<<16, 1LL<<16);
-	sylvan_init_bdd(1);
+    sylvan_set_sizes(1LL<<16, 1LL<<16, 1LL<<16, 1LL<<16);
+    sylvan_init_package();
+    sylvan_init_bdd();
 
     int res = runtest();
 

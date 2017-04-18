@@ -1,6 +1,23 @@
-#include <stdint.h> // for uint32_t etc
+/*
+ * Copyright 2011-2016 Formal Methods and Tools, University of Twente
+ * Copyright 2016 Tom van Dijk, Johannes Kepler University Linz
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 
 #include <sylvan_config.h>
+
+#include <stdint.h> // for uint32_t etc
 
 #ifndef CACHE_H
 #define CACHE_H
@@ -41,9 +58,15 @@ int cache_get(uint64_t a, uint64_t b, uint64_t c, uint64_t *res);
 int cache_put(uint64_t a, uint64_t b, uint64_t c, uint64_t res);
 
 /**
+ * Primitives for cache get/put that use two buckets
+ */
+int cache_get6(uint64_t a, uint64_t b, uint64_t c, uint64_t d, uint64_t e, uint64_t f, uint64_t *res1, uint64_t *res2);
+int cache_put6(uint64_t a, uint64_t b, uint64_t c, uint64_t d, uint64_t e, uint64_t f, uint64_t res1, uint64_t res2);
+
+/**
  * Helper function to get next 'operation id' (during initialization of modules)
  */
-uint64_t cache_next_opid();
+uint64_t cache_next_opid(void);
 
 /**
  * dd must be MTBDD, d2/d3 can be anything
@@ -94,17 +117,17 @@ cache_put4(uint64_t opid, uint64_t dd, uint64_t dd2, uint64_t dd3, uint64_t dd4,
 
 void cache_create(size_t _cache_size, size_t _max_size);
 
-void cache_free();
+void cache_free(void);
 
-void cache_clear();
+void cache_clear(void);
 
 void cache_setsize(size_t size);
 
-size_t cache_getused();
+size_t cache_getused(void);
 
-size_t cache_getsize();
+size_t cache_getsize(void);
 
-size_t cache_getmaxsize();
+size_t cache_getmaxsize(void);
 
 #ifdef __cplusplus
 }

@@ -248,22 +248,13 @@ namespace storm {
              */
             InternalAdd<DdType::Sylvan, ValueType> maximum(InternalAdd<DdType::Sylvan, ValueType> const& other) const;
             
-#ifdef STORM_HAVE_CARL
-			/*!
-             * Replaces the leaves in this MTBDD, using the supplied variable replacement map.
-             *
-             * @param replacementMap The variable replacement map.
-             * @return The resulting function represented as an ADD.
-             */
-            InternalAdd<DdType::Sylvan, ValueType> replaceLeaves(std::map<uint32_t, std::pair<storm::RationalFunctionVariable, std::pair<storm::RationalNumber, storm::RationalNumber>>> const& replacementMap) const;
-			
 			/*!
              * Replaces the leaves in this MTBDD, converting them to double if possible, and -1.0 else.
              *
              * @return The resulting function represented as an ADD.
              */
-            InternalAdd<DdType::Sylvan, double> toDouble() const;
-#endif
+            template<typename TargetValueType>
+            InternalAdd<DdType::Sylvan, TargetValueType> toValueType() const;
 			
             /*!
              * Sum-abstracts from the given cube.
@@ -278,13 +269,6 @@ namespace storm {
              * @param cube The cube from which to abstract.
              */
             InternalAdd<DdType::Sylvan, ValueType> minAbstract(InternalBdd<DdType::Sylvan> const& cube) const;
-
-            /*!
-             * Min-abstracts from the given cube, but treats 0 as the largest possible value.
-             *
-             * @param cube The cube from which to abstract.
-             */
-            InternalAdd<DdType::Sylvan, ValueType> minAbstractExcept0(InternalBdd<DdType::Sylvan> const& cube) const;
 			
 			/*!
              * Min-abstracts from the given cube and returns a representative.
@@ -316,7 +300,7 @@ namespace storm {
              * @param relative If set to true, not the absolute values have to be within the precision, but the relative
              * values.
              */
-            bool equalModuloPrecision(InternalAdd<DdType::Sylvan, ValueType> const& other, double precision, bool relative = true) const;
+            bool equalModuloPrecision(InternalAdd<DdType::Sylvan, ValueType> const& other, ValueType const& precision, bool relative = true) const;
             
             /*!
              * Swaps the given pairs of DD variables in the ADD. The pairs of meta variables have to be represented by
@@ -327,7 +311,17 @@ namespace storm {
              * @return The resulting ADD.
              */
             InternalAdd<DdType::Sylvan, ValueType> swapVariables(std::vector<InternalBdd<DdType::Sylvan>> const& from, std::vector<InternalBdd<DdType::Sylvan>> const& to) const;
-            
+
+            /*!
+             * Permutes the given pairs of DD variables in the ADD. The pairs of meta variables have to be represented by
+             * ADDs must have equal length.
+             *
+             * @param from The vector that specifies the 'from' part of the variable renaming.
+             * @param to The vector that specifies the 'to' part of the variable renaming.
+             * @return The resulting ADD.
+             */
+            InternalAdd<DdType::Sylvan, ValueType> permuteVariables(std::vector<InternalBdd<DdType::Sylvan>> const& from, std::vector<InternalBdd<DdType::Sylvan>> const& to) const;
+
             /*!
              * Multiplies the current ADD (representing a matrix) with the given matrix by summing over the given meta
              * variables.
@@ -704,9 +698,16 @@ namespace storm {
              */
             static MTBDD getLeaf(uint_fast64_t value);
 
+            /*!
+             * Retrieves the sylvan representation of the given storm::RatíonalNumber.
+             *
+             * @return The sylvan node for the given value.
+             */
+            static MTBDD getLeaf(storm::RationalNumber const& value);
+
 #ifdef STORM_HAVE_CARL
 			/*!
-			* Retrieves the sylvan representation of the given storm::RatíonalFunction value.
+			* Retrieves the sylvan representation of the given storm::RatíonalFunction.
 			*
 			* @return The sylvan node for the given value.
 			*/

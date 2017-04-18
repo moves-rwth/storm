@@ -135,20 +135,36 @@ namespace storm {
             Bdd<LibraryType> getCube(std::set<storm::expressions::Variable> const& variables) const;
 
             /*!
-             * Adds an integer meta variable with the given range.
+             * Adds an integer meta variable with the given range with two layers (a 'normal' and a 'primed' one).
              *
              * @param variableName The name of the new variable.
              * @param low The lowest value of the range of the variable.
              * @param high The highest value of the range of the variable.
              */
             std::pair<storm::expressions::Variable, storm::expressions::Variable> addMetaVariable(std::string const& variableName, int_fast64_t low, int_fast64_t high, boost::optional<std::pair<MetaVariablePosition, storm::expressions::Variable>> const& position = boost::none);
+
+            /*!
+             * Creates a meta variable with the given number of layers.
+             *
+             * @param variableName The name of the variable.
+             * @param numberOfLayers The number of layers of this variable (must be greater or equal 1).
+             */
+            std::vector<storm::expressions::Variable> addMetaVariable(std::string const& variableName, int_fast64_t low, int_fast64_t high, uint64_t numberOfLayers, boost::optional<std::pair<MetaVariablePosition, storm::expressions::Variable>> const& position = boost::none);
             
             /*!
-             * Adds a boolean meta variable.
+             * Adds a boolean meta variable with two layers (a 'normal' and a 'primed' one).
              *
              * @param variableName The name of the new variable.
              */
             std::pair<storm::expressions::Variable, storm::expressions::Variable> addMetaVariable(std::string const& variableName, boost::optional<std::pair<MetaVariablePosition, storm::expressions::Variable>> const& position = boost::none);
+            
+            /*!
+             * Creates a meta variable with the given number of layers.
+             *
+             * @param variableName The name of the variable.
+             * @param numberOfLayers The number of layers of this variable (must be greater or equal 1).
+             */
+            std::vector<storm::expressions::Variable> addMetaVariable(std::string const& variableName, uint64_t numberOfLayers, boost::optional<std::pair<MetaVariablePosition, storm::expressions::Variable>> const& position = boost::none);
             
             /*!
              * Retrieves the names of all meta variables that have been added to the manager.

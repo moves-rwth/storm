@@ -1,5 +1,3 @@
-void mtbdd_getsha(MTBDD mtbdd, char *target); // target must be at least 65 bytes...
-
 /**
  * Binary operation Divide (for MTBDDs of same type)
  * Only for MTBDDs where all leaves are Integer or Double.
@@ -120,7 +118,6 @@ int mtbdd_isnonzero(MTBDD);
 #define mtbdd_regular(dd) (dd & ~mtbdd_complement)
 
 #define GETNODE_BDD(bdd) ((bddnode_t)llmsset_index_to_ptr(nodes, bdd&0x000000ffffffffff))
-#define mtbdd_set_next(set) (mtbdd_gethigh(set))
 #define mtbdd_set_isempty(set) (set == mtbdd_true)
 
 /* Create a MTBDD representing just <var> or the negation of <var> */
@@ -140,12 +137,14 @@ TASK_DECL_2(MTBDD, mtbdd_op_complement, MTBDD, size_t);
 /**
  * Just like mtbdd_abstract_min, but instead of abstracting the variables in the given cube, picks a unique representative that realizes the minimal function value.
  */
-TASK_DECL_3(BDD, mtbdd_minExistsRepresentative, MTBDD, MTBDD, uint32_t);
-#define mtbdd_minExistsRepresentative(a, vars) (CALL(mtbdd_minExistsRepresentative, a, vars, 0))
+TASK_DECL_3(BDD, mtbdd_min_abstract_representative, MTBDD, MTBDD, uint32_t);
+#define mtbdd_min_abstract_representative(a, vars) (CALL(mtbdd_min_abstract_representative, a, vars, 0))
 
 /**
  * Just like mtbdd_abstract_max but instead of abstracting the variables in the given cube, picks a unique representative that realizes the maximal function value.
  */
-TASK_DECL_3(BDD, mtbdd_maxExistsRepresentative, MTBDD, MTBDD, uint32_t);
-#define mtbdd_maxExistsRepresentative(a, vars) (CALL(mtbdd_maxExistsRepresentative, a, vars, 0))
+TASK_DECL_3(BDD, mtbdd_max_abstract_representative, MTBDD, MTBDD, uint32_t);
+#define mtbdd_max_abstract_representative(a, vars) (CALL(mtbdd_max_abstract_representative, a, vars, 0))
 
+TASK_DECL_3(MTBDD, mtbdd_uapply_nocache, MTBDD, mtbdd_uapply_op, size_t);
+#define mtbdd_uapply_nocache(dd, op, param) CALL(mtbdd_uapply_nocache, dd, op, param)

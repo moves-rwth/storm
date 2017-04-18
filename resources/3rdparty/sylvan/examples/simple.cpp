@@ -81,17 +81,18 @@ VOID_TASK_1(_main, void*, arg)
     // - 1<<25 cache: 1152 MB
     // - 1<<26 cache: 2304 MB
     // - 1<<27 cache: 4608 MB
-    sylvan_init_package(1LL<<22, 1LL<<26, 1LL<<22, 1LL<<26);
+    sylvan_set_sizes(1LL<<22, 1LL<<26, 1LL<<22, 1LL<<26);
+    sylvan_init_package();
 
     // Initialize the BDD module with granularity 1 (cache every operation)
     // A higher granularity (e.g. 6) often results in better performance in practice
-    sylvan_init_bdd(1);
+    sylvan_init_bdd();
 
     // Now we can do some simple stuff using the C++ objects.
     CALL(simple_cxx);
 
     // Report statistics (if SYLVAN_STATS is 1 in the configuration)
-    sylvan_stats_report(stdout, 1);
+    sylvan_stats_report(stdout);
 
     // And quit, freeing memory
     sylvan_quit();

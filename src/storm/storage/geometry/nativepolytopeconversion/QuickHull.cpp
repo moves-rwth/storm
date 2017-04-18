@@ -150,7 +150,7 @@ namespace storm {
                 uint_fast64_t numOfAdditionalConstraints = additionalConstraints.size();
                 uint_fast64_t numOfRegularConstraints = resultMatrix.rows();
                 EigenMatrix newA(numOfRegularConstraints + numOfAdditionalConstraints, resultMatrix.cols());
-                EigenVector newb(numOfRegularConstraints + numOfAdditionalConstraints);
+                EigenVector newb(static_cast<unsigned long int>(numOfRegularConstraints + numOfAdditionalConstraints));
                 uint_fast64_t row = 0;
                 for (; row < numOfRegularConstraints; ++ row) {
                     newA.row(row) = resultMatrix.row(row);
@@ -166,7 +166,7 @@ namespace storm {
                 // clear the additionally added points. Note that the order of the points might have changed
                 storm::storage::BitVector keptPoints(points.size(), true);
                 for(uint_fast64_t pointIndex = 0; pointIndex < points.size(); ++pointIndex) {
-                    for(uint_fast64_t row = 0; row < resultMatrix.rows(); ++row) {
+                    for(int_fast64_t row = 0; row < resultMatrix.rows(); ++row) {
                         if((resultMatrix.row(row) * points[pointIndex])(0) > resultVector(row)) {
                             keptPoints.set(pointIndex, false);
                             break;
@@ -178,7 +178,7 @@ namespace storm {
                 if(generateRelevantVerticesAndVertexSets) {
                     storm::storage::BitVector keptVertices(relevantVertices.size(), true);
                     for(uint_fast64_t vertexIndex = 0; vertexIndex < relevantVertices.size(); ++vertexIndex) {
-                        for(uint_fast64_t row = 0; row < resultMatrix.rows(); ++row) {
+                        for(int_fast64_t row = 0; row < resultMatrix.rows(); ++row) {
                             if((resultMatrix.row(row) * relevantVertices[vertexIndex])(0) > resultVector(row)) {
                                 keptVertices.set(vertexIndex, false);
                                 break;

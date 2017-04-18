@@ -13,6 +13,7 @@
 #pragma GCC system_header // Only way to suppress some warnings atm.
 
 #include "sylvan_obj.hpp"
+#include "sylvan_storm_rational_number.h"
 #include "sylvan_storm_rational_function.h"
 
 #pragma GCC diagnostic pop

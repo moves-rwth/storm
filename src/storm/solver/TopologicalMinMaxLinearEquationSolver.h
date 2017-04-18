@@ -73,7 +73,7 @@ namespace storm {
 #ifdef STORM_HAVE_CUDA
             return basicValueIteration_mvReduce_uint64_double_minimize(maxIterationCount, precision, relativePrecisionCheck, matrixRowIndices, columnIndicesAndValues, x, b, nondeterministicChoiceIndices, iterationCount);
 #else
-            STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "storm is compiled without CUDA support.");
+            STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Storm is compiled without CUDA support.");
 #endif
         }
         template <>
@@ -92,7 +92,7 @@ namespace storm {
 #ifdef STORM_HAVE_CUDA
             return basicValueIteration_mvReduce_uint64_float_minimize(maxIterationCount, precision, relativePrecisionCheck, matrixRowIndices, columnIndicesAndValues, x, b, nondeterministicChoiceIndices, iterationCount);
 #else
-            STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "storm is compiled without CUDA support.");
+            STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Storm is compiled without CUDA support.");
 #endif
         }
         
@@ -116,7 +116,7 @@ namespace storm {
 #ifdef STORM_HAVE_CUDA
             return basicValueIteration_mvReduce_uint64_double_maximize(maxIterationCount, precision, relativePrecisionCheck, matrixRowIndices, columnIndicesAndValues, x, b, nondeterministicChoiceIndices, iterationCount);
 #else
-            STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "storm is compiled without CUDA support.");
+            STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Storm is compiled without CUDA support.");
 #endif
         }
         template <>
@@ -135,7 +135,7 @@ namespace storm {
 #ifdef STORM_HAVE_CUDA
             return basicValueIteration_mvReduce_uint64_float_maximize(maxIterationCount, precision, relativePrecisionCheck, matrixRowIndices, columnIndicesAndValues, x, b, nondeterministicChoiceIndices, iterationCount);
 #else
-            STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "storm is compiled without CUDA support.");
+            STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Storm is compiled without CUDA support.");
 #endif
         }
         

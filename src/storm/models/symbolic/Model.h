@@ -12,6 +12,9 @@
 #include "storm/models/ModelBase.h"
 #include "storm/utility/OsDetection.h"
 
+#include "storm-config.h"
+#include "storm/adapters/CarlAdapter.h"
+
 namespace storm {
     namespace dd {
         
@@ -267,6 +270,10 @@ namespace storm {
 
                 std::vector<std::string> getLabels() const;
                 
+                void addParameters(std::set<storm::RationalFunctionVariable> const& parameters);
+                
+                std::set<storm::RationalFunctionVariable> const& getParameters() const;
+                
             protected:
                 
                 /*!
@@ -349,6 +356,9 @@ namespace storm {
                 
                 // The reward models associated with the model.
                 std::unordered_map<std::string, RewardModelType> rewardModels;
+                
+                // The parameters. Only meaningful for models over rational functions.
+                std::set<storm::RationalFunctionVariable> parameters;
             };
             
         } // namespace symbolic
