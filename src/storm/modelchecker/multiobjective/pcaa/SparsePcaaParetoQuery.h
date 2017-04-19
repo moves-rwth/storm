@@ -25,6 +25,8 @@ namespace storm {
                  */
                 SparsePcaaParetoQuery(SparsePcaaPreprocessorReturnType<SparseModelType>& preprocessorResult);
                 
+                virtual ~SparsePcaaParetoQuery() = default;
+
                 
                 /*
                  * Invokes the computation and retrieves the result

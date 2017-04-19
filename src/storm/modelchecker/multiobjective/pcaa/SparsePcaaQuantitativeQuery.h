@@ -25,7 +25,8 @@ namespace storm {
                  */
                 SparsePcaaQuantitativeQuery(SparsePcaaPreprocessorReturnType<SparseModelType>& preprocessorResult);
                 
-                
+                virtual ~SparsePcaaQuantitativeQuery() = default;
+
                 /*
                  * Invokes the computation and retrieves the result
                  */
