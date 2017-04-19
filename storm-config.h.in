@@ -53,8 +53,8 @@
 // Whether CLN is available and to be used (define/undef)
 #cmakedefine STORM_HAVE_CLN
 
-// Whether GMP is available and to be used (define/undef)
-#cmakedefine STORM_HAVE_GMP
+// Whether GMP is available  (it is always available nowadays)
+#define STORM_HAVE_GMP
 
 // Whether carl is available and to be used.
 #cmakedefine STORM_HAVE_CARL

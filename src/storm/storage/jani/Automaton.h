@@ -7,14 +7,15 @@
 #include <boost/container/flat_set.hpp>
 
 #include "storm/storage/jani/VariableSet.h"
-#include "storm/storage/jani/Edge.h"
-#include "storm/storage/jani/TemplateEdge.h"
-#include "storm/storage/jani/Location.h"
+
 
 namespace storm {
     namespace jani {
 
         class Automaton;
+        class Edge;
+        class TemplateEdge;
+        class Location;
         
         namespace detail {
             class Edges {
@@ -248,10 +249,10 @@ namespace storm {
             ConstEdges getEdgesFromLocation(uint64_t locationIndex, uint64_t actionIndex) const;
             
             /*!
-             * Creates a new template edge that can be used to create new edges.
+             * Adds the template edge to the list of edges
              */
-            std::shared_ptr<TemplateEdge> createTemplateEdge(storm::expressions::Expression const& guard);
-            
+            void registerTemplateEdge(std::shared_ptr<TemplateEdge> const&);
+
             /*!
              * Adds an edge to the automaton.
              */
@@ -363,6 +364,8 @@ namespace storm {
              * Retrieves whether the automaton uses an assignment level other than zero.
              */
             bool usesAssignmentLevels() const;
+
+            void simplifyIndexedAssignments();
             
             /*!
              * Checks the automaton for linearity.
@@ -389,7 +392,7 @@ namespace storm {
             std::vector<Edge> edges;
             
             /// The templates for the contained edges.
-            std::vector<std::shared_ptr<TemplateEdge>> templateEdges;
+            std::unordered_set<std::shared_ptr<TemplateEdge>> templateEdges;
             
             /// A mapping from location indices to the starting indices. If l is mapped to i, it means that the edges
             /// leaving location l start at index i of the edges vector.

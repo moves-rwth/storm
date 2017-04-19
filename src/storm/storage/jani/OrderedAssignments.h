@@ -6,6 +6,8 @@
 
 namespace storm {
     namespace jani {
+
+        class VariableSet;
                 
         namespace detail {
             using Assignments = storm::adapters::DereferenceIteratorAdapter<std::vector<std::shared_ptr<Assignment>>>;
@@ -41,6 +43,14 @@ namespace storm {
              * @return True if more than one level occurs in the assignment set.
              */
             bool hasMultipleLevels() const;
+
+            /**
+             * Produces a new OrderedAssignments object with simplified leveling
+             * @param synchronous
+             * @param localVars
+             * @return
+             */
+            OrderedAssignments simplifyLevels(bool synchronous, VariableSet const& localVars, bool first = true) const;
             
             /*!
              * Retrieves whether this set of assignments is empty.
@@ -132,6 +142,16 @@ namespace storm {
             friend std::ostream& operator<<(std::ostream& stream, OrderedAssignments const& assignments);
             
         private:
+            uint64_t isReadBeforeAssignment(Variable const& var, uint64_t assignmentNumber, uint64_t start = 0) const;
+            uint64_t isWrittenBeforeAssignment(Variable const& var, uint64_t assignmentNumber, uint64_t start = 0) const;
+
+            /*!
+             * Gets the number of  assignments number with an assignment not higher than index.
+             * @param index The index we are interested in
+             * @return
+             */
+            uint64_t upperBound(int64_t index) const;
+
             static std::vector<std::shared_ptr<Assignment>>::const_iterator lowerBound(Assignment const& assignment, std::vector<std::shared_ptr<Assignment>> const& assignments);
                         
             // The vectors to store the assignments. These need to be ordered at all times.

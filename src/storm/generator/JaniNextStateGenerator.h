@@ -3,8 +3,14 @@
 #include "storm/generator/NextStateGenerator.h"
 
 #include "storm/storage/jani/Model.h"
+#include "storm/storage/jani/OrderedAssignments.h"
 
 namespace storm {
+    namespace jani {
+        class Edge;
+        class EdgeDestination;
+    }
+
     namespace generator {
         
         template<typename ValueType, typename StateType = uint32_t>

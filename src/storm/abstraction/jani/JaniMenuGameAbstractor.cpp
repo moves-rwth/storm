@@ -7,6 +7,8 @@
 #include "storm/storage/BitVector.h"
 
 #include "storm/storage/jani/Model.h"
+#include "storm/storage/jani/Automaton.h"
+#include "storm/storage/jani/Edge.h"
 
 #include "storm/storage/dd/DdManager.h"
 #include "storm/storage/dd/Add.h"

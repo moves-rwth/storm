@@ -51,7 +51,12 @@ namespace storm {
              * Retrieves the level of the assignment.
              */
             int64_t getLevel() const;
-            
+
+            /*!
+             * Sets the level
+             */
+            void setLevel(int64_t level);
+
             /*!
              * Checks the assignment for linearity.
              */

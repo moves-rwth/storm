@@ -1,12 +1,11 @@
 cmake_minimum_required(VERSION 3.1)
 
-project(sylvan VERSION 1.2.0)
+project(sylvan LANGUAGES C CXX VERSION 1.2.0)
 
 set(PROJECT_DESCRIPTION "Sylvan, a parallel decision diagram library")
 set(PROJECT_URL "https://github.com/trolando/sylvan")
 
 message(STATUS "CMake build configuration for Sylvan ${PROJECT_VERSION}")
-enable_language(C CXX)
 
 set(CMAKE_C_STANDARD 11)
 set(CMAKE_C_STANDARD_REQUIRED ON)

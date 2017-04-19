@@ -2,8 +2,17 @@
 
 #include "storm/storage/expressions/ExpressionManager.h"
 
-#include "storm/storage/jani/Compositions.h"
+
+#include "storm/storage/jani/Edge.h"
+#include "storm/storage/jani/TemplateEdge.h"
+#include "storm/storage/jani/EdgeDestination.h"
+#include "storm/storage/jani/Model.h"
+#include "storm/storage/jani/Automaton.h"
+#include "storm/storage/jani/Location.h"
+#include "storm/storage/jani/AutomatonComposition.h"
+#include "storm/storage/jani/ParallelComposition.h"
 #include "storm/storage/jani/CompositionInformationVisitor.h"
+#include "storm/storage/jani/Compositions.h"
 
 #include "storm/storage/expressions/LinearityCheckVisitor.h"
 
@@ -22,7 +31,11 @@ namespace storm {
         
         const std::string Model::SILENT_ACTION_NAME = "";
         const uint64_t Model::SILENT_ACTION_INDEX = 0;
-        
+
+
+        Model::Model(Model&& other) = default;
+        Model& Model::operator=(Model&& other) = default;
+
         Model::Model() {
             // Intentionally left empty.
         }
@@ -127,7 +140,9 @@ namespace storm {
         
         ConditionalMetaEdge createSynchronizedMetaEdge(Automaton& automaton, std::vector<std::reference_wrapper<Edge const>> const& edgesToSynchronize) {
             ConditionalMetaEdge result;
-            result.templateEdge = automaton.createTemplateEdge(createSynchronizedGuard(edgesToSynchronize));
+
+            result.templateEdge = std::make_shared<TemplateEdge>(createSynchronizedGuard(edgesToSynchronize));
+            automaton.registerTemplateEdge(result.templateEdge);
             
             for (auto const& edge : edgesToSynchronize) {
                 result.condition.push_back(edge.get().getSourceLocationIndex());
@@ -482,7 +497,8 @@ namespace storm {
                         conditionalMetaEdges.emplace_back();
                         ConditionalMetaEdge& conditionalMetaEdge = conditionalMetaEdges.back();
                         
-                        conditionalMetaEdge.templateEdge = newAutomaton.createTemplateEdge(edge.getGuard());
+                        conditionalMetaEdge.templateEdge = std::make_shared<TemplateEdge>(edge.getGuard());
+                        newAutomaton.registerTemplateEdge(conditionalMetaEdge.templateEdge);
                         conditionalMetaEdge.actionIndex = edge.getActionIndex();
                         conditionalMetaEdge.components.emplace_back(static_cast<uint64_t>(i));
                         conditionalMetaEdge.condition.emplace_back(edge.getSourceLocationIndex());

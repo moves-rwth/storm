@@ -5,10 +5,12 @@
 #include "storm/utility/macros.h"
 #include "storm/exceptions/InvalidArgumentException.h"
 
+#include "storm/storage/jani/TemplateEdge.h"
+
 namespace storm {
     namespace jani {
         
-        Edge::Edge(uint64_t sourceLocationIndex, uint64_t actionIndex, boost::optional<storm::expressions::Expression> const& rate, std::shared_ptr<TemplateEdge const> const& templateEdge, std::vector<std::pair<uint64_t, storm::expressions::Expression>> const& destinationTargetLocationsAndProbabilities) : sourceLocationIndex(sourceLocationIndex), actionIndex(actionIndex), rate(rate), templateEdge(templateEdge) {
+        Edge::Edge(uint64_t sourceLocationIndex, uint64_t actionIndex, boost::optional<storm::expressions::Expression> const& rate, std::shared_ptr<TemplateEdge> const& templateEdge, std::vector<std::pair<uint64_t, storm::expressions::Expression>> const& destinationTargetLocationsAndProbabilities) : sourceLocationIndex(sourceLocationIndex), actionIndex(actionIndex), rate(rate), templateEdge(templateEdge) {
             
             // Create the concrete destinations from the template edge.
             STORM_LOG_THROW(templateEdge->getNumberOfDestinations() == destinationTargetLocationsAndProbabilities.size(), storm::exceptions::InvalidArgumentException, "Sizes of template edge destinations and target locations mismatch.");
@@ -18,7 +20,7 @@ namespace storm {
             }
         }
         
-        Edge::Edge(uint64_t sourceLocationIndex, uint64_t actionIndex, boost::optional<storm::expressions::Expression> const& rate, std::shared_ptr<TemplateEdge const> const& templateEdge, std::vector<uint64_t> const& destinationLocations, std::vector<storm::expressions::Expression> const& destinationProbabilities) : sourceLocationIndex(sourceLocationIndex), actionIndex(actionIndex), rate(rate), templateEdge(templateEdge) {
+        Edge::Edge(uint64_t sourceLocationIndex, uint64_t actionIndex, boost::optional<storm::expressions::Expression> const& rate, std::shared_ptr<TemplateEdge> const& templateEdge, std::vector<uint64_t> const& destinationLocations, std::vector<storm::expressions::Expression> const& destinationProbabilities) : sourceLocationIndex(sourceLocationIndex), actionIndex(actionIndex), rate(rate), templateEdge(templateEdge) {
 
             // Create the concrete destinations from the template edge.
             STORM_LOG_THROW(templateEdge->getNumberOfDestinations() == destinationLocations.size() && destinationLocations.size() == destinationProbabilities.size(), storm::exceptions::InvalidArgumentException, "Sizes of template edge destinations and target locations mismatch.");
@@ -99,6 +101,23 @@ namespace storm {
         
         bool Edge::usesAssignmentLevels() const {
             return templateEdge->usesAssignmentLevels();
+        }
+
+        void Edge::simplifyIndexedAssignments(VariableSet const& localVars) {
+            if(usesAssignmentLevels()) {
+                templateEdge = std::make_shared<TemplateEdge>(templateEdge->simplifyIndexedAssignments(!hasSilentAction(), localVars));
+                std::vector<EdgeDestination> newdestinations;
+                assert(templateEdge->getNumberOfDestinations() == destinations.size());
+                for (uint64_t i = 0; i < templateEdge->getNumberOfDestinations(); ++i) {
+                    auto const& templateDestination = templateEdge->getDestination(i);
+                    newdestinations.emplace_back(destinations[i].getLocationIndex(), destinations[i].getProbability(), templateDestination);
+                }
+                destinations = newdestinations;
+            }
+        }
+
+        std::shared_ptr<TemplateEdge> const& Edge::getTemplateEdge() {
+            return templateEdge;
         }
     }
 }

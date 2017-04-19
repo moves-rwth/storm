@@ -8,6 +8,7 @@
 #include "storm/storage/dd/Add.h"
 
 #include "storm/storage/jani/Automaton.h"
+#include "storm/storage/jani/Edge.h"
 
 #include "storm/settings/SettingsManager.h"
 

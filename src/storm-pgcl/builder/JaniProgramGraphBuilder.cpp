@@ -118,7 +118,8 @@ namespace storm {
                                 assert(userVariableRestrictions.at(assignment.first).hasLeftBound() && userVariableRestrictions.at(assignment.first).hasRightBound());
                                 storm::expressions::Expression newCondition = simplifyExpression(edge.getCondition() && (assignment.second > bound.getRightBound().get() || assignment.second < bound.getLeftBound().get()));
                                 
-                                std::shared_ptr<storm::jani::TemplateEdge> templateEdge = automaton.createTemplateEdge(newCondition);
+                                std::shared_ptr<storm::jani::TemplateEdge> templateEdge = std::make_shared<storm::jani::TemplateEdge>(newCondition);
+                                automaton.registerTemplateEdge(templateEdge);
                                 templateEdge->addDestination(storm::jani::TemplateEdgeDestination());
                                 storm::jani::Edge e(janiLocId.at(edge.getSourceId()), storm::jani::Model::SILENT_ACTION_INDEX, boost::none, templateEdge, {varOutOfBoundsLocations.at(assignment.first)}, {expManager->rational(1.0)});
                                 edges.push_back(e);
@@ -136,7 +137,8 @@ namespace storm {
             for(auto it = programGraph.locationBegin(); it != programGraph.locationEnd(); ++it) {
                 ppg::ProgramLocation const& loc = it->second;
                 if (loc.nrOutgoingEdgeGroups() == 0) {
-                    std::shared_ptr<storm::jani::TemplateEdge> templateEdge = automaton.createTemplateEdge(expManager->boolean(true));
+                    std::shared_ptr<storm::jani::TemplateEdge> templateEdge = std::make_shared<storm::jani::TemplateEdge>(expManager->boolean(true));
+                    automaton.registerTemplateEdge(templateEdge);
                     templateEdge->addDestination(storm::jani::TemplateEdgeDestination());
                     storm::jani::Edge e(janiLocId.at(loc.id()), storm::jani::Model::SILENT_ACTION_INDEX, boost::none, templateEdge, {janiLocId.at(loc.id())}, {expManager->rational(1.0)});
                     automaton.addEdge(e);
@@ -146,7 +148,9 @@ namespace storm {
                         for(auto const& check : checks.first) {
                             automaton.addEdge(check);
                         }
-                        std::shared_ptr<storm::jani::TemplateEdge> templateEdge = automaton.createTemplateEdge(simplifyExpression(edge->getCondition() && checks.second));
+                        std::shared_ptr<storm::jani::TemplateEdge> templateEdge = std::make_shared<storm::jani::TemplateEdge>(simplifyExpression(edge->getCondition() && checks.second));
+                        automaton.registerTemplateEdge(templateEdge);
+
                         std::vector<std::pair<uint64_t, storm::expressions::Expression>> destinationLocationsAndProbabilities = buildDestinations(automaton, *edge, *templateEdge);
 
                         storm::jani::Edge e(janiLocId.at(loc.id()), storm::jani::Model::SILENT_ACTION_INDEX, boost::none, templateEdge, destinationLocationsAndProbabilities);
@@ -158,7 +162,9 @@ namespace storm {
                     {
                         STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Combi of nondeterminism and probabilistic choices within a loc not supported yet");
                     } else {
-                        std::shared_ptr<storm::jani::TemplateEdge> templateEdge = automaton.createTemplateEdge(expManager->boolean(true));
+                        std::shared_ptr<storm::jani::TemplateEdge> templateEdge = std::make_shared<storm::jani::TemplateEdge>(expManager->boolean(true));
+                        automaton.registerTemplateEdge(templateEdge);
+
 
                         std::vector<storm::expressions::Expression> destinationProbabilities;
                         std::vector<uint64_t> destinationLocations;

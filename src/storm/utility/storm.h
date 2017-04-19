@@ -269,6 +269,8 @@ namespace storm {
             
             STORM_LOG_THROW(model->isSparseModel(), storm::exceptions::InvalidSettingsException, "Bisimulation minimization is currently only available for sparse models.");
             model = performBisimulationMinimization<ModelType>(model->template as<storm::models::sparse::Model<typename ModelType::ValueType>>(), formulas, bisimType);
+            
+            STORM_LOG_INFO("Quotient model has " << model->getNumberOfStates() << " states and " << model->getNumberOfTransitions() << " transitions.");
         }
         
         preprocessingWatch.stop();

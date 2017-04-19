@@ -190,7 +190,7 @@ namespace storm {
             for (auto const& loc : locations) {
                 if (loc.second.nrOutgoingEdgeGroups() > 1) {
                     for (auto const& edgegroup : loc.second) {
-                        os << "\teg" << edgegroup->getId() << "[shape=circle];"<< std::endl;
+                        os << "\teg" << edgegroup->getId() << "[shape=rectangle];"<< std::endl;
                     }
                 }
             }

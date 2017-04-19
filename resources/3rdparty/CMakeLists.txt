@@ -141,7 +141,7 @@ if(Z3_FOUND)
                 OUTPUT_STRIP_TRAILING_WHITESPACE)
         if (z3_version_output MATCHES "([0-9]*\\.[0-9]*\\.[0-9]*)")
             set(Z3_VERSION "${CMAKE_MATCH_1}")
-            if(NOT "${Z3_VERSION}" VERSION_LESS "4.4.1")
+            if(NOT "${Z3_VERSION}" VERSION_LESS "4.5.0")
                 set(STORM_HAVE_Z3_OPTIMIZE ON)
             endif()
         endif()
@@ -189,13 +189,6 @@ endif()
 ##
 #############################################################
 include(${STORM_3RDPARTY_SOURCE_DIR}/include_cudd.cmake)
-
-#############################################################
-##
-##	cpptemplate
-##
-#############################################################
-include(${STORM_3RDPARTY_SOURCE_DIR}/include_cpptemplate.cmake)
 
 #############################################################
 ##
@@ -265,8 +258,15 @@ if(USE_CARL)
     if(STORM_USE_CLN_RF AND NOT STORM_HAVE_CLN)
 		message(FATAL_ERROR "Cannot use CLN numbers if carl is build without.")
 	endif()
-	
-	list(APPEND STORM_DEP_IMP_TARGETS lib_carl) 
+
+    #The library that needs symbols must be first, then the library that resolves the symbol.
+
+    list(APPEND STORM_DEP_IMP_TARGETS lib_carl)
+    if(STORM_USE_CLN_EA OR STORM_USE_CLN_RF)
+        list(APPEND STORM_DEP_IMP_TARGETS CLN_SHARED)
+    endif()
+    list(APPEND STORM_DEP_IMP_TARGETS GMPXX_SHARED GMP_SHARED)
+
 endif()
 
 
@@ -314,26 +314,23 @@ endif()
 ##	gmp
 ##
 #############################################################
+#
+#find_package(GMP QUIET REQUIRED)
+#
 
-if (NOT STORM_USE_CLN_EA OR NOT "${MSAT_ROOT}" STREQUAL "")
-    find_package(GMP QUIET REQUIRED)
-else()
-    # GMP is optional in this case
-    find_package(GMP QUIET)
-endif()
 
-if(GMP_FOUND)
-    set(STORM_HAVE_GMP ON)
-    message(STATUS "Storm - Linking with gmp.")
-    include_directories("${GMP_INCLUDE_DIR}")
-    list(APPEND STORM_LINK_LIBRARIES ${GMP_LIBRARY})
-elseif(MPIR_FOUND)
-    set(STORM_HAVE_GMP ON)
-    message(STATUS "Storm - Linking with mpir (gmp).")
-    include_directories("${GMP_INCLUDE_DIR}")
-    list(APPEND STORM_LINK_LIBRARIES ${GMP_MPIR_LIBRARY})
-    list(APPEND STORM_LINK_LIBRARIES ${GMP_MPIRXX_LIBRARY})
-endif(GMP_FOUND)
+get_target_property(GMPXX_LIB GMPXX_SHARED IMPORTED_LIB_LOCATION)
+get_target_property(GMP_LIB GMP_SHARED IMPORTED_LIB_LOCATION)
+get_target_property(GMPXX_INCLUDE_DIR GMPXX_SHARED INTERFACE_INCLUDE_DIRECTORIES)
+get_target_property(GMP_INCLUDE_DIR GMP_SHARED INTERFACE_INCLUDE_DIRECTORIES)
+get_filename_component(GMP_LIB_LOCATION ${GMP_LIB} DIRECTORY)
+get_filename_component(GMPXX_LIB_LOCATION ${GMPXX_LIB} DIRECTORY)
+
+
+
+#message(STATUS "Storm - Linking with gmp.")
+#include_directories("${GMP_INCLUDE_DIR}")
+#list(APPEND STORM_LINK_LIBRARIES ${GMP_LIBRARY})
 
 #############################################################
 ##
@@ -375,7 +372,7 @@ ExternalProject_Add(
         DOWNLOAD_COMMAND ""
         PREFIX "sylvan"
         SOURCE_DIR ${STORM_3RDPARTY_SOURCE_DIR}/sylvan
-        CMAKE_ARGS -DCMAKE_C_COMPILER=${CMAKE_C_COMPILER} -DCMAKE_CXX_COMPILER=${CMAKE_CXX_COMPILER} -DSYLVAN_BUILD_DOCS=OFF -DSYLVAN_BUILD_EXAMPLES=OFF -DCMAKE_BUILD_TYPE=Release -DCMAKE_POSITION_INDEPENDENT_CODE=ON -DUSE_CARL=ON -Dcarl_INCLUDE_DIR=${carl_INCLUDE_DIR} -DSYLVAN_PORTABLE=${STORM_PORTABLE} -Dcarl_LIBRARIES=${carl_LIBRARIES} -DBUILD_SHARED_LIBS=OFF -DSYLVAN_BUILD_TESTS=OFF
+        CMAKE_ARGS -DCMAKE_C_COMPILER=${CMAKE_C_COMPILER} -DGMP_LOCATION=${GMP_LIB_LOCATION}  -DGMP_INCLUDE=${GMP_INCLUDE_DIR}  -DCMAKE_CXX_COMPILER=${CMAKE_CXX_COMPILER} -DSYLVAN_BUILD_DOCS=OFF -DSYLVAN_BUILD_EXAMPLES=OFF -DCMAKE_BUILD_TYPE=Release -DCMAKE_POSITION_INDEPENDENT_CODE=ON -DUSE_CARL=ON -Dcarl_INCLUDE_DIR=${carl_INCLUDE_DIR} -DSYLVAN_PORTABLE=${STORM_PORTABLE} -Dcarl_LIBRARIES=${carl_LIBRARIES} -DBUILD_SHARED_LIBS=OFF -DSYLVAN_BUILD_TESTS=OFF
         BINARY_DIR ${STORM_3RDPARTY_BINARY_DIR}/sylvan
         BUILD_IN_SOURCE 0
         INSTALL_COMMAND ""
@@ -384,6 +381,7 @@ ExternalProject_Add(
         LOG_BUILD ON
         BUILD_BYPRODUCTS ${STORM_3RDPARTY_BINARY_DIR}/sylvan/src/libsylvan${STATIC_EXT}
 )
+
 ExternalProject_Get_Property(sylvan source_dir)
 ExternalProject_Get_Property(sylvan binary_dir)
 set(Sylvan_INCLUDE_DIR "${source_dir}/src")
@@ -407,6 +405,15 @@ else()
         message(FATAL_ERROR "HWLOC is required on Linux but was not found.")
     endif()
 endif()
+
+#############################################################
+##
+##	cpptemplate
+##
+#############################################################
+
+include_directories(${STORM_3RDPARTY_SOURCE_DIR}/cpptemplate)
+list(APPEND STORM_3RDPARTY_SOURCES ${STORM_3RDPARTY_SOURCE_DIR}/cpptemplate/cpptempl.cpp)
 
 #############################################################
 ##

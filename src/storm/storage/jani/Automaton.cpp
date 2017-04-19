@@ -1,5 +1,9 @@
 #include "storm/storage/jani/Automaton.h"
 
+#include "storm/storage/jani/Edge.h"
+#include "storm/storage/jani/TemplateEdge.h"
+#include "storm/storage/jani/Location.h"
+
 #include "storm/utility/macros.h"
 #include "storm/exceptions/WrongFormatException.h"
 #include "storm/exceptions/InvalidArgumentException.h"
@@ -297,10 +301,7 @@ namespace storm {
             return ConstEdges(it1, it2);
         }
         
-        std::shared_ptr<TemplateEdge> Automaton::createTemplateEdge(storm::expressions::Expression const& guard) {
-            templateEdges.emplace_back(std::make_shared<TemplateEdge>(guard));
-            return templateEdges.back();
-        }
+
         
         void Automaton::addEdge(Edge const& edge) {
             STORM_LOG_THROW(edge.getSourceLocationIndex() < locations.size(), storm::exceptions::InvalidArgumentException, "Cannot add edge with unknown source location index '" << edge.getSourceLocationIndex() << "'.");
@@ -430,7 +431,10 @@ namespace storm {
                 edge.substitute(substitution);
             }
         }
-        
+        void Automaton::registerTemplateEdge(std::shared_ptr<TemplateEdge> const& te) {
+            templateEdges.insert(te);
+        }
+
         void Automaton::changeAssignmentVariables(std::map<Variable const*, std::reference_wrapper<Variable const>> const& remapping) {
             for (auto& location : locations) {
                 location.changeAssignmentVariables(remapping);
@@ -441,6 +445,11 @@ namespace storm {
         }
         
         void Automaton::finalize(Model const& containingModel) {
+            //simplifyIndexedAssignments();
+            templateEdges.clear();
+            for (auto& edge : edges) {
+                templateEdges.insert(edge.getTemplateEdge());
+            }
             for (auto& templateEdge : templateEdges) {
                 templateEdge->finalize(containingModel);
             }
@@ -489,7 +498,14 @@ namespace storm {
                 templateEdge->liftTransientDestinationAssignments();
             }
         }
-        
+
+        void Automaton::simplifyIndexedAssignments() {
+            // TODO has to be fixed.
+            for (auto& edge : edges) {
+                edge.simplifyIndexedAssignments(variables);
+            }
+        }
+
         bool Automaton::usesAssignmentLevels() const {
             for (auto const& edge : this->getEdges()) {
                 if (edge.usesAssignmentLevels()) {

@@ -5,6 +5,8 @@
 
 #include "storm/storage/SymbolicModelDescription.h"
 
+
+
 #include "storm/settings/modules/DebugSettings.h"
 #include "storm/settings/modules/IOSettings.h"
 #include "storm/settings/modules/CoreSettings.h"
@@ -268,11 +270,14 @@ namespace storm {
                 } else {
                     constantDefinitions = model.parseConstantDefinitions(constantDefinitionString);
                 }
-                model = model.preprocess(constantDefinitions);
-                
+
                 if (model.isJaniModel() && storm::settings::getModule<storm::settings::modules::JaniExportSettings>().isJaniFileSet()) {
                     exportJaniModel(model.asJaniModel(), properties, storm::settings::getModule<storm::settings::modules::JaniExportSettings>().getJaniFilename());
                 }
+
+                model = model.preprocess(constantDefinitions);
+                
+
                 
                 if (ioSettings.isNoBuildModelSet()) {
                     return;

@@ -28,6 +28,14 @@ namespace storm {
             class StandardRewardModel;
         }
     }
+
+    namespace jani {
+        class OrderedAssignments;
+        class Assignment;
+        class Variable;
+        class Edge;
+        class EdgeDestination;
+    }
     
     namespace builder {
         namespace jit {

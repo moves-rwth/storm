@@ -32,8 +32,12 @@
 
 namespace storm {
     namespace jani {
-        
-        
+
+
+        modernjson::json buildExpression(storm::expressions::Expression const& exp,  std::vector<storm::jani::Constant> const& constants, VariableSet const& globalVariables = VariableSet(), VariableSet const& localVariables = VariableSet()) {
+            return ExpressionToJson::translate(exp,  constants, globalVariables, localVariables);
+        }
+
         class CompositionJsonExporter : public CompositionVisitor {
         public:
             CompositionJsonExporter(bool allowRecursion) : allowRecursion(allowRecursion){
@@ -127,20 +131,20 @@ namespace storm {
         }
         
         
-        modernjson::json constructPropertyInterval(boost::optional<storm::expressions::Expression> const& lower, boost::optional<bool> const& lowerExclusive, boost::optional<storm::expressions::Expression> const& upper, boost::optional<bool> const& upperExclusive) {
+        modernjson::json FormulaToJaniJson::constructPropertyInterval(boost::optional<storm::expressions::Expression> const& lower, boost::optional<bool> const& lowerExclusive, boost::optional<storm::expressions::Expression> const& upper, boost::optional<bool> const& upperExclusive) const {
             STORM_LOG_THROW((lower.is_initialized() || upper.is_initialized()), storm::exceptions::InvalidJaniException, "PropertyInterval needs either a lower or an upper bound, but none was given.");
             STORM_LOG_THROW((lower.is_initialized() || !lowerExclusive.is_initialized()), storm::exceptions::InvalidJaniException, "PropertyInterval defines wether the lower bound is exclusive but no lower bound is given.");
             STORM_LOG_THROW((upper.is_initialized() || !upperExclusive.is_initialized()), storm::exceptions::InvalidJaniException, "PropertyInterval defines wether the upper bound is exclusive but no upper bound is given.");
             
             modernjson::json iDecl;
             if (lower) {
-                iDecl["lower"] = ExpressionToJson::translate(*lower);
+                iDecl["lower"] = buildExpression(*lower, model.getConstants(), model.getGlobalVariables());
                 if (lowerExclusive) {
                     iDecl["lower-exclusive"] = *lowerExclusive;
                 }
             }
             if (upper) {
-                iDecl["upper"] = ExpressionToJson::translate(*upper);
+                iDecl["upper"] = buildExpression(*upper, model.getConstants(), model.getGlobalVariables());
                 if (upperExclusive) {
                     iDecl["upper-exclusive"] = *upperExclusive;
                 }
@@ -154,7 +158,7 @@ namespace storm {
         }
         
         boost::any FormulaToJaniJson::visit(storm::logic::AtomicExpressionFormula const& f, boost::any const&) const {
-            return ExpressionToJson::translate(f.getExpression());
+            return buildExpression(f.getExpression(), model.getConstants(), model.getGlobalVariables());
         }
         
         boost::any FormulaToJaniJson::visit(storm::logic::AtomicLabelFormula const& f, boost::any const&) const {
@@ -231,7 +235,7 @@ namespace storm {
                 }
                 opDecl["left"]["exp"] = modernjson::json(1);
                 opDecl["left"]["accumulate"] = modernjson::json(tvec);
-                opDecl["right"] = ExpressionToJson::translate(bound.threshold);
+                opDecl["right"] = buildExpression(bound.threshold, model.getConstants(), model.getGlobalVariables());
             } else {
                 if(f.hasOptimalityType()) {
                     opDecl["op"] = f.getOptimalityType() == storm::solver::OptimizationDirection::Minimize ? "Emin" : "Emax";
@@ -268,7 +272,7 @@ namespace storm {
                     opDecl["left"]["op"] = (bound.comparisonType == storm::logic::ComparisonType::Less || bound.comparisonType == storm::logic::ComparisonType::LessEqual) ? "Smax" : "Smin";
                     opDecl["left"]["exp"] = boost::any_cast<modernjson::json>(f.getSubformula().accept(*this, data));
                 }
-                opDecl["right"] = ExpressionToJson::translate(bound.threshold);
+                opDecl["right"] = buildExpression(bound.threshold, model.getConstants(), model.getGlobalVariables());
             } else {
                 if(f.hasOptimalityType()) {
                     opDecl["op"] = f.getOptimalityType() == storm::solver::OptimizationDirection::Minimize ? "Smin" : "Smax";
@@ -344,7 +348,7 @@ namespace storm {
                     opDecl["left"]["op"] = (bound.comparisonType == storm::logic::ComparisonType::Less || bound.comparisonType == storm::logic::ComparisonType::LessEqual) ? "Pmax" : "Pmin";
                     opDecl["left"]["exp"] = boost::any_cast<modernjson::json>(f.getSubformula().accept(*this, data));
                 }
-                opDecl["right"] = ExpressionToJson::translate(bound.threshold);
+                opDecl["right"] = buildExpression(bound.threshold, model.getConstants(), model.getGlobalVariables());
             } else {
                 if(f.hasOptimalityType()) {
                     opDecl["op"] = f.getOptimalityType() == storm::solver::OptimizationDirection::Minimize ? "Pmin" : "Pmax";
@@ -380,7 +384,7 @@ namespace storm {
                 STORM_LOG_THROW(f.hasRewardModelName(), storm::exceptions::NotSupportedException, "Reward name has to be specified for Jani-conversion");
                 opDecl["left"]["exp"] = f.getRewardModelName();
                 opDecl["left"]["accumulate"] = modernjson::json(accvec);
-                opDecl["right"] = ExpressionToJson::translate(bound.threshold);
+                opDecl["right"] = buildExpression(bound.threshold, model.getConstants(), model.getGlobalVariables());
             } else {
                 if(f.hasOptimalityType()) {
                     opDecl["op"] = f.getOptimalityType() == storm::solver::OptimizationDirection::Minimize ? "Emin" : "Emax";
@@ -473,8 +477,8 @@ namespace storm {
             }
         }
         
-        modernjson::json ExpressionToJson::translate(storm::expressions::Expression const& expr) {
-            ExpressionToJson visitor;
+        modernjson::json ExpressionToJson::translate(storm::expressions::Expression const& expr, std::vector<storm::jani::Constant> const& constants, VariableSet const& globalVariables, VariableSet const& localVariables) {
+            ExpressionToJson visitor(constants, globalVariables, localVariables);
             return boost::any_cast<modernjson::json>(expr.accept(visitor, boost::none));
         }
         
@@ -509,7 +513,18 @@ namespace storm {
             return opDecl;
         }
         boost::any ExpressionToJson::visit(storm::expressions::VariableExpression const& expression, boost::any const&) {
-            return modernjson::json(expression.getVariableName());
+            if (globalVariables.hasVariable(expression.getVariable())) {
+                return modernjson::json(globalVariables.getVariable(expression.getVariable()).getName());
+            } else if (localVariables.hasVariable(expression.getVariable())) {
+                return modernjson::json(localVariables.getVariable(expression.getVariable()).getName());
+            } else {
+                for (auto const& constant : constants) {
+                    if (constant.getExpressionVariable() == expression.getVariable()) {
+                        return modernjson::json(constant.getName());
+                    }
+                }
+            }
+            STORM_LOG_ASSERT(false, "Expression variable '" << expression.getVariableName() << "' not known in Jani data structures.");
         }
         boost::any ExpressionToJson::visit(storm::expressions::UnaryBooleanFunctionExpression const& expression, boost::any const& data) {
             modernjson::json opDecl;
@@ -568,11 +583,7 @@ namespace storm {
             
         }
         
-        
-        modernjson::json buildExpression(storm::expressions::Expression const& exp) {
-            return ExpressionToJson::translate(exp);
-        }
-        
+
         
         modernjson::json buildConstantsArray(std::vector<storm::jani::Constant> const& constants) {
             std::vector<modernjson::json> constantDeclarations;
@@ -590,19 +601,21 @@ namespace storm {
                 }
                 constantEntry["type"] = typeDesc;
                 if(constant.isDefined()) {
-                    constantEntry["value"] = buildExpression(constant.getExpression());
+                    constantEntry["value"] = buildExpression(constant.getExpression(), constants);
                 }
                 constantDeclarations.push_back(constantEntry);
             }
             return modernjson::json(constantDeclarations);
         }
         
-        modernjson::json buildVariablesArray(storm::jani::VariableSet const& varSet) {
+        modernjson::json buildVariablesArray(storm::jani::VariableSet const& varSet, std::vector<storm::jani::Constant> const& constants, VariableSet const& globalVariables, VariableSet const& localVariables = VariableSet()) {
             std::vector<modernjson::json> variableDeclarations;
             for(auto const& variable : varSet) {
                 modernjson::json varEntry;
                 varEntry["name"] = variable.getName();
-                varEntry["transient"] = variable.isTransient();
+                if (variable.isTransient()) {
+                    varEntry["transient"] = variable.isTransient();
+                }
                 modernjson::json typeDesc;
                 if(variable.isBooleanVariable()) {
                     typeDesc = "bool";
@@ -614,13 +627,13 @@ namespace storm {
                     assert(variable.isBoundedIntegerVariable());
                     typeDesc["kind"] = "bounded";
                     typeDesc["base"] = "int";
-                    typeDesc["lower-bound"] = buildExpression(variable.asBoundedIntegerVariable().getLowerBound());
-                    typeDesc["upper-bound"] = buildExpression(variable.asBoundedIntegerVariable().getUpperBound());
+                    typeDesc["lower-bound"] = buildExpression(variable.asBoundedIntegerVariable().getLowerBound(), constants, globalVariables, localVariables);
+                    typeDesc["upper-bound"] = buildExpression(variable.asBoundedIntegerVariable().getUpperBound(), constants, globalVariables, localVariables);
                 }
                 
                 varEntry["type"] = typeDesc;
                 if(variable.hasInitExpression()) {
-                    varEntry["initial-value"] = buildExpression(variable.getInitExpression());
+                    varEntry["initial-value"] = buildExpression(variable.getInitExpression(), constants, globalVariables, localVariables);
                 }
                 variableDeclarations.push_back(varEntry);
             }
@@ -628,13 +641,13 @@ namespace storm {
             
         }
         
-        modernjson::json buildAssignmentArray(storm::jani::OrderedAssignments const& orderedAssignments) {
+        modernjson::json buildAssignmentArray(storm::jani::OrderedAssignments const& orderedAssignments, std::vector<storm::jani::Constant> const& constants, VariableSet const& globalVariables, VariableSet const& localVariables) {
             std::vector<modernjson::json> assignmentDeclarations;
             bool addIndex = orderedAssignments.hasMultipleLevels();
             for(auto const& assignment : orderedAssignments) {
                 modernjson::json assignmentEntry;
                 assignmentEntry["ref"] = assignment.getVariable().getName();
-                assignmentEntry["value"] = buildExpression(assignment.getAssignedExpression());
+                assignmentEntry["value"] = buildExpression(assignment.getAssignedExpression(), constants, globalVariables, localVariables);
                 if(addIndex) {
                     assignmentEntry["index"] = assignment.getLevel();
                 }
@@ -643,13 +656,15 @@ namespace storm {
             return modernjson::json(assignmentDeclarations);
         }
         
-        modernjson::json buildLocationsArray(std::vector<storm::jani::Location> const& locations) {
+        modernjson::json buildLocationsArray(std::vector<storm::jani::Location> const& locations, std::vector<storm::jani::Constant> const& constants, VariableSet const& globalVariables, VariableSet const& localVariables) {
             std::vector<modernjson::json> locationDeclarations;
             for(auto const& location : locations) {
                 modernjson::json locEntry;
                 locEntry["name"] = location.getName();
                 // TODO support invariants?
-                locEntry["transient-values"] = buildAssignmentArray(location.getAssignments());
+                if (!location.getAssignments().empty()) {
+                    locEntry["transient-values"] = buildAssignmentArray(location.getAssignments(), constants, globalVariables, localVariables);
+                }
                 locationDeclarations.push_back(locEntry);
             }
             return modernjson::json(locationDeclarations);
@@ -663,20 +678,30 @@ namespace storm {
             return modernjson::json(names);
         }
         
-        modernjson::json buildDestinations(std::vector<EdgeDestination> const& destinations, std::map<uint64_t, std::string> const& locationNames) {
+        modernjson::json buildDestinations(std::vector<EdgeDestination> const& destinations, std::map<uint64_t, std::string> const& locationNames, std::vector<storm::jani::Constant> const& constants, VariableSet const& globalVariables, VariableSet const& localVariables) {
             assert(destinations.size() > 0);
             std::vector<modernjson::json> destDeclarations;
             for(auto const& destination : destinations) {
                 modernjson::json destEntry;
                 destEntry["location"] = locationNames.at(destination.getLocationIndex());
-                destEntry["probability"]["exp"] = buildExpression(destination.getProbability());
-                destEntry["assignments"] = buildAssignmentArray(destination.getOrderedAssignments());
+                bool prob1 = false;
+                if(destination.getProbability().isLiteral()) {
+                    if(destination.getProbability().evaluateAsDouble() == 1) {
+                        prob1 = true;
+                    }
+                }
+                if (!prob1) {
+                    destEntry["probability"]["exp"] = buildExpression(destination.getProbability(), constants, globalVariables, localVariables);
+                }
+                if (!destination.getOrderedAssignments().empty()) {
+                    destEntry["assignments"] = buildAssignmentArray(destination.getOrderedAssignments(), constants, globalVariables, localVariables);
+                }
                 destDeclarations.push_back(destEntry);
             }
             return modernjson::json(destDeclarations);
         }
         
-        modernjson::json buildEdges(std::vector<Edge> const& edges , std::map<uint64_t, std::string> const& actionNames, std::map<uint64_t, std::string> const& locationNames) {
+        modernjson::json buildEdges(std::vector<Edge> const& edges , std::map<uint64_t, std::string> const& actionNames, std::map<uint64_t, std::string> const& locationNames, std::vector<storm::jani::Constant> const& constants, VariableSet const& globalVariables, VariableSet const& localVariables) {
             std::vector<modernjson::json> edgeDeclarations;
             for(auto const& edge : edges) {
                 if (edge.getGuard().isFalse()) {
@@ -689,28 +714,33 @@ namespace storm {
                     edgeEntry["action"] = actionNames.at(edge.getActionIndex());
                 }
                 if(edge.hasRate()) {
-                    edgeEntry["rate"]["exp"] = buildExpression(edge.getRate());
+                    edgeEntry["rate"]["exp"] = buildExpression(edge.getRate(), constants, globalVariables, localVariables);
                 }
-                edgeEntry["guard"]["exp"] = buildExpression(edge.getGuard());
-                edgeEntry["destinations"] = buildDestinations(edge.getDestinations(), locationNames);
+                if (!edge.getGuard().isTrue()) {
+                    edgeEntry["guard"]["exp"] = buildExpression(edge.getGuard(), constants, globalVariables, localVariables);
+                }
+                edgeEntry["destinations"] = buildDestinations(edge.getDestinations(), locationNames, constants, globalVariables, localVariables);
+                if (!edge.getAssignments().empty()) {
+                    edgeEntry["assignments"] = buildAssignmentArray(edge.getAssignments(), constants, globalVariables, localVariables);
+                }
                 
                 edgeDeclarations.push_back(edgeEntry);
             }
             return modernjson::json(edgeDeclarations);
         }
         
-        modernjson::json buildAutomataArray(std::vector<storm::jani::Automaton> const& automata, std::map<uint64_t, std::string> const& actionNames) {
+        modernjson::json buildAutomataArray(std::vector<storm::jani::Automaton> const& automata, std::map<uint64_t, std::string> const& actionNames, std::vector<storm::jani::Constant> const& constants, VariableSet const& globalVariables) {
             std::vector<modernjson::json> automataDeclarations;
             for(auto const& automaton : automata) {
                 modernjson::json autoEntry;
                 autoEntry["name"] = automaton.getName();
-                autoEntry["variables"] = buildVariablesArray(automaton.getVariables());
+                autoEntry["variables"] = buildVariablesArray(automaton.getVariables(), constants, globalVariables, automaton.getVariables());
                 if(automaton.hasRestrictedInitialStates()) {
-                    autoEntry["restrict-initial"]["exp"] = buildExpression(automaton.getInitialStatesRestriction());
+                    autoEntry["restrict-initial"]["exp"] = buildExpression(automaton.getInitialStatesRestriction(), constants, globalVariables, automaton.getVariables());
                 }
-                autoEntry["locations"] = buildLocationsArray(automaton.getLocations());
+                autoEntry["locations"] = buildLocationsArray(automaton.getLocations(), constants, globalVariables, automaton.getVariables());
                 autoEntry["initial-locations"] = buildInitialLocations(automaton);
-                autoEntry["edges"] = buildEdges(automaton.getEdges(), actionNames, automaton.buildIdToLocationNameMap());
+                autoEntry["edges"] = buildEdges(automaton.getEdges(), actionNames, automaton.buildIdToLocationNameMap(), constants, globalVariables, automaton.getVariables());
                 automataDeclarations.push_back(autoEntry);
             }
             return modernjson::json(automataDeclarations);
@@ -723,9 +753,9 @@ namespace storm {
             jsonStruct["type"] = to_string(janiModel.getModelType());
             jsonStruct["actions"] = buildActionArray(janiModel.getActions());
             jsonStruct["constants"] = buildConstantsArray(janiModel.getConstants());
-            jsonStruct["variables"] = buildVariablesArray(janiModel.getGlobalVariables());
-            jsonStruct["restrict-initial"]["exp"] = buildExpression(janiModel.getInitialStatesRestriction());
-            jsonStruct["automata"] = buildAutomataArray(janiModel.getAutomata(), janiModel.getActionIndexToNameMap());
+            jsonStruct["variables"] = buildVariablesArray(janiModel.getGlobalVariables(), janiModel.getConstants(), janiModel.getGlobalVariables());
+            jsonStruct["restrict-initial"]["exp"] = buildExpression(janiModel.getInitialStatesRestriction(), janiModel.getConstants(), janiModel.getGlobalVariables());
+            jsonStruct["automata"] = buildAutomataArray(janiModel.getAutomata(), janiModel.getActionIndexToNameMap(), janiModel.getConstants(), janiModel.getGlobalVariables());
             jsonStruct["system"] = CompositionJsonExporter::translate(janiModel.getSystemComposition());
             std::vector<std::string> standardFeatureVector = {"derived-operators"};
             jsonStruct["features"] = standardFeatureVector;
