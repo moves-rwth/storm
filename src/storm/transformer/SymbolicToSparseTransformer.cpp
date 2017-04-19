@@ -74,12 +74,10 @@ namespace storm {
                 if (rewardModelNameAndModel.second.hasStateRewards()) {
                     stateRewards = rewardModelNameAndModel.second.getStateRewardVector().toVector(odd);
                 }
-                if (rewardModelNameAndModel.second.hasStateActionRewards()) {
-                    stateActionRewards = rewardModelNameAndModel.second.getStateActionRewardVector().toVector(odd);
-                }
-                if (rewardModelNameAndModel.second.hasTransitionRewards()) {
-                    transitionRewards = rewardModelNameAndModel.second.getTransitionRewardMatrix().toMatrix(symbolicMdp.getNondeterminismVariables(), odd, odd);
-                }
+                // Note: .getStateActionRewardVector().toVector(odd); does not work as it needs to have information regarding the nondeterminism
+                // One could use transitionMatrix().toMatrixVector instead.
+                STORM_LOG_THROW(!rewardModelNameAndModel.second.hasStateActionRewards(), storm::exceptions::NotImplementedException, "Translation of symbolic to explicit state-action rewards is not yet supported.");
+                STORM_LOG_THROW(!rewardModelNameAndModel.second.hasTransitionRewards(), storm::exceptions::NotImplementedException, "Translation of symbolic to explicit transition rewards is not yet supported.");
                 rewardModels.emplace(rewardModelNameAndModel.first,storm::models::sparse::StandardRewardModel<ValueType>(stateRewards, stateActionRewards, transitionRewards));
             }
             storm::models::sparse::StateLabeling labelling(transitionMatrix.getRowGroupCount());
