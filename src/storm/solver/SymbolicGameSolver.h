@@ -4,7 +4,6 @@
 #include <set>
 #include <vector>
 
-#include "storm/solver/AbstractGameSolver.h"
 #include "storm/solver/OptimizationDirection.h"
 
 #include "storm/storage/expressions/Variable.h"
@@ -18,7 +17,7 @@ namespace storm {
          * An interface that represents an abstract symbolic game solver.
          */
         template<storm::dd::DdType Type, typename ValueType = double>
-        class SymbolicGameSolver : public AbstractGameSolver<ValueType> {
+        class SymbolicGameSolver {
         public:
             /*!
              * Constructs a symbolic game solver with the given meta variable sets and pairs.
@@ -54,7 +53,7 @@ namespace storm {
              * equation system iteratively.
              * @param relative Sets whether or not to use a relativ stopping criterion rather than an absolute one.
              */
-            SymbolicGameSolver(storm::dd::Add<Type, ValueType> const& A, storm::dd::Bdd<Type> const& allRows, storm::dd::Bdd<Type> const& illegalPlayer1Mask, storm::dd::Bdd<Type> const& illegalPlayer2Mask, std::set<storm::expressions::Variable> const& rowMetaVariables, std::set<storm::expressions::Variable> const& columnMetaVariables, std::vector<std::pair<storm::expressions::Variable, storm::expressions::Variable>> const& rowColumnMetaVariablePairs, std::set<storm::expressions::Variable> const& player1Variables, std::set<storm::expressions::Variable> const& player2Variables, double precision, uint_fast64_t maximalNumberOfIterations, bool relative);
+            SymbolicGameSolver(storm::dd::Add<Type, ValueType> const& A, storm::dd::Bdd<Type> const& allRows, storm::dd::Bdd<Type> const& illegalPlayer1Mask, storm::dd::Bdd<Type> const& illegalPlayer2Mask, std::set<storm::expressions::Variable> const& rowMetaVariables, std::set<storm::expressions::Variable> const& columnMetaVariables, std::vector<std::pair<storm::expressions::Variable, storm::expressions::Variable>> const& rowColumnMetaVariablePairs, std::set<storm::expressions::Variable> const& player1Variables, std::set<storm::expressions::Variable> const& player2Variables, ValueType precision, uint_fast64_t maximalNumberOfIterations, bool relative);
             
             /*!
              * Solves the equation system defined by the game matrix. Note that the game matrix has to be given upon
@@ -120,7 +119,15 @@ namespace storm {
 
             // A player 1 strategy if one was generated.
             boost::optional<storm::dd::Bdd<Type>> player2Strategy;
+            
+            // The precision to achieve.
+            ValueType precision;
 
+            // The maximal number of iterations to perform.
+            uint_fast64_t maximalNumberOfIterations;
+
+            // A flag indicating whether a relative or an absolute stopping criterion is to be used.
+            bool relative;
         };
         
     } // namespace solver

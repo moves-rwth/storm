@@ -475,7 +475,7 @@ namespace storm {
         bool isOne(storm::RationalFunction const& a) {
             return a.isOne();
         }
-
+        
         template<>
         bool isOne(storm::Polynomial const& a) {
             return a.isOne();
@@ -490,7 +490,7 @@ namespace storm {
         bool isZero(storm::Polynomial const& a) {
             return a.isZero();
         }
-
+        
         template<>
         bool isConstant(storm::RationalFunction const& a) {
             return a.isConstant();

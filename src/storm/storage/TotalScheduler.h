@@ -5,6 +5,7 @@
 #include <ostream>
 
 #include "storm/storage/Scheduler.h"
+#include "storm/storage/BitVector.h"
 
 namespace storm {
     namespace storage {
@@ -48,6 +49,13 @@ namespace storm {
             uint_fast64_t getChoice(uint_fast64_t state) const override;
             
             std::vector<uint_fast64_t> const& getChoices() const;
+            
+            /*!
+             * Constructs the scheduler for the subsystem indicated by the given BitVector
+             *
+             * @param subsystem A BitVector whose i-th entry is true iff state i is part of the subsystem
+             */
+            TotalScheduler getSchedulerForSubsystem(storm::storage::BitVector const& subsystem) const;
             
             friend std::ostream& operator<<(std::ostream& out, TotalScheduler const& scheduler);
             friend struct std::hash<storm::storage::TotalScheduler>;

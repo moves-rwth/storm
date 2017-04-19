@@ -115,6 +115,16 @@ namespace storm {
         }
         
         template<typename ValueType>
+        void MinMaxLinearEquationSolver<ValueType>::setSchedulerHint(storm::storage::TotalScheduler&& scheduler) {
+            schedulerHint = scheduler;
+        }
+        
+        template<typename ValueType>
+        bool MinMaxLinearEquationSolver<ValueType>::hasSchedulerHint() const {
+            return schedulerHint.is_initialized();
+        }
+        
+        template<typename ValueType>
         MinMaxLinearEquationSolverFactory<ValueType>::MinMaxLinearEquationSolverFactory(bool trackScheduler) : trackScheduler(trackScheduler) {
             // Intentionally left empty.
         }
@@ -161,6 +171,7 @@ namespace storm {
             } else {
                 STORM_LOG_THROW(false, storm::exceptions::InvalidSettingsException, "Unsupported technique.");
             }
+            result->setTrackScheduler(this->isTrackSchedulerSet());
             return result;
         }
 

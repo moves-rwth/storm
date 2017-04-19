@@ -2,12 +2,14 @@
 #define STORM_MODELCHECKER_CHECKTASK_H_
 
 #include <boost/optional.hpp>
+#include <memory>
 
 #include "storm/logic/Formulas.h"
 #include "storm/utility/constants.h"
 
 #include "storm/solver/OptimizationDirection.h"
 #include "storm/logic/ComparisonType.h"
+#include "storm/modelchecker/hints/ModelCheckerHint.h"
 
 #include "storm/exceptions/InvalidOperationException.h"
 
@@ -35,7 +37,7 @@ namespace storm {
             /*!
              * Creates a task object with the default options for the given formula.
              */
-            CheckTask(FormulaType const& formula, bool onlyInitialStatesRelevant = false) : formula(formula) {
+            CheckTask(FormulaType const& formula, bool onlyInitialStatesRelevant = false) : formula(formula), hint(new ModelCheckerHint()) {
                 this->onlyInitialStatesRelevant = onlyInitialStatesRelevant;
                 this->produceSchedulers = false;
                 this->qualitative = false;
@@ -49,7 +51,7 @@ namespace storm {
              */
             template<typename NewFormulaType>
             CheckTask<NewFormulaType, ValueType> substituteFormula(NewFormulaType const& newFormula) const {
-                CheckTask<NewFormulaType, ValueType> result(newFormula, this->optimizationDirection, this->rewardModel, this->onlyInitialStatesRelevant, this->bound, this->qualitative, this->produceSchedulers, this->resultHint);
+                CheckTask<NewFormulaType, ValueType> result(newFormula, this->optimizationDirection, this->rewardModel, this->onlyInitialStatesRelevant, this->bound, this->qualitative, this->produceSchedulers, this->hint);
                 result.updateOperatorInformation();
                 return result;
             }
@@ -94,6 +96,15 @@ namespace storm {
                         }
                     }
                 }
+            }
+
+            /*!
+             * Copies the check task from the source while replacing the considered ValueType the new one. In particular, this
+             * changes the formula type of the check task object.
+             */
+            template<typename NewValueType>
+            CheckTask<FormulaType, NewValueType> convertValueType() const {
+                return CheckTask<FormulaType, NewValueType>(this->formula, this->optimizationDirection, this->rewardModel, this->onlyInitialStatesRelevant, this->bound, this->qualitative, this->produceSchedulers, this->hint);
             }
             
             /*!
@@ -205,34 +216,20 @@ namespace storm {
             }
             
             /*!
-             * sets a vector that may serve as a hint for the (quantitative) model-checking result
+             * sets a hint that might contain information that speeds up the modelchecking process (if supported by the model checker)
              */
-            void setResultHint(std::vector<ValueType> const& hint){
-                this->resultHint = hint;
+            void setHint(std::shared_ptr<ModelCheckerHint> const& hint) {
+                this->hint = hint;
             }
             
             /*!
-             * sets a vector that may serve as a hint for the (quantitative) model-checking result
+             * Retrieves a hint that might contain information that speeds up the modelchecking process (if supported by the model checker)
              */
-            void setResultHint(std::vector<ValueType>&& hint){
-                this->resultHint = hint;
+            ModelCheckerHint const& getHint() const {
+                return *hint;
             }
-            
-            /*!
-             * Retrieves whether there is a vector that may serve as a hint for the (quantitative) model-checking result
-             */
-            bool isResultHintSet() const {
-                return static_cast<bool>(resultHint);
-            }
-            
-            /*!
-             * Retrieves the vector that may serve as a hint for the (quantitative) model-checking result
-             */
-            std::vector<ValueType> const& getResultVectorHint() const {
-                return resultHint.get();
-            }
-            boost::optional<std::vector<ValueType>> const& getOptionalResultVectorHint() const{
-                return resultHint;
+            ModelCheckerHint& getHint() {
+                return *hint;
             }
             
         private:
@@ -250,7 +247,7 @@ namespace storm {
              * @param produceSchedulers If supported by the model checker and the model formalism, schedulers to achieve
              * a value will be produced if this flag is set.
              */
-            CheckTask(std::reference_wrapper<FormulaType const> const& formula, boost::optional<storm::OptimizationDirection> const& optimizationDirection, boost::optional<std::string> const& rewardModel, bool onlyInitialStatesRelevant, boost::optional<storm::logic::Bound> const& bound, bool qualitative, bool produceSchedulers, boost::optional<std::vector<ValueType>> const& resultHint) : formula(formula), optimizationDirection(optimizationDirection), rewardModel(rewardModel), onlyInitialStatesRelevant(onlyInitialStatesRelevant), bound(bound), qualitative(qualitative), produceSchedulers(produceSchedulers), resultHint(resultHint) {
+            CheckTask(std::reference_wrapper<FormulaType const> const& formula, boost::optional<storm::OptimizationDirection> const& optimizationDirection, boost::optional<std::string> const& rewardModel, bool onlyInitialStatesRelevant, boost::optional<storm::logic::Bound> const& bound, bool qualitative, bool produceSchedulers, std::shared_ptr<ModelCheckerHint> const& hint) : formula(formula), optimizationDirection(optimizationDirection), rewardModel(rewardModel), onlyInitialStatesRelevant(onlyInitialStatesRelevant), bound(bound), qualitative(qualitative), produceSchedulers(produceSchedulers), hint(hint) {
                 // Intentionally left empty.
             }
             
@@ -276,10 +273,8 @@ namespace storm {
             // if this flag is set.
             bool produceSchedulers;
             
-            // If supported by the model checker and the model formalism, this vector serves as initial guess for the
-            // solution.
-            boost::optional<std::vector<ValueType>> resultHint;
-       //     boost::optional<storm::storage::Scheduler> schedulerHint; //TODO: will need two schedulers for games
+            // A hint that might contain information that speeds up the modelchecking process (if supported by the model checker)
+            std::shared_ptr<ModelCheckerHint> hint;
         };
         
     }

@@ -1,10 +1,3 @@
-/* 
- * File:   ModelInstantiator.h
- * Author: Tim Quatmann
- *
- * Created on February 23, 2016
- */
-
 #ifndef STORM_UTILITY_MODELINSTANTIATOR_H
 #define	STORM_UTILITY_MODELINSTANTIATOR_H
 
@@ -53,7 +46,7 @@ namespace storm {
                  * @param valuation Maps each occurring variables to the value with which it should be substituted
                  * @return The instantiated model
                  */
-                ConstantSparseModelType const& instantiate(std::map<VariableType, CoefficientType>const& valuation);
+                ConstantSparseModelType const& instantiate(storm::utility::parametric::Valuation<ParametricType> const& valuation);
                 
                 /*!
                  *  Check validity

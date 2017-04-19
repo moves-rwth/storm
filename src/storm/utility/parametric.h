@@ -1,10 +1,3 @@
-//
-//  parametric.h
-//
-//  Created by Tim Quatmann on 08/03/16.
-//
-//
-
 #ifndef STORM_UTILITY_PARAMETRIC_H
 #define STORM_UTILITY_PARAMETRIC_H
 
@@ -21,6 +14,7 @@ namespace storm {
              */
             template<typename FunctionType>
             struct VariableType { typedef void type; };
+            
             /*!
              * Acess the type of coefficients from a given function type
              */
@@ -33,19 +27,33 @@ namespace storm {
             template<>
             struct CoefficientType<storm::RationalFunction> { typedef storm::RationalFunctionCoefficient type; };
 #endif
-            
+
+            template<typename FunctionType> using Valuation = std::map<typename VariableType<FunctionType>::type, typename CoefficientType<FunctionType>::type>;
+
             /*!
              * Evaluates the given function wrt. the given valuation
              */
             template<typename FunctionType>
-            typename CoefficientType<FunctionType>::type evaluate(FunctionType const& function, std::map<typename VariableType<FunctionType>::type, typename CoefficientType<FunctionType>::type> const& valuation);
+            typename CoefficientType<FunctionType>::type evaluate(FunctionType const& function, Valuation<FunctionType> const& valuation);
             
             /*!
-             * Retrieves the constant part of the given function.
+             *  Add all variables that occur in the given function to the the given set
              */
             template<typename FunctionType>
-            typename CoefficientType<FunctionType>::type getConstantPart(FunctionType const& function);
-
+            void gatherOccurringVariables(FunctionType const& function, std::set<typename VariableType<FunctionType>::type>& variableSet);
+            
+            /*!
+             *  Checks whether the function is linear (in one parameter)
+             */
+            template<typename FunctionType>
+            bool isLinear(FunctionType const& function);
+            
+            /*!
+             *  Checks whether the function is a multilinear polynomial, i.e., a polynomial which only considers variables with exponent at most 1
+             */
+            template<typename FunctionType>
+            bool isMultiLinearPolynomial(FunctionType const& function);
+            
         }
         
     }

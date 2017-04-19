@@ -1,10 +1,3 @@
-/* 
- * File:   parametric.cpp
- * Author: Tim Quatmann
- * 
- * Created by Tim Quatmann on 08/03/16.
- */
-
 #include <string>
 
 #include "storm/utility/parametric.h"
@@ -25,13 +18,32 @@ namespace storm {
             
 #ifdef STORM_HAVE_CARL
             template<>
-            typename CoefficientType<storm::RationalFunction>::type evaluate<storm::RationalFunction>(storm::RationalFunction const& function, std::map<typename VariableType<storm::RationalFunction>::type, typename CoefficientType<storm::RationalFunction>::type> const& valuation){
+            typename CoefficientType<storm::RationalFunction>::type evaluate<storm::RationalFunction>(storm::RationalFunction const& function, Valuation<storm::RationalFunction> const& valuation){
                 return function.evaluate(valuation);
             }
             
             template<>
-            typename CoefficientType<storm::RationalFunction>::type getConstantPart<storm::RationalFunction>(storm::RationalFunction const& function){
-                return function.constantPart();
+            void gatherOccurringVariables<storm::RationalFunction>(storm::RationalFunction const& function, std::set<typename VariableType<storm::RationalFunction>::type>& variableSet){
+                function.gatherVariables(variableSet);
+            }
+            
+            template<>
+            bool isLinear<storm::RationalFunction>(storm::RationalFunction const& function) {
+                return storm::utility::isConstant(function.denominator()) && function.nominator().isLinear();
+            }
+            
+            template<>
+            bool isMultiLinearPolynomial<storm::RationalFunction>(storm::RationalFunction const& function) {
+                if (!storm::utility::isConstant(function.denominator())) {
+                    return false;
+                }
+                auto varInfos = function.nominator().getVarInfo<false>();
+                for (auto const& varInfo : varInfos) {
+                    if (varInfo.second.maxDegree() > 1) {
+                        return false;
+                    }
+                }
+                return true;
             }
 #endif
         }

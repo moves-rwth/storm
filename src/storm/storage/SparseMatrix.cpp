@@ -1043,6 +1043,50 @@ namespace storm {
             
             return transposedMatrix;
         }
+            
+        template <typename ValueType>
+        SparseMatrix<ValueType> SparseMatrix<ValueType>::transposeSelectedRowsFromRowGroups(std::vector<uint_fast64_t> const& rowGroupChoices, bool keepZeros) const {
+            index_type rowCount = this->getColumnCount();
+            index_type columnCount = this->getRowGroupCount();
+            
+            // Get the overall entry count as well as the number of entries of each column
+            index_type entryCount = 0;
+            std::vector<index_type> rowIndications(columnCount + 1);
+            auto rowGroupChoiceIt = rowGroupChoices.begin();
+            for (index_type rowGroup = 0;  rowGroup < columnCount; ++rowGroup, ++rowGroupChoiceIt) {
+                for(auto const& entry : this->getRow(rowGroup, *rowGroupChoiceIt)) {
+                    if(keepZeros || !storm::utility::isZero(entry.getValue())) {
+                        ++entryCount;
+                        ++rowIndications[entry.getColumn() + 1];
+                    }
+                }
+            }
+            
+            // Now compute the accumulated offsets.
+            for (index_type i = 1; i < rowCount + 1; ++i) {
+                rowIndications[i] = rowIndications[i - 1] + rowIndications[i];
+            }
+            
+            std::vector<MatrixEntry<index_type, ValueType>> columnsAndValues(entryCount);
+            
+            // Create an array that stores the index for the next value to be added for
+            // each row in the transposed matrix. Initially this corresponds to the previously
+            // computed accumulated offsets.
+            std::vector<index_type> nextIndices = rowIndications;
+            
+            // Now we are ready to actually fill in the values of the transposed matrix.
+            rowGroupChoiceIt = rowGroupChoices.begin();
+            for (index_type rowGroup = 0;  rowGroup < columnCount; ++rowGroup, ++rowGroupChoiceIt) {
+                for(auto const& entry : this->getRow(rowGroup, *rowGroupChoiceIt)) {
+                    if(keepZeros || !storm::utility::isZero(entry.getValue())) {
+                        columnsAndValues[nextIndices[entry.getColumn()]] = std::make_pair(rowGroup, entry.getValue());
+                        ++nextIndices[entry.getColumn()];
+                    }
+                }
+            }
+            
+            return storm::storage::SparseMatrix<ValueType>(std::move(columnCount), std::move(rowIndications), std::move(columnsAndValues), boost::none);
+        }
         
         template<typename ValueType>
         void SparseMatrix<ValueType>::convertToEquationSystem() {
@@ -1319,7 +1363,7 @@ namespace storm {
         template<typename ValueType>
         typename SparseMatrix<ValueType>::const_rows SparseMatrix<ValueType>::getRow(index_type rowGroup, index_type offset) const {
             STORM_LOG_ASSERT(rowGroup < this->getRowGroupCount(), "Row group is out-of-bounds.");
-            STORM_LOG_ASSERT(offset < this->getRowGroupEntryCount(rowGroup), "Row offset in row-group is out-of-bounds.");
+            STORM_LOG_ASSERT(offset < this->getRowGroupSize(rowGroup), "Row offset in row-group is out-of-bounds.");
             if (!this->hasTrivialRowGrouping()) {
                 return getRow(this->getRowGroupIndices()[rowGroup] + offset);
             } else {
@@ -1330,7 +1374,7 @@ namespace storm {
         template<typename ValueType>
         typename SparseMatrix<ValueType>::rows SparseMatrix<ValueType>::getRow(index_type rowGroup, index_type offset) {
             STORM_LOG_ASSERT(rowGroup < this->getRowGroupCount(), "Row group is out-of-bounds.");
-            STORM_LOG_ASSERT(offset < this->getRowGroupEntryCount(rowGroup), "Row offset in row-group is out-of-bounds.");
+            STORM_LOG_ASSERT(offset < this->getRowGroupSize(rowGroup), "Row offset in row-group is out-of-bounds.");
             if (!this->hasTrivialRowGrouping()) {
                 return getRow(this->getRowGroupIndices()[rowGroup] + offset);
             } else {

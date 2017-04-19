@@ -39,6 +39,27 @@ namespace storm {
                  */
 				std::string exportResultPath() const;
 				
+				/*!
+				 * Retrieves whether the parameter space was declared
+				 */
+				bool isParameterSpaceSet() const;
+				
+				/*!
+				 * Retrieves the given parameter spcae
+				 */
+				std::string getParameterSpace() const;
+				
+				/*!
+				 * Retrieves the threshold considered for iterative region refinement.
+				 * The refinement converges as soon as the fraction of unknown area falls below this threshold
+				 */
+				double getRefinementThreshold() const;
+				
+				/*!
+				 * Retrieves whether exact validation should be performed
+				 */
+				bool isExactValidationSet() const;
+				
 				/**
 				 * Retrieves whether the encoding of the transition system should be exported to a file. 
 				 * @return True iff the smt file should be encoded.
@@ -70,6 +91,9 @@ namespace storm {
 				const static std::string encodeSmt2StrategyOptionName;
 				const static std::string exportSmt2DestinationPathOptionName;
 				const static std::string exportResultDestinationPathOptionName;
+				const static std::string parameterSpaceOptionName;
+				const static std::string refinementThresholdOptionName;
+				const static std::string exactValidationOptionName;
                 const static std::string derivativesOptionName;
             };
             

@@ -1,10 +1,3 @@
-/* 
- * File:   ModelInstantiator.cpp
- * Author: Tim Quatmann
- * 
- * Created on February 23, 2016
- */
-
 #include "storm/utility/ModelInstantiator.h"
 #include "storm/models/sparse/StandardRewardModel.h"
 
@@ -100,7 +93,7 @@ namespace storm {
                     STORM_LOG_ASSERT(parametricEntryIt->getColumn() == constantEntryIt->getColumn(), "Entries of parametric and constant matrix are not at the same position");
                     if(storm::utility::isConstant(parametricEntryIt->getValue())){
                         //Constant entries can be inserted directly
-                        constantEntryIt->setValue(storm::utility::convertNumber<ConstantType>(storm::utility::parametric::getConstantPart(parametricEntryIt->getValue())));
+                        constantEntryIt->setValue(storm::utility::convertNumber<ConstantType>(parametricEntryIt->getValue()));
                     } else {
                         //insert the new function and store that the current constantMatrix entry needs to be set to the value of this function
                         auto functionsIt = functions.insert(std::make_pair(parametricEntryIt->getValue(), dummyValue)).first;
@@ -125,7 +118,7 @@ namespace storm {
                 while(parametricEntryIt != parametricVector.end()){
                     if(storm::utility::isConstant(storm::utility::simplify(*parametricEntryIt))){
                         //Constant entries can be inserted directly
-                        *constantEntryIt = storm::utility::convertNumber<ConstantType>(storm::utility::parametric::getConstantPart(*parametricEntryIt));
+                        *constantEntryIt = storm::utility::convertNumber<ConstantType>(*parametricEntryIt);
                     } else {
                         //insert the new function and store that the current constantVector entry needs to be set to the value of this function
                         auto functionsIt = functions.insert(std::make_pair(*parametricEntryIt, dummyValue)).first;
@@ -139,7 +132,7 @@ namespace storm {
             }
             
             template<typename ParametricSparseModelType, typename ConstantSparseModelType>
-            ConstantSparseModelType const& ModelInstantiator<ParametricSparseModelType, ConstantSparseModelType>::instantiate(std::map<VariableType, CoefficientType>const& valuation){
+            ConstantSparseModelType const& ModelInstantiator<ParametricSparseModelType, ConstantSparseModelType>::instantiate(storm::utility::parametric::Valuation<ParametricType> const& valuation){
                 //Write results into the placeholders
                 for(auto& functionResult : this->functions){
                     functionResult.second=storm::utility::convertNumber<ConstantType>(
@@ -168,6 +161,12 @@ namespace storm {
             template class ModelInstantiator<storm::models::sparse::Ctmc<storm::RationalFunction>, storm::models::sparse::Ctmc<double>>;
             template class ModelInstantiator<storm::models::sparse::MarkovAutomaton<storm::RationalFunction>, storm::models::sparse::MarkovAutomaton<double>>;
             template class ModelInstantiator<storm::models::sparse::StochasticTwoPlayerGame<storm::RationalFunction>, storm::models::sparse::StochasticTwoPlayerGame<double>>;
+        
+            template class ModelInstantiator<storm::models::sparse::Dtmc<storm::RationalFunction>, storm::models::sparse::Dtmc<storm::RationalNumber>>;
+            template class ModelInstantiator<storm::models::sparse::Mdp<storm::RationalFunction>, storm::models::sparse::Mdp<storm::RationalNumber>>;
+            template class ModelInstantiator<storm::models::sparse::Ctmc<storm::RationalFunction>, storm::models::sparse::Ctmc<storm::RationalNumber>>;
+            template class ModelInstantiator<storm::models::sparse::MarkovAutomaton<storm::RationalFunction>, storm::models::sparse::MarkovAutomaton<storm::RationalNumber>>;
+            template class ModelInstantiator<storm::models::sparse::StochasticTwoPlayerGame<storm::RationalFunction>, storm::models::sparse::StochasticTwoPlayerGame<storm::RationalNumber>>;
 #endif
     } //namespace utility
 } //namespace storm

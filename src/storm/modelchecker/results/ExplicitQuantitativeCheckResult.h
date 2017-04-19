@@ -45,6 +45,7 @@ namespace storm {
             virtual bool isExplicitQuantitativeCheckResult() const override;
             
             vector_type const& getValueVector() const;
+            vector_type& getValueVector();
             map_type const& getValueMap() const;
             
             virtual std::ostream& writeToStream(std::ostream& out) const override;
@@ -63,6 +64,7 @@ namespace storm {
             bool hasScheduler() const;
             void setScheduler(std::unique_ptr<storm::storage::Scheduler>&& scheduler);
             storm::storage::Scheduler const& getScheduler() const;
+            storm::storage::Scheduler& getScheduler();
             
         private:
             // The values of the quantitative check result.

@@ -61,11 +61,11 @@ namespace storm {
                             entryIt->setValue(storm::utility::simplify((ValueType) (entryIt->getValue() * columnValue)));
                         }
                     }
-                    updateValue(column, columnValue);
+                    updateValue(row, columnValue);
                 }
                 
                 // Now substitute the row entries in all other rows that contain an element whose column is the current row.
-                FlexibleRowType& elementsWithEntryInColumnEqualRow = transposedMatrix.getRow(row);
+                FlexibleRowType& elementsWithEntryInColumnEqualRow = transposedMatrix.getRow(column);
                 
                 // In case we have a constrained elimination, we need to keep track of the rows that keep their value
                 // in the column equal to the current row.
@@ -169,7 +169,7 @@ namespace storm {
                     predecessorForwardTransitions = std::move(newSuccessors);
                     STORM_LOG_TRACE("Fixed new next-state probabilities of predecessor state " << predecessor << ".");
                     
-                    updatePredecessor(predecessor, multiplyFactor, column);
+                    updatePredecessor(predecessor, multiplyFactor, row);
                     
                     STORM_LOG_TRACE("Updating priority of predecessor.");
                     updatePriority(predecessor);
@@ -187,7 +187,7 @@ namespace storm {
                     // Delete the current state as a predecessor of the successor state only if we are going to remove the
                     // current state's forward transitions.
                     if (clearRow) {
-                        FlexibleRowIterator elimIt = std::find_if(successorBackwardTransitions.begin(), successorBackwardTransitions.end(), [&](storm::storage::MatrixEntry<typename storm::storage::FlexibleSparseMatrix<ValueType>::index_type, typename storm::storage::FlexibleSparseMatrix<ValueType>::value_type> const& a) { return a.getColumn() == column; });
+                        FlexibleRowIterator elimIt = std::find_if(successorBackwardTransitions.begin(), successorBackwardTransitions.end(), [&](storm::storage::MatrixEntry<typename storm::storage::FlexibleSparseMatrix<ValueType>::index_type, typename storm::storage::FlexibleSparseMatrix<ValueType>::value_type> const& a) { return a.getColumn() == row; });
                         STORM_LOG_ASSERT(elimIt != successorBackwardTransitions.end(), "Expected a proper backward transition from " << successorEntry.getColumn() << " to " << column << ", but found none.");
                         successorBackwardTransitions.erase(elimIt);
                     }
@@ -207,7 +207,7 @@ namespace storm {
                             break;
                         }
                         if (first2->getColumn() < first1->getColumn()) {
-                            if (first2->getColumn() != column) {
+                            if (first2->getColumn() != row) {
                                 *result = *first2;
                             }
                             ++first2;
@@ -225,9 +225,9 @@ namespace storm {
                         }
                     }
                     if (isFilterPredecessor()) {
-                        std::copy_if(first2, last2, result, [&] (storm::storage::MatrixEntry<typename storm::storage::FlexibleSparseMatrix<ValueType>::index_type, typename storm::storage::FlexibleSparseMatrix<ValueType>::value_type> const& a) { return a.getColumn() != column && filterPredecessor(a.getColumn()); });
+                        std::copy_if(first2, last2, result, [&] (storm::storage::MatrixEntry<typename storm::storage::FlexibleSparseMatrix<ValueType>::index_type, typename storm::storage::FlexibleSparseMatrix<ValueType>::value_type> const& a) { return a.getColumn() != row && filterPredecessor(a.getColumn()); });
                     } else {
-                        std::copy_if(first2, last2, result, [&] (storm::storage::MatrixEntry<typename storm::storage::FlexibleSparseMatrix<ValueType>::index_type, typename storm::storage::FlexibleSparseMatrix<ValueType>::value_type> const& a) { return a.getColumn() != column; });
+                        std::copy_if(first2, last2, result, [&] (storm::storage::MatrixEntry<typename storm::storage::FlexibleSparseMatrix<ValueType>::index_type, typename storm::storage::FlexibleSparseMatrix<ValueType>::value_type> const& a) { return a.getColumn() != row; });
                     }
                     // Now move the new predecessors in place.
                     successorBackwardTransitions = std::move(newPredecessors);

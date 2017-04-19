@@ -233,6 +233,34 @@ namespace storm {
             }
             
             template<typename ValueType>
+            template<typename MatrixValueType>
+            storm::storage::BitVector StandardRewardModel<ValueType>::getStatesWithZeroReward(storm::storage::SparseMatrix<MatrixValueType> const& transitionMatrix) const {
+                storm::storage::BitVector result = this->hasStateRewards() ? storm::utility::vector::filterZero(this->getStateRewardVector()) : storm::storage::BitVector(transitionMatrix.getRowGroupCount(), true);
+                if (this->hasStateActionRewards()) {
+                    for (uint_fast64_t state = 0; state < transitionMatrix.getRowGroupCount(); ++state) {
+                        for (uint_fast64_t row = transitionMatrix.getRowGroupIndices()[state]; row < transitionMatrix.getRowGroupIndices()[state+1]; ++row) {
+                            if(!storm::utility::isZero(this->getStateActionRewardVector()[row])) {
+                                result.set(state, false);
+                                break;
+                            }
+                        }
+                    }
+                }
+                if (this->hasTransitionRewards()) {
+                    for (uint_fast64_t state = 0; state < transitionMatrix.getRowGroupCount(); ++state) {
+                        for (auto const& rewardMatrixEntry : this->getTransitionRewardMatrix().getRowGroup(state)) {
+                            if(!storm::utility::isZero(rewardMatrixEntry.getValue())) {
+                                result.set(state, false);
+                                break;
+                            }
+                        }
+                    }
+                }
+                return result;
+            }
+
+            
+            template<typename ValueType>
             void StandardRewardModel<ValueType>::setStateActionRewardValue(uint_fast64_t row, ValueType const& value) {
                 this->optionalStateActionRewardVector.get()[row] = value;
             }
@@ -304,6 +332,7 @@ namespace storm {
             template std::vector<double> StandardRewardModel<double>::getTotalRewardVector(uint_fast64_t numberOfRows, storm::storage::SparseMatrix<double> const& transitionMatrix, storm::storage::BitVector const& filter) const;
             template std::vector<double> StandardRewardModel<double>::getTotalRewardVector(storm::storage::SparseMatrix<double> const& transitionMatrix, std::vector<double> const& weights, bool scaleTransAndActions) const;
             template std::vector<double> StandardRewardModel<double>::getTotalActionRewardVector(storm::storage::SparseMatrix<double> const& transitionMatrix,  std::vector<double> const& stateRewardWeights) const;
+            template storm::storage::BitVector StandardRewardModel<double>::getStatesWithZeroReward(storm::storage::SparseMatrix<double> const& transitionMatrix) const;
             template void StandardRewardModel<double>::reduceToStateBasedRewards(storm::storage::SparseMatrix<double> const& transitionMatrix, bool reduceToStateRewards);
             template void StandardRewardModel<double>::setStateActionReward(uint_fast64_t choiceIndex, double const & newValue);
             template void StandardRewardModel<double>::setStateReward(uint_fast64_t state, double const & newValue);
@@ -325,6 +354,7 @@ namespace storm {
             template std::vector<storm::RationalNumber> StandardRewardModel<storm::RationalNumber>::getTotalRewardVector(storm::storage::SparseMatrix<storm::RationalNumber> const& transitionMatrix) const;
             template std::vector<storm::RationalNumber> StandardRewardModel<storm::RationalNumber>::getTotalRewardVector(storm::storage::SparseMatrix<storm::RationalNumber> const& transitionMatrix, std::vector<storm::RationalNumber> const& weights, bool scaleTransAndActions) const;
             template std::vector<storm::RationalNumber> StandardRewardModel<storm::RationalNumber>::getTotalActionRewardVector(storm::storage::SparseMatrix<storm::RationalNumber> const& transitionMatrix,  std::vector<storm::RationalNumber> const& stateRewardWeights) const;
+            template storm::storage::BitVector StandardRewardModel<storm::RationalNumber>::getStatesWithZeroReward(storm::storage::SparseMatrix<storm::RationalNumber> const& transitionMatrix) const;
             template void StandardRewardModel<storm::RationalNumber>::reduceToStateBasedRewards(storm::storage::SparseMatrix<storm::RationalNumber> const& transitionMatrix, bool reduceToStateRewards);
             template void StandardRewardModel<storm::RationalNumber>::setStateActionReward(uint_fast64_t choiceIndex, storm::RationalNumber const & newValue);
             template void StandardRewardModel<storm::RationalNumber>::setStateReward(uint_fast64_t state, storm::RationalNumber const & newValue);
@@ -334,6 +364,8 @@ namespace storm {
             template std::vector<storm::RationalFunction> StandardRewardModel<storm::RationalFunction>::getTotalRewardVector(uint_fast64_t numberOfRows, storm::storage::SparseMatrix<storm::RationalFunction> const& transitionMatrix, storm::storage::BitVector const& filter) const;
             template std::vector<storm::RationalFunction> StandardRewardModel<storm::RationalFunction>::getTotalRewardVector(storm::storage::SparseMatrix<storm::RationalFunction> const& transitionMatrix) const;
             template std::vector<storm::RationalFunction> StandardRewardModel<storm::RationalFunction>::getTotalRewardVector(storm::storage::SparseMatrix<storm::RationalFunction> const& transitionMatrix, std::vector<storm::RationalFunction> const& weights, bool scaleTransAndActions) const;
+            template storm::storage::BitVector StandardRewardModel<storm::RationalFunction>::getStatesWithZeroReward(storm::storage::SparseMatrix<storm::RationalFunction> const& transitionMatrix) const;
+
             template std::vector<storm::RationalFunction> StandardRewardModel<storm::RationalFunction>::getTotalActionRewardVector(storm::storage::SparseMatrix<storm::RationalFunction> const& transitionMatrix,  std::vector<storm::RationalFunction> const& stateRewardWeights) const;
             template void StandardRewardModel<storm::RationalFunction>::reduceToStateBasedRewards(storm::storage::SparseMatrix<storm::RationalFunction> const& transitionMatrix, bool reduceToStateRewards);
             template void StandardRewardModel<storm::RationalFunction>::setStateActionReward(uint_fast64_t choiceIndex, storm::RationalFunction const & newValue);

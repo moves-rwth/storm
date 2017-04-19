@@ -6,6 +6,7 @@
 
 #include "storm/utility/vector.h"
 #include "storm/adapters/CarlAdapter.h"
+#include "storm/utility/NumberTraits.h"
 
 #include "storm/exceptions/IllegalArgumentException.h"
 #include "storm/exceptions/IllegalFunctionCallException.h"
@@ -334,8 +335,7 @@ namespace storm {
             
             template<typename ValueType, typename RewardModelType>
             bool Model<ValueType, RewardModelType>::isExact() const {
-                // TODO: change when dedicated data-structure for exact values is present
-                return this->supportsParameters();
+                return storm::NumberTraits<ValueType>::IsExact && storm::NumberTraits<typename RewardModelType::ValueType>::IsExact;
             }
             
             template<typename ValueType, typename RewardModelType>

@@ -25,12 +25,12 @@
 #include "storm/settings/modules/NativeEquationSolverSettings.h"
 #include "storm/settings/modules/EliminationSettings.h"
 #include "storm/settings/modules/MinMaxEquationSolverSettings.h"
+#include "storm/settings/modules/GameSolverSettings.h"
 #include "storm/settings/modules/BisimulationSettings.h"
 #include "storm/settings/modules/GlpkSettings.h"
 #include "storm/settings/modules/GurobiSettings.h"
 #include "storm/settings/modules/Smt2SmtSolverSettings.h"
 #include "storm/settings/modules/ParametricSettings.h"
-#include "storm/settings/modules/RegionSettings.h"
 #include "storm/settings/modules/TopologicalValueIterationEquationSolverSettings.h"
 #include "storm/settings/modules/ExplorationSettings.h"
 #include "storm/settings/modules/ResourceSettings.h"
@@ -522,12 +522,12 @@ namespace storm {
             storm::settings::addModule<storm::settings::modules::NativeEquationSolverSettings>();
             storm::settings::addModule<storm::settings::modules::EliminationSettings>();
             storm::settings::addModule<storm::settings::modules::MinMaxEquationSolverSettings>();
+            storm::settings::addModule<storm::settings::modules::GameSolverSettings>();
             storm::settings::addModule<storm::settings::modules::BisimulationSettings>();
             storm::settings::addModule<storm::settings::modules::GlpkSettings>();
             storm::settings::addModule<storm::settings::modules::GurobiSettings>();
             storm::settings::addModule<storm::settings::modules::TopologicalValueIterationEquationSolverSettings>();
             storm::settings::addModule<storm::settings::modules::ParametricSettings>();
-            storm::settings::addModule<storm::settings::modules::RegionSettings>();
             storm::settings::addModule<storm::settings::modules::Smt2SmtSolverSettings>();
             storm::settings::addModule<storm::settings::modules::ExplorationSettings>();
             storm::settings::addModule<storm::settings::modules::ResourceSettings>();

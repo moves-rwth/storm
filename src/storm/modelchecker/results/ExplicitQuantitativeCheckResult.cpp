@@ -48,6 +48,11 @@ namespace storm {
         }
         
         template<typename ValueType>
+        typename ExplicitQuantitativeCheckResult<ValueType>::vector_type& ExplicitQuantitativeCheckResult<ValueType>::getValueVector() {
+            return boost::get<vector_type>(values);
+        }
+        
+        template<typename ValueType>
         typename ExplicitQuantitativeCheckResult<ValueType>::map_type const& ExplicitQuantitativeCheckResult<ValueType>::getValueMap() const {
             return boost::get<map_type>(values);
         }
@@ -167,6 +172,12 @@ namespace storm {
         
         template<typename ValueType>
         storm::storage::Scheduler const& ExplicitQuantitativeCheckResult<ValueType>::getScheduler() const {
+            STORM_LOG_THROW(this->hasScheduler(), storm::exceptions::InvalidOperationException, "Unable to retrieve non-existing scheduler.");
+            return *scheduler.get();
+        }
+        
+        template<typename ValueType>
+        storm::storage::Scheduler& ExplicitQuantitativeCheckResult<ValueType>::getScheduler() {
             STORM_LOG_THROW(this->hasScheduler(), storm::exceptions::InvalidOperationException, "Unable to retrieve non-existing scheduler.");
             return *scheduler.get();
         }

@@ -42,7 +42,7 @@ namespace storm {
                 } else {
                     std::vector<EigenVector> eigenPoints;
                     eigenPoints.reserve(points.size());
-                    for(auto const& p : points){
+                    for (auto const& p : points){
                         eigenPoints.emplace_back(storm::adapters::EigenAdapter::toEigenVector(p));
                     }
 

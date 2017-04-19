@@ -20,7 +20,6 @@
 #include "storm/settings/modules/IOSettings.h"
 #include "storm/settings/modules/BisimulationSettings.h"
 #include "storm/settings/modules/ParametricSettings.h"
-#include "storm/settings/modules/RegionSettings.h"
 #include "storm/settings/modules/EliminationSettings.h"
 #include "storm/settings/modules/JitBuilderSettings.h"
 #include "storm/settings/modules/JaniExportSettings.h"
@@ -69,10 +68,10 @@
 #include "storm/modelchecker/prctl/SymbolicMdpPrctlModelChecker.h"
 #include "storm/modelchecker/reachability/SparseDtmcEliminationModelChecker.h"
 #include "storm/modelchecker/abstraction/GameBasedMdpModelChecker.h"
-#include "storm/modelchecker/region/SparseDtmcRegionModelChecker.h"
-#include "storm/modelchecker/region/SparseMdpRegionModelChecker.h"
-#include "storm/modelchecker/region/ParameterRegion.h"
 #include "storm/modelchecker/exploration/SparseExplorationModelChecker.h"
+#include "storm/modelchecker/parametric/SparseDtmcRegionChecker.h"
+#include "storm/modelchecker/parametric/SparseMdpRegionChecker.h"
+#include "storm/utility/parameterlifting.h"
 
 #include "storm/modelchecker/csl/SparseCtmcCslModelChecker.h"
 #include "storm/modelchecker/csl/helper/SparseCtmcCslHelper.h"
@@ -83,6 +82,8 @@
 #include "storm/modelchecker/results/SymbolicQualitativeCheckResult.h"
 #include "storm/modelchecker/results/HybridQuantitativeCheckResult.h"
 #include "storm/modelchecker/results/SymbolicQualitativeCheckResult.h"
+
+#include "storm/transformer/ContinuousToDiscreteTimeModelTransformer.h"
 
 // Headers for counterexample generation.
 #include "storm/counterexamples/MILPMinimalLabelSetGenerator.h"
@@ -322,6 +323,137 @@ namespace storm {
         }
     }
     
+    template<typename ParametricType>
+    inline void performParameterLifting(std::shared_ptr<storm::models::sparse::Model<ParametricType>>, std::shared_ptr<storm::logic::Formula const> const&) {
+        STORM_LOG_THROW(false, storm::exceptions::InvalidSettingsException, "Unable to perform parameterLifting for non-parametric model.");
+    }
+
+#ifdef STORM_HAVE_CARL
+    template<>
+    inline void performParameterLifting(std::shared_ptr<storm::models::sparse::Model<storm::RationalFunction>> markovModel, std::shared_ptr<storm::logic::Formula const> const& formula) {
+        storm::utility::Stopwatch parameterLiftingStopWatch(true);
+        std::shared_ptr<storm::logic::Formula const> consideredFormula = formula;
+        
+        STORM_LOG_WARN_COND(storm::utility::parameterlifting::validateParameterLiftingSound(markovModel, formula), "Could not validate whether parameter lifting is sound on the input model and the formula " << *formula);
+        
+        if (markovModel->isOfType(storm::models::ModelType::Ctmc) || markovModel->isOfType(storm::models::ModelType::MarkovAutomaton)) {
+            STORM_PRINT_AND_LOG("Transforming continuous model to discrete model...");
+            storm::transformer::transformContinuousToDiscreteModelInPlace(markovModel, consideredFormula);
+            STORM_PRINT_AND_LOG(" done!" << std::endl);
+            markovModel->printModelInformationToStream(std::cout);
+        }
+        
+        auto modelParameters = storm::models::sparse::getProbabilityParameters(*markovModel);
+        auto rewParameters = storm::models::sparse::getRewardParameters(*markovModel);
+        modelParameters.insert(rewParameters.begin(), rewParameters.end());
+        
+        STORM_LOG_THROW(storm::settings::getModule<storm::settings::modules::ParametricSettings>().isParameterSpaceSet(), storm::exceptions::InvalidSettingsException, "Invoked Parameter lifting but no parameter space was defined.");
+        auto parameterSpaceAsString = storm::settings::getModule<storm::settings::modules::ParametricSettings>().getParameterSpace();
+        auto parameterSpace = storm::storage::ParameterRegion<storm::RationalFunction>::parseRegion(parameterSpaceAsString, modelParameters);
+        auto refinementThreshold = storm::utility::convertNumber<typename storm::storage::ParameterRegion<storm::RationalFunction>::CoefficientType>(storm::settings::getModule<storm::settings::modules::ParametricSettings>().getRefinementThreshold());
+        std::vector<std::pair<storm::storage::ParameterRegion<storm::RationalFunction>, storm::modelchecker::parametric::RegionCheckResult>> result;
+                
+        STORM_PRINT_AND_LOG("Performing parameter lifting for property " << *consideredFormula << " with parameter space " << parameterSpace.toString(true) << " and refinement threshold " << storm::utility::convertNumber<double>(refinementThreshold) << " ..." << std::endl);
+        
+        storm::modelchecker::CheckTask<storm::logic::Formula, storm::RationalFunction> task(*consideredFormula, true);
+        std::string resultVisualization;
+        
+        if (markovModel->isOfType(storm::models::ModelType::Dtmc)) {
+            if (storm::settings::getModule<storm::settings::modules::GeneralSettings>().isExactSet()) {
+                storm::modelchecker::parametric::SparseDtmcRegionChecker <storm::models::sparse::Dtmc<storm::RationalFunction>, storm::RationalNumber> regionChecker(*markovModel->template as<storm::models::sparse::Dtmc<storm::RationalFunction>>());
+                regionChecker.specifyFormula(task);
+                result = regionChecker.performRegionRefinement(parameterSpace, refinementThreshold);
+                parameterLiftingStopWatch.stop();
+                if (modelParameters.size() == 2) {
+                    resultVisualization = regionChecker.visualizeResult(result, parameterSpace, *modelParameters.begin(), *(modelParameters.rbegin()));
+                }
+            } else {
+                storm::modelchecker::parametric::SparseDtmcRegionChecker <storm::models::sparse::Dtmc<storm::RationalFunction>, double, storm::RationalNumber> regionChecker(*markovModel->template as<storm::models::sparse::Dtmc<storm::RationalFunction>>());
+                regionChecker.specifyFormula(task);
+                result = regionChecker.performRegionRefinement(parameterSpace, refinementThreshold);
+                parameterLiftingStopWatch.stop();
+                if (modelParameters.size() == 2) {
+                    resultVisualization = regionChecker.visualizeResult(result, parameterSpace, *modelParameters.begin(), *(modelParameters.rbegin()));
+                }
+            }
+        } else if (markovModel->isOfType(storm::models::ModelType::Mdp)) {
+            if (storm::settings::getModule<storm::settings::modules::GeneralSettings>().isExactSet()) {
+                storm::modelchecker::parametric::SparseMdpRegionChecker<storm::models::sparse::Mdp<storm::RationalFunction>, storm::RationalNumber> regionChecker(*markovModel->template as<storm::models::sparse::Mdp<storm::RationalFunction>>());
+                regionChecker.specifyFormula(task);
+                result = regionChecker.performRegionRefinement(parameterSpace, refinementThreshold);
+                parameterLiftingStopWatch.stop();
+                if (modelParameters.size() == 2) {
+                    resultVisualization = regionChecker.visualizeResult(result, parameterSpace, *modelParameters.begin(), *(modelParameters.rbegin()));
+                }
+            } else {
+                storm::modelchecker::parametric::SparseMdpRegionChecker<storm::models::sparse::Mdp<storm::RationalFunction>, double, storm::RationalNumber> regionChecker(*markovModel->template as<storm::models::sparse::Mdp<storm::RationalFunction>>());
+                regionChecker.specifyFormula(task);
+                result = regionChecker.performRegionRefinement(parameterSpace, refinementThreshold);
+                parameterLiftingStopWatch.stop();
+                if (modelParameters.size() == 2) {
+                    resultVisualization = regionChecker.visualizeResult(result, parameterSpace, *modelParameters.begin(), *(modelParameters.rbegin()));
+                }
+            }
+        } else {
+            STORM_LOG_THROW(false, storm::exceptions::InvalidSettingsException, "Unable to perform parameterLifting on the provided model type.");
+        }
+        
+        
+        auto satArea = storm::utility::zero<typename storm::storage::ParameterRegion<storm::RationalFunction>::CoefficientType>();
+        auto unsatArea = storm::utility::zero<typename storm::storage::ParameterRegion<storm::RationalFunction>::CoefficientType>();
+        uint_fast64_t numOfSatRegions = 0;
+        uint_fast64_t numOfUnsatRegions = 0;
+        for (auto const& res : result) {
+            switch (res.second) {
+                case storm::modelchecker::parametric::RegionCheckResult::AllSat:
+                    satArea += res.first.area();
+                    ++numOfSatRegions;
+                    break;
+                case storm::modelchecker::parametric::RegionCheckResult::AllViolated:
+                    unsatArea += res.first.area();
+                    ++numOfUnsatRegions;
+                    break;
+                default:
+                    STORM_LOG_ERROR("Unexpected result for region " << res.first.toString(true) << " : " << res.second << ".");
+                    break;
+            }
+        }
+        STORM_PRINT_AND_LOG("Done! Found " << numOfSatRegions << " safe regions and "
+                                     << numOfUnsatRegions << " unsafe regions." << std::endl);
+        STORM_PRINT_AND_LOG(storm::utility::convertNumber<double>(satArea / parameterSpace.area()) * 100 << "% of the parameter space is safe, and "
+                         << storm::utility::convertNumber<double>(unsatArea / parameterSpace.area()) * 100 << "% of the parameter space is unsafe." << std::endl);
+        STORM_PRINT_AND_LOG("Model checking with parameter lifting took " << parameterLiftingStopWatch << " seconds." << std::endl);
+        STORM_PRINT_AND_LOG(resultVisualization);
+        
+        if (storm::settings::getModule<storm::settings::modules::ParametricSettings>().exportResultToFile()) {
+            std::string path = storm::settings::getModule<storm::settings::modules::ParametricSettings>().exportResultPath();
+            STORM_PRINT_AND_LOG("Exporting result to path " << path << "." << std::endl);
+            std::ofstream filestream;
+            storm::utility::openFile(path, filestream);
+                
+            for (auto const& res : result) {
+                switch (res.second) {
+                    case storm::modelchecker::parametric::RegionCheckResult::AllSat:
+                        filestream << "safe: " << res.first.toString(true) << std::endl;
+                        break;
+                    case storm::modelchecker::parametric::RegionCheckResult::AllViolated:
+                        filestream << "unsafe: " << res.first.toString(true) << std::endl;
+                        break;
+                    default:
+                        break;
+                }
+            }
+        }
+    }
+#endif
+    
+    template<typename ValueType>
+    inline void performParameterLifting(std::shared_ptr<storm::models::sparse::Model<ValueType>> markovModel, std::vector<std::shared_ptr<storm::logic::Formula const>> const& formulas) {
+        for (auto const& formula : formulas) {
+            performParameterLifting(markovModel, formula);
+        }
+    }
+
     template<typename ValueType, storm::dd::DdType DdType>
     std::unique_ptr<storm::modelchecker::CheckResult> verifyModel(std::shared_ptr<storm::models::ModelBase> model, std::shared_ptr<storm::logic::Formula const> const& formula, bool onlyInitialStatesRelevant) {
         switch(storm::settings::getModule<storm::settings::modules::CoreSettings>().getEngine()) {
@@ -477,88 +609,6 @@ namespace storm {
         }
         return result;
     }
-    
-    /*!
-     * Initializes a region model checker.
-     *
-     * @param regionModelChecker the resulting model checker object
-     * @param programFilePath a path to the prism program file
-     * @param formulaString The considered formula (as path to the file or directly as string.) Should be exactly one formula.
-     * @param constantsString can be used to specify constants for certain parameters, e.g., "p=0.9,R=42"
-     * @return true when initialization was successful
-     */
-    inline bool initializeRegionModelChecker(std::shared_ptr<storm::modelchecker::region::AbstractSparseRegionModelChecker<storm::RationalFunction, double>>& regionModelChecker,
-                                             std::string const& programFilePath,
-                                             std::string const& formulaString,
-                                             std::string const& constantsString=""){
-        regionModelChecker.reset();
-        // Program and formula
-        storm::prism::Program program = parseProgram(programFilePath);
-        program = storm::utility::prism::preprocess(program, constantsString);
-        std::vector<std::shared_ptr<const storm::logic::Formula>> formulas = extractFormulasFromProperties(parsePropertiesForPrismProgram(formulaString, program));
-        if(formulas.size()!=1) {
-            STORM_LOG_ERROR("The given formulaString does not specify exactly one formula");
-            return false;
-        }
-        std::shared_ptr<storm::models::sparse::Model<storm::RationalFunction>> model = buildSparseModel<storm::RationalFunction>(program, formulas);
-        auto const& regionSettings = storm::settings::getModule<storm::settings::modules::RegionSettings>();
-        storm::modelchecker::region::SparseRegionModelCheckerSettings settings(regionSettings.getSampleMode(), regionSettings.getApproxMode(), regionSettings.getSmtMode());
-        // Preprocessing and ModelChecker
-        if (model->isOfType(storm::models::ModelType::Dtmc)){
-            preprocessModel<storm::models::sparse::Dtmc<storm::RationalFunction>>(model,formulas);
-            regionModelChecker = std::make_shared<storm::modelchecker::region::SparseDtmcRegionModelChecker<storm::models::sparse::Dtmc<storm::RationalFunction>, double>>(model->as<storm::models::sparse::Dtmc<storm::RationalFunction>>(), settings);
-        } else if (model->isOfType(storm::models::ModelType::Mdp)){
-            preprocessModel<storm::models::sparse::Mdp<storm::RationalFunction>>(model,formulas);
-            regionModelChecker = std::make_shared<storm::modelchecker::region::SparseMdpRegionModelChecker<storm::models::sparse::Mdp<storm::RationalFunction>, double>>(model->as<storm::models::sparse::Mdp<storm::RationalFunction>>(),  settings);
-        } else {
-            STORM_LOG_ERROR("The type of the given model is not supported (only Dtmcs or Mdps are supported");
-            return false;
-        }
-        // Specify the formula
-        if(!regionModelChecker->canHandle(*formulas[0])){
-            STORM_LOG_ERROR("The given formula is not supported.");
-            return false;
-        }
-        regionModelChecker->specifyFormula(formulas[0]);
-        return true;
-    }
-    
-    /*!
-     * Computes the reachability value at the given point by instantiating the model.
-     *
-     * @param regionModelChecker the model checker object that is to be used
-     * @param point the valuation of the different variables
-     * @return true iff the specified formula is satisfied (i.e., iff the reachability value is within the bound of the formula)
-     */
-    inline bool checkSamplingPoint(std::shared_ptr<storm::modelchecker::region::AbstractSparseRegionModelChecker<storm::RationalFunction, double>> regionModelChecker,
-                                   std::map<storm::RationalFunctionVariable, storm::RationalFunctionCoefficient> const& point){
-        return regionModelChecker->valueIsInBoundOfFormula(regionModelChecker->getReachabilityValue(point));
-    }
-    
-    /*!
-     * Does an approximation of the reachability value for all parameters in the given region.
-     * @param regionModelChecker the model checker object that is to be used
-     * @param lowerBoundaries maps every variable to its lowest possible value within the region. (corresponds to the bottom left corner point in the 2D case)
-     * @param upperBoundaries maps every variable to its highest possible value within the region. (corresponds to the top right corner point in the 2D case)
-     * @param proveAllSat if set to true, it is checked whether the property is satisfied for all parameters in the given region. Otherwise, it is checked
-     *                    whether the property is violated for all parameters.
-     * @return true iff the objective (given by the proveAllSat flag) was accomplished.
-     *
-     * So there are the following cases:
-     * proveAllSat=true,  return=true  ==> the property is SATISFIED for all parameters in the given region
-     * proveAllSat=true,  return=false ==> the approximative value is NOT within the bound of the formula (either the approximation is too bad or there are points in the region that violate the property)
-     * proveAllSat=false, return=true  ==> the property is VIOLATED for all parameters in the given region
-     * proveAllSat=false, return=false ==> the approximative value IS within the bound of the formula (either the approximation is too bad or there are points in the region that satisfy the property)
-     */
-    inline bool checkRegionApproximation(std::shared_ptr<storm::modelchecker::region::AbstractSparseRegionModelChecker<storm::RationalFunction, double>> regionModelChecker,
-                                         std::map<storm::RationalFunctionVariable, storm::RationalFunctionCoefficient> const& lowerBoundaries,
-                                         std::map<storm::RationalFunctionVariable, storm::RationalFunctionCoefficient> const& upperBoundaries,
-                                         bool proveAllSat){
-        storm::modelchecker::region::ParameterRegion<storm::RationalFunction> region(lowerBoundaries, upperBoundaries);
-        return regionModelChecker->checkRegionWithApproximation(region, proveAllSat);
-    }
-    
-    
 #endif
     
     template<storm::dd::DdType DdType, typename ValueType = double>

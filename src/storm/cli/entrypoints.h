@@ -290,7 +290,17 @@ namespace storm {
             
             // Then select the correct engine.
             if (hybrid) {
-                verifySymbolicModelWithHybridEngine<LibraryType, ValueType>(markovModel, properties, onlyInitialStatesRelevant);
+                if (storm::settings::getModule<storm::settings::modules::CoreSettings>().isParameterLiftingSet()) {
+                    STORM_LOG_THROW(storm::settings::getModule<storm::settings::modules::GeneralSettings>().isParametricSet(), storm::exceptions::InvalidSettingsException, "Invoked parameter lifting without enabling the parametric engine.");
+                    STORM_PRINT_AND_LOG("Transforming symbolic model to sparse model ...");
+                    auto sparseModel = storm::transformer::transformSymbolicToSparseModel(markovModel);
+                    STORM_PRINT_AND_LOG(" done" << std::endl);
+                    sparseModel->printModelInformationToStream(std::cout);
+                    auto formulas = extractFormulasFromProperties(properties);
+                    storm::performParameterLifting<ValueType>(sparseModel, formulas);
+                } else {
+                    verifySymbolicModelWithHybridEngine<LibraryType, ValueType>(markovModel, properties, onlyInitialStatesRelevant);
+                }
             } else {
                 verifySymbolicModelWithDdEngine<LibraryType, ValueType>(markovModel, properties, onlyInitialStatesRelevant);
             }
@@ -318,6 +328,9 @@ namespace storm {
             // Finally, treat the formulas.
             if (storm::settings::getModule<storm::settings::modules::CoreSettings>().isCounterexampleSet()) {
                 generateCounterexamples<ValueType>(model, sparseModel, formulas);
+            } else if (storm::settings::getModule<storm::settings::modules::CoreSettings>().isParameterLiftingSet()) {
+                STORM_LOG_THROW(storm::settings::getModule<storm::settings::modules::GeneralSettings>().isParametricSet(), storm::exceptions::InvalidSettingsException, "Invoked parameter lifting without enabling the parametric engine.");
+                storm::performParameterLifting<ValueType>(sparseModel, formulas);
             } else {
                 verifySparseModel<ValueType>(sparseModel, properties, onlyInitialStatesRelevant);
             }

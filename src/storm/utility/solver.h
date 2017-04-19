@@ -25,9 +25,6 @@ namespace storm {
         class SymbolicMinMaxLinearEquationSolver;
         
         template<typename V>
-        class GameSolver;
-        
-        template<typename V>
         class LinearEquationSolver;
         
         template<typename V>
@@ -63,15 +60,6 @@ namespace storm {
                 virtual std::unique_ptr<storm::solver::SymbolicGameSolver<Type, ValueType>> create(storm::dd::Add<Type, ValueType> const& A, storm::dd::Bdd<Type> const& allRows, storm::dd::Bdd<Type> const& illegalPlayer1Mask, storm::dd::Bdd<Type> const& illegalPlayer2Mask, std::set<storm::expressions::Variable> const& rowMetaVariables, std::set<storm::expressions::Variable> const& columnMetaVariables, std::vector<std::pair<storm::expressions::Variable, storm::expressions::Variable>> const& rowColumnMetaVariablePairs, std::set<storm::expressions::Variable> const& player1Variables, std::set<storm::expressions::Variable> const& player2Variables) const;
             };
 
-            template<typename ValueType>
-            class GameSolverFactory {
-            public:
-                /*!
-                 * Creates a new game solver instance with the given matrices.
-                 */
-                virtual std::unique_ptr<storm::solver::GameSolver<ValueType>> create(storm::storage::SparseMatrix<storm::storage::sparse::state_type> const& player1Matrix, storm::storage::SparseMatrix<ValueType> const& player2Matrix) const;
-            };
-           
             class LpSolverFactory {
             public:
                 /*!

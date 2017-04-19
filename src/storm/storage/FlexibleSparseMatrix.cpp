@@ -109,16 +109,12 @@ namespace storm {
         
         template<typename ValueType>
         typename FlexibleSparseMatrix<ValueType>::index_type FlexibleSparseMatrix<ValueType>::getRowGroupCount() const {
-            return rowGroupIndices.size();
+            return rowGroupIndices.size() - 1;
         }
         
         template<typename ValueType>
         typename FlexibleSparseMatrix<ValueType>::index_type FlexibleSparseMatrix<ValueType>::getRowGroupSize(index_type group) const {
-            if (group == getRowGroupCount() - 1) {
-                return getRowCount() - rowGroupIndices[group];
-            } else {
-                return rowGroupIndices[group + 1] - rowGroupIndices[group];
-            }
+            return rowGroupIndices[group + 1] - rowGroupIndices[group];
         }
         
         template<typename ValueType>
@@ -157,9 +153,9 @@ namespace storm {
         bool FlexibleSparseMatrix<ValueType>::hasTrivialRowGrouping() const {
             return trivialRowGrouping;
         }
-
+        
         template<typename ValueType>
-        void FlexibleSparseMatrix<ValueType>::createSubmatrix(storm::storage::BitVector const& rowConstraint, storm::storage::BitVector const& columnConstraint) {
+        void FlexibleSparseMatrix<ValueType>::filterEntries(storm::storage::BitVector const& rowConstraint, storm::storage::BitVector const& columnConstraint) {
             for (uint_fast64_t rowIndex = 0; rowIndex < this->data.size(); ++rowIndex) {
                 auto& row = this->data[rowIndex];
                 if (!rowConstraint.get(rowIndex)) {
@@ -179,12 +175,83 @@ namespace storm {
         
         template<typename ValueType>
         storm::storage::SparseMatrix<ValueType> FlexibleSparseMatrix<ValueType>::createSparseMatrix() {
-            storm::storage::SparseMatrixBuilder<ValueType> matrixBuilder(getRowCount(), getColumnCount());
-            for (uint_fast64_t rowIndex = 0; rowIndex < getRowCount(); ++rowIndex) {
-                auto& row = this->data[rowIndex];
-                for (auto const& entry : row) {
-                    matrixBuilder.addNextValue(rowIndex, entry.getColumn(), entry.getValue());
+            uint_fast64_t numEntries = 0;
+            for (auto const& row : this->data) {
+                numEntries += row.size();
+            }
+            
+            storm::storage::SparseMatrixBuilder<ValueType> matrixBuilder(getRowCount(), getColumnCount(), numEntries, hasTrivialRowGrouping(), hasTrivialRowGrouping() ? 0 : getRowGroupCount());
+            uint_fast64_t currRowIndex = 0;
+            auto rowGroupIndexIt = getRowGroupIndices().begin();
+            for (auto const& row : this->data) {
+                if(!hasTrivialRowGrouping()) {
+                    while (currRowIndex >= *rowGroupIndexIt) {
+                        matrixBuilder.newRowGroup(currRowIndex);
+                        ++rowGroupIndexIt;
+                    }
                 }
+                for (auto const& entry : row) {
+                    matrixBuilder.addNextValue(currRowIndex, entry.getColumn(), entry.getValue());
+                }
+                ++currRowIndex;
+            }
+            // The matrix might end with one or more empty row groups
+            if(!hasTrivialRowGrouping()) {
+                while (currRowIndex >= *rowGroupIndexIt) {
+                    matrixBuilder.newRowGroup(currRowIndex);
+                    ++rowGroupIndexIt;
+                }
+            }
+            return matrixBuilder.build();
+        }
+        
+        template<typename ValueType>
+        storm::storage::SparseMatrix<ValueType> FlexibleSparseMatrix<ValueType>::createSparseMatrix(storm::storage::BitVector const& rowConstraint, storm::storage::BitVector const& columnConstraint) {
+            uint_fast64_t numEntries = 0;
+            for (auto const& rowIndex : rowConstraint) {
+                auto const& row = data[rowIndex];
+                for(auto const& entry : row) {
+                    if (columnConstraint.get(entry.getColumn())) {
+                        ++numEntries;
+                    }
+                }
+            }
+            uint_fast64_t numRowGroups = 0;
+            if (!hasTrivialRowGrouping()) {
+                auto lastRowGroupIndexIt = getRowGroupIndices().end() - 1;
+                auto rowGroupIndexIt = getRowGroupIndices().begin();
+                while (rowGroupIndexIt != lastRowGroupIndexIt) {
+                    // Check whether the rowGroup will be nonempty
+                    if(rowConstraint.getNextSetIndex(*rowGroupIndexIt) < *(++rowGroupIndexIt)) {
+                        ++numRowGroups;
+                    }
+                }
+            }
+            
+            std::vector<uint_fast64_t> oldToNewColumnIndexMapping(getColumnCount(), getColumnCount());
+            uint_fast64_t newColumnIndex = 0;
+            for (auto const& oldColumnIndex : columnConstraint) {
+                oldToNewColumnIndexMapping[oldColumnIndex] = newColumnIndex++;
+            }
+            
+            storm::storage::SparseMatrixBuilder<ValueType> matrixBuilder(rowConstraint.getNumberOfSetBits(), newColumnIndex, numEntries, true, !hasTrivialRowGrouping(), numRowGroups);
+            uint_fast64_t currRowIndex = 0;
+            auto rowGroupIndexIt = getRowGroupIndices().begin();
+            for (auto const& oldRowIndex : rowConstraint) {
+                if(!hasTrivialRowGrouping() && oldRowIndex >= *rowGroupIndexIt) {
+                    matrixBuilder.newRowGroup(currRowIndex);
+                    // Skip empty row groups
+                    do {
+                        ++rowGroupIndexIt;
+                    } while (oldRowIndex >= *rowGroupIndexIt);
+                }
+                auto const& row = data[oldRowIndex];
+                for (auto const& entry : row) {
+                    if(columnConstraint.get(entry.getColumn())) {
+                        matrixBuilder.addNextValue(currRowIndex, oldToNewColumnIndexMapping[entry.getColumn()], entry.getValue());
+                    }
+                }
+                ++currRowIndex;
             }
             return matrixBuilder.build();
         }
@@ -237,7 +304,7 @@ namespace storm {
                 FlexibleIndex rowGroupCount = matrix.getRowGroupCount();
                 for (FlexibleIndex rowGroup = 0; rowGroup < rowGroupCount; ++rowGroup) {
                     out << "\t---- group " << rowGroup << "/" << (rowGroupCount - 1) << " ---- " << std::endl;
-                    FlexibleIndex endRow = rowGroup+1 < rowGroupCount ? matrix.rowGroupIndices[rowGroup + 1] : matrix.getRowCount();
+                    FlexibleIndex endRow = matrix.rowGroupIndices[rowGroup + 1];
                     // Iterate over all rows.
                     for (FlexibleIndex row = matrix.rowGroupIndices[rowGroup]; row < endRow; ++row) {
                         // Print the actual row.
