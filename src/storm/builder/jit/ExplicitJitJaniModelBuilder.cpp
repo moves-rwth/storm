@@ -1531,12 +1531,17 @@ namespace storm {
                         }
                     }
                 }
-                    
+
+                std::set<std::string> expressionLabelStrings;
                 for (auto const& expression : this->options.getExpressionLabels()) {
                     cpptempl::data_map label;
-                    label["name"] = expression.toString();
-                    label["predicate"] = expressionTranslator.translate(shiftVariablesWrtLowerBound(expression), storm::expressions::ToCppTranslationOptions(variablePrefixes, variableToName, storm::expressions::ToCppTranslationMode::CastDouble));
-                    labels.push_back(label);
+                    std::string expressionLabelString = expression.toString();
+                    if(expressionLabelStrings.count(expressionLabelString) == 0) {
+                        label["name"] = expression.toString();
+                        label["predicate"] = expressionTranslator.translate(shiftVariablesWrtLowerBound(expression), storm::expressions::ToCppTranslationOptions(variablePrefixes, variableToName, storm::expressions::ToCppTranslationMode::CastDouble));
+                        labels.push_back(label);
+                        expressionLabelStrings.insert(expressionLabelString);
+                    }
                 }
                     
                 modelData["labels"] = cpptempl::make_data(labels);

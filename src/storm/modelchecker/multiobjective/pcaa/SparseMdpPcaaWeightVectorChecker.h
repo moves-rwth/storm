@@ -25,7 +25,9 @@ namespace storm {
                                                  storm::storage::BitVector const& actionsWithNegativeReward,
                                                  storm::storage::BitVector const& ecActions,
                                                  storm::storage::BitVector const& possiblyRecurrentStates);
-                
+
+                virtual ~SparseMdpPcaaWeightVectorChecker() = default;
+
             private:
                 
                 /*!

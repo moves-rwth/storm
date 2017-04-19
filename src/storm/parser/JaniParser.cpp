@@ -370,7 +370,7 @@ namespace storm {
                         STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Reward bounded properties are not supported by storm");
                     }
                     if (args[0]->isTrueFormula()) {
-                        return std::make_shared<storm::logic::EventuallyFormula const>(args[1], storm::logic::FormulaContext::Reward);
+                        return std::make_shared<storm::logic::EventuallyFormula const>(args[1], formulaContext);
                     } else {
                         return std::make_shared<storm::logic::UntilFormula const>(args[0], args[1]);
                     }

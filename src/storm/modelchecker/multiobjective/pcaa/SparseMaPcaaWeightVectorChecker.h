@@ -31,6 +31,8 @@ namespace storm {
                                                           storm::storage::BitVector const& ecActions,
                                                           storm::storage::BitVector const& possiblyRecurrentStates);
                 
+                virtual ~SparseMaPcaaWeightVectorChecker() = default;
+
             private:
                 
                 /*

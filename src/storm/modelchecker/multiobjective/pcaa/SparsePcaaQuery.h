@@ -22,6 +22,8 @@ namespace storm {
                 typedef std::vector<GeometryValueType> Point;
                 typedef std::vector<GeometryValueType> WeightVector;
                 
+                virtual ~SparsePcaaQuery() = default;
+                
                 /*
                  * Invokes the computation and retrieves the result
                  */

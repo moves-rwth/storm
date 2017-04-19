@@ -25,7 +25,8 @@ namespace storm {
                  */
                 SparsePcaaAchievabilityQuery(SparsePcaaPreprocessorReturnType<SparseModelType>& preprocessorResult);
                 
-                
+                virtual ~SparsePcaaAchievabilityQuery() = default;
+
                 /*
                  * Invokes the computation and retrieves the result
                  */
