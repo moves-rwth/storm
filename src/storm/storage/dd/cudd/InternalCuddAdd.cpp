@@ -209,6 +209,8 @@ namespace storm {
                 summationAdds.push_back(ddVariable.toAdd<ValueType>().getCuddAdd());
             }
             
+            return InternalAdd<DdType::CUDD, ValueType>(ddManager, this->getCuddAdd().TimesPlus(otherMatrix.getCuddAdd(), summationAdds));
+            return InternalAdd<DdType::CUDD, ValueType>(ddManager, this->getCuddAdd().Triangle(otherMatrix.getCuddAdd(), summationAdds));
             return InternalAdd<DdType::CUDD, ValueType>(ddManager, this->getCuddAdd().MatrixMultiply(otherMatrix.getCuddAdd(), summationAdds));
         }
         
@@ -425,6 +427,11 @@ namespace storm {
             }
         }
 
+        template<typename ValueType>
+        InternalDdManager<DdType::CUDD> const& InternalAdd<DdType::CUDD, ValueType>::getInternalDdManager() const {
+            return *ddManager;
+        }
+        
         template<typename ValueType>
         void InternalAdd<DdType::CUDD, ValueType>::composeWithExplicitVector(storm::dd::Odd const& odd, std::vector<uint_fast64_t> const& ddVariableIndices, std::vector<ValueType>& targetVector, std::function<ValueType (ValueType const&, ValueType const&)> const& function) const {
             composeWithExplicitVectorRec(this->getCuddDdNode(), nullptr, 0, ddVariableIndices.size(), 0, odd, ddVariableIndices, targetVector, function);

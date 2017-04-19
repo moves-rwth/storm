@@ -9,6 +9,7 @@
 #include "storm/storage/expressions/Expression.h"
 #include "storm/storage/expressions/Variable.h"
 #include "storm/storage/dd/DdType.h"
+#include "storm/storage/dd/Bdd.h"
 #include "storm/models/ModelBase.h"
 #include "storm/utility/OsDetection.h"
 
@@ -23,9 +24,6 @@ namespace storm {
         
         template<storm::dd::DdType Type, typename ValueType>
         class Add;
-        
-        template<storm::dd::DdType Type>
-        class Bdd;
         
         template<storm::dd::DdType Type>
         class DdManager;
@@ -104,14 +102,7 @@ namespace storm {
                  *
                  * @return The manager responsible for the DDs that represent this model.
                  */
-                storm::dd::DdManager<Type> const& getManager() const;
-
-                /*!
-                 * Retrieves the manager responsible for the DDs that represent this model.
-                 *
-                 * @return The manager responsible for the DDs that represent this model.
-                 */
-                storm::dd::DdManager<Type>& getManager();
+                storm::dd::DdManager<Type>& getManager() const;
 
                 /*!
                  * Retrieves the manager responsible for the DDs that represent this model.
@@ -143,9 +134,17 @@ namespace storm {
                  * Returns the sets of states labeled with the given label.
                  *
                  * @param label The label for which to get the labeled states.
-                 * @return The set of states labeled with the requested label in the form of a bit vector.
+                 * @return The set of states labeled with the requested label.
                  */
                 virtual storm::dd::Bdd<Type> getStates(std::string const& label) const;
+                
+                /*!
+                 * Returns the expression for the given label.
+                 *
+                 * @param label The label for which to get the expression.
+                 * @return The expression characterizing the requested label.
+                 */
+                virtual storm::expressions::Expression getExpression(std::string const& label) const;
                 
                 /*!
                  * Returns the set of states labeled satisfying the given expression (that must be of boolean type).

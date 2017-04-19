@@ -118,21 +118,21 @@ namespace storm {
              */
             uint_fast64_t getNumberOfDdVariables() const;
 
-        private:
             /*!
              * Retrieves the underlying CUDD manager.
              *
              * @return The underlying CUDD manager.
              */
             cudd::Cudd& getCuddManager();
-            
+
             /*!
              * Retrieves the underlying CUDD manager.
              *
              * @return The underlying CUDD manager.
              */
             cudd::Cudd const& getCuddManager() const;
-            
+
+        private:
             // The manager responsible for the DDs created/modified with this DdManager.
             cudd::Cudd cuddManager;
             

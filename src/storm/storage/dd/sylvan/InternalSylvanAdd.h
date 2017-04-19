@@ -586,6 +586,15 @@ namespace storm {
              */
             Odd createOdd(std::vector<uint_fast64_t> const& ddVariableIndices) const;
             
+            InternalDdManager<DdType::Sylvan> const& getInternalDdManager() const;
+
+            /*!
+             * Retrieves the underlying sylvan MTBDD.
+             *
+             * @return The sylvan MTBDD.
+             */
+            sylvan::Mtbdd getSylvanMtbdd() const;
+
         private:
             /*!
              * Recursively builds the ODD from an ADD.
@@ -720,13 +729,6 @@ namespace storm {
              * @return The value of the leaf.
              */
             static ValueType getValue(MTBDD const& node);
-            
-            /*!
-             * Retrieves the underlying sylvan MTBDD.
-             *
-             * @return The sylvan MTBDD.
-             */
-            sylvan::Mtbdd getSylvanMtbdd() const;
             
             // The manager responsible for this MTBDD.
             InternalDdManager<DdType::Sylvan> const* ddManager;

@@ -25,6 +25,11 @@ namespace storm {
         template<DdType LibraryType, typename ValueType>
         class AddIterator;
         
+        namespace bisimulation {
+            template<DdType LibraryType, typename ValueType>
+            class InternalSignatureRefiner;
+        }
+        
         template<DdType LibraryType, typename ValueType = double>
         class Add : public Dd<LibraryType> {
         public:
@@ -33,7 +38,9 @@ namespace storm {
             
             template<DdType LibraryTypePrime, typename ValueTypePrime>
             friend class Add;
-            
+
+            friend class bisimulation::InternalSignatureRefiner<LibraryType, ValueType>;
+
             // Instantiate all copy/move constructors/assignments with the default implementation.
             Add() = default;
             Add(Add<LibraryType, ValueType> const& other) = default;
@@ -624,7 +631,17 @@ namespace storm {
              * @return The corresponding ODD.
              */
             Odd createOdd() const;
-            
+
+            /*!
+             * Retrieves the internal ADD.
+             */
+            InternalAdd<LibraryType, ValueType> const& getInternalAdd() const;
+
+            /*!
+             * Retrieves the internal ADD.
+             */
+            InternalDdManager<LibraryType> const& getInternalDdManager() const;
+
         private:
             /*!
              * Creates an ADD from the given internal ADD.

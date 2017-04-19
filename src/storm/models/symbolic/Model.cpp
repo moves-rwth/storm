@@ -50,15 +50,10 @@ namespace storm {
             }
             
             template<storm::dd::DdType Type, typename ValueType>
-            storm::dd::DdManager<Type> const& Model<Type, ValueType>::getManager() const {
+            storm::dd::DdManager<Type>& Model<Type, ValueType>::getManager() const {
                 return *manager;
             }
-            
-            template<storm::dd::DdType Type, typename ValueType>
-            storm::dd::DdManager<Type>& Model<Type, ValueType>::getManager() {
-                return *manager;
-            }
-            
+                        
             template<storm::dd::DdType Type, typename ValueType>
             std::shared_ptr<storm::dd::DdManager<Type>> const& Model<Type, ValueType>::getManagerAsSharedPointer() const {
                 return manager;
@@ -83,6 +78,12 @@ namespace storm {
             storm::dd::Bdd<Type> Model<Type, ValueType>::getStates(std::string const& label) const {
                 STORM_LOG_THROW(labelToExpressionMap.find(label) != labelToExpressionMap.end(), storm::exceptions::IllegalArgumentException, "The label " << label << " is invalid for the labeling of the model.");
                 return this->getStates(labelToExpressionMap.at(label));
+            }
+            
+            template<storm::dd::DdType Type, typename ValueType>
+            storm::expressions::Expression Model<Type, ValueType>::getExpression(std::string const& label) const {
+                STORM_LOG_THROW(labelToExpressionMap.find(label) != labelToExpressionMap.end(), storm::exceptions::IllegalArgumentException, "The label " << label << " is invalid for the labeling of the model.");
+                return labelToExpressionMap.at(label);
             }
             
             template<storm::dd::DdType Type, typename ValueType>

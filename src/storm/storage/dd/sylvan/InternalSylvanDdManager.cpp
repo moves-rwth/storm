@@ -9,6 +9,7 @@
 #include "storm/utility/constants.h"
 #include "storm/utility/macros.h"
 #include "storm/exceptions/NotSupportedException.h"
+#include "storm/exceptions/InvalidSettingsException.h"
 
 #include "storm/utility/sylvan.h"
 
@@ -47,7 +48,11 @@ namespace storm {
                 // Compute the power of two that still fits within the total numbers to store.
                 uint_fast64_t powerOfTwo = findLargestPowerOfTwoFitting(totalNodesToStore);
                 
-                sylvan::Sylvan::initPackage(1ull << std::max(16ull, powerOfTwo > 24 ? powerOfTwo - 8 : 0ull), 1ull << (powerOfTwo - 1), 1ull << std::max(16ull, powerOfTwo > 24 ? powerOfTwo - 12 : 0ull), 1ull << (powerOfTwo - 1));
+                STORM_LOG_THROW(powerOfTwo >= 16, storm::exceptions::InvalidSettingsException, "Too little memory assigned to sylvan.");
+                
+                STORM_LOG_TRACE("Assigning " << (1ull << (powerOfTwo - 1)) << " slots to both sylvan's unique table and its cache.");
+                sylvan::Sylvan::initPackage(1ull << (powerOfTwo - 1), 1ull << (powerOfTwo - 1), 1ull << (powerOfTwo - 1), 1ull << (powerOfTwo - 1));
+                sylvan::Sylvan::setGranularity(3);
                 sylvan::Sylvan::initBdd();
                 sylvan::Sylvan::initMtbdd();
                 sylvan::Sylvan::initCustomMtbdd();

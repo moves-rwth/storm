@@ -829,6 +829,11 @@ namespace storm {
         }
         
         template<typename ValueType>
+        InternalDdManager<DdType::Sylvan> const& InternalAdd<DdType::Sylvan, ValueType>::getInternalDdManager() const {
+            return *ddManager;
+        }
+        
+        template<typename ValueType>
         void InternalAdd<DdType::Sylvan, ValueType>::composeWithExplicitVector(storm::dd::Odd const& odd, std::vector<uint_fast64_t> const& ddVariableIndices, std::vector<ValueType>& targetVector, std::function<ValueType (ValueType const&, ValueType const&)> const& function) const {
             composeWithExplicitVectorRec(mtbdd_regular(this->getSylvanMtbdd().GetMTBDD()), mtbdd_hascomp(this->getSylvanMtbdd().GetMTBDD()), nullptr, 0, ddVariableIndices.size(), 0, odd, ddVariableIndices, targetVector, function);
         }

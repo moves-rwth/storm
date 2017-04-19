@@ -811,6 +811,16 @@ namespace storm {
         Odd Add<LibraryType, ValueType>::createOdd() const {
             return internalAdd.createOdd(this->getSortedVariableIndices());
         }
+        
+        template<DdType LibraryType, typename ValueType>
+        InternalAdd<LibraryType, ValueType> const& Add<LibraryType, ValueType>::getInternalAdd() const {
+            return internalAdd;
+        }
+        
+        template<DdType LibraryType, typename ValueType>
+        InternalDdManager<LibraryType> const& Add<LibraryType, ValueType>::getInternalDdManager() const {
+            return internalAdd.getInternalDdManager();
+        }
 
         template<DdType LibraryType, typename ValueType>
         Add<LibraryType, ValueType>::operator InternalAdd<LibraryType, ValueType>() const {

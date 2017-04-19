@@ -54,6 +54,7 @@
 // Headers for model processing.
 #include "storm/storage/bisimulation/DeterministicModelBisimulationDecomposition.h"
 #include "storm/storage/bisimulation/NondeterministicModelBisimulationDecomposition.h"
+#include "storm/storage/dd/BisimulationDecomposition.h"
 #include "storm/transformer/SymbolicToSparseTransformer.h"
 #include "storm/storage/ModelFormulasPair.h"
 #include "storm/storage/SymbolicModelDescription.h"
@@ -167,20 +168,30 @@ namespace storm {
     
     template<typename ValueType, storm::dd::DdType LibraryType = storm::dd::DdType::CUDD>
     std::shared_ptr<storm::models::symbolic::Model<LibraryType, ValueType>> buildSymbolicModel(storm::storage::SymbolicModelDescription const& model, std::vector<std::shared_ptr<storm::logic::Formula const>> const& formulas) {
+        std::shared_ptr<storm::models::symbolic::Model<LibraryType, ValueType>> result;
         if (model.isPrismProgram()) {
             typename storm::builder::DdPrismModelBuilder<LibraryType, ValueType>::Options options;
             options = typename storm::builder::DdPrismModelBuilder<LibraryType, ValueType>::Options(formulas);
             
             storm::builder::DdPrismModelBuilder<LibraryType, ValueType> builder;
-            return builder.build(model.asPrismProgram(), options);
+            result = builder.build(model.asPrismProgram(), options);
         } else {
             STORM_LOG_THROW(model.isJaniModel(), storm::exceptions::InvalidArgumentException, "Cannot build symbolic model for the given symbolic model description.");
             typename storm::builder::DdJaniModelBuilder<LibraryType, ValueType>::Options options;
             options = typename storm::builder::DdJaniModelBuilder<LibraryType, ValueType>::Options(formulas);
             
             storm::builder::DdJaniModelBuilder<LibraryType, ValueType> builder;
-            return builder.build(model.asJaniModel(), options);
+            result = builder.build(model.asJaniModel(), options);
         }
+        
+        if (storm::settings::getModule<storm::settings::modules::GeneralSettings>().isBisimulationSet()) {
+            storm::dd::BisimulationDecomposition<LibraryType, ValueType> decomposition(*result);
+            decomposition.compute();
+            
+            // TODO build quotient and return it.
+        }
+        
+        return result;
     }
     
     template<typename ModelType>
@@ -236,7 +247,6 @@ namespace storm {
         std::vector<std::shared_ptr<storm::logic::Formula const>> formulas = { formula };
         return performBisimulationMinimization<ModelType>(model, formulas , type);
     }
-    
     
     template<typename ModelType>
     std::shared_ptr<storm::models::ModelBase> preprocessModel(std::shared_ptr<storm::models::ModelBase> model, std::vector<std::shared_ptr<storm::logic::Formula const>> const& formulas) {

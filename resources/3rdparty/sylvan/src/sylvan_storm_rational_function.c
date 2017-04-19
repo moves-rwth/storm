@@ -676,7 +676,7 @@ TASK_4(MTBDD, sylvan_storm_rational_function_equal_norm_d2, MTBDD, a, MTBDD, b, 
     
     /* Check cache */
     MTBDD result;
-    if (cache_get3(CACHE_MTBDD_EQUAL_NORM_RF, a, b, svalue, &result)) {
+    if (cache_get3(CACHE_MTBDD_EQUAL_NORM_RF, a, b, (uint64_t)svalue, &result)) {
         sylvan_stats_count(MTBDD_EQUAL_NORM_CACHED);
         return result;
     }
@@ -700,7 +700,7 @@ TASK_4(MTBDD, sylvan_storm_rational_function_equal_norm_d2, MTBDD, a, MTBDD, b, 
     if (result == mtbdd_false) *shortcircuit = 1;
     
     /* Store in cache */
-    if (cache_put3(CACHE_MTBDD_EQUAL_NORM_RF, a, b, svalue, result)) {
+    if (cache_put3(CACHE_MTBDD_EQUAL_NORM_RF, a, b, (uint64_t)svalue, result)) {
         sylvan_stats_count(MTBDD_EQUAL_NORM_CACHEDPUT);
     }
     
@@ -749,7 +749,7 @@ TASK_4(MTBDD, sylvan_storm_rational_function_equal_norm_rel_d2, MTBDD, a, MTBDD,
     
     /* Check cache */
     MTBDD result;
-    if (cache_get3(CACHE_MTBDD_EQUAL_NORM_REL_RF, a, b, svalue, &result)) {
+    if (cache_get3(CACHE_MTBDD_EQUAL_NORM_REL_RF, a, b, (uint64_t)svalue, &result)) {
         sylvan_stats_count(MTBDD_EQUAL_NORM_REL_CACHED);
         return result;
     }
@@ -773,7 +773,7 @@ TASK_4(MTBDD, sylvan_storm_rational_function_equal_norm_rel_d2, MTBDD, a, MTBDD,
     if (result == mtbdd_false) *shortcircuit = 1;
     
     /* Store in cache */
-    if (cache_put3(CACHE_MTBDD_EQUAL_NORM_REL_RF, a, b, svalue, result)) {
+    if (cache_put3(CACHE_MTBDD_EQUAL_NORM_REL_RF, a, b, (uint64_t)svalue, result)) {
         sylvan_stats_count(MTBDD_EQUAL_NORM_REL_CACHEDPUT);
     }
     

@@ -50,6 +50,21 @@ namespace storm {
         }
         
         template<DdType LibraryType>
+        uint64_t DdMetaVariable<LibraryType>::getHighestLevel() const {
+            uint64_t result = 0;
+            bool first = true;
+            for (auto const& v : ddVariables) {
+                if (first) {
+                    result = v.getLevel();
+                } else {
+                    result = std::max(result, v.getLevel());
+                }
+            }
+            
+            return result;
+        }
+        
+        template<DdType LibraryType>
         void DdMetaVariable<LibraryType>::createCube() {
             STORM_LOG_ASSERT(!this->ddVariables.empty(), "The DD variables must not be empty.");
             auto it = this->ddVariables.begin();

@@ -73,6 +73,11 @@ namespace storm {
              */
             Bdd<LibraryType> const& getCube() const;
             
+            /*!
+             * Retrieves the highest level of all DD variables belonging to this meta variable.
+             */
+            uint64_t getHighestLevel() const;
+            
         private:
             /*!
              * Creates an integer meta variable with the given name and range bounds.

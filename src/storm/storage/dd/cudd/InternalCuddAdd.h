@@ -38,11 +38,18 @@ namespace storm {
         
         template<DdType LibraryType, typename ValueType>
         class AddIterator;
+
+        namespace bisimulation {
+            template<DdType LibraryType, typename ValueType>
+            class InternalSignatureRefiner;
+        }
         
         template<typename ValueType>
         class InternalAdd<DdType::CUDD, ValueType> {
         public:
             friend class InternalBdd<DdType::CUDD>;
+            
+            friend class bisimulation::InternalSignatureRefiner<DdType::CUDD, ValueType>;
             
             /*!
              * Creates an ADD that encapsulates the given CUDD ADD.
@@ -575,6 +582,8 @@ namespace storm {
              * @return The corresponding ODD.
              */
             Odd createOdd(std::vector<uint_fast64_t> const& ddVariableIndices) const;
+            
+            InternalDdManager<DdType::CUDD> const& getInternalDdManager() const;
             
         private:
             /*!
