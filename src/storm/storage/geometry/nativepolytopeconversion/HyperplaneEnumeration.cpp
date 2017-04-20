@@ -91,7 +91,7 @@ namespace storm {
                     for(auto const& mapEntry : vertexCollector){
                         for(auto const& oldHyperplaneIndex : mapEntry.second){
                             //ignore the hyperplanes which are redundant, i.e. for which there is no new index
-                            if(oldToNewIndexMapping[oldHyperplaneIndex] < relevantVector.rows()){
+                            if((int_fast64_t) oldToNewIndexMapping[oldHyperplaneIndex] <  relevantVector.rows()){
                                 vertexSets[oldToNewIndexMapping[oldHyperplaneIndex]].insert(resultVertices.size());
                             }
                         }
