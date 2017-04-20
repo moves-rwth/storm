@@ -94,10 +94,12 @@ namespace storm {
              *
              * @param variable The expression variable associated with the meta variable.
              * @param value The value the meta variable is supposed to have.
+             * @param mostSignificantBitAtTop A flag indicating whether the most significant bit of the value is to be
+             * encoded with the topmost variable or the bottommost.
              * @return The DD representing the function that maps all inputs which have the given meta variable equal
              * to the given value one.
              */
-            Bdd<LibraryType> getEncoding(storm::expressions::Variable const& variable, int_fast64_t value) const;
+            Bdd<LibraryType> getEncoding(storm::expressions::Variable const& variable, int_fast64_t value, bool mostSignificantBitAtTop = true) const;
             
             /*!
              * Retrieves the BDD representing the range of the meta variable, i.e., a function that maps all legal values

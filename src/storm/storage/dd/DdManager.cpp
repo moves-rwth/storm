@@ -56,7 +56,7 @@ namespace storm {
         }
         
         template<DdType LibraryType>
-        Bdd<LibraryType> DdManager<LibraryType>::getEncoding(storm::expressions::Variable const& variable, int_fast64_t value) const {
+        Bdd<LibraryType> DdManager<LibraryType>::getEncoding(storm::expressions::Variable const& variable, int_fast64_t value, bool mostSignificantBitAtTop) const {
             DdMetaVariable<LibraryType> const& metaVariable = this->getMetaVariable(variable);
             
             STORM_LOG_THROW(value >= metaVariable.getLow() && value <= metaVariable.getHigh(), storm::exceptions::InvalidArgumentException, "Illegal value " << value << " for meta variable '" << variable.getName() << "'.");
@@ -67,17 +67,35 @@ namespace storm {
             std::vector<Bdd<LibraryType>> const& ddVariables = metaVariable.getDdVariables();
             
             Bdd<LibraryType> result;
-            if (value & (1ull << (ddVariables.size() - 1))) {
-                result = ddVariables[0];
-            } else {
-                result = !ddVariables[0];
-            }
-            
-            for (std::size_t i = 1; i < ddVariables.size(); ++i) {
-                if (value & (1ull << (ddVariables.size() - i - 1))) {
-                    result &= ddVariables[i];
+            if (mostSignificantBitAtTop) {
+                if (value & (1ull << (ddVariables.size() - 1))) {
+                    result = ddVariables[0];
                 } else {
-                    result &= !ddVariables[i];
+                    result = !ddVariables[0];
+                }
+                
+                for (std::size_t i = 1; i < ddVariables.size(); ++i) {
+                    if (value & (1ull << (ddVariables.size() - i - 1))) {
+                        result &= ddVariables[i];
+                    } else {
+                        result &= !ddVariables[i];
+                    }
+                }
+            } else {
+                if (value & 1ull) {
+                    result = ddVariables[0];
+                } else {
+                    result = !ddVariables[0];
+                }
+                value >>= 1;
+                
+                for (std::size_t i = 1; i < ddVariables.size(); ++i) {
+                    if (value & 1ull) {
+                        result &= ddVariables[i];
+                    } else {
+                        result &= !ddVariables[i];
+                    }
+                    value >>= 1;
                 }
             }
             
@@ -163,6 +181,8 @@ namespace storm {
             if (numberOfBits == 0) {
                 ++numberOfBits;
             }
+            
+            STORM_LOG_TRACE("Creating meta variable with " << numberOfBits << " bit(s) and " << numberOfLayers << " layer(s).");
             
             std::stringstream tmp1;
             std::vector<storm::expressions::Variable> result;

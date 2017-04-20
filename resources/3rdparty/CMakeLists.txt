@@ -383,7 +383,7 @@ ExternalProject_Add(
         LOG_CONFIGURE ON
         LOG_BUILD ON
         BUILD_BYPRODUCTS ${STORM_3RDPARTY_BINARY_DIR}/sylvan/src/libsylvan${STATIC_EXT}
-        BUILD_ALWAYS
+        BUILD_ALWAYS 1
 )
 ExternalProject_Get_Property(sylvan source_dir)
 ExternalProject_Get_Property(sylvan binary_dir)

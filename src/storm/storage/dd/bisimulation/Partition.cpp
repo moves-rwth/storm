@@ -90,9 +90,12 @@ namespace storm {
                 // Enumerate all realizable blocks.
                 enumerateBlocksRec<DdType>(stateSets, model.getReachableStates(), 0, blockVariable, [&manager, &partitionAdd, &blockVariable, &blockCount](storm::dd::Bdd<DdType> const& stateSet) {
                     stateSet.template toAdd<ValueType>().exportToDot("states_" + std::to_string(blockCount) + ".dot");
-                    partitionAdd += (stateSet && manager.getEncoding(blockVariable, blockCount)).template toAdd<ValueType>();
+                    partitionAdd += (stateSet && manager.getEncoding(blockVariable, blockCount, false)).template toAdd<ValueType>();
                     blockCount++;
                 } );
+                
+                // Move the partition over to the primed variables.
+                partitionAdd = partitionAdd.swapVariables(model.getRowColumnMetaVariablePairs());
                 
                 return std::make_pair(partitionAdd, blockCount);
             }

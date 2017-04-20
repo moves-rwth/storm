@@ -36,9 +36,9 @@ namespace storm {
             if (numberOfInstances == 0) {
                 storm::settings::modules::SylvanSettings const& settings = storm::settings::getModule<storm::settings::modules::SylvanSettings>();
                 if (settings.isNumberOfThreadsSet()) {
-                    lace_init(settings.getNumberOfThreads(), 1000000);
+                    lace_init(settings.getNumberOfThreads(), 1024*1024*16);
                 } else {
-                    lace_init(0, 1000000);
+                    lace_init(0, 1024*1024*16);
                 }
                 lace_startup(0, 0, 0);
                 
@@ -50,8 +50,11 @@ namespace storm {
                 
                 STORM_LOG_THROW(powerOfTwo >= 16, storm::exceptions::InvalidSettingsException, "Too little memory assigned to sylvan.");
                 
-                STORM_LOG_TRACE("Assigning " << (1ull << (powerOfTwo - 1)) << " slots to both sylvan's unique table and its cache.");
-                sylvan::Sylvan::initPackage(1ull << (powerOfTwo - 1), 1ull << (powerOfTwo - 1), 1ull << (powerOfTwo - 1), 1ull << (powerOfTwo - 1));
+                if ((((1ull << powerOfTwo) + (1ull << (powerOfTwo - 1)))) < totalNodesToStore) {
+                    sylvan::Sylvan::initPackage(1ull << powerOfTwo, 1ull << powerOfTwo, 1ull << (powerOfTwo - 1), 1ull << (powerOfTwo - 1));
+                } else {
+                    sylvan::Sylvan::initPackage(1ull << (powerOfTwo - 1), 1ull << (powerOfTwo - 1), 1ull << (powerOfTwo - 1), 1ull << (powerOfTwo - 1));
+                }
                 sylvan::Sylvan::setGranularity(3);
                 sylvan::Sylvan::initBdd();
                 sylvan::Sylvan::initMtbdd();

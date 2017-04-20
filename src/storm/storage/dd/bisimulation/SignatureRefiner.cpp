@@ -75,7 +75,7 @@ namespace storm {
                     }
                     
                     // Determine the levels in the DDs.
-                    uint64_t partitionVariable = Cudd_NodeReadIndex(partitionNode);
+                    uint64_t partitionVariable = Cudd_NodeReadIndex(partitionNode) - 1;
                     uint64_t signatureVariable = Cudd_NodeReadIndex(signatureNode);
                     uint64_t partitionLevel = Cudd_ReadPerm(ddman, partitionVariable);
                     uint64_t signatureLevel = Cudd_ReadPerm(ddman, signatureVariable);
@@ -111,7 +111,7 @@ namespace storm {
                         }
                         
                         // Get the node to connect the subresults.
-                        DdNode* var = Cudd_addIthVar(ddman, topVariable);
+                        DdNode* var = Cudd_addIthVar(ddman, topVariable + 1);
                         Cudd_Ref(var);
                         DdNode* result = Cudd_addIte(ddman, var, thenResult, elseResult);
                         Cudd_Ref(result);
@@ -144,7 +144,7 @@ namespace storm {
                         } else {
                             DdNode* result;
                             {
-                                storm::dd::Add<storm::dd::DdType::CUDD, ValueType> blockEncoding = manager.getEncoding(blockVariable, nextFreeBlockIndex).template toAdd<ValueType>();
+                                storm::dd::Add<storm::dd::DdType::CUDD, ValueType> blockEncoding = manager.getEncoding(blockVariable, nextFreeBlockIndex, false).template toAdd<ValueType>();
                                 ++nextFreeBlockIndex;
                                 result = blockEncoding.getInternalAdd().getCuddDdNode();
                                 Cudd_Ref(result);
@@ -175,8 +175,7 @@ namespace storm {
                 // The cache used to identify which old block numbers have already been reused.
                 spp::sparse_hash_map<DdNode const*, bool> reuseBlocksCache;
             };
-            
-            
+                        
             template<typename ValueType>
             class InternalSignatureRefiner<storm::dd::DdType::Sylvan, ValueType> {
             public:
@@ -219,7 +218,7 @@ namespace storm {
 
                     // Determine levels in the DDs.
                     BDDVAR signatureVariable = mtbdd_isleaf(signatureNode) ? 0xffffffff : sylvan_var(signatureNode);
-                    BDDVAR partitionVariable = sylvan_var(partitionNode);
+                    BDDVAR partitionVariable = mtbdd_isleaf(signatureNode) ? 0xffffffff : sylvan_var(partitionNode) - 1;
                     BDDVAR topVariable = std::min(signatureVariable, partitionVariable);
 
                     // Check whether the top variable is still within the state encoding.
@@ -229,25 +228,37 @@ namespace storm {
                         MTBDD elseResult;
                         if (partitionVariable < signatureVariable) {
                             thenResult = refine(sylvan_high(partitionNode), signatureNode);
+                            sylvan_protect(&thenResult);
                             elseResult = refine(sylvan_low(partitionNode), signatureNode);
+                            sylvan_protect(&elseResult);
                         } else if (partitionVariable > signatureVariable) {
                             thenResult = refine(partitionNode, sylvan_high(signatureNode));
+                            sylvan_protect(&thenResult);
                             elseResult = refine(partitionNode, sylvan_low(signatureNode));
+                            sylvan_protect(&elseResult);
                         } else {
                             thenResult = refine(sylvan_high(partitionNode), sylvan_high(signatureNode));
+                            sylvan_protect(&thenResult);
                             elseResult = refine(sylvan_low(partitionNode), sylvan_low(signatureNode));
+                            sylvan_protect(&elseResult);
                         }
                         
                         if (thenResult == elseResult) {
+                            sylvan_unprotect(&thenResult);
+                            sylvan_unprotect(&elseResult);
                             return thenResult;
                         }
                         
                         // Get the node to connect the subresults.
-                        MTBDD result = mtbdd_ite(sylvan_ithvar(topVariable), thenResult, elseResult);
+                        MTBDD result = sylvan_makenode(topVariable + 1, elseResult, thenResult);// mtbdd_ite(sylvan_ithvar(topVariable), thenResult, elseResult);
+                        sylvan_protect(&result);
+                        sylvan_unprotect(&thenResult);
+                        sylvan_unprotect(&elseResult);
                         
                         // Store the result in the cache.
                         signatureCache[std::make_pair(signatureNode, partitionNode)] = result;
-                        
+
+                        sylvan_unprotect(&result);
                         return result;
                     } else {
                         
@@ -269,11 +280,13 @@ namespace storm {
                         } else {
                             MTBDD result;
                             {
-                                storm::dd::Add<storm::dd::DdType::Sylvan, ValueType> blockEncoding = manager.getEncoding(blockVariable, nextFreeBlockIndex).template toAdd<ValueType>();
+                                storm::dd::Add<storm::dd::DdType::Sylvan, ValueType> blockEncoding = manager.getEncoding(blockVariable, nextFreeBlockIndex, false).template toAdd<ValueType>();
                                 ++nextFreeBlockIndex;
                                 result = blockEncoding.getInternalAdd().getSylvanMtbdd().GetMTBDD();
+                                sylvan_protect(&result);
                             }
                             signatureCache[std::make_pair(signatureNode, partitionNode)] = result;
+                            sylvan_unprotect(&result);
                             return result;
                         }
                     }
