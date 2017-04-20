@@ -1,8 +1,8 @@
 find_package(GLPK QUIET)
 if(GLPK_FOUND)
-    message (STATUS "storm - Using system version of glpk.")
+    message (STATUS "Storm - Using system version of glpk.")
 else()
-    message (STATUS "storm - Using shipped version of glpk.")
+    message (STATUS "Storm - Using shipped version of glpk.")
     set(GLPK_LIB_DIR ${STORM_3RDPARTY_BINARY_DIR}/glpk-4.57/lib)
     ExternalProject_Add(glpk_ext
         DOWNLOAD_COMMAND ""
@@ -25,7 +25,7 @@ endif()
 
 # Since there is a shipped version, always use GLPK
 set(STORM_HAVE_GLPK ON)
-message (STATUS "storm - Linking with glpk ${GLPK_VERSION_STRING}")
+message (STATUS "Storm - Linking with glpk ${GLPK_VERSION_STRING}")
 
 add_imported_library(glpk SHARED ${GLPK_LIBRARIES} ${GLPK_INCLUDE_DIR})
 list(APPEND STORM_DEP_TARGETS glpk_SHARED)

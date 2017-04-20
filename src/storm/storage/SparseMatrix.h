@@ -673,8 +673,7 @@ namespace storm {
             /*!
              * Selects exactly one row from each row group of this matrix and returns the resulting matrix.
              *
-             * @param rowGroupToRowIndexMapping A mapping from each row group index to a selected row in this group.
-             * @param insertDiagonalEntries If set to true, the resulting matrix will have zero entries in column i for
+s             * @param insertDiagonalEntries If set to true, the resulting matrix will have zero entries in column i for
              * each row in row group i. This can then be used for inserting other values later.
              * @return A submatrix of the current matrix by selecting one row out of each row group.
              */
@@ -700,6 +699,17 @@ namespace storm {
              * @return A sparse matrix that represents the transpose of this matrix.
              */
             storm::storage::SparseMatrix<value_type> transpose(bool joinGroups = false, bool keepZeros = false) const;
+            
+            
+            /*!
+             * Transposes the matrix w.r.t. the selected rows.
+             * This is equivalent to selectRowsFromRowGroups(rowGroupChoices, false).transpose(false, keepZeros) but avoids creating one intermediate matrix.
+             *
+             * @param rowGroupChoices A mapping from each row group index to a selected row in this group.
+             * @param keepZeros A flag indicating whether entries with value zero should be kept.
+             *
+             */
+            SparseMatrix<ValueType> transposeSelectedRowsFromRowGroups(std::vector<uint_fast64_t> const& rowGroupChoices, bool keepZeros = false) const;
             
             /*!
              * Transforms the matrix into an equation system. That is, it transforms the matrix A into a matrix (1-A).
@@ -902,7 +912,7 @@ namespace storm {
              * @param offset which row in the group
              * @return An object representing the given row.
              */
-            rows getRow(index_type rowGroup, index_type entryInGroup);
+            rows getRow(index_type rowGroup, index_type offset);
             
             /*!
              * Returns an object representing the given row group.

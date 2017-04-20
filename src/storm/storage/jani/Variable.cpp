@@ -101,6 +101,13 @@ namespace storm {
                 this->setInitExpression(this->getInitExpression().substitute(substitution));
             }
         }
-        
+
+        bool operator==(Variable const& lhs, Variable const& rhs) {
+            return lhs.getExpressionVariable() == rhs.getExpressionVariable();
+        }
+
+        bool operator!=(Variable const& lhs, Variable const& rhs) {
+            return !(lhs == rhs);
+        }
     }
 }

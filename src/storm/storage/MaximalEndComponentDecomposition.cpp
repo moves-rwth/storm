@@ -196,6 +196,9 @@ namespace storm {
 #ifdef STORM_HAVE_CARL
         template class MaximalEndComponentDecomposition<storm::RationalNumber>;
         template MaximalEndComponentDecomposition<storm::RationalNumber>::MaximalEndComponentDecomposition(storm::models::sparse::NondeterministicModel<storm::RationalNumber> const& model);
+
+        template class MaximalEndComponentDecomposition<storm::RationalFunction>;
+        template MaximalEndComponentDecomposition<storm::RationalFunction>::MaximalEndComponentDecomposition(storm::models::sparse::NondeterministicModel<storm::RationalFunction> const& model);
 #endif
     }
 }

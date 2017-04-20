@@ -75,7 +75,7 @@ namespace storm {
         }
 
         inline std::ostream& operator<<(std::ostream& os, DFTElementType const& tp) {
-            return os << toString(tp) << std::endl;
+            return os << toString(tp);
         }
 
 

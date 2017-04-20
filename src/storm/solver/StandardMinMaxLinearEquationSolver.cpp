@@ -12,6 +12,7 @@
 #include "storm/utility/macros.h"
 #include "storm/exceptions/InvalidSettingsException.h"
 #include "storm/exceptions/InvalidStateException.h"
+#include "storm/exceptions/NotImplementedException.h"
 namespace storm {
     namespace solver {
         
@@ -90,14 +91,16 @@ namespace storm {
                     return solveEquationsValueIteration(dir, x, b);
                 case StandardMinMaxLinearEquationSolverSettings<ValueType>::SolutionMethod::PolicyIteration:
                     return solveEquationsPolicyIteration(dir, x, b);
+                default:
+                    STORM_LOG_THROW(false, storm::exceptions::InvalidSettingsException, "This solver does not implement the selected solution method");
             }
-            return true;
+            return false;
         }
         
         template<typename ValueType>
         bool StandardMinMaxLinearEquationSolver<ValueType>::solveEquationsPolicyIteration(OptimizationDirection dir, std::vector<ValueType>& x, std::vector<ValueType> const& b) const {
             // Create the initial scheduler.
-            std::vector<storm::storage::sparse::state_type> scheduler(this->A.getRowGroupCount());
+            std::vector<storm::storage::sparse::state_type> scheduler = this->schedulerHint ? this->schedulerHint->getChoices() : std::vector<storm::storage::sparse::state_type>(this->A.getRowGroupCount());
             
             // Get a vector for storing the right-hand side of the inner equation system.
             if(!auxiliaryRowGroupVector) {
@@ -132,9 +135,10 @@ namespace storm {
                 // Go through the multiplication result and see whether we can improve any of the choices.
                 bool schedulerImproved = false;
                 for (uint_fast64_t group = 0; group < this->A.getRowGroupCount(); ++group) {
+                    uint_fast64_t currentChoice = scheduler[group];
                     for (uint_fast64_t choice = this->A.getRowGroupIndices()[group]; choice < this->A.getRowGroupIndices()[group + 1]; ++choice) {
                         // If the choice is the currently selected one, we can skip it.
-                        if (choice - this->A.getRowGroupIndices()[group] == scheduler[group]) {
+                        if (choice - this->A.getRowGroupIndices()[group] == currentChoice) {
                             continue;
                         }
                         
@@ -151,6 +155,7 @@ namespace storm {
                         if (valueImproved(dir, x[group], choiceValue)) {
                             schedulerImproved = true;
                             scheduler[group] = choice - this->A.getRowGroupIndices()[group];
+                            x[group] = std::move(choiceValue);
                         }
                     }
                 }
@@ -182,25 +187,15 @@ namespace storm {
                 clearCache();
             }
             
-            if(status == Status::Converged || status == Status::TerminatedEarly) {
-                return true;
-            } else{
-                return false;
-            }
+            return status == Status::Converged || status == Status::TerminatedEarly;
         }
         
         template<typename ValueType>
         bool StandardMinMaxLinearEquationSolver<ValueType>::valueImproved(OptimizationDirection dir, ValueType const& value1, ValueType const& value2) const {
             if (dir == OptimizationDirection::Minimize) {
-                if (value1 > value2) {
-                    return true;
-                }
-                return false;
+                return value2 < value1;
             } else {
-                if (value1 < value2) {
-                    return true;
-                }
-                return false;
+                return value2 > value1;
             }
         }
 
@@ -221,14 +216,30 @@ namespace storm {
                 linEqSolverA->setCachingEnabled(true);
             }
             
-            if (!auxiliaryRowVector.get()) {
+            if (!auxiliaryRowVector) {
                 auxiliaryRowVector = std::make_unique<std::vector<ValueType>>(A.getRowCount());
             }
             std::vector<ValueType>& multiplyResult = *auxiliaryRowVector;
             
-            if (!auxiliaryRowGroupVector.get()) {
+            if (!auxiliaryRowGroupVector) {
                 auxiliaryRowGroupVector = std::make_unique<std::vector<ValueType>>(A.getRowGroupCount());
             }
+            
+            if(this->schedulerHint) {
+                // Resolve the nondeterminism according to the scheduler hint
+                storm::storage::SparseMatrix<ValueType> submatrix = this->A.selectRowsFromRowGroups(this->schedulerHint->getChoices(), true);
+                submatrix.convertToEquationSystem();
+                storm::utility::vector::selectVectorValues<ValueType>(*auxiliaryRowGroupVector, this->schedulerHint->getChoices(), this->A.getRowGroupIndices(), b);
+
+                // Solve the resulting equation system.
+                // Note that the linEqSolver might consider a slightly different interpretation of "equalModuloPrecision". Hence, we iteratively increase its precision.
+                auto submatrixSolver = linearEquationSolverFactory->create(std::move(submatrix));
+                submatrixSolver->setCachingEnabled(true);
+                if (this->lowerBound) { submatrixSolver->setLowerBound(this->lowerBound.get()); }
+                if (this->upperBound) { submatrixSolver->setUpperBound(this->upperBound.get()); }
+                submatrixSolver->solveEquations(x, *auxiliaryRowGroupVector);
+            }
+            
             std::vector<ValueType>* newX = auxiliaryRowGroupVector.get();
             
             std::vector<ValueType>* currentX = &x;
@@ -280,21 +291,17 @@ namespace storm {
                 clearCache();
             }
             
-            if(status == Status::Converged || status == Status::TerminatedEarly) {
-                return true;
-            } else{
-                return false;
-            }
+            return status == Status::Converged || status == Status::TerminatedEarly;
         }
         
         template<typename ValueType>
-        void StandardMinMaxLinearEquationSolver<ValueType>::repeatedMultiply(OptimizationDirection dir, std::vector<ValueType>& x, std::vector<ValueType>* b, uint_fast64_t n) const {
+        void StandardMinMaxLinearEquationSolver<ValueType>::repeatedMultiply(OptimizationDirection dir, std::vector<ValueType>& x, std::vector<ValueType> const* b, uint_fast64_t n) const {
             if(!linEqSolverA) {
                 linEqSolverA = linearEquationSolverFactory->create(A);
                 linEqSolverA->setCachingEnabled(true);
             }
             
-            if (!auxiliaryRowVector.get()) {
+            if (!auxiliaryRowVector) {
                 auxiliaryRowVector = std::make_unique<std::vector<ValueType>>(A.getRowCount());
             }
             std::vector<ValueType>& multiplyResult = *auxiliaryRowVector;
@@ -387,11 +394,16 @@ namespace storm {
         
         template<typename ValueType>
         std::unique_ptr<MinMaxLinearEquationSolver<ValueType>> StandardMinMaxLinearEquationSolverFactory<ValueType>::create(storm::storage::SparseMatrix<ValueType> const& matrix) const {
+            std::unique_ptr<MinMaxLinearEquationSolver<ValueType>> result;
             if (linearEquationSolverFactory) {
-                return std::make_unique<StandardMinMaxLinearEquationSolver<ValueType>>(matrix, linearEquationSolverFactory->clone(), settings);
+                result = std::make_unique<StandardMinMaxLinearEquationSolver<ValueType>>(matrix, linearEquationSolverFactory->clone(), settings);
             } else {
-                return std::make_unique<StandardMinMaxLinearEquationSolver<ValueType>>(matrix, std::make_unique<GeneralLinearEquationSolverFactory<ValueType>>(), settings);
+                result = std::make_unique<StandardMinMaxLinearEquationSolver<ValueType>>(matrix, std::make_unique<GeneralLinearEquationSolverFactory<ValueType>>(), settings);
             }
+            if (this->isTrackSchedulerSet()) {
+                result->setTrackScheduler(true);
+            }
+            return result;
         }
         
         template<typename ValueType>

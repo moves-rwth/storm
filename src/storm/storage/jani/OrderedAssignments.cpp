@@ -2,6 +2,7 @@
 
 #include "storm/utility/macros.h"
 #include "storm/exceptions/InvalidArgumentException.h"
+#include "storm/storage/jani/VariableSet.h"
 
 namespace storm {
     namespace jani {
@@ -73,7 +74,7 @@ namespace storm {
             if (allAssignments.empty()) {
                 return false;
             }
-            return getLowestLevel() != getHighestLevel();
+            return getLowestLevel() != 0 || getHighestLevel() != 0;
         }
         
         bool OrderedAssignments::empty() const {
@@ -91,10 +92,12 @@ namespace storm {
         }
         
         int_fast64_t OrderedAssignments::getLowestLevel() const {
+            assert(!allAssignments.empty());
             return allAssignments.front()->getLevel();
         }
         
         int_fast64_t OrderedAssignments::getHighestLevel() const {
+            assert(!allAssignments.empty());
             return allAssignments.back()->getLevel();
         }
         
@@ -106,7 +109,67 @@ namespace storm {
                 return false;
             }
         }
-        
+
+        OrderedAssignments OrderedAssignments::simplifyLevels(bool synchronous, VariableSet const& localVars, bool first) const {
+            bool changed = false;
+            if (first) {
+                std::vector<Assignment> newAssignments;
+                for (uint64_t i = 0; i < allAssignments.size(); ++i) {
+                    if (synchronous && !localVars.hasVariable(allAssignments.at(i)->getVariable())) {
+                        newAssignments.push_back(*(allAssignments.at(i)));
+                        continue;
+                    }
+                    bool readBeforeWrite = true;
+                    for (uint64_t j = i + 1; j < allAssignments.size(); ++j) {
+                        if (allAssignments.at(j)->getAssignedExpression().containsVariable(
+                                {allAssignments.at(i)->getVariable().getExpressionVariable()})) {
+                            // is read.
+                            break;
+                        }
+                        if (allAssignments.at(j)->getVariable() == allAssignments.at(i)->getVariable()) {
+                            // is written, has not been read before
+                            readBeforeWrite = false;
+                            break;
+                        }
+
+                    }
+                    if (readBeforeWrite) {
+                        newAssignments.push_back(*(allAssignments.at(i)));
+                    } else {
+                        changed = true;
+                    }
+                }
+                if (changed) {
+                    return OrderedAssignments(newAssignments).simplifyLevels(synchronous, localVars, false);
+                }
+            }
+
+
+            std::vector<Assignment> newAssignments;
+            for (auto const& assignment : allAssignments) {
+                newAssignments.push_back(*assignment);
+                if (synchronous && !localVars.hasVariable(assignment->getVariable())) {
+                    continue;
+                }
+                if (assignment->getLevel() == 0) {
+                    continue;
+                }
+                uint64_t assNr = upperBound(assignment->getLevel() - 1);
+                if (assNr == isWrittenBeforeAssignment(assignment->getVariable(), assNr)) {
+                    if (assNr == isReadBeforeAssignment(assignment->getVariable(), assNr)) {
+                        newAssignments.back().setLevel(0);
+                        changed = true;
+                    }
+                }
+            }
+            if (changed) {
+                return OrderedAssignments(newAssignments).simplifyLevels(synchronous, localVars, false);
+            } else {
+                return *this;
+            }
+
+        }
+
         detail::ConstAssignments OrderedAssignments::getAllAssignments() const {
             return detail::ConstAssignments(allAssignments.begin(), allAssignments.end());
         }
@@ -156,7 +219,36 @@ namespace storm {
         std::vector<std::shared_ptr<Assignment>>::const_iterator OrderedAssignments::lowerBound(Assignment const& assignment, std::vector<std::shared_ptr<Assignment>> const& assignments) {
             return std::lower_bound(assignments.begin(), assignments.end(), assignment, storm::jani::AssignmentPartialOrderByLevelAndVariable());
         }
-        
+
+        uint64_t OrderedAssignments::isReadBeforeAssignment(Variable const& var, uint64_t assignmentNumber, uint64_t start) const {
+            for (uint64_t i = start; i < assignmentNumber; i++) {
+                if (allAssignments.at(i)->getAssignedExpression().containsVariable({ var.getExpressionVariable() })) {
+                    return i;
+                }
+            }
+            return assignmentNumber;
+        }
+
+        uint64_t OrderedAssignments::isWrittenBeforeAssignment(Variable const& var, uint64_t assignmentNumber, uint64_t start) const {
+            for (uint64_t i = start; i < assignmentNumber; i++) {
+                if (allAssignments.at(i)->getVariable() == var) {
+                    return i;
+                }
+            }
+            return assignmentNumber;
+        }
+
+        uint64_t OrderedAssignments::upperBound(int64_t index) const {
+            uint64_t  result = 0;
+            for(auto const& assignment : allAssignments) {
+                if(assignment->getLevel() > index) {
+                    return result;
+                }
+                ++result;
+            }
+            return result;
+        }
+
         bool OrderedAssignments::areLinear() const {
             bool result = true;
             for (auto const& assignment : getAllAssignments()) {
@@ -168,7 +260,11 @@ namespace storm {
         std::ostream& operator<<(std::ostream& stream, OrderedAssignments const& assignments) {
             stream << "[";
             for(auto const& e : assignments.allAssignments) {
-                stream << *e << std::endl;
+                stream << *e;
+                if (e->getLevel() != 0) {
+                    stream << " @" << e->getLevel();
+                }
+                stream << std::endl;
             }
             stream << "]";
             return stream;

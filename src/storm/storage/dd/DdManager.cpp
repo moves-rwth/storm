@@ -487,6 +487,7 @@ namespace storm {
         template Add<DdType::Sylvan, double> DdManager<DdType::Sylvan>::getConstant(double const& value) const;
         template Add<DdType::Sylvan, uint_fast64_t> DdManager<DdType::Sylvan>::getConstant(uint_fast64_t const& value) const;
 #ifdef STORM_HAVE_CARL
+        template Add<DdType::Sylvan, storm::RationalNumber> DdManager<DdType::Sylvan>::getConstant(storm::RationalNumber const& value) const;
 		template Add<DdType::Sylvan, storm::RationalFunction> DdManager<DdType::Sylvan>::getConstant(storm::RationalFunction const& value) const;
 #endif
 

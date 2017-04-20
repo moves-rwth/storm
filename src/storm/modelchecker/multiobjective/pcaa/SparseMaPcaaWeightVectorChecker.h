@@ -31,6 +31,8 @@ namespace storm {
                                                           storm::storage::BitVector const& ecActions,
                                                           storm::storage::BitVector const& possiblyRecurrentStates);
                 
+                virtual ~SparseMaPcaaWeightVectorChecker() = default;
+
             private:
                 
                 /*
@@ -105,13 +107,13 @@ namespace storm {
                 void digitize(SubModel& subModel, VT const& digitizationConstant) const;
                 
                 /* 
-                 * Fills the given maps with the digitized time bounds. Also sets the offsetsToLowerBound / offsetsToUpperBound values
+                 * Fills the given map with the digitized time bounds. Also sets the offsetsToLowerBound / offsetsToUpperBound values
                  * according to the digitization error
                  */
                 template <typename VT = ValueType, typename std::enable_if<storm::NumberTraits<VT>::SupportsExponential, int>::type = 0>
-                void digitizeTimeBounds(TimeBoundMap& lowerTimeBounds, TimeBoundMap& upperTimeBounds, VT const& digitizationConstant);
+                void digitizeTimeBounds(TimeBoundMap& upperTimeBounds, VT const& digitizationConstant);
                 template <typename VT = ValueType, typename std::enable_if<!storm::NumberTraits<VT>::SupportsExponential, int>::type = 0>
-                void digitizeTimeBounds(TimeBoundMap& lowerTimeBounds, TimeBoundMap& upperTimeBounds, VT const& digitizationConstant);
+                void digitizeTimeBounds(TimeBoundMap& upperTimeBounds, VT const& digitizationConstant);
                 
                 
                 /*!
@@ -129,7 +131,7 @@ namespace storm {
                  * the reward vector of the reduced PStoPS model, and
                  * objectives that are considered at the current time epoch.
                  */
-                void updateDataToCurrentEpoch(SubModel& MS, SubModel& PS, MinMaxSolverData& minMax, storm::storage::BitVector& consideredObjectives, uint_fast64_t const& currentEpoch, std::vector<ValueType> const& weightVector, TimeBoundMap::iterator& lowerTimeBoundIt, TimeBoundMap const& lowerTimeBounds, TimeBoundMap::iterator& upperTimeBoundIt, TimeBoundMap const& upperTimeBounds);
+                void updateDataToCurrentEpoch(SubModel& MS, SubModel& PS, MinMaxSolverData& minMax, storm::storage::BitVector& consideredObjectives, uint_fast64_t const& currentEpoch, std::vector<ValueType> const& weightVector, TimeBoundMap::iterator& upperTimeBoundIt, TimeBoundMap const& upperTimeBounds);
                 
                 /*
                  * Performs a step for the probabilistic states, that is

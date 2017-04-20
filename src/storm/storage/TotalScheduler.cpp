@@ -1,6 +1,7 @@
 #include "storm/storage/TotalScheduler.h"
 #include "storm/exceptions/InvalidArgumentException.h"
 #include "storm/utility/Hash.h"
+#include "storm/utility/vector.h"
 
 namespace storm {
     namespace storage {
@@ -41,6 +42,10 @@ namespace storm {
         
         std::vector<uint_fast64_t> const& TotalScheduler::getChoices() const {
             return choices;
+        }
+        
+        TotalScheduler TotalScheduler::getSchedulerForSubsystem(storm::storage::BitVector const& subsystem) const {
+            return TotalScheduler(storm::utility::vector::filterVector(choices, subsystem));
         }
         
         std::ostream& operator<<(std::ostream& out, TotalScheduler const& scheduler) {

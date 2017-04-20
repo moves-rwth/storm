@@ -32,8 +32,10 @@ namespace storm {
                 bool thresholdIsStrict = false;
                 
                 // The time bound(s) for the formula (if given by the originalFormula)
-                boost::optional<ValueType> lowerTimeBound;
-                boost::optional<ValueType> upperTimeBound;
+                boost::optional<storm::expressions::Expression> lowerTimeBound;
+                boost::optional<storm::expressions::Expression> upperTimeBound;
+                bool lowerTimeBoundStrict = false;
+                bool upperTimeBoundStrict = false;
                 
                 void printToStream(std::ostream& out) const {
                     out << std::setw(30) << originalFormula->toString();
@@ -51,12 +53,12 @@ namespace storm {
                     out << "time bounds:";
                     if(lowerTimeBound) {
                         if(upperTimeBound) {
-                            out << "[" << *lowerTimeBound << ", " <<  *upperTimeBound << "]";
+                            out << (lowerTimeBoundStrict ? "(" : "[") << *lowerTimeBound << ", " <<  *upperTimeBound << (upperTimeBoundStrict ? ")" : "]");
                         } else {
-                            out << ">=" << std::setw(5) << *lowerTimeBound;
+                            out << (lowerTimeBoundStrict ? " >" : ">=") << std::setw(5) << *lowerTimeBound;
                         }
                     } else if (upperTimeBound) {
-                        out << "<=" << std::setw(5) << *upperTimeBound;
+                        out << (upperTimeBoundStrict ? " <" : "<=") << std::setw(5) << *upperTimeBound;
                     } else {
                         out << " none";
                     }

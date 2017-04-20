@@ -56,6 +56,7 @@ do {                                            \
 #define STORM_PRINT(message)                    \
 {                                               \
     std::cout << message;                       \
+    std::cout.flush();                          \
 }
 
 #define STORM_PRINT_AND_LOG(message)            \

@@ -70,7 +70,7 @@ namespace storm {
              * vector must be equal to the number of rows of A.
              * @return The result of the repeated matrix-vector multiplication as the content of the vector x.
              */
-            virtual void repeatedMultiply(OptimizationDirection d, std::vector<ValueType>& x, std::vector<ValueType>* b, uint_fast64_t n = 1) const = 0;
+            virtual void repeatedMultiply(OptimizationDirection d, std::vector<ValueType>& x, std::vector<ValueType> const* b, uint_fast64_t n = 1) const = 0;
             
             /*!
              * Behaves the same as the other variant of <code>multiply</code>, with the
@@ -159,6 +159,16 @@ namespace storm {
              * Sets bounds for the solution that can potentially used by the solver.
              */
             void setBounds(ValueType const& lower, ValueType const& upper);
+            
+            /*!
+             * Sets a scheduler that might be considered by the solver as an initial guess
+             */
+            void setSchedulerHint(storm::storage::TotalScheduler&& scheduler);
+            
+            /*!
+             * Returns true iff a scheduler hint was defined
+             */
+             bool hasSchedulerHint() const;
 
         protected:
             /// The optimization direction to use for calls to functions that do not provide it explicitly. Can also be unset.
@@ -175,6 +185,9 @@ namespace storm {
             
             // An upper bound if one was set.
             boost::optional<ValueType> upperBound;
+            
+            // A scheduler that might be considered by the solver as an initial guess
+            boost::optional<storm::storage::TotalScheduler> schedulerHint;
             
         private:
             /// Whether some of the generated data during solver calls should be cached.

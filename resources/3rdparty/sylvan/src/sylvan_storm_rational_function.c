@@ -542,7 +542,7 @@ TASK_IMPL_3(MTBDD, sylvan_storm_rational_function_and_exists, MTBDD, a, MTBDD, b
     return result;
 }
 
-TASK_IMPL_2(MTBDD, sylvan_storm_rational_function_op_threshold, MTBDD, a, size_t, svalue) {
+TASK_IMPL_2(MTBDD, sylvan_storm_rational_function_op_threshold, MTBDD, a, size_t*, svalue) {
     storm_rational_function_ptr value = (storm_rational_function_ptr)svalue;
     
     if (mtbdd_isleaf(a)) {
@@ -553,7 +553,7 @@ TASK_IMPL_2(MTBDD, sylvan_storm_rational_function_op_threshold, MTBDD, a, size_t
     return mtbdd_invalid;
 }
 
-TASK_IMPL_2(MTBDD, sylvan_storm_rational_function_op_strict_threshold, MTBDD, a, size_t, svalue) {
+TASK_IMPL_2(MTBDD, sylvan_storm_rational_function_op_strict_threshold, MTBDD, a, size_t*, svalue) {
     storm_rational_function_ptr value = (storm_rational_function_ptr)svalue;
 
     if (mtbdd_isleaf(a)) {
@@ -567,12 +567,12 @@ TASK_IMPL_2(MTBDD, sylvan_storm_rational_function_op_strict_threshold, MTBDD, a,
 
 TASK_IMPL_2(MTBDD, sylvan_storm_rational_function_threshold, MTBDD, dd, storm_rational_function_ptr, value)
 {
-    return mtbdd_uapply(dd, TASK(sylvan_storm_rational_function_op_threshold), *(size_t*)value);
+    return mtbdd_uapply(dd, TASK(sylvan_storm_rational_function_op_threshold), (size_t*)value);
 }
 
 TASK_IMPL_2(MTBDD, sylvan_storm_rational_function_strict_threshold, MTBDD, dd, storm_rational_function_ptr, value)
 {
-    return mtbdd_uapply(dd, TASK(sylvan_storm_rational_function_op_strict_threshold), *(size_t*)value);
+    return mtbdd_uapply(dd, TASK(sylvan_storm_rational_function_op_strict_threshold), (size_t*)value);
 }
 
 TASK_IMPL_1(MTBDD, sylvan_storm_rational_function_minimum, MTBDD, a) {

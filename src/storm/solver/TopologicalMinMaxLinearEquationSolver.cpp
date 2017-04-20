@@ -438,7 +438,7 @@ namespace storm {
 		}
         
         template<typename ValueType>
-        void TopologicalMinMaxLinearEquationSolver<ValueType>::repeatedMultiply(OptimizationDirection dir, std::vector<ValueType>& x, std::vector<ValueType>* b, uint_fast64_t n) const {
+        void TopologicalMinMaxLinearEquationSolver<ValueType>::repeatedMultiply(OptimizationDirection dir, std::vector<ValueType>& x, std::vector<ValueType> const* b, uint_fast64_t n) const {
             std::unique_ptr<std::vector<ValueType>> multiplyResult = std::make_unique<std::vector<ValueType>>(this->A.getRowCount());
             
             // Now perform matrix-vector multiplication as long as we meet the bound of the formula.

@@ -5,6 +5,8 @@
 
 #include "storm/storage/SymbolicModelDescription.h"
 
+
+
 #include "storm/settings/modules/DebugSettings.h"
 #include "storm/settings/modules/IOSettings.h"
 #include "storm/settings/modules/CoreSettings.h"
@@ -268,11 +270,14 @@ namespace storm {
                 } else {
                     constantDefinitions = model.parseConstantDefinitions(constantDefinitionString);
                 }
-                model = model.preprocess(constantDefinitions);
-                
+
                 if (model.isJaniModel() && storm::settings::getModule<storm::settings::modules::JaniExportSettings>().isJaniFileSet()) {
                     exportJaniModel(model.asJaniModel(), properties, storm::settings::getModule<storm::settings::modules::JaniExportSettings>().getJaniFilename());
                 }
+
+                model = model.preprocess(constantDefinitions);
+                
+
                 
                 if (ioSettings.isNoBuildModelSet()) {
                     return;
@@ -294,7 +299,7 @@ namespace storm {
                 } else {
                     buildAndCheckSymbolicModel<double>(model, properties, true);
                 }
-            } else if (ioSettings.isExplicitSet()) {
+            } else if (ioSettings.isExplicitSet() || ioSettings.isExplicitDRNSet()) {
                 STORM_LOG_THROW(coreSettings.getEngine() == storm::settings::modules::CoreSettings::Engine::Sparse, storm::exceptions::InvalidSettingsException, "Only the sparse engine supports explicit model input.");
                 
                 // If the model is given in an explicit format, we parse the properties without allowing expressions
@@ -303,9 +308,18 @@ namespace storm {
                 if (ioSettings.isPropertySet()) {
                     properties = storm::parsePropertiesForExplicit(ioSettings.getProperty(), propertyFilter);
                 }
-                
-                buildAndCheckExplicitModel<double>(properties, true);
+
+                if (generalSettings.isParametricSet()) {
+#ifdef STORM_HAVE_CARL
+                    buildAndCheckExplicitModel<storm::RationalFunction>(properties, true);
+#else
+                    STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "No parameters are supported in this build.");
+#endif
+                } else {
+                    buildAndCheckExplicitModel<double>(properties, true);
+                }
             } else {
+
                 STORM_LOG_THROW(false, storm::exceptions::InvalidSettingsException, "No input model.");
             }
         }

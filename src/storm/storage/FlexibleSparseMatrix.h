@@ -158,19 +158,31 @@ namespace storm {
             bool hasTrivialRowGrouping() const;
 
             /*!
-             * Creates a submatrix of the current matrix in place by dropping all rows and columns whose bits are not
-             * set to one in the given bit vector.
+             * Erases all entries whose row and column does not satisfy the given rowConstraint and the given columnConstraint
              *
-             * @param rowConstraint A bit vector indicating which rows to keep.
-             * @param columnConstraint A bit vector indicating which columns to keep.
+             * @param rowConstraint A bit vector indicating which row entries to keep.
+             * @param columnConstraint A bit vector indicating which column entries to keep.
              */
-            void createSubmatrix(storm::storage::BitVector const& rowConstraint, storm::storage::BitVector const& columnConstraint);
-
+            void filterEntries(storm::storage::BitVector const& rowConstraint, storm::storage::BitVector const& columnConstraint);
+            
             /*!
              * Creates a sparse matrix from the flexible sparse matrix.
              * @return The sparse matrix.
              */
             storm::storage::SparseMatrix<ValueType> createSparseMatrix();
+                        
+            /*!
+             * Creates a sparse matrix from the flexible sparse matrix.
+             * Only the selected rows and columns will be considered.
+             * Empty rowGroups will be ignored
+             *
+             * @param rowConstraint A bit vector indicating which rows to keep.
+             * @param columnConstraint A bit vector indicating which columns to keep.
+
+             *
+             * @return The sparse matrix.
+             */
+            storm::storage::SparseMatrix<ValueType> createSparseMatrix(storm::storage::BitVector const& rowConstraint, storm::storage::BitVector const& columnConstraint);
 
             /*!
              * Checks whether the given state has a self-loop with an arbitrary probability in the probability matrix.

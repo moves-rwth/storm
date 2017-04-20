@@ -4,6 +4,10 @@
 #include "storm/utility/prism.h"
 #include "storm/utility/jani.h"
 
+#include "storm/storage/jani/Model.h"
+#include "storm/storage/jani/Automaton.h"
+
+
 #include "storm/utility/macros.h"
 #include "storm/exceptions/InvalidOperationException.h"
 #include "storm/exceptions/InvalidTypeException.h"

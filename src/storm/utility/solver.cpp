@@ -4,11 +4,8 @@
 
 #include "storm/solver/SymbolicNativeLinearEquationSolver.h"
 #include "storm/solver/SymbolicEliminationLinearEquationSolver.h"
-#include "storm/solver/SymbolicMinMaxLinearEquationSolver.h"
 #include "storm/solver/SymbolicGameSolver.h"
-#include "storm/solver/GameSolver.h"
 
-#include "storm/solver/TopologicalMinMaxLinearEquationSolver.h"
 
 #include "storm/solver/GurobiLpSolver.h"
 #include "storm/solver/Z3LpSolver.h"
@@ -28,11 +25,6 @@ namespace storm {
             template<storm::dd::DdType Type, typename ValueType>
             std::unique_ptr<storm::solver::SymbolicGameSolver<Type, ValueType>> SymbolicGameSolverFactory<Type, ValueType>::create(storm::dd::Add<Type, ValueType> const& A, storm::dd::Bdd<Type> const& allRows, storm::dd::Bdd<Type> const& illegalPlayer1Mask, storm::dd::Bdd<Type> const& illegalPlayer2Mask, std::set<storm::expressions::Variable> const& rowMetaVariables, std::set<storm::expressions::Variable> const& columnMetaVariables, std::vector<std::pair<storm::expressions::Variable, storm::expressions::Variable>> const& rowColumnMetaVariablePairs, std::set<storm::expressions::Variable> const& player1Variables, std::set<storm::expressions::Variable> const& player2Variables) const {
                 return std::unique_ptr<storm::solver::SymbolicGameSolver<Type, ValueType>>(new storm::solver::SymbolicGameSolver<Type, ValueType>(A, allRows, illegalPlayer1Mask, illegalPlayer2Mask, rowMetaVariables, columnMetaVariables, rowColumnMetaVariablePairs, player1Variables, player2Variables));
-            }
-            
-            template<typename ValueType>
-            std::unique_ptr<storm::solver::GameSolver<ValueType>> GameSolverFactory<ValueType>::create(storm::storage::SparseMatrix<storm::storage::sparse::state_type> const& player1Matrix, storm::storage::SparseMatrix<ValueType> const& player2Matrix) const {
-                return std::unique_ptr<storm::solver::GameSolver<ValueType>>(new storm::solver::GameSolver<ValueType>(player1Matrix, player2Matrix));
             }
             
             std::unique_ptr<storm::solver::LpSolver> LpSolverFactory::create(std::string const& name, storm::solver::LpSolverTypeSelection solvT) const {
@@ -95,7 +87,6 @@ namespace storm {
             
             template class SymbolicGameSolverFactory<storm::dd::DdType::CUDD, double>;
             template class SymbolicGameSolverFactory<storm::dd::DdType::Sylvan, double>;
-            template class GameSolverFactory<double>;
         }
     }
 }

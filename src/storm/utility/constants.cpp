@@ -475,7 +475,7 @@ namespace storm {
         bool isOne(storm::RationalFunction const& a) {
             return a.isOne();
         }
-
+        
         template<>
         bool isOne(storm::Polynomial const& a) {
             return a.isOne();
@@ -490,7 +490,7 @@ namespace storm {
         bool isZero(storm::Polynomial const& a) {
             return a.isZero();
         }
-
+        
         template<>
         bool isConstant(storm::RationalFunction const& a) {
             return a.isConstant();
@@ -518,7 +518,7 @@ namespace storm {
         }
         
         template<>
-        RationalFunction convertNumber(int_fast64_t const& number){
+        RationalFunction convertNumber(int_fast64_t const& number) {
             STORM_LOG_ASSERT(static_cast<carl::sint>(number) == number, "Rationalizing failed, because the number is too large.");
             return RationalFunction(carl::rationalize<RationalFunctionCoefficient>(static_cast<carl::sint>(number)));
         }
@@ -530,11 +530,12 @@ namespace storm {
         }
         
         template<>
-        ClnRationalNumber convertNumber(RationalFunction const& number){
-            return convertNumber<ClnRationalNumber>(number.nominatorAsNumber() / number.denominatorAsNumber());
+        ClnRationalNumber convertNumber(RationalFunction const& number) {
+            storm::RationalFunctionCoefficient tmp = number.nominatorAsNumber() / number.denominatorAsNumber();
+            return convertNumber<ClnRationalNumber>(tmp);
         }
 #endif
-        
+
 #if defined(STORM_HAVE_GMP)
         template<>
         RationalFunction convertNumber(GmpRationalNumber const& number) {

@@ -109,7 +109,9 @@ namespace storm {
                     probabilities.emplace_back(storm::expressions::ite(destguard, (expressionManager->rational(trans.getWeight()) / totalWeight), expressionManager->rational(0.0)));
                 }
 
-                std::shared_ptr<storm::jani::TemplateEdge> templateEdge = automaton.createTemplateEdge((priorityGuard && guard).simplify());
+                std::shared_ptr<storm::jani::TemplateEdge> templateEdge = std::make_shared<storm::jani::TemplateEdge>((priorityGuard && guard).simplify());
+                automaton.registerTemplateEdge(templateEdge);
+
                 for (auto const& oa : oas) {
                     templateEdge->addDestination(storm::jani::TemplateEdgeDestination(oa));
                 }
@@ -139,7 +141,9 @@ namespace storm {
                     }
                 }
 
-                std::shared_ptr<storm::jani::TemplateEdge> templateEdge = automaton.createTemplateEdge(guard);
+                std::shared_ptr<storm::jani::TemplateEdge> templateEdge = std::make_shared<storm::jani::TemplateEdge>(guard);
+                automaton.registerTemplateEdge(templateEdge);
+
                 templateEdge->addDestination(assignments);
                 storm::jani::Edge e(locId, storm::jani::Model::SILENT_ACTION_INDEX, expressionManager->rational(trans.getRate()), templateEdge, {locId}, {expressionManager->integer(1)});
                 automaton.addEdge(e);

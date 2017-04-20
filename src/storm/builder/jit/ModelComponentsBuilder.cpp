@@ -129,9 +129,9 @@ namespace storm {
                     return new storm::models::sparse::Dtmc<ValueType, storm::models::sparse::StandardRewardModel<ValueType>>(std::move(transitionMatrix), std::move(stateLabeling), std::move(rewardModels));
                 } else if (modelType == storm::jani::ModelType::CTMC) {
                     return new storm::models::sparse::Ctmc<ValueType, storm::models::sparse::StandardRewardModel<ValueType>>(std::move(transitionMatrix), std::move(stateLabeling), std::move(rewardModels));
-                } else if (modelType == storm::jani::ModelType::MDP) {
+                } else if (modelType == storm::jani::ModelType::MDP || modelType == storm::jani::ModelType::LTS) {
                     return new storm::models::sparse::Mdp<ValueType, storm::models::sparse::StandardRewardModel<ValueType>>(std::move(transitionMatrix), std::move(stateLabeling), std::move(rewardModels));
-                } else {
+                } else if (modelType == storm::jani::ModelType::MA) {
                     std::vector<ValueType> exitRates(transitionMatrix.getRowGroupCount(), storm::utility::zero<ValueType>());
                     for (auto state : *markovianStates) {
                         for (auto const& element : transitionMatrix.getRow(transitionMatrix.getRowGroupIndices()[state])) {
@@ -143,6 +143,8 @@ namespace storm {
                     }
                     
                     return new storm::models::sparse::MarkovAutomaton<ValueType, storm::models::sparse::StandardRewardModel<ValueType>>(std::move(transitionMatrix), std::move(stateLabeling), std::move(*markovianStates), std::move(exitRates), std::move(rewardModels));
+                } else {
+                    STORM_LOG_THROW(false, storm::exceptions::WrongFormatException, "Model type unsupported by JIT builder.");
                 }
             }
             

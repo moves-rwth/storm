@@ -11,10 +11,11 @@ namespace storm {
             ValueType mActiveFailureRate;
             ValueType mPassiveFailureRate;
             DFTDependencyVector mIngoingDependencies;
+            bool mTransient;
 
         public:
-            DFTBE(size_t id, std::string const& name, ValueType failureRate, ValueType dormancyFactor) :
-                    DFTElement<ValueType>(id, name), mActiveFailureRate(failureRate), mPassiveFailureRate(dormancyFactor * failureRate)
+            DFTBE(size_t id, std::string const& name, ValueType failureRate, ValueType dormancyFactor, bool transient = false) :
+                    DFTElement<ValueType>(id, name), mActiveFailureRate(failureRate), mPassiveFailureRate(dormancyFactor * failureRate), mTransient(transient)
             {}
 
             DFTElementType type() const override {
@@ -31,6 +32,10 @@ namespace storm {
 
             ValueType const& passiveFailureRate() const {
                 return mPassiveFailureRate;
+            }
+
+            bool isTransient() const {
+                return mTransient;
             }
             
             bool canFail() const {

@@ -40,6 +40,8 @@ namespace storm {
                                                         storm::storage::BitVector const& ecActions,
                                                         storm::storage::BitVector const& possiblyRecurrentStates);
                 
+                virtual ~SparsePcaaWeightVectorChecker() = default;
+                
                 /*!
                  * - computes the maximal expected reward w.r.t. the weighted sum of the rewards of the individual objectives
                  * - extracts the scheduler that induces this maximum

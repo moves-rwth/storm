@@ -43,7 +43,11 @@ namespace storm  {
         int64_t Assignment::getLevel() const {
             return level;
         }
-        
+
+        void Assignment::setLevel(int64_t level)  {
+            this->level = level;
+        }
+
         bool Assignment::isLinear() const {
             storm::expressions::LinearityCheckVisitor linearityChecker;
             return linearityChecker.check(this->getAssignedExpression(), true);
