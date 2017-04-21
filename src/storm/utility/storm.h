@@ -418,10 +418,12 @@ namespace storm {
                     break;
             }
         }
+        typename storm::storage::ParameterRegion<storm::RationalFunction>::CoefficientType satAreaFraction = satArea / parameterSpace.area();
+        typename storm::storage::ParameterRegion<storm::RationalFunction>::CoefficientType unsatAreaFraction = unsatArea / parameterSpace.area();
         STORM_PRINT_AND_LOG("Done! Found " << numOfSatRegions << " safe regions and "
                                      << numOfUnsatRegions << " unsafe regions." << std::endl);
-        STORM_PRINT_AND_LOG(storm::utility::convertNumber<double>(satArea / parameterSpace.area()) * 100 << "% of the parameter space is safe, and "
-                         << storm::utility::convertNumber<double>(unsatArea / parameterSpace.area()) * 100 << "% of the parameter space is unsafe." << std::endl);
+        STORM_PRINT_AND_LOG(storm::utility::convertNumber<double>(satAreaFraction) * 100 << "% of the parameter space is safe, and "
+                         << storm::utility::convertNumber<double>(unsatAreaFraction) * 100 << "% of the parameter space is unsafe." << std::endl);
         STORM_PRINT_AND_LOG("Model checking with parameter lifting took " << parameterLiftingStopWatch << " seconds." << std::endl);
         STORM_PRINT_AND_LOG(resultVisualization);
         

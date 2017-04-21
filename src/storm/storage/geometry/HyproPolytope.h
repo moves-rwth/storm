@@ -48,7 +48,7 @@ namespace storm {
                 HyproPolytope(HyproPolytopeType const& polytope);
                 HyproPolytope(HyproPolytopeType&& polytope);
                 
-                ~HyproPolytope();
+                virtual ~HyproPolytope();
 
                 /*!
                  * Returns the vertices of this polytope.

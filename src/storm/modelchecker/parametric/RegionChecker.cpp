@@ -276,8 +276,11 @@ namespace storm {
                         bool currRegionComplete = false;
                         CoefficientType coveredArea = storm::utility::zero<CoefficientType>();
                         for (auto const& r : result) {
-                            CoefficientType instersectionArea = std::max(storm::utility::zero<CoefficientType>(), std::min(yUpper, r.first.getUpperBoundary(y)) - std::max(yLower, r.first.getLowerBoundary(y)));
-                            instersectionArea *= std::max(storm::utility::zero<CoefficientType>(), std::min(xUpper, r.first.getUpperBoundary(x)) - std::max(xLower, r.first.getLowerBoundary(x)));
+                            CoefficientType interesctionSizeY = std::min(yUpper, r.first.getUpperBoundary(y)) - std::max(yLower, r.first.getLowerBoundary(y));
+                            interesctionSizeY = std::max(interesctionSizeY, storm::utility::zero<CoefficientType>());
+                            CoefficientType interesctionSizeX = std::min(xUpper, r.first.getUpperBoundary(x)) - std::max(xLower, r.first.getLowerBoundary(x));
+                            interesctionSizeX = std::max(interesctionSizeX, storm::utility::zero<CoefficientType>());
+                            CoefficientType instersectionArea =  interesctionSizeY * interesctionSizeX;
                             if(!storm::utility::isZero(instersectionArea)) {
                                 currRegionSafe = currRegionSafe || r.second == RegionCheckResult::AllSat;
                                 currRegionUnSafe = currRegionUnSafe || r.second == RegionCheckResult::AllViolated;
