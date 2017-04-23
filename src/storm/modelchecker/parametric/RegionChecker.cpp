@@ -30,7 +30,7 @@ namespace storm {
             }
             
             template <typename SparseModelType, typename ConstantType, typename ExactConstantType>
-            RegionChecker<SparseModelType, ConstantType, ExactConstantType>::RegionChecker(SparseModelType const& parametricModel) : parametricModel(parametricModel) {
+            RegionChecker<SparseModelType, ConstantType, ExactConstantType>::RegionChecker(SparseModelType const& parametricModel) : parametricModel(parametricModel), numOfCorrectedRegions(0) {
                 initializationStopwatch.start();
                 STORM_LOG_THROW(parametricModel.getInitialStates().getNumberOfSetBits() == 1, storm::exceptions::NotSupportedException, "Parameter lifting requires models with only one initial state");
                 initializationStopwatch.stop();
@@ -130,6 +130,7 @@ namespace storm {
                     if(!exactParameterLiftingChecker->check(region, this->currentCheckTask->getOptimizationDirection())->asExplicitQualitativeCheckResult()[*getConsideredParametricModel().getInitialStates().begin()]) {
                         // Numerical result is wrong; Check whether the region is AllViolated!
                         STORM_LOG_INFO("Numerical result was wrong for one region... Applying exact methods to obtain the actual result...");
+                        ++numOfCorrectedRegions;
                         if(!exactParameterLiftingChecker->check(region, storm::solver::invert(this->currentCheckTask->getOptimizationDirection()))->asExplicitQualitativeCheckResult()[*getConsideredParametricModel().getInitialStates().begin()]) {
                             parameterLiftingCheckerStopwatch.stop();
                             return RegionCheckResult::AllViolated;
@@ -142,6 +143,7 @@ namespace storm {
                     if(exactParameterLiftingChecker->check(region, storm::solver::invert(this->currentCheckTask->getOptimizationDirection()))->asExplicitQualitativeCheckResult()[*getConsideredParametricModel().getInitialStates().begin()]) {
                         // Numerical result is wrong; Check whether the region is AllSat!
                         STORM_LOG_INFO("Numerical result was wrong for one region... Applying exact methods to obtain the actual result...");
+                        ++numOfCorrectedRegions;
                         if(exactParameterLiftingChecker->check(region, this->currentCheckTask->getOptimizationDirection())->asExplicitQualitativeCheckResult()[*getConsideredParametricModel().getInitialStates().begin()]) {
                             parameterLiftingCheckerStopwatch.stop();
                             return RegionCheckResult::AllSat;
@@ -169,6 +171,7 @@ namespace storm {
                 std::vector<std::pair<storm::storage::ParameterRegion<typename SparseModelType::ValueType>, RegionCheckResult>> result;
                 unprocessedRegions.emplace(region, RegionCheckResult::Unknown);
                 uint_fast64_t numOfAnalyzedRegions = 0;
+                numOfCorrectedRegions = 0;
                 CoefficientType displayedProgress = storm::utility::zero<CoefficientType>();
                 if (storm::settings::getModule<storm::settings::modules::CoreSettings>().isShowStatisticsSet()) {
                     STORM_PRINT_AND_LOG("Progress (solved fraction) :" << std::endl <<  "0% [");
@@ -235,6 +238,9 @@ namespace storm {
                     
                     STORM_PRINT_AND_LOG("Parameter Lifting Statistics:" << std::endl);
                     STORM_PRINT_AND_LOG("    Analyzed a total of " << numOfAnalyzedRegions << " regions." << std::endl);
+                    if (settings.applyExactValidation) {
+                        STORM_PRINT_AND_LOG("    Exact validation corrected " << numOfCorrectedRegions << " regions." << std::endl);
+                    }
                     STORM_PRINT_AND_LOG("    Initialization took " << initializationStopwatch << " seconds." << std::endl);
                     STORM_PRINT_AND_LOG("    Checking sampled models took " << instantiationCheckerStopwatch << " seconds." << std::endl);
                     STORM_PRINT_AND_LOG("    Checking lifted models took " << parameterLiftingCheckerStopwatch << " seconds." << std::endl);
