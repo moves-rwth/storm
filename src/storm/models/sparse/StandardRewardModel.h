@@ -40,11 +40,9 @@ namespace storm {
                 StandardRewardModel(StandardRewardModel<ValueType> const& dtmc) = default;
                 StandardRewardModel& operator=(StandardRewardModel<ValueType> const& dtmc) = default;
                 
-#ifndef WINDOWS
                 StandardRewardModel(StandardRewardModel<ValueType>&& dtmc) = default;
                 StandardRewardModel& operator=(StandardRewardModel<ValueType>&& dtmc) = default;
-#endif
-                
+
                 /*!
                  * Retrieves whether the reward model has state rewards.
                  *

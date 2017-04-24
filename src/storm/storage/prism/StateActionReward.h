@@ -38,11 +38,9 @@ namespace storm {
             StateActionReward() = default;
             StateActionReward(StateActionReward const& other) = default;
             StateActionReward& operator=(StateActionReward const& other)= default;
-#ifndef WINDOWS
             StateActionReward(StateActionReward&& other) = default;
             StateActionReward& operator=(StateActionReward&& other) = default;
-#endif
-            
+
             /*!
              * Retrieves the action name that is associated with this transition reward.
              *

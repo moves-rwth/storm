@@ -26,11 +26,9 @@ namespace storm {
             Formula() = default;
             Formula(Formula const& other) = default;
             Formula& operator=(Formula const& other)= default;
-#ifndef WINDOWS
             Formula(Formula&& other) = default;
             Formula& operator=(Formula&& other) = default;
-#endif
-            
+
             /*!
              * Retrieves the name that is associated with this formula.
              *

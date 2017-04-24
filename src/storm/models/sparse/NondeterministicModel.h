@@ -47,11 +47,9 @@ namespace storm {
                 NondeterministicModel(NondeterministicModel<ValueType, RewardModelType> const& other) = default;
                 NondeterministicModel& operator=(NondeterministicModel<ValueType, RewardModelType> const& other) = default;
                 
-#ifndef WINDOWS
                 NondeterministicModel(NondeterministicModel<ValueType, RewardModelType>&& other) = default;
                 NondeterministicModel& operator=(NondeterministicModel<ValueType, RewardModelType>&& other) = default;
-#endif
-                
+
                 /*!
                  * Retrieves the number of (nondeterministic) choices in the model.
                  *

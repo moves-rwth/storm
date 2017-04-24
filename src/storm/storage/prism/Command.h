@@ -32,11 +32,9 @@ namespace storm {
             Command() = default;
             Command(Command const& other) = default;
             Command& operator=(Command const& other) = default;
-#ifndef WINDOWS
             Command(Command&& other) = default;
             Command& operator=(Command&& other) = default;
-#endif
-            
+
             /*!
              * Retrieves the action name of this command.
              *

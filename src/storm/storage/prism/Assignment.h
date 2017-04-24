@@ -26,11 +26,9 @@ namespace storm {
             Assignment() = default;
             Assignment(Assignment const& other) = default;
             Assignment& operator=(Assignment const& other)= default;
-#ifndef WINDOWS
             Assignment(Assignment&& other) = default;
             Assignment& operator=(Assignment&& other) = default;
-#endif
-            
+
             /*!
              * Retrieves the name of the variable that this assignment targets.
              *

@@ -26,10 +26,8 @@ namespace storm {
             // Instantiate constructors and assignments with their default implementations.
             UnaryBooleanFunctionExpression(UnaryBooleanFunctionExpression const& other) = default;
             UnaryBooleanFunctionExpression& operator=(UnaryBooleanFunctionExpression const& other) = delete;
-#ifndef WINDOWS
             UnaryBooleanFunctionExpression(UnaryBooleanFunctionExpression&&) = default;
             UnaryBooleanFunctionExpression& operator=(UnaryBooleanFunctionExpression&&) = delete;
-#endif
             virtual ~UnaryBooleanFunctionExpression() = default;
             
             // Override base class methods.

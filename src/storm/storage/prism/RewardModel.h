@@ -31,11 +31,9 @@ namespace storm {
             RewardModel() = default;
             RewardModel(RewardModel const& other) = default;
             RewardModel& operator=(RewardModel const& other)= default;
-#ifndef WINDOWS
             RewardModel(RewardModel&& other) = default;
             RewardModel& operator=(RewardModel&& other) = default;
-#endif
-            
+
             /*!
              * Retrieves the name of the reward model.
              *

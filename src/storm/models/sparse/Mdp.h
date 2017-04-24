@@ -44,11 +44,9 @@ namespace storm {
                 Mdp(Mdp<ValueType, RewardModelType> const& other) = default;
                 Mdp& operator=(Mdp<ValueType, RewardModelType> const& other) = default;
                 
-#ifndef WINDOWS
                 Mdp(Mdp<ValueType, RewardModelType>&& other) = default;
                 Mdp& operator=(Mdp<ValueType, RewardModelType>&& other) = default;
-#endif
-                
+
                 /*!
                  * Constructs an MDP by copying the current MDP and restricting the choices of each state to the ones
                  * whose label set is contained in the given label set. Note that is is only valid to call this method

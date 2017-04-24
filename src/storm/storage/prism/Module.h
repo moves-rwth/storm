@@ -48,11 +48,9 @@ namespace storm {
             Module() = default;
             Module(Module const& other) = default;
             Module& operator=(Module const& other)= default;
-#ifndef WINDOWS
             Module(Module&& other) = default;
             Module& operator=(Module&& other) = default;
-#endif
-            
+
             /*!
              * Retrieves the number of boolean variables in the module.
              *

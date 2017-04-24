@@ -63,11 +63,9 @@ namespace storm {
             Program() = default;
             Program(Program const& other) = default;
             Program& operator=(Program const& other) = default;
-#ifndef WINDOWS
             Program(Program&& other) = default;
             Program& operator=(Program&& other) = default;
-#endif
-            
+
             /*!
              * Retrieves the model type of the model.
              *
