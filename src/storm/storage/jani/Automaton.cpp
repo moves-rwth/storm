@@ -528,5 +528,36 @@ namespace storm {
             
             return result;
         }
+
+        void Automaton::writeDotToStream(std::ostream& outStream) const {
+            outStream << "\tsubgraph " << name << " {" << std::endl;
+
+            // Write all locations to the stream.
+            uint64_t locIndex = 0;
+            for (auto const& loc : locations) {
+                outStream << "\t" << name << "_s" << locIndex  << "[ label=\"" << loc.getName() << "\"];" << std::endl;
+                ++locIndex;
+            }
+            // Write for each edge an node to the stream;
+            uint64_t edgeIndex = 0;
+            for (auto const& edge : edges) {
+                outStream << "\t" << name << "_e" << edgeIndex << ";" << std::endl;
+                ++edgeIndex;
+            }
+
+            // Connect edges
+            edgeIndex = 0;
+            for (auto const& edge : edges) {
+                outStream << "\t" << name << "_s" << edge.getSourceLocationIndex() << " -> " << name << "_e" << edgeIndex << ";" << std::endl;
+                for (auto const& edgeDest : edge.getDestinations()) {
+                    outStream << "\t" << name << "_e" << edgeIndex << " -> " << name << "_s" << edgeDest.getLocationIndex() << ";" << std::endl;
+                }
+                ++edgeIndex;
+            }
+
+
+            outStream << "\t}" << std::endl;
+
+        }
     }
 }

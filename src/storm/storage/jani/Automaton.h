@@ -371,6 +371,8 @@ namespace storm {
              * Checks the automaton for linearity.
              */
             bool isLinear() const;
+
+            void writeDotToStream(std::ostream& outStream = std::cout) const;
             
         private:
             /// The name of the automaton.

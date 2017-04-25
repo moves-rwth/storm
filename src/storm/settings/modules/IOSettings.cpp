@@ -19,6 +19,7 @@ namespace storm {
             const std::string IOSettings::moduleName = "io";
             const std::string IOSettings::exportDotOptionName = "exportdot";
             const std::string IOSettings::exportExplicitOptionName = "exportexplicit";
+            const std::string IOSettings::exportJaniDotOptionName = "exportjanidot";
             const std::string IOSettings::explicitOptionName = "explicit";
             const std::string IOSettings::explicitOptionShortName = "exp";
             const std::string IOSettings::explicitDrnOptionName = "explicit-drn";
@@ -40,6 +41,7 @@ namespace storm {
             const std::string IOSettings::prismCompatibilityOptionShortName = "pc";
             const std::string IOSettings::noBuildOptionName = "nobuild";
             const std::string IOSettings::fullModelBuildOptionName = "buildfull";
+            const std::string IOSettings::buildChoiceLabelOptionName = "buildchoicelab";
             const std::string IOSettings::janiPropertyOptionName = "janiproperty";
             const std::string IOSettings::janiPropertyOptionShortName = "jprop";
             const std::string IOSettings::propertyOptionName = "prop";
@@ -50,6 +52,8 @@ namespace storm {
                 this->addOption(storm::settings::OptionBuilder(moduleName, prismCompatibilityOptionName, false, "Enables PRISM compatibility. This may be necessary to process some PRISM models.").setShortName(prismCompatibilityOptionShortName).build());
                 this->addOption(storm::settings::OptionBuilder(moduleName, exportDotOptionName, "", "If given, the loaded model will be written to the specified file in the dot format.")
                                 .addArgument(storm::settings::ArgumentBuilder::createStringArgument("filename", "The name of the file to which the model is to be written.").build()).build());
+                this->addOption(storm::settings::OptionBuilder(moduleName, exportJaniDotOptionName, "", "If given, the loaded jani model will be written to the specified file in the dot format.")
+                                        .addArgument(storm::settings::ArgumentBuilder::createStringArgument("filename", "The name of the file to which the model is to be written.").build()).build());
                 this->addOption(storm::settings::OptionBuilder(moduleName, exportExplicitOptionName, "", "If given, the loaded model will be written to the specified file in the drn format.")
                                 .addArgument(storm::settings::ArgumentBuilder::createStringArgument("filename", "the name of the file to which the model is to be writen.").build()).build());
                 this->addOption(storm::settings::OptionBuilder(moduleName, explicitOptionName, false, "Parses the model given in an explicit (sparse) representation.").setShortName(explicitOptionShortName)
@@ -65,6 +69,7 @@ namespace storm {
                 this->addOption(storm::settings::OptionBuilder(moduleName, prismToJaniOptionName, false, "If set, the input PRISM model is transformed to JANI.").build());
                 this->addOption(storm::settings::OptionBuilder(moduleName, jitOptionName, false, "If set, the model is built using the JIT model builder.").build());
                 this->addOption(storm::settings::OptionBuilder(moduleName, fullModelBuildOptionName, false, "If set, include all rewards and labels.").build());
+                this->addOption(storm::settings::OptionBuilder(moduleName, buildChoiceLabelOptionName, false, "If set, include choice labels").build());
                 this->addOption(storm::settings::OptionBuilder(moduleName, noBuildOptionName, false, "If set, do not build the model.").build());
                 this->addOption(storm::settings::OptionBuilder(moduleName, propertyOptionName, false, "Specifies the properties to be checked on the model.").setShortName(propertyOptionShortName)
                                         .addArgument(storm::settings::ArgumentBuilder::createStringArgument("property or filename", "The formula or the file containing the formulas.").build())
@@ -93,6 +98,14 @@ namespace storm {
             
             std::string IOSettings::getExportDotFilename() const {
                 return this->getOption(exportDotOptionName).getArgumentByName("filename").getValueAsString();
+            }
+
+            bool IOSettings::isExportJaniDotSet() const {
+                return this->getOption(exportJaniDotOptionName).getHasOptionBeenSet();
+            }
+
+            std::string IOSettings::getExportJaniDotFilename() const {
+                return this->getOption(exportJaniDotOptionName).getArgumentByName("filename").getValueAsString();
             }
             
             bool IOSettings::isExportExplicitSet() const {
@@ -225,6 +238,10 @@ namespace storm {
                 return this->getOption(noBuildOptionName).getHasOptionBeenSet();
             }
 
+            bool IOSettings::isBuildChoiceLabelsSet() const {
+                return this->getOption(buildChoiceLabelOptionName).getHasOptionBeenSet();
+            }
+
             bool IOSettings::isPropertySet() const {
                 return this->getOption(propertyOptionName).getHasOptionBeenSet();
             }
@@ -246,6 +263,8 @@ namespace storm {
 
                 // Ensure that not two explicit input models were given.
                 STORM_LOG_THROW(!isExplicitSet() || !isExplicitDRNSet(), storm::exceptions::InvalidSettingsException, "Explicit model ");
+
+                STORM_LOG_THROW(!isExportJaniDotSet() || isJaniInputSet(), storm::exceptions::InvalidSettingsException, "Jani-to-dot export is only available for jani models" );
 
                 // Ensure that the model was given either symbolically or explicitly.
                 STORM_LOG_THROW(!isJaniInputSet() || !isPrismInputSet() || !isExplicitSet() || !isExplicitDRNSet(), storm::exceptions::InvalidSettingsException, "The model may be either given in an explicit or a symbolic format (PRISM or JANI), but not both.");

@@ -1165,5 +1165,16 @@ namespace storm {
             
             return newModel;
         }
+
+        void Model::writeDotToStream(std::ostream& outStream) const {
+            outStream << "digraph " << name << " {" << std::endl;
+
+            for (auto const& automaton : automata) {
+                automaton.writeDotToStream(outStream);
+                outStream << std::endl;
+            }
+
+            outStream << "}";
+        }
     }
 }
