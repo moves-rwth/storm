@@ -372,7 +372,7 @@ namespace storm {
              */
             bool isLinear() const;
 
-            void writeDotToStream(std::ostream& outStream = std::cout) const;
+            void writeDotToStream(std::ostream& outStream, std::vector<std::string> const& actionNames) const;
             
         private:
             /// The name of the automaton.

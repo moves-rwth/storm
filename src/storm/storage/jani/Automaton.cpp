@@ -529,7 +529,7 @@ namespace storm {
             return result;
         }
 
-        void Automaton::writeDotToStream(std::ostream& outStream) const {
+        void Automaton::writeDotToStream(std::ostream& outStream, std::vector<std::string> const& actionNames) const {
             outStream << "\tsubgraph " << name << " {" << std::endl;
 
             // Write all locations to the stream.
@@ -541,14 +541,14 @@ namespace storm {
             // Write for each edge an node to the stream;
             uint64_t edgeIndex = 0;
             for (auto const& edge : edges) {
-                outStream << "\t" << name << "_e" << edgeIndex << ";" << std::endl;
+                outStream << "\t" << name << "_e" << edgeIndex << "[ label=\"\" , shape=circle, width=.2, style=filled, fillcolor=\"black\"];" << std::endl;
                 ++edgeIndex;
             }
 
             // Connect edges
             edgeIndex = 0;
             for (auto const& edge : edges) {
-                outStream << "\t" << name << "_s" << edge.getSourceLocationIndex() << " -> " << name << "_e" << edgeIndex << ";" << std::endl;
+                outStream << "\t" << name << "_s" << edge.getSourceLocationIndex() << " -> " << name << "_e" << edgeIndex << " [label=\"" << actionNames.at(edge.getActionIndex()) << "\"];" << std::endl;
                 for (auto const& edgeDest : edge.getDestinations()) {
                     outStream << "\t" << name << "_e" << edgeIndex << " -> " << name << "_s" << edgeDest.getLocationIndex() << ";" << std::endl;
                 }
