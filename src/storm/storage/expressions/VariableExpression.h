@@ -20,10 +20,9 @@ namespace storm {
             // Instantiate constructors and assignments with their default implementations.
             VariableExpression(VariableExpression const&) = default;
             VariableExpression& operator=(VariableExpression const&) = delete;
-#ifndef WINDOWS
             VariableExpression(VariableExpression&&) = default;
             VariableExpression& operator=(VariableExpression&&) = delete;
-#endif
+
             virtual ~VariableExpression() = default;
 
             // Override base class methods.

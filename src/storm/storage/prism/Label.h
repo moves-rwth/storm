@@ -34,11 +34,9 @@ namespace storm {
             Label() = default;
             Label(Label const& other) = default;
             Label& operator=(Label const& other)= default;
-#ifndef WINDOWS
             Label(Label&& other) = default;
             Label& operator=(Label&& other) = default;
-#endif
-            
+
             /*!
              * Retrieves the name that is associated with this label.
              *

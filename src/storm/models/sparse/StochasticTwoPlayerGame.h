@@ -52,11 +52,9 @@ namespace storm {
                 StochasticTwoPlayerGame(StochasticTwoPlayerGame const& other) = default;
                 StochasticTwoPlayerGame& operator=(StochasticTwoPlayerGame const& other) = default;
                 
-#ifndef WINDOWS
                 StochasticTwoPlayerGame(StochasticTwoPlayerGame&& other) = default;
                 StochasticTwoPlayerGame& operator=(StochasticTwoPlayerGame&& other) = default;
-#endif
-                
+
                 /*!
                  * Retrieves the matrix representing the choices in player 1 states.
                  *

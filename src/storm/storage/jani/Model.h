@@ -448,6 +448,8 @@ namespace storm {
              * @return
              */
             bool reusesActionsInComposition() const;
+
+            void writeDotToStream(std::ostream& outStream = std::cout) const;
             
             /// The name of the silent action.
             static const std::string SILENT_ACTION_NAME;

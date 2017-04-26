@@ -26,11 +26,9 @@ namespace storm {
             Update() = default;
             Update(Update const& other) = default;
             Update& operator=(Update const& other)= default;
-#ifndef WINDOWS
             Update(Update&& other) = default;
             Update& operator=(Update&& other) = default;
-#endif
-            
+
             /*!
              * Retrieves the expression for the likelihood of this update.
              *

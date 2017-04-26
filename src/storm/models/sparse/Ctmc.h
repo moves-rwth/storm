@@ -54,11 +54,9 @@ namespace storm {
                 
                 Ctmc(Ctmc<ValueType, RewardModelType> const& ctmc) = default;
                 Ctmc& operator=(Ctmc<ValueType, RewardModelType> const& ctmc) = default;
-                
-#ifndef WINDOWS
                 Ctmc(Ctmc<ValueType, RewardModelType>&& ctmc) = default;
                 Ctmc& operator=(Ctmc<ValueType, RewardModelType>&& ctmc) = default;
-#endif
+
                 /*!
                  * Retrieves the vector of exit rates of the model.
                  *

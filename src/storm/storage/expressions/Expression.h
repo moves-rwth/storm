@@ -76,11 +76,9 @@ namespace storm {
             // Instantiate constructors and assignments with their default implementations.
             Expression(Expression const& other) = default;
             Expression& operator=(Expression const& other) = default;
-#ifndef WINDOWS
             Expression(Expression&&) = default;
             Expression& operator=(Expression&&) = default;
-#endif
-            
+
             /*!
              * Converts the expression to an expression over the variables of the provided expression manager.
              */

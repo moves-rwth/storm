@@ -68,9 +68,9 @@ namespace storm {
         
         template<typename T>
         void Argument<T>::setFromDefaultValue()  {
-            STORM_LOG_THROW(this->hasDefaultValue, storm::exceptions::IllegalFunctionCallException, "Unable to set value from default value, because the argument has none.");
+            STORM_LOG_THROW(this->hasDefaultValue, storm::exceptions::IllegalFunctionCallException, "Unable to set value from default value, because the argument " << name << " has none.");
             bool result = this->setFromTypeValue(this->defaultValue, false);
-            STORM_LOG_THROW(result, storm::exceptions::IllegalArgumentValueException, "Unable to assign default value to argument, because it was rejected.");
+            STORM_LOG_THROW(result, storm::exceptions::IllegalArgumentValueException, "Unable to assign default value to argument " << name << ", because it was rejected.");
         }
         
         template<typename T>
@@ -95,7 +95,7 @@ namespace storm {
             switch (this->argumentType) {
                 case ArgumentType::Integer:
                     return inferToInteger(ArgumentType::Integer, this->getArgumentValue());
-                default: STORM_LOG_THROW(false, storm::exceptions::IllegalFunctionCallException, "Unable to retrieve argument value as integer."); break;
+                default: STORM_LOG_THROW(false, storm::exceptions::IllegalFunctionCallException, "Unable to retrieve argument value for " << name << " as integer."); break;
             }
         }
         
@@ -105,7 +105,7 @@ namespace storm {
             switch (this->argumentType) {
                 case ArgumentType::UnsignedInteger:
                     return inferToUnsignedInteger(ArgumentType::UnsignedInteger, this->getArgumentValue());
-                default: STORM_LOG_THROW(false, storm::exceptions::IllegalFunctionCallException, "Unable to retrieve argument value as unsigned integer."); break;
+                default: STORM_LOG_THROW(false, storm::exceptions::IllegalFunctionCallException, "Unable to retrieve argument value for " << name << " as unsigned integer."); break;
             }
         }
         
@@ -115,7 +115,7 @@ namespace storm {
             switch (this->argumentType) {
                 case ArgumentType::Double:
                     return inferToDouble(ArgumentType::Double, this->getArgumentValue());
-                default: STORM_LOG_THROW(false, storm::exceptions::IllegalFunctionCallException, "Unable to retrieve argument value as double."); break;
+                default: STORM_LOG_THROW(false, storm::exceptions::IllegalFunctionCallException, "Unable to retrieve argument value for " << name << " as double."); break;
             }
         }
         
@@ -124,7 +124,7 @@ namespace storm {
             switch (this->argumentType) {
                 case ArgumentType::Boolean:
                     return inferToBoolean(ArgumentType::Boolean, this->getArgumentValue());
-                default: STORM_LOG_THROW(false, storm::exceptions::IllegalFunctionCallException, "Unable to retrieve argument value as boolean."); break;
+                default: STORM_LOG_THROW(false, storm::exceptions::IllegalFunctionCallException, "Unable to retrieve argument value for " << name << " as Boolean."); break;
             }
         }
         

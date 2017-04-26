@@ -31,10 +31,9 @@ namespace storm {
             // Default-instantiate some copy/move construction/assignment.
             Variable(Variable const& other) = default;
             Variable& operator=(Variable const& other) = default;
-#ifndef WINDOWS
             Variable(Variable&& other) = default;
             Variable& operator=(Variable&& other) = default;
-#endif
+
             
             /*!
              * Checks the two variables for equality.

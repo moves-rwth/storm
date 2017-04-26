@@ -26,11 +26,9 @@ namespace storm {
             SystemCompositionConstruct() = default;
             SystemCompositionConstruct(SystemCompositionConstruct const& other) = default;
             SystemCompositionConstruct& operator=(SystemCompositionConstruct const& other)= default;
-#ifndef WINDOWS
             SystemCompositionConstruct(SystemCompositionConstruct&& other) = default;
             SystemCompositionConstruct& operator=(SystemCompositionConstruct&& other) = default;
-#endif
-            
+
             Composition const& getSystemComposition() const;
             
             friend std::ostream& operator<<(std::ostream& stream, SystemCompositionConstruct const& systemCompositionConstruct);

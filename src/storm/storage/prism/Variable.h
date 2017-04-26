@@ -15,11 +15,9 @@ namespace storm {
             // Create default implementations of constructors/assignment.
             Variable(Variable const& otherVariable) = default;
             Variable& operator=(Variable const& otherVariable)= default;
-#ifndef WINDOWS
             Variable(Variable&& otherVariable) = default;
             Variable& operator=(Variable&& otherVariable) = default;
-#endif
-            
+
             /*!
              * Retrieves the name of the variable.
              *

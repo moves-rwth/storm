@@ -32,6 +32,9 @@
 #include "storm/settings/SettingsManager.h"
 #include "storm/settings/modules/JitBuilderSettings.h"
 
+#include "storm/settings/modules/CoreSettings.h"
+
+
 #include "storm/utility/OsDetection.h"
 #include "storm-config.h"
 
@@ -534,6 +537,8 @@ namespace storm {
                     list.push_back(cpptempl::data_map());
                 }
                 modelData["double"] = cpptempl::make_data(list);
+
+                modelData["dontFixDeadlocks"] = storm::settings::getModule<storm::settings::modules::CoreSettings>().isDontFixDeadlocksSet();
 
                 // If we are building a possibly parametric model, we need to create the parameters.
                 if (std::is_same<storm::RationalFunction, ValueType>::value) {
@@ -1657,7 +1662,6 @@ namespace storm {
 #include "storm/builder/RewardModelInformation.h"
                 
 #include "storm/utility/constants.h"
-                
 #include "storm/exceptions/WrongFormatException.h"
                 
                 namespace storm {
@@ -2278,7 +2282,14 @@ namespace storm {
                                             // Explore all edges that participate in synchronization vectors.
                                             exploreSynchronizingEdges(currentState, behaviour, statesToExplore);
                                         }
-                                        
+
+                                        {% if dontFixDeadlocks %}
+                                        if (behaviour.empty() && behaviour.isExpanded() ) {
+                                            std::cout << currentState << std::endl;
+                                            throw storm::exceptions::WrongFormatException("Error while creating sparse matrix from JANI model: found deadlock state  and fixing deadlocks was explicitly disabled.");
+                                        }
+                                        {% endif %}
+
                                         this->addStateBehaviour(currentIndex, behaviour);
                                         behaviour.clear();
                                     }
