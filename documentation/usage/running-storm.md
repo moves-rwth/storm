@@ -502,12 +502,66 @@ The trade-off is depicted by the following curve:
 
 {% include collapse-panel.html target="job_sched_file" name="Prism file for Stochastic Job Scheduling" %}
 <div class="job_sched_file collapse" markdown="1">
-Download link:
-
+Download link: https://github.com/moves-rwth/storm-examples/blob/master/ma/jobs/jobs03_2.ma
 ```shell
+// Stochastic Job Scheduling, based on []
+// Encoding by Junges & Quatmann
+// RWTH Aachen University
+// Please cite Quatmann et al: Multi-objective Model Checking of Markov Automata
+ma
 
+const int N = 3;
+const int K = 2;
+const double x_j1 = 1.0;
+const double x_j2 = 2.0;
+const double x_j3 = 3.0;
+formula is_running = r_j1 + r_j2 + r_j3 > 0;
+formula num_finished = f_j1 + f_j2 + f_j3;
+module main
+	r_j1 : [0..1];
+	r_j2 : [0..1];
+	r_j3 : [0..1];
+	f_j1 : [0..1];
+	f_j2 : [0..1];
+	f_j3 : [0..1];
+	<> (r_j1 = 1)  -> x_j1 : (r_j1' = 0) & (r_j2' = 0) & (r_j3' = 0) & (f_j1' = 1);
+	<> (r_j2 = 1)  -> x_j2 : (r_j1' = 0) & (r_j2' = 0) & (r_j3' = 0) & (f_j2' = 1);
+	<> (r_j3 = 1)  -> x_j3 : (r_j1' = 0) & (r_j2' = 0) & (r_j3' = 0) & (f_j3' = 1);
+	[] (!is_running) & (num_finished = 2) & (f_j1 = 0) -> 1: (r_j1' = 1);
+	[] (!is_running) & (num_finished = 2) & (f_j2 = 0) -> 1: (r_j2' = 1);
+	[] (!is_running) & (num_finished = 2) & (f_j3 = 0) -> 1: (r_j3' = 1);
+	[] (!is_running) & (num_finished <= 1) & (f_j1 = 0) & (f_j2 = 0) -> 1: (r_j1' = 1) & (r_j2' = 1);
+	[] (!is_running) & (num_finished <= 1) & (f_j1 = 0) & (f_j3 = 0) -> 1: (r_j1' = 1) & (r_j3' = 1);
+	[] (!is_running) & (num_finished <= 1) & (f_j2 = 0) & (f_j3 = 0) -> 1: (r_j2' = 1) & (r_j3' = 1);
+endmodule
+init
+	r_j1 = 0 &
+	r_j2 = 0 &
+	r_j3 = 0 &
+	f_j1 = 0 &
+	f_j2 = 0 &
+	f_j3 = 0
+endinit
+label "all_jobs_finished" = num_finished=N;
+label "half_of_jobs_finished" = num_finished=2;
+label "slowest_before_fastest" = f_j1=1 & f_j3=0;
+rewards "avg_waiting_time"
+ true : (N-num_finished)/N;
+endrewards
 ```
 </div>
+
+Again, we assume that the file `jobs03_2.nm` is located in the current directory. 
+We obtain the data for the plot above by the following call:
+
+```shell
+storm --prism jobs12_3.ma --prop "multi(Tmin=? [ F \"all_jobs_finished\"], Pmax=? [ F<=(N/(4*K)) \"half_of_jobs_finished\"])" --multiobjective:precision 0.01 --multiobjective:exportplot plot/
+```
+
+`--prop` now contains a multi-objective query with two dimensions: A call for the expected time, and a maximum time-bounded probability. 
+Notice that for Markov automata, the algorithm necessarily can only approximate the result: `--multiobjective:precision` reflects the area that remains undecided.
+`--multiobjective:exportplot plot/` specifies that the directory `plot` will contain the Pareto-optimal points in a CSV format. The plot can be generated from this file. 
+
 
 ### Running Storm on JANI input
 
