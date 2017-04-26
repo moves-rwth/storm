@@ -108,7 +108,7 @@ namespace storm {
                 result.toMS = this->model.getTransitionMatrix().getSubmatrix(true, result.states, this->model.getMarkovianStates(), createMS);
                 result.toPS = this->model.getTransitionMatrix().getSubmatrix(true, result.states, probabilisticStates, false);
                 STORM_LOG_ASSERT(result.getNumberOfStates() == result.states.getNumberOfSetBits() && result.getNumberOfStates() == result.toMS.getRowGroupCount() && result.getNumberOfStates() == result.toPS.getRowGroupCount(), "Invalid state count for subsystem");
-                STORM_LOG_ASSERT(result.getNumberOfChoices() == result.choices.getNumberOfSetBits() && result.getNumberOfChoices() == result.toMS.getRowCount() && result.getNumberOfChoices() == result.toPS.getRowCount(), "Invalid state count for subsystem");
+                STORM_LOG_ASSERT(result.getNumberOfChoices() == result.choices.getNumberOfSetBits() && result.getNumberOfChoices() == result.toMS.getRowCount() && result.getNumberOfChoices() == result.toPS.getRowCount(), "Invalid choice count for subsystem");
                 
                 result.weightedRewardVector.resize(result.getNumberOfChoices());
                 storm::utility::vector::selectVectorValues(result.weightedRewardVector, result.choices, weightedRewardVector);

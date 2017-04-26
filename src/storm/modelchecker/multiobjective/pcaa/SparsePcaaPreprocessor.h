@@ -6,6 +6,7 @@
 #include "storm/logic/Formulas.h"
 #include "storm/storage/BitVector.h"
 #include "storm/modelchecker/multiobjective/pcaa/SparsePcaaPreprocessorReturnType.h"
+#include "storm/storage/memorystructure/MemoryStructure.h"
 
 namespace storm {
     namespace modelchecker {
@@ -29,12 +30,6 @@ namespace storm {
                 static ReturnType preprocess(SparseModelType const& originalModel, storm::logic::MultiObjectiveFormula const& originalFormula);
                 
             private:
-                /*!
-                 * Initializes the returned Information
-                 * @param originalModel The considered model
-                 * @param originalFormula the considered formula
-                 */
-                static ReturnType initializeResult(storm::logic::MultiObjectiveFormula const& originalFormula, SparseModelType const& originalModel);
                 
                 /*!
                  * Updates the preprocessed model stored in the given result to the given model.
@@ -42,6 +37,11 @@ namespace storm {
                  * the index of the state in the current result.preprocessedModel.
                  */
                 static void updatePreprocessedModel(ReturnType& result, SparseModelType& newPreprocessedModel, std::vector<uint_fast64_t>& newToOldStateIndexMapping);
+                
+                /*!
+                 * Updates the preprocessed model stored in the given result to the product of the model and the given memory structure.
+                 */
+                static void addMemoryToPreprocessedModel(ReturnType& result, storm::storage::MemoryStructure& memory);
                 
                 /*!
                  * Apply the neccessary preprocessing for the given formula.
