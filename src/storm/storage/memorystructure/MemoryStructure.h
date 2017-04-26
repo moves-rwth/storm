@@ -39,6 +39,7 @@ namespace storm {
             
             TransitionMatrix const& getTransitionMatrix() const;
             storm::models::sparse::StateLabeling const& getStateLabeling() const;
+            uint_fast64_t getNumberOfStates() const;
             
             /*!
              * Builds the product of this memory structure and the given memory structure.

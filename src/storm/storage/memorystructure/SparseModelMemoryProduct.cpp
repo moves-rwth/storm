@@ -23,13 +23,21 @@ namespace storm {
             
         template <typename ValueType>
         std::shared_ptr<storm::models::sparse::Model<ValueType>> SparseModelMemoryProduct<ValueType>::build() {
+            uint_fast64_t modelStateCount = model.getNumberOfStates();
+            uint_fast64_t memoryStateCount = memory.getNumberOfStates();
             
             std::vector<uint_fast64_t> memorySuccessors = computeMemorySuccessors();
-            storm::storage::BitVector reachableStates = computeReachableStates(memorySuccessors);
             
+            // Get the initial states and reachable states. A stateIndex s corresponds to the model state (s / memoryStateCount) and memory state (s % memoryStateCount)
+            storm::storage::BitVector initialStates(modelStateCount * memoryStateCount, false);
+            for (auto const& modelInit : model.getInitialStates()) {
+                // Note: The initial state of a memory structure is always 0.
+                initialStates.set(modelInit * memoryStateCount + memorySuccessors[modelInit * memoryStateCount], true);
+            }
+            storm::storage::BitVector reachableStates = computeReachableStates(memorySuccessors, initialStates);
             // Compute the mapping to the states of the result
             uint_fast64_t reachableStateCount = 0;
-            toResultStateMapping = std::vector<uint_fast64_t> (model.getNumberOfStates() * memory.getTransitionMatrix().size(), std::numeric_limits<uint_fast64_t>::max());
+            toResultStateMapping = std::vector<uint_fast64_t> (model.getNumberOfStates() * memory.getNumberOfStates(), std::numeric_limits<uint_fast64_t>::max());
             for (auto const& reachableState : reachableStates) {
                 toResultStateMapping[reachableState] = reachableStateCount;
                 ++reachableStateCount;
@@ -42,20 +50,23 @@ namespace storm {
             storm::models::sparse::StateLabeling labeling = buildStateLabeling(transitionMatrix);
             std::unordered_map<std::string, storm::models::sparse::StandardRewardModel<ValueType>> rewardModels = buildRewardModels(transitionMatrix, memorySuccessors);
 
+            // Add the label for the initial states. We need to translate the state indices w.r.t. the set of reachable states.
+            labeling.addLabel("init", initialStates % reachableStates);
+            
             return buildResult(std::move(transitionMatrix), std::move(labeling), std::move(rewardModels));
 
         }
             
         template <typename ValueType>
-        uint_fast64_t const& SparseModelMemoryProduct<ValueType>::getResultState(uint_fast64_t const& modelState, uint_fast64_t const& memoryState) {
-                return toResultStateMapping[modelState * memory.getTransitionMatrix().size() + memoryState];
+        uint_fast64_t const& SparseModelMemoryProduct<ValueType>::getResultState(uint_fast64_t const& modelState, uint_fast64_t const& memoryState) const {
+                return toResultStateMapping[modelState * memory.getNumberOfStates() + memoryState];
         }
             
             
         template <typename ValueType>
         std::vector<uint_fast64_t> SparseModelMemoryProduct<ValueType>::computeMemorySuccessors() const {
             uint_fast64_t modelStateCount = model.getNumberOfStates();
-            uint_fast64_t memoryStateCount = memory.getTransitionMatrix().size();
+            uint_fast64_t memoryStateCount = memory.getNumberOfStates();
             std::vector<uint_fast64_t> result(modelStateCount * memoryStateCount, std::numeric_limits<uint_fast64_t>::max());
             
             storm::modelchecker::SparsePropositionalModelChecker<storm::models::sparse::Model<ValueType>> mc(model);
@@ -63,8 +74,8 @@ namespace storm {
                 for (uint_fast64_t transitionGoal = 0; transitionGoal < memoryStateCount; ++transitionGoal) {
                     auto const& transition = memory.getTransitionMatrix()[memoryState][transitionGoal];
                     if (transition) {
-                        storm::storage::BitVector const& modelStates = mc.check(*transition)->asExplicitQualitativeCheckResult().getTruthValuesVector();
-                        for (auto const& modelState : modelStates) {
+                        auto mcResult = mc.check(*transition);
+                        for (auto const& modelState : mcResult->asExplicitQualitativeCheckResult().getTruthValuesVector()) {
                             result[modelState * memoryStateCount + memoryState] = transitionGoal;
                         }
                     }
@@ -74,19 +85,12 @@ namespace storm {
         }
             
         template <typename ValueType>
-        storm::storage::BitVector SparseModelMemoryProduct<ValueType>::computeReachableStates(std::vector<uint_fast64_t> const& memorySuccessors) const {
-            uint_fast64_t modelStateCount = model.getNumberOfStates();
-            uint_fast64_t memoryStateCount = memory.getTransitionMatrix().size();
-            // Explore the reachable states via with DFS.
+        storm::storage::BitVector SparseModelMemoryProduct<ValueType>::computeReachableStates(std::vector<uint_fast64_t> const& memorySuccessors, storm::storage::BitVector const& initialStates) const {
+            uint_fast64_t memoryStateCount = memory.getNumberOfStates();
+            // Explore the reachable states via DFS.
             // A state s on the stack corresponds to the model state (s / memoryStateCount) and memory state (s % memoryStateCount)
-            storm::storage::BitVector reachableStates(modelStateCount * memoryStateCount, false);
-            std::vector<uint_fast64_t> stack;
-            for (auto const& modelInit : model.getInitialStates()) {
-                // Note: 0 is always the initial state of a memory structure.
-                uint_fast64_t stateIndex = modelInit * memoryStateCount + memorySuccessors[modelInit * memoryStateCount];
-                reachableStates.set(stateIndex, true);
-                stack.push_back(stateIndex);
-            }
+            storm::storage::BitVector reachableStates = initialStates;
+            std::vector<uint_fast64_t> stack(reachableStates.begin(), reachableStates.end());
             while (!stack.empty()) {
                 uint_fast64_t stateIndex = stack.back();
                 stack.pop_back();
@@ -110,7 +114,7 @@ namespace storm {
             
         template <typename ValueType>
         storm::storage::SparseMatrix<ValueType> SparseModelMemoryProduct<ValueType>::buildDeterministicTransitionMatrix(storm::storage::BitVector const& reachableStates, std::vector<uint_fast64_t> const& memorySuccessors) const {
-            uint_fast64_t memoryStateCount = memory.getTransitionMatrix().size();
+            uint_fast64_t memoryStateCount = memory.getNumberOfStates();
             uint_fast64_t numResStates = reachableStates.getNumberOfSetBits();
             uint_fast64_t numResTransitions = 0;
             for (auto const& stateIndex : reachableStates) {
@@ -124,8 +128,7 @@ namespace storm {
                 uint_fast64_t memoryState = stateIndex % memoryStateCount;
                 for (auto const& entry : model.getTransitionMatrix().getRow(modelState)) {
                     uint_fast64_t const& successorMemoryState = memorySuccessors[entry.getColumn() * memoryStateCount + memoryState];
-                    uint_fast64_t transitionTargetStateIndex = entry.getColumn() * memoryStateCount + successorMemoryState;
-                    builder.addNextValue(currentRow, toResultStateMapping[transitionTargetStateIndex], entry.getValue());
+                    builder.addNextValue(currentRow, getResultState(entry.getColumn(), successorMemoryState), entry.getValue());
                 }
                 ++currentRow;
             }
@@ -135,7 +138,7 @@ namespace storm {
         
         template <typename ValueType>
         storm::storage::SparseMatrix<ValueType> SparseModelMemoryProduct<ValueType>::buildNondeterministicTransitionMatrix(storm::storage::BitVector const& reachableStates, std::vector<uint_fast64_t> const& memorySuccessors) const {
-            uint_fast64_t memoryStateCount = memory.getTransitionMatrix().size();
+            uint_fast64_t memoryStateCount = memory.getNumberOfStates();
             uint_fast64_t numResStates = reachableStates.getNumberOfSetBits();
             uint_fast64_t numResChoices = 0;
             uint_fast64_t numResTransitions = 0;
@@ -156,8 +159,7 @@ namespace storm {
                 for (uint_fast64_t modelRow = model.getTransitionMatrix().getRowGroupIndices()[modelState]; modelRow < model.getTransitionMatrix().getRowGroupIndices()[modelState + 1]; ++modelRow) {
                     for (auto const& entry : model.getTransitionMatrix().getRow(modelRow)) {
                         uint_fast64_t const& successorMemoryState = memorySuccessors[entry.getColumn() * memoryStateCount + memoryState];
-                        uint_fast64_t transitionTargetStateIndex = entry.getColumn() * memoryStateCount + successorMemoryState;
-                        builder.addNextValue(currentRow, toResultStateMapping[transitionTargetStateIndex], entry.getValue());
+                        builder.addNextValue(currentRow, getResultState(entry.getColumn(), successorMemoryState), entry.getValue());
                     }
                     ++currentRow;
                 }
@@ -169,32 +171,32 @@ namespace storm {
         template <typename ValueType>
         storm::models::sparse::StateLabeling SparseModelMemoryProduct<ValueType>::buildStateLabeling(storm::storage::SparseMatrix<ValueType> const& resultTransitionMatrix) const {
             uint_fast64_t modelStateCount = model.getNumberOfStates();
-            uint_fast64_t memoryStateCount = memory.getTransitionMatrix().size();
+            uint_fast64_t memoryStateCount = memory.getNumberOfStates();
             
             uint_fast64_t numResStates = resultTransitionMatrix.getRowGroupCount();
             storm::models::sparse::StateLabeling resultLabeling(numResStates);
             
             for (std::string modelLabel : model.getStateLabeling().getLabels()) {
-                storm::storage::BitVector const& modelLabeledStates = model.getStateLabeling().getStates(modelLabel);
-                storm::storage::BitVector resLabeledStates(numResStates, false);
-                for (auto const& modelState : modelLabeledStates) {
-                    for (uint_fast64_t memoryState = 0; memoryState < memoryStateCount; ++memoryState) {
-                        uint_fast64_t const& resState = toResultStateMapping[modelState * memoryStateCount + memoryState];
-                        // Check if the state exists in the result (i.e. if it is reachable)
-                        if (resState < numResStates) {
-                            resLabeledStates.set(resState, true);
+                if (modelLabel != "init") {
+                    storm::storage::BitVector resLabeledStates(numResStates, false);
+                    for (auto const& modelState : model.getStateLabeling().getStates(modelLabel)) {
+                        for (uint_fast64_t memoryState = 0; memoryState < memoryStateCount; ++memoryState) {
+                            uint_fast64_t const& resState = getResultState(modelState, memoryState);
+                            // Check if the state exists in the result (i.e. if it is reachable)
+                            if (resState < numResStates) {
+                                resLabeledStates.set(resState, true);
+                            }
                         }
                     }
+                    resultLabeling.addLabel(modelLabel, std::move(resLabeledStates));
                 }
-                resultLabeling.addLabel(modelLabel, std::move(resLabeledStates));
             }
             for (std::string memoryLabel : memory.getStateLabeling().getLabels()) {
                 STORM_LOG_THROW(!resultLabeling.containsLabel(memoryLabel), storm::exceptions::InvalidOperationException, "Failed to build the product of model and memory structure: State labelings are not disjoint as both structures contain the label " << memoryLabel << ".");
-                storm::storage::BitVector const& memoryLabeledStates = memory.getStateLabeling().getStates(memoryLabel);
                 storm::storage::BitVector resLabeledStates(numResStates, false);
-                for (auto const& memoryState : memoryLabeledStates) {
+                for (auto const& memoryState : memory.getStateLabeling().getStates(memoryLabel)) {
                     for (uint_fast64_t modelState = 0; modelState < modelStateCount; ++modelState) {
-                        uint_fast64_t const& resState = toResultStateMapping[modelState * memoryStateCount + memoryState];
+                        uint_fast64_t const& resState = getResultState(modelState, memoryState);
                         // Check if the state exists in the result (i.e. if it is reachable)
                         if (resState < numResStates) {
                             resLabeledStates.set(resState, true);
@@ -209,7 +211,7 @@ namespace storm {
         template <typename ValueType>
         std::unordered_map<std::string, storm::models::sparse::StandardRewardModel<ValueType>> SparseModelMemoryProduct<ValueType>::buildRewardModels(storm::storage::SparseMatrix<ValueType> const& resultTransitionMatrix, std::vector<uint_fast64_t> const& memorySuccessors) const {
             std::unordered_map<std::string, storm::models::sparse::StandardRewardModel<ValueType>> result;
-            uint_fast64_t memoryStateCount = memory.getTransitionMatrix().size();
+            uint_fast64_t memoryStateCount = memory.getNumberOfStates();
             uint_fast64_t numResStates = resultTransitionMatrix.getRowGroupCount();
 
             for (auto const& rewardModel : model.getRewardModels()) {
@@ -220,7 +222,7 @@ namespace storm {
                     for (auto const& modelStateReward : rewardModel.second.getStateRewardVector()) {
                         if (!storm::utility::isZero(modelStateReward)) {
                             for (uint_fast64_t memoryState = 0; memoryState < memoryStateCount; ++memoryState) {
-                                uint_fast64_t const& resState = toResultStateMapping[modelState * memoryStateCount + memoryState];
+                                uint_fast64_t const& resState = getResultState(modelState, memoryState);
                                 // Check if the state exists in the result (i.e. if it is reachable)
                                 if (resState < numResStates) {
                                     stateRewards.get()[resState] = modelStateReward;
@@ -242,7 +244,7 @@ namespace storm {
                             }
                             uint_fast64_t rowOffset = modelRow - model.getTransitionMatrix().getRowGroupIndices()[modelState];
                             for (uint_fast64_t memoryState = 0; memoryState < memoryStateCount; ++memoryState) {
-                                uint_fast64_t const& resState = toResultStateMapping[modelState * memoryStateCount + memoryState];
+                                uint_fast64_t const& resState = getResultState(modelState, memoryState);
                                 // Check if the state exists in the result (i.e. if it is reachable)
                                 if (resState < numResStates) {
                                     stateActionRewards.get()[resultTransitionMatrix.getRowGroupIndices()[resState] + rowOffset] = modelStateActionReward;
@@ -266,8 +268,7 @@ namespace storm {
                                 uint_fast64_t modelRowIndex = model.getTransitionMatrix().getRowGroupIndices()[modelState] + rowOffset;
                                 for (auto const& entry : rewardModel.second.getTransitionRewardMatrix().getRow(modelRowIndex)) {
                                     uint_fast64_t const& successorMemoryState = memorySuccessors[entry.getColumn() * memoryStateCount + memoryState];
-                                    uint_fast64_t transitionTargetStateIndex = entry.getColumn() * memoryStateCount + successorMemoryState;
-                                    builder.addNextValue(resRowIndex, toResultStateMapping[transitionTargetStateIndex], entry.getValue());
+                                    builder.addNextValue(resRowIndex, getResultState(entry.getColumn(), successorMemoryState), entry.getValue());
                                 }
                             }
                         }
@@ -293,7 +294,7 @@ namespace storm {
                 {
                     // We also need to translate the exit rates and the Markovian states
                     uint_fast64_t numResStates = matrix.getRowGroupCount();
-                    uint_fast64_t memoryStateCount = memory.getTransitionMatrix().size();
+                    uint_fast64_t memoryStateCount = memory.getNumberOfStates();
                     std::vector<ValueType> resultExitRates;
                     resultExitRates.reserve(matrix.getRowGroupCount());
                     storm::storage::BitVector resultMarkovianStates(numResStates, false);
@@ -310,10 +311,12 @@ namespace storm {
                                 resultMarkovianStates.set(resState, true);
                             }
                         }
+                        ++stateIndex;
                     }
-                    ++stateIndex;
                     return std::make_shared<storm::models::sparse::MarkovAutomaton<ValueType>> (std::move(matrix), std::move(labeling), std::move(resultMarkovianStates), std::move(resultExitRates), true, std::move(rewardModels));
                 }
+                default:
+                    STORM_LOG_THROW(false, storm::exceptions::InvalidOperationException, "Memory Structure Product for Model Type " << model.getType() << " is not supported");
             }
         }
         

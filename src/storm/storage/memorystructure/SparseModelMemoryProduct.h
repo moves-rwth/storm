@@ -31,8 +31,9 @@ namespace storm {
             // Invokes the building of the product
             std::shared_ptr<storm::models::sparse::Model<ValueType>> build();
             
-            // Retrieves the state of the resulting model that represents the given memory and model state
-            uint_fast64_t const& getResultState(uint_fast64_t const& modelState, uint_fast64_t const& memoryState);
+            // Retrieves the state of the resulting model that represents the given memory and model state.
+            // An invalid index is returned, if the specifyied state does not exist (i.e., if it is not reachable).
+            uint_fast64_t const& getResultState(uint_fast64_t const& modelState, uint_fast64_t const& memoryState) const;
             
         private:
             
@@ -41,12 +42,16 @@ namespace storm {
             std::vector<uint_fast64_t> computeMemorySuccessors() const;
             
             // Computes the reachable states of the resulting model
-            storm::storage::BitVector computeReachableStates(std::vector<uint_fast64_t> const& memorySuccessors) const;
+            storm::storage::BitVector computeReachableStates(std::vector<uint_fast64_t> const& memorySuccessors, storm::storage::BitVector const& initialStates) const;
             
             // Methods that build the model components
+            // Matrix for deterministic models
             storm::storage::SparseMatrix<ValueType> buildDeterministicTransitionMatrix(storm::storage::BitVector const& reachableStates, std::vector<uint_fast64_t> const& memorySuccessors) const;
+            // Matrix for nondeterministic models
             storm::storage::SparseMatrix<ValueType> buildNondeterministicTransitionMatrix(storm::storage::BitVector const& reachableStates, std::vector<uint_fast64_t> const& memorySuccessors) const;
+            // State labeling. Note: DOES NOT ADD A LABEL FOR THE INITIAL STATES
             storm::models::sparse::StateLabeling buildStateLabeling(storm::storage::SparseMatrix<ValueType> const& resultTransitionMatrix) const;
+            // Reward models
             std::unordered_map<std::string, storm::models::sparse::StandardRewardModel<ValueType>> buildRewardModels(storm::storage::SparseMatrix<ValueType> const& resultTransitionMatrix, std::vector<uint_fast64_t> const& memorySuccessors) const;
             
             // Builds the resulting model

@@ -18,11 +18,15 @@ namespace storm {
         }
             
         MemoryStructure::TransitionMatrix const& MemoryStructure::getTransitionMatrix() const {
-            return this->transitions;
+            return transitions;
         }
         
         storm::models::sparse::StateLabeling const& MemoryStructure::getStateLabeling() const {
             return stateLabeling;
+        }
+        
+        uint_fast64_t MemoryStructure::getNumberOfStates() const {
+            return transitions.size();
         }
             
         MemoryStructure MemoryStructure::product(MemoryStructure const& rhs) const {
