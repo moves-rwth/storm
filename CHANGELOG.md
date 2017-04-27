@@ -14,6 +14,8 @@ Version 1.0.x
 - Several improvements in parameter lifting
 - Several improvements in JANI parsing
 - Properties can contain model variables
+- Support for rational numbers/functions in decision diagrams via sylvan
+- Elimination-based solvers (exact solution) for models stored as decision diagrams
 - Export of version and configuration to cmake
 - Improved building process
 
