@@ -267,7 +267,7 @@ Time for model checking: 0.000s.
 `storm` tells us that -- on average -- we will have to flip our fair coin 11/3 times. Note that we had to escape the quotes around the reward model name in the property string. If the property is placed within a file, there is no need to escape them.
 
 {:.alert .alert-info}
-More information on how to define properties can be found [here](properties.html).
+More information on how to define properties can be found [here](properties.html){:.alert-link}.
 
 #### Example 2 (Analysis of a PRISM model of an asynchronous leader election protocol)
 
