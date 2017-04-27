@@ -1,4 +1,4 @@
-set(storm_VERSION @storm_VERSION@)
+set(storm_VERSION @STORM_VERSION@)
 
 get_filename_component(storm_CMAKE_DIR "${CMAKE_CURRENT_LIST_FILE}" PATH)
 
