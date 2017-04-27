@@ -44,6 +44,7 @@ Required:
 - cmake
 - boost (>= 1.61)
 - cln
+- gmp
 - ginac
 - autoreconf
 - doxygen
@@ -67,9 +68,12 @@ Furthermore, we recommend the usage of [Homebrew](https://brew.sh){:target="_bla
 
 - Required:
 ``` console
-$ brew install cln ginac boost autoconf cmake doxygen
+$ brew install cln ginac autoconf cmake doxygen
+$ brew install boost --c++11
+$ brew install gmp --c++11
 $ brew tap homebrew/science
 $ brew install homebrew/science/glpk
+$ brew install homebrew/science/hwloc
 ```
 
 - Recommended:
@@ -81,7 +85,7 @@ $ brew install z3 xerces-c
 
 - Required:
 ``` console
-$ sudo apt-get install git cmake libboost-all-dev libcln-dev libginac-dev automake doxygen libglpk-dev
+$ sudo apt-get install git cmake libboost-all-dev libcln-dev libgmp-dev libginac-dev automake doxygen libglpk-dev
 ```
 
 - Recommended
@@ -93,7 +97,7 @@ $ sudo apt-get install libz3-dev libxerces-c-dev
 
 - Required:
 ``` console
-$ sudo apt-get install git cmake libboost-all-dev libcln-dev libginac-dev automake doxygen libglpk-dev libhwloc-dev
+$ sudo apt-get install git cmake libboost-all-dev libcln-dev libgmp-dev libginac-dev automake doxygen libglpk-dev libhwloc-dev
 ```
 
 - Recommended:

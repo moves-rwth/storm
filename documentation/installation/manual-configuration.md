@@ -21,7 +21,7 @@ $ git clone https://github.com/smtrat/carl
 $ cd carl
 $ mkdir build
 $ cd build
-$ cmake -DUSE_CLN_NUMBERS=ON -DUSE_GINAC=ON ..
+$ cmake -DUSE_CLN_NUMBERS=ON -DUSE_GINAC=ON -DTHREAD_SAFE=ON ..
 $ make
 ```
 

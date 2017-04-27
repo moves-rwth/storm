@@ -12,14 +12,14 @@ This guide shows you the options you have to install Storm. For this, we are goi
 
 We currently provide two ways of installing Storm:
 
-- [homebrew](#homebrew)
+- [Homebrew](#homebrew)
 - [from source](#building-storm-from-source)
 
-If you just want to run Storm and you want to run it natively on your machine, then we recommend installing it via [homebrew](#homebrew). However, if you want or need to make changes to the Storm code base, you have to obtain the source code and [build it](#building-storm-from-source) yourself. While this is not always a breeze (depending on your operating system), we spent some effort on making this process as easy as possible.
+If you just want to run Storm and you want to run it natively on your machine, then we recommend installing it via [Homebrew](#homebrew). However, if you want or need to make changes to the Storm code base, you have to obtain the source code and [build it](#building-storm-from-source) yourself. While this is not always a breeze (depending on your operating system), we spent some effort on making this process as easy as possible.
 
 ## Homebrew
 
-If you are running a version of macOS that is newer than Mavericks, you can use [homebrew](https://brew.sh/){:target="_blank"}, the "missing package manager for macOS". Once you have installed homebrew, you need to make homebrew aware of how to install Storm. In brew-speak, you need to *tap* the Storm homebrew formulas
+If you are running a version of macOS that is newer than Mavericks, you can use [homebrew](https://brew.sh/){:target="_blank"}, the "missing package manager for macOS". Once you have installed Homebrew, you need to make Homebrew aware of how to install Storm. In brew-speak, you need to *tap* the Storm Homebrew formulas
 
 ```console
 $ brew tap moves-rwth/storm
@@ -123,4 +123,4 @@ We recommend to execute it to verify that Storm produces correct results on your
 $ make check
 ```
 
-will build and run the tests. In case of errors, please do not hesistate to [file an issue](troubleshooting.html#file-an-issue).
+will build and run the tests. In case of errors, please do not hesitate to [file an issue](troubleshooting.html#file-an-issue).

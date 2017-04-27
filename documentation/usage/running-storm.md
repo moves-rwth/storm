@@ -30,7 +30,7 @@ Consequently, our guide on how to run Storm is structured accordingly. For every
 
 Many of Storm's executables have many options, only a fraction of which are covered in this guide. If you want to explore these options, invoke the executable with the `--help [hint]` option. If a hint is given, only those options are shown that match it.
 
-Before we get started, let us check whether everything is set up properly. In all command-line examples we assume that the executables are in your PATH and can therefore be invoked without prefixing them with their path. If you installed Storm via [homebrew]({{ site.github.url }}/documentation/installation/installation.html#homebrew), this is automatically the case; if you built Storm yourself, you have to [manually add it to your PATH]({{ site.github.url }}/documentation/installation/installation.html#adding-storm-to-your-path-optional). Typing
+Before we get started, let us check whether everything is set up properly. In all command-line examples we assume that the executables are in your PATH and can therefore be invoked without prefixing them with their path. If you installed Storm via [Homebrew]({{ site.github.url }}/documentation/installation/installation.html#homebrew), this is automatically the case; if you built Storm yourself, you have to [manually add it to your PATH]({{ site.github.url }}/documentation/installation/installation.html#adding-storm-to-your-path-optional). Typing
 
 ```console
 $ storm
@@ -443,7 +443,7 @@ ERROR (storm.cpp:39): An exception caused Storm to terminate. The message of the
 </div>
 
 
-Likely, Storm will tell you that there is an error and that for nondeterministic models you need to specify whether minimal or maximal probabilities are to be computed. Why is that? Since the model is a [Markov Decision Process](models.html#discrete-time-markov-decision-processes-mdps), there are (potentially) nondeterministic choices in the model that need to be resolved. Storm doesn't know how to resolve them unless you tell it to either minimize or maximize (wrt. to the probability of the objective) whenever there is a nondeterministic choice.
+Likely, Storm will tell you that there is an error and that for nondeterministic models you need to specify whether minimal or maximal probabilities are to be computed. Why is that? Since the model is a [Markov Decision Process](models.html#discrete-time-markov-decision-processes-mdps), there are (potentially) nondeterministic choices in the model that need to be resolved. Storm doesn't know how to resolve them unless you tell it to either minimize or maximize (w.r.t. the probability of the objective) whenever there is a nondeterministic choice.
 
 ```console
 $ storm --prism leader4.nm --prop "Pmin=? [F<=40 (s1=4 | s2=4 | s3=4 | s4=4) ]"
@@ -484,11 +484,90 @@ Storm should tell you that this probability is 0.375. So what does it mean? It m
 {:.alert .alert-info}
 For [nondeterministic models (MDPs and MAs)](models.html#models-with-nondeterminism){:.alert-link}, you will have to specify in which direction the nondeterminism is going to be resolved.
 
+
+### Multi-objective Model Checking of a Markov Automaton
+
+Storm supports multi-objective model checking: In non-deterministic models, different objectives might require different choices of actions in order to satisfy the property.
+This induces trade-offs between different strategies. Multi-objective model checking reveals such trade-offs by computing the Pareto curve. An example is given below.
+
+#### Example 3 (Pareto Curves)
+Consider an instance of stochastic job scheduling, where a number of jobs with exponential run time needs to be handled by a number of servers.
+On one hand, we are interested in reducing the expected time until all jobs are done. On the other hand, we want to maximize the probability that a first
+batch of jobs has been treated within an hour. This yields a trade-off, as the optimal strategy for minimizing the expected time is to run the slowest jobs first.
+
+The trade-off is depicted by the following curve: 
+
+![Pareto Curve]({{ site.github.url }}/pics/multi-objective.png?raw=true 'Pareto Curve'){:class="img-thumbnail col-sm" height="220" width="220"}
+
+
+{% include collapse-panel.html target="job_sched_file" name="Prism file for Stochastic Job Scheduling" %}
+<div class="job_sched_file collapse" markdown="1">
+Download link: https://github.com/moves-rwth/storm-examples/blob/master/ma/jobs/jobs03_2.ma
+```shell
+// Stochastic Job Scheduling, based on []
+// Encoding by Junges & Quatmann
+// RWTH Aachen University
+// Please cite Quatmann et al: Multi-objective Model Checking of Markov Automata
+ma
+
+const int N = 3;
+const int K = 2;
+const double x_j1 = 1.0;
+const double x_j2 = 2.0;
+const double x_j3 = 3.0;
+formula is_running = r_j1 + r_j2 + r_j3 > 0;
+formula num_finished = f_j1 + f_j2 + f_j3;
+module main
+	r_j1 : [0..1];
+	r_j2 : [0..1];
+	r_j3 : [0..1];
+	f_j1 : [0..1];
+	f_j2 : [0..1];
+	f_j3 : [0..1];
+	<> (r_j1 = 1)  -> x_j1 : (r_j1' = 0) & (r_j2' = 0) & (r_j3' = 0) & (f_j1' = 1);
+	<> (r_j2 = 1)  -> x_j2 : (r_j1' = 0) & (r_j2' = 0) & (r_j3' = 0) & (f_j2' = 1);
+	<> (r_j3 = 1)  -> x_j3 : (r_j1' = 0) & (r_j2' = 0) & (r_j3' = 0) & (f_j3' = 1);
+	[] (!is_running) & (num_finished = 2) & (f_j1 = 0) -> 1: (r_j1' = 1);
+	[] (!is_running) & (num_finished = 2) & (f_j2 = 0) -> 1: (r_j2' = 1);
+	[] (!is_running) & (num_finished = 2) & (f_j3 = 0) -> 1: (r_j3' = 1);
+	[] (!is_running) & (num_finished <= 1) & (f_j1 = 0) & (f_j2 = 0) -> 1: (r_j1' = 1) & (r_j2' = 1);
+	[] (!is_running) & (num_finished <= 1) & (f_j1 = 0) & (f_j3 = 0) -> 1: (r_j1' = 1) & (r_j3' = 1);
+	[] (!is_running) & (num_finished <= 1) & (f_j2 = 0) & (f_j3 = 0) -> 1: (r_j2' = 1) & (r_j3' = 1);
+endmodule
+init
+	r_j1 = 0 &
+	r_j2 = 0 &
+	r_j3 = 0 &
+	f_j1 = 0 &
+	f_j2 = 0 &
+	f_j3 = 0
+endinit
+label "all_jobs_finished" = num_finished=N;
+label "half_of_jobs_finished" = num_finished=2;
+label "slowest_before_fastest" = f_j1=1 & f_j3=0;
+rewards "avg_waiting_time"
+ true : (N-num_finished)/N;
+endrewards
+```
+</div>
+
+Again, we assume that the file `jobs03_2.nm` is located in the current directory. 
+We obtain the data for the plot above by the following call:
+
+```shell
+storm --prism jobs12_3.ma --prop "multi(Tmin=? [ F \"all_jobs_finished\"], Pmax=? [ F<=(N/(4*K)) \"half_of_jobs_finished\"])" --multiobjective:precision 0.01 --multiobjective:exportplot plot/
+```
+
+`--prop` now contains a multi-objective query with two dimensions: A call for the expected time, and a maximum time-bounded probability. 
+Notice that for Markov automata, the algorithm necessarily can only approximate the result: `--multiobjective:precision` reflects the area that remains undecided.
+`--multiobjective:exportplot plot/` specifies that the directory `plot` will contain the Pareto-optimal points in a CSV format. The plot can be generated from this file. 
+
+
 ### Running Storm on JANI input
 
 [JANI](languages.html#jani) models can be provided with the `--jani <path/to/jani-file>` option.
 
-#### Example 3 (Analysis of a rejection-sampling algorithm to approximate $$\pi$$)
+#### Example 4 (Analysis of a rejection-sampling algorithm to approximate $$\pi$$)
 
 Here, we are going to analyze a model of an algorithm that approximates $$\pi$$. It does so by repeated sampling according to a uniform distribution. While this model is a JANI model, the original model was written in [pGCL](languages.html#cpgcl) and has been translated to JANI by Storm's `storm-pgcl` binary. The JANI model and the original pGCL code is available from the [JANI models repository](https://github.com/ahartmanns/jani-models){:target="_blank"}.
 
@@ -1581,7 +1660,7 @@ Labels: 	0
 
 As we selected the *hybrid* engine, Storm builds the MDP in terms of a symbolic data structure ((MT)BDDs), hence the `(symbolic)` marker. For this representation, Storm also reports the sizes of the state and transition DDs in terms of the number of nodes.
 
-The algorithm uses a sampling-based technique to approximate $$\pi$$. More specifically, it repeatedly (100 times in this particular instance) samples points in a square and checks whether they are in a circle whose diameter is the edge length of the square (which is called a hit). From this, we can derive $$\pi \approx 4 \frac{hits}{100}$$ (for more details, we refer to [this explanation](https://theclevermachine.wordpress.com/tag/rejection-sampling/){:target="_blank"}). We are therefore interested in the expected number of hits until termination of the algorithm (as all JANI models obtained from `storm-pgcl`, it has a transient boolean variable `_ret0_` that marks termination of the pGCL program; this transient variable can be used as a label in properties):
+The algorithm uses a sampling-based technique to approximate $$\pi$$. More specifically, it repeatedly (100 times in this particular instance) samples points in a square and checks whether they are in a circle whose diameter is the edge length of the square (which is called a hit). From this, we can derive $$\pi \approx 4 \frac{hits}{100}$$ (for more details, we refer to [this explanation](https://theclevermachine.wordpress.com/tag/rejection-sampling/){:target="_blank"}). We are therefore interested in the expected number of hits until termination of the algorithm (as all JANI models obtained from `storm-pgcl`, it has a transient Boolean variable `_ret0_` that marks termination of the pGCL program; this transient variable can be used as a label in properties):
 
 ```console
 $ storm --jani approx_pi_00100_010_full.jani --engine hybrid --prop "Rmax=? [F \"_ret0_\"]"
@@ -1685,7 +1764,7 @@ init one done deadlock
 ```
 </div>
 
-Again, we assume that all three files are located in the current directory. We proceed analoguously to the example in the PRISM input section and start by loading the model:
+Again, we assume that all three files are located in the current directory. We proceed analogously to the example in the PRISM input section and start by loading the model:
 
 ```console
 $ storm --explicit die.tra die.lab --transrew die.tra.rew
@@ -1768,7 +1847,7 @@ Storm 1.0.0
 Command line arguments: --explicit die.tra die.lab --transrew die.tra.rew --prop P=? [F "one"]
 Current working directory: ~/storm/build/bin
 
-TTime for model construction: 0.000s.
+Time for model construction: 0.000s.
 --------------------------------------------------------------
 Model type: 	DTMC (sparse)
 States: 	13

@@ -36,8 +36,9 @@ For this, we assume that `a` and `b` are [state formulae](#state-formulae) and `
 
 - `a U b` to describe paths on which at some point `b` holds and in all prior steps `a` holds.
 - `F b` as a shortcut for `true U b`.
-- `a U{op}k b` (where `k` is an expression evaluating to a number) to describe the paths on which `b` holds within `k` steps and `a` holds in all prior steps.
+- `a U{op}k b` (where `k` is an expression evaluating to a number) to describe the paths on which `b` holds within `k` time (where time in discrete models means steps) and `a` holds before.
 - `F{op}k b` as a shortcut for `true U{op}k b`.
+- `G a` to describe paths on which `a` holds in every step.
 
 ### State Formulae
 
@@ -71,6 +72,20 @@ Just like path formulae, these reward formulae can be embedded in an `R` operato
 - `R{op}t [ r ]` (where `r` is a reward formulae) describes the states in which the reward of `r` conforms to the comparison `{op} t`.
 - `R=? [ r ]`, `Rmin=? [ r ]` and `Rmax=? [ r ]` have the straightforward interpretation.
 
+In models with several reward structures, a particular reward structure has to be chosen:
+
+- `R{"name"}{op}t [ r ]`
+- `R{"name"}=?`, `R{"name"}min=?`, `R{"name"}max=?`
+
+
+In continuous-time models, rewards in states are based on the sojourn time in that state. 
+In particular, a constant reward of `1` in every state reflects the sojourn time. This time-reward does not need to be added manually.
+Instead, the following immediately reflects the time operator, analogous to above.
+
+- `T<=t [ r ]`
+- `T=? [ r ]`, `Tmin=? [r]` and `Tmax=? [ r ]`.
+
+
 ## Conditional Properties
 
 The extension to conditional properties let's you query the probabilities of an event conditioned on the fact that something else holds. The formula
@@ -90,12 +105,30 @@ To illustrate how the formulae can be used, we give some examples of syntactical
 - `Rmax=? [F "elected" ]`
 - `R=? [ LRA ]`
 - `P=? [ F s<10 || F s<7 ]`
+- `Tmin=? [ F s=3 ]`
 
 ## Multi-objective Model Checking
 
-{:.alert .alert-info}
-Coming soon.
+Storm supports multi-objective model checking: In non-deterministic models, different objectives might require different choices of actions in order to satisfy the property.
+This induces trade-offs between different strategies. Multi-objective model checking reveals such trade-offs by computing the Pareto curve, as explained in our [example]({{ site.github.url }}/documentation/usage/running-storm.html#example-multiobj).
+
+The simplest way of asking about these trade-offs are achievability queries: They ask whether there exists a strategy which fulfils all thresholds.
+
+- `multi(P>=0.3 [ F "one" ], P>=0.5 [ G "two" ])`
+
+Instead of fixing all values, we can leave one threshold open and ask for the optimal value for the threshold:
+
+-  `multi(Pmax=? [ F "one" ], P>=0.5 [ G "two" ])`
+
+If the other properties together are not achievable, the query returns `False`.
+One can also leave multiple thresholds open: Instead of a single value, the model checker returns a Pareto curve.
+
+-  `multi(Pmax=? [ F "one" ], Pmax=? [ G "two" ])`
+ 
+
 
 ## Naming Properties
 
 To allow referring to specific properties, they can be equipped with names. To give the name `name` to a property `P`, you can write `"name" : P`.
+
+
