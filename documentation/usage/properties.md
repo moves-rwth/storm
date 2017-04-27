@@ -11,7 +11,7 @@ categories: [Usage]
 Storm takes properties in a format that can be described as an "extended subset" of the [PRISM property language](http://www.prismmodelchecker.org/manual/PropertySpecification/Introduction){:target="_blank"}. Alternatively, if the input is given in terms of a [JANI](languages.html#jani) model, the properties are embedded in the model in the appropriate format.
 
 {:.alert .alert-info}
-For DFTs, GSPNs and probabilistic programs, domain-specific properties can be given. For this, we refer to the guide on how to [run Storm](running-storm.html) on those inputs.
+For DFTs, GSPNs and probabilistic programs, domain-specific properties can be given. For this, we refer to the guide on how to [run Storm](running-storm.html){:.alert-link} on those inputs.
 
 ## Identifying States
 
@@ -78,7 +78,7 @@ In models with several reward structures, a particular reward structure has to b
 - `R{"name"}=?`, `R{"name"}min=?`, `R{"name"}max=?`
 
 
-In continuous-time models, rewards in states are based on the sojourn time in that state. 
+In continuous-time models, rewards in states are based on the sojourn time in that state.
 In particular, a constant reward of `1` in every state reflects the sojourn time. This time-reward does not need to be added manually.
 Instead, the following immediately reflects the time operator, analogous to above.
 
@@ -110,7 +110,7 @@ To illustrate how the formulae can be used, we give some examples of syntactical
 ## Multi-objective Model Checking
 
 Storm supports multi-objective model checking: In non-deterministic models, different objectives might require different choices of actions in order to satisfy the property.
-This induces trade-offs between different strategies. Multi-objective model checking reveals such trade-offs by computing the Pareto curve, as explained in our [example]({{ site.github.url }}/documentation/usage/running-storm.html#example-multiobj).
+This induces trade-offs between different strategies. Multi-objective model checking reveals such trade-offs by computing the Pareto curve, as explained in our [example]({{ site.github.url }}/documentation/usage/running-storm.html#multi-objective-model-checking-of-a-markov-automaton).
 
 The simplest way of asking about these trade-offs are achievability queries: They ask whether there exists a strategy which fulfils all thresholds.
 
@@ -124,7 +124,6 @@ If the other properties together are not achievable, the query returns `False`.
 One can also leave multiple thresholds open: Instead of a single value, the model checker returns a Pareto curve.
 
 -  `multi(Pmax=? [ F "one" ], Pmax=? [ G "two" ])`
- 
 
 
 ## Naming Properties

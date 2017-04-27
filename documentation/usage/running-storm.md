@@ -495,15 +495,15 @@ Consider an instance of stochastic job scheduling, where a number of jobs with e
 On one hand, we are interested in reducing the expected time until all jobs are done. On the other hand, we want to maximize the probability that a first
 batch of jobs has been treated within an hour. This yields a trade-off, as the optimal strategy for minimizing the expected time is to run the slowest jobs first.
 
-The trade-off is depicted by the following curve: 
+The trade-off is depicted by the following curve:
 
 ![Pareto Curve]({{ site.github.url }}/pics/multi-objective.png?raw=true 'Pareto Curve'){:class="img-thumbnail col-sm" height="220" width="220"}
 
 
 {% include collapse-panel.html target="job_sched_file" name="Prism file for Stochastic Job Scheduling" %}
 <div class="job_sched_file collapse" markdown="1">
-Download link: https://github.com/moves-rwth/storm-examples/blob/master/ma/jobs/jobs03_2.ma
-```shell
+Download link: [https://github.com/moves-rwth/storm-examples/blob/master/ma/jobs/jobs03_2.ma](https://github.com/moves-rwth/storm-examples/blob/master/ma/jobs/jobs03_2.ma){:target="_blank"}
+```text
 // Stochastic Job Scheduling, based on []
 // Encoding by Junges & Quatmann
 // RWTH Aachen University
@@ -551,16 +551,16 @@ endrewards
 ```
 </div>
 
-Again, we assume that the file `jobs03_2.nm` is located in the current directory. 
+Again, we assume that the file `jobs03_2.nm` is located in the current directory.
 We obtain the data for the plot above by the following call:
 
-```shell
-storm --prism jobs12_3.ma --prop "multi(Tmin=? [ F \"all_jobs_finished\"], Pmax=? [ F<=(N/(4*K)) \"half_of_jobs_finished\"])" --multiobjective:precision 0.01 --multiobjective:exportplot plot/
+```console
+$ storm --prism jobs12_3.ma --prop "multi(Tmin=? [ F \"all_jobs_finished\"], Pmax=? [ F<=(N/(4*K)) \"half_of_jobs_finished\"])" --multiobjective:precision 0.01 --multiobjective:exportplot plot/
 ```
 
-`--prop` now contains a multi-objective query with two dimensions: A call for the expected time, and a maximum time-bounded probability. 
+`--prop` now contains a multi-objective query with two dimensions: A call for the expected time, and a maximum time-bounded probability.
 Notice that for Markov automata, the algorithm necessarily can only approximate the result: `--multiobjective:precision` reflects the area that remains undecided.
-`--multiobjective:exportplot plot/` specifies that the directory `plot` will contain the Pareto-optimal points in a CSV format. The plot can be generated from this file. 
+`--multiobjective:exportplot plot/` specifies that the directory `plot` will contain the Pareto-optimal points in a CSV format. The plot can be generated from this file.
 
 
 ### Running Storm on JANI input

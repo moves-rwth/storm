@@ -52,7 +52,7 @@ There are a number of cmake options that modify how Storm is built. All of them 
 
 ### Developer
 
-For developers, we offer the option `STORM_DEVELOPER`. If set to "on", this enables
+For developers, we offer the option `STORM_DEVELOPER=ON`. This enables
 
 - more cmake output
 - more warnings
