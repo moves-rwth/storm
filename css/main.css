@@ -16,6 +16,12 @@ body {
   height: 60px;
 }
 
+.footer a {
+  color: #fff;
+  text-decoration: underline;
+  font-weight: bold;
+}
+
 .publication_table > table > tbody > tr > td {
     padding-bottom: 10px;
 }
