@@ -1,0 +1,21 @@
+<div class="panel panel-primary">
+  <div class="panel-heading">
+    <a href=".{{ include.class }}" data-toggle="collapse">
+      <div class="{{ include.class }} collapse in">Show output
+        <div class="pull-right">
+          <span class="glyphicon glyphicon-menu-down" aria-hidden="true"></span>
+        </div>
+      </div>
+      <div class="{{ include.class }} collapse">Hide output
+        <div class="pull-right">
+          <span class="glyphicon glyphicon-menu-up" aria-hidden="true"></span>
+        </div>
+      </div>
+    </a>
+  </div>
+</div>
+
+<div class="{{ include.class }} collapse" markdown="1">
+```text
+{%include_absolute resources/output-examples/{{ include.path }} %}```
+</div>

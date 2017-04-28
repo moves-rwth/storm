@@ -1,0 +1,17 @@
+Storm 1.0.0
+
+Command line arguments: --prism die.pm
+Current working directory: ~/storm/build/bin
+
+Time for model construction: 0.287s.
+
+--------------------------------------------------------------
+Model type: 	DTMC (sparse)
+States: 	13
+Transitions: 	20
+Reward Models:  none
+Labels: 	2
+   * deadlock -> 0 state(s)
+   * init -> 1 state(s)
+choice labels: 	no
+--------------------------------------------------------------

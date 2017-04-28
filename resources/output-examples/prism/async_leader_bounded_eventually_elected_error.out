@@ -1,0 +1,23 @@
+Storm 1.0.0
+
+Command line arguments: --prism leader4.nm --prop P=? [F<=40 (s1=4 | s2=4 | s3=4 | s4=4) ]
+Current working directory: ~/storm/build/bin
+
+Time for model construction: 0.395s.
+
+--------------------------------------------------------------
+Model type: 	MDP (sparse)
+States: 	3172
+Transitions: 	7144
+Choices: 	6252
+Reward Models:  none
+Labels: 	3
+   * deadlock -> 0 state(s)
+   * init -> 1 state(s)
+   * ((((s1 = 4) | (s2 = 4)) | (s3 = 4)) | (s4 = 4)) -> 4 state(s)
+choice labels: 	no
+--------------------------------------------------------------
+
+Model checking property P=? [true U<=40 ((((s1 = 4) | (s2 = 4)) | (s3 = 4)) | (s4 = 4))] ...
+ERROR (SparseMdpPrctlModelChecker.cpp:60): Formula needs to specify whether minimal or maximal values are to be computed on nondeterministic model.
+ERROR (storm.cpp:39): An exception caused Storm to terminate. The message of the exception is: Formula needs to specify whether minimal or maximal values are to be computed on nondeterministic model.

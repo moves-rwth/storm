@@ -1,0 +1,16 @@
+Storm 1.0.0
+
+Command line arguments: --jani approx_pi_00100_010_full.jani --engine hybrid
+Current working directory: ~/storm/build/bin
+
+Time for model construction: 0.069s.
+
+--------------------------------------------------------------
+Model type: 	MDP (symbolic)
+States: 	254304 (108 nodes)
+Transitions: 	2018744 (663 nodes)
+Choices: 	254304
+Reward Models:  none
+Variables: 	rows: 4 meta variables (20 DD variables), columns: 4 meta variables (20 DD variables), nondeterminism: 3 meta variables (3 DD variables)
+Labels: 	0
+--------------------------------------------------------------

@@ -1,0 +1,22 @@
+Storm 1.0.0
+
+Command line arguments: --prism die.pm --prop P=? [F s=7&d=1]
+Current working directory: ~/storm/build/bin
+
+Time for model construction: 0.292s.
+
+--------------------------------------------------------------
+Model type: 	DTMC (sparse)
+States: 	13
+Transitions: 	20
+Reward Models:  none
+Labels: 	3
+   * deadlock -> 0 state(s)
+   * init -> 1 state(s)
+   * ((s = 7) & (d = 1)) -> 1 state(s)
+choice labels: 	no
+--------------------------------------------------------------
+
+Model checking property P=? [F ((s = 7) & (d = 1))] ...
+Result (initial states): 0.1666666667
+Time for model checking: 0.003s.

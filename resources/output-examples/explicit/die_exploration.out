@@ -1,0 +1,17 @@
+Storm 1.0.0
+
+Command line arguments: --explicit die.tra die.lab --transrew die.tra.rew
+Current working directory: ~/storm/build/bin
+
+Time for model construction: 0.001s.
+--------------------------------------------------------------
+Model type: 	DTMC (sparse)
+States: 	13
+Transitions: 	20
+Reward Models:  (default)
+Labels: 	3
+   * deadlock -> 0 state(s)
+   * one -> 1 state(s)
+   * init -> 1 state(s)
+choice labels: 	no
+--------------------------------------------------------------

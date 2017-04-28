@@ -1,0 +1,22 @@
+<div class="panel panel-primary">
+  <div class="panel-heading">
+    <a href=".{{ include.class }}" data-toggle="collapse">
+      <div class="{{ include.class }} collapse in">Show {{ include.name }}
+        <div class="pull-right">
+          <span class="glyphicon glyphicon-menu-down" aria-hidden="true"></span>
+        </div>
+      </div>
+      <div class="{{ include.class }} collapse">Hide {{ include.name }}
+        <div class="pull-right">
+          <span class="glyphicon glyphicon-menu-up" aria-hidden="true"></span>
+        </div>
+      </div>
+    </a>
+  </div>
+</div>
+
+<div class="{{ include.class }} collapse" markdown="1">
+[Download {{ include.name }}]({{ site.github.url }}/resources/input-examples/{{ include.path }}){:target="_blank"}
+```text
+{%include_absolute resources/input-examples/{{ include.path }} %}```
+</div>

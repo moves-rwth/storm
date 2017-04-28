@@ -1,0 +1,22 @@
+Storm 1.0.0
+
+Command line arguments: --prism die.pm --prop R{"coin_flips"}=? [F s=7]
+Current working directory: ~/storm/build/bin
+
+Time for model construction: 0.286s.
+
+--------------------------------------------------------------
+Model type: 	DTMC (sparse)
+States: 	13
+Transitions: 	20
+Reward Models:  coin_flips
+Labels: 	3
+   * deadlock -> 0 state(s)
+   * init -> 1 state(s)
+   * (s = 7) -> 6 state(s)
+choice labels: 	no
+--------------------------------------------------------------
+
+Model checking property R[exp]{"coin_flips"}=? [F (s = 7)] ...
+Result (initial states): 3.666666667
+Time for model checking: 0.000s.
