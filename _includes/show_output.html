@@ -1,18 +1,12 @@
-<div class="panel panel-primary">
-  <div class="panel-heading">
-    <a href=".{{ include.class }}" data-toggle="collapse">
-      <div class="{{ include.class }} collapse in">Show output
-        <div class="pull-right">
-          <span class="glyphicon glyphicon-menu-down" aria-hidden="true"></span>
-        </div>
-      </div>
-      <div class="{{ include.class }} collapse">Hide output
-        <div class="pull-right">
-          <span class="glyphicon glyphicon-menu-up" aria-hidden="true"></span>
-        </div>
-      </div>
-    </a>
-  </div>
+<div>
+  <a href=".{{ include.class }}" data-toggle="collapse" class="btn btn-default btn-block">
+    <div class="{{ include.class }} collapse in">
+      <i class="fa fa-chevron-down fa-pull-right" aria-hidden="true"></i>Show output
+    </div>
+    <div class="{{ include.class }} collapse">
+      <i class="fa fa-chevron-up fa-pull-right" aria-hidden="true"></i>Hide output
+    </div>
+  </a>
 </div>
 
 <div class="{{ include.class }} collapse" markdown="1">
