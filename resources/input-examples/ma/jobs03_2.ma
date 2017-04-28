@@ -1,4 +1,3 @@
-
 // Stochastic Job Scheduling, based on []
 // Encoding by Junges & Quatmann
 // RWTH Aachen University
