@@ -163,7 +163,7 @@ batch of jobs has been treated within an hour. This yields a trade-off, as the o
 
 The trade-off is depicted by the following curve:
 
-![Pareto Curve]({{ site.github.url }}/pics/multi-objective.png?raw=true 'Pareto Curve'){:class="img-thumbnail col-sm" height="220" width="220"}
+![Pareto Curve]({{ site.github.url }}/pics/multi-objective.png 'Pareto Curve'){: .img-thumbnail .col-sm .center-image width="300"}
 
 {% include show_model.html name="PRISM file for stochastic job scheduling" class="job_sched_file" path="ma/jobs03_2.ma" %}
 
