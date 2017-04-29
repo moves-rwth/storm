@@ -34,12 +34,9 @@ namespace storm {
         
         template<typename ValueType, typename StateType>
         JaniNextStateGenerator<ValueType, StateType>::JaniNextStateGenerator(storm::jani::Model const& model, NextStateGeneratorOptions const& options, bool) : NextStateGenerator<ValueType, StateType>(model.getExpressionManager(), options), model(model), rewardVariables(), hasStateActionRewards(false) {
-            STORM_LOG_THROW(model.hasStandardComposition(), storm::exceptions::WrongFormatException, "The explicit next-state generator currently does not support custom system compositions.");
             STORM_LOG_THROW(!model.hasNonGlobalTransientVariable(), storm::exceptions::InvalidSettingsException, "The explicit next-state generator currently does not support automata-local transient variables.");
             STORM_LOG_THROW(!model.usesAssignmentLevels(), storm::exceptions::InvalidSettingsException, "The explicit next-state generator currently does not support assignment levels.");
             STORM_LOG_THROW(!this->options.isBuildChoiceLabelsSet(), storm::exceptions::InvalidSettingsException, "JANI next-state generator cannot generate choice labels.");
-            STORM_LOG_THROW(!model.reusesActionsInComposition(), storm::exceptions::InvalidArgumentException, "The jit JANI model builder currently does not support reusing actions in parallel composition");
-
 
             // Lift the transient edge destinations. We can do so, as we know that there are no assignment levels (because that's not supported anyway).
             if (this->model.hasTransientEdgeDestinationAssignments()) {
@@ -47,9 +44,12 @@ namespace storm {
             }
             STORM_LOG_THROW(!this->model.hasTransientEdgeDestinationAssignments(), storm::exceptions::InvalidSettingsException, "The explicit next-state generator currently does not support transient edge destination assignments.");
             
-            // Only after checking validity of the program, we initialize the variable information.
+            // Create all synchronization-related information, e.g. the automata that are put in parallel.
+            this->createSynchronizationInformation();
+
+            // Now we are ready to initialize the variable information.
             this->checkValid();
-            this->variableInformation = VariableInformation(model);
+            this->variableInformation = VariableInformation(model, this->parallelAutomata);
             
             // Create a proper evalator.
             this->evaluator = std::make_unique<storm::expressions::ExpressionEvaluator<ValueType>>(model.getManager());
@@ -92,11 +92,6 @@ namespace storm {
             
             // If there are terminal states we need to handle, we now need to translate all labels to expressions.
             if (this->options.hasTerminalStates()) {
-                std::vector<std::reference_wrapper<storm::jani::Automaton const>> composedAutomata;
-                for (auto const& automaton : this->model.getAutomata()) {
-                    composedAutomata.emplace_back(automaton);
-                }
-                
                 for (auto const& expressionOrLabelAndBool : this->options.getTerminalStates()) {
                     if (expressionOrLabelAndBool.first.isExpression()) {
                         this->terminalStates.push_back(std::make_pair(expressionOrLabelAndBool.first.getExpression(), expressionOrLabelAndBool.second));
@@ -110,7 +105,7 @@ namespace storm {
                             STORM_LOG_THROW(variable.isBooleanVariable(), storm::exceptions::InvalidSettingsException, "Terminal states refer to non-boolean variable '" << expressionOrLabelAndBool.first.getLabel() << "'.");
                             STORM_LOG_THROW(variable.isTransient(), storm::exceptions::InvalidSettingsException, "Terminal states refer to non-transient variable '" << expressionOrLabelAndBool.first.getLabel() << "'.");
                             
-                            this->terminalStates.push_back(std::make_pair(this->model.getLabelExpression(variable.asBooleanVariable(), composedAutomata), expressionOrLabelAndBool.second));
+                            this->terminalStates.push_back(std::make_pair(this->model.getLabelExpression(variable.asBooleanVariable(), this->parallelAutomata), expressionOrLabelAndBool.second));
                         }
                     }
                 }
@@ -177,15 +172,11 @@ namespace storm {
             storm::utility::solver::SmtSolverFactory factory;
             std::unique_ptr<storm::solver::SmtSolver> solver = factory.create(model.getExpressionManager());
             
-            std::vector<std::reference_wrapper<storm::jani::Automaton const>> allAutomata;
-            for (auto const& automaton : model.getAutomata()) {
-                allAutomata.push_back(automaton);
-            }
-            std::vector<storm::expressions::Expression> rangeExpressions = model.getAllRangeExpressions(allAutomata);
+            std::vector<storm::expressions::Expression> rangeExpressions = model.getAllRangeExpressions(this->parallelAutomata);
             for (auto const& expression : rangeExpressions) {
                 solver->add(expression);
             }
-            solver->add(model.getInitialStatesExpression(allAutomata));
+            solver->add(model.getInitialStatesExpression(this->parallelAutomata));
             
             // Proceed as long as the solver can still enumerate initial states.
             std::vector<StateType> initialStateIndices;
@@ -213,9 +204,10 @@ namespace storm {
                 // Gather iterators to the initial locations of all the automata.
                 std::vector<std::set<uint64_t>::const_iterator> initialLocationsIts;
                 std::vector<std::set<uint64_t>::const_iterator> initialLocationsItes;
-                for (auto const& automaton : allAutomata) {
-                    initialLocationsIts.push_back(automaton.get().getInitialLocationIndices().cbegin());
-                    initialLocationsItes.push_back(automaton.get().getInitialLocationIndices().cend());
+                for (auto const& automatonRef : this->parallelAutomata) {
+                    auto const& automaton = automatonRef.get();
+                    initialLocationsIts.push_back(automaton.getInitialLocationIndices().cbegin());
+                    initialLocationsItes.push_back(automaton.getInitialLocationIndices().cend());
                 }
                 storm::utility::combinatorics::forEach(initialLocationsIts, initialLocationsItes, [this,&initialState] (uint64_t index, uint64_t value) { setLocation(initialState, this->variableInformation.locationVariables[index], value); }, [&stateToIdCallback,&initialStateIndices,&initialState] () {
                     // Register initial state.
@@ -287,7 +279,8 @@ namespace storm {
             // need the state rewards then.
             std::vector<ValueType> stateRewards(this->rewardVariables.size(), storm::utility::zero<ValueType>());
             uint64_t automatonIndex = 0;
-            for (auto const& automaton : model.getAutomata()) {
+            for (auto const& automatonRef : this->parallelAutomata) {
+                auto const& automaton = automatonRef.get();
                 uint64_t currentLocationIndex = locations[automatonIndex];
                 storm::jani::Location const& location = automaton.getLocation(currentLocationIndex);
                 auto valueIt = stateRewards.begin();
@@ -307,12 +300,7 @@ namespace storm {
             
             // Get all choices for the state.
             result.setExpanded();
-            std::vector<Choice<ValueType>> allChoices = getSilentActionChoices(locations, *this->state, stateToIdCallback);
-            std::vector<Choice<ValueType>> allLabeledChoices = getNonsilentActionChoices(locations, *this->state, stateToIdCallback);
-            for (auto& choice : allLabeledChoices) {
-                allChoices.push_back(std::move(choice));
-            }
-            
+            std::vector<Choice<ValueType>> allChoices = getActionChoices(locations, *this->state, stateToIdCallback);
             std::size_t totalNumberOfChoices = allChoices.size();
             
             // If there is not a single choice, we return immediately, because the state has no behavior (other than
@@ -370,239 +358,235 @@ namespace storm {
             
             return result;
         }
+
+        template<typename ValueType, typename StateType>
+        Choice<ValueType> JaniNextStateGenerator<ValueType, StateType>::expandNonSynchronizingEdge(storm::jani::Edge const& edge, uint64_t outputActionIndex, uint64_t automatonIndex, CompressedState const& state, StateToIdCallback stateToIdCallback) {
+            // Determine the exit rate if it's a Markovian edge.
+            boost::optional<ValueType> exitRate = boost::none;
+            if (edge.hasRate()) {
+                exitRate = this->evaluator->asRational(edge.getRate());
+            }
+            
+            Choice<ValueType> choice(edge.getActionIndex(), static_cast<bool>(exitRate));
+            
+            // Iterate over all updates of the current command.
+            ValueType probabilitySum = storm::utility::zero<ValueType>();
+            for (auto const& destination : edge.getDestinations()) {
+                ValueType probability = this->evaluator->asRational(destination.getProbability());
+                
+                if (probability != storm::utility::zero<ValueType>()) {
+                    // Obtain target state index and add it to the list of known states. If it has not yet been
+                    // seen, we also add it to the set of states that have yet to be explored.
+                    auto newState = applyUpdate(state, destination, this->variableInformation.locationVariables[automatonIndex]);
+                    
+                    StateType stateIndex = stateToIdCallback(applyUpdate(state, destination, this->variableInformation.locationVariables[automatonIndex]));
+                    
+                    // Update the choice by adding the probability/target state to it.
+                    probability = exitRate ? exitRate.get() * probability : probability;
+                    choice.addProbability(stateIndex, probability);
+                    
+                    if (this->options.isExplorationChecksSet()) {
+                        probabilitySum += probability;
+                    }
+                }
+            }
+            
+            // Create the state-action reward for the newly created choice.
+            performTransientAssignments(edge.getAssignments().getTransientAssignments(), [&choice] (ValueType const& value) { choice.addReward(value); } );
+            
+            if (this->options.isExplorationChecksSet()) {
+                // Check that the resulting distribution is in fact a distribution.
+                STORM_LOG_THROW(!this->isDiscreteTimeModel() || this->comparator.isOne(probabilitySum), storm::exceptions::WrongFormatException, "Probabilities do not sum to one for edge (actually sum to " << probabilitySum << ").");
+            }
+            
+            return choice;
+        }
         
         template<typename ValueType, typename StateType>
-        std::vector<Choice<ValueType>> JaniNextStateGenerator<ValueType, StateType>::getSilentActionChoices(std::vector<uint64_t> const& locations, CompressedState const& state, StateToIdCallback stateToIdCallback) {
+        std::vector<Choice<ValueType>> JaniNextStateGenerator<ValueType, StateType>::expandSynchronizingEdgeCombination(AutomataEdgeSets const& edgeCombination, uint64_t outputActionIndex, CompressedState const& state, StateToIdCallback stateToIdCallback) {
             std::vector<Choice<ValueType>> result;
             
-            // Iterate over all automata.
-            uint64_t automatonIndex = 0;
+            if (this->options.isExplorationChecksSet()) {
+                // Check whether a global variable is written multiple times in any combination.
+                checkGlobalVariableWritesValid(edgeCombination);
+            }
             
-            for (auto const& automaton : model.getAutomata()) {
-                uint64_t location = locations[automatonIndex];
+            std::vector<EdgeSet::const_iterator> iteratorList(edgeCombination.size());
+            
+            // Initialize the list of iterators.
+            for (size_t i = 0; i < edgeCombination.size(); ++i) {
+                iteratorList[i] = edgeCombination[i].second.cbegin();
+            }
+            
+            // As long as there is one feasible combination of commands, keep on expanding it.
+            bool done = false;
+            while (!done) {
+                boost::container::flat_map<CompressedState, ValueType>* currentTargetStates = new boost::container::flat_map<CompressedState, ValueType>();
+                boost::container::flat_map<CompressedState, ValueType>* newTargetStates = new boost::container::flat_map<CompressedState, ValueType>();
+                std::vector<ValueType> stateActionRewards(rewardVariables.size(), storm::utility::zero<ValueType>());
                 
-                // Iterate over all edges from the source location.
-                for (auto const& edge : automaton.getEdgesFromLocation(location)) {
-                    // Skip the edge if it is labeled with a non-silent action.
-                    if (edge.getActionIndex() != storm::jani::Model::SILENT_ACTION_INDEX) {
-                        continue;
-                    }
+                currentTargetStates->emplace(state, storm::utility::one<ValueType>());
+                
+                for (uint_fast64_t i = 0; i < iteratorList.size(); ++i) {
+                    storm::jani::Edge const& edge = **iteratorList[i];
                     
-                    // Skip the command, if it is not enabled.
-                    if (!this->evaluator->asBool(edge.getGuard())) {
-                        continue;
-                    }
-                    
-                    // Determine the exit rate if it's a Markovian edge.
-                    boost::optional<ValueType> exitRate = boost::none;
-                    if (edge.hasRate()) {
-                        exitRate = this->evaluator->asRational(edge.getRate());
-                    }
-                    
-                    result.push_back(Choice<ValueType>(edge.getActionIndex(), static_cast<bool>(exitRate)));
-                    Choice<ValueType>& choice = result.back();
-                    
-                    // Iterate over all updates of the current command.
-                    ValueType probabilitySum = storm::utility::zero<ValueType>();
                     for (auto const& destination : edge.getDestinations()) {
-                        ValueType probability = this->evaluator->asRational(destination.getProbability());
-                        
-                        if (probability != storm::utility::zero<ValueType>()) {
-                            // Obtain target state index and add it to the list of known states. If it has not yet been
-                            // seen, we also add it to the set of states that have yet to be explored.
-                            StateType stateIndex = stateToIdCallback(applyUpdate(state, destination, this->variableInformation.locationVariables[automatonIndex]));
+                        for (auto const& stateProbabilityPair : *currentTargetStates) {
+                            // Compute the new state under the current update and add it to the set of new target states.
+                            CompressedState newTargetState = applyUpdate(stateProbabilityPair.first, destination, this->variableInformation.locationVariables[edgeCombination[i].first]);
                             
-                            // Update the choice by adding the probability/target state to it.
-                            probability = exitRate ? exitRate.get() * probability : probability;
-                            choice.addProbability(stateIndex, probability);
-                            
-                            if (this->options.isExplorationChecksSet()) {
-                                probabilitySum += probability;
+                            // If the new state was already found as a successor state, update the probability
+                            // and otherwise insert it.
+                            ValueType probability = stateProbabilityPair.second * this->evaluator->asRational(destination.getProbability());
+                            if (edge.hasRate()) {
+                                probability *= this->evaluator->asRational(edge.getRate());
+                            }
+                            if (probability != storm::utility::zero<ValueType>()) {
+                                auto targetStateIt = newTargetStates->find(newTargetState);
+                                if (targetStateIt != newTargetStates->end()) {
+                                    targetStateIt->second += probability;
+                                } else {
+                                    newTargetStates->emplace(newTargetState, probability);
+                                }
                             }
                         }
+                        
+                        // Create the state-action reward for the newly created choice.
+                        auto valueIt = stateActionRewards.begin();
+                        performTransientAssignments(edge.getAssignments().getTransientAssignments(), [&valueIt] (ValueType const& value) { *valueIt += value; ++valueIt; } );
                     }
                     
-                    // Create the state-action reward for the newly created choice.
-                    performTransientAssignments(edge.getAssignments().getTransientAssignments(), [&choice] (ValueType const& value) { choice.addReward(value); } );
-                    
-                    if (this->options.isExplorationChecksSet()) {
-                        // Check that the resulting distribution is in fact a distribution.
-                        STORM_LOG_THROW(!this->isDiscreteTimeModel() || this->comparator.isOne(probabilitySum), storm::exceptions::WrongFormatException, "Probabilities do not sum to one for edge (actually sum to " << probabilitySum << ").");
+                    // If there is one more command to come, shift the target states one time step back.
+                    if (i < iteratorList.size() - 1) {
+                        delete currentTargetStates;
+                        currentTargetStates = newTargetStates;
+                        newTargetStates = new boost::container::flat_map<CompressedState, ValueType>();
                     }
                 }
                 
-                ++automatonIndex;
+                // At this point, we applied all commands of the current command combination and newTargetStates
+                // contains all target states and their respective probabilities. That means we are now ready to
+                // add the choice to the list of transitions.
+                result.emplace_back(outputActionIndex);
+                
+                // Now create the actual distribution.
+                Choice<ValueType>& choice = result.back();
+                
+                // Add the rewards to the choice.
+                choice.addRewards(std::move(stateActionRewards));
+                
+                // Add the probabilities/rates to the newly created choice.
+                ValueType probabilitySum = storm::utility::zero<ValueType>();
+                for (auto const& stateProbabilityPair : *newTargetStates) {
+                    StateType actualIndex = stateToIdCallback(stateProbabilityPair.first);
+                    choice.addProbability(actualIndex, stateProbabilityPair.second);
+                    
+                    if (this->options.isExplorationChecksSet()) {
+                        probabilitySum += stateProbabilityPair.second;
+                    }
+                }
+                
+                if (this->options.isExplorationChecksSet()) {
+                    // Check that the resulting distribution is in fact a distribution.
+                    STORM_LOG_THROW(!this->isDiscreteTimeModel() || !this->comparator.isConstant(probabilitySum) || this->comparator.isOne(probabilitySum), storm::exceptions::WrongFormatException, "Sum of update probabilities do not sum to one for some command (actually sum to " << probabilitySum << ").");
+                }
+                
+                // Dispose of the temporary maps.
+                delete currentTargetStates;
+                delete newTargetStates;
+                
+                // Now, check whether there is one more command combination to consider.
+                bool movedIterator = false;
+                for (uint64_t j = 0; !movedIterator && j < iteratorList.size(); ++j) {
+                    ++iteratorList[j];
+                    if (iteratorList[j] != edgeCombination[j].second.end()) {
+                        movedIterator = true;
+                    } else {
+                        // Reset the iterator to the beginning of the list.
+                        iteratorList[j] = edgeCombination[j].second.begin();
+                    }
+                }
+                
+                done = !movedIterator;
             }
             
             return result;
         }
         
         template<typename ValueType, typename StateType>
-        std::vector<Choice<ValueType>> JaniNextStateGenerator<ValueType, StateType>::getNonsilentActionChoices(std::vector<uint64_t> const& locations, CompressedState const& state, StateToIdCallback stateToIdCallback) {
+        std::vector<Choice<ValueType>> JaniNextStateGenerator<ValueType, StateType>::getActionChoices(std::vector<uint64_t> const& locations, CompressedState const& state, StateToIdCallback stateToIdCallback) {
             std::vector<Choice<ValueType>> result;
             
-            for (uint64_t actionIndex : model.getNonsilentActionIndices()) {
-                std::vector<std::vector<storm::jani::Edge const*>> enabledEdges = getEnabledEdges(locations, actionIndex);
-                
-                // Only process this action, if there is at least one feasible solution.
-                if (!enabledEdges.empty()) {
-                    if (this->options.isExplorationChecksSet()) {
-                        // Check whether a global variable is written multiple times in any combination.
-                        checkGlobalVariableWritesValid(enabledEdges);
-                    }
-                    
-                    std::vector<std::vector<storm::jani::Edge const*>::const_iterator> iteratorList(enabledEdges.size());
-                    
-                    // Initialize the list of iterators.
-                    for (size_t i = 0; i < enabledEdges.size(); ++i) {
-                        iteratorList[i] = enabledEdges[i].cbegin();
-                    }
-                    
-                    // As long as there is one feasible combination of commands, keep on expanding it.
-                    bool done = false;
-                    while (!done) {
-                        boost::container::flat_map<CompressedState, ValueType>* currentTargetStates = new boost::container::flat_map<CompressedState, ValueType>();
-                        boost::container::flat_map<CompressedState, ValueType>* newTargetStates = new boost::container::flat_map<CompressedState, ValueType>();
-                        std::vector<ValueType> stateActionRewards(rewardVariables.size(), storm::utility::zero<ValueType>());
+            for (auto const& outputAndEdges : edges) {
+                auto const& edges = outputAndEdges.second;
+                if (edges.size() == 1) {
+                    // If the synch consists of just one element, it's non-synchronizing.
+                    auto const& nonsychingEdges = edges.front();
+                    uint64_t automatonIndex = nonsychingEdges.first;
+
+                    auto edgesIt = nonsychingEdges.second.find(locations[automatonIndex]);
+                    if (edgesIt != nonsychingEdges.second.end()) {
+                        for (auto const& edge : edgesIt->second) {
+                            if (!this->evaluator->asBool(edge->getGuard())) {
+                                continue;
+                            }
                         
-                        currentTargetStates->emplace(state, storm::utility::one<ValueType>());
+                            Choice<ValueType> choice = expandNonSynchronizingEdge(*edge, outputAndEdges.first ? outputAndEdges.first.get() : edge->getActionIndex(), automatonIndex, state, stateToIdCallback);
+                            result.emplace_back(std::move(choice));
+                        }
+                    }
+                } else {
+                    // If the element has more than one set of edges, we need to perform a synchronization.
+                    STORM_LOG_ASSERT(outputAndEdges.first, "Need output action index for synchronization.");
+                    
+                    AutomataEdgeSets automataEdgeSets;
+                    uint64_t outputActionIndex = outputAndEdges.first.get();
+                    
+                    bool productiveCombination = true;
+                    for (auto const& automatonAndEdges : outputAndEdges.second) {
+                        uint64_t automatonIndex = automatonAndEdges.first;
+                        EdgeSet enabledEdgesOfAutomaton;
                         
-                        auto locationVariableIt = this->variableInformation.locationVariables.cbegin();
-                        for (uint_fast64_t i = 0; i < iteratorList.size(); ++i) {
-                            storm::jani::Edge const& edge = **iteratorList[i];
-                            
-                            for (auto const& destination : edge.getDestinations()) {
-                                for (auto const& stateProbabilityPair : *currentTargetStates) {
-                                    // Compute the new state under the current update and add it to the set of new target states.
-                                    CompressedState newTargetState = applyUpdate(stateProbabilityPair.first, destination, *locationVariableIt);
-                                    
-                                    // If the new state was already found as a successor state, update the probability
-                                    // and otherwise insert it.
-                                    ValueType probability = stateProbabilityPair.second * this->evaluator->asRational(destination.getProbability());
-                                    if (edge.hasRate()) {
-                                        probability *= this->evaluator->asRational(edge.getRate());
-                                    }
-                                    if (probability != storm::utility::zero<ValueType>()) {
-                                        auto targetStateIt = newTargetStates->find(newTargetState);
-                                        if (targetStateIt != newTargetStates->end()) {
-                                            targetStateIt->second += probability;
-                                        } else {
-                                            newTargetStates->emplace(newTargetState, probability);
-                                        }
-                                    }
+                        bool atLeastOneEdge = false;
+                        auto edgesIt = automatonAndEdges.second.find(locations[automatonIndex]);
+                        if (edgesIt != automatonAndEdges.second.end()) {
+                            for (auto const& edge : edgesIt->second) {
+                                if (!this->evaluator->asBool(edge->getGuard())) {
+                                    continue;
                                 }
-                                
-                                // Create the state-action reward for the newly created choice.
-                                auto valueIt = stateActionRewards.begin();
-                                performTransientAssignments(edge.getAssignments().getTransientAssignments(), [&valueIt] (ValueType const& value) { *valueIt += value; ++valueIt; } );
-                            }
                             
-                            // If there is one more command to come, shift the target states one time step back.
-                            if (i < iteratorList.size() - 1) {
-                                delete currentTargetStates;
-                                currentTargetStates = newTargetStates;
-                                newTargetStates = new boost::container::flat_map<CompressedState, ValueType>();
-                            }
-                            
-                            ++locationVariableIt;
-                        }
-                        
-                        // At this point, we applied all commands of the current command combination and newTargetStates
-                        // contains all target states and their respective probabilities. That means we are now ready to
-                        // add the choice to the list of transitions.
-                        result.push_back(Choice<ValueType>(actionIndex));
-                        
-                        // Now create the actual distribution.
-                        Choice<ValueType>& choice = result.back();
-                        
-                        // Add the rewards to the choice.
-                        choice.addRewards(std::move(stateActionRewards));
-                        
-                        // Add the probabilities/rates to the newly created choice.
-                        ValueType probabilitySum = storm::utility::zero<ValueType>();
-                        for (auto const& stateProbabilityPair : *newTargetStates) {
-                            StateType actualIndex = stateToIdCallback(stateProbabilityPair.first);
-                            choice.addProbability(actualIndex, stateProbabilityPair.second);
-                            
-                            if (this->options.isExplorationChecksSet()) {
-                                probabilitySum += stateProbabilityPair.second;
+                                atLeastOneEdge = true;
+                                enabledEdgesOfAutomaton.emplace_back(edge);
                             }
                         }
-                        
-                        if (this->options.isExplorationChecksSet()) {
-                            // Check that the resulting distribution is in fact a distribution.
-                            STORM_LOG_THROW(!this->isDiscreteTimeModel() || !this->comparator.isConstant(probabilitySum) || this->comparator.isOne(probabilitySum), storm::exceptions::WrongFormatException, "Sum of update probabilities do not sum to one for some command (actually sum to " << probabilitySum << ").");
+
+                        // If there is no enabled edge of this automaton, the whole combination is not productive.
+                        if (!atLeastOneEdge) {
+                            productiveCombination = false;
+                            break;
                         }
                         
-                        // Dispose of the temporary maps.
-                        delete currentTargetStates;
-                        delete newTargetStates;
-                        
-                        // Now, check whether there is one more command combination to consider.
-                        bool movedIterator = false;
-                        for (uint64_t j = 0; !movedIterator && j < iteratorList.size(); ++j) {
-                            ++iteratorList[j];
-                            if (iteratorList[j] != enabledEdges[j].end()) {
-                                movedIterator = true;
-                            } else {
-                                // Reset the iterator to the beginning of the list.
-                                iteratorList[j] = enabledEdges[j].begin();
-                            }
-                        }
-                        
-                        done = !movedIterator;
+                        automataEdgeSets.emplace_back(std::make_pair(automatonIndex, std::move(enabledEdgesOfAutomaton)));
                     }
-                }
+                    
+                    if (productiveCombination) {
+                        std::vector<Choice<ValueType>> choices = expandSynchronizingEdgeCombination(automataEdgeSets, outputActionIndex, state, stateToIdCallback);
+                    
+                        for (auto const& choice : choices) {
+                            result.emplace_back(std::move(choice));
+                        }
+                    }
+                 }
             }
-            
+
             return result;
         }
         
         template<typename ValueType, typename StateType>
-        std::vector<std::vector<storm::jani::Edge const*>> JaniNextStateGenerator<ValueType, StateType>::getEnabledEdges(std::vector<uint64_t> const& locationIndices, uint64_t actionIndex) {
-            std::vector<std::vector<storm::jani::Edge const*>> result;
-            
-            // Iterate over all automata.
-            uint64_t automatonIndex = 0;
-            for (auto const& automaton : model.getAutomata()) {
-                // If the automaton has no edge labeled with the given action, we can skip it.
-                if (!automaton.hasEdgeLabeledWithActionIndex(actionIndex)) {
-                    continue;
-                }
-                
-                auto edges = automaton.getEdgesFromLocation(locationIndices[automatonIndex], actionIndex);
-                
-                // If the automaton contains the action, but there is no edge available labeled with
-                // this action, we don't have any feasible command combinations.
-                if (edges.empty()) {
-                    return std::vector<std::vector<storm::jani::Edge const*>>();
-                }
-                
-                std::vector<storm::jani::Edge const*> edgePointers;
-                for (auto const& edge : edges) {
-                    if (this->evaluator->asBool(edge.getGuard())) {
-                        edgePointers.push_back(&edge);
-                    }
-                }
-                
-                // If there was no enabled edge although the automaton has some edge with the required action, we must
-                // not return anything.
-                if (edgePointers.empty()) {
-                    return std::vector<std::vector<storm::jani::Edge const*>>();
-                }
-                
-                result.emplace_back(std::move(edgePointers));
-                ++automatonIndex;
-            }
-            
-            return result;
-        }
-        
-        template<typename ValueType, typename StateType>
-        void JaniNextStateGenerator<ValueType, StateType>::checkGlobalVariableWritesValid(std::vector<std::vector<storm::jani::Edge const*>> const& enabledEdges) const {
+        void JaniNextStateGenerator<ValueType, StateType>::checkGlobalVariableWritesValid(AutomataEdgeSets const& enabledEdges) const {
             std::map<storm::expressions::Variable, uint64_t> writtenGlobalVariables;
             for (auto edgeSetIt = enabledEdges.begin(), edgeSetIte = enabledEdges.end(); edgeSetIt != edgeSetIte; ++edgeSetIt) {
-                for (auto const& edge : *edgeSetIt) {
+                for (auto const& edge : edgeSetIt->second) {
                     for (auto const& globalVariable : edge->getWrittenGlobalVariables()) {
                         auto it = writtenGlobalVariables.find(globalVariable);
                         
@@ -629,20 +613,13 @@ namespace storm {
         
         template<typename ValueType, typename StateType>
         storm::models::sparse::StateLabeling JaniNextStateGenerator<ValueType, StateType>::label(storm::storage::BitVectorHashMap<StateType> const& states, std::vector<StateType> const& initialStateIndices, std::vector<StateType> const& deadlockStateIndices) {
-            
-            // Prepare a mapping from automata names to the location variables.
-            std::vector<std::reference_wrapper<storm::jani::Automaton const>> composedAutomata;
-            for (auto const& automaton : model.getAutomata()) {
-                composedAutomata.emplace_back(automaton);
-            }
-            
             // As in JANI we can use transient boolean variable assignments in locations to identify states, we need to
             // create a list of boolean transient variables and the expressions that define them.
             std::unordered_map<storm::expressions::Variable, storm::expressions::Expression> transientVariableToExpressionMap;
             for (auto const& variable : model.getGlobalVariables().getTransientVariables()) {
                 if (variable.isBooleanVariable()) {
                     if (this->options.isBuildAllLabelsSet() || this->options.getLabelNames().find(variable.getName()) != this->options.getLabelNames().end()) {
-                        transientVariableToExpressionMap[variable.getExpressionVariable()] = model.getLabelExpression(variable.asBooleanVariable(), composedAutomata);
+                        transientVariableToExpressionMap[variable.getExpressionVariable()] = model.getLabelExpression(variable.asBooleanVariable(), this->parallelAutomata);
                     }
                 }
             }
@@ -691,7 +668,8 @@ namespace storm {
             }
             
             // Then fill them.
-            for (auto const& automaton : model.getAutomata()) {
+            for (auto const& automatonRef : this->parallelAutomata) {
+                auto const& automaton = automatonRef.get();
                 for (auto const& location : automaton.getLocations()) {
                     auto rewardVariableIt = rewardVariables.begin();
                     auto rewardVariableIte = rewardVariables.end();
@@ -729,6 +707,81 @@ namespace storm {
                     }
                 }
             }
+        }
+        
+        template<typename ValueType, typename StateType>
+        void JaniNextStateGenerator<ValueType, StateType>::createSynchronizationInformation() {
+            // Create synchronizing edges information.
+            storm::jani::Composition const& topLevelComposition = this->model.getSystemComposition();
+            if (topLevelComposition.isAutomatonComposition()) {
+                auto const& automaton = this->model.getAutomaton(topLevelComposition.asAutomatonComposition().getAutomatonName());
+                this->parallelAutomata.push_back(automaton);
+                
+                LocationsAndEdges locationsAndEdges;
+                for (auto const& edge : automaton.getEdges()) {
+                    locationsAndEdges[edge.getSourceLocationIndex()].emplace_back(&edge);
+                }
+                
+                AutomataAndEdges automataAndEdges;
+                automataAndEdges.emplace_back(std::make_pair(0, std::move(locationsAndEdges)));
+                
+                this->edges.emplace_back(std::make_pair(boost::none, std::move(automataAndEdges)));
+            } else {
+                STORM_LOG_THROW(topLevelComposition.isParallelComposition(), storm::exceptions::WrongFormatException, "Expected parallel composition.");
+                storm::jani::ParallelComposition const& parallelComposition = topLevelComposition.asParallelComposition();
+                
+                uint64_t automatonIndex = 0;
+                for (auto const& composition : parallelComposition.getSubcompositions()) {
+                    STORM_LOG_THROW(composition->isAutomatonComposition(), storm::exceptions::WrongFormatException, "Expected flat parallel composition.");
+                    this->parallelAutomata.push_back(this->model.getAutomaton(composition->asAutomatonComposition().getAutomatonName()));
+                
+                    // Add edges with silent action.
+                    LocationsAndEdges locationsAndEdges;
+                    for (auto const& edge : parallelAutomata.back().get().getEdges()) {
+                        if (edge.getActionIndex() == storm::jani::Model::SILENT_ACTION_INDEX) {
+                            locationsAndEdges[edge.getSourceLocationIndex()].emplace_back(&edge);
+                        }
+                    }
+
+                    if (!locationsAndEdges.empty()) {
+                        AutomataAndEdges automataAndEdges;
+                        automataAndEdges.emplace_back(std::make_pair(automatonIndex, std::move(locationsAndEdges)));
+                        this->edges.emplace_back(std::make_pair(boost::none, std::move(automataAndEdges)));
+                    }
+                    ++automatonIndex;
+                }
+                
+                for (auto const& vector : parallelComposition.getSynchronizationVectors()) {
+                    uint64_t outputActionIndex = this->model.getActionIndex(vector.getOutput());
+                    
+                    AutomataAndEdges automataAndEdges;
+                    bool atLeastOneEdge = true;
+                    uint64_t automatonIndex = 0;
+                    for (auto const& element : vector.getInput()) {
+                        if (!storm::jani::SynchronizationVector::isNoActionInput(element)) {
+                            LocationsAndEdges locationsAndEdges;
+                            uint64_t actionIndex = this->model.getActionIndex(element);
+                            for (auto const& edge : parallelAutomata[automatonIndex].get().getEdges()) {
+                                if (edge.getActionIndex() == actionIndex) {
+                                    locationsAndEdges[edge.getSourceLocationIndex()].emplace_back(&edge);
+                                }
+                            }
+                            if (locationsAndEdges.empty()) {
+                                atLeastOneEdge = false;
+                                break;
+                            }
+                            automataAndEdges.emplace_back(std::make_pair(automatonIndex, std::move(locationsAndEdges)));
+                        }
+                        ++automatonIndex;
+                    }
+                    
+                    if (atLeastOneEdge) {
+                        this->edges.emplace_back(std::make_pair(outputActionIndex, std::move(automataAndEdges)));
+                    }
+                }
+            }
+            
+            STORM_LOG_TRACE("Number of synchronizations: " << this->edges.size() << ".");
         }
         
         template<typename ValueType, typename StateType>
