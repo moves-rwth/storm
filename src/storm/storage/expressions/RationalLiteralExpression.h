@@ -37,10 +37,9 @@ namespace storm {
             // Instantiate constructors and assignments with their default implementations.
             RationalLiteralExpression(RationalLiteralExpression const& other) = default;
             RationalLiteralExpression& operator=(RationalLiteralExpression const& other) = delete;
-#ifndef WINDOWS
             RationalLiteralExpression(RationalLiteralExpression&&) = default;
             RationalLiteralExpression& operator=(RationalLiteralExpression&&) = delete;
-#endif
+
             virtual ~RationalLiteralExpression() = default;
             
             // Override base class methods.

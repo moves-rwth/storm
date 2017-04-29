@@ -81,7 +81,8 @@ namespace storm {
                     }
                 } else {
                     if (behaviour.isExpanded() && dontFixDeadlocks) {
-                        STORM_LOG_THROW(false, storm::exceptions::WrongFormatException, "Error while creating sparse matrix from JANI model: found deadlock state and fixing deadlocks was explicitly disabled.");
+                        // Skip on purpose; Error is produced in the generated code to provide better diagnostics.
+                        //STORM_LOG_THROW(false, storm::exceptions::WrongFormatException, "Error while creating sparse matrix from JANI model: found deadlock state and fixing deadlocks was explicitly disabled.");
                     } else {
                         // Add the self-loop in the transition matrix.
                         transitionMatrixBuilder->addNextValue(currentRow, currentRowGroup, storm::utility::one<ValueType>());

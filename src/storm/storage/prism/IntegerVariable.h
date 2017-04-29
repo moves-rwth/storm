@@ -14,10 +14,8 @@ namespace storm {
             IntegerVariable() = default;
             IntegerVariable(IntegerVariable const& other) = default;
             IntegerVariable& operator=(IntegerVariable const& other)= default;
-#ifndef WINDOWS
             IntegerVariable(IntegerVariable&& other) = default;
             IntegerVariable& operator=(IntegerVariable&& other) = default;
-#endif
 
             /*!
              * Creates an integer variable with the given initial value expression.

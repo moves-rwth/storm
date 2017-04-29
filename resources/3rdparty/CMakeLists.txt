@@ -202,7 +202,15 @@ if(USE_CARL)
     	find_package(carl QUIET)
 	endif()
     if(carl_FOUND AND NOT STORM_FORCE_SHIPPED_CARL)
-		set(STORM_SHIPPED_CARL OFF)
+        get_target_property(carlLOCATION lib_carl LOCATION)
+        if(${carlLOCATION} STREQUAL "carlLOCATION-NOTFOUND")
+            message(SEND_ERROR "Library location for carl is not found, did you build carl?")
+        elseif(EXISTS ${carlLOCATION})
+            #empty on purpose
+        else()
+            message(SEND_ERROR "File ${carlLOCATION} does not exist, did you build carl?")
+        endif()
+        set(STORM_SHIPPED_CARL OFF)
         set(STORM_HAVE_CARL ON)
         message(STATUS "Storm - Use system version of carl.")
         message(STATUS "Storm - Linking with carl ${carl_VERSION} (CARL_USE_CLN_NUMBERS: ${CARL_USE_CLN_NUMBERS}).")
@@ -412,7 +420,8 @@ endif()
 ##
 #############################################################
 
-include_directories(${STORM_3RDPARTY_SOURCE_DIR}/cpptemplate)
+add_imported_library_interface(CppTemplate "${STORM_3RDPARTY_SOURCE_DIR}/cpptemplate/")
+list(APPEND STORM_DEP_TARGETS CppTemplate)
 list(APPEND STORM_3RDPARTY_SOURCES ${STORM_3RDPARTY_SOURCE_DIR}/cpptemplate/cpptempl.cpp)
 
 #############################################################

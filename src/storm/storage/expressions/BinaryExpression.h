@@ -24,10 +24,9 @@ namespace storm {
             // Instantiate constructors and assignments with their default implementations.
             BinaryExpression(BinaryExpression const& other) = default;
             BinaryExpression& operator=(BinaryExpression const& other) = delete;
-#ifndef WINDOWS
             BinaryExpression(BinaryExpression&&) = default;
             BinaryExpression& operator=(BinaryExpression&&) = delete;
-#endif
+
             virtual ~BinaryExpression() = default;
 
             // Override base class methods.

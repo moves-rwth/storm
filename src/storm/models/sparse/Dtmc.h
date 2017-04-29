@@ -44,11 +44,9 @@ namespace storm {
                 Dtmc(Dtmc<ValueType, RewardModelType> const& dtmc) = default;
                 Dtmc& operator=(Dtmc<ValueType, RewardModelType> const& dtmc) = default;
                 
-#ifndef WINDOWS
                 Dtmc(Dtmc<ValueType, RewardModelType>&& dtmc) = default;
                 Dtmc& operator=(Dtmc<ValueType, RewardModelType>&& dtmc) = default;
-#endif
-                
+
                 
 #ifdef STORM_HAVE_CARL
                 class ConstraintCollector {

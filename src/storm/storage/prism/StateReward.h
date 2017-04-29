@@ -35,11 +35,9 @@ namespace storm {
             StateReward() = default;
             StateReward(StateReward const& other) = default;
             StateReward& operator=(StateReward const& other)= default;
-#ifndef WINDOWS
             StateReward(StateReward&& other) = default;
             StateReward& operator=(StateReward&& other) = default;
-#endif
-            
+
             /*!
              * Retrieves the state predicate that is associated with this state reward.
              *

@@ -15,6 +15,7 @@
 #include "storm/settings/modules/JaniExportSettings.h"
 
 #include "storm/utility/resources.h"
+#include "storm/utility/file.h"
 #include "storm/utility/storm-version.h"
 
 
@@ -240,6 +241,13 @@ namespace storm {
                             STORM_LOG_THROW(input.second.count(propName) == 1, storm::exceptions::InvalidArgumentException, "No property with name " << propName << " known.");
                             properties.push_back(input.second.at(propName));
                         }
+                    }
+
+                    if(ioSettings.isExportJaniDotSet()) {
+                        std::ofstream out;
+                        storm::utility::openFile(ioSettings.getExportJaniDotFilename(), out);
+                        model.asJaniModel().writeDotToStream(out);
+                        storm::utility::closeFile(out);
                     }
                     
                 }
