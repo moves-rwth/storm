@@ -538,7 +538,11 @@ namespace storm {
                 }
                 modelData["double"] = cpptempl::make_data(list);
 
-                modelData["dontFixDeadlocks"] = storm::settings::getModule<storm::settings::modules::CoreSettings>().isDontFixDeadlocksSet();
+                list = cpptempl::data_list();
+                if (storm::settings::getModule<storm::settings::modules::CoreSettings>().isDontFixDeadlocksSet()) {
+                    list.push_back(cpptempl::data_map());
+                }
+                modelData["dontFixDeadlocks"] = cpptempl::make_data(list);
 
                 // If we are building a possibly parametric model, we need to create the parameters.
                 if (std::is_same<storm::RationalFunction, ValueType>::value) {

@@ -43,8 +43,10 @@ mark_as_advanced(FORCE_COLOR)
 option(STORM_COMPILE_WITH_CCACHE "Compile using CCache [if found]" ON)
 mark_as_advanced(STORM_COMPILE_WITH_CCACHE)
 option(STORM_LOG_DISABLE_DEBUG "Disable log and trace message support" OFF)
-option(STORM_USE_CLN_EA "Sets whether CLN or GMP numbers should be used for exact arithmetic." OFF)
-option(STORM_USE_CLN_RF "Sets whether CLN or GMP numbers should be used for rational functions." ON)
+option(STORM_USE_CLN_EA "Sets whether CLN instead of GMP numbers should be used for exact arithmetic." OFF)
+export_option(STORM_USE_CLN_EA)
+option(STORM_USE_CLN_RF "Sets whether CLN instead of GMP numbers should be used for rational functions." ON)
+export_option(STORM_USE_CLN_RF)
 option(BUILD_SHARED_LIBS "Build the Storm library dynamically" OFF)
 set(BOOST_ROOT "" CACHE STRING "A hint to the root directory of Boost (optional).")
 set(GUROBI_ROOT "" CACHE STRING "A hint to the root directory of Gurobi (optional).")
@@ -397,6 +399,8 @@ else()
 	endif()
 	message(STATUS "Storm - version is ${STORM_VERSION_MAJOR}.${STORM_VERSION_MINOR}.${STORM_VERSION_PATCH} (${STORM_VERSION_COMMITS_AHEAD} commits ahead of tag), building from git: ${STORM_VERSION_GIT_HASH} (dirty: ${STORM_VERSION_DIRTY}).")
 endif()
+set(STORM_VERSION "${STORM_VERSION_MAJOR}.${STORM_VERSION_MINOR}.${STORM_VERSION_PATCH}")
+
 
 # Configure a header file to pass some of the CMake settings to the source code
 configure_file (
