@@ -41,6 +41,7 @@ namespace storm {
              *  * Only the selected reward models will be kept. The target and sink states will not get any reward.
              *  * Choices that lead from a maybeState to a ~(target | sink) state will be removed. An exception is thrown if this leads to deadlocks.
              *  * It is assumed that maybeStates, targetStates, and sinkStates are pairwise disjoint. Otherwise an exception is thrown.
+             *  * The order of the maybeStates will not be affected (i.e. s_1 < s_2 in the input model implies s'_1 < s'_2 in the output model).
              */
              ReturnType mergeTargetAndSinkStates(storm::storage::BitVector const& maybeStates, storm::storage::BitVector const& targetStates, storm::storage::BitVector const& sinkStates, std::vector<std::string> const& selectedRewardModels = std::vector<std::string>()) const;
             

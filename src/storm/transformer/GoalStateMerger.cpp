@@ -30,7 +30,7 @@ namespace storm {
   
             auto result = initialize(maybeStates, targetStates, sinkStates);
             
-            auto transitionMatrix = buildTransitionMatrix(maybeStates, targetStates, sinkStates, result.first, result.second);
+            auto transitionMatrix = buildTransitionMatrix(maybeStates, result.first, result.second);
             auto labeling = buildStateLabeling(maybeStates, targetStates, sinkStates, result.first);
             auto rewardModels = buildRewardModels(maybeStates, result.first, selectedRewardModels);
             
@@ -169,7 +169,7 @@ namespace storm {
             uint_fast64_t stateCount = maybeStates.getNumberOfSetBits() + (resultData.targetState ? 1 : 0) + (resultData.sinkState ? 1 : 0);
             storm::models::sparse::StateLabeling labeling(stateCount);
             
-            for (auto const& label : originalModel.getLabels()) {
+            for (auto const& label : originalModel.getStateLabeling().getLabels()) {
                 storm::storage::BitVector const& oldStatesWithLabel = originalModel.getStates(label);
                 storm::storage::BitVector newStatesWithLabel = oldStatesWithLabel % maybeStates;
                 newStatesWithLabel.resize(stateCount, false);
@@ -199,19 +199,19 @@ namespace storm {
                 auto origRewardModel = originalModel.getRewardModel(rewardModelName);
                 
                 boost::optional<std::vector<RewardValueType>> stateRewards;
-                if (origRewardModel.hasStateRewards) {
+                if (origRewardModel.hasStateRewards()) {
                     stateRewards = storm::utility::vector::filterVector(origRewardModel.getStateRewardVector(), maybeStates);
                     stateRewards->resize(stateCount, storm::utility::zero<RewardValueType>());
                 }
                 
                 boost::optional<std::vector<RewardValueType>> stateActionRewards;
-                if (origRewardModel.hasStateActionRewards) {
+                if (origRewardModel.hasStateActionRewards()) {
                     stateActionRewards = storm::utility::vector::filterVector(origRewardModel.getStateActionRewardVector(), resultData.keptChoices);
                     stateActionRewards->resize(choiceCount, storm::utility::zero<RewardValueType>());
                 }
                 
                 boost::optional<storm::storage::SparseMatrix<RewardValueType>> transitionRewards;
-                if (origRewardModel.hasTransitionRewards) {
+                if (origRewardModel.hasTransitionRewards()) {
                     storm::storage::SparseMatrixBuilder<RewardValueType> builder(choiceCount, stateCount, 0, true);
                     for (auto const& row : resultData.keptChoices) {
                         boost::optional<typename SparseModelType::ValueType> targetValue, sinkValue;
@@ -256,6 +256,20 @@ namespace storm {
             return std::make_shared<storm::models::sparse::MarkovAutomaton<double>> (std::move(transitionMatrix), std::move(labeling), std::move(markovianStates), std::move(exitRates), true, std::move(rewardModels));
         }
         
+        template <>
+        std::shared_ptr<storm::models::sparse::MarkovAutomaton<storm::RationalNumber>> GoalStateMerger<storm::models::sparse::MarkovAutomaton<storm::RationalNumber>>::buildOutputModel(storm::storage::BitVector const& maybeStates, ReturnType const& resultData, storm::storage::SparseMatrix<storm::RationalNumber>&& transitionMatrix, storm::models::sparse::StateLabeling&& labeling, std::unordered_map<std::string, typename storm::models::sparse::MarkovAutomaton<storm::RationalNumber>::RewardModelType>&& rewardModels) const {
+            
+            uint_fast64_t stateCount = maybeStates.getNumberOfSetBits() + (resultData.targetState ? 1 : 0) + (resultData.sinkState ? 1 : 0);
+
+            storm::storage::BitVector markovianStates = originalModel.getMarkovianStates() % maybeStates;
+            markovianStates.resize(stateCount, true);
+            
+            std::vector<storm::RationalNumber> exitRates = storm::utility::vector::filterVector(originalModel.getExitRates(), maybeStates);
+            exitRates.resize(stateCount, storm::utility::one<storm::RationalNumber>());
+            
+            return std::make_shared<storm::models::sparse::MarkovAutomaton<storm::RationalNumber>> (std::move(transitionMatrix), std::move(labeling), std::move(markovianStates), std::move(exitRates), true, std::move(rewardModels));
+        }
+        
         template <typename SparseModelType>
         std::shared_ptr<SparseModelType> GoalStateMerger<SparseModelType>::buildOutputModel(storm::storage::BitVector const& maybeStates, GoalStateMerger::ReturnType const& resultData, storm::storage::SparseMatrix<typename SparseModelType::ValueType>&& transitionMatrix, storm::models::sparse::StateLabeling&& labeling, std::unordered_map<std::string, typename SparseModelType::RewardModelType>&& rewardModels) const {
             
@@ -267,6 +281,7 @@ namespace storm {
         template class GoalStateMerger<storm::models::sparse::MarkovAutomaton<double>>;
         template class GoalStateMerger<storm::models::sparse::Dtmc<storm::RationalNumber>>;
         template class GoalStateMerger<storm::models::sparse::Mdp<storm::RationalNumber>>;
+        template class GoalStateMerger<storm::models::sparse::MarkovAutomaton<storm::RationalNumber>>;
         template class GoalStateMerger<storm::models::sparse::Dtmc<storm::RationalFunction>>;
         template class GoalStateMerger<storm::models::sparse::Mdp<storm::RationalFunction>>;
 

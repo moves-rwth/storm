@@ -45,7 +45,7 @@ namespace storm {
             
             // obtain the resulting subsystem
             storm::transformer::GoalStateMerger<SparseModelType> goalStateMerger(this->originalModel);
-            storm::transformer::GoalStateMerger<SparseModelType>::ReturnType mergerResult =  goalStateMerger.mergeTargetAndSinkStates(maybeStates, statesWithProbability01.second, statesWithProbability01.first);
+            typename storm::transformer::GoalStateMerger<SparseModelType>::ReturnType mergerResult =  goalStateMerger.mergeTargetAndSinkStates(maybeStates, statesWithProbability01.second, statesWithProbability01.first);
             this->simplifiedModel = mergerResult.model;
             statesWithProbability01.second = storm::storage::BitVector(this->simplifiedModel->getNumberOfStates(), false);
             if (mergerResult.targetState) {
@@ -105,7 +105,7 @@ namespace storm {
             
             // obtain the resulting subsystem
             storm::transformer::GoalStateMerger<SparseModelType> goalStateMerger(this->originalModel);
-            storm::transformer::GoalStateMerger<SparseModelType>::ReturnType mergerResult =  goalStateMerger.mergeTargetAndSinkStates(maybeStates, prob0States, psiStates);
+            typename storm::transformer::GoalStateMerger<SparseModelType>::ReturnType mergerResult =  goalStateMerger.mergeTargetAndSinkStates(maybeStates, prob0States, psiStates);
             this->simplifiedModel = mergerResult.model;
             psiStates = storm::storage::BitVector(this->simplifiedModel->getNumberOfStates(), false);
             if (mergerResult.targetState) {
@@ -154,7 +154,7 @@ namespace storm {
             // obtain the resulting subsystem
             std::vector<std::string> rewardModelNameAsVector(1, formula.hasRewardModelName() ? formula.getRewardModelName() : this->originalModel.getRewardModels().begin()->first);
             storm::transformer::GoalStateMerger<SparseModelType> goalStateMerger(this->originalModel);
-            storm::transformer::GoalStateMerger<SparseModelType>::ReturnType mergerResult =  goalStateMerger.mergeTargetAndSinkStates(maybeStates, targetStates, infinityStates, rewardModelNameAsVector);
+            typename storm::transformer::GoalStateMerger<SparseModelType>::ReturnType mergerResult =  goalStateMerger.mergeTargetAndSinkStates(maybeStates, targetStates, infinityStates, rewardModelNameAsVector);
             this->simplifiedModel = mergerResult.model;
             targetStates = storm::storage::BitVector(this->simplifiedModel->getNumberOfStates(), false);
             if (mergerResult.targetState) {
@@ -164,7 +164,7 @@ namespace storm {
             while (this->simplifiedModel->hasLabel(targetLabel)) {
                 targetLabel = "_" + targetLabel;
             }
-            this->simplifiedModel->getStateLabeling().addLabel(targetLabel, std::move(psiStates));
+            this->simplifiedModel->getStateLabeling().addLabel(targetLabel, std::move(targetStates));
             
             // obtain the simplified formula for the simplified model
             auto labelFormula = std::make_shared<storm::logic::AtomicLabelFormula const> (targetLabel);
@@ -204,7 +204,7 @@ namespace storm {
             // obtain the resulting subsystem
             std::vector<std::string> rewardModelNameAsVector(1, formula.hasRewardModelName() ? formula.getRewardModelName() : this->originalModel.getRewardModels().begin()->first);
             storm::transformer::GoalStateMerger<SparseModelType> goalStateMerger(this->originalModel);
-            storm::transformer::GoalStateMerger<SparseModelType>::ReturnType mergerResult =  goalStateMerger.mergeTargetAndSinkStates(maybeStates, noStates, zeroRewardStates, rewardModelNameAsVector);
+            typename storm::transformer::GoalStateMerger<SparseModelType>::ReturnType mergerResult =  goalStateMerger.mergeTargetAndSinkStates(maybeStates, noStates, zeroRewardStates, rewardModelNameAsVector);
             this->simplifiedModel = mergerResult.model;
             
             // obtain the simplified formula for the simplified model
