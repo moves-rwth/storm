@@ -82,6 +82,7 @@ namespace storm {
                         auto backwardTransitions = result.preprocessedModel.getBackwardTransitions();
                         analyzeEndComponents(result, backwardTransitions);
                         ensureRewardFiniteness(result, backwardTransitions);
+						break;
                     }
                 }
                 return result;

@@ -5,7 +5,7 @@
 #include <boost/optional.hpp>
 
 #include "storm/logic/Formulas.h"
-#include "storm/modelchecker/multiobjective/constraintbased/CbObjective.h"
+#include "storm/modelchecker/multiobjective/Objective.h"
 
 #include "storm/exceptions/UnexpectedException.h"
 
@@ -14,7 +14,7 @@ namespace storm {
         namespace multiobjective {
             
             template <class SparseModelType>
-            struct SparseCbPreprocessorReturnType {
+            struct SparseMultiObjectivePreprocessorReturnType {
                 
                 enum class QueryType { Achievability };
                 
@@ -24,14 +24,14 @@ namespace storm {
                 QueryType queryType;
                 
                 // The (preprocessed) objectives
-                std::vector<CbObjective<typename SparseModelType::ValueType>> objectives;
+                std::vector<Objective<typename SparseModelType::ValueType>> objectives;
                 
                 // The states for which there is a scheduler such that all objectives have value zero
                 storm::storage::BitVector possibleBottomStates;
                 // Overapproximation of the set of choices that are part of an end component.
                 storm::storage::BitVector possibleECChoices;
                 
-                SparseCbPreprocessorReturnType(storm::logic::MultiObjectiveFormula const& originalFormula, SparseModelType const& originalModel) : originalFormula(originalFormula), originalModel(originalModel) {
+                SparseMultiObjectivePreprocessorReturnType(storm::logic::MultiObjectiveFormula const& originalFormula, SparseModelType const& originalModel) : originalFormula(originalFormula), originalModel(originalModel) {
                     // Intentionally left empty
                 }
                 
@@ -56,12 +56,12 @@ namespace storm {
                     originalModel.printModelInformationToStream(out);
                     out << std::endl;
                     out << "Preprocessed Model Information:" << std::endl;
-                    preprocessedModel.printModelInformationToStream(out);
+                    preprocessedModel->printModelInformationToStream(out);
                     out << std::endl;
                     out << "---------------------------------------------------------------------------------------------------------------------------------------" << std::endl;
                 }
            
-                friend std::ostream& operator<<(std::ostream& out, SparseCbPreprocessorReturnType<SparseModelType> const& ret) {
+                friend std::ostream& operator<<(std::ostream& out, SparseMultiObjectivePreprocessorReturnType<SparseModelType> const& ret) {
                     ret.printToStream(out);
                     return out;
                 }

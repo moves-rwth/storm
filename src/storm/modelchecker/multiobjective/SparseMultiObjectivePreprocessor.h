@@ -34,7 +34,7 @@ namespace storm {
                 
                 struct PreprocessorData {
                     SparseModelType const& originalModel;
-                    std::vector<std::shared_ptr<CbObjective<ValueType>>> objectives;
+                    std::vector<std::shared_ptr<Objective<ValueType>>> objectives;
                     std::vector<std::shared_ptr<SparseMultiObjectivePreprocessorTask<SparseModelType>>> tasks;
                     std::shared_ptr<storm::storage::MemoryStructure> memory;
                     
