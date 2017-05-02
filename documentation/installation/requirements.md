@@ -12,9 +12,9 @@ categories: [Installation]
 
 Currently, we provide support for
 
-- macOS 10.12 "Sierra"
-- Debian 9 "Stretch"
-- Ubuntu 16.10 "Yakkety Yak"
+- <i class="fa fa-apple" aria-hidden="true"></i> macOS 10.12 "Sierra"
+- <i class="icon-debian"></i> Debian 9 "Stretch"
+- <i class="icon-ubuntu"></i> Ubuntu 16.10 "Yakkety Yak"
 
 which are known to enable the easy installation of Storm. Other Linux distributions are likely to work too, but it may take significant effort to get the required versions of the dependencies up and running. For example, thanks to [Joachim Klein](http://www.inf.tu-dresden.de/index.php?node_id=1473){:target="_blank"}, there is a [script]({{ site.github.url }}/resources/scripts/installation/storm-build-debian-jessie.sh) that installs Storm and some crucial dependencies on Debian 8 "Jessie".
 
@@ -60,7 +60,7 @@ Recommended:
 
 We collected some platform specific hints to ease the installation of Storm on the supported operating systems. Since Storm has some optional dependencies that enhance it's functionality, and some dependencies that are strictly required, we show how to install both the *required* and *recommended* dependencies. The installation instructions of the *recommended* dependencies are to be understood incrementally, i.e. in addition to the required dependencies.
 
-### macOS 10.12 "Sierra"
+### <i class="fa fa-apple" aria-hidden="true"></i> macOS 10.12 "Sierra"
 
 First of all, you need to download and install Xcode and its command line utilities to have the suitable command line tools. For more details, we refer to [this tutorial](https://www.moncefbelyamani.com/how-to-install-xcode-homebrew-git-rvm-ruby-on-mac/){:target="_blank"}.
 
@@ -81,7 +81,7 @@ $ brew install homebrew/science/hwloc
 $ brew install z3 xerces-c
 ```
 
-### Debian 9 "Stretch"
+### <i class="icon-debian"></i> Debian 9 "Stretch"
 
 - Required:
 ``` console
@@ -93,7 +93,7 @@ $ sudo apt-get install git cmake libboost-all-dev libcln-dev libgmp-dev libginac
 $ sudo apt-get install libz3-dev libxerces-c-dev
 ```
 
-### Ubuntu 16.10 "Yakkety Yak"
+### <i class="icon-ubuntu"></i> Ubuntu 16.10 "Yakkety Yak"
 
 - Required:
 ``` console

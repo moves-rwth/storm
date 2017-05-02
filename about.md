@@ -66,7 +66,10 @@ While Storm tries to make it easy to include new functionality, a developer stil
 
 ## People
 
-The developers can be reached via storm-dev ```at``` i2.informatik.rwth-aachen.de. If you have general feedback, feature request or bug reports, please send us a mail.
+The developers can be reached via
+- <i class="fa fa-envelope" aria-hidden="true"></i> storm-dev ```at``` i2.informatik.rwth-aachen.de
+
+If you have general feedback, feature request or bug reports, please send us a mail.
 
 Storm has been developed at the [Chair for Software Modeling and Verification](http://moves.rwth-aachen.de){:target="_blank"} at RWTH Aachen University by
 
