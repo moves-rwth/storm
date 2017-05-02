@@ -266,11 +266,11 @@ namespace storm {
                 if (this->hasStateActionRewards()) {
                     result = storm::utility::vector::filterZero(this->getStateActionRewardVector());
                     if (this->hasStateRewards()) {
-                        result &= transitionMatrix.getRowIndicesOfRowGroups(storm::utility::vector::filterZero(this->getStateActionRewardVector()));
+                        result &= transitionMatrix.getRowIndicesOfRowGroups(storm::utility::vector::filterZero(this->getStateRewardVector()));
                     }
                 } else {
                     if (this->hasStateRewards()) {
-                        result = transitionMatrix.getRowIndicesOfRowGroups(storm::utility::vector::filterZero(this->getStateActionRewardVector()));
+                        result = transitionMatrix.getRowIndicesOfRowGroups(storm::utility::vector::filterZero(this->getStateRewardVector()));
                     } else {
                         result = storm::storage::BitVector(transitionMatrix.getRowCount(), true);
                     }
