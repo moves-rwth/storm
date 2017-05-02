@@ -6,7 +6,7 @@ category_weight: 3
 categories: [Usage]
 ---
 
-{% include toc.html %}
+{% include includes/toc.html %}
 
 Storm takes properties in a format that can be described as an "extended subset" of the [PRISM property language](http://www.prismmodelchecker.org/manual/PropertySpecification/Introduction){:target="_blank"}. Alternatively, if the input is given in terms of a [JANI](languages.html#jani) model, the properties are embedded in the model in the appropriate format.
 

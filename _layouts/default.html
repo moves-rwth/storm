@@ -1,9 +1,9 @@
 <!DOCTYPE html>
 <html lang="en">
-    {% include head.html %}
+    {% include includes/head.html %}
     <body>
 
-    {% include navbar.html %}
+    {% include includes/navbar.html %}
     <div class="container">
         <ul class="breadcrumb">
             <li><a href="{{ site.github.url }}/index.html">Home</a></li>
@@ -25,7 +25,7 @@
         </div>
     </div>
 
-    {% include footer.html %}
+    {% include includes/footer.html %}
     <script>
         $(function(){
           $("#papers_storm").load("https://www-i2.informatik.rwth-aachen.de/pub/index.php?title=&topics=storm_paper&years=0&author_url=");

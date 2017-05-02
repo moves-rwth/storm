@@ -6,7 +6,7 @@ category_weight: 4
 categories: [Usage]
 ---
 
-{% include toc.html %}
+{% include includes/toc.html %}
 
 ## Storm's executables
 
@@ -59,7 +59,7 @@ These input languages can be treated by Storm's main executable `storm`. Storm s
 
 In our first example, we are going to analyze a small [DTMC](models.html#discrete-time-markov-chains-dtmcs) in the PRISM format. More specifically, the model represents a protocol to simulate a six-sided die with the use of a fair coin only. The model and more information can be found at the [PRISM website](http://www.prismmodelchecker.org/casestudies/dice.php){:target="_blank"}, but for your convenience, you can view the model and the download link below.
 
-{% include show_model.html name="PRISM model of Knuth-Yao die" class="prism_die_dtmc" path="prism/die.pm" %}
+{% include includes/show_model.html name="PRISM model of Knuth-Yao die" class="prism_die_dtmc" path="prism/die.pm" %}
 
 From now on, we will assume that the model file is stored as `die.pm` in the current directory. Let us start with a simple (exhaustive) exploration of the state space of the model:
 
@@ -67,7 +67,7 @@ From now on, we will assume that the model file is stored as `die.pm` in the cur
 $ storm --prism die.pm
 ```
 
-{% include show_output.html class="prism_die_dtmc_output_exploration" path="prism/die_exploration.out" %}
+{% include includes/show_output.html class="prism_die_dtmc_output_exploration" path="prism/die_exploration.out" %}
 
 This will tell you that the model is a [sparse](engines.html#sparse) [discrete-time Markov chain](models.html#discrete-time-markov-chains-dtmcs) with 13 states and 20 transitions, no reward model and two labels (`deadlock` and `init`). But wait, doesn't the PRISM model actually specify a reward model? Why does `storm` not find one? The reason is simple, `storm` doesn't build reward models or (custom) labels that are not referred to by properties unless you explicitly want all of them to be built:
 
@@ -75,7 +75,7 @@ This will tell you that the model is a [sparse](engines.html#sparse) [discrete-t
 $ storm --prism die.pm --buildfull
 ```
 
-{% include show_output.html class="prism_die_dtmc_output_exploration_buildfull" path="prism/die_exploration_buildfull.out" %}
+{% include includes/show_output.html class="prism_die_dtmc_output_exploration_buildfull" path="prism/die_exploration_buildfull.out" %}
 
 This gives you the same model, but this time there is a reward model `coin_flips` attached to it. Unless you want to know how many states satisfy a custom label, you can let `storm` take care of generating the needed reward models and labels. Note that by default, the model is stored in an *sparse matrix* representation (hence the `(sparse)` marker after the model type). There are other formats supported by Storm; please look at the [engines guide](engines.html) for more details.
 
@@ -85,7 +85,7 @@ Now, let's say we want to check whether the probability to roll a one with our s
 $ storm --prism die.pm --prop "P=? [F s=7&d=1]"
 ```
 
-{% include show_output.html class="prism_die_dtmc_output_prob_one" path="prism/die_prob_one.out" %}
+{% include includes/show_output.html class="prism_die_dtmc_output_prob_one" path="prism/die_prob_one.out" %}
 
 This will tell us that the probability for rolling a one is actually (very close to) 1/6.
 
@@ -98,7 +98,7 @@ Congratulations, you have now checked your first property with Storm! Now, say w
 $ storm --prism die.pm --prop "P=? [F s=7&d=1 || F s=7&d<4]"
 ```
 
-{% include show_output.html class="prism_die_dtmc_output_prob_one_conditional" path="prism/die_prob_one_conditional.out" %}
+{% include includes/show_output.html class="prism_die_dtmc_output_prob_one_conditional" path="prism/die_prob_one_conditional.out" %}
 
 which tells us that this probability is 1/3. So far the model seems to simulate a proper six-sided die! Finally, we are interested in the expected number of coin flips that need to be made until the simulated die returns an outcome:
 
@@ -106,7 +106,7 @@ which tells us that this probability is 1/3. So far the model seems to simulate 
 $ storm --prism die.pm --prop "R{\"coin_flips\"}=? [F s=7]"
 ```
 
-{% include show_output.html class="prism_die_dtmc_output_expected_coinflips" path="prism/die_expected_coinflips.out" %}
+{% include includes/show_output.html class="prism_die_dtmc_output_expected_coinflips" path="prism/die_expected_coinflips.out" %}
 
 `storm` tells us that -- on average -- we will have to flip our fair coin 11/3 times. Note that we had to escape the quotes around the reward model name in the property string. If the property is placed within a file, there is no need to escape them.
 
@@ -117,7 +117,7 @@ More information on how to define properties can be found [here](properties.html
 
 In this example, we consider another model available from the [PRISM website](http://www.prismmodelchecker.org/casestudies/asynchronous_leader.php){:target="_blank"}: the asynchronous leader election protocol.
 
-{% include show_model.html name="PRISM model of asynchronous leader election protocol" class="prism_async_leader_mdp" path="prism/leader4.nm" %}
+{% include includes/show_model.html name="PRISM model of asynchronous leader election protocol" class="prism_async_leader_mdp" path="prism/leader4.nm" %}
 
 Just like in [Example 1](#example-1-analysis-of-a-prism-model-of-the-knuth-yao-die), we will assume that the file `leader4.nm` is located in the current directory.
 
@@ -127,7 +127,7 @@ As the name of the protocol suggests, it is supposed to elect a leader among a s
 $ storm --prism leader4.nm --prop "P>=1 [F (s1=4 | s2=4 | s3=4 | s4=4) ]"
 ```
 
-{% include show_output.html class="prism_async_leader_mdp_eventually_elected" path="prism/async_leader_eventually_elected.out" %}
+{% include includes/show_output.html class="prism_async_leader_mdp_eventually_elected" path="prism/async_leader_eventually_elected.out" %}
 
 Apparently this is true. But what about the performance of the protocol? The property we just checked does not guarantee any upper bound on the number of steps that we need to make until a leader is elected. Suppose we have only 40 steps and want to know what's the probability to elect a leader *within this time bound*.
 
@@ -135,7 +135,7 @@ Apparently this is true. But what about the performance of the protocol? The pro
 $ storm --prism leader4.nm --prop "P=? [F<=40 (s1=4 | s2=4 | s3=4 | s4=4) ]"
 ```
 
-{% include show_output.html class="prism_async_leader_mdp_bounded_eventually_elected_error" path="prism/async_leader_bounded_eventually_elected_error.out" %}
+{% include includes/show_output.html class="prism_async_leader_mdp_bounded_eventually_elected_error" path="prism/async_leader_bounded_eventually_elected_error.out" %}
 
 Likely, Storm will tell you that there is an error and that for nondeterministic models you need to specify whether minimal or maximal probabilities are to be computed. Why is that? Since the model is a [Markov Decision Process](models.html#discrete-time-markov-decision-processes-mdps), there are (potentially) nondeterministic choices in the model that need to be resolved. Storm doesn't know how to resolve them unless you tell it to either minimize or maximize (w.r.t. the probability of the objective) whenever there is a nondeterministic choice.
 
@@ -143,7 +143,7 @@ Likely, Storm will tell you that there is an error and that for nondeterministic
 $ storm --prism leader4.nm --prop "Pmin=? [F<=40 (s1=4 | s2=4 | s3=4 | s4=4) ]"
 ```
 
-{% include show_output.html class="prism_async_leader_mdp_bounded_eventually_elected" path="prism/async_leader_bounded_eventually_elected.out" %}
+{% include includes/show_output.html class="prism_async_leader_mdp_bounded_eventually_elected" path="prism/async_leader_bounded_eventually_elected.out" %}
 
 Storm should tell you that this probability is 0.375. So what does it mean? It means that even in the worst of all cases, so when every nondeterministic choice in the model is chosen to minimize the probability to elect a leader quickly, then we will elect a leader within our time bound in about 3 out of 8 cases.
 
@@ -165,7 +165,7 @@ The trade-off is depicted by the following curve:
 
 ![Pareto Curve]({{ site.github.url }}/pics/multi-objective.png 'Pareto Curve'){: .img-thumbnail .col-sm .center-image width="300"}
 
-{% include show_model.html name="PRISM file for stochastic job scheduling" class="job_sched_file" path="ma/jobs03_2.ma" %}
+{% include includes/show_model.html name="PRISM file for stochastic job scheduling" class="job_sched_file" path="ma/jobs03_2.ma" %}
 
 Again, we assume that the file `jobs03_2.nm` is located in the current directory.
 We obtain the data for the plot above by the following call:
@@ -187,9 +187,9 @@ Notice that for Markov automata, the algorithm necessarily can only approximate 
 
 Here, we are going to analyze a model of an algorithm that approximates $$\pi$$. It does so by repeated sampling according to a uniform distribution. While this model is a JANI model, the original model was written in [pGCL](languages.html#cpgcl) and has been translated to JANI by Storm's `storm-pgcl` binary. The JANI model and the original pGCL code is available from the [JANI models repository](https://github.com/ahartmanns/jani-models){:target="_blank"}.
 
-{% include show_model.html name="original pGCL program" class="jani_approxpi_pgcl" path="jani/approx_pi_00100_010_full.pgcl" %}
+{% include includes/show_model.html name="original pGCL program" class="jani_approxpi_pgcl" path="jani/approx_pi_00100_010_full.pgcl" %}
 
-{% include show_model.html name="JANI model of rejection-sampling algorithm" class="jani_approxpi_jani" path="jani/approx_pi_00100_010_full.jani" %}
+{% include includes/show_model.html name="JANI model of rejection-sampling algorithm" class="jani_approxpi_jani" path="jani/approx_pi_00100_010_full.jani" %}
 
 Again, we will assume that the file `approx_pi_00100_010_full.jani` is located in the current directory. Let's see how many states the underlying MDP has. For the sake of illustration, we are going to use the [hybrid engine](engines.html#hybrid) for this example.
 
@@ -197,7 +197,7 @@ Again, we will assume that the file `approx_pi_00100_010_full.jani` is located i
 $ storm --jani approx_pi_00100_010_full.jani --engine hybrid
 ```
 
-{% include show_output.html class="jani_approxpi_jani_output_exploration" path="jani/approxpi_exploration.out" %}
+{% include includes/show_output.html class="jani_approxpi_jani_output_exploration" path="jani/approxpi_exploration.out" %}
 
 As we selected the *hybrid* engine, Storm builds the MDP in terms of a symbolic data structure ((MT)BDDs), hence the `(symbolic)` marker. For this representation, Storm also reports the sizes of the state and transition DDs in terms of the number of nodes.
 
@@ -206,7 +206,7 @@ The algorithm uses a sampling-based technique to approximate $$\pi$$. More speci
 ```console
 $ storm --jani approx_pi_00100_010_full.jani --engine hybrid --prop "Rmax=? [F \"_ret0_\"]"
 ```
-{% include show_output.html class="jani_approxpi_jani_output_expected_hits" path="jani/approxpi_expected_hits.out" %}
+{% include includes/show_output.html class="jani_approxpi_jani_output_expected_hits" path="jani/approxpi_expected_hits.out" %}
 
 Plugging this value in our formula yields $$\pi \approx 4 \frac{hits}{100} = 4 \frac{72.60088512}{100} \approx 2.90404$$. Of course, this is a crude approximation, but it can be refined by adjusting the size of the circle and the number of samples (see the other instances of this model in the [JANI models repository](https://github.com/ahartmanns/jani-models/tree/master/ApproxPi/NaiveRejectionSampling){:target="_blank"}).
 
@@ -218,11 +218,11 @@ Sometimes, it is convenient to specify your model in terms of an explicit enumer
 
 Here, we take the same input model as for [Example 1](#example-1-analysis-of-a-prism-model-of-the-knuth-yao-die) of the PRISM input section. However, this time the input model is given in the explicit format.
 
-{% include show_model.html name="explicit transition file of Knuth-Yao die" class="explicit_die_dtmc_tra" path="explicit/die.tra" %}
+{% include includes/show_model.html name="explicit transition file of Knuth-Yao die" class="explicit_die_dtmc_tra" path="explicit/die.tra" %}
 
-{% include show_model.html name="explicit label file of Knuth-Yao die" class="explicit_die_dtmc_lab" path="explicit/die.lab" %}
+{% include includes/show_model.html name="explicit label file of Knuth-Yao die" class="explicit_die_dtmc_lab" path="explicit/die.lab" %}
 
-{% include show_model.html name="explicit (transition) reward file of Knuth-Yao die" class="explicit_die_dtmc_rew" path="explicit/die.tra.rew" %}
+{% include includes/show_model.html name="explicit (transition) reward file of Knuth-Yao die" class="explicit_die_dtmc_rew" path="explicit/die.tra.rew" %}
 
 Again, we assume that all three files are located in the current directory. We proceed analogously to the example in the PRISM input section and start by loading the model:
 
@@ -230,7 +230,7 @@ Again, we assume that all three files are located in the current directory. We p
 $ storm --explicit die.tra die.lab --transrew die.tra.rew
 ```
 
-{% include show_output.html class="explicit_die_dtmc_exploration" path="explicit/die_exploration.out" %}
+{% include includes/show_output.html class="explicit_die_dtmc_exploration" path="explicit/die_exploration.out" %}
 
 Note that in contrast to the PRISM input model, the explicit version of the Knuth-Yao die does not have symbolic variables. Therefore, we need to rephrase the properties from before. Computing the probability of rolling a one thus becomes
 
@@ -238,7 +238,7 @@ Note that in contrast to the PRISM input model, the explicit version of the Knut
 $ storm --explicit die.tra die.lab --transrew die.tra.rew --prop "P=? [F \"one\"]"
 ```
 
-{% include show_output.html class="explicit_die_dtmc_output_prob_one" path="explicit/die_prob_one.out" %}
+{% include includes/show_output.html class="explicit_die_dtmc_output_prob_one" path="explicit/die_prob_one.out" %}
 
 {:.alert .alert-danger}
 Unlike for PRISM and JANI models, there is no `--exact` mode for explicit input as it's already imprecise because of floating point numbers.
@@ -249,7 +249,7 @@ Note that the model defines two labels `one` and `done` that can be used in prop
 $ storm --explicit die.tra die.lab --transrew die.tra.rew --prop "R=? [F \"done\"]"
 ```
 
-{% include show_output.html class="explicit_die_dtmc_output_expected_coinflips" path="explicit/die_expected_coinflips.out" %}
+{% include includes/show_output.html class="explicit_die_dtmc_output_expected_coinflips" path="explicit/die_expected_coinflips.out" %}
 
 
 ## Running Storm on DFTs

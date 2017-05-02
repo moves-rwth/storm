@@ -6,7 +6,7 @@ category_weight: 1
 categories: [Installation]
 ---
 
-{% include toc.html %}
+{% include includes/toc.html %}
 
 This guide shows you the options you have to install Storm. For this, we are going to assume that all necessary [dependencies](requirements.html) have been installed on the machine in default locations so they can be found by our build machinery. Also, we are going to assume that your operating system is in the list of supported [operating systems](requirements.html#supported-os). If your operating system is not in this list but is Linux-based, chances are that you can install Storm but you may have to perform additional steps that we do not cover here. If you just want to quickly try Storm and/or are not able to install the dependencies, you might want to check out our [virtual machine]({{ site.github.url }}/documentation/vm/vm.html) image.
 

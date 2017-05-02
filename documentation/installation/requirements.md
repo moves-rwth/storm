@@ -6,7 +6,7 @@ category_weight: 2
 categories: [Installation]
 ---
 
-{% include toc.html %}
+{% include includes/toc.html %}
 
 ## Supported OS
 

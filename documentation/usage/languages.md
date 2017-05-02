@@ -6,7 +6,7 @@ category_weight: 2
 categories: [Usage]
 ---
 
-{% include toc.html %}
+{% include includes/toc.html %}
 
 ## PRISM
 

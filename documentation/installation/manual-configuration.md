@@ -6,7 +6,7 @@ category_weight: 3
 categories: [Installation]
 ---
 
-{% include toc.html %}
+{% include includes/toc.html %}
 
 Designed for users that need particular features and people developing under Storm, this guide will detail how to perform a manual configuration of the build process.
 
