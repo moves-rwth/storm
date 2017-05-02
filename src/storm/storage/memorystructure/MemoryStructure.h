@@ -54,6 +54,8 @@ namespace storm {
              */
             template <typename ValueType>
             SparseModelMemoryProduct<ValueType> product(storm::models::sparse::Model<ValueType> const& sparseModel) const;
+            
+            std::string toString() const;
 
         private:
             TransitionMatrix transitions;

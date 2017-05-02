@@ -1,5 +1,7 @@
 #include "storm/storage/memorystructure/MemoryStructure.h"
 
+#include <iostream>
+
 #include "storm/logic/Formulas.h"
 #include "storm/utility/macros.h"
 #include "storm/storage/memorystructure/SparseModelMemoryProduct.h"
@@ -40,12 +42,12 @@ namespace storm {
             for (uint_fast64_t lhsState = 0; lhsState < lhsNumStates; ++lhsState) {
                 for (uint_fast64_t rhsState = 0; rhsState < rhsNumStates; ++rhsState) {
                     assert (resState == (lhsState * rhsNumStates) + rhsState);
-                    auto resStateTransitions = resultTransitions[resState];
+                    auto& resStateTransitions = resultTransitions[resState];
                     for (uint_fast64_t lhsTransitionTarget = 0; lhsTransitionTarget < lhsNumStates; ++lhsTransitionTarget) {
                         auto& lhsTransition = this->getTransitionMatrix()[lhsState][lhsTransitionTarget];
                         if (lhsTransition) {
                             for (uint_fast64_t rhsTransitionTarget = 0; rhsTransitionTarget < rhsNumStates; ++rhsTransitionTarget) {
-                                auto& rhsTransition = this->getTransitionMatrix()[rhsState][rhsTransitionTarget];
+                                auto& rhsTransition = rhs.getTransitionMatrix()[rhsState][rhsTransitionTarget];
                                 if (rhsTransition) {
                                     uint_fast64_t resTransitionTarget = (lhsTransitionTarget * rhsNumStates) + rhsTransitionTarget;
                                     resStateTransitions[resTransitionTarget] = std::make_shared<storm::logic::BinaryBooleanStateFormula const>(storm::logic::BinaryBooleanStateFormula::OperatorType::And, lhsTransition,rhsTransition);
@@ -82,12 +84,47 @@ namespace storm {
                 }
                 resultLabeling.addLabel(rhsLabel, std::move(resLabeledStates));
             }
-            return MemoryStructure(std::move(resultTransitions), std::move(resultLabeling));
+            //return MemoryStructure(std::move(resultTransitions), std::move(resultLabeling));
+            
+            MemoryStructure res(std::move(resultTransitions), std::move(resultLabeling));
+            return res;
+            
         }
             
         template <typename ValueType>
         SparseModelMemoryProduct<ValueType> MemoryStructure::product(storm::models::sparse::Model<ValueType> const& sparseModel) const {
             return SparseModelMemoryProduct<ValueType>(sparseModel, *this);
+        }
+        
+        std::string MemoryStructure::toString() const {
+            std::stringstream stream;
+            
+            stream << "Memory Structure with " << getNumberOfStates() << " states: " << std::endl;
+            
+            for (uint_fast64_t state = 0; state < getNumberOfStates(); ++state) {
+                stream << "State " << state << ": Labels = {";
+                bool firstLabel = true;
+                for (auto const& label : getStateLabeling().getLabelsOfState(state)) {
+                    if (!firstLabel) {
+                        stream << ", ";
+                    }
+                    firstLabel = false;
+                    stream << label;
+                }
+                stream << "}, Transitions: " << std::endl;
+                for (uint_fast64_t transitionTarget = 0; transitionTarget < getNumberOfStates(); ++transitionTarget) {
+                    stream << "\t From " << state << " to " << transitionTarget << ": \t";
+                    auto const& transition = getTransitionMatrix()[state][transitionTarget];
+                    if (transition) {
+                        stream << *transition;
+                    } else {
+                        stream << "false";
+                    }
+                    stream << std::endl;
+                }
+            }
+            
+            return stream.str();
         }
         
         template SparseModelMemoryProduct<double> MemoryStructure::product(storm::models::sparse::Model<double> const& sparseModel) const;
