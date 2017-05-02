@@ -5,7 +5,7 @@
 #include "storm/models/sparse/Mdp.h"
 #include "storm/models/sparse/MarkovAutomaton.h"
 #include "storm/models/sparse/StandardRewardModel.h"
-#include "storm/modelchecker/multiobjective/pcaa/SparsePcaaPreprocessor.h"
+#include "storm/modelchecker/multiobjective/SparseMultiObjectivePreprocessor.h"
 #include "storm/modelchecker/multiobjective/pcaa/SparsePcaaAchievabilityQuery.h"
 #include "storm/modelchecker/multiobjective/pcaa/SparsePcaaQuantitativeQuery.h"
 #include "storm/modelchecker/multiobjective/pcaa/SparsePcaaParetoQuery.h"
@@ -34,7 +34,7 @@ namespace storm {
                     STORM_LOG_THROW(dynamic_cast<storm::models::sparse::MarkovAutomaton<typename SparseModelType::ValueType> const *>(&model)->isClosed(), storm::exceptions::InvalidArgumentException, "Unable to check multi-objective formula on non-closed Markov automaton.");
                 }
                 
-                auto preprocessorResult = SparsePcaaPreprocessor<SparseModelType>::preprocess(model, formula);
+                auto preprocessorResult = SparseMultiObjectivePreprocessor<SparseModelType>::preprocess(model, formula);
                 swPreprocessing.stop();
                 if (storm::settings::getModule<storm::settings::modules::CoreSettings>().isShowStatisticsSet()) {
                     STORM_PRINT_AND_LOG("Preprocessing done in " << swPreprocessing << " seconds." << std::endl << " Result: " << preprocessorResult << std::endl);
@@ -44,13 +44,13 @@ namespace storm {
                 storm::utility::Stopwatch swValueIterations(true);
                 std::unique_ptr<SparsePcaaQuery<SparseModelType, storm::RationalNumber>> query;
                 switch (preprocessorResult.queryType) {
-                    case SparsePcaaPreprocessorReturnType<SparseModelType>::QueryType::Achievability:
+                    case SparseMultiObjectivePreprocessorReturnType<SparseModelType>::QueryType::Achievability:
                         query = std::unique_ptr<SparsePcaaQuery<SparseModelType, storm::RationalNumber>> (new SparsePcaaAchievabilityQuery<SparseModelType, storm::RationalNumber>(preprocessorResult));
                         break;
-                    case SparsePcaaPreprocessorReturnType<SparseModelType>::QueryType::Quantitative:
+                    case SparseMultiObjectivePreprocessorReturnType<SparseModelType>::QueryType::Quantitative:
                         query = std::unique_ptr<SparsePcaaQuery<SparseModelType, storm::RationalNumber>> (new SparsePcaaQuantitativeQuery<SparseModelType, storm::RationalNumber>(preprocessorResult));
                         break;
-                    case SparsePcaaPreprocessorReturnType<SparseModelType>::QueryType::Pareto:
+                    case SparseMultiObjectivePreprocessorReturnType<SparseModelType>::QueryType::Pareto:
                         query = std::unique_ptr<SparsePcaaQuery<SparseModelType, storm::RationalNumber>> (new SparsePcaaParetoQuery<SparseModelType, storm::RationalNumber>(preprocessorResult));
                         break;
                     default:

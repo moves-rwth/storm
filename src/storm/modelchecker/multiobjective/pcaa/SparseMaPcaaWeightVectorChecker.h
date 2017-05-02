@@ -26,10 +26,9 @@ namespace storm {
                 typedef typename SparseMaModelType::ValueType ValueType;
                 
                 SparseMaPcaaWeightVectorChecker(SparseMaModelType const& model,
-                                                          std::vector<PcaaObjective<ValueType>> const& objectives,
-                                                          storm::storage::BitVector const& actionsWithNegativeReward,
-                                                          storm::storage::BitVector const& ecActions,
-                                                          storm::storage::BitVector const& possiblyRecurrentStates);
+                                                        std::vector<Objective<ValueType>> const& objectives,
+                                                        storm::storage::BitVector const& possibleECActions,
+                                                        storm::storage::BitVector const& possibleBottomStates);
                 
                 virtual ~SparseMaPcaaWeightVectorChecker() = default;
 

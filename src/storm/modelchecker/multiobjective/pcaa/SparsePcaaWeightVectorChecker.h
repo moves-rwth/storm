@@ -5,7 +5,7 @@
 #include "storm/storage/BitVector.h"
 #include "storm/storage/SparseMatrix.h"
 #include "storm/storage/TotalScheduler.h"
-#include "storm/modelchecker/multiobjective/pcaa/PcaaObjective.h"
+#include "storm/modelchecker/multiobjective/Objective.h"
 #include "storm/utility/vector.h"
 
 namespace storm {
@@ -28,17 +28,15 @@ namespace storm {
                  *
                  * @param model The (preprocessed) model
                  * @param objectives The (preprocessed) objectives
-                 * @param actionsWithNegativeReward The actions that have negative reward assigned for at least one objective
-                 * @param ecActions The actions that are part of an EC
-                 * @param possiblyRecurrentStates The states for which it is posible to visit them infinitely often (without inducing inf. reward)
+                 * @param possibleECActions Overapproximation of the actions that are part of an EC
+                 * @param possibleBottomStates The states for which it is posible to not collect further reward with prob. 1
                  *
                  */
                 
                 SparsePcaaWeightVectorChecker(SparseModelType const& model,
-                                                        std::vector<PcaaObjective<ValueType>> const& objectives,
-                                                        storm::storage::BitVector const& actionsWithNegativeReward,
-                                                        storm::storage::BitVector const& ecActions,
-                                                        storm::storage::BitVector const& possiblyRecurrentStates);
+                                                        std::vector<Objective<ValueType>> const& objectives,
+                                                        storm::storage::BitVector const& possibleECActions,
+                                                        storm::storage::BitVector const& possibleBottomStates);
                 
                 virtual ~SparsePcaaWeightVectorChecker() = default;
                 
@@ -88,7 +86,7 @@ namespace storm {
                  *
                  * @param weightedRewardVector the weighted rewards (only considering the unbounded objectives)
                  */
-                void unboundedWeightedPhase(std::vector<ValueType> const& weightedRewardVector);
+                void unboundedWeightedPhase(std::vector<ValueType> const& weightedRewardVector, boost::optional<ValueType> const& lowerResultBound, boost::optional<ValueType> const& upperResultBound);
                 
                 /*!
                  * Computes the values of the objectives that do not have a stepBound w.r.t. the scheduler computed in the unboundedWeightedPhase
@@ -122,16 +120,16 @@ namespace storm {
                 // The (preprocessed) model
                 SparseModelType const& model;
                 // The (preprocessed) objectives
-                std::vector<PcaaObjective<ValueType>> const& objectives;
+                std::vector<Objective<ValueType>> const& objectives;
                 
-                // The actions that have negative reward assigned for at least one objective
-                storm::storage::BitVector actionsWithNegativeReward;
-                // The actions that are part of an EC
-                storm::storage::BitVector ecActions;
+                // Overapproximation of the set of choices that are part of an end component.
+                storm::storage::BitVector possibleECActions;
+                // The actions that have reward assigned for at least one objective without upper timeBound
+                storm::storage::BitVector actionsWithoutRewardInUnboundedPhase;
                 // The states for which it is allowed to visit them infinitely often
                 // Put differently, if one of the states is part of a neutral EC, it is possible to
                 // stay in this EC forever (withoud inducing infinite reward for some objective).
-                storm::storage::BitVector possiblyRecurrentStates;
+                storm::storage::BitVector possibleBottomStates;
                 // stores the indices of the objectives for which there is no upper time bound
                 storm::storage::BitVector objectivesWithNoUpperTimeBound;
                 // stores the (discretized) state action rewards for each objective.
