@@ -1,0 +1,26 @@
+Storm-DyFTeE 1.0.0
+
+Command line arguments: -dft motorbike.dft --timebound 1
+Current working directory: ~/storm/storm/build/bin
+
+Loading DFT from file motorbike.dft
+--------------------------------------------------------------
+Model type: 	CTMC (sparse)
+States: 	10
+Transitions: 	15
+Reward Models:  none
+Labels: 	2
+   * init -> 1 state(s)
+   * failed -> 6 state(s)
+choice labels: 	no
+--------------------------------------------------------------
+Model checking property Pmin=? [true U<=1 "failed"] ...
+Result (initial states): 0.3577681657
+Time for model checking: 0.000s.
+Times:
+Exploration:	0.001s
+Building:	0.000s
+Bisimulation:	0.000s
+Modelchecking:	0.000s
+Total:		0.001s
+Result: [0.3577681657]

@@ -1,0 +1,7 @@
+toplevel "Bike";
+"Bike" or "Front" "Back";
+"Front" wsp "FrontWheel" "SpareWheel";
+"Back" wsp "RearWheel" "SpareWheel";
+"FrontWheel" lambda=0.5 dorm=0.0;
+"RearWheel" lambda=0.5 dorm=0.0;
+"SpareWheel" lambda=1.0 dorm=0.1;

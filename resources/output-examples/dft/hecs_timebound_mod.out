@@ -1,0 +1,143 @@
+Storm-DyFTeE 1.0.0
+
+Command line arguments: -dft hecs.dft --timebound 500 -symred --modularisation
+Current working directory: ~/storm/build/bin
+
+Loading DFT from file hecs.dft
+--------------------------------------------------------------
+Model type: 	CTMC (sparse)
+States: 	5
+Transitions: 	6
+Reward Models:  none
+Labels: 	2
+   * init -> 1 state(s)
+   * failed -> 1 state(s)
+choice labels: 	no
+--------------------------------------------------------------
+Model checking property Pmin=? [true U<=500 "failed"] ...
+Result (initial states): 0.0453951136
+Time for model checking: 0.000s.
+--------------------------------------------------------------
+Model type: 	CTMC (sparse)
+States: 	2
+Transitions: 	2
+Reward Models:  none
+Labels: 	2
+   * init -> 1 state(s)
+   * failed -> 1 state(s)
+choice labels: 	no
+--------------------------------------------------------------
+Model checking property Pmin=? [true U<=500 "failed"] ...
+Result (initial states): 0.2591817412
+Time for model checking: 0.000s.
+--------------------------------------------------------------
+Model type: 	CTMC (sparse)
+States: 	2
+Transitions: 	2
+Reward Models:  none
+Labels: 	2
+   * init -> 1 state(s)
+   * failed -> 1 state(s)
+choice labels: 	no
+--------------------------------------------------------------
+Model checking property Pmin=? [true U<=500 "failed"] ...
+Result (initial states): 0.2591817412
+Time for model checking: 0.000s.
+--------------------------------------------------------------
+Model type: 	CTMC (sparse)
+States: 	2
+Transitions: 	2
+Reward Models:  none
+Labels: 	2
+   * init -> 1 state(s)
+   * failed -> 1 state(s)
+choice labels: 	no
+--------------------------------------------------------------
+Model checking property Pmin=? [true U<=500 "failed"] ...
+Result (initial states): 0.2591817412
+Time for model checking: 0.000s.
+--------------------------------------------------------------
+Model type: 	CTMC (sparse)
+States: 	2
+Transitions: 	2
+Reward Models:  none
+Labels: 	2
+   * init -> 1 state(s)
+   * failed -> 1 state(s)
+choice labels: 	no
+--------------------------------------------------------------
+Model checking property Pmin=? [true U<=500 "failed"] ...
+Result (initial states): 0.2591817412
+Time for model checking: 0.000s.
+--------------------------------------------------------------
+Model type: 	CTMC (sparse)
+States: 	2
+Transitions: 	2
+Reward Models:  none
+Labels: 	2
+   * init -> 1 state(s)
+   * failed -> 1 state(s)
+choice labels: 	no
+--------------------------------------------------------------
+Model checking property Pmin=? [true U<=500 "failed"] ...
+Result (initial states): 0.2591817412
+Time for model checking: 0.000s.
+--------------------------------------------------------------
+Model type: 	CTMC (sparse)
+States: 	2
+Transitions: 	2
+Reward Models:  none
+Labels: 	2
+   * init -> 1 state(s)
+   * failed -> 1 state(s)
+choice labels: 	no
+--------------------------------------------------------------
+Model checking property Pmin=? [true U<=500 "failed"] ...
+Result (initial states): 0.004987498783
+Time for model checking: 0.000s.
+--------------------------------------------------------------
+Model type: 	CTMC (sparse)
+States: 	2
+Transitions: 	2
+Reward Models:  none
+Labels: 	2
+   * init -> 1 state(s)
+   * failed -> 1 state(s)
+choice labels: 	no
+--------------------------------------------------------------
+Model checking property Pmin=? [true U<=500 "failed"] ...
+Result (initial states): 0.004987498783
+Time for model checking: 0.000s.
+--------------------------------------------------------------
+Model type: 	CTMC (sparse)
+States: 	2
+Transitions: 	2
+Reward Models:  none
+Labels: 	2
+   * init -> 1 state(s)
+   * failed -> 1 state(s)
+choice labels: 	no
+--------------------------------------------------------------
+Model checking property Pmin=? [true U<=500 "failed"] ...
+Result (initial states): 0.2211992058
+Time for model checking: 0.000s.
+--------------------------------------------------------------
+Model type: 	CTMC (sparse)
+States: 	2
+Transitions: 	2
+Reward Models:  none
+Labels: 	2
+   * init -> 1 state(s)
+   * failed -> 1 state(s)
+choice labels: 	no
+--------------------------------------------------------------
+Model checking property Pmin=? [true U<=500 "failed"] ...
+Result (initial states): 0.2591817412
+Time for model checking: 0.000s.
+Times:
+Exploration:	0.006s
+Building:	0.000s
+Bisimulation:	0.000s
+Modelchecking:	0.001s
+Total:		0.009s
+Result: [0.5117286837]

@@ -1,0 +1,146 @@
+Storm-DyFTeE 1.0.0
+
+Command line arguments: -dft motorbike.dft --timepoints 1 5 0.1
+Current working directory: ~/storm/build/bin
+
+Loading DFT from file motorbike.dft
+--------------------------------------------------------------
+Model type: 	CTMC (sparse)
+States: 	10
+Transitions: 	15
+Reward Models:  none
+Labels: 	2
+   * init -> 1 state(s)
+   * failed -> 6 state(s)
+choice labels: 	no
+--------------------------------------------------------------
+Model checking property Pmin=? [true U<=1 "failed"] ...
+Result (initial states): 0.3577681657
+Time for model checking: 0.000s.
+Model checking property Pmin=? [true U<=11/10 "failed"] ...
+Result (initial states): 0.4017604598
+Time for model checking: 0.000s.
+Model checking property Pmin=? [true U<=6/5 "failed"] ...
+Result (initial states): 0.4442146745
+Time for model checking: 0.000s.
+Model checking property Pmin=? [true U<=13/10 "failed"] ...
+Result (initial states): 0.4848810529
+Time for model checking: 0.000s.
+Model checking property Pmin=? [true U<=7/5 "failed"] ...
+Result (initial states): 0.523591286
+Time for model checking: 0.000s.
+Model checking property Pmin=? [true U<=3/2 "failed"] ...
+Result (initial states): 0.5602431065
+Time for model checking: 0.000s.
+Model checking property Pmin=? [true U<=8/5 "failed"] ...
+Result (initial states): 0.5947861527
+Time for model checking: 0.000s.
+Model checking property Pmin=? [true U<=17/10 "failed"] ...
+Result (initial states): 0.6272113724
+Time for model checking: 0.000s.
+Model checking property Pmin=? [true U<=9/5 "failed"] ...
+Result (initial states): 0.6575417607
+Time for model checking: 0.000s.
+Model checking property Pmin=? [true U<=19/10 "failed"] ...
+Result (initial states): 0.6858242617
+Time for model checking: 0.000s.
+Model checking property Pmin=? [true U<=2 "failed"] ...
+Result (initial states): 0.7121244631
+Time for model checking: 0.000s.
+Model checking property Pmin=? [true U<=21/10 "failed"] ...
+Result (initial states): 0.7365207031
+Time for model checking: 0.000s.
+Model checking property Pmin=? [true U<=11/5 "failed"] ...
+Result (initial states): 0.7591006077
+Time for model checking: 0.000s.
+Model checking property Pmin=? [true U<=23/10 "failed"] ...
+Result (initial states): 0.7799576577
+Time for model checking: 0.000s.
+Model checking property Pmin=? [true U<=12/5 "failed"] ...
+Result (initial states): 0.7991881066
+Time for model checking: 0.000s.
+Model checking property Pmin=? [true U<=5/2 "failed"] ...
+Result (initial states): 0.816889687
+Time for model checking: 0.000s.
+Model checking property Pmin=? [true U<=13/5 "failed"] ...
+Result (initial states): 0.8331592523
+Time for model checking: 0.000s.
+Model checking property Pmin=? [true U<=27/10 "failed"] ...
+Result (initial states): 0.8480920639
+Time for model checking: 0.000s.
+Model checking property Pmin=? [true U<=14/5 "failed"] ...
+Result (initial states): 0.861780707
+Time for model checking: 0.000s.
+Model checking property Pmin=? [true U<=29/10 "failed"] ...
+Result (initial states): 0.8743140803
+Time for model checking: 0.000s.
+Model checking property Pmin=? [true U<=3 "failed"] ...
+Result (initial states): 0.8857774128
+Time for model checking: 0.000s.
+Model checking property Pmin=? [true U<=31/10 "failed"] ...
+Result (initial states): 0.8962517674
+Time for model checking: 0.000s.
+Model checking property Pmin=? [true U<=16/5 "failed"] ...
+Result (initial states): 0.9058135182
+Time for model checking: 0.000s.
+Model checking property Pmin=? [true U<=33/10 "failed"] ...
+Result (initial states): 0.9145347989
+Time for model checking: 0.000s.
+Model checking property Pmin=? [true U<=17/5 "failed"] ...
+Result (initial states): 0.9224833027
+Time for model checking: 0.000s.
+Model checking property Pmin=? [true U<=7/2 "failed"] ...
+Result (initial states): 0.9297220126
+Time for model checking: 0.000s.
+Model checking property Pmin=? [true U<=18/5 "failed"] ...
+Result (initial states): 0.9363098495
+Time for model checking: 0.000s.
+Model checking property Pmin=? [true U<=37/10 "failed"] ...
+Result (initial states): 0.942301609
+Time for model checking: 0.000s.
+Model checking property Pmin=? [true U<=19/5 "failed"] ...
+Result (initial states): 0.9477478148
+Time for model checking: 0.000s.
+Model checking property Pmin=? [true U<=39/10 "failed"] ...
+Result (initial states): 0.9526954318
+Time for model checking: 0.000s.
+Model checking property Pmin=? [true U<=4 "failed"] ...
+Result (initial states): 0.9571878562
+Time for model checking: 0.000s.
+Model checking property Pmin=? [true U<=41/10 "failed"] ...
+Result (initial states): 0.9612648229
+Time for model checking: 0.000s.
+Model checking property Pmin=? [true U<=21/5 "failed"] ...
+Result (initial states): 0.964963109
+Time for model checking: 0.000s.
+Model checking property Pmin=? [true U<=43/10 "failed"] ...
+Result (initial states): 0.9683165348
+Time for model checking: 0.000s.
+Model checking property Pmin=? [true U<=22/5 "failed"] ...
+Result (initial states): 0.9713558929
+Time for model checking: 0.000s.
+Model checking property Pmin=? [true U<=9/2 "failed"] ...
+Result (initial states): 0.974109601
+Time for model checking: 0.000s.
+Model checking property Pmin=? [true U<=23/5 "failed"] ...
+Result (initial states): 0.9766036105
+Time for model checking: 0.000s.
+Model checking property Pmin=? [true U<=47/10 "failed"] ...
+Result (initial states): 0.9788617753
+Time for model checking: 0.000s.
+Model checking property Pmin=? [true U<=24/5 "failed"] ...
+Result (initial states): 0.9809055689
+Time for model checking: 0.000s.
+Model checking property Pmin=? [true U<=49/10 "failed"] ...
+Result (initial states): 0.9827548586
+Time for model checking: 0.000s.
+Model checking property Pmin=? [true U<=5 "failed"] ...
+Result (initial states): 0.9844277921
+Time for model checking: 0.000s.
+Times:
+Exploration:	0.001s
+Building:	0.000s
+Bisimulation:	0.000s
+Modelchecking:	0.006s
+Total:		0.007s
+Result: [0.3577681657, 0.4017604598, 0.4442146745, 0.4848810529, 0.523591286, 0.5602431065, 0.5947861527, 0.6272113724, 0.6575417607, 0.6858242617, 0.7121244631, 0.7365207031, 0.7591006077, 0.7799576577, 0.7991881066, 0.816889687, 0.8331592523, 0.8480920639, 0.861780707, 0.8743140803, 0.8857774128, 0.8962517674, 0.9058135182, 0.9145347989, 0.9224833027, 0.9297220126, 0.9363098495, 0.942301609, 0.9477478148, 0.9526954318, 0.9571878562, 0.9612648229, 0.964963109, 0.9683165348, 0.9713558929, 0.974109601, 0.9766036105, 0.9788617753, 0.9809055689, 0.9827548586, 0.9844277921]

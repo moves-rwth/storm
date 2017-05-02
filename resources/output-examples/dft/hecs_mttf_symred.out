@@ -1,0 +1,26 @@
+Storm-DyFTeE 1.0.0
+
+Command line arguments: -dft hecs.dft -mttf -symred
+Current working directory: ~/storm/build/bin
+
+Loading DFT from file hecs.dft
+--------------------------------------------------------------
+Model type: 	CTMC (sparse)
+States: 	98
+Transitions: 	200
+Reward Models:  none
+Labels: 	2
+   * init -> 1 state(s)
+   * failed -> 74 state(s)
+choice labels: 	no
+--------------------------------------------------------------
+Model checking property T[exp]min=? [F "failed"] ...
+Result (initial states): 573.7440971
+Time for model checking: 0.000s.
+Times:
+Exploration:	0.003s
+Building:	0.000s
+Bisimulation:	0.000s
+Modelchecking:	0.000s
+Total:		0.003s
+Result: [573.7440971]
