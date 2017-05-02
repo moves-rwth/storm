@@ -75,11 +75,11 @@ namespace storm {
                         stateIsDeadlock = false;
                         result.keptChoices.set(row, true);
                         transitionCount += transitionsToMaybeStates;
-                        if(hasTransitionToTarget) {
+                        if (hasTransitionToTarget) {
                             ++transitionCount;
                             targetStateRequired = true;
                         }
-                        if(hasTransitionToSink) {
+                        if (hasTransitionToSink) {
                             ++transitionCount;
                             sinkStateRequired = true;
                         }
@@ -90,14 +90,14 @@ namespace storm {
             }
             
             // Treat the target and sink states (if these states will exist)
-            if(targetStateRequired) {
+            if (targetStateRequired) {
                 result.targetState = stateCount;
                 ++stateCount;
                 ++transitionCount;
                 storm::utility::vector::setVectorValues(result.oldToNewStateIndexMapping, targetStates, *result.targetState);
             }
             
-            if(sinkStateRequired) {
+            if (sinkStateRequired) {
                 result.sinkState = stateCount;
                 ++stateCount;
                 ++transitionCount;
@@ -116,7 +116,7 @@ namespace storm {
             uint_fast64_t rowCount = resultData.keptChoices.getNumberOfSetBits() + (resultData.targetState ? 1 : 0) + (resultData.sinkState ? 1 : 0);
             uint_fast64_t maybeStateCount = maybeStates.getNumberOfSetBits();
             uint_fast64_t stateCount = maybeStateCount + (resultData.targetState ? 1 : 0) + (resultData.sinkState ? 1 : 0);
-            storm::storage::SparseMatrixBuilder<typename SparseModelType::ValueType> builder(rowCount, stateCount, transitionCount, true, origMatrix.hasTrivialRowGrouping(), origMatrix.hasTrivialRowGrouping() ? 0 : stateCount);
+             storm::storage::SparseMatrixBuilder<typename SparseModelType::ValueType> builder(rowCount, stateCount, transitionCount, true, !origMatrix.hasTrivialRowGrouping(), origMatrix.hasTrivialRowGrouping() ? 0 : stateCount);
             
             uint_fast64_t currRow = 0;
             for (auto state : maybeStates) {
@@ -138,10 +138,10 @@ namespace storm {
                             STORM_LOG_THROW(false, storm::exceptions::UnexpectedException, "There is a transition originating from a maybestate that does not lead to a maybe-, target-, or sinkstate.");
                         }
                     }
-                    if(targetValue) {
+                    if (targetValue) {
                         builder.addNextValue(currRow, *resultData.targetState, storm::utility::simplify(*targetValue));
                     }
-                    if(sinkValue) {
+                    if (sinkValue) {
                         builder.addNextValue(currRow, *resultData.sinkState, storm::utility::simplify(*sinkValue));
                     }
                     ++currRow;
@@ -149,13 +149,17 @@ namespace storm {
             }
             
             // Add the selfloops at target and sink
-            if(resultData.targetState) {
-                builder.newRowGroup(currRow);
+            if (resultData.targetState) {
+                if (!origMatrix.hasTrivialRowGrouping()) {
+                    builder.newRowGroup(currRow);
+                }
                 builder.addNextValue(currRow, *resultData.targetState, storm::utility::one<typename SparseModelType::ValueType>());
                 ++currRow;
             }
-            if(resultData.sinkState) {
-                builder.newRowGroup(currRow);
+            if (resultData.sinkState) {
+                if (!origMatrix.hasTrivialRowGrouping()) {
+                    builder.newRowGroup(currRow);
+                }
                 builder.addNextValue(currRow, *resultData.sinkState, storm::utility::one<typename SparseModelType::ValueType>());
                 ++currRow;
             }
@@ -173,10 +177,10 @@ namespace storm {
                 storm::storage::BitVector const& oldStatesWithLabel = originalModel.getStates(label);
                 storm::storage::BitVector newStatesWithLabel = oldStatesWithLabel % maybeStates;
                 newStatesWithLabel.resize(stateCount, false);
-                if (!oldStatesWithLabel.isDisjointFrom(targetStates)) {
+                if (!oldStatesWithLabel.isDisjointFrom(targetStates) && resultData.targetState.is_initialized()) {
                     newStatesWithLabel.set(*resultData.targetState, true);
                 }
-                if (!oldStatesWithLabel.isDisjointFrom(sinkStates)) {
+                if (!oldStatesWithLabel.isDisjointFrom(sinkStates) && resultData.sinkState.is_initialized()) {
                     newStatesWithLabel.set(*resultData.sinkState, true);
                 }
                 labeling.addLabel(label, std::move(newStatesWithLabel));
@@ -227,10 +231,10 @@ namespace storm {
                                 STORM_LOG_THROW(false, storm::exceptions::UnexpectedException, "There is a transition reward originating from a maybestate that does not lead to a maybe-, target-, or sinkstate.");
                             }
                         }
-                        if(targetValue) {
+                        if (targetValue) {
                             builder.addNextValue(row, *resultData.targetState, storm::utility::simplify(*targetValue));
                         }
-                        if(sinkValue) {
+                        if (sinkValue) {
                             builder.addNextValue(row, *resultData.sinkState, storm::utility::simplify(*sinkValue));
                         }
                     }

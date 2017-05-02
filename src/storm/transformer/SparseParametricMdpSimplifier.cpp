@@ -47,9 +47,18 @@ namespace storm {
             storm::transformer::GoalStateMerger<SparseModelType> goalStateMerger(this->originalModel);
             typename storm::transformer::GoalStateMerger<SparseModelType>::ReturnType mergerResult =  goalStateMerger.mergeTargetAndSinkStates(maybeStates, statesWithProbability01.second, statesWithProbability01.first);
             this->simplifiedModel = mergerResult.model;
+            statesWithProbability01.first = storm::storage::BitVector(this->simplifiedModel->getNumberOfStates(), false);
+            if (mergerResult.sinkState) {
+                statesWithProbability01.first.set(mergerResult.sinkState.get(), true);
+            }
+            std::string sinkLabel = "sink";
+            while (this->simplifiedModel->hasLabel(sinkLabel)) {
+                sinkLabel = "_" + sinkLabel;
+            }
+            this->simplifiedModel->getStateLabeling().addLabel(sinkLabel, std::move(statesWithProbability01.first));
             statesWithProbability01.second = storm::storage::BitVector(this->simplifiedModel->getNumberOfStates(), false);
             if (mergerResult.targetState) {
-                statesWithProbability01.first.set(mergerResult.targetState.get(), true);
+                statesWithProbability01.second.set(mergerResult.targetState.get(), true);
             }
             std::string targetLabel = "target";
             while (this->simplifiedModel->hasLabel(targetLabel)) {
@@ -63,11 +72,18 @@ namespace storm {
             this->simplifiedFormula = std::make_shared<storm::logic::ProbabilityOperatorFormula const>(eventuallyFormula, formula.getOperatorInformation());
             
             // Eliminate all states for which all outgoing transitions are constant
-            this->simplifiedModel = this->eliminateConstantDeterministicStates(*this->simplifiedModel);
+            storm::storage::BitVector considerForElimination = ~this->simplifiedModel->getInitialStates();
+            if (mergerResult.targetState) {
+                considerForElimination.set(*mergerResult.targetState, false);
+            }
+            if (mergerResult.sinkState) {
+                considerForElimination.set(*mergerResult.sinkState, false);
+            }
+            this->simplifiedModel = this->eliminateConstantDeterministicStates(*this->simplifiedModel, considerForElimination);
                         
             // Eliminate the end components that do not contain a target or a sink state (only required if the probability is maximized)
             if(!minimizing) {
-                this->simplifiedModel = this->eliminateNeutralEndComponents(*this->simplifiedModel, this->simplifiedModel->getStates("target") | this->simplifiedModel->getStates("sink"));
+                this->simplifiedModel = this->eliminateNeutralEndComponents(*this->simplifiedModel, this->simplifiedModel->getStates(targetLabel) | this->simplifiedModel->getStates(sinkLabel));
             }
             
             return true;
@@ -105,7 +121,7 @@ namespace storm {
             
             // obtain the resulting subsystem
             storm::transformer::GoalStateMerger<SparseModelType> goalStateMerger(this->originalModel);
-            typename storm::transformer::GoalStateMerger<SparseModelType>::ReturnType mergerResult =  goalStateMerger.mergeTargetAndSinkStates(maybeStates, prob0States, psiStates);
+            typename storm::transformer::GoalStateMerger<SparseModelType>::ReturnType mergerResult =  goalStateMerger.mergeTargetAndSinkStates(maybeStates, psiStates, prob0States);
             this->simplifiedModel = mergerResult.model;
             psiStates = storm::storage::BitVector(this->simplifiedModel->getNumberOfStates(), false);
             if (mergerResult.targetState) {
@@ -156,6 +172,16 @@ namespace storm {
             storm::transformer::GoalStateMerger<SparseModelType> goalStateMerger(this->originalModel);
             typename storm::transformer::GoalStateMerger<SparseModelType>::ReturnType mergerResult =  goalStateMerger.mergeTargetAndSinkStates(maybeStates, targetStates, infinityStates, rewardModelNameAsVector);
             this->simplifiedModel = mergerResult.model;
+            infinityStates = storm::storage::BitVector(this->simplifiedModel->getNumberOfStates(), false);
+            if (mergerResult.sinkState) {
+                infinityStates.set(mergerResult.sinkState.get(), true);
+            }
+            std::string sinkLabel = "sink";
+            while (this->simplifiedModel->hasLabel(sinkLabel)) {
+                sinkLabel = "_" + sinkLabel;
+            }
+            this->simplifiedModel->getStateLabeling().addLabel(sinkLabel, std::move(infinityStates));
+
             targetStates = storm::storage::BitVector(this->simplifiedModel->getNumberOfStates(), false);
             if (mergerResult.targetState) {
                 targetStates.set(mergerResult.targetState.get(), true);
@@ -172,11 +198,18 @@ namespace storm {
             this->simplifiedFormula = std::make_shared<storm::logic::RewardOperatorFormula const>(eventuallyFormula, rewardModelNameAsVector.front(), formula.getOperatorInformation(), storm::logic::RewardMeasureType::Expectation);
             
             // Eliminate all states for which all outgoing transitions are constant
-            this->simplifiedModel = this->eliminateConstantDeterministicStates(*this->simplifiedModel, rewardModelNameAsVector.front());
+            storm::storage::BitVector considerForElimination = ~this->simplifiedModel->getInitialStates();
+            if (mergerResult.targetState) {
+                considerForElimination.set(*mergerResult.targetState, false);
+            }
+            if (mergerResult.sinkState) {
+                considerForElimination.set(*mergerResult.sinkState, false);
+            }
+            this->simplifiedModel = this->eliminateConstantDeterministicStates(*this->simplifiedModel, considerForElimination, rewardModelNameAsVector.front());
             
             // Eliminate the end components in which no reward is collected (only required if rewards are minimized)
             if (minimizing) {
-                this->simplifiedModel = this->eliminateNeutralEndComponents(*this->simplifiedModel, this->simplifiedModel->getStates("target") | this->simplifiedModel->getStates("sink"), rewardModelNameAsVector.front());
+                this->simplifiedModel = this->eliminateNeutralEndComponents(*this->simplifiedModel, this->simplifiedModel->getStates(targetLabel) | this->simplifiedModel->getStates(sinkLabel), rewardModelNameAsVector.front());
             }
             return true;
         }

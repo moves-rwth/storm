@@ -42,7 +42,7 @@ namespace storm {
             this->simplifiedModel = mergerResult.model;
             statesWithProbability01.second = storm::storage::BitVector(this->simplifiedModel->getNumberOfStates(), false);
             if (mergerResult.targetState) {
-                statesWithProbability01.first.set(mergerResult.targetState.get(), true);
+                statesWithProbability01.second.set(mergerResult.targetState.get(), true);
             }
             std::string targetLabel = "target";
             while (this->simplifiedModel->hasLabel(targetLabel)) {
@@ -56,7 +56,14 @@ namespace storm {
             this->simplifiedFormula = std::make_shared<storm::logic::ProbabilityOperatorFormula const>(eventuallyFormula, formula.getOperatorInformation());
             
             // Eliminate all states for which all outgoing transitions are constant
-            this->simplifiedModel = this->eliminateConstantDeterministicStates(*this->simplifiedModel);
+            storm::storage::BitVector considerForElimination = ~this->simplifiedModel->getInitialStates();
+            if (mergerResult.targetState) {
+                considerForElimination.set(*mergerResult.targetState, false);
+            }
+            if (mergerResult.sinkState) {
+                considerForElimination.set(*mergerResult.sinkState, false);
+            }
+            this->simplifiedModel = this->eliminateConstantDeterministicStates(*this->simplifiedModel, considerForElimination);
                 
             return true;
         }
@@ -90,7 +97,7 @@ namespace storm {
             
             // obtain the resulting subsystem
             storm::transformer::GoalStateMerger<SparseModelType> goalStateMerger(this->originalModel);
-            typename storm::transformer::GoalStateMerger<SparseModelType>::ReturnType mergerResult =  goalStateMerger.mergeTargetAndSinkStates(maybeStates, prob0States, psiStates);
+            typename storm::transformer::GoalStateMerger<SparseModelType>::ReturnType mergerResult =  goalStateMerger.mergeTargetAndSinkStates(maybeStates, psiStates, prob0States);
             this->simplifiedModel = mergerResult.model;
             psiStates = storm::storage::BitVector(this->simplifiedModel->getNumberOfStates(), false);
             if (mergerResult.targetState) {
@@ -150,7 +157,14 @@ namespace storm {
             this->simplifiedFormula = std::make_shared<storm::logic::RewardOperatorFormula const>(eventuallyFormula, rewardModelNameAsVector.front(), formula.getOperatorInformation(), storm::logic::RewardMeasureType::Expectation);
             
             // Eliminate all states for which all outgoing transitions are constant
-            this->simplifiedModel = this->eliminateConstantDeterministicStates(*this->simplifiedModel, rewardModelNameAsVector.front());
+            storm::storage::BitVector considerForElimination = ~this->simplifiedModel->getInitialStates();
+            if (mergerResult.targetState) {
+                considerForElimination.set(*mergerResult.targetState, false);
+            }
+            if (mergerResult.sinkState) {
+                considerForElimination.set(*mergerResult.sinkState, false);
+            }
+            this->simplifiedModel = this->eliminateConstantDeterministicStates(*this->simplifiedModel, considerForElimination, rewardModelNameAsVector.front());
                 
             return true;
         }

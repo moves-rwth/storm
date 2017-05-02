@@ -37,7 +37,7 @@ namespace storm {
              *
              *  Notes:
              *  * the target (or sink) state is not created, if it is not reachable
-             *  * the target (or sink) state will get a label iff at least one of the given targetStates (sinkStates) have that label.
+             *  * the target (or sink) state will get a label iff it is reachable and at least one of the given targetStates (sinkStates) have that label.
              *  * Only the selected reward models will be kept. The target and sink states will not get any reward.
              *  * Choices that lead from a maybeState to a ~(target | sink) state will be removed. An exception is thrown if this leads to deadlocks.
              *  * It is assumed that maybeStates, targetStates, and sinkStates are pairwise disjoint. Otherwise an exception is thrown.
