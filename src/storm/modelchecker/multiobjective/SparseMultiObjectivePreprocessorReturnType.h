@@ -6,6 +6,7 @@
 
 #include "storm/logic/Formulas.h"
 #include "storm/modelchecker/multiobjective/Objective.h"
+#include "storm/storage/BitVector.h"
 
 #include "storm/exceptions/UnexpectedException.h"
 
@@ -16,7 +17,7 @@ namespace storm {
             template <class SparseModelType>
             struct SparseMultiObjectivePreprocessorReturnType {
                 
-                enum class QueryType { Achievability };
+                enum class QueryType { Achievability, Quantitative, Pareto };
                 
                 storm::logic::MultiObjectiveFormula const& originalFormula;
                 SparseModelType const& originalModel;

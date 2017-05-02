@@ -44,16 +44,19 @@ namespace storm {
                     }
                 }
                 
+                // Incorporate the required memory into the state space
                 storm::storage::SparseModelMemoryProduct<ValueType> product = data.memory->product(originalModel);
                 std::shared_ptr<SparseModelType> preprocessedModel = std::dynamic_pointer_cast<SparseModelType>(product.build());
                 
                 auto backwardTransitions = preprocessedModel->getBackwardTransitions();
                 
+                // compute the end components of the model (if required)
                 bool endComponentAnalysisRequired = false;
                 for (auto& task : data.tasks) {
                     endComponentAnalysisRequired = endComponentAnalysisRequired || task->requiresEndComponentAnalysis();
                 }
                 if (endComponentAnalysisRequired) {
+                    // TODO
                     STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "End component analysis required but currently not implemented.");
                 }
                 
@@ -61,41 +64,8 @@ namespace storm {
                     task->perform(*preprocessedModel);
                 }
                 
-                ReturnType result(originalFormula, originalModel);
-                for (auto& obj : data.objectives) {
-                    result.objectives.push_back(std::move(*obj));
-                }
-                result.preprocessedModel = std::move(preprocessedModel);
-                result.queryType = ReturnType::QueryType::Achievability;
-                
-                auto minMaxNonZeroRewardStates = getStatesWithNonZeroRewardMinMax(result, backwardTransitions);
-                auto finiteRewardStates = ensureRewardFiniteness(result, data.finiteRewardCheckObjectives, minMaxNonZeroRewardStates.first, backwardTransitions);
-                
-                std::set<std::string> relevantRewardModels;
-                for (auto const& obj : result.objectives) {
-                    relevantRewardModels.insert(*obj.rewardModelName);
-                }
-                
-                // Build a subsystem that discards states that yield infinite reward for all schedulers.
-                // We can also merge the states that will have reward zero anyway.
-                storm::storage::BitVector zeroRewardStates = ~minMaxNonZeroRewardStates.second;
-                storm::transformer::GoalStateMerger<SparseModelType> merger(*result.preprocessedModel);
-                typename storm::transformer::GoalStateMerger<SparseModelType>::ReturnType mergerResult = merger.mergeTargetAndSinkStates(finiteRewardStates, zeroRewardStates, storm::storage::BitVector(finiteRewardStates.size(), false), std::vector<std::string>(relevantRewardModels.begin(), relevantRewardModels.end()));
-                
-                result.preprocessedModel = mergerResult.model;
-                result.possibleBottomStates = (~minMaxNonZeroRewardStates.first) % finiteRewardStates;
-                if (mergerResult.targetState) {
-                    storm::storage::BitVector targetStateAsVector(result.preprocessedModel->getNumberOfStates(), false);
-                    targetStateAsVector.set(*mergerResult.targetState, true);
-                    result.possibleECChoices = storm::utility::graph::performProb0E(*result.preprocessedModel, result.preprocessedModel->getBackwardTransitions(), storm::storage::BitVector(targetStateAsVector.size(), true), targetStateAsVector);
-                    result.possibleECChoices.set(result.preprocessedModel->getTransitionMatrix().getRowGroupIndices()[*mergerResult.targetState], true);
-                    // There is an additional state in the result
-                    result.possibleBottomStates.resize(result.possibleBottomStates.size() + 1, true);
-                }
-                assert(result.possibleBottomStates.size() == result.preprocessedModel->getNumberOfStates());
-                
-                
-                return result;
+                // Build the actual result
+                return buildResult(originalModel, originalFormula, data, preprocessedModel, backwardTransitions);
             }
             
             template <typename SparseModelType>
@@ -139,8 +109,6 @@ namespace storm {
                         break;
                     }
                 }
-                
-                
             }
             
             template<typename SparseModelType>
@@ -189,6 +157,10 @@ namespace storm {
             template<typename SparseModelType>
             void SparseMultiObjectivePreprocessor<SparseModelType>::preprocessProbabilityOperatorFormula(storm::logic::ProbabilityOperatorFormula const& formula, PreprocessorData& data) {
                 
+                // Probabilities are between zero and one
+                data.objectives.back()->lowerResultBound = storm::utility::zero<ValueType>();
+                data.objectives.back()->upperResultBound = storm::utility::one<ValueType>();
+                
                 if (formula.getSubformula().isUntilFormula()){
                     preprocessUntilFormula(formula.getSubformula().asUntilFormula(), data);
                 } else if (formula.getSubformula().isBoundedUntilFormula()){
@@ -217,6 +189,8 @@ namespace storm {
                     rewardModelName = data.originalModel.getRewardModels().begin()->first;
                 }
                 
+                data.objectives.back()->lowerResultBound = storm::utility::zero<ValueType>();
+                
                 if (formula.getSubformula().isEventuallyFormula()){
                     preprocessEventuallyFormula(formula.getSubformula().asEventuallyFormula(), data, rewardModelName);
                 } else if (formula.getSubformula().isCumulativeRewardFormula()) {
@@ -232,6 +206,8 @@ namespace storm {
             void SparseMultiObjectivePreprocessor<SparseModelType>::preprocessTimeOperatorFormula(storm::logic::TimeOperatorFormula const& formula, PreprocessorData& data) {
                 // Time formulas are only supported for Markov automata
                 STORM_LOG_THROW(data.originalModel.isOfType(storm::models::ModelType::MarkovAutomaton), storm::exceptions::InvalidPropertyException, "Time operator formulas are only supported for Markov automata.");
+                
+                data.objectives.back()->lowerResultBound = storm::utility::zero<ValueType>();
                 
                 if (formula.getSubformula().isEventuallyFormula()){
                     preprocessEventuallyFormula(formula.getSubformula().asEventuallyFormula(), data);
@@ -344,6 +320,8 @@ namespace storm {
                     data.objectives.back()->upperTimeBound = storm::logic::TimeBound(formula.isBoundStrict(), formula.getBound());
                 }
 
+                assert(optionalRewardModelName.is_initialized());
+                data.objectives.back()->rewardModelName = *optionalRewardModelName;
 
             }
             
@@ -354,6 +332,68 @@ namespace storm {
                 data.finiteRewardCheckObjectives.set(data.objectives.size() - 1, true);
             }
             
+            template<typename SparseModelType>
+            typename SparseMultiObjectivePreprocessor<SparseModelType>::ReturnType SparseMultiObjectivePreprocessor<SparseModelType>::buildResult(SparseModelType const& originalModel, storm::logic::MultiObjectiveFormula const& originalFormula, PreprocessorData& data, std::shared_ptr<SparseModelType> const& preprocessedModel, storm::storage::SparseMatrix<ValueType> const& backwardTransitions) {
+                        
+                ReturnType result(originalFormula, originalModel);
+                
+                result.preprocessedModel = preprocessedModel;
+                
+                for (auto& obj : data.objectives) {
+                    result.objectives.push_back(std::move(*obj));
+                }
+                
+                result.queryType = getQueryType(result.objectives);
+                
+                auto minMaxNonZeroRewardStates = getStatesWithNonZeroRewardMinMax(result, backwardTransitions);
+                auto finiteRewardStates = ensureRewardFiniteness(result, data.finiteRewardCheckObjectives, minMaxNonZeroRewardStates.first, backwardTransitions);
+                
+                std::set<std::string> relevantRewardModels;
+                for (auto const& obj : result.objectives) {
+                    relevantRewardModels.insert(*obj.rewardModelName);
+                }
+                
+                // Build a subsystem that discards states that yield infinite reward for all schedulers.
+                // We can also merge the states that will have reward zero anyway.
+                storm::storage::BitVector zeroRewardStates = ~minMaxNonZeroRewardStates.second;
+                storm::storage::BitVector maybeStates = finiteRewardStates & ~zeroRewardStates;
+                storm::transformer::GoalStateMerger<SparseModelType> merger(*result.preprocessedModel);
+                typename storm::transformer::GoalStateMerger<SparseModelType>::ReturnType mergerResult = merger.mergeTargetAndSinkStates(maybeStates, zeroRewardStates, storm::storage::BitVector(maybeStates.size(), false), std::vector<std::string>(relevantRewardModels.begin(), relevantRewardModels.end()));
+                
+                result.preprocessedModel = mergerResult.model;
+                result.possibleBottomStates = (~minMaxNonZeroRewardStates.first) % maybeStates;
+                if (mergerResult.targetState) {
+                    storm::storage::BitVector targetStateAsVector(result.preprocessedModel->getNumberOfStates(), false);
+                    targetStateAsVector.set(*mergerResult.targetState, true);
+                    result.possibleECChoices = result.preprocessedModel->getTransitionMatrix().getRowIndicesOfRowGroups(storm::utility::graph::performProb0E(*result.preprocessedModel, result.preprocessedModel->getBackwardTransitions(), storm::storage::BitVector(targetStateAsVector.size(), true), targetStateAsVector));
+                    result.possibleECChoices.set(result.preprocessedModel->getTransitionMatrix().getRowGroupIndices()[*mergerResult.targetState], true);
+                    // There is an additional state in the result
+                    result.possibleBottomStates.resize(result.possibleBottomStates.size() + 1, true);
+                }
+                assert(result.possibleBottomStates.size() == result.preprocessedModel->getNumberOfStates());
+                
+                return result;
+            }
+            
+            template<typename SparseModelType>
+            typename SparseMultiObjectivePreprocessor<SparseModelType>::ReturnType::QueryType SparseMultiObjectivePreprocessor<SparseModelType>::getQueryType(std::vector<Objective<ValueType>> const& objectives) {
+                uint_fast64_t numOfObjectivesWithThreshold = 0;
+                for (auto& obj : objectives) {
+                    if (obj.bound) {
+                        ++numOfObjectivesWithThreshold;
+                    }
+                }
+                if (numOfObjectivesWithThreshold == objectives.size()) {
+                    return ReturnType::QueryType::Achievability;
+                } else if (numOfObjectivesWithThreshold + 1 == objectives.size()) {
+                    // Note: We do not want to consider a Pareto query when the total number of objectives is one.
+                    return ReturnType::QueryType::Quantitative;
+                } else if (numOfObjectivesWithThreshold == 0) {
+                    return ReturnType::QueryType::Pareto;
+                } else {
+                    STORM_LOG_THROW(false, storm::exceptions::InvalidPropertyException, "Invalid Multi-objective query: The numer of qualitative objectives should be either 0 (Pareto query), 1 (quantitative query), or #objectives (achievability query).");
+                }
+            }
             
             template<typename SparseModelType>
             std::pair<storm::storage::BitVector, storm::storage::BitVector> SparseMultiObjectivePreprocessor<SparseModelType>::getStatesWithNonZeroRewardMinMax(ReturnType& result, storm::storage::SparseMatrix<ValueType> const& backwardTransitions) {

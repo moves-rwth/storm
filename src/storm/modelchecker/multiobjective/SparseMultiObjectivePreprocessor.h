@@ -66,6 +66,17 @@ namespace storm {
                 
                 
                 /*!
+                 * Builds the result from preprocessing
+                 */
+                static ReturnType buildResult(SparseModelType const& originalModel, storm::logic::MultiObjectiveFormula const& originalFormula, PreprocessorData& data, std::shared_ptr<SparseModelType> const& preprocessedModel, storm::storage::SparseMatrix<ValueType> const& backwardTransitions);
+                
+                /*!
+                 * Returns the query type
+                 */
+                 static typename ReturnType::QueryType getQueryType(std::vector<Objective<ValueType>> const& objectives);
+                
+                
+                /*!
                  * Computes the set of states that have a non-zero reward w.r.t. all objectives, assuming that the objectives are all minimizing and maximizing, respectively.
                  */
                 static std::pair<storm::storage::BitVector, storm::storage::BitVector> getStatesWithNonZeroRewardMinMax(ReturnType& result, storm::storage::SparseMatrix<ValueType> const& backwardTransitions);

@@ -31,6 +31,8 @@ namespace storm {
                 // Lower and upper time/step bouds
                 boost::optional<storm::logic::TimeBound> lowerTimeBound, upperTimeBound;
                 
+                boost::optional<ValueType> lowerResultBound, upperResultBound;
+                
                 void printToStream(std::ostream& out) const {
                     out  << originalFormula->toString();
                     out << " \t";
@@ -39,7 +41,7 @@ namespace storm {
                     out << " \t";
                     out << "intern bound: ";
                     if (bound){
-                        out << bound;
+                        out << *bound;
                     } else {
                         out << " -none-    ";
                     }
@@ -55,7 +57,23 @@ namespace storm {
                         out << " -none-    ";
                     }
                     out << " \t";
-                    out << "intern reward model: " << *rewardModelName;
+                    out << "intern reward model: ";
+                    if (rewardModelName) {
+                        out << *rewardModelName;
+                    } else {
+                        out << " -none-    ";
+                    }
+                    out << " \t";
+                    out << "result bounds: ";
+                    if (lowerResultBound && upperResultBound) {
+                        out << "[" << *lowerResultBound << ", " << *upperResultBound << "]";
+                    } else if (lowerResultBound) {
+                        out << ">=" << *lowerResultBound;
+                    } else if (upperResultBound) {
+                        out << "<=" << *upperResultBound;
+                    } else {
+                        out << " -none-    ";
+                    }
                  }
             };
         }
