@@ -4,7 +4,7 @@ destination:  ./_site
 plugins_dir:  _plugins
 layouts_dir:  _layouts
 data_dir:     _data
-includes_dir: _includes
+includes_dir: resources
 
 # Handling Reading
 safe:         false
@@ -70,5 +70,3 @@ kramdown:
   hard_wrap:      false
   footnote_nr:    1
   syntax_highlighter: rouge
-
-code_dir: "resources/"
