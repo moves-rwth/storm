@@ -94,12 +94,12 @@ namespace storm {
                 // Normalize the direction vector so that the entries sum up to one
                 storm::utility::vector::scaleVectorInPlace(direction, storm::utility::one<GeometryValueType>() / std::accumulate(direction.begin(), direction.end(), storm::utility::zero<GeometryValueType>()));
                 weightVectorChecker->check(storm::utility::vector::convertNumericVector<typename SparseModelType::ValueType>(direction));
-                STORM_LOG_DEBUG("weighted objectives checker result (lower bounds) is " << storm::utility::vector::toString(storm::utility::vector::convertNumericVector<double>(weightVectorChecker->getLowerBoundsOfInitialStateResults())));
+                STORM_LOG_DEBUG("weighted objectives checker result (under approximation) is " << storm::utility::vector::toString(storm::utility::vector::convertNumericVector<double>(weightVectorChecker->getUnderApproximationOfInitialStateResults())));
                 RefinementStep step;
                 step.weightVector = direction;
-                step.lowerBoundPoint = storm::utility::vector::convertNumericVector<GeometryValueType>(weightVectorChecker->getLowerBoundsOfInitialStateResults());
-                step.upperBoundPoint = storm::utility::vector::convertNumericVector<GeometryValueType>(weightVectorChecker->getUpperBoundsOfInitialStateResults());
-                // For the minimizing objectives, we need to scale the corresponding entries with -1 in order to consider the downward closure
+                step.lowerBoundPoint = storm::utility::vector::convertNumericVector<GeometryValueType>(weightVectorChecker->getUnderApproximationOfInitialStateResults());
+                step.upperBoundPoint = storm::utility::vector::convertNumericVector<GeometryValueType>(weightVectorChecker->getOverApproximationOfInitialStateResults());
+                // For the minimizing objectives, we need to scale the corresponding entries with -1 as we want to consider the downward closure
                 for (uint_fast64_t objIndex = 0; objIndex < this->objectives.size(); ++objIndex) {
                     if (storm::solver::minimize(this->objectives[objIndex].optimizationDirection)) {
                         step.lowerBoundPoint[objIndex] *= -storm::utility::one<GeometryValueType>();

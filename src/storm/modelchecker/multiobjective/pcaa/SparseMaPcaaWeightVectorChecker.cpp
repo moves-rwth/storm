@@ -268,11 +268,11 @@ namespace storm {
                         errorAwayFromZero += digitizationError;
                     }
                     if (storm::solver::maximize(obj.optimizationDirection)) {
-                        this->offsetsToLowerBound[objIndex] = -errorTowardsZero;
-                        this->offsetsToUpperBound[objIndex] = errorAwayFromZero;
+                        this->offsetsToUnderApproximation[objIndex] = -errorTowardsZero;
+                        this->offsetsToOverApproximation[objIndex] = errorAwayFromZero;
                     } else {
-                        this->offsetsToLowerBound[objIndex] = errorAwayFromZero;
-                        this->offsetsToUpperBound[objIndex] = -errorTowardsZero;
+                        this->offsetsToUnderApproximation[objIndex] = errorAwayFromZero;
+                        this->offsetsToOverApproximation[objIndex] = -errorTowardsZero;
                     }
                 }
             } 

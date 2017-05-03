@@ -47,8 +47,8 @@ namespace storm {
                         stepBoundIt->second.set(objIndex);
                         
                         // There is no error for the values of these objectives.
-                        this->offsetsToLowerBound[objIndex] = storm::utility::zero<ValueType>();
-                        this->offsetsToUpperBound[objIndex] = storm::utility::zero<ValueType>();
+                        this->offsetsToUnderApproximation[objIndex] = storm::utility::zero<ValueType>();
+                        this->offsetsToOverApproximation[objIndex] = storm::utility::zero<ValueType>();
                     }
                 }
                 

@@ -106,7 +106,7 @@ namespace storm {
                 void digitize(SubModel& subModel, VT const& digitizationConstant) const;
                 
                 /* 
-                 * Fills the given map with the digitized time bounds. Also sets the offsetsToLowerBound / offsetsToUpperBound values
+                 * Fills the given map with the digitized time bounds. Also sets the offsetsToUnderApproximation / offsetsToOverApproximation values
                  * according to the digitization error
                  */
                 template <typename VT = ValueType, typename std::enable_if<storm::NumberTraits<VT>::SupportsExponential, int>::type = 0>

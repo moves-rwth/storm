@@ -36,8 +36,8 @@ namespace storm {
                     discreteActionRewards(objectives.size()),
                     checkHasBeenCalled(false),
                     objectiveResults(objectives.size()),
-                    offsetsToLowerBound(objectives.size()),
-                    offsetsToUpperBound(objectives.size()) {
+                    offsetsToUnderApproximation(objectives.size()),
+                    offsetsToOverApproximation(objectives.size()) {
                 
                 // set data for unbounded objectives
                 for(uint_fast64_t objIndex = 0; objIndex < objectives.size(); ++objIndex) {
@@ -94,10 +94,9 @@ namespace storm {
                         break;
                     }
                 }
-                STORM_LOG_INFO("Weight vector check done. Lower bounds for results in initial state: " << storm::utility::vector::toString(storm::utility::vector::convertNumericVector<double>(getLowerBoundsOfInitialStateResults())));
+                STORM_LOG_INFO("Weight vector check done. Lower bounds for results in initial state: " << storm::utility::vector::toString(storm::utility::vector::convertNumericVector<double>(getUnderApproximationOfInitialStateResults())));
                 // Validate that the results are sufficiently precise
-                ValueType resultingWeightedPrecision = storm::utility::vector::dotProduct(getUpperBoundsOfInitialStateResults(), weightVector) - storm::utility::vector::dotProduct(getLowerBoundsOfInitialStateResults(), weightVector);
-                STORM_LOG_THROW(resultingWeightedPrecision >= storm::utility::zero<ValueType>(), storm::exceptions::UnexpectedException, "The distance between the lower and the upper result is negative.");
+                ValueType resultingWeightedPrecision = storm::utility::abs(storm::utility::vector::dotProduct(getOverApproximationOfInitialStateResults(), weightVector) - storm::utility::vector::dotProduct(getUnderApproximationOfInitialStateResults(), weightVector));
                 resultingWeightedPrecision /= storm::utility::sqrt(storm::utility::vector::dotProduct(weightVector, weightVector));
                 STORM_LOG_THROW(resultingWeightedPrecision <= weightedPrecision, storm::exceptions::UnexpectedException, "The desired precision was not reached");
             }
@@ -113,25 +112,25 @@ namespace storm {
             }
             
             template <class SparseModelType>
-            std::vector<typename SparsePcaaWeightVectorChecker<SparseModelType>::ValueType> SparsePcaaWeightVectorChecker<SparseModelType>::getLowerBoundsOfInitialStateResults() const {
+            std::vector<typename SparsePcaaWeightVectorChecker<SparseModelType>::ValueType> SparsePcaaWeightVectorChecker<SparseModelType>::getUnderApproximationOfInitialStateResults() const {
                 STORM_LOG_THROW(checkHasBeenCalled, storm::exceptions::IllegalFunctionCallException, "Tried to retrieve results but check(..) has not been called before.");
                 uint_fast64_t initstate = *this->model.getInitialStates().begin();
                 std::vector<ValueType> res;
                 res.reserve(this->objectives.size());
                 for(uint_fast64_t objIndex = 0; objIndex < this->objectives.size(); ++objIndex) {
-                    res.push_back(this->objectiveResults[objIndex][initstate] + this->offsetsToLowerBound[objIndex]);
+                    res.push_back(this->objectiveResults[objIndex][initstate] + this->offsetsToUnderApproximation[objIndex]);
                 }
                 return res;
             }
             
             template <class SparseModelType>
-            std::vector<typename SparsePcaaWeightVectorChecker<SparseModelType>::ValueType> SparsePcaaWeightVectorChecker<SparseModelType>::getUpperBoundsOfInitialStateResults() const {
+            std::vector<typename SparsePcaaWeightVectorChecker<SparseModelType>::ValueType> SparsePcaaWeightVectorChecker<SparseModelType>::getOverApproximationOfInitialStateResults() const {
                 STORM_LOG_THROW(checkHasBeenCalled, storm::exceptions::IllegalFunctionCallException, "Tried to retrieve results but check(..) has not been called before.");
                 uint_fast64_t initstate = *this->model.getInitialStates().begin();
                 std::vector<ValueType> res;
                 res.reserve(this->objectives.size());
                 for(uint_fast64_t objIndex = 0; objIndex < this->objectives.size(); ++objIndex) {
-                    res.push_back(this->objectiveResults[objIndex][initstate] + this->offsetsToUpperBound[objIndex]);
+                    res.push_back(this->objectiveResults[objIndex][initstate] + this->offsetsToOverApproximation[objIndex]);
                 }
                 return res;
             }
@@ -218,8 +217,8 @@ namespace storm {
                    for (uint_fast64_t const &objIndex : storm::utility::vector::getSortedIndices(weightVector)) {
                        auto const& obj = objectives[objIndex];
                        if (objectivesWithNoUpperTimeBound.get(objIndex)) {
-                           offsetsToLowerBound[objIndex] = storm::utility::zero<ValueType>();
-                           offsetsToUpperBound[objIndex] = storm::utility::zero<ValueType>();
+                           offsetsToUnderApproximation[objIndex] = storm::utility::zero<ValueType>();
+                           offsetsToOverApproximation[objIndex] = storm::utility::zero<ValueType>();
                            storm::utility::vector::selectVectorValues(deterministicStateRewards, this->scheduler.getChoices(), model.getTransitionMatrix().getRowGroupIndices(), discreteActionRewards[objIndex]);
                            storm::storage::BitVector statesWithRewards = ~storm::utility::vector::filterZero(deterministicStateRewards);
                            // As maybestates we pick the states from which a state with reward is reachable

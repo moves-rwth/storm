@@ -14,8 +14,8 @@ namespace storm {
             
             /*!
              * Helper Class that takes preprocessed Pcaa data and a weight vector and ...
-             * - computes the maximal expected reward w.r.t. the weighted sum of the rewards of the individual objectives
-             * - extracts the scheduler that induces this maximum
+             * - computes the optimal expected reward w.r.t. the weighted sum of the rewards of the individual objectives
+             * - extracts the scheduler that induces this optimum
              * - computes for each objective the value induced by this scheduler
              */
             template <class SparseModelType>
@@ -41,8 +41,8 @@ namespace storm {
                 virtual ~SparsePcaaWeightVectorChecker() = default;
                 
                 /*!
-                 * - computes the maximal expected reward w.r.t. the weighted sum of the rewards of the individual objectives
-                 * - extracts the scheduler that induces this maximum
+                 * - computes the optimal expected reward w.r.t. the weighted sum of the rewards of the individual objectives
+                 * - extracts the scheduler that induces this optimum
                  * - computes for each objective the value induced by this scheduler
                  */
                 void check(std::vector<ValueType> const& weightVector);
@@ -50,19 +50,19 @@ namespace storm {
                 /*!
                  * Retrieves the results of the individual objectives at the initial state of the given model.
                  * Note that check(..) has to be called before retrieving results. Otherwise, an exception is thrown.
-                 * Also note that there is no guarantee that the lower/upper bounds are sound
+                 * Also note that there is no guarantee that the under/over approximation is in fact correct
                  * as long as the underlying solution methods are unsound (e.g., standard value iteration).
                  */
-                std::vector<ValueType> getLowerBoundsOfInitialStateResults() const;
-                std::vector<ValueType> getUpperBoundsOfInitialStateResults() const;
+                std::vector<ValueType> getUnderApproximationOfInitialStateResults() const;
+                std::vector<ValueType> getOverApproximationOfInitialStateResults() const;
                 
                 
                 /*!
                  * Sets the precision of this weight vector checker. After calling check() the following will hold:
                  * Let h_lower and h_upper be two hyperplanes such that
-                 * * the normal vector is the provided weight-vector
-                 * * getLowerBoundsOfInitialStateResults() lies on h_lower and
-                 * * getUpperBoundsOfInitialStateResults() lies on h_upper.
+                 * * the normal vector is the provided weight-vector where the entry for minimizing objectives is negated
+                 * * getUnderApproximationOfInitialStateResults() lies on h_lower and
+                 * * getOverApproximationOfInitialStateResults() lies on h_upper.
                  * Then the distance between the two hyperplanes is at most weightedPrecision
                  */
                 void setWeightedPrecision(ValueType const& weightedPrecision);
@@ -82,7 +82,7 @@ namespace storm {
             protected:
                 
                 /*!
-                 * Determines the scheduler that maximizes the weighted reward vector of the unbounded objectives
+                 * Determines the scheduler that optimizes the weighted reward vector of the unbounded objectives
                  *
                  * @param weightedRewardVector the weighted rewards (only considering the unbounded objectives)
                  */
@@ -134,12 +134,7 @@ namespace storm {
                 storm::storage::BitVector objectivesWithNoUpperTimeBound;
                 // stores the (discretized) state action rewards for each objective.
                 std::vector<std::vector<ValueType>> discreteActionRewards;
-                /* stores the precision of this weight vector checker. After calling check() the following will hold:
-                * Let h_lower and h_upper be two hyperplanes such that
-                * * the normal vector is the provided weight-vector
-                * * getLowerBoundsOfInitialStateResults() lies on h_lower and
-                * * getUpperBoundsOfInitialStateResults() lies on h_upper.
-                * Then the distance between the two hyperplanes is at most weightedPrecision */
+                // stores the precision of this weight vector checker.
                 ValueType weightedPrecision;
                 // Memory for the solution of the most recent call of check(..)
                 // becomes true after the first call of check(..)
@@ -148,11 +143,11 @@ namespace storm {
                 std::vector<ValueType> weightedResult;
                 // The results for the individual objectives (w.r.t. all states of the model)
                 std::vector<std::vector<ValueType>> objectiveResults;
-                // Stores for each objective the distance between the computed result (w.r.t. the initial state) and a lower/upper bound for the actual result.
+                // Stores for each objective the distance between the computed result (w.r.t. the initial state) and an over/under approximation for the actual result.
                 // The distances are stored as a (possibly negative) offset that has to be added (+) to to the objectiveResults.
-                std::vector<ValueType> offsetsToLowerBound;
-                std::vector<ValueType> offsetsToUpperBound;
-                // The scheduler that maximizes the weighted rewards
+                std::vector<ValueType> offsetsToUnderApproximation;
+                std::vector<ValueType> offsetsToOverApproximation;
+                // The scheduler that optimizes the weighted rewards
                 storm::storage::TotalScheduler scheduler;
                 
             };
