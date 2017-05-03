@@ -267,13 +267,8 @@ namespace storm {
                         digitizationError -= std::exp(-maxRate * timeBound) * storm::utility::pow(storm::utility::one<VT>() + maxRate * digitizationConstant, digitizedBound);
                         errorAwayFromZero += digitizationError;
                     }
-                    if (storm::solver::maximize(obj.optimizationDirection)) {
-                        this->offsetsToLowerBound[objIndex] = -errorTowardsZero;
-                        this->offsetsToUpperBound[objIndex] = errorAwayFromZero;
-                    } else {
-                        this->offsetsToLowerBound[objIndex] = -errorAwayFromZero;
-                        this->offsetsToUpperBound[objIndex] = errorTowardsZero;
-                    }
+                    this->offsetsToLowerBound[objIndex] = -errorTowardsZero;
+                    this->offsetsToUpperBound[objIndex] = errorAwayFromZero;
                 }
             } 
             
