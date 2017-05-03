@@ -95,7 +95,7 @@ namespace storm {
                 bool maxStepsPerformed() const;
                 
                 /*
-                 * Transforms the given point (or polytope) to values w.r.t. the original model (e.g. negates negative rewards for minimizing objectives).
+                 * Transforms the given point (or polytope) to values w.r.t. the original model/formula (e.g. negates values for minimizing objectives).
                  */
                 Point transformPointToOriginalModel(Point const& polytope) const;
                 std::shared_ptr<storm::storage::geometry::Polytope<GeometryValueType>> transformPolytopeToOriginalModel(std::shared_ptr<storm::storage::geometry::Polytope<GeometryValueType>> const& polytope) const;

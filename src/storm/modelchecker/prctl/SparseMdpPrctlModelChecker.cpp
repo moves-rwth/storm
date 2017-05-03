@@ -14,7 +14,7 @@
 
 #include "storm/modelchecker/prctl/helper/SparseMdpPrctlHelper.h"
 
-#include "storm/modelchecker/multiobjective/pcaa.h"
+#include "storm/modelchecker/multiobjective/multiObjectiveModelChecking.h"
 
 #include "storm/solver/LpSolver.h"
 
@@ -164,7 +164,7 @@ namespace storm {
         
         template<typename SparseMdpModelType>
         std::unique_ptr<CheckResult> SparseMdpPrctlModelChecker<SparseMdpModelType>::checkMultiObjectiveFormula(CheckTask<storm::logic::MultiObjectiveFormula, ValueType> const& checkTask) {
-            return multiobjective::performPcaa(this->getModel(), checkTask.getFormula());
+            return multiobjective::performMultiObjectiveModelChecking(this->getModel(), checkTask.getFormula());
         }
         
         template class SparseMdpPrctlModelChecker<storm::models::sparse::Mdp<double>>;

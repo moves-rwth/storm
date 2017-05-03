@@ -2,7 +2,7 @@
 
 #include "storm/modelchecker/csl/helper/SparseMarkovAutomatonCslHelper.h"
 
-#include "storm/modelchecker/multiobjective/pcaa.h"
+#include "storm/modelchecker/multiobjective/multiObjectiveModelChecking.h"
 
 #include "storm/models/sparse/StandardRewardModel.h"
 
@@ -121,7 +121,7 @@ namespace storm {
         
         template<typename SparseMarkovAutomatonModelType>
         std::unique_ptr<CheckResult> SparseMarkovAutomatonCslModelChecker<SparseMarkovAutomatonModelType>::checkMultiObjectiveFormula(CheckTask<storm::logic::MultiObjectiveFormula, ValueType> const& checkTask) {
-            return multiobjective::performPcaa(this->getModel(), checkTask.getFormula());
+            return multiobjective::performMultiObjectiveModelChecking(this->getModel(), checkTask.getFormula());
         }
         
         template class SparseMarkovAutomatonCslModelChecker<storm::models::sparse::MarkovAutomaton<double>>;
