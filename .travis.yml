@@ -10,9 +10,11 @@ matrix:
 
 before_install:
   - brew update
-  - brew install cln ginac autoconf cmake doxygen
-  - brew install boost --c++11
   - brew install gmp --c++11
+  - brew install cln
+  - brew install ginac
+  - brew install doxygen
+  - brew install boost --c++11
   - brew tap homebrew/science
   - brew install homebrew/science/glpk
   - brew install homebrew/science/hwloc
