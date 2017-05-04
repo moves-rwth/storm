@@ -1,0 +1,28 @@
+sudo: required
+language: cpp
+
+matrix:
+  include:
+    - compiler: clang
+      os: osx
+      osx_image: xcode8
+
+
+before_install:
+  - brew update
+  - brew install cln ginac autoconf cmake doxygen
+  - brew install boost --c++11
+  - brew install gmp --c++11
+  - brew tap homebrew/science
+  - brew install homebrew/science/glpk
+  - brew install homebrew/science/hwloc
+
+script:
+  - mkdir build
+  - cd build
+  - cmake ..
+  - make
+
+# Linux
+#- sudo apt-get  update -qq
+#- sudo apt-get install -qq  git cmake libboost-all-dev libcln-dev libgmp-dev libginac-dev automake doxygen libglpk-dev libhwloc-dev
