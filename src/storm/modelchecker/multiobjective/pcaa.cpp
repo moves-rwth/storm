@@ -80,7 +80,7 @@ namespace storm {
             template std::unique_ptr<CheckResult> performPcaa<storm::models::sparse::MarkovAutomaton<double>>(storm::models::sparse::MarkovAutomaton<double> const& model, storm::logic::MultiObjectiveFormula const& formula);
 #ifdef STORM_HAVE_CARL
             template std::unique_ptr<CheckResult> performPcaa<storm::models::sparse::Mdp<storm::RationalNumber>>(storm::models::sparse::Mdp<storm::RationalNumber> const& model, storm::logic::MultiObjectiveFormula const& formula);
-           // template std::unique_ptr<CheckResult> performPcaa<storm::models::sparse::MarkovAutomaton<storm::RationalNumber>>(storm::models::sparse::MarkovAutomaton<storm::RationalNumber> const& model, storm::logic::MultiObjectiveFormula const& formula);
+            template std::unique_ptr<CheckResult> performPcaa<storm::models::sparse::MarkovAutomaton<storm::RationalNumber>>(storm::models::sparse::MarkovAutomaton<storm::RationalNumber> const& model, storm::logic::MultiObjectiveFormula const& formula);
 #endif
 
         }
