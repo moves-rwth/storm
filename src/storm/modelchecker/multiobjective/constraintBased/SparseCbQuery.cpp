@@ -20,8 +20,9 @@ namespace storm {
             template <class SparseModelType>
             SparseCbQuery<SparseModelType>::SparseCbQuery(SparseMultiObjectivePreprocessorReturnType<SparseModelType>& preprocessorResult) :
                 originalModel(preprocessorResult.originalModel), originalFormula(preprocessorResult.originalFormula),
-                preprocessedModel(std::move(*preprocessorResult.preprocessedModel)), objectives(std::move(preprocessorResult.objectives)) {
-                
+                preprocessedModel(std::move(*preprocessorResult.preprocessedModel)), objectives(std::move(preprocessorResult.objectives)),
+                possibleBottomStates(std::move(preprocessorResult.possibleBottomStates)) {
+                expressionManager = std::make_shared<storm::expressions::ExpressionManager>();
             }
             
             

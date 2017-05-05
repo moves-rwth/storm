@@ -147,11 +147,25 @@ namespace storm {
                 if (objective.considersComplementaryEvent) {
                     if (objective.bound) {
                         objective.bound->threshold = objective.bound->threshold.getManager().rational(storm::utility::one<storm::RationalNumber>()) - objective.bound->threshold;
-                        objective.bound->comparisonType = storm::logic::invert(objective.bound->comparisonType);
+                        switch (objective.bound->comparisonType) {
+                            case storm::logic::ComparisonType::Greater:
+                                objective.bound->comparisonType = storm::logic::ComparisonType::Less;
+                                break;
+                            case storm::logic::ComparisonType::GreaterEqual:
+                                objective.bound->comparisonType = storm::logic::ComparisonType::LessEqual;
+                                break;
+                            case storm::logic::ComparisonType::Less:
+                                objective.bound->comparisonType = storm::logic::ComparisonType::Greater;
+                                break;
+                            case storm::logic::ComparisonType::LessEqual:
+                                objective.bound->comparisonType = storm::logic::ComparisonType::GreaterEqual;
+                                break;
+                            default:
+                                STORM_LOG_THROW(false, storm::exceptions::InvalidPropertyException, "Current objective " << formula << " has unexpected comparison type");
+                        }
                     }
                     objective.optimizationDirection = storm::solver::invert(objective.optimizationDirection);
                 }
-                
             }
             
             template<typename SparseModelType>
@@ -365,10 +379,13 @@ namespace storm {
                 if (mergerResult.targetState) {
                     storm::storage::BitVector targetStateAsVector(result.preprocessedModel->getNumberOfStates(), false);
                     targetStateAsVector.set(*mergerResult.targetState, true);
+                    // The overapproximation for the possible ec choices consists of the states that can reach the target states with prob. 0 and the target state itself.
                     result.possibleECChoices = result.preprocessedModel->getTransitionMatrix().getRowIndicesOfRowGroups(storm::utility::graph::performProb0E(*result.preprocessedModel, result.preprocessedModel->getBackwardTransitions(), storm::storage::BitVector(targetStateAsVector.size(), true), targetStateAsVector));
                     result.possibleECChoices.set(result.preprocessedModel->getTransitionMatrix().getRowGroupIndices()[*mergerResult.targetState], true);
                     // There is an additional state in the result
                     result.possibleBottomStates.resize(result.possibleBottomStates.size() + 1, true);
+                } else {
+                    result.possibleECChoices = storm::storage::BitVector(result.preprocessedModel->getNumberOfChoices(), true);
                 }
                 assert(result.possibleBottomStates.size() == result.preprocessedModel->getNumberOfStates());
                 

@@ -1,7 +1,10 @@
 #pragma once
 
+#include <memory>
+
 #include "storm/modelchecker/results/CheckResult.h"
 #include "storm/modelchecker/multiobjective/SparseMultiObjectivePreprocessorReturnType.h"
+#include "storm/storage/expressions/ExpressionManager.h"
 
 namespace storm {
     namespace modelchecker {
@@ -31,6 +34,10 @@ namespace storm {
                 
                 SparseModelType preprocessedModel;
                 std::vector<Objective<typename SparseModelType::ValueType>> objectives;
+                
+                std::shared_ptr<storm::expressions::ExpressionManager> expressionManager;
+                
+                storm::storage::BitVector possibleBottomStates;
                 
             };
             
