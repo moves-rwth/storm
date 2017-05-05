@@ -31,6 +31,7 @@ namespace storm {
             template class SparseCbQuery<storm::models::sparse::MarkovAutomaton<double>>;
             
             template class SparseCbQuery<storm::models::sparse::Mdp<storm::RationalNumber>>;
+            template class SparseCbQuery<storm::models::sparse::MarkovAutomaton<storm::RationalNumber>>;
 #endif
         }
     }

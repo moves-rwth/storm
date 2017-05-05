@@ -175,6 +175,20 @@ namespace storm {
                 }
                 return result;
             }
+            
+            template <>
+            std::vector<storm::RationalNumber> SparseCbAchievabilityQuery<storm::models::sparse::MarkovAutomaton<storm::RationalNumber>>::getActionBasedExpectedRewards(std::string const& rewardModelName) const {
+                auto const& rewModel = this->preprocessedModel.getRewardModel(rewardModelName);
+                STORM_LOG_ASSERT(!rewModel.hasTransitionRewards(), "Preprocessed Reward model has transition rewards which is not expected.");
+                std::vector<storm::RationalNumber> result = rewModel.hasStateActionRewards() ? rewModel.getStateActionRewardVector() : std::vector<storm::RationalNumber>(this->preprocessedModel.getNumberOfChoices(), storm::utility::zero<ValueType>());
+                if(rewModel.hasStateRewards()) {
+                    // Note that state rewards are earned over time and thus play no role for probabilistic states
+                    for(auto markovianState : this->preprocessedModel.getMarkovianStates()) {
+                        result[this->preprocessedModel.getTransitionMatrix().getRowGroupIndices()[markovianState]] += rewModel.getStateReward(markovianState) / this->preprocessedModel.getExitRate(markovianState);
+                    }
+                }
+                return result;
+            }
 
             template <>
             std::vector<storm::RationalNumber> SparseCbAchievabilityQuery<storm::models::sparse::Mdp<storm::RationalNumber>>::getActionBasedExpectedRewards(std::string const& rewardModelName) const {
@@ -187,7 +201,7 @@ namespace storm {
             template class SparseCbAchievabilityQuery<storm::models::sparse::MarkovAutomaton<double>>;
             
             template class SparseCbAchievabilityQuery<storm::models::sparse::Mdp<storm::RationalNumber>>;
-         //   template class SparseCbAchievabilityQuery<storm::models::sparse::MarkovAutomaton<storm::RationalNumber>>;
+            template class SparseCbAchievabilityQuery<storm::models::sparse::MarkovAutomaton<storm::RationalNumber>>;
 #endif
         }
     }

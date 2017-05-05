@@ -115,7 +115,7 @@ namespace storm {
             template std::unique_ptr<CheckResult> performMultiObjectiveModelChecking<storm::models::sparse::Mdp<double>>(storm::models::sparse::Mdp<double> const& model, storm::logic::MultiObjectiveFormula const& formula, MultiObjectiveMethodSelection methodSelection);
             template std::unique_ptr<CheckResult> performMultiObjectiveModelChecking<storm::models::sparse::MarkovAutomaton<double>>(storm::models::sparse::MarkovAutomaton<double> const& model, storm::logic::MultiObjectiveFormula const& formula, MultiObjectiveMethodSelection methodSelection);
             template std::unique_ptr<CheckResult> performMultiObjectiveModelChecking<storm::models::sparse::Mdp<storm::RationalNumber>>(storm::models::sparse::Mdp<storm::RationalNumber> const& model, storm::logic::MultiObjectiveFormula const& formula, MultiObjectiveMethodSelection methodSelection);
-           // template std::unique_ptr<CheckResult> performMultiObjectiveModelChecking<storm::models::sparse::MarkovAutomaton<storm::RationalNumber>>(storm::models::sparse::MarkovAutomaton<storm::RationalNumber> const& model, storm::logic::MultiObjectiveFormula const& formula, MultiObjectiveMethodSelection methodSelection);
+            template std::unique_ptr<CheckResult> performMultiObjectiveModelChecking<storm::models::sparse::MarkovAutomaton<storm::RationalNumber>>(storm::models::sparse::MarkovAutomaton<storm::RationalNumber> const& model, storm::logic::MultiObjectiveFormula const& formula, MultiObjectiveMethodSelection methodSelection);
 
         }
     }

@@ -6,7 +6,6 @@
 
 #include "storm/modelchecker/multiobjective/pcaa/SparsePcaaWeightVectorChecker.h"
 #include "storm/solver/LinearEquationSolver.h"
-#include "storm/solver/GmmxxLinearEquationSolver.h"
 #include "storm/solver/MinMaxLinearEquationSolver.h"
 #include "storm/utility/NumberTraits.h"
 
@@ -70,7 +69,7 @@ namespace storm {
                 };
                 
                 struct LinEqSolverData {
-                    storm::solver::GmmxxLinearEquationSolverFactory<ValueType> factory;
+                    std::unique_ptr<storm::solver::LinearEquationSolverFactory<ValueType>> factory;
                     std::unique_ptr<storm::solver::LinearEquationSolver<ValueType>> solver;
                     std::vector<ValueType> b;
                 };
@@ -123,6 +122,9 @@ namespace storm {
                 /*!
                  * Initializes the data for the LinEq solver
                  */
+                template <typename VT = ValueType, typename std::enable_if<storm::NumberTraits<VT>::SupportsExponential, int>::type = 0>
+                std::unique_ptr<LinEqSolverData> initLinEqSolver(SubModel const& PS) const;
+                template <typename VT = ValueType, typename std::enable_if<!storm::NumberTraits<VT>::SupportsExponential, int>::type = 0>
                 std::unique_ptr<LinEqSolverData> initLinEqSolver(SubModel const& PS) const;
                 
                 /*
