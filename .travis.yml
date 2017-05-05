@@ -67,6 +67,10 @@ matrix:
 #    script: export OS=osx; export COMPILER='clang-default'; export STL='libc++'; extras/scripts/postsubmit.sh
 #      DebugPlain
 
+cache:
+  directories:
+  - build
+
 services:
 - docker
 sudo: required

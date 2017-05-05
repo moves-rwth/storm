@@ -92,8 +92,8 @@ ReleasePlain)         CMAKE_ARGS=(-DCMAKE_BUILD_TYPE=Release -DCMAKE_CXX_FLAGS="
 *) echo "Error: you need to specify one of the supported postsubmit modes (see postsubmit.sh)."; exit 1 ;;
 esac
 
-rm -rf build
-mkdir build
+#rm -rf build
+mkdir -p build
 cd build
 cmake .. "${CMAKE_ARGS[@]}"
 echo
