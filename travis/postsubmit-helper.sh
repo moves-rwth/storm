@@ -78,7 +78,7 @@ clang-default)
 esac
 
 run_make() {
-  make -j$N_JOBS
+  make storm -j$N_JOBS
 }
 
 # Build
