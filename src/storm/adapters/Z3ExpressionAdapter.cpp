@@ -54,6 +54,24 @@ namespace storm {
                                     return manager.boolean(false);
                             case Z3_OP_EQ:
                                     return this->translateExpression(expr.arg(0)) == this->translateExpression(expr.arg(1));
+                            case Z3_OP_DISTINCT: {
+                                    unsigned args = expr.num_args();
+                                    STORM_LOG_THROW(args != 0, storm::exceptions::ExpressionEvaluationException, "Failed to convert Z3 expression. DISTINCT (mutual != ) operator with 0-arity is assumed to be an error.");
+                                    if (args == 1) {
+                                        return manager.boolean(true);
+                                    } else {
+                                        storm::expressions::Expression retVal = this->translateExpression(expr.arg(0)) != this->translateExpression(expr.arg(1));
+                                        for (unsigned arg2 = 2; arg2 < args; ++arg2) {
+                                            retVal = retVal && (this->translateExpression(expr.arg(0)) != this->translateExpression(expr.arg(arg2)));
+                                        }
+                                        for (unsigned arg1 = 1; arg1 < args; ++arg1) {
+                                            for (unsigned arg2 = arg1 + 1; arg2 < args; ++arg2) {
+                                                retVal = retVal && (this->translateExpression(expr.arg(arg1)) != this->translateExpression(expr.arg(arg2)));
+                                            }
+                                        }
+                                        return retVal;
+                                    }
+                            }
                             case Z3_OP_ITE:
                                     return storm::expressions::ite(this->translateExpression(expr.arg(0)), this->translateExpression(expr.arg(1)), this->translateExpression(expr.arg(2)));
                             case Z3_OP_AND: {
@@ -133,7 +151,7 @@ namespace storm {
                                 STORM_LOG_THROW(expr.is_const(), storm::exceptions::ExpressionEvaluationException, "Failed to convert Z3 expression. Encountered non-constant uninterpreted function.");
                                 return manager.getVariable(expr.decl().name().str()).getExpression();
                             default:
-                                STORM_LOG_THROW(false, storm::exceptions::ExpressionEvaluationException, "Failed to convert Z3 expression. Encountered unhandled Z3_decl_kind " << expr.decl().kind() <<".");
+                                STORM_LOG_THROW(false, storm::exceptions::ExpressionEvaluationException, "Failed to convert Z3 expression. Encountered unhandled Z3_decl_kind " << expr.decl().decl_kind() <<".");
                                 break;
                         }
                     } else {
