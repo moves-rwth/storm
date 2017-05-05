@@ -25,7 +25,7 @@ linux)
 #        export STLARG=$STLARG;
 #        export ASAN_OPTIONS=$ASAN_OPTIONS;
 #        export OS=$OS;
-#        cd fruit; extras/scripts/postsubmit-helper.sh $1"
+#        cd fruit; travis/postsubmit-helper.sh $1"
 #    exit $?
     ;;
 
@@ -35,7 +35,7 @@ osx)
     export STLARG
     export ASAN_OPTIONS
     export OS
-    extras/scripts/postsubmit-helper.sh "$@"
+    travis/postsubmit-helper.sh "$@"
     exit $?
     ;;
 
