@@ -114,6 +114,8 @@ TASK_IMPL_2(MTBDD, sylvan_storm_rational_function_op_plus, MTBDD*, pa, MTBDD*, p
     /* Check for partial functions */
     if (a == mtbdd_false) return b;
     if (b == mtbdd_false) return a;
+    
+    if (a == mtbdd_true || b == mtbdd_true) return mtbdd_true;
 
     /* If both leaves, compute plus */
     if (mtbdd_isleaf(a) && mtbdd_isleaf(b)) {
@@ -163,6 +165,8 @@ TASK_IMPL_2(MTBDD, sylvan_storm_rational_function_op_times, MTBDD*, pa, MTBDD*, 
 
     /* Check for partial functions */
     if (a == mtbdd_false || b == mtbdd_false) return mtbdd_false;
+    if (a == mtbdd_true) return b;
+    if (b == mtbdd_true) return a;
 
     /* If both leaves, compute multiplication */
     if (mtbdd_isleaf(a) && mtbdd_isleaf(b)) {

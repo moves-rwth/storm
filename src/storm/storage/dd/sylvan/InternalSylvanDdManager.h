@@ -69,6 +69,14 @@ namespace storm {
             InternalAdd<DdType::Sylvan, ValueType> getAddZero() const;
             
             /*!
+             * Retrieves an ADD representing an undefined value.
+             *
+             * @return An ADD representing an undefined value.
+             */
+            template<typename ValueType>
+            InternalAdd<DdType::Sylvan, ValueType> getAddUndefined() const;
+            
+            /*!
              * Retrieves an ADD representing the constant function with the given value.
              *
              * @return An ADD representing the constant function with the given value.

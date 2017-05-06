@@ -99,16 +99,24 @@ list(APPEND STORM_DEP_TARGETS ExprTk)
 
 # Use the shipped version of Sparsepp
 message (STATUS "Storm - Including Sparsepp.")
-include_directories("${PROJECT_SOURCE_DIR}/resources/3rdparty/sparsepp")
+set(SPARSEPP_INCLUDE_DIR "${PROJECT_SOURCE_DIR}/resources/3rdparty/sparsepp/sparsepp")
+file(GLOB SPARSEPP_HEADERS "${SPARSEPP_INCLUDE_DIR}/*.h")
 
-# Add sparsepp.h to the headers that are copied to the include directory in thebuild directory.
-add_custom_command(
-	OUTPUT ${CMAKE_BINARY_DIR}/include/resources/3rdparty/sparsepp/sparsepp.h
-	COMMAND ${CMAKE_COMMAND} -E make_directory ${CMAKE_BINARY_DIR}/include/resources/3rdparty/sparsepp
-	COMMAND ${CMAKE_COMMAND} -E copy ${PROJECT_SOURCE_DIR}/resources/3rdparty/sparsepp/sparsepp.h ${CMAKE_BINARY_DIR}/include/resources/3rdparty/sparsepp/sparsepp.h
-	DEPENDS ${PROJECT_SOURCE_DIR}/resources/3rdparty/sparsepp/sparsepp.h
-)
-list(APPEND STORM_RESOURCES_HEADERS "${CMAKE_BINARY_DIR}/include/resources/3rdparty/sparsepp/sparsepp.h")
+# Add the sparsepp headers to the headers that are copied to the include directory in the build directory.
+set(SPARSEPP_BINDIR_DIR ${CMAKE_BINARY_DIR}/include/resources/3rdparty/sparsepp)
+include_directories("${SPARSEPP_BINDIR_DIR}")
+foreach(HEADER ${SPARSEPP_HEADERS})
+    string(REGEX REPLACE "${PROJECT_SOURCE_DIR}/src/?" "" RELATIVE_HEADER_PATH ${HEADER})
+    string(REGEX MATCH "(.*)[/\\]" RELATIVE_DIRECTORY ${RELATIVE_HEADER_PATH})
+    string(REGEX REPLACE "${RELATIVE_DIRECTORY}/?" "" HEADER_FILENAME ${RELATIVE_HEADER_PATH})
+    add_custom_command(
+        OUTPUT ${SPARSEPP_BINDIR_DIR}/sparsepp/${HEADER_FILENAME}
+        COMMAND ${CMAKE_COMMAND} -E make_directory ${SPARSEPP_BINDIR_DIR}/sparsepp
+        COMMAND ${CMAKE_COMMAND} -E copy ${HEADER} ${SPARSEPP_BINDIR_DIR}/sparsepp/${HEADER_FILENAME}
+        DEPENDS ${SPARSEPP_INCLUDE_DIR}/${HEADER_FILENAME}
+    )
+    list(APPEND SPARSEPP_BINDIR_HEADERS ${SPARSEPP_BINDIR_DIR}/sparsepp/${HEADER_FILENAME})
+endforeach()
 
 #############################################################
 ##
@@ -380,7 +388,6 @@ ExternalProject_Add(
         LOG_CONFIGURE ON
         LOG_BUILD ON
         BUILD_BYPRODUCTS ${STORM_3RDPARTY_BINARY_DIR}/sylvan/src/libsylvan${STATIC_EXT}
-        BUILD_ALWAYS 1
 )
 
 ExternalProject_Get_Property(sylvan source_dir)
@@ -626,4 +633,4 @@ if(ENABLE_CUDA)
     include_directories("${PROJECT_SOURCE_DIR}/cuda/kernels/")
 endif()
 
-add_custom_target(copy_resources_headers DEPENDS ${CMAKE_BINARY_DIR}/include/resources/3rdparty/sparsepp/sparsepp.h ${CMAKE_BINARY_DIR}/include/resources/3rdparty/sparsepp/sparsepp.h)
+add_custom_target(copy_resources_headers DEPENDS ${SPARSEPP_BINDIR_HEADERS})

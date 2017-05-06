@@ -357,6 +357,11 @@ namespace storm {
         }
         
         template<DdType LibraryType>
+        InternalBdd<LibraryType> const& Bdd<LibraryType>::getInternalBdd() const {
+            return internalBdd;
+        }
+        
+        template<DdType LibraryType>
         template<typename ValueType>
         std::vector<ValueType> Bdd<LibraryType>::filterExplicitVector(Odd const& odd, std::vector<ValueType> const& values) const {
             std::vector<ValueType> result(this->getNonZeroCount());

@@ -42,6 +42,12 @@ namespace storm {
         Add<LibraryType, ValueType> DdManager<LibraryType>::getAddZero() const {
             return Add<LibraryType, ValueType>(*this, internalDdManager.template getAddZero<ValueType>());
         }
+
+        template<DdType LibraryType>
+        template<typename ValueType>
+        Add<LibraryType, ValueType> DdManager<LibraryType>::getAddUndefined() const {
+            return Add<LibraryType, ValueType>(*this, internalDdManager.template getAddUndefined<ValueType>());
+        }
         
         template<DdType LibraryType>
         template<typename ValueType>
@@ -460,7 +466,6 @@ namespace storm {
         template Add<DdType::CUDD, double> DdManager<DdType::CUDD>::getIdentity(storm::expressions::Variable const& variable) const;
         template Add<DdType::CUDD, uint_fast64_t> DdManager<DdType::CUDD>::getIdentity(storm::expressions::Variable const& variable) const;
         
-        
         template class DdManager<DdType::Sylvan>;
         
         template Add<DdType::Sylvan, double> DdManager<DdType::Sylvan>::getAddZero() const;
@@ -470,6 +475,13 @@ namespace storm {
 		template Add<DdType::Sylvan, storm::RationalFunction> DdManager<DdType::Sylvan>::getAddZero() const;
 #endif
         
+        template Add<DdType::Sylvan, double> DdManager<DdType::Sylvan>::getAddUndefined() const;
+        template Add<DdType::Sylvan, uint_fast64_t> DdManager<DdType::Sylvan>::getAddUndefined() const;
+#ifdef STORM_HAVE_CARL
+        template Add<DdType::Sylvan, storm::RationalNumber> DdManager<DdType::Sylvan>::getAddUndefined() const;
+        template Add<DdType::Sylvan, storm::RationalFunction> DdManager<DdType::Sylvan>::getAddUndefined() const;
+#endif
+
         template Add<DdType::Sylvan, double> DdManager<DdType::Sylvan>::getAddOne() const;
         template Add<DdType::Sylvan, uint_fast64_t> DdManager<DdType::Sylvan>::getAddOne() const;
 #ifdef STORM_HAVE_CARL

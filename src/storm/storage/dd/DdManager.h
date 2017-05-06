@@ -73,6 +73,14 @@ namespace storm {
             Add<LibraryType, ValueType> getAddZero() const;
 
             /*!
+             * Retrieves an ADD representing the an undefined value.
+             *
+             * @return An ADD representing an undefined value.
+             */
+            template<typename ValueType>
+            Add<LibraryType, ValueType> getAddUndefined() const;
+
+            /*!
              * Retrieves an ADD representing the constant infinity function.
              *
              * @return An ADD representing the constant infinity function.

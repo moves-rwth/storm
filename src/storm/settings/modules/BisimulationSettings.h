@@ -15,6 +15,8 @@ namespace storm {
                 // An enumeration of all available bisimulation types.
                 enum class BisimulationType { Strong, Weak };
                 
+                enum class CachingStrategy { FullDirect, FullLate, Granularity, Minimal };
+                
                 /*!
                  * Creates a new set of bisimulation settings.
                  */

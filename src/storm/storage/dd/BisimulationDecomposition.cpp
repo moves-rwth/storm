@@ -1,5 +1,6 @@
 #include "storm/storage/dd/BisimulationDecomposition.h"
 
+#include "storm/storage/dd/bisimulation/SignatureComputer.h"
 #include "storm/storage/dd/bisimulation/SignatureRefiner.h"
 
 #include "storm/utility/macros.h"
@@ -26,46 +27,52 @@ namespace storm {
         
         template <storm::dd::DdType DdType, typename ValueType>
         void BisimulationDecomposition<DdType, ValueType>::compute() {
-//            LACE_ME;
-            
-            auto partitionRefinementStart = std::chrono::high_resolution_clock::now();
             this->status = Status::InComputation;
+            auto start = std::chrono::high_resolution_clock::now();
+            std::chrono::high_resolution_clock::duration totalSignatureTime(0);
+            std::chrono::high_resolution_clock::duration totalRefinementTime(0);
             
             STORM_LOG_TRACE("Initial partition has " << currentPartition.getNumberOfBlocks() << " blocks.");
 #ifndef NDEBUG
-            STORM_LOG_TRACE("Initial partition ADD has " << currentPartition.getPartitionAdd().getNodeCount() << " nodes.");
+            STORM_LOG_TRACE("Initial partition has " << currentPartition.getNodeCount() << " nodes.");
 #endif
             
             SignatureRefiner<DdType, ValueType> refiner(model.getManager(), currentPartition.getBlockVariable(), model.getRowVariables());
+            SignatureComputer<DdType, ValueType> signatureComputer(model);
             bool done = false;
             uint64_t iterations = 0;
             while (!done) {
-//                currentPartition.getPartitionAdd().exportToDot("part" + std::to_string(iterations) + ".dot");
-                Signature<DdType, ValueType> signature(model.getTransitionMatrix().multiplyMatrix(currentPartition.getPartitionAdd(), model.getColumnVariables()));
-//                signature.getSignatureAdd().exportToDot("sig" + std::to_string(iterations) + ".dot");
-#ifndef NDEBUG
-                STORM_LOG_TRACE("Computed signature ADD with " << signature.getSignatureAdd().getNodeCount() << " nodes.");
-#endif
-                
-                Partition<DdType, ValueType> newPartition = refiner.refine(currentPartition, signature);
+                ++iterations;
+                auto iterationStart = std::chrono::high_resolution_clock::now();
 
-                STORM_LOG_TRACE("New partition has " << newPartition.getNumberOfBlocks() << " blocks.");
-#ifndef NDEBUG
-                STORM_LOG_TRACE("Computed new partition ADD with " << newPartition.getPartitionAdd().getNodeCount() << " nodes.");
-#endif
-//                STORM_LOG_TRACE("Current #nodes in table " << llmsset_count_marked(nodes) << " of " << llmsset_get_size(nodes) << " BDD nodes.");
+                auto signatureStart = std::chrono::high_resolution_clock::now();
+                Signature<DdType, ValueType> signature = signatureComputer.compute(currentPartition);
+                auto signatureEnd = std::chrono::high_resolution_clock::now();
+                totalSignatureTime += (signatureEnd - signatureStart);
                 
+                auto refinementStart = std::chrono::high_resolution_clock::now();
+                Partition<DdType, ValueType> newPartition = refiner.refine(currentPartition, signature);
+//                newPartition.getPartitionAdd().exportToDot("part" + std::to_string(iterations) + ".dot");
+                auto refinementEnd = std::chrono::high_resolution_clock::now();
+                totalRefinementTime += (refinementEnd - refinementStart);
+                
+                auto signatureTime = std::chrono::duration_cast<std::chrono::milliseconds>(signatureEnd - signatureStart).count();
+                auto refinementTime = std::chrono::duration_cast<std::chrono::milliseconds>(refinementEnd - refinementStart).count();
+                auto iterationTime = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::high_resolution_clock::now() - iterationStart).count();
+                STORM_LOG_DEBUG("Iteration " << iterations << " produced " << newPartition.getNumberOfBlocks() << " blocks and was completed in " << iterationTime << "ms (signature: " << signatureTime << "ms, refinement: " << refinementTime << "ms). Signature DD has " << signature.getSignatureAdd().getNodeCount() << " nodes and partition DD has " << currentPartition.getNodeCount() << " nodes.");
+
                 if (currentPartition == newPartition) {
                     done = true;
                 } else {
                     currentPartition = newPartition;
                 }
-                ++iterations;
             }
 
             this->status = Status::FixedPoint;
-            auto partitionRefinementEnd = std::chrono::high_resolution_clock::now();
-            STORM_LOG_DEBUG("Partition refinement completed in " << std::chrono::duration_cast<std::chrono::milliseconds>(partitionRefinementEnd - partitionRefinementStart).count() << "ms (" << iterations << " iterations).");
+            auto end = std::chrono::high_resolution_clock::now();
+            auto totalSignatureTimeInMilliseconds = std::chrono::duration_cast<std::chrono::milliseconds>(totalSignatureTime).count();
+            auto totalRefinementTimeInMilliseconds = std::chrono::duration_cast<std::chrono::milliseconds>(totalRefinementTime).count();
+            STORM_LOG_DEBUG("Partition refinement completed in " << std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count() << "ms (" << iterations << " iterations, signature: " << totalSignatureTimeInMilliseconds << "ms, refinement: " << totalRefinementTimeInMilliseconds << "ms).");
         }
         
         template <storm::dd::DdType DdType, typename ValueType>

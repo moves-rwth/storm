@@ -376,6 +376,20 @@ namespace storm {
 
             friend struct std::hash<storm::dd::InternalBdd<storm::dd::DdType::Sylvan>>;
             
+            /*!
+             * Retrieves the sylvan BDD.
+             *
+             * @return The sylvan BDD.
+             */
+            sylvan::Bdd& getSylvanBdd();
+            
+            /*!
+             * Retrieves the sylvan BDD.
+             *
+             * @return The sylvan BDD.
+             */
+            sylvan::Bdd const& getSylvanBdd() const;
+            
         private:
             /*!
              * Builds a BDD representing the values that make the given filter function evaluate to true.
@@ -474,19 +488,6 @@ namespace storm {
              */
             static storm::expressions::Variable toExpressionRec(BDD dd, storm::expressions::ExpressionManager& manager, std::vector<storm::expressions::Expression>& expressions, std::unordered_map<uint_fast64_t, storm::expressions::Variable>& indexToVariableMap, std::unordered_map<std::pair<uint_fast64_t, uint_fast64_t>, storm::expressions::Variable>& countIndexToVariablePair, std::unordered_map<BDD, uint_fast64_t>& nodeToCounterMap, std::vector<uint_fast64_t>& nextCounterForIndex);
             
-            /*!
-             * Retrieves the sylvan BDD.
-             *
-             * @return The sylvan BDD.
-             */
-            sylvan::Bdd& getSylvanBdd();
-
-            /*!
-             * Retrieves the sylvan BDD.
-             *
-             * @return The sylvan BDD.
-             */
-            sylvan::Bdd const& getSylvanBdd() const;
             
             // The internal manager responsible for this BDD.
             InternalDdManager<DdType::Sylvan> const* ddManager;

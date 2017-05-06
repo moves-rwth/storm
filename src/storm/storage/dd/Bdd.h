@@ -29,6 +29,15 @@ namespace storm {
             template<DdType LibraryTypePrime, typename ValueTypePrime>
             friend class Add;
             
+            /*!
+             * Creates a DD that encapsulates the given internal BDD.
+             *
+             * @param ddManager The manager responsible for this DD.
+             * @param internalBdd The internal BDD to store.
+             * @param containedMetaVariables The meta variables that appear in the DD.
+             */
+            Bdd(DdManager<LibraryType> const& ddManager, InternalBdd<LibraryType> const& internalBdd, std::set<storm::expressions::Variable> const& containedMetaVariables = std::set<storm::expressions::Variable>());
+            
             // Instantiate all copy/move constructors/assignments with the default implementation.
             Bdd() = default;
             Bdd(Bdd<LibraryType> const& other) = default;
@@ -353,6 +362,11 @@ namespace storm {
              */
             storm::storage::BitVector filterExplicitVector(Odd const& odd, storm::storage::BitVector const& values) const;
             
+            /*!
+             * Retrieves the internal BDD.
+             */
+            InternalBdd<LibraryType> const& getInternalBdd() const;
+            
             friend struct std::hash<storm::dd::Bdd<LibraryType>>;
             
             template<DdType LibraryTypePrime, typename ValueType>
@@ -363,15 +377,6 @@ namespace storm {
              * We provide a conversion operator from the BDD to its internal type to ease calling the internal functions.
              */
             operator InternalBdd<LibraryType>() const;
-            
-            /*!
-             * Creates a DD that encapsulates the given internal BDD.
-             *
-             * @param ddManager The manager responsible for this DD.
-             * @param internalBdd The internal BDD to store.
-             * @param containedMetaVariables The meta variables that appear in the DD.
-             */
-            Bdd(DdManager<LibraryType> const& ddManager, InternalBdd<LibraryType> const& internalBdd, std::set<storm::expressions::Variable> const& containedMetaVariables = std::set<storm::expressions::Variable>());
             
             // The internal BDD that depends on the chosen library.
             InternalBdd<LibraryType> internalBdd;

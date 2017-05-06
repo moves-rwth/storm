@@ -6,6 +6,8 @@
 #include "storm/settings/Argument.h"
 #include "storm/settings/SettingsManager.h"
 
+#include "storm/exceptions/InvalidSettingsException.h"
+
 namespace storm {
     namespace settings {
         namespace modules {

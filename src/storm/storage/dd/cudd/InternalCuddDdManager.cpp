@@ -3,6 +3,8 @@
 #include "storm/settings/SettingsManager.h"
 #include "storm/settings/modules/CuddSettings.h"
 
+#include "storm/exceptions/NotSupportedException.h"
+
 namespace storm {
     namespace dd {
         
@@ -55,7 +57,12 @@ namespace storm {
         InternalAdd<DdType::CUDD, ValueType> InternalDdManager<DdType::CUDD>::getAddZero() const {
             return InternalAdd<DdType::CUDD, ValueType>(this, cuddManager.addZero());
         }
-        
+
+        template<typename ValueType>
+        InternalAdd<DdType::CUDD, ValueType> InternalDdManager<DdType::CUDD>::getAddUndefined() const {
+            STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Undefined values are not supported by CUDD.");
+        }
+
         template<typename ValueType>
         InternalAdd<DdType::CUDD, ValueType> InternalDdManager<DdType::CUDD>::getConstant(ValueType const& value) const {
             return InternalAdd<DdType::CUDD, ValueType>(this, cuddManager.constant(value));

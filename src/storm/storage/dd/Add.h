@@ -339,7 +339,18 @@ namespace storm {
              * @return An ADD representing the result of the matrix-matrix multiplication.
              */
             Add<LibraryType, ValueType> multiplyMatrix(Add<LibraryType, ValueType> const& otherMatrix, std::set<storm::expressions::Variable> const& summationMetaVariables) const;
-            
+
+            /*!
+             * Multiplies the current ADD (representing a matrix) with the given matrix (given by a BDD) by summing over
+             * the given meta variables.
+             *
+             * @param otherMatrix The matrix with which to multiply.
+             * @param summationMetaVariables The names of the meta variables over which to sum during the matrix-
+             * matrix multiplication.
+             * @return An ADD representing the result of the matrix-matrix multiplication.
+             */
+            Add<LibraryType, ValueType> multiplyMatrix(Bdd<LibraryType> const& otherMatrix, std::set<storm::expressions::Variable> const& summationMetaVariables) const;
+
             /*!
              * Computes a BDD that represents the function in which all assignments with a function value strictly
              * larger than the given value are mapped to one and all others to zero.

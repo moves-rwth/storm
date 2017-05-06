@@ -17,6 +17,17 @@
 
 namespace storm {
     namespace dd {
+        
+#ifndef NDEBUG
+        VOID_TASK_0(gc_start) {
+            STORM_LOG_TRACE("Starting sylvan garbage collection...");
+        }
+        
+        VOID_TASK_0(gc_end) {
+            STORM_LOG_TRACE("Sylvan garbage collection done.");
+        }
+#endif
+        
         uint_fast64_t InternalDdManager<DdType::Sylvan>::numberOfInstances = 0;
         
         // It is important that the variable pairs start at an even offset, because sylvan assumes this to be true for
@@ -50,15 +61,27 @@ namespace storm {
                 
                 STORM_LOG_THROW(powerOfTwo >= 16, storm::exceptions::InvalidSettingsException, "Too little memory assigned to sylvan.");
                 
-                if ((((1ull << powerOfTwo) + (1ull << (powerOfTwo - 1)))) < totalNodesToStore) {
-                    sylvan::Sylvan::initPackage(1ull << powerOfTwo, 1ull << powerOfTwo, 1ull << (powerOfTwo - 1), 1ull << (powerOfTwo - 1));
-                } else {
-                    sylvan::Sylvan::initPackage(1ull << (powerOfTwo - 1), 1ull << (powerOfTwo - 1), 1ull << (powerOfTwo - 1), 1ull << (powerOfTwo - 1));
+                uint64_t maxTableSize = 1ull << powerOfTwo;
+                uint64_t maxCacheSize = 1ull << (powerOfTwo - 1);
+                if (maxTableSize + maxCacheSize > totalNodesToStore) {
+                    maxTableSize >>= 1;
                 }
-                sylvan::Sylvan::setGranularity(3);
+                
+                uint64_t initialTableSize = 1ull << std::max(powerOfTwo - 4, 16ull);
+                uint64_t initialCacheSize = 1ull << std::max(powerOfTwo - 4, 16ull);
+                
+                STORM_LOG_DEBUG("Initializing sylvan. Initial/max table size: " << initialTableSize << "/" << maxTableSize << ", initial/max cache size: " << initialCacheSize << "/" << maxCacheSize << ".");
+                sylvan::Sylvan::initPackage(initialTableSize, maxTableSize, initialCacheSize, maxCacheSize);
+
                 sylvan::Sylvan::initBdd();
                 sylvan::Sylvan::initMtbdd();
                 sylvan::Sylvan::initCustomMtbdd();
+                
+#ifndef NDEBUG
+                sylvan_gc_hook_pregc(TASK(gc_start));
+                sylvan_gc_hook_postgc(TASK(gc_end));
+#endif
+
             }
             ++numberOfInstances;
         }
@@ -127,7 +150,12 @@ namespace storm {
 			return InternalAdd<DdType::Sylvan, storm::RationalFunction>(this, sylvan::Mtbdd::stormRationalFunctionTerminal(storm::utility::zero<storm::RationalFunction>()));
 		}
 #endif
-        
+
+        template<typename ValueType>
+        InternalAdd<DdType::Sylvan, ValueType> InternalDdManager<DdType::Sylvan>::getAddUndefined() const {
+            return InternalAdd<DdType::Sylvan, ValueType>(this, sylvan::Mtbdd(sylvan::Bdd::bddZero()));
+        }
+
         template<>
         InternalAdd<DdType::Sylvan, double> InternalDdManager<DdType::Sylvan>::getConstant(double const& value) const {
             return InternalAdd<DdType::Sylvan, double>(this, sylvan::Mtbdd::doubleTerminal(value));
@@ -199,6 +227,15 @@ namespace storm {
 
 #ifdef STORM_HAVE_CARL
 		template InternalAdd<DdType::Sylvan, storm::RationalFunction> InternalDdManager<DdType::Sylvan>::getAddZero() const;
+#endif
+
+        template InternalAdd<DdType::Sylvan, double> InternalDdManager<DdType::Sylvan>::getAddUndefined() const;
+        template InternalAdd<DdType::Sylvan, uint_fast64_t> InternalDdManager<DdType::Sylvan>::getAddUndefined() const;
+        
+        template InternalAdd<DdType::Sylvan, storm::RationalNumber> InternalDdManager<DdType::Sylvan>::getAddUndefined() const;
+
+#ifdef STORM_HAVE_CARL
+        template InternalAdd<DdType::Sylvan, storm::RationalFunction> InternalDdManager<DdType::Sylvan>::getAddUndefined() const;
 #endif
         
         template InternalAdd<DdType::Sylvan, double> InternalDdManager<DdType::Sylvan>::getConstant(double const& value) const;

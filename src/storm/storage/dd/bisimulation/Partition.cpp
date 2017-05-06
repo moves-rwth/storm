@@ -7,20 +7,30 @@ namespace storm {
         namespace bisimulation {
             
             template<storm::dd::DdType DdType, typename ValueType>
-            Partition<DdType, ValueType>::Partition(storm::dd::Add<DdType, ValueType> const& partitionAdd, storm::expressions::Variable const& blockVariable, uint64_t nextFreeBlockIndex) : partitionAdd(partitionAdd), blockVariable(blockVariable), nextFreeBlockIndex(nextFreeBlockIndex) {
+            Partition<DdType, ValueType>::Partition(storm::dd::Add<DdType, ValueType> const& partitionAdd, storm::expressions::Variable const& blockVariable, uint64_t nextFreeBlockIndex) : partition(partitionAdd), blockVariable(blockVariable), nextFreeBlockIndex(nextFreeBlockIndex) {
                 // Intentionally left empty.
             }
-            
+
+            template<storm::dd::DdType DdType, typename ValueType>
+            Partition<DdType, ValueType>::Partition(storm::dd::Bdd<DdType> const& partitionBdd, storm::expressions::Variable const& blockVariable, uint64_t nextFreeBlockIndex) : partition(partitionBdd), blockVariable(blockVariable), nextFreeBlockIndex(nextFreeBlockIndex) {
+                // Intentionally left empty.
+            }
+
             template<storm::dd::DdType DdType, typename ValueType>
             bool Partition<DdType, ValueType>::operator==(Partition<DdType, ValueType> const& other) {
-                return this->partitionAdd == other.partitionAdd && this->blockVariable == other.blockVariable && this->nextFreeBlockIndex == other.nextFreeBlockIndex;
+                return this->partition == other.partition && this->blockVariable == other.blockVariable && this->nextFreeBlockIndex == other.nextFreeBlockIndex;
             }
             
             template<storm::dd::DdType DdType, typename ValueType>
-            Partition<DdType, ValueType> Partition<DdType, ValueType>::replacePartitionAdd(storm::dd::Add<DdType, ValueType> const& newPartitionAdd, uint64_t nextFreeBlockIndex) const {
+            Partition<DdType, ValueType> Partition<DdType, ValueType>::replacePartition(storm::dd::Add<DdType, ValueType> const& newPartitionAdd, uint64_t nextFreeBlockIndex) const {
                 return Partition<DdType, ValueType>(newPartitionAdd, blockVariable, nextFreeBlockIndex);
             }
-            
+
+            template<storm::dd::DdType DdType, typename ValueType>
+            Partition<DdType, ValueType> Partition<DdType, ValueType>::replacePartition(storm::dd::Bdd<DdType> const& newPartitionBdd, uint64_t nextFreeBlockIndex) const {
+                return Partition<DdType, ValueType>(newPartitionBdd, blockVariable, nextFreeBlockIndex);
+            }
+
             template<storm::dd::DdType DdType, typename ValueType>
             Partition<DdType, ValueType> Partition<DdType, ValueType>::create(storm::models::symbolic::Model<DdType, ValueType> const& model) {
                 return create(model, model.getLabels());
@@ -45,8 +55,14 @@ namespace storm {
                 }
                 
                 storm::expressions::Variable blockVariable = createBlockVariable(manager, model.getReachableStates().getNonZeroCount());
-                std::pair<storm::dd::Add<DdType, ValueType>, uint64_t> partitionAddAndBlockCount = createPartitionAdd(manager, model, stateSets, blockVariable);
-                return Partition<DdType, ValueType>(partitionAddAndBlockCount.first, blockVariable, partitionAddAndBlockCount.second);
+                std::pair<storm::dd::Bdd<DdType>, uint64_t> partitionBddAndBlockCount = createPartitionBdd(manager, model, stateSets, blockVariable);
+                
+                // Store the partition as an ADD only in the case of CUDD.
+                if (DdType == storm::dd::DdType::CUDD) {
+                    return Partition<DdType, ValueType>(partitionBddAndBlockCount.first.template toAdd<ValueType>(), blockVariable, partitionBddAndBlockCount.second);
+                } else {
+                    return Partition<DdType, ValueType>(partitionBddAndBlockCount.first, blockVariable, partitionBddAndBlockCount.second);
+                }
             }
             
             template<storm::dd::DdType DdType, typename ValueType>
@@ -55,8 +71,23 @@ namespace storm {
             }
             
             template<storm::dd::DdType DdType, typename ValueType>
-            storm::dd::Add<DdType, ValueType> const& Partition<DdType, ValueType>::getPartitionAdd() const {
-                return partitionAdd;
+            bool Partition<DdType, ValueType>::storedAsAdd() const {
+                return partition.which() == 1;
+            }
+            
+            template<storm::dd::DdType DdType, typename ValueType>
+            bool Partition<DdType, ValueType>::storedAsBdd() const {
+                return partition.which() == 0;
+            }
+            
+            template<storm::dd::DdType DdType, typename ValueType>
+            storm::dd::Add<DdType, ValueType> const& Partition<DdType, ValueType>::asAdd() const {
+                return boost::get<storm::dd::Add<DdType, ValueType>>(partition);
+            }
+            
+            template<storm::dd::DdType DdType, typename ValueType>
+            storm::dd::Bdd<DdType> const& Partition<DdType, ValueType>::asBdd() const {
+                return boost::get<storm::dd::Bdd<DdType>>(partition);
             }
             
             template<storm::dd::DdType DdType, typename ValueType>
@@ -67,6 +98,15 @@ namespace storm {
             template<storm::dd::DdType DdType, typename ValueType>
             uint64_t Partition<DdType, ValueType>::getNextFreeBlockIndex() const {
                 return nextFreeBlockIndex;
+            }
+            
+            template<storm::dd::DdType DdType, typename ValueType>
+            uint64_t Partition<DdType, ValueType>::getNodeCount() const {
+                if (this->storedAsBdd()) {
+                    return asBdd().getNodeCount();
+                } else {
+                    return asAdd().getNodeCount();
+                }
             }
             
             template<storm::dd::DdType DdType>
@@ -83,14 +123,14 @@ namespace storm {
             }
             
             template<storm::dd::DdType DdType, typename ValueType>
-            std::pair<storm::dd::Add<DdType, ValueType>, uint64_t> Partition<DdType, ValueType>::createPartitionAdd(storm::dd::DdManager<DdType> const& manager, storm::models::symbolic::Model<DdType, ValueType> const& model, std::vector<storm::dd::Bdd<DdType>> const& stateSets, storm::expressions::Variable const& blockVariable) {
+            std::pair<storm::dd::Bdd<DdType>, uint64_t> Partition<DdType, ValueType>::createPartitionBdd(storm::dd::DdManager<DdType> const& manager, storm::models::symbolic::Model<DdType, ValueType> const& model, std::vector<storm::dd::Bdd<DdType>> const& stateSets, storm::expressions::Variable const& blockVariable) {
                 uint64_t blockCount = 0;
-                storm::dd::Add<DdType, ValueType> partitionAdd = manager.template getAddZero<ValueType>();
+                storm::dd::Bdd<DdType> partitionAdd = manager.getBddZero();
                 
                 // Enumerate all realizable blocks.
                 enumerateBlocksRec<DdType>(stateSets, model.getReachableStates(), 0, blockVariable, [&manager, &partitionAdd, &blockVariable, &blockCount](storm::dd::Bdd<DdType> const& stateSet) {
                     stateSet.template toAdd<ValueType>().exportToDot("states_" + std::to_string(blockCount) + ".dot");
-                    partitionAdd += (stateSet && manager.getEncoding(blockVariable, blockCount, false)).template toAdd<ValueType>();
+                    partitionAdd |= (stateSet && manager.getEncoding(blockVariable, blockCount, false));
                     blockCount++;
                 } );
                 

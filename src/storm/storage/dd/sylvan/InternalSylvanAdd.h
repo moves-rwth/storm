@@ -331,7 +331,17 @@ namespace storm {
              * @return An ADD representing the result of the matrix-matrix multiplication.
              */
             InternalAdd<DdType::Sylvan, ValueType> multiplyMatrix(InternalAdd<DdType::Sylvan, ValueType> const& otherMatrix, std::vector<InternalBdd<DdType::Sylvan>> const& summationDdVariables) const;
-            
+
+            /*!
+             * Multiplies the current ADD (representing a matrix) with the given matrix by summing over the given meta
+             * variables.
+             *
+             * @param otherMatrix The matrix with which to multiply.
+             * @param summationDdVariables The DD variables (represented as ADDs) over which to sum.
+             * @return An ADD representing the result of the matrix-matrix multiplication.
+             */
+            InternalAdd<DdType::Sylvan, ValueType> multiplyMatrix(InternalBdd<DdType::Sylvan> const& otherMatrix, std::vector<InternalBdd<DdType::Sylvan>> const& summationDdVariables) const;
+
             /*!
              * Computes a BDD that represents the function in which all assignments with a function value strictly
              * larger than the given value are mapped to one and all others to zero.
