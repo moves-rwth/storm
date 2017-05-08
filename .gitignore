@@ -52,3 +52,5 @@ nbproject/
 *.out
 # Python config
 stormpy/setup.cfg
+# Travis helpers
+travis/mtime_cache/cache.json
