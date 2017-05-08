@@ -8,8 +8,10 @@
 #include "storm/utility/constants.h"
 #include "storm/utility/vector.h"
 #include "storm/utility/solver.h"
+#include "storm/utility/Stopwatch.h"
 #include "storm/settings/SettingsManager.h"
 #include "storm/settings/modules/GeneralSettings.h"
+#include "storm/settings/modules/CoreSettings.h"
 #include "storm/settings/modules/MultiObjectiveSettings.h"
 #include "storm/storage/expressions/Expressions.h"
 
@@ -39,15 +41,23 @@ namespace storm {
             
             template <class SparseModelType>
             bool SparseCbAchievabilityQuery<SparseModelType>::checkAchievability() {
-                
+                STORM_LOG_INFO("Building constraint system to check achievability.");
                 //this->preprocessedModel.writeDotToStream(std::cout);
-                
+                storm::utility::Stopwatch swInitialization(true);
                 initializeConstraintSystem();
-                solver->push();
+                STORM_LOG_INFO("Constraint system consists of " << expectedChoiceVariables.size() << " + " << bottomStateVariables.size() << " variables");
                 addObjectiveConstraints();
-                solver->push();
+                swInitialization.stop();
                 
+                storm::utility::Stopwatch swCheck(true);
+                STORM_LOG_INFO("Invoking SMT Solver.");
                 storm::solver::SmtSolver::CheckResult result = solver->check();
+                swCheck.stop();
+                
+                if (storm::settings::getModule<storm::settings::modules::CoreSettings>().isShowStatisticsSet()) {
+                    STORM_PRINT_AND_LOG("Building the constraintsystem took " << swInitialization << " seconds and checking the SMT formula took " << swCheck << " seconds." << std::endl);
+                }
+                
                 switch(result) {
                     case storm::solver::SmtSolver::CheckResult::Sat:
                         // std::cout << std::endl << "Satisfying assignment: " << std::endl << solver->getModelAsValuation().toString(true) << std::endl;
