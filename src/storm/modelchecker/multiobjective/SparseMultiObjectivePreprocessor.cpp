@@ -463,7 +463,7 @@ namespace storm {
                 std::vector<uint_fast64_t> const& groupIndices = transitions.getRowGroupIndices();
                 
                 storm::storage::BitVector maxRewardsToCheck(result.preprocessedModel->getNumberOfChoices(), true);
-                bool hasMinRewardToCheck;
+                bool hasMinRewardToCheck = false;
                 for (auto const& objIndex : finiteRewardCheckObjectives) {
                     auto const& rewModel = result.preprocessedModel->getRewardModel(result.objectives[objIndex].rewardModelName.get());
                     if (storm::solver::minimize(result.objectives[objIndex].optimizationDirection)) {
