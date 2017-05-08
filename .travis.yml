@@ -70,6 +70,7 @@ matrix:
 cache:
   directories:
   - build
+  - travis/mtime_cache
 
 services:
 - docker
