@@ -85,8 +85,8 @@ travis_fold() {
 
 run_make() {
   travis_fold start make
-#  VERBOSE=1 make storm -j$N_JOBS
-  make resources -j$N_JOBS
+  make storm -j$N_JOBS
+  #make resources -j$N_JOBS
   travis_fold end make
 }
 
