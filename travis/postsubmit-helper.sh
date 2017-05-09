@@ -78,8 +78,8 @@ clang-default)
 esac
 
 run_make() {
-  VERBOSE=1 make storm -j$N_JOBS
-#  make resources -j$N_JOBS
+#  VERBOSE=1 make storm -j$N_JOBS
+  make resources -j$N_JOBS
 }
 
 # Build
