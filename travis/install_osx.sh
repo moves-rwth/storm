@@ -2,6 +2,12 @@
 # Script installing dependencies
 # Inspired by https://github.com/google/fruit
 
+travis_fold() {
+  local action=$1
+  local name=$2
+  echo -en "travis_fold:${action}:${name}\r"
+}
+
 set -e
 
 # Helper for installing packages via homebrew
@@ -17,8 +23,11 @@ install_brew_package() {
 }
 
 # Update packages
+travis_fold start brew_update
 brew update
+travis_fold end brew_update
 
+travis_fold start brew_install_util
 # For md5sum
 install_brew_package md5sha1sum
 # For `timeout'
@@ -39,9 +48,11 @@ clang-3.9)     install_brew_package llvm@3.9 --with-clang --with-libcxx;;
 clang-4.0)     install_brew_package llvm     --with-clang --with-libcxx;;
 *) echo "Compiler not supported: ${COMPILER}. See travis_ci_install_osx.sh"; exit 1 ;;
 esac
+travis_fold end brew_install_util
 
 
 # Install dependencies
+travis_fold start brew_install_dependencies
 install_brew_package gmp --c++11
 install_brew_package cln
 install_brew_package ginac
@@ -50,3 +61,4 @@ install_brew_package boost --c++11
 brew tap homebrew/science
 install_brew_package homebrew/science/glpk
 install_brew_package homebrew/science/hwloc
+travis_fold end brew_install_dependencies

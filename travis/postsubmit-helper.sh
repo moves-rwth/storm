@@ -77,9 +77,17 @@ clang-default)
     exit 1
 esac
 
+travis_fold() {
+  local action=$1
+  local name=$2
+  echo -en "travis_fold:${action}:${name}\r"
+}
+
 run_make() {
+  travis_fold start make
 #  VERBOSE=1 make storm -j$N_JOBS
   make resources -j$N_JOBS
+  travis_fold end make
 }
 
 # Build
@@ -94,8 +102,11 @@ ReleasePlain)         CMAKE_ARGS=(-DCMAKE_BUILD_TYPE=Release -DCMAKE_CXX_FLAGS="
 esac
 
 # Restore timestamps of files
+travis_fold start mtime
 ruby travis/mtime_cache/mtime_cache.rb -g travis/mtime_cache/globs.txt -c travis/mtime_cache/cache.json
+travis_fold end mtime
 
+travis_fold start cmake
 #rm -rf build
 mkdir -p build
 cd build
@@ -107,4 +118,5 @@ then
   cat CMakeFiles/CMakeError.log
 fi
 echo
+travis_fold end cmake
 run_make
