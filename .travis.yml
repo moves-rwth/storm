@@ -57,7 +57,7 @@ matrix:
     os: osx
     osx_image: xcode8
     script: export OS=osx; export COMPILER='clang-4.0'; export STL='libc++';
-      travis/postsubmit.sh DebugPlain
+      gtimeout 400 travis/postsubmit.sh DebugPlain
 #  - compiler: clang
 #    env: COMPILER=clang-default STL=libc++ TEST=DebugPlain
 #    install: export OS=osx; export COMPILER='clang-default'; export STL='libc++';
