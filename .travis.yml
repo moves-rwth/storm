@@ -19,7 +19,7 @@ matrix:
     script: export OS=linux; export COMPILER='gcc-6'; export LINUX='ubuntu-16.10';
       travis/postsubmit.sh DebugPlain
     before_cache:
-      docker cp storm:/storm .
+      docker cp storm:/storm/. .
 #  - compiler: gcc
 #    env: COMPILER=gcc-6 UBUNTU=17.04 TEST=DebugPlain
 #    install: export OS=linux; export COMPILER='gcc-6'; export UBUNTU='17.04'; extras/scripts/travis_ci_install_linux.sh
