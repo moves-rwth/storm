@@ -5,6 +5,7 @@ set -e
 
 apt-get update -qq
 apt-get install -y --no-install-recommends \
+    ruby \
     git \
     cmake \
     libboost-all-dev \
