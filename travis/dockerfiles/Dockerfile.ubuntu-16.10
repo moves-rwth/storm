@@ -1,0 +1,6 @@
+FROM ubuntu:16.10
+MAINTAINER Matthias Volk <matthias.volk@cs.rwth-aachen.de>
+
+COPY common_install.sh /
+
+RUN bash -x /common_install.sh
