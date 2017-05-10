@@ -2,7 +2,7 @@
 # Script installing dependencies
 # Inspired by https://github.com/google/fruit
 
-set -ev
+set -e
 
 # Helper for travis folding
 travis_fold() {

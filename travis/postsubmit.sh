@@ -1,10 +1,10 @@
 #!/bin/bash -x
 # Inspired by https://github.com/google/fruit
 
-set -ev
+set -e
 
 : ${N_JOBS:=2}
-: ${TIMEOUT:=400}
+: ${TIMEOUT:=2400}
 
 if [ "$STL" != "" ]
 then
