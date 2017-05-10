@@ -12,34 +12,34 @@ fi
 
 case $OS in
 linux)
-    echo "Linux currently unsupported"
-    exit 2
-#    docker rm -f fruit &>/dev/null || true
-#    docker run -d -it --name fruit --privileged polettimarco/fruit-basesystem:ubuntu-$UBUNTU
-#    docker exec fruit mkdir fruit
-#    docker cp . fruit:/fruit
-#
-#    docker exec fruit bash -c "
-#        export COMPILER=$COMPILER;
-#        export N_JOBS=$N_JOBS;
-#        export STLARG=$STLARG;
-#        export ASAN_OPTIONS=$ASAN_OPTIONS;
-#        export OS=$OS;
-#        cd fruit; travis/postsubmit-helper.sh $1"
-#    exit $?
+    # Execute docker image on linux
+    docker rm -f storm &>/dev/null || true
+    docker run -d -it --name storm --privileged mvolk/storm-basesystem:$LINUX
+    docker exec storm mkdir storm
+    docker cp . storm:/storm
+
+    docker exec storm bash -c "
+        export COMPILER=$COMPILER;
+        export N_JOBS=$N_JOBS;
+        export STLARG=$STLARG;
+        export OS=$OS;
+        cd storm;
+        travis/postsubmit-helper.sh $1"
+    exit $?
     ;;
 
 osx)
+    # Mac OSX
     export COMPILER
     export N_JOBS
     export STLARG
-    export ASAN_OPTIONS
     export OS
-    travis/postsubmit-helper.sh "$@"
+    travis/postsubmit-helper.sh "$1"
     exit $?
     ;;
 
 *)
+    # Other OS
     echo "Unsupported OS: $OS"
     exit 1
 esac
