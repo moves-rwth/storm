@@ -1,5 +1,5 @@
 #!/bin/bash -x
 
-set -e
+set -ev
 
 sudo apt-get install -qq -y docker

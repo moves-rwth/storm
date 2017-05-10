@@ -1,7 +1,14 @@
 #!/bin/bash -x
 # Inspired by https://github.com/google/fruit
 
-set -e
+set -ev
+
+# Helper for travis folding
+travis_fold() {
+  local action=$1
+  local name=$2
+  echo -en "travis_fold:${action}:${name}\r"
+}
 
 # This only exists in OS X, but it doesn't cause issues in Linux (the dir doesn't exist, so it's
 # ignored).
@@ -82,20 +89,6 @@ clang-default)
     exit 1
 esac
 
-travis_fold() {
-  local action=$1
-  local name=$2
-  echo -en "travis_fold:${action}:${name}\r"
-}
-
-run_make() {
-  travis_fold start make
-  #make storm -j$N_JOBS
-  #make resources -j$N_JOBS
-  make -j$N_JOBS
-  travis_fold end make
-}
-
 # Build
 echo CXX version: $($CXX --version)
 echo C++ Standard library location: $(echo '#include <vector>' | $CXX -x c++ -E - | grep 'vector\"' | awk '{print $3}' | sed 's@/vector@@;s@\"@@g' | head -n 1)
@@ -125,4 +118,9 @@ then
 fi
 echo
 travis_fold end cmake
-run_make
+
+travis_fold start make
+#make storm -j$N_JOBS
+#make resources -j$N_JOBS
+make -j$N_JOBS
+travis_fold end make

@@ -2,13 +2,14 @@
 # Script installing dependencies
 # Inspired by https://github.com/google/fruit
 
+set -ev
+
+# Helper for travis folding
 travis_fold() {
   local action=$1
   local name=$2
   echo -en "travis_fold:${action}:${name}\r"
 }
-
-set -e
 
 # Helper for installing packages via homebrew
 install_brew_package() {

@@ -1,7 +1,7 @@
-#!/bin/bash
+#!/bin/bash -x
 # Inspired by https://github.com/google/fruit
 
-set -e
+set -ev
 
 : ${N_JOBS:=2}
 : ${TIMEOUT:=400}
