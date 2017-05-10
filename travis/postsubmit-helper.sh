@@ -28,6 +28,11 @@ gcc-6)
     export CXX=g++-6
     ;;
 
+gcc-default)
+    export CC=gcc
+    export CXX=g++
+    ;;
+
 clang-3.5)
     export CC=clang-3.5
     export CXX=clang++-3.5
