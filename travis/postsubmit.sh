@@ -4,6 +4,7 @@
 set -e
 
 : ${N_JOBS:=2}
+: ${TIMEOUT:=400}
 
 if [ "$STL" != "" ]
 then
@@ -13,12 +14,16 @@ fi
 case $OS in
 linux)
     # Execute docker image on linux
+    # Stop previous session
     docker rm -f storm &>/dev/null || true
+    # Run container
     docker run -d -it --name storm --privileged mvolk/storm-basesystem:$LINUX
+    # Copy local content into container
     docker exec storm mkdir storm
     docker cp . storm:/storm
 
-    docker exec storm bash -c "
+    # Execute main process
+    timeout $TIMEOUT docker exec storm bash -c "
         export COMPILER=$COMPILER;
         export N_JOBS=$N_JOBS;
         export STLARG=$STLARG;
@@ -34,7 +39,7 @@ osx)
     export N_JOBS
     export STLARG
     export OS
-    travis/postsubmit-helper.sh "$1"
+    gtimeout $TIMEOUT travis/postsubmit-helper.sh "$1"
     exit $?
     ;;
 
