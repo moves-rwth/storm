@@ -182,7 +182,9 @@ namespace storm {
 			}
 
 			virtual boost::any visit(storm::expressions::RationalLiteralExpression const& expression, boost::any const&) override {
-				return msat_make_number(env, std::to_string(expression.getValueAsDouble()).c_str());
+				std::stringstream fractionStream;
+                fractionStream << expression.getValue();
+				return msat_make_number(env, fractionStream.str().c_str());
 			}
 
 			virtual boost::any visit(storm::expressions::IntegerLiteralExpression const& expression, boost::any const&) override {
