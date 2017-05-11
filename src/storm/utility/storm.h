@@ -526,7 +526,7 @@ namespace storm {
     }
     
     template<typename ValueType>
-    std::unique_ptr<storm::modelchecker::CheckResult> verifySparseMarkovAutomaton(std::shared_ptr<storm::models::sparse::MarkovAutomaton<ValueType>> ma, storm::modelchecker::CheckTask<storm::logic::Formula> const& task) {
+    std::unique_ptr<storm::modelchecker::CheckResult> verifySparseMarkovAutomaton(std::shared_ptr<storm::models::sparse::MarkovAutomaton<ValueType>> ma, storm::modelchecker::CheckTask<storm::logic::Formula, ValueType> const& task) {
         std::unique_ptr<storm::modelchecker::CheckResult> result;
         // Close the MA, if it is not already closed.
         if (!ma->isClosed()) {
@@ -572,6 +572,8 @@ namespace storm {
             result = verifySparseCtmc(model->template as<storm::models::sparse::Ctmc<storm::RationalNumber>>(), task);
         } else if (model->getType() == storm::models::ModelType::Mdp) {
             result = verifySparseMdp(model->template as<storm::models::sparse::Mdp<storm::RationalNumber>>(), task);
+        } else if (model->getType() == storm::models::ModelType::MarkovAutomaton) {
+            result = verifySparseMarkovAutomaton(model->template as<storm::models::sparse::MarkovAutomaton<storm::RationalNumber>>(), task);
         } else {
             STORM_LOG_ASSERT(false, "Illegal model type.");
         }

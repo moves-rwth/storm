@@ -101,6 +101,14 @@ namespace storm {
             ExpressionManager const& getManager() const;
 
         protected:
+                        
+            /*!
+             * Retrieves the manager responsible for the variables of this valuation.
+             *
+             * @return The manager.
+             */
+            std::shared_ptr<ExpressionManager const> const& getManagerAsSharedPtr() const;
+            
             /*!
              * Sets the manager responsible for the variables in this valuation.
              *

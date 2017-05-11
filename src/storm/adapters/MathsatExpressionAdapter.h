@@ -13,6 +13,7 @@
 #include "storage/expressions/Expressions.h"
 #include "storage/expressions/ExpressionVisitor.h"
 #include "storm/utility/macros.h"
+#include "storm/utility/constants.h"
 #include "storm/exceptions/ExpressionEvaluationException.h"
 #include "storm/exceptions/InvalidTypeException.h"
 #include "storm/exceptions/InvalidArgumentException.h"
@@ -181,7 +182,9 @@ namespace storm {
 			}
 
 			virtual boost::any visit(storm::expressions::RationalLiteralExpression const& expression, boost::any const&) override {
-				return msat_make_number(env, std::to_string(expression.getValueAsDouble()).c_str());
+				std::stringstream fractionStream;
+                fractionStream << expression.getValue();
+				return msat_make_number(env, fractionStream.str().c_str());
 			}
 
 			virtual boost::any visit(storm::expressions::IntegerLiteralExpression const& expression, boost::any const&) override {
@@ -250,10 +253,13 @@ namespace storm {
 					msat_free(name);
                     return result;
 				} else if (msat_term_is_number(env, term)) {
+					char* termAsCString = msat_term_repr(term);
+                    std::string termString(termAsCString);
+                    msat_free(termAsCString);
 					if (msat_is_integer_type(env, msat_term_get_type(term))) {
                         return manager.integer(std::stoll(msat_term_repr(term)));
 					} else if (msat_is_rational_type(env, msat_term_get_type(term))) {
-                        return manager.rational(std::stod(msat_term_repr(term)));
+                        return manager.rational(storm::utility::convertNumber<storm::RationalNumber>(termString));
 					}
 				}
                 

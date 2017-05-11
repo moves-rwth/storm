@@ -46,6 +46,11 @@ namespace storm {
                 this->weightVectorChecker = std::unique_ptr<SparsePcaaWeightVectorChecker<storm::models::sparse::MarkovAutomaton<double>>>(new SparseMaPcaaWeightVectorChecker<storm::models::sparse::MarkovAutomaton<double>>(model, objectives, actionsWithNegativeReward, ecActions, possiblyRecurrentStates));
             }
             
+            template<>
+            void SparsePcaaQuery<storm::models::sparse::MarkovAutomaton<storm::RationalNumber>, storm::RationalNumber>::initializeWeightVectorChecker(storm::models::sparse::MarkovAutomaton<storm::RationalNumber> const& model, std::vector<PcaaObjective<storm::RationalNumber>> const& objectives, storm::storage::BitVector const& actionsWithNegativeReward, storm::storage::BitVector const& ecActions, storm::storage::BitVector const& possiblyRecurrentStates) {
+                this->weightVectorChecker = std::unique_ptr<SparsePcaaWeightVectorChecker<storm::models::sparse::MarkovAutomaton<storm::RationalNumber>>>(new SparseMaPcaaWeightVectorChecker<storm::models::sparse::MarkovAutomaton<storm::RationalNumber>>(model, objectives, actionsWithNegativeReward, ecActions, possiblyRecurrentStates));
+            }
+            
             template <class SparseModelType, typename GeometryValueType>
             typename SparsePcaaQuery<SparseModelType, GeometryValueType>::WeightVector SparsePcaaQuery<SparseModelType, GeometryValueType>::findSeparatingVector(Point const& pointToBeSeparated) {
                 STORM_LOG_DEBUG("Searching a weight vector to seperate the point given by " << storm::utility::vector::toString(storm::utility::vector::convertNumericVector<double>(pointToBeSeparated)) << ".");
@@ -239,6 +244,7 @@ namespace storm {
             template class SparsePcaaQuery<storm::models::sparse::MarkovAutomaton<double>, storm::RationalNumber>;
             
             template class SparsePcaaQuery<storm::models::sparse::Mdp<storm::RationalNumber>, storm::RationalNumber>;
+            template class SparsePcaaQuery<storm::models::sparse::MarkovAutomaton<storm::RationalNumber>, storm::RationalNumber>;
 #endif
         }
     }

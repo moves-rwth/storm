@@ -79,7 +79,7 @@ namespace storm {
                 
                 // A flag that indicates whether or not to store the state information after successfully building the
                 // model. If it is to be preserved, it can be retrieved via the appropriate methods after a successful
-                // call to <code>translateProgram</code>.
+                // call to <code>build</code>.
                 bool buildStateValuations;
             };
             
