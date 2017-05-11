@@ -128,5 +128,5 @@ travis_fold end make
 
 # Make
 travis_fold start tests
-make test -j$N_JOBS
+ctest test --output-on-failure
 travis_fold end tests
