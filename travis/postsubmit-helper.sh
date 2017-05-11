@@ -105,8 +105,8 @@ travis_fold start mtime
 ruby travis/mtime_cache/mtime_cache.rb -g travis/mtime_cache/globs.txt -c travis/mtime_cache/cache.json
 travis_fold end mtime
 
+# CMake
 travis_fold start cmake
-#rm -rf build
 mkdir -p build
 cd build
 cmake .. "${CMAKE_ARGS[@]}"
@@ -119,8 +119,14 @@ fi
 echo
 travis_fold end cmake
 
+# Make
 travis_fold start make
 #make storm -j$N_JOBS
 #make resources -j$N_JOBS
 make -j$N_JOBS
 travis_fold end make
+
+# Make
+travis_fold start tests
+make test -j$N_JOBS
+travis_fold end tests

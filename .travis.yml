@@ -80,6 +80,7 @@ matrix:
 #      DebugPlain
 
 cache:
+  timeout: 600
   directories:
   - build
   - travis/mtime_cache
