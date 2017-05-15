@@ -29,6 +29,37 @@ stages = [
 
 if __name__ == "__main__":
     s = ""
+    # Initial config
+    s += "# This file was inspired from https://github.com/google/fruit\n"
+    s += "\n"
+    s += "#\n"
+    s += "# General config\n"
+    s += "#\n"
+    s += "branches:\n"
+    s += "  only:\n"
+    s += "  - master\n"
+    s += "dist: trusty\n"
+    s += "language: cpp\n"
+    s += "\n"
+    s += "# Enable caching\n"
+    s += "cache:\n"
+    s += "  timeout: 600\n"
+    s += "  directories:\n"
+    s += "  - build\n"
+    s += "  - travis/mtime_cache\n"
+    s += "\n"
+    s += "# Enable docker support\n"
+    s += "services:\n"
+    s += "- docker\n"
+    s += "sudo: required\n"
+    s += "\n"
+    s += "#\n"
+    s += "# Configurations\n"
+    s += "#\n"
+    s += "matrix:\n"
+    s += "  fast_finish: true\n"
+    s += "\n"
+    s += "  include:\n"
 
     # Generate all configurations
     # Linux via Docker
@@ -49,7 +80,7 @@ if __name__ == "__main__":
                 s += "    install: export OS=linux; export COMPILER='{}'; export LINUX='{}'\n".format(compiler, linux)
                 s += "      travis/install_linux.sh\n"
                 s += "    script: export OS=linux; export COMPILER='{}'; export LINUX='{}'\n".format(compiler, linux)
-                s += "      travis/postsubmit.sh {} {}".format(build, stage[1])
+                s += "      travis/postsubmit.sh {} {}\n".format(build, stage[1])
                 s += "    before_cache:\n"
                 s += "      docker cp storm:/storm/. .\n"
 
@@ -71,6 +102,6 @@ if __name__ == "__main__":
                 s += "    install: export OS=osx; export COMPILER='{}'; export STL='libc++'\n".format(compiler)
                 s += "      travis/install_osx.sh\n"
                 s += "    script: export OS=osx; export COMPILER='{}'; export STL='libc++'\n".format(compiler)
-                s += "      travis/postsubmit.sh {} {}".format(build, stage[1])
+                s += "      travis/postsubmit.sh {} {}\n".format(build, stage[1])
 
     print(s)
