@@ -56,9 +56,7 @@ if __name__ == "__main__":
     s += "#\n"
     s += "# Configurations\n"
     s += "#\n"
-    s += "matrix:\n"
-    s += "  fast_finish: true\n"
-    s += "\n"
+    s += "jobs:\n"
     s += "  include:\n"
 
     # Generate all configurations

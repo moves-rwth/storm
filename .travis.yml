@@ -24,9 +24,7 @@ sudo: required
 #
 # Configurations
 #
-matrix:
-  fast_finish: true
-
+jobs:
   include:
 
   ###
