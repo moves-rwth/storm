@@ -25,47 +25,7 @@ namespace storm {
                 STORM_LOG_THROW(probabilityMatrix.isProbabilistic(), storm::exceptions::InvalidArgumentException, "The probability matrix is invalid.");
             }
             
-#ifdef STORM_HAVE_CARL
-            template <typename ValueType, typename RewardModelType>
-            Dtmc<ValueType, RewardModelType>::ConstraintCollector::ConstraintCollector(Dtmc<ValueType> const& dtmc) {
-                process(dtmc);
-            }
-            
-            template <typename ValueType, typename RewardModelType>
-            std::unordered_set<storm::ArithConstraint<ValueType>> const& Dtmc<ValueType, RewardModelType>::ConstraintCollector::getWellformedConstraints() const {
-                return this->wellformedConstraintSet;
-            }
-            
-            template <typename ValueType, typename RewardModelType>
-            std::unordered_set<storm::ArithConstraint<ValueType>> const& Dtmc<ValueType, RewardModelType>::ConstraintCollector::getGraphPreservingConstraints() const {
-                return this->graphPreservingConstraintSet;
-            }
-            
-            template <typename ValueType, typename RewardModelType>
-            void Dtmc<ValueType, RewardModelType>::ConstraintCollector::process(storm::models::sparse::Dtmc<ValueType> const& dtmc) {
-                for(uint_fast64_t state = 0; state < dtmc.getNumberOfStates(); ++state) {
-                    ValueType sum = storm::utility::zero<ValueType>();
-                    for (auto const& transition : dtmc.getRows(state)) {
-                        sum += transition.getValue();
-                        if (!storm::utility::isConstant(transition.getValue())) {
-                            wellformedConstraintSet.emplace(transition.getValue() - 1, storm::CompareRelation::LEQ);
-                            wellformedConstraintSet.emplace(transition.getValue(), storm::CompareRelation::GEQ);
-                            graphPreservingConstraintSet.emplace(transition.getValue(), storm::CompareRelation::GREATER);
-                        }
-                    }
-                    STORM_LOG_ASSERT(!storm::utility::isConstant(sum) || storm::utility::isOne(sum), "If the sum is a constant, it must be equal to 1.");
-                    if(!storm::utility::isConstant(sum)) {
-                        wellformedConstraintSet.emplace(sum - 1, storm::CompareRelation::EQ);
-                    }
-                    
-                }
-            }
-            
-            template <typename ValueType, typename RewardModelType>
-            void Dtmc<ValueType, RewardModelType>::ConstraintCollector::operator()(storm::models::sparse::Dtmc<ValueType> const& dtmc) {
-                process(dtmc);
-            }
-#endif
+
             
             template class Dtmc<double>;
             template class Dtmc<float>;
