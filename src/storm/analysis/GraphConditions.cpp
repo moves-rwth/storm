@@ -7,6 +7,7 @@
 namespace storm {
     namespace analysis {
 
+
         template <typename ValueType>
         ConstraintCollector<ValueType>::ConstraintCollector(storm::models::sparse::Dtmc<ValueType> const& dtmc) {
             process(dtmc);
@@ -22,6 +23,25 @@ namespace storm {
             return this->graphPreservingConstraintSet;
         }
 
+        template <typename ValueType>
+        void ConstraintCollector<ValueType>::wellformedRequiresNonNegativeEntries(std::vector<ValueType> const& vec) {
+            for(auto const& entry : vec) {
+                if (!storm::utility::isConstant(entry)) {
+                    if (entry.denominator().isConstant()) {
+                        if (entry.denominatorAsNumber() > 0) {
+                            wellformedConstraintSet.emplace(entry.nominator().polynomial(), storm::CompareRelation::GEQ);
+                        } else if (entry.denominatorAsNumber() < 0) {
+                            wellformedConstraintSet.emplace(entry.nominator().polynomial(), storm::CompareRelation::LEQ);
+                        } else {
+                            assert(false); // Should fail before.
+                        }
+                    } else {
+                        wellformedConstraintSet.emplace(entry.denominator().polynomial(), storm::CompareRelation::NEQ);
+                        STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "Rational functions at state rewards not yet supported.");
+                    }
+                }
+            }
+        }
 
         template <typename ValueType>
         void ConstraintCollector<ValueType>::process(storm::models::sparse::Dtmc<ValueType> const& dtmc) {
@@ -42,7 +62,7 @@ namespace storm {
                             }
                         } else {
                             wellformedConstraintSet.emplace(transition.getValue().denominator().polynomial(), storm::CompareRelation::NEQ);
-                            STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "Rational functions at edges not yet supported.");
+                            wellformedConstraintSet.emplace(carl::FormulaType::ITE, typename ConstraintType<ValueType>::val(transition.getValue().nominator().polynomial(), storm::CompareRelation::GREATER), typename ConstraintType<ValueType>::val(transition.getValue().nominator().polynomial(), storm::CompareRelation::GEQ), typename ConstraintType<ValueType>::val(transition.getValue().nominator().polynomial(), storm::CompareRelation::LEQ));
                         }
                         graphPreservingConstraintSet.emplace(transition.getValue().nominator().polynomial(), storm::CompareRelation::NEQ);
                     }
@@ -55,37 +75,25 @@ namespace storm {
             }
             for(auto const& rewModelEntry : dtmc.getRewardModels()) {
                 if (rewModelEntry.second.hasStateRewards()) {
-                    for(auto const& stateReward : rewModelEntry.second.getStateRewardVector()) {
-                        if (!storm::utility::isConstant(stateReward)) {
-                            if (stateReward.denominator().isConstant()) {
-                                if (stateReward.denominatorAsNumber() > 0) {
-                                    wellformedConstraintSet.emplace(stateReward.nominator().polynomial(), storm::CompareRelation::GEQ);
-                                } else if (stateReward.denominatorAsNumber() < 0) {
-                                    wellformedConstraintSet.emplace(stateReward.nominator().polynomial(), storm::CompareRelation::LEQ);
-                                } else {
-                                    assert(false); // Should fail before.
-                                }
-                            } else {
-                                wellformedConstraintSet.emplace(stateReward.denominator().polynomial(), storm::CompareRelation::NEQ);
-                                STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "Rational functions at state rewards not yet supported.");
-                            }
-                        }
-                    }
+                    wellformedRequiresNonNegativeEntries(rewModelEntry.second.getStateRewardVector());
                 }
                 if (rewModelEntry.second.hasStateActionRewards()) {
-                    for(auto const& saReward : rewModelEntry.second.getStateActionRewardVector()) {
-                        if (!storm::utility::isConstant(saReward)) {
-                            if (saReward.denominator().isConstant()) {
-                                if (saReward.denominatorAsNumber() > 0) {
-                                    wellformedConstraintSet.emplace(saReward.nominator().polynomial(), storm::CompareRelation::GEQ);
-                                } else if (saReward.denominatorAsNumber() < 0) {
-                                    wellformedConstraintSet.emplace(saReward.nominator().polynomial(), storm::CompareRelation::LEQ);
+                    wellformedRequiresNonNegativeEntries(rewModelEntry.second.getStateActionRewardVector());
+                }
+                if (rewModelEntry.second.hasTransitionRewards()) {
+                    for (auto const& entry : rewModelEntry.second.getTransitionRewardMatrix()) {
+                        if(!entry.getValue().isConstant()) {
+                            if (entry.getValue().denominator().isConstant()) {
+                                if (entry.getValue().denominatorAsNumber() > 0) {
+                                    wellformedConstraintSet.emplace(entry.getValue().nominator().polynomial(), storm::CompareRelation::GEQ);
+                                } else if (entry.getValue().denominatorAsNumber() < 0) {
+                                    wellformedConstraintSet.emplace(entry.getValue().nominator().polynomial(), storm::CompareRelation::LEQ);
                                 } else {
                                     assert(false); // Should fail before.
                                 }
                             } else {
-                                wellformedConstraintSet.emplace(saReward.denominator().polynomial(), storm::CompareRelation::NEQ);
-                                STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "Rational functions at state rewards not yet supported.");
+                                wellformedConstraintSet.emplace(entry.getValue().denominator().polynomial(), storm::CompareRelation::NEQ);
+                                STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "Rational functions at transition rewards are not yet supported.");
                             }
                         }
                     }

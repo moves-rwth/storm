@@ -31,6 +31,7 @@ private:
     // on the parameter values.
     std::unordered_set<typename ConstraintType<ValueType>::val> graphPreservingConstraintSet;
 
+    void wellformedRequiresNonNegativeEntries(std::vector<ValueType> const&);
 public:
     /*!
      * Constructs the a constraint collector for the given DTMC. The constraints are built and ready for
