@@ -60,17 +60,18 @@ if __name__ == "__main__":
     s += "  include:\n"
 
     # Generate all configurations
-    # Linux via Docker
-    for config in configs_linux:
-        linux = config[0]
-        compiler = "{}{}".format(config[1], config[2])
+    for stage in stages:
         s += "\n"
         s += "  ###\n"
-        s += "  # {}\n".format(linux)
+        s += "  # Stage: {}\n".format(stage)
         s += "  ###\n"
         s += "\n"
-        for build in build_types:
-            for stage in stages:
+        # Linux via Docker
+        for config in configs_linux:
+            linux = config[0]
+            compiler = "{}{}".format(config[1], config[2])
+            s += "  # {}\n".format(linux)
+            for build in build_types:
                 s += "  - stage: {}\n".format(stage[0])
                 s += "    os: linux\n"
                 s += "    compiler: {}\n".format(config[1])
@@ -82,17 +83,12 @@ if __name__ == "__main__":
                 s += "    before_cache:\n"
                 s += "      docker cp storm:/storm/. .\n"
 
-    # Mac OS X
-    for config in configs_mac:
-        osx = config[0]
-        compiler = "{}{}".format(config[1], config[2])
-        s += "\n"
-        s += "  ###\n"
-        s += "  # {}\n".format(osx)
-        s += "  ###\n"
-        s += "\n"
-        for build in build_types:
-            for stage in stages:
+        # Mac OS X
+        for config in configs_mac:
+            osx = config[0]
+            compiler = "{}{}".format(config[1], config[2])
+            s += "  # {}\n".format(osx)
+            for build in build_types:
                 s += "  - stage: {}\n".format(stage[0])
                 s += "    os: osx\n"
                 s += "    compiler: {}\n".format(config[1])
