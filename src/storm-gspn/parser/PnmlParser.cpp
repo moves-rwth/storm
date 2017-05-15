@@ -9,8 +9,19 @@
 #include "storm/exceptions/WrongFormatException.h"
 #include "storm/utility/macros.h"
 
+
+namespace {
+    bool isOnlyWhitespace(std::string const& in) {
+        return std::all_of(in.begin(), in.end(), [](char c){
+            return std::isspace(static_cast<unsigned char>(c));
+        });
+    }
+}
 namespace storm {
     namespace parser {
+
+
+
         storm::gspn::GSPN * PnmlParser::parse(xercesc::DOMElement const*  elementRoot ) {
             if (storm::adapters::getName(elementRoot) == "pnml") {
                 traversePnmlElement(elementRoot);
@@ -39,7 +50,7 @@ namespace storm {
 
                 if (name == "net") {
                     traverseNetOrPage(child);
-                } else if (std::all_of(name.begin(), name.end(), isspace)) {
+                } else if (isOnlyWhitespace(name)) {
                     // ignore node (contains only whitespace)
                 } else {
                     // Found node or attribute which is at the moment nod handled by this parser.
@@ -79,7 +90,7 @@ namespace storm {
                     // Some pnml files have a child named page.
                     // The page node has the same children like the net node (e.g., place, transition, arc)
                     traverseNetOrPage(child);
-                } else if (std::all_of(name.begin(), name.end(), isspace)) {
+                } else if (isOnlyWhitespace(name)) {
                     // ignore node (contains only whitespace)
                 } else {
                     // Found node or attribute which is at the moment nod handled by this parser.
@@ -120,7 +131,7 @@ namespace storm {
                 } else if(name == "capacity") {
                     capacity.first = true;
                     capacity.second = traverseCapacity(child);
-                } else if (std::all_of(name.begin(), name.end(), isspace)) {
+                } else if (isOnlyWhitespace(name)) {
                     // ignore node (contains only whitespace)
                 } else if (name == "name" ||
                            name == "graphics") {
@@ -179,7 +190,7 @@ namespace storm {
                     timed.second = traverseTransitionType(child);
                 } else if (name == "priority") {
                     priority = traversePriority(child);
-                } else if (std::all_of(name.begin(), name.end(), isspace)) {
+                } else if (isOnlyWhitespace(name)) {
                     // ignore node (contains only whitespace)
                 } else if (name == "graphics" ||
                            name == "name" ||
@@ -255,7 +266,7 @@ namespace storm {
                 } else if(name == "inscription") {
                     multiplicity.first = true;
                     multiplicity.second = traverseMultiplicity(child);
-                } else if (std::all_of(name.begin(), name.end(), isspace)) {
+                } else if (isOnlyWhitespace(name)) {
                     // ignore node (contains only whitespace)
                 } else if (name == "graphics" || name == "arcpath" || name == "tagged") {
                     // ignore these tags
@@ -304,7 +315,7 @@ namespace storm {
                     auto value = storm::adapters::getName(child->getFirstChild());
                     value = value.substr(std::string("Default,").length());
                     result = std::stoull(value);
-                } else if (std::all_of(name.begin(), name.end(), isspace)) {
+                } else if (isOnlyWhitespace(name)) {
                     // ignore node (contains only whitespace)
                 } else if (name == "graphics") {
                     // ignore these tags
@@ -330,7 +341,7 @@ namespace storm {
                     result = std::stoull(value);
                 } else if (name == "graphics") {
                     // ignore these nodes
-                } else if (std::all_of(name.begin(), name.end(), isspace)) {
+                } else if (isOnlyWhitespace(name)) {
                     // ignore node (contains only whitespace)
                 } else {
                     // Found node or attribute which is at the moment nod handled by this parser.
@@ -354,7 +365,7 @@ namespace storm {
                     result = std::stoull(value);
                 } else if (name == "graphics") {
                     // ignore these nodes
-                } else if (std::all_of(name.begin(), name.end(), isspace)) {
+                } else if (isOnlyWhitespace(name)) {
                     // ignore node (contains only whitespace)
                 } else {
                     // Found node or attribute which is at the moment nod handled by this parser.
@@ -373,7 +384,7 @@ namespace storm {
                 auto name = storm::adapters::getName(child);
                 if (name == "value") {
                     result = storm::adapters::getName(child->getFirstChild());
-                } else  if (std::all_of(name.begin(), name.end(), isspace)) {
+                } else  if (isOnlyWhitespace(name)) {
                     // ignore node (contains only whitespace)
                 } else {
                     // Found node or attribute which is at the moment nod handled by this parser.
@@ -391,7 +402,7 @@ namespace storm {
                 auto name = storm::adapters::getName(child);
                 if (name == "value") {
                     result = storm::adapters::getName(child->getFirstChild()) == "true" ? true : false;
-                } else  if (std::all_of(name.begin(), name.end(), isspace)) {
+                } else  if (isOnlyWhitespace(name)) {
                     // ignore node (contains only whitespace)
                 } else {
                     // Found node or attribute which is at the moment nod handled by this parser.
@@ -428,7 +439,7 @@ namespace storm {
                     auto value = storm::adapters::getName(child->getFirstChild());
                     value = value.substr(std::string("Default,").length());
                     result = std::stoull(value);
-                } else if (std::all_of(name.begin(), name.end(), isspace)) {
+                } else if (isOnlyWhitespace(name)) {
                     // ignore node (contains only whitespace)
                 } else if (name == "graphics") {
                     // ignore these tags
