@@ -29,7 +29,7 @@ linux)
         export STLARG=$STLARG;
         export OS=$OS;
         cd storm;
-        travis/postsubmit-helper.sh $1"
+        travis/postsubmit-helper.sh $1 $2"
     exit $?
     ;;
 
@@ -39,7 +39,7 @@ osx)
     export N_JOBS
     export STLARG
     export OS
-    gtimeout $TIMEOUT travis/postsubmit-helper.sh "$1"
+    gtimeout $TIMEOUT travis/postsubmit-helper.sh "$1" "$2"
     exit $?
     ;;
 

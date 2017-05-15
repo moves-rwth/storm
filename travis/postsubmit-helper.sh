@@ -10,6 +10,57 @@ travis_fold() {
   echo -en "travis_fold:${action}:${name}\r"
 }
 
+# Helper for distinguishing between different runs
+run() {
+  case "$1" in
+  BuildDep)
+    # CMake
+    travis_fold start cmake
+    mkdir -p build
+    cd build
+    cmake .. "${CMAKE_ARGS[@]}"
+    echo
+    echo "Content of CMakeFiles/CMakeError.log:"
+    if [ -f "CMakeFiles/CMakeError.log" ]
+    then
+      cat CMakeFiles/CMakeError.log
+    fi
+    echo
+    travis_fold end cmake
+    # Make resources
+    travis_fold start make_dep
+    make resources -j$N_JOBS
+    travis_fold end make_dep
+    ;;
+
+  BuildLib)
+    # Make libstorm
+    travis_fold start make_lib
+    make storm -j$N_JOBS
+    travis_fold end make_lib
+    ;;
+
+  BuildAll)
+    # Make all
+    travis_fold start make_all
+    make -j$N_JOBS
+    travis_fold end make_all
+    ;;
+
+  TestAll)
+    # Test all
+    travis_fold start test_all
+    ctest test --output-on-failure
+    travis_fold end test_all
+    ;;
+
+  *)
+    echo "Unrecognized value of run: $1"
+    exit 1
+  esac
+}
+
+
 # This only exists in OS X, but it doesn't cause issues in Linux (the dir doesn't exist, so it's
 # ignored).
 export PATH="/usr/local/opt/coreutils/libexec/gnubin:$PATH"
@@ -105,28 +156,4 @@ travis_fold start mtime
 ruby travis/mtime_cache/mtime_cache.rb -g travis/mtime_cache/globs.txt -c travis/mtime_cache/cache.json
 travis_fold end mtime
 
-# CMake
-travis_fold start cmake
-mkdir -p build
-cd build
-cmake .. "${CMAKE_ARGS[@]}"
-echo
-echo "Content of CMakeFiles/CMakeError.log:"
-if [ -f "CMakeFiles/CMakeError.log" ]
-then
-  cat CMakeFiles/CMakeError.log
-fi
-echo
-travis_fold end cmake
-
-# Make
-travis_fold start make
-#make storm -j$N_JOBS
-#make resources -j$N_JOBS
-make -j$N_JOBS
-travis_fold end make
-
-# Make
-travis_fold start tests
-ctest test --output-on-failure
-travis_fold end tests
+run "$2"
