@@ -16,7 +16,8 @@ run() {
   BuildDep)
     # CMake
     travis_fold start cmake
-    mkdir -p build
+    rm -rf build
+    mkdir build
     cd build
     cmake .. "${CMAKE_ARGS[@]}"
     echo
@@ -36,6 +37,7 @@ run() {
   BuildLib)
     # Make libstorm
     travis_fold start make_lib
+    cd build
     make storm -j$N_JOBS
     travis_fold end make_lib
     ;;
@@ -43,6 +45,7 @@ run() {
   BuildAll)
     # Make all
     travis_fold start make_all
+    cd build
     make -j$N_JOBS
     travis_fold end make_all
     ;;
@@ -50,6 +53,7 @@ run() {
   TestAll)
     # Test all
     travis_fold start test_all
+    cd build
     ctest test --output-on-failure
     travis_fold end test_all
     ;;
