@@ -77,9 +77,9 @@ if __name__ == "__main__":
                 s += "    os: linux\n"
                 s += "    compiler: {}\n".format(config[1])
                 s += "    env: BUILD={} COMPILER={} LINUX={}\n".format(build, compiler, linux)
-                s += "    install: export OS=linux; export COMPILER='{}'; export LINUX='{}'\n".format(compiler, linux)
+                s += "    install: export OS=linux; export COMPILER='{}'; export LINUX='{}';\n".format(compiler, linux)
                 s += "      travis/install_linux.sh\n"
-                s += "    script: export OS=linux; export COMPILER='{}'; export LINUX='{}'\n".format(compiler, linux)
+                s += "    script: export OS=linux; export COMPILER='{}'; export LINUX='{}';\n".format(compiler, linux)
                 s += "      travis/postsubmit.sh {} {}\n".format(build, stage[1])
                 s += "    before_cache:\n"
                 s += "      docker cp storm:/storm/. .\n"
@@ -99,9 +99,9 @@ if __name__ == "__main__":
                 s += "    os: osx\n"
                 s += "    compiler: {}\n".format(config[1])
                 s += "    env: BUILD={} COMPILER={} STL=libc++\n".format(build, compiler)
-                s += "    install: export OS=osx; export COMPILER='{}'; export STL='libc++'\n".format(compiler)
+                s += "    install: export OS=osx; export COMPILER='{}'; export STL='libc++';\n".format(compiler)
                 s += "      travis/install_osx.sh\n"
-                s += "    script: export OS=osx; export COMPILER='{}'; export STL='libc++'\n".format(compiler)
+                s += "    script: export OS=osx; export COMPILER='{}'; export STL='libc++';\n".format(compiler)
                 s += "      travis/postsubmit.sh {} {}\n".format(build, stage[1])
 
     print(s)
