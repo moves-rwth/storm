@@ -30,7 +30,7 @@ run() {
     travis_fold end cmake
     # Make resources
     travis_fold start make_dep
-    make resources -j$N_JOBS
+    VERBOSE=1 make resources -j$N_JOBS
     travis_fold end make_dep
     ;;
 
@@ -38,7 +38,7 @@ run() {
     # Make libstorm
     travis_fold start make_lib
     cd build
-    make storm -j$N_JOBS
+    VERBOSE=1 make storm -j$N_JOBS
     travis_fold end make_lib
     ;;
 
@@ -46,7 +46,7 @@ run() {
     # Make all
     travis_fold start make_all
     cd build
-    make -j$N_JOBS
+    VERBOSE=1 make -j$N_JOBS
     travis_fold end make_all
     ;;
 
