@@ -859,6 +859,18 @@ namespace storm {
                 return result;
             }
             
+            template<typename Type>
+            void filterVectorInPlace(std::vector<Type>& v, storm::storage::BitVector const& filter) {
+                STORM_LOG_ASSERT(v.size() == filter.size(), "The filter size does not match the size of the input vector");
+                auto vIt = v.begin();
+                for(auto index : filter) {
+                    *vIt = std::move(v[index]);
+                    ++vIt;
+                }
+                v.resize(vIt - v.begin());
+                STORM_LOG_ASSERT(v.size() == filter.getNumberOfSetBits(), "Result does not match.");
+            }
+            
             template<typename T>
             bool hasNegativeEntry(std::vector<T> const& v){
                 return std::any_of(v.begin(), v.end(), [](T value){return value < storm::utility::zero<T>();});

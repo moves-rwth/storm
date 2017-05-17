@@ -566,6 +566,27 @@ namespace storm {
         }
         
         template<typename ValueType>
+        storm::storage::BitVector SparseMatrix<ValueType>::getRowFilter(storm::storage::BitVector const& groupConstraint, storm::storage::BitVector const& columnConstraint) const {
+            storm::storage::BitVector result(this->getRowCount(), false);
+            for (auto const& group : groupConstraint) {
+                uint_fast64_t const endOfGroup = this->getRowGroupIndices()[group + 1];
+                for (uint_fast64_t row = this->getRowGroupIndices()[group]; row < endOfGroup; ++row) {
+                    bool choiceSatisfiesColumnConstraint = true;
+                    for (auto const& entry : this->getRow(row)) {
+                        if (!columnConstraint.get(entry.getColumn())) {
+                            choiceSatisfiesColumnConstraint = false;
+                            break;
+                        }
+                    }
+                    if (choiceSatisfiesColumnConstraint) {
+                        result.set(row, true);
+                    }
+                }
+            }
+            return result;
+        }
+        
+        template<typename ValueType>
         void SparseMatrix<ValueType>::makeRowsAbsorbing(storm::storage::BitVector const& rows) {
             for (auto row : rows) {
                 makeRowDirac(row, row);
