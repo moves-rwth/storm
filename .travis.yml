@@ -15,6 +15,7 @@ cache:
   directories:
   - build
   - travis/mtime_cache
+  - src/storm/utility/storm-version.cpp
 
 # Enable docker support
 services:
