@@ -1,5 +1,8 @@
 #pragma once
 
+#include <vector>
+#include <memory>
+
 #include <boost/variant.hpp>
 
 #include "storm/storage/dd/DdType.h"
@@ -9,37 +12,19 @@
 #include "storm/models/symbolic/Model.h"
 
 namespace storm {
+    namespace logic {
+        class Formula;
+    }
+    
     namespace dd {
         namespace bisimulation {
+            
+            class PreservationInformation;
             
             template<storm::dd::DdType DdType, typename ValueType>
             class Partition {
             public:
                 Partition() = default;
-                
-                /*!
-                 * Creates a new partition from the given data.
-                 *
-                 * @param partitionAdd An ADD that maps encoding over the state/row variables and the block variable to
-                 * one iff the state is in the block.
-                 * @param blockVariable The variable to use for the block encoding. Its range must be [0, x] where x is
-                 * the number of states in the partition.
-                 * @param nextFreeBlockIndex The next free block index. The existing blocks must be encoded with indices
-                 * between 0 and this number.
-                 */
-                Partition(storm::dd::Add<DdType, ValueType> const& partitionAdd, storm::expressions::Variable const& blockVariable, uint64_t nextFreeBlockIndex);
-                
-                /*!
-                 * Creates a new partition from the given data.
-                 *
-                 * @param partitionBdd A BDD that maps encoding over the state/row variables and the block variable to
-                 * true iff the state is in the block.
-                 * @param blockVariable The variable to use for the block encoding. Its range must be [0, x] where x is
-                 * the number of states in the partition.
-                 * @param nextFreeBlockIndex The next free block index. The existing blocks must be encoded with indices
-                 * between 0 and this number.
-                 */
-                Partition(storm::dd::Bdd<DdType> const& partitionBdd, storm::expressions::Variable const& blockVariable, uint64_t nextFreeBlockIndex);
                 
                 bool operator==(Partition<DdType, ValueType> const& other);
                 
@@ -62,6 +47,11 @@ namespace storm {
                  */
                 static Partition create(storm::models::symbolic::Model<DdType, ValueType> const& model, std::vector<storm::expressions::Expression> const& expressions);
 
+                /*!
+                 * Creates a partition from the given model that preserves the given formulas.
+                 */
+                static Partition create(storm::models::symbolic::Model<DdType, ValueType> const& model, std::vector<std::shared_ptr<storm::logic::Formula const>> const& formulas);
+                
                 uint64_t getNumberOfBlocks() const;
                 
                 bool storedAsAdd() const;
@@ -71,21 +61,56 @@ namespace storm {
                 storm::dd::Bdd<DdType> const& asBdd() const;
                 
                 storm::expressions::Variable const& getBlockVariable() const;
+                storm::expressions::Variable const& getPrimedBlockVariable() const;
                 
                 uint64_t getNextFreeBlockIndex() const;
-                
                 uint64_t getNodeCount() const;
+
+                PreservationInformation const& getPreservationInformation() const;
                 
             private:
+                /*!
+                 * Creates a new partition from the given data.
+                 *
+                 * @param preservationInformation Informatin about which labels/expressions this partition preserves.
+                 * @param partitionAdd An ADD that maps encoding over the state/row variables and the block variable to
+                 * one iff the state is in the block.
+                 * @param blockVariables The variables to use for the block encoding. Its range must be [0, x] where x is
+                 * greater or equal than the number of states in the partition.
+                 * @param nextFreeBlockIndex The next free block index. The existing blocks must be encoded with indices
+                 * between 0 and this number.
+                 */
+                Partition(std::shared_ptr<PreservationInformation> preservationInformation, storm::dd::Add<DdType, ValueType> const& partitionAdd, std::pair<storm::expressions::Variable, storm::expressions::Variable> const& blockVariables, uint64_t nextFreeBlockIndex);
+                
+                /*!
+                 * Creates a new partition from the given data.
+                 *
+                 * @param preservationInformation Informatin about which labels/expressions this partition preserves.
+                 * @param partitionBdd A BDD that maps encoding over the state/row variables and the block variable to
+                 * true iff the state is in the block.
+                 * @param blockVariables The variables to use for the block encoding. Their range must be [0, x] where x is
+                 * greater or equal than the number of states in the partition.
+                 * @param nextFreeBlockIndex The next free block index. The existing blocks must be encoded with indices
+                 * between 0 and this number.
+                 */
+                Partition(std::shared_ptr<PreservationInformation> preservationInformation, storm::dd::Bdd<DdType> const& partitionBdd, std::pair<storm::expressions::Variable, storm::expressions::Variable> const& blockVariables, uint64_t nextFreeBlockIndex);
+                
+                /*!
+                 * Creates a partition from the given model that respects the given expressions.
+                 */
+                static Partition create(storm::models::symbolic::Model<DdType, ValueType> const& model, std::vector<storm::expressions::Expression> const& expressions, std::shared_ptr<PreservationInformation> const& preservationInformation);
+                
                 static std::pair<storm::dd::Bdd<DdType>, uint64_t> createPartitionBdd(storm::dd::DdManager<DdType> const& manager, storm::models::symbolic::Model<DdType, ValueType> const& model, std::vector<storm::dd::Bdd<DdType>> const& stateSets, storm::expressions::Variable const& blockVariable);
                 
-                static storm::expressions::Variable createBlockVariable(storm::dd::DdManager<DdType>& manager, uint64_t numberOfStates);
+                static std::pair<storm::expressions::Variable, storm::expressions::Variable> createBlockVariables(storm::dd::DdManager<DdType>& manager, uint64_t numberOfDdVariables);
+
+                std::shared_ptr<PreservationInformation> preservationInformation;
                 
                 /// The DD representing the partition. The DD is over the row variables of the model and the block variable.
                 boost::variant<storm::dd::Bdd<DdType>, storm::dd::Add<DdType, ValueType>> partition;
                 
-                /// The meta variable used to encode the block of each state in this partition.
-                storm::expressions::Variable blockVariable;
+                /// The meta variables used to encode the block of each state in this partition.
+                std::pair<storm::expressions::Variable, storm::expressions::Variable> blockVariables;
                 
                 /// The next free block index.
                 uint64_t nextFreeBlockIndex;

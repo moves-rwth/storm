@@ -21,11 +21,25 @@ namespace storm {
                                         std::set<storm::expressions::Variable> const& rowVariables,
                                         std::shared_ptr<storm::adapters::AddExpressionAdapter<Type, ValueType>> rowExpressionAdapter,
                                         std::set<storm::expressions::Variable> const& columnVariables,
-                                        std::shared_ptr<storm::adapters::AddExpressionAdapter<Type, ValueType>> columnExpressionAdapter,
                                         std::vector<std::pair<storm::expressions::Variable, storm::expressions::Variable>> const& rowColumnMetaVariablePairs,
                                         std::map<std::string, storm::expressions::Expression> labelToExpressionMap,
                                         std::unordered_map<std::string, RewardModelType> const& rewardModels)
-            : DeterministicModel<Type, ValueType>(storm::models::ModelType::Dtmc, manager, reachableStates, initialStates, deadlockStates, transitionMatrix, rowVariables, rowExpressionAdapter, columnVariables, columnExpressionAdapter, rowColumnMetaVariablePairs, labelToExpressionMap, rewardModels) {
+            : DeterministicModel<Type, ValueType>(storm::models::ModelType::Dtmc, manager, reachableStates, initialStates, deadlockStates, transitionMatrix, rowVariables, rowExpressionAdapter, columnVariables, rowColumnMetaVariablePairs, labelToExpressionMap, rewardModels) {
+                // Intentionally left empty.
+            }
+            
+            template<storm::dd::DdType Type, typename ValueType>
+            Dtmc<Type, ValueType>::Dtmc(std::shared_ptr<storm::dd::DdManager<Type>> manager,
+                                        storm::dd::Bdd<Type> reachableStates,
+                                        storm::dd::Bdd<Type> initialStates,
+                                        storm::dd::Bdd<Type> deadlockStates,
+                                        storm::dd::Add<Type, ValueType> transitionMatrix,
+                                        std::set<storm::expressions::Variable> const& rowVariables,
+                                        std::set<storm::expressions::Variable> const& columnVariables,
+                                        std::vector<std::pair<storm::expressions::Variable, storm::expressions::Variable>> const& rowColumnMetaVariablePairs,
+                                        std::map<std::string, storm::dd::Bdd<Type>> labelToBddMap,
+                                        std::unordered_map<std::string, RewardModelType> const& rewardModels)
+            : DeterministicModel<Type, ValueType>(storm::models::ModelType::Dtmc, manager, reachableStates, initialStates, deadlockStates, transitionMatrix, rowVariables, columnVariables, rowColumnMetaVariablePairs, labelToBddMap, rewardModels) {
                 // Intentionally left empty.
             }
             

@@ -2,9 +2,11 @@
 
 #include "storm/storage/dd/bisimulation/SignatureComputer.h"
 #include "storm/storage/dd/bisimulation/SignatureRefiner.h"
+#include "storm/storage/dd/bisimulation/QuotientExtractor.h"
 
 #include "storm/utility/macros.h"
 #include "storm/exceptions/InvalidOperationException.h"
+#include "storm/exceptions/NotSupportedException.h"
 
 #include <sylvan_table.h>
 
@@ -16,13 +18,18 @@ namespace storm {
         using namespace bisimulation;
         
         template <storm::dd::DdType DdType, typename ValueType>
-        BisimulationDecomposition<DdType, ValueType>::BisimulationDecomposition(storm::models::symbolic::Model<DdType, ValueType> const& model) : status(Status::Initialized), model(model), currentPartition(bisimulation::Partition<DdType, ValueType>::create(model)) {
+        BisimulationDecomposition<DdType, ValueType>::BisimulationDecomposition(storm::models::symbolic::Model<DdType, ValueType> const& model) : BisimulationDecomposition(model, bisimulation::Partition<DdType, ValueType>::create(model)) {
+            // Intentionally left empty.
+        }
+        
+        template <storm::dd::DdType DdType, typename ValueType>
+        BisimulationDecomposition<DdType, ValueType>::BisimulationDecomposition(storm::models::symbolic::Model<DdType, ValueType> const& model, std::vector<std::shared_ptr<storm::logic::Formula const>> const& formulas) : BisimulationDecomposition(model, bisimulation::Partition<DdType, ValueType>::create(model, formulas)) {
             // Intentionally left empty.
         }
         
         template <storm::dd::DdType DdType, typename ValueType>
         BisimulationDecomposition<DdType, ValueType>::BisimulationDecomposition(storm::models::symbolic::Model<DdType, ValueType> const& model, Partition<DdType, ValueType> const& initialPartition) : model(model), currentPartition(initialPartition) {
-            // Intentionally left empty.
+            STORM_LOG_THROW(!model.hasRewardModel(), storm::exceptions::NotSupportedException, "Symbolic bisimulation currently does not support preserving rewards.");
         }
         
         template <storm::dd::DdType DdType, typename ValueType>
@@ -52,7 +59,6 @@ namespace storm {
                 
                 auto refinementStart = std::chrono::high_resolution_clock::now();
                 Partition<DdType, ValueType> newPartition = refiner.refine(currentPartition, signature);
-//                newPartition.getPartitionAdd().exportToDot("part" + std::to_string(iterations) + ".dot");
                 auto refinementEnd = std::chrono::high_resolution_clock::now();
                 totalRefinementTime += (refinementEnd - refinementStart);
                 
@@ -78,7 +84,13 @@ namespace storm {
         template <storm::dd::DdType DdType, typename ValueType>
         std::shared_ptr<storm::models::symbolic::Model<DdType, ValueType>> BisimulationDecomposition<DdType, ValueType>::getQuotient() const {
             STORM_LOG_THROW(this->status == Status::FixedPoint, storm::exceptions::InvalidOperationException, "Cannot extract quotient, because bisimulation decomposition was not completed.");
-            return nullptr;
+
+            STORM_LOG_TRACE("Starting quotient extraction.");
+            QuotientExtractor<DdType, ValueType> extractor;
+            std::shared_ptr<storm::models::symbolic::Model<DdType, ValueType>> quotient = extractor.extract(model, currentPartition);
+            STORM_LOG_TRACE("Quotient extraction done.");
+            
+            return quotient;
         }
         
         template class BisimulationDecomposition<storm::dd::DdType::CUDD, double>;

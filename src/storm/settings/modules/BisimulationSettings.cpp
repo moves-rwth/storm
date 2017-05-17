@@ -14,10 +14,17 @@ namespace storm {
             
             const std::string BisimulationSettings::moduleName = "bisimulation";
             const std::string BisimulationSettings::typeOptionName = "type";
+            const std::string BisimulationSettings::representativeOptionName = "repr";
+            const std::string BisimulationSettings::quotientFormatOptionName = "quot";
             
             BisimulationSettings::BisimulationSettings() : ModuleSettings(moduleName) {
                 std::vector<std::string> types = { "strong", "weak" };
                 this->addOption(storm::settings::OptionBuilder(moduleName, typeOptionName, true, "Sets the kind of bisimulation quotienting used.").addArgument(storm::settings::ArgumentBuilder::createStringArgument("name", "The name of the type to use.").addValidatorString(ArgumentValidatorFactory::createMultipleChoiceValidator(types)).setDefaultValueString("strong").build()).build());
+                
+                std::vector<std::string> quotTypes = { "sparse", "dd" };
+                this->addOption(storm::settings::OptionBuilder(moduleName, typeOptionName, true, "Sets the format in which the quotient is extracted (only applies to DD-based bisimulation).").addArgument(storm::settings::ArgumentBuilder::createStringArgument("format", "The format of the quotient.").addValidatorString(ArgumentValidatorFactory::createMultipleChoiceValidator(quotTypes)).setDefaultValueString("dd").build()).build());
+                
+                this->addOption(storm::settings::OptionBuilder(moduleName, representativeOptionName, false, "Sets whether to use representatives in the quotient rather than block numbers.").build());
             }
             
             bool BisimulationSettings::isStrongBisimulationSet() const {
@@ -32,6 +39,18 @@ namespace storm {
                     return true;
                 }
                 return false;
+            }
+            
+            BisimulationSettings::QuotientFormat BisimulationSettings::getQuotientFormat() const {
+                std::string quotientFormatAsString = this->getOption(typeOptionName).getArgumentByName("format").getValueAsString();
+                if (quotientFormatAsString == "sparse") {
+                    return BisimulationSettings::QuotientFormat::Sparse;
+                }
+                return BisimulationSettings::QuotientFormat::Dd;
+            }
+            
+            bool BisimulationSettings::isUseRepresentativesSet() const {
+                return this->getOption(representativeOptionName).getHasOptionBeenSet();
             }
             
             bool BisimulationSettings::check() const {

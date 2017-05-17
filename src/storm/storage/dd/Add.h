@@ -310,6 +310,17 @@ namespace storm {
              * values.
              */
             bool equalModuloPrecision(Add<LibraryType, ValueType> const& other, ValueType const& precision, bool relative = true) const;
+
+            /*!
+             * Renames the given meta variables in the ADD. The number of the underlying DD variables of the both meta
+             * variable sets needs to agree.
+             *
+             * @param from The meta variables to be renamed. The current ADD needs to contain all these meta variables.
+             * @param to The meta variables that are the target of the renaming process. The current ADD must not contain
+             * any of these meta variables.
+             * @return The resulting ADD.
+             */
+            Add<LibraryType, ValueType> renameVariables(std::set<storm::expressions::Variable> const& from, std::set<storm::expressions::Variable> const& to) const;
             
             /*!
              * Swaps the given pairs of meta variables in the ADD. The pairs of meta variables must be guaranteed to have
@@ -319,7 +330,7 @@ namespace storm {
              * @return The resulting ADD.
              */
             Add<LibraryType, ValueType> swapVariables(std::vector<std::pair<storm::expressions::Variable, storm::expressions::Variable>> const& metaVariablePairs) const;
-            
+
             /*!
              * Permutes the given pairs of meta variables in the ADD. The pairs of meta variables must be guaranteed to have
              * the same number of underlying ADD variables. The first component of the i-th entry is substituted by the second component.

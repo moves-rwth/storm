@@ -22,6 +22,16 @@ namespace storm {
         }
         
         template<DdType LibraryType>
+        std::shared_ptr<DdManager<LibraryType>> DdManager<LibraryType>::asSharedPointer() {
+            return this->shared_from_this();
+        }
+        
+        template<DdType LibraryType>
+        std::shared_ptr<DdManager<LibraryType> const> DdManager<LibraryType>::asSharedPointer() const {
+            return this->shared_from_this();
+        }
+        
+        template<DdType LibraryType>
         Bdd<LibraryType> DdManager<LibraryType>::getBddOne() const {
             return Bdd<LibraryType>(*this, internalDdManager.getBddOne());
         }
@@ -219,6 +229,11 @@ namespace storm {
             }
             
             return result;
+        }
+        
+        template<DdType LibraryType>
+        std::vector<storm::expressions::Variable> DdManager<LibraryType>::addBitVectorMetaVariable(std::string const& variableName, uint64_t bits, uint64_t numberOfLayers, boost::optional<std::pair<MetaVariablePosition, storm::expressions::Variable>> const& position) {
+            return this->addMetaVariable(variableName, 0, (1ull << bits) - 1, numberOfLayers, position);
         }
         
         template<DdType LibraryType>

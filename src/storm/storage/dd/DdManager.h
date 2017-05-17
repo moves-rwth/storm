@@ -21,7 +21,7 @@ namespace storm {
     namespace dd {
         // Declare DdManager class so we can then specialize it for the different DD types.
         template<DdType LibraryType>
-        class DdManager {
+        class DdManager : public std::enable_shared_from_this<DdManager<LibraryType>> {
         public:
             friend class Bdd<LibraryType>;
             
@@ -41,6 +41,9 @@ namespace storm {
             DdManager<LibraryType>& operator=(DdManager<LibraryType> const& other) = delete;
             DdManager(DdManager<LibraryType>&& other) = default;
             DdManager<LibraryType>& operator=(DdManager<LibraryType>&& other) = default;
+
+            std::shared_ptr<DdManager<LibraryType>> asSharedPointer();
+            std::shared_ptr<DdManager<LibraryType> const> asSharedPointer() const;
             
             /*!
              * Retrieves a BDD representing the constant one function.
@@ -160,7 +163,15 @@ namespace storm {
              * @param numberOfLayers The number of layers of this variable (must be greater or equal 1).
              */
             std::vector<storm::expressions::Variable> addMetaVariable(std::string const& variableName, int_fast64_t low, int_fast64_t high, uint64_t numberOfLayers, boost::optional<std::pair<MetaVariablePosition, storm::expressions::Variable>> const& position = boost::none);
-            
+
+            /*!
+             * Creates a meta variable with the given number of layers.
+             *
+             * @param variableName The name of the variable.
+             * @param numberOfLayers The number of layers of this variable (must be greater or equal 1).
+             */
+            std::vector<storm::expressions::Variable> addBitVectorMetaVariable(std::string const& variableName, uint64_t bits, uint64_t numberOfLayers, boost::optional<std::pair<MetaVariablePosition, storm::expressions::Variable>> const& position = boost::none);
+
             /*!
              * Adds a boolean meta variable with two layers (a 'normal' and a 'primed' one).
              *

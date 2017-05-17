@@ -1,10 +1,15 @@
 #pragma once
 
+#include <memory>
+#include <vector>
+
 #include "storm/storage/dd/DdType.h"
+
+#include "storm/storage/dd/bisimulation/Partition.h"
 
 #include "storm/models/symbolic/Model.h"
 
-#include "storm/storage/dd/bisimulation/Partition.h"
+#include "storm/logic/Formula.h"
 
 namespace storm {
     namespace dd {
@@ -17,7 +22,7 @@ namespace storm {
             };
             
             BisimulationDecomposition(storm::models::symbolic::Model<DdType, ValueType> const& model);
-
+            BisimulationDecomposition(storm::models::symbolic::Model<DdType, ValueType> const& model, std::vector<std::shared_ptr<storm::logic::Formula const>> const& formulas);
             BisimulationDecomposition(storm::models::symbolic::Model<DdType, ValueType> const& model, bisimulation::Partition<DdType, ValueType> const& initialPartition);
             
             /*!

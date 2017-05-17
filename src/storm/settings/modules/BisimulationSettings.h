@@ -15,7 +15,7 @@ namespace storm {
                 // An enumeration of all available bisimulation types.
                 enum class BisimulationType { Strong, Weak };
                 
-                enum class CachingStrategy { FullDirect, FullLate, Granularity, Minimal };
+                enum class QuotientFormat { Sparse, Dd };
                 
                 /*!
                  * Creates a new set of bisimulation settings.
@@ -36,6 +36,18 @@ namespace storm {
                  */
                 bool isWeakBisimulationSet() const;
 
+                /*!
+                 * Retrieves the format in which the quotient is to be extracted.
+                 * NOTE: only applies to DD-based bisimulation.
+                 */
+                QuotientFormat getQuotientFormat() const;
+                
+                /*!
+                 * Retrieves whether representatives for blocks are to be used instead of the block numbers.
+                 * NOTE: only applies to DD-based bisimulation.
+                 */
+                bool isUseRepresentativesSet() const;
+                
                 virtual bool check() const override;
                 
                 // The name of the module.
@@ -44,6 +56,8 @@ namespace storm {
             private:
                 // Define the string names of the options as constants.
                 static const std::string typeOptionName;
+                static const std::string representativeOptionName;
+                static const std::string quotientFormatOptionName;
             };
         } // namespace modules
     } // namespace settings

@@ -141,7 +141,7 @@ namespace storm {
         template <storm::dd::DdType Type, typename ValueType>
         class ParameterCreator {
         public:
-            void create(storm::jani::Model const& model, storm::adapters::AddExpressionAdapter<Type, ValueType>& rowExpressionAdapter, storm::adapters::AddExpressionAdapter<Type, ValueType>& columnExpressionAdapter) {
+            void create(storm::jani::Model const& model, storm::adapters::AddExpressionAdapter<Type, ValueType>& rowExpressionAdapter) {
                 // Intentionally left empty: no support for parameters for this data type.
             }
             
@@ -160,14 +160,13 @@ namespace storm {
                 // Intentionally left empty.
             }
             
-            void create(storm::jani::Model const& model, storm::adapters::AddExpressionAdapter<Type, storm::RationalFunction>& rowExpressionAdapter, storm::adapters::AddExpressionAdapter<Type, storm::RationalFunction>& columnExpressionAdapter) {
+            void create(storm::jani::Model const& model, storm::adapters::AddExpressionAdapter<Type, storm::RationalFunction>& rowExpressionAdapter) {
                 for (auto const& constant : model.getConstants()) {
                     if (!constant.isDefined()) {
                         carl::Variable carlVariable = carl::freshRealVariable(constant.getExpressionVariable().getName());
                         parameters.insert(carlVariable);
                         auto rf = convertVariableToPolynomial(carlVariable);
                         rowExpressionAdapter.setValue(constant.getExpressionVariable(), rf);
-                        columnExpressionAdapter.setValue(constant.getExpressionVariable(), rf);
                     }
                 }
             }
@@ -202,8 +201,7 @@ namespace storm {
             CompositionVariables() : manager(std::make_shared<storm::dd::DdManager<Type>>()),
             variableToRowMetaVariableMap(std::make_shared<std::map<storm::expressions::Variable, storm::expressions::Variable>>()),
             rowExpressionAdapter(std::make_shared<storm::adapters::AddExpressionAdapter<Type, ValueType>>(manager, variableToRowMetaVariableMap)),
-            variableToColumnMetaVariableMap(std::make_shared<std::map<storm::expressions::Variable, storm::expressions::Variable>>()),
-            columnExpressionAdapter(std::make_shared<storm::adapters::AddExpressionAdapter<Type, ValueType>>(manager, variableToColumnMetaVariableMap)) {
+            variableToColumnMetaVariableMap(std::make_shared<std::map<storm::expressions::Variable, storm::expressions::Variable>>()) {
                 // Intentionally left empty.
             }
             
@@ -217,7 +215,6 @@ namespace storm {
             // The meta variables for the column encoding.
             std::set<storm::expressions::Variable> columnMetaVariables;
             std::shared_ptr<std::map<storm::expressions::Variable, storm::expressions::Variable>> variableToColumnMetaVariableMap;
-            std::shared_ptr<storm::adapters::AddExpressionAdapter<Type, ValueType>> columnExpressionAdapter;
             
             // All pairs of row/column meta variables.
             std::vector<std::pair<storm::expressions::Variable, storm::expressions::Variable>> rowColumnMetaVariablePairs;
@@ -392,7 +389,7 @@ namespace storm {
                 }
                 
                 ParameterCreator<Type, ValueType> parameterCreator;
-                parameterCreator.create(model, *result.rowExpressionAdapter, *result.columnExpressionAdapter);
+                parameterCreator.create(model, *result.rowExpressionAdapter);
                 if (std::is_same<ValueType, storm::RationalFunction>::value) {
                     result.parameters = parameterCreator.getParameters();
                 }
@@ -1706,11 +1703,11 @@ namespace storm {
         std::shared_ptr<storm::models::symbolic::Model<Type, ValueType>> createModel(storm::jani::ModelType const& modelType, CompositionVariables<Type, ValueType> const& variables, ModelComponents<Type, ValueType> const& modelComponents) {
             std::shared_ptr<storm::models::symbolic::Model<Type, ValueType>> result;
             if (modelType == storm::jani::ModelType::DTMC) {
-                result = std::make_shared<storm::models::symbolic::Dtmc<Type, ValueType>>(variables.manager, modelComponents.reachableStates, modelComponents.initialStates, modelComponents.deadlockStates, modelComponents.transitionMatrix, variables.rowMetaVariables, variables.rowExpressionAdapter, variables.columnMetaVariables, variables.columnExpressionAdapter, variables.rowColumnMetaVariablePairs, modelComponents.labelToExpressionMap, modelComponents.rewardModels);
+                result = std::make_shared<storm::models::symbolic::Dtmc<Type, ValueType>>(variables.manager, modelComponents.reachableStates, modelComponents.initialStates, modelComponents.deadlockStates, modelComponents.transitionMatrix, variables.rowMetaVariables, variables.rowExpressionAdapter, variables.columnMetaVariables, variables.rowColumnMetaVariablePairs, modelComponents.labelToExpressionMap, modelComponents.rewardModels);
             } else if (modelType == storm::jani::ModelType::CTMC) {
-                result = std::make_shared<storm::models::symbolic::Ctmc<Type, ValueType>>(variables.manager, modelComponents.reachableStates, modelComponents.initialStates, modelComponents.deadlockStates, modelComponents.transitionMatrix, variables.rowMetaVariables, variables.rowExpressionAdapter, variables.columnMetaVariables, variables.columnExpressionAdapter, variables.rowColumnMetaVariablePairs, modelComponents.labelToExpressionMap, modelComponents.rewardModels);
+                result = std::make_shared<storm::models::symbolic::Ctmc<Type, ValueType>>(variables.manager, modelComponents.reachableStates, modelComponents.initialStates, modelComponents.deadlockStates, modelComponents.transitionMatrix, variables.rowMetaVariables, variables.rowExpressionAdapter, variables.columnMetaVariables, variables.rowColumnMetaVariablePairs, modelComponents.labelToExpressionMap, modelComponents.rewardModels);
             } else if (modelType == storm::jani::ModelType::MDP || modelType == storm::jani::ModelType::LTS) {
-                result = std::make_shared<storm::models::symbolic::Mdp<Type, ValueType>>(variables.manager, modelComponents.reachableStates, modelComponents.initialStates, modelComponents.deadlockStates, modelComponents.transitionMatrix, variables.rowMetaVariables, variables.rowExpressionAdapter, variables.columnMetaVariables, variables.columnExpressionAdapter, variables.rowColumnMetaVariablePairs, variables.allNondeterminismVariables, modelComponents.labelToExpressionMap, modelComponents.rewardModels);
+                result = std::make_shared<storm::models::symbolic::Mdp<Type, ValueType>>(variables.manager, modelComponents.reachableStates, modelComponents.initialStates, modelComponents.deadlockStates, modelComponents.transitionMatrix, variables.rowMetaVariables, variables.rowExpressionAdapter, variables.columnMetaVariables, variables.rowColumnMetaVariablePairs, variables.allNondeterminismVariables, modelComponents.labelToExpressionMap, modelComponents.rewardModels);
             } else {
                 STORM_LOG_THROW(false, storm::exceptions::WrongFormatException, "Model type '" << modelType << "' not supported.");
             }

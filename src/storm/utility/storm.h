@@ -192,10 +192,9 @@ namespace storm {
         }
         
         if (storm::settings::getModule<storm::settings::modules::GeneralSettings>().isBisimulationSet()) {
-            storm::dd::BisimulationDecomposition<LibraryType, ValueType> decomposition(*result);
+            storm::dd::BisimulationDecomposition<LibraryType, ValueType> decomposition(*result, formulas);
             decomposition.compute();
-            
-            // TODO build quotient and return it.
+            result = decomposition.getQuotient();
         }
         
         return result;
