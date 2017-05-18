@@ -862,19 +862,18 @@ namespace storm {
             template<typename Type>
             void filterVectorInPlace(std::vector<Type>& v, storm::storage::BitVector const& filter) {
                 STORM_LOG_ASSERT(v.size() == filter.size(), "The filter size does not match the size of the input vector");
-                auto vIt = v.begin();
-                auto filterIt = filter.begin();
-                // get the first position where the filter has a 0.
-                // Note that we do not have to modify the entries of v on all positions before
-                for (uint_fast64_t i = 0; i == *filterIt && filterIt != filter.end(); ++i) {
-                    ++filterIt;
-                    ++vIt;
+                uint_fast64_t size = v.size();
+                // we can start our work at the first index where the filter has value zero
+                uint_fast64_t firstUnsetIndex = filter.getNextUnsetIndex(0);
+                if (firstUnsetIndex < size) {
+                    auto vIt = v.begin() + firstUnsetIndex;
+                    for (uint_fast64_t index = filter.getNextSetIndex(firstUnsetIndex + 1); index != size; index = filter.getNextSetIndex(index + 1)) {
+                        *vIt = std::move(v[index]);
+                        ++vIt;
+                    }
+                    v.resize(vIt - v.begin());
+                    v.shrink_to_fit();
                 }
-                for (; filterIt != filter.end(); ++filterIt) {
-                    *vIt = std::move(v[*filterIt]);
-                    ++vIt;
-                }
-                v.resize(vIt - v.begin());
                 STORM_LOG_ASSERT(v.size() == filter.getNumberOfSetBits(), "Result does not match.");
             }
             
