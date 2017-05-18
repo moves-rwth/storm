@@ -33,6 +33,7 @@ run() {
     VERBOSE=1 make resources -j$N_JOBS
     VERBOSE=1 make test-resources -j$N_JOBS
     VERBOSE=1 make l3pp_ext -j$N_JOBS
+    VERBOSE=1 make sylvan -j$N_JOBS
     travis_fold end make_dep
     ;;
 
