@@ -46,11 +46,12 @@ namespace storm {
             // Get the reward models
             std::unordered_map<std::string, typename SparseModelType::RewardModelType> rewardModels;
             for (auto rewardModelName : selectedRewardModels) {
-                auto origTotalRewards = originalModel.getRewardModel(rewardModelName).getTotalRewardVector(originalModel.getTransitionMatrix());
-                auto transitionsOfMaybeStates = originalModel.getTransitionMatrix().getRowIndicesOfRowGroups(maybeStates);
-                auto resTotalRewards = storm::utility::vector::filterVector(origTotalRewards, transitionsOfMaybeStates);
-                resTotalRewards.resize(transitionMatrix.getRowCount(), storm::utility::zero<typename SparseModelType::RewardModelType::ValueType>());
-                rewardModels.insert(std::make_pair(rewardModelName, typename SparseModelType::RewardModelType(boost::none, resTotalRewards)));
+                auto totalRewards = originalModel.getRewardModel(rewardModelName).getTotalRewardVector(originalModel.getTransitionMatrix());
+                auto choicesOfMaybeStates = originalModel.getTransitionMatrix().getRowFilter(maybeStates);
+                storm::utility::vector::filterVectorInPlace(totalRewards, choicesOfMaybeStates);
+                // add zero reward for the sink and goal states (if they exists)
+                totalRewards.resize(transitionMatrix.getRowCount(), storm::utility::zero<typename SparseModelType::RewardModelType::ValueType>());
+                rewardModels.insert(std::make_pair(rewardModelName, typename SparseModelType::RewardModelType(boost::none, totalRewards)));
             }
                 
             // modify the given target and sink states

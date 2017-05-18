@@ -140,14 +140,14 @@ namespace storm {
                     this->getTransitionMatrix() = this->getTransitionMatrix().restrictRows(keptChoices);
                     for(auto& rewModel : this->getRewardModels()) {
                         if(rewModel.second.hasStateActionRewards()) {
-                            rewModel.second.getStateActionRewardVector() = storm::utility::vector::filterVector(rewModel.second.getStateActionRewardVector(), keptChoices);
+                            storm::utility::vector::filterVectorInPlace(rewModel.second.getStateActionRewardVector(), keptChoices);
                         }
                         if(rewModel.second.hasTransitionRewards()) {
                             rewModel.second.getTransitionRewardMatrix() = rewModel.second.getTransitionRewardMatrix().restrictRows(keptChoices);
                         }
                     }
                     if(this->hasChoiceLabeling()) {
-                        this->getOptionalChoiceLabeling() = storm::utility::vector::filterVector(this->getOptionalChoiceLabeling().get(), keptChoices);
+                        storm::utility::vector::filterVectorInPlace(this->getOptionalChoiceLabeling().get(), keptChoices);
                     }
 
                     // Mark the automaton as closed.
@@ -329,7 +329,7 @@ namespace storm {
                 storm::models::sparse::StateLabeling stateLabeling = this->getStateLabeling().getSubLabeling(keepStates);
                 boost::optional<std::vector<LabelSet>> optionalChoiceLabeling = this->getOptionalChoiceLabeling();
                 if (optionalChoiceLabeling) {
-                    optionalChoiceLabeling = storm::utility::vector::filterVector(optionalChoiceLabeling.get(), keepStates);
+                    storm::utility::vector::filterVectorInPlace(optionalChoiceLabeling.get(), keepStates);
                 }
                 //TODO update reward models according to kept states
                 STORM_LOG_WARN_COND(this->getRewardModels().empty(), "Conversion of MA to CTMC does not preserve rewards.");

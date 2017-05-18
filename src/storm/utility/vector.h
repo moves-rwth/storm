@@ -863,8 +863,15 @@ namespace storm {
             void filterVectorInPlace(std::vector<Type>& v, storm::storage::BitVector const& filter) {
                 STORM_LOG_ASSERT(v.size() == filter.size(), "The filter size does not match the size of the input vector");
                 auto vIt = v.begin();
-                for(auto index : filter) {
-                    *vIt = std::move(v[index]);
+                auto filterIt = filter.begin();
+                // get the first position where the filter has a 0.
+                // Note that we do not have to modify the entries of v on all positions before
+                for (uint_fast64_t i = 0; i == *filterIt && filterIt != filter.end(); ++i) {
+                    ++filterIt;
+                    ++vIt;
+                }
+                for (; filterIt != filter.end(); ++filterIt) {
+                    *vIt = std::move(v[*filterIt]);
                     ++vIt;
                 }
                 v.resize(vIt - v.begin());
@@ -875,7 +882,7 @@ namespace storm {
             bool hasNegativeEntry(std::vector<T> const& v){
                 return std::any_of(v.begin(), v.end(), [](T value){return value < storm::utility::zero<T>();});
             }
-            
+                     
             template<typename T>
             bool hasPositiveEntry(std::vector<T> const& v){
                 return std::any_of(v.begin(), v.end(), [](T value){return value > storm::utility::zero<T>();});

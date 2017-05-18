@@ -555,10 +555,11 @@ namespace storm {
         }
 
         template<typename ValueType>
-        storm::storage::BitVector SparseMatrix<ValueType>::getRowIndicesOfRowGroups(storm::storage::BitVector const& groups) const {
+        storm::storage::BitVector SparseMatrix<ValueType>::getRowFilter(storm::storage::BitVector const& groupConstraint) const {
             storm::storage::BitVector res(this->getRowCount(), false);
-            for(auto group : groups) {
-                for(uint_fast64_t row = this->getRowGroupIndices()[group]; row < this->getRowGroupIndices()[group+1]; ++row) {
+            for(auto group : groupConstraint) {
+                uint_fast64_t const endOfGroup = this->getRowGroupIndices()[group + 1];
+                for(uint_fast64_t row = this->getRowGroupIndices()[group]; row < endOfGroup; ++row) {
                     res.set(row, true);
                 }
             }

@@ -102,7 +102,7 @@ namespace storm {
                 
                 storm::storage::BitVector probabilisticStates = ~this->model.getMarkovianStates();
                 result.states = createMS ? this->model.getMarkovianStates() : probabilisticStates;
-                result.choices = this->model.getTransitionMatrix().getRowIndicesOfRowGroups(result.states);
+                result.choices = this->model.getTransitionMatrix().getRowFilter(result.states);
                 STORM_LOG_ASSERT(!createMS || result.states.getNumberOfSetBits() == result.choices.getNumberOfSetBits(), "row groups for Markovian states should consist of exactly one row");
                 
                 //We need to add diagonal entries for selfloops on Markovian states.

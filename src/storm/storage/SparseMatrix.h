@@ -569,7 +569,7 @@ namespace storm {
              * @param groups the selected row groups
              * @return a bit vector that is true at position i iff the row group of row i is selected.
              */
-            storm::storage::BitVector getRowIndicesOfRowGroups(storm::storage::BitVector const& groups) const;
+            storm::storage::BitVector getRowFilter(storm::storage::BitVector const& groupConstraint) const;
             
             /*!
              * Returns the indices of all rows that
