@@ -30,7 +30,7 @@ linux)
     docker cp . storm:/storm
 
     # Execute main process
-    timeout $TIMEOUT $TIMEARG docker exec storm bash -c "
+    timeout $TIMEARG $TIMEOUT docker exec storm bash -c "
         export COMPILER=$COMPILER;
         export N_JOBS=$N_JOBS;
         export STLARG=$STLARG;
@@ -46,7 +46,7 @@ osx)
     export N_JOBS
     export STLARG
     export OS
-    gtimeout $TIMEOUT $TIMEARG travis/postsubmit-helper.sh "$1" "$2"
+    gtimeout $TIMEARG $TIMEOUT travis/postsubmit-helper.sh "$1" "$2"
     exit $?
     ;;
 
