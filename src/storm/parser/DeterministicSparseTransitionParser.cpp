@@ -176,7 +176,6 @@ namespace storm {
 
             // Check all transitions for non-zero diagonal entries and deadlock states.
             uint_fast64_t row, col, lastRow = 0, lastCol = -1;
-            bool rowHadDiagonalEntry = false;
 
             // Read first row and reserve space for self-loops if necessary.
             char const* tmp;
@@ -188,13 +187,19 @@ namespace storm {
             }
 
             while (buf[0] != '\0') {
-
                 // Read the transition.
                 row = checked_strtol(buf, &buf);
                 col = checked_strtol(buf, &buf);
                 // The actual read value is not needed here.
                 checked_strtod(buf, &buf);
 
+                if (lastRow != row) {
+                    // Compensate for missing rows.
+                    for (uint_fast64_t skippedRow = lastRow + 1; skippedRow < row; ++skippedRow) {
+                        ++result.numberOfNonzeroEntries;
+                    }
+                }
+                
                 // Check if a higher state id was found.
                 if (row > result.highestStateIndex) result.highestStateIndex = row;
                 if (col > result.highestStateIndex) result.highestStateIndex = col;
@@ -213,6 +218,10 @@ namespace storm {
                 buf = trimWhitespaces(buf);
             }
 
+            for (uint_fast64_t skippedRow = (uint_fast64_t) (lastRow + 1); skippedRow <= result.highestStateIndex; ++skippedRow) {
+                ++result.numberOfNonzeroEntries;
+            }
+            
             return result;
         }
 
