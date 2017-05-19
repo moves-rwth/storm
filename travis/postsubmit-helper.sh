@@ -1,4 +1,4 @@
-#!/bin/bash -x
+#!/bin/bash
 # Inspired by https://github.com/google/fruit
 
 set -e
@@ -30,10 +30,10 @@ run() {
     travis_fold end cmake
     # Make resources
     travis_fold start make_dep
-    VERBOSE=1 make resources -j$N_JOBS
-    VERBOSE=1 make test-resources -j$N_JOBS
-    VERBOSE=1 make l3pp_ext -j$N_JOBS
-    VERBOSE=1 make sylvan -j$N_JOBS
+    make resources -j$N_JOBS
+    make test-resources -j$N_JOBS
+    make l3pp_ext -j$N_JOBS
+    make sylvan -j$N_JOBS
     travis_fold end make_dep
     ;;
 
@@ -41,7 +41,7 @@ run() {
     # Make libstorm
     travis_fold start make_lib
     cd build
-    VERBOSE=1 make storm -j$N_JOBS
+    make storm -j$N_JOBS
     travis_fold end make_lib
     ;;
 
@@ -49,7 +49,7 @@ run() {
     # Make all
     travis_fold start make_all
     cd build
-    VERBOSE=1 make -j$N_JOBS
+    make -j$N_JOBS
     travis_fold end make_all
     ;;
 

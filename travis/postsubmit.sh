@@ -1,4 +1,4 @@
-#!/bin/bash -x
+#!/bin/bash
 # Inspired by https://github.com/google/fruit
 
 set -e

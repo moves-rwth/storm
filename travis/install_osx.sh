@@ -1,4 +1,4 @@
-#!/bin/bash -x
+#!/bin/bash
 # Script installing dependencies
 # Inspired by https://github.com/google/fruit
 
