@@ -21,8 +21,8 @@ build_types = [
 # Stages in travis
 stages = [
     ("Build dependencies", "BuildDep"),
-    ("Build library 1", "BuildLib1"),
-    ("Build library 2", "BuildLib"),
+    ("Build library (1st run)", "BuildLib1"),
+    ("Build library (2nd run)", "BuildLib"),
     ("Build all", "BuildAll"),
     ("Test all", "TestAll"),
 ]

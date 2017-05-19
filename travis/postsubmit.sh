@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/bash -x
 # Inspired by https://github.com/google/fruit
 
 set -e
@@ -11,7 +11,7 @@ then
   STLARG="-stdlib=$STL"
 fi
 
-if [ "$2" = "BuildLib1"]
+if [ "$2" = "BuildLib1" ]
 then
     TIMEARG="--preserve-status"
 else
