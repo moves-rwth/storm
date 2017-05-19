@@ -4,7 +4,7 @@
 set -e
 
 : ${N_JOBS:=2}
-: ${TIMEOUT:=2200}
+: ${TIMEOUT:=2000}
 
 if [ "$STL" != "" ]
 then
