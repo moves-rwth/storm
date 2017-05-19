@@ -27,12 +27,13 @@ option(STORM_USE_LTO "Sets whether link-time optimizations are enabled." ON)
 MARK_AS_ADVANCED(STORM_USE_LTO)
 option(STORM_PORTABLE "Sets whether a build needs to be portable." OFF)
 MARK_AS_ADVANCED(STORM_PORTABLE)
-option(STORM_USE_POPCNT "Sets whether the popcnt instruction is going to be used." ON)
-MARK_AS_ADVANCED(STORM_USE_POPCNT)
+# Force POPCNT is helpful for portable code targetting platforms with SSE4.2 operation support.
+option(STORM_FORCE_POPCNT "Sets whether the popcnt instruction is forced to be used (advanced)." OFF)
+MARK_AS_ADVANCED(STORM_FORCE_POPCNT)
 option(USE_BOOST_STATIC_LIBRARIES "Sets whether the Boost libraries should be linked statically." OFF)
 option(STORM_USE_INTELTBB "Sets whether the Intel TBB libraries should be used." OFF)
 option(STORM_USE_GUROBI "Sets whether Gurobi should be used." OFF)
-option(USE_CARL "Sets whether carl should be included." ON)
+set(USE_CARL ON)
 option(STORM_FORCE_SHIPPED_CARL "Sets whether the shipped version of carl is to be used no matter whether carl is found or not." OFF)
 MARK_AS_ADVANCED(STORM_FORCE_SHIPPED_CARL)
 option(USE_SMTRAT "Sets whether SMT-RAT should be included." OFF)
@@ -198,7 +199,7 @@ endif()
 ##	Compiler independent settings
 ##
 #############################################################
-if (STORM_USE_POPCNT)
+if (STORM_FORCE_POPCNT)
 	set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -mpopcnt")
 endif()
 
@@ -397,9 +398,18 @@ else()
 	else()
 		set(STORM_VERSION_DIRTY "false")
 	endif()
-	message(STATUS "Storm - version is ${STORM_VERSION_MAJOR}.${STORM_VERSION_MINOR}.${STORM_VERSION_PATCH} (${STORM_VERSION_COMMITS_AHEAD} commits ahead of tag), building from git: ${STORM_VERSION_GIT_HASH} (dirty: ${STORM_VERSION_DIRTY}).")
+
+	set(STORM_VERSION_DEV_STRING "")
+	if(STORM_VERSION_COMMITS_AHEAD)
+		MATH(EXPR STORM_VERSION_DEV_PATCH "${STORM_VERSION_PATCH}+1")
+
+		set(STORM_VERSION_DEV_STRING "(dev)")
+	else()
+		set(STORM_VERSION_DEV_PATCH ${STORM_VERSION_PATCH})
+	endif()
+	message(STATUS "Storm - version is ${STORM_VERSION_MAJOR}.${STORM_VERSION_MINOR}.${STORM_VERSION_DEV_PATCH}${STORM_VERSION_DEV_STRING} (version ${STORM_VERSION_MAJOR}.${STORM_VERSION_MINOR}.${STORM_VERSION_PATCH} + ${STORM_VERSION_COMMITS_AHEAD} commits), building from git: ${STORM_VERSION_GIT_HASH} (dirty: ${STORM_VERSION_DIRTY}).")
 endif()
-set(STORM_VERSION "${STORM_VERSION_MAJOR}.${STORM_VERSION_MINOR}.${STORM_VERSION_PATCH}")
+set(STORM_VERSION "${STORM_VERSION_MAJOR}.${STORM_VERSION_MINOR}.${STORM_VERSION_DEV_PATCH}")
 
 
 # Configure a header file to pass some of the CMake settings to the source code

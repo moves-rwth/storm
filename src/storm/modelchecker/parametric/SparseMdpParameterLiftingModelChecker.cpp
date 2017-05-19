@@ -69,7 +69,7 @@ namespace storm {
                     // Create the vector of one-step probabilities to go to target states.
                     std::vector<typename SparseModelType::ValueType> b = this->parametricModel.getTransitionMatrix().getConstrainedRowSumVector(storm::storage::BitVector(this->parametricModel.getTransitionMatrix().getRowCount(), true), psiStates);
                     
-                    parameterLifter = std::make_unique<storm::transformer::ParameterLifter<typename SparseModelType::ValueType, ConstantType>>(this->parametricModel.getTransitionMatrix(), b, this->parametricModel.getTransitionMatrix().getRowIndicesOfRowGroups(maybeStates), maybeStates);
+                    parameterLifter = std::make_unique<storm::transformer::ParameterLifter<typename SparseModelType::ValueType, ConstantType>>(this->parametricModel.getTransitionMatrix(), b, this->parametricModel.getTransitionMatrix().getRowFilter(maybeStates), maybeStates);
                     computePlayer1Matrix();
                     
                     applyPreviousResultAsHint = false;
@@ -104,7 +104,7 @@ namespace storm {
                     // Create the vector of one-step probabilities to go to target states.
                     std::vector<typename SparseModelType::ValueType> b = this->parametricModel.getTransitionMatrix().getConstrainedRowSumVector(storm::storage::BitVector(this->parametricModel.getTransitionMatrix().getRowCount(), true), statesWithProbability01.second);
                     
-                    parameterLifter = std::make_unique<storm::transformer::ParameterLifter<typename SparseModelType::ValueType, ConstantType>>(this->parametricModel.getTransitionMatrix(), b, this->parametricModel.getTransitionMatrix().getRowIndicesOfRowGroups(maybeStates), maybeStates);
+                    parameterLifter = std::make_unique<storm::transformer::ParameterLifter<typename SparseModelType::ValueType, ConstantType>>(this->parametricModel.getTransitionMatrix(), b, this->parametricModel.getTransitionMatrix().getRowFilter(maybeStates), maybeStates);
                     computePlayer1Matrix();
                     
                     // Check whether there is an EC consisting of maybestates
@@ -146,16 +146,8 @@ namespace storm {
                     std::vector<typename SparseModelType::ValueType> b = rewardModel.getTotalRewardVector(this->parametricModel.getTransitionMatrix());
                     
                     // We need to handle choices that lead to an infinity state.
-                    // As a maybeState does not have reward infinity, such a choice will never be picked. Hence, we can unselect the corresponding rows
-                    storm::storage::BitVector selectedRows = this->parametricModel.getTransitionMatrix().getRowIndicesOfRowGroups(maybeStates);
-                    for (uint_fast64_t row : selectedRows) {
-                        for (auto const& element : this->parametricModel.getTransitionMatrix().getRow(row)) {
-                            if (infinityStates.get(element.getColumn())) {
-                                selectedRows.set(row, false);
-                                break;
-                            }
-                        }
-                    }
+                    // As a maybeState does not have reward infinity, a choice leading to an infinity state will never be picked. Hence, we can unselect the corresponding rows
+                    storm::storage::BitVector selectedRows = this->parametricModel.getTransitionMatrix().getRowFilter(maybeStates, ~infinityStates);
                     
                     parameterLifter = std::make_unique<storm::transformer::ParameterLifter<typename SparseModelType::ValueType, ConstantType>>(this->parametricModel.getTransitionMatrix(), b, selectedRows, maybeStates);
                     computePlayer1Matrix();

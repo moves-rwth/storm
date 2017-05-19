@@ -86,9 +86,6 @@ namespace storm {
                 
                 return true;
             } else if (mode == Mode::Writable) {
-                struct stat info;
-                STORM_LOG_THROW(stat (filename.c_str(), &info) != 0, storm::exceptions::IllegalArgumentValueException , "Could not open file '" << filename << "' for writing because file or directory already exists.");
-                
                 std::ofstream filestream(filename);
                 STORM_LOG_THROW(filestream.is_open(), storm::exceptions::IllegalArgumentValueException , "Could not open file '" << filename << "' for writing.");
                 filestream.close();

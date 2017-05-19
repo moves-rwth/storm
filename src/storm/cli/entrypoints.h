@@ -1,10 +1,10 @@
-#ifndef STORM_ENTRYPOINTS_H_H
-#define STORM_ENTRYPOINTS_H_H
+#pragma once
 
 #include <type_traits>
 
 #include "storm/utility/storm.h"
 
+#include "storm/analysis/GraphConditions.h"
 #include "storm/storage/SymbolicModelDescription.h"
 #include "storm/utility/DirectEncodingExporter.h"
 #include "storm/utility/Stopwatch.h"
@@ -112,7 +112,7 @@ namespace storm {
                 }
 
                 if (storm::settings::getModule<storm::settings::modules::ParametricSettings>().exportResultToFile()) {
-                    exportParametricResultToFile(result->asExplicitQuantitativeCheckResult<storm::RationalFunction>()[*model->getInitialStates().begin()], storm::models::sparse::Dtmc<storm::RationalFunction>::ConstraintCollector(*(model->template as<storm::models::sparse::Dtmc<storm::RationalFunction>>())), storm::settings::getModule<storm::settings::modules::ParametricSettings>().exportResultPath());
+                    exportParametricResultToFile(result->asExplicitQuantitativeCheckResult<storm::RationalFunction>()[*model->getInitialStates().begin()], storm::analysis::ConstraintCollector<storm::RationalFunction>(*(model->template as<storm::models::sparse::Dtmc<storm::RationalFunction>>())), storm::settings::getModule<storm::settings::modules::ParametricSettings>().exportResultPath());
                 }
             }
         }
@@ -469,5 +469,3 @@ namespace storm {
 
     }
 }
-
-#endif //STORM_ENTRYPOINTS_H_H

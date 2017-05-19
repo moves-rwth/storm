@@ -138,13 +138,13 @@ namespace storm {
                 stateEliminator.eliminateState(state, true);
             }
             selectedStates.complement();
-            auto keptRows = sparseMatrix.getRowIndicesOfRowGroups(selectedStates);
+            auto keptRows = sparseMatrix.getRowFilter(selectedStates);
             storm::storage::SparseMatrix<typename  SparseModelType::ValueType> newTransitionMatrix = flexibleMatrix.createSparseMatrix(keptRows, selectedStates);
             
             // obtain the reward model for the resulting system
             std::unordered_map<std::string, typename SparseModelType::RewardModelType> rewardModels;
             if(rewardModelName) {
-                actionRewards = storm::utility::vector::filterVector(actionRewards, keptRows);
+                storm::utility::vector::filterVectorInPlace(actionRewards, keptRows);
                 rewardModels.insert(std::make_pair(*rewardModelName, typename SparseModelType::RewardModelType(boost::none, std::move(actionRewards))));
             }
                 

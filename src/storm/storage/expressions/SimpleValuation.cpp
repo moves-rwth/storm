@@ -19,7 +19,7 @@ namespace storm {
             // Intentionally left empty.
         }
         
-        SimpleValuation::SimpleValuation(SimpleValuation const& other) : Valuation(other.getManager().getSharedPointer()) {
+        SimpleValuation::SimpleValuation(SimpleValuation const& other) : Valuation(other.getManagerAsSharedPtr()) {
             if (this != &other) {
                 booleanValues = other.booleanValues;
                 integerValues = other.integerValues;
@@ -29,7 +29,7 @@ namespace storm {
                 
         SimpleValuation& SimpleValuation::operator=(SimpleValuation const& other) {
             if (this != &other) {
-                this->setManager(other.getManager().getSharedPointer());
+                this->setManager(other.getManagerAsSharedPtr());
                 booleanValues = other.booleanValues;
                 integerValues = other.integerValues;
                 rationalValues = other.rationalValues;
@@ -37,7 +37,7 @@ namespace storm {
             return *this;
         }
         
-        SimpleValuation::SimpleValuation(SimpleValuation&& other) : Valuation(other.getManager().getSharedPointer()) {
+        SimpleValuation::SimpleValuation(SimpleValuation&& other) : Valuation(other.getManagerAsSharedPtr()) {
             if (this != &other) {
                 booleanValues = std::move(other.booleanValues);
                 integerValues = std::move(other.integerValues);
@@ -47,7 +47,7 @@ namespace storm {
         
         SimpleValuation& SimpleValuation::operator=(SimpleValuation&& other) {
             if (this != &other) {
-                this->setManager(other.getManager().getSharedPointer());
+                this->setManager(other.getManagerAsSharedPtr());
                 booleanValues = std::move(other.booleanValues);
                 integerValues = std::move(other.integerValues);
                 rationalValues = std::move(other.rationalValues);

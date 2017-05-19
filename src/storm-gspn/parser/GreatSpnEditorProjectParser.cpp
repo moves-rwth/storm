@@ -2,6 +2,8 @@
 #ifdef STORM_HAVE_XERCES
 
 #include <iostream>
+#include <algorithm>
+
 
 #include "storm-gspn/adapters/XercesAdapter.h"
 
@@ -9,8 +11,18 @@
 #include "storm/exceptions/WrongFormatException.h"
 #include "storm/utility/macros.h"
 
+namespace {
+    bool isOnlyWhitespace(std::string const& in) {
+        return std::all_of(in.begin(), in.end(), [](char c){
+            return std::isspace(static_cast<unsigned char>(c));
+        });
+    }
+}
+
 namespace storm {
     namespace parser {
+
+
         storm::gspn::GSPN* GreatSpnEditorProjectParser::parse(xercesc::DOMElement const*  elementRoot) {
             if (storm::adapters::XMLtoString(elementRoot->getTagName()) == "project") {
                 traverseProjectElement(elementRoot);
@@ -46,7 +58,7 @@ namespace storm {
 
                 if (name.compare("gspn") == 0) {
                     traverseGspnElement(child);
-                } else if (std::all_of(name.begin(), name.end(), isspace)) {
+                } else if (isOnlyWhitespace(name)) {
                     // ignore node (contains only whitespace)
                 } else {
                     // Found node or attribute which is at the moment nod handled by this parser.
@@ -84,7 +96,7 @@ namespace storm {
                     traverseNodesElement(child);
                 } else if (name.compare("edges") == 0) {
                     traverseEdgesElement(child);
-                } else if (std::all_of(name.begin(), name.end(), isspace)) {
+                } else if (isOnlyWhitespace(name)) {
                     // ignore node (contains only whitespace)
                 } else {
                     // Found node or attribute which is at the moment nod handled by this parser.
@@ -114,7 +126,7 @@ namespace storm {
                     traversePlaceElement(child);
                 } else if(name.compare("transition") == 0) {
                     traverseTransitionElement(child);
-                } else if (std::all_of(name.begin(), name.end(), isspace)) {
+                } else if (isOnlyWhitespace(name)) {
                     // ignore node (contains only whitespace)
                 } else {
                     // Found node or attribute which is at the moment nod handled by this parser.
@@ -144,7 +156,7 @@ namespace storm {
 
                 if (name.compare("arc") == 0) {
                     traverseArcElement(child);
-                } else if (std::all_of(name.begin(), name.end(), isspace)) {
+                } else if (isOnlyWhitespace(name)) {
                     // ignore node (contains only whitespace)
                 } else {
                     // Found node or attribute which is at the moment nod handled by this parser.
@@ -192,7 +204,7 @@ namespace storm {
                 auto child = node->getChildNodes()->item(i);
                 auto name = storm::adapters::getName(child);
 
-                if (std::all_of(name.begin(), name.end(), isspace)) {
+                if (isOnlyWhitespace(name)) {
                     // ignore node (contains only whitespace)
                 } else {
                     // Found node or attribute which is at the moment nod handled by this parser.
@@ -252,7 +264,7 @@ namespace storm {
                 auto child = node->getChildNodes()->item(i);
                 auto name = storm::adapters::getName(child);
 
-                if (std::all_of(name.begin(), name.end(), isspace)) {
+                if (isOnlyWhitespace(name)) {
                     // ignore node (contains only whitespace)
                 } else {
                     // Found node or attribute which is at the moment nod handled by this parser.
@@ -325,7 +337,7 @@ namespace storm {
                 auto child = node->getChildNodes()->item(i);
                 auto name = storm::adapters::getName(child);
 
-                if (std::all_of(name.begin(), name.end(), isspace)) {
+                if (isOnlyWhitespace(name)) {
                     // ignore node (contains only whitespace)
                 } else if(ignoreArcChild(name)) {
                     // ignore

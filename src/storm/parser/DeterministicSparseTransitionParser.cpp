@@ -46,8 +46,7 @@ namespace storm {
             char const* buf = file.getData();
 
             // Perform first pass, i.e. count entries that are not zero.
-            bool insertDiagonalEntriesIfMissing = !isRewardFile;
-            DeterministicSparseTransitionParser<ValueType>::FirstPassResult firstPass = DeterministicSparseTransitionParser<ValueType>::firstPass(file.getData(), insertDiagonalEntriesIfMissing);
+            DeterministicSparseTransitionParser<ValueType>::FirstPassResult firstPass = DeterministicSparseTransitionParser<ValueType>::firstPass(file.getData());
 
             STORM_LOG_TRACE("First pass on " << filename << " shows " << firstPass.numberOfNonzeroEntries << " non-zeros.");
 
@@ -85,7 +84,6 @@ namespace storm {
             double val;
             bool dontFixDeadlocks = storm::settings::getModule<storm::settings::modules::CoreSettings>().isDontFixDeadlocksSet();
             bool hadDeadlocks = false;
-            bool rowHadDiagonalEntry = false;
 
             // Read all transitions from file. Note that we assume that the
             // transitions are listed in canonical order, otherwise this will not
@@ -131,16 +129,6 @@ namespace storm {
                     // Test if we moved to a new row.
                     // Handle all incomplete or skipped rows.
                     if (lastRow != row) {
-                        if (!rowHadDiagonalEntry) {
-                            if (insertDiagonalEntriesIfMissing) {
-                                resultMatrix.addNextValue(lastRow, lastRow, storm::utility::zero<ValueType>());
-                                STORM_LOG_DEBUG("While parsing " << filename << ": state " << lastRow << " has no transition to itself. Inserted a 0-transition. (1)");
-                            } else {
-                                STORM_LOG_WARN("Warning while parsing " << filename << ": state " << lastRow << " has no transition to itself.");
-                            }
-                            // No increment for lastRow.
-                            rowHadDiagonalEntry = true;
-                        }
                         for (uint_fast64_t skippedRow = lastRow + 1; skippedRow < row; ++skippedRow) {
                             hadDeadlocks = true;
                             if (!dontFixDeadlocks) {
@@ -152,34 +140,10 @@ namespace storm {
                             }
                         }
                         lastRow = row;
-                        rowHadDiagonalEntry = false;
-                    }
-
-                    if (col == row) {
-                        rowHadDiagonalEntry = true;
-                    }
-
-                    if (col > row && !rowHadDiagonalEntry) {
-                        if (insertDiagonalEntriesIfMissing) {
-                            resultMatrix.addNextValue(row, row, storm::utility::zero<ValueType>());
-                            STORM_LOG_DEBUG("While parsing " << filename << ": state " << row << " has no transition to itself. Inserted a 0-transition. (2)");
-                        } else {
-                            STORM_LOG_WARN("Warning while parsing " << filename << ": state " << row << " has no transition to itself.");
-                        }
-                        rowHadDiagonalEntry = true;
                     }
 
                     resultMatrix.addNextValue(row, col, val);
                     buf = trimWhitespaces(buf);
-                }
-
-                if (!rowHadDiagonalEntry) {
-                    if (insertDiagonalEntriesIfMissing) {
-                        resultMatrix.addNextValue(lastRow, lastRow, storm::utility::zero<ValueType>());
-                        STORM_LOG_DEBUG("While parsing " << filename << ": state " << lastRow << " has no transition to itself. Inserted a 0-transition. (3)");
-                    } else {
-                        STORM_LOG_WARN("Warning while parsing " << filename << ": state " << lastRow << " has no transition to itself.");
-                    }
                 }
 
                 // If we encountered deadlock and did not fix them, now is the time to throw the exception.
@@ -199,7 +163,7 @@ namespace storm {
         }
 
         template<typename ValueType>
-        typename DeterministicSparseTransitionParser<ValueType>::FirstPassResult DeterministicSparseTransitionParser<ValueType>::firstPass(char const* buf, bool insertDiagonalEntriesIfMissing) {
+        typename DeterministicSparseTransitionParser<ValueType>::FirstPassResult DeterministicSparseTransitionParser<ValueType>::firstPass(char const* buf) {
 
             DeterministicSparseTransitionParser<ValueType>::FirstPassResult result;
 
@@ -231,30 +195,6 @@ namespace storm {
                 // The actual read value is not needed here.
                 checked_strtod(buf, &buf);
 
-                // Compensate for missing diagonal entries if desired.
-                if (insertDiagonalEntriesIfMissing) {
-                    if (lastRow != row) {
-                        if (!rowHadDiagonalEntry) {
-                            ++result.numberOfNonzeroEntries;
-                        }
-
-                        // Compensate for missing rows.
-                        for (uint_fast64_t skippedRow = lastRow + 1; skippedRow < row; ++skippedRow) {
-                            ++result.numberOfNonzeroEntries;
-                        }
-                        rowHadDiagonalEntry = false;
-                    }
-
-                    if (col == row) {
-                        rowHadDiagonalEntry = true;
-                    }
-
-                    if (col > row && !rowHadDiagonalEntry) {
-                        rowHadDiagonalEntry = true;
-                        ++result.numberOfNonzeroEntries;
-                    }
-                }
-
                 // Check if a higher state id was found.
                 if (row > result.highestStateIndex) result.highestStateIndex = row;
                 if (col > result.highestStateIndex) result.highestStateIndex = col;
@@ -271,17 +211,6 @@ namespace storm {
                 lastCol = col;
 
                 buf = trimWhitespaces(buf);
-            }
-
-            if (insertDiagonalEntriesIfMissing) {
-                if (!rowHadDiagonalEntry) {
-                    ++result.numberOfNonzeroEntries;
-                }
-
-                //Compensate for missing rows at the end of the file.
-                for (uint_fast64_t skippedRow = (uint_fast64_t) (lastRow + 1); skippedRow <= result.highestStateIndex; ++skippedRow) {
-                    ++result.numberOfNonzeroEntries;
-                }
             }
 
             return result;

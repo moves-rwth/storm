@@ -52,7 +52,6 @@ namespace storm {
             template<typename NewFormulaType>
             CheckTask<NewFormulaType, ValueType> substituteFormula(NewFormulaType const& newFormula) const {
                 CheckTask<NewFormulaType, ValueType> result(newFormula, this->optimizationDirection, this->rewardModel, this->onlyInitialStatesRelevant, this->bound, this->qualitative, this->produceSchedulers, this->hint);
-                result.updateOperatorInformation();
                 return result;
             }
             
@@ -68,13 +67,13 @@ namespace storm {
                     }
                     
                     if (operatorFormula.hasBound()) {
-                        if (onlyInitialStatesRelevant) {
-                            this->bound = operatorFormula.getBound();
-                        }
-
-                        if (!optimizationDirection) {
-                            this->optimizationDirection = operatorFormula.getComparisonType() == storm::logic::ComparisonType::Less || operatorFormula.getComparisonType() == storm::logic::ComparisonType::LessEqual ? OptimizationDirection::Maximize : OptimizationDirection::Minimize;
-                        }
+                        this->bound = operatorFormula.getBound();
+                    }
+                    
+                    if (operatorFormula.hasOptimalityType()) {
+                        this->optimizationDirection = operatorFormula.getOptimalityType();
+                    } else if (operatorFormula.hasBound()) {
+                        this->optimizationDirection = operatorFormula.getComparisonType() == storm::logic::ComparisonType::Less || operatorFormula.getComparisonType() == storm::logic::ComparisonType::LessEqual ? OptimizationDirection::Maximize : OptimizationDirection::Minimize;
                     }
                 
                     if (formula.get().isProbabilityOperatorFormula()) {

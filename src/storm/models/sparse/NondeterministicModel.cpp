@@ -108,7 +108,8 @@ namespace storm {
                     
                     // For this, we need to iterate over all available nondeterministic choices in the current state.
                     for (uint_fast64_t choice = 0; choice < rowCount; ++choice) {
-                        typename storm::storage::SparseMatrix<ValueType>::const_rows row = this->getTransitionMatrix().getRow(this->getNondeterministicChoiceIndices()[state] + choice);
+                        uint_fast64_t rowIndex = this->getNondeterministicChoiceIndices()[state] + choice;
+                        typename storm::storage::SparseMatrix<ValueType>::const_rows row = this->getTransitionMatrix().getRow(rowIndex);
                         
                         if (scheduler != nullptr) {
                             // If the scheduler picked the current choice, we will not make it dotted, but highlight it.
@@ -131,17 +132,17 @@ namespace storm {
                         }
                         outStream << "];" << std::endl;
                         
-                        outStream << "\t" << state << " -> \"" << state << "c" << choice << "\"";
+                        outStream << "\t" << state << " -> \"" << state << "c" << choice << "\" [ label= \"" << rowIndex << "\"";
                         
                         // If we were given a scheduler to highlight, we do so now.
                         if (scheduler != nullptr) {
                             if (highlightChoice) {
-                                outStream << " [color=\"red\", penwidth = 2]";
+                                outStream << ", color=\"red\", penwidth = 2";
                             } else {
-                                outStream << " [style = \"dotted\"]";
+                                outStream << ", style = \"dotted\"";
                             }
                         }
-                        outStream << ";" << std::endl;
+                        outStream << "];" << std::endl;
                         
                         // Now draw all probabilitic arcs that belong to this nondeterminstic choice.
                         for (auto const& transition : row) {

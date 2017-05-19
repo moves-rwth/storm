@@ -105,7 +105,7 @@ namespace storm {
             template class SparsePcaaAchievabilityQuery<storm::models::sparse::MarkovAutomaton<double>, storm::RationalNumber>;
             
             template class SparsePcaaAchievabilityQuery<storm::models::sparse::Mdp<storm::RationalNumber>, storm::RationalNumber>;
-         //   template class SparsePcaaAchievabilityQuery<storm::models::sparse::MarkovAutomaton<storm::RationalNumber>, storm::RationalNumber>;
+            template class SparsePcaaAchievabilityQuery<storm::models::sparse::MarkovAutomaton<storm::RationalNumber>, storm::RationalNumber>;
 #endif
         }
     }
