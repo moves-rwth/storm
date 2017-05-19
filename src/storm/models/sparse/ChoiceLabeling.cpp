@@ -54,7 +54,7 @@ namespace storm {
 
 
             void ChoiceLabeling::addLabelToChoice(std::string const& label,uint64_t choice) {
-                this->addLabelToChoice(label, choice);
+                return ItemLabeling::addLabelToItem(label, choice);
             }
 
             bool ChoiceLabeling::getChoiceHasLabel(std::string const& label, uint64_t choice) const {

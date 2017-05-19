@@ -168,7 +168,7 @@ namespace storm {
                 STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Cannot build sparse model from this symbolic model description.");
             }
             storm::builder::ExplicitModelBuilder<ValueType> builder(generator);
-            return builder.build();
+            return builder.build().getModel();
         }
     }
     

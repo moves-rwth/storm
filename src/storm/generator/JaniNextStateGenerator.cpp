@@ -342,10 +342,6 @@ namespace storm {
                     if (hasStateActionRewards && !this->isDiscreteTimeModel()) {
                         totalExitRate += choice.getTotalMass();
                     }
-                    
-                    if (this->options.isBuildChoiceLabelsSet()) {
-                        globalChoice.addLabels(choice.getLabels());
-                    }
                 }
                 
                 std::vector<ValueType> stateActionRewards(rewardVariables.size(), storm::utility::zero<ValueType>());

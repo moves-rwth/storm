@@ -1,10 +1,12 @@
 #include "storm/generator/PrismNextStateGenerator.h"
 
 #include <boost/container/flat_map.hpp>
+#include <boost/any.hpp>
 
 #include "storm/models/sparse/StateLabeling.h"
 
 #include "storm/storage/expressions/SimpleValuation.h"
+#include "storm/storage/sparse/PrismChoiceOrigins.h"
 
 #include "storm/solver/SmtSolver.h"
 
@@ -244,8 +246,12 @@ namespace storm {
                         totalExitRate += choice.getTotalMass();
                     }
                     
-                    if (this->options.isBuildChoiceLabelsSet()) {
+                    if (this->options.isBuildChoiceLabelsSet() && choice.hasLabels()) {
                         globalChoice.addLabels(choice.getLabels());
+                    }
+                    
+                    if (this->options.isBuildChoiceOriginsSet() && choice.hasOriginData()) {
+                        globalChoice.addOriginData(choice.getOriginData());
                     }
                 }
                 
@@ -391,9 +397,10 @@ namespace storm {
                     result.push_back(Choice<ValueType>(command.getActionIndex(), command.isMarkovian()));
                     Choice<ValueType>& choice = result.back();
                     
-                    // Remember the command labels only if we were asked to.
-                    if (this->options.isBuildChoiceLabelsSet()) {
-                        choice.addLabel(command.getGlobalIndex());
+                    // Remember the choice origin only if we were asked to.
+                    if (this->options.isBuildChoiceOriginsSet()) {
+                        CommandSet commandIndex { command.getGlobalIndex() };
+                        choice.addOriginData(boost::any(std::move(commandIndex)));
                     }
                     
                     // Iterate over all updates of the current command.
@@ -503,12 +510,16 @@ namespace storm {
                         // Now create the actual distribution.
                         Choice<ValueType>& choice = result.back();
                         
-                        // Remember the command labels only if we were asked to.
+                        // Remember the choice label and origins only if we were asked to.
                         if (this->options.isBuildChoiceLabelsSet()) {
-                            // Add the labels of all commands to this choice.
+                            choice.addLabel(program.getActionName(actionIndex));
+                        }
+                        if (this->options.isBuildChoiceOriginsSet()) {
+                            CommandSet commandIndices;
                             for (uint_fast64_t i = 0; i < iteratorList.size(); ++i) {
-                                choice.addLabel(iteratorList[i]->get().getGlobalIndex());
+                                commandIndices.insert(iteratorList[i]->get().getGlobalIndex());
                             }
+                            choice.addOriginData(boost::any(std::move(commandIndices)));
                         }
                         
                         // Add the probabilities/rates to the newly created choice.
@@ -594,6 +605,41 @@ namespace storm {
             storm::prism::RewardModel const& rewardModel = rewardModels[index].get();
             return storm::builder::RewardModelInformation(rewardModel.getName(), rewardModel.hasStateRewards(), rewardModel.hasStateActionRewards(), rewardModel.hasTransitionRewards());
         }
+        
+        template<typename ValueType, typename StateType>
+        std::shared_ptr<storm::storage::sparse::ChoiceOrigins> PrismNextStateGenerator<ValueType, StateType>::generateChoiceOrigins(std::vector<boost::any>& dataForChoiceOrigins) const {
+            
+            if (!this->getOptions().isBuildChoiceOriginsSet()) {
+                return nullptr;
+            }
+            
+            std::vector<uint_fast64_t> identifiers;
+            identifiers.reserve(dataForChoiceOrigins.size());
+            
+            std::map<CommandSet, uint_fast64_t> commandSetToIdentifierMap;
+            uint_fast64_t currentIdentifier = 0;
+            for (boost::any& originData : dataForChoiceOrigins) {
+                STORM_LOG_ASSERT(originData.empty() || boost::any_cast<CommandSet>(&originData) != nullptr, "Origin data has unexpected type: " << originData.type().name() << ".");
+                
+                CommandSet currentCommandSet = originData.empty() ? CommandSet() : boost::any_cast<CommandSet>(std::move(originData));
+                auto insertionRes = commandSetToIdentifierMap.insert(std::make_pair(std::move(currentCommandSet), currentIdentifier));
+                identifiers.push_back(insertionRes.first->second);
+                if (insertionRes.second) {
+                    ++currentIdentifier;
+                }
+            }
+            
+            std::vector<CommandSet> identifierToCommandSetMapping(currentIdentifier);
+            std::vector<std::string> identifierToInfoMapping(currentIdentifier);
+            for (auto const& setIdPair : commandSetToIdentifierMap) {
+                identifierToCommandSetMapping[setIdPair.second] = setIdPair.first;
+                // Todo: Make these identifiers unique
+                identifierToInfoMapping[setIdPair.second] = "Choice made from " + std::to_string(setIdPair.first.size()) + " commands";
+            }
+            
+            return std::make_shared<storm::storage::sparse::PrismChoiceOrigins>(std::make_shared<storm::prism::Program>(program), std::move(identifiers), std::move(identifierToInfoMapping), std::move(identifierToCommandSetMapping));
+        }
+
                 
         template class PrismNextStateGenerator<double>;
 

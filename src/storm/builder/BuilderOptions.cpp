@@ -35,7 +35,7 @@ namespace storm {
             return boost::get<storm::expressions::Expression>(labelOrExpression);
         }
         
-        BuilderOptions::BuilderOptions(bool buildAllRewardModels, bool buildAllLabels) : buildAllRewardModels(buildAllRewardModels), buildAllLabels(buildAllLabels), buildChoiceLabels(false), explorationChecks(false) {
+        BuilderOptions::BuilderOptions(bool buildAllRewardModels, bool buildAllLabels) : buildAllRewardModels(buildAllRewardModels), buildAllLabels(buildAllLabels), buildChoiceLabels(false), buildChoiceOrigins(false), explorationChecks(false) {
             // Intentionally left empty.
         }
         
@@ -139,6 +139,10 @@ namespace storm {
             return buildChoiceLabels;
         }
         
+        bool BuilderOptions::isBuildChoiceOriginsSet() const {
+            return buildChoiceOrigins;
+        }
+        
         bool BuilderOptions::isBuildAllRewardModelsSet() const {
             return buildAllRewardModels;
         }
@@ -195,6 +199,11 @@ namespace storm {
         
         BuilderOptions& BuilderOptions::setBuildChoiceLabels(bool newValue) {
             buildChoiceLabels = newValue;
+            return *this;
+        }
+ 
+        BuilderOptions& BuilderOptions::setBuildChoiceOrigins(bool newValue) {
+            buildChoiceOrigins = newValue;
             return *this;
         }
 

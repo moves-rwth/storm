@@ -89,6 +89,7 @@ namespace storm {
             bool hasTerminalStates() const;
             void clearTerminalStates();
             bool isBuildChoiceLabelsSet() const;
+            bool isBuildChoiceOriginsSet() const;
             bool isBuildAllRewardModelsSet() const;
             bool isBuildAllLabelsSet() const;
             bool isExplorationChecksSet() const;
@@ -101,6 +102,7 @@ namespace storm {
             BuilderOptions& addTerminalExpression(storm::expressions::Expression const& expression, bool value);
             BuilderOptions& addTerminalLabel(std::string const& label, bool value);
             BuilderOptions& setBuildChoiceLabels(bool newValue);
+            BuilderOptions& setBuildChoiceOrigins(bool newValue);
             BuilderOptions& setExplorationChecks(bool newValue);
             
         private:
@@ -125,6 +127,10 @@ namespace storm {
             
             /// A flag indicating whether or not to build choice labels.
             bool buildChoiceLabels;
+                         
+            // A flag that indicates whether or not to generate the information from which parts of the model specification
+            // each choice originates.
+            bool buildChoiceOrigins;
             
             /// A flag that stores whether exploration checks are to be performed.
             bool explorationChecks;
