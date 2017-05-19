@@ -37,6 +37,14 @@ run() {
     travis_fold end make_dep
     ;;
 
+  BuildLib1)
+    # Make libstorm (first try)
+    travis_fold start make_lib
+    cd build
+    make storm -j$N_JOBS
+    travis_fold end make_lib
+    ;;
+
   BuildLib)
     # Make libstorm
     travis_fold start make_lib

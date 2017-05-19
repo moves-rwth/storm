@@ -20,11 +20,11 @@ build_types = [
 
 # Stages in travis
 stages = [
-    ("Build dependencies", "BuildDep", False),
-    ("Build library 1", "BuildLib", True),
-    ("Build library 2", "BuildLib", False),
-    ("Build all", "BuildAll", False),
-    ("Test all", "TestAll", False),
+    ("Build dependencies", "BuildDep"),
+    ("Build library 1", "BuildLib1"),
+    ("Build library 2", "BuildLib"),
+    ("Build all", "BuildAll"),
+    ("Test all", "TestAll"),
 ]
 
 
@@ -61,7 +61,6 @@ if __name__ == "__main__":
     s += "  include:\n"
 
     # Generate all configurations
-    allowedFailures = ""
     for stage in stages:
         s += "\n"
         s += "    ###\n"
@@ -86,8 +85,6 @@ if __name__ == "__main__":
                 buildConfig += "      before_cache:\n"
                 buildConfig += "        docker cp storm:/storm/. .\n"
             s += buildConfig
-            if stage[2]:
-                allowedFailures += buildConfig
 
         # Mac OS X
         for config in configs_mac:
@@ -105,15 +102,5 @@ if __name__ == "__main__":
                 buildConfig += "      script: export OS=osx; export COMPILER='{}'; export STL='libc++';\n".format(compiler)
                 buildConfig += "        travis/postsubmit.sh {} {}\n".format(build, stage[1])
             s += buildConfig
-            if stage[2]:
-                allowedFailures += buildConfig
-
-    # Allow failures
-    s += "\n"
-    s += "  #\n"
-    s += "  # Allowed failures\n"
-    s += "  #\n"
-    s += "  allow_failures:\n"
-    s += allowedFailures
 
     print(s)

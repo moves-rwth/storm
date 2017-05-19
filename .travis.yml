@@ -103,7 +103,7 @@ jobs:
       install: export OS=linux; export COMPILER='gcc-6'; export LINUX='ubuntu-16.10';
         travis/install_linux.sh
       script: export OS=linux; export COMPILER='gcc-6'; export LINUX='ubuntu-16.10';
-        travis/postsubmit.sh DefaultDebug BuildLib
+        travis/postsubmit.sh DefaultDebug BuildLib1
       before_cache:
         docker cp storm:/storm/. .
     - stage: Build library 1
@@ -113,7 +113,7 @@ jobs:
       install: export OS=linux; export COMPILER='gcc-6'; export LINUX='ubuntu-16.10';
         travis/install_linux.sh
       script: export OS=linux; export COMPILER='gcc-6'; export LINUX='ubuntu-16.10';
-        travis/postsubmit.sh DefaultRelease BuildLib
+        travis/postsubmit.sh DefaultRelease BuildLib1
       before_cache:
         docker cp storm:/storm/. .
     # debian-9
@@ -124,7 +124,7 @@ jobs:
       install: export OS=linux; export COMPILER='gcc-6'; export LINUX='debian-9';
         travis/install_linux.sh
       script: export OS=linux; export COMPILER='gcc-6'; export LINUX='debian-9';
-        travis/postsubmit.sh DefaultDebug BuildLib
+        travis/postsubmit.sh DefaultDebug BuildLib1
       before_cache:
         docker cp storm:/storm/. .
     - stage: Build library 1
@@ -134,7 +134,7 @@ jobs:
       install: export OS=linux; export COMPILER='gcc-6'; export LINUX='debian-9';
         travis/install_linux.sh
       script: export OS=linux; export COMPILER='gcc-6'; export LINUX='debian-9';
-        travis/postsubmit.sh DefaultRelease BuildLib
+        travis/postsubmit.sh DefaultRelease BuildLib1
       before_cache:
         docker cp storm:/storm/. .
     # osx
@@ -145,7 +145,7 @@ jobs:
       install: export OS=osx; export COMPILER='clang-4.0'; export STL='libc++';
         travis/install_osx.sh
       script: export OS=osx; export COMPILER='clang-4.0'; export STL='libc++';
-        travis/postsubmit.sh DefaultDebug BuildLib
+        travis/postsubmit.sh DefaultDebug BuildLib1
     - stage: Build library 1
       os: osx
       compiler: clang
@@ -153,7 +153,7 @@ jobs:
       install: export OS=osx; export COMPILER='clang-4.0'; export STL='libc++';
         travis/install_osx.sh
       script: export OS=osx; export COMPILER='clang-4.0'; export STL='libc++';
-        travis/postsubmit.sh DefaultRelease BuildLib
+        travis/postsubmit.sh DefaultRelease BuildLib1
 
     ###
     # Stage: Build library 2
@@ -346,65 +346,4 @@ jobs:
         travis/install_osx.sh
       script: export OS=osx; export COMPILER='clang-4.0'; export STL='libc++';
         travis/postsubmit.sh DefaultRelease TestAll
-
-  #
-  # Allowed failures
-  #
-  allow_failures:
-    - stage: Build library 1
-      os: linux
-      compiler: gcc
-      env: BUILD=DefaultDebug COMPILER=gcc-6 LINUX=ubuntu-16.10
-      install: export OS=linux; export COMPILER='gcc-6'; export LINUX='ubuntu-16.10';
-        travis/install_linux.sh
-      script: export OS=linux; export COMPILER='gcc-6'; export LINUX='ubuntu-16.10';
-        travis/postsubmit.sh DefaultDebug BuildLib
-      before_cache:
-        docker cp storm:/storm/. .
-    - stage: Build library 1
-      os: linux
-      compiler: gcc
-      env: BUILD=DefaultRelease COMPILER=gcc-6 LINUX=ubuntu-16.10
-      install: export OS=linux; export COMPILER='gcc-6'; export LINUX='ubuntu-16.10';
-        travis/install_linux.sh
-      script: export OS=linux; export COMPILER='gcc-6'; export LINUX='ubuntu-16.10';
-        travis/postsubmit.sh DefaultRelease BuildLib
-      before_cache:
-        docker cp storm:/storm/. .
-    - stage: Build library 1
-      os: linux
-      compiler: gcc
-      env: BUILD=DefaultDebug COMPILER=gcc-6 LINUX=debian-9
-      install: export OS=linux; export COMPILER='gcc-6'; export LINUX='debian-9';
-        travis/install_linux.sh
-      script: export OS=linux; export COMPILER='gcc-6'; export LINUX='debian-9';
-        travis/postsubmit.sh DefaultDebug BuildLib
-      before_cache:
-        docker cp storm:/storm/. .
-    - stage: Build library 1
-      os: linux
-      compiler: gcc
-      env: BUILD=DefaultRelease COMPILER=gcc-6 LINUX=debian-9
-      install: export OS=linux; export COMPILER='gcc-6'; export LINUX='debian-9';
-        travis/install_linux.sh
-      script: export OS=linux; export COMPILER='gcc-6'; export LINUX='debian-9';
-        travis/postsubmit.sh DefaultRelease BuildLib
-      before_cache:
-        docker cp storm:/storm/. .
-    - stage: Build library 1
-      os: osx
-      compiler: clang
-      env: BUILD=DefaultDebug COMPILER=clang-4.0 STL=libc++
-      install: export OS=osx; export COMPILER='clang-4.0'; export STL='libc++';
-        travis/install_osx.sh
-      script: export OS=osx; export COMPILER='clang-4.0'; export STL='libc++';
-        travis/postsubmit.sh DefaultDebug BuildLib
-    - stage: Build library 1
-      os: osx
-      compiler: clang
-      env: BUILD=DefaultRelease COMPILER=clang-4.0 STL=libc++
-      install: export OS=osx; export COMPILER='clang-4.0'; export STL='libc++';
-        travis/install_osx.sh
-      script: export OS=osx; export COMPILER='clang-4.0'; export STL='libc++';
-        travis/postsubmit.sh DefaultRelease BuildLib
 
