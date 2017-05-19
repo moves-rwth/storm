@@ -11,7 +11,7 @@ then
   STLARG="-stdlib=$STL"
 fi
 
-if [ "$2$ = "BuildLib1"]
+if [ "$2" = "BuildLib1"]
 then
     TIMEARG="--preserve-status"
 else
