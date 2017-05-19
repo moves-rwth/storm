@@ -294,7 +294,7 @@ TEST(GmmxxDtmcPrctlModelCheckerTest, LRA) {
 TEST(GmmxxDtmcPrctlModelCheckerTest, Conditional) {
     storm::prism::Program program = storm::parser::PrismParser::parse(STORM_TEST_RESOURCES_DIR "/dtmc/test_conditional.pm");
     
-    std::shared_ptr<storm::models::sparse::Model<double>> model = storm::builder::ExplicitModelBuilder<double>(program, storm::generator::NextStateGeneratorOptions(true, true)).build();
+    std::shared_ptr<storm::models::sparse::Model<double>> model = storm::builder::ExplicitModelBuilder<double>(program, storm::generator::NextStateGeneratorOptions(true, true)).build().getModel();
     ASSERT_TRUE(model->getType() == storm::models::ModelType::Dtmc);
     ASSERT_EQ(4ul, model->getNumberOfStates());
     ASSERT_EQ(5ul, model->getNumberOfTransitions());

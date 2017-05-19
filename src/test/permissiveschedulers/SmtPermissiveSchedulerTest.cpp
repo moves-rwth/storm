@@ -29,7 +29,7 @@ TEST(SmtPermissiveSchedulerTest, DISABLED_DieSelection) {
     // Customize and perform model-building.
     storm::generator::NextStateGeneratorOptions options(formula02b);
     
-    std::shared_ptr<storm::models::sparse::Mdp<double>> mdp = storm::builder::ExplicitModelBuilder<double>(program, options).build()->as<storm::models::sparse::Mdp<double>>();
+    std::shared_ptr<storm::models::sparse::Mdp<double>> mdp = storm::builder::ExplicitModelBuilder<double>(program, options).build().getModel()->as<storm::models::sparse::Mdp<double>>();
     
 //    boost::optional<storm::ps::SubMDPPermissiveScheduler<>> perms = storm::ps::computePermissiveSchedulerViaSMT<>(*mdp, formula02);
 //    EXPECT_NE(perms, boost::none);
