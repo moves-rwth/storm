@@ -90,11 +90,6 @@ namespace storm {
             }
             
             template<typename DataType>
-            void Partition<DataType>::setPosition(storm::storage::sparse::state_type state, storm::storage::sparse::state_type position) {
-                this->positions[state] = position;
-            }
-            
-            template<typename DataType>
             storm::storage::sparse::state_type const& Partition<DataType>::getState(storm::storage::sparse::state_type position) const {
                 return this->states[position];
             }
@@ -214,7 +209,7 @@ namespace storm {
             
             template<typename DataType>
             std::pair<typename std::vector<std::unique_ptr<Block<DataType>>>::iterator, bool> Partition<DataType>::splitBlock(Block<DataType>& block, storm::storage::sparse::state_type position) {
-                STORM_LOG_THROW(position >= block.getBeginIndex() && position <= block.getEndIndex(), storm::exceptions::InvalidArgumentException, "Cannot split block at illegal position.");
+                STORM_LOG_ASSERT(position >= block.getBeginIndex() && position <= block.getEndIndex(), "Cannot split block at illegal position.");
                 STORM_LOG_TRACE("Splitting " << block.getId() << " at position " << position << " (begin was " << block.getBeginIndex() << ").");
 
                 // In case one of the resulting blocks would be empty, we simply return the current block and do not create
@@ -306,23 +301,6 @@ namespace storm {
             void Partition<DataType>::sortBlock(Block<DataType> const& block) {
                 std::sort(this->begin(block), this->end(block), [] (storm::storage::sparse::state_type const& a, storm::storage::sparse::state_type const& b) { return a < b; });
                 mapStatesToPositions(block);
-            }
-            
-            template<typename DataType>
-            Block<DataType>& Partition<DataType>::insertBlock(Block<DataType>& block) {
-                // Find the beginning of the new block.
-                storm::storage::sparse::state_type begin = block.hasPreviousBlock() ? block.getPreviousBlock().getEndIndex() : 0;
-                
-                // Actually insert the new block.
-                blocks.emplace_back(new Block<DataType>(begin, block.getBeginIndex(), block.getPreviousBlockPointer(), &block, blocks.size()));
-                Block<DataType>& newBlock = *blocks.back();
-                
-                // Update the mapping of the states in the newly created block.
-                for (auto it = this->begin(newBlock), ite = this->end(newBlock); it != ite; ++it) {
-                    stateToBlockMapping[*it] = &newBlock;
-                }
-                
-                return newBlock;
             }
             
             template<typename DataType>

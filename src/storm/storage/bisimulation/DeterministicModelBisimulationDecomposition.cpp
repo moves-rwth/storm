@@ -118,22 +118,37 @@ namespace storm {
             this->initializeSilentProbabilities();
         }
         
+        
         template<typename ModelType>
-        void DeterministicModelBisimulationDecomposition<ModelType>::initializeMeasureDrivenPartition() {
-            BisimulationDecomposition<ModelType, BlockDataType>::initializeMeasureDrivenPartition();
-            
+        void DeterministicModelBisimulationDecomposition<ModelType>::postProcessInitialPartition() {
             if (this->options.getType() == BisimulationType::Weak && this->model.getType() == storm::models::ModelType::Dtmc) {
                 this->initializeWeakDtmcBisimulation();
             }
+            
+            if (this->options.getKeepRewards() && this->model.hasRewardModel() && this->options.getType() == BisimulationType::Weak) {
+                // For a weak bisimulation that is to preserve reward properties, we have to flag all blocks of states
+                // with non-zero reward as reward blocks to they can be refined wrt. strong bisimulation.
+                
+                // Here, we assume that the initial partition already respects state rewards. Therefore, it suffices to
+                // check the first state of each block for a non-zero reward.
+                std::vector<ValueType> const& stateRewardVector = this->model.getUniqueRewardModel().getStateRewardVector();
+                for (auto& block : this->partition.getBlocks()) {
+                    auto state = *this->partition.begin(*block);
+                    block->data().setHasRewards(!storm::utility::isZero(stateRewardVector[state]));
+                }
+            }
+        }
+        
+        template<typename ModelType>
+        void DeterministicModelBisimulationDecomposition<ModelType>::initializeMeasureDrivenPartition() {
+            BisimulationDecomposition<ModelType, BlockDataType>::initializeMeasureDrivenPartition();
+            postProcessInitialPartition();
         }
         
         template<typename ModelType>
         void DeterministicModelBisimulationDecomposition<ModelType>::initializeLabelBasedPartition() {
             BisimulationDecomposition<ModelType, BlockDataType>::initializeLabelBasedPartition();
-            
-            if (this->options.getType() == BisimulationType::Weak && this->model.getType() == storm::models::ModelType::Dtmc) {
-                this->initializeWeakDtmcBisimulation();
-            }
+            postProcessInitialPartition();
         }
         
         template<typename ModelType>
@@ -157,36 +172,48 @@ namespace storm {
         }
         
         template<typename ModelType>
+        void DeterministicModelBisimulationDecomposition<ModelType>::refinePredecessorBlockOfSplitterStrong(bisimulation::Block<BlockDataType>& block, std::vector<bisimulation::Block<BlockDataType>*>& splitterQueue) {
+            STORM_LOG_TRACE("Refining predecessor " << block.getId() << " of splitter");
+            
+            // Depending on the actions we need to take, the block to refine changes, so we need to keep track of it.
+            Block<BlockDataType>* blockToRefineProbabilistically = &block;
+            
+            bool split = false;
+            // If the new begin index has shifted to a non-trivial position, we need to split the block.
+            if (block.getBeginIndex() != block.data().marker1() && block.getEndIndex() != block.data().marker1()) {
+                split = true;
+                this->partition.splitBlock(block, block.data().marker1());
+                blockToRefineProbabilistically = block.getPreviousBlockPointer();
+                
+                // Keep track of whether this is a block with reward states.
+                blockToRefineProbabilistically->data().setHasRewards(block.data().hasRewards());
+            }
+            
+            split |= this->partition.splitBlock(*blockToRefineProbabilistically,
+                                                [this] (storm::storage::sparse::state_type state1, storm::storage::sparse::state_type state2) {
+                                                    return this->comparator.isLess(getProbabilityToSplitter(state1), getProbabilityToSplitter(state2));
+                                                },
+                                                [&splitterQueue,&block] (Block<BlockDataType>& newBlock) {
+                                                    splitterQueue.emplace_back(&newBlock);
+                                                    newBlock.data().setSplitter();
+
+                                                    // Keep track of whether this is a block with reward states.
+                                                    newBlock.data().setHasRewards(block.data().hasRewards());
+                                                });
+            
+            
+            // If the predecessor block was split, we need to insert it into the splitter vector if it is not already
+            // marked as a splitter.
+            if (split && !blockToRefineProbabilistically->data().splitter()) {
+                splitterQueue.emplace_back(blockToRefineProbabilistically);
+                blockToRefineProbabilistically->data().setSplitter();
+            }
+        }
+        
+        template<typename ModelType>
         void DeterministicModelBisimulationDecomposition<ModelType>::refinePredecessorBlocksOfSplitterStrong(std::list<Block<BlockDataType>*> const& predecessorBlocks, std::vector<bisimulation::Block<BlockDataType>*>& splitterQueue) {
             for (auto block : predecessorBlocks) {
-                STORM_LOG_TRACE("Refining predecessor " << block->getId() << " of splitter");
-
-                // Depending on the actions we need to take, the block to refine changes, so we need to keep track of it.
-                Block<BlockDataType>* blockToRefineProbabilistically = block;
-                
-                bool split = false;
-                // If the new begin index has shifted to a non-trivial position, we need to split the block.
-                if (block->getBeginIndex() != block->data().marker1() && block->getEndIndex() != block->data().marker1()) {
-                    split = true;
-                    this->partition.splitBlock(*block, block->data().marker1());
-                    blockToRefineProbabilistically = block->getPreviousBlockPointer();
-                }
-                
-                split |= this->partition.splitBlock(*blockToRefineProbabilistically,
-                                                    [this] (storm::storage::sparse::state_type state1, storm::storage::sparse::state_type state2) {
-                                                        return this->comparator.isLess(getProbabilityToSplitter(state1), getProbabilityToSplitter(state2));
-                                                    },
-                                                    [&splitterQueue] (Block<BlockDataType>& block) {
-                                                        splitterQueue.emplace_back(&block); block.data().setSplitter();
-                                                    });
-                
-                
-                // If the predecessor block was split, we need to insert it into the splitter vector if it is not already
-                // marked as a splitter.
-                if (split && !blockToRefineProbabilistically->data().splitter()) {
-                    splitterQueue.emplace_back(blockToRefineProbabilistically);
-                    blockToRefineProbabilistically->data().setSplitter();
-                }
+                refinePredecessorBlockOfSplitterStrong(*block, splitterQueue);
                 
                 // If the block was *not* split, we need to reset the markers by notifying the data.
                 block->resetMarkers();
@@ -395,12 +422,15 @@ namespace storm {
                                                      [&weakStateLabels,&block,originalBlockIndex,this] (storm::storage::sparse::state_type state1, storm::storage::sparse::state_type state2) {
                                                          return weakStateLabels[this->partition.getPosition(state1) - originalBlockIndex] < weakStateLabels[this->partition.getPosition(state2) - originalBlockIndex];
                                                      },
-                                                     [this, &splitterQueue] (bisimulation::Block<BlockDataType>& block) {
-                                                         updateSilentProbabilitiesBasedOnTransitions(block);
+                                                     [this, &splitterQueue, &block] (bisimulation::Block<BlockDataType>& newBlock) {
+                                                         updateSilentProbabilitiesBasedOnTransitions(newBlock);
                                                          
                                                          // Insert the new block as a splitter.
-                                                         block.data().setSplitter();
-                                                         splitterQueue.emplace_back(&block);
+                                                         newBlock.data().setSplitter();
+                                                         splitterQueue.emplace_back(&newBlock);
+                                                         
+                                                         // Keep track of whether this is a block with reward states.
+                                                         newBlock.data().setHasRewards(block.data().hasRewards());
                                                      });
             
             // If the block was split, we also update the silent probabilities.
@@ -418,10 +448,14 @@ namespace storm {
         template<typename ModelType>
         void DeterministicModelBisimulationDecomposition<ModelType>::refinePredecessorBlocksOfSplitterWeak(bisimulation::Block<BlockDataType>& splitter, std::list<bisimulation::Block<BlockDataType>*> const& predecessorBlocks, std::vector<bisimulation::Block<BlockDataType>*>& splitterQueue) {
             for (auto block : predecessorBlocks) {
-                if (*block != splitter) {
-                    refinePredecessorBlockOfSplitterWeak(*block, splitterQueue);
+                if (block->data().hasRewards()) {
+                    refinePredecessorBlockOfSplitterStrong(*block, splitterQueue);
                 } else {
-                    // If the block to split is the splitter itself, we must not do any splitting here.
+                    if (*block != splitter) {
+                        refinePredecessorBlockOfSplitterWeak(*block, splitterQueue);
+                    } else {
+                        // If the block to split is the splitter itself, we must not do any splitting here.
+                    }
                 }
                 
                 block->resetMarkers();
@@ -594,7 +628,7 @@ namespace storm {
                         storm::storage::sparse::state_type targetBlock = this->partition.getBlock(entry.getColumn()).getId();
                         
                         // If we are computing a weak bisimulation quotient, there is no need to add self-loops.
-                        if ((this->options.getType() == BisimulationType::Weak) && targetBlock == blockIndex) {
+                        if ((this->options.getType() == BisimulationType::Weak) && targetBlock == blockIndex && !oldBlock.data().hasRewards()) {
                             continue;
                         }
                         
@@ -608,7 +642,7 @@ namespace storm {
                     
                     // Now add them to the actual matrix.
                     for (auto const& probabilityEntry : blockProbability) {
-                        if (this->options.getType() == BisimulationType::Weak && this->model.getType() == storm::models::ModelType::Dtmc) {
+                        if (this->options.getType() == BisimulationType::Weak && this->model.getType() == storm::models::ModelType::Dtmc && !oldBlock.data().hasRewards()) {
                             builder.addNextValue(blockIndex, probabilityEntry.first, probabilityEntry.second / (storm::utility::one<ValueType>() - getSilentProbability(representativeState)));
                         } else {
                             builder.addNextValue(blockIndex, probabilityEntry.first, probabilityEntry.second);

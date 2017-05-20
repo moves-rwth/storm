@@ -49,6 +49,12 @@ namespace storm {
                 // Retrieves whether the block is to be interpreted as absorbing.
                 bool absorbing() const;
                 
+                // Sets whether the states in the block have rewards.
+                void setHasRewards(bool value = true);
+                
+                // Retrieves whether the states in the block have rewards.
+                bool hasRewards() const;
+                
                 // Sets the representative state of this block
                 void setRepresentativeState(storm::storage::sparse::state_type representativeState);
                 
@@ -61,19 +67,21 @@ namespace storm {
                 friend std::ostream& operator<<(std::ostream& out, DeterministicBlockData const& data);
                 
             public:
+                // Helpers to set/retrieve flags.
+                bool getFlag(uint64_t flag) const;
+                void setFlag(uint64_t flag, bool value);
+                
                 // Two markers that can be used for various purposes. Whenever the block is split, both the markers are
                 // set to the beginning index of the block.
                 uint_fast64_t valMarker1;
                 uint_fast64_t valMarker2;
                 
-                // A flag that can be used for marking the block as being a splitter.
-                bool splitterFlag;
-                
-                // A flag that can be used for marking the block as needing refinement.
-                bool needsRefinementFlag;
-                
-                // A flag indicating whether the block is to be interpreted as absorbing or not.
-                bool absorbingFlag;
+                // Some bits to store flags: splitter flag, refinement flag, absorbing flag.
+                static const uint64_t SPLITTER_FLAG = 1ull;
+                static const uint64_t REFINEMENT_FLAG = 1ull << 1;
+                static const uint64_t ABSORBING_FLAG = 1ull << 2;
+                static const uint64_t REWARD_FLAG = 1ull << 3;
+                uint8_t flags;
                 
                 // An optional representative state for the block. If this is set, this state is used to derive the
                 // atomic propositions of the meta state in the quotient model.
