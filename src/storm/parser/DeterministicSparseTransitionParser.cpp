@@ -46,7 +46,7 @@ namespace storm {
             char const* buf = file.getData();
 
             // Perform first pass, i.e. count entries that are not zero.
-            DeterministicSparseTransitionParser<ValueType>::FirstPassResult firstPass = DeterministicSparseTransitionParser<ValueType>::firstPass(file.getData());
+            DeterministicSparseTransitionParser<ValueType>::FirstPassResult firstPass = DeterministicSparseTransitionParser<ValueType>::firstPass(file.getData(), !isRewardFile);
 
             STORM_LOG_TRACE("First pass on " << filename << " shows " << firstPass.numberOfNonzeroEntries << " non-zeros.");
 
@@ -163,7 +163,7 @@ namespace storm {
         }
 
         template<typename ValueType>
-        typename DeterministicSparseTransitionParser<ValueType>::FirstPassResult DeterministicSparseTransitionParser<ValueType>::firstPass(char const* buf) {
+        typename DeterministicSparseTransitionParser<ValueType>::FirstPassResult DeterministicSparseTransitionParser<ValueType>::firstPass(char const* buf, bool reserveDiagonalElements) {
 
             DeterministicSparseTransitionParser<ValueType>::FirstPassResult result;
 
@@ -180,7 +180,7 @@ namespace storm {
             // Read first row and reserve space for self-loops if necessary.
             char const* tmp;
             row = checked_strtol(buf, &tmp);
-            if (row > 0) {
+            if (row > 0 && reserveDiagonalElements) {
                 for (uint_fast64_t skippedRow = 0; skippedRow < row; ++skippedRow) {
                     ++result.numberOfNonzeroEntries;
                 }
@@ -193,7 +193,7 @@ namespace storm {
                 // The actual read value is not needed here.
                 checked_strtod(buf, &buf);
 
-                if (lastRow != row) {
+                if (lastRow != row && reserveDiagonalElements) {
                     // Compensate for missing rows.
                     for (uint_fast64_t skippedRow = lastRow + 1; skippedRow < row; ++skippedRow) {
                         ++result.numberOfNonzeroEntries;
@@ -218,10 +218,12 @@ namespace storm {
                 buf = trimWhitespaces(buf);
             }
 
-            for (uint_fast64_t skippedRow = (uint_fast64_t) (lastRow + 1); skippedRow <= result.highestStateIndex; ++skippedRow) {
-                ++result.numberOfNonzeroEntries;
+            if (reserveDiagonalElements) {
+                for (uint_fast64_t skippedRow = (uint_fast64_t) (lastRow + 1); skippedRow <= result.highestStateIndex; ++skippedRow) {
+                    ++result.numberOfNonzeroEntries;
+                }
             }
-            
+        
             return result;
         }
 

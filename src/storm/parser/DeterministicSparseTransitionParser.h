@@ -65,9 +65,11 @@ namespace storm {
              * transitions and the maximum node id.
              *
              * @param buffer The buffer that contains the input.
+             * @param reserveDiagonalElements A flag indicating whether the diagonal elements should be counted as if they
+             * were present to enable fixes later.
              * @return A structure representing the result of the first pass.
              */
-            static FirstPassResult firstPass(char const* buffer);
+            static FirstPassResult firstPass(char const* buffer, bool reserveDiagonalElements);
 
             /*
              * The main parsing routine.
