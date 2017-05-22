@@ -1,6 +1,7 @@
 #include "storm/models/sparse/NondeterministicModel.h"
 
 #include "storm/models/sparse/StandardRewardModel.h"
+#include "storm/models/sparse/MarkovAutomaton.h"
 
 #include "storm/adapters/CarlAdapter.h"
 
@@ -86,8 +87,9 @@ namespace storm {
                         
                         // For each nondeterministic choice, we draw an arrow to an intermediate node to better display
                         // the grouping of transitions.
-                        outStream << "\t\"" << state << "c" << choice << "\" [shape = \"point\"";
                         
+                        // The intermediate node:
+                        outStream << "\t\"" << state << "c" << choice << "\" [shape = \"point\"";
                         // If we were given a scheduler to highlight, we do so now.
                         if (scheduler != nullptr) {
                             if (highlightChoice) {
@@ -96,17 +98,55 @@ namespace storm {
                         }
                         outStream << "];" << std::endl;
                         
-                        outStream << "\t" << state << " -> \"" << state << "c" << choice << "\" [ label= \"" << rowIndex << "\"";
-                        
-                        // If we were given a scheduler to highlight, we do so now.
-                        if (scheduler != nullptr) {
-                            if (highlightChoice) {
-                                outStream << ", color=\"red\", penwidth = 2";
-                            } else {
-                                outStream << ", style = \"dotted\"";
+                        // The arrow to the intermediate node:
+                        outStream << "\t" << state << " -> \"" << state << "c" << choice << "\"";
+                        bool arrowHasLabel = false;
+                        if (this->isOfType(ModelType::MarkovAutomaton)) {
+                            // If this is a Markov automaton, we have to check whether the current choice is a Markovian choice and correspondingly print the exit rate
+                            MarkovAutomaton<ValueType, RewardModelType> const* ma = dynamic_cast<MarkovAutomaton<ValueType, RewardModelType> const*>(this);
+                            if (ma->isMarkovianState(state) && choice == 0) {
+                                arrowHasLabel = true;
+                                outStream << " [ label = \"" << ma->getExitRate(state);
                             }
                         }
-                        outStream << "];" << std::endl;
+                        if (this->hasChoiceLabeling()) {
+                            if (arrowHasLabel) {
+                                outStream << " | {";
+                            } else {
+                                outStream << " [ label = \"{";
+                            }
+                            arrowHasLabel = true;
+                            bool firstLabel = true;
+                            for (auto const& label : this->getChoiceLabeling().getLabelsOfChoice(rowIndex)) {
+                                if (!firstLabel) {
+                                    outStream << ", ";
+                                }
+                                firstLabel = false;
+                                outStream << label;
+                            }
+                            outStream << "}";
+                        }
+                        if (arrowHasLabel) {
+                            outStream << "\"";
+                        }
+                        // If we were given a scheduler to highlight, we do so now.
+                        if (scheduler != nullptr) {
+                            if (arrowHasLabel) {
+                                outStream << ", ";
+                            } else {
+                                outStream << "[ ";
+                            }
+                            if (highlightChoice) {
+                                outStream << "color=\"red\", penwidth = 2";
+                            } else {
+                                outStream << "style = \"dotted\"";
+                            }
+                        }
+                        
+                        if (arrowHasLabel || scheduler != nullptr) {
+                            outStream << "]" << std::endl;
+                        }
+                        outStream << ";" << std::endl;
                         
                         // Now draw all probabilitic arcs that belong to this nondeterminstic choice.
                         for (auto const& transition : row) {
@@ -133,7 +173,6 @@ namespace storm {
             }
             
             template class NondeterministicModel<double>;
-            template class NondeterministicModel<float>;
 
 #ifdef STORM_HAVE_CARL
             template class NondeterministicModel<storm::RationalNumber>;

@@ -207,7 +207,11 @@ namespace storm {
             void Model<ValueType, RewardModelType>::printModelInformationFooterToStream(std::ostream& out) const {
                 this->printRewardModelsInformationToStream(out);
                 this->getStateLabeling().printLabelingInformationToStream(out);
-                out << "choice labels: \t" << (this->hasChoiceLabeling() ? "yes" : "no")  << std::noboolalpha << std::endl;
+                if (this->hasChoiceLabeling()) {
+                    this->getChoiceLabeling().printLabelingInformationToStream(out);
+                } else {
+                    out << "Choice Labels: \tnone";
+                }
                 out << "-------------------------------------------------------------- " << std::endl;
             }
             

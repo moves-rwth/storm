@@ -156,88 +156,6 @@ namespace storm {
             }
             
             template <typename ValueType, typename RewardModelType>
-            void MarkovAutomaton<ValueType, RewardModelType>::writeDotToStream(std::ostream& outStream, bool includeLabeling, storm::storage::BitVector const* subsystem, std::vector<ValueType> const* firstValue, std::vector<ValueType> const* secondValue, std::vector<uint_fast64_t> const* stateColoring, std::vector<std::string> const* colors, std::vector<uint_fast64_t>* scheduler, bool finalizeOutput) const {
-                Model<ValueType, RewardModelType>::writeDotToStream(outStream, includeLabeling, subsystem, firstValue, secondValue, stateColoring, colors, scheduler, false);
-                
-                // Write the probability distributions for all the states.
-                for (uint_fast64_t state = 0; state < this->getNumberOfStates(); ++state) {
-                    uint_fast64_t rowCount = this->getTransitionMatrix().getRowGroupIndices()[state + 1] - this->getTransitionMatrix().getRowGroupIndices()[state];
-                    bool highlightChoice = true;
-                    
-                    // For this, we need to iterate over all available nondeterministic choices in the current state.
-                    for (uint_fast64_t choice = 0; choice < rowCount; ++choice) {
-                        uint_fast64_t rowIndex = this->getTransitionMatrix().getRowGroupIndices()[state] + choice;
-                        typename storm::storage::SparseMatrix<ValueType>::const_rows row = this->getTransitionMatrix().getRow(rowIndex);
-                        
-                        if (scheduler != nullptr) {
-                            // If the scheduler picked the current choice, we will not make it dotted, but highlight it.
-                            if ((*scheduler)[state] == choice) {
-                                highlightChoice = true;
-                            } else {
-                                highlightChoice = false;
-                            }
-                        }
-                        
-                        // If it's not a Markovian state or the current row is the first choice for this state, then we
-                        // are dealing with a probabilitic choice.
-                        if (!markovianStates.get(state) || choice != 0) {
-                            // For each nondeterministic choice, we draw an arrow to an intermediate node to better display
-                            // the grouping of transitions.
-                            outStream << "\t\"" << state << "c" << choice << "\" [shape = \"point\"";
-                            
-                            // If we were given a scheduler to highlight, we do so now.
-                            if (scheduler != nullptr) {
-                                if (highlightChoice) {
-                                    outStream << ", fillcolor=\"red\"";
-                                }
-                            }
-                            outStream << "];" << std::endl;
-                            
-                            outStream << "\t" << state << " -> \"" << state << "c" << choice << "\" [ label= \"" << rowIndex << "\"";
-                            
-                            // If we were given a scheduler to highlight, we do so now.
-                            if (scheduler != nullptr) {
-                                if (highlightChoice) {
-                                    outStream << ", color=\"red\", penwidth = 2";
-                                } else {
-                                    outStream << ", style = \"dotted\"";
-                                }
-                            }
-                            outStream << "];" << std::endl;
-                            
-                            // Now draw all probabilitic arcs that belong to this nondeterminstic choice.
-                            for (auto const& transition : row) {
-                                if (subsystem == nullptr || subsystem->get(transition.getColumn())) {
-                                    outStream << "\t\"" << state << "c" << choice << "\" -> " << transition.getColumn() << " [ label= \"" << transition.getValue() << "\" ]";
-                                    
-                                    // If we were given a scheduler to highlight, we do so now.
-                                    if (scheduler != nullptr) {
-                                        if (highlightChoice) {
-                                            outStream << " [color=\"red\", penwidth = 2]";
-                                        } else {
-                                            outStream << " [style = \"dotted\"]";
-                                        }
-                                    }
-                                    outStream << ";" << std::endl;
-                                }
-                            }
-                        } else {
-                            // In this case we are emitting a Markovian choice, so draw the arrows directly to the target states.
-                            for (auto const& transition : row) {
-                                if (subsystem == nullptr || subsystem->get(transition.getColumn())) {
-                                    outStream << "\t\"" << state << "\" -> " << transition.getColumn() << " [ label= \"" << transition.getValue() << " (" << this->exitRates[state] << ")\" ]";
-                                }
-                            }
-                        }
-                    }
-                }
-                
-                if (finalizeOutput) {
-                    outStream << "}" << std::endl;
-                }
-            }
-            
-            template <typename ValueType, typename RewardModelType>
             void MarkovAutomaton<ValueType, RewardModelType>::turnRatesToProbabilities() {
                 this->exitRates.resize(this->getNumberOfStates());
                 for (uint_fast64_t state = 0; state< this->getNumberOfStates(); ++state) {
@@ -348,7 +266,6 @@ namespace storm {
             
             
             template class MarkovAutomaton<double>;
-//            template class MarkovAutomaton<float>;
 #ifdef STORM_HAVE_CARL
             template class MarkovAutomaton<storm::RationalNumber>;
             

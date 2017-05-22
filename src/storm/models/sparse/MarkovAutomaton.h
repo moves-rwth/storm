@@ -191,8 +191,6 @@ namespace storm {
                  */
                 std::shared_ptr<storm::models::sparse::Ctmc<ValueType, RewardModelType>> convertToCTMC() const;
                 
-                virtual void writeDotToStream(std::ostream& outStream, bool includeLabeling = true, storm::storage::BitVector const* subsystem = nullptr, std::vector<ValueType> const* firstValue = nullptr, std::vector<ValueType> const* secondValue = nullptr, std::vector<uint_fast64_t> const* stateColoring = nullptr, std::vector<std::string> const* colors = nullptr, std::vector<uint_fast64_t>* scheduler = nullptr, bool finalizeOutput = true) const override;
-                                
                 virtual void printModelInformationToStream(std::ostream& out) const override;
                 
             private:

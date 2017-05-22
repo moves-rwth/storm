@@ -74,6 +74,7 @@ namespace storm {
 
 
             std::ostream& operator<<(std::ostream& out, StateLabeling const& labeling) {
+                out << "State ";
                 labeling.printLabelingInformationToStream(out);
                 return out;
             }
