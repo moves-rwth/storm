@@ -14,6 +14,7 @@
 #include "storm/utility/macros.h"
 #include "storm/exceptions/InvalidArgumentException.h"
 #include "storm/exceptions/WrongFormatException.h"
+#include "storm/exceptions/UnexpectedException.h"
 
 namespace storm {
     namespace generator {
@@ -636,8 +637,47 @@ namespace storm {
             std::vector<std::string> identifierToInfoMapping(currentIdentifier);
             for (auto const& setIdPair : commandSetToIdentifierMap) {
                 identifierToCommandSetMapping[setIdPair.second] = setIdPair.first;
-                // Todo: Make these identifiers unique
-                identifierToInfoMapping[setIdPair.second] = "Choice made from " + std::to_string(setIdPair.first.size()) + " commands";
+                
+                // Get a string representation of this command set.
+                std::stringstream commandSetName;
+                if (setIdPair.first.empty()) {
+                    commandSetName << "No origin";
+                } else {
+                    //process the first command in the set
+                    auto commandIndexIt = setIdPair.first.begin();
+                    std::string actionName;
+                    auto moduleCommandPair = program.getModuleCommandIndexByGlobalCommandIndex(*commandIndexIt);
+                    storm::prism::Module const& firstModule = program.getModule(moduleCommandPair.first);
+                    storm::prism::Command const& firstCommand = firstModule.getCommand(moduleCommandPair.second);
+                    actionName = firstCommand.getActionName();
+                    commandSetName << actionName;
+                    bool commandSetHasModuleDetails = false;
+                    if (firstModule.getCommandIndicesByActionIndex(firstCommand.getActionIndex()).size() != 1) {
+                        commandSetHasModuleDetails = true;
+                        commandSetName << " (" << firstModule.getName() << ": " << firstCommand;
+                    }
+                    
+                    // now process the remaining commands
+                    for (; commandIndexIt != setIdPair.first.end(); ++commandIndexIt) {
+                        moduleCommandPair = program.getModuleCommandIndexByGlobalCommandIndex(*commandIndexIt);
+                        storm::prism::Module const& module = program.getModule(moduleCommandPair.first);
+                        storm::prism::Command const& command = module.getCommand(moduleCommandPair.second);
+                        STORM_LOG_THROW(command.getActionName() == actionName, storm::exceptions::UnexpectedException, "Inconsistent action names for choice origin");
+                        if (module.getCommandIndicesByActionIndex(command.getActionIndex()).size() != 1) {
+                            if (commandSetHasModuleDetails) {
+                                commandSetName << "    ";
+                            } else {
+                                commandSetHasModuleDetails = true;
+                                commandSetName << " (";
+                            }
+                            commandSetName << module.getName() << ": " << command;
+                        }
+                    }
+                    if (commandSetHasModuleDetails) {
+                        commandSetName << ")";
+                    }
+                }
+                identifierToInfoMapping[setIdPair.second] = commandSetName.str();
             }
             
             return std::make_shared<storm::storage::sparse::PrismChoiceOrigins>(std::make_shared<storm::prism::Program>(program), std::move(identifiers), std::move(identifierToInfoMapping), std::move(identifierToCommandSetMapping));
