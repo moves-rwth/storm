@@ -33,28 +33,19 @@ TEST(DeterministicSparseTransitionParserTest, BasicTransitionsParsing) {
     storm::storage::SparseMatrix<double> transitionMatrix = storm::parser::DeterministicSparseTransitionParser<>::parseDeterministicTransitions(STORM_TEST_RESOURCES_DIR "/tra/dtmc_general.tra");
 
     ASSERT_EQ(8ul, transitionMatrix.getColumnCount());
-    ASSERT_EQ(21ul, transitionMatrix.getEntryCount());
+    ASSERT_EQ(17ul, transitionMatrix.getEntryCount());
 
     // Test every entry of the matrix.
     storm::storage::SparseMatrix<double>::const_iterator cIter = transitionMatrix.begin(0);
 
-    ASSERT_EQ(0ul, cIter->getColumn());
-    ASSERT_EQ(0, cIter->getValue());
-    cIter++;
     ASSERT_EQ(1ul, cIter->getColumn());
     ASSERT_EQ(1, cIter->getValue());
-    cIter++;
-    ASSERT_EQ(1ul, cIter->getColumn());
-    ASSERT_EQ(0, cIter->getValue());
     cIter++;
     ASSERT_EQ(2ul, cIter->getColumn());
     ASSERT_EQ(0.5, cIter->getValue());
     cIter++;
     ASSERT_EQ(3ul, cIter->getColumn());
     ASSERT_EQ(0.5, cIter->getValue());
-    cIter++;
-    ASSERT_EQ(2ul, cIter->getColumn());
-    ASSERT_EQ(0, cIter->getValue());
     cIter++;
     ASSERT_EQ(3ul, cIter->getColumn());
     ASSERT_EQ(0.4, cIter->getValue());
@@ -70,9 +61,6 @@ TEST(DeterministicSparseTransitionParserTest, BasicTransitionsParsing) {
     cIter++;
     ASSERT_EQ(3ul, cIter->getColumn());
     ASSERT_EQ(1, cIter->getValue());
-    cIter++;
-    ASSERT_EQ(4ul, cIter->getColumn());
-    ASSERT_EQ(0, cIter->getValue());
     cIter++;
     ASSERT_EQ(3ul, cIter->getColumn());
     ASSERT_EQ(0.1, cIter->getValue());
@@ -197,7 +185,7 @@ TEST(DeterministicSparseTransitionParserTest, FixDeadlocks) {
     storm::storage::SparseMatrix<double> transitionMatrix = storm::parser::DeterministicSparseTransitionParser<>::parseDeterministicTransitions(STORM_TEST_RESOURCES_DIR "/tra/dtmc_deadlock.tra");
 
     ASSERT_EQ(9ul, transitionMatrix.getColumnCount());
-    ASSERT_EQ(23ul, transitionMatrix.getEntryCount());
+    ASSERT_EQ(18ul, transitionMatrix.getEntryCount());
 
     storm::storage::SparseMatrix<double>::const_iterator cIter = transitionMatrix.begin(7);
     ASSERT_EQ(7ul, cIter->getColumn());
@@ -208,9 +196,6 @@ TEST(DeterministicSparseTransitionParserTest, FixDeadlocks) {
     cIter++;
     ASSERT_EQ(7ul, cIter->getColumn());
     ASSERT_EQ(0.775347, cIter->getValue());
-    cIter++;
-    ASSERT_EQ(8ul, cIter->getColumn());
-    ASSERT_EQ(0, cIter->getValue());
 }
 
 TEST(DeterministicSparseTransitionParserTest, DontFixDeadlocks) {

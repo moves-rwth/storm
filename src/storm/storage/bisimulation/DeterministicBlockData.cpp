@@ -13,7 +13,7 @@ namespace storm {
                 // Intentionally left empty.
             }
             
-            DeterministicBlockData::DeterministicBlockData(uint_fast64_t marker1, uint_fast64_t marker2) : valMarker1(marker1), valMarker2(marker2), splitterFlag(false), needsRefinementFlag(false), absorbingFlag(false), valRepresentativeState() {
+            DeterministicBlockData::DeterministicBlockData(uint_fast64_t marker1, uint_fast64_t marker2) : valMarker1(marker1), valMarker2(marker2), flags(0), valRepresentativeState() {
                 // Intentionally left empty.
             }
             
@@ -56,19 +56,27 @@ namespace storm {
             }
             
             bool DeterministicBlockData::splitter() const {
-                return this->splitterFlag;
+                return getFlag(SPLITTER_FLAG);
             }
             
             void DeterministicBlockData::setSplitter(bool value) {
-                this->splitterFlag = value;
+                setFlag(SPLITTER_FLAG, value);
             }
                         
             void DeterministicBlockData::setAbsorbing(bool absorbing) {
-                this->absorbingFlag = absorbing;
+                setFlag(ABSORBING_FLAG, absorbing);
             }
             
             bool DeterministicBlockData::absorbing() const {
-                return this->absorbingFlag;
+                return getFlag(ABSORBING_FLAG);
+            }
+            
+            void DeterministicBlockData::setHasRewards(bool value) {
+                setFlag(REWARD_FLAG, value);
+            }
+            
+            bool DeterministicBlockData::hasRewards() const {
+                return getFlag(REWARD_FLAG);
             }
             
             void DeterministicBlockData::setRepresentativeState(storm::storage::sparse::state_type representativeState) {
@@ -85,15 +93,27 @@ namespace storm {
             }
             
             bool DeterministicBlockData::needsRefinement() const {
-                return needsRefinementFlag;
+                return getFlag(REFINEMENT_FLAG);
             }
             
             void DeterministicBlockData::setNeedsRefinement(bool value) {
-                needsRefinementFlag = value;
+                setFlag(REFINEMENT_FLAG, value);
+            }
+            
+            bool DeterministicBlockData::getFlag(uint64_t flag) const {
+                return (this->flags & flag) != 0ull;
+            }
+            
+            void DeterministicBlockData::setFlag(uint64_t flag, bool value) {
+                if (value) {
+                    this->flags |= flag;
+                } else {
+                    this->flags &= ~flag;
+                }
             }
 
             std::ostream& operator<<(std::ostream& out, DeterministicBlockData const& data) {
-                out << "m1: " << data.marker1() << ", m2: " << data.marker2();
+                out << "m1: " << data.marker1() << ", m2: " << data.marker2() << ", r: " << data.hasRewards();
                 return out;
             }
         }
