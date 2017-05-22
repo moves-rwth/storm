@@ -58,7 +58,7 @@ namespace storm {
                 
                 uint_fast64_t subsystemStateCount = subsystemStates.getNumberOfSetBits();
                 STORM_LOG_THROW(subsystemStateCount != 0, storm::exceptions::InvalidArgumentException, "Invoked SubsystemBuilder for an empty subsystem.");
-                if(subsystemStateCount == subsystemStates.size() && subsystemActions.full()) {
+                if (subsystemStateCount == subsystemStates.size() && subsystemActions.full()) {
                     result.model = std::make_shared<SparseModelType>(originalModel);
                     result.newToOldStateIndexMapping = storm::utility::vector::buildVectorForRange(0, result.model->getNumberOfStates());
                     result.keptActions = storm::storage::BitVector(result.model->getTransitionMatrix().getRowCount(), true);
@@ -67,13 +67,13 @@ namespace storm {
                 
                 result.newToOldStateIndexMapping.reserve(subsystemStateCount);
                 result.keptActions = storm::storage::BitVector(originalModel.getTransitionMatrix().getRowCount(), false);
-                for(auto subsysState : subsystemStates) {
+                for (auto subsysState : subsystemStates) {
                     result.newToOldStateIndexMapping.push_back(subsysState);
                     bool stateHasOneChoiceLeft = false;
-                    for(uint_fast64_t row = subsystemActions.getNextSetIndex(originalModel.getTransitionMatrix().getRowGroupIndices()[subsysState]); row < originalModel.getTransitionMatrix().getRowGroupIndices()[subsysState+1]; row = subsystemActions.getNextSetIndex(row+1)) {
+                    for (uint_fast64_t row = subsystemActions.getNextSetIndex(originalModel.getTransitionMatrix().getRowGroupIndices()[subsysState]); row < originalModel.getTransitionMatrix().getRowGroupIndices()[subsysState+1]; row = subsystemActions.getNextSetIndex(row+1)) {
                         bool allRowEntriesStayInSubsys = true;
-                        for(auto const& entry : originalModel.getTransitionMatrix().getRow(row)) {
-                            if(!subsystemStates.get(entry.getColumn())) {
+                        for (auto const& entry : originalModel.getTransitionMatrix().getRow(row)) {
+                            if (!subsystemStates.get(entry.getColumn())) {
                                 allRowEntriesStayInSubsys = false;
                                 break;
                             }
@@ -85,19 +85,15 @@ namespace storm {
                 }
                 
                 // Transform the ingedients of the model
-                storm::storage::SparseMatrix<typename SparseModelType::ValueType> matrix = transformMatrix(originalModel.getTransitionMatrix(), subsystemStates, result.keptActions);
-                storm::models::sparse::StateLabeling labeling(matrix.getRowGroupCount());
-                for(auto const& label : originalModel.getStateLabeling().getLabels()){
-                    storm::storage::BitVector newBitVectorForLabel = transformStateBitVector(originalModel.getStateLabeling().getStates(label), subsystemStates);
-                    labeling.addLabel(label, std::move(newBitVectorForLabel));
-                }
+                storm::storage::SparseMatrix<typename SparseModelType::ValueType> matrix = originalModel.getTransitionMatrix().getSubmatrix(false, result.keptActions, subsystemStates);
+                storm::models::sparse::StateLabeling labeling = originalModel.getStateLabeling().getSubLabeling(subsystemStates);
                 std::unordered_map<std::string, typename SparseModelType::RewardModelType> rewardModels;
-                for(auto const& rewardModel : originalModel.getRewardModels()){
+                for (auto const& rewardModel : originalModel.getRewardModels()){
                     rewardModels.insert(std::make_pair(rewardModel.first, transformRewardModel(rewardModel.second, subsystemStates, result.keptActions)));
                 }
-                boost::optional<std::vector<storm::models::sparse::LabelSet>> choiceLabeling;
-                if(originalModel.hasChoiceLabeling()){
-                    choiceLabeling = transformActionValueVector<storm::models::sparse::LabelSet>(originalModel.getChoiceLabeling(), result.keptActions);
+                boost::optional<storm::models::sparse::ChoiceLabeling> choiceLabeling;
+                if (originalModel.hasChoiceLabeling()) {
+                    choiceLabeling = originalModel.getChoiceLabeling().getSubLabeling(result.keptActions);
                 }
                 result.model = std::make_shared<SparseModelType>(createTransformedModel(originalModel, subsystemStates, matrix, labeling, rewardModels, choiceLabeling));
                 STORM_LOG_DEBUG("Subsystem Builder is done. Resulting model has " << result.model->getNumberOfStates() << " states.");
@@ -111,48 +107,17 @@ namespace storm {
                 boost::optional<std::vector<ValueType>> stateRewardVector;
                 boost::optional<std::vector<ValueType>> stateActionRewardVector;
                 boost::optional<storm::storage::SparseMatrix<ValueType>> transitionRewardMatrix;
-                if(originalRewardModel.hasStateRewards()){
-                    stateRewardVector = transformStateValueVector(originalRewardModel.getStateRewardVector(), subsystem);
+                if (originalRewardModel.hasStateRewards()){
+                    stateRewardVector = storm::utility::vector::filterVector(originalRewardModel.getStateRewardVector(), subsystem);
                 }
-                if(originalRewardModel.hasStateActionRewards()){
-                    stateActionRewardVector = transformActionValueVector(originalRewardModel.getStateActionRewardVector(), subsystemActions);
+                if (originalRewardModel.hasStateActionRewards()){
+                    stateActionRewardVector = storm::utility::vector::filterVector(originalRewardModel.getStateActionRewardVector(), subsystemActions);
                 }
-                if(originalRewardModel.hasTransitionRewards()){
-                    transitionRewardMatrix = transformMatrix(originalRewardModel.getTransitionRewardMatrix(), subsystem, subsystemActions);
+                if (originalRewardModel.hasTransitionRewards()){
+                    transitionRewardMatrix = originalRewardModel.getTransitionRewardMatrix().getSubmatrix(false, subsystemActions, subsystem);
                 }
                 return RewardModelType(std::move(stateRewardVector), std::move(stateActionRewardVector), std::move(transitionRewardMatrix));
             }
-            
-            template<typename ValueType = typename SparseModelType::ValueType>
-            static storm::storage::SparseMatrix<ValueType> transformMatrix(storm::storage::SparseMatrix<ValueType> const& originalMatrix, storm::storage::BitVector const& subsystem, storm::storage::BitVector const& subsystemActions) {
-                return originalMatrix.getSubmatrix(false, subsystemActions, subsystem);
-            }
-            
-            
-            template<typename ValueType = typename SparseModelType::ValueType>
-            static std::vector<ValueType> transformActionValueVector(std::vector<ValueType> const& originalVector, storm::storage::BitVector const& subsystemActions) {
-                std::vector<ValueType> v;
-                v.reserve(subsystemActions.getNumberOfSetBits());
-                for(auto action : subsystemActions){
-                    v.push_back(originalVector[action]);
-                }
-                return v;
-            }
-            
-            template<typename ValueType = typename SparseModelType::ValueType>
-            static std::vector<ValueType> transformStateValueVector(std::vector<ValueType> const& originalVector, storm::storage::BitVector const& subsystem) {
-                std::vector<ValueType> v;
-                v.reserve(subsystem.getNumberOfSetBits());
-                for(auto state : subsystem){
-                    v.push_back(originalVector[state]);
-                }
-                return v;
-            }
-            
-            static storm::storage::BitVector transformStateBitVector(storm::storage::BitVector const& originalBitVector, storm::storage::BitVector const& subsystem) {
-                return originalBitVector % subsystem;
-            }
-            
             
             template<typename MT = SparseModelType>
             static typename std::enable_if<
@@ -165,7 +130,7 @@ namespace storm {
                                    storm::storage::SparseMatrix<typename MT::ValueType>& matrix,
                                    storm::models::sparse::StateLabeling& stateLabeling,
                                    std::unordered_map<std::string, typename MT::RewardModelType>& rewardModels,
-                                   boost::optional<std::vector<typename storm::models::sparse::LabelSet>>& choiceLabeling ) {
+                                   boost::optional<storm::models::sparse::ChoiceLabeling>& choiceLabeling ) {
                 return MT(std::move(matrix), std::move(stateLabeling), std::move(rewardModels), std::move(choiceLabeling));
             }
             
@@ -179,12 +144,11 @@ namespace storm {
                                    storm::models::sparse::StateLabeling& stateLabeling,
                                    std::unordered_map<std::string,
                                    typename MT::RewardModelType>& rewardModels,
-                                   boost::optional<std::vector<typename storm::models::sparse::LabelSet>>& choiceLabeling ) {
-                storm::storage::BitVector markovianStates = transformStateBitVector(originalModel.getMarkovianStates(), subsystem);
-                std::vector<typename MT::ValueType> exitRates = transformStateValueVector(originalModel.getExitRates(), subsystem);
+                                   boost::optional<storm::models::sparse::ChoiceLabeling>& choiceLabeling ) {
+                storm::storage::BitVector markovianStates = originalModel.getMarkovianStates() % subsystem;
+                std::vector<typename MT::ValueType> exitRates = storm::utility::vector::filterVector(originalModel.getExitRates(), subsystem);
                 return MT(std::move(matrix), std::move(stateLabeling), std::move(markovianStates), std::move(exitRates), true, std::move(rewardModels), std::move(choiceLabeling));
             }
-            
             
         };
     }

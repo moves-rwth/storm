@@ -45,6 +45,10 @@ namespace storm {
             	return  indexToIdentifier[choiceIndex];
             }
             
+			uint_fast64_t ChoiceOrigins::getIdentifierForChoicesWithNoOrigin() {
+				return 0;
+			}
+                
 			std::string const& ChoiceOrigins::getIdentifierInfo(uint_fast64_t identifier) const {
 				return identifierToInfo[identifier];
 			}
@@ -60,8 +64,15 @@ namespace storm {
             }
             
             std::shared_ptr<ChoiceOrigins> ChoiceOrigins::selectChoices(std::vector<uint_fast64_t> const& selectedChoices) const {
-                std::vector<uint_fast64_t> indexToIdentifierMapping(selectedChoices.size());
-                storm::utility::vector::selectVectorValues(indexToIdentifierMapping, selectedChoices, indexToIdentifier);
+                std::vector<uint_fast64_t> indexToIdentifierMapping;
+                indexToIdentifierMapping.reserve(selectedChoices.size());
+                for (auto const& selectedChoice : selectedChoices){
+                    if (selectedChoice < this->indexToIdentifier.size()) {
+                        indexToIdentifierMapping.push_back(indexToIdentifier[selectedChoice]);
+                    } else {
+                        indexToIdentifierMapping.push_back(getIdentifierForChoicesWithNoOrigin());
+                    }
+                }
                 return cloneWithNewIndexToIdentifierMapping(std::move(indexToIdentifierMapping));
             }
         }

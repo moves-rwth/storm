@@ -3,11 +3,11 @@
 
 #include <vector>
 #include <unordered_map>
-#include <boost/container/flat_set.hpp>
 #include <boost/optional.hpp>
 
 #include "storm/models/ModelBase.h"
 #include "storm/models/sparse/StateLabeling.h"
+#include "storm/models/sparse/ChoiceLabeling.h"
 #include "storm/storage/sparse/StateType.h"
 #include "storm/storage/SparseMatrix.h"
 #include "storm/utility/OsDetection.h"
@@ -24,9 +24,6 @@ namespace storm {
     
     namespace models {
         namespace sparse {
-            
-            // The type used for storing a set of labels.
-            typedef boost::container::flat_set<uint_fast64_t> LabelSet;
             
             template<typename ValueType>
             class StandardRewardModel;
@@ -60,7 +57,7 @@ namespace storm {
                       storm::storage::SparseMatrix<ValueType> const& transitionMatrix,
                       storm::models::sparse::StateLabeling const& stateLabeling,
                       std::unordered_map<std::string, RewardModelType> const& rewardModels = std::unordered_map<std::string, RewardModelType>(),
-                      boost::optional<std::vector<LabelSet>> const& optionalChoiceLabeling = boost::optional<std::vector<LabelSet>>());
+                      boost::optional<storm::models::sparse::ChoiceLabeling> const& optionalChoiceLabeling = boost::none);
                 
                 /*!
                  * Constructs a model by moving the given data.
@@ -75,7 +72,7 @@ namespace storm {
                       storm::storage::SparseMatrix<ValueType>&& transitionMatrix,
                       storm::models::sparse::StateLabeling&& stateLabeling,
                       std::unordered_map<std::string, RewardModelType>&& rewardModels = std::unordered_map<std::string, RewardModelType>(),
-                      boost::optional<std::vector<LabelSet>>&& optionalChoiceLabeling = boost::optional<std::vector<LabelSet>>());
+                      boost::optional<storm::models::sparse::ChoiceLabeling>&& optionalChoiceLabeling = boost::none);
                                 
                 /*!
                  * Retrieves the backward transition relation of the model, i.e. a set of transitions between states
@@ -227,21 +224,21 @@ namespace storm {
                  *
                  * @return The labels for the choices of the model.
                  */
-                std::vector<LabelSet> const& getChoiceLabeling() const;
+                storm::models::sparse::ChoiceLabeling const& getChoiceLabeling() const;
                 
                 /*!
                  * Retrieves an optional value that contains the choice labeling if there is one.
                  * 
                  * @return The labels for the choices, if they're saved.
                  */
-                boost::optional<std::vector<LabelSet>> const&  getOptionalChoiceLabeling() const;
+                boost::optional<storm::models::sparse::ChoiceLabeling> const&  getOptionalChoiceLabeling() const;
 
                 /*!
                  * Retrieves an optional value that contains the choice labeling if there is one.
                  *
                  * @return The labels for the choices, if they're saved.
                  */
-                boost::optional<std::vector<LabelSet>>&  getOptionalChoiceLabeling();
+                boost::optional<storm::models::sparse::ChoiceLabeling>&  getOptionalChoiceLabeling();
                 
                 /*!
                  * Returns the state labeling associated with this model.
@@ -365,7 +362,7 @@ namespace storm {
                 std::unordered_map<std::string, RewardModelType> rewardModels;
                 
                 // If set, a vector representing the labels of choices.
-                boost::optional<std::vector<LabelSet>> choiceLabeling;
+                boost::optional<storm::models::sparse::ChoiceLabeling> choiceLabeling;
             };
             
 #ifdef STORM_HAVE_CARL

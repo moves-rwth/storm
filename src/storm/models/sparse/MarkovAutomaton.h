@@ -30,7 +30,7 @@ namespace storm {
                                 storm::storage::BitVector const& markovianStates,
                                 std::vector<ValueType> const& exitRates,
                                 std::unordered_map<std::string, RewardModelType> const& rewardModels = std::unordered_map<std::string, RewardModelType>(),
-                                boost::optional<std::vector<LabelSet>> const& optionalChoiceLabeling = boost::optional<std::vector<LabelSet>>());
+                                boost::optional<storm::models::sparse::ChoiceLabeling> const& optionalChoiceLabeling = boost::none);
             
                 /*!
                  * Constructs a model from the given data.
@@ -48,7 +48,7 @@ namespace storm {
                                 storm::models::sparse::StateLabeling const& stateLabeling,
                                 storm::storage::BitVector const& markovianStates,
                                 std::unordered_map<std::string, RewardModelType> const& rewardModels = std::unordered_map<std::string, RewardModelType>(),
-                                boost::optional<std::vector<LabelSet>> const& optionalChoiceLabeling = boost::optional<std::vector<LabelSet>>());
+                                boost::optional<storm::models::sparse::ChoiceLabeling> const& optionalChoiceLabeling = boost::none);
                 
                 /*!
                  * Constructs a model from the given data.
@@ -66,7 +66,7 @@ namespace storm {
                                 storm::models::sparse::StateLabeling&& stateLabeling,
                                 storm::storage::BitVector&& markovianStates,
                                 std::unordered_map<std::string, RewardModelType>&& rewardModels = std::unordered_map<std::string, RewardModelType>(),
-                                boost::optional<std::vector<LabelSet>>&& optionalChoiceLabeling = boost::optional<std::vector<LabelSet>>());
+                                boost::optional<storm::models::sparse::ChoiceLabeling>&& optionalChoiceLabeling = boost::none);
              
                 /*!
                  * Constructs a model by moving the given data.
@@ -83,7 +83,7 @@ namespace storm {
                                 storm::storage::BitVector const& markovianStates,
                                 std::vector<ValueType> const& exitRates,
                                 std::unordered_map<std::string, RewardModelType>&& rewardModels = std::unordered_map<std::string, RewardModelType>(),
-                                boost::optional<std::vector<LabelSet>>&& optionalChoiceLabeling = boost::optional<std::vector<LabelSet>>());
+                                boost::optional<storm::models::sparse::ChoiceLabeling>&& optionalChoiceLabeling = boost::none);
          
                 /*!
                  * Constructs a model by moving the given data.
@@ -102,7 +102,7 @@ namespace storm {
                                 std::vector<ValueType> const& exitRates,
                                 bool probabilities,
                                 std::unordered_map<std::string, RewardModelType>&& rewardModels = std::unordered_map<std::string, RewardModelType>(),
-                                boost::optional<std::vector<LabelSet>>&& optionalChoiceLabeling = boost::optional<std::vector<LabelSet>>());
+                                boost::optional<storm::models::sparse::ChoiceLabeling>&& optionalChoiceLabeling = boost::none);
                 
                 MarkovAutomaton(MarkovAutomaton<ValueType, RewardModelType> const& other) = default;
                 MarkovAutomaton& operator=(MarkovAutomaton<ValueType, RewardModelType> const& other) = default;

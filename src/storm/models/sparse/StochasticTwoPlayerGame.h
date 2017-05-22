@@ -29,8 +29,8 @@ namespace storm {
                                         storm::storage::SparseMatrix<ValueType> const& player2Matrix,
                                         storm::models::sparse::StateLabeling const& stateLabeling,
                                         std::unordered_map<std::string, RewardModelType> const& rewardModels = std::unordered_map<std::string, RewardModelType>(),
-                                        boost::optional<std::vector<LabelSet>> const& optionalPlayer1ChoiceLabeling = boost::optional<std::vector<LabelSet>>(),
-                                        boost::optional<std::vector<LabelSet>> const& optionalPlayer2ChoiceLabeling = boost::optional<std::vector<LabelSet>>());
+                                        boost::optional<storm::models::sparse::ChoiceLabeling> const& optionalPlayer1ChoiceLabeling = boost::none,
+                                        boost::optional<storm::models::sparse::ChoiceLabeling> const& optionalPlayer2ChoiceLabeling = boost::none);
                 
                 /*!
                  * Constructs a model by moving the given data.
@@ -46,8 +46,8 @@ namespace storm {
                                         storm::storage::SparseMatrix<ValueType>&& player2Matrix,
                                         storm::models::sparse::StateLabeling&& stateLabeling,
                                         std::unordered_map<std::string, RewardModelType>&& rewardModels = std::unordered_map<std::string, RewardModelType>(),
-                                        boost::optional<std::vector<LabelSet>>&& optionalPlayer1ChoiceLabeling = boost::optional<std::vector<LabelSet>>(),
-                                        boost::optional<std::vector<LabelSet>>&& optionalPlayer2ChoiceLabeling = boost::optional<std::vector<LabelSet>>());
+                                        boost::optional<storm::models::sparse::ChoiceLabeling>&& optionalPlayer1ChoiceLabeling = boost::none,
+                                        boost::optional<storm::models::sparse::ChoiceLabeling>&& optionalPlayer2ChoiceLabeling = boost::none);
                 
                 StochasticTwoPlayerGame(StochasticTwoPlayerGame const& other) = default;
                 StochasticTwoPlayerGame& operator=(StochasticTwoPlayerGame const& other) = default;
@@ -82,7 +82,7 @@ namespace storm {
                  *
                  * @return A vector containing the labels of each player 1 choice.
                  */
-                std::vector<LabelSet> const& getPlayer1ChoiceLabeling() const;
+                storm::models::sparse::ChoiceLabeling const& getPlayer1ChoiceLabeling() const;
 
                 /*!
                  * Retrieves whether the game has labels attached to player 2 states.
@@ -96,7 +96,7 @@ namespace storm {
                  *
                  * @return A vector containing the labels of each player 2 choice.
                  */
-                std::vector<LabelSet> const& getPlayer2ChoiceLabeling() const;
+                storm::models::sparse::ChoiceLabeling const& getPlayer2ChoiceLabeling() const;
                 
             private:
                 // A matrix that stores the player 1 choices. This matrix contains a row group for each player 1 node. Every
@@ -107,7 +107,7 @@ namespace storm {
                 
                 // An (optional) vector of labels attached to the choices of player 1. Each row of the matrix can be equipped
                 // with a set of labels to tag certain choices.
-                boost::optional<std::vector<LabelSet>> player1ChoiceLabeling;
+                boost::optional<storm::models::sparse::ChoiceLabeling> player1ChoiceLabeling;
                 
                 // The matrix and labels for player 2 are stored in the superclass.
             };

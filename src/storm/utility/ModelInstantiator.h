@@ -103,7 +103,7 @@ namespace storm {
                 initializeModelSpecificData(PMT const& parametricModel) {
                     auto player1MatrixCopy = parametricModel.getPlayer1Matrix();
                     auto stateLabelingCopy = parametricModel.getStateLabeling();
-                    boost::optional<std::vector<typename storm::models::sparse::LabelSet>> player1ChoiceLabeling, player2ChoiceLabeling;
+                    boost::optional<storm::models::sparse::ChoiceLabeling> player1ChoiceLabeling, player2ChoiceLabeling;
                     if(parametricModel.hasPlayer1ChoiceLabeling()) player1ChoiceLabeling = parametricModel.getPlayer1ChoiceLabeling();
                     if(parametricModel.hasPlayer2ChoiceLabeling()) player2ChoiceLabeling = parametricModel.getPlayer2ChoiceLabeling();
                     this->instantiatedModel = std::make_shared<ConstantSparseModelType>(std::move(player1MatrixCopy), buildDummyMatrix(parametricModel.getTransitionMatrix()), std::move(stateLabelingCopy), buildDummyRewardModels(parametricModel.getRewardModels()), std::move(player1ChoiceLabeling), std::move(player2ChoiceLabeling));

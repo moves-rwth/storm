@@ -59,24 +59,29 @@ namespace storm {
                 
                 // Transform the ingedients of the model
                 storm::storage::SparseMatrix<typename SparseModelType::ValueType> matrix = transformMatrix(originalModel.getTransitionMatrix(), result, gateStates);
-                storm::models::sparse::StateLabeling labeling(matrix.getRowGroupCount());
-                for(auto const& label : originalModel.getStateLabeling().getLabels()){
+                storm::models::sparse::StateLabeling stateLabeling(matrix.getRowGroupCount());
+                for (auto const& label : originalModel.getStateLabeling().getLabels()) {
                     storm::storage::BitVector newBitVectorForLabel = transformStateBitVector(originalModel.getStateLabeling().getStates(label), result);
-                    if(label=="init"){
+                    if (label=="init") {
                         newBitVectorForLabel &= (result.firstCopy | result.gateStates);
                     }
-                    labeling.addLabel(label, std::move(newBitVectorForLabel));
-                }
-                std::unordered_map<std::string, typename SparseModelType::RewardModelType> rewardModels;
-                for(auto const& rewardModel : originalModel.getRewardModels()){
-                    rewardModels.insert(std::make_pair(rewardModel.first, transformRewardModel(rewardModel.second, originalModel.getTransitionMatrix().getRowGroupIndices(), result, gateStates)));
-                }
-                boost::optional<std::vector<storm::models::sparse::LabelSet>> choiceLabeling;
-                if(originalModel.hasChoiceLabeling()){
-                    choiceLabeling = transformActionValueVector<storm::models::sparse::LabelSet>(originalModel.getChoiceLabeling(), originalModel.getTransitionMatrix().getRowGroupIndices(), result);
+                    stateLabeling.addLabel(label, std::move(newBitVectorForLabel));
                 }
                 
-                result.model = std::make_shared<SparseModelType>(createTransformedModel(originalModel, result, matrix, labeling, rewardModels, choiceLabeling));
+                std::unordered_map<std::string, typename SparseModelType::RewardModelType> rewardModels;
+                for (auto const& rewardModel : originalModel.getRewardModels()) {
+                    rewardModels.insert(std::make_pair(rewardModel.first, transformRewardModel(rewardModel.second, originalModel.getTransitionMatrix().getRowGroupIndices(), result, gateStates)));
+                }
+                
+                boost::optional<storm::models::sparse::ChoiceLabeling> choiceLabeling;
+                if (originalModel.hasChoiceLabeling()) {
+                    for (auto const& label : originalModel.getChoiceLabeling().getLabels()) {
+                        storm::storage::BitVector newBitVectorForLabel = transformActionBitVector(originalModel.getChoiceLabeling().getChoices(label), originalModel.getTransitionMatrix().getRowGroupIndices(), result);
+                        choiceLabeling->addLabel(label, std::move(newBitVectorForLabel));
+                    }
+                }
+                
+                result.model = std::make_shared<SparseModelType>(createTransformedModel(originalModel, result, matrix, stateLabeling, rewardModels, choiceLabeling));
                 STORM_LOG_DEBUG("State duplicator is done. Resulting model has " << result.model->getNumberOfStates() << " states, where " << result.firstCopy.getNumberOfSetBits() << " are in the first copy.");
                 return result;
             }
@@ -109,9 +114,9 @@ namespace storm {
                 result.firstCopyOldToNewStateIndexMapping = std::vector<uint_fast64_t>(originalModel.getNumberOfStates(), std::numeric_limits<uint_fast64_t>::max());
                 result.secondCopyOldToNewStateIndexMapping = std::vector<uint_fast64_t>(originalModel.getNumberOfStates(), std::numeric_limits<uint_fast64_t>::max());
                 uint_fast64_t newState = 0;
-                for(auto const& oldState : result.reachableStates){
+                for (auto const& oldState : result.reachableStates) {
                     result.newToOldStateIndexMapping[newState] = oldState;
-                    if(statesForFirstCopy.get(oldState)){
+                    if (statesForFirstCopy.get(oldState)) {
                         result.firstCopyOldToNewStateIndexMapping[oldState] = newState;
                     } else {
                         result.secondCopyOldToNewStateIndexMapping[oldState] = newState;
@@ -120,7 +125,7 @@ namespace storm {
                 }
                 // The remaining states are duplicates. All these states belong to the second copy.
                 
-                for(auto const& oldState : result.duplicatedStates) {
+                for (auto const& oldState : result.duplicatedStates) {
                     result.newToOldStateIndexMapping[newState] = oldState;
                     result.secondCopyOldToNewStateIndexMapping[oldState] = newState;
                     ++newState;
@@ -136,13 +141,13 @@ namespace storm {
                 boost::optional<std::vector<ValueType>> stateRewardVector;
                 boost::optional<std::vector<ValueType>> stateActionRewardVector;
                 boost::optional<storm::storage::SparseMatrix<ValueType>> transitionRewardMatrix;
-                if(originalRewardModel.hasStateRewards()){
+                if (originalRewardModel.hasStateRewards()) {
                     stateRewardVector = transformStateValueVector(originalRewardModel.getStateRewardVector(), result);
                 }
-                if(originalRewardModel.hasStateActionRewards()){
+                if (originalRewardModel.hasStateActionRewards()) {
                     stateActionRewardVector = transformActionValueVector(originalRewardModel.getStateActionRewardVector(), originalRowGroupIndices, result);
                 }
-                if(originalRewardModel.hasTransitionRewards()){
+                if (originalRewardModel.hasTransitionRewards()) {
                     transitionRewardMatrix = transformMatrix(originalRewardModel.getTransitionRewardMatrix(), result, gateStates);
                 }
                 return RewardModelType(std::move(stateRewardVector), std::move(stateActionRewardVector), std::move(transitionRewardMatrix));
@@ -154,7 +159,7 @@ namespace storm {
                 uint_fast64_t numStates = result.newToOldStateIndexMapping.size();
                 uint_fast64_t numRows = 0;
                 uint_fast64_t numEntries = 0;
-                for(auto const& oldState : result.newToOldStateIndexMapping){
+                for (auto const& oldState : result.newToOldStateIndexMapping) {
                     numRows += originalMatrix.getRowGroupSize(oldState);
                     numEntries += originalMatrix.getRowGroupEntryCount(oldState);
                 }
@@ -162,22 +167,22 @@ namespace storm {
                 
                 // Fill in the data
                 uint_fast64_t newRow = 0;
-                for(uint_fast64_t newState = 0; newState < numStates; ++newState){
-                    if(!originalMatrix.hasTrivialRowGrouping()){
+                for (uint_fast64_t newState = 0; newState < numStates; ++newState) {
+                    if (!originalMatrix.hasTrivialRowGrouping()) {
                         builder.newRowGroup(newRow);
                     }
                     uint_fast64_t oldState = result.newToOldStateIndexMapping[newState];
-                    for (uint_fast64_t oldRow = originalMatrix.getRowGroupIndices()[oldState]; oldRow < originalMatrix.getRowGroupIndices()[oldState+1]; ++oldRow){
-                        for(auto const& entry : originalMatrix.getRow(oldRow)){
-                            if(result.firstCopy.get(newState) && !gateStates.get(entry.getColumn())){
+                    for (uint_fast64_t oldRow = originalMatrix.getRowGroupIndices()[oldState]; oldRow < originalMatrix.getRowGroupIndices()[oldState+1]; ++oldRow) {
+                        for (auto const& entry : originalMatrix.getRow(oldRow)) {
+                            if (result.firstCopy.get(newState) && !gateStates.get(entry.getColumn())) {
                                 builder.addNextValue(newRow, result.firstCopyOldToNewStateIndexMapping[entry.getColumn()], entry.getValue());
-                            } else if (!result.duplicatedStates.get(entry.getColumn())){
+                            } else if (!result.duplicatedStates.get(entry.getColumn())) {
                                 builder.addNextValue(newRow, result.secondCopyOldToNewStateIndexMapping[entry.getColumn()], entry.getValue());
                             }
                         }
                         //To add values in the right order, transitions to duplicated states have to be added in a second run.
-                        for(auto const& entry : originalMatrix.getRow(oldRow)){
-                            if (result.secondCopy.get(newState) && result.duplicatedStates.get(entry.getColumn())){
+                        for (auto const& entry : originalMatrix.getRow(oldRow)) {
+                            if (result.secondCopy.get(newState) && result.duplicatedStates.get(entry.getColumn())) {
                                 builder.addNextValue(newRow, result.secondCopyOldToNewStateIndexMapping[entry.getColumn()], entry.getValue());
                             }
                         }
@@ -192,13 +197,13 @@ namespace storm {
             template<typename ValueType = typename SparseModelType::ValueType>
             static std::vector<ValueType> transformActionValueVector(std::vector<ValueType>const& originalVector, std::vector<uint_fast64_t> const& originalRowGroupIndices, StateDuplicatorReturnType const& result) {
                 uint_fast64_t numActions = 0;
-                for(auto const& oldState : result.newToOldStateIndexMapping){
+                for (auto const& oldState : result.newToOldStateIndexMapping) {
                     numActions += originalRowGroupIndices[oldState+1] - originalRowGroupIndices[oldState];
                 }
                 std::vector<ValueType> v;
                 v.reserve(numActions);
-                for(auto const& oldState : result.newToOldStateIndexMapping){
-                    for (uint_fast64_t oldAction = originalRowGroupIndices[oldState]; oldAction < originalRowGroupIndices[oldState+1]; ++oldAction){
+                for (auto const& oldState : result.newToOldStateIndexMapping) {
+                    for (uint_fast64_t oldAction = originalRowGroupIndices[oldState]; oldAction < originalRowGroupIndices[oldState+1]; ++oldAction) {
                         v.push_back(originalVector[oldAction]);
                     }
                 }
@@ -211,17 +216,36 @@ namespace storm {
                 uint_fast64_t numStates = result.newToOldStateIndexMapping.size();
                 std::vector<ValueType> v;
                 v.reserve(numStates);
-                for(auto const& oldState : result.newToOldStateIndexMapping){
+                for (auto const& oldState : result.newToOldStateIndexMapping) {
                     v.push_back(originalVector[oldState]);
                 }
                 STORM_LOG_ASSERT(v.size() == numStates, "Unexpected vector size.");
                 return v;
             }
             
-            static storm::storage::BitVector transformStateBitVector(storm::storage::BitVector const& originalBitVector, StateDuplicatorReturnType const& result) {
+            static storm::storage::BitVector transformActionBitVector(storm::storage::BitVector const& originalBitVector, std::vector<uint_fast64_t> const& originalRowGroupIndices, StateDuplicatorReturnType const& result) {
+                uint_fast64_t numActions = 0;
+                for (auto const& oldState : result.newToOldStateIndexMapping) {
+                    numActions += originalRowGroupIndices[oldState+1] - originalRowGroupIndices[oldState];
+                }
+                storm::storage::BitVector bv(numActions, false);
+                uint_fast64_t newAction = 0;
+                for (auto const& oldState : result.newToOldStateIndexMapping) {
+                    for (uint_fast64_t oldAction = originalRowGroupIndices[oldState]; oldAction < originalRowGroupIndices[oldState+1]; ++oldAction) {
+                        if (originalBitVector.get(oldAction)) {
+                            bv.set(newAction, true);
+                        }
+                        ++newAction;
+                    }
+                }
+                STORM_LOG_ASSERT(newAction == numActions, "Unexpected vector size.");
+                return bv;
+            }
+            
+           static storm::storage::BitVector transformStateBitVector(storm::storage::BitVector const& originalBitVector, StateDuplicatorReturnType const& result) {
                 uint_fast64_t numStates = result.newToOldStateIndexMapping.size();
                 storm::storage::BitVector bv(numStates);
-                for(uint_fast64_t newState = 0; newState < numStates; ++newState){
+                for (uint_fast64_t newState = 0; newState < numStates; ++newState) {
                     uint_fast64_t oldState = result.newToOldStateIndexMapping[newState];
                     bv.set(newState, originalBitVector.get(oldState));
                 }
@@ -241,7 +265,7 @@ namespace storm {
                                    storm::models::sparse::StateLabeling& stateLabeling,
                                    std::unordered_map<std::string,
                                    typename MT::RewardModelType>& rewardModels,
-                                   boost::optional<std::vector<typename storm::models::sparse::LabelSet>>& choiceLabeling ) {
+                                   boost::optional<storm::models::sparse::ChoiceLabeling>& choiceLabeling ) {
                 return MT(std::move(matrix), std::move(stateLabeling), std::move(rewardModels), std::move(choiceLabeling));
             }
             
@@ -255,7 +279,7 @@ namespace storm {
                                    storm::models::sparse::StateLabeling& stateLabeling,
                                    std::unordered_map<std::string,
                                    typename MT::RewardModelType>& rewardModels,
-                                   boost::optional<std::vector<typename storm::models::sparse::LabelSet>>& choiceLabeling ) {
+                                   boost::optional<storm::models::sparse::ChoiceLabeling>& choiceLabeling ) {
                 storm::storage::BitVector markovianStates = transformStateBitVector(originalModel.getMarkovianStates(), result);
                 std::vector<typename MT::ValueType> exitRates = transformStateValueVector(originalModel.getExitRates(), result);
                 return MT(std::move(matrix), std::move(stateLabeling), std::move(markovianStates), std::move(exitRates), true, std::move(rewardModels), std::move(choiceLabeling));

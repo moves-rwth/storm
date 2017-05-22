@@ -11,8 +11,9 @@ namespace storm {
         template<typename ValueType, typename RewardModelType = storm::models::sparse::StandardRewardModel<ValueType>>
         class ExplicitModelBuilderResult {
         public:
-            ExplicitModelBuilderResult(std::shared_ptr<storm::models::sparse::Model<ValueType, RewardModelType>> model, std::shared_ptr<storm::storage::sparse::StateValuations> stateValuations,std::shared_ptr<storm::storage::sparse::ChoiceOrigins> choiceOrigins);
+            ExplicitModelBuilderResult(std::shared_ptr<storm::models::sparse::Model<ValueType, RewardModelType>> model, std::shared_ptr<storm::storage::sparse::StateValuations> stateValuations = nullptr,std::shared_ptr<storm::storage::sparse::ChoiceOrigins> choiceOrigins = nullptr);
             
+            bool hasModel();
             std::shared_ptr<storm::models::sparse::Model<ValueType, RewardModelType>>& getModel();
             std::shared_ptr<storm::models::sparse::Model<ValueType, RewardModelType>> const& getModel() const;
             

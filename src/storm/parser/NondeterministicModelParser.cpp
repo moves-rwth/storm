@@ -40,9 +40,10 @@ namespace storm {
             }
 
             // Only parse choice labeling if a file is given.
-            boost::optional<std::vector < storm::models::sparse::LabelSet>> choiceLabeling;
+            boost::optional<storm::models::sparse::ChoiceLabeling> choiceLabeling;
             if (!choiceLabelingFilename.empty()) {
-                choiceLabeling = std::move(storm::parser::SparseChoiceLabelingParser::parseChoiceLabeling(transitions.getRowGroupIndices(), choiceLabelingFilename));
+                STORM_LOG_ERROR("Parsing choice labels is currently not implemented"); // TODO
+                //choiceLabeling = std::move(storm::parser::SparseChoiceLabelingParser::parseChoiceLabeling(transitions.getRowGroupIndices(), choiceLabelingFilename));
             }
 
             // Construct the result.

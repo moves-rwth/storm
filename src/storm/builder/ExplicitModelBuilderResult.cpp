@@ -13,6 +13,11 @@ namespace storm {
         ExplicitModelBuilderResult<ValueType, RewardModelType>::ExplicitModelBuilderResult(std::shared_ptr<storm::models::sparse::Model<ValueType, RewardModelType>> model, std::shared_ptr<storm::storage::sparse::StateValuations> stateValuations,std::shared_ptr<storm::storage::sparse::ChoiceOrigins> choiceOrigins) : model(model), stateValuations(stateValuations), choiceOrigins(choiceOrigins) {
             // Intentionally left empty
         }
+        
+        template <typename ValueType, typename RewardModelType>
+        bool ExplicitModelBuilderResult<ValueType, RewardModelType>::hasModel() {
+            return static_cast<bool>(model);
+        }
             
         template <typename ValueType, typename RewardModelType>
         std::shared_ptr<storm::models::sparse::Model<ValueType, RewardModelType>>& ExplicitModelBuilderResult<ValueType, RewardModelType>::getModel() {

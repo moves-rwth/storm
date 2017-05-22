@@ -26,7 +26,7 @@ namespace storm {
                 Mdp(storm::storage::SparseMatrix<ValueType> const& transitionMatrix,
                     storm::models::sparse::StateLabeling const& stateLabeling,
                     std::unordered_map<std::string, RewardModelType> const& rewardModels = std::unordered_map<std::string, RewardModelType>(),
-                    boost::optional<std::vector<LabelSet>> const& optionalChoiceLabeling = boost::optional<std::vector<LabelSet>>());
+                    boost::optional<storm::models::sparse::ChoiceLabeling> const& optionalChoiceLabeling = boost::none);
                 
                 /*!
                  * Constructs a model by moving the given data.
@@ -39,7 +39,7 @@ namespace storm {
                 Mdp(storm::storage::SparseMatrix<ValueType>&& transitionMatrix,
                     storm::models::sparse::StateLabeling&& stateLabeling,
                     std::unordered_map<std::string, RewardModelType>&& rewardModels = std::unordered_map<std::string, RewardModelType>(),
-                    boost::optional<std::vector<LabelSet>>&& optionalChoiceLabeling = boost::optional<std::vector<LabelSet>>());
+                    boost::optional<storm::models::sparse::ChoiceLabeling>&& optionalChoiceLabeling = boost::none);
                 
                 Mdp(Mdp<ValueType, RewardModelType> const& other) = default;
                 Mdp& operator=(Mdp<ValueType, RewardModelType> const& other) = default;
@@ -47,17 +47,6 @@ namespace storm {
                 Mdp(Mdp<ValueType, RewardModelType>&& other) = default;
                 Mdp& operator=(Mdp<ValueType, RewardModelType>&& other) = default;
 
-                /*!
-                 * Constructs an MDP by copying the current MDP and restricting the choices of each state to the ones
-                 * whose label set is contained in the given label set. Note that is is only valid to call this method
-                 * if the MDP has choice labels.
-                 *
-                 * @param enabledChoiceLabels A set of labels that determines which choices of the original model can be taken
-                 * and which ones need to be ignored.
-                 * @return A restricted version of the current MDP that only uses choice labels from the given set.
-                 */
-                Mdp<ValueType, RewardModelType> restrictChoiceLabels(LabelSet const& enabledChoiceLabels) const;
-                
                 /*!
                  * Constructs an MDP by copying the current MDP and restricting the choices of each state to the ones given by the bitvector.
                  * 

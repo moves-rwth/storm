@@ -617,7 +617,10 @@ namespace storm {
             identifiers.reserve(dataForChoiceOrigins.size());
             
             std::map<CommandSet, uint_fast64_t> commandSetToIdentifierMap;
-            uint_fast64_t currentIdentifier = 0;
+            // The empty commandset (i.e., the choices without origin) always has to get identifier getIdentifierForChoicesWithNoOrigin() -- which is assumed to be 0
+            STORM_LOG_ASSERT(storm::storage::sparse::ChoiceOrigins::getIdentifierForChoicesWithNoOrigin() == 0, "The no origin identifier is assumed to be zero");
+            commandSetToIdentifierMap.insert(std::make_pair(CommandSet(), 0));
+            uint_fast64_t currentIdentifier = 1;
             for (boost::any& originData : dataForChoiceOrigins) {
                 STORM_LOG_ASSERT(originData.empty() || boost::any_cast<CommandSet>(&originData) != nullptr, "Origin data has unexpected type: " << originData.type().name() << ".");
                 

@@ -19,7 +19,7 @@ namespace storm {
                                     storm::storage::SparseMatrix<ValueType> const& transitionMatrix,
                                     storm::models::sparse::StateLabeling const& stateLabeling,
                                     std::unordered_map<std::string, RewardModelType> const& rewardModels,
-                                    boost::optional<std::vector<LabelSet>> const& optionalChoiceLabeling)
+                                    boost::optional<storm::models::sparse::ChoiceLabeling> const& optionalChoiceLabeling)
             : ModelBase(modelType), transitionMatrix(transitionMatrix), stateLabeling(stateLabeling),
             rewardModels(rewardModels), choiceLabeling(optionalChoiceLabeling) {
                 for (auto const& rewardModel : this->getRewardModels()) {
@@ -32,7 +32,7 @@ namespace storm {
                                     storm::storage::SparseMatrix<ValueType>&& transitionMatrix,
                                     storm::models::sparse::StateLabeling&& stateLabeling,
                                     std::unordered_map<std::string, RewardModelType>&& rewardModels,
-                                    boost::optional<std::vector<LabelSet>>&& optionalChoiceLabeling)
+                                    boost::optional<storm::models::sparse::ChoiceLabeling>&& optionalChoiceLabeling)
             : ModelBase(modelType), transitionMatrix(std::move(transitionMatrix)), stateLabeling(std::move(stateLabeling)),
             rewardModels(std::move(rewardModels)), choiceLabeling(std::move(optionalChoiceLabeling)) {
                 for (auto const& rewardModel : this->getRewardModels()) {
@@ -160,17 +160,17 @@ namespace storm {
             }
             
             template<typename ValueType, typename RewardModelType>
-            std::vector<LabelSet> const& Model<ValueType, RewardModelType>::getChoiceLabeling() const {
+            storm::models::sparse::ChoiceLabeling const& Model<ValueType, RewardModelType>::getChoiceLabeling() const {
                 return choiceLabeling.get();
             }
             
             template<typename ValueType, typename RewardModelType>
-            boost::optional<std::vector<LabelSet>> const& Model<ValueType, RewardModelType>::getOptionalChoiceLabeling() const {
+            boost::optional<storm::models::sparse::ChoiceLabeling> const& Model<ValueType, RewardModelType>::getOptionalChoiceLabeling() const {
                 return choiceLabeling;
             }
 
             template<typename ValueType, typename RewardModelType>
-            boost::optional<std::vector<LabelSet>>& Model<ValueType, RewardModelType>::getOptionalChoiceLabeling() {
+            boost::optional<storm::models::sparse::ChoiceLabeling>& Model<ValueType, RewardModelType>::getOptionalChoiceLabeling() {
                 return choiceLabeling;
             }
             

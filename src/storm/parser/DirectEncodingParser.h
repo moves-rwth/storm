@@ -79,7 +79,7 @@ namespace storm {
                 std::unordered_map<std::string, RewardModelType> rewardModels;
 
                 // A vector that stores a labeling for each choice.
-                boost::optional<std::vector<storm::models::sparse::LabelSet>> choiceLabeling;
+                boost::optional<storm::models::sparse::ChoiceLabeling> choiceLabeling;
 
                 // The exit rates for MAs.
                 std::vector<ValueType> exitRates;

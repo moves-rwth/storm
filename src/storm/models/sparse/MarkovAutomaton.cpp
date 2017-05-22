@@ -20,7 +20,7 @@ namespace storm {
                                                         storm::storage::BitVector const& markovianStates,
                                                         std::vector<ValueType> const& exitRates,
                                                         std::unordered_map<std::string, RewardModelType> const& rewardModels,
-                                                        boost::optional<std::vector<LabelSet>> const& optionalChoiceLabeling)
+                                                        boost::optional<storm::models::sparse::ChoiceLabeling> const& optionalChoiceLabeling)
             : NondeterministicModel<ValueType, RewardModelType>(storm::models::ModelType::MarkovAutomaton, transitionMatrix, stateLabeling, rewardModels, optionalChoiceLabeling), markovianStates(markovianStates), exitRates(exitRates), closed(this->checkIsClosed()) {
                 this->turnRatesToProbabilities();
             }
@@ -31,7 +31,7 @@ namespace storm {
                                                         storm::storage::BitVector const& markovianStates,
                                                         std::vector<ValueType> const& exitRates,
                                                         std::unordered_map<std::string, RewardModelType>&& rewardModels,
-                                                        boost::optional<std::vector<LabelSet>>&& optionalChoiceLabeling)
+                                                        boost::optional<storm::models::sparse::ChoiceLabeling>&& optionalChoiceLabeling)
             : NondeterministicModel<ValueType, RewardModelType>(storm::models::ModelType::MarkovAutomaton, std::move(transitionMatrix), std::move(stateLabeling), std::move(rewardModels), std::move(optionalChoiceLabeling)), markovianStates(markovianStates), exitRates(std::move(exitRates)), closed(this->checkIsClosed()) {
                 this->turnRatesToProbabilities();
             }
@@ -42,7 +42,7 @@ namespace storm {
                                                                          storm::models::sparse::StateLabeling const& stateLabeling,
                                                                          storm::storage::BitVector const& markovianStates,
                                                                          std::unordered_map<std::string, RewardModelType> const& rewardModels,
-                                                                         boost::optional<std::vector<LabelSet>> const& optionalChoiceLabeling)
+                                                                         boost::optional<storm::models::sparse::ChoiceLabeling> const& optionalChoiceLabeling)
             : NondeterministicModel<ValueType, RewardModelType>(storm::models::ModelType::MarkovAutomaton, rateMatrix, stateLabeling, rewardModels, optionalChoiceLabeling), markovianStates(markovianStates) {
                 turnRatesToProbabilities();
                 this->closed = checkIsClosed();
@@ -53,7 +53,7 @@ namespace storm {
                                                                          storm::models::sparse::StateLabeling&& stateLabeling,
                                                                          storm::storage::BitVector&& markovianStates,
                                                                          std::unordered_map<std::string, RewardModelType>&& rewardModels,
-                                                                         boost::optional<std::vector<LabelSet>>&& optionalChoiceLabeling)
+                                                                         boost::optional<storm::models::sparse::ChoiceLabeling>&& optionalChoiceLabeling)
             : NondeterministicModel<ValueType, RewardModelType>(storm::models::ModelType::MarkovAutomaton, rateMatrix, stateLabeling, rewardModels, optionalChoiceLabeling), markovianStates(markovianStates) {
                 turnRatesToProbabilities();
                 this->closed = checkIsClosed();
@@ -67,7 +67,7 @@ namespace storm {
                                                                          std::vector<ValueType> const& exitRates,
                                                                          bool probabilities,
                                                                          std::unordered_map<std::string, RewardModelType>&& rewardModels,
-                                                                         boost::optional<std::vector<LabelSet>>&& optionalChoiceLabeling)
+                                                                         boost::optional<storm::models::sparse::ChoiceLabeling>&& optionalChoiceLabeling)
             : NondeterministicModel<ValueType, RewardModelType>(storm::models::ModelType::MarkovAutomaton, std::move(transitionMatrix), std::move(stateLabeling), std::move(rewardModels), std::move(optionalChoiceLabeling)), markovianStates(markovianStates), exitRates(std::move(exitRates)), closed(this->checkIsClosed()) {
                 STORM_LOG_ASSERT(probabilities, "Matrix must be probabilistic.");
                 STORM_LOG_ASSERT(this->getTransitionMatrix().isProbabilistic(), "Matrix must be probabilistic.");
@@ -147,7 +147,7 @@ namespace storm {
                         }
                     }
                     if(this->hasChoiceLabeling()) {
-                        storm::utility::vector::filterVectorInPlace(this->getOptionalChoiceLabeling().get(), keptChoices);
+                        this->getChoiceLabeling().getSubLabeling(keptChoices);
                     }
 
                     // Mark the automaton as closed.
@@ -327,15 +327,13 @@ namespace storm {
                 STORM_LOG_TRACE("New CTMC matrix:" << std::endl << rateMatrix);
                 // Construct CTMC
                 storm::models::sparse::StateLabeling stateLabeling = this->getStateLabeling().getSubLabeling(keepStates);
-                boost::optional<std::vector<LabelSet>> optionalChoiceLabeling = this->getOptionalChoiceLabeling();
-                if (optionalChoiceLabeling) {
-                    storm::utility::vector::filterVectorInPlace(optionalChoiceLabeling.get(), keepStates);
-                }
-                //TODO update reward models according to kept states
+                
+                //TODO update reward models and choice labels according to kept states
                 STORM_LOG_WARN_COND(this->getRewardModels().empty(), "Conversion of MA to CTMC does not preserve rewards.");
                 std::unordered_map<std::string, RewardModelType> rewardModels = this->getRewardModels();
+                STORM_LOG_WARN_COND(!this->hasChoiceLabeling(), "Conversion of MA to CTMC does not preserve choice labels.");
                 
-                return std::make_shared<storm::models::sparse::Ctmc<ValueType, RewardModelType>>(std::move(rateMatrix), std::move(stateLabeling), std::move(rewardModels), std::move(optionalChoiceLabeling));
+                return std::make_shared<storm::models::sparse::Ctmc<ValueType, RewardModelType>>(std::move(rateMatrix), std::move(stateLabeling), std::move(rewardModels));
             }
 
             

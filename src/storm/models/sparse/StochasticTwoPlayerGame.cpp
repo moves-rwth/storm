@@ -13,8 +13,8 @@ namespace storm {
                                                                                          storm::storage::SparseMatrix<ValueType> const& player2Matrix,
                                                                                          storm::models::sparse::StateLabeling const& stateLabeling,
                                                                                          std::unordered_map<std::string, RewardModelType> const& rewardModels,
-                                                                                         boost::optional<std::vector<LabelSet>> const& optionalPlayer1ChoiceLabeling,
-                                                                                         boost::optional<std::vector<LabelSet>> const& optionalPlayer2ChoiceLabeling)
+                                                                                         boost::optional<storm::models::sparse::ChoiceLabeling> const& optionalPlayer1ChoiceLabeling,
+                                                                                         boost::optional<storm::models::sparse::ChoiceLabeling> const& optionalPlayer2ChoiceLabeling)
             : NondeterministicModel<ValueType>(storm::models::ModelType::S2pg, player2Matrix, stateLabeling, rewardModels, optionalPlayer2ChoiceLabeling), player1Matrix(player1Matrix), player1ChoiceLabeling(optionalPlayer1ChoiceLabeling) {
                 // Intentionally left empty.
             }
@@ -25,8 +25,8 @@ namespace storm {
                                                                                          storm::storage::SparseMatrix<ValueType>&& player2Matrix,
                                                                                          storm::models::sparse::StateLabeling&& stateLabeling,
                                                                                          std::unordered_map<std::string, RewardModelType>&& rewardModels,
-                                                                                         boost::optional<std::vector<LabelSet>>&& optionalPlayer1ChoiceLabeling,
-                                                                                         boost::optional<std::vector<LabelSet>>&& optionalPlayer2ChoiceLabeling)
+                                                                                         boost::optional<storm::models::sparse::ChoiceLabeling>&& optionalPlayer1ChoiceLabeling,
+                                                                                         boost::optional<storm::models::sparse::ChoiceLabeling>&& optionalPlayer2ChoiceLabeling)
             : NondeterministicModel<ValueType>(storm::models::ModelType::S2pg, std::move(player2Matrix), std::move(stateLabeling), std::move(rewardModels), std::move(optionalPlayer2ChoiceLabeling)), player1Matrix(std::move(player1Matrix)), player1ChoiceLabeling(std::move(optionalPlayer1ChoiceLabeling)) {
                 // Intentionally left empty.
             }
@@ -47,7 +47,7 @@ namespace storm {
             }
             
             template <typename ValueType, typename RewardModelType>
-            std::vector<LabelSet> const& StochasticTwoPlayerGame<ValueType, RewardModelType>::getPlayer1ChoiceLabeling() const {
+            storm::models::sparse::ChoiceLabeling const& StochasticTwoPlayerGame<ValueType, RewardModelType>::getPlayer1ChoiceLabeling() const {
                 return player1ChoiceLabeling.get();
             }
 
@@ -57,7 +57,7 @@ namespace storm {
             }
             
             template <typename ValueType, typename RewardModelType>
-            std::vector<LabelSet> const& StochasticTwoPlayerGame<ValueType, RewardModelType>::getPlayer2ChoiceLabeling() const {
+            storm::models::sparse::ChoiceLabeling const& StochasticTwoPlayerGame<ValueType, RewardModelType>::getPlayer2ChoiceLabeling() const {
                 return this->getChoiceLabeling();
             }
             

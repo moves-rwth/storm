@@ -35,6 +35,12 @@ namespace storm {
                 uint_fast64_t getIdentifier(uint_fast64_t choiceIndex) const;
                 
                 /*
+                 * Returns the identifier that is used for choices without an origin in the input specification
+                 * E.g., Selfloops introduced on deadlock states
+                 */
+                static uint_fast64_t getIdentifierForChoicesWithNoOrigin();
+                
+                /*
                  * Returns the information for the given choice origin identifier as a (human readable) string
                  */
                 std::string const& getIdentifierInfo(uint_fast64_t identifier) const;

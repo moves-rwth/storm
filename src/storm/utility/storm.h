@@ -86,7 +86,7 @@
 #include "storm/transformer/ContinuousToDiscreteTimeModelTransformer.h"
 
 // Headers for counterexample generation.
-#include "storm/counterexamples/MILPMinimalLabelSetGenerator.h"
+#include "storm/counterexamples/MILPMinimalCommandSetGenerator.h"
 #include "storm/counterexamples/SMTMinimalCommandSetGenerator.h"
 
 // Headers related to model building.
@@ -135,18 +135,19 @@ namespace storm {
     std::vector<storm::jani::Property> filterProperties(std::vector<storm::jani::Property> const& properties, boost::optional<std::set<std::string>> const& propertyFilter);
     
     template<typename ValueType>
-    std::shared_ptr<storm::models::sparse::Model<ValueType>> buildSparseModel(storm::storage::SymbolicModelDescription const& model, std::vector<std::shared_ptr<storm::logic::Formula const>> const& formulas) {
+    storm::builder::ExplicitModelBuilderResult<ValueType> buildSparseModel(storm::storage::SymbolicModelDescription const& model, std::vector<std::shared_ptr<storm::logic::Formula const>> const& formulas) {
         storm::builder::BuilderOptions options(formulas);
         
         if (storm::settings::getModule<storm::settings::modules::IOSettings>().isBuildFullModelSet()) {
             options.setBuildAllLabels();
             options.setBuildAllRewardModels();
+            options.setBuildChoiceLabels(true);
             options.clearTerminalStates();
         }
         
         // Generate command labels if we are going to build a counterexample later.
         if (storm::settings::getModule<storm::settings::modules::CounterexampleGeneratorSettings>().isMinimalCommandSetGenerationSet()) {
-            options.setBuildChoiceLabels(true);
+            options.setBuildChoiceOrigins(true);
         }
         
         if (storm::settings::getModule<storm::settings::modules::IOSettings>().isJitSet()) {
@@ -171,7 +172,7 @@ namespace storm {
                 STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Cannot build sparse model from this symbolic model description.");
             }
             storm::builder::ExplicitModelBuilder<ValueType> builder(generator);
-            return builder.build().getModel();
+            return builder.build();
         }
     }
     
@@ -259,6 +260,7 @@ namespace storm {
             ma->close();
             if (ma->hasOnlyTrivialNondeterminism()) {
                 // Markov automaton can be converted into CTMC.
+                STORM_PRINT_AND_LOG(std::endl << "Converting deterministic MA to a CTMC..." << std::endl);
                 model = ma->convertToCTMC();
             }
         }
@@ -285,7 +287,7 @@ namespace storm {
     }
     
     template<typename ValueType>
-    void generateCounterexample(storm::storage::SymbolicModelDescription const& model, std::shared_ptr<storm::models::sparse::Model<ValueType>> markovModel, std::shared_ptr<storm::logic::Formula const> const& formula) {
+    void generateCounterexample(storm::storage::SymbolicModelDescription const& model, std::shared_ptr<storm::models::sparse::Model<ValueType>> markovModel, std::shared_ptr<storm::storage::sparse::ChoiceOrigins> choiceOrigins, std::shared_ptr<storm::logic::Formula const> const& formula) {
         if (storm::settings::getModule<storm::settings::modules::CounterexampleGeneratorSettings>().isMinimalCommandSetGenerationSet()) {
             STORM_LOG_THROW(model.isPrismProgram(), storm::exceptions::InvalidTypeException, "Minimal command set generation is only available for PRISM models.");
             STORM_LOG_THROW(markovModel->getType() == storm::models::ModelType::Mdp, storm::exceptions::InvalidTypeException, "Minimal command set generation is only available for MDPs.");
@@ -297,9 +299,9 @@ namespace storm {
             bool useMILP = storm::settings::getModule<storm::settings::modules::CounterexampleGeneratorSettings>().isUseMilpBasedMinimalCommandSetGenerationSet();
             
             if (useMILP) {
-                storm::counterexamples::MILPMinimalLabelSetGenerator<ValueType>::computeCounterexample(program, *mdp, formula);
+                storm::counterexamples::MILPMinimalCommandSetGenerator<ValueType>::computeCounterexample(program, *mdp, choiceOrigins, formula);
             } else {
-                storm::counterexamples::SMTMinimalCommandSetGenerator<ValueType>::computeCounterexample(program, storm::settings::getModule<storm::settings::modules::IOSettings>().getConstantDefinitionString(), *mdp, formula);
+                storm::counterexamples::SMTMinimalCommandSetGenerator<ValueType>::computeCounterexample(program, storm::settings::getModule<storm::settings::modules::IOSettings>().getConstantDefinitionString(), *mdp, choiceOrigins, formula);
             }
             
         } else {
@@ -309,20 +311,20 @@ namespace storm {
     
 #ifdef STORM_HAVE_CARL
     template<>
-    inline void generateCounterexample(storm::storage::SymbolicModelDescription const&, std::shared_ptr<storm::models::sparse::Model<storm::RationalNumber>> , std::shared_ptr<storm::logic::Formula const> const& ) {
+    inline void generateCounterexample(storm::storage::SymbolicModelDescription const&, std::shared_ptr<storm::models::sparse::Model<storm::RationalNumber>> , std::shared_ptr<storm::storage::sparse::ChoiceOrigins>, std::shared_ptr<storm::logic::Formula const> const& ) {
         STORM_LOG_THROW(false, storm::exceptions::InvalidSettingsException, "Unable to generate counterexample for exact arithmetic model.");
     }
     
     template<>
-    inline void generateCounterexample(storm::storage::SymbolicModelDescription const&, std::shared_ptr<storm::models::sparse::Model<storm::RationalFunction>> , std::shared_ptr<storm::logic::Formula const> const& ) {
+    inline void generateCounterexample(storm::storage::SymbolicModelDescription const&, std::shared_ptr<storm::models::sparse::Model<storm::RationalFunction>> , std::shared_ptr<storm::storage::sparse::ChoiceOrigins>, std::shared_ptr<storm::logic::Formula const> const& ) {
         STORM_LOG_THROW(false, storm::exceptions::InvalidSettingsException, "Unable to generate counterexample for parametric model.");
     }
 #endif
     
     template<typename ValueType>
-    void generateCounterexamples(storm::storage::SymbolicModelDescription const& model, std::shared_ptr<storm::models::sparse::Model<ValueType>> markovModel, std::vector<std::shared_ptr<storm::logic::Formula const>> const& formulas) {
+    void generateCounterexamples(storm::storage::SymbolicModelDescription const& model, std::shared_ptr<storm::models::sparse::Model<ValueType>> markovModel, std::shared_ptr<storm::storage::sparse::ChoiceOrigins> choiceOrigins, std::vector<std::shared_ptr<storm::logic::Formula const>> const& formulas) {
         for (auto const& formula : formulas) {
-            generateCounterexample(model, markovModel, formula);
+            generateCounterexample(model, markovModel, choiceOrigins, formula);
         }
     }
     

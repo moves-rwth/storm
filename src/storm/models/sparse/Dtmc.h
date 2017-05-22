@@ -24,7 +24,7 @@ namespace storm {
                 Dtmc(storm::storage::SparseMatrix<ValueType> const& probabilityMatrix,
                      storm::models::sparse::StateLabeling const& stateLabeling,
                      std::unordered_map<std::string, RewardModelType> const& rewardModels = std::unordered_map<std::string, RewardModelType>(),
-                     boost::optional<std::vector<LabelSet>> const& optionalChoiceLabeling = boost::optional<std::vector<LabelSet>>());
+                     boost::optional<storm::models::sparse::ChoiceLabeling> const& optionalChoiceLabeling = boost::none);
                 
                 /*!
                  * Constructs a model by moving the given data.
@@ -36,7 +36,7 @@ namespace storm {
                  */
                 Dtmc(storm::storage::SparseMatrix<ValueType>&& probabilityMatrix, storm::models::sparse::StateLabeling&& stateLabeling,
                      std::unordered_map<std::string, RewardModelType>&& rewardModels = std::unordered_map<std::string, RewardModelType>(),
-                     boost::optional<std::vector<LabelSet>>&& optionalChoiceLabeling = boost::optional<std::vector<LabelSet>>());
+                     boost::optional<storm::models::sparse::ChoiceLabeling>&& optionalChoiceLabeling = boost::none);
                 
                 Dtmc(Dtmc<ValueType, RewardModelType> const& dtmc) = default;
                 Dtmc& operator=(Dtmc<ValueType, RewardModelType> const& dtmc) = default;

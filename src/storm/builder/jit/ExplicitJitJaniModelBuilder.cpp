@@ -15,7 +15,6 @@
 #include "storm/storage/jani/ParallelComposition.h"
 #include "storm/storage/jani/CompositionInformationVisitor.h"
 
-
 #include "storm/builder/RewardModelInformation.h"
 
 #include "storm/models/sparse/Dtmc.h"
@@ -458,7 +457,7 @@ namespace storm {
             }
             
             template <typename ValueType, typename RewardModelType>
-            std::shared_ptr<storm::models::sparse::Model<ValueType, RewardModelType>> ExplicitJitJaniModelBuilder<ValueType, RewardModelType>::build() {
+            storm::builder::ExplicitModelBuilderResult<ValueType, RewardModelType> ExplicitJitJaniModelBuilder<ValueType, RewardModelType>::build() {
                 // (0) Assemble information about the model.
                 cpptempl::data_map modelData = generateModelData();
                 
@@ -506,7 +505,7 @@ namespace storm {
                 STORM_LOG_THROW(!error, storm::exceptions::WrongFormatException, "Model building failed. Reason: " << error.get());
                 
                 // Return the constructed model.
-                return sparseModel;
+                return storm::builder::ExplicitModelBuilderResult<ValueType, RewardModelType>(sparseModel);
             }
             
             template <typename ValueType, typename RewardModelType>

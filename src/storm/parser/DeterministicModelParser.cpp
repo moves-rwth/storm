@@ -60,7 +60,7 @@ namespace storm {
             if (!stateRewardFilename.empty() || !transitionRewardFilename.empty()) {
                 rewardModels.insert(std::make_pair("", storm::models::sparse::StandardRewardModel<RewardValueType>(parserResult.stateRewards, boost::optional<std::vector<RewardValueType>>(), parserResult.transitionRewards)));
             }
-            return storm::models::sparse::Ctmc<ValueType, storm::models::sparse::StandardRewardModel<RewardValueType>>(std::move(parserResult.transitionSystem), std::move(parserResult.labeling), std::move(rewardModels), boost::optional<std::vector<boost::container::flat_set < uint_fast64_t>>>());
+            return storm::models::sparse::Ctmc<ValueType, storm::models::sparse::StandardRewardModel<RewardValueType>>(std::move(parserResult.transitionSystem), std::move(parserResult.labeling), std::move(rewardModels), boost::none);
         }
 
         template class DeterministicModelParser<double, double>;

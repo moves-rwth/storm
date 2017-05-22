@@ -15,7 +15,7 @@ namespace storm {
                                                                     storm::storage::SparseMatrix<ValueType> const& transitionMatrix,
                                                                     storm::models::sparse::StateLabeling const& stateLabeling,
                                                                     std::unordered_map<std::string, RewardModelType> const& rewardModels,
-                                                                    boost::optional<std::vector<LabelSet>> const& optionalChoiceLabeling)
+                                                                    boost::optional<storm::models::sparse::ChoiceLabeling> const& optionalChoiceLabeling)
             : Model<ValueType, RewardModelType>(modelType, transitionMatrix, stateLabeling, rewardModels, optionalChoiceLabeling) {
                 // Intentionally left empty.
             }
@@ -25,7 +25,7 @@ namespace storm {
                                                                     storm::storage::SparseMatrix<ValueType>&& transitionMatrix,
                                                                     storm::models::sparse::StateLabeling&& stateLabeling,
                                                                     std::unordered_map<std::string, RewardModelType>&& rewardModels,
-                                                                    boost::optional<std::vector<LabelSet>>&& optionalChoiceLabeling)
+                                                                    boost::optional<storm::models::sparse::ChoiceLabeling>&& optionalChoiceLabeling)
             : Model<ValueType, RewardModelType>(modelType, std::move(transitionMatrix), std::move(stateLabeling), std::move(rewardModels),
                                std::move(optionalChoiceLabeling)) {
                 // Intentionally left empty.
@@ -46,43 +46,7 @@ namespace storm {
                 auto indices = this->getNondeterministicChoiceIndices();
                 return indices[state+1] - indices[state];
             }
-            
-            template<typename ValueType, typename RewardModelType>
-            void NondeterministicModel<ValueType, RewardModelType>::modifyStateActionRewards(RewardModelType& rewardModel, std::map<std::pair<uint_fast64_t, LabelSet>, typename RewardModelType::ValueType> const& modifications) const {
-                STORM_LOG_THROW(rewardModel.hasStateActionRewards(), storm::exceptions::InvalidOperationException, "Cannot modify state-action rewards, because the reward model does not have state-action rewards.");
-                STORM_LOG_THROW(this->hasChoiceLabeling(), storm::exceptions::InvalidOperationException, "Cannot modify state-action rewards, because the model does not have an action labeling.");
-                std::vector<LabelSet> const& choiceLabels = this->getChoiceLabeling();
-                for (auto const& modification : modifications) {
-                    uint_fast64_t stateIndex = modification.first.first;
-                    for (uint_fast64_t row = this->getNondeterministicChoiceIndices()[stateIndex]; row < this->getNondeterministicChoiceIndices()[stateIndex + 1]; ++row) {
-                        // If the action label of the row matches the requested one, we set the reward value accordingly.
-                        if (choiceLabels[row] == modification.first.second) {
-                            rewardModel.setStateActionRewardValue(row, modification.second);
-                        }
-                    }
-                }
-            }
 
-            template<typename ValueType, typename RewardModelType>
-            template<typename T>
-            void NondeterministicModel<ValueType, RewardModelType>::modifyStateActionRewards(std::string const& modelName, std::map<uint_fast64_t, T> const& modifications) {
-                RewardModelType& rewardModel = this->rewardModel(modelName);
-                size_t i = 0;
-                for(auto const& mod : modifications) {
-                    std::cout << i++ << "/" << modifications.size() << std::endl;
-                    rewardModel.setStateActionReward(mod.first, mod.second);
-                }
-            }
-
-            template<typename ValueType, typename RewardModelType>
-            template<typename T>
-            void NondeterministicModel<ValueType, RewardModelType>::modifyStateRewards(std::string const& modelName, std::map<uint_fast64_t, T> const& modifications) {
-                RewardModelType& rewardModel = this->rewardModel(modelName);
-                for(auto const& mod : modifications) {
-                    rewardModel.setStateReward(mod.first, mod.second);
-                }
-            }
-            
             template<typename ValueType, typename RewardModelType>
             void NondeterministicModel<ValueType, RewardModelType>::reduceToStateBasedRewards() {
                 for (auto& rewardModel : this->getRewardModels()) {
@@ -173,11 +137,7 @@ namespace storm {
 
 #ifdef STORM_HAVE_CARL
             template class NondeterministicModel<storm::RationalNumber>;
-
             template class NondeterministicModel<double, storm::models::sparse::StandardRewardModel<storm::Interval>>;
-            template void NondeterministicModel<double, storm::models::sparse::StandardRewardModel<storm::Interval>>::modifyStateActionRewards(std::string const& modelName, std::map<uint_fast64_t, double> const& modifications);
-            template void NondeterministicModel<double, storm::models::sparse::StandardRewardModel<storm::Interval>>::modifyStateRewards(std::string const& modelName, std::map<uint_fast64_t, double> const& modifications);
-
             template class NondeterministicModel<storm::RationalFunction>;
 #endif
         }

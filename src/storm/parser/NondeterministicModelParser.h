@@ -64,7 +64,7 @@ namespace storm {
                 /*!
                  * Optional choice labeling.
                  */
-                boost::optional<std::vector<storm::models::sparse::LabelSet>> choiceLabeling;
+                boost::optional<storm::models::sparse::ChoiceLabeling> choiceLabeling;
             };
 
             /*!

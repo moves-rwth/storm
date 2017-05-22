@@ -11,7 +11,7 @@ namespace storm {
                                                               storm::storage::SparseMatrix<ValueType> const& transitionMatrix,
                                                               storm::models::sparse::StateLabeling const& stateLabeling,
                                                               std::unordered_map<std::string, RewardModelType> const& rewardModels,
-                                                              boost::optional<std::vector<LabelSet>> const& optionalChoiceLabeling)
+                                                              boost::optional<storm::models::sparse::ChoiceLabeling> const& optionalChoiceLabeling)
             : Model<ValueType, RewardModelType>(modelType, transitionMatrix, stateLabeling, rewardModels, optionalChoiceLabeling) {
                 // Intentionally left empty.
             }
@@ -21,7 +21,7 @@ namespace storm {
                                                               storm::storage::SparseMatrix<ValueType>&& transitionMatrix,
                                                               storm::models::sparse::StateLabeling&& stateLabeling,
                                                               std::unordered_map<std::string, RewardModelType>&& rewardModels,
-                                                              boost::optional<std::vector<LabelSet>>&& optionalChoiceLabeling)
+                                                              boost::optional<storm::models::sparse::ChoiceLabeling>&& optionalChoiceLabeling)
             : Model<ValueType, RewardModelType>(modelType, std::move(transitionMatrix), std::move(stateLabeling), std::move(rewardModels), std::move(optionalChoiceLabeling)) {
                 // Intentionally left empty.
             }

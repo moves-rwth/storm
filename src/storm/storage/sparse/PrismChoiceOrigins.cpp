@@ -1,16 +1,18 @@
 #include "storm/storage/sparse/PrismChoiceOrigins.h"
 
+#include "storm/utility/macros.h"
+#include "storm/exceptions/InvalidArgumentException.h"
 
 namespace storm {
     namespace storage {
         namespace sparse {
             
             PrismChoiceOrigins::PrismChoiceOrigins(std::shared_ptr<storm::prism::Program const> const& prismProgram, std::vector<uint_fast64_t> const& indexToIdentifierMapping, std::vector<std::string> const& identifierToInfoMapping, std::vector<CommandSet> const& identifierToCommandSetMapping) : ChoiceOrigins(indexToIdentifierMapping, identifierToInfoMapping), program(prismProgram), identifierToCommandSet(identifierToCommandSetMapping) {
-				// Intentionally left empty
+                STORM_LOG_THROW(identifierToCommandSet[this->getIdentifierForChoicesWithNoOrigin()].empty(), storm::exceptions::InvalidArgumentException, "The given command set for the choices without origin is non-empty");
 			}
 
             PrismChoiceOrigins::PrismChoiceOrigins(std::shared_ptr<storm::prism::Program const> const& prismProgram, std::vector<uint_fast64_t>&& indexToIdentifierMapping, std::vector<std::string>&& identifierToInfoMapping, std::vector<CommandSet>&& identifierToCommandSetMapping) : ChoiceOrigins(std::move(indexToIdentifierMapping), std::move(identifierToInfoMapping)), program(prismProgram), identifierToCommandSet(std::move(identifierToCommandSetMapping)) {
-				// Intentionally left empty
+                STORM_LOG_THROW(identifierToCommandSet[this->getIdentifierForChoicesWithNoOrigin()].empty(), storm::exceptions::InvalidArgumentException, "The given command set for the choices without origin is non-empty");
             }
                 
             bool PrismChoiceOrigins::isPrismChoiceOrigins() const  {

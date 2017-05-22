@@ -1,5 +1,6 @@
 #include "storm/parser/SparseChoiceLabelingParser.h"
 
+#include "storm/utility/macros.h"
 #include "storm/exceptions/WrongFormatException.h"
 #include "storm/exceptions/OutOfRangeException.h"
 #include "storm/exceptions/FileIoException.h"
@@ -11,7 +12,7 @@ namespace storm {
 
         using namespace storm::utility::cstring;
 
-        std::vector<storm::models::sparse::LabelSet> SparseChoiceLabelingParser::parseChoiceLabeling(std::vector<uint_fast64_t> const& nondeterministicChoiceIndices, std::string const& filename) {
+        std::vector<boost::container::flat_set<uint_fast64_t>> SparseChoiceLabelingParser::parseChoiceLabeling(std::vector<uint_fast64_t> const& nondeterministicChoiceIndices, std::string const& filename) {
             // Open file.
             MappedFile file(filename.c_str());
             char const* buf = file.getData();
@@ -19,7 +20,7 @@ namespace storm {
             uint_fast64_t totalNumberOfChoices = nondeterministicChoiceIndices.back();
             
             // Create choice labeling vector with given choice count.
-            std::vector<storm::models::sparse::LabelSet> result(totalNumberOfChoices);
+            std::vector<boost::container::flat_set<uint_fast64_t>> result(totalNumberOfChoices);
 
             // Now parse state reward assignments.
             uint_fast64_t state = 0;
