@@ -54,8 +54,6 @@ namespace storm {
                  */
                 std::set<std::string> getLabels() const;
 
-
-
                 /*!
                  * Creates a new label and attaches it to the given items. Note that the dimension of given labeling must
                  * match the number of items for which this item labeling is valid.
@@ -74,6 +72,13 @@ namespace storm {
                  */
                 void addLabel(std::string const& label, storage::BitVector&& labeling);
 
+                /*!
+                 * Adds all labels from the other labeling to this labeling.
+                 * It is assumed that both labelings have the same itemcount.
+                 * If a label is present in both labellings, we take the union of the corresponding item sets.
+                 */
+                 void join(ItemLabeling const& other);
+                
                 /*!
                  * Checks whether a label is registered within this labeling.
                  *

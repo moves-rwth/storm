@@ -25,15 +25,20 @@ namespace storm {
                  * Creates a new representation of the choice indices to their origin in the prism program
                  * @param prismProgram The associated prism program
                  * @param indexToIdentifierMapping maps a choice index to the internally used identifier of the choice origin
-                 * @param identifierToInfoMapping maps an origin identifier to a string representation of the origin
                  * @param identifierToCommandSetMapping maps an origin identifier to the set of global indices of the corresponding prism commands
                  */
-                PrismChoiceOrigins(std::shared_ptr<storm::prism::Program const> const& prismProgram, std::vector<uint_fast64_t> const& indexToIdentifierMapping, std::vector<std::string> const& identifierToInfoMapping, std::vector<CommandSet> const& identifierToCommandSetMapping);
-                PrismChoiceOrigins(std::shared_ptr<storm::prism::Program const> const& prismProgram, std::vector<uint_fast64_t>&& indexToIdentifierMapping, std::vector<std::string>&& identifierToInfoMapping, std::vector<CommandSet>&& identifierToCommandSetMapping);
+                PrismChoiceOrigins(std::shared_ptr<storm::prism::Program const> const& prismProgram, std::vector<uint_fast64_t> const& indexToIdentifierMapping, std::vector<CommandSet> const& identifierToCommandSetMapping);
+                PrismChoiceOrigins(std::shared_ptr<storm::prism::Program const> const& prismProgram, std::vector<uint_fast64_t>&& indexToIdentifierMapping, std::vector<CommandSet>&& identifierToCommandSetMapping);
                 
                 virtual ~PrismChoiceOrigins() = default;
                 
                 virtual bool isPrismChoiceOrigins() const override ;
+                
+                /*
+                 * Returns the largest identifier that is used by this object.
+                 * This can be used to, e.g., loop over all identifiers.
+                 */
+                virtual uint_fast64_t getLargestIdentifier() const override;
                 
                 /*
                  * Returns the prism program associated with this
@@ -45,17 +50,20 @@ namespace storm {
                  * The command set is represented by a set of global command indices
                  */
                 CommandSet const& getCommandSet(uint_fast64_t choiceIndex) const;
-                
+
+            protected:
                 /*
                  * Returns a copy of this object where the mapping of choice indices to origin identifiers is replaced by the given one.
                  */
                 virtual std::shared_ptr<ChoiceOrigins> cloneWithNewIndexToIdentifierMapping(std::vector<uint_fast64_t>&& indexToIdentifierMapping) const override;
                 
-            private:
+                /*
+                 * Computes the identifier infos (i.e., human readable strings representing the choice origins).
+                 */
+                virtual void computeIdentifierInfos() const override;
                 
                 std::shared_ptr<storm::prism::Program const> program;
                 std::vector<CommandSet> identifierToCommandSet;
-                
             };
         }
     }

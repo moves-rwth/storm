@@ -41,6 +41,17 @@ namespace storm {
                 addLabel(label, storage::BitVector(itemCount));
             }
 
+            void ItemLabeling::join(ItemLabeling const& other) {
+                STORM_LOG_THROW(this->itemCount == other.itemCount, storm::exceptions::InvalidArgumentException, "The item count of the two labelings does not match: " << this->itemCount << " vs. " << other.itemCount << ".");
+                for (auto const& label : other.getLabels()) {
+                    if (this->containsLabel(label)) {
+                        this->setItems(label, this->getItems(label) | other.getItems(label));
+                    } else {
+                        this->addLabel(label, other.getItems(label));
+                    }
+                }
+            }
+            
             std::set<std::string> ItemLabeling::getLabels() const {
                 std::set<std::string> result;
                 for (auto const& labelIndexPair : this->nameToLabelingIndexMap) {

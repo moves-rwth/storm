@@ -4,16 +4,17 @@
 #include "storm/storage/sparse/JaniChoiceOrigins.h"
 #include "storm/utility/vector.h"
 
+#include "storm/utility/macros.h"
 
 namespace storm {
     namespace storage {
         namespace sparse {
             
-            ChoiceOrigins::ChoiceOrigins(std::vector<uint_fast64_t> const& indexToIdentifierMapping, std::vector<std::string> const& identifierToInfoMapping) : indexToIdentifier(indexToIdentifierMapping), identifierToInfo(identifierToInfoMapping) {
+            ChoiceOrigins::ChoiceOrigins(std::vector<uint_fast64_t> const& indexToIdentifierMapping) : indexToIdentifier(indexToIdentifierMapping) {
                 // Intentionally left empty
             }
             
-            ChoiceOrigins::ChoiceOrigins(std::vector<uint_fast64_t>&& indexToIdentifierMapping, std::vector<std::string>&& identifierToInfoMapping) : indexToIdentifier(std::move(indexToIdentifierMapping)), identifierToInfo(std::move(identifierToInfoMapping)) {
+            ChoiceOrigins::ChoiceOrigins(std::vector<uint_fast64_t>&& indexToIdentifierMapping) : indexToIdentifier(std::move(indexToIdentifierMapping)) {
                 // Intentionally left empty
             }
             
@@ -42,6 +43,7 @@ namespace storm {
             }
             			    
             uint_fast64_t ChoiceOrigins::getIdentifier(uint_fast64_t choiceIndex) const {
+                STORM_LOG_ASSERT(choiceIndex < indexToIdentifier.size(), "Invalid choice index: " << choiceIndex);
             	return  indexToIdentifier[choiceIndex];
             }
             
@@ -50,6 +52,10 @@ namespace storm {
 			}
                 
 			std::string const& ChoiceOrigins::getIdentifierInfo(uint_fast64_t identifier) const {
+                STORM_LOG_ASSERT(identifier <= this->getLargestIdentifier(), "Invalid choice origin identifier: " << identifier);
+                if (identifierToInfo.empty()) {
+                    computeIdentifierInfos();
+                }
 				return identifierToInfo[identifier];
 			}
                 
@@ -74,6 +80,17 @@ namespace storm {
                     }
                 }
                 return cloneWithNewIndexToIdentifierMapping(std::move(indexToIdentifierMapping));
+            }
+                         
+            storm::models::sparse::ChoiceLabeling ChoiceOrigins::toChoiceLabeling() const {
+                storm::models::sparse::ChoiceLabeling result(indexToIdentifier.size());
+                for (uint_fast64_t identifier = 0; identifier <= this->getLargestIdentifier(); ++identifier) {
+                    storm::storage::BitVector choicesWithIdentifier = storm::utility::vector::filter<uint_fast64_t>(indexToIdentifier, [&identifier](uint_fast64_t i) -> bool { return i == identifier;});
+                    if (!choicesWithIdentifier.empty()) {
+                        result.addLabel(getIdentifierInfo(identifier), std::move(choicesWithIdentifier));
+                    }
+                }
+                return result;
             }
         }
     }
