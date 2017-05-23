@@ -62,7 +62,7 @@ namespace storm {
                         // If the commands are labeled, it is clear which modules induced the current choice.
                         // In this case, we only need to print more information if there are multiple commands in a module with the same label.
                         bool setNameNeedsAllModuleNames = !firstCommand.isLabeled();
-                        bool actionNameIsUniqueInModule = firstModule.getCommandIndicesByActionIndex(firstCommand.getActionIndex()).size() != 1;
+                        bool actionNameIsUniqueInModule = firstCommand.isLabeled() && firstModule.getCommandIndicesByActionIndex(firstCommand.getActionIndex()).size() == 1;
                         
                         bool setNameHasModuleDetails = false;
                         if (!actionNameIsUniqueInModule || setNameNeedsAllModuleNames) {
@@ -77,13 +77,13 @@ namespace storm {
                         }
                     
                         // now process the remaining commands
-                        for (; commandIndexIt != set.end(); ++commandIndexIt) {
+                        for (++commandIndexIt; commandIndexIt != set.end(); ++commandIndexIt) {
                             moduleCommandPair = program->getModuleCommandIndexByGlobalCommandIndex(*commandIndexIt);
                             storm::prism::Module const& module = program->getModule(moduleCommandPair.first);
                             storm::prism::Command const& command = module.getCommand(moduleCommandPair.second);
                             STORM_LOG_THROW(command.getActionName() == actionName, storm::exceptions::UnexpectedException, "Inconsistent action names for choice origin");
 
-                            actionNameIsUniqueInModule = module.getCommandIndicesByActionIndex(command.getActionIndex()).size() != 1;
+                            actionNameIsUniqueInModule = firstCommand.isLabeled() && module.getCommandIndicesByActionIndex(command.getActionIndex()).size() == 1;
                             if (!actionNameIsUniqueInModule || setNameNeedsAllModuleNames) {
                                 if (setNameHasModuleDetails) {
                                     setName << "  ||  ";
@@ -106,6 +106,7 @@ namespace storm {
                     }
                     this->identifierToInfo.push_back(setName.str());
                 }
+                STORM_LOG_DEBUG("Generated the following names for the choice origins: " << storm::utility::vector::toString(this->identifierToInfo));
                 STORM_LOG_ASSERT(storm::utility::vector::isUnique(this->identifierToInfo), "The generated names for the prism choice origins are not unique.");
             }
         }
