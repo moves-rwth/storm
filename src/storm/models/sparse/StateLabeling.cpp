@@ -18,7 +18,6 @@ namespace storm {
             StateLabeling::StateLabeling(ItemLabeling const&& itemLab) : ItemLabeling(itemLab) {
                 // Intentionally left empty.
             }
-
             
             bool StateLabeling::operator==(StateLabeling const& other) const {
                 if (itemCount != other.itemCount) {
@@ -37,19 +36,14 @@ namespace storm {
                 }
                 return true;
             }
-
-
             
             StateLabeling StateLabeling::getSubLabeling(storm::storage::BitVector const& states) const {
                 return StateLabeling(ItemLabeling::getSubLabeling(states));
             }
             
-
-            
             std::set<std::string> StateLabeling::getLabelsOfState(storm::storage::sparse::state_type state) const {
                 return ItemLabeling::getLabelsOfItem(state);
             }
-
             
             void StateLabeling::addLabelToState(std::string const& label, storm::storage::sparse::state_type state) {
                 return ItemLabeling::addLabelToItem(label, state);
@@ -58,7 +52,6 @@ namespace storm {
             bool StateLabeling::getStateHasLabel(std::string const& label, storm::storage::sparse::state_type state) const {
                 return ItemLabeling::getItemHasLabel(label, state);
             }
-
             
             storm::storage::BitVector const& StateLabeling::getStates(std::string const& label) const {
                 return ItemLabeling::getItems(label);
@@ -74,7 +67,6 @@ namespace storm {
 
 
             std::ostream& operator<<(std::ostream& out, StateLabeling const& labeling) {
-                out << "State ";
                 labeling.printLabelingInformationToStream(out);
                 return out;
             }

@@ -65,7 +65,7 @@ namespace storm {
                 std::unordered_map<std::string, storm::models::sparse::StandardRewardModel<typename RewardModelType::ValueType>> rewardModels;
                 
                 // A vector that stores a labeling for each choice.
-                storm::models::sparse::ChoiceLabeling choiceLabeling;
+                boost::optional<storm::models::sparse::ChoiceLabeling> choiceLabeling;
                 
                 // A vector that stores which states are markovian.
                 boost::optional<storm::storage::BitVector> markovianStates;

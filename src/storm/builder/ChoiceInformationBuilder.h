@@ -27,7 +27,7 @@ namespace storm {
             
             void addOriginData(boost::any const& originData, uint_fast64_t choiceIndex);
             
-            storm::models::sparse::ChoiceLabeling buildChoiceLabeling(uint_fast64_t totalNumberOfChoices);
+            boost::optional<storm::models::sparse::ChoiceLabeling> buildChoiceLabeling(uint_fast64_t totalNumberOfChoices);
             
             std::vector<boost::any> buildDataOfChoiceOrigins(uint_fast64_t totalNumberOfChoices);
             

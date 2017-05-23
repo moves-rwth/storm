@@ -121,7 +121,7 @@ namespace storm {
             }
 
             void ItemLabeling::printLabelingInformationToStream(std::ostream& out) const {
-                out << "Labels: \t" << this->getNumberOfLabels() << std::endl;
+                out << this->getNumberOfLabels() << " labels" << std::endl;
                 for (auto const& labelIndexPair : this->nameToLabelingIndexMap) {
                     out << "   * " << labelIndexPair.first << " -> " << this->labelings[labelIndexPair.second].getNumberOfSetBits() << " item(s)" << std::endl;
                 }

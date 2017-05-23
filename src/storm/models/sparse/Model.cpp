@@ -206,11 +206,13 @@ namespace storm {
             template<typename ValueType, typename RewardModelType>
             void Model<ValueType, RewardModelType>::printModelInformationFooterToStream(std::ostream& out) const {
                 this->printRewardModelsInformationToStream(out);
+                out << "State Labels: \t";
                 this->getStateLabeling().printLabelingInformationToStream(out);
+                out << "Choice Labels: \t";
                 if (this->hasChoiceLabeling()) {
                     this->getChoiceLabeling().printLabelingInformationToStream(out);
                 } else {
-                    out << "Choice Labels: \tnone";
+                    out << "none" << std::endl;
                 }
                 out << "-------------------------------------------------------------- " << std::endl;
             }

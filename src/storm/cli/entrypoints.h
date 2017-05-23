@@ -325,7 +325,7 @@ namespace storm {
             markovModel->printModelInformationToStream(std::cout);
             
             // Preprocess the model.
-            STORM_LOG_WARN_COND(builderResult.hasStateValuations() || builderResult.hasChoiceOrigins(), "state valuations and choice origins might be invalidated if the model is preprocessed..."); // TODO: check this more carefully.
+            STORM_LOG_WARN_COND(!builderResult.hasStateValuations() && !builderResult.hasChoiceOrigins(), "State valuations and Choice origins might be invalidated if the model is preprocessed..."); // TODO: check this more carefully.
             BRANCH_ON_SPARSE_MODELTYPE(markovModel, markovModel, ValueType, preprocessModel, formulas);
             std::shared_ptr<storm::models::sparse::Model<ValueType>> sparseModel = markovModel->template as<storm::models::sparse::Model<ValueType>>();
             

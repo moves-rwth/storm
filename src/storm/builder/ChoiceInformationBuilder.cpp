@@ -16,13 +16,17 @@ namespace storm {
             dataOfOrigins.push_back(originData);
         }
         
-        storm::models::sparse::ChoiceLabeling ChoiceInformationBuilder::buildChoiceLabeling(uint_fast64_t totalNumberOfChoices) {
-            storm::models::sparse::ChoiceLabeling result(totalNumberOfChoices);
-            for (auto& label : labels) {
-                label.second.resize(totalNumberOfChoices, false);
-                result.addLabel(label.first, std::move(label.second));
+        boost::optional<storm::models::sparse::ChoiceLabeling> ChoiceInformationBuilder::buildChoiceLabeling(uint_fast64_t totalNumberOfChoices) {
+            if (labels.empty()) {
+                return boost::none;
+            } else {
+                storm::models::sparse::ChoiceLabeling result(totalNumberOfChoices);
+                for (auto& label : labels) {
+                    label.second.resize(totalNumberOfChoices, false);
+                    result.addLabel(label.first, std::move(label.second));
+                }
+                return result;
             }
-            return result;
         }
             
         std::vector<boost::any> ChoiceInformationBuilder::buildDataOfChoiceOrigins(uint_fast64_t totalNumberOfChoices) {
