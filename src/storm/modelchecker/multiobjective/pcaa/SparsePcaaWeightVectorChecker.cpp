@@ -24,25 +24,28 @@ namespace storm {
 
             template <class SparseModelType>
             SparsePcaaWeightVectorChecker<SparseModelType>::SparsePcaaWeightVectorChecker(SparseModelType const& model,
-                                                                                          std::vector<PcaaObjective<typename SparseModelType::ValueType>> const& objectives,
-                                                                                          storm::storage::BitVector const& actionsWithNegativeReward,
-                                                                                          storm::storage::BitVector const& ecActions,
-                                                                                          storm::storage::BitVector const& possiblyRecurrentStates) :
+                                                                                          std::vector<Objective<typename SparseModelType::ValueType>> const& objectives,
+                                                                                          storm::storage::BitVector const& possibleECActions,
+                                                                                          storm::storage::BitVector const& possibleBottomStates) :
                     model(model),
                     objectives(objectives),
-                    actionsWithNegativeReward(actionsWithNegativeReward),
-                    ecActions(ecActions),
-                    possiblyRecurrentStates(possiblyRecurrentStates),
-                    objectivesWithNoUpperTimeBound(objectives.size()),
+                    possibleECActions(possibleECActions),
+                    actionsWithoutRewardInUnboundedPhase(model.getNumberOfChoices(), true),
+                    possibleBottomStates(possibleBottomStates),
+                    objectivesWithNoUpperTimeBound(objectives.size(), false),
                     discreteActionRewards(objectives.size()),
                     checkHasBeenCalled(false),
                     objectiveResults(objectives.size()),
-                    offsetsToLowerBound(objectives.size()),
-                    offsetsToUpperBound(objectives.size()) {
+                    offsetsToUnderApproximation(objectives.size()),
+                    offsetsToOverApproximation(objectives.size()) {
                 
-                // set the unbounded objectives
+                // set data for unbounded objectives
                 for(uint_fast64_t objIndex = 0; objIndex < objectives.size(); ++objIndex) {
-                    objectivesWithNoUpperTimeBound.set(objIndex, !objectives[objIndex].upperTimeBound);
+                    auto const& obj = objectives[objIndex];
+                    if (!obj.upperTimeBound) {
+                        objectivesWithNoUpperTimeBound.set(objIndex, true);
+                        actionsWithoutRewardInUnboundedPhase &= model.getRewardModel(*obj.rewardModelName).getChoicesWithZeroReward(model.getTransitionMatrix());
+                    }
                 }
             }
             
@@ -52,10 +55,37 @@ namespace storm {
                 checkHasBeenCalled=true;
                 STORM_LOG_INFO("Invoked WeightVectorChecker with weights " << std::endl << "\t" << storm::utility::vector::toString(storm::utility::vector::convertNumericVector<double>(weightVector)));
                 std::vector<ValueType> weightedRewardVector(model.getTransitionMatrix().getRowCount(), storm::utility::zero<ValueType>());
-                for(auto objIndex : objectivesWithNoUpperTimeBound) {
-                    storm::utility::vector::addScaledVector(weightedRewardVector, discreteActionRewards[objIndex], weightVector[objIndex]);
+                boost::optional<ValueType> weightedLowerResultBound = storm::utility::zero<ValueType>();
+                boost::optional<ValueType> weightedUpperResultBound = storm::utility::zero<ValueType>();
+                for (auto objIndex : objectivesWithNoUpperTimeBound) {
+                    if (storm::solver::minimize(objectives[objIndex].optimizationDirection)) {
+                        if (objectives[objIndex].lowerResultBound && weightedUpperResultBound) {
+                            weightedUpperResultBound.get() -= weightVector[objIndex] * objectives[objIndex].lowerResultBound.get();
+                        } else {
+                            weightedUpperResultBound = boost::none;
+                        }
+                        if (objectives[objIndex].upperResultBound && weightedLowerResultBound) {
+                            weightedLowerResultBound.get() -= weightVector[objIndex] * objectives[objIndex].upperResultBound.get();
+                        } else {
+                            weightedLowerResultBound = boost::none;
+                        }
+                        storm::utility::vector::addScaledVector(weightedRewardVector, discreteActionRewards[objIndex], -weightVector[objIndex]);
+                    } else {
+                        if (objectives[objIndex].lowerResultBound && weightedLowerResultBound) {
+                            weightedLowerResultBound.get() += weightVector[objIndex] * objectives[objIndex].lowerResultBound.get();
+                        } else {
+                            weightedLowerResultBound = boost::none;
+                        }
+                        if (objectives[objIndex].upperResultBound && weightedUpperResultBound) {
+                            weightedUpperResultBound.get() += weightVector[objIndex] * objectives[objIndex].upperResultBound.get();
+                        } else {
+                            weightedUpperResultBound = boost::none;
+                        }
+                        storm::utility::vector::addScaledVector(weightedRewardVector, discreteActionRewards[objIndex], weightVector[objIndex]);
+                    }
                 }
-                unboundedWeightedPhase(weightedRewardVector);
+                
+                unboundedWeightedPhase(weightedRewardVector, weightedLowerResultBound, weightedUpperResultBound);
                 unboundedIndividualPhase(weightVector);
                 // Only invoke boundedPhase if necessarry, i.e., if there is at least one objective with a time bound
                 for(auto const& obj : this->objectives) {
@@ -64,10 +94,9 @@ namespace storm {
                         break;
                     }
                 }
-                STORM_LOG_INFO("Weight vector check done. Lower bounds for results in initial state: " << storm::utility::vector::toString(storm::utility::vector::convertNumericVector<double>(getLowerBoundsOfInitialStateResults())));
+                STORM_LOG_INFO("Weight vector check done. Lower bounds for results in initial state: " << storm::utility::vector::toString(storm::utility::vector::convertNumericVector<double>(getUnderApproximationOfInitialStateResults())));
                 // Validate that the results are sufficiently precise
-                ValueType resultingWeightedPrecision = storm::utility::vector::dotProduct(getUpperBoundsOfInitialStateResults(), weightVector) - storm::utility::vector::dotProduct(getLowerBoundsOfInitialStateResults(), weightVector);
-                STORM_LOG_THROW(resultingWeightedPrecision >= storm::utility::zero<ValueType>(), storm::exceptions::UnexpectedException, "The distance between the lower and the upper result is negative.");
+                ValueType resultingWeightedPrecision = storm::utility::abs(storm::utility::vector::dotProduct(getOverApproximationOfInitialStateResults(), weightVector) - storm::utility::vector::dotProduct(getUnderApproximationOfInitialStateResults(), weightVector));
                 resultingWeightedPrecision /= storm::utility::sqrt(storm::utility::vector::dotProduct(weightVector, weightVector));
                 STORM_LOG_THROW(resultingWeightedPrecision <= weightedPrecision, storm::exceptions::UnexpectedException, "The desired precision was not reached");
             }
@@ -83,25 +112,25 @@ namespace storm {
             }
             
             template <class SparseModelType>
-            std::vector<typename SparsePcaaWeightVectorChecker<SparseModelType>::ValueType> SparsePcaaWeightVectorChecker<SparseModelType>::getLowerBoundsOfInitialStateResults() const {
+            std::vector<typename SparsePcaaWeightVectorChecker<SparseModelType>::ValueType> SparsePcaaWeightVectorChecker<SparseModelType>::getUnderApproximationOfInitialStateResults() const {
                 STORM_LOG_THROW(checkHasBeenCalled, storm::exceptions::IllegalFunctionCallException, "Tried to retrieve results but check(..) has not been called before.");
                 uint_fast64_t initstate = *this->model.getInitialStates().begin();
                 std::vector<ValueType> res;
                 res.reserve(this->objectives.size());
                 for(uint_fast64_t objIndex = 0; objIndex < this->objectives.size(); ++objIndex) {
-                    res.push_back(this->objectiveResults[objIndex][initstate] + this->offsetsToLowerBound[objIndex]);
+                    res.push_back(this->objectiveResults[objIndex][initstate] + this->offsetsToUnderApproximation[objIndex]);
                 }
                 return res;
             }
             
             template <class SparseModelType>
-            std::vector<typename SparsePcaaWeightVectorChecker<SparseModelType>::ValueType> SparsePcaaWeightVectorChecker<SparseModelType>::getUpperBoundsOfInitialStateResults() const {
+            std::vector<typename SparsePcaaWeightVectorChecker<SparseModelType>::ValueType> SparsePcaaWeightVectorChecker<SparseModelType>::getOverApproximationOfInitialStateResults() const {
                 STORM_LOG_THROW(checkHasBeenCalled, storm::exceptions::IllegalFunctionCallException, "Tried to retrieve results but check(..) has not been called before.");
                 uint_fast64_t initstate = *this->model.getInitialStates().begin();
                 std::vector<ValueType> res;
                 res.reserve(this->objectives.size());
                 for(uint_fast64_t objIndex = 0; objIndex < this->objectives.size(); ++objIndex) {
-                    res.push_back(this->objectiveResults[objIndex][initstate] + this->offsetsToUpperBound[objIndex]);
+                    res.push_back(this->objectiveResults[objIndex][initstate] + this->offsetsToOverApproximation[objIndex]);
                 }
                 return res;
             }
@@ -116,13 +145,12 @@ namespace storm {
             }
             
             template <class SparseModelType>
-            void SparsePcaaWeightVectorChecker<SparseModelType>::unboundedWeightedPhase(std::vector<ValueType> const& weightedRewardVector) {
+            void SparsePcaaWeightVectorChecker<SparseModelType>::unboundedWeightedPhase(std::vector<ValueType> const& weightedRewardVector, boost::optional<ValueType> const& lowerResultBound, boost::optional<ValueType> const& upperResultBound) {
                 if(this->objectivesWithNoUpperTimeBound.empty() || !storm::utility::vector::hasNonZeroEntry(weightedRewardVector)) {
                     this->weightedResult = std::vector<ValueType>(model.getNumberOfStates(), storm::utility::zero<ValueType>());
                     this->scheduler = storm::storage::TotalScheduler(model.getNumberOfStates());
                     return;
                 }
-                
                 
                 // Only consider the states from which a transition with non-zero reward is reachable. (The remaining states always have reward zero).
                 storm::storage::BitVector zeroRewardActions = storm::utility::vector::filterZero(weightedRewardVector);
@@ -136,7 +164,7 @@ namespace storm {
                 storm::storage::BitVector subsystemStates = storm::utility::graph::performProbGreater0E(model.getTransitionMatrix().transpose(true), storm::storage::BitVector(model.getNumberOfStates(), true), nonZeroRewardStates);
                 
                 // Remove neutral end components, i.e., ECs in which no reward is earned.
-                auto ecEliminatorResult = storm::transformer::EndComponentEliminator<ValueType>::transform(model.getTransitionMatrix(), subsystemStates, ecActions & zeroRewardActions, possiblyRecurrentStates);
+                auto ecEliminatorResult = storm::transformer::EndComponentEliminator<ValueType>::transform(model.getTransitionMatrix(), subsystemStates, possibleECActions & zeroRewardActions, possibleBottomStates);
                 
                 std::vector<ValueType> subRewardVector(ecEliminatorResult.newToOldRowMapping.size());
                 storm::utility::vector::selectVectorValues(subRewardVector, ecEliminatorResult.newToOldRowMapping, weightedRewardVector);
@@ -146,6 +174,12 @@ namespace storm {
                 std::unique_ptr<storm::solver::MinMaxLinearEquationSolver<ValueType>> solver = solverFactory.create(ecEliminatorResult.matrix);
                 solver->setOptimizationDirection(storm::solver::OptimizationDirection::Maximize);
                 solver->setTrackScheduler(true);
+                if (lowerResultBound) {
+                    solver->setLowerBound(*lowerResultBound);
+                }
+                if (upperResultBound) {
+                    solver->setUpperBound(*upperResultBound);
+                }
                 solver->solveEquations(subResult, subRewardVector);
 
                 this->weightedResult = std::vector<ValueType>(model.getNumberOfStates());
@@ -158,10 +192,14 @@ namespace storm {
             
             template <class SparseModelType>
             void SparsePcaaWeightVectorChecker<SparseModelType>::unboundedIndividualPhase(std::vector<ValueType> const& weightVector) {
-               if(objectivesWithNoUpperTimeBound.getNumberOfSetBits() == 1 && storm::utility::isOne(weightVector[*objectivesWithNoUpperTimeBound.begin()])) {
-                    objectiveResults[*objectivesWithNoUpperTimeBound.begin()] = weightedResult;
+               if (objectivesWithNoUpperTimeBound.getNumberOfSetBits() == 1 && storm::utility::isOne(weightVector[*objectivesWithNoUpperTimeBound.begin()])) {
+                   uint_fast64_t objIndex = *objectivesWithNoUpperTimeBound.begin();
+                   objectiveResults[objIndex] = weightedResult;
+                   if (storm::solver::minimize(objectives[objIndex].optimizationDirection)) {
+                       storm::utility::vector::scaleVectorInPlace(objectiveResults[objIndex], -storm::utility::one<ValueType>());
+                   }
                     for (uint_fast64_t objIndex2 = 0; objIndex2 < objectives.size(); ++objIndex2) {
-			            if(*objectivesWithNoUpperTimeBound.begin() != objIndex2) {
+			            if (objIndex != objIndex2) {
                             objectiveResults[objIndex2] = std::vector<ValueType>(model.getNumberOfStates(), storm::utility::zero<ValueType>());
                         }
                     }
@@ -177,9 +215,10 @@ namespace storm {
                    ValueType sumOfWeightsOfUncheckedObjectives = storm::utility::vector::sum_if(weightVector, objectivesWithNoUpperTimeBound);
 
                    for (uint_fast64_t const &objIndex : storm::utility::vector::getSortedIndices(weightVector)) {
+                       auto const& obj = objectives[objIndex];
                        if (objectivesWithNoUpperTimeBound.get(objIndex)) {
-                           offsetsToLowerBound[objIndex] = storm::utility::zero<ValueType>();
-                           offsetsToUpperBound[objIndex] = storm::utility::zero<ValueType>();
+                           offsetsToUnderApproximation[objIndex] = storm::utility::zero<ValueType>();
+                           offsetsToOverApproximation[objIndex] = storm::utility::zero<ValueType>();
                            storm::utility::vector::selectVectorValues(deterministicStateRewards, this->scheduler.getChoices(), model.getTransitionMatrix().getRowGroupIndices(), discreteActionRewards[objIndex]);
                            storm::storage::BitVector statesWithRewards = ~storm::utility::vector::filterZero(deterministicStateRewards);
                            // As maybestates we pick the states from which a state with reward is reachable
@@ -188,7 +227,12 @@ namespace storm {
                            // Compute the estimate for this objective
                            if (!storm::utility::isZero(weightVector[objIndex])) {
                                objectiveResults[objIndex] = weightedSumOfUncheckedObjectives;
-                               storm::utility::vector::scaleVectorInPlace(objectiveResults[objIndex], storm::utility::one<ValueType>() / sumOfWeightsOfUncheckedObjectives);
+                               ValueType scalingFactor = storm::utility::one<ValueType>() / sumOfWeightsOfUncheckedObjectives;
+                               if (storm::solver::minimize(obj.optimizationDirection)) {
+                                   scalingFactor *= -storm::utility::one<ValueType>();
+                               }
+                               storm::utility::vector::scaleVectorInPlace(objectiveResults[objIndex], scalingFactor);
+                               storm::utility::vector::clip(objectiveResults[objIndex], obj.lowerResultBound, obj.upperResultBound);
                            }
                            // Make sure that the objectiveResult is initialized correctly
                            objectiveResults[objIndex].resize(model.getNumberOfStates(), storm::utility::zero<ValueType>());
@@ -206,6 +250,12 @@ namespace storm {
 
                                // Now solve the resulting equation system.
                                std::unique_ptr<storm::solver::LinearEquationSolver<ValueType>> solver = linearEquationSolverFactory.create(std::move(submatrix));
+                               if (obj.lowerResultBound) {
+                                   solver->setLowerBound(*obj.lowerResultBound);
+                               }
+                               if (obj.upperResultBound) {
+                                   solver->setUpperBound(*obj.upperResultBound);
+                               }
                                solver->solveEquations(x, b);
 
                                // Set the result for this objective accordingly
@@ -234,7 +284,7 @@ namespace storm {
                                                          std::vector<ValueType>& originalSolution,
                                                          std::vector<uint_fast64_t>& originalOptimalChoices) const {
                 
-                storm::storage::BitVector recurrentStates(model.getTransitionMatrix().getRowGroupCount(), false);
+                storm::storage::BitVector bottomStates(model.getTransitionMatrix().getRowGroupCount(), false);
                 storm::storage::BitVector statesThatShouldStayInTheirEC(model.getTransitionMatrix().getRowGroupCount(), false);
                 storm::storage::BitVector statesWithUndefSched(model.getTransitionMatrix().getRowGroupCount(), false);
                 
@@ -247,13 +297,13 @@ namespace storm {
                         originalSolution[state] = reducedSolution[stateInReducedModel];
                         uint_fast64_t chosenRowInReducedModel = reducedMatrix.getRowGroupIndices()[stateInReducedModel] + reducedOptimalChoices[stateInReducedModel];
                         uint_fast64_t chosenRowInOriginalModel = reducedToOriginalChoiceMapping[chosenRowInReducedModel];
-                        // Check if the state is recurrent, i.e., the chosen row stays inside this EC.
-                        bool stateIsRecurrent = possiblyRecurrentStates.get(state);
+                        // Check if the state is a bottom state, i.e., the chosen row stays inside its EC.
+                        bool stateIsBottom = possibleBottomStates.get(state);
                         for(auto const& entry : model.getTransitionMatrix().getRow(chosenRowInOriginalModel)) {
-                            stateIsRecurrent &= originalToReducedStateMapping[entry.getColumn()] == stateInReducedModel;
+                            stateIsBottom &= originalToReducedStateMapping[entry.getColumn()] == stateInReducedModel;
                         }
-                        if(stateIsRecurrent) {
-                            recurrentStates.set(state);
+                        if(stateIsBottom) {
+                            bottomStates.set(state);
                             statesThatShouldStayInTheirEC.set(state);
                         } else {
                             // Check if the chosen row originaly belonged to the current state (and not to another state of the EC)
@@ -269,42 +319,41 @@ namespace storm {
                         // if the state does not exist in the reduced model, it means that the (weighted) result is always zero, independent of the scheduler.
                         originalSolution[state] = storm::utility::zero<ValueType>();
                         // However, it might be the case that infinite reward is induced for an objective with weight 0.
-                        // To avoid this, all possibly recurrent states are made recurrent and the remaining states have to reach a recurrent state with prob. one
-                        if(possiblyRecurrentStates.get(state)) {
-                            recurrentStates.set(state);
+                        // To avoid this, all possible bottom states are made bottom and the remaining states have to reach a bottom state with prob. one
+                        if(possibleBottomStates.get(state)) {
+                            bottomStates.set(state);
                         } else {
                             statesWithUndefSched.set(state);
                         }
                     }
                 }
                 
-                // Handle recurrent states
-                for(auto state : recurrentStates) {
+                // Handle bottom states
+                for(auto state : bottomStates) {
                     bool foundRowForState = false;
-                    // Find a row with zero rewards that only leads to recurrent states.
+                    // Find a row with zero rewards that only leads to bottom states.
                     // If the state should stay in its EC, we also need to make sure that all successors map to the same state in the reduced model
                     uint_fast64_t stateInReducedModel = originalToReducedStateMapping[state];
                     for(uint_fast64_t row = model.getTransitionMatrix().getRowGroupIndices()[state]; row < model.getTransitionMatrix().getRowGroupIndices()[state+1]; ++row) {
-                        bool rowOnlyLeadsToRecurrentStates = true;
+                        bool rowOnlyLeadsToBottomStates = true;
                         bool rowStaysInEC = true;
                         for( auto const& entry : model.getTransitionMatrix().getRow(row)) {
-                            rowOnlyLeadsToRecurrentStates &= recurrentStates.get(entry.getColumn());
+                            rowOnlyLeadsToBottomStates &= bottomStates.get(entry.getColumn());
                             rowStaysInEC &= originalToReducedStateMapping[entry.getColumn()] == stateInReducedModel;
                         }
-                        if(rowOnlyLeadsToRecurrentStates && (rowStaysInEC || !statesThatShouldStayInTheirEC.get(state)) && !actionsWithNegativeReward.get(row)) {
+                        if(rowOnlyLeadsToBottomStates && (rowStaysInEC || !statesThatShouldStayInTheirEC.get(state)) && actionsWithoutRewardInUnboundedPhase.get(row)) {
                             foundRowForState = true;
                             originalOptimalChoices[state] = row - model.getTransitionMatrix().getRowGroupIndices()[state];
                             break;
                         }
                     }
-                    STORM_LOG_ASSERT(foundRowForState, "Could not find a suitable choice for a recurrent state.");
+                    STORM_LOG_ASSERT(foundRowForState, "Could not find a suitable choice for a bottom state.");
                 }
                 
                 // Handle remaining states with still undef. scheduler (either EC states or non-subsystem states)
                 while(!statesWithUndefSched.empty()) {
                     for(auto state : statesWithUndefSched) {
-                        // Try to find a choice such that at least one successor has a defined scheduler.
-                        // This way, a non-recurrent state will never become recurrent
+                        // Iteratively Try to find a choice such that at least one successor has a defined scheduler.
                         uint_fast64_t stateInReducedModel = originalToReducedStateMapping[state];
                         for(uint_fast64_t row = model.getTransitionMatrix().getRowGroupIndices()[state]; row < model.getTransitionMatrix().getRowGroupIndices()[state+1]; ++row) {
                             bool rowStaysInEC = true;

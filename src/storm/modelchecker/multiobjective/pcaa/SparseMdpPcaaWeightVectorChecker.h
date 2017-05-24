@@ -20,11 +20,20 @@ namespace storm {
             public:
                 typedef typename SparseMdpModelType::ValueType ValueType;
             
+                /*
+                 * Creates a weight vextor checker.
+                 *
+                 * @param model The (preprocessed) model
+                 * @param objectives The (preprocessed) objectives
+                 * @param possibleECActions Overapproximation of the actions that are part of an EC
+                 * @param possibleBottomStates The states for which it is posible to not collect further reward with prob. 1
+                 *
+                 */
+                
                 SparseMdpPcaaWeightVectorChecker(SparseMdpModelType const& model,
-                                                 std::vector<PcaaObjective<ValueType>> const& objectives,
-                                                 storm::storage::BitVector const& actionsWithNegativeReward,
-                                                 storm::storage::BitVector const& ecActions,
-                                                 storm::storage::BitVector const& possiblyRecurrentStates);
+                                                        std::vector<Objective<ValueType>> const& objectives,
+                                                        storm::storage::BitVector const& possibleECActions,
+                                                        storm::storage::BitVector const& possibleBottomStates);
 
                 virtual ~SparseMdpPcaaWeightVectorChecker() = default;
 

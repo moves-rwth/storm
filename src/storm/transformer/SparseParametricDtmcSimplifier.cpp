@@ -38,17 +38,32 @@ namespace storm {
             
             // obtain the resulting subsystem
             storm::transformer::GoalStateMerger<SparseModelType> goalStateMerger(this->originalModel);
-            this->simplifiedModel = goalStateMerger.mergeTargetAndSinkStates(maybeStates, statesWithProbability01.second, statesWithProbability01.first);
-            this->simplifiedModel->getStateLabeling().addLabel("target", statesWithProbability01.second);
-            this->simplifiedModel->getStateLabeling().addLabel("sink", statesWithProbability01.first);
+            typename storm::transformer::GoalStateMerger<SparseModelType>::ReturnType mergerResult =  goalStateMerger.mergeTargetAndSinkStates(maybeStates, statesWithProbability01.second, statesWithProbability01.first);
+            this->simplifiedModel = mergerResult.model;
+            statesWithProbability01.second = storm::storage::BitVector(this->simplifiedModel->getNumberOfStates(), false);
+            if (mergerResult.targetState) {
+                statesWithProbability01.second.set(mergerResult.targetState.get(), true);
+            }
+            std::string targetLabel = "target";
+            while (this->simplifiedModel->hasLabel(targetLabel)) {
+                targetLabel = "_" + targetLabel;
+            }
+            this->simplifiedModel->getStateLabeling().addLabel(targetLabel, std::move(statesWithProbability01.second));
             
             // obtain the simplified formula for the simplified model
-            auto labelFormula = std::make_shared<storm::logic::AtomicLabelFormula const> ("target");
+            auto labelFormula = std::make_shared<storm::logic::AtomicLabelFormula const> (targetLabel);
             auto eventuallyFormula = std::make_shared<storm::logic::EventuallyFormula const>(labelFormula, storm::logic::FormulaContext::Probability);
             this->simplifiedFormula = std::make_shared<storm::logic::ProbabilityOperatorFormula const>(eventuallyFormula, formula.getOperatorInformation());
             
             // Eliminate all states for which all outgoing transitions are constant
-            this->simplifiedModel = this->eliminateConstantDeterministicStates(*this->simplifiedModel);
+            storm::storage::BitVector considerForElimination = ~this->simplifiedModel->getInitialStates();
+            if (mergerResult.targetState) {
+                considerForElimination.set(*mergerResult.targetState, false);
+            }
+            if (mergerResult.sinkState) {
+                considerForElimination.set(*mergerResult.sinkState, false);
+            }
+            this->simplifiedModel = this->eliminateConstantDeterministicStates(*this->simplifiedModel, considerForElimination);
                 
             return true;
         }
@@ -82,12 +97,20 @@ namespace storm {
             
             // obtain the resulting subsystem
             storm::transformer::GoalStateMerger<SparseModelType> goalStateMerger(this->originalModel);
-            this->simplifiedModel = goalStateMerger.mergeTargetAndSinkStates(maybeStates, prob0States, psiStates);
-            this->simplifiedModel->getStateLabeling().addLabel("target", psiStates);
-            this->simplifiedModel->getStateLabeling().addLabel("sink", prob0States);
+            typename storm::transformer::GoalStateMerger<SparseModelType>::ReturnType mergerResult =  goalStateMerger.mergeTargetAndSinkStates(maybeStates, psiStates, prob0States);
+            this->simplifiedModel = mergerResult.model;
+            psiStates = storm::storage::BitVector(this->simplifiedModel->getNumberOfStates(), false);
+            if (mergerResult.targetState) {
+                psiStates.set(mergerResult.targetState.get(), true);
+            }
+            std::string targetLabel = "target";
+            while (this->simplifiedModel->hasLabel(targetLabel)) {
+                targetLabel = "_" + targetLabel;
+            }
+            this->simplifiedModel->getStateLabeling().addLabel(targetLabel, std::move(psiStates));
             
             // obtain the simplified formula for the simplified model
-            auto labelFormula = std::make_shared<storm::logic::AtomicLabelFormula const> ("target");
+            auto labelFormula = std::make_shared<storm::logic::AtomicLabelFormula const> (targetLabel);
             auto boundedUntilFormula = std::make_shared<storm::logic::BoundedUntilFormula const>(storm::logic::Formula::getTrueFormula(), labelFormula, boost::none, storm::logic::TimeBound(formula.getSubformula().asBoundedUntilFormula().isUpperBoundStrict(), formula.getSubformula().asBoundedUntilFormula().getUpperBound()), storm::logic::TimeBoundType::Steps);
             this->simplifiedFormula = std::make_shared<storm::logic::ProbabilityOperatorFormula const>(boundedUntilFormula, formula.getOperatorInformation());
             
@@ -116,17 +139,32 @@ namespace storm {
             // obtain the resulting subsystem
             std::vector<std::string> rewardModelNameAsVector(1, formula.hasRewardModelName() ? formula.getRewardModelName() : this->originalModel.getRewardModels().begin()->first);
             storm::transformer::GoalStateMerger<SparseModelType> goalStateMerger(this->originalModel);
-            this->simplifiedModel = goalStateMerger.mergeTargetAndSinkStates(maybeStates, targetStates, infinityStates, rewardModelNameAsVector);
-            this->simplifiedModel->getStateLabeling().addLabel("target", targetStates);
-            this->simplifiedModel->getStateLabeling().addLabel("sink", infinityStates);
+            typename storm::transformer::GoalStateMerger<SparseModelType>::ReturnType mergerResult =  goalStateMerger.mergeTargetAndSinkStates(maybeStates, targetStates, infinityStates, rewardModelNameAsVector);
+            this->simplifiedModel = mergerResult.model;
+            targetStates = storm::storage::BitVector(this->simplifiedModel->getNumberOfStates(), false);
+            if (mergerResult.targetState) {
+                targetStates.set(mergerResult.targetState.get(), true);
+            }
+            std::string targetLabel = "target";
+            while (this->simplifiedModel->hasLabel(targetLabel)) {
+                targetLabel = "_" + targetLabel;
+            }
+            this->simplifiedModel->getStateLabeling().addLabel(targetLabel, std::move(targetStates));
             
             // obtain the simplified formula for the simplified model
-            auto labelFormula = std::make_shared<storm::logic::AtomicLabelFormula const> ("target");
+            auto labelFormula = std::make_shared<storm::logic::AtomicLabelFormula const> (targetLabel);
             auto eventuallyFormula = std::make_shared<storm::logic::EventuallyFormula const>(labelFormula, storm::logic::FormulaContext::Reward);
             this->simplifiedFormula = std::make_shared<storm::logic::RewardOperatorFormula const>(eventuallyFormula, rewardModelNameAsVector.front(), formula.getOperatorInformation(), storm::logic::RewardMeasureType::Expectation);
             
             // Eliminate all states for which all outgoing transitions are constant
-            this->simplifiedModel = this->eliminateConstantDeterministicStates(*this->simplifiedModel, rewardModelNameAsVector.front());
+            storm::storage::BitVector considerForElimination = ~this->simplifiedModel->getInitialStates();
+            if (mergerResult.targetState) {
+                considerForElimination.set(*mergerResult.targetState, false);
+            }
+            if (mergerResult.sinkState) {
+                considerForElimination.set(*mergerResult.sinkState, false);
+            }
+            this->simplifiedModel = this->eliminateConstantDeterministicStates(*this->simplifiedModel, considerForElimination, rewardModelNameAsVector.front());
                 
             return true;
         }
@@ -151,7 +189,8 @@ namespace storm {
             // obtain the resulting subsystem
             std::vector<std::string> rewardModelNameAsVector(1, formula.hasRewardModelName() ? formula.getRewardModelName() : this->originalModel.getRewardModels().begin()->first);
             storm::transformer::GoalStateMerger<SparseModelType> goalStateMerger(this->originalModel);
-            this->simplifiedModel = goalStateMerger.mergeTargetAndSinkStates(maybeStates, noStates, zeroRewardStates, rewardModelNameAsVector);
+            typename storm::transformer::GoalStateMerger<SparseModelType>::ReturnType mergerResult =  goalStateMerger.mergeTargetAndSinkStates(maybeStates, noStates, zeroRewardStates, rewardModelNameAsVector);
+            this->simplifiedModel = mergerResult.model;
             
             // obtain the simplified formula for the simplified model
             this->simplifiedFormula = storm::logic::CloneVisitor().clone(formula);

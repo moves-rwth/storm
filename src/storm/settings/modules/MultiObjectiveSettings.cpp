@@ -12,11 +12,14 @@ namespace storm {
         namespace modules {
             
             const std::string MultiObjectiveSettings::moduleName = "multiobjective";
+            const std::string MultiObjectiveSettings::methodOptionName = "method";
             const std::string MultiObjectiveSettings::exportPlotOptionName = "exportplot";
             const std::string MultiObjectiveSettings::precisionOptionName = "precision";
             const std::string MultiObjectiveSettings::maxStepsOptionName = "maxsteps";
             
             MultiObjectiveSettings::MultiObjectiveSettings() : ModuleSettings(moduleName) {
+                std::vector<std::string> methods = {"pcaa", "constraintbased"};
+                this->addOption(storm::settings::OptionBuilder(moduleName, methodOptionName, true, "The method to be used for multi objective model checking.").addArgument(storm::settings::ArgumentBuilder::createStringArgument("name", "The name of the method to use.").addValidatorString(ArgumentValidatorFactory::createMultipleChoiceValidator(methods)).setDefaultValueString("pcaa").build()).build());
                 this->addOption(storm::settings::OptionBuilder(moduleName, exportPlotOptionName, true, "Saves data for plotting of pareto curves and achievable values.")
                                 .addArgument(storm::settings::ArgumentBuilder::createStringArgument("directory", "A path to a directory in which the results will be saved.").build()).build());
                 this->addOption(storm::settings::OptionBuilder(moduleName, precisionOptionName, true, "The precision used for the approximation of numerical- and pareto queries.")
@@ -25,12 +28,26 @@ namespace storm {
                                 .addArgument(storm::settings::ArgumentBuilder::createUnsignedIntegerArgument("value", "the threshold for the number of refinement steps to be performed.").build()).build());
             }
             
+            storm::modelchecker::multiobjective::MultiObjectiveMethod MultiObjectiveSettings::getMultiObjectiveMethod() const {
+                std::string methodAsString = this->getOption(methodOptionName).getArgumentByName("name").getValueAsString();
+                if (methodAsString == "pcaa") {
+                    return storm::modelchecker::multiobjective::MultiObjectiveMethod::Pcaa;
+                } else  {
+                    STORM_LOG_ASSERT(methodAsString == "constraintbased", "Unexpected method name for multi objective model checking method.");
+                    return storm::modelchecker::multiobjective::MultiObjectiveMethod::ConstraintBased;
+                }
+            }
+            
             bool MultiObjectiveSettings::isExportPlotSet() const {
                 return this->getOption(exportPlotOptionName).getHasOptionBeenSet();
             }
             
             std::string MultiObjectiveSettings::getExportPlotDirectory() const {
-                return this->getOption(exportPlotOptionName).getArgumentByName("directory").getValueAsString();
+                std::string result = this->getOption(exportPlotOptionName).getArgumentByName("directory").getValueAsString();
+                if (result.back() != '/') {
+                    result.push_back('/');
+                }
+                return result;
             }
             
             double MultiObjectiveSettings::getPrecision() const {
