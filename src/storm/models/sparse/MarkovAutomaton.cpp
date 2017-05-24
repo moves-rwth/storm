@@ -147,7 +147,7 @@ namespace storm {
                         }
                     }
                     if(this->hasChoiceLabeling()) {
-                        this->getChoiceLabeling().getSubLabeling(keptChoices);
+                        this->getOptionalChoiceLabeling() = this->getChoiceLabeling().getSubLabeling(keptChoices);
                     }
 
                     // Mark the automaton as closed.
