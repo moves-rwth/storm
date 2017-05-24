@@ -16,7 +16,6 @@
 #include "storm/utility/macros.h"
 #include "storm/utility/vector.h"
 #include "storm/utility/graph.h"
-#include "storm/utility/endComponents.h"
 
 #include "storm/exceptions/InvalidPropertyException.h"
 #include "storm/exceptions/UnexpectedException.h"
@@ -476,7 +475,7 @@ namespace storm {
                 
                 // Assert reward finitiness for maximizing objectives under all schedulers
                 storm::storage::BitVector allStates(result.preprocessedModel->getNumberOfStates(), true);
-                if (storm::utility::endComponents::checkIfECWithChoiceExists(transitions, backwardTransitions, allStates, maxRewardsToCheck)) {
+                if (storm::utility::graph::checkIfECWithChoiceExists(transitions, backwardTransitions, allStates, maxRewardsToCheck)) {
                     STORM_LOG_THROW(false, storm::exceptions::InvalidPropertyException, "At least one of the maximizing objectives induces infinite expected reward (or time). This is not supported");
                 }
                     

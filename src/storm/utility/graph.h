@@ -74,7 +74,20 @@ namespace storm {
              */
             template<typename T>
             storm::storage::BitVector getBsccCover(storm::storage::SparseMatrix<T> const& transitionMatrix);
-            
+        
+            /*!
+             * Checks whether there is an End Component that
+             * 1. contains at least one of the specified choices and
+             * 2. only contains states given by the specified subsystem.
+             *
+             * @param transitionMatrix the transition matrix
+             * @param backwardTransitions The reversed transition relation of the graph structure to search
+             * @param subsystem the subsystem which we consider
+             * @param choices the choices which are to be checked
+             */
+            template <typename T>
+            bool checkIfECWithChoiceExists(storm::storage::SparseMatrix<T> const& transitionMatrix, storm::storage::SparseMatrix<T> const& backwardTransitions, storm::storage::BitVector const& subsystem, storm::storage::BitVector const& choices);
+
             /*!
              * Performs a breadth-first search through the underlying graph structure to compute the distance from all
              * states to the starting states of the search.
