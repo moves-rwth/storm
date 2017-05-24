@@ -308,11 +308,12 @@ namespace storm {
             modelComponents.choiceLabeling = choiceInformationBuilder.buildChoiceLabeling(modelComponents.transitionMatrix.getRowCount());
             
             // if requested, build the state valuations and choice origins
-            if (options.buildStateValuations) {
-                modelComponents.stateValuations = std::make_shared<storm::storage::sparse::StateValuations>(stateStorage.getNumberOfStates());
+            if (generator->getOptions().isBuildStateValuationsSet()) {
+                std::vector<storm::expressions::SimpleValuation> valuations(modelComponents.transitionMatrix.getRowGroupCount());
                 for (auto const& bitVectorIndexPair : stateStorage.stateToId) {
-                    modelComponents.stateValuations->valuations[bitVectorIndexPair.second] = generator->toValuation(bitVectorIndexPair.first);
+                    valuations[bitVectorIndexPair.second] = generator->toValuation(bitVectorIndexPair.first);
                 }
+                modelComponents.stateValuations = storm::storage::sparse::StateValuations(std::move(valuations));
             }
             auto originData = choiceInformationBuilder.buildDataOfChoiceOrigins(modelComponents.transitionMatrix.getRowCount());
             modelComponents.choiceOrigins = generator->generateChoiceOrigins(originData);

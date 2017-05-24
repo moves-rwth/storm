@@ -16,7 +16,6 @@
 #include "storm/storage/expressions/ExpressionEvaluator.h"
 #include "storm/storage/BitVectorHashMap.h"
 #include "storm/logic/Formulas.h"
-#include "storm/models/sparse/StateAnnotation.h"
 #include "storm/models/sparse/Model.h"
 #include "storm/models/sparse/StateLabeling.h"
 #include "storm/models/sparse/ChoiceLabeling.h"
@@ -70,11 +69,11 @@ namespace storm {
                 // A vector that stores which states are markovian.
                 boost::optional<storm::storage::BitVector> markovianStates;
                 
-                // Stores for each state to which variable valuation it belongs (is nullptr if not generated)
-                std::shared_ptr<storm::storage::sparse::StateValuations> stateValuations;
+                // If generated, stores for each state to which variable valuation it belongs
+                boost::optional<storm::storage::sparse::StateValuations> stateValuations;
                 
-                // Stores for each choice from which parts of the input model description it originates (is nullptr if not generated)
-                std::shared_ptr<storm::storage::sparse::ChoiceOrigins> choiceOrigins;
+                // If generated, stores for each choice from which parts of the input model description it originates
+                boost::optional<std::shared_ptr<storm::storage::sparse::ChoiceOrigins>> choiceOrigins;
 
             };
             
@@ -86,10 +85,6 @@ namespace storm {
                 
                 // The order in which to explore the model.
                 ExplorationOrder explorationOrder;
-                
-                // A flag that indicates whether or not to store the state information after successfully building the
-                // model. If it is to be preserved, it is contained in the result obtained from <code> build </code>
-                bool buildStateValuations;
             };
             
             /*!
