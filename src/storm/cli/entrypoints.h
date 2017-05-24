@@ -437,35 +437,15 @@ namespace storm {
                 STORM_LOG_THROW(model->isSparseModel(), storm::exceptions::InvalidStateException, "Expected sparse model.");
                 verifySparseModel<ValueType>(model->as<storm::models::sparse::Model<ValueType>>(), properties, onlyInitialStatesRelevant);
             }
-        }
-
-#ifdef STORM_HAVE_CARL
-        template<>
-        void buildAndCheckExplicitModel<storm::RationalFunction>(std::vector<storm::jani::Property> const& properties, bool onlyInitialStatesRelevant) {
-            storm::settings::modules::IOSettings const& settings = storm::settings::getModule<storm::settings::modules::IOSettings>();
-
-            STORM_LOG_THROW(settings.isExplicitSet() || settings.isExplicitDRNSet(), storm::exceptions::InvalidStateException, "Unable to build explicit model without model files.");
-
-            storm::utility::Stopwatch modelBuildingWatch(true);
-            std::shared_ptr<storm::models::ModelBase> model;
-            STORM_LOG_THROW(!settings.isExplicitSet(), storm::exceptions::NotSupportedException, "Parametric explicit model files are not supported.");
-            model = buildExplicitDRNModel<storm::RationalFunction>(settings.getExplicitDRNFilename());
-            modelBuildingWatch.stop();
-            STORM_PRINT_AND_LOG("Time for model construction: " << modelBuildingWatch << "." << std::endl);
-
-            // Preprocess the model if needed.
-            BRANCH_ON_MODELTYPE(model, model, storm::RationalFunction, storm::dd::DdType::CUDD, preprocessModel, extractFormulasFromProperties(properties));
-
-            // Print some information about the model.
-            model->printModelInformationToStream(std::cout);
-
-            // Verify the model, if a formula was given.
-            if (!properties.empty()) {
-                STORM_LOG_THROW(model->isSparseModel(), storm::exceptions::InvalidStateException, "Expected sparse model.");
-                verifySparseModel<storm::RationalFunction>(model->as<storm::models::sparse::Model<storm::RationalFunction>>(), properties, onlyInitialStatesRelevant);
+            
+            // Export DOT if required.
+            if(storm::settings::getModule<storm::settings::modules::IOSettings>().isExportDotSet()) {
+                std::ofstream stream;
+                storm::utility::openFile(storm::settings::getModule<storm::settings::modules::IOSettings>().getExportDotFilename(), stream);
+                model->as<storm::models::sparse::Model<ValueType>>()->writeDotToStream(stream);
+                storm::utility::closeFile(stream);
             }
-        }
-#endif
 
+        }
     }
 }

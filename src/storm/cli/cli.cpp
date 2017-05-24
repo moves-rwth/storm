@@ -323,6 +323,12 @@ namespace storm {
 #else
                     STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "No parameters are supported in this build.");
 #endif
+                } else if (generalSettings.isExactSet()) {
+#ifdef STORM_HAVE_CARL
+                    buildAndCheckExplicitModel<storm::RationalNumber>(properties, true);
+#else
+                    STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "No exact numbers are supported in this build.");
+#endif
                 } else {
                     buildAndCheckExplicitModel<double>(properties, true);
                 }
