@@ -97,15 +97,9 @@ namespace storm {
         }
         
         template<typename SparseModelType>
-         std::shared_ptr<SparseModelType> SparseParametricModelSimplifier<SparseModelType>::eliminateConstantDeterministicStates(SparseModelType const& model, boost::optional<std::string> const& rewardModelName) {
+         std::shared_ptr<SparseModelType> SparseParametricModelSimplifier<SparseModelType>::eliminateConstantDeterministicStates(SparseModelType const& model, storm::storage::BitVector const& consideredStates, boost::optional<std::string> const& rewardModelName) {
             storm::storage::SparseMatrix<typename SparseModelType::ValueType> const& sparseMatrix = model.getTransitionMatrix();
             
-            // Get the states without any label
-            storm::storage::BitVector considerForElimination(model.getNumberOfStates(), false);
-            for(auto const& label : model.getStateLabeling().getLabels()) {
-                considerForElimination |= model.getStateLabeling().getStates(label);
-            }
-            considerForElimination.complement();
                             
             // get the action-based reward values
             std::vector<typename SparseModelType::ValueType> actionRewards;
@@ -116,8 +110,8 @@ namespace storm {
             }
             
             // Find the states that are to be eliminated
-            storm::storage::BitVector selectedStates = considerForElimination;
-            for (auto state : considerForElimination) {
+            storm::storage::BitVector selectedStates = consideredStates;
+            for (auto state : consideredStates) {
                 if (sparseMatrix.getRowGroupSize(state) == 1 && (!rewardModelName.is_initialized() || storm::utility::isConstant(actionRewards[sparseMatrix.getRowGroupIndices()[state]]))) {
                     for (auto const& entry : sparseMatrix.getRowGroup(state)) {
                         if(!storm::utility::isConstant(entry.getValue())) {

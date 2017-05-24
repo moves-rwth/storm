@@ -113,14 +113,25 @@ namespace storm {
         class FormulaParser;
     }
     
+    
     template<typename ValueType>
-    std::shared_ptr<storm::models::sparse::Model<ValueType>> buildExplicitModel(std::string const& transitionsFile, std::string const& labelingFile, boost::optional<std::string> const& stateRewardsFile = boost::none, boost::optional<std::string> const& transitionRewardsFile = boost::none, boost::optional<std::string> const& choiceLabelingFile = boost::none) {
-        return storm::parser::AutoParser<>::parseModel(transitionsFile, labelingFile, stateRewardsFile ? stateRewardsFile.get() : "", transitionRewardsFile ? transitionRewardsFile.get() : "", choiceLabelingFile ? choiceLabelingFile.get() : "" );
+    inline std::shared_ptr<storm::models::sparse::Model<ValueType>> buildExplicitModel(std::string const&, std::string const&, boost::optional<std::string> const& = boost::none, boost::optional<std::string> const& = boost::none, boost::optional<std::string> const& = boost::none) {
+       STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Exact or parametric models with explicit input are not supported.");
     }
 
+    template<>
+    inline std::shared_ptr<storm::models::sparse::Model<double>> buildExplicitModel(std::string const& transitionsFile, std::string const& labelingFile, boost::optional<std::string> const& stateRewardsFile, boost::optional<std::string> const& transitionRewardsFile, boost::optional<std::string> const& choiceLabelingFile) {
+        return storm::parser::AutoParser<double, double>::parseModel(transitionsFile, labelingFile, stateRewardsFile ? stateRewardsFile.get() : "", transitionRewardsFile ? transitionRewardsFile.get() : "", choiceLabelingFile ? choiceLabelingFile.get() : "" );
+    }
+    
     template<typename ValueType>
-    std::shared_ptr<storm::models::sparse::Model<ValueType>> buildExplicitDRNModel(std::string const& drnFile) {
+    inline std::shared_ptr<storm::models::sparse::Model<ValueType>> buildExplicitDRNModel(std::string const& drnFile) {
         return storm::parser::DirectEncodingParser<ValueType>::parseModel(drnFile);
+    }
+
+    template<>
+    inline std::shared_ptr<storm::models::sparse::Model<storm::RationalNumber>> buildExplicitDRNModel(std::string const&) {
+       STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Exact models with direct encoding are not supported.");
     }
 
     std::vector<std::shared_ptr<storm::logic::Formula const>> extractFormulasFromProperties(std::vector<storm::jani::Property> const& properties);

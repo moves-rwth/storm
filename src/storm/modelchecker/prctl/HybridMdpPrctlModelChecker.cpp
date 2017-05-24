@@ -16,7 +16,7 @@
 
 #include "storm/logic/FragmentSpecification.h"
 
-#include "storm/modelchecker/multiobjective/pcaa.h"
+#include "storm/modelchecker/multiobjective/multiObjectiveModelChecking.h"
 
 #include "storm/solver/MinMaxLinearEquationSolver.h"
 
@@ -126,7 +126,7 @@ namespace storm {
         template<typename ModelType>
         std::unique_ptr<CheckResult> HybridMdpPrctlModelChecker<ModelType>::checkMultiObjectiveFormula(CheckTask<storm::logic::MultiObjectiveFormula, ValueType> const& checkTask) {
             auto sparseModel = storm::transformer::SymbolicMdpToSparseMdpTransformer<DdType, ValueType>::translate(this->getModel());
-            std::unique_ptr<CheckResult> explicitResult = multiobjective::performPcaa(*sparseModel, checkTask.getFormula());
+            std::unique_ptr<CheckResult> explicitResult = multiobjective::performMultiObjectiveModelChecking(*sparseModel, checkTask.getFormula());
 
             // Convert the explicit result
             if(explicitResult->isExplicitQualitativeCheckResult()) {
