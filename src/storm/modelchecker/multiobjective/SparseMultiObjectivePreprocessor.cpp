@@ -379,7 +379,7 @@ namespace storm {
                     storm::storage::BitVector targetStateAsVector(result.preprocessedModel->getNumberOfStates(), false);
                     targetStateAsVector.set(*mergerResult.targetState, true);
                     // The overapproximation for the possible ec choices consists of the states that can reach the target states with prob. 0 and the target state itself.
-                    result.possibleECChoices = result.preprocessedModel->getTransitionMatrix().getRowIndicesOfRowGroups(storm::utility::graph::performProb0E(*result.preprocessedModel, result.preprocessedModel->getBackwardTransitions(), storm::storage::BitVector(targetStateAsVector.size(), true), targetStateAsVector));
+                    result.possibleECChoices = result.preprocessedModel->getTransitionMatrix().getRowFilter(storm::utility::graph::performProb0E(*result.preprocessedModel, result.preprocessedModel->getBackwardTransitions(), storm::storage::BitVector(targetStateAsVector.size(), true), targetStateAsVector));
                     result.possibleECChoices.set(result.preprocessedModel->getTransitionMatrix().getRowGroupIndices()[*mergerResult.targetState], true);
                     // There is an additional state in the result
                     result.possibleBottomStates.resize(result.possibleBottomStates.size() + 1, true);

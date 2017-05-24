@@ -96,7 +96,7 @@ namespace storm {
                 }
                 STORM_LOG_INFO("Weight vector check done. Lower bounds for results in initial state: " << storm::utility::vector::toString(storm::utility::vector::convertNumericVector<double>(getUnderApproximationOfInitialStateResults())));
                 // Validate that the results are sufficiently precise
-                ValueType resultingWeightedPrecision = storm::utility::abs(storm::utility::vector::dotProduct(getOverApproximationOfInitialStateResults(), weightVector) - storm::utility::vector::dotProduct(getUnderApproximationOfInitialStateResults(), weightVector));
+                ValueType resultingWeightedPrecision = storm::utility::abs<ValueType>(storm::utility::vector::dotProduct(getOverApproximationOfInitialStateResults(), weightVector) - storm::utility::vector::dotProduct(getUnderApproximationOfInitialStateResults(), weightVector));
                 resultingWeightedPrecision /= storm::utility::sqrt(storm::utility::vector::dotProduct(weightVector, weightVector));
                 STORM_LOG_THROW(resultingWeightedPrecision <= weightedPrecision, storm::exceptions::UnexpectedException, "The desired precision was not reached");
             }
