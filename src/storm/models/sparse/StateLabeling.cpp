@@ -19,6 +19,10 @@ namespace storm {
                 // Intentionally left empty.
             }
             
+            bool StateLabeling::isStateLabeling() const {
+                return true;
+            }
+            
             bool StateLabeling::operator==(StateLabeling const& other) const {
                 if (itemCount != other.itemCount) {
                     return false;

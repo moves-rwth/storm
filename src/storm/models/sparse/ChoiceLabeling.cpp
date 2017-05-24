@@ -1,4 +1,4 @@
-#include "ChoiceLabeling.h"
+#include "storm/models/sparse/ChoiceLabeling.h"
 
 
 
@@ -21,7 +21,10 @@ namespace storm {
                 // Intentionally left empty.
             }
 
-
+            bool ChoiceLabeling::isChoiceLabeling() const {
+                return true;
+            }
+            
             bool ChoiceLabeling::operator==(ChoiceLabeling const& other) const {
                 if (itemCount != other.itemCount) {
                     return false;
@@ -40,13 +43,9 @@ namespace storm {
                 return true;
             }
 
-
-
             ChoiceLabeling ChoiceLabeling::getSubLabeling(storm::storage::BitVector const& choices) const {
                 return ChoiceLabeling(ItemLabeling::getSubLabeling(choices));
             }
-
-
 
             std::set<std::string> ChoiceLabeling::getLabelsOfChoice(uint64_t choice) const {
                 return this->getLabelsOfItem(choice);

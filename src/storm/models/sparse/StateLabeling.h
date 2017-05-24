@@ -32,6 +32,7 @@ namespace storm {
                 StateLabeling(ItemLabeling const&& other);
                 StateLabeling& operator=(StateLabeling const& other) = default;
                 
+                virtual bool isStateLabeling() const override;
 
                 /*!
                  * Checks whether the two labelings are equal.

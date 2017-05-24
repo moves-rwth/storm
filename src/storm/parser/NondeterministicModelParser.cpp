@@ -6,9 +6,8 @@
 #include "storm/models/sparse/StandardRewardModel.h"
 
 #include "storm/parser/NondeterministicSparseTransitionParser.h"
-#include "storm/parser/AtomicPropositionLabelingParser.h"
+#include "storm/parser/SparseItemLabelingParser.h"
 #include "storm/parser/SparseStateRewardParser.h"
-#include "storm/parser/SparseChoiceLabelingParser.h"
 
 #include "storm/adapters/CarlAdapter.h"
 #include "storm/utility/macros.h"
@@ -25,7 +24,7 @@ namespace storm {
             uint_fast64_t stateCount = transitions.getColumnCount();
 
             // Parse the state labeling.
-            storm::models::sparse::StateLabeling labeling(storm::parser::AtomicPropositionLabelingParser::parseAtomicPropositionLabeling(stateCount, labelingFilename));
+            storm::models::sparse::StateLabeling labeling(storm::parser::SparseItemLabelingParser::parseAtomicPropositionLabeling(stateCount, labelingFilename));
 
             // Only parse state rewards if a file is given.
             boost::optional<std::vector<RewardValueType>> stateRewards;
@@ -42,8 +41,7 @@ namespace storm {
             // Only parse choice labeling if a file is given.
             boost::optional<storm::models::sparse::ChoiceLabeling> choiceLabeling;
             if (!choiceLabelingFilename.empty()) {
-                STORM_LOG_ERROR("Parsing choice labels is currently not implemented"); // TODO
-                //choiceLabeling = std::move(storm::parser::SparseChoiceLabelingParser::parseChoiceLabeling(transitions.getRowGroupIndices(), choiceLabelingFilename));
+                choiceLabeling = storm::parser::SparseItemLabelingParser::parseChoiceLabeling(transitions.getRowCount(), choiceLabelingFilename, transitions.getRowGroupIndices());
             }
 
             // Construct the result.

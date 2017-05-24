@@ -53,6 +53,9 @@ namespace storm {
 
                 //! Optional rewards for each transition.
                 boost::optional<storm::storage::SparseMatrix<RewardValueType>> transitionRewards;
+                
+                //! The labels of each choice.
+                boost::optional<storm::models::sparse::ChoiceLabeling> choiceLabeling;
             };
 
 
@@ -69,12 +72,14 @@ namespace storm {
              * @param labelingFilename The path and name of the file containing the labels for the states of the model.
              * @param stateRewardFilename The path and name of the file containing the state reward of the model. This file is optional.
              * @param transitionRewardFilename The path and name of the file containing the transition rewards of the model. This file is optional.
+             * @param choiceLabelingFilename The path and name of the file containing the choice labeling of the model. This file is optional.
              * @return The parsed Dtmc.
              */
             static storm::models::sparse::Dtmc<ValueType, storm::models::sparse::StandardRewardModel<RewardValueType>> parseDtmc(std::string const& transitionsFilename,
                     std::string const & labelingFilename,
                     std::string const & stateRewardFilename = "",
-                    std::string const & transitionRewardFilename = "");
+                    std::string const & transitionRewardFilename = "",
+                    std::string const & choiceLabelingFilename = "");
 
             /*!
              * Parse a Ctmc.
@@ -89,12 +94,16 @@ namespace storm {
              * @param labelingFilename The path and name of the file containing the labels for the states of the model.
              * @param stateRewardFilename The path and name of the file containing the state reward of the model. This file is optional.
              * @param transitionRewardFilename The path and name of the file containing the transition rewards of the model. This file is optional.
+             * @param choiceLabelingFilename The path and name of the file containing the choice labeling of the model. This file is optional.
+
              * @return The parsed Ctmc.
              */
             static storm::models::sparse::Ctmc<ValueType, storm::models::sparse::StandardRewardModel<RewardValueType>> parseCtmc(std::string const& transitionsFilename,
                     std::string const & labelingFilename,
                     std::string const & stateRewardFilename = "",
-                    std::string const & transitionRewardFilename = "");
+                    std::string const & transitionRewardFilename = "",
+                    std::string const & choiceLabelingFilename = "");
+
 
         private:
 
@@ -109,12 +118,14 @@ namespace storm {
              * @param labelingFilename The path and name of the file containing the labels for the states of the model.
              * @param stateRewardFilename The path and name of the file containing the state reward of the model. This file is optional.
              * @param transitionRewardFilename The path and name of the file containing the transition rewards of the model. This file is optional.
+             * @param choiceLabelingFilename The path and name of the file containing the choice labeling of the model. This file is optional.
              * @return The parsed model encapsulated in a Result structure.
              */
             static Result parseDeterministicModel(std::string const& transitionsFilename,
                     std::string const& labelingFilename,
                     std::string const& stateRewardFilename = "",
-                    std::string const& transitionRewardFilename = "");
+                    std::string const& transitionRewardFilename = "",
+                    std::string const & choiceLabelingFilename = "");
         };
 
     } /* namespace parser */

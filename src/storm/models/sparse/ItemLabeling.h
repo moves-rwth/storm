@@ -15,6 +15,9 @@ namespace storm {
     namespace models {
         namespace sparse {
 
+            class StateLabeling;
+            class ChoiceLabeling;
+            
             /*!
              * A base class managing the labeling of items with a number of (atomic) labels.
              */
@@ -31,6 +34,14 @@ namespace storm {
                 ItemLabeling& operator=(ItemLabeling const& other) = default;
 
 
+                virtual bool isStateLabeling() const;
+                virtual bool isChoiceLabeling() const;
+                
+                StateLabeling const& asStateLabeling() const;
+                StateLabeling& asStateLabeling();
+                ChoiceLabeling const& asChoiceLabeling() const;
+                ChoiceLabeling& asChoiceLabeling();
+                
                 /*!
                  * Checks whether the two labelings are equal.
                  *

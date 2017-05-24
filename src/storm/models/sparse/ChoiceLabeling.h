@@ -24,7 +24,8 @@ namespace storm {
                 ChoiceLabeling(ItemLabeling const&& other);
                 ChoiceLabeling& operator=(ChoiceLabeling const& other) = default;
 
-
+                virtual bool isChoiceLabeling() const override ;
+  
                 /*!
                  * Checks whether the two labelings are equal.
                  *

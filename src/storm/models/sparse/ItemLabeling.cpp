@@ -1,5 +1,8 @@
 #include "storm/models/sparse/ItemLabeling.h"
 
+#include "storm/models/sparse/StateLabeling.h"
+#include "storm/models/sparse/ChoiceLabeling.h"
+
 #include "storm/exceptions/OutOfRangeException.h"
 #include "storm/exceptions/InvalidArgumentException.h"
 
@@ -11,6 +14,26 @@ namespace storm {
                 // Intentionally left empty.
             }
 
+            bool ItemLabeling::isStateLabeling() const {
+                return false;
+            }
+            bool ItemLabeling::isChoiceLabeling() const {
+                return false;
+            }
+            
+            StateLabeling const& ItemLabeling::asStateLabeling() const {
+                return dynamic_cast<StateLabeling const&>(*this);
+            }
+            StateLabeling& ItemLabeling::asStateLabeling() {
+                return dynamic_cast<StateLabeling&>(*this);
+            }
+            ChoiceLabeling const& ItemLabeling::asChoiceLabeling() const {
+                return dynamic_cast<ChoiceLabeling const&>(*this);
+            }
+            ChoiceLabeling& ItemLabeling::asChoiceLabeling() {
+                return dynamic_cast<ChoiceLabeling&>(*this);
+            }
+            
             bool ItemLabeling::operator==(ItemLabeling const& other) const {
                 if (itemCount != other.itemCount) {
                     return false;
