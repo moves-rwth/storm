@@ -138,6 +138,10 @@ namespace storm {
     storm::builder::ExplicitModelBuilderResult<ValueType> buildSparseModel(storm::storage::SymbolicModelDescription const& model, std::vector<std::shared_ptr<storm::logic::Formula const>> const& formulas) {
         storm::builder::BuilderOptions options(formulas);
         
+        if (storm::settings::getModule<storm::settings::modules::IOSettings>().isBuildChoiceLabelsSet()) {
+            options.setBuildChoiceLabels(true);
+        }
+        
         if (storm::settings::getModule<storm::settings::modules::IOSettings>().isBuildFullModelSet()) {
             options.setBuildAllLabels();
             options.setBuildAllRewardModels();
