@@ -82,12 +82,12 @@ namespace storm {
         }
         
         template <storm::dd::DdType DdType, typename ValueType>
-        std::shared_ptr<storm::models::symbolic::Model<DdType, ValueType>> BisimulationDecomposition<DdType, ValueType>::getQuotient() const {
+        std::shared_ptr<storm::models::Model<ValueType>> BisimulationDecomposition<DdType, ValueType>::getQuotient() const {
             STORM_LOG_THROW(this->status == Status::FixedPoint, storm::exceptions::InvalidOperationException, "Cannot extract quotient, because bisimulation decomposition was not completed.");
 
             STORM_LOG_TRACE("Starting quotient extraction.");
             QuotientExtractor<DdType, ValueType> extractor;
-            std::shared_ptr<storm::models::symbolic::Model<DdType, ValueType>> quotient = extractor.extract(model, currentPartition);
+            std::shared_ptr<storm::models::Model<ValueType>> quotient = extractor.extract(model, currentPartition);
             STORM_LOG_TRACE("Quotient extraction done.");
             
             return quotient;

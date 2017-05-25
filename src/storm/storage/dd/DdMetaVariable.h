@@ -78,6 +78,16 @@ namespace storm {
              */
             uint64_t getHighestLevel() const;
             
+            /*!
+             * Retrieves the indices of the DD variables associated with this meta variable sorted by level.
+             */
+            std::vector<uint64_t> getIndices() const;
+            
+            /*!
+             * Retrieves the indices and levels of the DD variables associated with this meta variable.
+             */
+            std::vector<std::pair<uint64_t, uint64_t>> getIndicesAndLevels() const;
+
         private:
             /*!
              * Creates an integer meta variable with the given name and range bounds.

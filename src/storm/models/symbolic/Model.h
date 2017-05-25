@@ -10,7 +10,7 @@
 #include "storm/storage/expressions/Variable.h"
 #include "storm/storage/dd/DdType.h"
 #include "storm/storage/dd/Bdd.h"
-#include "storm/models/ModelBase.h"
+#include "storm/models/Model.h"
 #include "storm/utility/OsDetection.h"
 
 #include "storm-config.h"
@@ -45,7 +45,7 @@ namespace storm {
              * Base class for all symbolic models.
              */
             template<storm::dd::DdType Type, typename CValueType = double>
-            class Model : public storm::models::ModelBase {
+            class Model : public storm::models::Model<CValueType> {
             public:
                 typedef CValueType ValueType;
                 

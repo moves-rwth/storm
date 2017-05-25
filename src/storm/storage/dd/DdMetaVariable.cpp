@@ -50,6 +50,28 @@ namespace storm {
         }
         
         template<DdType LibraryType>
+        std::vector<uint64_t> DdMetaVariable<LibraryType>::getIndices() const {
+            std::vector<std::pair<uint64_t, uint64_t>> indicesAndLevels = this->getIndicesAndLevels();
+            std::sort(indicesAndLevels.begin(), indicesAndLevels.end(), [] (std::pair<uint64_t, uint64_t> const& a, std::pair<uint64_t, uint64_t> const& b) { return a.second < b.second; });
+            
+            std::vector<uint64_t> indices;
+            for (auto const& e : indicesAndLevels) {
+                indices.emplace_back(e.first);
+            }
+            
+            return indices;
+        }
+        
+        template<DdType LibraryType>
+        std::vector<std::pair<uint64_t, uint64_t>> DdMetaVariable<LibraryType>::getIndicesAndLevels() const {
+            std::vector<std::pair<uint64_t, uint64_t>> indicesAndLevels;
+            for (auto const& v : ddVariables) {
+                indicesAndLevels.emplace_back(v.getIndex(), v.getLevel());
+            }
+            return indicesAndLevels;
+        }
+        
+        template<DdType LibraryType>
         uint64_t DdMetaVariable<LibraryType>::getHighestLevel() const {
             uint64_t result = 0;
             bool first = true;

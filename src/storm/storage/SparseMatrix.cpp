@@ -125,41 +125,47 @@ namespace storm {
             // the insertion.
             bool fixCurrentRow = row == lastRow && column < lastColumn;
             
-            // If we switched to another row, we have to adjust the missing entries in the row indices vector.
-            if (row != lastRow) {
-                // Otherwise, we need to push the correct values to the vectors, which might trigger reallocations.
-                for (index_type i = lastRow + 1; i <= row; ++i) {
-                    rowIndications.push_back(currentEntryCount);
+            // If the element is in the same row and column as the previous entry, we add them up.
+            if (row == lastRow && column == lastColumn) {
+                columnsAndValues.back().setColumn(column);
+                columnsAndValues.back().setValue(value);
+            } else {
+                // If we switched to another row, we have to adjust the missing entries in the row indices vector.
+                if (row != lastRow) {
+                    // Otherwise, we need to push the correct values to the vectors, which might trigger reallocations.
+                    for (index_type i = lastRow + 1; i <= row; ++i) {
+                        rowIndications.push_back(currentEntryCount);
+                    }
+                    
+                    lastRow = row;
                 }
                 
-                lastRow = row;
-            }
-            
-            lastColumn = column;
-            
-            // Finally, set the element and increase the current size.
-            columnsAndValues.emplace_back(column, value);
-            highestColumn = std::max(highestColumn, column);
-            ++currentEntryCount;
-            
-            // If we need to fix the row, do so now.
-            if (fixCurrentRow) {
-                // First, we sort according to columns.
-                std::sort(columnsAndValues.begin() + rowIndications.back(), columnsAndValues.end(), [] (storm::storage::MatrixEntry<index_type, ValueType> const& a, storm::storage::MatrixEntry<index_type, ValueType> const& b) {
-                    return a.getColumn() < b.getColumn();
-                });
+                lastColumn = column;
                 
-                // Then, we eliminate possible duplicate entries.
-                auto it = std::unique(columnsAndValues.begin() + rowIndications.back(), columnsAndValues.end(), [] (storm::storage::MatrixEntry<index_type, ValueType> const& a, storm::storage::MatrixEntry<index_type, ValueType> const& b) {
-                    return a.getColumn() == b.getColumn();
-                });
+                // Finally, set the element and increase the current size.
+                columnsAndValues.emplace_back(column, value);
+                highestColumn = std::max(highestColumn, column);
+                ++currentEntryCount;
                 
-                // Finally, remove the superfluous elements.
-                std::size_t elementsToRemove = std::distance(it, columnsAndValues.end());
-                if (elementsToRemove > 0) {
-                    STORM_LOG_WARN("Unordered insertion into matrix builder caused duplicate entries.");
-                    currentEntryCount -= elementsToRemove;
-                    columnsAndValues.resize(columnsAndValues.size() - elementsToRemove);
+                // If we need to fix the row, do so now.
+                if (fixCurrentRow) {
+                    // First, we sort according to columns.
+                    std::sort(columnsAndValues.begin() + rowIndications.back(), columnsAndValues.end(), [] (storm::storage::MatrixEntry<index_type, ValueType> const& a, storm::storage::MatrixEntry<index_type, ValueType> const& b) {
+                        return a.getColumn() < b.getColumn();
+                    });
+                    
+                    // Then, we eliminate possible duplicate entries.
+                    auto it = std::unique(columnsAndValues.begin() + rowIndications.back(), columnsAndValues.end(), [] (storm::storage::MatrixEntry<index_type, ValueType> const& a, storm::storage::MatrixEntry<index_type, ValueType> const& b) {
+                        return a.getColumn() == b.getColumn();
+                    });
+                    
+                    // Finally, remove the superfluous elements.
+                    std::size_t elementsToRemove = std::distance(it, columnsAndValues.end());
+                    if (elementsToRemove > 0) {
+                        STORM_LOG_WARN("Unordered insertion into matrix builder caused duplicate entries.");
+                        currentEntryCount -= elementsToRemove;
+                        columnsAndValues.resize(columnsAndValues.size() - elementsToRemove);
+                    }
                 }
             }
             

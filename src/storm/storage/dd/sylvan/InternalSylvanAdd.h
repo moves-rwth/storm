@@ -605,6 +605,13 @@ namespace storm {
              */
             sylvan::Mtbdd getSylvanMtbdd() const;
 
+            /*!
+             * Retrieves the value of the given node (that must be a leaf).
+             *
+             * @return The value of the leaf.
+             */
+            static ValueType getValue(MTBDD const& node);
+
         private:
             /*!
              * Recursively builds the ODD from an ADD.
@@ -732,13 +739,6 @@ namespace storm {
 			*/
 			static MTBDD getLeaf(storm::RationalFunction const& value);
 #endif
-            
-            /*!
-             * Retrieves the value of the given node (that must be a leaf).
-             *
-             * @return The value of the leaf.
-             */
-            static ValueType getValue(MTBDD const& node);
             
             // The manager responsible for this MTBDD.
             InternalDdManager<DdType::Sylvan> const* ddManager;

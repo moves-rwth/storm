@@ -595,7 +595,6 @@ namespace storm {
             
             InternalDdManager<DdType::CUDD> const& getInternalDdManager() const;
             
-        private:
             /*!
              * Retrieves the CUDD ADD object associated with this ADD.
              *
@@ -610,6 +609,7 @@ namespace storm {
              */
             DdNode* getCuddDdNode() const;
             
+        private:
             /*!
              * Performs a recursive step to perform the given function between the given DD-based vector and the given
              * explicit vector.

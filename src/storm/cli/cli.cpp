@@ -277,8 +277,6 @@ namespace storm {
 
                 model = model.preprocess(constantDefinitions);
                 
-
-                
                 if (ioSettings.isNoBuildModelSet()) {
                     return;
                 }

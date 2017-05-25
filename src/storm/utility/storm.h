@@ -194,7 +194,7 @@ namespace storm {
         if (storm::settings::getModule<storm::settings::modules::GeneralSettings>().isBisimulationSet()) {
             storm::dd::BisimulationDecomposition<LibraryType, ValueType> decomposition(*result, formulas);
             decomposition.compute();
-            result = decomposition.getQuotient();
+            result = std::dynamic_pointer_cast<storm::models::symbolic::Model<LibraryType, ValueType>>(decomposition.getQuotient());
         }
         
         return result;

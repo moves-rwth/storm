@@ -33,7 +33,7 @@ namespace storm {
             /*!
              * Retrieves the quotient model after the bisimulation decomposition was computed.
              */
-            std::shared_ptr<storm::models::symbolic::Model<DdType, ValueType>> getQuotient() const;
+            std::shared_ptr<storm::models::Model<ValueType>> getQuotient() const;
             
         private:
             // The status of the computation.

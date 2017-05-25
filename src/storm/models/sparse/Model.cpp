@@ -20,7 +20,7 @@ namespace storm {
                                     storm::models::sparse::StateLabeling const& stateLabeling,
                                     std::unordered_map<std::string, RewardModelType> const& rewardModels,
                                     boost::optional<std::vector<LabelSet>> const& optionalChoiceLabeling)
-            : ModelBase(modelType), transitionMatrix(transitionMatrix), stateLabeling(stateLabeling),
+            : storm::models::Model<ValueType>(modelType), transitionMatrix(transitionMatrix), stateLabeling(stateLabeling),
             rewardModels(rewardModels), choiceLabeling(optionalChoiceLabeling) {
                 for (auto const& rewardModel : this->getRewardModels()) {
                     STORM_LOG_THROW(!rewardModel.second.hasTransitionRewards() || rewardModel.second.getTransitionRewardMatrix().isSubmatrixOf(this->getTransitionMatrix()), storm::exceptions::IllegalArgumentException, "The transition reward matrix is not a submatrix of the transition matrix, i.e. there are rewards for transitions that do not exist.");
@@ -33,7 +33,7 @@ namespace storm {
                                     storm::models::sparse::StateLabeling&& stateLabeling,
                                     std::unordered_map<std::string, RewardModelType>&& rewardModels,
                                     boost::optional<std::vector<LabelSet>>&& optionalChoiceLabeling)
-            : ModelBase(modelType), transitionMatrix(std::move(transitionMatrix)), stateLabeling(std::move(stateLabeling)),
+            : storm::models::Model<ValueType>(modelType), transitionMatrix(std::move(transitionMatrix)), stateLabeling(std::move(stateLabeling)),
             rewardModels(std::move(rewardModels)), choiceLabeling(std::move(optionalChoiceLabeling)) {
                 for (auto const& rewardModel : this->getRewardModels()) {
                     STORM_LOG_THROW(!rewardModel.second.hasTransitionRewards() || rewardModel.second.getTransitionRewardMatrix().isSubmatrixOf(this->getTransitionMatrix()), storm::exceptions::IllegalArgumentException, "The transition reward matrix is not a submatrix of the transition matrix, i.e. there are rewards for transitions that do not exist.");

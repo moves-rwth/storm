@@ -387,7 +387,6 @@ namespace storm {
             
             friend struct std::hash<storm::dd::InternalBdd<storm::dd::DdType::CUDD>>;
             
-        private:
             /*!
              * Retrieves the CUDD BDD object associated with this DD.
              *
@@ -402,6 +401,7 @@ namespace storm {
              */
             DdNode* getCuddDdNode() const;
             
+        private:
             /*!
              * Builds a BDD representing the values that make the given filter function evaluate to true.
              *

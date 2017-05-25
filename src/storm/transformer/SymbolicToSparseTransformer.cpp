@@ -29,6 +29,7 @@ namespace storm {
 
         template<storm::dd::DdType Type, typename ValueType>
         std::shared_ptr<storm::models::sparse::Dtmc<ValueType>> SymbolicDtmcToSparseDtmcTransformer<Type, ValueType>::translate(storm::models::symbolic::Dtmc<Type, ValueType> const& symbolicDtmc) {
+            
             this->odd = symbolicDtmc.getReachableStates().createOdd();
             storm::storage::SparseMatrix<ValueType> transitionMatrix = symbolicDtmc.getTransitionMatrix().toMatrix(this->odd, this->odd);
             std::unordered_map<std::string, storm::models::sparse::StandardRewardModel<ValueType>> rewardModels;

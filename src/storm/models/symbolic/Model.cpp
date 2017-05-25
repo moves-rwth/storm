@@ -35,7 +35,7 @@ namespace storm {
                                           std::vector<std::pair<storm::expressions::Variable, storm::expressions::Variable>> const& rowColumnMetaVariablePairs,
                                           std::map<std::string, storm::expressions::Expression> labelToExpressionMap,
                                           std::unordered_map<std::string, RewardModelType> const& rewardModels)
-            : ModelBase(modelType), manager(manager), reachableStates(reachableStates), transitionMatrix(transitionMatrix), rowVariables(rowVariables), rowExpressionAdapter(rowExpressionAdapter), columnVariables(columnVariables), rowColumnMetaVariablePairs(rowColumnMetaVariablePairs), labelToExpressionMap(labelToExpressionMap), rewardModels(rewardModels) {
+            : storm::models::Model<ValueType>(modelType), manager(manager), reachableStates(reachableStates), transitionMatrix(transitionMatrix), rowVariables(rowVariables), rowExpressionAdapter(rowExpressionAdapter), columnVariables(columnVariables), rowColumnMetaVariablePairs(rowColumnMetaVariablePairs), labelToExpressionMap(labelToExpressionMap), rewardModels(rewardModels) {
                 this->labelToBddMap.emplace("init", initialStates);
                 this->labelToBddMap.emplace("deadlock", deadlockStates);
             }
@@ -52,7 +52,7 @@ namespace storm {
                                           std::vector<std::pair<storm::expressions::Variable, storm::expressions::Variable>> const& rowColumnMetaVariablePairs,
                                           std::map<std::string, storm::dd::Bdd<Type>> labelToBddMap,
                                           std::unordered_map<std::string, RewardModelType> const& rewardModels)
-            : ModelBase(modelType), manager(manager), reachableStates(reachableStates), transitionMatrix(transitionMatrix), rowVariables(rowVariables), rowExpressionAdapter(nullptr), columnVariables(columnVariables), rowColumnMetaVariablePairs(rowColumnMetaVariablePairs), labelToBddMap(labelToBddMap), rewardModels(rewardModels) {
+            : storm::models::Model<ValueType>(modelType), manager(manager), reachableStates(reachableStates), transitionMatrix(transitionMatrix), rowVariables(rowVariables), rowExpressionAdapter(nullptr), columnVariables(columnVariables), rowColumnMetaVariablePairs(rowColumnMetaVariablePairs), labelToBddMap(labelToBddMap), rewardModels(rewardModels) {
                 STORM_LOG_THROW(this->labelToBddMap.find("init") == this->labelToBddMap.end(), storm::exceptions::WrongFormatException, "Illegal custom label 'init'.");
                 STORM_LOG_THROW(this->labelToBddMap.find("deadlock") == this->labelToBddMap.end(), storm::exceptions::WrongFormatException, "Illegal custom label 'deadlock'.");
                 this->labelToBddMap.emplace("init", initialStates);

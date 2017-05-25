@@ -6,7 +6,7 @@
 #include <boost/container/flat_set.hpp>
 #include <boost/optional.hpp>
 
-#include "storm/models/ModelBase.h"
+#include "storm/models/Model.h"
 #include "storm/models/sparse/StateLabeling.h"
 #include "storm/storage/sparse/StateType.h"
 #include "storm/storage/SparseMatrix.h"
@@ -35,7 +35,7 @@ namespace storm {
              * Base class for all sparse models.
              */
             template<class CValueType, class CRewardModelType = StandardRewardModel<CValueType>>
-            class Model : public storm::models::ModelBase {
+            class Model : public storm::models::Model<CValueType> {
                 template<typename ParametricModelType, typename ConstantModelType>
                 friend class storm::utility::ModelInstantiator;
                 

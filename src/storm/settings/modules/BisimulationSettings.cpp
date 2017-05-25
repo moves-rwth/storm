@@ -22,7 +22,7 @@ namespace storm {
                 this->addOption(storm::settings::OptionBuilder(moduleName, typeOptionName, true, "Sets the kind of bisimulation quotienting used.").addArgument(storm::settings::ArgumentBuilder::createStringArgument("name", "The name of the type to use.").addValidatorString(ArgumentValidatorFactory::createMultipleChoiceValidator(types)).setDefaultValueString("strong").build()).build());
                 
                 std::vector<std::string> quotTypes = { "sparse", "dd" };
-                this->addOption(storm::settings::OptionBuilder(moduleName, typeOptionName, true, "Sets the format in which the quotient is extracted (only applies to DD-based bisimulation).").addArgument(storm::settings::ArgumentBuilder::createStringArgument("format", "The format of the quotient.").addValidatorString(ArgumentValidatorFactory::createMultipleChoiceValidator(quotTypes)).setDefaultValueString("dd").build()).build());
+                this->addOption(storm::settings::OptionBuilder(moduleName, quotientFormatOptionName, true, "Sets the format in which the quotient is extracted (only applies to DD-based bisimulation).").addArgument(storm::settings::ArgumentBuilder::createStringArgument("format", "The format of the quotient.").addValidatorString(ArgumentValidatorFactory::createMultipleChoiceValidator(quotTypes)).setDefaultValueString("dd").build()).build());
                 
                 this->addOption(storm::settings::OptionBuilder(moduleName, representativeOptionName, false, "Sets whether to use representatives in the quotient rather than block numbers.").build());
             }
@@ -42,7 +42,7 @@ namespace storm {
             }
             
             BisimulationSettings::QuotientFormat BisimulationSettings::getQuotientFormat() const {
-                std::string quotientFormatAsString = this->getOption(typeOptionName).getArgumentByName("format").getValueAsString();
+                std::string quotientFormatAsString = this->getOption(quotientFormatOptionName).getArgumentByName("format").getValueAsString();
                 if (quotientFormatAsString == "sparse") {
                     return BisimulationSettings::QuotientFormat::Sparse;
                 }
