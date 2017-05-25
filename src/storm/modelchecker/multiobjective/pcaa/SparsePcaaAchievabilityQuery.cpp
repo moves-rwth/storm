@@ -7,9 +7,11 @@
 #include "storm/modelchecker/results/ExplicitQualitativeCheckResult.h"
 #include "storm/utility/constants.h"
 #include "storm/utility/vector.h"
-#include "storm/settings//SettingsManager.h"
+#include "storm/settings/SettingsManager.h"
 #include "storm/settings/modules/GeneralSettings.h"
 #include "storm/settings/modules/MultiObjectiveSettings.h"
+
+#include "storm/exceptions/InvalidOperationException.h"
 
 namespace storm {
     namespace modelchecker {
@@ -17,8 +19,8 @@ namespace storm {
             
             
             template <class SparseModelType, typename GeometryValueType>
-            SparsePcaaAchievabilityQuery<SparseModelType, GeometryValueType>::SparsePcaaAchievabilityQuery(SparsePcaaPreprocessorReturnType<SparseModelType>& preprocessorResult) : SparsePcaaQuery<SparseModelType, GeometryValueType>(preprocessorResult) {
-                STORM_LOG_ASSERT(preprocessorResult.queryType==SparsePcaaPreprocessorReturnType<SparseModelType>::QueryType::Achievability, "Invalid query Type");
+            SparsePcaaAchievabilityQuery<SparseModelType, GeometryValueType>::SparsePcaaAchievabilityQuery(SparseMultiObjectivePreprocessorReturnType<SparseModelType>& preprocessorResult) : SparsePcaaQuery<SparseModelType, GeometryValueType>(preprocessorResult) {
+                STORM_LOG_ASSERT(preprocessorResult.queryType==SparseMultiObjectivePreprocessorReturnType<SparseModelType>::QueryType::Achievability, "Invalid query Type");
                 initializeThresholdData();
                 
                 // Set the precision of the weight vector checker. Will be refined during the computation
@@ -30,8 +32,17 @@ namespace storm {
                 thresholds.reserve(this->objectives.size());
                 strictThresholds = storm::storage::BitVector(this->objectives.size(), false);
                 for(uint_fast64_t objIndex = 0; objIndex < this->objectives.size(); ++objIndex) {
-                    thresholds.push_back(storm::utility::convertNumber<GeometryValueType>(*this->objectives[objIndex].threshold));
-                    strictThresholds.set(objIndex, this->objectives[objIndex].thresholdIsStrict);
+                    auto const& obj = this->objectives[objIndex];
+                    STORM_LOG_ASSERT(obj.bound.is_initialized(), "Achievability query invoked but there is an objective without bound.");
+                    STORM_LOG_THROW(!obj.bound->threshold.containsVariables(), storm::exceptions::InvalidOperationException, "There is an objective whose bound contains undefined variables.");
+                    thresholds.push_back(storm::utility::convertNumber<GeometryValueType>(obj.bound->threshold.evaluateAsRational()));
+                    if (storm::solver::minimize(obj.optimizationDirection)) {
+                        STORM_LOG_ASSERT(!storm::logic::isLowerBound(obj.bound->comparisonType), "Minimizing objective should not specify an upper bound.");
+                        // Values for minimizing objectives will be negated in order to convert them to maximizing objectives.
+                        // Hence, we also negate the threshold
+                        thresholds.back() *= -storm::utility::one<GeometryValueType>();
+                    }
+                    strictThresholds.set(objIndex, storm::logic::isStrict(obj.bound->comparisonType));
                 }
             }
             
@@ -105,7 +116,7 @@ namespace storm {
             template class SparsePcaaAchievabilityQuery<storm::models::sparse::MarkovAutomaton<double>, storm::RationalNumber>;
             
             template class SparsePcaaAchievabilityQuery<storm::models::sparse::Mdp<storm::RationalNumber>, storm::RationalNumber>;
-         //   template class SparsePcaaAchievabilityQuery<storm::models::sparse::MarkovAutomaton<storm::RationalNumber>, storm::RationalNumber>;
+            template class SparsePcaaAchievabilityQuery<storm::models::sparse::MarkovAutomaton<storm::RationalNumber>, storm::RationalNumber>;
 #endif
         }
     }

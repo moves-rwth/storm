@@ -2,7 +2,7 @@
 
 #include "storm/modelchecker/csl/helper/SparseMarkovAutomatonCslHelper.h"
 
-#include "storm/modelchecker/multiobjective/pcaa.h"
+#include "storm/modelchecker/multiobjective/multiObjectiveModelChecking.h"
 
 #include "storm/models/sparse/StandardRewardModel.h"
 
@@ -66,7 +66,7 @@ namespace storm {
                 upperBound = storm::utility::infinity<double>();
             }
 
-            std::vector<ValueType> result = storm::modelchecker::helper::SparseMarkovAutomatonCslHelper<ValueType>::computeBoundedUntilProbabilities(checkTask.getOptimizationDirection(), this->getModel().getTransitionMatrix(), this->getModel().getExitRates(), this->getModel().getMarkovianStates(), rightResult.getTruthValuesVector(), std::make_pair(lowerBound, upperBound), *minMaxLinearEquationSolverFactory);
+            std::vector<ValueType> result = storm::modelchecker::helper::SparseMarkovAutomatonCslHelper::computeBoundedUntilProbabilities(checkTask.getOptimizationDirection(), this->getModel().getTransitionMatrix(), this->getModel().getExitRates(), this->getModel().getMarkovianStates(), rightResult.getTruthValuesVector(), std::make_pair(lowerBound, upperBound), *minMaxLinearEquationSolverFactory);
             return std::unique_ptr<CheckResult>(new ExplicitQuantitativeCheckResult<ValueType>(std::move(result)));
         }
                 
@@ -78,7 +78,7 @@ namespace storm {
             std::unique_ptr<CheckResult> rightResultPointer = this->check(pathFormula.getRightSubformula());
             ExplicitQualitativeCheckResult& leftResult = leftResultPointer->asExplicitQualitativeCheckResult();
             ExplicitQualitativeCheckResult& rightResult = rightResultPointer->asExplicitQualitativeCheckResult();
-            std::vector<ValueType> result = storm::modelchecker::helper::SparseMarkovAutomatonCslHelper<ValueType>::computeUntilProbabilities(checkTask.getOptimizationDirection(), this->getModel().getTransitionMatrix(), this->getModel().getBackwardTransitions(), leftResult.getTruthValuesVector(), rightResult.getTruthValuesVector(), checkTask.isQualitativeSet(), *minMaxLinearEquationSolverFactory);
+            std::vector<ValueType> result = storm::modelchecker::helper::SparseMarkovAutomatonCslHelper::computeUntilProbabilities(checkTask.getOptimizationDirection(), this->getModel().getTransitionMatrix(), this->getModel().getBackwardTransitions(), leftResult.getTruthValuesVector(), rightResult.getTruthValuesVector(), checkTask.isQualitativeSet(), *minMaxLinearEquationSolverFactory);
             return std::unique_ptr<CheckResult>(new ExplicitQuantitativeCheckResult<ValueType>(std::move(result)));
         }
                 
@@ -90,7 +90,7 @@ namespace storm {
             std::unique_ptr<CheckResult> subResultPointer = this->check(eventuallyFormula.getSubformula());
             ExplicitQualitativeCheckResult const& subResult = subResultPointer->asExplicitQualitativeCheckResult();
 
-            std::vector<ValueType> result = storm::modelchecker::helper::SparseMarkovAutomatonCslHelper<ValueType>::computeReachabilityRewards(checkTask.getOptimizationDirection(), this->getModel().getTransitionMatrix(), this->getModel().getBackwardTransitions(), this->getModel().getExitRates(), this->getModel().getMarkovianStates(), checkTask.isRewardModelSet() ? this->getModel().getRewardModel(checkTask.getRewardModel()) : this->getModel().getRewardModel(""), subResult.getTruthValuesVector(), *minMaxLinearEquationSolverFactory);
+            std::vector<ValueType> result = storm::modelchecker::helper::SparseMarkovAutomatonCslHelper::computeReachabilityRewards(checkTask.getOptimizationDirection(), this->getModel().getTransitionMatrix(), this->getModel().getBackwardTransitions(), this->getModel().getExitRates(), this->getModel().getMarkovianStates(), checkTask.isRewardModelSet() ? this->getModel().getRewardModel(checkTask.getRewardModel()) : this->getModel().getRewardModel(""), subResult.getTruthValuesVector(), *minMaxLinearEquationSolverFactory);
 
             return std::unique_ptr<CheckResult>(new ExplicitQuantitativeCheckResult<ValueType>(std::move(result)));
         }
@@ -103,7 +103,7 @@ namespace storm {
             std::unique_ptr<CheckResult> subResultPointer = this->check(stateFormula);
             ExplicitQualitativeCheckResult const& subResult = subResultPointer->asExplicitQualitativeCheckResult();
 
-            std::vector<ValueType> result = storm::modelchecker::helper::SparseMarkovAutomatonCslHelper<ValueType>::computeLongRunAverageProbabilities(checkTask.getOptimizationDirection(), this->getModel().getTransitionMatrix(), this->getModel().getBackwardTransitions(), this->getModel().getExitRates(), this->getModel().getMarkovianStates(), subResult.getTruthValuesVector(), *minMaxLinearEquationSolverFactory);
+            std::vector<ValueType> result = storm::modelchecker::helper::SparseMarkovAutomatonCslHelper::computeLongRunAverageProbabilities(checkTask.getOptimizationDirection(), this->getModel().getTransitionMatrix(), this->getModel().getBackwardTransitions(), this->getModel().getExitRates(), this->getModel().getMarkovianStates(), subResult.getTruthValuesVector(), *minMaxLinearEquationSolverFactory);
             return std::unique_ptr<CheckResult>(new ExplicitQuantitativeCheckResult<ValueType>(std::move(result)));
         }
                 
@@ -115,15 +115,16 @@ namespace storm {
             std::unique_ptr<CheckResult> subResultPointer = this->check(eventuallyFormula.getSubformula());
             ExplicitQualitativeCheckResult& subResult = subResultPointer->asExplicitQualitativeCheckResult();
 
-            std::vector<ValueType> result = storm::modelchecker::helper::SparseMarkovAutomatonCslHelper<ValueType>::computeTimes(checkTask.getOptimizationDirection(), this->getModel().getTransitionMatrix(), this->getModel().getBackwardTransitions(), this->getModel().getExitRates(), this->getModel().getMarkovianStates(), subResult.getTruthValuesVector(), *minMaxLinearEquationSolverFactory);
+            std::vector<ValueType> result = storm::modelchecker::helper::SparseMarkovAutomatonCslHelper::computeReachabilityTimes(checkTask.getOptimizationDirection(), this->getModel().getTransitionMatrix(), this->getModel().getBackwardTransitions(), this->getModel().getExitRates(), this->getModel().getMarkovianStates(), subResult.getTruthValuesVector(), *minMaxLinearEquationSolverFactory);
             return std::unique_ptr<CheckResult>(new ExplicitQuantitativeCheckResult<ValueType>(std::move(result)));
         }
         
         template<typename SparseMarkovAutomatonModelType>
         std::unique_ptr<CheckResult> SparseMarkovAutomatonCslModelChecker<SparseMarkovAutomatonModelType>::checkMultiObjectiveFormula(CheckTask<storm::logic::MultiObjectiveFormula, ValueType> const& checkTask) {
-            return multiobjective::performPcaa(this->getModel(), checkTask.getFormula());
+            return multiobjective::performMultiObjectiveModelChecking(this->getModel(), checkTask.getFormula());
         }
         
         template class SparseMarkovAutomatonCslModelChecker<storm::models::sparse::MarkovAutomaton<double>>;
+        template class SparseMarkovAutomatonCslModelChecker<storm::models::sparse::MarkovAutomaton<storm::RationalNumber>>;
     }
 }

@@ -40,11 +40,9 @@ namespace storm {
                 StandardRewardModel(StandardRewardModel<ValueType> const& dtmc) = default;
                 StandardRewardModel& operator=(StandardRewardModel<ValueType> const& dtmc) = default;
                 
-#ifndef WINDOWS
                 StandardRewardModel(StandardRewardModel<ValueType>&& dtmc) = default;
                 StandardRewardModel& operator=(StandardRewardModel<ValueType>&& dtmc) = default;
-#endif
-                
+
                 /*!
                  * Retrieves whether the reward model has state rewards.
                  *
@@ -238,6 +236,15 @@ namespace storm {
                  */
                  template<typename MatrixValueType>
                  storm::storage::BitVector getStatesWithZeroReward(storm::storage::SparseMatrix<MatrixValueType> const& transitionMatrix) const;
+                
+                /*!
+                 * Returns the set of choices at which all rewards (state-, action- and transition-rewards) are zero.
+                 *
+                 * @param transitionMatrix the transition matrix of the model (used to determine the state that belongs to a choice
+                 * @ return a vector representing all choices at which the reward is zero
+                 */
+                 template<typename MatrixValueType>
+                 storm::storage::BitVector getChoicesWithZeroReward(storm::storage::SparseMatrix<MatrixValueType> const& transitionMatrix) const;
                  
                 /*!
                  * Sets the given value in the state-action reward vector at the given row. This assumes that the reward

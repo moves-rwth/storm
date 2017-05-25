@@ -15,6 +15,7 @@
 #include "storm/settings/modules/JaniExportSettings.h"
 
 #include "storm/utility/resources.h"
+#include "storm/utility/file.h"
 #include "storm/utility/storm-version.h"
 
 
@@ -241,6 +242,13 @@ namespace storm {
                             properties.push_back(input.second.at(propName));
                         }
                     }
+
+                    if(ioSettings.isExportJaniDotSet()) {
+                        std::ofstream out;
+                        storm::utility::openFile(ioSettings.getExportJaniDotFilename(), out);
+                        model.asJaniModel().writeDotToStream(out);
+                        storm::utility::closeFile(out);
+                    }
                     
                 }
                 
@@ -312,6 +320,12 @@ namespace storm {
                     buildAndCheckExplicitModel<storm::RationalFunction>(properties, true);
 #else
                     STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "No parameters are supported in this build.");
+#endif
+                } else if (generalSettings.isExactSet()) {
+#ifdef STORM_HAVE_CARL
+                    buildAndCheckExplicitModel<storm::RationalNumber>(properties, true);
+#else
+                    STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "No exact numbers are supported in this build.");
 #endif
                 } else {
                     buildAndCheckExplicitModel<double>(properties, true);

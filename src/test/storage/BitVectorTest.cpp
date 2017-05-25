@@ -482,6 +482,21 @@ TEST(BitVectorTest, NextSetIndex) {
     ASSERT_EQ(vector.size(), vector.getNextSetIndex(18));
 }
 
+TEST(BitVectorTest, NextUnsetIndex) {
+    storm::storage::BitVector vector(32);
+    
+    vector.set(14);
+    vector.set(17);
+    
+    vector.complement();
+    
+    ASSERT_EQ(14ul, vector.getNextUnsetIndex(14));
+    ASSERT_EQ(17ul, vector.getNextUnsetIndex(15));
+    ASSERT_EQ(17ul, vector.getNextUnsetIndex(16));
+    ASSERT_EQ(17ul, vector.getNextUnsetIndex(17));
+    ASSERT_EQ(vector.size(), vector.getNextUnsetIndex(18));
+}
+
 TEST(BitVectorTest, Iterator) {
     storm::storage::BitVector vector(32);
     

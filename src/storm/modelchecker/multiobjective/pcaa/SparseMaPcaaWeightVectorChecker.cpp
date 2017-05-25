@@ -7,6 +7,7 @@
 #include "storm/models/sparse/StandardRewardModel.h"
 #include "storm/utility/macros.h"
 #include "storm/utility/vector.h"
+#include "storm/solver/GmmxxLinearEquationSolver.h"
 
 #include "storm/exceptions/InvalidOperationException.h"
 #include "storm/exceptions/InvalidPropertyException.h"
@@ -15,17 +16,17 @@ namespace storm {
     namespace modelchecker {
         namespace multiobjective {
             
+            
             template <class SparseMaModelType>
             SparseMaPcaaWeightVectorChecker<SparseMaModelType>::SparseMaPcaaWeightVectorChecker(SparseMaModelType const& model,
-                                                                                                std::vector<PcaaObjective<ValueType>> const& objectives,
-                                                                                                storm::storage::BitVector const& actionsWithNegativeReward,
-                                                                                                storm::storage::BitVector const& ecActions,
-                                                                                                storm::storage::BitVector const& possiblyRecurrentStates) :
-            SparsePcaaWeightVectorChecker<SparseMaModelType>(model, objectives, actionsWithNegativeReward, ecActions, possiblyRecurrentStates) {
+                                                                                                std::vector<Objective<ValueType>> const& objectives,
+                                                                                                storm::storage::BitVector const& possibleECActions,
+                                                                                                storm::storage::BitVector const& possibleBottomStates) :
+            SparsePcaaWeightVectorChecker<SparseMaModelType>(model, objectives, possibleECActions, possibleBottomStates) {
                 // Set the (discretized) state action rewards.
                 this->discreteActionRewards.resize(objectives.size());
                 for(auto objIndex : this->objectivesWithNoUpperTimeBound) {
-                    typename SparseMaModelType::RewardModelType const& rewModel = this->model.getRewardModel(this->objectives[objIndex].rewardModelName);
+                    typename SparseMaModelType::RewardModelType const& rewModel = this->model.getRewardModel(*this->objectives[objIndex].rewardModelName);
                     STORM_LOG_ASSERT(!rewModel.hasTransitionRewards(), "Preprocessed Reward model has transition rewards which is not expected.");
                     this->discreteActionRewards[objIndex] = rewModel.hasStateActionRewards() ? rewModel.getStateActionRewardVector() : std::vector<ValueType>(this->model.getTransitionMatrix().getRowCount(), storm::utility::zero<ValueType>());
                     if(rewModel.hasStateRewards()) {
@@ -101,14 +102,14 @@ namespace storm {
                 
                 storm::storage::BitVector probabilisticStates = ~this->model.getMarkovianStates();
                 result.states = createMS ? this->model.getMarkovianStates() : probabilisticStates;
-                result.choices = this->model.getTransitionMatrix().getRowIndicesOfRowGroups(result.states);
+                result.choices = this->model.getTransitionMatrix().getRowFilter(result.states);
                 STORM_LOG_ASSERT(!createMS || result.states.getNumberOfSetBits() == result.choices.getNumberOfSetBits(), "row groups for Markovian states should consist of exactly one row");
                 
                 //We need to add diagonal entries for selfloops on Markovian states.
                 result.toMS = this->model.getTransitionMatrix().getSubmatrix(true, result.states, this->model.getMarkovianStates(), createMS);
                 result.toPS = this->model.getTransitionMatrix().getSubmatrix(true, result.states, probabilisticStates, false);
                 STORM_LOG_ASSERT(result.getNumberOfStates() == result.states.getNumberOfSetBits() && result.getNumberOfStates() == result.toMS.getRowGroupCount() && result.getNumberOfStates() == result.toPS.getRowGroupCount(), "Invalid state count for subsystem");
-                STORM_LOG_ASSERT(result.getNumberOfChoices() == result.choices.getNumberOfSetBits() && result.getNumberOfChoices() == result.toMS.getRowCount() && result.getNumberOfChoices() == result.toPS.getRowCount(), "Invalid state count for subsystem");
+                STORM_LOG_ASSERT(result.getNumberOfChoices() == result.choices.getNumberOfSetBits() && result.getNumberOfChoices() == result.toMS.getRowCount() && result.getNumberOfChoices() == result.toPS.getRowCount(), "Invalid choice count for subsystem");
                 
                 result.weightedRewardVector.resize(result.getNumberOfChoices());
                 storm::utility::vector::selectVectorValues(result.weightedRewardVector, result.choices, weightedRewardVector);
@@ -119,7 +120,7 @@ namespace storm {
                     if(this->objectivesWithNoUpperTimeBound.get(objIndex)) {
                         storm::utility::vector::selectVectorValues(objVector, result.choices, this->discreteActionRewards[objIndex]);
                     } else {
-                        typename SparseMaModelType::RewardModelType const& rewModel = this->model.getRewardModel(this->objectives[objIndex].rewardModelName);
+                        typename SparseMaModelType::RewardModelType const& rewModel = this->model.getRewardModel(*this->objectives[objIndex].rewardModelName);
                         STORM_LOG_ASSERT(!rewModel.hasTransitionRewards(), "Preprocessed Reward model has transition rewards which is not expected.");
                         STORM_LOG_ASSERT(!rewModel.hasStateRewards(), "State rewards for bounded objectives for MAs are not expected (bounded rewards are not supported).");
                         if(rewModel.hasStateActionRewards()) {
@@ -160,8 +161,8 @@ namespace storm {
                 VT smallestNonZeroBound = storm::utility::zero<VT>();
                 for(auto const& obj : this->objectives) {
                     if(obj.upperTimeBound){
-                        STORM_LOG_THROW(!obj.upperTimeBound->containsVariables(), storm::exceptions::InvalidOperationException, "The time bound '" << *obj.upperTimeBound << " contains undefined variables");
-                        timeBounds.push_back(storm::utility::convertNumber<VT>(obj.upperTimeBound->evaluateAsRational()));
+                        STORM_LOG_THROW(!obj.upperTimeBound->getBound().containsVariables(), storm::exceptions::InvalidOperationException, "The time bound '" << obj.upperTimeBound->getBound() << " contains undefined variables");
+                        timeBounds.push_back(storm::utility::convertNumber<VT>(obj.upperTimeBound->getBound().evaluateAsRational()));
                         STORM_LOG_ASSERT(!storm::utility::isZero(timeBounds.back()), "Got zero-valued upper time bound.");
                         eToPowerOfMinusMaxRateTimesBound.push_back(std::exp(-maxRate * timeBounds.back()));
                         smallestNonZeroBound = storm::utility::isZero(smallestNonZeroBound) ? timeBounds.back() : std::min(smallestNonZeroBound, timeBounds.back());
@@ -259,7 +260,7 @@ namespace storm {
                     VT errorTowardsZero = storm::utility::zero<VT>();
                     VT errorAwayFromZero = storm::utility::zero<VT>();
                     if(obj.upperTimeBound) {
-                        VT timeBound = storm::utility::convertNumber<VT>(obj.upperTimeBound->evaluateAsRational());
+                        VT timeBound = storm::utility::convertNumber<VT>(obj.upperTimeBound->getBound().evaluateAsRational());
                         uint_fast64_t digitizedBound = storm::utility::convertNumber<uint_fast64_t>(timeBound/digitizationConstant);
                         auto timeBoundIt = upperTimeBounds.insert(std::make_pair(digitizedBound, storm::storage::BitVector(this->objectives.size(), false))).first;
                         timeBoundIt->second.set(objIndex);
@@ -267,12 +268,12 @@ namespace storm {
                         digitizationError -= std::exp(-maxRate * timeBound) * storm::utility::pow(storm::utility::one<VT>() + maxRate * digitizationConstant, digitizedBound);
                         errorAwayFromZero += digitizationError;
                     }
-                    if (obj.rewardsArePositive) {
-                        this->offsetsToLowerBound[objIndex] = -errorTowardsZero;
-                        this->offsetsToUpperBound[objIndex] = errorAwayFromZero;
+                    if (storm::solver::maximize(obj.optimizationDirection)) {
+                        this->offsetsToUnderApproximation[objIndex] = -errorTowardsZero;
+                        this->offsetsToOverApproximation[objIndex] = errorAwayFromZero;
                     } else {
-                        this->offsetsToLowerBound[objIndex] = -errorAwayFromZero;
-                        this->offsetsToUpperBound[objIndex] = errorTowardsZero;
+                        this->offsetsToUnderApproximation[objIndex] = errorAwayFromZero;
+                        this->offsetsToOverApproximation[objIndex] = -errorTowardsZero;
                     }
                 }
             } 
@@ -298,13 +299,22 @@ namespace storm {
             }
 
             template <class SparseMaModelType>
+            template <typename VT, typename std::enable_if<storm::NumberTraits<VT>::SupportsExponential, int>::type>
             std::unique_ptr<typename SparseMaPcaaWeightVectorChecker<SparseMaModelType>::LinEqSolverData> SparseMaPcaaWeightVectorChecker<SparseMaModelType>::initLinEqSolver(SubModel const& PS) const {
                 std::unique_ptr<LinEqSolverData> result(new LinEqSolverData());
+                auto factory = std::make_unique<storm::solver::GmmxxLinearEquationSolverFactory<ValueType>>();
                 // We choose Jacobi since we call the solver very frequently on 'easy' inputs (note that jacobi without preconditioning has very little overhead).
-                result->factory.getSettings().setSolutionMethod(storm::solver::GmmxxLinearEquationSolverSettings<ValueType>::SolutionMethod::Jacobi);
-                result->factory.getSettings().setPreconditioner(storm::solver::GmmxxLinearEquationSolverSettings<ValueType>::Preconditioner::None);
+                factory->getSettings().setSolutionMethod(storm::solver::GmmxxLinearEquationSolverSettings<ValueType>::SolutionMethod::Jacobi);
+                factory->getSettings().setPreconditioner(storm::solver::GmmxxLinearEquationSolverSettings<ValueType>::Preconditioner::None);
+                result->factory = std::move(factory);
                 result->b.resize(PS.getNumberOfStates());
                 return result;
+            }
+              
+            template <class SparseMaModelType>
+            template <typename VT, typename std::enable_if<!storm::NumberTraits<VT>::SupportsExponential, int>::type>
+            std::unique_ptr<typename SparseMaPcaaWeightVectorChecker<SparseMaModelType>::LinEqSolverData> SparseMaPcaaWeightVectorChecker<SparseMaModelType>::initLinEqSolver(SubModel const& PS) const {
+                STORM_LOG_THROW(false, storm::exceptions::InvalidOperationException, "Computing bounded probabilities of MAs is unsupported for this value type.");
             }
             
             template <class SparseMaModelType>
@@ -314,8 +324,9 @@ namespace storm {
                     consideredObjectives |= upperTimeBoundIt->second;
                     for(auto objIndex : upperTimeBoundIt->second) {
                         // This objective now plays a role in the weighted sum
-                        storm::utility::vector::addScaledVector(MS.weightedRewardVector, MS.objectiveRewardVectors[objIndex], weightVector[objIndex]);
-                        storm::utility::vector::addScaledVector(PS.weightedRewardVector, PS.objectiveRewardVectors[objIndex], weightVector[objIndex]);
+                        ValueType factor = storm::solver::minimize(this->objectives[objIndex].optimizationDirection) ? -weightVector[objIndex] : weightVector[objIndex];
+                        storm::utility::vector::addScaledVector(MS.weightedRewardVector, MS.objectiveRewardVectors[objIndex], factor);
+                        storm::utility::vector::addScaledVector(PS.weightedRewardVector, PS.objectiveRewardVectors[objIndex], factor);
                     }
                     ++upperTimeBoundIt;
                 }
@@ -334,6 +345,9 @@ namespace storm {
                     // In this case there is no need to perform the computation on the individual objectives
                     optimalChoicesAtCurrentEpoch = newScheduler->getChoices();
                     PS.objectiveSolutionVectors[*consideredObjectives.begin()] = PS.weightedSolutionVector;
+                    if (storm::solver::minimize(this->objectives[*consideredObjectives.begin()].optimizationDirection)) {
+                        storm::utility::vector::scaleVectorInPlace(PS.objectiveSolutionVectors[*consideredObjectives.begin()], -storm::utility::one<ValueType>());
+                    }
                 } else {
                     // check whether the linEqSolver needs to be updated, i.e., whether the scheduler has changed
                     if(linEq.solver == nullptr || newScheduler->getChoices() != optimalChoicesAtCurrentEpoch) {
@@ -341,7 +355,7 @@ namespace storm {
                         linEq.solver = nullptr;
                         storm::storage::SparseMatrix<ValueType> linEqMatrix = PS.toPS.selectRowsFromRowGroups(optimalChoicesAtCurrentEpoch, true);
                         linEqMatrix.convertToEquationSystem();
-                        linEq.solver = linEq.factory.create(std::move(linEqMatrix));
+                        linEq.solver = linEq.factory->create(std::move(linEqMatrix));
                         linEq.solver->setCachingEnabled(true);
                     }
                     
@@ -378,6 +392,9 @@ namespace storm {
                 if(consideredObjectives.getNumberOfSetBits() == 1 && storm::utility::isOne(weightVector[*consideredObjectives.begin()])) {
                     // In this case there is no need to perform the computation on the individual objectives
                     MS.objectiveSolutionVectors[*consideredObjectives.begin()] = MS.weightedSolutionVector;
+                    if (storm::solver::minimize(this->objectives[*consideredObjectives.begin()].optimizationDirection)) {
+                        storm::utility::vector::scaleVectorInPlace(MS.objectiveSolutionVectors[*consideredObjectives.begin()], -storm::utility::one<ValueType>());
+                    }
                 } else {
                     for(auto objIndex : consideredObjectives) {
                         MS.toMS.multiplyWithVector(MS.objectiveSolutionVectors[objIndex], MS.auxChoiceValues);
@@ -393,11 +410,13 @@ namespace storm {
             template double SparseMaPcaaWeightVectorChecker<storm::models::sparse::MarkovAutomaton<double>>::getDigitizationConstant<double>(std::vector<double> const& direction) const;
             template void SparseMaPcaaWeightVectorChecker<storm::models::sparse::MarkovAutomaton<double>>::digitize<double>(SparseMaPcaaWeightVectorChecker<storm::models::sparse::MarkovAutomaton<double>>::SubModel& subModel, double const& digitizationConstant) const;
             template void SparseMaPcaaWeightVectorChecker<storm::models::sparse::MarkovAutomaton<double>>::digitizeTimeBounds<double>( SparseMaPcaaWeightVectorChecker<storm::models::sparse::MarkovAutomaton<double>>::TimeBoundMap& upperTimeBounds, double const& digitizationConstant);
+            template std::unique_ptr<typename SparseMaPcaaWeightVectorChecker<storm::models::sparse::MarkovAutomaton<double>>::LinEqSolverData>  SparseMaPcaaWeightVectorChecker<storm::models::sparse::MarkovAutomaton<double>>::initLinEqSolver<double>( SparseMaPcaaWeightVectorChecker<storm::models::sparse::MarkovAutomaton<double>>::SubModel const& PS ) const;
 #ifdef STORM_HAVE_CARL
-//            template class SparseMaPcaaWeightVectorChecker<storm::models::sparse::MarkovAutomaton<storm::RationalNumber>>;
-   //         template storm::RationalNumber SparseMaPcaaWeightVectorChecker<storm::models::sparse::MarkovAutomaton<storm::RationalNumber>>::getDigitizationConstant<storm::RationalNumber>(std::vector<double> const& direction) const;
- //           template void SparseMaPcaaWeightVectorChecker<storm::models::sparse::MarkovAutomaton<storm::RationalNumber>>::digitize<storm::RationalNumber>(SparseMaPcaaWeightVectorChecker<storm::models::sparse::MarkovAutomaton<storm::RationalNumber>>::SubModel& subModel, storm::RationalNumber const& digitizationConstant) const;
-//            template void SparseMaPcaaWeightVectorChecker<storm::models::sparse::MarkovAutomaton<storm::RationalNumber>>::digitizeTimeBounds<storm::RationalNumber>(SparseMaPcaaWeightVectorChecker<storm::models::sparse::MarkovAutomaton<double>>::TimeBoundMap& upperTimeBounds, storm::RationalNumber const& digitizationConstant);
+            template class SparseMaPcaaWeightVectorChecker<storm::models::sparse::MarkovAutomaton<storm::RationalNumber>>;
+            template storm::RationalNumber SparseMaPcaaWeightVectorChecker<storm::models::sparse::MarkovAutomaton<storm::RationalNumber>>::getDigitizationConstant<storm::RationalNumber>(std::vector<storm::RationalNumber> const& direction) const;
+            template void SparseMaPcaaWeightVectorChecker<storm::models::sparse::MarkovAutomaton<storm::RationalNumber>>::digitize<storm::RationalNumber>(SparseMaPcaaWeightVectorChecker<storm::models::sparse::MarkovAutomaton<storm::RationalNumber>>::SubModel& subModel, storm::RationalNumber const& digitizationConstant) const;
+            template void SparseMaPcaaWeightVectorChecker<storm::models::sparse::MarkovAutomaton<storm::RationalNumber>>::digitizeTimeBounds<storm::RationalNumber>(SparseMaPcaaWeightVectorChecker<storm::models::sparse::MarkovAutomaton<storm::RationalNumber>>::TimeBoundMap& upperTimeBounds, storm::RationalNumber const& digitizationConstant);
+            template std::unique_ptr<typename SparseMaPcaaWeightVectorChecker<storm::models::sparse::MarkovAutomaton<storm::RationalNumber>>::LinEqSolverData>  SparseMaPcaaWeightVectorChecker<storm::models::sparse::MarkovAutomaton<storm::RationalNumber>>::initLinEqSolver<storm::RationalNumber>( SparseMaPcaaWeightVectorChecker<storm::models::sparse::MarkovAutomaton<storm::RationalNumber>>::SubModel const& PS ) const;
 #endif
             
         }

@@ -1,18 +1,12 @@
-#ifndef STORM_MODELCHECKER_MULTIOBJECTIVE_PCAA_SPARSEPCAAPREPROCESSORRETURNTYPE_H_
-#define STORM_MODELCHECKER_MULTIOBJECTIVE_PCAA_SPARSEPCAAPREPROCESSORRETURNTYPE_H_
+#pragma once
 
 #include <vector>
 #include <memory>
-#include <iomanip>
-#include <type_traits>
 #include <boost/optional.hpp>
 
 #include "storm/logic/Formulas.h"
-#include "storm/modelchecker/multiobjective/pcaa/PcaaObjective.h"
-#include "storm/models/sparse/MarkovAutomaton.h"
+#include "storm/modelchecker/multiobjective/Objective.h"
 #include "storm/storage/BitVector.h"
-#include "storm/utility/macros.h"
-#include "storm/utility/constants.h"
 
 #include "storm/exceptions/UnexpectedException.h"
 
@@ -21,36 +15,24 @@ namespace storm {
         namespace multiobjective {
             
             template <class SparseModelType>
-            struct SparsePcaaPreprocessorReturnType {
+            struct SparseMultiObjectivePreprocessorReturnType {
                 
                 enum class QueryType { Achievability, Quantitative, Pareto };
                 
                 storm::logic::MultiObjectiveFormula const& originalFormula;
                 SparseModelType const& originalModel;
-                SparseModelType preprocessedModel;
+                std::shared_ptr<SparseModelType> preprocessedModel;
                 QueryType queryType;
                 
                 // The (preprocessed) objectives
-                std::vector<PcaaObjective<typename SparseModelType::ValueType>> objectives;
+                std::vector<Objective<typename SparseModelType::ValueType>> objectives;
                 
-                // The index of the objective that is to be maximized (or minimized) in case of a quantitative Query
-                boost::optional<uint_fast64_t> indexOfOptimizingObjective;
-
-                // Maps any state of the preprocessed model to the corresponding state of the original Model
-                std::vector<uint_fast64_t> newToOldStateIndexMapping;
+                // The states for which there is a scheduler such that all objectives have value zero
+                storm::storage::BitVector possibleBottomStates;
+                // Overapproximation of the set of choices that are part of an end component.
+                storm::storage::BitVector possibleECChoices;
                 
-                // The actions of the preprocessed model that have positive reward assigned for at least one objective (objectives with an upper time-bound are ignored!)
-                storm::storage::BitVector actionsWithPositiveReward;
-                // The actions of the preprocessed model that have negative reward assigned for at least one objective (objectives with an upper time-bound are ignored!)
-                storm::storage::BitVector actionsWithNegativeReward;
-                // The actions of the preprocessed model that are part of an EC
-                storm::storage::BitVector ecActions;
-                
-                // The set of states of the preprocessed model for which there is a scheduler such that
-                // the state is visited infinitely often and the induced reward is finite for all objectives
-                storm::storage::BitVector possiblyRecurrentStates;
-                
-                SparsePcaaPreprocessorReturnType(storm::logic::MultiObjectiveFormula const& originalFormula, SparseModelType const& originalModel, SparseModelType&& preprocessedModel) : originalFormula(originalFormula), originalModel(originalModel), preprocessedModel(preprocessedModel) {
+                SparseMultiObjectivePreprocessorReturnType(storm::logic::MultiObjectiveFormula const& originalFormula, SparseModelType const& originalModel) : originalFormula(originalFormula), originalModel(originalModel) {
                     // Intentionally left empty
                 }
                 
@@ -75,12 +57,12 @@ namespace storm {
                     originalModel.printModelInformationToStream(out);
                     out << std::endl;
                     out << "Preprocessed Model Information:" << std::endl;
-                    preprocessedModel.printModelInformationToStream(out);
+                    preprocessedModel->printModelInformationToStream(out);
                     out << std::endl;
                     out << "---------------------------------------------------------------------------------------------------------------------------------------" << std::endl;
                 }
            
-                friend std::ostream& operator<<(std::ostream& out, SparsePcaaPreprocessorReturnType<SparseModelType> const& ret) {
+                friend std::ostream& operator<<(std::ostream& out, SparseMultiObjectivePreprocessorReturnType<SparseModelType> const& ret) {
                     ret.printToStream(out);
                     return out;
                 }
@@ -90,4 +72,3 @@ namespace storm {
     }
 }
 
-#endif /* STORM_MODELCHECKER_MULTIOBJECTIVE_PCAA_SPARSEPCAAPREPROCESSORRETURNTYPE_H_ */

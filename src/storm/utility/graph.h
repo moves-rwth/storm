@@ -74,7 +74,20 @@ namespace storm {
              */
             template<typename T>
             storm::storage::BitVector getBsccCover(storm::storage::SparseMatrix<T> const& transitionMatrix);
-            
+        
+            /*!
+             * Checks whether there is an End Component that
+             * 1. contains at least one of the specified choices and
+             * 2. only contains states given by the specified subsystem.
+             *
+             * @param transitionMatrix the transition matrix
+             * @param backwardTransitions The reversed transition relation of the graph structure to search
+             * @param subsystem the subsystem which we consider
+             * @param choices the choices which are to be checked
+             */
+            template <typename T>
+            bool checkIfECWithChoiceExists(storm::storage::SparseMatrix<T> const& transitionMatrix, storm::storage::SparseMatrix<T> const& backwardTransitions, storm::storage::BitVector const& subsystem, storm::storage::BitVector const& choices);
+
             /*!
              * Performs a breadth-first search through the underlying graph structure to compute the distance from all
              * states to the starting states of the search.
@@ -365,7 +378,7 @@ namespace storm {
              * @return A bit vector that represents all states with probability 0.
              */
             template <typename T>
-            storm::storage::BitVector performProbGreater0A(storm::storage::SparseMatrix<T> const& transitionMatrix, std::vector<uint_fast64_t> const& nondeterministicChoiceIndices, storm::storage::SparseMatrix<T> const& backwardTransitions, storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates, bool useStepBound = false, uint_fast64_t maximalSteps = 0);
+            storm::storage::BitVector performProbGreater0A(storm::storage::SparseMatrix<T> const& transitionMatrix, std::vector<uint_fast64_t> const& nondeterministicChoiceIndices, storm::storage::SparseMatrix<T> const& backwardTransitions, storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates, bool useStepBound = false, uint_fast64_t maximalSteps = 0, boost::optional<storm::storage::BitVector> const& choiceConstraint = boost::none);
             
             /*!
              * Computes the sets of states that have probability 0 of satisfying phi until psi under at least

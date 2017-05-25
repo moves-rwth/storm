@@ -14,10 +14,8 @@ namespace storm {
             BooleanVariable() = default;
             BooleanVariable(BooleanVariable const& other) = default;
             BooleanVariable& operator=(BooleanVariable const& other)= default;
-#ifndef WINDOWS
             BooleanVariable(BooleanVariable&& other) = default;
             BooleanVariable& operator=(BooleanVariable&& other) = default;
-#endif
 
             /*!
              * Creates a boolean variable with the given constant initial value expression.

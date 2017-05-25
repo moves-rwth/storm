@@ -27,10 +27,9 @@ namespace storm {
             // Instantiate constructors and assignments with their default implementations.
             BinaryRelationExpression(BinaryRelationExpression const& other) = default;
             BinaryRelationExpression& operator=(BinaryRelationExpression const& other) = default;
-#ifndef WINDOWS
             BinaryRelationExpression(BinaryRelationExpression&&) = default;
             BinaryRelationExpression& operator=(BinaryRelationExpression&&) = default;
-#endif
+
             virtual ~BinaryRelationExpression() = default;
             
             // Override base class methods.

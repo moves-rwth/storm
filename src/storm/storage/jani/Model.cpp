@@ -1,5 +1,7 @@
 #include "storm/storage/jani/Model.h"
 
+#include <algorithm>
+
 #include "storm/storage/expressions/ExpressionManager.h"
 
 
@@ -1164,6 +1166,33 @@ namespace storm {
             newModel.setSystemComposition(newModel.getStandardSystemComposition());
             
             return newModel;
+        }
+
+
+        // Helper for writeDotToStream:
+
+        std::string filterName(std::string const& text)  {
+            std::string result = text;
+            std::replace_if(result.begin() , result.end() ,
+                            [] (const char& c) { return std::ispunct(c) ;},'_');
+            return result;
+        }
+
+
+        void Model::writeDotToStream(std::ostream& outStream) const {
+            outStream << "digraph " << filterName(name) << " {" << std::endl;
+
+            std::vector<std::string> actionNames;
+            for (auto const& act : actions) {
+                actionNames.push_back(act.getName());
+            }
+
+            for (auto const& automaton : automata) {
+                automaton.writeDotToStream(outStream, actionNames);
+                outStream << std::endl;
+            }
+
+            outStream << "}";
         }
     }
 }

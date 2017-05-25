@@ -58,7 +58,7 @@ namespace storm {
                 NativePolytope(EmptyStatus&& emptyStatus, EigenMatrix&& halfspaceMatrix, EigenVector&& halfspaceVector);
                 
 
-                ~NativePolytope();
+                virtual ~NativePolytope();
 
                 /*!
                  * Returns the vertices of this polytope.

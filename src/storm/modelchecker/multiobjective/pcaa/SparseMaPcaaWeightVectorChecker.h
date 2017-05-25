@@ -6,7 +6,6 @@
 
 #include "storm/modelchecker/multiobjective/pcaa/SparsePcaaWeightVectorChecker.h"
 #include "storm/solver/LinearEquationSolver.h"
-#include "storm/solver/GmmxxLinearEquationSolver.h"
 #include "storm/solver/MinMaxLinearEquationSolver.h"
 #include "storm/utility/NumberTraits.h"
 
@@ -26,10 +25,9 @@ namespace storm {
                 typedef typename SparseMaModelType::ValueType ValueType;
                 
                 SparseMaPcaaWeightVectorChecker(SparseMaModelType const& model,
-                                                          std::vector<PcaaObjective<ValueType>> const& objectives,
-                                                          storm::storage::BitVector const& actionsWithNegativeReward,
-                                                          storm::storage::BitVector const& ecActions,
-                                                          storm::storage::BitVector const& possiblyRecurrentStates);
+                                                        std::vector<Objective<ValueType>> const& objectives,
+                                                        storm::storage::BitVector const& possibleECActions,
+                                                        storm::storage::BitVector const& possibleBottomStates);
                 
                 virtual ~SparseMaPcaaWeightVectorChecker() = default;
 
@@ -71,7 +69,7 @@ namespace storm {
                 };
                 
                 struct LinEqSolverData {
-                    storm::solver::GmmxxLinearEquationSolverFactory<ValueType> factory;
+                    std::unique_ptr<storm::solver::LinearEquationSolverFactory<ValueType>> factory;
                     std::unique_ptr<storm::solver::LinearEquationSolver<ValueType>> solver;
                     std::vector<ValueType> b;
                 };
@@ -107,7 +105,7 @@ namespace storm {
                 void digitize(SubModel& subModel, VT const& digitizationConstant) const;
                 
                 /* 
-                 * Fills the given map with the digitized time bounds. Also sets the offsetsToLowerBound / offsetsToUpperBound values
+                 * Fills the given map with the digitized time bounds. Also sets the offsetsToUnderApproximation / offsetsToOverApproximation values
                  * according to the digitization error
                  */
                 template <typename VT = ValueType, typename std::enable_if<storm::NumberTraits<VT>::SupportsExponential, int>::type = 0>
@@ -124,6 +122,9 @@ namespace storm {
                 /*!
                  * Initializes the data for the LinEq solver
                  */
+                template <typename VT = ValueType, typename std::enable_if<storm::NumberTraits<VT>::SupportsExponential, int>::type = 0>
+                std::unique_ptr<LinEqSolverData> initLinEqSolver(SubModel const& PS) const;
+                template <typename VT = ValueType, typename std::enable_if<!storm::NumberTraits<VT>::SupportsExponential, int>::type = 0>
                 std::unique_ptr<LinEqSolverData> initLinEqSolver(SubModel const& PS) const;
                 
                 /*

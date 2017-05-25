@@ -94,6 +94,9 @@
 #include "storm/generator/PrismNextStateGenerator.h"
 #include "storm/generator/JaniNextStateGenerator.h"
 
+#include "storm/analysis/GraphConditions.h"
+
+
 // Headers related to exception handling.
 #include "storm/exceptions/InvalidStateException.h"
 #include "storm/exceptions/InvalidArgumentException.h"
@@ -111,14 +114,25 @@ namespace storm {
         class FormulaParser;
     }
     
+    
     template<typename ValueType>
-    std::shared_ptr<storm::models::sparse::Model<ValueType>> buildExplicitModel(std::string const& transitionsFile, std::string const& labelingFile, boost::optional<std::string> const& stateRewardsFile = boost::none, boost::optional<std::string> const& transitionRewardsFile = boost::none, boost::optional<std::string> const& choiceLabelingFile = boost::none) {
-        return storm::parser::AutoParser<>::parseModel(transitionsFile, labelingFile, stateRewardsFile ? stateRewardsFile.get() : "", transitionRewardsFile ? transitionRewardsFile.get() : "", choiceLabelingFile ? choiceLabelingFile.get() : "" );
+    inline std::shared_ptr<storm::models::sparse::Model<ValueType>> buildExplicitModel(std::string const&, std::string const&, boost::optional<std::string> const& = boost::none, boost::optional<std::string> const& = boost::none, boost::optional<std::string> const& = boost::none) {
+       STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Exact or parametric models with explicit input are not supported.");
     }
 
+    template<>
+    inline std::shared_ptr<storm::models::sparse::Model<double>> buildExplicitModel(std::string const& transitionsFile, std::string const& labelingFile, boost::optional<std::string> const& stateRewardsFile, boost::optional<std::string> const& transitionRewardsFile, boost::optional<std::string> const& choiceLabelingFile) {
+        return storm::parser::AutoParser<double, double>::parseModel(transitionsFile, labelingFile, stateRewardsFile ? stateRewardsFile.get() : "", transitionRewardsFile ? transitionRewardsFile.get() : "", choiceLabelingFile ? choiceLabelingFile.get() : "" );
+    }
+    
     template<typename ValueType>
-    std::shared_ptr<storm::models::sparse::Model<ValueType>> buildExplicitDRNModel(std::string const& drnFile) {
+    inline std::shared_ptr<storm::models::sparse::Model<ValueType>> buildExplicitDRNModel(std::string const& drnFile) {
         return storm::parser::DirectEncodingParser<ValueType>::parseModel(drnFile);
+    }
+
+    template<>
+    inline std::shared_ptr<storm::models::sparse::Model<storm::RationalNumber>> buildExplicitDRNModel(std::string const&) {
+       STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Exact models with direct encoding are not supported.");
     }
 
     std::vector<std::shared_ptr<storm::logic::Formula const>> extractFormulasFromProperties(std::vector<storm::jani::Property> const& properties);
@@ -427,10 +441,12 @@ namespace storm {
                     break;
             }
         }
+        typename storm::storage::ParameterRegion<storm::RationalFunction>::CoefficientType satAreaFraction = satArea / parameterSpace.area();
+        typename storm::storage::ParameterRegion<storm::RationalFunction>::CoefficientType unsatAreaFraction = unsatArea / parameterSpace.area();
         STORM_PRINT_AND_LOG("Done! Found " << numOfSatRegions << " safe regions and "
                                      << numOfUnsatRegions << " unsafe regions." << std::endl);
-        STORM_PRINT_AND_LOG(storm::utility::convertNumber<double>(satArea / parameterSpace.area()) * 100 << "% of the parameter space is safe, and "
-                         << storm::utility::convertNumber<double>(unsatArea / parameterSpace.area()) * 100 << "% of the parameter space is unsafe." << std::endl);
+        STORM_PRINT_AND_LOG(storm::utility::convertNumber<double>(satAreaFraction) * 100 << "% of the parameter space is safe, and "
+                         << storm::utility::convertNumber<double>(unsatAreaFraction) * 100 << "% of the parameter space is unsafe." << std::endl);
         STORM_PRINT_AND_LOG("Model checking with parameter lifting took " << parameterLiftingStopWatch << " seconds." << std::endl);
         STORM_PRINT_AND_LOG(resultVisualization);
         
@@ -533,7 +549,7 @@ namespace storm {
     }
     
     template<typename ValueType>
-    std::unique_ptr<storm::modelchecker::CheckResult> verifySparseMarkovAutomaton(std::shared_ptr<storm::models::sparse::MarkovAutomaton<ValueType>> ma, storm::modelchecker::CheckTask<storm::logic::Formula> const& task) {
+    std::unique_ptr<storm::modelchecker::CheckResult> verifySparseMarkovAutomaton(std::shared_ptr<storm::models::sparse::MarkovAutomaton<ValueType>> ma, storm::modelchecker::CheckTask<storm::logic::Formula, ValueType> const& task) {
         std::unique_ptr<storm::modelchecker::CheckResult> result;
         // Close the MA, if it is not already closed.
         if (!ma->isClosed()) {
@@ -579,25 +595,30 @@ namespace storm {
             result = verifySparseCtmc(model->template as<storm::models::sparse::Ctmc<storm::RationalNumber>>(), task);
         } else if (model->getType() == storm::models::ModelType::Mdp) {
             result = verifySparseMdp(model->template as<storm::models::sparse::Mdp<storm::RationalNumber>>(), task);
+        } else if (model->getType() == storm::models::ModelType::MarkovAutomaton) {
+            result = verifySparseMarkovAutomaton(model->template as<storm::models::sparse::MarkovAutomaton<storm::RationalNumber>>(), task);
         } else {
             STORM_LOG_ASSERT(false, "Illegal model type.");
         }
         return result;
     }
     
-    inline void exportParametricResultToFile(storm::RationalFunction const& result, storm::models::sparse::Dtmc<storm::RationalFunction>::ConstraintCollector const& constraintCollector, std::string const& path) {
+    inline void exportParametricResultToFile(storm::RationalFunction const& result, storm::analysis::ConstraintCollector<storm::RationalFunction> const& constraintCollector, std::string const& path) {
         std::ofstream filestream;
         storm::utility::openFile(path, filestream);
-        // TODO: add checks.
         filestream << "!Parameters: ";
         std::set<storm::RationalFunctionVariable> vars = result.gatherVariables();
         std::copy(vars.begin(), vars.end(), std::ostream_iterator<storm::RationalFunctionVariable>(filestream, "; "));
         filestream << std::endl;
         filestream << "!Result: " << result << std::endl;
         filestream << "!Well-formed Constraints: " << std::endl;
-        std::copy(constraintCollector.getWellformedConstraints().begin(), constraintCollector.getWellformedConstraints().end(), std::ostream_iterator<storm::ArithConstraint<storm::RationalFunction>>(filestream, "\n"));
+        std::vector<std::string> stringConstraints;
+        std::transform(constraintCollector.getWellformedConstraints().begin(), constraintCollector.getWellformedConstraints().end(), std::back_inserter(stringConstraints), [](carl::Formula<typename storm::Polynomial::PolyType> const& c) ->  std::string { return c.toString();});
+        std::copy(stringConstraints.begin(), stringConstraints.end(), std::ostream_iterator<std::string>(filestream, "\n"));
         filestream << "!Graph-preserving Constraints: " << std::endl;
-        std::copy(constraintCollector.getGraphPreservingConstraints().begin(), constraintCollector.getGraphPreservingConstraints().end(), std::ostream_iterator<storm::ArithConstraint<storm::RationalFunction>>(filestream, "\n"));
+        stringConstraints.clear();
+        std::transform(constraintCollector.getGraphPreservingConstraints().begin(), constraintCollector.getGraphPreservingConstraints().end(), std::back_inserter(stringConstraints), [](carl::Formula<typename storm::Polynomial::PolyType> const& c) ->  std::string { return c.toString();});
+        std::copy(stringConstraints.begin(), stringConstraints.end(), std::ostream_iterator<std::string>(filestream, "\n"));
         storm::utility::closeFile(filestream);
     }
     

@@ -13,6 +13,7 @@ namespace storm {
     
     namespace jani {
         class Model;
+        class Automaton;
     }
     
     namespace generator {
@@ -74,7 +75,7 @@ namespace storm {
         // A structure storing information about the used variables of the program.
         struct VariableInformation {
             VariableInformation(storm::prism::Program const& program);
-            VariableInformation(storm::jani::Model const& model);
+            VariableInformation(storm::jani::Model const& model, std::vector<std::reference_wrapper<storm::jani::Automaton const>> const& parallelAutomata);
             
             VariableInformation() = default;
             uint_fast64_t getTotalBitOffset(bool roundTo64Bit = false) const;
@@ -96,6 +97,11 @@ namespace storm {
              * Sorts the variables to establish a known ordering.
              */
             void sortVariables();
+            
+            /*!
+             * Creates all necessary variables for a JANI automaton.
+             */
+            void createVariablesForAutomaton(storm::jani::Automaton const& automaton);
         };
         
     }

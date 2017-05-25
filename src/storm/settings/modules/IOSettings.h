@@ -36,6 +36,20 @@ namespace storm {
                 std::string getExportDotFilename() const;
 
                 /*!
+                 * Retrieves whether the export-to-dot option for jani was set.
+                 *
+                 * @return True if the export-to-jani-dot option was set.
+                 */
+                bool isExportJaniDotSet() const;
+
+                /*!
+                 * Retrieves the name in which to write the jani model in dot format, if the export-to-jani-dot option was set.
+                 *
+                 * @return The name of the file in which to write the exported model.
+                 */
+                std::string getExportJaniDotFilename() const;
+
+                /*!
                  * Retrieves whether the export-to-explicit option was set
                  *
                  * @return True if the export-to-explicit option was set
@@ -277,6 +291,12 @@ namespace storm {
                  */
                 bool isBuildFullModelSet() const;
 
+                /*!
+                 * Retrieves whether the choice labels should be build
+                 * @return
+                 */
+                bool isBuildChoiceLabelsSet() const;
+
                 bool check() const override;
                 void finalize() override;
 
@@ -286,6 +306,7 @@ namespace storm {
             private:
                 // Define the string names of the options as constants.
                 static const std::string exportDotOptionName;
+                static const std::string exportJaniDotOptionName;
                 static const std::string exportExplicitOptionName;
                 static const std::string explicitOptionName;
                 static const std::string explicitOptionShortName;
@@ -308,6 +329,7 @@ namespace storm {
                 static const std::string prismCompatibilityOptionShortName;
                 static const std::string fullModelBuildOptionName;
                 static const std::string noBuildOptionName;
+                static const std::string buildChoiceLabelOptionName;
                 static const std::string janiPropertyOptionName;
                 static const std::string janiPropertyOptionShortName;
                 static const std::string propertyOptionName;

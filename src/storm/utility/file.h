@@ -1,12 +1,4 @@
-/** 
- * @file:   file.h
- * @author: Sebastian Junges
- *
- * @since October 7, 2014
- */
-
-#ifndef STORM_UTILITY_FILE_H_
-#define STORM_UTILITY_FILE_H_
+#pragma once
 
 #include <iostream>
 
@@ -19,7 +11,7 @@ namespace storm {
         /*!
          * Open the given file for writing.
          *
-         * @param filename Path and name of the file to be tested.
+         * @param filepath Path and name of the file to be written to.
          * @param filestream Contains the file handler afterwards.
          * @param append If true, the new content is appended instead of clearing the existing content.
          */
@@ -36,7 +28,7 @@ namespace storm {
         /*!
          * Open the given file for reading.
          *
-         * @param filename Path and name of the file to be tested.
+         * @param filepath Path and name of the file to be tested.
          * @param filestream Contains the file handler afterwards.
          */
         inline void openFile(std::string const& filepath, std::ifstream& filestream) {
@@ -47,7 +39,7 @@ namespace storm {
         /*!
          * Close the given file after writing.
          *
-         * @param filestream Contains the file handler to close.
+         * @param stream Contains the file handler to close.
          */
         inline void closeFile(std::ofstream& stream) {
             stream.close();
@@ -56,7 +48,7 @@ namespace storm {
         /*!
          * Close the given file after reading.
          *
-         * @param filestream Contains the file handler to close.
+         * @param stream Contains the file handler to close.
          */
         inline void closeFile(std::ifstream& stream) {
             stream.close();
@@ -77,5 +69,3 @@ namespace storm {
 
     }
 }
-
-#endif

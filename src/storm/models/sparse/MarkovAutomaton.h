@@ -107,11 +107,9 @@ namespace storm {
                 MarkovAutomaton(MarkovAutomaton<ValueType, RewardModelType> const& other) = default;
                 MarkovAutomaton& operator=(MarkovAutomaton<ValueType, RewardModelType> const& other) = default;
                 
-#ifndef WINDOWS
                 MarkovAutomaton(MarkovAutomaton<ValueType, RewardModelType>&& other) = default;
                 MarkovAutomaton& operator=(MarkovAutomaton<ValueType, RewardModelType>&& other) = default;
-#endif
-                
+
                 /*!
                  * Retrieves whether the Markov automaton is closed.
                  *

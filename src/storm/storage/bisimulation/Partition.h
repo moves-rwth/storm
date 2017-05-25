@@ -152,15 +152,6 @@ namespace storm {
                 void swapStatesAtPositions(storm::storage::sparse::state_type position1, storm::storage::sparse::state_type position2);
                 
             private:
-                // FIXME: necessary?
-                // Inserts a block before the given block. The new block will cover all states between the beginning
-                // of the given block and the end of the previous block.
-                Block<DataType>& insertBlock(Block<DataType>& block);
-                
-                // FIXME: necessary?
-                // Sets the position of the given state.
-                void setPosition(storm::storage::sparse::state_type state, storm::storage::sparse::state_type position);
-                
                 // The of blocks in the partition.
                 std::vector<std::unique_ptr<Block<DataType>>> blocks;
                 

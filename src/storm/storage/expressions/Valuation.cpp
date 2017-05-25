@@ -15,6 +15,10 @@ namespace storm {
             return *manager;
         }
         
+        std::shared_ptr<ExpressionManager const> const& Valuation::getManagerAsSharedPtr() const {
+            return manager;
+        }
+        
         void Valuation::setManager(std::shared_ptr<ExpressionManager const> const& manager) {
             this->manager = manager;
         }

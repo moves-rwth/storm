@@ -103,6 +103,106 @@ namespace storm {
                 return result;
             }
             
+            template <typename T>
+            bool checkIfECWithChoiceExists(storm::storage::SparseMatrix<T> const& transitionMatrix, storm::storage::SparseMatrix<T> const& backwardTransitions, storm::storage::BitVector const& subsystem, storm::storage::BitVector const& choices) {
+                
+                STORM_LOG_THROW(subsystem.size() == transitionMatrix.getRowGroupCount(), storm::exceptions::InvalidArgumentException, "Invalid size of subsystem");
+                STORM_LOG_THROW(choices.size() == transitionMatrix.getRowCount(), storm::exceptions::InvalidArgumentException, "Invalid size of choice vector");
+                
+                if (subsystem.empty() || choices.empty()) {
+                    return false;
+                }
+                
+                storm::storage::BitVector statesWithChoice(transitionMatrix.getRowGroupCount(), false);
+                uint_fast64_t state = 0;
+                for (auto const& choice : choices) {
+                    // Get the correct state
+                    while (choice >= transitionMatrix.getRowGroupIndices()[state + 1]) {
+                        ++state;
+                    }
+                    assert(choice >= transitionMatrix.getRowGroupIndices()[state]);
+                    // make sure that the choice originates from the subsystem and also stays within the subsystem
+                    if (subsystem.get(state)) {
+                        bool choiceStaysInSubsys = true;
+                        for (auto const& entry : transitionMatrix.getRow(choice)) {
+                            if (!subsystem.get(entry.getColumn())) {
+                                choiceStaysInSubsys = false;
+                                break;
+                            }
+                        }
+                        if (choiceStaysInSubsys) {
+                            statesWithChoice.set(state, true);
+                        }
+                    }
+                }
+                
+                // Initialize candidate states that satisfy some necessary conditions for being part of an EC with a specified choice:
+                
+                // Get the states for which a policy can enforce that a choice is reached while staying inside the subsystem
+                storm::storage::BitVector candidateStates = storm::utility::graph::performProb1E(transitionMatrix, transitionMatrix.getRowGroupIndices(), backwardTransitions, subsystem, statesWithChoice);
+                
+                // Only keep the states that can stay in the set of candidates forever
+                candidateStates = storm::utility::graph::performProb0E(transitionMatrix, transitionMatrix.getRowGroupIndices(), backwardTransitions, candidateStates, ~candidateStates);
+                
+                // Only keep the states that can be reached after performing one of the specified choices
+                statesWithChoice &= candidateStates;
+                storm::storage::BitVector choiceTargets(transitionMatrix.getRowGroupCount(), false);
+                for (auto const& state : statesWithChoice) {
+                    for (uint_fast64_t choice = choices.getNextSetIndex(transitionMatrix.getRowGroupIndices()[state]); choice < transitionMatrix.getRowGroupIndices()[state + 1]; choice = choices.getNextSetIndex(choice + 1)) {
+                        bool choiceStaysInCandidateSet = true;
+                        for (auto const& entry : transitionMatrix.getRow(choice)) {
+                            if (!candidateStates.get(entry.getColumn())) {
+                                choiceStaysInCandidateSet = false;
+                                break;
+                            }
+                        }
+                        if (choiceStaysInCandidateSet) {
+                            for (auto const& entry : transitionMatrix.getRow(choice)) {
+                                choiceTargets.set(entry.getColumn(), true);
+                            }
+                        }
+                    }
+                }
+                candidateStates = storm::utility::graph::getReachableStates(transitionMatrix, choiceTargets, candidateStates, storm::storage::BitVector(candidateStates.size(), false));
+                
+                // At this point we know that every candidate state can reach a choice at least once without leaving the set of candidate states.
+                // We now compute the states that can reach a choice at least twice, three times, four times, ... until a fixpoint is reached.
+                while (!candidateStates.empty()) {
+                    // Update the states with a choice that stays within the set of candidates
+                    statesWithChoice &= candidateStates;
+                    for (auto const& state : statesWithChoice) {
+                        bool stateHasChoice = false;
+                        for (uint_fast64_t choice = choices.getNextSetIndex(transitionMatrix.getRowGroupIndices()[state]); choice < transitionMatrix.getRowGroupIndices()[state + 1]; choice = choices.getNextSetIndex(choice + 1)) {
+                            bool choiceStaysInCandidateSet = true;
+                            for (auto const& entry : transitionMatrix.getRow(choice)) {
+                                if (!candidateStates.get(entry.getColumn())) {
+                                    choiceStaysInCandidateSet = false;
+                                    break;
+                                }
+                            }
+                            if (choiceStaysInCandidateSet) {
+                                stateHasChoice = true;
+                                break;
+                            }
+                        }
+                        if (!stateHasChoice) {
+                            statesWithChoice.set(state, false);
+                        }
+                    }
+                   
+                    // Update the candidates
+                    storm::storage::BitVector newCandidates = storm::utility::graph::performProb1E(transitionMatrix, transitionMatrix.getRowGroupIndices(), backwardTransitions, candidateStates, statesWithChoice);
+                    
+                    // Check if conferged
+                    if (newCandidates == candidateStates) {
+                        assert(!candidateStates.empty());
+                        return true;
+                    }
+                }
+                return false;
+            }
+
+            
             template<typename T>
             std::vector<uint_fast64_t> getDistances(storm::storage::SparseMatrix<T> const& transitionMatrix, storm::storage::BitVector const& initialStates, boost::optional<storm::storage::BitVector> const& subsystem) {
                 std::vector<uint_fast64_t> distances(transitionMatrix.getRowGroupCount());
@@ -570,7 +670,7 @@ namespace storm {
             }
             
             template <typename T>
-            storm::storage::BitVector performProbGreater0A(storm::storage::SparseMatrix<T> const& transitionMatrix, std::vector<uint_fast64_t> const& nondeterministicChoiceIndices, storm::storage::SparseMatrix<T> const& backwardTransitions, storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates, bool useStepBound, uint_fast64_t maximalSteps) {
+            storm::storage::BitVector performProbGreater0A(storm::storage::SparseMatrix<T> const& transitionMatrix, std::vector<uint_fast64_t> const& nondeterministicChoiceIndices, storm::storage::SparseMatrix<T> const& backwardTransitions, storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates, bool useStepBound, uint_fast64_t maximalSteps, boost::optional<storm::storage::BitVector> const& choiceConstraint) {
                 size_t numberOfStates = phiStates.size();
                 
                 // Prepare resulting bit vector.
@@ -613,40 +713,66 @@ namespace storm {
                             if (!statesWithProbabilityGreater0.get(predecessorEntryIt->getColumn())) {
                                 
                                 // Check whether the predecessor has at least one successor in the current state set for every
-                                // nondeterministic choice.
-                                bool addToStatesWithProbabilityGreater0 = true;
-                                for (uint_fast64_t row = nondeterministicChoiceIndices[predecessorEntryIt->getColumn()]; row < nondeterministicChoiceIndices[predecessorEntryIt->getColumn() + 1]; ++row) {
-                                    bool hasAtLeastOneSuccessorWithProbabilityGreater0 = false;
-                                    for (typename storm::storage::SparseMatrix<T>::const_iterator successorEntryIt = transitionMatrix.begin(row), successorEntryIte = transitionMatrix.end(row); successorEntryIt != successorEntryIte; ++successorEntryIt) {
-                                        if (statesWithProbabilityGreater0.get(successorEntryIt->getColumn())) {
-                                            hasAtLeastOneSuccessorWithProbabilityGreater0 = true;
-                                            break;
+                                // nondeterministic choice within the possibly given choiceConstraint.
+                                
+                                // Note: The backwards edge might be induced by a choice that violates the choiceConstraint.
+                                // However this is not problematic as long as there is at least one enabled choice for the predecessor.
+                                uint_fast64_t row = nondeterministicChoiceIndices[predecessorEntryIt->getColumn()];
+                                uint_fast64_t const& endOfGroup = nondeterministicChoiceIndices[predecessorEntryIt->getColumn() + 1];
+                                if (!choiceConstraint || choiceConstraint->getNextSetIndex(row) < endOfGroup) {
+                                    bool addToStatesWithProbabilityGreater0 = true;
+                                    for (; row < endOfGroup; ++row) {
+                                        if (!choiceConstraint || choiceConstraint->get(row)) {
+                                            bool hasAtLeastOneSuccessorWithProbabilityGreater0 = false;
+                                            for (typename storm::storage::SparseMatrix<T>::const_iterator successorEntryIt = transitionMatrix.begin(row), successorEntryIte = transitionMatrix.end(row); successorEntryIt != successorEntryIte; ++successorEntryIt) {
+                                                if (statesWithProbabilityGreater0.get(successorEntryIt->getColumn())) {
+                                                    hasAtLeastOneSuccessorWithProbabilityGreater0 = true;
+                                                    break;
+                                                }
+                                            }
+                                            
+                                            if (!hasAtLeastOneSuccessorWithProbabilityGreater0) {
+                                                addToStatesWithProbabilityGreater0 = false;
+                                                break;
+                                            }
                                         }
                                     }
                                     
-                                    if (!hasAtLeastOneSuccessorWithProbabilityGreater0) {
-                                        addToStatesWithProbabilityGreater0 = false;
-                                        break;
+                                    // If we need to add the state, then actually add it and perform further search from the state.
+                                    if (addToStatesWithProbabilityGreater0) {
+                                        // If we don't have a bound on the number of steps to take, just add the state to the stack.
+                                        if (useStepBound) {
+                                            // If there is at least one more step to go, we need to push the state and the new number of steps.
+                                            remainingSteps[predecessorEntryIt->getColumn()] = currentStepBound - 1;
+                                            stepStack.push_back(currentStepBound - 1);
+                                        }
+                                        statesWithProbabilityGreater0.set(predecessorEntryIt->getColumn(), true);
+                                        stack.push_back(predecessorEntryIt->getColumn());
                                     }
-                                }
-                                
-                                // If we need to add the state, then actually add it and perform further search from the state.
-                                if (addToStatesWithProbabilityGreater0) {
-                                    // If we don't have a bound on the number of steps to take, just add the state to the stack.
-                                    if (useStepBound) {
-                                        // If there is at least one more step to go, we need to push the state and the new number of steps.
-                                        remainingSteps[predecessorEntryIt->getColumn()] = currentStepBound - 1;
-                                        stepStack.push_back(currentStepBound - 1);
-                                    }
-                                    statesWithProbabilityGreater0.set(predecessorEntryIt->getColumn(), true);
-                                    stack.push_back(predecessorEntryIt->getColumn());
                                 }
                                 
                             } else if (useStepBound && remainingSteps[predecessorEntryIt->getColumn()] < currentStepBound - 1) {
-                                // We have found a shorter path to the predecessor. Hence, we need to explore it again
-                                remainingSteps[predecessorEntryIt->getColumn()] = currentStepBound - 1;
-                                stepStack.push_back(currentStepBound - 1);
-                                stack.push_back(predecessorEntryIt->getColumn());
+                                // We have found a shorter path to the predecessor. Hence, we need to explore it again.
+                                // If there is a choiceConstraint, we still need to check whether the backwards edge was induced by a valid action
+                                bool predecessorIsValid = true;
+                                if (choiceConstraint) {
+                                    predecessorIsValid = false;
+                                    uint_fast64_t row = choiceConstraint->getNextSetIndex(nondeterministicChoiceIndices[predecessorEntryIt->getColumn()]);
+                                    uint_fast64_t const& endOfGroup = nondeterministicChoiceIndices[predecessorEntryIt->getColumn() + 1];
+                                    for (; row < endOfGroup && !predecessorIsValid; row = choiceConstraint->getNextSetIndex(row + 1)) {
+                                        for (auto const& entry : transitionMatrix.getRow(row)) {
+                                            if (entry.getColumn() == currentState) {
+                                                predecessorIsValid = true;
+                                                break;
+                                            }
+                                        }
+                                    }
+                                }
+                                if (predecessorIsValid) {
+                                    remainingSteps[predecessorEntryIt->getColumn()] = currentStepBound - 1;
+                                    stepStack.push_back(currentStepBound - 1);
+                                    stack.push_back(predecessorEntryIt->getColumn());
+                                }
                             }
                         }
                     }
@@ -1162,6 +1288,8 @@ namespace storm {
             template storm::storage::BitVector getReachableStates(storm::storage::SparseMatrix<double> const& transitionMatrix, storm::storage::BitVector const& initialStates, storm::storage::BitVector const& constraintStates, storm::storage::BitVector const& targetStates, bool useStepBound, uint_fast64_t maximalSteps);
             
             template storm::storage::BitVector getBsccCover(storm::storage::SparseMatrix<double> const& transitionMatrix);
+           
+            template bool checkIfECWithChoiceExists(storm::storage::SparseMatrix<double> const& transitionMatrix, storm::storage::SparseMatrix<double> const& backwardTransitions, storm::storage::BitVector const& subsystem, storm::storage::BitVector const& choices);
             
             template std::vector<uint_fast64_t> getDistances(storm::storage::SparseMatrix<double> const& transitionMatrix, storm::storage::BitVector const& initialStates, boost::optional<storm::storage::BitVector> const& subsystem);
             
@@ -1201,7 +1329,7 @@ namespace storm {
             
             template std::pair<storm::storage::BitVector, storm::storage::BitVector> performProb01Max(storm::models::sparse::NondeterministicModel<double, storm::models::sparse::StandardRewardModel<double>> const& model, storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates) ;
             
-            template storm::storage::BitVector performProbGreater0A(storm::storage::SparseMatrix<double> const& transitionMatrix, std::vector<uint_fast64_t> const& nondeterministicChoiceIndices, storm::storage::SparseMatrix<double> const& backwardTransitions, storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates, bool useStepBound = false, uint_fast64_t maximalSteps = 0);
+            template storm::storage::BitVector performProbGreater0A(storm::storage::SparseMatrix<double> const& transitionMatrix, std::vector<uint_fast64_t> const& nondeterministicChoiceIndices, storm::storage::SparseMatrix<double> const& backwardTransitions, storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates, bool useStepBound = false, uint_fast64_t maximalSteps = 0, boost::optional<storm::storage::BitVector> const& choiceConstraint = boost::none);
             
             
             template storm::storage::BitVector performProb0E(storm::models::sparse::NondeterministicModel<double, storm::models::sparse::StandardRewardModel<double>> const& model, storm::storage::SparseMatrix<double> const& backwardTransitions, storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates);
@@ -1231,7 +1359,7 @@ namespace storm {
             template storm::storage::BitVector getReachableStates(storm::storage::SparseMatrix<float> const& transitionMatrix, storm::storage::BitVector const& initialStates, storm::storage::BitVector const& constraintStates, storm::storage::BitVector const& targetStates, bool useStepBound, uint_fast64_t maximalSteps);
             
             template storm::storage::BitVector getBsccCover(storm::storage::SparseMatrix<float> const& transitionMatrix);
-            
+          
             template std::vector<uint_fast64_t> getDistances(storm::storage::SparseMatrix<float> const& transitionMatrix, storm::storage::BitVector const& initialStates, boost::optional<storm::storage::BitVector> const& subsystem);
             
             
@@ -1264,7 +1392,7 @@ namespace storm {
             
             template std::pair<storm::storage::BitVector, storm::storage::BitVector> performProb01Max(storm::models::sparse::NondeterministicModel<float> const& model, storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates) ;
             
-            template storm::storage::BitVector performProbGreater0A(storm::storage::SparseMatrix<float> const& transitionMatrix, std::vector<uint_fast64_t> const& nondeterministicChoiceIndices, storm::storage::SparseMatrix<float> const& backwardTransitions, storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates, bool useStepBound = false, uint_fast64_t maximalSteps = 0);
+            template storm::storage::BitVector performProbGreater0A(storm::storage::SparseMatrix<float> const& transitionMatrix, std::vector<uint_fast64_t> const& nondeterministicChoiceIndices, storm::storage::SparseMatrix<float> const& backwardTransitions, storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates, bool useStepBound = false, uint_fast64_t maximalSteps = 0, boost::optional<storm::storage::BitVector> const& choiceConstraint = boost::none);
             
             
             template storm::storage::BitVector performProb0E(storm::models::sparse::NondeterministicModel<float> const& model, storm::storage::SparseMatrix<float> const& backwardTransitions, storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates);
@@ -1287,7 +1415,9 @@ namespace storm {
             template storm::storage::BitVector getReachableStates(storm::storage::SparseMatrix<storm::RationalNumber> const& transitionMatrix, storm::storage::BitVector const& initialStates, storm::storage::BitVector const& constraintStates, storm::storage::BitVector const& targetStates, bool useStepBound, uint_fast64_t maximalSteps);
             
             template storm::storage::BitVector getBsccCover(storm::storage::SparseMatrix<storm::RationalNumber> const& transitionMatrix);
-            
+           
+           template bool checkIfECWithChoiceExists(storm::storage::SparseMatrix<storm::RationalNumber> const& transitionMatrix, storm::storage::SparseMatrix<storm::RationalNumber> const& backwardTransitions, storm::storage::BitVector const& subsystem, storm::storage::BitVector const& choices);
+
             template std::vector<uint_fast64_t> getDistances(storm::storage::SparseMatrix<storm::RationalNumber> const& transitionMatrix, storm::storage::BitVector const& initialStates, boost::optional<storm::storage::BitVector> const& subsystem);
             
             template storm::storage::BitVector performProbGreater0(storm::storage::SparseMatrix<storm::RationalNumber> const& backwardTransitions, storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates, bool useStepBound = false, uint_fast64_t maximalSteps = 0);
@@ -1318,7 +1448,7 @@ namespace storm {
             
             template std::pair<storm::storage::BitVector, storm::storage::BitVector> performProb01Max(storm::models::sparse::NondeterministicModel<storm::RationalNumber> const& model, storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates) ;
             
-            template storm::storage::BitVector performProbGreater0A(storm::storage::SparseMatrix<storm::RationalNumber> const& transitionMatrix, std::vector<uint_fast64_t> const& nondeterministicChoiceIndices, storm::storage::SparseMatrix<storm::RationalNumber> const& backwardTransitions, storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates, bool useStepBound = false, uint_fast64_t maximalSteps = 0);
+            template storm::storage::BitVector performProbGreater0A(storm::storage::SparseMatrix<storm::RationalNumber> const& transitionMatrix, std::vector<uint_fast64_t> const& nondeterministicChoiceIndices, storm::storage::SparseMatrix<storm::RationalNumber> const& backwardTransitions, storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates, bool useStepBound = false, uint_fast64_t maximalSteps = 0, boost::optional<storm::storage::BitVector> const& choiceConstraint = boost::none);
             
             template storm::storage::BitVector performProb0E(storm::models::sparse::NondeterministicModel<storm::RationalNumber> const& model, storm::storage::SparseMatrix<storm::RationalNumber> const& backwardTransitions, storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates);
             
@@ -1336,6 +1466,8 @@ namespace storm {
             template storm::storage::BitVector getReachableStates(storm::storage::SparseMatrix<storm::RationalFunction> const& transitionMatrix, storm::storage::BitVector const& initialStates, storm::storage::BitVector const& constraintStates, storm::storage::BitVector const& targetStates, bool useStepBound, uint_fast64_t maximalSteps);
             
             template storm::storage::BitVector getBsccCover(storm::storage::SparseMatrix<storm::RationalFunction> const& transitionMatrix);
+            
+            template bool checkIfECWithChoiceExists(storm::storage::SparseMatrix<storm::RationalFunction> const& transitionMatrix, storm::storage::SparseMatrix<storm::RationalFunction> const& backwardTransitions, storm::storage::BitVector const& subsystem, storm::storage::BitVector const& choices);
             
             template std::vector<uint_fast64_t> getDistances(storm::storage::SparseMatrix<storm::RationalFunction> const& transitionMatrix, storm::storage::BitVector const& initialStates, boost::optional<storm::storage::BitVector> const& subsystem);
             
@@ -1365,11 +1497,9 @@ namespace storm {
 
             template std::pair<storm::storage::BitVector, storm::storage::BitVector> performProb01Max(storm::storage::SparseMatrix<storm::RationalFunction> const& transitionMatrix, std::vector<uint_fast64_t> const& nondeterministicChoiceIndices, storm::storage::SparseMatrix<storm::RationalFunction> const& backwardTransitions, storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates) ;
             
-            
             template std::pair<storm::storage::BitVector, storm::storage::BitVector> performProb01Max(storm::models::sparse::NondeterministicModel<storm::RationalFunction> const& model, storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates) ;
             
-            template storm::storage::BitVector performProbGreater0A(storm::storage::SparseMatrix<storm::RationalFunction> const& transitionMatrix, std::vector<uint_fast64_t> const& nondeterministicChoiceIndices, storm::storage::SparseMatrix<storm::RationalFunction> const& backwardTransitions, storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates, bool useStepBound = false, uint_fast64_t maximalSteps = 0);
-            
+            template storm::storage::BitVector performProbGreater0A(storm::storage::SparseMatrix<storm::RationalFunction> const& transitionMatrix, std::vector<uint_fast64_t> const& nondeterministicChoiceIndices, storm::storage::SparseMatrix<storm::RationalFunction> const& backwardTransitions, storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates, bool useStepBound = false, uint_fast64_t maximalSteps = 0, boost::optional<storm::storage::BitVector> const& choiceConstraint = boost::none);
             
             template storm::storage::BitVector performProb0E(storm::models::sparse::NondeterministicModel<storm::RationalFunction> const& model, storm::storage::SparseMatrix<storm::RationalFunction> const& backwardTransitions, storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates);
             template storm::storage::BitVector performProb0E(storm::storage::SparseMatrix<storm::RationalFunction> const& transitionMatrix, std::vector<uint_fast64_t> const& nondeterministicChoiceIndices,  storm::storage::SparseMatrix<storm::RationalFunction> const& backwardTransitions, storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates) ;
@@ -1378,7 +1508,6 @@ namespace storm {
             template storm::storage::BitVector performProb1A( storm::storage::SparseMatrix<storm::RationalFunction> const& transitionMatrix, std::vector<uint_fast64_t> const& nondeterministicChoiceIndices, storm::storage::SparseMatrix<storm::RationalFunction> const& backwardTransitions, storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates);
             
             template std::pair<storm::storage::BitVector, storm::storage::BitVector> performProb01Min(storm::storage::SparseMatrix<storm::RationalFunction> const& transitionMatrix, std::vector<uint_fast64_t> const& nondeterministicChoiceIndices, storm::storage::SparseMatrix<storm::RationalFunction> const& backwardTransitions, storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates) ;
-            
             
             template std::pair<storm::storage::BitVector, storm::storage::BitVector> performProb01Min(storm::models::sparse::NondeterministicModel<storm::RationalFunction> const& model, storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates);
             

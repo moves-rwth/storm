@@ -46,11 +46,7 @@ namespace storm {
                 Model(Model<ValueType, RewardModelType> const& other) = default;
                 Model& operator=(Model<ValueType, RewardModelType> const& other) = default;
                 
-#ifndef WINDOWS
-                Model(Model<ValueType, RewardModelType>&& other) = default;
-                Model& operator=(Model<ValueType, RewardModelType>&& other) = default;
-#endif
-                
+
                 /*!
                  * Constructs a model from the given data.
                  *

@@ -17,7 +17,7 @@ namespace storm {
                 
                 typedef std::vector<ValueType> Point;
             
-                ~Polytope();
+                virtual ~Polytope();
                 
                 /*!
                  * Creates a polytope from the given halfspaces.

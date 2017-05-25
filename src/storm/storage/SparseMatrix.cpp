@@ -14,6 +14,7 @@
 #include "storm/storage/BitVector.h"
 #include "storm/utility/constants.h"
 #include "storm/utility/ConstantsComparator.h"
+#include "storm/utility/vector.h"
 
 #include "storm/exceptions/InvalidStateException.h"
 #include "storm/exceptions/NotImplementedException.h"
@@ -552,23 +553,42 @@ namespace storm {
             // If there is no current row grouping, we need to create it.
             if (!this->rowGroupIndices) {
                 STORM_LOG_ASSERT(trivialRowGrouping, "Only trivial row-groupings can be constructed on-the-fly.");
-                this->rowGroupIndices = std::vector<index_type>(this->getRowCount() + 1);
-                for (uint_fast64_t group = 0; group <= this->getRowCount(); ++group) {
-                    this->rowGroupIndices.get()[group] = group;
-                }
+                this->rowGroupIndices = storm::utility::vector::buildVectorForRange(0, this->getRowGroupCount() + 1);
             }
             return rowGroupIndices.get();
         }
 
         template<typename ValueType>
-        storm::storage::BitVector SparseMatrix<ValueType>::getRowIndicesOfRowGroups(storm::storage::BitVector const& groups) const {
+        storm::storage::BitVector SparseMatrix<ValueType>::getRowFilter(storm::storage::BitVector const& groupConstraint) const {
             storm::storage::BitVector res(this->getRowCount(), false);
-            for(auto group : groups) {
-                for(uint_fast64_t row = this->getRowGroupIndices()[group]; row < this->getRowGroupIndices()[group+1]; ++row) {
+            for(auto group : groupConstraint) {
+                uint_fast64_t const endOfGroup = this->getRowGroupIndices()[group + 1];
+                for(uint_fast64_t row = this->getRowGroupIndices()[group]; row < endOfGroup; ++row) {
                     res.set(row, true);
                 }
             }
             return res;
+        }
+        
+        template<typename ValueType>
+        storm::storage::BitVector SparseMatrix<ValueType>::getRowFilter(storm::storage::BitVector const& groupConstraint, storm::storage::BitVector const& columnConstraint) const {
+            storm::storage::BitVector result(this->getRowCount(), false);
+            for (auto const& group : groupConstraint) {
+                uint_fast64_t const endOfGroup = this->getRowGroupIndices()[group + 1];
+                for (uint_fast64_t row = this->getRowGroupIndices()[group]; row < endOfGroup; ++row) {
+                    bool choiceSatisfiesColumnConstraint = true;
+                    for (auto const& entry : this->getRow(row)) {
+                        if (!columnConstraint.get(entry.getColumn())) {
+                            choiceSatisfiesColumnConstraint = false;
+                            break;
+                        }
+                    }
+                    if (choiceSatisfiesColumnConstraint) {
+                        result.set(row, true);
+                    }
+                }
+            }
+            return result;
         }
         
         template<typename ValueType>

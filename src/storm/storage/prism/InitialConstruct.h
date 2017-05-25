@@ -32,11 +32,9 @@ namespace storm {
             InitialConstruct() = default;
             InitialConstruct(InitialConstruct const& other) = default;
             InitialConstruct& operator=(InitialConstruct const& other)= default;
-#ifndef WINDOWS
             InitialConstruct(InitialConstruct&& other) = default;
             InitialConstruct& operator=(InitialConstruct&& other) = default;
-#endif
-            
+
             /*!
              * Retrieves the expression characterizing the initial states.
              *
