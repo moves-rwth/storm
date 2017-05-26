@@ -14,6 +14,8 @@
 #include "storm/models/sparse/Mdp.h"
 #include "storm/models/sparse/Ctmc.h"
 #include "storm/models/sparse/MarkovAutomaton.h"
+#include "storm/storage/sparse/ModelComponents.h"
+#include "storm/utility/builder.h"
 
 #include "storm/exceptions/InvalidArgumentException.h"
 #include "storm/exceptions/InvalidStateException.h"
@@ -84,26 +86,33 @@ namespace storm {
                      STORM_LOG_THROW(stateHasOneChoiceLeft, storm::exceptions::InvalidArgumentException, "The subsystem would contain a deadlock state.");
                 }
                 
-                // Transform the ingedients of the model
-                storm::storage::SparseMatrix<typename SparseModelType::ValueType> matrix = originalModel.getTransitionMatrix().getSubmatrix(false, result.keptActions, subsystemStates);
-                storm::models::sparse::StateLabeling labeling = originalModel.getStateLabeling().getSubLabeling(subsystemStates);
-                std::unordered_map<std::string, typename SparseModelType::RewardModelType> rewardModels;
+                // Transform the components of the model
+                storm::storage::sparse::ModelComponents<typename SparseModelType::ValueType, typename SparseModelType::RewardModelType> components;
+                components.transitionMatrix = originalModel.getTransitionMatrix().getSubmatrix(false, result.keptActions, subsystemStates);
+                components.stateLabeling = originalModel.getStateLabeling().getSubLabeling(subsystemStates);
                 for (auto const& rewardModel : originalModel.getRewardModels()){
-                    rewardModels.insert(std::make_pair(rewardModel.first, transformRewardModel(rewardModel.second, subsystemStates, result.keptActions)));
+                    components.rewardModels.insert(std::make_pair(rewardModel.first, transformRewardModel(rewardModel.second, subsystemStates, result.keptActions)));
                 }
-                boost::optional<storm::models::sparse::ChoiceLabeling> choiceLabeling;
                 if (originalModel.hasChoiceLabeling()) {
-                    choiceLabeling = originalModel.getChoiceLabeling().getSubLabeling(result.keptActions);
+                    components.choiceLabeling = originalModel.getChoiceLabeling().getSubLabeling(result.keptActions);
                 }
-                result.model = std::make_shared<SparseModelType>(createTransformedModel(originalModel, subsystemStates, matrix, labeling, rewardModels, choiceLabeling));
+                if (originalModel.hasStateValuations()) {
+                    components.stateValuations = originalModel.getStateValuations().selectStates(subsystemStateCount);
+                }
+                if (originalModel.hasChoiceOrigins()) {
+                    components.choiceOrigins = originalModel.getChoiceOrigins().selectChoices(result.keptActions);
+                }
+                
+                transformModelSpecificComponents(originalModel, subsystemStates, components);
+                
+                result.model = storm::utility::builder::buildModelFromComponents(originalModel.getType(), std::move(components));
                 STORM_LOG_DEBUG("Subsystem Builder is done. Resulting model has " << result.model->getNumberOfStates() << " states.");
                 return result;
             }
             
         private:
-            template<typename ValueType = typename SparseModelType::ValueType, typename RewardModelType = typename SparseModelType::RewardModelType>
-            static typename std::enable_if<std::is_same<RewardModelType, storm::models::sparse::StandardRewardModel<ValueType>>::value, RewardModelType>::type
-            transformRewardModel(RewardModelType const& originalRewardModel, storm::storage::BitVector const& subsystem, storm::storage::BitVector const& subsystemActions) {
+            template<typename ValueType = typename SparseModelType::RewardModelType::ValueType, typename RewardModelType = typename SparseModelType::RewardModelType>
+            static RewardModelType transformRewardModel(RewardModelType const& originalRewardModel, storm::storage::BitVector const& subsystem, storm::storage::BitVector const& subsystemActions) {
                 boost::optional<std::vector<ValueType>> stateRewardVector;
                 boost::optional<std::vector<ValueType>> stateActionRewardVector;
                 boost::optional<storm::storage::SparseMatrix<ValueType>> transitionRewardMatrix;
@@ -122,32 +131,37 @@ namespace storm {
             template<typename MT = SparseModelType>
             static typename std::enable_if<
             std::is_same<MT,storm::models::sparse::Dtmc<typename SparseModelType::ValueType>>::value ||
-            std::is_same<MT,storm::models::sparse::Mdp<typename SparseModelType::ValueType>>::value ||
-            std::is_same<MT,storm::models::sparse::Ctmc<typename SparseModelType::ValueType>>::value,
+            std::is_same<MT,storm::models::sparse::Mdp<typename SparseModelType::ValueType>>::value,
             MT>::type
-            createTransformedModel(MT const& /*originalModel*/,
+            transformModelSpecificComponents(MT const&,
                                    storm::storage::BitVector const& /*subsystem*/,
-                                   storm::storage::SparseMatrix<typename MT::ValueType>& matrix,
-                                   storm::models::sparse::StateLabeling& stateLabeling,
-                                   std::unordered_map<std::string, typename MT::RewardModelType>& rewardModels,
-                                   boost::optional<storm::models::sparse::ChoiceLabeling>& choiceLabeling ) {
-                return MT(std::move(matrix), std::move(stateLabeling), std::move(rewardModels), std::move(choiceLabeling));
+                                   storm::storage::sparse::ModelComponents<typename SparseModelType::ValueType, typename SparseModelType::RewardModelType>&) {
+                // Intentionally left empty
             }
             
             template<typename MT = SparseModelType>
             static typename std::enable_if<
-            std::is_same<MT,storm::models::sparse::MarkovAutomaton<typename SparseModelType::ValueType>>::value,
+            std::is_same<MT,storm::models::sparse::Ctmc<typename SparseModelType::ValueType>>::value,
             MT>::type
-            createTransformedModel(MT const& originalModel,
+            transformModelSpecificComponents(MT const& originalModel,
                                    storm::storage::BitVector const& subsystem,
                                    storm::storage::SparseMatrix<typename MT::ValueType>& matrix,
-                                   storm::models::sparse::StateLabeling& stateLabeling,
-                                   std::unordered_map<std::string,
-                                   typename MT::RewardModelType>& rewardModels,
-                                   boost::optional<storm::models::sparse::ChoiceLabeling>& choiceLabeling ) {
-                storm::storage::BitVector markovianStates = originalModel.getMarkovianStates() % subsystem;
-                std::vector<typename MT::ValueType> exitRates = storm::utility::vector::filterVector(originalModel.getExitRates(), subsystem);
-                return MT(std::move(matrix), std::move(stateLabeling), std::move(markovianStates), std::move(exitRates), true, std::move(rewardModels), std::move(choiceLabeling));
+                                   storm::storage::sparse::ModelComponents<typename SparseModelType::ValueType, typename SparseModelType::RewardModelType>& components) {
+                components.exitRates = storm::utility::vector::filterVector(originalModel.getExitRateVector(), subsystem);
+                components.rateTransitions = true;
+            }
+        
+            template<typename MT = SparseModelType>
+            static typename std::enable_if<
+            std::is_same<MT,storm::models::sparse::MarkovAutomaton<typename SparseModelType::ValueType>>::value,
+            MT>::type
+            transformModelSpecificComponents(MT const& originalModel,
+                                   storm::storage::BitVector const& subsystem,
+                                   storm::storage::SparseMatrix<typename MT::ValueType>& matrix,
+                                   storm::storage::sparse::ModelComponents<typename SparseModelType::ValueType, typename SparseModelType::RewardModelType>& components) {
+                components.markovianStates = originalModel.getMarkovianStates() % subsystem;
+                components.exitRates = storm::utility::vector::filterVector(originalModel.getExitRates(), subsystem);
+                components.rateTransitions = false; // Note that originalModel.getTransitionMatrix() contains probabilities
             }
             
         };

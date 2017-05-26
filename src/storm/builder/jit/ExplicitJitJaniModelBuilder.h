@@ -17,8 +17,6 @@
 #include "storm/builder/BuilderOptions.h"
 #include "storm/builder/jit/JitModelBuilderInterface.h"
 #include "storm/builder/jit/ModelComponentsBuilder.h"
-#include "storm/builder/ExplicitModelBuilderResult.h"
-
 
 namespace storm {
     namespace models {
@@ -59,7 +57,7 @@ namespace storm {
                 /*!
                  * Builds and returns the sparse model.
                  */
-                storm::builder::ExplicitModelBuilderResult<ValueType, RewardModelType> build();
+                std::shared_ptr<storm::models::sparse::Model<ValueType, RewardModelType>> build();
                 
                 /*!
                  * Performs some checks that can help debug why the model builder does not work. Returns true if the

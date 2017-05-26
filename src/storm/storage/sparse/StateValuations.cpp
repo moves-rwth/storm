@@ -22,6 +22,10 @@ namespace storm {
                 return valuations[state];
             }
 
+            uint_fast64_t StateValuations::getNumberOfStates() const {
+                return valuations.size();
+            }
+            
             StateValuations StateValuations::selectStates(storm::storage::BitVector const& selectedStates) const {
                 return StateValuations(storm::utility::vector::filterVector(valuations, selectedStates));
             }

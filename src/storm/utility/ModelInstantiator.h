@@ -63,9 +63,12 @@ namespace storm {
                             std::is_same<PMT,storm::models::sparse::Mdp<typename ParametricSparseModelType::ValueType>>::value
                 >::type
                 initializeModelSpecificData(PMT const& parametricModel) {
-                    auto stateLabelingCopy = parametricModel.getStateLabeling();
-                    auto choiceLabelingCopy = parametricModel.getOptionalChoiceLabeling();
-                    this->instantiatedModel = std::make_shared<ConstantSparseModelType>(buildDummyMatrix(parametricModel.getTransitionMatrix()), std::move(stateLabelingCopy), buildDummyRewardModels(parametricModel.getRewardModels()), std::move(choiceLabelingCopy));
+                    storm::storage::sparse::ModelComponents<ConstantType, typename ConstantSparseModelType::RewardModelType> components(buildDummyMatrix(parametricModel.getTransitionMatrix()));
+                    components.stateLabeling = parametricModel.getStateLabeling();
+                    components.rewardModels = buildDummyRewardModels(parametricModel.getRewardModels());
+                    components.choiceLabeling = parametricModel.getOptionalChoiceLabeling();
+                    
+                    this->instantiatedModel = std::make_shared<ConstantSparseModelType>(std::move(components));
                 }
 
                 template<typename PMT = ParametricSparseModelType>
@@ -73,10 +76,13 @@ namespace storm {
                 std::is_same<PMT,storm::models::sparse::Ctmc<typename ParametricSparseModelType::ValueType>>::value
                 >::type
                 initializeModelSpecificData(PMT const& parametricModel) {
-                    auto stateLabelingCopy = parametricModel.getStateLabeling();
-                    auto choiceLabelingCopy = parametricModel.getOptionalChoiceLabeling();
-                    std::vector<ConstantType> exitRates(parametricModel.getExitRateVector().size(), storm::utility::one<ConstantType>());
-                    this->instantiatedModel = std::make_shared<ConstantSparseModelType>(buildDummyMatrix(parametricModel.getTransitionMatrix()), std::move(exitRates), std::move(stateLabelingCopy), buildDummyRewardModels(parametricModel.getRewardModels()), std::move(choiceLabelingCopy));
+                    storm::storage::sparse::ModelComponents<ConstantType, typename ConstantSparseModelType::RewardModelType> components(buildDummyMatrix(parametricModel.getTransitionMatrix()));
+                    components.stateLabeling = parametricModel.getStateLabeling();
+                    components.rewardModels = buildDummyRewardModels(parametricModel.getRewardModels());
+                    components.exitRates = std::vector<ConstantType>(parametricModel.getExitRateVector().size(), storm::utility::one<ConstantType>());
+                    components.rateTransitions = true;
+                    components.choiceLabeling = parametricModel.getOptionalChoiceLabeling();
+                    this->instantiatedModel = std::make_shared<ConstantSparseModelType>(std::move(components));
 
                     initializeVectorMapping(this->instantiatedModel->getExitRateVector(), this->functions, this->vectorMapping, parametricModel.getExitRateVector());
                 }
@@ -87,12 +93,14 @@ namespace storm {
                             std::is_same<PMT,storm::models::sparse::MarkovAutomaton<typename ParametricSparseModelType::ValueType>>::value
                 >::type
                 initializeModelSpecificData(PMT const& parametricModel) {
-                    auto stateLabelingCopy = parametricModel.getStateLabeling();
-                    auto markovianStatesCopy = parametricModel.getMarkovianStates();
-                    auto choiceLabelingCopy = parametricModel.getOptionalChoiceLabeling();
-                    std::vector<ConstantType> exitRates(parametricModel.getExitRates().size(), storm::utility::one<ConstantType>());
-                    this->instantiatedModel = std::make_shared<ConstantSparseModelType>(buildDummyMatrix(parametricModel.getTransitionMatrix()), std::move(stateLabelingCopy), std::move(markovianStatesCopy), std::move(exitRates), true, buildDummyRewardModels(parametricModel.getRewardModels()), std::move(choiceLabelingCopy));
-                    
+                    storm::storage::sparse::ModelComponents<ConstantType, typename ConstantSparseModelType::RewardModelType> components(buildDummyMatrix(parametricModel.getTransitionMatrix()));
+                    components.stateLabeling = parametricModel.getStateLabeling();
+                    components.rewardModels = buildDummyRewardModels(parametricModel.getRewardModels());
+                    components.exitRates = std::vector<ConstantType>(parametricModel.getExitRates().size(), storm::utility::one<ConstantType>());
+                    components.markovianStates = parametricModel.getMarkovianStates();
+                    components.choiceLabeling = parametricModel.getOptionalChoiceLabeling();
+                    this->instantiatedModel = std::make_shared<ConstantSparseModelType>(std::move(components));
+
                     initializeVectorMapping(this->instantiatedModel->getExitRates(), this->functions, this->vectorMapping, parametricModel.getExitRates());
                 }
                 
@@ -101,12 +109,13 @@ namespace storm {
                             std::is_same<PMT,storm::models::sparse::StochasticTwoPlayerGame<typename ParametricSparseModelType::ValueType>>::value
                 >::type
                 initializeModelSpecificData(PMT const& parametricModel) {
-                    auto player1MatrixCopy = parametricModel.getPlayer1Matrix();
-                    auto stateLabelingCopy = parametricModel.getStateLabeling();
-                    boost::optional<storm::models::sparse::ChoiceLabeling> player1ChoiceLabeling, player2ChoiceLabeling;
-                    if(parametricModel.hasPlayer1ChoiceLabeling()) player1ChoiceLabeling = parametricModel.getPlayer1ChoiceLabeling();
-                    if(parametricModel.hasPlayer2ChoiceLabeling()) player2ChoiceLabeling = parametricModel.getPlayer2ChoiceLabeling();
-                    this->instantiatedModel = std::make_shared<ConstantSparseModelType>(std::move(player1MatrixCopy), buildDummyMatrix(parametricModel.getTransitionMatrix()), std::move(stateLabelingCopy), buildDummyRewardModels(parametricModel.getRewardModels()), std::move(player1ChoiceLabeling), std::move(player2ChoiceLabeling));
+                    storm::storage::sparse::ModelComponents<ConstantType, typename ConstantSparseModelType::RewardModelType> components(buildDummyMatrix(parametricModel.getTransitionMatrix()));
+                    components.stateLabeling = parametricModel.getStateLabeling();
+                    components.rewardModels = buildDummyRewardModels(parametricModel.getRewardModels());
+                    components.player1Matrix = parametricModel.getPlayer1Matrix();
+                    components.choiceLabeling = parametricModel.getOptionalChoiceLabeling();
+                    
+                    this->instantiatedModel = std::make_shared<ConstantSparseModelType>(std::move(components));
                 }
                 
                 /*!

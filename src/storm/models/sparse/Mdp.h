@@ -21,12 +21,10 @@ namespace storm {
                  * @param transitionMatrix The matrix representing the transitions in the model.
                  * @param stateLabeling The labeling of the states.
                  * @param rewardModels A mapping of reward model names to reward models.
-                 * @param optionalChoiceLabeling A vector that represents the labels associated with the choices of each state.
                  */
                 Mdp(storm::storage::SparseMatrix<ValueType> const& transitionMatrix,
                     storm::models::sparse::StateLabeling const& stateLabeling,
-                    std::unordered_map<std::string, RewardModelType> const& rewardModels = std::unordered_map<std::string, RewardModelType>(),
-                    boost::optional<storm::models::sparse::ChoiceLabeling> const& optionalChoiceLabeling = boost::none);
+                    std::unordered_map<std::string, RewardModelType> const& rewardModels = std::unordered_map<std::string, RewardModelType>());
                 
                 /*!
                  * Constructs a model by moving the given data.
@@ -34,12 +32,18 @@ namespace storm {
                  * @param transitionMatrix The matrix representing the transitions in the model.
                  * @param stateLabeling The labeling of the states.
                  * @param rewardModels A mapping of reward model names to reward models.
-                 * @param optionalChoiceLabeling A vector that represents the labels associated with the choices of each state.
                  */
                 Mdp(storm::storage::SparseMatrix<ValueType>&& transitionMatrix,
                     storm::models::sparse::StateLabeling&& stateLabeling,
-                    std::unordered_map<std::string, RewardModelType>&& rewardModels = std::unordered_map<std::string, RewardModelType>(),
-                    boost::optional<storm::models::sparse::ChoiceLabeling>&& optionalChoiceLabeling = boost::none);
+                    std::unordered_map<std::string, RewardModelType>&& rewardModels = std::unordered_map<std::string, RewardModelType>());
+                
+                /*!
+                 * Constructs a model from the given data.
+                 *
+                 * @param components The components for this model.
+                 */
+                Mdp(storm::storage::sparse::ModelComponents<ValueType, RewardModelType> const& components);
+                Mdp(storm::storage::sparse::ModelComponents<ValueType, RewardModelType>&& components);
                 
                 Mdp(Mdp<ValueType, RewardModelType> const& other) = default;
                 Mdp& operator=(Mdp<ValueType, RewardModelType> const& other) = default;

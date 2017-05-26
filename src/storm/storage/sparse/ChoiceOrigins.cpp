@@ -47,12 +47,16 @@ namespace storm {
             	return  indexToIdentifier[choiceIndex];
             }
             
+            uint_fast64_t ChoiceOrigins::getNumberOfChoices() const {
+                return indexToIdentifier.size();
+            }
+            
 			uint_fast64_t ChoiceOrigins::getIdentifierForChoicesWithNoOrigin() {
 				return 0;
 			}
                 
 			std::string const& ChoiceOrigins::getIdentifierInfo(uint_fast64_t identifier) const {
-                STORM_LOG_ASSERT(identifier <= this->getLargestIdentifier(), "Invalid choice origin identifier: " << identifier);
+                STORM_LOG_ASSERT(identifier < this->getNumberOfIdentifiers(), "Invalid choice origin identifier: " << identifier);
                 if (identifierToInfo.empty()) {
                     computeIdentifierInfos();
                 }
@@ -84,7 +88,7 @@ namespace storm {
                          
             storm::models::sparse::ChoiceLabeling ChoiceOrigins::toChoiceLabeling() const {
                 storm::models::sparse::ChoiceLabeling result(indexToIdentifier.size());
-                for (uint_fast64_t identifier = 0; identifier <= this->getLargestIdentifier(); ++identifier) {
+                for (uint_fast64_t identifier = 0; identifier < this->getNumberOfIdentifiers(); ++identifier) {
                     storm::storage::BitVector choicesWithIdentifier = storm::utility::vector::filter<uint_fast64_t>(indexToIdentifier, [&identifier](uint_fast64_t i) -> bool { return i == identifier;});
                     if (!choicesWithIdentifier.empty()) {
                         result.addLabel(getIdentifierInfo(identifier), std::move(choicesWithIdentifier));

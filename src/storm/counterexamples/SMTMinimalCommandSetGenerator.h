@@ -85,12 +85,11 @@ namespace storm {
              * a scheduler that satisfies phi until psi with a nonzero probability.
              *
              * @param mdp The MDP to search for relevant commands.
-             * @param choiceOrigins The choice origins of the mdp.
              * @param phiStates A bit vector representing all states that satisfy phi.
              * @param psiStates A bit vector representing all states that satisfy psi.
              * @return A structure containing the relevant commands as well as states.
              */
-            static RelevancyInformation determineRelevantStatesAndCommands(storm::models::sparse::Mdp<T> const& mdp, storm::storage::sparse::PrismChoiceOrigins const& choiceOrigins, storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates) {
+            static RelevancyInformation determineRelevantStatesAndCommands(storm::models::sparse::Mdp<T> const& mdp, storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates) {
 
                 // Create result.
                 RelevancyInformation relevancyInformation;
@@ -107,6 +106,7 @@ namespace storm {
                 // Retrieve some references for convenient access.
                 storm::storage::SparseMatrix<T> const& transitionMatrix = mdp.getTransitionMatrix();
                 std::vector<uint_fast64_t> const& nondeterministicChoiceIndices = mdp.getNondeterministicChoiceIndices();
+                storm::storage::sparse::PrismChoiceOrigins const& choiceOrigins = mdp.getChoiceOrigins()->asPrismChoiceOrigins();
 
                 // Now traverse all choices of all relevant states and check whether there is a successor target state.
                 // If so, the associated commands become relevant. Also, if a choice of relevant state has at least one
@@ -133,7 +133,7 @@ namespace storm {
                 }
                 
                 // Compute the set of commands that are known to be taken in any case.
-                relevancyInformation.knownCommands = storm::utility::counterexamples::getGuaranteedCommandSet(mdp, choiceOrigins, psiStates, relevancyInformation.relevantCommands);
+                relevancyInformation.knownCommands = storm::utility::counterexamples::getGuaranteedCommandSet(mdp, psiStates, relevancyInformation.relevantCommands);
                 if (!relevancyInformation.knownCommands.empty()) {
                     boost::container::flat_set<uint_fast64_t> remainingCommands;
                     std::set_difference(relevancyInformation.relevantCommands.begin(), relevancyInformation.relevantCommands.end(), relevancyInformation.knownCommands.begin(), relevancyInformation.knownCommands.end(), std::inserter(remainingCommands, remainingCommands.end()));
@@ -269,7 +269,7 @@ namespace storm {
              * @param context The Z3 context in which to build the expressions.
              * @param solver The solver to use for the satisfiability evaluation.
              */
-            static void assertExplicitCuts(storm::models::sparse::Mdp<T> const& mdp, storm::storage::sparse::PrismChoiceOrigins const& choiceOrigins, storm::storage::BitVector const& psiStates, VariableInformation const& variableInformation, RelevancyInformation const& relevancyInformation, storm::solver::SmtSolver& solver) {
+            static void assertExplicitCuts(storm::models::sparse::Mdp<T> const& mdp, storm::storage::BitVector const& psiStates, VariableInformation const& variableInformation, RelevancyInformation const& relevancyInformation, storm::solver::SmtSolver& solver) {
                 // Walk through the MDP and
                 // * identify commands enabled in initial states
                 // * identify commands that can directly precede a given action
@@ -288,6 +288,7 @@ namespace storm {
                 storm::storage::SparseMatrix<T> const& transitionMatrix = mdp.getTransitionMatrix();
                 storm::storage::BitVector const& initialStates = mdp.getInitialStates();
                 storm::storage::SparseMatrix<T> backwardTransitions = mdp.getBackwardTransitions();
+                storm::storage::sparse::PrismChoiceOrigins const& choiceOrigins = mdp.getChoiceOrigins()->asPrismChoiceOrigins();
                 
                 for (auto currentState : relevancyInformation.relevantStates) {
                     for (auto currentChoice : relevancyInformation.relevantChoicesForRelevantStates.at(currentState)) {
@@ -546,7 +547,7 @@ namespace storm {
              * @param program The symbolic representation of the model in terms of a program.
              * @param solver The solver to use for the satisfiability evaluation.
              */
-            static void assertSymbolicCuts(storm::prism::Program& program, storm::models::sparse::Mdp<T> const& mdp, storm::storage::sparse::PrismChoiceOrigins const& choiceOrigins, VariableInformation const& variableInformation, RelevancyInformation const& relevancyInformation, storm::solver::SmtSolver& solver) {
+            static void assertSymbolicCuts(storm::prism::Program& program, storm::models::sparse::Mdp<T> const& mdp, VariableInformation const& variableInformation, RelevancyInformation const& relevancyInformation, storm::solver::SmtSolver& solver) {
                 // A container storing the command sets that may precede a given command set.
                 std::map<boost::container::flat_set<uint_fast64_t>, std::set<boost::container::flat_set<uint_fast64_t>>> precedingCommandSets;
 
@@ -556,6 +557,7 @@ namespace storm {
                 // Get some data from the MDP for convenient access.
                 storm::storage::SparseMatrix<T> const& transitionMatrix = mdp.getTransitionMatrix();
                 storm::storage::SparseMatrix<T> backwardTransitions = mdp.getBackwardTransitions();
+                storm::storage::sparse::PrismChoiceOrigins const& choiceOrigins = mdp.getChoiceOrigins()->asPrismChoiceOrigins();
                 
                 // Compute the set of commands that may precede a given action.
                 for (auto currentState : relevancyInformation.relevantStates) {
@@ -888,7 +890,7 @@ namespace storm {
             /*!
              * Asserts constraints necessary to encode the reachability of at least one target state from the initial states.
              */
-            static void assertReachabilityCuts(storm::models::sparse::Mdp<T> const& mdp, storm::storage::sparse::PrismChoiceOrigins const& choiceOrigins, storm::storage::BitVector const& psiStates, VariableInformation const& variableInformation, RelevancyInformation const& relevancyInformation, storm::solver::SmtSolver& solver) {
+            static void assertReachabilityCuts(storm::models::sparse::Mdp<T> const& mdp, storm::storage::BitVector const& psiStates, VariableInformation const& variableInformation, RelevancyInformation const& relevancyInformation, storm::solver::SmtSolver& solver) {
                 
                 if (!variableInformation.hasReachabilityVariables) {
                     throw storm::exceptions::InvalidStateException() << "Impossible to assert reachability cuts without the necessary variables.";
@@ -897,6 +899,7 @@ namespace storm {
                 // Get some data from the MDP for convenient access.
                 storm::storage::SparseMatrix<T> const& transitionMatrix = mdp.getTransitionMatrix();
                 storm::storage::SparseMatrix<T> backwardTransitions = mdp.getBackwardTransitions();
+                storm::storage::sparse::PrismChoiceOrigins const& choiceOrigins = mdp.getChoiceOrigins()->asPrismChoiceOrigins();
 
                 // First, we add the formulas that encode
                 // (1) if an incoming transition is chosen, an outgoing one is chosen as well (for non-initial states)
@@ -1356,7 +1359,7 @@ namespace storm {
              * @param commandSet The currently chosen set of commands.
              * @param variableInformation A structure with information about the variables of the solver.
              */
-            static void analyzeZeroProbabilitySolution(storm::solver::SmtSolver& solver, storm::models::sparse::Mdp<T> const& subMdp, storm::storage::sparse::PrismChoiceOrigins const& subChoiceOrigins, storm::models::sparse::Mdp<T> const& originalMdp, storm::storage::sparse::PrismChoiceOrigins const& originalChoiceOrigins, storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates, boost::container::flat_set<uint_fast64_t> const& commandSet, VariableInformation& variableInformation, RelevancyInformation const& relevancyInformation) {
+            static void analyzeZeroProbabilitySolution(storm::solver::SmtSolver& solver, storm::models::sparse::Mdp<T> const& subMdp, storm::models::sparse::Mdp<T> const& originalMdp, storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates, boost::container::flat_set<uint_fast64_t> const& commandSet, VariableInformation& variableInformation, RelevancyInformation const& relevancyInformation) {
                 storm::storage::BitVector reachableStates(subMdp.getNumberOfStates());
                 
                 STORM_LOG_DEBUG("Analyzing solution with zero probability.");
@@ -1372,8 +1375,10 @@ namespace storm {
                 
                 storm::storage::SparseMatrix<T> const& transitionMatrix = subMdp.getTransitionMatrix();
                 std::vector<uint_fast64_t> const& nondeterministicChoiceIndices = subMdp.getNondeterministicChoiceIndices();
+                storm::storage::sparse::PrismChoiceOrigins const& subChoiceOrigins = subMdp.getChoiceOrigins()->asPrismChoiceOrigins();
                 
                 // Now determine which states and commands are actually reachable.
+
                 boost::container::flat_set<uint_fast64_t> reachableCommands;
                 while (!stack.empty()) {
                     uint_fast64_t currentState = stack.back();
@@ -1415,7 +1420,9 @@ namespace storm {
                 boost::container::flat_set<uint_fast64_t> locallyRelevantCommands;
                 std::set_difference(relevancyInformation.relevantCommands.begin(), relevancyInformation.relevantCommands.end(), commandSet.begin(), commandSet.end(), std::inserter(locallyRelevantCommands, locallyRelevantCommands.begin()));
                 
-                std::vector<boost::container::flat_set<uint_fast64_t>> guaranteedCommandSets = storm::utility::counterexamples::getGuaranteedCommandSets(originalMdp, originalChoiceOrigins, statesThatCanReachTargetStates, locallyRelevantCommands);
+                storm::storage::sparse::PrismChoiceOrigins const& originalChoiceOrigins = originalMdp.getChoiceOrigins()->asPrismChoiceOrigins();
+                
+                std::vector<boost::container::flat_set<uint_fast64_t>> guaranteedCommandSets = storm::utility::counterexamples::getGuaranteedCommandSets(originalMdp, statesThatCanReachTargetStates, locallyRelevantCommands);
                 STORM_LOG_DEBUG("Found " << reachableCommands.size() << " reachable commands and " << reachableStates.getNumberOfSetBits() << " reachable states.");
                 
                 // Search for states on the border of the reachable state space, i.e. states that are still reachable
@@ -1480,7 +1487,7 @@ namespace storm {
              * @param commandSet The currently chosen set of commands.
              * @param variableInformation A structure with information about the variables of the solver.
              */
-            static void analyzeInsufficientProbabilitySolution(storm::solver::SmtSolver& solver, storm::models::sparse::Mdp<T> const& subMdp, storm::storage::sparse::PrismChoiceOrigins const& subChoiceOrigins, storm::models::sparse::Mdp<T> const& originalMdp, storm::storage::sparse::PrismChoiceOrigins const& originalChoiceOrigins, storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates, boost::container::flat_set<uint_fast64_t> const& commandSet, VariableInformation& variableInformation, RelevancyInformation const& relevancyInformation) {
+            static void analyzeInsufficientProbabilitySolution(storm::solver::SmtSolver& solver, storm::models::sparse::Mdp<T> const& subMdp, storm::models::sparse::Mdp<T> const& originalMdp, storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates, boost::container::flat_set<uint_fast64_t> const& commandSet, VariableInformation& variableInformation, RelevancyInformation const& relevancyInformation) {
 
                 STORM_LOG_DEBUG("Analyzing solution with insufficient probability.");
 
@@ -1496,6 +1503,7 @@ namespace storm {
                 
                 storm::storage::SparseMatrix<T> const& transitionMatrix = subMdp.getTransitionMatrix();
                 std::vector<uint_fast64_t> const& nondeterministicChoiceIndices = subMdp.getNondeterministicChoiceIndices();
+                storm::storage::sparse::PrismChoiceOrigins const& subChoiceOrigins = subMdp.getChoiceOrigins()->asPrismChoiceOrigins();
                 
                 // Now determine which states and commands are actually reachable.
                 boost::container::flat_set<uint_fast64_t> reachableCommands;
@@ -1533,7 +1541,9 @@ namespace storm {
                 boost::container::flat_set<uint_fast64_t> locallyRelevantCommands;
                 std::set_difference(relevancyInformation.relevantCommands.begin(), relevancyInformation.relevantCommands.end(), commandSet.begin(), commandSet.end(), std::inserter(locallyRelevantCommands, locallyRelevantCommands.begin()));
                 
-                std::vector<boost::container::flat_set<uint_fast64_t>> guaranteedCommandSets = storm::utility::counterexamples::getGuaranteedCommandSets(originalMdp, originalChoiceOrigins, statesThatCanReachTargetStates, locallyRelevantCommands);
+                storm::storage::sparse::PrismChoiceOrigins const& originalChoiceOrigins = originalMdp.getChoiceOrigins()->asPrismChoiceOrigins();
+                
+                std::vector<boost::container::flat_set<uint_fast64_t>> guaranteedCommandSets = storm::utility::counterexamples::getGuaranteedCommandSets(originalMdp, statesThatCanReachTargetStates, locallyRelevantCommands);
                 
                 // Search for states for which we could enable another option and possibly improve the reachability probability.
                 std::set<boost::container::flat_set<uint_fast64_t>> cutCommands;
@@ -1578,13 +1588,12 @@ namespace storm {
             
             /*!
              * Returns the submdp obtained from removing all choices that do not originate from the specified commandset.
-             * Also returns the choiceorigins of the submdp
              */
-            static std::pair<storm::models::sparse::Mdp<T>, std::shared_ptr<storm::storage::sparse::ChoiceOrigins>> restrictMdpToCommandSet(storm::models::sparse::Mdp<T> const& mdp, std::shared_ptr<storm::storage::sparse::ChoiceOrigins> const& choiceOrigins, boost::container::flat_set<uint_fast64_t> const& enabledCommands) {
-                STORM_LOG_THROW(choiceOrigins, storm::exceptions::InvalidArgumentException, "Restriction to command set is impossible for model without choice origins.");
-                STORM_LOG_THROW(choiceOrigins->isPrismChoiceOrigins(), storm::exceptions::InvalidArgumentException, "Restriction to command set is impossible for model without prism choice origins.");
+            static storm::models::sparse::Mdp<T> restrictMdpToCommandSet(storm::models::sparse::Mdp<T> const& mdp, boost::container::flat_set<uint_fast64_t> const& enabledCommands) {
+                STORM_LOG_THROW(mdp.hasChoiceOrigins(), storm::exceptions::InvalidArgumentException, "Restriction to command set is impossible for model without choice origins.");
+                STORM_LOG_THROW(mdp.getChoiceOrigins()->isPrismChoiceOrigins(), storm::exceptions::InvalidArgumentException, "Restriction to command set is impossible for model without prism choice origins.");
 
-                storm::storage::sparse::PrismChoiceOrigins const& prismChoiceOrigins = choiceOrigins->asPrismChoiceOrigins();
+                storm::storage::sparse::PrismChoiceOrigins const& prismChoiceOrigins = mdp.getChoiceOrigins()->asPrismChoiceOrigins();
 
                 storm::storage::SparseMatrixBuilder<T> transitionMatrixBuilder(0, mdp.getTransitionMatrix().getColumnCount(), 0, true, true, mdp.getTransitionMatrix().getRowGroupCount());
                 std::vector<uint_fast64_t> subMdpChoiceIndexMapping;
@@ -1619,10 +1628,10 @@ namespace storm {
                     }
                 }
                 
-                storm::models::sparse::Mdp<T> resultMdp(transitionMatrixBuilder.build(), storm::models::sparse::StateLabeling(mdp.getStateLabeling()));
-                std::shared_ptr<storm::storage::sparse::ChoiceOrigins> resultOrigins = prismChoiceOrigins.selectChoices(subMdpChoiceIndexMapping);
-                
-                return std::make_pair(std::move(resultMdp), std::move(resultOrigins));
+                storm::storage::sparse::ModelComponents<T> resultComponents(transitionMatrixBuilder.build());
+                resultComponents.stateLabeling = mdp.getStateLabeling();
+                resultComponents.choiceOrigins = prismChoiceOrigins.selectChoices(subMdpChoiceIndexMapping);
+                return storm::models::sparse::Mdp<T>(std::move(resultComponents));
             }
 
             /*!
@@ -1631,7 +1640,6 @@ namespace storm {
              * @param program The program that was used to build the MDP.
              * @param constantDefinitionString A string defining the undefined constants in the given program.
              * @param mdp The MDP in which to find the minimal command set.
-             * @param choiceOrigins The choice origins of the mdp
              * @param phiStates A bit vector characterizing all phi states in the model.
              * @param psiStates A bit vector characterizing all psi states in the model.
              * @param probabilityThreshold The probability value that must be achieved or exceeded.
@@ -1640,7 +1648,7 @@ namespace storm {
              * @param checkThresholdFeasible If set, it is verified that the model can actually achieve/exceed the given probability value. If this check
              * is made and fails, an exception is thrown.
              */
-            static boost::container::flat_set<uint_fast64_t> getMinimalCommandSet(storm::prism::Program program, std::string const& constantDefinitionString, storm::models::sparse::Mdp<T> const& mdp, std::shared_ptr<storm::storage::sparse::ChoiceOrigins> const& choiceOrigins, storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates, double probabilityThreshold, bool strictBound, bool checkThresholdFeasible = false, bool includeReachabilityEncoding = false) {
+            static boost::container::flat_set<uint_fast64_t> getMinimalCommandSet(storm::prism::Program program, std::string const& constantDefinitionString, storm::models::sparse::Mdp<T> const& mdp, storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates, double probabilityThreshold, bool strictBound, bool checkThresholdFeasible = false, bool includeReachabilityEncoding = false) {
 #ifdef STORM_HAVE_Z3                 
 
                 
@@ -1661,10 +1669,8 @@ namespace storm {
                 auto analysisClock = std::chrono::high_resolution_clock::now();
                 decltype(std::chrono::high_resolution_clock::now() - analysisClock) totalAnalysisTime(0);
 
-                STORM_LOG_THROW(choiceOrigins && choiceOrigins->isPrismChoiceOrigins(), storm::exceptions::InvalidArgumentException, "Restriction to Prism command set is impossible for model without Prism choice origins.");
+                STORM_LOG_THROW(mdp.hasChoiceOrigins() && mdp.getChoiceOrigins()->isPrismChoiceOrigins(), storm::exceptions::InvalidArgumentException, "Restriction to Prism command set is impossible for model without Prism choice origins.");
                 
-                storm::storage::sparse::PrismChoiceOrigins const& prismChoiceOrigins = choiceOrigins->asPrismChoiceOrigins();
-
                 std::map<storm::expressions::Variable, storm::expressions::Expression> constantDefinitions = storm::utility::cli::parseConstantDefinitionString(program.getManager(), constantDefinitionString);
                 storm::prism::Program preparedProgram = program.defineUndefinedConstants(constantDefinitions);
                 preparedProgram = preparedProgram.substituteConstants();
@@ -1683,7 +1689,7 @@ namespace storm {
                 }
                 
                 // (2) Identify all states and commands that are relevant, because only these need to be considered later.
-                RelevancyInformation relevancyInformation = determineRelevantStatesAndCommands(mdp, prismChoiceOrigins, phiStates, psiStates);
+                RelevancyInformation relevancyInformation = determineRelevantStatesAndCommands(mdp, phiStates, psiStates);
                 
                 // (3) Create a solver.
                 std::shared_ptr<storm::expressions::ExpressionManager> manager(new storm::expressions::ExpressionManager());
@@ -1701,12 +1707,12 @@ namespace storm {
                 
                 // (6) Add constraints that cut off a lot of suboptimal solutions.
                 STORM_LOG_DEBUG("Asserting cuts.");
-                assertExplicitCuts(mdp, prismChoiceOrigins, psiStates, variableInformation, relevancyInformation, *solver);
+                assertExplicitCuts(mdp, psiStates, variableInformation, relevancyInformation, *solver);
                 STORM_LOG_DEBUG("Asserted explicit cuts.");
-                assertSymbolicCuts(preparedProgram, mdp, prismChoiceOrigins, variableInformation, relevancyInformation, *solver);
+                assertSymbolicCuts(preparedProgram, mdp, variableInformation, relevancyInformation, *solver);
                 STORM_LOG_DEBUG("Asserted symbolic cuts.");
                 if (includeReachabilityEncoding) {
-                    assertReachabilityCuts(mdp, prismChoiceOrigins, psiStates, variableInformation, relevancyInformation, *solver);
+                    assertReachabilityCuts(mdp, psiStates, variableInformation, relevancyInformation, *solver);
                     STORM_LOG_DEBUG("Asserted reachability cuts.");
                 }
                 
@@ -1735,10 +1741,8 @@ namespace storm {
                     // Restrict the given MDP to the current set of commands and compute the reachability probability.
                     modelCheckingClock = std::chrono::high_resolution_clock::now();
                     commandSet.insert(relevancyInformation.knownCommands.begin(), relevancyInformation.knownCommands.end());
-                    auto subMdpChoiceOrigins = restrictMdpToCommandSet(mdp, choiceOrigins, commandSet);
-                    storm::models::sparse::Mdp<T> const& subMdp = subMdpChoiceOrigins.first;
-                    STORM_LOG_THROW(subMdpChoiceOrigins.second && subMdpChoiceOrigins.second->isPrismChoiceOrigins(), storm::exceptions::InvalidArgumentException, "Expected prism choice origins for submodel.");
-                    storm::storage::sparse::PrismChoiceOrigins const& subPrismChoiceOrigins = subMdpChoiceOrigins.second->asPrismChoiceOrigins();
+                    storm::models::sparse::Mdp<T> const& subMdp = restrictMdpToCommandSet(mdp, commandSet);
+                    STORM_LOG_THROW(subMdp.hasChoiceOrigins() && subMdp.getChoiceOrigins()->isPrismChoiceOrigins(), storm::exceptions::InvalidArgumentException, "Expected prism choice origins for submodel.");
                 
                     storm::modelchecker::helper::SparseMdpPrctlHelper<T> modelCheckerHelper;
                     STORM_LOG_DEBUG("Invoking model checker.");
@@ -1759,11 +1763,11 @@ namespace storm {
                             ++zeroProbabilityCount;
                             
                             // If there was no target state reachable, analyze the solution and guide the solver into the right direction.
-                            analyzeZeroProbabilitySolution(*solver, subMdp, subPrismChoiceOrigins, mdp, prismChoiceOrigins, phiStates, psiStates, commandSet, variableInformation, relevancyInformation);
+                            analyzeZeroProbabilitySolution(*solver, subMdp, mdp, phiStates, psiStates, commandSet, variableInformation, relevancyInformation);
                         } else {
                             // If the reachability probability was greater than zero (i.e. there is a reachable target state), but the probability was insufficient to exceed
                             // the given threshold, we analyze the solution and try to guide the solver into the right direction.
-                            analyzeInsufficientProbabilitySolution(*solver, subMdp, subPrismChoiceOrigins, mdp, prismChoiceOrigins, phiStates, psiStates, commandSet, variableInformation, relevancyInformation);
+                            analyzeInsufficientProbabilitySolution(*solver, subMdp, mdp, phiStates, psiStates, commandSet, variableInformation, relevancyInformation);
                         }
                     } else {
                         done = true;
@@ -1801,7 +1805,7 @@ namespace storm {
 #endif
             }
             
-            static void computeCounterexample(storm::prism::Program program, std::string const& constantDefinitionString, storm::models::sparse::Mdp<T> const& mdp, std::shared_ptr<storm::storage::sparse::ChoiceOrigins> const& choiceOrigins, std::shared_ptr<storm::logic::Formula const> const& formula) {
+            static void computeCounterexample(storm::prism::Program program, std::string const& constantDefinitionString, storm::models::sparse::Mdp<T> const& mdp, std::shared_ptr<storm::logic::Formula const> const& formula) {
 #ifdef STORM_HAVE_Z3
                 std::cout << std::endl << "Generating minimal command set counterexample for formula " << *formula << std::endl;
                 
@@ -1843,7 +1847,7 @@ namespace storm {
                 
                 // Delegate the actual computation work to the function of equal name.
                 auto startTime = std::chrono::high_resolution_clock::now();
-                auto commandSet = getMinimalCommandSet(program, constantDefinitionString, mdp, choiceOrigins, phiStates, psiStates, threshold, strictBound, true, storm::settings::getModule<storm::settings::modules::CounterexampleGeneratorSettings>().isEncodeReachabilitySet());
+                auto commandSet = getMinimalCommandSet(program, constantDefinitionString, mdp, phiStates, psiStates, threshold, strictBound, true, storm::settings::getModule<storm::settings::modules::CounterexampleGeneratorSettings>().isEncodeReachabilitySet());
                 auto endTime = std::chrono::high_resolution_clock::now();
                 std::cout << std::endl << "Computed minimal command set of size " << commandSet.size() << " in " << std::chrono::duration_cast<std::chrono::milliseconds>(endTime - startTime).count() << "ms." << std::endl;
                 

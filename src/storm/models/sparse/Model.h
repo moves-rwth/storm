@@ -8,18 +8,16 @@
 #include "storm/models/ModelBase.h"
 #include "storm/models/sparse/StateLabeling.h"
 #include "storm/models/sparse/ChoiceLabeling.h"
+#include "storm/storage/sparse/ModelComponents.h"
 #include "storm/storage/sparse/StateType.h"
 #include "storm/storage/SparseMatrix.h"
+#include "storm/storage/sparse/ChoiceOrigins.h"
+#include "storm/storage/sparse/StateValuations.h"
 #include "storm/utility/OsDetection.h"
 
 namespace storm {
     namespace storage {
         class BitVector;
-    }
-    
-    namespace utility {
-        template<typename ParametricModelType, typename ConstantModelType>
-        class ModelInstantiator;
     }
     
     namespace models {
@@ -33,9 +31,7 @@ namespace storm {
              */
             template<class CValueType, class CRewardModelType = StandardRewardModel<CValueType>>
             class Model : public storm::models::ModelBase {
-                template<typename ParametricModelType, typename ConstantModelType>
-                friend class storm::utility::ModelInstantiator;
-                
+            
             public:
                 typedef CValueType ValueType;
                 typedef CRewardModelType RewardModelType;
@@ -43,37 +39,15 @@ namespace storm {
                 Model(Model<ValueType, RewardModelType> const& other) = default;
                 Model& operator=(Model<ValueType, RewardModelType> const& other) = default;
                 
-
                 /*!
                  * Constructs a model from the given data.
                  *
-                 * @param modelType The type of the model.
-                 * @param transitionMatrix The matrix representing the transitions in the model.
-                 * @param stateLabeling The labeling of the states.
-                 * @param rewardModels A mapping of reward model names to reward models.
-                 * @param optionalChoiceLabeling A vector that represents the labels associated with the choices of each state.
+                 * @param modelType the type of this model
+                 * @param components The components for this model.
                  */
-                Model(storm::models::ModelType const& modelType,
-                      storm::storage::SparseMatrix<ValueType> const& transitionMatrix,
-                      storm::models::sparse::StateLabeling const& stateLabeling,
-                      std::unordered_map<std::string, RewardModelType> const& rewardModels = std::unordered_map<std::string, RewardModelType>(),
-                      boost::optional<storm::models::sparse::ChoiceLabeling> const& optionalChoiceLabeling = boost::none);
-                
-                /*!
-                 * Constructs a model by moving the given data.
-                 *
-                 * @param modelType The type of the model.
-                 * @param transitionMatrix The matrix representing the transitions in the model.
-                 * @param stateLabeling The labeling of the states.
-                 * @param rewardModels A mapping of reward model names to reward models.
-                 * @param optionalChoiceLabeling A vector that represents the labels associated with the choices of each state.
-                 */
-                Model(storm::models::ModelType const& modelType,
-                      storm::storage::SparseMatrix<ValueType>&& transitionMatrix,
-                      storm::models::sparse::StateLabeling&& stateLabeling,
-                      std::unordered_map<std::string, RewardModelType>&& rewardModels = std::unordered_map<std::string, RewardModelType>(),
-                      boost::optional<storm::models::sparse::ChoiceLabeling>&& optionalChoiceLabeling = boost::none);
-                                
+                Model(ModelType modelType, storm::storage::sparse::ModelComponents<ValueType, RewardModelType> const& components);
+                Model(ModelType modelType, storm::storage::sparse::ModelComponents<ValueType, RewardModelType>&& components);
+               
                 /*!
                  * Retrieves the backward transition relation of the model, i.e. a set of transitions between states
                  * that correspond to the reversed transition relation of this model.
@@ -219,28 +193,6 @@ namespace storm {
                 bool removeRewardModel(std::string const& rewardModelName);
 
                 /*!
-                 * Retrieves the labels for the choices of the model. Note that calling this method is only valid if the
-                 * model has a choice labeling.
-                 *
-                 * @return The labels for the choices of the model.
-                 */
-                storm::models::sparse::ChoiceLabeling const& getChoiceLabeling() const;
-                
-                /*!
-                 * Retrieves an optional value that contains the choice labeling if there is one.
-                 * 
-                 * @return The labels for the choices, if they're saved.
-                 */
-                boost::optional<storm::models::sparse::ChoiceLabeling> const&  getOptionalChoiceLabeling() const;
-
-                /*!
-                 * Retrieves an optional value that contains the choice labeling if there is one.
-                 *
-                 * @return The labels for the choices, if they're saved.
-                 */
-                boost::optional<storm::models::sparse::ChoiceLabeling>&  getOptionalChoiceLabeling();
-                
-                /*!
                  * Returns the state labeling associated with this model.
                  *
                  * @return The state labeling associated with this model.
@@ -260,6 +212,88 @@ namespace storm {
                  * @return True iff this model has a labeling of the choices.
                  */
                 bool hasChoiceLabeling() const;
+                
+                /*!
+                 * Retrieves the labels for the choices of the model. Note that calling this method is only valid if the
+                 * model has a choice labeling.
+                 *
+                 * @return The labels for the choices of the model.
+                 */
+                storm::models::sparse::ChoiceLabeling const& getChoiceLabeling() const;
+                
+                /*!
+                 * Retrieves an optional value that contains the choice labeling if there is one.
+                 *
+                 * @return The labels for the choices, if they're saved.
+                 */
+                boost::optional<storm::models::sparse::ChoiceLabeling> const&  getOptionalChoiceLabeling() const;
+
+                /*!
+                 * Retrieves an optional value that contains the choice labeling if there is one.
+                 *
+                 * @return The labels for the choices, if they're saved.
+                 */
+                boost::optional<storm::models::sparse::ChoiceLabeling>&  getOptionalChoiceLabeling();
+                
+                /*!
+                 * Retrieves whether this model was build with state valuations.
+                 *
+                 * @return True iff this model has state valuations.
+                 */
+                bool hasStateValuations() const;
+                
+                /*!
+                 * Retrieves the valuations of the states of the model. Note that calling this method is only valid if the
+                 * model has state valuations.
+                 *
+                 * @return The valuations of the states of the model.
+                 */
+                storm::storage::sparse::StateValuations const& getStateValuations() const;
+                
+                /*!
+                 * Retrieves an optional value that contains the state valuations if there are some.
+                 *
+                 * @return The state valuations, if they're saved.
+                 */
+                boost::optional<storm::storage::sparse::StateValuations> const&  getOptionalStateValuations() const;
+
+                /*!
+                 * Retrieves an optional value that contains the state valuations if there are some.
+                 *
+                 * @return The state valuations, if they're saved.
+                 */
+                boost::optional<storm::storage::sparse::StateValuations>&  getOptionalStateValuations();
+                
+               
+                /*!
+                 * Retrieves whether this model was build with choice origins.
+                 *
+                 * @return True iff this model has choice origins.
+                 */
+                bool hasChoiceOrigins() const;
+                
+                /*!
+                 * Retrieves the origins of the choices of the model. Note that calling this method is only valid if the
+                 * model has choice origins.
+                 *
+                 * @return The origins of the choices of the model.
+                 */
+                std::shared_ptr<storm::storage::sparse::ChoiceOrigins> const& getChoiceOrigins() const;
+                
+                /*!
+                 * Retrieves an optional value that contains the choice origins if there are some.
+                 *
+                 * @return The choice origins, if they're saved.
+                 */
+                boost::optional<std::shared_ptr<storm::storage::sparse::ChoiceOrigins>> const&  getOptionalChoiceOrigins() const;
+
+                /*!
+                 * Retrieves an optional value that contains the choice origins if there are some.
+                 *
+                 * @return The choice origins, if they're saved.
+                 */
+                boost::optional<std::shared_ptr<storm::storage::sparse::ChoiceOrigins>>&  getOptionalChoiceOrigins();
+                
                 
                 /*!
                  * Converts the transition rewards of all reward models to state-based rewards. For deterministic models,
@@ -352,6 +386,10 @@ namespace storm {
                 void printRewardModelsInformationToStream(std::ostream& out) const;
                                 
             private:
+                
+                // Upon construction of a model, this function asserts that the specified components are valid
+                void assertValidityOfComponents(storm::storage::sparse::ModelComponents<ValueType, RewardModelType> const& components) const;
+
                 //  A matrix representing transition relation.
                 storm::storage::SparseMatrix<ValueType> transitionMatrix;
                 
@@ -363,6 +401,13 @@ namespace storm {
                 
                 // If set, a vector representing the labels of choices.
                 boost::optional<storm::models::sparse::ChoiceLabeling> choiceLabeling;
+                
+                // if set, retrieves for each state the variable valuation that this state represents
+                boost::optional<storm::storage::sparse::StateValuations> stateValuations;
+                
+                // if set, gives information about where each choice originates w.r.t. the input model description
+                boost::optional<std::shared_ptr<storm::storage::sparse::ChoiceOrigins>> choiceOrigins;
+                
             };
             
 #ifdef STORM_HAVE_CARL

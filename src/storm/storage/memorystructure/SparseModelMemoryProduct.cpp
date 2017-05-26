@@ -10,6 +10,7 @@
 #include "storm/modelchecker/results/ExplicitQualitativeCheckResult.h"
 #include "storm/utility/constants.h"
 #include "storm/utility/macros.h"
+#include "storm/utility/builder.h"
 
 #include "storm/exceptions/InvalidOperationException.h"
 
@@ -52,6 +53,7 @@ namespace storm {
 
             // Add the label for the initial states. We need to translate the state indices w.r.t. the set of reachable states.
             labeling.addLabel("init", initialStates % reachableStates);
+            
             
             return buildResult(std::move(transitionMatrix), std::move(labeling), std::move(rewardModels));
 
@@ -283,41 +285,37 @@ namespace storm {
             
         template <typename ValueType>
         std::shared_ptr<storm::models::sparse::Model<ValueType>> SparseModelMemoryProduct<ValueType>::buildResult(storm::storage::SparseMatrix<ValueType>&& matrix, storm::models::sparse::StateLabeling&& labeling, std::unordered_map<std::string, storm::models::sparse::StandardRewardModel<ValueType>>&& rewardModels) const {
-            switch (model.getType()) {
-                case storm::models::ModelType::Dtmc:
-                    return std::make_shared<storm::models::sparse::Dtmc<ValueType>> (std::move(matrix), std::move(labeling), std::move(rewardModels));
-                case storm::models::ModelType::Mdp:
-                    return std::make_shared<storm::models::sparse::Mdp<ValueType>> (std::move(matrix), std::move(labeling), std::move(rewardModels));
-                case storm::models::ModelType::Ctmc:
-                    return std::make_shared<storm::models::sparse::Ctmc<ValueType>> (std::move(matrix), std::move(labeling), std::move(rewardModels));
-                case storm::models::ModelType::MarkovAutomaton:
-                {
-                    // We also need to translate the exit rates and the Markovian states
-                    uint_fast64_t numResStates = matrix.getRowGroupCount();
-                    uint_fast64_t memoryStateCount = memory.getNumberOfStates();
-                    std::vector<ValueType> resultExitRates;
-                    resultExitRates.reserve(matrix.getRowGroupCount());
-                    storm::storage::BitVector resultMarkovianStates(numResStates, false);
-                    auto const& modelExitRates = dynamic_cast<storm::models::sparse::MarkovAutomaton<ValueType> const&>(model).getExitRates();
-                    auto const& modelMarkovianStates = dynamic_cast<storm::models::sparse::MarkovAutomaton<ValueType> const&>(model).getMarkovianStates();
+            storm::storage::sparse::ModelComponents<ValueType, storm::models::sparse::StandardRewardModel<ValueType>> components (std::move(matrix), std::move(labeling), std::move(rewardModels));
+            
+            if (model.isOfType(storm::models::ModelType::Ctmc)) {
+                components.rateTransitions = true;
+            } else if (model.isOfType(storm::models::ModelType::MarkovAutomaton)) {
+                // We also need to translate the exit rates and the Markovian states
+                uint_fast64_t numResStates = matrix.getRowGroupCount();
+                uint_fast64_t memoryStateCount = memory.getNumberOfStates();
+                std::vector<ValueType> resultExitRates;
+                resultExitRates.reserve(matrix.getRowGroupCount());
+                storm::storage::BitVector resultMarkovianStates(numResStates, false);
+                auto const& modelExitRates = dynamic_cast<storm::models::sparse::MarkovAutomaton<ValueType> const&>(model).getExitRates();
+                auto const& modelMarkovianStates = dynamic_cast<storm::models::sparse::MarkovAutomaton<ValueType> const&>(model).getMarkovianStates();
                     
-                    uint_fast64_t stateIndex = 0;
-                    for (auto const& resState : toResultStateMapping) {
-                        if (resState < numResStates) {
-                            assert(resState == resultExitRates.size());
-                            uint_fast64_t modelState = stateIndex / memoryStateCount;
-                            resultExitRates.push_back(modelExitRates[modelState]);
-                            if (modelMarkovianStates.get(modelState)) {
-                                resultMarkovianStates.set(resState, true);
-                            }
+                uint_fast64_t stateIndex = 0;
+                for (auto const& resState : toResultStateMapping) {
+                    if (resState < numResStates) {
+                        assert(resState == resultExitRates.size());
+                        uint_fast64_t modelState = stateIndex / memoryStateCount;
+                        resultExitRates.push_back(modelExitRates[modelState]);
+                        if (modelMarkovianStates.get(modelState)) {
+                            resultMarkovianStates.set(resState, true);
                         }
-                        ++stateIndex;
                     }
-                    return std::make_shared<storm::models::sparse::MarkovAutomaton<ValueType>> (std::move(matrix), std::move(labeling), std::move(resultMarkovianStates), std::move(resultExitRates), true, std::move(rewardModels));
+                    ++stateIndex;
                 }
-                default:
-                    STORM_LOG_THROW(false, storm::exceptions::InvalidOperationException, "Memory Structure Product for Model Type " << model.getType() << " is not supported");
+                components.markovianStates = std::move(resultMarkovianStates);
+                components.exitRates = std::move(resultExitRates);
             }
+            
+            return storm::utility::builder::buildModelFromComponents(model.getType(), std::move(components));
         }
         
         template  class SparseModelMemoryProduct<double>;

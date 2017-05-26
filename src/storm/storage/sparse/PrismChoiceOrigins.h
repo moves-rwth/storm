@@ -35,10 +35,10 @@ namespace storm {
                 virtual bool isPrismChoiceOrigins() const override ;
                 
                 /*
-                 * Returns the largest identifier that is used by this object.
+                 * Returns the number of identifier that are used by this object.
                  * This can be used to, e.g., loop over all identifiers.
                  */
-                virtual uint_fast64_t getLargestIdentifier() const override;
+                virtual uint_fast64_t getNumberOfIdentifiers() const override;
                 
                 /*
                  * Returns the prism program associated with this

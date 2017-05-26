@@ -795,6 +795,11 @@ s             * @param insertDiagonalEntries If set to true, the resulting matri
             void multiplyVectorWithMatrix(std::vector<value_type> const& vector, std::vector<value_type>& result) const;
             
             /*!
+             * Scales each row of the matrix, i.e., multiplies each element in row i with factors[i]
+             */
+            void scaleRowsInPlace(std::vector<value_type> const& factors);
+
+            /*!
              * Performs one step of the successive over-relaxation technique.
              *
              * @param omega The Omega parameter for SOR.

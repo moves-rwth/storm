@@ -14,41 +14,16 @@ namespace storm {
             template<class ValueType, typename RewardModelType = StandardRewardModel<ValueType>>
             class NondeterministicModel: public Model<ValueType, RewardModelType> {
             public:
+                
+                
                 /*!
                  * Constructs a model from the given data.
                  *
-                 * @param modelType The type of the model.
-                 * @param transitionMatrix The matrix representing the transitions in the model.
-                 * @param stateLabeling The labeling of the states.
-                 * @param rewardModels A mapping of reward model names to reward models.
-                 * @param optionalChoiceLabeling A vector that represents the labels associated with the choices of each state.
+                 * @param modelType the type of this model
+                 * @param components The components for this model.
                  */
-                NondeterministicModel(storm::models::ModelType const& modelType,
-                                      storm::storage::SparseMatrix<ValueType> const& transitionMatrix,
-                                      storm::models::sparse::StateLabeling const& stateLabeling,
-                                      std::unordered_map<std::string, RewardModelType> const& rewardModels = std::unordered_map<std::string, RewardModelType>(),
-                                      boost::optional<storm::models::sparse::ChoiceLabeling> const& optionalChoiceLabeling = boost::none);
-                
-                /*!
-                 * Constructs a model by moving the given data.
-                 *
-                 * @param modelType The type of the model.
-                 * @param transitionMatrix The matrix representing the transitions in the model.
-                 * @param stateLabeling The labeling of the states.
-                 * @param rewardModels A mapping of reward model names to reward models.
-                 * @param optionalChoiceLabeling A vector that represents the labels associated with the choices of each state.
-                 */
-                NondeterministicModel(storm::models::ModelType const& modelType,
-                                      storm::storage::SparseMatrix<ValueType>&& transitionMatrix,
-                                      storm::models::sparse::StateLabeling&& stateLabeling,
-                                      std::unordered_map<std::string, RewardModelType>&& rewardModels = std::unordered_map<std::string, RewardModelType>(),
-                                      boost::optional<storm::models::sparse::ChoiceLabeling>&& optionalChoiceLabeling = boost::none);
-                
-                NondeterministicModel(NondeterministicModel<ValueType, RewardModelType> const& other) = default;
-                NondeterministicModel& operator=(NondeterministicModel<ValueType, RewardModelType> const& other) = default;
-                
-                NondeterministicModel(NondeterministicModel<ValueType, RewardModelType>&& other) = default;
-                NondeterministicModel& operator=(NondeterministicModel<ValueType, RewardModelType>&& other) = default;
+                NondeterministicModel(ModelType modelType, storm::storage::sparse::ModelComponents<ValueType, RewardModelType> const& components);
+                NondeterministicModel(ModelType modelType, storm::storage::sparse::ModelComponents<ValueType, RewardModelType>&& components);
 
                 /*!
                  * Retrieves the number of (nondeterministic) choices in the model.

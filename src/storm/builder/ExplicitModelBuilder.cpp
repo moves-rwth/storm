@@ -33,8 +33,9 @@
 #include "storm/utility/constants.h"
 #include "storm/utility/macros.h"
 #include "storm/utility/ConstantsComparator.h"
-#include "storm/exceptions/WrongFormatException.h"
+#include "storm/utility/builder.h"
 
+#include "storm/exceptions/WrongFormatException.h"
 #include "storm/exceptions/InvalidArgumentException.h"
 #include "storm/exceptions/InvalidOperationException.h"
 
@@ -42,12 +43,7 @@ namespace storm {
     namespace builder {
                         
         template <typename ValueType, typename RewardModelType, typename StateType>
-        ExplicitModelBuilder<ValueType, RewardModelType, StateType>::ModelComponents::ModelComponents() : transitionMatrix(), stateLabeling(), rewardModels(), choiceLabeling() {
-            // Intentionally left empty.
-        }
-        
-        template <typename ValueType, typename RewardModelType, typename StateType>
-        ExplicitModelBuilder<ValueType, RewardModelType, StateType>::Options::Options() : explorationOrder(storm::settings::getModule<storm::settings::modules::IOSettings>().getExplorationOrder()), buildStateValuations(false) {
+        ExplicitModelBuilder<ValueType, RewardModelType, StateType>::Options::Options() : explorationOrder(storm::settings::getModule<storm::settings::modules::IOSettings>().getExplorationOrder()) {
             // Intentionally left empty.
         }
         
@@ -67,30 +63,23 @@ namespace storm {
         }
         
         template <typename ValueType, typename RewardModelType, typename StateType>
-        ExplicitModelBuilderResult<ValueType, RewardModelType> ExplicitModelBuilder<ValueType, RewardModelType, StateType>::build() {
+        std::shared_ptr<storm::models::sparse::Model<ValueType, RewardModelType>> ExplicitModelBuilder<ValueType, RewardModelType, StateType>::build() {
             STORM_LOG_DEBUG("Exploration order is: " << options.explorationOrder);
-            ModelComponents modelComponents = buildModelComponents();
             
-            std::shared_ptr<storm::models::sparse::Model<ValueType, RewardModelType>> resultModel;
             switch (generator->getModelType()) {
                 case storm::generator::ModelType::DTMC:
-                    resultModel = std::shared_ptr<storm::models::sparse::Model<ValueType, RewardModelType>>(new storm::models::sparse::Dtmc<ValueType, RewardModelType>(std::move(modelComponents.transitionMatrix), std::move(modelComponents.stateLabeling), std::move(modelComponents.rewardModels), std::move(modelComponents.choiceLabeling)));
-                    break;
+                    return storm::utility::builder::buildModelFromComponents(storm::models::ModelType::Dtmc, buildModelComponents());
                 case storm::generator::ModelType::CTMC:
-                    resultModel = std::shared_ptr<storm::models::sparse::Model<ValueType, RewardModelType>>(new storm::models::sparse::Ctmc<ValueType, RewardModelType>(std::move(modelComponents.transitionMatrix), std::move(modelComponents.stateLabeling), std::move(modelComponents.rewardModels), std::move(modelComponents.choiceLabeling)));
-                    break;
+                    return storm::utility::builder::buildModelFromComponents(storm::models::ModelType::Ctmc, buildModelComponents());
                 case storm::generator::ModelType::MDP:
-                    resultModel = std::shared_ptr<storm::models::sparse::Model<ValueType, RewardModelType>>(new storm::models::sparse::Mdp<ValueType, RewardModelType>(std::move(modelComponents.transitionMatrix), std::move(modelComponents.stateLabeling), std::move(modelComponents.rewardModels), std::move(modelComponents.choiceLabeling)));
-                    break;
+                    return storm::utility::builder::buildModelFromComponents(storm::models::ModelType::Mdp, buildModelComponents());
                 case storm::generator::ModelType::MA:
-                    resultModel = std::shared_ptr<storm::models::sparse::Model<ValueType, RewardModelType>>(new storm::models::sparse::MarkovAutomaton<ValueType, RewardModelType>(std::move(modelComponents.transitionMatrix), std::move(modelComponents.stateLabeling), *std::move(modelComponents.markovianStates), std::move(modelComponents.rewardModels), std::move(modelComponents.choiceLabeling)));
-                    break;
+                    return storm::utility::builder::buildModelFromComponents(storm::models::ModelType::MarkovAutomaton, buildModelComponents());
                 default:
                     STORM_LOG_THROW(false, storm::exceptions::WrongFormatException, "Error while creating model: cannot handle this model type.");
-                    break;
             }
             
-            return ExplicitModelBuilderResult<ValueType, RewardModelType>(resultModel, modelComponents.stateValuations, modelComponents.choiceOrigins);
+            return nullptr;
         }
         
         template <typename ValueType, typename RewardModelType, typename StateType>
@@ -278,32 +267,30 @@ namespace storm {
         }
         
         template <typename ValueType, typename RewardModelType, typename StateType>
-        typename ExplicitModelBuilder<ValueType, RewardModelType, StateType>::ModelComponents ExplicitModelBuilder<ValueType, RewardModelType, StateType>::buildModelComponents() {
-            ModelComponents modelComponents;
-                        
+        storm::storage::sparse::ModelComponents<ValueType, RewardModelType> ExplicitModelBuilder<ValueType, RewardModelType, StateType>::buildModelComponents() {
+            
             // Determine whether we have to combine different choices to one or whether this model can have more than
             // one choice per state.
             bool deterministicModel = generator->isDeterministicModel();
             
-            // Prepare the transition matrix builder and the reward model builders.
+            // Prepare the component builders
             storm::storage::SparseMatrixBuilder<ValueType> transitionMatrixBuilder(0, 0, 0, false, !deterministicModel, 0);
             std::vector<RewardModelBuilder<typename RewardModelType::ValueType>> rewardModelBuilders;
             for (uint64_t i = 0; i < generator->getNumberOfRewardModels(); ++i) {
                 rewardModelBuilders.emplace_back(generator->getRewardModelInformation(i));
             }
-            
             ChoiceInformationBuilder choiceInformationBuilder;
-            buildMatrices(transitionMatrixBuilder, rewardModelBuilders, choiceInformationBuilder, modelComponents.markovianStates);
-            modelComponents.transitionMatrix = transitionMatrixBuilder.build();
+            boost::optional<storm::storage::BitVector> markovianStates;
+            
+            buildMatrices(transitionMatrixBuilder, rewardModelBuilders, choiceInformationBuilder, markovianStates);
+            
+            // initialize the model components with the obtained information.
+            storm::storage::sparse::ModelComponents<ValueType, RewardModelType> modelComponents(transitionMatrixBuilder.build(), buildStateLabeling(), std::unordered_map<std::string, RewardModelType>(), !generator->isDiscreteTimeModel(), std::move(markovianStates));
 
             // Now finalize all reward models.
             for (auto& rewardModelBuilder : rewardModelBuilders) {
                 modelComponents.rewardModels.emplace(rewardModelBuilder.getName(), rewardModelBuilder.build(modelComponents.transitionMatrix.getRowCount(), modelComponents.transitionMatrix.getColumnCount(), modelComponents.transitionMatrix.getRowGroupCount()));
             }
-            
-            // Build the state labeling.
-            modelComponents.stateLabeling = buildStateLabeling();
-            
             // Build the choice labeling
             modelComponents.choiceLabeling = choiceInformationBuilder.buildChoiceLabeling(modelComponents.transitionMatrix.getRowCount());
             
@@ -315,8 +302,10 @@ namespace storm {
                 }
                 modelComponents.stateValuations = storm::storage::sparse::StateValuations(std::move(valuations));
             }
-            auto originData = choiceInformationBuilder.buildDataOfChoiceOrigins(modelComponents.transitionMatrix.getRowCount());
-            modelComponents.choiceOrigins = generator->generateChoiceOrigins(originData);
+            if (generator->getOptions().isBuildChoiceOriginsSet()) {
+                auto originData = choiceInformationBuilder.buildDataOfChoiceOrigins(modelComponents.transitionMatrix.getRowCount());
+                modelComponents.choiceOrigins = generator->generateChoiceOrigins(originData);
+            }
             
             return modelComponents;
         }

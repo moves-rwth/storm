@@ -28,10 +28,10 @@ namespace storm {
                 virtual bool isJaniChoiceOrigins() const override ;
                 
                 /*
-                 * Returns the largest identifier that is used by this object.
+                 * Returns the number of identifiers that are used by this object.
                  * This can be used to, e.g., loop over all identifiers.
                  */
-                virtual uint_fast64_t getLargestIdentifier() const override;
+                virtual uint_fast64_t getNumberOfIdentifiers() const override;
                 
                 /*
                  * Returns a copy of this object where the mapping of choice indices to origin identifiers is replaced by the given one.

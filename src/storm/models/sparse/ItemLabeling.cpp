@@ -126,6 +126,10 @@ namespace storm {
                 return labelings.size();
             }
 
+            std::size_t ItemLabeling::getNumberOfItems() const {
+                return itemCount;
+            }
+
             storm::storage::BitVector const& ItemLabeling::getItems(std::string const& label) const {
                 STORM_LOG_THROW(this->containsLabel(label), storm::exceptions::InvalidArgumentException, "The label " << label << " is invalid for the labeling of the model.");
                 return this->labelings[nameToLabelingIndexMap.at(label)];

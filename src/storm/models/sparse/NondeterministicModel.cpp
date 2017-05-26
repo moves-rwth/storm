@@ -11,25 +11,16 @@ namespace storm {
     namespace models {
         namespace sparse {
             
-            template<typename ValueType, typename RewardModelType>
-            NondeterministicModel<ValueType, RewardModelType>::NondeterministicModel(storm::models::ModelType const& modelType,
-                                                                    storm::storage::SparseMatrix<ValueType> const& transitionMatrix,
-                                                                    storm::models::sparse::StateLabeling const& stateLabeling,
-                                                                    std::unordered_map<std::string, RewardModelType> const& rewardModels,
-                                                                    boost::optional<storm::models::sparse::ChoiceLabeling> const& optionalChoiceLabeling)
-            : Model<ValueType, RewardModelType>(modelType, transitionMatrix, stateLabeling, rewardModels, optionalChoiceLabeling) {
-                // Intentionally left empty.
+             template <typename ValueType, typename RewardModelType>
+            NondeterministicModel<ValueType, RewardModelType>::NondeterministicModel(ModelType modelType, storm::storage::sparse::ModelComponents<ValueType, RewardModelType> const& components)
+                    : Model<ValueType, RewardModelType>(modelType, components) {
+                // Intentionally left empty
             }
             
-            template<typename ValueType, typename RewardModelType>
-            NondeterministicModel<ValueType, RewardModelType>::NondeterministicModel(storm::models::ModelType const& modelType,
-                                                                    storm::storage::SparseMatrix<ValueType>&& transitionMatrix,
-                                                                    storm::models::sparse::StateLabeling&& stateLabeling,
-                                                                    std::unordered_map<std::string, RewardModelType>&& rewardModels,
-                                                                    boost::optional<storm::models::sparse::ChoiceLabeling>&& optionalChoiceLabeling)
-            : Model<ValueType, RewardModelType>(modelType, std::move(transitionMatrix), std::move(stateLabeling), std::move(rewardModels),
-                               std::move(optionalChoiceLabeling)) {
-                // Intentionally left empty.
+            template <typename ValueType, typename RewardModelType>
+            NondeterministicModel<ValueType, RewardModelType>::NondeterministicModel(ModelType modelType, storm::storage::sparse::ModelComponents<ValueType, RewardModelType>&& components)
+                    : Model<ValueType, RewardModelType>(modelType, std::move(components)) {
+                // Intentionally left empty
             }
             
             template<typename ValueType, typename RewardModelType>

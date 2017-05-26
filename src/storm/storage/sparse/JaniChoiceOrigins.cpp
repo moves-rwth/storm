@@ -15,7 +15,7 @@ namespace storm {
             	return true;
             }
             
-            uint_fast64_t JaniChoiceOrigins::getLargestIdentifier() const {
+            uint_fast64_t JaniChoiceOrigins::getNumberOfIdentifiers() const {
                 return 0;
             }
              

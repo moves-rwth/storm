@@ -26,7 +26,11 @@ namespace storm {
                 virtual ~StateValuations() = default;
                 
                 virtual std::string getStateInfo(storm::storage::sparse::state_type const& state) const override;
+                
                 storm::expressions::SimpleValuation const& getStateValuation(storm::storage::sparse::state_type const& state) const;
+                
+                // Returns the number of states that this object describes.
+                uint_fast64_t getNumberOfStates() const;
                 
                 /*
                  * Derive new state valuations from this by selecting the given states.
@@ -38,7 +42,6 @@ namespace storm {
                  * If an invalid state index is selected, the corresponding valuation will be empty.
                  */
                 StateValuations selectStates(std::vector<storm::storage::sparse::state_type> const& selectedStates) const;
-
                 
                 
             private:

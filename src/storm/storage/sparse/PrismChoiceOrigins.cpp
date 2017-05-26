@@ -22,7 +22,7 @@ namespace storm {
             	return true;
             }
              
-            uint_fast64_t PrismChoiceOrigins::getLargestIdentifier() const {
+            uint_fast64_t PrismChoiceOrigins::getNumberOfIdentifiers() const {
                 return identifierToCommandSet.size();
             }
             
@@ -43,7 +43,7 @@ namespace storm {
 
             void PrismChoiceOrigins::computeIdentifierInfos() const {
                 this->identifierToInfo.clear();
-                this->identifierToInfo.reserve(this->getLargestIdentifier() + 1);
+                this->identifierToInfo.reserve(this->getNumberOfIdentifiers());
                 for (CommandSet const& set : identifierToCommandSet) {
                     // Get a string representation of this command set.
                     std::stringstream setName;

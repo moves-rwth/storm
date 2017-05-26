@@ -3,6 +3,7 @@
 #include "SparseStateRewardParser.h"
 #include "NondeterministicSparseTransitionParser.h"
 
+#include "storm/storage/sparse/ModelComponents.h"
 #include "storm/models/sparse/StandardRewardModel.h"
 
 #include "storm/exceptions/WrongFormatException.h"
@@ -24,6 +25,12 @@ namespace storm {
             // Parse the state labeling.
             storm::models::sparse::StateLabeling resultLabeling(storm::parser::SparseItemLabelingParser::parseAtomicPropositionLabeling(transitionMatrix.getColumnCount(), labelingFilename));
 
+            // Cunstruct the result components
+            storm::storage::sparse::ModelComponents<ValueType, storm::models::sparse::StandardRewardModel<RewardValueType>> componets(std::move(transitionMatrix), std::move(resultLabeling));
+            componets.rateTransitions = true;
+            componets.markovianStates = std::move(transitionResult.markovianStates);
+            componets.exitRates = std::move(transitionResult.exitRates);
+            
             // If given, parse the state rewards file.
             boost::optional<std::vector<RewardValueType>> stateRewards;
             if (!stateRewardFilename.empty()) {
@@ -36,19 +43,18 @@ namespace storm {
                 transitionRewards = std::move(storm::parser::NondeterministicSparseTransitionParser<RewardValueType>::parseNondeterministicTransitionRewards(transitionRewardFilename, transitionMatrix));
             }
             
-            std::unordered_map<std::string, storm::models::sparse::StandardRewardModel<RewardValueType>> rewardModels;
-            rewardModels.insert(std::make_pair("", storm::models::sparse::StandardRewardModel<RewardValueType>(std::move(stateRewards), boost::none, std::move(transitionRewards))));
+            if (stateRewards || transitionRewards) {
+                componets.rewardModels.insert(std::make_pair("", storm::models::sparse::StandardRewardModel<RewardValueType>(std::move(stateRewards), boost::none, std::move(transitionRewards))));
+            }
 
             // Only parse choice labeling if a file is given.
             boost::optional<storm::models::sparse::ChoiceLabeling> choiceLabeling;
             if (!choiceLabelingFilename.empty()) {
-                choiceLabeling = storm::parser::SparseItemLabelingParser::parseChoiceLabeling(transitionMatrix.getRowCount(), choiceLabelingFilename, transitionMatrix.getRowGroupIndices());
+                componets.choiceLabeling = storm::parser::SparseItemLabelingParser::parseChoiceLabeling(transitionMatrix.getRowCount(), choiceLabelingFilename, transitionMatrix.getRowGroupIndices());
             }
 
-            // Put the pieces together to generate the Markov Automaton.
-            storm::models::sparse::MarkovAutomaton<ValueType, storm::models::sparse::StandardRewardModel<RewardValueType>> resultingAutomaton(std::move(transitionMatrix), std::move(resultLabeling), std::move(transitionResult.markovianStates), std::move(transitionResult.exitRates), std::move(rewardModels), std::move(choiceLabeling));
-
-            return resultingAutomaton;
+            // generate the Markov Automaton.
+            return storm::models::sparse::MarkovAutomaton<ValueType, storm::models::sparse::StandardRewardModel<RewardValueType>> (std::move(componets));
         }
 
         template class MarkovAutomatonParser<double, double>;

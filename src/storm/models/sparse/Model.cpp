@@ -14,30 +14,66 @@
 namespace storm {
     namespace models {
         namespace sparse {
-            template<typename ValueType, typename RewardModelType>
-            Model<ValueType, RewardModelType>::Model(storm::models::ModelType const& modelType,
-                                    storm::storage::SparseMatrix<ValueType> const& transitionMatrix,
-                                    storm::models::sparse::StateLabeling const& stateLabeling,
-                                    std::unordered_map<std::string, RewardModelType> const& rewardModels,
-                                    boost::optional<storm::models::sparse::ChoiceLabeling> const& optionalChoiceLabeling)
-            : ModelBase(modelType), transitionMatrix(transitionMatrix), stateLabeling(stateLabeling),
-            rewardModels(rewardModels), choiceLabeling(optionalChoiceLabeling) {
-                for (auto const& rewardModel : this->getRewardModels()) {
-                    STORM_LOG_THROW(!rewardModel.second.hasTransitionRewards() || rewardModel.second.getTransitionRewardMatrix().isSubmatrixOf(this->getTransitionMatrix()), storm::exceptions::IllegalArgumentException, "The transition reward matrix is not a submatrix of the transition matrix, i.e. there are rewards for transitions that do not exist.");
-                }
+            
+            template <typename ValueType, typename RewardModelType>
+            Model<ValueType, RewardModelType>::Model(ModelType modelType, storm::storage::sparse::ModelComponents<ValueType, RewardModelType> const& components)
+                    : ModelBase(modelType), transitionMatrix(components.transitionMatrix), stateLabeling(components.stateLabeling), rewardModels(components.rewardModels),
+                      choiceLabeling(components.choiceLabeling), stateValuations(components.stateValuations), choiceOrigins(components.choiceOrigins) {
+                assertValidityOfComponents(components);
             }
             
-            template<typename ValueType, typename RewardModelType>
-            Model<ValueType, RewardModelType>::Model(storm::models::ModelType const& modelType,
-                                    storm::storage::SparseMatrix<ValueType>&& transitionMatrix,
-                                    storm::models::sparse::StateLabeling&& stateLabeling,
-                                    std::unordered_map<std::string, RewardModelType>&& rewardModels,
-                                    boost::optional<storm::models::sparse::ChoiceLabeling>&& optionalChoiceLabeling)
-            : ModelBase(modelType), transitionMatrix(std::move(transitionMatrix)), stateLabeling(std::move(stateLabeling)),
-            rewardModels(std::move(rewardModels)), choiceLabeling(std::move(optionalChoiceLabeling)) {
+            template <typename ValueType, typename RewardModelType>
+            Model<ValueType, RewardModelType>::Model(ModelType modelType, storm::storage::sparse::ModelComponents<ValueType, RewardModelType>&& components)
+                    : ModelBase(modelType), transitionMatrix(std::move(components.transitionMatrix)), stateLabeling(std::move(components.stateLabeling)), rewardModels(std::move(components.rewardModels)),
+                      choiceLabeling(std::move(components.choiceLabeling)), stateValuations(std::move(components.stateValuations)), choiceOrigins(std::move(components.choiceOrigins)) {
+                assertValidityOfComponents(components);
+            }
+            
+            template <typename ValueType, typename RewardModelType>
+            void Model<ValueType, RewardModelType>::assertValidityOfComponents(storm::storage::sparse::ModelComponents<ValueType, RewardModelType> const& components) const {
+                uint_fast64_t stateCount = this->getNumberOfStates();
+                uint_fast64_t choiceCount = this->getTransitionMatrix().getRowCount();
+                
+                // general components for all model types.
+                STORM_LOG_THROW(this->getTransitionMatrix().getColumnCount() == stateCount, storm::exceptions::IllegalArgumentException, "Invalid column count of transition matrix.");
+                STORM_LOG_THROW(components.rateTransitions || this->getTransitionMatrix().isProbabilistic(), storm::exceptions::IllegalArgumentException, "The matrix is not probabilistic.");
+                STORM_LOG_THROW(this->getStateLabeling().getNumberOfItems() == stateCount, storm::exceptions::IllegalArgumentException, "Invalid item count of state labeling.");
                 for (auto const& rewardModel : this->getRewardModels()) {
+                    STORM_LOG_THROW(!rewardModel.second.hasStateRewards() || rewardModel.second.getStateRewardVector().size() == stateCount, storm::exceptions::IllegalArgumentException, "Invalid size of state reward vector.");
+                    STORM_LOG_THROW(!rewardModel.second.hasStateActionRewards() || rewardModel.second.getStateActionRewardVector().size() == choiceCount, storm::exceptions::IllegalArgumentException, "Invalid size of state reward vector.");
                     STORM_LOG_THROW(!rewardModel.second.hasTransitionRewards() || rewardModel.second.getTransitionRewardMatrix().isSubmatrixOf(this->getTransitionMatrix()), storm::exceptions::IllegalArgumentException, "The transition reward matrix is not a submatrix of the transition matrix, i.e. there are rewards for transitions that do not exist.");
                 }
+                STORM_LOG_THROW(!this->hasChoiceLabeling() || this->getChoiceLabeling().getNumberOfItems() == choiceCount, storm::exceptions::IllegalArgumentException, "Invalid item count of choice labeling.");
+                STORM_LOG_THROW(!this->hasStateValuations() || this->getStateValuations().getNumberOfStates() == stateCount, storm::exceptions::IllegalArgumentException, "Invalid choice count for choice origins.");
+                STORM_LOG_THROW(!this->hasChoiceOrigins() || this->getChoiceOrigins()->getNumberOfChoices() == choiceCount, storm::exceptions::IllegalArgumentException, "Invalid choice count for choice origins.");
+                
+                // Branch on type of nondeterminism
+                if (this->isOfType(ModelType::Dtmc) || this->isOfType(ModelType::Ctmc)) {
+                    STORM_LOG_THROW(this->getTransitionMatrix().hasTrivialRowGrouping(), storm::exceptions::IllegalArgumentException, "Can not create deterministic model: Transition matrix has non-trivial row grouping.");
+                    STORM_LOG_THROW(stateCount == this->getTransitionMatrix().getRowCount(), storm::exceptions::IllegalArgumentException, "Can not create deterministic model: Number of rows of transition matrix does not match state count.");
+                    STORM_LOG_THROW(stateCount == this->getTransitionMatrix().getColumnCount(), storm::exceptions::IllegalArgumentException, "Can not create deterministic model: Number of columns of transition matrix does not match state count.");
+                    STORM_LOG_ERROR_COND(!components.player1Matrix.is_initialized(), "Player 1 matrix given for a model that is no stochastic game (will be ignored).");
+                } else if (this->isOfType(ModelType::Mdp) || this->isOfType(ModelType::MarkovAutomaton)) {
+                    STORM_LOG_THROW(stateCount == this->getTransitionMatrix().getRowGroupCount(), storm::exceptions::IllegalArgumentException, "Can not create nondeterministic model: Number of row groups of transition matrix does not match state count.");
+                    STORM_LOG_THROW(stateCount == this->getTransitionMatrix().getColumnCount(), storm::exceptions::IllegalArgumentException, "Can not create nondeterministic model: Number of columns of transition matrix does not match state count.");
+                    STORM_LOG_ERROR_COND(!components.player1Matrix.is_initialized(), "Player 1 matrix given for a model that is no stochastic game (will be ignored).");
+                } else {
+                    STORM_LOG_THROW(this->isOfType(ModelType::S2pg), storm::exceptions::IllegalArgumentException, "Invalid model type.");
+                    STORM_LOG_THROW(components.player1Matrix.is_initialized(), storm::exceptions::IllegalArgumentException, "No player 1 matrix given for stochastic game.");
+                    STORM_LOG_THROW(components.player1Matrix->isProbabilistic(), storm::exceptions::IllegalArgumentException, "Can not create stochastic game: There is a row in the p1 matrix with not exactly one entry.");
+                    STORM_LOG_THROW(stateCount == components.player1Matrix->getRowGroupCount(), storm::exceptions::IllegalArgumentException, "Can not create stochastic game: Number of row groups of p1 matrix does not match state count.");
+                    STORM_LOG_THROW(this->getTransitionMatrix().getRowGroupCount() == components.player1Matrix->getColumnCount(), storm::exceptions::IllegalArgumentException, "Can not create stochastic game: Number of row groups of p2 matrix does not match column count of p1 matrix.");
+                }
+                
+                // Branch on continuous/discrete timing
+                if (this->isOfType(ModelType::Ctmc) || this->isOfType(ModelType::MarkovAutomaton)) {
+                    STORM_LOG_THROW(components.rateTransitions || components.exitRates.is_initialized(), storm::exceptions::IllegalArgumentException, "Can not create continuous time model: no rates are given.");
+                    STORM_LOG_THROW(!components.exitRates.is_initialized() || components.exitRates->size() == stateCount, storm::exceptions::IllegalArgumentException, "Size of exit rate vector does not match state count.");
+                    STORM_LOG_THROW(this->isOfType(ModelType::Ctmc) || components.markovianStates.is_initialized(), storm::exceptions::IllegalArgumentException, "Can not create Markov Automaton: no Markovian states given.");
+                } else {
+                    STORM_LOG_ERROR_COND(!components.rateTransitions && !components.exitRates.is_initialized(), "Rates specified for discrete-time model. The rates will be ignored.");
+                }
+                STORM_LOG_ERROR_COND(this->isOfType(ModelType::MarkovAutomaton) || !components.markovianStates.is_initialized(), "Markovian states given for a model that is not a Markov automaton (will be ignored).");
             }
             
             template<typename ValueType, typename RewardModelType>
@@ -158,6 +194,20 @@ namespace storm {
             uint_fast64_t Model<ValueType, RewardModelType>::getNumberOfRewardModels() const {
                 return this->rewardModels.size();
             }
+            template<typename ValueType, typename RewardModelType>
+            storm::models::sparse::StateLabeling const& Model<ValueType, RewardModelType>::getStateLabeling() const {
+                return stateLabeling;
+            }
+            
+            template<typename ValueType, typename RewardModelType>
+            storm::models::sparse::StateLabeling& Model<ValueType, RewardModelType>::getStateLabeling() {
+                return stateLabeling;
+            }
+            
+            template<typename ValueType, typename RewardModelType>
+            bool Model<ValueType, RewardModelType>::hasChoiceLabeling() const {
+                return static_cast<bool>(choiceLabeling);
+            }
             
             template<typename ValueType, typename RewardModelType>
             storm::models::sparse::ChoiceLabeling const& Model<ValueType, RewardModelType>::getChoiceLabeling() const {
@@ -175,18 +225,43 @@ namespace storm {
             }
             
             template<typename ValueType, typename RewardModelType>
-            storm::models::sparse::StateLabeling const& Model<ValueType, RewardModelType>::getStateLabeling() const {
-                return stateLabeling;
+            bool Model<ValueType, RewardModelType>::hasStateValuations() const {
+                return static_cast<bool>(stateValuations);
             }
             
             template<typename ValueType, typename RewardModelType>
-            storm::models::sparse::StateLabeling& Model<ValueType, RewardModelType>::getStateLabeling() {
-                return stateLabeling;
+            storm::storage::sparse::StateValuations const& Model<ValueType, RewardModelType>::getStateValuations() const {
+                return stateValuations.get();
             }
             
             template<typename ValueType, typename RewardModelType>
-            bool Model<ValueType, RewardModelType>::hasChoiceLabeling() const {
-                return static_cast<bool>(choiceLabeling);
+            boost::optional<storm::storage::sparse::StateValuations> const& Model<ValueType, RewardModelType>::getOptionalStateValuations() const {
+                return stateValuations;
+            }
+
+            template<typename ValueType, typename RewardModelType>
+            boost::optional<storm::storage::sparse::StateValuations>& Model<ValueType, RewardModelType>::getOptionalStateValuations() {
+                return stateValuations;
+            }
+            
+            template<typename ValueType, typename RewardModelType>
+            bool Model<ValueType, RewardModelType>::hasChoiceOrigins() const {
+                return static_cast<bool>(choiceOrigins);
+            }
+            
+            template<typename ValueType, typename RewardModelType>
+            std::shared_ptr<storm::storage::sparse::ChoiceOrigins> const& Model<ValueType, RewardModelType>::getChoiceOrigins() const {
+                return choiceOrigins.get();
+            }
+            
+            template<typename ValueType, typename RewardModelType>
+            boost::optional<std::shared_ptr<storm::storage::sparse::ChoiceOrigins>> const& Model<ValueType, RewardModelType>::getOptionalChoiceOrigins() const {
+                return choiceOrigins;
+            }
+
+            template<typename ValueType, typename RewardModelType>
+            boost::optional<std::shared_ptr<storm::storage::sparse::ChoiceOrigins>>& Model<ValueType, RewardModelType>::getOptionalChoiceOrigins() {
+                return choiceOrigins;
             }
             
             template<typename ValueType, typename RewardModelType>
@@ -358,8 +433,6 @@ namespace storm {
             std::set<storm::RationalFunctionVariable> getProbabilityParameters(Model<storm::RationalFunction> const& model) {
                 return storm::storage::getVariables(model.getTransitionMatrix());
             }
-
-
 
             std::set<storm::RationalFunctionVariable> getRewardParameters(Model<storm::RationalFunction> const& model) {
                 std::set<storm::RationalFunctionVariable> result;

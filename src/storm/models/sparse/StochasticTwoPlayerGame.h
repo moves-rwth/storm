@@ -22,15 +22,11 @@ namespace storm {
                  * @param player2Matrix The matrix representing the choices of player 2.
                  * @param stateLabeling The labeling of the states.
                  * @param rewardModels A mapping of reward model names to reward models.
-                 * @param optionalPlayer1ChoiceLabeling A vector that represents the labels associated with the choices of each player 1 state.
-                 * @param optionalPlayer2ChoiceLabeling A vector that represents the labels associated with the choices of each player 2 state.
                  */
                 StochasticTwoPlayerGame(storm::storage::SparseMatrix<storm::storage::sparse::state_type> const& player1Matrix,
                                         storm::storage::SparseMatrix<ValueType> const& player2Matrix,
                                         storm::models::sparse::StateLabeling const& stateLabeling,
-                                        std::unordered_map<std::string, RewardModelType> const& rewardModels = std::unordered_map<std::string, RewardModelType>(),
-                                        boost::optional<storm::models::sparse::ChoiceLabeling> const& optionalPlayer1ChoiceLabeling = boost::none,
-                                        boost::optional<storm::models::sparse::ChoiceLabeling> const& optionalPlayer2ChoiceLabeling = boost::none);
+                                        std::unordered_map<std::string, RewardModelType> const& rewardModels = std::unordered_map<std::string, RewardModelType>()),
                 
                 /*!
                  * Constructs a model by moving the given data.
@@ -39,15 +35,20 @@ namespace storm {
                  * @param player2Matrix The matrix representing the choices of player 2.
                  * @param stateLabeling The labeling of the states.
                  * @param rewardModels A mapping of reward model names to reward models.
-                 * @param optionalPlayer1ChoiceLabeling A vector that represents the labels associated with the choices of each player 1 state.
-                 * @param optionalPlayer2ChoiceLabeling A vector that represents the labels associated with the choices of each player 2 state.
                  */
                 StochasticTwoPlayerGame(storm::storage::SparseMatrix<storm::storage::sparse::state_type>&& player1Matrix,
                                         storm::storage::SparseMatrix<ValueType>&& player2Matrix,
                                         storm::models::sparse::StateLabeling&& stateLabeling,
-                                        std::unordered_map<std::string, RewardModelType>&& rewardModels = std::unordered_map<std::string, RewardModelType>(),
-                                        boost::optional<storm::models::sparse::ChoiceLabeling>&& optionalPlayer1ChoiceLabeling = boost::none,
-                                        boost::optional<storm::models::sparse::ChoiceLabeling>&& optionalPlayer2ChoiceLabeling = boost::none);
+                                        std::unordered_map<std::string, RewardModelType>&& rewardModels = std::unordered_map<std::string, RewardModelType>()),
+                
+                /*!
+                 * Constructs a model from the given data.
+                 *
+                 * @param components The components for this model.
+                 */
+                StochasticTwoPlayerGame(storm::storage::sparse::ModelComponents<ValueType, RewardModelType> const& components);
+                StochasticTwoPlayerGame(storm::storage::sparse::ModelComponents<ValueType, RewardModelType>&& components);
+
                 
                 StochasticTwoPlayerGame(StochasticTwoPlayerGame const& other) = default;
                 StochasticTwoPlayerGame& operator=(StochasticTwoPlayerGame const& other) = default;
@@ -71,26 +72,12 @@ namespace storm {
                 storm::storage::SparseMatrix<ValueType> const& getPlayer2Matrix() const;
                 
                 /*!
-                 * Retrieves the whether the game has labels attached to the choices in player 1 states.
-                 *
-                 * @return True if the game has player 1 choice labels.
-                 */
-                bool hasPlayer1ChoiceLabeling() const;
-                
-                /*!
-                 * Retrieves the labels attached to the choices of player 1 states.
-                 *
-                 * @return A vector containing the labels of each player 1 choice.
-                 */
-                storm::models::sparse::ChoiceLabeling const& getPlayer1ChoiceLabeling() const;
-
-                /*!
                  * Retrieves whether the game has labels attached to player 2 states.
                  *
                  * @return True if the game has player 2 labels.
                  */
                 bool hasPlayer2ChoiceLabeling() const;
-
+                
                 /*!
                  * Retrieves the labels attached to the choices of player 2 states.
                  *
@@ -105,11 +92,7 @@ namespace storm {
                 // the index of a row group in the matrix for player 2).
                 storm::storage::SparseMatrix<storm::storage::sparse::state_type> player1Matrix;
                 
-                // An (optional) vector of labels attached to the choices of player 1. Each row of the matrix can be equipped
-                // with a set of labels to tag certain choices.
-                boost::optional<storm::models::sparse::ChoiceLabeling> player1ChoiceLabeling;
-                
-                // The matrix and labels for player 2 are stored in the superclass.
+                // The matrix for player 2 are stored in the superclass.
             };
             
         } // namespace sparse

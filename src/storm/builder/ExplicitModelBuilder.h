@@ -20,14 +20,13 @@
 #include "storm/models/sparse/StateLabeling.h"
 #include "storm/models/sparse/ChoiceLabeling.h"
 #include "storm/storage/SparseMatrix.h"
-#include "storm/storage/sparse/ChoiceOrigins.h"
+#include "storm/storage/sparse/ModelComponents.h"
 #include "storm/storage/sparse/StateStorage.h"
 #include "storm/settings/SettingsManager.h"
 
 #include "storm/utility/prism.h"
 
 #include "storm/builder/ExplorationOrder.h"
-#include "storm/builder/ExplicitModelBuilderResult.h"
 
 #include "storm/generator/NextStateGenerator.h"
 #include "storm/generator/CompressedState.h"
@@ -50,32 +49,6 @@ namespace storm {
         template<typename ValueType, typename RewardModelType = storm::models::sparse::StandardRewardModel<ValueType>, typename StateType = uint32_t>
         class ExplicitModelBuilder {
         public:
-            // A structure holding the individual components of a model.
-            struct ModelComponents {
-                ModelComponents();
-                
-                // The transition matrix.
-                storm::storage::SparseMatrix<ValueType> transitionMatrix;
-                
-                // The state labeling.
-                storm::models::sparse::StateLabeling stateLabeling;
-                
-                // The reward models associated with the model.
-                std::unordered_map<std::string, storm::models::sparse::StandardRewardModel<typename RewardModelType::ValueType>> rewardModels;
-                
-                // A vector that stores a labeling for each choice.
-                boost::optional<storm::models::sparse::ChoiceLabeling> choiceLabeling;
-                
-                // A vector that stores which states are markovian.
-                boost::optional<storm::storage::BitVector> markovianStates;
-                
-                // If generated, stores for each state to which variable valuation it belongs
-                boost::optional<storm::storage::sparse::StateValuations> stateValuations;
-                
-                // If generated, stores for each choice from which parts of the input model description it originates
-                boost::optional<std::shared_ptr<storm::storage::sparse::ChoiceOrigins>> choiceOrigins;
-
-            };
             
             struct Options {
                 /*!
@@ -115,7 +88,7 @@ namespace storm {
              * @return The explicit model that was given by the probabilistic program as well as additional
              *         information (if requested).
              */
-            ExplicitModelBuilderResult<ValueType, RewardModelType> build();
+            std::shared_ptr<storm::models::sparse::Model<ValueType, RewardModelType>> build();
             
         private:
             /*!
@@ -144,7 +117,7 @@ namespace storm {
              *
              * @return A structure containing the components of the resulting model.
              */
-            ModelComponents buildModelComponents();
+            storm::storage::sparse::ModelComponents<ValueType, RewardModelType> buildModelComponents();
             
             /*!
              * Builds the state labeling for the given program.

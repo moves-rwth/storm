@@ -1361,6 +1361,19 @@ namespace storm {
         }
         
         template<typename ValueType>
+        void SparseMatrix<ValueType>::scaleRowsInPlace(std::vector<value_type> const& factors) {
+            STORM_LOG_ASSERT(factors.size() == this->getRowCount(), "Can not scale rows: Number of rows and number of scaling factors do not match.");
+            uint_fast64_t row = 0;
+            for (auto const& factor : factors) {
+                for (auto& entry : getRow(row)) {
+                    entry.setValue(entry.getValue() * factor);
+                }
+                ++row;
+            }
+        }
+
+        
+        template<typename ValueType>
         typename SparseMatrix<ValueType>::const_rows SparseMatrix<ValueType>::getRows(index_type startRow, index_type endRow) const {
             return const_rows(this->columnsAndValues.begin() + this->rowIndications[startRow], this->rowIndications[endRow] - this->rowIndications[startRow]);
         }

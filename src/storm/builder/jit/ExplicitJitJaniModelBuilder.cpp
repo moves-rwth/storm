@@ -15,6 +15,7 @@
 #include "storm/storage/jani/ParallelComposition.h"
 #include "storm/storage/jani/CompositionInformationVisitor.h"
 
+
 #include "storm/builder/RewardModelInformation.h"
 
 #include "storm/models/sparse/Dtmc.h"
@@ -134,7 +135,7 @@ namespace storm {
                     stream << ".";
                     STORM_LOG_THROW(false, storm::exceptions::InvalidArgumentException, "Model still contains these undefined constants: " + stream.str());
                 }
-                    
+                
 #ifdef STORM_HAVE_CARL
                 else if (std::is_same<ValueType, storm::RationalFunction>::value && !this->model.undefinedConstantsAreGraphPreserving()) {
                     STORM_LOG_THROW(false, storm::exceptions::InvalidArgumentException, "The input model contains undefined constants that influence the graph structure of the underlying model, which is not allowed.");
@@ -142,7 +143,7 @@ namespace storm {
 #endif
                 //STORM_LOG_THROW(!model.reusesActionsInComposition(), storm::exceptions::InvalidArgumentException, "The jit JANI model builder currently does not support reusing actions in parallel composition");
 
-                // Comment this in to print the JANI model for debugging purposes. 
+                // Comment this in to print the JANI model for debugging purposes.
                 // this->model.makeStandardJaniCompliant();
                 // storm::jani::JsonExporter::toStream(this->model, std::vector<std::shared_ptr<storm::logic::Formula const>>(), std::cout, false);
             }
@@ -230,7 +231,7 @@ namespace storm {
                 
                 return result;
             }
-                
+            
             template <typename ValueType, typename RewardModelType>
             bool ExplicitJitJaniModelBuilder<ValueType, RewardModelType>::checkCompilerFlagsWork() const {
                 bool result = true;
@@ -238,7 +239,7 @@ namespace storm {
                 try {
                     std::string emptyProgram = R"(
 #include <cstdint>
-                        
+                    
                     int main() {
                         return 0;
                     }
@@ -249,7 +250,7 @@ namespace storm {
                     outputFile += ".out";
                     std::string outputFilename = boost::filesystem::absolute(outputFile).string();
                     boost::optional<std::string> error = execute(compiler + " " + compilerFlags + " " + temporaryFilename + " -o " + outputFilename);
-                        
+                    
                     if (error) {
                         result = false;
                         STORM_LOG_ERROR(problem);
@@ -261,7 +262,7 @@ namespace storm {
                     result = false;
                     STORM_LOG_ERROR(problem);
                 }
-                    
+                
                 return result;
             }
 
@@ -272,7 +273,7 @@ namespace storm {
                 try {
                     std::string program = R"(
 #include <boost/optional.hpp>
-                        
+                    
                     int main() {
                         return 0;
                     }
@@ -283,7 +284,7 @@ namespace storm {
                     outputFile += ".out";
                     std::string outputFilename = boost::filesystem::absolute(outputFile).string();
                     boost::optional<std::string> error = execute(compiler + " " + compilerFlags + " " + temporaryFilename + " -I" + boostIncludeDirectory + " -o " + outputFilename);
-                        
+                    
                     if (error) {
                         result = false;
                         STORM_LOG_ERROR(problem);
@@ -297,7 +298,7 @@ namespace storm {
                 }
                 return result;
             }
-               
+            
             template <typename ValueType, typename RewardModelType>
             bool ExplicitJitJaniModelBuilder<ValueType, RewardModelType>::checkBoostDllAvailable() const {
                 bool result = true;
@@ -330,7 +331,7 @@ namespace storm {
                 }
                 return result;
             }
-                
+            
             template <typename ValueType, typename RewardModelType>
             bool ExplicitJitJaniModelBuilder<ValueType, RewardModelType>::checkStormHeadersAvailable() const {
                 bool result = true;
@@ -364,7 +365,7 @@ namespace storm {
                 }
                 return result;
             }
-                
+            
             template <typename ValueType, typename RewardModelType>
             bool ExplicitJitJaniModelBuilder<ValueType, RewardModelType>::checkCarlAvailable() const {
                 bool result = true;
@@ -457,7 +458,7 @@ namespace storm {
             }
             
             template <typename ValueType, typename RewardModelType>
-            storm::builder::ExplicitModelBuilderResult<ValueType, RewardModelType> ExplicitJitJaniModelBuilder<ValueType, RewardModelType>::build() {
+            std::shared_ptr<storm::models::sparse::Model<ValueType, RewardModelType>> ExplicitJitJaniModelBuilder<ValueType, RewardModelType>::build() {
                 // (0) Assemble information about the model.
                 cpptempl::data_map modelData = generateModelData();
                 
@@ -505,7 +506,7 @@ namespace storm {
                 STORM_LOG_THROW(!error, storm::exceptions::WrongFormatException, "Model building failed. Reason: " << error.get());
                 
                 // Return the constructed model.
-                return storm::builder::ExplicitModelBuilderResult<ValueType, RewardModelType>(sparseModel);
+                return sparseModel;
             }
             
             template <typename ValueType, typename RewardModelType>

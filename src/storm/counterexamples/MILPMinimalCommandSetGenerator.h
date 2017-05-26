@@ -116,11 +116,12 @@ namespace storm {
              * @return A structure that stores the relevant and problematic choices in the model as well as the set
              * of relevant commands.
              */
-            static struct ChoiceInformation determineRelevantAndProblematicChoices(storm::models::sparse::Mdp<T> const& mdp, storm::storage::sparse::PrismChoiceOrigins const& choiceOrigins, StateInformation const& stateInformation, storm::storage::BitVector const& psiStates) {
+            static struct ChoiceInformation determineRelevantAndProblematicChoices(storm::models::sparse::Mdp<T> const& mdp, StateInformation const& stateInformation, storm::storage::BitVector const& psiStates) {
                 // Create result and shortcuts to needed data for convenience.
                 ChoiceInformation result;
                 storm::storage::SparseMatrix<T> const& transitionMatrix = mdp.getTransitionMatrix();
                 std::vector<uint_fast64_t> const& nondeterministicChoiceIndices = mdp.getNondeterministicChoiceIndices();
+                storm::storage::sparse::PrismChoiceOrigins const& choiceOrigins = mdp.getChoiceOrigins()->asPrismChoiceOrigins();
                 
                 // Now traverse all choices of all relevant states and check whether there is a relevant target state.
                 // If so, the associated commands become relevant. Also, if a choice of relevant state has at least one
@@ -158,7 +159,7 @@ namespace storm {
                 }
 
                 // Finally, determine the set of commands that are known to be taken.
-                result.knownCommands = storm::utility::counterexamples::getGuaranteedCommandSet(mdp, choiceOrigins, psiStates, result.allRelevantCommands);
+                result.knownCommands = storm::utility::counterexamples::getGuaranteedCommandSet(mdp, psiStates, result.allRelevantCommands);
                 STORM_LOG_DEBUG("Found " << result.allRelevantCommands.size() << " relevant commands and " << result.knownCommands.size() << " known commands.");
 
                 return result;
@@ -480,7 +481,9 @@ namespace storm {
              * @param variableInformation A struct with information about the variables of the model.
              * @return The total number of constraints that were created.
              */
-            static uint_fast64_t assertChoicesImplyCommands(storm::solver::LpSolver& solver, storm::models::sparse::Mdp<T> const& mdp, storm::storage::sparse::PrismChoiceOrigins const& choiceOrigins, StateInformation const& stateInformation, ChoiceInformation const& choiceInformation, VariableInformation const& variableInformation) {
+            static uint_fast64_t assertChoicesImplyCommands(storm::solver::LpSolver& solver, storm::models::sparse::Mdp<T> const& mdp, StateInformation const& stateInformation, ChoiceInformation const& choiceInformation, VariableInformation const& variableInformation) {
+                storm::storage::sparse::PrismChoiceOrigins const& choiceOrigins = mdp.getChoiceOrigins()->asPrismChoiceOrigins();
+
                 uint_fast64_t numberOfConstraintsCreated = 0;
 
                 for (auto state : stateInformation.relevantStates) {
@@ -807,7 +810,7 @@ namespace storm {
              * @param includeSchedulerCuts If set to true, additional constraints are asserted that reduce the set of
              * possible choices.
              */
-            static void buildConstraintSystem(storm::solver::LpSolver& solver, storm::models::sparse::Mdp<T> const& mdp, storm::storage::sparse::PrismChoiceOrigins const& choiceOrigins, storm::storage::BitVector const& psiStates, StateInformation const& stateInformation, ChoiceInformation const& choiceInformation, VariableInformation const& variableInformation, double probabilityThreshold, bool strictBound, bool includeSchedulerCuts = false) {
+            static void buildConstraintSystem(storm::solver::LpSolver& solver, storm::models::sparse::Mdp<T> const& mdp, storm::storage::BitVector const& psiStates, StateInformation const& stateInformation, ChoiceInformation const& choiceInformation, VariableInformation const& variableInformation, double probabilityThreshold, bool strictBound, bool includeSchedulerCuts = false) {
                 // Assert that the reachability probability in the subsystem exceeds the given threshold.
                 uint_fast64_t numberOfConstraints = assertProbabilityGreaterThanThreshold(solver, variableInformation, probabilityThreshold, strictBound);
                 STORM_LOG_DEBUG("Asserted that reachability probability exceeds threshold.");
@@ -817,7 +820,7 @@ namespace storm {
                 STORM_LOG_DEBUG("Asserted that policy is valid.");
 
                 // Add constraints that assert the commands that belong to some taken choices are taken as well.
-                numberOfConstraints += assertChoicesImplyCommands(solver, mdp, choiceOrigins, stateInformation, choiceInformation, variableInformation);
+                numberOfConstraints += assertChoicesImplyCommands(solver, mdp, stateInformation, choiceInformation, variableInformation);
                 STORM_LOG_DEBUG("Asserted that commands implied by choices are taken.");
 
                 // Add constraints that encode that the reachability probability from states which do not pick any action
@@ -917,13 +920,10 @@ namespace storm {
             }
                 
         public:
-            static boost::container::flat_set<uint_fast64_t> getMinimalCommandSet(storm::models::sparse::Mdp<T> const& mdp, std::shared_ptr<storm::storage::sparse::ChoiceOrigins> const& choiceOrigins, storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates, double probabilityThreshold, bool strictBound, bool checkThresholdFeasible = false, bool includeSchedulerCuts = false) {
+            static boost::container::flat_set<uint_fast64_t> getMinimalCommandSet(storm::models::sparse::Mdp<T> const& mdp, storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates, double probabilityThreshold, bool strictBound, bool checkThresholdFeasible = false, bool includeSchedulerCuts = false) {
                 // (0) Check whether there are choice origins available
-                STORM_LOG_THROW(choiceOrigins, storm::exceptions::InvalidArgumentException, "Restriction to command set is impossible for model without choice origns.");
-                STORM_LOG_THROW(choiceOrigins->isPrismChoiceOrigins(), storm::exceptions::InvalidArgumentException, "Restriction to command set is impossible for model without prism choice origins.");
-                
-                storm::storage::sparse::PrismChoiceOrigins const& prismChoiceOrigins = choiceOrigins->asPrismChoiceOrigins();
-
+                STORM_LOG_THROW(mdp.hasChoiceOrigins(), storm::exceptions::InvalidArgumentException, "Restriction to command set is impossible for model without choice origns.");
+                STORM_LOG_THROW(mdp.getChoiceOrigins()->isPrismChoiceOrigins(), storm::exceptions::InvalidArgumentException, "Restriction to command set is impossible for model without prism choice origins.");
                 
                 // (1) Check whether its possible to exceed the threshold if checkThresholdFeasible is set.
                 double maximalReachabilityProbability = 0;
@@ -941,7 +941,7 @@ namespace storm {
                 StateInformation stateInformation = determineRelevantAndProblematicStates(mdp, phiStates, psiStates);
                 
                 // (3) Determine sets of relevant commands and problematic choices.
-                ChoiceInformation choiceInformation = determineRelevantAndProblematicChoices(mdp, prismChoiceOrigins, stateInformation, psiStates);
+                ChoiceInformation choiceInformation = determineRelevantAndProblematicChoices(mdp, stateInformation, psiStates);
                 
                 // (4) Encode resulting system as MILP problem.
                 std::shared_ptr<storm::solver::LpSolver> solver = storm::utility::solver::getLpSolver("MinimalCommandSetCounterexample");
@@ -950,7 +950,7 @@ namespace storm {
                 VariableInformation variableInformation = createVariables(*solver, mdp, stateInformation, choiceInformation);
  
                 //  (4.2) Construct constraint system.
-                buildConstraintSystem(*solver, mdp, prismChoiceOrigins, psiStates, stateInformation, choiceInformation, variableInformation, probabilityThreshold, strictBound, includeSchedulerCuts);
+                buildConstraintSystem(*solver, mdp, psiStates, stateInformation, choiceInformation, variableInformation, probabilityThreshold, strictBound, includeSchedulerCuts);
                 
                 // (4.3) Optimize the model.
                 solver->optimize();
@@ -967,11 +967,10 @@ namespace storm {
              * Computes a (minimal) counterexample with respect to the number of prism commands for the given model and (safety) formula. If the model satisfies the property, an exception is thrown.
              *
              * @param mdp An MDP that is the model in which to generate the counterexample.
-             * @param choiceOrigins the choice origins generated for the mdp
              * @param formulaPtr A pointer to a safety formula. The outermost operator must be a probabilistic bound operator with a strict upper bound. The nested
              * formula can be either an unbounded until formula or an eventually formula.
              */
-            static void computeCounterexample(storm::prism::Program const& program, storm::models::sparse::Mdp<T> const& mdp, std::shared_ptr<storm::storage::sparse::ChoiceOrigins> const& choiceOrigins, std::shared_ptr<storm::logic::Formula const> const& formula) {
+            static void computeCounterexample(storm::prism::Program const& program, storm::models::sparse::Mdp<T> const& mdp, std::shared_ptr<storm::logic::Formula const> const& formula) {
                 std::cout << std::endl << "Generating minimal command set counterexample for formula " << *formula << std::endl;
                 
                 STORM_LOG_THROW(formula->isProbabilityOperatorFormula(), storm::exceptions::InvalidPropertyException, "Counterexample generation does not support this kind of formula. Expecting a probability operator as the outermost formula element.");
@@ -1012,7 +1011,7 @@ namespace storm {
                 
                 // Delegate the actual computation work to the function of equal name.
                 auto startTime = std::chrono::high_resolution_clock::now();
-                boost::container::flat_set<uint_fast64_t> usedCommandSet = getMinimalCommandSet(mdp, choiceOrigins, phiStates, psiStates, threshold, strictBound, true, storm::settings::getModule<storm::settings::modules::CounterexampleGeneratorSettings>().isUseSchedulerCutsSet());
+                boost::container::flat_set<uint_fast64_t> usedCommandSet = getMinimalCommandSet(mdp, phiStates, psiStates, threshold, strictBound, true, storm::settings::getModule<storm::settings::modules::CounterexampleGeneratorSettings>().isUseSchedulerCutsSet());
                 auto endTime = std::chrono::high_resolution_clock::now();
                 std::cout << std::endl << "Computed minimal command set of size " << usedCommandSet.size() << " in " << std::chrono::duration_cast<std::chrono::milliseconds>(endTime - startTime).count() << "ms." << std::endl;
 

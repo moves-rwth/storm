@@ -92,7 +92,7 @@ namespace storm {
             STORM_LOG_THROW(line == "@model", storm::exceptions::WrongFormatException, "Expected model declaration.");
 
             // Construct transition matrix
-            std::shared_ptr<ModelComponents> modelComponents = parseStates(file, type, nrStates, valueParser);
+            std::shared_ptr<storm::storage::sparse::ModelComponents<ValueType, RewardModelType>> modelComponents = parseStates(file, type, nrStates, valueParser);
 
             // Done parsing
             storm::utility::closeFile(file);
@@ -105,7 +105,8 @@ namespace storm {
                 }
                 case storm::models::ModelType::Ctmc:
                 {
-                    return std::make_shared<storm::models::sparse::Ctmc<ValueType, RewardModelType>>(std::move(modelComponents->transitionMatrix), std::move(modelComponents->stateLabeling), std::move(modelComponents->rewardModels), std::move(modelComponents->choiceLabeling));
+                    modelComponents->rateTransitions = true;
+                    return std::make_shared<storm::models::sparse::Ctmc<ValueType, RewardModelType>>(std::move(*modelComponents));
                 }
                 case storm::models::ModelType::Mdp:
                 {
@@ -113,7 +114,8 @@ namespace storm {
                 }
                 case storm::models::ModelType::MarkovAutomaton:
                 {
-                    return std::make_shared<storm::models::sparse::MarkovAutomaton<ValueType, RewardModelType>>(std::move(modelComponents->transitionMatrix), std::move(modelComponents->stateLabeling), std::move(modelComponents->markovianStates), std::move(modelComponents->exitRates));
+                    modelComponents->rateTransitions = true;
+                    return std::make_shared<storm::models::sparse::MarkovAutomaton<ValueType, RewardModelType>>(std::move(*modelComponents));
                 }
                 default:
                     STORM_LOG_THROW(false, storm::exceptions::FileIoException, "Unknown/Unhandled model type " << type << " which cannot be parsed.");
@@ -121,11 +123,11 @@ namespace storm {
         }
 
         template<typename ValueType, typename RewardModelType>
-        std::shared_ptr<typename DirectEncodingParser<ValueType, RewardModelType>::ModelComponents> DirectEncodingParser<ValueType, RewardModelType>::parseStates(std::istream& file, storm::models::ModelType type, size_t stateSize, ValueParser<ValueType> const& valueParser) {
+        std::shared_ptr<storm::storage::sparse::ModelComponents<ValueType, RewardModelType>> DirectEncodingParser<ValueType, RewardModelType>::parseStates(std::istream& file, storm::models::ModelType type, size_t stateSize, ValueParser<ValueType> const& valueParser) {
             // Initialize
-            std::shared_ptr<ModelComponents> modelComponents = std::make_shared<ModelComponents>();
-            modelComponents->nonDeterministic = (type == storm::models::ModelType::Mdp || type == storm::models::ModelType::MarkovAutomaton);
-            storm::storage::SparseMatrixBuilder<ValueType> builder = storm::storage::SparseMatrixBuilder<ValueType>(0, 0, 0, false, modelComponents->nonDeterministic, 0);
+            auto modelComponents = std::make_shared<storm::storage::sparse::ModelComponents<ValueType, RewardModelType>>();
+            bool nonDeterministic = (type == storm::models::ModelType::Mdp || type == storm::models::ModelType::MarkovAutomaton);
+            storm::storage::SparseMatrixBuilder<ValueType> builder = storm::storage::SparseMatrixBuilder<ValueType>(0, 0, 0, false, nonDeterministic, 0);
             modelComponents->stateLabeling = storm::models::sparse::StateLabeling(stateSize);
 
             // Iterate over all lines
@@ -177,7 +179,7 @@ namespace storm {
                     }
                     STORM_LOG_TRACE("New state " << state);
                     STORM_LOG_ASSERT(state == parsedId, "State ids do not correspond.");
-                    if (modelComponents->nonDeterministic) {
+                    if (nonDeterministic) {
                         builder.newRowGroup(row);
                     }
                 } else if (boost::starts_with(line, "\taction ")) {

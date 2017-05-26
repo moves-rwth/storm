@@ -311,27 +311,21 @@ namespace storm {
             auto formulas = extractFormulasFromProperties(properties);
             // Start by building the model.
             storm::utility::Stopwatch modelBuildingWatch(true);
-            storm::builder::ExplicitModelBuilderResult<ValueType> builderResult = buildSparseModel<ValueType>(model, formulas);
+            std::shared_ptr<storm::models::ModelBase> markovModel = buildSparseModel<ValueType>(model, formulas);
+            STORM_LOG_THROW(markovModel, storm::exceptions::UnexpectedException, "The model was not successfully built.");
             modelBuildingWatch.stop();
             STORM_PRINT_AND_LOG("Time for model construction: " << modelBuildingWatch << "." << std::endl << std::endl);
 
-            // Extract the model from the result.
-            STORM_LOG_THROW(builderResult.hasModel(), storm::exceptions::UnexpectedException, "The model was not successfully built.");
-            std::shared_ptr<storm::models::ModelBase> markovModel = builderResult.getModel();
-            builderResult.getModel().reset();
-            STORM_LOG_WARN_COND(markovModel.unique(), "There are multiple references to the model. After preprocessing the model, the preprocessed as well as the original model might be stored in memory.");
-            
             // Print some information about the model.
             markovModel->printModelInformationToStream(std::cout);
             
             // Preprocess the model.
-            STORM_LOG_WARN_COND(!builderResult.hasStateValuations() && !builderResult.hasChoiceOrigins(), "State valuations and Choice origins might be invalidated if the model is preprocessed..."); // TODO: check this more carefully.
             BRANCH_ON_SPARSE_MODELTYPE(markovModel, markovModel, ValueType, preprocessModel, formulas);
             std::shared_ptr<storm::models::sparse::Model<ValueType>> sparseModel = markovModel->template as<storm::models::sparse::Model<ValueType>>();
             
             // Finally, treat the formulas.
             if (storm::settings::getModule<storm::settings::modules::CoreSettings>().isCounterexampleSet()) {
-                generateCounterexamples<ValueType>(model, sparseModel, builderResult.getChoiceOrigins(), formulas);
+                generateCounterexamples<ValueType>(model, sparseModel, formulas);
             } else if (storm::settings::getModule<storm::settings::modules::CoreSettings>().isParameterLiftingSet()) {
                 STORM_LOG_THROW(storm::settings::getModule<storm::settings::modules::GeneralSettings>().isParametricSet(), storm::exceptions::InvalidSettingsException, "Invoked parameter lifting without enabling the parametric engine.");
                 storm::performParameterLifting<ValueType>(sparseModel, formulas);

@@ -105,7 +105,14 @@ namespace storm {
                  */
                 std::size_t getNumberOfLabels() const;
 
+                /*!
+                 * Returns the number of items managed by this object.
+                 *
+                 * @return The number of labels.
+                 */
+                std::size_t getNumberOfItems() const;
 
+                
 
                 /*!
                  * Prints information about the labeling to the specified stream.

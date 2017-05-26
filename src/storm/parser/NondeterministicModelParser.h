@@ -2,6 +2,7 @@
 #define STORM_PARSER_NONDETERMINISTICMODELPARSER_H_
 
 #include "storm/models/sparse/Mdp.h"
+#include "storm/models/sparse/StandardRewardModel.h"
 
 namespace storm {
     namespace parser {
@@ -15,57 +16,6 @@ namespace storm {
         template<typename ValueType = double, typename RewardValueType = double>
         class NondeterministicModelParser {
         public:
-
-            /*!
-             * A structure containing the parsed components of a nondeterministic model.
-             */
-            struct Result {
-
-                /*!
-                 * The copy constructor.
-                 *
-                 * @param transitionSystem The transition system to be contained in the Result.
-                 * @param labeling The the labeling of the transition system to be contained in the Result.
-                 */
-                Result(storm::storage::SparseMatrix<ValueType>& transitionSystem, storm::models::sparse::StateLabeling& labeling) : transitionSystem(transitionSystem), labeling(labeling) {
-                    // Intentionally left empty.
-                }
-
-                /*!
-                 * The move constructor.
-                 *
-                 * @param transitionSystem The transition system to be contained in the Result.
-                 * @param labeling The the labeling of the transition system to be contained in the Result.
-                 */
-                Result(storm::storage::SparseMatrix<ValueType>&& transitionSystem, storm::models::sparse::StateLabeling&& labeling) : transitionSystem(std::move(transitionSystem)), labeling(std::move(labeling)) {
-                    // Intentionally left empty.
-                }
-
-                /*!
-                 * A matrix representing the transitions of the model
-                 */
-                storm::storage::SparseMatrix<ValueType> transitionSystem;
-
-                /*!
-                 * The labels of each state.
-                 */
-                storm::models::sparse::StateLabeling labeling;
-
-                /*!
-                 * Optional rewards for each state.
-                 */
-                boost::optional<std::vector<RewardValueType>> stateRewards;
-
-                /*!
-                 * Optional rewards for each transition.
-                 */
-                boost::optional<storm::storage::SparseMatrix<RewardValueType>> transitionRewards;
-
-                /*!
-                 * Optional choice labeling.
-                 */
-                boost::optional<storm::models::sparse::ChoiceLabeling> choiceLabeling;
-            };
 
             /*!
              * Parse a Mdp.
@@ -101,7 +51,7 @@ namespace storm {
              * @param choiceLabelingFilename The path and name of the file containing the choice labeling of the model. This file is optional.
              * @return The parsed model encapsulated in a Result structure.
              */
-            static Result parseNondeterministicModel(std::string const& transitionsFilename, std::string const& labelingFilename, std::string const& stateRewardFilename = "", std::string const& transitionRewardFilename = "", std::string const& choiceLabelingFilename = "");
+            static storm::storage::sparse::ModelComponents<ValueType, storm::models::sparse::StandardRewardModel<RewardValueType>> parseNondeterministicModel(std::string const& transitionsFilename, std::string const& labelingFilename, std::string const& stateRewardFilename = "", std::string const& transitionRewardFilename = "", std::string const& choiceLabelingFilename = "");
 
         };
 

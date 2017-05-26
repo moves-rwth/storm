@@ -58,8 +58,6 @@ namespace storm {
                  */
                 std::set<std::string> getLabelsOfState(storm::storage::sparse::state_type state) const;
                 
-
-                
                 /*!
                  * Adds a label to a given state.
                  *

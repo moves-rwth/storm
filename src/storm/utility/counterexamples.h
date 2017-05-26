@@ -16,11 +16,15 @@ namespace storm {
              * @return The set of Prism commands that is visited on all paths from any state to a target state.
              */
             template <typename T>
-            std::vector<boost::container::flat_set<uint_fast64_t>> getGuaranteedCommandSets(storm::models::sparse::Mdp<T> const& mdp, storm::storage::sparse::PrismChoiceOrigins const& choiceOrigins, storm::storage::BitVector const& psiStates, boost::container::flat_set<uint_fast64_t> const& relevantCommands) {
+            std::vector<boost::container::flat_set<uint_fast64_t>> getGuaranteedCommandSets(storm::models::sparse::Mdp<T> const& mdp, storm::storage::BitVector const& psiStates, boost::container::flat_set<uint_fast64_t> const& relevantCommands) {
+                STORM_LOG_THROW(mdp.hasChoiceOrigins(), storm::exceptions::InvalidArgumentException, "Restriction to command set is impossible for model without choice origns.");
+                STORM_LOG_THROW(mdp.getChoiceOrigins()->isPrismChoiceOrigins(), storm::exceptions::InvalidArgumentException, "Restriction to command set is impossible for model without prism choice origins.");
+                
                 // Get some data from the MDP for convenient access.
                 storm::storage::SparseMatrix<T> const& transitionMatrix = mdp.getTransitionMatrix();
                 std::vector<uint_fast64_t> const& nondeterministicChoiceIndices = mdp.getNondeterministicChoiceIndices();
                 storm::storage::SparseMatrix<T> backwardTransitions = mdp.getBackwardTransitions();
+                storm::storage::sparse::PrismChoiceOrigins const& choiceOrigins = mdp.getChoiceOrigins()->asPrismChoiceOrigins();
 
                 // Now we compute the set of commands that is present on all paths from the initial to the target states.
                 std::vector<boost::container::flat_set<uint_fast64_t>> analysisInformation(mdp.getNumberOfStates(), relevantCommands);
@@ -102,8 +106,8 @@ namespace storm {
              * @return The set of prism commands that is executed on all paths from an initial state to a target state.
              */
             template <typename T>
-            boost::container::flat_set<uint_fast64_t> getGuaranteedCommandSet(storm::models::sparse::Mdp<T> const& mdp, storm::storage::sparse::PrismChoiceOrigins const& choiceOrigins, storm::storage::BitVector const& psiStates, boost::container::flat_set<uint_fast64_t> const& relevantCommands) {
-                std::vector<boost::container::flat_set<uint_fast64_t>> guaranteedCommands = getGuaranteedCommandSets(mdp, choiceOrigins, psiStates, relevantCommands);
+            boost::container::flat_set<uint_fast64_t> getGuaranteedCommandSet(storm::models::sparse::Mdp<T> const& mdp, storm::storage::BitVector const& psiStates, boost::container::flat_set<uint_fast64_t> const& relevantCommands) {
+                std::vector<boost::container::flat_set<uint_fast64_t>> guaranteedCommands = getGuaranteedCommandSets(mdp, psiStates, relevantCommands);
                 
                 boost::container::flat_set<uint_fast64_t> knownCommands(relevantCommands);
                 boost::container::flat_set<uint_fast64_t> tempIntersection;

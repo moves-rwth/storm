@@ -37,10 +37,16 @@ namespace storm {
                 uint_fast64_t getIdentifier(uint_fast64_t choiceIndex) const;
                 
                 /*
-                 * Returns the largest identifier that is used by this object.
+                 * Returns the number of considered identifier.
                  * This can be used to, e.g., loop over all identifiers.
                  */
-                virtual uint_fast64_t getLargestIdentifier() const = 0;
+                virtual uint_fast64_t getNumberOfIdentifiers() const = 0;
+                
+                /*
+                 * Returns the number of considered choice indices.
+                 */
+                uint_fast64_t getNumberOfChoices() const;
+                
                 /*
                  * Returns the identifier that is used for choices without an origin in the input specification
                  * E.g., Selfloops introduced on deadlock states
@@ -85,6 +91,8 @@ namespace storm {
                 virtual void computeIdentifierInfos() const = 0;
                 
                 std::vector<uint_fast64_t> const indexToIdentifier;
+                
+                // cached identifier infos might be empty if identifiers have not been generated yet.
                 mutable std::vector<std::string> identifierToInfo;
 
             };
