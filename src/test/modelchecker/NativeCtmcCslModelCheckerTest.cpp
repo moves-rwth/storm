@@ -26,7 +26,7 @@ TEST(NativeCtmcCslModelCheckerTest, Cluster) {
     std::shared_ptr<storm::logic::Formula const> formula(nullptr);
     
     // Build the model.
-    std::shared_ptr<storm::models::sparse::Model<double>> model = storm::builder::ExplicitModelBuilder<double>(program, storm::generator::NextStateGeneratorOptions(false, true). addRewardModel("num_repairs")).build().getModel();
+    std::shared_ptr<storm::models::sparse::Model<double>> model = storm::builder::ExplicitModelBuilder<double>(program, storm::generator::NextStateGeneratorOptions(false, true). addRewardModel("num_repairs")).build();
     ASSERT_EQ(storm::models::ModelType::Ctmc, model->getType());
     std::shared_ptr<storm::models::sparse::Ctmc<double>> ctmc = model->as<storm::models::sparse::Ctmc<double>>();
     uint_fast64_t initialState = *ctmc->getInitialStates().begin();
@@ -97,7 +97,7 @@ TEST(NativeCtmcCslModelCheckerTest, Embedded) {
     // Build the model.
     storm::generator::NextStateGeneratorOptions options;
     options.addRewardModel("up").setBuildAllLabels();
-    std::shared_ptr<storm::models::sparse::Model<double>> model = storm::builder::ExplicitModelBuilder<double>(program, options).build().getModel();
+    std::shared_ptr<storm::models::sparse::Model<double>> model = storm::builder::ExplicitModelBuilder<double>(program, options).build();
     ASSERT_EQ(storm::models::ModelType::Ctmc, model->getType());
     std::shared_ptr<storm::models::sparse::Ctmc<double>> ctmc = model->as<storm::models::sparse::Ctmc<double>>();
     uint_fast64_t initialState = *ctmc->getInitialStates().begin();
@@ -152,7 +152,7 @@ TEST(NativeCtmcCslModelCheckerTest, Polling) {
     std::shared_ptr<storm::logic::Formula const> formula(nullptr);
     
     // Build the model.
-    std::shared_ptr<storm::models::sparse::Model<double>> model = storm::builder::ExplicitModelBuilder<double>(program, storm::generator::NextStateGeneratorOptions(false, true)).build().getModel();
+    std::shared_ptr<storm::models::sparse::Model<double>> model = storm::builder::ExplicitModelBuilder<double>(program, storm::generator::NextStateGeneratorOptions(false, true)).build();
     ASSERT_EQ(storm::models::ModelType::Ctmc, model->getType());
     std::shared_ptr<storm::models::sparse::Ctmc<double>> ctmc = model->as<storm::models::sparse::Ctmc<double>>();
     uint_fast64_t initialState = *ctmc->getInitialStates().begin();
@@ -186,7 +186,7 @@ TEST(NativeCtmcCslModelCheckerTest, Tandem) {
     std::shared_ptr<storm::logic::Formula const> formula(nullptr);
     
     // Build the model with the customers reward structure.
-    std::shared_ptr<storm::models::sparse::Model<double>> model = storm::builder::ExplicitModelBuilder<double>(program, storm::generator::NextStateGeneratorOptions(false, true).addRewardModel("customers")).build().getModel();
+    std::shared_ptr<storm::models::sparse::Model<double>> model = storm::builder::ExplicitModelBuilder<double>(program, storm::generator::NextStateGeneratorOptions(false, true).addRewardModel("customers")).build();
     ASSERT_EQ(storm::models::ModelType::Ctmc, model->getType());
     std::shared_ptr<storm::models::sparse::Ctmc<double>> ctmc = model->as<storm::models::sparse::Ctmc<double>>();
     uint_fast64_t initialState = *ctmc->getInitialStates().begin();

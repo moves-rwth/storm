@@ -26,7 +26,7 @@ TEST(MilpPermissiveSchedulerTest, DieSelection) {
     // Customize and perform model-building.
     storm::generator::NextStateGeneratorOptions options;
     options.setBuildAllLabels().setBuildChoiceLabels(true);
-    std::shared_ptr<storm::models::sparse::Mdp<double>> mdp = storm::builder::ExplicitModelBuilder<double>(program, options).build().getModel()->as<storm::models::sparse::Mdp<double>>();
+    std::shared_ptr<storm::models::sparse::Mdp<double>> mdp = storm::builder::ExplicitModelBuilder<double>(program, options).build()->as<storm::models::sparse::Mdp<double>>();
     
     boost::optional<storm::ps::SubMDPPermissiveScheduler<>> perms = storm::ps::computePermissiveSchedulerViaMILP<>(*mdp, formula02);
     EXPECT_NE(perms, boost::none);

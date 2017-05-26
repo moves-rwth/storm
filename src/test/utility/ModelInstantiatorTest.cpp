@@ -30,7 +30,7 @@ TEST(ModelInstantiatorTest, BrpProb) {
     ASSERT_TRUE(formulas.size()==1);
     // Parametric model
     storm::generator::NextStateGeneratorOptions options(*formulas.front());
-    std::shared_ptr<storm::models::sparse::Dtmc<storm::RationalFunction>> dtmc = storm::builder::ExplicitModelBuilder<storm::RationalFunction>(program, options).build().getModel()->as<storm::models::sparse::Dtmc<storm::RationalFunction>>();
+    std::shared_ptr<storm::models::sparse::Dtmc<storm::RationalFunction>> dtmc = storm::builder::ExplicitModelBuilder<storm::RationalFunction>(program, options).build()->as<storm::models::sparse::Dtmc<storm::RationalFunction>>();
     
     storm::utility::ModelInstantiator<storm::models::sparse::Dtmc<storm::RationalFunction>, storm::models::sparse::Dtmc<double>> modelInstantiator(*dtmc);
     EXPECT_FALSE(dtmc->hasRewardModel());
@@ -148,7 +148,7 @@ TEST(ModelInstantiatorTest, Brp_Rew) {
     ASSERT_TRUE(formulas.size()==1);
     // Parametric model
     storm::generator::NextStateGeneratorOptions options(*formulas.front());
-    std::shared_ptr<storm::models::sparse::Dtmc<storm::RationalFunction>> dtmc = storm::builder::ExplicitModelBuilder<storm::RationalFunction>(program, options).build().getModel()->as<storm::models::sparse::Dtmc<storm::RationalFunction>>();
+    std::shared_ptr<storm::models::sparse::Dtmc<storm::RationalFunction>> dtmc = storm::builder::ExplicitModelBuilder<storm::RationalFunction>(program, options).build()->as<storm::models::sparse::Dtmc<storm::RationalFunction>>();
 
     storm::utility::ModelInstantiator<storm::models::sparse::Dtmc<storm::RationalFunction>, storm::models::sparse::Dtmc<double>> modelInstantiator(*dtmc);
     
@@ -218,7 +218,7 @@ TEST(ModelInstantiatorTest, Consensus) {
     ASSERT_TRUE(formulas.size()==1);
     // Parametric model
     storm::generator::NextStateGeneratorOptions options(*formulas.front());
-    std::shared_ptr<storm::models::sparse::Mdp<storm::RationalFunction>> mdp = storm::builder::ExplicitModelBuilder<storm::RationalFunction>(program, options).build().getModel()->as<storm::models::sparse::Mdp<storm::RationalFunction>>();
+    std::shared_ptr<storm::models::sparse::Mdp<storm::RationalFunction>> mdp = storm::builder::ExplicitModelBuilder<storm::RationalFunction>(program, options).build()->as<storm::models::sparse::Mdp<storm::RationalFunction>>();
 
     storm::utility::ModelInstantiator<storm::models::sparse::Mdp<storm::RationalFunction>, storm::models::sparse::Mdp<double>> modelInstantiator(*mdp);
     

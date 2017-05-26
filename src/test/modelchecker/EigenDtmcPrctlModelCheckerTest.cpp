@@ -69,7 +69,7 @@ TEST(EigenDtmcPrctlModelCheckerTest, Die_RationalNumber) {
     
     storm::generator::NextStateGeneratorOptions options;
     options.setBuildAllLabels().setBuildAllRewardModels();
-    std::shared_ptr<storm::models::sparse::Model<storm::RationalNumber>> model = storm::builder::ExplicitModelBuilder<storm::RationalNumber>(program, options).build().getModel();
+    std::shared_ptr<storm::models::sparse::Model<storm::RationalNumber>> model = storm::builder::ExplicitModelBuilder<storm::RationalNumber>(program, options).build();
     
     // A parser that we use for conveniently constructing the formulas.
     
@@ -118,7 +118,7 @@ TEST(EigenDtmcPrctlModelCheckerTest, Die_RationalFunction) {
     storm::prism::Program program = storm::parser::PrismParser::parse(STORM_TEST_RESOURCES_DIR "/pdtmc/parametric_die.pm");
     storm::generator::NextStateGeneratorOptions options;
     options.setBuildAllLabels().setBuildAllRewardModels();
-    std::shared_ptr<storm::models::sparse::Model<storm::RationalFunction>> model = storm::builder::ExplicitModelBuilder<storm::RationalFunction>(program, options).build().getModel();
+    std::shared_ptr<storm::models::sparse::Model<storm::RationalFunction>> model = storm::builder::ExplicitModelBuilder<storm::RationalFunction>(program, options).build();
     
     // A parser that we use for conveniently constructing the formulas.
     
@@ -403,7 +403,7 @@ TEST(EigenDtmcPrctlModelCheckerTest, Conditional) {
 
     storm::generator::NextStateGeneratorOptions options;
     options.setBuildAllLabels().setBuildAllRewardModels();
-    std::shared_ptr<storm::models::sparse::Model<double>> model = storm::builder::ExplicitModelBuilder<double>(program, options).build().getModel();
+    std::shared_ptr<storm::models::sparse::Model<double>> model = storm::builder::ExplicitModelBuilder<double>(program, options).build();
     ASSERT_TRUE(model->getType() == storm::models::ModelType::Dtmc);
     ASSERT_EQ(4ul, model->getNumberOfStates());
     ASSERT_EQ(5ul, model->getNumberOfTransitions());

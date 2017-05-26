@@ -596,7 +596,7 @@ TEST(GraphTest, SymbolicProb01StochasticGameWlan) {
 TEST(GraphTest, ExplicitProb01) {
     storm::storage::SymbolicModelDescription modelDescription = storm::parser::PrismParser::parse(STORM_TEST_RESOURCES_DIR "/dtmc/crowds-5-5.pm");
     storm::prism::Program program = modelDescription.preprocess().asPrismProgram();
-    std::shared_ptr<storm::models::sparse::Model<double>> model = storm::builder::ExplicitModelBuilder<double>(program, storm::generator::NextStateGeneratorOptions(false, true)).build().getModel();
+    std::shared_ptr<storm::models::sparse::Model<double>> model = storm::builder::ExplicitModelBuilder<double>(program, storm::generator::NextStateGeneratorOptions(false, true)).build();
     
     ASSERT_TRUE(model->getType() == storm::models::ModelType::Dtmc);
     
@@ -618,7 +618,7 @@ TEST(GraphTest, ExplicitProb01) {
 TEST(GraphTest, ExplicitProb01MinMax) {
     storm::storage::SymbolicModelDescription modelDescription = storm::parser::PrismParser::parse(STORM_TEST_RESOURCES_DIR "/mdp/leader3.nm");
     storm::prism::Program program = modelDescription.preprocess().asPrismProgram();
-    std::shared_ptr<storm::models::sparse::Model<double>> model = storm::builder::ExplicitModelBuilder<double>(program, storm::generator::NextStateGeneratorOptions(false, true)).build().getModel();
+    std::shared_ptr<storm::models::sparse::Model<double>> model = storm::builder::ExplicitModelBuilder<double>(program, storm::generator::NextStateGeneratorOptions(false, true)).build();
     
     ASSERT_TRUE(model->getType() == storm::models::ModelType::Mdp);
     
@@ -634,7 +634,7 @@ TEST(GraphTest, ExplicitProb01MinMax) {
     
     modelDescription = storm::parser::PrismParser::parse(STORM_TEST_RESOURCES_DIR "/mdp/coin2-2.nm");
     program = modelDescription.preprocess().asPrismProgram();
-    model = storm::builder::ExplicitModelBuilder<double>(program, storm::generator::NextStateGeneratorOptions(false, true)).build().getModel();
+    model = storm::builder::ExplicitModelBuilder<double>(program, storm::generator::NextStateGeneratorOptions(false, true)).build();
     
     ASSERT_TRUE(model->getType() == storm::models::ModelType::Mdp);
     
@@ -656,7 +656,7 @@ TEST(GraphTest, ExplicitProb01MinMax) {
     
     modelDescription = storm::parser::PrismParser::parse(STORM_TEST_RESOURCES_DIR "/mdp/csma2-2.nm");
     program = modelDescription.preprocess().asPrismProgram();
-    model = storm::builder::ExplicitModelBuilder<double>(program, storm::generator::NextStateGeneratorOptions(false, true)).build().getModel();
+    model = storm::builder::ExplicitModelBuilder<double>(program, storm::generator::NextStateGeneratorOptions(false, true)).build();
     
     ASSERT_TRUE(model->getType() == storm::models::ModelType::Mdp);
     

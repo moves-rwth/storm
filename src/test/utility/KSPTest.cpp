@@ -17,7 +17,7 @@ std::shared_ptr<storm::models::sparse::Model<double>> buildExampleModel() {
 	std::string prismModelPath = STORM_TEST_RESOURCES_DIR "/dtmc/brp-16-2.pm";
     storm::storage::SymbolicModelDescription modelDescription = storm::parser::PrismParser::parse(prismModelPath);
     storm::prism::Program program = modelDescription.preprocess().asPrismProgram();
-    return storm::builder::ExplicitModelBuilder<double>(program).build().getModel();
+    return storm::builder::ExplicitModelBuilder<double>(program).build();
 }
 
 // NOTE: these are hardcoded (obviously), but the model's state indices might change
