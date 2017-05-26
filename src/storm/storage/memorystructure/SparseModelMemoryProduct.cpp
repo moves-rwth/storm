@@ -291,10 +291,10 @@ namespace storm {
                 components.rateTransitions = true;
             } else if (model.isOfType(storm::models::ModelType::MarkovAutomaton)) {
                 // We also need to translate the exit rates and the Markovian states
-                uint_fast64_t numResStates = matrix.getRowGroupCount();
+                uint_fast64_t numResStates = components.transitionMatrix.getRowGroupCount();
                 uint_fast64_t memoryStateCount = memory.getNumberOfStates();
                 std::vector<ValueType> resultExitRates;
-                resultExitRates.reserve(matrix.getRowGroupCount());
+                resultExitRates.reserve(components.transitionMatrix.getRowGroupCount());
                 storm::storage::BitVector resultMarkovianStates(numResStates, false);
                 auto const& modelExitRates = dynamic_cast<storm::models::sparse::MarkovAutomaton<ValueType> const&>(model).getExitRates();
                 auto const& modelMarkovianStates = dynamic_cast<storm::models::sparse::MarkovAutomaton<ValueType> const&>(model).getMarkovianStates();

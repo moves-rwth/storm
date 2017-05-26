@@ -17,7 +17,7 @@ TEST(SparseDtmcParameterLiftingTest, Brp_Prob) {
     storm::prism::Program program = storm::parseProgram(programFile);
     program = storm::utility::prism::preprocess(program, constantsAsString);
     std::vector<std::shared_ptr<const storm::logic::Formula>> formulas = storm::extractFormulasFromProperties(storm::parsePropertiesForPrismProgram(formulaAsString, program));
-    std::shared_ptr<storm::models::sparse::Dtmc<storm::RationalFunction>> model = storm::buildSparseModel<storm::RationalFunction>(program, formulas).getModel()->as<storm::models::sparse::Dtmc<storm::RationalFunction>>();
+    std::shared_ptr<storm::models::sparse::Dtmc<storm::RationalFunction>> model = storm::buildSparseModel<storm::RationalFunction>(program, formulas)->as<storm::models::sparse::Dtmc<storm::RationalFunction>>();
     
     auto modelParameters = storm::models::sparse::getProbabilityParameters(*model);
     auto rewParameters = storm::models::sparse::getRewardParameters(*model);
@@ -47,7 +47,7 @@ TEST(SparseDtmcParameterLiftingTest, Brp_Rew) {
     storm::prism::Program program = storm::parseProgram(programFile);
     program = storm::utility::prism::preprocess(program, constantsAsString);
     std::vector<std::shared_ptr<const storm::logic::Formula>> formulas = storm::extractFormulasFromProperties(storm::parsePropertiesForPrismProgram(formulaAsString, program));
-    std::shared_ptr<storm::models::sparse::Dtmc<storm::RationalFunction>> model = storm::buildSparseModel<storm::RationalFunction>(program, formulas).getModel()->as<storm::models::sparse::Dtmc<storm::RationalFunction>>();
+    std::shared_ptr<storm::models::sparse::Dtmc<storm::RationalFunction>> model = storm::buildSparseModel<storm::RationalFunction>(program, formulas)->as<storm::models::sparse::Dtmc<storm::RationalFunction>>();
     
     auto modelParameters = storm::models::sparse::getProbabilityParameters(*model);
     auto rewParameters = storm::models::sparse::getRewardParameters(*model);
@@ -77,7 +77,7 @@ TEST(SparseDtmcParameterLiftingTest, Brp_Rew_Bounded) {
     storm::prism::Program program = storm::parseProgram(programFile);
     program = storm::utility::prism::preprocess(program, constantsAsString);
     std::vector<std::shared_ptr<const storm::logic::Formula>> formulas = storm::extractFormulasFromProperties(storm::parsePropertiesForPrismProgram(formulaAsString, program));
-    std::shared_ptr<storm::models::sparse::Dtmc<storm::RationalFunction>> model = storm::buildSparseModel<storm::RationalFunction>(program, formulas).getModel()->as<storm::models::sparse::Dtmc<storm::RationalFunction>>();
+    std::shared_ptr<storm::models::sparse::Dtmc<storm::RationalFunction>> model = storm::buildSparseModel<storm::RationalFunction>(program, formulas)->as<storm::models::sparse::Dtmc<storm::RationalFunction>>();
     
     auto modelParameters = storm::models::sparse::getProbabilityParameters(*model);
     auto rewParameters = storm::models::sparse::getRewardParameters(*model);
@@ -108,7 +108,7 @@ TEST(SparseDtmcParameterLiftingTest, Brp_Prob_exactValidation) {
     storm::prism::Program program = storm::parseProgram(programFile);
     program = storm::utility::prism::preprocess(program, constantsAsString);
     std::vector<std::shared_ptr<const storm::logic::Formula>> formulas = storm::extractFormulasFromProperties(storm::parsePropertiesForPrismProgram(formulaAsString, program));
-    std::shared_ptr<storm::models::sparse::Dtmc<storm::RationalFunction>> model = storm::buildSparseModel<storm::RationalFunction>(program, formulas).getModel()->as<storm::models::sparse::Dtmc<storm::RationalFunction>>();
+    std::shared_ptr<storm::models::sparse::Dtmc<storm::RationalFunction>> model = storm::buildSparseModel<storm::RationalFunction>(program, formulas)->as<storm::models::sparse::Dtmc<storm::RationalFunction>>();
     
     auto modelParameters = storm::models::sparse::getProbabilityParameters(*model);
     auto rewParameters = storm::models::sparse::getRewardParameters(*model);
@@ -141,7 +141,7 @@ TEST(SparseDtmcParameterLiftingTest, Brp_Rew_exactValidation) {
     storm::prism::Program program = storm::parseProgram(programFile);
     program = storm::utility::prism::preprocess(program, constantsAsString);
     std::vector<std::shared_ptr<const storm::logic::Formula>> formulas = storm::extractFormulasFromProperties(storm::parsePropertiesForPrismProgram(formulaAsString, program));
-    std::shared_ptr<storm::models::sparse::Dtmc<storm::RationalFunction>> model = storm::buildSparseModel<storm::RationalFunction>(program, formulas).getModel()->as<storm::models::sparse::Dtmc<storm::RationalFunction>>();
+    std::shared_ptr<storm::models::sparse::Dtmc<storm::RationalFunction>> model = storm::buildSparseModel<storm::RationalFunction>(program, formulas)->as<storm::models::sparse::Dtmc<storm::RationalFunction>>();
     
     auto modelParameters = storm::models::sparse::getProbabilityParameters(*model);
     auto rewParameters = storm::models::sparse::getRewardParameters(*model);
@@ -174,7 +174,7 @@ TEST(SparseDtmcParameterLiftingTest, Brp_Rew_Bounded_exactValidation) {
     storm::prism::Program program = storm::parseProgram(programFile);
     program = storm::utility::prism::preprocess(program, constantsAsString);
     std::vector<std::shared_ptr<const storm::logic::Formula>> formulas = storm::extractFormulasFromProperties(storm::parsePropertiesForPrismProgram(formulaAsString, program));
-    std::shared_ptr<storm::models::sparse::Dtmc<storm::RationalFunction>> model = storm::buildSparseModel<storm::RationalFunction>(program, formulas).getModel()->as<storm::models::sparse::Dtmc<storm::RationalFunction>>();
+    std::shared_ptr<storm::models::sparse::Dtmc<storm::RationalFunction>> model = storm::buildSparseModel<storm::RationalFunction>(program, formulas)->as<storm::models::sparse::Dtmc<storm::RationalFunction>>();
     
     auto modelParameters = storm::models::sparse::getProbabilityParameters(*model);
     auto rewParameters = storm::models::sparse::getRewardParameters(*model);
@@ -207,7 +207,7 @@ TEST(SparseDtmcParameterLiftingTest, Brp_Rew_Infty) {
     storm::prism::Program program = storm::parseProgram(programFile);
     program = storm::utility::prism::preprocess(program, constantsAsString);
     std::vector<std::shared_ptr<const storm::logic::Formula>> formulas = storm::extractFormulasFromProperties(storm::parsePropertiesForPrismProgram(formulaAsString, program));
-    std::shared_ptr<storm::models::sparse::Dtmc<storm::RationalFunction>> model = storm::buildSparseModel<storm::RationalFunction>(program, formulas).getModel()->as<storm::models::sparse::Dtmc<storm::RationalFunction>>();
+    std::shared_ptr<storm::models::sparse::Dtmc<storm::RationalFunction>> model = storm::buildSparseModel<storm::RationalFunction>(program, formulas)->as<storm::models::sparse::Dtmc<storm::RationalFunction>>();
     
     auto modelParameters = storm::models::sparse::getProbabilityParameters(*model);
     auto rewParameters = storm::models::sparse::getRewardParameters(*model);
@@ -233,7 +233,7 @@ TEST(SparseDtmcParameterLiftingTest, Brp_Rew_4Par) {
     storm::prism::Program program = storm::parseProgram(programFile);
     program = storm::utility::prism::preprocess(program, constantsAsString);
     std::vector<std::shared_ptr<const storm::logic::Formula>> formulas = storm::extractFormulasFromProperties(storm::parsePropertiesForPrismProgram(formulaAsString, program));
-    std::shared_ptr<storm::models::sparse::Dtmc<storm::RationalFunction>> model = storm::buildSparseModel<storm::RationalFunction>(program, formulas).getModel()->as<storm::models::sparse::Dtmc<storm::RationalFunction>>();
+    std::shared_ptr<storm::models::sparse::Dtmc<storm::RationalFunction>> model = storm::buildSparseModel<storm::RationalFunction>(program, formulas)->as<storm::models::sparse::Dtmc<storm::RationalFunction>>();
     
     auto modelParameters = storm::models::sparse::getProbabilityParameters(*model);
     auto rewParameters = storm::models::sparse::getRewardParameters(*model);
@@ -264,7 +264,7 @@ TEST(SparseDtmcParameterLiftingTest, Crowds_Prob) {
     storm::prism::Program program = storm::parseProgram(programFile);
     program = storm::utility::prism::preprocess(program, constantsAsString);
     std::vector<std::shared_ptr<const storm::logic::Formula>> formulas = storm::extractFormulasFromProperties(storm::parsePropertiesForPrismProgram(formulaAsString, program));
-    std::shared_ptr<storm::models::sparse::Dtmc<storm::RationalFunction>> model = storm::buildSparseModel<storm::RationalFunction>(program, formulas).getModel()->as<storm::models::sparse::Dtmc<storm::RationalFunction>>();
+    std::shared_ptr<storm::models::sparse::Dtmc<storm::RationalFunction>> model = storm::buildSparseModel<storm::RationalFunction>(program, formulas)->as<storm::models::sparse::Dtmc<storm::RationalFunction>>();
     
     auto modelParameters = storm::models::sparse::getProbabilityParameters(*model);
     auto rewParameters = storm::models::sparse::getRewardParameters(*model);
@@ -297,7 +297,7 @@ TEST(SparseDtmcParameterLiftingTest, Crowds_Prob_stepBounded) {
     storm::prism::Program program = storm::parseProgram(programFile);
     program = storm::utility::prism::preprocess(program, constantsAsString);
     std::vector<std::shared_ptr<const storm::logic::Formula>> formulas = storm::extractFormulasFromProperties(storm::parsePropertiesForPrismProgram(formulaAsString, program));
-    std::shared_ptr<storm::models::sparse::Dtmc<storm::RationalFunction>> model = storm::buildSparseModel<storm::RationalFunction>(program, formulas).getModel()->as<storm::models::sparse::Dtmc<storm::RationalFunction>>();
+    std::shared_ptr<storm::models::sparse::Dtmc<storm::RationalFunction>> model = storm::buildSparseModel<storm::RationalFunction>(program, formulas)->as<storm::models::sparse::Dtmc<storm::RationalFunction>>();
     
     auto modelParameters = storm::models::sparse::getProbabilityParameters(*model);
     auto rewParameters = storm::models::sparse::getRewardParameters(*model);
@@ -331,7 +331,7 @@ TEST(SparseDtmcParameterLiftingTest, Crowds_Prob_1Par) {
     storm::prism::Program program = storm::parseProgram(programFile);
     program = storm::utility::prism::preprocess(program, constantsAsString);
     std::vector<std::shared_ptr<const storm::logic::Formula>> formulas = storm::extractFormulasFromProperties(storm::parsePropertiesForPrismProgram(formulaAsString, program));
-    std::shared_ptr<storm::models::sparse::Dtmc<storm::RationalFunction>> model = storm::buildSparseModel<storm::RationalFunction>(program, formulas).getModel()->as<storm::models::sparse::Dtmc<storm::RationalFunction>>();
+    std::shared_ptr<storm::models::sparse::Dtmc<storm::RationalFunction>> model = storm::buildSparseModel<storm::RationalFunction>(program, formulas)->as<storm::models::sparse::Dtmc<storm::RationalFunction>>();
     
     auto modelParameters = storm::models::sparse::getProbabilityParameters(*model);
     auto rewParameters = storm::models::sparse::getRewardParameters(*model);
@@ -362,7 +362,7 @@ TEST(SparseDtmcParameterLiftingTest, Crowds_Prob_Const) {
     storm::prism::Program program = storm::parseProgram(programFile);
     program = storm::utility::prism::preprocess(program, constantsAsString);
     std::vector<std::shared_ptr<const storm::logic::Formula>> formulas = storm::extractFormulasFromProperties(storm::parsePropertiesForPrismProgram(formulaAsString, program));
-    std::shared_ptr<storm::models::sparse::Dtmc<storm::RationalFunction>> model = storm::buildSparseModel<storm::RationalFunction>(program, formulas).getModel()->as<storm::models::sparse::Dtmc<storm::RationalFunction>>();
+    std::shared_ptr<storm::models::sparse::Dtmc<storm::RationalFunction>> model = storm::buildSparseModel<storm::RationalFunction>(program, formulas)->as<storm::models::sparse::Dtmc<storm::RationalFunction>>();
     
     auto modelParameters = storm::models::sparse::getProbabilityParameters(*model);
     auto rewParameters = storm::models::sparse::getRewardParameters(*model);

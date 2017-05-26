@@ -31,17 +31,20 @@ namespace storm {
             
             template <typename ValueType, typename RewardModelType>
             void Model<ValueType, RewardModelType>::assertValidityOfComponents(storm::storage::sparse::ModelComponents<ValueType, RewardModelType> const& components) const {
+                
+                // More costly checks are only asserted to avoid doing them in release mode.
+                
                 uint_fast64_t stateCount = this->getNumberOfStates();
                 uint_fast64_t choiceCount = this->getTransitionMatrix().getRowCount();
                 
                 // general components for all model types.
                 STORM_LOG_THROW(this->getTransitionMatrix().getColumnCount() == stateCount, storm::exceptions::IllegalArgumentException, "Invalid column count of transition matrix.");
-                STORM_LOG_THROW(components.rateTransitions || this->getTransitionMatrix().isProbabilistic(), storm::exceptions::IllegalArgumentException, "The matrix is not probabilistic.");
+                STORM_LOG_ASSERT(components.rateTransitions || this->hasParameters() || this->getTransitionMatrix().isProbabilistic(), "The matrix is not probabilistic.");
                 STORM_LOG_THROW(this->getStateLabeling().getNumberOfItems() == stateCount, storm::exceptions::IllegalArgumentException, "Invalid item count of state labeling.");
                 for (auto const& rewardModel : this->getRewardModels()) {
                     STORM_LOG_THROW(!rewardModel.second.hasStateRewards() || rewardModel.second.getStateRewardVector().size() == stateCount, storm::exceptions::IllegalArgumentException, "Invalid size of state reward vector.");
                     STORM_LOG_THROW(!rewardModel.second.hasStateActionRewards() || rewardModel.second.getStateActionRewardVector().size() == choiceCount, storm::exceptions::IllegalArgumentException, "Invalid size of state reward vector.");
-                    STORM_LOG_THROW(!rewardModel.second.hasTransitionRewards() || rewardModel.second.getTransitionRewardMatrix().isSubmatrixOf(this->getTransitionMatrix()), storm::exceptions::IllegalArgumentException, "The transition reward matrix is not a submatrix of the transition matrix, i.e. there are rewards for transitions that do not exist.");
+                    STORM_LOG_ASSERT(!rewardModel.second.hasTransitionRewards() || rewardModel.second.getTransitionRewardMatrix().isSubmatrixOf(this->getTransitionMatrix()), "The transition reward matrix is not a submatrix of the transition matrix, i.e. there are rewards for transitions that do not exist.");
                 }
                 STORM_LOG_THROW(!this->hasChoiceLabeling() || this->getChoiceLabeling().getNumberOfItems() == choiceCount, storm::exceptions::IllegalArgumentException, "Invalid item count of choice labeling.");
                 STORM_LOG_THROW(!this->hasStateValuations() || this->getStateValuations().getNumberOfStates() == stateCount, storm::exceptions::IllegalArgumentException, "Invalid choice count for choice origins.");
@@ -60,7 +63,7 @@ namespace storm {
                 } else {
                     STORM_LOG_THROW(this->isOfType(ModelType::S2pg), storm::exceptions::IllegalArgumentException, "Invalid model type.");
                     STORM_LOG_THROW(components.player1Matrix.is_initialized(), storm::exceptions::IllegalArgumentException, "No player 1 matrix given for stochastic game.");
-                    STORM_LOG_THROW(components.player1Matrix->isProbabilistic(), storm::exceptions::IllegalArgumentException, "Can not create stochastic game: There is a row in the p1 matrix with not exactly one entry.");
+                    STORM_LOG_ASSERT(components.player1Matrix->isProbabilistic(), "Can not create stochastic game: There is a row in the p1 matrix with not exactly one entry.");
                     STORM_LOG_THROW(stateCount == components.player1Matrix->getRowGroupCount(), storm::exceptions::IllegalArgumentException, "Can not create stochastic game: Number of row groups of p1 matrix does not match state count.");
                     STORM_LOG_THROW(this->getTransitionMatrix().getRowGroupCount() == components.player1Matrix->getColumnCount(), storm::exceptions::IllegalArgumentException, "Can not create stochastic game: Number of row groups of p2 matrix does not match column count of p1 matrix.");
                 }

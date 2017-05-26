@@ -33,9 +33,6 @@ namespace storm {
                                 boost::optional<storm::storage::SparseMatrix<storm::storage::sparse::state_type>> const& player1Matrix = boost::none)
                         : transitionMatrix(transitionMatrix), stateLabeling(stateLabeling), rewardModels(rewardModels), rateTransitions(rateTransitions), markovianStates(markovianStates), player1Matrix(player1Matrix) {
                     // Intentionally left empty
-                    
-                    // TODO: remove this output
-                    std::cout << "Called copy constructor for model components (which should be avoided)" << std::endl;
                 }
               
                 ModelComponents(storm::storage::SparseMatrix<ValueType>&& transitionMatrix = storm::storage::SparseMatrix<ValueType>(),

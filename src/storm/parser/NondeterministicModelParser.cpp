@@ -38,7 +38,7 @@ namespace storm {
             // Only parse transition rewards if a file is given.
             boost::optional<storm::storage::SparseMatrix<RewardValueType>> transitionRewards;
             if (!transitionRewardFilename.empty()) {
-                transitionRewards = std::move(storm::parser::NondeterministicSparseTransitionParser<RewardValueType>::parseNondeterministicTransitionRewards(transitionRewardFilename, transitions));
+                transitionRewards = std::move(storm::parser::NondeterministicSparseTransitionParser<RewardValueType>::parseNondeterministicTransitionRewards(transitionRewardFilename, result.transitionMatrix));
             }
 
             if (stateRewards || transitionRewards) {
@@ -48,7 +48,7 @@ namespace storm {
             // Only parse choice labeling if a file is given.
             boost::optional<storm::models::sparse::ChoiceLabeling> choiceLabeling;
             if (!choiceLabelingFilename.empty()) {
-                result.choiceLabeling = storm::parser::SparseItemLabelingParser::parseChoiceLabeling(transitions.getRowCount(), choiceLabelingFilename, transitions.getRowGroupIndices());
+                result.choiceLabeling = storm::parser::SparseItemLabelingParser::parseChoiceLabeling(result.transitionMatrix.getRowCount(), choiceLabelingFilename, result.transitionMatrix.getRowGroupIndices());
             }
 
             return result;

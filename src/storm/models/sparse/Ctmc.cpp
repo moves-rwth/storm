@@ -27,6 +27,9 @@ namespace storm {
                 
                 if (components.exitRates) {
                     exitRates = components.exitRates.get();
+                } else {
+                    STORM_LOG_ASSERT(components.rateTransitions, "No rate information given for CTMC.");
+                    exitRates = createExitRateVector(this->getTransitionMatrix());
                 }
                 
                 if (!components.rateTransitions) {
@@ -40,8 +43,11 @@ namespace storm {
                 
                 if (components.exitRates) {
                     exitRates = std::move(components.exitRates.get());
+                } else {
+                    STORM_LOG_ASSERT(components.rateTransitions, "No rate information given for CTMC.");
+                    exitRates = createExitRateVector(this->getTransitionMatrix());
                 }
-                
+               
                 if (!components.rateTransitions) {
                     this->getTransitionMatrix().scaleRowsInPlace(exitRates);
                 }
