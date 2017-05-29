@@ -34,13 +34,13 @@ namespace storm {
             // If given, parse the state rewards file.
             boost::optional<std::vector<RewardValueType>> stateRewards;
             if (!stateRewardFilename.empty()) {
-                stateRewards.reset(storm::parser::SparseStateRewardParser<RewardValueType>::parseSparseStateReward(transitionMatrix.getColumnCount(), stateRewardFilename));
+                stateRewards.reset(storm::parser::SparseStateRewardParser<RewardValueType>::parseSparseStateReward(componets.transitionMatrix.getColumnCount(), stateRewardFilename));
             }
 
            // Only parse transition rewards if a file is given.
             boost::optional<storm::storage::SparseMatrix<RewardValueType>> transitionRewards;
             if (!transitionRewardFilename.empty()) {
-                transitionRewards = std::move(storm::parser::NondeterministicSparseTransitionParser<RewardValueType>::parseNondeterministicTransitionRewards(transitionRewardFilename, transitionMatrix));
+                transitionRewards = std::move(storm::parser::NondeterministicSparseTransitionParser<RewardValueType>::parseNondeterministicTransitionRewards(transitionRewardFilename, componets.transitionMatrix));
             }
             
             if (stateRewards || transitionRewards) {
@@ -50,7 +50,7 @@ namespace storm {
             // Only parse choice labeling if a file is given.
             boost::optional<storm::models::sparse::ChoiceLabeling> choiceLabeling;
             if (!choiceLabelingFilename.empty()) {
-                componets.choiceLabeling = storm::parser::SparseItemLabelingParser::parseChoiceLabeling(transitionMatrix.getRowCount(), choiceLabelingFilename, transitionMatrix.getRowGroupIndices());
+                componets.choiceLabeling = storm::parser::SparseItemLabelingParser::parseChoiceLabeling(componets.transitionMatrix.getRowCount(), choiceLabelingFilename, componets.transitionMatrix.getRowGroupIndices());
             }
 
             // generate the Markov Automaton.
