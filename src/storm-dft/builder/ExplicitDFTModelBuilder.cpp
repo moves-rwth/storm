@@ -138,22 +138,13 @@ namespace storm {
             }
 
             std::shared_ptr<storm::models::sparse::Model<ValueType>> model;
-            
+            storm::storage::sparse::ModelComponents<ValueType> components(std::move(modelComponents.transitionMatrix), std::move(modelComponents.stateLabeling));
+                    components.exitRates = std::move(modelComponents.exitRates);
             if (deterministic) {
-                // Turn the probabilities into rates by multiplying each row with the exit rate of the state.
-                // TODO Matthias: avoid transforming back and forth
-                storm::storage::SparseMatrix<ValueType> rateMatrix(modelComponents.transitionMatrix);
-                for (uint_fast64_t row = 0; row < rateMatrix.getRowCount(); ++row) {
-                    STORM_LOG_ASSERT(row < modelComponents.markovianStates.size(), "Row exceeds no. of markovian states.");
-                    if (modelComponents.markovianStates.get(row)) {
-                        for (auto& entry : rateMatrix.getRow(row)) {
-                            entry.setValue(entry.getValue() * modelComponents.exitRates[row]);
-                        }
-                    }
-                }
-                model = std::make_shared<storm::models::sparse::Ctmc<ValueType>>(std::move(rateMatrix), std::move(modelComponents.exitRates), std::move(modelComponents.stateLabeling));
+                model = std::make_shared<storm::models::sparse::Ctmc<ValueType>>(std::move(components));
             } else {
-                std::shared_ptr<storm::models::sparse::MarkovAutomaton<ValueType>> ma = std::make_shared<storm::models::sparse::MarkovAutomaton<ValueType>>(std::move(modelComponents.transitionMatrix), std::move(modelComponents.stateLabeling), std::move(modelComponents.markovianStates), std::move(modelComponents.exitRates), true);
+                    components.markovianStates = std::move(modelComponents.markovianStates);
+                    std::shared_ptr<storm::models::sparse::MarkovAutomaton<ValueType>> ma = std::make_shared<storm::models::sparse::MarkovAutomaton<ValueType>>(std::move(components));
                 if (ma->hasOnlyTrivialNondeterminism()) {
                     // Markov automaton can be converted into CTMC
                     model = ma->convertToCTMC();
