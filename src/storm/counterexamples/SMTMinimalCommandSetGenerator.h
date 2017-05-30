@@ -1102,6 +1102,10 @@ namespace storm {
             static std::vector<storm::expressions::Expression> createCounterCircuit(VariableInformation const& variableInformation, std::vector<storm::expressions::Variable> const& literals) {
                 STORM_LOG_DEBUG("Creating counter circuit for " << literals.size() << " literals.");
 
+                if (literals.empty()) {
+                    return std::vector<storm::expressions::Expression>();
+                }
+                
                 // Create the auxiliary vector.
                 std::vector<std::vector<storm::expressions::Expression>> aux;
                 for (uint_fast64_t index = 0; index < literals.size(); ++index) {
@@ -1142,6 +1146,13 @@ namespace storm {
                 STORM_LOG_DEBUG("Asserting solution has size less or equal " << k << ".");
                 
                 std::vector<storm::expressions::Variable> const& input = variableInformation.adderVariables;
+                
+                // If there are no input variables, the value is always 0 <= k, so there is nothing to assert.
+                if (input.empty()) {
+                    std::stringstream variableName;
+                    variableName << "relaxed" << k;
+                    return variableInformation.manager->declareBooleanVariable(variableName.str());
+                }
                 
                 storm::expressions::Expression result;
                 if (bitIsSet(k, 0)) {
