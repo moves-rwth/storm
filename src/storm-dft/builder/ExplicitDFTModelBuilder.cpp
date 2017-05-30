@@ -141,6 +141,7 @@ namespace storm {
             storm::storage::sparse::ModelComponents<ValueType> components(std::move(modelComponents.transitionMatrix), std::move(modelComponents.stateLabeling));
                     components.exitRates = std::move(modelComponents.exitRates);
             if (deterministic) {
+                components.transitionMatrix.makeRowGroupingTrivial();
                 model = std::make_shared<storm::models::sparse::Ctmc<ValueType>>(std::move(components));
             } else {
                     components.markovianStates = std::move(modelComponents.markovianStates);

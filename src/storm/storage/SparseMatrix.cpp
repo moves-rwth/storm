@@ -1473,6 +1473,16 @@ namespace storm {
         }
         
         template<typename ValueType>
+        void SparseMatrix<ValueType>::makeRowGroupingTrivial() {
+            if (trivialRowGrouping) {
+                STORM_LOG_ASSERT(!rowGroupIndices || rowGroupIndices.get() == storm::utility::vector::buildVectorForRange(0, this->getRowGroupCount() + 1), "Row grouping is supposed to be trivial but actually it is not.");
+            } else {
+                trivialRowGrouping = true;
+                rowGroupIndices = boost::none;
+            }
+        }
+        
+        template<typename ValueType>
         ValueType SparseMatrix<ValueType>::getRowSum(index_type row) const {
             ValueType sum = storm::utility::zero<ValueType>();
             for (const_iterator it = this->begin(row), ite = this->end(row); it != ite; ++it) {

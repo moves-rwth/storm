@@ -998,6 +998,12 @@ s             * @param insertDiagonalEntries If set to true, the resulting matri
              * @return True iff the matrix has a trivial row grouping.
              */
             bool hasTrivialRowGrouping() const;
+            
+            /*!
+             * Makes the row grouping of this matrix trivial.
+             * Has no effect when the row grouping is already trivial.
+             */
+            void makeRowGroupingTrivial();
 
 			/*!
 			* Returns a copy of the matrix with the chosen internal data type
