@@ -1,8 +1,6 @@
 #!/bin/bash -x
 # Inspired by https://github.com/google/fruit
 
-set -e
-
 : ${N_JOBS:=2}
 : ${TIMEOUT:=2000}
 
@@ -11,33 +9,34 @@ then
   STLARG="-stdlib=$STL"
 fi
 
-if [ "$2" = "BuildLib1" ]
-then
-    TIMEARG="--preserve-status"
-else
-    TIMEARG=""
-fi
-
 case $OS in
 linux)
     # Execute docker image on linux
     # Stop previous session
-    docker rm -f storm &>/dev/null || true
+    docker rm -f storm &>/dev/null
     # Run container
+    set -e
     docker run -d -it --name storm --privileged mvolk/storm-basesystem:$LINUX
     # Copy local content into container
     docker exec storm mkdir storm
     docker cp . storm:/storm
+    set +e
 
     # Execute main process
-    timeout $TIMEARG $TIMEOUT docker exec storm bash -c "
+    timeout $TIMEOUT docker exec storm bash -c "
         export COMPILER=$COMPILER;
         export N_JOBS=$N_JOBS;
         export STLARG=$STLARG;
         export OS=$OS;
         cd storm;
         travis/postsubmit-helper.sh $1 $2"
-    exit $?
+    EXITCODE=$?
+    if [ $EXITCODE = 124 ] && [ "$2" = "BuildLib1" ]
+    then
+        exit 0
+    else
+        exit $EXITCODE
+    fi
     ;;
 
 osx)
@@ -46,8 +45,14 @@ osx)
     export N_JOBS
     export STLARG
     export OS
-    gtimeout $TIMEARG $TIMEOUT travis/postsubmit-helper.sh "$1" "$2"
-    exit $?
+    gtimeout $TIMEOUT travis/postsubmit-helper.sh "$1" "$2"
+    if [ $EXITCODE = 124 ] && [ "$2" = "BuildLib1" ]
+    EXITCODE=$?
+    then
+        exit 0
+    else
+        exit $EXITCODE
+    fi
     ;;
 
 *)
