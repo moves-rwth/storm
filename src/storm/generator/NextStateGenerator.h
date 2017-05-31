@@ -9,6 +9,7 @@
 #include "storm/storage/expressions/Expression.h"
 #include "storm/storage/BitVectorHashMap.h"
 #include "storm/storage/expressions/ExpressionEvaluator.h"
+#include "storm/storage/sparse/ChoiceOrigins.h"
 
 #include "storm/builder/BuilderOptions.h"
 #include "storm/builder/RewardModelInformation.h"
@@ -61,6 +62,8 @@ namespace storm {
             virtual storm::models::sparse::StateLabeling label(storm::storage::BitVectorHashMap<StateType> const& states, std::vector<StateType> const& initialStateIndices = {}, std::vector<StateType> const& deadlockStateIndices = {}) = 0;
             
             NextStateGeneratorOptions const& getOptions() const;
+            
+            virtual std::shared_ptr<storm::storage::sparse::ChoiceOrigins> generateChoiceOrigins(std::vector<boost::any>& dataForChoiceOrigins) const;
             
         protected:
             /*!

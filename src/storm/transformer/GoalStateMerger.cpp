@@ -15,7 +15,6 @@
 #include "storm/exceptions/InvalidArgumentException.h"
 #include "storm/exceptions/UnexpectedException.h"
 
-
 namespace storm {
     namespace transformer {
         
@@ -248,30 +247,30 @@ namespace storm {
             
         template <>
         std::shared_ptr<storm::models::sparse::MarkovAutomaton<double>> GoalStateMerger<storm::models::sparse::MarkovAutomaton<double>>::buildOutputModel(storm::storage::BitVector const& maybeStates, ReturnType const& resultData, storm::storage::SparseMatrix<double>&& transitionMatrix, storm::models::sparse::StateLabeling&& labeling, std::unordered_map<std::string, typename storm::models::sparse::MarkovAutomaton<double>::RewardModelType>&& rewardModels) const {
-            
+            storm::storage::sparse::ModelComponents<double> modelComponents(std::move(transitionMatrix), std::move(labeling), std::move(rewardModels));
             uint_fast64_t stateCount = maybeStates.getNumberOfSetBits() + (resultData.targetState ? 1 : 0) + (resultData.sinkState ? 1 : 0);
 
-            storm::storage::BitVector markovianStates = originalModel.getMarkovianStates() % maybeStates;
-            markovianStates.resize(stateCount, true);
+            modelComponents.markovianStates = originalModel.getMarkovianStates() % maybeStates;
+            modelComponents.markovianStates->resize(stateCount, true);
             
-            std::vector<double> exitRates = storm::utility::vector::filterVector(originalModel.getExitRates(), maybeStates);
-            exitRates.resize(stateCount, storm::utility::one<double>());
+            modelComponents.exitRates = storm::utility::vector::filterVector(originalModel.getExitRates(), maybeStates);
+            modelComponents.exitRates->resize(stateCount, storm::utility::one<double>());
             
-            return std::make_shared<storm::models::sparse::MarkovAutomaton<double>> (std::move(transitionMatrix), std::move(labeling), std::move(markovianStates), std::move(exitRates), true, std::move(rewardModels));
+            return std::make_shared<storm::models::sparse::MarkovAutomaton<double>> (std::move(modelComponents));
         }
         
         template <>
         std::shared_ptr<storm::models::sparse::MarkovAutomaton<storm::RationalNumber>> GoalStateMerger<storm::models::sparse::MarkovAutomaton<storm::RationalNumber>>::buildOutputModel(storm::storage::BitVector const& maybeStates, ReturnType const& resultData, storm::storage::SparseMatrix<storm::RationalNumber>&& transitionMatrix, storm::models::sparse::StateLabeling&& labeling, std::unordered_map<std::string, typename storm::models::sparse::MarkovAutomaton<storm::RationalNumber>::RewardModelType>&& rewardModels) const {
-            
+            storm::storage::sparse::ModelComponents<storm::RationalNumber> modelComponents(std::move(transitionMatrix), std::move(labeling), std::move(rewardModels));
             uint_fast64_t stateCount = maybeStates.getNumberOfSetBits() + (resultData.targetState ? 1 : 0) + (resultData.sinkState ? 1 : 0);
 
-            storm::storage::BitVector markovianStates = originalModel.getMarkovianStates() % maybeStates;
-            markovianStates.resize(stateCount, true);
+            modelComponents.markovianStates = originalModel.getMarkovianStates() % maybeStates;
+            modelComponents.markovianStates->resize(stateCount, true);
             
-            std::vector<storm::RationalNumber> exitRates = storm::utility::vector::filterVector(originalModel.getExitRates(), maybeStates);
-            exitRates.resize(stateCount, storm::utility::one<storm::RationalNumber>());
+            modelComponents.exitRates = storm::utility::vector::filterVector(originalModel.getExitRates(), maybeStates);
+            modelComponents.exitRates->resize(stateCount, storm::utility::one<storm::RationalNumber>());
             
-            return std::make_shared<storm::models::sparse::MarkovAutomaton<storm::RationalNumber>> (std::move(transitionMatrix), std::move(labeling), std::move(markovianStates), std::move(exitRates), true, std::move(rewardModels));
+            return std::make_shared<storm::models::sparse::MarkovAutomaton<storm::RationalNumber>> (std::move(modelComponents));
         }
         
         template <typename SparseModelType>

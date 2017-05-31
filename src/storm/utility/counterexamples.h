@@ -4,29 +4,34 @@
 #include <queue>
 #include <utility>
 
+#include "storm/storage/sparse/PrismChoiceOrigins.h"
+
 namespace storm {
     namespace utility {
         namespace counterexamples {
             
             /*!
-             * Computes a set of action labels that is visited along all paths from any state to a target state.
+             * Computes a set of Prism commands that is executed along all paths from any state to a target state.
              *
-             * @return The set of action labels that is visited on all paths from any state to a target state.
+             * @return The set of Prism commands that is visited on all paths from any state to a target state.
              */
             template <typename T>
-            std::vector<boost::container::flat_set<uint_fast64_t>> getGuaranteedLabelSets(storm::models::sparse::Mdp<T> const& labeledMdp, storm::storage::BitVector const& psiStates, boost::container::flat_set<uint_fast64_t> const& relevantLabels) {
+            std::vector<boost::container::flat_set<uint_fast64_t>> getGuaranteedCommandSets(storm::models::sparse::Mdp<T> const& mdp, storm::storage::BitVector const& psiStates, boost::container::flat_set<uint_fast64_t> const& relevantCommands) {
+                STORM_LOG_THROW(mdp.hasChoiceOrigins(), storm::exceptions::InvalidArgumentException, "Restriction to command set is impossible for model without choice origns.");
+                STORM_LOG_THROW(mdp.getChoiceOrigins()->isPrismChoiceOrigins(), storm::exceptions::InvalidArgumentException, "Restriction to command set is impossible for model without prism choice origins.");
+                
                 // Get some data from the MDP for convenient access.
-                storm::storage::SparseMatrix<T> const& transitionMatrix = labeledMdp.getTransitionMatrix();
-                std::vector<uint_fast64_t> const& nondeterministicChoiceIndices = labeledMdp.getNondeterministicChoiceIndices();
-                std::vector<boost::container::flat_set<uint_fast64_t>> const& choiceLabeling = labeledMdp.getChoiceLabeling();
-                storm::storage::SparseMatrix<T> backwardTransitions = labeledMdp.getBackwardTransitions();
+                storm::storage::SparseMatrix<T> const& transitionMatrix = mdp.getTransitionMatrix();
+                std::vector<uint_fast64_t> const& nondeterministicChoiceIndices = mdp.getNondeterministicChoiceIndices();
+                storm::storage::SparseMatrix<T> backwardTransitions = mdp.getBackwardTransitions();
+                storm::storage::sparse::PrismChoiceOrigins const& choiceOrigins = mdp.getChoiceOrigins()->asPrismChoiceOrigins();
 
-                // Now we compute the set of labels that is present on all paths from the initial to the target states.
-                std::vector<boost::container::flat_set<uint_fast64_t>> analysisInformation(labeledMdp.getNumberOfStates(), relevantLabels);
+                // Now we compute the set of commands that is present on all paths from the initial to the target states.
+                std::vector<boost::container::flat_set<uint_fast64_t>> analysisInformation(mdp.getNumberOfStates(), relevantCommands);
                 
                 std::queue<uint_fast64_t> worklist;
-                storm::storage::BitVector statesInWorkList(labeledMdp.getNumberOfStates());
-                storm::storage::BitVector markedStates(labeledMdp.getNumberOfStates());
+                storm::storage::BitVector statesInWorkList(mdp.getNumberOfStates());
+                storm::storage::BitVector markedStates(mdp.getNumberOfStates());
                 
                 // Initially, put all predecessors of target states in the worklist and empty the analysis information them.
                 for (auto state : psiStates) {
@@ -60,13 +65,13 @@ namespace storm {
                         
                         // If we can reach the target state with this choice, we need to intersect the current
                         // analysis information with the union of the new analysis information of the target state
-                        // and the choice labels.
+                        // and the choice commands.
                         if (modifiedChoice) {
                             for (auto const& entry : transitionMatrix.getRow(currentChoice)) {
                                 if (markedStates.get(entry.getColumn())) {
                                     boost::container::flat_set<uint_fast64_t> tmpIntersection;
                                     std::set_intersection(analysisInformation[currentState].begin(), analysisInformation[currentState].end(), analysisInformation[entry.getColumn()].begin(), analysisInformation[entry.getColumn()].end(), std::inserter(tmpIntersection, tmpIntersection.begin()));
-                                    std::set_intersection(analysisInformation[currentState].begin(), analysisInformation[currentState].end(), choiceLabeling[currentChoice].begin(), choiceLabeling[currentChoice].end(), std::inserter(tmpIntersection, tmpIntersection.begin()));
+                                    std::set_intersection(analysisInformation[currentState].begin(), analysisInformation[currentState].end(), choiceOrigins.getCommandSet(currentChoice).begin(), choiceOrigins.getCommandSet(currentChoice).end(), std::inserter(tmpIntersection, tmpIntersection.begin()));
                                     analysisInformation[currentState] = std::move(tmpIntersection);
                                 }
                             }
@@ -96,22 +101,22 @@ namespace storm {
             }
             
             /*!
-             * Computes a set of action labels that is visited along all paths from an initial state to a target state.
+             * Computes a set of prism commands that is executed along all paths from an initial state to a target state.
              *
-             * @return The set of action labels that is visited on all paths from an initial state to a target state.
+             * @return The set of prism commands that is executed on all paths from an initial state to a target state.
              */
             template <typename T>
-            boost::container::flat_set<uint_fast64_t> getGuaranteedLabelSet(storm::models::sparse::Mdp<T> const& labeledMdp, storm::storage::BitVector const& psiStates, boost::container::flat_set<uint_fast64_t> const& relevantLabels) {
-                std::vector<boost::container::flat_set<uint_fast64_t>> guaranteedLabels = getGuaranteedLabelSets(labeledMdp, psiStates, relevantLabels);
+            boost::container::flat_set<uint_fast64_t> getGuaranteedCommandSet(storm::models::sparse::Mdp<T> const& mdp, storm::storage::BitVector const& psiStates, boost::container::flat_set<uint_fast64_t> const& relevantCommands) {
+                std::vector<boost::container::flat_set<uint_fast64_t>> guaranteedCommands = getGuaranteedCommandSets(mdp, psiStates, relevantCommands);
                 
-                boost::container::flat_set<uint_fast64_t> knownLabels(relevantLabels);
+                boost::container::flat_set<uint_fast64_t> knownCommands(relevantCommands);
                 boost::container::flat_set<uint_fast64_t> tempIntersection;
-                for (auto initialState : labeledMdp.getInitialStates()) {
-                    std::set_intersection(knownLabels.begin(), knownLabels.end(), guaranteedLabels[initialState].begin(), guaranteedLabels[initialState].end(), std::inserter(tempIntersection, tempIntersection.end()));
-                    std::swap(knownLabels, tempIntersection);
+                for (auto initialState : mdp.getInitialStates()) {
+                    std::set_intersection(knownCommands.begin(), knownCommands.end(), guaranteedCommands[initialState].begin(), guaranteedCommands[initialState].end(), std::inserter(tempIntersection, tempIntersection.end()));
+                    std::swap(knownCommands, tempIntersection);
                 }
 
-                return knownLabels;
+                return knownCommands;
             }
             
         } // namespace counterexample

@@ -123,6 +123,27 @@ namespace storm {
             }
             
             /*!
+             * Returns true iff every element in the given vector is unique, i.e., there are no i,j with i!=j and v[i]==v[j].
+             */
+            template<typename T>
+            bool isUnique(std::vector<T> const& v) {
+                if (v.size() < 2) {
+                    return true;
+                }
+                auto sortedIndices = getSortedIndices(v);
+                auto indexIt = sortedIndices.begin();
+                T const* previous = &v[*indexIt];
+                for (++indexIt; indexIt != sortedIndices.end(); ++indexIt) {
+                    T const& current = v[*indexIt];
+                    if (current==*previous) {
+                        return false;
+                    }
+                    previous = &current;
+                }
+                return true;
+            }
+            
+            /*!
              * Selects the elements from a vector at the specified positions and writes them consecutively into another vector.
              * @param vector The vector into which the selected elements are to be written.
              * @param positions The positions at which to select the elements from the values vector.

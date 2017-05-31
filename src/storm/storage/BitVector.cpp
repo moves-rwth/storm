@@ -254,7 +254,9 @@ namespace storm {
         
         void BitVector::grow(uint_fast64_t minimumLength, bool init) {
             if (minimumLength > bitCount) {
-                uint_fast64_t newLength = bitCount;
+                // We double the bitcount as long as it is less then the minimum length.
+                uint_fast64_t newLength = std::max(static_cast<uint_fast64_t>(64), bitCount);
+                // Note that newLength has to be initialized with a non-zero number.
                 while (newLength < minimumLength) {
                     newLength = newLength << 1;
                 }

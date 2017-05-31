@@ -566,6 +566,23 @@ namespace storm {
             return variableNameToModuleIndexPair->second;
         }
         
+        std::pair<uint_fast64_t, uint_fast64_t> Program::getModuleCommandIndexByGlobalCommandIndex(uint_fast64_t globalCommandIndex) const {
+            uint_fast64_t moduleIndex = 0;
+            for (auto const& module : modules) {
+                uint_fast64_t commandIndex = 0;
+                for (auto const& command : module.getCommands()) {
+                    if (command.getGlobalIndex() == globalCommandIndex) {
+                        return std::pair<uint_fast64_t, uint_fast64_t>(moduleIndex, commandIndex);
+                    }
+                    ++commandIndex;
+                }
+                ++moduleIndex;
+            }
+            // This point should not be reached if the globalCommandIndex is valid
+            STORM_LOG_THROW(false, storm::exceptions::OutOfRangeException, "Global command index '" << globalCommandIndex << "' does not exist.");
+            return std::pair<uint_fast64_t, uint_fast64_t>(0, 0);
+        }
+        
         bool Program::hasRewardModel() const {
             return !this->rewardModels.empty();
         }

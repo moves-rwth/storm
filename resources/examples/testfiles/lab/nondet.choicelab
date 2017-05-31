@@ -1,0 +1,8 @@
+#DECLARATION
+alpha beta gamma delta
+#END
+0 0 alpha
+0 1 alpha beta
+0 2 gamma
+1 0 beta
+3 2 beta

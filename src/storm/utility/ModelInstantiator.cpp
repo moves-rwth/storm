@@ -36,10 +36,11 @@ namespace storm {
                                                                                 true,
                                                                                 !parametricMatrix.hasTrivialRowGrouping(),
                                                                                 parametricMatrix.hasTrivialRowGrouping() ? 0 : parametricMatrix.getRowGroupCount());
-                ConstantType dummyValue = storm::utility::one<ConstantType>();
                 if (parametricMatrix.hasTrivialRowGrouping()) {
                     for (uint_fast64_t row = 0; row < parametricMatrix.getRowCount(); ++row) {
-                        for (auto const& paramEntry : parametricMatrix.getRow(row)) {
+                        auto parametricRow = parametricMatrix.getRow(row);
+                        ConstantType dummyValue = storm::utility::one<ConstantType>() / storm::utility::convertNumber<ConstantType>(parametricRow.getNumberOfEntries());
+                        for (auto const& paramEntry : parametricRow) {
                             matrixBuilder.addNextValue(row, paramEntry.getColumn(), dummyValue);
                         }
                     }
@@ -48,7 +49,9 @@ namespace storm {
                     for(uint_fast64_t rowGroup = 0; rowGroup < parametricMatrix.getRowGroupCount(); ++rowGroup){
                         matrixBuilder.newRowGroup(parametricMatrix.getRowGroupIndices()[rowGroup]);
                         for (uint_fast64_t row = parametricMatrix.getRowGroupIndices()[rowGroup]; row < parametricMatrix.getRowGroupIndices()[rowGroup+1]; ++row) {
-                            for(auto const& paramEntry : parametricMatrix.getRow(row)){
+                            auto parametricRow = parametricMatrix.getRow(row);
+                            ConstantType dummyValue = storm::utility::one<ConstantType>() / storm::utility::convertNumber<ConstantType>(parametricRow.getNumberOfEntries());
+                            for(auto const& paramEntry : parametricRow){
                                 matrixBuilder.addNextValue(row, paramEntry.getColumn(), dummyValue);
                             }
                         }
