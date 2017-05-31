@@ -796,8 +796,17 @@ s             * @param insertDiagonalEntries If set to true, the resulting matri
             
             /*!
              * Scales each row of the matrix, i.e., multiplies each element in row i with factors[i]
+             *
+             * @param factors The factors with which each row is scaled.
              */
             void scaleRowsInPlace(std::vector<value_type> const& factors);
+
+            /*!
+             * Divides each row of the matrix, i.e., divides each element in row i with divisors[i]
+             *
+             * @param divisors The divisors with which each row is divided.
+             */
+            void divideRowsInPlace(std::vector<value_type> const& divisors);
 
             /*!
              * Performs one step of the successive over-relaxation technique.

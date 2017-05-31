@@ -1361,7 +1361,7 @@ namespace storm {
         }
         
         template<typename ValueType>
-        void SparseMatrix<ValueType>::scaleRowsInPlace(std::vector<value_type> const& factors) {
+        void SparseMatrix<ValueType>::scaleRowsInPlace(std::vector<ValueType> const& factors) {
             STORM_LOG_ASSERT(factors.size() == this->getRowCount(), "Can not scale rows: Number of rows and number of scaling factors do not match.");
             uint_fast64_t row = 0;
             for (auto const& factor : factors) {
@@ -1371,7 +1371,26 @@ namespace storm {
                 ++row;
             }
         }
-
+       
+        template<typename ValueType>
+        void SparseMatrix<ValueType>::divideRowsInPlace(std::vector<ValueType> const& divisors) {
+            STORM_LOG_ASSERT(divisors.size() == this->getRowCount(), "Can not divide rows: Number of rows and number of divisors do not match.");
+            uint_fast64_t row = 0;
+            for (auto const& divisor : divisors) {
+                STORM_LOG_ASSERT(!storm::utility::isZero(divisor), "Can not divide row " << row << " by 0.");
+                for (auto& entry : getRow(row)) {
+                    entry.setValue(entry.getValue() / divisor);
+                }
+                ++row;
+            }
+        }
+        
+#ifdef STORM_HAVE_CARL
+        template<>
+        void SparseMatrix<Interval>::divideRowsInPlace(std::vector<Interval> const&) {
+            STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "This operation is not supported.");
+        }
+#endif
         
         template<typename ValueType>
         typename SparseMatrix<ValueType>::const_rows SparseMatrix<ValueType>::getRows(index_type startRow, index_type endRow) const {
