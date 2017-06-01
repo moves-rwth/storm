@@ -46,8 +46,8 @@ osx)
     export STLARG
     export OS
     gtimeout $TIMEOUT travis/postsubmit-helper.sh "$1" "$2"
-    if [ $EXITCODE = 124 ] && [ "$2" = "BuildLib1" ]
     EXITCODE=$?
+    if [ $EXITCODE = 124 ] && [ "$2" = "BuildLib1" ]
     then
         exit 0
     else
