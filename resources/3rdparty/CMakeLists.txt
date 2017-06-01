@@ -155,6 +155,8 @@ if(Z3_FOUND)
 
     add_imported_library(z3 SHARED ${Z3_LIBRARIES} ${Z3_INCLUDE_DIRS})
     list(APPEND STORM_DEP_TARGETS z3_SHARED)
+else()
+    message (WARNING "Storm - Z3 not found. Building of Prism/JANI models will not be supported.")
 endif(Z3_FOUND)
 
 #############################################################
@@ -223,7 +225,7 @@ if(USE_CARL)
 		message("START CARL CONFIG PROCESS")
 		file(MAKE_DIRECTORY ${STORM_3RDPARTY_BINARY_DIR}/carl_download) 
 		execute_process(
-		COMMAND ${CMAKE_COMMAND} ${STORM_3RDPARTY_SOURCE_DIR}/carl "-DSTORM_3RDPARTY_BINARY_DIR=${STORM_3RDPARTY_BINARY_DIR}" "-DUSE_CLN_NUMBERS=ON" "-DUSE_GINAC=ON" "-DBoost_LIBRARY_DIRS=${Boost_LIBRARY_DIRS}" "-DBoost_INCLUDE_DIRS=${Boost_INCLUDE_DIRS}" "-DTHREAD_SAFE=ON"
+		COMMAND ${CMAKE_COMMAND} ${STORM_3RDPARTY_SOURCE_DIR}/carl "-DSTORM_3RDPARTY_BINARY_DIR=${STORM_3RDPARTY_BINARY_DIR}"
 		WORKING_DIRECTORY ${STORM_3RDPARTY_BINARY_DIR}/carl_download
 		OUTPUT_VARIABLE carlconfig_out
 		RESULT_VARIABLE carlconfig_result)
