@@ -12,4 +12,5 @@ RUN apt-get update -qq && apt-get install -y --no-install-recommends \
     libginac-dev \
     automake \
     libglpk-dev \
-    libhwloc-dev
+    libhwloc-dev \
+    libz3-dev

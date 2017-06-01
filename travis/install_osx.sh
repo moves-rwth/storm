@@ -59,6 +59,7 @@ install_brew_package cln
 install_brew_package ginac
 install_brew_package doxygen
 install_brew_package boost --c++11
+install_brew_package z3 # optional
 brew tap homebrew/science
 install_brew_package homebrew/science/glpk
 install_brew_package homebrew/science/hwloc

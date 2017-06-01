@@ -11,4 +11,5 @@ RUN apt-get update -qq && apt-get install -y --no-install-recommends \
     libgmp-dev \
     libginac-dev \
     automake \
-    libglpk-dev
+    libglpk-dev \
+    libz3-dev
