@@ -2,6 +2,7 @@
 #define STORM_SETTINGS_MODULES_MULTIOBJECTIVESETTINGS_H_
 
 #include "storm/settings/modules/ModuleSettings.h"
+#include "storm/modelchecker/multiobjective/MultiObjectiveModelCheckingMethod.h"
 
 namespace storm {
     namespace settings {
@@ -17,6 +18,11 @@ namespace storm {
                  * Creates a new set of multi-objective model checking settings.
                  */
                 MultiObjectiveSettings();
+				
+				/*!
+				 * Returns the preferred method for multi objective model checking
+				 */
+				storm::modelchecker::multiobjective::MultiObjectiveMethod getMultiObjectiveMethod() const;
 				
 				/*!
 				 * Retrieves whether the data for plotting should be exported.
@@ -63,6 +69,7 @@ namespace storm {
                 const static std::string moduleName;
                 
             private:
+				const static std::string methodOptionName;
 				const static std::string exportPlotOptionName;
 				const static std::string precisionOptionName;
 				const static std::string maxStepsOptionName;

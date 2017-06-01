@@ -378,25 +378,20 @@ namespace storm {
                     if (!maybeStates.empty()) {
                         // In this case we have to compute the reward values for the remaining states.
                         
-                        // We can eliminate the rows and columns from the original transition probability matrix for states
-                        // whose reward values are already known.
-                        storm::storage::SparseMatrix<ValueType> submatrix = transitionMatrix.getSubmatrix(true, maybeStates, maybeStates, false);
-                        
-                        // Prepare the right-hand side of the equation system.
-                        std::vector<ValueType> b = totalStateRewardVectorGetter(submatrix.getRowCount(), transitionMatrix, maybeStates);
-
-                        // Since we are cutting away target and infinity states, we need to account for this by giving
-                        // choices the value infinity that have some successor contained in the infinity states.
-                        uint_fast64_t currentRow = 0;
-                        for (auto state : maybeStates) {
-                            for (uint_fast64_t row = nondeterministicChoiceIndices[state]; row < nondeterministicChoiceIndices[state + 1]; ++row, ++currentRow) {
-                                for (auto const& element : transitionMatrix.getRow(row)) {
-                                    if (infinityStates.get(element.getColumn())) {
-                                        b[currentRow] = storm::utility::infinity<ValueType>();
-                                        break;
-                                    }
-                                }
-                            }
+                        // Prepare matrix and vector for the equation system.
+                        storm::storage::SparseMatrix<ValueType> submatrix;
+                        std::vector<ValueType> b;
+                        // Remove rows and columns from the original transition probability matrix for states whose reward values are already known.
+                        // If there are infinity states, we additionaly have to remove choices of maybeState that lead to infinity
+                        boost::optional<storm::storage::BitVector> selectedChoices; // if not given, all maybeState choices are selected
+                        if (infinityStates.empty()) {
+                            submatrix = transitionMatrix.getSubmatrix(true, maybeStates, maybeStates, false);
+                            b = totalStateRewardVectorGetter(submatrix.getRowCount(), transitionMatrix, maybeStates);
+                        } else {
+                            selectedChoices = transitionMatrix.getRowFilter(maybeStates, ~infinityStates);
+                            submatrix = transitionMatrix.getSubmatrix(false, *selectedChoices, maybeStates, false);
+                            b = totalStateRewardVectorGetter(transitionMatrix.getRowCount(), transitionMatrix, storm::storage::BitVector(transitionMatrix.getRowGroupCount(), true));
+                            storm::utility::vector::filterVectorInPlace(b, *selectedChoices);
                         }
                         
                         bool skipEcWithinMaybeStatesCheck = !goal.minimize() || (hint.isExplicitModelCheckerHint() && hint.asExplicitModelCheckerHint<ValueType>().getNoEndComponentsInMaybeStates());
@@ -408,10 +403,25 @@ namespace storm {
                         
                         if (produceScheduler) {
                             storm::storage::Scheduler const& subscheduler = *resultForMaybeStates.scheduler;
-                            uint_fast64_t currentSubState = 0;
-                            for (auto maybeState : maybeStates) {
-                                scheduler->setChoice(maybeState, subscheduler.getChoice(currentSubState));
-                                ++currentSubState;
+                            if (selectedChoices) {
+                                uint_fast64_t currentSubState = 0;
+                                for (auto maybeState : maybeStates) {
+                                    uint_fast64_t subChoice = subscheduler.getChoice(currentSubState);
+                                    // find the rowindex that corresponds to the selected row of the submodel
+                                    uint_fast64_t firstRowIndex = transitionMatrix.getRowGroupIndices()[maybeState];
+                                    uint_fast64_t selectedRowIndex = selectedChoices->getNextSetIndex(firstRowIndex);
+                                    for (uint_fast64_t choice = 0; choice < subChoice; ++choice) {
+                                        selectedRowIndex = selectedChoices->getNextSetIndex(selectedRowIndex + 1);
+                                    }
+                                    scheduler->setChoice(maybeState, selectedRowIndex - firstRowIndex);
+                                    ++currentSubState;
+                                }
+                            } else {
+                                uint_fast64_t currentSubState = 0;
+                                for (auto maybeState : maybeStates) {
+                                    scheduler->setChoice(maybeState, subscheduler.getChoice(currentSubState));
+                                    ++currentSubState;
+                                }
                             }
                         }
                     }

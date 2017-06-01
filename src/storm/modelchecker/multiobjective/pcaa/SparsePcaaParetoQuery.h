@@ -23,7 +23,7 @@ namespace storm {
                  * Creates a new query for the Pareto curve approximation algorithm (Pcaa)
                  * @param preprocessorResult the result from preprocessing
                  */
-                SparsePcaaParetoQuery(SparsePcaaPreprocessorReturnType<SparseModelType>& preprocessorResult);
+                SparsePcaaParetoQuery(SparseMultiObjectivePreprocessorReturnType<SparseModelType>& preprocessorResult);
                 
                 virtual ~SparsePcaaParetoQuery() = default;
 

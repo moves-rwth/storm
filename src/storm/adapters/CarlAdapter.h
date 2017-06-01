@@ -9,6 +9,7 @@
 #include <carl/core/Relation.h>
 #include <carl/core/SimpleConstraint.h>
 #include <carl/util/stringparser.h>
+#include <carl/formula/Formula.h>
 
 namespace carl {
     // Define hash values for all polynomials and rational function.

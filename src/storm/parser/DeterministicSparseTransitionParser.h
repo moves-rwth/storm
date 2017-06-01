@@ -65,10 +65,11 @@ namespace storm {
              * transitions and the maximum node id.
              *
              * @param buffer The buffer that contains the input.
-             * @param insertDiagonalEntriesIfMissing A flag set iff entries on the primary diagonal of the matrix should be added in case they are missing in the parsed file.
+             * @param reserveDiagonalElements A flag indicating whether the diagonal elements should be counted as if they
+             * were present to enable fixes later.
              * @return A structure representing the result of the first pass.
              */
-            static FirstPassResult firstPass(char const* buffer, bool insertDiagonalEntriesIfMissing = true);
+            static FirstPassResult firstPass(char const* buffer, bool reserveDiagonalElements);
 
             /*
              * The main parsing routine.

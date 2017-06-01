@@ -231,11 +231,10 @@ namespace gmm {
     static void resize(this_type &v, size_type n) { v.resize(n); }
   };
 }
-namespace std {
-  template <typename T> ostream &operator <<
-  (std::ostream &o, const vector<T>& m) { gmm::write(o,m); return o; }
-}
+
 namespace gmm {
+  template <typename T> std::ostream &operator <<
+  (std::ostream &o, const std::vector<T>& m) { gmm::write(o,m); return o; }
 
   template <typename T>
   inline size_type nnz(const std::vector<T>& l) { return l.size(); }

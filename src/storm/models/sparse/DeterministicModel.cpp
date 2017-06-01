@@ -6,38 +6,49 @@
 namespace storm {
     namespace models {
         namespace sparse {
+            
             template <typename ValueType, typename RewardModelType>
-            DeterministicModel<ValueType, RewardModelType>::DeterministicModel(storm::models::ModelType const& modelType,
-                                                              storm::storage::SparseMatrix<ValueType> const& transitionMatrix,
-                                                              storm::models::sparse::StateLabeling const& stateLabeling,
-                                                              std::unordered_map<std::string, RewardModelType> const& rewardModels,
-                                                              boost::optional<std::vector<LabelSet>> const& optionalChoiceLabeling)
-            : Model<ValueType, RewardModelType>(modelType, transitionMatrix, stateLabeling, rewardModels, optionalChoiceLabeling) {
-                // Intentionally left empty.
+            DeterministicModel<ValueType, RewardModelType>::DeterministicModel(ModelType modelType, storm::storage::sparse::ModelComponents<ValueType, RewardModelType> const& components)
+                    : Model<ValueType, RewardModelType>(modelType, components) {
+                // Intentionally left empty
             }
             
             template <typename ValueType, typename RewardModelType>
-            DeterministicModel<ValueType, RewardModelType>::DeterministicModel(storm::models::ModelType const& modelType,
-                                                              storm::storage::SparseMatrix<ValueType>&& transitionMatrix,
-                                                              storm::models::sparse::StateLabeling&& stateLabeling,
-                                                              std::unordered_map<std::string, RewardModelType>&& rewardModels,
-                                                              boost::optional<std::vector<LabelSet>>&& optionalChoiceLabeling)
-            : Model<ValueType, RewardModelType>(modelType, std::move(transitionMatrix), std::move(stateLabeling), std::move(rewardModels), std::move(optionalChoiceLabeling)) {
-                // Intentionally left empty.
+            DeterministicModel<ValueType, RewardModelType>::DeterministicModel(ModelType modelType, storm::storage::sparse::ModelComponents<ValueType, RewardModelType>&& components)
+                    : Model<ValueType, RewardModelType>(modelType, std::move(components)) {
+                // Intentionally left empty
             }
             
             template <typename ValueType, typename RewardModelType>
             void DeterministicModel<ValueType, RewardModelType>::writeDotToStream(std::ostream& outStream, bool includeLabeling, storm::storage::BitVector const* subsystem, std::vector<ValueType> const* firstValue, std::vector<ValueType> const* secondValue, std::vector<uint_fast64_t> const* stateColoring, std::vector<std::string> const* colors, std::vector<uint_fast64_t>* scheduler, bool finalizeOutput) const {
                 Model<ValueType, RewardModelType>::writeDotToStream(outStream, includeLabeling, subsystem, firstValue, secondValue, stateColoring, colors, scheduler, false);
                 
-                // Simply iterate over all transitions and draw the arrows with probability information attached.
+                // iterate over all transitions and draw the arrows with probability information attached.
                 auto rowIt = this->getTransitionMatrix().begin();
                 for (uint_fast64_t i = 0; i < this->getTransitionMatrix().getRowCount(); ++i, ++rowIt) {
+                    
+                    // Put in an intermediate node if there is a choice labeling
+                    std::string arrowOrigin = std::to_string(i);
+                    if (this->hasChoiceLabeling()) {
+                        arrowOrigin = "\"" + arrowOrigin + "c\"";
+                        outStream << "\t" << arrowOrigin << " [shape = \"point\"]" << std::endl;
+                        outStream << "\t" << i << " -> " << arrowOrigin << " [label= \"{";
+                        bool firstLabel = true;
+                        for (auto const& label : this->getChoiceLabeling().getLabelsOfChoice(i)) {
+                            if (!firstLabel) {
+                                outStream << ", ";
+                            }
+                            firstLabel = false;
+                            outStream << label;
+                        }
+                        outStream << "}\"];" << std::endl;
+                    }
+                    
                     typename storm::storage::SparseMatrix<ValueType>::const_rows row = this->getTransitionMatrix().getRow(i);
                     for (auto const& transition : row) {
                         if (transition.getValue() != storm::utility::zero<ValueType>()) {
                             if (subsystem == nullptr || subsystem->get(transition.getColumn())) {
-                                outStream << "\t" << i << " -> " << transition.getColumn() << " [ label= \"" << transition.getValue() << "\" ];" << std::endl;
+                                outStream << "\t" << arrowOrigin << " -> " << transition.getColumn() << " [ label= \"" << transition.getValue() << "\" ];" << std::endl;
                             }
                         }
                     }
@@ -56,8 +67,6 @@ namespace storm {
             }
             
             template class DeterministicModel<double>;
-            template class DeterministicModel<float>;
-
 #ifdef STORM_HAVE_CARL
             template class DeterministicModel<storm::RationalNumber>;
             

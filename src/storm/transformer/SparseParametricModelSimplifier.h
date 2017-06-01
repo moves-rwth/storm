@@ -56,9 +56,10 @@ namespace storm {
              * * there is no statelabel defined, and
              * * (if rewardModelName is given) the reward collected at the state is constant.
              *
-             * The resulting model will only have the rewardModel with the provided name (or no reward model at all if no name was given)
+             * The resulting model will only have the rewardModel with the provided name (or no reward model at all if no name was given).
+             * Labelings of eliminated states will be lost
              */
-            static std::shared_ptr<SparseModelType> eliminateConstantDeterministicStates(SparseModelType const& model, boost::optional<std::string> const& rewardModelName = boost::none);
+            static std::shared_ptr<SparseModelType> eliminateConstantDeterministicStates(SparseModelType const& model,  storm::storage::BitVector const& consideredStates, boost::optional<std::string> const& rewardModelName = boost::none);
             
             SparseModelType const& originalModel;
             
