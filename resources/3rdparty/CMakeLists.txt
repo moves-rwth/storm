@@ -155,6 +155,8 @@ if(Z3_FOUND)
 
     add_imported_library(z3 SHARED ${Z3_LIBRARIES} ${Z3_INCLUDE_DIRS})
     list(APPEND STORM_DEP_TARGETS z3_SHARED)
+else()
+    message (WARNING "Storm - Z3 not found. Building of Prism/JANI models will not be supported.")
 endif(Z3_FOUND)
 
 #############################################################
