@@ -1,7 +1,4 @@
 #include "storm/cli/cli.h"
-#include "storm/cli/entrypoints.h"
-
-#include "storm/utility/storm.h"
 
 #include "storm/storage/SymbolicModelDescription.h"
 
@@ -14,6 +11,8 @@
 #include "storm/settings/modules/ResourceSettings.h"
 #include "storm/settings/modules/JaniExportSettings.h"
 
+#include "storm/modelchecker/results/SymbolicQualitativeCheckResult.h"
+
 #include "storm/utility/resources.h"
 #include "storm/utility/file.h"
 #include "storm/utility/storm-version.h"
@@ -24,9 +23,11 @@
 
 #include "storm/settings/SettingsManager.h"
 #include "storm/settings/modules/ResourceSettings.h"
-
+#include "storm/settings/modules/ParametricSettings.h"
 
 #include <type_traits>
+
+#include "storm/api/storm.h"
 
 #include "storm/utility/macros.h"
 
@@ -229,17 +230,6 @@ namespace storm {
             setFileLogging();
         }
         
-        void rest();
-        
-        boost::optional<std::set<std::string>> parsePropertyFilter(storm::settings::modules::IOSettings const& ioSettings) {
-            boost::optional<std::set<std::string>> propertyFilter;
-            std::string propertyFilterString = ioSettings.getPropertyFilter();
-            if (propertyFilterString != "all") {
-                propertyFilter = storm::parsePropertyFilter(propertyFilterString);
-            }
-            return propertyFilter;
-        }
-        
         struct SymbolicInput {
             // The symbolic model description.
             boost::optional<storm::storage::SymbolicModelDescription> model;
@@ -285,7 +275,7 @@ namespace storm {
             auto ioSettings = storm::settings::getModule<storm::settings::modules::IOSettings>();
 
             // Parse the property filter, if any is given.
-            boost::optional<std::set<std::string>> propertyFilter = parsePropertyFilter(ioSettings);
+            boost::optional<std::set<std::string>> propertyFilter = storm::api::parsePropertyFilter(ioSettings.getPropertyFilter());
             
             SymbolicInput input;
             parseSymbolicModelDescription(ioSettings, input);
@@ -308,7 +298,7 @@ namespace storm {
                 output.model.get().preprocess(constantDefinitions);
             }
             if (!output.properties.empty()) {
-                output.properties = substituteConstantsInProperties(output.properties, constantDefinitions);
+                output.properties = storm::api::substituteConstantsInProperties(output.properties, constantDefinitions);
             }
             
             // Check whether conversion for PRISM to JANI is requested or necessary.
@@ -362,13 +352,13 @@ namespace storm {
         
         template <storm::dd::DdType DdType, typename ValueType>
         std::shared_ptr<storm::models::ModelBase> buildModelDd(SymbolicInput const& input) {
-            return storm::api::buildSymbolicModel<DdType, ValueType>(input.model.get(), extractFormulasFromProperties(input.properties));
+            return storm::api::buildSymbolicModel<DdType, ValueType>(input.model.get(), storm::api::extractFormulasFromProperties(input.properties));
         }
 
         template <typename ValueType>
         std::shared_ptr<storm::models::ModelBase> buildModelSparse(SymbolicInput const& input, storm::settings::modules::IOSettings const& ioSettings) {
             auto counterexampleGeneratorSettings = storm::settings::getModule<storm::settings::modules::CounterexampleGeneratorSettings>();
-            return storm::api::buildSparseModel<ValueType>(input.model.get(), extractFormulasFromProperties(input.properties), ioSettings.isBuildChoiceLabelsSet(), counterexampleGeneratorSettings.isMinimalCommandSetGenerationSet());
+            return storm::api::buildSparseModel<ValueType>(input.model.get(), storm::api::extractFormulasFromProperties(input.properties), ioSettings.isBuildChoiceLabelsSet(), counterexampleGeneratorSettings.isMinimalCommandSetGenerationSet());
         }
 
         template <typename ValueType>
@@ -424,7 +414,7 @@ namespace storm {
             }
             
             STORM_LOG_INFO("Performing bisimulation minimization...");
-            return storm::api::performBisimulationMinimization<ValueType>(model, extractFormulasFromProperties(input.properties), bisimType);
+            return storm::api::performBisimulationMinimization<ValueType>(model, storm::api::extractFormulasFromProperties(input.properties), bisimType);
         }
         
         template <typename ValueType>
@@ -661,9 +651,10 @@ namespace storm {
                                             return result;
                                         },
                                         [&sparseModel] (std::unique_ptr<storm::modelchecker::CheckResult> const& result) {
-                                            if (std::is_same<ValueType, storm::RationalFunction>::value && sparseModel->isOfType(storm::models::ModelType::Dtmc) && storm::settings::getModule<storm::settings::modules::ParametricSettings>().exportResultToFile()) {
+                                            auto parametricSettings = storm::settings::getModule<storm::settings::modules::ParametricSettings>();
+                                            if (std::is_same<ValueType, storm::RationalFunction>::value && sparseModel->isOfType(storm::models::ModelType::Dtmc) && parametricSettings.exportResultToFile()) {
                                                 auto dtmc = sparseModel->template as<storm::models::sparse::Dtmc<storm::RationalFunction>>();
-                                                storm::api::exportParametricResultToFile(result->asExplicitQuantitativeCheckResult<storm::RationalFunction>()[*sparseModel->getInitialStates().begin()], storm::analysis::ConstraintCollector<storm::RationalFunction>(*dtmc), storm::settings::getModule<storm::settings::modules::ParametricSettings>().exportResultPath());
+                                                storm::api::exportParametricResultToFile(result->asExplicitQuantitativeCheckResult<storm::RationalFunction>()[*sparseModel->getInitialStates().begin()], storm::analysis::ConstraintCollector<storm::RationalFunction>(*dtmc), parametricSettings.exportResultPath());
                                             }
                                         });
         }
