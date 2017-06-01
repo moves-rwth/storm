@@ -1,6 +1,6 @@
 #include "storm/modelchecker/multiobjective/pcaa/SparseMdpPcaaWeightVectorChecker.h"
 
-#include "storm/adapters/CarlAdapter.h"
+#include "storm/adapters/RationalFunctionAdapter.h"
 #include "storm/models/sparse/Mdp.h"
 #include "storm/models/sparse/StandardRewardModel.h"
 #include "storm/utility/macros.h"

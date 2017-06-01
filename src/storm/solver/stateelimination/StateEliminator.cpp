@@ -1,6 +1,6 @@
 #include "storm/solver/stateelimination/StateEliminator.h"
 
-#include "storm/adapters/CarlAdapter.h"
+#include "storm/adapters/RationalFunctionAdapter.h"
 
 #include "storm/storage/BitVector.h"
 

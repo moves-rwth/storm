@@ -7,7 +7,7 @@
 #include "storm/utility/vector.h"
 #include "storm/exceptions/InvalidOperationException.h"
 #include "storm/exceptions/InvalidAccessException.h"
-#include "storm/adapters/CarlAdapter.h"
+#include "storm/adapters/RationalFunctionAdapter.h"
 
 
 namespace storm {

@@ -5,14 +5,17 @@
 
 namespace storm {
     namespace cli {
-            
-        std::string getCurrentWorkingDirectory();
-            
+
+        /*!
+         * Processes the options and returns the exit code.
+         */
+        int64_t process(const int argc, const char** argv);
+
         void printHeader(std::string const& name, const int argc, const char* argv[]);
         
         void printVersion(std::string const& name);
             
-        void showTimeAndMemoryStatistics(uint64_t wallclockMilliseconds = 0);
+        void printTimeAndMemoryStatistics(uint64_t wallclockMilliseconds = 0);
         
         /*!
          * Parses the given command line arguments.
@@ -22,8 +25,9 @@ namespace storm {
          * @return True iff the program should continue to run after parsing the options.
          */
         bool parseOptions(const int argc, const char* argv[]);
-            
+        
         void processOptions();
+        
     }
 }
 

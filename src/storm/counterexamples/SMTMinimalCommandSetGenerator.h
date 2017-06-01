@@ -6,6 +6,8 @@
 
 #include "storm/solver/Z3SmtSolver.h"
 
+#include "storm/counterexamples/PrismHighLevelCounterexample.h"
+
 #include "storm/storage/prism/Program.h"
 #include "storm/storage/expressions/Expression.h"
 #include "storm/modelchecker/prctl/helper/SparseMdpPrctlHelper.h"
@@ -1583,7 +1585,6 @@ namespace storm {
              * Computes the minimal command set that is needed in the given MDP to exceed the given probability threshold for satisfying phi until psi.
              *
              * @param program The program that was used to build the MDP.
-             * @param constantDefinitionString A string defining the undefined constants in the given program.
              * @param labeledMdp The MDP in which to find the minimal command set.
              * @param phiStates A bit vector characterizing all phi states in the model.
              * @param psiStates A bit vector characterizing all psi states in the model.
@@ -1593,7 +1594,7 @@ namespace storm {
              * @param checkThresholdFeasible If set, it is verified that the model can actually achieve/exceed the given probability value. If this check
              * is made and fails, an exception is thrown.
              */
-            static boost::container::flat_set<uint_fast64_t> getMinimalCommandSet(storm::prism::Program program, std::string const& constantDefinitionString, storm::models::sparse::Mdp<T> const& labeledMdp, storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates, double probabilityThreshold, bool strictBound, bool checkThresholdFeasible = false, bool includeReachabilityEncoding = false) {
+            static boost::container::flat_set<uint_fast64_t> getMinimalCommandSet(storm::prism::Program program, storm::models::sparse::Mdp<T> const& labeledMdp, storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates, double probabilityThreshold, bool strictBound, bool checkThresholdFeasible = false, bool includeReachabilityEncoding = false) {
 #ifdef STORM_HAVE_Z3
                 // Set up all clocks used for time measurement.
                 auto totalClock = std::chrono::high_resolution_clock::now();
@@ -1611,10 +1612,6 @@ namespace storm {
 
                 auto analysisClock = std::chrono::high_resolution_clock::now();
                 decltype(std::chrono::high_resolution_clock::now() - analysisClock) totalAnalysisTime(0);
-
-                std::map<storm::expressions::Variable, storm::expressions::Expression> constantDefinitions = storm::utility::cli::parseConstantDefinitionString(program.getManager(), constantDefinitionString);
-                storm::prism::Program preparedProgram = program.defineUndefinedConstants(constantDefinitions);
-                preparedProgram = preparedProgram.substituteConstants();
 
                 // (0) Check whether the MDP is indeed labeled.
                 if (!labeledMdp.hasChoiceLabeling()) {
@@ -1655,7 +1652,7 @@ namespace storm {
                 STORM_LOG_DEBUG("Asserting cuts.");
                 assertExplicitCuts(labeledMdp, psiStates, variableInformation, relevancyInformation, *solver);
                 STORM_LOG_DEBUG("Asserted explicit cuts.");
-                assertSymbolicCuts(preparedProgram, labeledMdp, variableInformation, relevancyInformation, *solver);
+                assertSymbolicCuts(program, labeledMdp, variableInformation, relevancyInformation, *solver);
                 STORM_LOG_DEBUG("Asserted symbolic cuts.");
                 if (includeReachabilityEncoding) {
                     assertReachabilityCuts(labeledMdp, psiStates, variableInformation, relevancyInformation, *solver);
@@ -1749,7 +1746,7 @@ namespace storm {
 #endif
             }
             
-            static void computeCounterexample(storm::prism::Program program, std::string const& constantDefinitionString, storm::models::sparse::Mdp<T> const& labeledMdp, std::shared_ptr<storm::logic::Formula const> const& formula) {
+            static std::shared_ptr<PrismHighLevelCounterexample> computeCounterexample(storm::prism::Program program, storm::models::sparse::Mdp<T> const& labeledMdp, std::shared_ptr<storm::logic::Formula const> const& formula) {
 #ifdef STORM_HAVE_Z3
                 std::cout << std::endl << "Generating minimal label counterexample for formula " << *formula << std::endl;
                 
@@ -1791,15 +1788,11 @@ namespace storm {
                 
                 // Delegate the actual computation work to the function of equal name.
                 auto startTime = std::chrono::high_resolution_clock::now();
-                auto labelSet = getMinimalCommandSet(program, constantDefinitionString, labeledMdp, phiStates, psiStates, threshold, strictBound, true, storm::settings::getModule<storm::settings::modules::CounterexampleGeneratorSettings>().isEncodeReachabilitySet());
+                auto labelSet = getMinimalCommandSet(program, labeledMdp, phiStates, psiStates, threshold, strictBound, true, storm::settings::getModule<storm::settings::modules::CounterexampleGeneratorSettings>().isEncodeReachabilitySet());
                 auto endTime = std::chrono::high_resolution_clock::now();
                 std::cout << std::endl << "Computed minimal label set of size " << labelSet.size() << " in " << std::chrono::duration_cast<std::chrono::milliseconds>(endTime - startTime).count() << "ms." << std::endl;
                 
-                std::cout << "Resulting program:" << std::endl << std::endl;
-                storm::prism::Program restrictedProgram = program.restrictCommands(labelSet);
-                std::cout << restrictedProgram << std::endl;
-                std::cout << std::endl << "-------------------------------------------" << std::endl;
-                
+                return std::make_shared<PrismHighLevelCounterexample>(program.restrictCommands(labelSet));
 #else
                 throw storm::exceptions::NotImplementedException() << "This functionality is unavailable since storm has been compiled without support for Z3.";
 #endif

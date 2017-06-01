@@ -14,6 +14,8 @@
 #include "storm/exceptions/InvalidArgumentException.h"
 #include "storm/exceptions/InvalidStateException.h"
 
+#include "storm/counterexamples/PrismHighLevelCounterexample.h"
+
 #include "storm/utility/graph.h"
 #include "storm/utility/counterexamples.h"
 #include "storm/utility/solver.h"
@@ -968,7 +970,7 @@ namespace storm {
              * @param formulaPtr A pointer to a safety formula. The outermost operator must be a probabilistic bound operator with a strict upper bound. The nested
              * formula can be either an unbounded until formula or an eventually formula.
              */
-            static void computeCounterexample(storm::prism::Program const& program, storm::models::sparse::Mdp<T> const& labeledMdp, std::shared_ptr<storm::logic::Formula const> const& formula) {
+            static std::shared_ptr<PrismHighLevelCounterexample> computeCounterexample(storm::prism::Program const& program, storm::models::sparse::Mdp<T> const& labeledMdp, std::shared_ptr<storm::logic::Formula const> const& formula) {
                 std::cout << std::endl << "Generating minimal label counterexample for formula " << *formula << std::endl;
                 
                 STORM_LOG_THROW(formula->isProbabilityOperatorFormula(), storm::exceptions::InvalidPropertyException, "Counterexample generation does not support this kind of formula. Expecting a probability operator as the outermost formula element.");
@@ -1013,10 +1015,7 @@ namespace storm {
                 auto endTime = std::chrono::high_resolution_clock::now();
                 std::cout << std::endl << "Computed minimal label set of size " << usedLabelSet.size() << " in " << std::chrono::duration_cast<std::chrono::milliseconds>(endTime - startTime).count() << "ms." << std::endl;
 
-                std::cout << "Resulting program:" << std::endl;
-                storm::prism::Program restrictedProgram = program.restrictCommands(usedLabelSet);
-                std::cout << restrictedProgram << std::endl;
-                std::cout << std::endl << "-------------------------------------------" << std::endl;
+                return std::make_shared<PrismHighLevelCounterexample>(program.restrictCommands(usedLabelSet));
             }
             
         };

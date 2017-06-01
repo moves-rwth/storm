@@ -1,6 +1,6 @@
 #include "storm/transformer/SparseParametricModelSimplifier.h"
 
-#include "storm/adapters/CarlAdapter.h"
+#include "storm/adapters/RationalFunctionAdapter.h"
 
 #include "storm/models/sparse/Dtmc.h"
 #include "storm/models/sparse/Mdp.h"

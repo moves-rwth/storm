@@ -1,6 +1,6 @@
 #pragma once
 
-#include "storm/adapters/NumberAdapter.h"
+#include "storm/adapters/RationalNumberAdapter.h"
 
 #include <carl/core/MultivariatePolynomial.h>
 #include <carl/core/RationalFunction.h>
@@ -9,7 +9,6 @@
 #include <carl/core/Relation.h>
 #include <carl/core/SimpleConstraint.h>
 #include <carl/util/stringparser.h>
-#include <carl/formula/Formula.h>
 
 namespace carl {
     // Define hash values for all polynomials and rational function.

@@ -29,17 +29,6 @@ namespace storm{
         modelAndFormulae.first.checkValid();
         return modelAndFormulae;
     }
-    
-    void exportJaniModel(storm::jani::Model const& model, std::vector<storm::jani::Property> const& properties, std::string const& filepath) {
-        STORM_LOG_TRACE("Exporting JANI model.");
-        if (storm::settings::getModule<storm::settings::modules::JaniExportSettings>().isExportAsStandardJaniSet()) {
-            storm::jani::Model normalisedModel = model;
-            normalisedModel.makeStandardJaniCompliant();
-            storm::jani::JsonExporter::toFile(normalisedModel, properties, filepath);
-        } else {
-            storm::jani::JsonExporter::toFile(model, properties, filepath);
-        }
-    }
 
     std::vector<storm::jani::Property> parseProperties(storm::parser::FormulaParser& formulaParser, std::string const& inputString, boost::optional<std::set<std::string>> const& propertyFilter) {
         // If the given property looks like a file (containing a dot and there exists a file with that name),

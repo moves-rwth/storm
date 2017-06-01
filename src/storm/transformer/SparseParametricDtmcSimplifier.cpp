@@ -1,6 +1,6 @@
 #include "storm/transformer/SparseParametricDtmcSimplifier.h"
 
-#include "storm/adapters/CarlAdapter.h"
+#include "storm/adapters/RationalFunctionAdapter.h"
 
 #include "storm/logic/CloneVisitor.h"
 #include "storm/modelchecker/propositional/SparsePropositionalModelChecker.h"

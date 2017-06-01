@@ -1,6 +1,6 @@
 #include "storm/generator/Choice.h"
 
-#include "storm/adapters/CarlAdapter.h"
+#include "storm/adapters/RationalFunctionAdapter.h"
 
 #include "storm/utility/constants.h"
 

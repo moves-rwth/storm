@@ -17,7 +17,7 @@
 
 #include "storm/utility/solver.h"
 
-#include "storm/adapters/CarlAdapter.h"
+#include "storm/adapters/RationalFunctionAdapter.h"
 
 #include "storm/settings/SettingsManager.h"
 #include "storm/settings/modules/AbstractionSettings.h"

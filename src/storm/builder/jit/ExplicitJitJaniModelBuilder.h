@@ -8,7 +8,7 @@
 
 #include "cpptempl.h"
 
-#include "storm/adapters/CarlAdapter.h"
+#include "storm/adapters/RationalFunctionAdapter.h"
 
 #include "storm/storage/jani/Model.h"
 #include "storm/storage/jani/ParallelComposition.h"

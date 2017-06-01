@@ -1,6 +1,6 @@
 #include "storm/models/sparse/MarkovAutomaton.h"
 
-#include "storm/adapters/CarlAdapter.h"
+#include "storm/adapters/RationalFunctionAdapter.h"
 #include "storm/models/sparse/StandardRewardModel.h"
 #include "storm/solver/stateelimination/StateEliminator.h"
 #include "storm/storage/FlexibleSparseMatrix.h"

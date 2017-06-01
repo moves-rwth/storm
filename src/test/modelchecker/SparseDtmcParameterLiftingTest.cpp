@@ -3,7 +3,7 @@
 
 #ifdef STORM_HAVE_CARL
 
-#include "storm/adapters/CarlAdapter.h"
+#include "storm/adapters/RationalFunctionAdapter.h"
 
 #include "storm/utility/storm.h"
 

@@ -12,7 +12,7 @@
 
 #include "storm/storage/StronglyConnectedComponentDecomposition.h"
 
-#include "storm/adapters/CarlAdapter.h"
+#include "storm/adapters/RationalFunctionAdapter.h"
 
 #include "storm/utility/macros.h"
 #include "storm/utility/vector.h"

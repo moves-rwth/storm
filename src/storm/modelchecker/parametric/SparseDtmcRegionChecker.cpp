@@ -1,6 +1,6 @@
 #include "storm/modelchecker/parametric/SparseDtmcRegionChecker.h"
 
-#include "storm/adapters/CarlAdapter.h"
+#include "storm/adapters/RationalFunctionAdapter.h"
 
 #include "storm/modelchecker/parametric/SparseDtmcParameterLiftingModelChecker.h"
 #include "storm/modelchecker/parametric/SparseDtmcInstantiationModelChecker.h"

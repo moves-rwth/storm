@@ -2,7 +2,7 @@
 
 #include <iostream>
 
-#include "storm/adapters/CarlAdapter.h"
+#include "storm/adapters/RationalFunctionAdapter.h"
 #include "storm/adapters/HyproAdapter.h"
 #include "storm/storage/geometry/HyproPolytope.h"
 #include "storm/storage/geometry/NativePolytope.h"

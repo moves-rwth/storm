@@ -4,7 +4,7 @@
 
 #include <boost/optional.hpp>
 
-#include "storm/adapters/CarlAdapter.h"
+#include "storm/adapters/RationalFunctionAdapter.h"
 
 #include "storm/storage/expressions/Expression.h"
 #include "storm/storage/expressions/Expressions.h"

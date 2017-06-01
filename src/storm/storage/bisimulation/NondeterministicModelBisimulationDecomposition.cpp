@@ -8,7 +8,7 @@
 #include "storm/utility/macros.h"
 #include "storm/exceptions/IllegalFunctionCallException.h"
 
-#include "storm/adapters/CarlAdapter.h"
+#include "storm/adapters/RationalFunctionAdapter.h"
 
 namespace storm {
     namespace storage {

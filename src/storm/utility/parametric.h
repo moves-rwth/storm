@@ -1,7 +1,7 @@
 #ifndef STORM_UTILITY_PARAMETRIC_H
 #define STORM_UTILITY_PARAMETRIC_H
 
-#include "storm/adapters/CarlAdapter.h"
+#include "storm/adapters/RationalFunctionAdapter.h"
 
 #include <map>
 

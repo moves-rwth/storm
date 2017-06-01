@@ -3,7 +3,7 @@
 
 #include "storm/modelchecker/parametric/RegionChecker.h"
 
-#include "storm/adapters/CarlAdapter.h"
+#include "storm/adapters/RationalFunctionAdapter.h"
 
 #include "storm/modelchecker/results/ExplicitQualitativeCheckResult.h"
 

@@ -5,7 +5,7 @@
 #include "storm/models/sparse/StandardRewardModel.h"
 
 #include "storm/utility/vector.h"
-#include "storm/adapters/CarlAdapter.h"
+#include "storm/adapters/RationalFunctionAdapter.h"
 #include "storm/utility/NumberTraits.h"
 
 #include "storm/exceptions/IllegalArgumentException.h"

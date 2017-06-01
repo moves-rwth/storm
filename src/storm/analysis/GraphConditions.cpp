@@ -107,7 +107,6 @@ namespace storm {
             process(dtmc);
         }
 
-
         template class ConstraintCollector<storm::RationalFunction>;
     }
 }

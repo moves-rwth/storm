@@ -3,7 +3,7 @@
 
 #include <unordered_map>
 
-#include "storm/adapters/CarlAdapter.h"
+#include "storm/adapters/RationalFunctionAdapter.h"
 #include "storm/adapters/EigenAdapter.h"
 
 namespace storm {

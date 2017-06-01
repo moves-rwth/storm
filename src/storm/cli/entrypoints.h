@@ -9,6 +9,8 @@
 #include "storm/utility/DirectEncodingExporter.h"
 #include "storm/utility/Stopwatch.h"
 
+#include "storm/api/storm.h"
+
 #include "storm/exceptions/NotImplementedException.h"
 #include "storm/exceptions/InvalidSettingsException.h"
 #include "storm/exceptions/UnexpectedException.h"
@@ -125,7 +127,7 @@ namespace storm {
                 STORM_PRINT_AND_LOG(std::endl << "Model checking property " << *property.getRawFormula() << " ..." << std::endl);
                 std::cout.flush();
                 storm::utility::Stopwatch modelCheckingWatch(true);
-                std::unique_ptr<storm::modelchecker::CheckResult> result(storm::verifySymbolicModelWithAbstractionRefinementEngine<DdType, ValueType>(model, property.getFilter().getFormula(), onlyInitialStatesRelevant));
+                std::unique_ptr<storm::modelchecker::CheckResult> result(storm::api::verifyWithAbstractionRefinementEngine<DdType, ValueType>(model, property.getFilter().getFormula(), onlyInitialStatesRelevant));
                 modelCheckingWatch.stop();
                 if (result) {
                     STORM_PRINT_AND_LOG("Result (initial states): ");
@@ -281,7 +283,7 @@ namespace storm {
         void buildAndCheckSymbolicModelWithSymbolicEngine(bool hybrid, storm::storage::SymbolicModelDescription const& model, std::vector<storm::jani::Property> const& properties, bool onlyInitialStatesRelevant = false) {
             // Start by building the model.
             storm::utility::Stopwatch modelBuildingWatch(true);
-            auto markovModel = buildSymbolicModel<ValueType, LibraryType>(model, extractFormulasFromProperties(properties));
+            auto markovModel = storm::api::buildSymbolicModel<LibraryType, ValueType>(model, extractFormulasFromProperties(properties));
             modelBuildingWatch.stop();
             STORM_PRINT_AND_LOG("Time for model construction: " << modelBuildingWatch << "." << std::endl << std::endl);
             
@@ -311,7 +313,7 @@ namespace storm {
             auto formulas = extractFormulasFromProperties(properties);
             // Start by building the model.
             storm::utility::Stopwatch modelBuildingWatch(true);
-            std::shared_ptr<storm::models::ModelBase> markovModel = buildSparseModel<ValueType>(model, formulas);
+            std::shared_ptr<storm::models::ModelBase> markovModel = storm::api::buildSparseModel<ValueType>(model, formulas);
             modelBuildingWatch.stop();
             STORM_PRINT_AND_LOG("Time for model construction: " << modelBuildingWatch << "." << std::endl << std::endl);
 
@@ -419,9 +421,9 @@ namespace storm {
             storm::utility::Stopwatch modelBuildingWatch(true);
             std::shared_ptr<storm::models::ModelBase> model;
             if (settings.isExplicitSet()) {
-                model = buildExplicitModel<ValueType>(settings.getTransitionFilename(), settings.getLabelingFilename(), settings.isStateRewardsSet() ? boost::optional<std::string>(settings.getStateRewardsFilename()) : boost::none, settings.isTransitionRewardsSet() ? boost::optional<std::string>(settings.getTransitionRewardsFilename()) : boost::none, settings.isChoiceLabelingSet() ? boost::optional<std::string>(settings.getChoiceLabelingFilename()) : boost::none);
+                model = api::buildExplicitModel<ValueType>(settings.getTransitionFilename(), settings.getLabelingFilename(), settings.isStateRewardsSet() ? boost::optional<std::string>(settings.getStateRewardsFilename()) : boost::none, settings.isTransitionRewardsSet() ? boost::optional<std::string>(settings.getTransitionRewardsFilename()) : boost::none, settings.isChoiceLabelingSet() ? boost::optional<std::string>(settings.getChoiceLabelingFilename()) : boost::none);
             } else {
-                model = buildExplicitDRNModel<ValueType>(settings.getExplicitDRNFilename());
+                model = api::buildExplicitDRNModel<ValueType>(settings.getExplicitDRNFilename());
             }
             modelBuildingWatch.stop();
             STORM_PRINT_AND_LOG("Time for model construction: " << modelBuildingWatch << "." << std::endl);

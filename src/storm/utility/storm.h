@@ -95,7 +95,6 @@
 
 #include "storm/analysis/GraphConditions.h"
 
-
 // Headers related to exception handling.
 #include "storm/exceptions/InvalidStateException.h"
 #include "storm/exceptions/InvalidArgumentException.h"
@@ -107,33 +106,14 @@
 #include "storm/utility/Stopwatch.h"
 #include "storm/utility/file.h"
 
+#include <carl/formula/Formula.h>
+
 namespace storm {
     
     namespace parser {
         class FormulaParser;
     }
     
-    
-    template<typename ValueType>
-    inline std::shared_ptr<storm::models::sparse::Model<ValueType>> buildExplicitModel(std::string const&, std::string const&, boost::optional<std::string> const& = boost::none, boost::optional<std::string> const& = boost::none, boost::optional<std::string> const& = boost::none) {
-       STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Exact or parametric models with explicit input are not supported.");
-    }
-
-    template<>
-    inline std::shared_ptr<storm::models::sparse::Model<double>> buildExplicitModel(std::string const& transitionsFile, std::string const& labelingFile, boost::optional<std::string> const& stateRewardsFile, boost::optional<std::string> const& transitionRewardsFile, boost::optional<std::string> const& choiceLabelingFile) {
-        return storm::parser::AutoParser<double, double>::parseModel(transitionsFile, labelingFile, stateRewardsFile ? stateRewardsFile.get() : "", transitionRewardsFile ? transitionRewardsFile.get() : "", choiceLabelingFile ? choiceLabelingFile.get() : "" );
-    }
-    
-    template<typename ValueType>
-    inline std::shared_ptr<storm::models::sparse::Model<ValueType>> buildExplicitDRNModel(std::string const& drnFile) {
-        return storm::parser::DirectEncodingParser<ValueType>::parseModel(drnFile);
-    }
-
-    template<>
-    inline std::shared_ptr<storm::models::sparse::Model<storm::RationalNumber>> buildExplicitDRNModel(std::string const&) {
-       STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Exact models with direct encoding are not supported.");
-    }
-
     std::vector<std::shared_ptr<storm::logic::Formula const>> extractFormulasFromProperties(std::vector<storm::jani::Property> const& properties);
     std::pair<storm::jani::Model, std::map<std::string, storm::jani::Property>> parseJaniModel(std::string const& path);
     storm::prism::Program parseProgram(std::string const& path);
@@ -144,65 +124,6 @@ namespace storm {
     std::vector<storm::jani::Property> parsePropertiesForJaniModel(std::string const& inputString, storm::jani::Model const& model, boost::optional<std::set<std::string>> const& propertyFilter = boost::none);
     boost::optional<std::set<std::string>> parsePropertyFilter(boost::optional<std::string> const& propertyFilter);
     std::vector<storm::jani::Property> filterProperties(std::vector<storm::jani::Property> const& properties, boost::optional<std::set<std::string>> const& propertyFilter);
-    
-    template<typename ValueType>
-    std::shared_ptr<storm::models::sparse::Model<ValueType>> buildSparseModel(storm::storage::SymbolicModelDescription const& model, std::vector<std::shared_ptr<storm::logic::Formula const>> const& formulas) {
-        storm::builder::BuilderOptions options(formulas);
-        
-        if (storm::settings::getModule<storm::settings::modules::IOSettings>().isBuildFullModelSet()) {
-            options.setBuildAllLabels();
-            options.setBuildAllRewardModels();
-            options.clearTerminalStates();
-        }
-        
-        // Generate command labels if we are going to build a counterexample later.
-        if (storm::settings::getModule<storm::settings::modules::CounterexampleGeneratorSettings>().isMinimalCommandSetGenerationSet()) {
-            options.setBuildChoiceLabels(true);
-        }
-        
-        if (storm::settings::getModule<storm::settings::modules::IOSettings>().isJitSet()) {
-            STORM_LOG_THROW(model.isJaniModel(), storm::exceptions::NotSupportedException, "Cannot use JIT-based model builder for non-JANI model.");
-            
-            storm::builder::jit::ExplicitJitJaniModelBuilder<ValueType> builder(model.asJaniModel(), options);
-            
-            if (storm::settings::getModule<storm::settings::modules::JitBuilderSettings>().isDoctorSet()) {
-                bool result = builder.doctor();
-                STORM_LOG_THROW(result, storm::exceptions::InvalidSettingsException, "The JIT-based model builder cannot be used on your system.");
-                STORM_LOG_INFO("The JIT-based model builder seems to be working.");
-            }
-            
-            return builder.build();
-        } else {
-            std::shared_ptr<storm::generator::NextStateGenerator<ValueType, uint32_t>> generator;
-            if (model.isPrismProgram()) {
-                generator = std::make_shared<storm::generator::PrismNextStateGenerator<ValueType, uint32_t>>(model.asPrismProgram(), options);
-            } else if (model.isJaniModel()) {
-                generator = std::make_shared<storm::generator::JaniNextStateGenerator<ValueType, uint32_t>>(model.asJaniModel(), options);
-            } else {
-                STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Cannot build sparse model from this symbolic model description.");
-            }
-            storm::builder::ExplicitModelBuilder<ValueType> builder(generator);
-            return builder.build();
-        }
-    }
-    
-    template<typename ValueType, storm::dd::DdType LibraryType = storm::dd::DdType::CUDD>
-    std::shared_ptr<storm::models::symbolic::Model<LibraryType, ValueType>> buildSymbolicModel(storm::storage::SymbolicModelDescription const& model, std::vector<std::shared_ptr<storm::logic::Formula const>> const& formulas) {
-        if (model.isPrismProgram()) {
-            typename storm::builder::DdPrismModelBuilder<LibraryType, ValueType>::Options options;
-            options = typename storm::builder::DdPrismModelBuilder<LibraryType, ValueType>::Options(formulas);
-            
-            storm::builder::DdPrismModelBuilder<LibraryType, ValueType> builder;
-            return builder.build(model.asPrismProgram(), options);
-        } else {
-            STORM_LOG_THROW(model.isJaniModel(), storm::exceptions::InvalidArgumentException, "Cannot build symbolic model for the given symbolic model description.");
-            typename storm::builder::DdJaniModelBuilder<LibraryType, ValueType>::Options options;
-            options = typename storm::builder::DdJaniModelBuilder<LibraryType, ValueType>::Options(formulas);
-            
-            storm::builder::DdJaniModelBuilder<LibraryType, ValueType> builder;
-            return builder.build(model.asJaniModel(), options);
-        }
-    }
     
     template<typename ModelType>
     std::shared_ptr<ModelType> performDeterministicSparseBisimulationMinimization(std::shared_ptr<ModelType> model, std::vector<std::shared_ptr<storm::logic::Formula const>> const& formulas, storm::storage::BisimulationType type) {
@@ -310,7 +231,7 @@ namespace storm {
             if (useMILP) {
                 storm::counterexamples::MILPMinimalLabelSetGenerator<ValueType>::computeCounterexample(program, *mdp, formula);
             } else {
-                storm::counterexamples::SMTMinimalCommandSetGenerator<ValueType>::computeCounterexample(program, storm::settings::getModule<storm::settings::modules::IOSettings>().getConstantDefinitionString(), *mdp, formula);
+                storm::counterexamples::SMTMinimalCommandSetGenerator<ValueType>::computeCounterexample(program, *mdp, formula);
             }
             
         } else {
@@ -757,27 +678,6 @@ namespace storm {
         }
         return result;
     }
-    
-    template<storm::dd::DdType DdType, typename ValueType>
-    std::unique_ptr<storm::modelchecker::CheckResult> verifySymbolicModelWithAbstractionRefinementEngine(storm::storage::SymbolicModelDescription const& model, std::shared_ptr<const storm::logic::Formula> const& formula, bool onlyInitialStatesRelevant = false) {
-        
-        STORM_LOG_THROW(model.getModelType() == storm::storage::SymbolicModelDescription::ModelType::DTMC || model.getModelType() == storm::storage::SymbolicModelDescription::ModelType::MDP, storm::exceptions::InvalidSettingsException, "Can only treat DTMCs/MDPs using the abstraction refinement engine.");
-        
-        if (model.getModelType() == storm::storage::SymbolicModelDescription::ModelType::DTMC) {
-            storm::modelchecker::GameBasedMdpModelChecker<DdType, storm::models::symbolic::Dtmc<DdType, ValueType>> modelchecker(model);
-            storm::modelchecker::CheckTask<storm::logic::Formula> task(*formula, onlyInitialStatesRelevant);
-            return modelchecker.check(task);
-        } else {
-            storm::modelchecker::GameBasedMdpModelChecker<DdType, storm::models::symbolic::Mdp<DdType, ValueType>> modelchecker(model);
-            storm::modelchecker::CheckTask<storm::logic::Formula> task(*formula, onlyInitialStatesRelevant);
-            return modelchecker.check(task);
-        }
-    }
-    
-    /**
-     *
-     */
-    void exportJaniModel(storm::jani::Model const& model, std::vector<storm::jani::Property> const& properties, std::string const& filepath);
     
     template<typename ValueType>
     void exportMatrixToFile(std::shared_ptr<storm::models::sparse::Model<ValueType>> model, std::string const& filepath) {

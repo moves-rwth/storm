@@ -9,7 +9,7 @@
 #include "storm/storage/dd/sylvan/InternalSylvanBdd.h"
 #include "storm/storage/dd/sylvan/InternalSylvanAdd.h"
 
-#include "storm/adapters/CarlAdapter.h"
+#include "storm/adapters/RationalFunctionAdapter.h"
 #include "storm-config.h"
 
 namespace storm {
