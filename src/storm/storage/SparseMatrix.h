@@ -795,6 +795,20 @@ s             * @param insertDiagonalEntries If set to true, the resulting matri
             void multiplyVectorWithMatrix(std::vector<value_type> const& vector, std::vector<value_type>& result) const;
             
             /*!
+             * Scales each row of the matrix, i.e., multiplies each element in row i with factors[i]
+             *
+             * @param factors The factors with which each row is scaled.
+             */
+            void scaleRowsInPlace(std::vector<value_type> const& factors);
+
+            /*!
+             * Divides each row of the matrix, i.e., divides each element in row i with divisors[i]
+             *
+             * @param divisors The divisors with which each row is divided.
+             */
+            void divideRowsInPlace(std::vector<value_type> const& divisors);
+
+            /*!
              * Performs one step of the successive over-relaxation technique.
              *
              * @param omega The Omega parameter for SOR.
@@ -993,6 +1007,12 @@ s             * @param insertDiagonalEntries If set to true, the resulting matri
              * @return True iff the matrix has a trivial row grouping.
              */
             bool hasTrivialRowGrouping() const;
+            
+            /*!
+             * Makes the row grouping of this matrix trivial.
+             * Has no effect when the row grouping is already trivial.
+             */
+            void makeRowGroupingTrivial();
 
 			/*!
 			* Returns a copy of the matrix with the chosen internal data type

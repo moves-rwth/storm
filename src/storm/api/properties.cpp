@@ -7,6 +7,8 @@
 #include "storm/storage/jani/Model.h"
 #include "storm/storage/jani/Property.h"
 
+#include "storm/logic/Formula.h"
+
 #include "storm/utility/cli.h"
 
 namespace storm {
@@ -92,5 +94,12 @@ namespace storm {
             }
         }
         
+        std::vector<std::shared_ptr<storm::logic::Formula const>> extractFormulasFromProperties(std::vector<storm::jani::Property> const& properties) {
+            std::vector<std::shared_ptr<storm::logic::Formula const>> formulas;
+            for (auto const& prop : properties) {
+                formulas.push_back(prop.getRawFormula());
+            }
+            return formulas;
+        }
     }
 }

@@ -8,7 +8,7 @@
 #include "storm/settings/modules/GeneralSettings.h"
 #include "storm/settings/modules/MultiObjectiveSettings.h"
 #include "storm/settings/SettingsManager.h"
-#include "storm/utility/storm.h"
+#include "storm/api/storm.h"
 
 
 TEST(SparseMaCbMultiObjectiveModelCheckerTest, server) {
@@ -17,10 +17,10 @@ TEST(SparseMaCbMultiObjectiveModelCheckerTest, server) {
     std::string formulasAsString = "multi(T>=5/3 [ F \"error\" ], P>=7/12 [ F \"processB\" ]) "; // true
     formulasAsString += "; multi(T>=16/9 [ F \"error\" ], P>=7/12 [ F \"processB\" ]) "; // false
 
-    storm::prism::Program program = storm::parseProgram(programFile);
+    storm::prism::Program program = storm::api::parseProgram(programFile);
     program = storm::utility::prism::preprocess(program, "");
-    std::vector<std::shared_ptr<storm::logic::Formula const>> formulas = storm::extractFormulasFromProperties(storm::parsePropertiesForPrismProgram(formulasAsString, program));
-    std::shared_ptr<storm::models::sparse::MarkovAutomaton<storm::RationalNumber>> ma = storm::buildSparseModel<storm::RationalNumber>(program, formulas)->as<storm::models::sparse::MarkovAutomaton<storm::RationalNumber>>();
+    std::vector<std::shared_ptr<storm::logic::Formula const>> formulas = storm::api::extractFormulasFromProperties(storm::api::parsePropertiesForPrismProgram(formulasAsString, program));
+    std::shared_ptr<storm::models::sparse::MarkovAutomaton<storm::RationalNumber>> ma = storm::api::buildSparseModel<storm::RationalNumber>(program, formulas)->as<storm::models::sparse::MarkovAutomaton<storm::RationalNumber>>();
     uint_fast64_t const initState = *ma->getInitialStates().begin();
 
     std::unique_ptr<storm::modelchecker::CheckResult> result;

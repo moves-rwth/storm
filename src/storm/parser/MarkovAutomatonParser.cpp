@@ -1,7 +1,9 @@
 #include "MarkovAutomatonParser.h"
-#include "AtomicPropositionLabelingParser.h"
+#include "SparseItemLabelingParser.h"
 #include "SparseStateRewardParser.h"
+#include "NondeterministicSparseTransitionParser.h"
 
+#include "storm/storage/sparse/ModelComponents.h"
 #include "storm/models/sparse/StandardRewardModel.h"
 
 #include "storm/exceptions/WrongFormatException.h"
@@ -12,7 +14,7 @@ namespace storm {
     namespace parser {
 
         template<typename ValueType, typename RewardValueType>
-        storm::models::sparse::MarkovAutomaton<ValueType, storm::models::sparse::StandardRewardModel<RewardValueType>> MarkovAutomatonParser<ValueType, RewardValueType>::parseMarkovAutomaton(std::string const& transitionsFilename, std::string const& labelingFilename, std::string const& stateRewardFilename, std::string const& transitionRewardFilename) {
+        storm::models::sparse::MarkovAutomaton<ValueType, storm::models::sparse::StandardRewardModel<RewardValueType>> MarkovAutomatonParser<ValueType, RewardValueType>::parseMarkovAutomaton(std::string const& transitionsFilename, std::string const& labelingFilename, std::string const& stateRewardFilename, std::string const& transitionRewardFilename, std::string const& choiceLabelingFilename) {
 
             // Parse the transitions of the Markov Automaton.
             typename storm::parser::MarkovAutomatonSparseTransitionParser<ValueType>::Result transitionResult(storm::parser::MarkovAutomatonSparseTransitionParser<ValueType>::parseMarkovAutomatonTransitions(transitionsFilename));
@@ -21,26 +23,38 @@ namespace storm {
             storm::storage::SparseMatrix<ValueType> transitionMatrix(transitionResult.transitionMatrixBuilder.build());
 
             // Parse the state labeling.
-            storm::models::sparse::StateLabeling resultLabeling(storm::parser::AtomicPropositionLabelingParser::parseAtomicPropositionLabeling(transitionMatrix.getColumnCount(), labelingFilename));
+            storm::models::sparse::StateLabeling resultLabeling(storm::parser::SparseItemLabelingParser::parseAtomicPropositionLabeling(transitionMatrix.getColumnCount(), labelingFilename));
 
+            // Cunstruct the result components
+            storm::storage::sparse::ModelComponents<ValueType, storm::models::sparse::StandardRewardModel<RewardValueType>> componets(std::move(transitionMatrix), std::move(resultLabeling));
+            componets.rateTransitions = true;
+            componets.markovianStates = std::move(transitionResult.markovianStates);
+            componets.exitRates = std::move(transitionResult.exitRates);
+            
             // If given, parse the state rewards file.
             boost::optional<std::vector<RewardValueType>> stateRewards;
-            if (stateRewardFilename != "") {
-                stateRewards.reset(storm::parser::SparseStateRewardParser<RewardValueType>::parseSparseStateReward(transitionMatrix.getColumnCount(), stateRewardFilename));
-            }
-            std::unordered_map<std::string, storm::models::sparse::StandardRewardModel<RewardValueType>> rewardModels;
-            rewardModels.insert(std::make_pair("", storm::models::sparse::StandardRewardModel<RewardValueType>(stateRewards, boost::optional<std::vector<RewardValueType>>(), boost::optional<storm::storage::SparseMatrix<RewardValueType>>())));
-
-            // Since Markov Automata do not support transition rewards no path should be given here.
-            if (transitionRewardFilename != "") {
-                STORM_LOG_ERROR("Transition rewards are unsupported for Markov automata.");
-                throw storm::exceptions::WrongFormatException() << "Transition rewards are unsupported for Markov automata.";
+            if (!stateRewardFilename.empty()) {
+                stateRewards.reset(storm::parser::SparseStateRewardParser<RewardValueType>::parseSparseStateReward(componets.transitionMatrix.getColumnCount(), stateRewardFilename));
             }
 
-            // Put the pieces together to generate the Markov Automaton.
-            storm::models::sparse::MarkovAutomaton<ValueType, storm::models::sparse::StandardRewardModel<RewardValueType>> resultingAutomaton(std::move(transitionMatrix), std::move(resultLabeling), std::move(transitionResult.markovianStates), std::move(transitionResult.exitRates), rewardModels);
+           // Only parse transition rewards if a file is given.
+            boost::optional<storm::storage::SparseMatrix<RewardValueType>> transitionRewards;
+            if (!transitionRewardFilename.empty()) {
+                transitionRewards = std::move(storm::parser::NondeterministicSparseTransitionParser<RewardValueType>::parseNondeterministicTransitionRewards(transitionRewardFilename, componets.transitionMatrix));
+            }
+            
+            if (stateRewards || transitionRewards) {
+                componets.rewardModels.insert(std::make_pair("", storm::models::sparse::StandardRewardModel<RewardValueType>(std::move(stateRewards), boost::none, std::move(transitionRewards))));
+            }
 
-            return resultingAutomaton;
+            // Only parse choice labeling if a file is given.
+            boost::optional<storm::models::sparse::ChoiceLabeling> choiceLabeling;
+            if (!choiceLabelingFilename.empty()) {
+                componets.choiceLabeling = storm::parser::SparseItemLabelingParser::parseChoiceLabeling(componets.transitionMatrix.getRowCount(), choiceLabelingFilename, componets.transitionMatrix.getRowGroupIndices());
+            }
+
+            // generate the Markov Automaton.
+            return storm::models::sparse::MarkovAutomaton<ValueType, storm::models::sparse::StandardRewardModel<RewardValueType>> (std::move(componets));
         }
 
         template class MarkovAutomatonParser<double, double>;

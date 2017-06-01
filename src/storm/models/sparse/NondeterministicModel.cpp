@@ -1,6 +1,7 @@
 #include "storm/models/sparse/NondeterministicModel.h"
 
 #include "storm/models/sparse/StandardRewardModel.h"
+#include "storm/models/sparse/MarkovAutomaton.h"
 
 #include "storm/adapters/RationalFunctionAdapter.h"
 
@@ -10,25 +11,16 @@ namespace storm {
     namespace models {
         namespace sparse {
             
-            template<typename ValueType, typename RewardModelType>
-            NondeterministicModel<ValueType, RewardModelType>::NondeterministicModel(storm::models::ModelType const& modelType,
-                                                                    storm::storage::SparseMatrix<ValueType> const& transitionMatrix,
-                                                                    storm::models::sparse::StateLabeling const& stateLabeling,
-                                                                    std::unordered_map<std::string, RewardModelType> const& rewardModels,
-                                                                    boost::optional<std::vector<LabelSet>> const& optionalChoiceLabeling)
-            : Model<ValueType, RewardModelType>(modelType, transitionMatrix, stateLabeling, rewardModels, optionalChoiceLabeling) {
-                // Intentionally left empty.
+             template <typename ValueType, typename RewardModelType>
+            NondeterministicModel<ValueType, RewardModelType>::NondeterministicModel(ModelType modelType, storm::storage::sparse::ModelComponents<ValueType, RewardModelType> const& components)
+                    : Model<ValueType, RewardModelType>(modelType, components) {
+                // Intentionally left empty
             }
             
-            template<typename ValueType, typename RewardModelType>
-            NondeterministicModel<ValueType, RewardModelType>::NondeterministicModel(storm::models::ModelType const& modelType,
-                                                                    storm::storage::SparseMatrix<ValueType>&& transitionMatrix,
-                                                                    storm::models::sparse::StateLabeling&& stateLabeling,
-                                                                    std::unordered_map<std::string, RewardModelType>&& rewardModels,
-                                                                    boost::optional<std::vector<LabelSet>>&& optionalChoiceLabeling)
-            : Model<ValueType, RewardModelType>(modelType, std::move(transitionMatrix), std::move(stateLabeling), std::move(rewardModels),
-                               std::move(optionalChoiceLabeling)) {
-                // Intentionally left empty.
+            template <typename ValueType, typename RewardModelType>
+            NondeterministicModel<ValueType, RewardModelType>::NondeterministicModel(ModelType modelType, storm::storage::sparse::ModelComponents<ValueType, RewardModelType>&& components)
+                    : Model<ValueType, RewardModelType>(modelType, std::move(components)) {
+                // Intentionally left empty
             }
             
             template<typename ValueType, typename RewardModelType>
@@ -46,43 +38,7 @@ namespace storm {
                 auto indices = this->getNondeterministicChoiceIndices();
                 return indices[state+1] - indices[state];
             }
-            
-            template<typename ValueType, typename RewardModelType>
-            void NondeterministicModel<ValueType, RewardModelType>::modifyStateActionRewards(RewardModelType& rewardModel, std::map<std::pair<uint_fast64_t, LabelSet>, typename RewardModelType::ValueType> const& modifications) const {
-                STORM_LOG_THROW(rewardModel.hasStateActionRewards(), storm::exceptions::InvalidOperationException, "Cannot modify state-action rewards, because the reward model does not have state-action rewards.");
-                STORM_LOG_THROW(this->hasChoiceLabeling(), storm::exceptions::InvalidOperationException, "Cannot modify state-action rewards, because the model does not have an action labeling.");
-                std::vector<LabelSet> const& choiceLabels = this->getChoiceLabeling();
-                for (auto const& modification : modifications) {
-                    uint_fast64_t stateIndex = modification.first.first;
-                    for (uint_fast64_t row = this->getNondeterministicChoiceIndices()[stateIndex]; row < this->getNondeterministicChoiceIndices()[stateIndex + 1]; ++row) {
-                        // If the action label of the row matches the requested one, we set the reward value accordingly.
-                        if (choiceLabels[row] == modification.first.second) {
-                            rewardModel.setStateActionRewardValue(row, modification.second);
-                        }
-                    }
-                }
-            }
 
-            template<typename ValueType, typename RewardModelType>
-            template<typename T>
-            void NondeterministicModel<ValueType, RewardModelType>::modifyStateActionRewards(std::string const& modelName, std::map<uint_fast64_t, T> const& modifications) {
-                RewardModelType& rewardModel = this->rewardModel(modelName);
-                size_t i = 0;
-                for(auto const& mod : modifications) {
-                    std::cout << i++ << "/" << modifications.size() << std::endl;
-                    rewardModel.setStateActionReward(mod.first, mod.second);
-                }
-            }
-
-            template<typename ValueType, typename RewardModelType>
-            template<typename T>
-            void NondeterministicModel<ValueType, RewardModelType>::modifyStateRewards(std::string const& modelName, std::map<uint_fast64_t, T> const& modifications) {
-                RewardModelType& rewardModel = this->rewardModel(modelName);
-                for(auto const& mod : modifications) {
-                    rewardModel.setStateReward(mod.first, mod.second);
-                }
-            }
-            
             template<typename ValueType, typename RewardModelType>
             void NondeterministicModel<ValueType, RewardModelType>::reduceToStateBasedRewards() {
                 for (auto& rewardModel : this->getRewardModels()) {
@@ -122,8 +78,9 @@ namespace storm {
                         
                         // For each nondeterministic choice, we draw an arrow to an intermediate node to better display
                         // the grouping of transitions.
-                        outStream << "\t\"" << state << "c" << choice << "\" [shape = \"point\"";
                         
+                        // The intermediate node:
+                        outStream << "\t\"" << state << "c" << choice << "\" [shape = \"point\"";
                         // If we were given a scheduler to highlight, we do so now.
                         if (scheduler != nullptr) {
                             if (highlightChoice) {
@@ -132,17 +89,55 @@ namespace storm {
                         }
                         outStream << "];" << std::endl;
                         
-                        outStream << "\t" << state << " -> \"" << state << "c" << choice << "\" [ label= \"" << rowIndex << "\"";
-                        
-                        // If we were given a scheduler to highlight, we do so now.
-                        if (scheduler != nullptr) {
-                            if (highlightChoice) {
-                                outStream << ", color=\"red\", penwidth = 2";
-                            } else {
-                                outStream << ", style = \"dotted\"";
+                        // The arrow to the intermediate node:
+                        outStream << "\t" << state << " -> \"" << state << "c" << choice << "\"";
+                        bool arrowHasLabel = false;
+                        if (this->isOfType(ModelType::MarkovAutomaton)) {
+                            // If this is a Markov automaton, we have to check whether the current choice is a Markovian choice and correspondingly print the exit rate
+                            MarkovAutomaton<ValueType, RewardModelType> const* ma = dynamic_cast<MarkovAutomaton<ValueType, RewardModelType> const*>(this);
+                            if (ma->isMarkovianState(state) && choice == 0) {
+                                arrowHasLabel = true;
+                                outStream << " [ label = \"" << ma->getExitRate(state);
                             }
                         }
-                        outStream << "];" << std::endl;
+                        if (this->hasChoiceLabeling()) {
+                            if (arrowHasLabel) {
+                                outStream << " | {";
+                            } else {
+                                outStream << " [ label = \"{";
+                            }
+                            arrowHasLabel = true;
+                            bool firstLabel = true;
+                            for (auto const& label : this->getChoiceLabeling().getLabelsOfChoice(rowIndex)) {
+                                if (!firstLabel) {
+                                    outStream << ", ";
+                                }
+                                firstLabel = false;
+                                outStream << label;
+                            }
+                            outStream << "}";
+                        }
+                        if (arrowHasLabel) {
+                            outStream << "\"";
+                        }
+                        // If we were given a scheduler to highlight, we do so now.
+                        if (scheduler != nullptr) {
+                            if (arrowHasLabel) {
+                                outStream << ", ";
+                            } else {
+                                outStream << "[ ";
+                            }
+                            if (highlightChoice) {
+                                outStream << "color=\"red\", penwidth = 2";
+                            } else {
+                                outStream << "style = \"dotted\"";
+                            }
+                        }
+                        
+                        if (arrowHasLabel || scheduler != nullptr) {
+                            outStream << "]" << std::endl;
+                        }
+                        outStream << ";" << std::endl;
                         
                         // Now draw all probabilitic arcs that belong to this nondeterminstic choice.
                         for (auto const& transition : row) {
@@ -169,15 +164,10 @@ namespace storm {
             }
             
             template class NondeterministicModel<double>;
-            template class NondeterministicModel<float>;
 
 #ifdef STORM_HAVE_CARL
             template class NondeterministicModel<storm::RationalNumber>;
-
             template class NondeterministicModel<double, storm::models::sparse::StandardRewardModel<storm::Interval>>;
-            template void NondeterministicModel<double, storm::models::sparse::StandardRewardModel<storm::Interval>>::modifyStateActionRewards(std::string const& modelName, std::map<uint_fast64_t, double> const& modifications);
-            template void NondeterministicModel<double, storm::models::sparse::StandardRewardModel<storm::Interval>>::modifyStateRewards(std::string const& modelName, std::map<uint_fast64_t, double> const& modifications);
-
             template class NondeterministicModel<storm::RationalFunction>;
 #endif
         }

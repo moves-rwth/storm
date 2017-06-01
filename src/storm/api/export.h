@@ -1,37 +1,31 @@
 #pragma once
 
+#include "storm/storage/jani/JSONExporter.h"
+
+#include "storm/analysis/GraphConditions.h"
+
+#include "storm/settings/SettingsManager.h"
+#include "storm/settings/modules/JaniExportSettings.h"
+
+#include "storm/utility/DirectEncodingExporter.h"
+#include "storm/utility/file.h"
 #include "storm/utility/macros.h"
 #include "storm/exceptions/NotSupportedException.h"
 
 namespace storm {
     namespace api {
         
-        void exportJaniModel(storm::jani::Model const& model, std::vector<storm::jani::Property> const& properties, std::string const& filename) {
-            auto janiSettings = storm::settings::getModule<storm::settings::modules::JaniExportSettings>();
-            
-            if (janiSettings.isExportAsStandardJaniSet()) {
-                storm::jani::Model normalisedModel = model;
-                normalisedModel.makeStandardJaniCompliant();
-                storm::jani::JsonExporter::toFile(normalisedModel, properties, filename);
-            } else {
-                storm::jani::JsonExporter::toFile(model, properties, filename);
-            }
-        }
+        void exportJaniModel(storm::jani::Model const& model, std::vector<storm::jani::Property> const& properties, std::string const& filename);
         
-        void exportJaniModelAsDot(storm::jani::Model const& model, std::string const& filename) {
-            std::ofstream out;
-            storm::utility::openFile(filename, out);
-            model.writeDotToStream(out);
-            storm::utility::closeFile(out);
-        }
-
+        void exportJaniModelAsDot(storm::jani::Model const& model, std::string const& filename);
+        
         template <typename ValueType>
         void exportParametricResultToFile(ValueType const& result, storm::analysis::ConstraintCollector<ValueType> const& constraintCollector, std::string const& path) {
             STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Cannot export non-parametric result.");
         }
         
         template <>
-        void exportParametricResultToFile(storm::RationalFunction const& result, storm::analysis::ConstraintCollector<storm::RationalFunction> const& constraintCollector, std::string const& path) {
+        inline void exportParametricResultToFile(storm::RationalFunction const& result, storm::analysis::ConstraintCollector<storm::RationalFunction> const& constraintCollector, std::string const& path) {
             std::ofstream filestream;
             storm::utility::openFile(path, filestream);
             filestream << "!Parameters: ";

@@ -17,32 +17,11 @@ namespace storm {
                 /*!
                  * Constructs a model from the given data.
                  *
-                 * @param modelType The type of the model.
-                 * @param transitionMatrix The matrix representing the transitions in the model.
-                 * @param stateLabeling The labeling of the states.
-                 * @param rewardModels A mapping of reward model names to reward models.
-                 * @param optionalChoiceLabeling A vector that represents the labels associated with the choices of each state.
+                 * @param modelType the type of this model
+                 * @param components The components for this model.
                  */
-                DeterministicModel(storm::models::ModelType const& modelType,
-                                   storm::storage::SparseMatrix<ValueType> const& transitionMatrix,
-                                   storm::models::sparse::StateLabeling const& stateLabeling,
-                                   std::unordered_map<std::string, RewardModelType> const& rewardModels = std::unordered_map<std::string, RewardModelType>(),
-                                   boost::optional<std::vector<LabelSet>> const& optionalChoiceLabeling = boost::optional<std::vector<LabelSet>>());
-                
-                /*!
-                 * Constructs a model by moving the given data.
-                 *
-                 * @param modelType The type of the model.
-                 * @param transitionMatrix The matrix representing the transitions in the model.
-                 * @param stateLabeling The labeling of the states.
-                 * @param rewardModels A mapping of reward model names to reward models.
-                 * @param optionalChoiceLabeling A vector that represents the labels associated with the choices of each state.
-                 */
-                DeterministicModel(storm::models::ModelType const& modelType,
-                                   storm::storage::SparseMatrix<ValueType>&& transitionMatrix,
-                                   storm::models::sparse::StateLabeling&& stateLabeling,
-                                   std::unordered_map<std::string, RewardModelType>&& rewardModels = std::unordered_map<std::string, RewardModelType>(),
-                                   boost::optional<std::vector<LabelSet>>&& optionalChoiceLabeling = boost::optional<std::vector<LabelSet>>());
+                DeterministicModel(ModelType modelType, storm::storage::sparse::ModelComponents<ValueType, RewardModelType> const& components);
+                DeterministicModel(ModelType modelType, storm::storage::sparse::ModelComponents<ValueType, RewardModelType>&& components);
                 
                 DeterministicModel(DeterministicModel<ValueType, RewardModelType> const& other) = default;
                 DeterministicModel& operator=(DeterministicModel<ValueType, RewardModelType> const& other) = default;

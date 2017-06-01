@@ -7,6 +7,7 @@
 
 
 #include "storm/models/sparse/StateLabeling.h"
+#include "storm/models/sparse/ChoiceLabeling.h"
 #include "storm/models/sparse/StandardRewardModel.h"
 #include "storm/models/sparse/Model.h"
 #include "storm/storage/SparseMatrix.h"
@@ -49,7 +50,7 @@ namespace storm {
                 std::vector<ValueType> exitRates;
 
                 // A vector that stores a labeling for each choice.
-                boost::optional<std::vector<boost::container::flat_set<uint_fast64_t>>> choiceLabeling;
+                boost::optional<storm::models::sparse::ChoiceLabeling> choiceLabeling;
             };
             
             const size_t INITIAL_BUCKETSIZE = 20000;

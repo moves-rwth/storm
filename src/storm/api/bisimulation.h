@@ -3,6 +3,9 @@
 #include "storm/storage/bisimulation/DeterministicModelBisimulationDecomposition.h"
 #include "storm/storage/bisimulation/NondeterministicModelBisimulationDecomposition.h"
 
+#include "storm/utility/macros.h"
+#include "storm/exceptions/NotSupportedException.h"
+
 namespace storm {
     namespace api {
         
@@ -35,7 +38,7 @@ namespace storm {
         template <typename ValueType>
         std::shared_ptr<storm::models::sparse::Model<ValueType>> performBisimulationMinimization(std::shared_ptr<storm::models::sparse::Model<ValueType>> const& model, std::vector<std::shared_ptr<storm::logic::Formula const>> const& formulas, storm::storage::BisimulationType type = storm::storage::BisimulationType::Strong) {
             
-            STORM_LOG_THROW(model->isOfType(storm::models::ModelType::Dtmc) || model->isOfType(storm::models::ModelType::Ctmc) || model->isOfType(storm::models::ModelType::Mdp), storm::exceptions::InvalidSettingsException, "Bisimulation minimization is currently only available for DTMCs, CTMCs and MDPs.");
+            STORM_LOG_THROW(model->isOfType(storm::models::ModelType::Dtmc) || model->isOfType(storm::models::ModelType::Ctmc) || model->isOfType(storm::models::ModelType::Mdp), storm::exceptions::NotSupportedException, "Bisimulation minimization is currently only available for DTMCs, CTMCs and MDPs.");
 
             model->reduceToStateBasedRewards();
 

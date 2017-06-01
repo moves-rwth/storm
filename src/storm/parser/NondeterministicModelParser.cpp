@@ -6,9 +6,8 @@
 #include "storm/models/sparse/StandardRewardModel.h"
 
 #include "storm/parser/NondeterministicSparseTransitionParser.h"
-#include "storm/parser/AtomicPropositionLabelingParser.h"
+#include "storm/parser/SparseItemLabelingParser.h"
 #include "storm/parser/SparseStateRewardParser.h"
-#include "storm/parser/SparseChoiceLabelingParser.h"
 
 #include "storm/adapters/RationalFunctionAdapter.h"
 #include "storm/utility/macros.h"
@@ -17,7 +16,7 @@ namespace storm {
     namespace parser {
 
         template<typename ValueType, typename RewardValueType>
-        typename NondeterministicModelParser<ValueType, RewardValueType>::Result NondeterministicModelParser<ValueType, RewardValueType>::parseNondeterministicModel(std::string const& transitionsFilename, std::string const& labelingFilename, std::string const& stateRewardFilename, std::string const& transitionRewardFilename, std::string const& choiceLabelingFilename) {
+        storm::storage::sparse::ModelComponents<ValueType, storm::models::sparse::StandardRewardModel<RewardValueType>> NondeterministicModelParser<ValueType, RewardValueType>::parseNondeterministicModel(std::string const& transitionsFilename, std::string const& labelingFilename, std::string const& stateRewardFilename, std::string const& transitionRewardFilename, std::string const& choiceLabelingFilename) {
 
             // Parse the transitions.
             storm::storage::SparseMatrix<ValueType> transitions(std::move(storm::parser::NondeterministicSparseTransitionParser<ValueType>::parseNondeterministicTransitions(transitionsFilename)));
@@ -25,7 +24,10 @@ namespace storm {
             uint_fast64_t stateCount = transitions.getColumnCount();
 
             // Parse the state labeling.
-            storm::models::sparse::StateLabeling labeling(storm::parser::AtomicPropositionLabelingParser::parseAtomicPropositionLabeling(stateCount, labelingFilename));
+            storm::models::sparse::StateLabeling labeling(storm::parser::SparseItemLabelingParser::parseAtomicPropositionLabeling(stateCount, labelingFilename));
+            
+            // Initialize result.
+            storm::storage::sparse::ModelComponents<ValueType, storm::models::sparse::StandardRewardModel<RewardValueType>> result(std::move(transitions), std::move(labeling));
 
             // Only parse state rewards if a file is given.
             boost::optional<std::vector<RewardValueType>> stateRewards;
@@ -36,31 +38,27 @@ namespace storm {
             // Only parse transition rewards if a file is given.
             boost::optional<storm::storage::SparseMatrix<RewardValueType>> transitionRewards;
             if (!transitionRewardFilename.empty()) {
-                transitionRewards = std::move(storm::parser::NondeterministicSparseTransitionParser<RewardValueType>::parseNondeterministicTransitionRewards(transitionRewardFilename, transitions));
+                transitionRewards = std::move(storm::parser::NondeterministicSparseTransitionParser<RewardValueType>::parseNondeterministicTransitionRewards(transitionRewardFilename, result.transitionMatrix));
+            }
+
+            if (stateRewards || transitionRewards) {
+                result.rewardModels.insert(std::make_pair("", storm::models::sparse::StandardRewardModel<RewardValueType>(std::move(stateRewards), boost::none, std::move(transitionRewards))));
             }
 
             // Only parse choice labeling if a file is given.
-            boost::optional<std::vector < storm::models::sparse::LabelSet>> choiceLabeling;
+            boost::optional<storm::models::sparse::ChoiceLabeling> choiceLabeling;
             if (!choiceLabelingFilename.empty()) {
-                choiceLabeling = std::move(storm::parser::SparseChoiceLabelingParser::parseChoiceLabeling(transitions.getRowGroupIndices(), choiceLabelingFilename));
+                result.choiceLabeling = storm::parser::SparseItemLabelingParser::parseChoiceLabeling(result.transitionMatrix.getRowCount(), choiceLabelingFilename, result.transitionMatrix.getRowGroupIndices());
             }
-
-            // Construct the result.
-            Result result(std::move(transitions), std::move(labeling));
-            result.stateRewards = std::move(stateRewards);
-            result.transitionRewards = std::move(transitionRewards);
-            result.choiceLabeling = std::move(choiceLabeling);
 
             return result;
         }
 
         template<typename ValueType, typename RewardValueType>
         storm::models::sparse::Mdp<ValueType, storm::models::sparse::StandardRewardModel<RewardValueType>> NondeterministicModelParser<ValueType, RewardValueType>::parseMdp(std::string const& transitionsFilename, std::string const& labelingFilename, std::string const& stateRewardFilename, std::string const& transitionRewardFilename, std::string const& choiceLabelingFilename) {
-            Result parserResult = parseNondeterministicModel(transitionsFilename, labelingFilename, stateRewardFilename, transitionRewardFilename, choiceLabelingFilename);
+            auto parserResult = parseNondeterministicModel(transitionsFilename, labelingFilename, stateRewardFilename, transitionRewardFilename, choiceLabelingFilename);
 
-            std::unordered_map<std::string, storm::models::sparse::StandardRewardModel<RewardValueType>> rewardModels;
-            rewardModels.insert(std::make_pair("", storm::models::sparse::StandardRewardModel<RewardValueType>(parserResult.stateRewards, boost::optional<std::vector<RewardValueType>>(), parserResult.transitionRewards)));
-            return storm::models::sparse::Mdp<ValueType, storm::models::sparse::StandardRewardModel<RewardValueType>>(std::move(parserResult.transitionSystem), std::move(parserResult.labeling), std::move(rewardModels), std::move(parserResult.choiceLabeling));
+            return storm::models::sparse::Mdp<ValueType, storm::models::sparse::StandardRewardModel<RewardValueType>>(std::move(parserResult));
         }
 
         template class NondeterministicModelParser<double, double>;

@@ -1,6 +1,6 @@
 #include "storm/logic/Formula.h"
 #include "storm/utility/initialize.h"
-#include "storm/utility/storm.h"
+#include "storm/api/storm.h"
 #include "storm/cli/cli.h"
 #include "storm/exceptions/BaseException.h"
 
@@ -193,7 +193,7 @@ int main(const int argc, const char** argv) {
             
             storm::settings::modules::JaniExportSettings const& janiSettings = storm::settings::getModule<storm::settings::modules::JaniExportSettings>();
             if (janiSettings.isJaniFileSet()) {
-                storm::exportJaniModel(*model, {storm::jani::Property("time-bounded", tbUntil), storm::jani::Property("mttf", rewFormula)}, janiSettings.getJaniFilename());
+                storm::api::exportJaniModel(*model, {storm::jani::Property("time-bounded", tbUntil), storm::jani::Property("mttf", rewFormula)}, janiSettings.getJaniFilename());
             }
             
             delete model;

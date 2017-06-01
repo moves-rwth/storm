@@ -366,9 +366,9 @@ namespace storm {
         }
 
         template <typename ValueType>
-        std::shared_ptr<storm::models::ModelBase> buildModelSparse(SymbolicInput const& input) {
+        std::shared_ptr<storm::models::ModelBase> buildModelSparse(SymbolicInput const& input, storm::settings::modules::IOSettings const& ioSettings) {
             auto counterexampleGeneratorSettings = storm::settings::getModule<storm::settings::modules::CounterexampleGeneratorSettings>();
-            return storm::api::buildSparseModel<ValueType>(input.model.get(), extractFormulasFromProperties(input.properties), counterexampleGeneratorSettings.isMinimalCommandSetGenerationSet());
+            return storm::api::buildSparseModel<ValueType>(input.model.get(), extractFormulasFromProperties(input.properties), ioSettings.isBuildChoiceLabelsSet(), counterexampleGeneratorSettings.isMinimalCommandSetGenerationSet());
         }
 
         template <typename ValueType>
@@ -391,7 +391,7 @@ namespace storm {
                 if (engine == storm::settings::modules::CoreSettings::Engine::Dd || engine == storm::settings::modules::CoreSettings::Engine::Hybrid) {
                     result = buildModelDd<DdType, ValueType>(input);
                 } else if (engine == storm::settings::modules::CoreSettings::Engine::Sparse) {
-                    result = buildModelSparse<ValueType>(input);
+                    result = buildModelSparse<ValueType>(input, ioSettings);
                 }
             } else if (ioSettings.isExplicitSet() || ioSettings.isExplicitDRNSet()) {
                 STORM_LOG_THROW(engine == storm::settings::modules::CoreSettings::Engine::Sparse, storm::exceptions::InvalidSettingsException, "Can only use sparse engine with explicit input.");

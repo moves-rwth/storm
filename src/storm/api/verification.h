@@ -2,7 +2,27 @@
 
 #include <type_traits>
 
+#include "storm/modelchecker/prctl/SparseDtmcPrctlModelChecker.h"
+#include "storm/modelchecker/prctl/HybridDtmcPrctlModelChecker.h"
+#include "storm/modelchecker/prctl/SymbolicDtmcPrctlModelChecker.h"
+#include "storm/modelchecker/csl/SparseCtmcCslModelChecker.h"
+#include "storm/modelchecker/csl/HybridCtmcCslModelChecker.h"
+#include "storm/modelchecker/prctl/SparseMdpPrctlModelChecker.h"
+#include "storm/modelchecker/prctl/HybridMdpPrctlModelChecker.h"
+#include "storm/modelchecker/prctl/SymbolicMdpPrctlModelChecker.h"
+#include "storm/modelchecker/csl/SparseMarkovAutomatonCslModelChecker.h"
 #include "storm/modelchecker/abstraction/GameBasedMdpModelChecker.h"
+#include "storm/modelchecker/exploration/SparseExplorationModelChecker.h"
+#include "storm/modelchecker/reachability/SparseDtmcEliminationModelChecker.h"
+
+#include "storm/models/symbolic/Dtmc.h"
+#include "storm/models/symbolic/Mdp.h"
+
+#include "storm/models/sparse/Dtmc.h"
+#include "storm/models/sparse/Mdp.h"
+
+#include "storm/settings/modules/CoreSettings.h"
+#include "storm/settings/modules/EliminationSettings.h"
 
 #include "storm/utility/macros.h"
 #include "storm/exceptions/NotSupportedException.h"
@@ -42,9 +62,9 @@ namespace storm {
         
         template<typename ValueType>
         typename std::enable_if<std::is_same<ValueType, double>::value, std::unique_ptr<storm::modelchecker::CheckResult>>::type verifyWithExplorationEngine(storm::storage::SymbolicModelDescription const& model, storm::modelchecker::CheckTask<storm::logic::Formula, ValueType> const& task) {
-            STORM_LOG_THROW(model.isPrismProgram(), storm::exceptions::InvalidSettingsException, "Exploration engine is currently only applicable to PRISM models.");
+            STORM_LOG_THROW(model.isPrismProgram(), storm::exceptions::NotSupportedException, "Exploration engine is currently only applicable to PRISM models.");
             storm::prism::Program const& program = model.asPrismProgram();
-            STORM_LOG_THROW(program.getModelType() == storm::prism::Program::ModelType::DTMC || program.getModelType() == storm::prism::Program::ModelType::MDP, storm::exceptions::InvalidSettingsException, "Currently exploration-based verification is only available for DTMCs and MDPs.");
+            STORM_LOG_THROW(program.getModelType() == storm::prism::Program::ModelType::DTMC || program.getModelType() == storm::prism::Program::ModelType::MDP, storm::exceptions::NotSupportedException, "Currently exploration-based verification is only available for DTMCs and MDPs.");
 
             std::unique_ptr<storm::modelchecker::CheckResult> result;
             if (program.getModelType() == storm::prism::Program::ModelType::DTMC) {
@@ -241,7 +261,7 @@ namespace storm {
         }
             
         template<>
-        std::unique_ptr<storm::modelchecker::CheckResult> verifyWithParameterLifting(std::shared_ptr<storm::models::sparse::Model<storm::RationalFunction>> markovModel, std::shared_ptr<storm::logic::Formula const> const& formula) {
+        inline std::unique_ptr<storm::modelchecker::CheckResult> verifyWithParameterLifting(std::shared_ptr<storm::models::sparse::Model<storm::RationalFunction>> markovModel, std::shared_ptr<storm::logic::Formula const> const& formula) {
             STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "Parameter-lifting is currently unavailable from the API.");
 //                storm::utility::Stopwatch parameterLiftingStopWatch(true);
 //                std::shared_ptr<storm::logic::Formula const> consideredFormula = formula;

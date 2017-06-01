@@ -80,7 +80,7 @@ namespace storm {
         }
         
         bool isDeterministicModel(ModelType const& modelType) {
-            if (modelType == ModelType::DTMC && modelType == ModelType::DTMC) {
+            if (modelType == ModelType::DTMC || modelType == ModelType::CTMC) {
                 return true;
             }
             return false;
