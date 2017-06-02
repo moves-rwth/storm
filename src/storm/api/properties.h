@@ -29,7 +29,7 @@ namespace storm {
     }
     
     namespace api {
-        boost::optional<std::set<std::string>> parsePropertyFilter(boost::optional<std::string> const& propertyFilter);
+        boost::optional<std::set<std::string>> parsePropertyFilter(std::string const& propertyFilter);
 
         // Parsing properties.
         std::vector<storm::jani::Property> parseProperties(storm::parser::FormulaParser& formulaParser, std::string const& inputString, boost::optional<std::set<std::string>> const& propertyFilter = boost::none);

@@ -14,8 +14,11 @@
 namespace storm {
     namespace api {
         
-        boost::optional<std::set<std::string>> parsePropertyFilter(boost::optional<std::string> const& propertyFilter) {
-            std::vector<std::string> propertyNames = storm::utility::cli::parseCommaSeparatedStrings(propertyFilter.get());
+        boost::optional<std::set<std::string>> parsePropertyFilter(std::string const& propertyFilter) {
+            if (propertyFilter == "all") {
+                return boost::none;
+            }
+            std::vector<std::string> propertyNames = storm::utility::cli::parseCommaSeparatedStrings(propertyFilter);
             std::set<std::string> propertyNameSet(propertyNames.begin(), propertyNames.end());
             return propertyNameSet;
         }

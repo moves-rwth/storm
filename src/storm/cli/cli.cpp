@@ -390,7 +390,7 @@ namespace storm {
             
             modelBuildingWatch.stop();
             if (result) {
-                STORM_PRINT_AND_LOG("Time for model construction: " << modelBuildingWatch << "." << std::endl);
+                STORM_PRINT_AND_LOG("Time for model construction: " << modelBuildingWatch << "." << std::endl << std::endl);
             }
 
             return result;
@@ -483,7 +483,7 @@ namespace storm {
             }
             
             if (result.second) {
-                STORM_PRINT_AND_LOG(std::endl << "Time for model preprocessing: " << preprocessingWatch << "." << std::endl);
+                STORM_PRINT_AND_LOG(std::endl << "Time for model preprocessing: " << preprocessingWatch << "." << std::endl << std::endl);
             }
             return result;
         }
