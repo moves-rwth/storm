@@ -4,6 +4,7 @@
 #include <unordered_set>
 #include "storm/adapters/RationalFunctionAdapter.h"
 #include "storm/models/sparse/Dtmc.h"
+#include <carl/formula/Formula.h>
 
 #include <carl/formula/Formula.h>
 
