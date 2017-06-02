@@ -2,7 +2,7 @@
 
 #include "storm/logic/Formula.h"
 #include "storm/modelchecker/results/CheckResult.h"
-#include "storm/utility/storm.h" // TODO this should not be included here.
+#include "storm/api/storm.h"
 #include "storm/utility/Stopwatch.h"
 
 #include "storm-dft/storage/dft/DFT.h"

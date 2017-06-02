@@ -41,6 +41,7 @@ namespace storm {
                     markovModel = transformer.translate(*markovModel->template as<storm::models::sparse::MarkovAutomaton<ValueType>>(), timeRewardModelName);
                 }
             }
+            return markovModel;
         }
         
        template <typename ValueType, typename RewardModelType>

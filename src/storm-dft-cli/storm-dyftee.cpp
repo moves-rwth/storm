@@ -64,7 +64,7 @@ void analyzeDFT(std::vector<std::string> const& properties, bool symred, bool al
     for (size_t i = 1; i < properties.size(); ++i) {
         propString += ";" + properties[i];
     }
-    std::vector<std::shared_ptr<storm::logic::Formula const>> props = storm::extractFormulasFromProperties(storm::parsePropertiesForExplicit(propString));
+    std::vector<std::shared_ptr<storm::logic::Formula const>> props = storm::api::extractFormulasFromProperties(storm::api::parseProperties(propString));
     STORM_LOG_ASSERT(props.size() > 0, "No properties found.");
 
     // Check model

@@ -11,10 +11,7 @@
 #include "storm/settings/modules/GeneralSettings.h"
 #include "storm/settings/modules/NativeEquationSolverSettings.h"
 
-#include "storm/parser/AutoParser.h"
-#include "storm/parser/PrismParser.h"
-
-#include "storm/utility/storm.h"
+#include "storm/api/storm.h"
 
 #if defined STORM_HAVE_MSAT
 TEST(GameBasedMdpModelCheckerTest, Dice_Cudd) {
@@ -23,7 +20,7 @@ TEST(GameBasedMdpModelCheckerTest, DISABLED_Dice_Cudd) {
 #endif
     std::string programFile = STORM_TEST_RESOURCES_DIR "/mdp/two_dice.nm";
 
-    storm::prism::Program program = storm::parseProgram(programFile);
+    storm::prism::Program program = storm::api::parseProgram(programFile);
 	
 	// Build the die model
     typename storm::builder::DdPrismModelBuilder<storm::dd::DdType::CUDD>::Options options;
@@ -94,7 +91,7 @@ TEST(GameBasedMdpModelCheckerTest, DISABLED_Dice_Sylvan) {
 #endif
     std::string programFile = STORM_TEST_RESOURCES_DIR "/mdp/two_dice.nm";
     
-    storm::prism::Program program = storm::parseProgram(programFile);
+    storm::prism::Program program = storm::api::parseProgram(programFile);
     
     // Build the die model
     typename storm::builder::DdPrismModelBuilder<storm::dd::DdType::Sylvan>::Options options;

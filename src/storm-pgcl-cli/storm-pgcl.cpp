@@ -2,7 +2,6 @@
 
 #include "logic/Formula.h"
 #include "utility/initialize.h"
-#include "utility/storm.h"
 #include "storm/cli/cli.h"
 #include "storm/exceptions/BaseException.h"
 #include "storm/utility/macros.h"
@@ -13,6 +12,7 @@
 
 #include "storm/exceptions/FileIoException.h"
 
+#include "storm/settings/SettingsManager.h"
 #include "storm/settings/modules/GeneralSettings.h"
 #include "storm/settings/modules/ResourceSettings.h"
 #include "storm/settings/modules/PGCLSettings.h"
@@ -20,6 +20,7 @@
 #include "storm/settings/modules/DebugSettings.h"
 #include "storm/settings/modules/JaniExportSettings.h"
 
+#include "storm/utility/file.h"
 
 /*!
  * Initialize the settings manager.
