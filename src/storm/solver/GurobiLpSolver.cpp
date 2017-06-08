@@ -65,7 +65,7 @@ namespace storm {
 			// Enable the following line to only print the output of Gurobi if the debug flag is set.
             toggleOutput(storm::settings::getModule<storm::settings::modules::DebugSettings>().isDebugSet() || storm::settings::getModule<storm::settings::modules::GurobiSettings>().isOutputSet());
             // Enable the following line to restrict Gurobi to one thread only.
-            error = GRBsetintparam(env, "Threads", storm::settings::getModule<storm::settings::modules::GurobisSettings>().getNumberOfThreads());
+            error = GRBsetintparam(env, "Threads", storm::settings::getModule<storm::settings::modules::GurobiSettings>().getNumberOfThreads());
             STORM_LOG_THROW(error == 0, storm::exceptions::InvalidStateException, "Unable to set Gurobi Parameter Threads (" << GRBgeterrormsg(env) << ", error code " << error << ").");
 
             // Enable the following line to force Gurobi to be as precise about the binary variables as required by the given precision option.
