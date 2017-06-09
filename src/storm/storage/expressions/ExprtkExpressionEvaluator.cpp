@@ -1,7 +1,7 @@
 #include "storm/storage/expressions/ExprtkExpressionEvaluator.h"
 #include "storm/storage/expressions/ExpressionManager.h"
 
-#include "storm/adapters/CarlAdapter.h"
+#include "storm/adapters/RationalFunctionAdapter.h"
 
 #include "storm/utility/macros.h"
 #include "storm/exceptions/UnexpectedException.h"

@@ -18,7 +18,7 @@
 #include "storm/exceptions/IllegalFunctionCallException.h"
 #include "storm/utility/macros.h"
 #include "storm/utility/file.h"
-#include "storm/adapters/CarlAdapter.h"
+#include "storm/adapters/RationalFunctionAdapter.h"
 #include "storm/exceptions/UnexpectedException.h"
 
 namespace storm {

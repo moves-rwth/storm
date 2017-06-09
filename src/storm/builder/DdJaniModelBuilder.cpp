@@ -40,7 +40,7 @@
 #include "storm/exceptions/InvalidStateException.h"
 #include "storm/exceptions/NotSupportedException.h"
 
-#include "storm/adapters/CarlAdapter.h"
+#include "storm/adapters/RationalFunctionAdapter.h"
 
 namespace storm {
     namespace builder {

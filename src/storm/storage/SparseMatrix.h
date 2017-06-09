@@ -12,7 +12,7 @@
 
 #include "storm/utility/OsDetection.h"
 #include "storm/utility/macros.h"
-#include "storm/adapters/CarlAdapter.h"
+#include "storm/adapters/RationalFunctionAdapter.h"
 
 // Forward declaration for adapter classes.
 namespace storm {

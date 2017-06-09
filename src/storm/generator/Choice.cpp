@@ -2,7 +2,7 @@
 
 #include <boost/container/flat_set.hpp>
 
-#include "storm/adapters/CarlAdapter.h"
+#include "storm/adapters/RationalFunctionAdapter.h"
 
 #include "storm/utility/constants.h"
 #include "storm/builder/ChoiceInformationBuilder.h"

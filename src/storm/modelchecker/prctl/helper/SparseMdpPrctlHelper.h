@@ -11,7 +11,7 @@
 #include "storm/utility/solver.h"
 #include "storm/solver/SolveGoal.h"
 
-#include "storm/adapters/CarlAdapter.h"
+#include "storm/adapters/RationalFunctionAdapter.h"
 
 namespace storm {
     namespace storage {

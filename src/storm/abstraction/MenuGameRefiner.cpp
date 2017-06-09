@@ -16,7 +16,7 @@
 #include "storm/settings/SettingsManager.h"
 
 #include "storm-config.h"
-#include "storm/adapters/CarlAdapter.h"
+#include "storm/adapters/RationalFunctionAdapter.h"
 
 namespace storm {
     namespace abstraction {

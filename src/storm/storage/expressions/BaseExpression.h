@@ -7,7 +7,7 @@
 #include <map>
 #include <iostream>
 
-#include "storm/adapters/NumberAdapter.h"
+#include "storm/adapters/RationalNumberAdapter.h"
 #include "storm/storage/expressions/Type.h"
 #include "storm/utility/OsDetection.h"
 #include <boost/any.hpp>

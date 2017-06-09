@@ -1,6 +1,6 @@
 #include "storm/models/sparse/Ctmc.h"
 #include "storm/models/sparse/StandardRewardModel.h"
-#include "storm/adapters/CarlAdapter.h"
+#include "storm/adapters/RationalFunctionAdapter.h"
 #include "storm/utility/macros.h"
 
 namespace storm {

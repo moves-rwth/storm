@@ -372,7 +372,7 @@ namespace storm {
                 std::string problem = "Unable to compile program using Carl data structures. Is Carls's include directory '" + carlIncludeDirectory + "' set correctly?";
                 try {
                     std::string program = R"(
-#include "storm/adapters/CarlAdapter.h"
+#include "storm/adapters/RationalFunctionAdapter.h"
                         
                     int main() {
                         return 0;
@@ -1651,10 +1651,10 @@ namespace storm {
 #include <boost/dll/alias.hpp>
                 
 {% if exact %}
-#include "storm/adapters/NumberAdapter.h"
+#include "storm/adapters/RationalNumberAdapter.h"
 {% endif %}
 {% if parametric %}
-#include "storm/adapters/CarlAdapter.h"
+#include "storm/adapters/RationalFunctionAdapter.h"
 {% endif %}
                 
 #include "resources/3rdparty/sparsepp/sparsepp.h"

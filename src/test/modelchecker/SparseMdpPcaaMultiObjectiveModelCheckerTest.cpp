@@ -9,7 +9,7 @@
 #include "storm/models/sparse/Mdp.h"
 #include "storm/settings/modules/GeneralSettings.h"
 #include "storm/settings/SettingsManager.h"
-#include "storm/utility/storm.h"
+#include "storm/api/storm.h"
 
 
 TEST(SparseMdpPcaaMultiObjectiveModelCheckerTest, consensus) {
@@ -20,10 +20,10 @@ TEST(SparseMdpPcaaMultiObjectiveModelCheckerTest, consensus) {
     formulasAsString += "; \n multi(P>=0.11 [ F \"one_proc_err\" ], P>=0.8916673903 [ G \"one_coin_ok\" ])"; // achievability (false)
     
     // programm, model,  formula
-    storm::prism::Program program = storm::parseProgram(programFile);
+    storm::prism::Program program = storm::api::parseProgram(programFile);
     program = storm::utility::prism::preprocess(program, "");
-    std::vector<std::shared_ptr<storm::logic::Formula const>> formulas = storm::extractFormulasFromProperties(storm::parsePropertiesForPrismProgram(formulasAsString, program));
-    std::shared_ptr<storm::models::sparse::Mdp<double>> mdp = storm::buildSparseModel<double>(program, formulas)->as<storm::models::sparse::Mdp<double>>();
+    std::vector<std::shared_ptr<storm::logic::Formula const>> formulas = storm::api::extractFormulasFromProperties(storm::api::parsePropertiesForPrismProgram(formulasAsString, program));
+    std::shared_ptr<storm::models::sparse::Mdp<double>> mdp = storm::api::buildSparseModel<double>(program, formulas)->as<storm::models::sparse::Mdp<double>>();
     uint_fast64_t const initState = *mdp->getInitialStates().begin();;
     
     std::unique_ptr<storm::modelchecker::CheckResult> result = storm::modelchecker::multiobjective::performMultiObjectiveModelChecking(*mdp, formulas[0]->asMultiObjectiveFormula(), storm::modelchecker::multiobjective::MultiObjectiveMethodSelection::Pcaa);
@@ -46,10 +46,10 @@ TEST(SparseMdpPcaaMultiObjectiveModelCheckerTest, zeroconf) {
     std::string formulasAsString = "multi(Pmax=? [ F l=4 & ip=1 ] , P>=0.993141[ G (error=0) ]) "; // numerical
     
     // programm, model,  formula
-    storm::prism::Program program = storm::parseProgram(programFile);
+    storm::prism::Program program = storm::api::parseProgram(programFile);
     program = storm::utility::prism::preprocess(program, "");
-    std::vector<std::shared_ptr<storm::logic::Formula const>> formulas = storm::extractFormulasFromProperties(storm::parsePropertiesForPrismProgram(formulasAsString, program));
-    std::shared_ptr<storm::models::sparse::Mdp<double>> mdp = storm::buildSparseModel<double>(program, formulas)->as<storm::models::sparse::Mdp<double>>();
+    std::vector<std::shared_ptr<storm::logic::Formula const>> formulas = storm::api::extractFormulasFromProperties(storm::api::parsePropertiesForPrismProgram(formulasAsString, program));
+    std::shared_ptr<storm::models::sparse::Mdp<double>> mdp = storm::api::buildSparseModel<double>(program, formulas)->as<storm::models::sparse::Mdp<double>>();
     uint_fast64_t const initState = *mdp->getInitialStates().begin();
     
     std::unique_ptr<storm::modelchecker::CheckResult> result = storm::modelchecker::multiobjective::performMultiObjectiveModelChecking(*mdp, formulas[0]->asMultiObjectiveFormula(), storm::modelchecker::multiobjective::MultiObjectiveMethodSelection::Pcaa);
@@ -63,10 +63,10 @@ TEST(SparseMdpPcaaMultiObjectiveModelCheckerTest, team3with3objectives) {
     std::string formulasAsString = "multi(Pmax=? [ F \"task1_compl\" ], R{\"w_1_total\"}>=2.210204082 [ C ],  P>=0.5 [ F \"task2_compl\" ])"; // numerical
     
     // programm, model,  formula
-    storm::prism::Program program = storm::parseProgram(programFile);
+    storm::prism::Program program = storm::api::parseProgram(programFile);
     program = storm::utility::prism::preprocess(program, "");
-    std::vector<std::shared_ptr<storm::logic::Formula const>> formulas = storm::extractFormulasFromProperties(storm::parsePropertiesForPrismProgram(formulasAsString, program));
-    std::shared_ptr<storm::models::sparse::Mdp<double>> mdp = storm::buildSparseModel<double>(program, formulas)->as<storm::models::sparse::Mdp<double>>();
+    std::vector<std::shared_ptr<storm::logic::Formula const>> formulas = storm::api::extractFormulasFromProperties(storm::api::parsePropertiesForPrismProgram(formulasAsString, program));
+    std::shared_ptr<storm::models::sparse::Mdp<double>> mdp = storm::api::buildSparseModel<double>(program, formulas)->as<storm::models::sparse::Mdp<double>>();
     uint_fast64_t const initState = *mdp->getInitialStates().begin();
     
     std::unique_ptr<storm::modelchecker::CheckResult> result = storm::modelchecker::multiobjective::performMultiObjectiveModelChecking(*mdp, formulas[0]->asMultiObjectiveFormula(), storm::modelchecker::multiobjective::MultiObjectiveMethodSelection::Pcaa);
@@ -80,10 +80,10 @@ TEST(SparseMdpPcaaMultiObjectiveModelCheckerTest, scheduler) {
     std::string formulasAsString = "multi(R{\"time\"}<= 11.778[ F \"tasks_complete\" ], R{\"energy\"}<=1.45 [  F \"tasks_complete\" ]) ";
     
     // programm, model,  formula
-    storm::prism::Program program = storm::parseProgram(programFile);
+    storm::prism::Program program = storm::api::parseProgram(programFile);
     program = storm::utility::prism::preprocess(program, "");
-    std::vector<std::shared_ptr<storm::logic::Formula const>> formulas = storm::extractFormulasFromProperties(storm::parsePropertiesForPrismProgram(formulasAsString, program));
-    std::shared_ptr<storm::models::sparse::Mdp<double>> mdp = storm::buildSparseModel<double>(program, formulas)->as<storm::models::sparse::Mdp<double>>();
+    std::vector<std::shared_ptr<storm::logic::Formula const>> formulas = storm::api::extractFormulasFromProperties(storm::api::parsePropertiesForPrismProgram(formulasAsString, program));
+    std::shared_ptr<storm::models::sparse::Mdp<double>> mdp = storm::api::buildSparseModel<double>(program, formulas)->as<storm::models::sparse::Mdp<double>>();
     uint_fast64_t const initState = *mdp->getInitialStates().begin();
     
     std::unique_ptr<storm::modelchecker::CheckResult> result = storm::modelchecker::multiobjective::performMultiObjectiveModelChecking(*mdp, formulas[0]->asMultiObjectiveFormula(), storm::modelchecker::multiobjective::MultiObjectiveMethodSelection::Pcaa);
@@ -96,10 +96,10 @@ TEST(SparseMdpPcaaMultiObjectiveModelCheckerTest, dpm) {
     std::string formulasAsString = "multi(R{\"power\"}min=? [ C<=100 ], R{\"queue\"}<=70 [ C<=100 ])"; // numerical
     
     // programm, model,  formula
-    storm::prism::Program program = storm::parseProgram(programFile);
+    storm::prism::Program program = storm::api::parseProgram(programFile);
     program = storm::utility::prism::preprocess(program, "");
-    std::vector<std::shared_ptr<storm::logic::Formula const>> formulas = storm::extractFormulasFromProperties(storm::parsePropertiesForPrismProgram(formulasAsString, program));
-    std::shared_ptr<storm::models::sparse::Mdp<double>> mdp = storm::buildSparseModel<double>(program, formulas)->as<storm::models::sparse::Mdp<double>>();
+    std::vector<std::shared_ptr<storm::logic::Formula const>> formulas = storm::api::extractFormulasFromProperties(storm::api::parsePropertiesForPrismProgram(formulasAsString, program));
+    std::shared_ptr<storm::models::sparse::Mdp<double>> mdp = storm::api::buildSparseModel<double>(program, formulas)->as<storm::models::sparse::Mdp<double>>();
     uint_fast64_t const initState = *mdp->getInitialStates().begin();
     
     std::unique_ptr<storm::modelchecker::CheckResult> result = storm::modelchecker::multiobjective::performMultiObjectiveModelChecking(*mdp, formulas[0]->asMultiObjectiveFormula(), storm::modelchecker::multiobjective::MultiObjectiveMethodSelection::Pcaa);

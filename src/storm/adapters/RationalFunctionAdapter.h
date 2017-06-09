@@ -1,6 +1,6 @@
 #pragma once
 
-#include "storm/adapters/NumberAdapter.h"
+#include "storm/adapters/RationalNumberAdapter.h"
 
 #include <carl/core/MultivariatePolynomial.h>
 #include <carl/core/RationalFunction.h>

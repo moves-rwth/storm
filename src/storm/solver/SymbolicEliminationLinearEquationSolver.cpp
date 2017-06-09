@@ -5,7 +5,7 @@
 
 #include "storm/utility/dd.h"
 
-#include "storm/adapters/CarlAdapter.h"
+#include "storm/adapters/RationalFunctionAdapter.h"
 
 namespace storm {
     namespace solver {

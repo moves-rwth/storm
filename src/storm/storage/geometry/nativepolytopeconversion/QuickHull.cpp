@@ -2,7 +2,7 @@
 
 #include <algorithm>
 #include <unordered_map>
-#include <storm/adapters/NumberAdapter.h>
+#include <storm/adapters/RationalNumberAdapter.h>
 
 #include "storm/utility/macros.h"
 #include "storm/utility/constants.h"

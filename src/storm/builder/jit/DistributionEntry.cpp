@@ -1,6 +1,6 @@
 #include "storm/builder/jit/DistributionEntry.h"
 
-#include "storm/adapters/CarlAdapter.h"
+#include "storm/adapters/RationalFunctionAdapter.h"
 
 namespace storm {
     namespace builder {

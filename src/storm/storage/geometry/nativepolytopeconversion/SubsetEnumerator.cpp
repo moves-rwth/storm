@@ -1,7 +1,7 @@
 #include "SubsetEnumerator.h"
 
 
-#include "storm/adapters/CarlAdapter.h"
+#include "storm/adapters/RationalFunctionAdapter.h"
 #include "storm/utility/eigen.h"
 
 namespace storm {

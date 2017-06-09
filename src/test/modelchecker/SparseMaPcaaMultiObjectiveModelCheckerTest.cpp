@@ -13,7 +13,7 @@
 #include "storm/settings/modules/GeneralSettings.h"
 #include "storm/settings/modules/MultiObjectiveSettings.h"
 #include "storm/settings/SettingsManager.h"
-#include "storm/utility/storm.h"
+#include "storm/api/storm.h"
 
 
 /* Rationals for MAs not supported at this point
@@ -24,9 +24,9 @@ TEST(SparseMaPcaaMultiObjectiveModelCheckerTest, serverRationalNumbers) {
   //  formulasAsString += "; \n multi(..)";
     
     // programm, model,  formula
-    storm::prism::Program program = storm::parseProgram(programFile);
+    storm::prism::Program program = storm::api::parseProgram(programFile);
     program.checkValidity();
-    std::vector<std::shared_ptr<storm::logic::Formula const>> formulas = storm::extractFormulasFromProperties(parseFormulasForProgram(formulasAsString, program));
+    std::vector<std::shared_ptr<storm::logic::Formula const>> formulas = storm::api::extractFormulasFromProperties(parseFormulasForProgram(formulasAsString, program));
     storm::generator::NextStateGeneratorOptions options(formulas);
     std::shared_ptr<storm::models::sparse::MarkovAutomaton<storm::RationalNumber>> ma = storm::builder::ExplicitModelBuilder<storm::RationalNumber>(program, options).build()->as<storm::models::sparse::MarkovAutomaton<storm::RationalNumber>>();
     
@@ -53,10 +53,10 @@ TEST(SparseMaPcaaMultiObjectiveModelCheckerTest, server) {
     std::string programFile = STORM_TEST_RESOURCES_DIR "/ma/server.ma";
     std::string formulasAsString = "multi(Tmax=? [ F \"error\" ], Pmax=? [ F \"processB\" ]) "; // pareto
 
-    storm::prism::Program program = storm::parseProgram(programFile);
+    storm::prism::Program program = storm::api::parseProgram(programFile);
     program = storm::utility::prism::preprocess(program, "");
-    std::vector<std::shared_ptr<storm::logic::Formula const>> formulas = storm::extractFormulasFromProperties(storm::parsePropertiesForPrismProgram(formulasAsString, program));
-    std::shared_ptr<storm::models::sparse::MarkovAutomaton<double>> ma = storm::buildSparseModel<double>(program, formulas)->as<storm::models::sparse::MarkovAutomaton<double>>();
+    std::vector<std::shared_ptr<storm::logic::Formula const>> formulas = storm::api::extractFormulasFromProperties(storm::api::parsePropertiesForPrismProgram(formulasAsString, program));
+    std::shared_ptr<storm::models::sparse::MarkovAutomaton<double>> ma = storm::api::buildSparseModel<double>(program, formulas)->as<storm::models::sparse::MarkovAutomaton<double>>();
 
     std::unique_ptr<storm::modelchecker::CheckResult> result = storm::modelchecker::multiobjective::performMultiObjectiveModelChecking(*ma, formulas[0]->asMultiObjectiveFormula(), storm::modelchecker::multiobjective::MultiObjectiveMethodSelection::Pcaa);
     ASSERT_TRUE(result->isExplicitParetoCurveCheckResult());
@@ -82,10 +82,10 @@ TEST(SparseMaPcaaMultiObjectiveModelCheckerTest, jobscheduler_pareto_3Obj) {
     std::string programFile = STORM_TEST_RESOURCES_DIR "/ma/jobscheduler.ma";
     std::string formulasAsString = "multi(Tmin=? [ F  \"all_jobs_finished\" ], Pmax=? [ F<=0.2 \"half_of_jobs_finished\" ], Pmin=? [ F \"slowest_before_fastest\"  ]) ";
 
-    storm::prism::Program program = storm::parseProgram(programFile);
+    storm::prism::Program program = storm::api::parseProgram(programFile);
     program = storm::utility::prism::preprocess(program, "");
-    std::vector<std::shared_ptr<storm::logic::Formula const>> formulas = storm::extractFormulasFromProperties(storm::parsePropertiesForPrismProgram(formulasAsString, program));
-    std::shared_ptr<storm::models::sparse::MarkovAutomaton<double>> ma = storm::buildSparseModel<double>(program, formulas)->as<storm::models::sparse::MarkovAutomaton<double>>();
+    std::vector<std::shared_ptr<storm::logic::Formula const>> formulas = storm::api::extractFormulasFromProperties(storm::api::parsePropertiesForPrismProgram(formulasAsString, program));
+    std::shared_ptr<storm::models::sparse::MarkovAutomaton<double>> ma = storm::api::buildSparseModel<double>(program, formulas)->as<storm::models::sparse::MarkovAutomaton<double>>();
 
     std::unique_ptr<storm::modelchecker::CheckResult> result = storm::modelchecker::multiobjective::performMultiObjectiveModelChecking(*ma, formulas[0]->asMultiObjectiveFormula(), storm::modelchecker::multiobjective::MultiObjectiveMethodSelection::Pcaa);
     ASSERT_TRUE(result->isExplicitParetoCurveCheckResult());
@@ -113,10 +113,10 @@ TEST(SparseMaPcaaMultiObjectiveModelCheckerTest, jobscheduler_achievability_3Obj
     std::string formulasAsString = "multi(T<=1.31 [ F  \"all_jobs_finished\" ], P>=0.17 [ F<=0.2 \"half_of_jobs_finished\" ], P<=0.31 [ F \"slowest_before_fastest\"  ]) "; //true
     formulasAsString += "; multi(T<=1.29 [ F  \"all_jobs_finished\" ], P>=0.18 [ F<=0.2 \"half_of_jobs_finished\" ], P<=0.29 [ F \"slowest_before_fastest\"  ])"; //false
 
-    storm::prism::Program program = storm::parseProgram(programFile);
+    storm::prism::Program program = storm::api::parseProgram(programFile);
     program = storm::utility::prism::preprocess(program, "");
-    std::vector<std::shared_ptr<storm::logic::Formula const>> formulas = storm::extractFormulasFromProperties(storm::parsePropertiesForPrismProgram(formulasAsString, program));
-    std::shared_ptr<storm::models::sparse::MarkovAutomaton<double>> ma = storm::buildSparseModel<double>(program, formulas)->as<storm::models::sparse::MarkovAutomaton<double>>();
+    std::vector<std::shared_ptr<storm::logic::Formula const>> formulas = storm::api::extractFormulasFromProperties(storm::api::parsePropertiesForPrismProgram(formulasAsString, program));
+    std::shared_ptr<storm::models::sparse::MarkovAutomaton<double>> ma = storm::api::buildSparseModel<double>(program, formulas)->as<storm::models::sparse::MarkovAutomaton<double>>();
     uint_fast64_t const initState = *ma->getInitialStates().begin();
 
     std::unique_ptr<storm::modelchecker::CheckResult> result = storm::modelchecker::multiobjective::performMultiObjectiveModelChecking(*ma, formulas[0]->asMultiObjectiveFormula(), storm::modelchecker::multiobjective::MultiObjectiveMethodSelection::Pcaa);
@@ -134,10 +134,10 @@ TEST(SparseMaPcaaMultiObjectiveModelCheckerTest, jobscheduler_quantitative_3Obj)
     std::string formulasAsString = "multi(Tmin=? [ F  \"all_jobs_finished\" ], P>=0.1797900683 [ F<=0.2 \"half_of_jobs_finished\" ], P<=0.3 [ F \"slowest_before_fastest\"  ]) "; //quantitative
     formulasAsString += "; multi(T<=1.26 [ F  \"all_jobs_finished\" ], P>=0.2 [ F<=0.2 \"half_of_jobs_finished\" ], Pmin=? [ F \"slowest_before_fastest\"  ])"; //false
 
-    storm::prism::Program program = storm::parseProgram(programFile);
+    storm::prism::Program program = storm::api::parseProgram(programFile);
     program = storm::utility::prism::preprocess(program, "");
-    std::vector<std::shared_ptr<storm::logic::Formula const>> formulas = storm::extractFormulasFromProperties(storm::parsePropertiesForPrismProgram(formulasAsString, program));
-    std::shared_ptr<storm::models::sparse::MarkovAutomaton<double>> ma = storm::buildSparseModel<double>(program, formulas)->as<storm::models::sparse::MarkovAutomaton<double>>();
+    std::vector<std::shared_ptr<storm::logic::Formula const>> formulas = storm::api::extractFormulasFromProperties(storm::api::parsePropertiesForPrismProgram(formulasAsString, program));
+    std::shared_ptr<storm::models::sparse::MarkovAutomaton<double>> ma = storm::api::buildSparseModel<double>(program, formulas)->as<storm::models::sparse::MarkovAutomaton<double>>();
     uint_fast64_t const initState = *ma->getInitialStates().begin();
 
 
@@ -155,10 +155,10 @@ TEST(SparseMaPcaaMultiObjectiveModelCheckerTest, jobscheduler_pareto_2Obj) {
     std::string programFile = STORM_TEST_RESOURCES_DIR "/ma/jobscheduler.ma";
     std::string formulasAsString = "multi( Pmax=? [ F<=0.1 \"one_job_finished\"], Pmin=? [F<=0.2 \"all_jobs_finished\"]) ";
 
-    storm::prism::Program program = storm::parseProgram(programFile);
+    storm::prism::Program program = storm::api::parseProgram(programFile);
     program = storm::utility::prism::preprocess(program, "");
-    std::vector<std::shared_ptr<storm::logic::Formula const>> formulas = storm::extractFormulasFromProperties(storm::parsePropertiesForPrismProgram(formulasAsString, program));
-    std::shared_ptr<storm::models::sparse::MarkovAutomaton<double>> ma = storm::buildSparseModel<double>(program, formulas)->as<storm::models::sparse::MarkovAutomaton<double>>();
+    std::vector<std::shared_ptr<storm::logic::Formula const>> formulas = storm::api::extractFormulasFromProperties(storm::api::parsePropertiesForPrismProgram(formulasAsString, program));
+    std::shared_ptr<storm::models::sparse::MarkovAutomaton<double>> ma = storm::api::buildSparseModel<double>(program, formulas)->as<storm::models::sparse::MarkovAutomaton<double>>();
 
     std::unique_ptr<storm::modelchecker::CheckResult> result = storm::modelchecker::multiobjective::performMultiObjectiveModelChecking(*ma, formulas[0]->asMultiObjectiveFormula(), storm::modelchecker::multiobjective::MultiObjectiveMethodSelection::Pcaa);
     ASSERT_TRUE(result->isExplicitParetoCurveCheckResult());

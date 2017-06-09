@@ -1,7 +1,7 @@
 #include "storm/transformer/ParameterLifter.h"
 
 
-#include "storm/adapters/CarlAdapter.h"
+#include "storm/adapters/RationalFunctionAdapter.h"
 
 #include "storm/utility/vector.h"
 

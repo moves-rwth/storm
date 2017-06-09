@@ -3,7 +3,7 @@
 #include <memory>
 
 #include "storm/utility/eigen.h"
-#include "storm/adapters/CarlAdapter.h"
+#include "storm/adapters/RationalFunctionAdapter.h"
 
 #include "storm/storage/SparseMatrix.h"
 

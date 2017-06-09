@@ -1,7 +1,7 @@
 #include "gtest/gtest.h"
 #include "storm-config.h"
 
-#include "storm/adapters/CarlAdapter.h"
+#include "storm/adapters/RationalFunctionAdapter.h"
 #include "storm/exceptions/InvalidArgumentException.h"
 #include "storm/storage/dd/DdManager.h"
 #include "storm/storage/dd/Add.h"

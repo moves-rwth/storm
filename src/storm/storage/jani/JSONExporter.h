@@ -5,7 +5,7 @@
 #include "storm/logic/FormulaVisitor.h"
 #include "Model.h"
 #include "storm/storage/jani/Property.h"
-#include "storm/adapters/NumberAdapter.h"
+#include "storm/adapters/RationalNumberAdapter.h"
 // JSON parser
 #include "json.hpp"
 namespace modernjson {

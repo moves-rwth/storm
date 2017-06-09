@@ -10,7 +10,7 @@
 
 #include <cmath>
 
-#include "storm/adapters/CarlAdapter.h"
+#include "storm/adapters/RationalFunctionAdapter.h"
 
 namespace storm {
     namespace dd {

@@ -1,6 +1,6 @@
 #include "storm/models/sparse/Dtmc.h"
 #include "storm/models/sparse/StandardRewardModel.h"
-#include "storm/adapters/CarlAdapter.h"
+#include "storm/adapters/RationalFunctionAdapter.h"
 #include "storm/exceptions/NotImplementedException.h"
 #include "storm/exceptions/InvalidArgumentException.h"
 #include "storm/utility/constants.h"

@@ -9,7 +9,7 @@
 #include "storm/exceptions/NotSupportedException.h"
 
 #include "storm-config.h"
-#include "storm/adapters/CarlAdapter.h"
+#include "storm/adapters/RationalFunctionAdapter.h"
 
 #include <cmath>
 #include <iostream>

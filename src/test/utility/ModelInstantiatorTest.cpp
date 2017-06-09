@@ -3,7 +3,7 @@
 
 #ifdef STORM_HAVE_CARL
 
-#include "storm/adapters/CarlAdapter.h"
+#include "storm/adapters/RationalFunctionAdapter.h"
 #include<carl/numbers/numbers.h>
 #include<carl/core/VariablePool.h>
 
@@ -11,7 +11,7 @@
 #include "storm/settings/SettingsManager.h"
 #include "storm/settings/modules/GeneralSettings.h"
 
-#include "utility/storm.h"
+#include "storm/api/storm.h"
 #include "utility/ModelInstantiator.h"
 #include "storm/models/sparse/Model.h"
 #include "storm/models/sparse/Dtmc.h"
@@ -24,9 +24,9 @@ TEST(ModelInstantiatorTest, BrpProb) {
     std::string formulaAsString = "P=? [F s=5 ]";
     
     // Program and formula
-    storm::prism::Program program = storm::parseProgram(programFile);
+    storm::prism::Program program = storm::api::parseProgram(programFile);
     program.checkValidity();
-    std::vector<std::shared_ptr<storm::logic::Formula const>> formulas = storm::extractFormulasFromProperties(storm::parsePropertiesForPrismProgram(formulaAsString, program));
+    std::vector<std::shared_ptr<storm::logic::Formula const>> formulas = storm::api::extractFormulasFromProperties(storm::api::parsePropertiesForPrismProgram(formulaAsString, program));
     ASSERT_TRUE(formulas.size()==1);
     // Parametric model
     storm::generator::NextStateGeneratorOptions options(*formulas.front());
@@ -142,9 +142,9 @@ TEST(ModelInstantiatorTest, Brp_Rew) {
     std::string formulaAsString = "R=? [F ((s=5) | (s=0&srep=3)) ]";
     
     // Program and formula
-    storm::prism::Program program = storm::parseProgram(programFile);
+    storm::prism::Program program = storm::api::parseProgram(programFile);
     program.checkValidity();
-    std::vector<std::shared_ptr<storm::logic::Formula const>> formulas = storm::extractFormulasFromProperties(storm::parsePropertiesForPrismProgram(formulaAsString, program));
+    std::vector<std::shared_ptr<storm::logic::Formula const>> formulas = storm::api::extractFormulasFromProperties(storm::api::parsePropertiesForPrismProgram(formulaAsString, program));
     ASSERT_TRUE(formulas.size()==1);
     // Parametric model
     storm::generator::NextStateGeneratorOptions options(*formulas.front());
@@ -212,9 +212,9 @@ TEST(ModelInstantiatorTest, Consensus) {
     std::string formulaAsString = "Pmin=? [F \"finished\"&\"all_coins_equal_1\" ]";
     
     // Program and formula
-    storm::prism::Program program = storm::parseProgram(programFile);
+    storm::prism::Program program = storm::api::parseProgram(programFile);
     program.checkValidity();
-    std::vector<std::shared_ptr<storm::logic::Formula const>> formulas = storm::extractFormulasFromProperties(storm::parsePropertiesForPrismProgram(formulaAsString, program));
+    std::vector<std::shared_ptr<storm::logic::Formula const>> formulas = storm::api::extractFormulasFromProperties(storm::api::parsePropertiesForPrismProgram(formulaAsString, program));
     ASSERT_TRUE(formulas.size()==1);
     // Parametric model
     storm::generator::NextStateGeneratorOptions options(*formulas.front());

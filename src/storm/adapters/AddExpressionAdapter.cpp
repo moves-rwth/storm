@@ -9,7 +9,7 @@
 #include "storm/storage/dd/Bdd.h"
 
 #include "storm-config.h"
-#include "storm/adapters/CarlAdapter.h"
+#include "storm/adapters/RationalFunctionAdapter.h"
 
 #include "storm/utility/constants.h"
 

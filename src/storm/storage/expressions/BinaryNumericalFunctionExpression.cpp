@@ -1,7 +1,7 @@
 #include <algorithm>
 #include <cmath>
 
-#include "storm/adapters/NumberAdapter.h"
+#include "storm/adapters/RationalNumberAdapter.h"
 #include "storm/storage/expressions/BinaryNumericalFunctionExpression.h"
 #include "storm/storage/expressions/IntegerLiteralExpression.h"
 #include "storm/storage/expressions/RationalLiteralExpression.h"

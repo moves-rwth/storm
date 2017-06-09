@@ -7,7 +7,7 @@
 #ifdef SMTRATDOESNTWORK // Does not compile with current version of smtrat.
 
 #include "lib/smtrat.h"
-#include "../adapters/carlAdapter.h"
+#include "../adapters/RationalFunctionAdapter.h"
 
 
 namespace storm {

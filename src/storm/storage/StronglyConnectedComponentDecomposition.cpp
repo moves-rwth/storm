@@ -1,7 +1,7 @@
 #include "storm/storage/StronglyConnectedComponentDecomposition.h"
 #include "storm/models/sparse/Model.h"
 #include "storm/models/sparse/StandardRewardModel.h"
-#include "storm/adapters/CarlAdapter.h"
+#include "storm/adapters/RationalFunctionAdapter.h"
 
 namespace storm {
     namespace storage {

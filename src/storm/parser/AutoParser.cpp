@@ -10,7 +10,7 @@
 #include "storm/utility/macros.h"
 #include "storm/exceptions/WrongFormatException.h"
 
-#include "storm/adapters/CarlAdapter.h"
+#include "storm/adapters/RationalFunctionAdapter.h"
 
 #include "storm/utility/cstring.h"
 #include "storm/utility/OsDetection.h"

@@ -12,7 +12,7 @@
 #include "storm/exceptions/NotSupportedException.h"
 #include "storm/settings/SettingsManager.h"
 
-#include "storm/adapters/CarlAdapter.h"
+#include "storm/adapters/RationalFunctionAdapter.h"
 #include "storm/utility/constants.h"
 #include "storm/utility/builder.h"
 #include "storm/utility/macros.h"

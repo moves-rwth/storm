@@ -10,7 +10,7 @@
 #include <algorithm>
 #include <functional>
 #include <numeric>
-#include <storm/adapters/CarlAdapter.h>
+#include <storm/adapters/RationalFunctionAdapter.h>
 
 #include <boost/optional.hpp>
 

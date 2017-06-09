@@ -1,6 +1,6 @@
 #include "storm/modelchecker/propositional/SparsePropositionalModelChecker.h"
 
-#include "storm/adapters/CarlAdapter.h"
+#include "storm/adapters/RationalFunctionAdapter.h"
 
 #include "storm/models/sparse/Dtmc.h"
 #include "storm/models/sparse/Ctmc.h"
