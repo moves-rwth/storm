@@ -4,6 +4,7 @@
 #include <set>
 #include <map>
 #include <vector>
+#include <memory>
 #include <boost/optional.hpp>
 
 namespace storm {
