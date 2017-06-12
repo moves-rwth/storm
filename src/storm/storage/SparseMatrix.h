@@ -657,9 +657,13 @@ namespace storm {
              * Restrict rows in grouped rows matrix. Ensures that the number of groups stays the same. 
              * 
              * @param rowsToKeep A bit vector indicating which rows to keep.
-             * 
+             * @param allowEmptyRowGroups if set to true, the result can potentially have empty row groups.
+             *                            Otherwise, it is asserted that there are no empty row groups.
+             *
+             * @note The resulting matrix will always have a non-trivial row grouping even if the current one is trivial.
+             *
              */
-            SparseMatrix restrictRows(storm::storage::BitVector const& rowsToKeep) const;
+            SparseMatrix restrictRows(storm::storage::BitVector const& rowsToKeep, bool allowEmptyRowGroups = false) const;
             
             /**
              * Compares two rows.
