@@ -10,6 +10,7 @@
 #include "storm/utility/vector.h"
 
 #include "storm/exceptions/InvalidArgumentException.h"
+#include "storm/exceptions/UnexpectedException.h"
 
 namespace storm {
     namespace transformer {
@@ -32,16 +33,18 @@ namespace storm {
                 SparseCtmcToSparseDtmcTransformer<ValueType, RewardModelType> transformer;
                 if (transformer.transformationPreservesProperty(*formula)) {
                     STORM_LOG_INFO("Transforming Ctmc to embedded Dtmc...");
-                    markovModel = transformer.translate(*markovModel->template as<storm::models::sparse::Ctmc<ValueType>>(), timeRewardModelName);
+                    return transformer.translate(*markovModel->template as<storm::models::sparse::Ctmc<ValueType>>(), timeRewardModelName);
                 }
             } else if (markovModel->isOfType(storm::models::ModelType::MarkovAutomaton)) {
                 SparseMaToSparseMdpTransformer<ValueType, RewardModelType> transformer;
                 if (transformer.transformationPreservesProperty(*formula)) {
                     STORM_LOG_INFO("Transforming Markov automaton to embedded Mdp...");
-                    markovModel = transformer.translate(*markovModel->template as<storm::models::sparse::MarkovAutomaton<ValueType>>(), timeRewardModelName);
+                    return transformer.translate(*markovModel->template as<storm::models::sparse::MarkovAutomaton<ValueType>>(), timeRewardModelName);
                 }
+            } else {
+                STORM_LOG_THROW(false, storm::exceptions::UnexpectedException, "Model type " << markovModel->getType() << " not expected.");
             }
-            return markovModel;
+            return nullptr;
         }
         
        template <typename ValueType, typename RewardModelType>
@@ -70,6 +73,8 @@ namespace storm {
                     STORM_LOG_INFO("Transforming Markov automaton to embedded Mdp...");
                     markovModel = transformer.translate(std::move(*markovModel->template as<storm::models::sparse::MarkovAutomaton<ValueType>>()), timeRewardModelName);
                 }
+            } else {
+                STORM_LOG_THROW(false, storm::exceptions::UnexpectedException, "Model type " << markovModel->getType() << " not expected.");
             }
         }
         
