@@ -13,6 +13,9 @@
 
 #include "storm/modelchecker/results/SymbolicQualitativeCheckResult.h"
 
+#include "storm/models/sparse/StandardRewardModel.h"
+#include "storm/models/symbolic/StandardRewardModel.h"
+
 #include "storm/utility/resources.h"
 #include "storm/utility/file.h"
 #include "storm/utility/storm-version.h"
