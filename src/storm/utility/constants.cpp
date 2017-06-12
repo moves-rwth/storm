@@ -99,7 +99,7 @@ namespace storm {
 
         template<>
         storm::storage::sparse::state_type convertNumber(long long const& number){
-            return static_cast<double>(number);
+            return static_cast<storm::storage::sparse::state_type>(number);
         }
 
         template<typename ValueType>
