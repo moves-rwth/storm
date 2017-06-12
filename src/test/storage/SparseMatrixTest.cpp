@@ -3,6 +3,7 @@
 #include "storm/storage/BitVector.h"
 #include "storm/exceptions/InvalidStateException.h"
 #include "storm/exceptions/OutOfRangeException.h"
+#include "storm/exceptions/InvalidArgumentException.h"
 
 TEST(SparseMatrixBuilder, CreationWithDimensions) {
     storm::storage::SparseMatrixBuilder<double> matrixBuilder(3, 4, 5);
@@ -372,6 +373,83 @@ TEST(SparseMatrix, Submatrix) {
     ASSERT_NO_THROW(matrix5 = matrixBuilder5.build());
     
     ASSERT_TRUE(matrix4 == matrix5);
+}
+
+TEST(SparseMatrix, RestrictRows) {
+    storm::storage::SparseMatrixBuilder<double> matrixBuilder1(7, 4, 9, true, true, 3);
+    ASSERT_NO_THROW(matrixBuilder1.newRowGroup(0));
+    ASSERT_NO_THROW(matrixBuilder1.addNextValue(0, 1, 1.0));
+    ASSERT_NO_THROW(matrixBuilder1.addNextValue(0, 2, 1.2));
+    ASSERT_NO_THROW(matrixBuilder1.addNextValue(1, 0, 0.5));
+    ASSERT_NO_THROW(matrixBuilder1.addNextValue(1, 1, 0.7));
+    ASSERT_NO_THROW(matrixBuilder1.newRowGroup(2));
+    ASSERT_NO_THROW(matrixBuilder1.addNextValue(2, 0, 0.5));
+    ASSERT_NO_THROW(matrixBuilder1.addNextValue(3, 2, 1.1));
+    ASSERT_NO_THROW(matrixBuilder1.newRowGroup(4));
+    ASSERT_NO_THROW(matrixBuilder1.addNextValue(4, 0, 0.1));
+    ASSERT_NO_THROW(matrixBuilder1.addNextValue(4, 1, 0.2));
+    ASSERT_NO_THROW(matrixBuilder1.addNextValue(6, 3, 0.3));
+    storm::storage::SparseMatrix<double> matrix1;
+    ASSERT_NO_THROW(matrix1 = matrixBuilder1.build());
+
+    storm::storage::BitVector constraint1(7);
+    constraint1.set(0);
+    constraint1.set(1);
+    constraint1.set(2);
+    constraint1.set(5);
+    
+    storm::storage::SparseMatrix<double> matrix1Prime;
+    ASSERT_NO_THROW(matrix1Prime = matrix1.restrictRows(constraint1));
+    
+    storm::storage::SparseMatrixBuilder<double> matrixBuilder2(4, 4, 5, true, true, 3);
+    ASSERT_NO_THROW(matrixBuilder2.newRowGroup(0));
+    ASSERT_NO_THROW(matrixBuilder2.addNextValue(0, 1, 1.0));
+    ASSERT_NO_THROW(matrixBuilder2.addNextValue(0, 2, 1.2));
+    ASSERT_NO_THROW(matrixBuilder2.addNextValue(1, 0, 0.5));
+    ASSERT_NO_THROW(matrixBuilder2.addNextValue(1, 1, 0.7));
+    ASSERT_NO_THROW(matrixBuilder2.newRowGroup(2));
+    ASSERT_NO_THROW(matrixBuilder2.addNextValue(2, 0, 0.5));
+    ASSERT_NO_THROW(matrixBuilder2.newRowGroup(3));
+    storm::storage::SparseMatrix<double> matrix2;
+    ASSERT_NO_THROW(matrix2 = matrixBuilder2.build());
+    
+    ASSERT_EQ(matrix2, matrix1Prime);
+    
+    storm::storage::BitVector constraint2(4);
+    constraint2.set(1);
+    constraint2.set(2);
+    
+    storm::storage::SparseMatrix<double> matrix2Prime;
+    ASSERT_THROW(matrix2Prime = matrix2.restrictRows(constraint2), storm::exceptions::InvalidArgumentException);
+    ASSERT_NO_THROW(matrix2Prime = matrix2.restrictRows(constraint2, true));
+    
+    storm::storage::SparseMatrixBuilder<double> matrixBuilder3(2, 4, 3, true, true, 3);
+    ASSERT_NO_THROW(matrixBuilder3.newRowGroup(0));
+    ASSERT_NO_THROW(matrixBuilder3.addNextValue(0, 0, 0.5));
+    ASSERT_NO_THROW(matrixBuilder3.addNextValue(0, 1, 0.7));
+    ASSERT_NO_THROW(matrixBuilder3.newRowGroup(1));
+    ASSERT_NO_THROW(matrixBuilder3.addNextValue(1, 0, 0.5));
+    storm::storage::SparseMatrix<double> matrix3;
+    ASSERT_NO_THROW(matrix3 = matrixBuilder3.build());
+    
+    ASSERT_EQ(matrix3, matrix2Prime);
+    
+    matrix3.makeRowGroupingTrivial();
+    storm::storage::BitVector constraint3(2);
+    constraint3.set(1);
+    
+    storm::storage::SparseMatrix<double> matrix3Prime;
+    ASSERT_THROW(matrix3Prime = matrix3.restrictRows(constraint3), storm::exceptions::InvalidArgumentException);
+    ASSERT_NO_THROW(matrix3Prime = matrix3.restrictRows(constraint3, true));
+
+    storm::storage::SparseMatrixBuilder<double> matrixBuilder4(1, 4, 1, true, true, 2);
+    ASSERT_NO_THROW(matrixBuilder4.newRowGroup(0));
+    ASSERT_NO_THROW(matrixBuilder4.newRowGroup(0));
+    ASSERT_NO_THROW(matrixBuilder4.addNextValue(0, 0, 0.5));
+    storm::storage::SparseMatrix<double> matrix4;
+    ASSERT_NO_THROW(matrix4 = matrixBuilder4.build());
+    
+    ASSERT_EQ(matrix4, matrix3Prime);
 }
 
 TEST(SparseMatrix, Transpose) {
