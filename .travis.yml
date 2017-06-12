@@ -31,6 +31,23 @@ jobs:
     # Stage: Build dependencies
     ###
 
+    # osx
+    - stage: Build dependencies
+      os: osx
+      compiler: clang
+      env: BUILD=DefaultDebug COMPILER=clang-4.0 STL=libc++
+      install: export OS=osx; export COMPILER='clang-4.0'; export STL='libc++';
+        travis/install_osx.sh
+      script: export OS=osx; export COMPILER='clang-4.0'; export STL='libc++';
+        travis/postsubmit.sh DefaultDebug BuildDep
+    - stage: Build dependencies
+      os: osx
+      compiler: clang
+      env: BUILD=DefaultRelease COMPILER=clang-4.0 STL=libc++
+      install: export OS=osx; export COMPILER='clang-4.0'; export STL='libc++';
+        travis/install_osx.sh
+      script: export OS=osx; export COMPILER='clang-4.0'; export STL='libc++';
+        travis/postsubmit.sh DefaultRelease BuildDep
     # ubuntu-16.10
     - stage: Build dependencies
       os: linux
@@ -73,28 +90,28 @@ jobs:
         travis/postsubmit.sh DefaultRelease BuildDep
       before_cache:
         docker cp storm:/storm/. .
-    # osx
-    - stage: Build dependencies
-      os: osx
-      compiler: clang
-      env: BUILD=DefaultDebug COMPILER=clang-4.0 STL=libc++
-      install: export OS=osx; export COMPILER='clang-4.0'; export STL='libc++';
-        travis/install_osx.sh
-      script: export OS=osx; export COMPILER='clang-4.0'; export STL='libc++';
-        travis/postsubmit.sh DefaultDebug BuildDep
-    - stage: Build dependencies
-      os: osx
-      compiler: clang
-      env: BUILD=DefaultRelease COMPILER=clang-4.0 STL=libc++
-      install: export OS=osx; export COMPILER='clang-4.0'; export STL='libc++';
-        travis/install_osx.sh
-      script: export OS=osx; export COMPILER='clang-4.0'; export STL='libc++';
-        travis/postsubmit.sh DefaultRelease BuildDep
 
     ###
     # Stage: Build library (1st run)
     ###
 
+    # osx
+    - stage: Build library (1st run)
+      os: osx
+      compiler: clang
+      env: BUILD=DefaultDebug COMPILER=clang-4.0 STL=libc++
+      install: export OS=osx; export COMPILER='clang-4.0'; export STL='libc++';
+        travis/install_osx.sh
+      script: export OS=osx; export COMPILER='clang-4.0'; export STL='libc++';
+        travis/postsubmit.sh DefaultDebug BuildLib1
+    - stage: Build library (1st run)
+      os: osx
+      compiler: clang
+      env: BUILD=DefaultRelease COMPILER=clang-4.0 STL=libc++
+      install: export OS=osx; export COMPILER='clang-4.0'; export STL='libc++';
+        travis/install_osx.sh
+      script: export OS=osx; export COMPILER='clang-4.0'; export STL='libc++';
+        travis/postsubmit.sh DefaultRelease BuildLib1
     # ubuntu-16.10
     - stage: Build library (1st run)
       os: linux
@@ -137,28 +154,28 @@ jobs:
         travis/postsubmit.sh DefaultRelease BuildLib1
       before_cache:
         docker cp storm:/storm/. .
-    # osx
-    - stage: Build library (1st run)
-      os: osx
-      compiler: clang
-      env: BUILD=DefaultDebug COMPILER=clang-4.0 STL=libc++
-      install: export OS=osx; export COMPILER='clang-4.0'; export STL='libc++';
-        travis/install_osx.sh
-      script: export OS=osx; export COMPILER='clang-4.0'; export STL='libc++';
-        travis/postsubmit.sh DefaultDebug BuildLib1
-    - stage: Build library (1st run)
-      os: osx
-      compiler: clang
-      env: BUILD=DefaultRelease COMPILER=clang-4.0 STL=libc++
-      install: export OS=osx; export COMPILER='clang-4.0'; export STL='libc++';
-        travis/install_osx.sh
-      script: export OS=osx; export COMPILER='clang-4.0'; export STL='libc++';
-        travis/postsubmit.sh DefaultRelease BuildLib1
 
     ###
     # Stage: Build library (2nd run)
     ###
 
+    # osx
+    - stage: Build library (2nd run)
+      os: osx
+      compiler: clang
+      env: BUILD=DefaultDebug COMPILER=clang-4.0 STL=libc++
+      install: export OS=osx; export COMPILER='clang-4.0'; export STL='libc++';
+        travis/install_osx.sh
+      script: export OS=osx; export COMPILER='clang-4.0'; export STL='libc++';
+        travis/postsubmit.sh DefaultDebug BuildLib
+    - stage: Build library (2nd run)
+      os: osx
+      compiler: clang
+      env: BUILD=DefaultRelease COMPILER=clang-4.0 STL=libc++
+      install: export OS=osx; export COMPILER='clang-4.0'; export STL='libc++';
+        travis/install_osx.sh
+      script: export OS=osx; export COMPILER='clang-4.0'; export STL='libc++';
+        travis/postsubmit.sh DefaultRelease BuildLib
     # ubuntu-16.10
     - stage: Build library (2nd run)
       os: linux
@@ -201,28 +218,28 @@ jobs:
         travis/postsubmit.sh DefaultRelease BuildLib
       before_cache:
         docker cp storm:/storm/. .
-    # osx
-    - stage: Build library (2nd run)
-      os: osx
-      compiler: clang
-      env: BUILD=DefaultDebug COMPILER=clang-4.0 STL=libc++
-      install: export OS=osx; export COMPILER='clang-4.0'; export STL='libc++';
-        travis/install_osx.sh
-      script: export OS=osx; export COMPILER='clang-4.0'; export STL='libc++';
-        travis/postsubmit.sh DefaultDebug BuildLib
-    - stage: Build library (2nd run)
-      os: osx
-      compiler: clang
-      env: BUILD=DefaultRelease COMPILER=clang-4.0 STL=libc++
-      install: export OS=osx; export COMPILER='clang-4.0'; export STL='libc++';
-        travis/install_osx.sh
-      script: export OS=osx; export COMPILER='clang-4.0'; export STL='libc++';
-        travis/postsubmit.sh DefaultRelease BuildLib
 
     ###
     # Stage: Build all
     ###
 
+    # osx
+    - stage: Build all
+      os: osx
+      compiler: clang
+      env: BUILD=DefaultDebug COMPILER=clang-4.0 STL=libc++
+      install: export OS=osx; export COMPILER='clang-4.0'; export STL='libc++';
+        travis/install_osx.sh
+      script: export OS=osx; export COMPILER='clang-4.0'; export STL='libc++';
+        travis/postsubmit.sh DefaultDebug BuildAll
+    - stage: Build all
+      os: osx
+      compiler: clang
+      env: BUILD=DefaultRelease COMPILER=clang-4.0 STL=libc++
+      install: export OS=osx; export COMPILER='clang-4.0'; export STL='libc++';
+        travis/install_osx.sh
+      script: export OS=osx; export COMPILER='clang-4.0'; export STL='libc++';
+        travis/postsubmit.sh DefaultRelease BuildAll
     # ubuntu-16.10
     - stage: Build all
       os: linux
@@ -265,28 +282,28 @@ jobs:
         travis/postsubmit.sh DefaultRelease BuildAll
       before_cache:
         docker cp storm:/storm/. .
-    # osx
-    - stage: Build all
-      os: osx
-      compiler: clang
-      env: BUILD=DefaultDebug COMPILER=clang-4.0 STL=libc++
-      install: export OS=osx; export COMPILER='clang-4.0'; export STL='libc++';
-        travis/install_osx.sh
-      script: export OS=osx; export COMPILER='clang-4.0'; export STL='libc++';
-        travis/postsubmit.sh DefaultDebug BuildAll
-    - stage: Build all
-      os: osx
-      compiler: clang
-      env: BUILD=DefaultRelease COMPILER=clang-4.0 STL=libc++
-      install: export OS=osx; export COMPILER='clang-4.0'; export STL='libc++';
-        travis/install_osx.sh
-      script: export OS=osx; export COMPILER='clang-4.0'; export STL='libc++';
-        travis/postsubmit.sh DefaultRelease BuildAll
 
     ###
     # Stage: Test all
     ###
 
+    # osx
+    - stage: Test all
+      os: osx
+      compiler: clang
+      env: BUILD=DefaultDebug COMPILER=clang-4.0 STL=libc++
+      install: export OS=osx; export COMPILER='clang-4.0'; export STL='libc++';
+        travis/install_osx.sh
+      script: export OS=osx; export COMPILER='clang-4.0'; export STL='libc++';
+        travis/postsubmit.sh DefaultDebug TestAll
+    - stage: Test all
+      os: osx
+      compiler: clang
+      env: BUILD=DefaultRelease COMPILER=clang-4.0 STL=libc++
+      install: export OS=osx; export COMPILER='clang-4.0'; export STL='libc++';
+        travis/install_osx.sh
+      script: export OS=osx; export COMPILER='clang-4.0'; export STL='libc++';
+        travis/postsubmit.sh DefaultRelease TestAll
     # ubuntu-16.10
     - stage: Test all
       os: linux
@@ -329,21 +346,4 @@ jobs:
         travis/postsubmit.sh DefaultRelease TestAll
       before_cache:
         docker cp storm:/storm/. .
-    # osx
-    - stage: Test all
-      os: osx
-      compiler: clang
-      env: BUILD=DefaultDebug COMPILER=clang-4.0 STL=libc++
-      install: export OS=osx; export COMPILER='clang-4.0'; export STL='libc++';
-        travis/install_osx.sh
-      script: export OS=osx; export COMPILER='clang-4.0'; export STL='libc++';
-        travis/postsubmit.sh DefaultDebug TestAll
-    - stage: Test all
-      os: osx
-      compiler: clang
-      env: BUILD=DefaultRelease COMPILER=clang-4.0 STL=libc++
-      install: export OS=osx; export COMPILER='clang-4.0'; export STL='libc++';
-        travis/install_osx.sh
-      script: export OS=osx; export COMPILER='clang-4.0'; export STL='libc++';
-        travis/postsubmit.sh DefaultRelease TestAll
 

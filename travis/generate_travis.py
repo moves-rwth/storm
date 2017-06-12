@@ -67,6 +67,23 @@ if __name__ == "__main__":
         s += "    # Stage: {}\n".format(stage[0])
         s += "    ###\n"
         s += "\n"
+        # Mac OS X
+        for config in configs_mac:
+            osx = config[0]
+            compiler = "{}{}".format(config[1], config[2])
+            s += "    # {}\n".format(osx)
+            buildConfig = ""
+            for build in build_types:
+                buildConfig += "    - stage: {}\n".format(stage[0])
+                buildConfig += "      os: osx\n"
+                buildConfig += "      compiler: {}\n".format(config[1])
+                buildConfig += "      env: BUILD={} COMPILER={} STL=libc++\n".format(build, compiler)
+                buildConfig += "      install: export OS=osx; export COMPILER='{}'; export STL='libc++';\n".format(compiler)
+                buildConfig += "        travis/install_osx.sh\n"
+                buildConfig += "      script: export OS=osx; export COMPILER='{}'; export STL='libc++';\n".format(compiler)
+                buildConfig += "        travis/postsubmit.sh {} {}\n".format(build, stage[1])
+            s += buildConfig
+
         # Linux via Docker
         for config in configs_linux:
             linux = config[0]
@@ -84,23 +101,6 @@ if __name__ == "__main__":
                 buildConfig += "        travis/postsubmit.sh {} {}\n".format(build, stage[1])
                 buildConfig += "      before_cache:\n"
                 buildConfig += "        docker cp storm:/storm/. .\n"
-            s += buildConfig
-
-        # Mac OS X
-        for config in configs_mac:
-            osx = config[0]
-            compiler = "{}{}".format(config[1], config[2])
-            s += "    # {}\n".format(osx)
-            buildConfig = ""
-            for build in build_types:
-                buildConfig += "    - stage: {}\n".format(stage[0])
-                buildConfig += "      os: osx\n"
-                buildConfig += "      compiler: {}\n".format(config[1])
-                buildConfig += "      env: BUILD={} COMPILER={} STL=libc++\n".format(build, compiler)
-                buildConfig += "      install: export OS=osx; export COMPILER='{}'; export STL='libc++';\n".format(compiler)
-                buildConfig += "        travis/install_osx.sh\n"
-                buildConfig += "      script: export OS=osx; export COMPILER='{}'; export STL='libc++';\n".format(compiler)
-                buildConfig += "        travis/postsubmit.sh {} {}\n".format(build, stage[1])
             s += buildConfig
 
     print(s)
