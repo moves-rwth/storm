@@ -3,7 +3,7 @@
 
 #include "storm/parser/FormulaParser.h"
 #include "storm/logic/Formulas.h"
-#include "storm/models/sparse/StandardRewardModel.h"
+#include "storm/models/symbolic/StandardRewardModel.h"
 #include "storm/models/sparse/Model.h"
 #include "storm/modelchecker/abstraction/GameBasedMdpModelChecker.h"
 #include "storm/modelchecker/results/ExplicitQuantitativeCheckResult.h"
