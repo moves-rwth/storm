@@ -1,7 +1,7 @@
 #pragma once
 
-#include "storm/counterexamples/MILPMinimalCommandSetGenerator.h"
-#include "storm/counterexamples/SMTMinimalCommandSetGenerator.h"
+#include "storm/counterexamples/MILPMinimalLabelSetGenerator.h"
+#include "storm/counterexamples/SMTMinimalLabelSetGenerator.h"
 
 namespace storm {
     namespace api {

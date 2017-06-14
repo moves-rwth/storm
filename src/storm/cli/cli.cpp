@@ -497,7 +497,7 @@ namespace storm {
         
         void printCounterexample(std::shared_ptr<storm::counterexamples::Counterexample> const& counterexample, storm::utility::Stopwatch* watch = nullptr) {
             if (counterexample) {
-                STORM_PRINT_AND_LOG(counterexample << std::endl);
+                STORM_PRINT_AND_LOG(*counterexample << std::endl);
                 if (watch) {
                     STORM_PRINT_AND_LOG("Time for computation: " << *watch << "." << std::endl);
                 }
