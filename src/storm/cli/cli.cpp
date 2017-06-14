@@ -615,8 +615,14 @@ namespace storm {
             }
         }
         
+        struct PostprocessingIdentity {
+            void operator()(std::unique_ptr<storm::modelchecker::CheckResult> const&) {
+                // Intentionally left empty.
+            }
+        };
+        
         template<typename ValueType>
-        void verifyProperties(std::vector<storm::jani::Property> const& properties, std::function<std::unique_ptr<storm::modelchecker::CheckResult>(std::shared_ptr<storm::logic::Formula const> const& formula)> const& verificationCallback, std::function<void(std::unique_ptr<storm::modelchecker::CheckResult> const&)> const& postprocessingCallback = [](std::unique_ptr<storm::modelchecker::CheckResult> const&){}) {
+        void verifyProperties(std::vector<storm::jani::Property> const& properties, std::function<std::unique_ptr<storm::modelchecker::CheckResult>(std::shared_ptr<storm::logic::Formula const> const& formula)> const& verificationCallback, std::function<void(std::unique_ptr<storm::modelchecker::CheckResult> const&)> const& postprocessingCallback = PostprocessingIdentity()) {
             for (auto const& property : properties) {
                 printModelCheckingProperty(property);
                 storm::utility::Stopwatch watch(true);
