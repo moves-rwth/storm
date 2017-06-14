@@ -31,11 +31,15 @@ namespace storm {
             
             // Get the initial states and reachable states. A stateIndex s corresponds to the model state (s / memoryStateCount) and memory state (s % memoryStateCount)
             storm::storage::BitVector initialStates(modelStateCount * memoryStateCount, false);
+            auto memoryInitIt = memory.getInitialMemoryStates().begin();
             for (auto const& modelInit : model.getInitialStates()) {
-                // Note: The initial state of a memory structure is always 0.
-                initialStates.set(modelInit * memoryStateCount + memorySuccessors[modelInit * memoryStateCount], true);
+                initialStates.set(modelInit * memoryStateCount + *memoryInitIt, true);
+                ++memoryInitIt;
             }
+            STORM_LOG_ASSERT(memoryInitIt == memory.getInitialMemoryStates().end(), "Unexpected number of initial states.");
+            
             storm::storage::BitVector reachableStates = computeReachableStates(memorySuccessors, initialStates);
+            
             // Compute the mapping to the states of the result
             uint_fast64_t reachableStateCount = 0;
             toResultStateMapping = std::vector<uint_fast64_t> (model.getNumberOfStates() * memory.getNumberOfStates(), std::numeric_limits<uint_fast64_t>::max());
@@ -64,21 +68,18 @@ namespace storm {
                 return toResultStateMapping[modelState * memory.getNumberOfStates() + memoryState];
         }
             
-            
         template <typename ValueType>
         std::vector<uint_fast64_t> SparseModelMemoryProduct<ValueType>::computeMemorySuccessors() const {
-            uint_fast64_t modelStateCount = model.getNumberOfStates();
+            uint_fast64_t modelTransitionCount = model.getTransitionMatrix().getEntryCount();
             uint_fast64_t memoryStateCount = memory.getNumberOfStates();
-            std::vector<uint_fast64_t> result(modelStateCount * memoryStateCount, std::numeric_limits<uint_fast64_t>::max());
+            std::vector<uint_fast64_t> result(modelTransitionCount * memoryStateCount, std::numeric_limits<uint_fast64_t>::max());
             
-            storm::modelchecker::SparsePropositionalModelChecker<storm::models::sparse::Model<ValueType>> mc(model);
             for (uint_fast64_t memoryState = 0; memoryState < memoryStateCount; ++memoryState) {
                 for (uint_fast64_t transitionGoal = 0; transitionGoal < memoryStateCount; ++transitionGoal) {
-                    auto const& transition = memory.getTransitionMatrix()[memoryState][transitionGoal];
-                    if (transition) {
-                        auto mcResult = mc.check(*transition);
-                        for (auto const& modelState : mcResult->asExplicitQualitativeCheckResult().getTruthValuesVector()) {
-                            result[modelState * memoryStateCount + memoryState] = transitionGoal;
+                    auto const& memoryTransition = memory.getTransitionMatrix()[memoryState][transitionGoal];
+                    if (memoryTransition) {
+                        for (auto const& modelTransitionIndex : memoryTransition.get()) {
+                            result[modelTransitionIndex * memoryStateCount + memoryState] = transitionGoal;
                         }
                     }
                 }
@@ -99,10 +100,12 @@ namespace storm {
                 uint_fast64_t modelState = stateIndex / memoryStateCount;
                 uint_fast64_t memoryState = stateIndex % memoryStateCount;
                 
-                for (auto const& modelTransition : model.getTransitionMatrix().getRowGroup(modelState)) {
-                    if (!storm::utility::isZero(modelTransition.getValue())) {
-                        uint_fast64_t successorModelState = modelTransition.getColumn();
-                        uint_fast64_t successorMemoryState = memorySuccessors[successorModelState * memoryStateCount + memoryState];
+                auto const& rowGroup = model.getTransitionMatrix().getRowGroup(modelState);
+                for (auto modelTransitionIt = rowGroup.begin(); modelTransitionIt != rowGroup.end(); ++modelTransitionIt) {
+                    if (!storm::utility::isZero(modelTransitionIt->getValue())) {
+                        uint_fast64_t successorModelState = modelTransitionIt->getColumn();
+                        uint_fast64_t modelTransitionId = modelTransitionIt - model.getTransitionMatrix().begin();
+                        uint_fast64_t successorMemoryState = memorySuccessors[modelTransitionId * memoryStateCount + memoryState];
                         uint_fast64_t successorStateIndex = successorModelState * memoryStateCount + successorMemoryState;
                         if (!reachableStates.get(successorStateIndex)) {
                             reachableStates.set(successorStateIndex, true);
@@ -128,9 +131,11 @@ namespace storm {
             for (auto const& stateIndex : reachableStates) {
                 uint_fast64_t modelState = stateIndex / memoryStateCount;
                 uint_fast64_t memoryState = stateIndex % memoryStateCount;
-                for (auto const& entry : model.getTransitionMatrix().getRow(modelState)) {
-                    uint_fast64_t const& successorMemoryState = memorySuccessors[entry.getColumn() * memoryStateCount + memoryState];
-                    builder.addNextValue(currentRow, getResultState(entry.getColumn(), successorMemoryState), entry.getValue());
+                auto const& modelRow = model.getTransitionMatrix().getRow(modelState);
+                for (auto entryIt = modelRow.begin(); entryIt != modelRow.end(); ++entryIt) {
+                    uint_fast64_t transitionId = entryIt - model.getTransitionMatrix().begin();
+                    uint_fast64_t const& successorMemoryState = memorySuccessors[transitionId * memoryStateCount + memoryState];
+                    builder.addNextValue(currentRow, getResultState(entryIt->getColumn(), successorMemoryState), entryIt->getValue());
                 }
                 ++currentRow;
             }
@@ -158,10 +163,12 @@ namespace storm {
                 uint_fast64_t modelState = stateIndex / memoryStateCount;
                 uint_fast64_t memoryState = stateIndex % memoryStateCount;
                 builder.newRowGroup(currentRow);
-                for (uint_fast64_t modelRow = model.getTransitionMatrix().getRowGroupIndices()[modelState]; modelRow < model.getTransitionMatrix().getRowGroupIndices()[modelState + 1]; ++modelRow) {
-                    for (auto const& entry : model.getTransitionMatrix().getRow(modelRow)) {
-                        uint_fast64_t const& successorMemoryState = memorySuccessors[entry.getColumn() * memoryStateCount + memoryState];
-                        builder.addNextValue(currentRow, getResultState(entry.getColumn(), successorMemoryState), entry.getValue());
+                for (uint_fast64_t modelRowIndex = model.getTransitionMatrix().getRowGroupIndices()[modelState]; modelRowIndex < model.getTransitionMatrix().getRowGroupIndices()[modelState + 1]; ++modelRowIndex) {
+                    auto const& modelRow = model.getTransitionMatrix().getRow(modelRowIndex);
+                    for (auto entryIt = modelRow.begin(); entryIt != modelRow.end(); ++entryIt) {
+                        uint_fast64_t transitionId = entryIt - model.getTransitionMatrix().begin();
+                        uint_fast64_t const& successorMemoryState = memorySuccessors[transitionId * memoryStateCount + memoryState];
+                        builder.addNextValue(currentRow, getResultState(entryIt->getColumn(), successorMemoryState), entryIt->getValue());
                     }
                     ++currentRow;
                 }
@@ -268,9 +275,11 @@ namespace storm {
                             for (uint_fast64_t rowOffset = 0; rowOffset < rowGroupSize; ++rowOffset) {
                                 uint_fast64_t resRowIndex = resultTransitionMatrix.getRowGroupIndices()[resState] + rowOffset;
                                 uint_fast64_t modelRowIndex = model.getTransitionMatrix().getRowGroupIndices()[modelState] + rowOffset;
-                                for (auto const& entry : rewardModel.second.getTransitionRewardMatrix().getRow(modelRowIndex)) {
-                                    uint_fast64_t const& successorMemoryState = memorySuccessors[entry.getColumn() * memoryStateCount + memoryState];
-                                    builder.addNextValue(resRowIndex, getResultState(entry.getColumn(), successorMemoryState), entry.getValue());
+                                auto const& rewardMatrixRow = rewardModel.second.getTransitionRewardMatrix().getRow(modelRowIndex);
+                                for (auto entryIt = rewardMatrixRow.begin(); entryIt != rewardMatrixRow.end(); ++entryIt) {
+                                    uint_fast64_t transitionId = entryIt - rewardModel.second.getTransitionRewardMatrix().begin();
+                                    uint_fast64_t const& successorMemoryState = memorySuccessors[transitionId * memoryStateCount + memoryState];
+                                    builder.addNextValue(resRowIndex, getResultState(entryIt->getColumn(), successorMemoryState), entryIt->getValue());
                                 }
                             }
                         }

@@ -11,11 +11,11 @@
 namespace storm {
     namespace storage {
         
-        MemoryStructure::MemoryStructure(TransitionMatrix const& transitionMatrix, storm::models::sparse::StateLabeling const& memoryStateLabeling) : transitions(transitionMatrix), stateLabeling(memoryStateLabeling) {
+        MemoryStructure::MemoryStructure(TransitionMatrix const& transitionMatrix, storm::models::sparse::StateLabeling const& memoryStateLabeling, std::vector<uint_fast64_t> const& initialMemoryStates) : transitions(transitionMatrix), stateLabeling(memoryStateLabeling), initialMemoryStates(initialMemoryStates) {
             // intentionally left empty
         }
         
-        MemoryStructure::MemoryStructure(TransitionMatrix&& transitionMatrix, storm::models::sparse::StateLabeling&& memoryStateLabeling) : transitions(std::move(transitionMatrix)), stateLabeling(std::move(memoryStateLabeling)) {
+        MemoryStructure::MemoryStructure(TransitionMatrix&& transitionMatrix, storm::models::sparse::StateLabeling&& memoryStateLabeling, std::vector<uint_fast64_t>&& initialMemoryStates) : transitions(std::move(transitionMatrix)), stateLabeling(std::move(memoryStateLabeling)), initialMemoryStates(std::move(initialMemoryStates)) {
             // intentionally left empty
         }
             
@@ -25,6 +25,10 @@ namespace storm {
         
         storm::models::sparse::StateLabeling const& MemoryStructure::getStateLabeling() const {
             return stateLabeling;
+        }
+        
+        std::vector<uint_fast64_t> const& MemoryStructure::getInitialMemoryStates() const {
+            return initialMemoryStates;
         }
         
         uint_fast64_t MemoryStructure::getNumberOfStates() const {
@@ -37,7 +41,7 @@ namespace storm {
             uint_fast64_t resNumStates = lhsNumStates * rhsNumStates;
                 
             // Transition matrix
-            TransitionMatrix resultTransitions(resNumStates, std::vector<std::shared_ptr<storm::logic::Formula const>>(resNumStates));
+            TransitionMatrix resultTransitions(resNumStates, std::vector<boost::optional<storm::storage::BitVector>>(resNumStates));
             uint_fast64_t resState = 0;
             for (uint_fast64_t lhsState = 0; lhsState < lhsNumStates; ++lhsState) {
                 for (uint_fast64_t rhsState = 0; rhsState < rhsNumStates; ++rhsState) {
@@ -50,7 +54,11 @@ namespace storm {
                                 auto& rhsTransition = rhs.getTransitionMatrix()[rhsState][rhsTransitionTarget];
                                 if (rhsTransition) {
                                     uint_fast64_t resTransitionTarget = (lhsTransitionTarget * rhsNumStates) + rhsTransitionTarget;
-                                    resStateTransitions[resTransitionTarget] = std::make_shared<storm::logic::BinaryBooleanStateFormula const>(storm::logic::BinaryBooleanStateFormula::OperatorType::And, lhsTransition,rhsTransition);
+                                    resStateTransitions[resTransitionTarget] = rhsTransition.get() & lhsTransition.get();
+                                    // If it is not possible to take the considered transition w.r.t. the considered model, we can delete it.
+                                    if (resStateTransitions[resTransitionTarget]->empty()) {
+                                        resStateTransitions[resTransitionTarget] = boost::none;
+                                    }
                                 }
                             }
                         }
@@ -84,11 +92,18 @@ namespace storm {
                 }
                 resultLabeling.addLabel(rhsLabel, std::move(resLabeledStates));
             }
-            //return MemoryStructure(std::move(resultTransitions), std::move(resultLabeling));
             
-            MemoryStructure res(std::move(resultTransitions), std::move(resultLabeling));
-            return res;
+            // Initial States
+            std::vector<uint_fast64_t> resultInitialMemoryStates;
+            STORM_LOG_THROW(this->getInitialMemoryStates().size() == rhs.getInitialMemoryStates().size(), storm::exceptions::InvalidOperationException, "Tried to build the product of two memory structures that consider a different number of initial model states.");
+            resultInitialMemoryStates.reserve(this->getInitialMemoryStates().size());
+            auto lhsStateIt = this->getInitialMemoryStates().begin();
+            auto rhsStateIt = rhs.getInitialMemoryStates().begin();
+            for (; lhsStateIt != this->getInitialMemoryStates().end(); ++lhsStateIt, ++rhsStateIt) {
+                resultInitialMemoryStates.push_back(*lhsStateIt * rhsNumStates + *rhsStateIt);
+            }
             
+            return MemoryStructure(std::move(resultTransitions), std::move(resultLabeling), std::move(resultInitialMemoryStates));
         }
             
         template <typename ValueType>
@@ -129,8 +144,6 @@ namespace storm {
         
         template SparseModelMemoryProduct<double> MemoryStructure::product(storm::models::sparse::Model<double> const& sparseModel) const;
         template SparseModelMemoryProduct<storm::RationalNumber> MemoryStructure::product(storm::models::sparse::Model<storm::RationalNumber> const& sparseModel) const;
-
-
     }
 }
 
