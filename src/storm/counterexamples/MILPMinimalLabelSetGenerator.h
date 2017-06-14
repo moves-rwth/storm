@@ -2,6 +2,7 @@
 #define STORM_COUNTEREXAMPLES_MILPMINIMALLABELSETGENERATOR_MDP_H_
 
 #include <chrono>
+#include <boost/container/flat_set.hpp>
 
 #include "storm/models/sparse/Mdp.h"
 #include "storm/logic/Formulas.h"
@@ -33,10 +34,10 @@ namespace storm {
         
         /*!
          * This class provides functionality to generate a minimal counterexample to a probabilistic reachability
-         * property in terms of used commands.
+         * property in terms of used labels.
          */
         template <class T>
-        class MILPMinimalCommandSetGenerator {
+        class MILPMinimalLabelSetGenerator {
         private:
             /*!
              * A helper class that provides the functionality to compute a hash value for pairs of state indices.
@@ -60,21 +61,21 @@ namespace storm {
             };
             
             /*!
-             * A helper struct capturing information about relevant and problematic choices of states and which commands
+             * A helper struct capturing information about relevant and problematic choices of states and which labels
              * are relevant.
              */
             struct ChoiceInformation {
                 std::unordered_map<uint_fast64_t, std::list<uint_fast64_t>> relevantChoicesForRelevantStates;
                 std::unordered_map<uint_fast64_t, std::list<uint_fast64_t>> problematicChoicesForProblematicStates;
-                boost::container::flat_set<uint_fast64_t> allRelevantCommands;
-                boost::container::flat_set<uint_fast64_t> knownCommands;
+                boost::container::flat_set<uint_fast64_t> allRelevantLabels;
+                boost::container::flat_set<uint_fast64_t> knownLabels;
             };
 
             /*!
              * A helper struct capturing information about the variables of the MILP formulation.
              */
             struct VariableInformation {
-                std::unordered_map<uint_fast64_t, storm::expressions::Variable> commandToVariableMap;
+                std::unordered_map<uint_fast64_t, storm::expressions::Variable> labelToVariableMap;
                 std::unordered_map<uint_fast64_t, std::list<storm::expressions::Variable>> stateToChoiceVariablesMap;
                 std::unordered_map<uint_fast64_t, storm::expressions::Variable> initialStateToChoiceVariableMap;
                 std::unordered_map<uint_fast64_t, storm::expressions::Variable> stateToProbabilityVariableMap;
@@ -117,17 +118,16 @@ namespace storm {
              * @param stateInformation The relevant and problematic states of the model.
              * @param psiStates A bit vector characterizing the psi states in the model.
              * @return A structure that stores the relevant and problematic choices in the model as well as the set
-             * of relevant commands.
+             * of relevant labels.
              */
-            static struct ChoiceInformation determineRelevantAndProblematicChoices(storm::models::sparse::Mdp<T> const& mdp, StateInformation const& stateInformation, storm::storage::BitVector const& psiStates) {
+            static struct ChoiceInformation determineRelevantAndProblematicChoices(storm::models::sparse::Mdp<T> const& mdp, std::vector<boost::container::flat_set<uint_fast64_t>> const& labelSets, StateInformation const& stateInformation, storm::storage::BitVector const& psiStates) {
                 // Create result and shortcuts to needed data for convenience.
                 ChoiceInformation result;
                 storm::storage::SparseMatrix<T> const& transitionMatrix = mdp.getTransitionMatrix();
                 std::vector<uint_fast64_t> const& nondeterministicChoiceIndices = mdp.getNondeterministicChoiceIndices();
-                storm::storage::sparse::PrismChoiceOrigins const& choiceOrigins = mdp.getChoiceOrigins()->asPrismChoiceOrigins();
                 
                 // Now traverse all choices of all relevant states and check whether there is a relevant target state.
-                // If so, the associated commands become relevant. Also, if a choice of relevant state has at least one
+                // If so, the associated labels become relevant. Also, if a choice of relevant state has at least one
                 // relevant successor, the choice is considered to be relevant.
                 for (auto state : stateInformation.relevantStates) {
                     result.relevantChoicesForRelevantStates.emplace(state, std::list<uint_fast64_t>());
@@ -138,10 +138,10 @@ namespace storm {
                         bool currentChoiceRelevant = false;
                         bool allSuccessorsProblematic = true;
                         for (auto const& successorEntry : transitionMatrix.getRow(row)) {
-                            // If there is a relevant successor, we need to add the commands of the current choice.
+                            // If there is a relevant successor, we need to add the labels of the current choice.
                             if (stateInformation.relevantStates.get(successorEntry.getColumn()) || psiStates.get(successorEntry.getColumn())) {
-                                for (auto const& command : choiceOrigins.getCommandSet(row)) {
-                                    result.allRelevantCommands.insert(command);
+                                for (auto const& label : labelSets[row]) {
+                                    result.allRelevantLabels.insert(label);
                                 }
                                 if (!currentChoiceRelevant) {
                                     currentChoiceRelevant = true;
@@ -161,30 +161,30 @@ namespace storm {
                     }
                 }
 
-                // Finally, determine the set of commands that are known to be taken.
-                result.knownCommands = storm::utility::counterexamples::getGuaranteedCommandSet(mdp, psiStates, result.allRelevantCommands);
-                STORM_LOG_DEBUG("Found " << result.allRelevantCommands.size() << " relevant commands and " << result.knownCommands.size() << " known commands.");
+                // Finally, determine the set of labels that are known to be taken.
+                result.knownLabels = storm::utility::counterexamples::getGuaranteedLabelSet(mdp, labelSets, psiStates, result.allRelevantLabels);
+                STORM_LOG_DEBUG("Found " << result.allRelevantLabels.size() << " relevant labels and " << result.knownLabels.size() << " known labels.");
 
                 return result;
             }
 
             /*!
-             * Creates the variables for the commands of the model.
+             * Creates the variables for the labels of the model.
              *
              * @param solver The MILP solver.
-             * @param relevantCommands The set of relevant commands of the model.
-             * @return A mapping from commands to variable indices.
+             * @param relevantLabels The set of relevant labels of the model.
+             * @return A mapping from labels to variable indices.
              */
-            static std::pair<std::unordered_map<uint_fast64_t, storm::expressions::Variable>, uint_fast64_t> createCommandVariables(storm::solver::LpSolver& solver, boost::container::flat_set<uint_fast64_t> const& relevantCommands) {
+            static std::pair<std::unordered_map<uint_fast64_t, storm::expressions::Variable>, uint_fast64_t> createLabelVariables(storm::solver::LpSolver& solver, boost::container::flat_set<uint_fast64_t> const& relevantLabels) {
                 std::stringstream variableNameBuffer;
                 std::unordered_map<uint_fast64_t, storm::expressions::Variable> resultingMap;
-                for (auto const& command : relevantCommands) {
+                for (auto const& label : relevantLabels) {
                     variableNameBuffer.str("");
                     variableNameBuffer.clear();
-                    variableNameBuffer << "command" << command;
-                    resultingMap[command] = solver.addBinaryVariable(variableNameBuffer.str(), 1);
+                    variableNameBuffer << "label" << label;
+                    resultingMap[label] = solver.addBinaryVariable(variableNameBuffer.str(), 1);
                 }
-                return std::make_pair(resultingMap, relevantCommands.size());
+                return std::make_pair(resultingMap, relevantLabels.size());
             }
             
             /*!
@@ -363,11 +363,11 @@ namespace storm {
                 // Create a struct that stores all information about variables.
                 VariableInformation result;
                 
-                // Create variables for involved commands.
-                std::pair<std::unordered_map<uint_fast64_t, storm::expressions::Variable>, uint_fast64_t> commandVariableResult = createCommandVariables(solver, choiceInformation.allRelevantCommands);
-                result.commandToVariableMap = std::move(commandVariableResult.first);
-                result.numberOfVariables += commandVariableResult.second;
-                STORM_LOG_DEBUG("Created variables for commands.");
+                // Create variables for involved labels.
+                std::pair<std::unordered_map<uint_fast64_t, storm::expressions::Variable>, uint_fast64_t> labelVariableResult = createLabelVariables(solver, choiceInformation.allRelevantLabels);
+                result.labelToVariableMap = std::move(labelVariableResult.first);
+                result.numberOfVariables += labelVariableResult.second;
+                STORM_LOG_DEBUG("Created variables for labels.");
                 
                 // Create scheduler variables for relevant states and their actions.
                 std::pair<std::unordered_map<uint_fast64_t, std::list<storm::expressions::Variable>>, uint_fast64_t> schedulerVariableResult = createSchedulerVariables(solver, stateInformation, choiceInformation);
@@ -474,8 +474,8 @@ namespace storm {
             }
             
             /*!
-             * Asserts constraints that make sure the commands are included in the solution set if the policy selects a
-             * choice that originates from the command in question.
+             * Asserts constraints that make sure the labels are included in the solution set if the policy selects a
+             * choice that originates from the label in question.
              *
              * @param solver The MILP solver.
              * @param mdp The MDP.
@@ -484,17 +484,16 @@ namespace storm {
              * @param variableInformation A struct with information about the variables of the model.
              * @return The total number of constraints that were created.
              */
-            static uint_fast64_t assertChoicesImplyCommands(storm::solver::LpSolver& solver, storm::models::sparse::Mdp<T> const& mdp, StateInformation const& stateInformation, ChoiceInformation const& choiceInformation, VariableInformation const& variableInformation) {
-                storm::storage::sparse::PrismChoiceOrigins const& choiceOrigins = mdp.getChoiceOrigins()->asPrismChoiceOrigins();
+            static uint_fast64_t assertChoicesImplyLabels(storm::solver::LpSolver& solver, storm::models::sparse::Mdp<T> const& mdp, std::vector<boost::container::flat_set<uint_fast64_t>> const& labelSets, StateInformation const& stateInformation, ChoiceInformation const& choiceInformation, VariableInformation const& variableInformation) {
 
                 uint_fast64_t numberOfConstraintsCreated = 0;
 
                 for (auto state : stateInformation.relevantStates) {
                     std::list<storm::expressions::Variable>::const_iterator choiceVariableIterator = variableInformation.stateToChoiceVariablesMap.at(state).begin();
                     for (auto choice : choiceInformation.relevantChoicesForRelevantStates.at(state)) {
-                        for (auto command : choiceOrigins.getCommandSet(choice)) {
-                            storm::expressions::Expression constraint = variableInformation.commandToVariableMap.at(command) - *choiceVariableIterator >= solver.getConstant(0);
-                            solver.addConstraint("ChoicesImplyCommands" + std::to_string(numberOfConstraintsCreated), constraint);
+                        for (auto label : labelSets[choice]) {
+                            storm::expressions::Expression constraint = variableInformation.labelToVariableMap.at(label) - *choiceVariableIterator >= solver.getConstant(0);
+                            solver.addConstraint("ChoicesImplyLabels" + std::to_string(numberOfConstraintsCreated), constraint);
                             ++numberOfConstraintsCreated;
                         }
                         ++choiceVariableIterator;
@@ -623,19 +622,19 @@ namespace storm {
             }
             
             /*
-             * Asserts that commands that are on all paths from initial to target states are definitely taken.
+             * Asserts that labels that are on all paths from initial to target states are definitely taken.
              *
              * @param solver The MILP solver.
              * @param choiceInformation The information about the choices in the model.
              * @param variableInformation A struct with information about the variables of the model.
              * @return The total number of constraints that were created.
              */
-            static uint_fast64_t assertKnownCommands(storm::solver::LpSolver& solver, ChoiceInformation const& choiceInformation, VariableInformation const& variableInformation) {
+            static uint_fast64_t assertKnownLabels(storm::solver::LpSolver& solver, ChoiceInformation const& choiceInformation, VariableInformation const& variableInformation) {
                 uint_fast64_t numberOfConstraintsCreated = 0;
 
-                for (auto command : choiceInformation.knownCommands) {
-                    storm::expressions::Expression constraint = variableInformation.commandToVariableMap.at(command) == solver.getConstant(1);
-                    solver.addConstraint("KnownCommands" + std::to_string(numberOfConstraintsCreated), constraint);
+                for (auto label : choiceInformation.knownLabels) {
+                    storm::expressions::Expression constraint = variableInformation.labelToVariableMap.at(label) == solver.getConstant(1);
+                    solver.addConstraint("KnownLabels" + std::to_string(numberOfConstraintsCreated), constraint);
                     ++numberOfConstraintsCreated;
                 }
 
@@ -813,7 +812,7 @@ namespace storm {
              * @param includeSchedulerCuts If set to true, additional constraints are asserted that reduce the set of
              * possible choices.
              */
-            static void buildConstraintSystem(storm::solver::LpSolver& solver, storm::models::sparse::Mdp<T> const& mdp, storm::storage::BitVector const& psiStates, StateInformation const& stateInformation, ChoiceInformation const& choiceInformation, VariableInformation const& variableInformation, double probabilityThreshold, bool strictBound, bool includeSchedulerCuts = false) {
+            static void buildConstraintSystem(storm::solver::LpSolver& solver, storm::models::sparse::Mdp<T> const& mdp, std::vector<boost::container::flat_set<uint_fast64_t>> const& labelSets, storm::storage::BitVector const& psiStates, StateInformation const& stateInformation, ChoiceInformation const& choiceInformation, VariableInformation const& variableInformation, double probabilityThreshold, bool strictBound, bool includeSchedulerCuts = false) {
                 // Assert that the reachability probability in the subsystem exceeds the given threshold.
                 uint_fast64_t numberOfConstraints = assertProbabilityGreaterThanThreshold(solver, variableInformation, probabilityThreshold, strictBound);
                 STORM_LOG_DEBUG("Asserted that reachability probability exceeds threshold.");
@@ -822,9 +821,9 @@ namespace storm {
                 numberOfConstraints += assertValidPolicy(solver, stateInformation, variableInformation);
                 STORM_LOG_DEBUG("Asserted that policy is valid.");
 
-                // Add constraints that assert the commands that belong to some taken choices are taken as well.
-                numberOfConstraints += assertChoicesImplyCommands(solver, mdp, stateInformation, choiceInformation, variableInformation);
-                STORM_LOG_DEBUG("Asserted that commands implied by choices are taken.");
+                // Add constraints that assert the labels that belong to some taken choices are taken as well.
+                numberOfConstraints += assertChoicesImplyLabels(solver, mdp, labelSets, stateInformation, choiceInformation, variableInformation);
+                STORM_LOG_DEBUG("Asserted that labels implied by choices are taken.");
 
                 // Add constraints that encode that the reachability probability from states which do not pick any action
                 // is zero.
@@ -839,9 +838,9 @@ namespace storm {
                 numberOfConstraints += assertUnproblematicStateReachable(solver, mdp, stateInformation, choiceInformation, variableInformation);
                 STORM_LOG_DEBUG("Asserted that unproblematic state reachable from problematic states.");
 
-                // Add constraints that express that certain commands are already known to be taken.
-                numberOfConstraints += assertKnownCommands(solver, choiceInformation, variableInformation);
-                STORM_LOG_DEBUG("Asserted known commands are taken.");
+                // Add constraints that express that certain labels are already known to be taken.
+                numberOfConstraints += assertKnownLabels(solver, choiceInformation, variableInformation);
+                STORM_LOG_DEBUG("Asserted known labels are taken.");
                 
                 // If required, assert additional constraints that reduce the number of possible policies.
                 if (includeSchedulerCuts) {
@@ -861,14 +860,14 @@ namespace storm {
              * @param solver The MILP solver.
              * @param variableInformation A struct with information about the variables of the model.
              */
-            static boost::container::flat_set<uint_fast64_t> getUsedCommandsInSolution(storm::solver::LpSolver const& solver, VariableInformation const& variableInformation) {
+            static boost::container::flat_set<uint_fast64_t> getUsedLabelsInSolution(storm::solver::LpSolver const& solver, VariableInformation const& variableInformation) {
                 boost::container::flat_set<uint_fast64_t> result;
 
-                for (auto const& commandVariablePair : variableInformation.commandToVariableMap) {
-                    bool commandTaken = solver.getBinaryValue(commandVariablePair.second);
+                for (auto const& labelVariablePair : variableInformation.labelToVariableMap) {
+                    bool labelTaken = solver.getBinaryValue(labelVariablePair.second);
                     
-                    if (commandTaken) {
-                        result.insert(commandVariablePair.first);
+                    if (labelTaken) {
+                        result.insert(labelVariablePair.first);
                     }
                 }
                 return result;
@@ -923,10 +922,9 @@ namespace storm {
             }
                 
         public:
-            static boost::container::flat_set<uint_fast64_t> getMinimalCommandSet(storm::models::sparse::Mdp<T> const& mdp, storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates, double probabilityThreshold, bool strictBound, bool checkThresholdFeasible = false, bool includeSchedulerCuts = false) {
-                // (0) Check whether there are choice origins available
-                STORM_LOG_THROW(mdp.hasChoiceOrigins(), storm::exceptions::InvalidArgumentException, "Restriction to command set is impossible for model without choice origns.");
-                STORM_LOG_THROW(mdp.getChoiceOrigins()->isPrismChoiceOrigins(), storm::exceptions::InvalidArgumentException, "Restriction to command set is impossible for model without prism choice origins.");
+            static boost::container::flat_set<uint_fast64_t> getMinimalLabelSet(storm::models::sparse::Mdp<T> const& mdp, std::vector<boost::container::flat_set<uint_fast64_t>> const& labelSets, storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates, double probabilityThreshold, bool strictBound, bool checkThresholdFeasible = false, bool includeSchedulerCuts = false) {
+                // (0) Check whether the label sets are valid
+                STORM_LOG_THROW(mdp.getNumberOfChoices() == labelSets.size(), storm::exceptions::InvalidArgumentException, "The given number of labels does not match the number of choices.");
                 
                 // (1) Check whether its possible to exceed the threshold if checkThresholdFeasible is set.
                 double maximalReachabilityProbability = 0;
@@ -943,27 +941,27 @@ namespace storm {
                 // (2) Identify relevant and problematic states.
                 StateInformation stateInformation = determineRelevantAndProblematicStates(mdp, phiStates, psiStates);
                 
-                // (3) Determine sets of relevant commands and problematic choices.
-                ChoiceInformation choiceInformation = determineRelevantAndProblematicChoices(mdp, stateInformation, psiStates);
+                // (3) Determine sets of relevant labels and problematic choices.
+                ChoiceInformation choiceInformation = determineRelevantAndProblematicChoices(mdp, labelSets, stateInformation, psiStates);
                 
                 // (4) Encode resulting system as MILP problem.
-                std::shared_ptr<storm::solver::LpSolver> solver = storm::utility::solver::getLpSolver("MinimalCommandSetCounterexample");
+                std::shared_ptr<storm::solver::LpSolver> solver = storm::utility::solver::getLpSolver("MinimalLabelSetCounterexample");
                 
                 //  (4.1) Create variables.
                 VariableInformation variableInformation = createVariables(*solver, mdp, stateInformation, choiceInformation);
  
                 //  (4.2) Construct constraint system.
-                buildConstraintSystem(*solver, mdp, psiStates, stateInformation, choiceInformation, variableInformation, probabilityThreshold, strictBound, includeSchedulerCuts);
+                buildConstraintSystem(*solver, mdp, labelSets, psiStates, stateInformation, choiceInformation, variableInformation, probabilityThreshold, strictBound, includeSchedulerCuts);
                 
                 // (4.3) Optimize the model.
                 solver->optimize();
                 
                 // (4.4) Read off result from variables.
-                boost::container::flat_set<uint_fast64_t> usedCommandSet = getUsedCommandsInSolution(*solver, variableInformation);
-                usedCommandSet.insert(choiceInformation.knownCommands.begin(), choiceInformation.knownCommands.end());
+                boost::container::flat_set<uint_fast64_t> usedLabelSet = getUsedLabelsInSolution(*solver, variableInformation);
+                usedLabelSet.insert(choiceInformation.knownLabels.begin(), choiceInformation.knownLabels.end());
                 
                 // (5) Return result.
-                return usedCommandSet;
+                return usedLabelSet;
             }
             
             /*!
@@ -975,6 +973,10 @@ namespace storm {
              */
             static std::shared_ptr<PrismHighLevelCounterexample> computeCounterexample(storm::prism::Program const& program, storm::models::sparse::Mdp<T> const& mdp, std::shared_ptr<storm::logic::Formula const> const& formula) {
                 std::cout << std::endl << "Generating minimal label counterexample for formula " << *formula << std::endl;
+                
+                // Check whether there are choice origins available
+                STORM_LOG_THROW(mdp.hasChoiceOrigins(), storm::exceptions::InvalidArgumentException, "Restriction to minimal command set is impossible for model without choice origns.");
+                STORM_LOG_THROW(mdp.getChoiceOrigins()->isPrismChoiceOrigins(), storm::exceptions::InvalidArgumentException, "Restriction to command set is impossible for model without prism choice origins.");
                 
                 STORM_LOG_THROW(formula->isProbabilityOperatorFormula(), storm::exceptions::InvalidPropertyException, "Counterexample generation does not support this kind of formula. Expecting a probability operator as the outermost formula element.");
                 storm::logic::ProbabilityOperatorFormula const& probabilityOperator = formula->asProbabilityOperatorFormula();
@@ -1012,9 +1014,18 @@ namespace storm {
                     psiStates = subQualitativeResult.getTruthValuesVector();
                 }
                 
+                // Obtain the label sets for each choice.
+                // The label set of a choice corresponds to the set of prism commands that induce the choice.
+                storm::storage::sparse::PrismChoiceOrigins const& choiceOrigins = mdp.getChoiceOrigins()->asPrismChoiceOrigins();
+                std::vector<boost::container::flat_set<uint_fast64_t>> labelSets;
+                labelSets.reserve(mdp.getNumberOfChoices());
+                for (uint_fast64_t choice = 0; choice < mdp.getNumberOfChoices(); ++choice) {
+                    labelSets.push_back(choiceOrigins.getCommandSet(choice));
+                }
+                
                 // Delegate the actual computation work to the function of equal name.
                 auto startTime = std::chrono::high_resolution_clock::now();
-                boost::container::flat_set<uint_fast64_t> usedCommandSet = getMinimalCommandSet(mdp, phiStates, psiStates, threshold, strictBound, true, storm::settings::getModule<storm::settings::modules::CounterexampleGeneratorSettings>().isUseSchedulerCutsSet());
+                boost::container::flat_set<uint_fast64_t> usedCommandSet = getMinimalLabelSet(mdp, labelSets, phiStates, psiStates, threshold, strictBound, true, storm::settings::getModule<storm::settings::modules::CounterexampleGeneratorSettings>().isUseSchedulerCutsSet());
                 auto endTime = std::chrono::high_resolution_clock::now();
                 std::cout << std::endl << "Computed minimal command set of size " << usedCommandSet.size() << " in " << std::chrono::duration_cast<std::chrono::milliseconds>(endTime - startTime).count() << "ms." << std::endl;
 
