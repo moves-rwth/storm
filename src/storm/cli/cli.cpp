@@ -808,10 +808,12 @@ namespace storm {
             uint64_t maximumResidentSizeInMegabytes = ru.ru_maxrss / 1024;
 #endif
             std::cout << "  * peak memory usage: " << maximumResidentSizeInMegabytes << "MB" << std::endl;
-            std::cout << "  * CPU time: " << ru.ru_utime.tv_sec << "." << std::setw(3) << std::setfill('0') << ru.ru_utime.tv_usec/1000 << "s" << std::endl;
+            char oldFillChar = std::cout.fill('0');
+            std::cout << "  * CPU time: " << ru.ru_utime.tv_sec << "." << std::setw(3) << ru.ru_utime.tv_usec/1000 << "s" << std::endl;
             if (wallclockMilliseconds != 0) {
-                std::cout << "  * wallclock time: " << (wallclockMilliseconds/1000) << "." << std::setw(3) << std::setfill('0') << (wallclockMilliseconds % 1000) << "s" << std::endl;
+                std::cout << "  * wallclock time: " << (wallclockMilliseconds/1000) << "." << std::setw(3) << (wallclockMilliseconds % 1000) << "s" << std::endl;
             }
+            std::cout.fill(oldFillChar);
         }
         
     }
