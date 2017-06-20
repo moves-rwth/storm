@@ -88,6 +88,17 @@ namespace storm {
 
         template <typename ValueType>
         void Scheduler<ValueType>::printToStream(std::ostream& out, std::shared_ptr<storm::models::sparse::Model<ValueType>> model, bool skipUniqueChoices) const {
+            STORM_LOG_THROW(model == nullptr || model->getNumberOfStates() == schedulerChoices.front().size(), storm::exceptions::InvalidOperationException, "The given model is not compatible with this scheduler.");
+            
+            bool const stateValuationsGiven = model != nullptr && model->hasStateValuations();
+            bool const choiceOriginsGiven = model != nullptr && model->hasChoiceOrigins();
+            uint_fast64_t widthOfStates = std::to_string(schedulerChoices.front().size()).length();
+            if (stateValuationsGiven) {
+                widthOfStates += model->getStateValuations().getStateInfo(schedulerChoices.front().size() - 1).length() + 5;
+            }
+            widthOfStates = std::max(widthOfStates, 12ull);
+            uint_fast64_t numOfSkippedStatesWithUniqueChoice = 0;
+            
             out << "___________________________________________________________________" << std::endl;
             out << (isPartialScheduler() ? "Partially" : "Fully") << " defined ";
             out << (isMemorylessScheduler() ? "memoryless " : "");
@@ -95,38 +106,43 @@ namespace storm {
             if (!isMemorylessScheduler()) {
                 out << " with " << getNumberOfMemoryStates() << " memory states";
             }
-            out << "." << std::endl;
-            out << "___________________________________________________________________" << std::endl;
-            out << "Choices on " << schedulerChoices.front().size() << " model states:" << std::endl;
+            out << ":" << std::endl;
             STORM_LOG_WARN_COND(!(skipUniqueChoices && model == nullptr), "Can not skip unique choices if the model is not given.");
-            out << "    model state:    " << "    " << (isMemorylessScheduler() ? "" : " memory:     ") << "choice(s)" << std::endl;
+            out << std::setw(widthOfStates) << "model state:" << "    " << (isMemorylessScheduler() ? "" : " memory:     ") << "choice(s)" << std::endl;
                 for (uint_fast64_t state = 0; state < schedulerChoices.front().size(); ++state) {
                     // Check whether the state is skipped
                     if (skipUniqueChoices && model != nullptr && model->getTransitionMatrix().getRowGroupSize(state) == 1) {
+                        ++numOfSkippedStatesWithUniqueChoice;
                         continue;
                     }
-                    if (model != nullptr && model->hasStateValuations()) {
-                        out << std::setw(20) << model->getStateValuations().getStateInfo(state);
+                    
+                    // Print the state info
+                    if (stateValuationsGiven) {
+                        out << std::setw(widthOfStates)  << (std::to_string(state) + ": " + model->getStateValuations().getStateInfo(state));
                     } else {
-                        out << std::setw(20) << state;
+                        out << std::setw(widthOfStates) << state;
                     }
                     out << "    ";
+                    
                     bool firstMemoryState = true;
                     for (uint_fast64_t memoryState = 0; memoryState < getNumberOfMemoryStates(); ++memoryState) {
+                        // Indent if this is not the first memory state
                         if (firstMemoryState) {
                             firstMemoryState = false;
                         } else {
-                            out << std::setw(20) << "";
+                            out << std::setw(widthOfStates) << "";
                             out << "    ";
                         }
+                        // Print the memory state info
                         if (!isMemorylessScheduler()) {
                             out << "m" << std::setw(8) << memoryState;
                         }
                         
+                        // Print choice info
                         SchedulerChoice<ValueType> const& choice = schedulerChoices[memoryState][state];
                         if (choice.isDefined()) {
                             if (choice.isDeterministic()) {
-                                if (model != nullptr && model->hasChoiceOrigins()) {
+                                if (choiceOriginsGiven) {
                                     out << model->getChoiceOrigins()->getChoiceInfo(model->getTransitionMatrix().getRowGroupIndices()[state] + choice.getDeterministicChoice());
                                 } else {
                                     out << choice.getDeterministicChoice();
@@ -140,7 +156,7 @@ namespace storm {
                                         out << "   +    ";
                                     }
                                     out << choiceProbPair.second << ": (";
-                                    if (model != nullptr && model->hasChoiceOrigins()) {
+                                    if (choiceOriginsGiven) {
                                         out << model->getChoiceOrigins()->getChoiceInfo(model->getTransitionMatrix().getRowGroupIndices()[state] + choiceProbPair.first);
                                     } else {
                                         out << choiceProbPair.first;
@@ -151,8 +167,13 @@ namespace storm {
                         } else {
                             out << "undefined.";
                         }
+                        
+                        // Todo: print memory updates
                         out << std::endl;
                     }
+            }
+            if (numOfSkippedStatesWithUniqueChoice > 0) {
+                out << "Skipped " << numOfSkippedStatesWithUniqueChoice << " deterministic states with unique choice." << std::endl;
             }
             out << "___________________________________________________________________" << std::endl;
         }
