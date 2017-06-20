@@ -298,7 +298,7 @@ namespace storm {
             std::map<storm::expressions::Variable, storm::expressions::Expression> constantDefinitions;
             if (output.model) {
                 constantDefinitions = output.model.get().parseConstantDefinitions(constantDefinitionString);
-                output.model.get().preprocess(constantDefinitions);
+                output.model = output.model.get().preprocess(constantDefinitions);
             }
             if (!output.properties.empty()) {
                 output.properties = storm::api::substituteConstantsInProperties(output.properties, constantDefinitions);
