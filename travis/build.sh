@@ -2,7 +2,8 @@
 # Inspired by https://github.com/google/fruit
 
 : ${N_JOBS:=2}
-: ${TIMEOUT:=2000}
+: ${TIMEOUT_MAC:=1800}
+: ${TIMEOUT_LINUX:=2000}
 
 if [ "$STL" != "" ]
 then
@@ -23,7 +24,7 @@ linux)
     set +e
 
     # Execute main process
-    timeout $TIMEOUT docker exec storm bash -c "
+    timeout $TIMEOUT_LINUX docker exec storm bash -c "
         export COMPILER=$COMPILER;
         export N_JOBS=$N_JOBS;
         export STLARG=$STLARG;
@@ -45,7 +46,7 @@ osx)
     export N_JOBS
     export STLARG
     export OS
-    gtimeout $TIMEOUT travis/build-helper.sh "$1" "$2"
+    gtimeout $TIMEOUT_MAC travis/build-helper.sh "$1" "$2"
     EXITCODE=$?
     if [ $EXITCODE = 124 ] && [ "$2" = "BuildLib1" ]
     then
