@@ -81,7 +81,7 @@ if __name__ == "__main__":
                 buildConfig += "      install: export OS=osx; export COMPILER='{}'; export STL='libc++';\n".format(compiler)
                 buildConfig += "        travis/install_osx.sh\n"
                 buildConfig += "      script: export OS=osx; export COMPILER='{}'; export STL='libc++';\n".format(compiler)
-                buildConfig += "        travis/postsubmit.sh {} {}\n".format(build, stage[1])
+                buildConfig += "        travis/build.sh {} {}\n".format(build, stage[1])
             s += buildConfig
 
         # Linux via Docker
@@ -98,7 +98,7 @@ if __name__ == "__main__":
                 buildConfig += "      install: export OS=linux; export COMPILER='{}'; export LINUX='{}';\n".format(compiler, linux)
                 buildConfig += "        travis/install_linux.sh\n"
                 buildConfig += "      script: export OS=linux; export COMPILER='{}'; export LINUX='{}';\n".format(compiler, linux)
-                buildConfig += "        travis/postsubmit.sh {} {}\n".format(build, stage[1])
+                buildConfig += "        travis/build.sh {} {}\n".format(build, stage[1])
                 buildConfig += "      before_cache:\n"
                 buildConfig += "        docker cp storm:/storm/. .\n"
             s += buildConfig

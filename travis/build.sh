@@ -29,7 +29,7 @@ linux)
         export STLARG=$STLARG;
         export OS=$OS;
         cd storm;
-        travis/postsubmit-helper.sh $1 $2"
+        travis/build-helper.sh $1 $2"
     EXITCODE=$?
     if [ $EXITCODE = 124 ] && [ "$2" = "BuildLib1" ]
     then
@@ -45,7 +45,7 @@ osx)
     export N_JOBS
     export STLARG
     export OS
-    gtimeout $TIMEOUT travis/postsubmit-helper.sh "$1" "$2"
+    gtimeout $TIMEOUT travis/build-helper.sh "$1" "$2"
     EXITCODE=$?
     if [ $EXITCODE = 124 ] && [ "$2" = "BuildLib1" ]
     then
