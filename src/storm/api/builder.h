@@ -61,7 +61,7 @@ namespace storm {
         }
 
         template<typename ValueType>
-        std::shared_ptr<storm::models::sparse::Model<ValueType>> buildSparseModel(storm::storage::SymbolicModelDescription const& model, std::vector<std::shared_ptr<storm::logic::Formula const>> const& formulas, bool buildChoiceLabels = false, bool buildChoiceOrigins = false) {
+        std::shared_ptr<storm::models::sparse::Model<ValueType>> buildSparseModel(storm::storage::SymbolicModelDescription const& model, std::vector<std::shared_ptr<storm::logic::Formula const>> const& formulas, bool buildChoiceLabels = false, bool buildChoiceOrigins = false, bool buildStateValuations = false) {
             storm::builder::BuilderOptions options(formulas);
 
             if (storm::settings::getModule<storm::settings::modules::IOSettings>().isBuildFullModelSet()) {
@@ -69,8 +69,9 @@ namespace storm {
                 options.setBuildAllRewardModels();
                 options.clearTerminalStates();
             }
-            options.setBuildChoiceOrigins(buildChoiceOrigins);
             options.setBuildChoiceLabels(buildChoiceLabels);
+            options.setBuildChoiceOrigins(buildChoiceOrigins);
+            options.setBuildStateValuations(buildStateValuations);
             
             if (storm::settings::getModule<storm::settings::modules::IOSettings>().isJitSet()) {
                 STORM_LOG_THROW(model.isJaniModel(), storm::exceptions::NotSupportedException, "Cannot use JIT-based model builder for non-JANI model.");
