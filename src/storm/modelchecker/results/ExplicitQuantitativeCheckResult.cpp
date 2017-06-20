@@ -166,18 +166,18 @@ namespace storm {
         }
         
         template<typename ValueType>
-        void ExplicitQuantitativeCheckResult<ValueType>::setScheduler(std::unique_ptr<storm::storage::Scheduler>&& scheduler) {
+        void ExplicitQuantitativeCheckResult<ValueType>::setScheduler(std::unique_ptr<storm::storage::Scheduler<ValueType>>&& scheduler) {
             this->scheduler = std::move(scheduler);
         }
         
         template<typename ValueType>
-        storm::storage::Scheduler const& ExplicitQuantitativeCheckResult<ValueType>::getScheduler() const {
+        storm::storage::Scheduler<ValueType> const& ExplicitQuantitativeCheckResult<ValueType>::getScheduler() const {
             STORM_LOG_THROW(this->hasScheduler(), storm::exceptions::InvalidOperationException, "Unable to retrieve non-existing scheduler.");
             return *scheduler.get();
         }
         
         template<typename ValueType>
-        storm::storage::Scheduler& ExplicitQuantitativeCheckResult<ValueType>::getScheduler() {
+        storm::storage::Scheduler<ValueType>& ExplicitQuantitativeCheckResult<ValueType>::getScheduler() {
             STORM_LOG_THROW(this->hasScheduler(), storm::exceptions::InvalidOperationException, "Unable to retrieve non-existing scheduler.");
             return *scheduler.get();
         }

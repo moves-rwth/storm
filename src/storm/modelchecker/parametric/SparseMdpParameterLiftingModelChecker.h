@@ -10,7 +10,7 @@
 #include "storm/storage/sparse/StateType.h"
 #include "storm/solver/GameSolver.h"
 #include "storm/transformer/ParameterLifter.h"
-#include "storm/storage/TotalScheduler.h"
+#include "storm/storage/Scheduler.h"
 
 namespace storm {
     namespace modelchecker {
@@ -24,9 +24,9 @@ namespace storm {
                 
                 virtual bool canHandle(CheckTask<storm::logic::Formula, typename SparseModelType::ValueType> const& checkTask) const override;
                 
-                boost::optional<storm::storage::TotalScheduler>& getCurrentMinScheduler();
-                boost::optional<storm::storage::TotalScheduler>& getCurrentMaxScheduler();
-                boost::optional<storm::storage::TotalScheduler>& getCurrentPlayer1Scheduler();
+                boost::optional<storm::storage::Scheduler<ConstantType>> getCurrentMinScheduler();
+                boost::optional<storm::storage::Scheduler<ConstantType>> getCurrentMaxScheduler();
+                boost::optional<storm::storage::Scheduler<ConstantType>> getCurrentPlayer1Scheduler();
                 
             protected:
                 
@@ -52,8 +52,8 @@ namespace storm {
                 std::unique_ptr<storm::solver::GameSolverFactory<ConstantType>> solverFactory;
                 
                 // Results from the most recent solver call.
-                boost::optional<storm::storage::TotalScheduler> minSched, maxSched;
-                boost::optional<storm::storage::TotalScheduler> player1Sched;
+                boost::optional<std::vector<uint_fast64_t>> minSchedChoices, maxSchedChoices;
+                boost::optional<std::vector<uint_fast64_t>> player1SchedChoices;
                 std::vector<ConstantType> x;
                 boost::optional<ConstantType> lowerResultBound, upperResultBound;
                 bool applyPreviousResultAsHint;

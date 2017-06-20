@@ -101,8 +101,8 @@ namespace storm {
         bool StandardGameSolver<ValueType>::solveGamePolicyIteration(OptimizationDirection player1Dir, OptimizationDirection player2Dir, std::vector<ValueType>& x, std::vector<ValueType> const& b) const {
             
             // Create the initial choice selections.
-            std::vector<storm::storage::sparse::state_type> player1Choices = this->hasSchedulerHints() ? this->player1SchedulerHint->getChoices() : std::vector<storm::storage::sparse::state_type>(this->player1Matrix.getRowGroupCount(), 0);
-            std::vector<storm::storage::sparse::state_type> player2Choices = this->hasSchedulerHints() ? this->player2SchedulerHint->getChoices() : std::vector<storm::storage::sparse::state_type>(this->player2Matrix.getRowGroupCount(), 0);
+            std::vector<storm::storage::sparse::state_type> player1Choices = this->hasSchedulerHints() ? this->player1ChoicesHint.get() : std::vector<storm::storage::sparse::state_type>(this->player1Matrix.getRowGroupCount(), 0);
+            std::vector<storm::storage::sparse::state_type> player2Choices = this->hasSchedulerHints() ? this->player2ChoicesHint.get() : std::vector<storm::storage::sparse::state_type>(this->player2Matrix.getRowGroupCount(), 0);
             
             if(!auxiliaryP2RowGroupVector) {
                 auxiliaryP2RowGroupVector = std::make_unique<std::vector<ValueType>>(this->player2Matrix.getRowGroupCount());
@@ -149,8 +149,8 @@ namespace storm {
             
             // If requested, we store the scheduler for retrieval.
             if (this->isTrackSchedulersSet()) {
-                this->player1Scheduler = std::make_unique<storm::storage::TotalScheduler>(std::move(player1Choices));
-                this->player2Scheduler = std::make_unique<storm::storage::TotalScheduler>(std::move(player2Choices));
+                this->player1SchedulerChoices = std::move(player1Choices);
+                this->player2SchedulerChoices = std::move(player2Choices);
             }
             
             if(!this->isCachingEnabled()) {
@@ -205,7 +205,7 @@ namespace storm {
             if (this->hasSchedulerHints()) {
                 // Solve the equation system induced by the two schedulers.
                 storm::storage::SparseMatrix<ValueType> submatrix;
-                getInducedMatrixVector(x, b, this->player1SchedulerHint->getChoices(), this->player2SchedulerHint->getChoices(), submatrix, *auxiliaryP1RowGroupVector);
+                getInducedMatrixVector(x, b, this->player1ChoicesHint.get(), this->player2ChoicesHint.get(), submatrix, *auxiliaryP1RowGroupVector);
                 submatrix.convertToEquationSystem();
                 auto submatrixSolver = linearEquationSolverFactory->create(std::move(submatrix));
                 if (this->lowerBound) { submatrixSolver->setLowerBound(this->lowerBound.get()); }
@@ -244,11 +244,9 @@ namespace storm {
             
             // If requested, we store the scheduler for retrieval.
             if (this->isTrackSchedulersSet()) {
-                std::vector<uint_fast64_t> player1Choices(player1Matrix.getRowGroupCount(), 0);
-                std::vector<uint_fast64_t> player2Choices(player2Matrix.getRowGroupCount(), 0);
-                extractChoices(player1Dir, player2Dir, x, b, *auxiliaryP2RowGroupVector, player1Choices, player2Choices);
-                this->player1Scheduler = std::make_unique<storm::storage::TotalScheduler>(std::move(player1Choices));
-                this->player2Scheduler = std::make_unique<storm::storage::TotalScheduler>(std::move(player2Choices));
+                this->player1SchedulerChoices = std::vector<uint_fast64_t>(player1Matrix.getRowGroupCount(), 0);
+                this->player2SchedulerChoices = std::vector<uint_fast64_t>(player2Matrix.getRowGroupCount(), 0);
+                extractChoices(player1Dir, player2Dir, x, b, *auxiliaryP2RowGroupVector, this->player1SchedulerChoices.get(), this->player2SchedulerChoices.get());
             }
             
             if(!this->isCachingEnabled()) {

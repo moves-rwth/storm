@@ -47,8 +47,12 @@ namespace storm {
                 STORM_LOG_ASSERT(dtmcPLChecker, "Underlying Parameter lifting checker has unexpected type");
                 auto exactDtmcPLChecker = dynamic_cast<storm::modelchecker::parametric::SparseDtmcParameterLiftingModelChecker<SparseModelType, ExactConstantType>*>(this->exactParameterLiftingChecker.get());
                 STORM_LOG_ASSERT(exactDtmcPLChecker, "Underlying exact parameter lifting checker has unexpected type");
-                exactDtmcPLChecker->getCurrentMaxScheduler() = dtmcPLChecker->getCurrentMaxScheduler();
-                exactDtmcPLChecker->getCurrentMinScheduler() = dtmcPLChecker->getCurrentMinScheduler();
+                if (dtmcPLChecker->getCurrentMaxScheduler()) {
+                    exactDtmcPLChecker->getCurrentMaxScheduler() = dtmcPLChecker->getCurrentMaxScheduler()->template toValueType<ExactConstantType>();
+                }
+                if (dtmcPLChecker->getCurrentMinScheduler()) {
+                    exactDtmcPLChecker->getCurrentMinScheduler() = dtmcPLChecker->getCurrentMinScheduler()->template toValueType<ExactConstantType>();
+                }
             }
        
 #ifdef STORM_HAVE_CARL

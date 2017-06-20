@@ -53,7 +53,7 @@ namespace storm {
         void MinMaxLinearEquationSolver<ValueType>::setTrackScheduler(bool trackScheduler) {
             this->trackScheduler = trackScheduler;
             if (!this->trackScheduler) {
-                scheduler = boost::none;
+                schedulerChoices = boost::none;
             }
         }
         
@@ -64,19 +64,25 @@ namespace storm {
         
         template<typename ValueType>
         bool MinMaxLinearEquationSolver<ValueType>::hasScheduler() const {
-            return static_cast<bool>(scheduler);
+            return static_cast<bool>(schedulerChoices);
         }
         
         template<typename ValueType>
-        storm::storage::TotalScheduler const& MinMaxLinearEquationSolver<ValueType>::getScheduler() const {
-            STORM_LOG_THROW(scheduler, storm::exceptions::IllegalFunctionCallException, "Cannot retrieve scheduler, because none was generated.");
-            return *scheduler.get();
+        storm::storage::Scheduler<ValueType> MinMaxLinearEquationSolver<ValueType>::computeScheduler() const {
+            STORM_LOG_THROW(hasScheduler(), storm::exceptions::IllegalFunctionCallException, "Cannot retrieve scheduler, because none was generated.");
+            storm::storage::Scheduler<ValueType> result(schedulerChoices->size());
+            uint_fast64_t state = 0;
+            for (auto const& schedulerChoice : schedulerChoices.get()) {
+                result.setChoice(schedulerChoice, state);
+                ++state;
+            }
+            return result;
         }
         
         template<typename ValueType>
-        std::unique_ptr<storm::storage::TotalScheduler> MinMaxLinearEquationSolver<ValueType>:: getScheduler() {
-            STORM_LOG_THROW(scheduler, storm::exceptions::IllegalFunctionCallException, "Cannot retrieve scheduler, because none was generated.");
-            return std::move(scheduler.get());
+        std::vector<uint_fast64_t> const& MinMaxLinearEquationSolver<ValueType>::getSchedulerChoices() const {
+            STORM_LOG_THROW(hasScheduler(), storm::exceptions::IllegalFunctionCallException, "Cannot retrieve scheduler choices, because they were not generated.");
+            return schedulerChoices.get();
         }
         
         template<typename ValueType>
@@ -115,13 +121,13 @@ namespace storm {
         }
         
         template<typename ValueType>
-        void MinMaxLinearEquationSolver<ValueType>::setSchedulerHint(storm::storage::TotalScheduler&& scheduler) {
-            schedulerHint = scheduler;
+        void MinMaxLinearEquationSolver<ValueType>::setSchedulerHint(std::vector<uint_fast64_t>&& choices) {
+            choicesHint = std::move(choices);
         }
         
         template<typename ValueType>
         bool MinMaxLinearEquationSolver<ValueType>::hasSchedulerHint() const {
-            return schedulerHint.is_initialized();
+            return choicesHint.is_initialized();
         }
         
         template<typename ValueType>

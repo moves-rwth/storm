@@ -4,6 +4,7 @@
 #include "storm/modelchecker/results/ExplicitQuantitativeCheckResult.h"
 #include "storm/modelchecker/results/ExplicitQualitativeCheckResult.h"
 #include "storm/modelchecker/hints/ExplicitModelCheckerHint.h"
+#include "storm/storage/Scheduler.h"
 #include "storm/utility/graph.h"
 #include "storm/utility/vector.h"
 
@@ -53,16 +54,16 @@ namespace storm {
                 // For qualitative properties, we still want a quantitative result hint. Hence we perform the check on the subformula
                 if(this->currentCheckTask->getFormula().asOperatorFormula().hasQuantitativeResult()) {
                     result = modelChecker.check(*this->currentCheckTask);
-                    storm::storage::Scheduler const& scheduler = result->template asExplicitQuantitativeCheckResult<ConstantType>().getScheduler();
+                    storm::storage::Scheduler<ConstantType> const& scheduler = result->template asExplicitQuantitativeCheckResult<ConstantType>().getScheduler();
                     hint.setResultHint(result->template asExplicitQuantitativeCheckResult<ConstantType>().getValueVector());
-                    hint.setSchedulerHint(dynamic_cast<storm::storage::TotalScheduler const&>(scheduler));
+                    hint.setSchedulerHint(dynamic_cast<storm::storage::Scheduler<ConstantType> const&>(scheduler));
                 } else {
                     auto newCheckTask = this->currentCheckTask->substituteFormula(this->currentCheckTask->getFormula().asOperatorFormula().getSubformula()).setOnlyInitialStatesRelevant(false);
                     std::unique_ptr<storm::modelchecker::CheckResult> quantitativeResult = modelChecker.computeProbabilities(newCheckTask);
                     result = quantitativeResult->template asExplicitQuantitativeCheckResult<ConstantType>().compareAgainstBound(this->currentCheckTask->getFormula().asOperatorFormula().getComparisonType(), this->currentCheckTask->getFormula().asOperatorFormula().template getThresholdAs<ConstantType>());
-                    storm::storage::Scheduler& scheduler = quantitativeResult->template asExplicitQuantitativeCheckResult<ConstantType>().getScheduler();
+                    storm::storage::Scheduler<ConstantType>& scheduler = quantitativeResult->template asExplicitQuantitativeCheckResult<ConstantType>().getScheduler();
                     hint.setResultHint(std::move(quantitativeResult->template asExplicitQuantitativeCheckResult<ConstantType>().getValueVector()));
-                    hint.setSchedulerHint(std::move(dynamic_cast<storm::storage::TotalScheduler&>(scheduler)));
+                    hint.setSchedulerHint(std::move(dynamic_cast<storm::storage::Scheduler<ConstantType>&>(scheduler)));
                 }
                 
                 if (this->getInstantiationsAreGraphPreserving() && !hint.hasMaybeStates()) {
@@ -98,16 +99,16 @@ namespace storm {
                 // For qualitative properties, we still want a quantitative result hint. Hence we perform the check on the subformula
                 if(this->currentCheckTask->getFormula().asOperatorFormula().hasQuantitativeResult()) {
                     std::unique_ptr<storm::modelchecker::CheckResult> result = modelChecker.check(*this->currentCheckTask);
-                    storm::storage::Scheduler const& scheduler = result->template asExplicitQuantitativeCheckResult<ConstantType>().getScheduler();
+                    storm::storage::Scheduler<ConstantType> const& scheduler = result->template asExplicitQuantitativeCheckResult<ConstantType>().getScheduler();
                     hint.setResultHint(result->template asExplicitQuantitativeCheckResult<ConstantType>().getValueVector());
-                    hint.setSchedulerHint(dynamic_cast<storm::storage::TotalScheduler const&>(scheduler));
+                    hint.setSchedulerHint(dynamic_cast<storm::storage::Scheduler<ConstantType> const&>(scheduler));
                 } else {
                     auto newCheckTask = this->currentCheckTask->substituteFormula(this->currentCheckTask->getFormula().asOperatorFormula().getSubformula()).setOnlyInitialStatesRelevant(false);
                     std::unique_ptr<storm::modelchecker::CheckResult> quantitativeResult = modelChecker.computeRewards(this->currentCheckTask->getFormula().asRewardOperatorFormula().getMeasureType(), newCheckTask);
                     result = quantitativeResult->template asExplicitQuantitativeCheckResult<ConstantType>().compareAgainstBound(this->currentCheckTask->getFormula().asOperatorFormula().getComparisonType(), this->currentCheckTask->getFormula().asOperatorFormula().template getThresholdAs<ConstantType>());
-                    storm::storage::Scheduler& scheduler = quantitativeResult->template asExplicitQuantitativeCheckResult<ConstantType>().getScheduler();
+                    storm::storage::Scheduler<ConstantType>& scheduler = quantitativeResult->template asExplicitQuantitativeCheckResult<ConstantType>().getScheduler();
                     hint.setResultHint(std::move(quantitativeResult->template asExplicitQuantitativeCheckResult<ConstantType>().getValueVector()));
-                    hint.setSchedulerHint(std::move(dynamic_cast<storm::storage::TotalScheduler&>(scheduler)));
+                    hint.setSchedulerHint(std::move(dynamic_cast<storm::storage::Scheduler<ConstantType>&>(scheduler)));
                 }
                 
                 if (this->getInstantiationsAreGraphPreserving() && !hint.hasMaybeStates()) {

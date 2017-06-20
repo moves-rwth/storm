@@ -18,8 +18,8 @@ namespace storm {
         void GameSolver<ValueType>::setTrackSchedulers(bool value) {
             trackSchedulers = value;
             if (!trackSchedulers) {
-                player1Scheduler = boost::none;
-                player2Scheduler = boost::none;
+                player1SchedulerChoices = boost::none;
+                player2SchedulerChoices = boost::none;
             }
         }
         
@@ -30,42 +30,54 @@ namespace storm {
         
         template<typename ValueType>
         bool GameSolver<ValueType>::hasSchedulers() const {
-            return player1Scheduler.is_initialized() && player2Scheduler.is_initialized();
+            return player1SchedulerChoices.is_initialized() && player2SchedulerChoices.is_initialized();
         }
         
         template<typename ValueType>
-        storm::storage::TotalScheduler const& GameSolver<ValueType>::getPlayer1Scheduler() const {
-            STORM_LOG_THROW(player1Scheduler, storm::exceptions::IllegalFunctionCallException, "Cannot retrieve player 1 scheduler, because none was generated.");
-            return *player1Scheduler.get();
+        storm::storage::Scheduler<ValueType> GameSolver<ValueType>::computePlayer1Scheduler() const {
+            STORM_LOG_THROW(hasSchedulers(), storm::exceptions::IllegalFunctionCallException, "Cannot retrieve player 1 scheduler, because none was generated.");
+            storm::storage::Scheduler<ValueType> result(player1SchedulerChoices->size());
+            uint_fast64_t state = 0;
+            for (auto const& schedulerChoice : player1SchedulerChoices.get()) {
+                result.setChoice(schedulerChoice, state);
+                ++state;
+            }
+            return result;
         }
         
         template<typename ValueType>
-        storm::storage::TotalScheduler const& GameSolver<ValueType>::getPlayer2Scheduler() const {
-            STORM_LOG_THROW(player2Scheduler, storm::exceptions::IllegalFunctionCallException, "Cannot retrieve player 2 scheduler, because none was generated.");
-            return *player2Scheduler.get();
+        storm::storage::Scheduler<ValueType> GameSolver<ValueType>::computePlayer2Scheduler() const {
+            STORM_LOG_THROW(hasSchedulers(), storm::exceptions::IllegalFunctionCallException, "Cannot retrieve player 2 scheduler, because none was generated.");
+            storm::storage::Scheduler<ValueType> result(player2SchedulerChoices->size());
+            uint_fast64_t state = 0;
+            for (auto const& schedulerChoice : player2SchedulerChoices.get()) {
+                result.setChoice(schedulerChoice, state);
+                ++state;
+            }
+            return result;
         }
         
         template<typename ValueType>
-        std::unique_ptr<storm::storage::TotalScheduler> GameSolver<ValueType>::getPlayer1Scheduler() {
-            STORM_LOG_THROW(player1Scheduler, storm::exceptions::IllegalFunctionCallException, "Cannot retrieve player 1 scheduler, because none was generated.");
-            return std::move(player1Scheduler.get());
+        std::vector<uint_fast64_t> const& GameSolver<ValueType>::getPlayer1SchedulerChoices() const {
+            STORM_LOG_THROW(hasSchedulers(), storm::exceptions::IllegalFunctionCallException, "Cannot retrieve player 1 scheduler choices, because they were not generated.");
+            return player1SchedulerChoices.get();
         }
         
         template<typename ValueType>
-        std::unique_ptr<storm::storage::TotalScheduler> GameSolver<ValueType>::getPlayer2Scheduler() {
-            STORM_LOG_THROW(player2Scheduler, storm::exceptions::IllegalFunctionCallException, "Cannot retrieve player 2 scheduler, because none was generated.");
-            return std::move(player2Scheduler.get());
+        std::vector<uint_fast64_t> const& GameSolver<ValueType>::getPlayer2SchedulerChoices() const {
+            STORM_LOG_THROW(hasSchedulers(), storm::exceptions::IllegalFunctionCallException, "Cannot retrieve player 2 scheduler choices, because they were not generated.");
+            return player2SchedulerChoices.get();
         }
         
         template<typename ValueType>
-        void GameSolver<ValueType>::setSchedulerHints(storm::storage::TotalScheduler&& player1Scheduler, storm::storage::TotalScheduler&& player2Scheduler) {
-            this->player1SchedulerHint = std::move(player1Scheduler);
-            this->player2SchedulerHint = std::move(player2Scheduler);
+        void GameSolver<ValueType>::setSchedulerHints(std::vector<uint_fast64_t>&& player1Choices, std::vector<uint_fast64_t>&& player2Choices) {
+            this->player1ChoicesHint = std::move(player1Choices);
+            this->player2ChoicesHint = std::move(player2Choices);
         }
 
         template<typename ValueType>
         bool GameSolver<ValueType>::hasSchedulerHints() const {
-            return player1SchedulerHint.is_initialized() && player2SchedulerHint.is_initialized();
+            return player1ChoicesHint.is_initialized() && player2ChoicesHint.is_initialized();
         }
         
         template<typename ValueType>

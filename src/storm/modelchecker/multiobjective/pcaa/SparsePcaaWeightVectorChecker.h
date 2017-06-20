@@ -4,7 +4,7 @@
 
 #include "storm/storage/BitVector.h"
 #include "storm/storage/SparseMatrix.h"
-#include "storm/storage/TotalScheduler.h"
+#include "storm/storage/Scheduler.h"
 #include "storm/modelchecker/multiobjective/Objective.h"
 #include "storm/utility/vector.h"
 
@@ -75,8 +75,9 @@ namespace storm {
                 /*!
                  * Retrieves a scheduler that induces the current values
                  * Note that check(..) has to be called before retrieving the scheduler. Otherwise, an exception is thrown.
+                 * Also note that (currently) the scheduler only supports unbounded objectives.
                  */
-                storm::storage::TotalScheduler const& getScheduler() const;
+                storm::storage::Scheduler<ValueType> computeScheduler() const;
                 
                 
             protected:
@@ -147,8 +148,8 @@ namespace storm {
                 // The distances are stored as a (possibly negative) offset that has to be added (+) to to the objectiveResults.
                 std::vector<ValueType> offsetsToUnderApproximation;
                 std::vector<ValueType> offsetsToOverApproximation;
-                // The scheduler that optimizes the weighted rewards
-                storm::storage::TotalScheduler scheduler;
+                // The scheduler choices that optimize the weighted rewards of undounded objectives.
+                std::vector<uint_fast64_t> optimalChoices;
                 
             };
             

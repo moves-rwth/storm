@@ -340,18 +340,18 @@ namespace storm {
             void SparseMaPcaaWeightVectorChecker<SparseMaModelType>::performPSStep(SubModel& PS, SubModel const& MS, MinMaxSolverData& minMax, LinEqSolverData& linEq, std::vector<uint_fast64_t>& optimalChoicesAtCurrentEpoch,  storm::storage::BitVector const& consideredObjectives, std::vector<ValueType> const& weightVector) const {
                 // compute a choice vector for the probabilistic states that is optimal w.r.t. the weighted reward vector
                 minMax.solver->solveEquations(PS.weightedSolutionVector, minMax.b);
-                auto newScheduler = minMax.solver->getScheduler();
+                auto const& newChoices = minMax.solver->getSchedulerChoices();
                 if(consideredObjectives.getNumberOfSetBits() == 1 && storm::utility::isOne(weightVector[*consideredObjectives.begin()])) {
                     // In this case there is no need to perform the computation on the individual objectives
-                    optimalChoicesAtCurrentEpoch = newScheduler->getChoices();
+                    optimalChoicesAtCurrentEpoch = newChoices;
                     PS.objectiveSolutionVectors[*consideredObjectives.begin()] = PS.weightedSolutionVector;
                     if (storm::solver::minimize(this->objectives[*consideredObjectives.begin()].optimizationDirection)) {
                         storm::utility::vector::scaleVectorInPlace(PS.objectiveSolutionVectors[*consideredObjectives.begin()], -storm::utility::one<ValueType>());
                     }
                 } else {
                     // check whether the linEqSolver needs to be updated, i.e., whether the scheduler has changed
-                    if(linEq.solver == nullptr || newScheduler->getChoices() != optimalChoicesAtCurrentEpoch) {
-                        optimalChoicesAtCurrentEpoch = newScheduler->getChoices();
+                    if(linEq.solver == nullptr || newChoices != optimalChoicesAtCurrentEpoch) {
+                        optimalChoicesAtCurrentEpoch = newChoices;
                         linEq.solver = nullptr;
                         storm::storage::SparseMatrix<ValueType> linEqMatrix = PS.toPS.selectRowsFromRowGroups(optimalChoicesAtCurrentEpoch, true);
                         linEqMatrix.convertToEquationSystem();

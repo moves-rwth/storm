@@ -214,8 +214,8 @@ namespace storm {
                 if (applyPreviousResultAsHint) {
                     solver->setTrackSchedulers(true);
                     x.resize(maybeStates.getNumberOfSetBits(), storm::utility::zero<ConstantType>());
-                    if(storm::solver::minimize(dirForParameters) && minSched && player1Sched) solver->setSchedulerHints(std::move(player1Sched.get()), std::move(minSched.get()));
-                    if(storm::solver::maximize(dirForParameters) && maxSched && player1Sched) solver->setSchedulerHints(std::move(player1Sched.get()), std::move(maxSched.get()));
+                    if(storm::solver::minimize(dirForParameters) && minSchedChoices && player1SchedChoices) solver->setSchedulerHints(std::move(player1SchedChoices.get()), std::move(minSchedChoices.get()));
+                    if(storm::solver::maximize(dirForParameters) && maxSchedChoices && player1SchedChoices) solver->setSchedulerHints(std::move(player1SchedChoices.get()), std::move(maxSchedChoices.get()));
                 } else {
                     x.assign(maybeStates.getNumberOfSetBits(), storm::utility::zero<ConstantType>());
                 }
@@ -241,11 +241,11 @@ namespace storm {
                     solver->solveGame(this->currentCheckTask->getOptimizationDirection(), dirForParameters, x, parameterLifter->getVector());
                     if(applyPreviousResultAsHint) {
                         if(storm::solver::minimize(dirForParameters)) {
-                            minSched = std::move(*solver->getPlayer2Scheduler());
+                            minSchedChoices = solver->getPlayer2SchedulerChoices();
                         } else {
-                            maxSched = std::move(*solver->getPlayer2Scheduler());
+                            maxSchedChoices = solver->getPlayer2SchedulerChoices();
                         }
-                        player1Sched = std::move(*solver->getPlayer1Scheduler());
+                        player1SchedChoices = solver->getPlayer1SchedulerChoices();
                     }
                 }
                 
@@ -285,8 +285,8 @@ namespace storm {
                 stepBound = boost::none;
                 player1Matrix = storm::storage::SparseMatrix<storm::storage::sparse::state_type>();
                 parameterLifter = nullptr;
-                minSched = boost::none;
-                maxSched = boost::none;
+                minSchedChoices = boost::none;
+                maxSchedChoices = boost::none;
                 x.clear();
                 lowerResultBound = boost::none;
                 upperResultBound = boost::none;
@@ -294,18 +294,51 @@ namespace storm {
             }
             
             template <typename SparseModelType, typename ConstantType>
-            boost::optional<storm::storage::TotalScheduler>& SparseMdpParameterLiftingModelChecker<SparseModelType, ConstantType>::getCurrentMinScheduler() {
-                return minSched;
+            boost::optional<storm::storage::Scheduler<ConstantType>> SparseMdpParameterLiftingModelChecker<SparseModelType, ConstantType>::getCurrentMinScheduler() {
+                if (!minSchedChoices) {
+                    return boost::none;
+                }
+                
+                storm::storage::Scheduler<ConstantType> result(minSchedChoices->size());
+                uint_fast64_t state = 0;
+                for (auto const& schedulerChoice : minSchedChoices.get()) {
+                    result.setChoice(schedulerChoice, state);
+                    ++state;
+                }
+                
+                return result;
             }
                     
             template <typename SparseModelType, typename ConstantType>
-            boost::optional<storm::storage::TotalScheduler>& SparseMdpParameterLiftingModelChecker<SparseModelType, ConstantType>::getCurrentMaxScheduler() {
-                return maxSched;
+            boost::optional<storm::storage::Scheduler<ConstantType>> SparseMdpParameterLiftingModelChecker<SparseModelType, ConstantType>::getCurrentMaxScheduler() {
+                if (!maxSchedChoices) {
+                    return boost::none;
+                }
+                
+                storm::storage::Scheduler<ConstantType> result(maxSchedChoices->size());
+                uint_fast64_t state = 0;
+                for (auto const& schedulerChoice : maxSchedChoices.get()) {
+                    result.setChoice(schedulerChoice, state);
+                    ++state;
+                }
+                
+                return result;
             }
             
             template <typename SparseModelType, typename ConstantType>
-            boost::optional<storm::storage::TotalScheduler>& SparseMdpParameterLiftingModelChecker<SparseModelType, ConstantType>::getCurrentPlayer1Scheduler() {
-                return player1Sched;
+            boost::optional<storm::storage::Scheduler<ConstantType>> SparseMdpParameterLiftingModelChecker<SparseModelType, ConstantType>::getCurrentPlayer1Scheduler() {
+                if (!player1SchedChoices) {
+                    return boost::none;
+                }
+                
+                storm::storage::Scheduler<ConstantType> result(player1SchedChoices->size());
+                uint_fast64_t state = 0;
+                for (auto const& schedulerChoice : player1SchedChoices.get()) {
+                    result.setChoice(schedulerChoice, state);
+                    ++state;
+                }
+                
+                return result;
             }
     
             template class SparseMdpParameterLiftingModelChecker<storm::models::sparse::Mdp<storm::RationalFunction>, double>;

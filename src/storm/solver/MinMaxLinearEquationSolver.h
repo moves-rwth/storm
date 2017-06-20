@@ -10,7 +10,7 @@
 #include "storm/solver/AbstractEquationSolver.h"
 #include "storm/solver/SolverSelectionOptions.h"
 #include "storm/storage/sparse/StateType.h"
-#include "storm/storage/TotalScheduler.h"
+#include "storm/storage/Scheduler.h"
 #include "storm/solver/OptimizationDirection.h"
 
 #include "storm/exceptions/InvalidSettingsException.h"
@@ -108,14 +108,12 @@ namespace storm {
             /*!
              * Retrieves the generated scheduler. Note: it is only legal to call this function if a scheduler was generated.
              */
-            storm::storage::TotalScheduler const& getScheduler() const;
-
+            storm::storage::Scheduler<ValueType> computeScheduler() const;
+            
             /*!
-             * Retrieves the generated scheduler and takes ownership of it. Note: it is only legal to call this function
-             * if a scheduler was generated and after a call to this method, the solver will not contain the scheduler
-             * any more (i.e. it is illegal to call this method again until a new scheduler has been generated).
+             * Retrieves the generated (deterministic) choices of the optimal scheduler. Note: it is only legal to call this function if a scheduler was generated.
              */
-            std::unique_ptr<storm::storage::TotalScheduler> getScheduler();
+            std::vector<uint_fast64_t> const& getSchedulerChoices() const;
 
             /**
              * Gets the precision after which the solver takes two numbers as equal.
@@ -163,7 +161,7 @@ namespace storm {
             /*!
              * Sets a scheduler that might be considered by the solver as an initial guess
              */
-            void setSchedulerHint(storm::storage::TotalScheduler&& scheduler);
+            void setSchedulerHint(std::vector<uint_fast64_t>&& choices);
             
             /*!
              * Returns true iff a scheduler hint was defined
@@ -177,8 +175,8 @@ namespace storm {
             /// Whether we generate a scheduler during solving.
             bool trackScheduler;
 
-            /// The scheduler (if it could be successfully generated).
-            mutable boost::optional<std::unique_ptr<storm::storage::TotalScheduler>> scheduler;
+            /// The scheduler choices that induce the optimal values (if they could be successfully generated).
+            mutable boost::optional<std::vector<uint_fast64_t>> schedulerChoices;
             
             // A lower bound if one was set.
             boost::optional<ValueType> lowerBound;
@@ -186,8 +184,8 @@ namespace storm {
             // An upper bound if one was set.
             boost::optional<ValueType> upperBound;
             
-            // A scheduler that might be considered by the solver as an initial guess
-            boost::optional<storm::storage::TotalScheduler> schedulerHint;
+            // Scheduler choices that might be considered by the solver as an initial guess
+            boost::optional<std::vector<uint_fast64_t>> choicesHint;
             
         private:
             /// Whether some of the generated data during solver calls should be cached.

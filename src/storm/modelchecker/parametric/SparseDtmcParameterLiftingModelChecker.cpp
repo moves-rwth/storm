@@ -186,8 +186,8 @@ namespace storm {
                 if (lowerResultBound) solver->setLowerBound(lowerResultBound.get());
                 if (upperResultBound) solver->setUpperBound(upperResultBound.get());
                 if (!stepBound) solver->setTrackScheduler(true);
-                if (storm::solver::minimize(dirForParameters) && minSched && !stepBound) solver->setSchedulerHint(std::move(minSched.get()));
-                if (storm::solver::maximize(dirForParameters) && maxSched && !stepBound) solver->setSchedulerHint(std::move(maxSched.get()));
+                if (storm::solver::minimize(dirForParameters) && minSchedChoices && !stepBound) solver->setSchedulerHint(std::move(minSchedChoices.get()));
+                if (storm::solver::maximize(dirForParameters) && maxSchedChoices && !stepBound) solver->setSchedulerHint(std::move(maxSchedChoices.get()));
                 if (this->currentCheckTask->isBoundSet() && solver->hasSchedulerHint()) {
                     // If we reach this point, we know that after applying the hint, the x-values can only become larger (if we maximize) or smaller (if we minimize).
                     std::unique_ptr<storm::solver::TerminationCondition<ConstantType>> termCond;
@@ -211,9 +211,9 @@ namespace storm {
                     x.resize(maybeStates.getNumberOfSetBits(), storm::utility::zero<ConstantType>());
                     solver->solveEquations(dirForParameters, x, parameterLifter->getVector());
                     if(storm::solver::minimize(dirForParameters)) {
-                        minSched = std::move(*solver->getScheduler());
+                        minSchedChoices = solver->getSchedulerChoices();
                     } else {
-                        maxSched = std::move(*solver->getScheduler());
+                        maxSchedChoices = solver->getSchedulerChoices();
                     }
                 }
                 
@@ -234,21 +234,43 @@ namespace storm {
                 resultsForNonMaybeStates.clear();
                 stepBound = boost::none;
                 parameterLifter = nullptr;
-                minSched = boost::none;
-                maxSched = boost::none;
+                minSchedChoices = boost::none;
+                maxSchedChoices = boost::none;
                 x.clear();
                 lowerResultBound = boost::none;
                 upperResultBound = boost::none;
             }
             
             template <typename SparseModelType, typename ConstantType>
-            boost::optional<storm::storage::TotalScheduler>& SparseDtmcParameterLiftingModelChecker<SparseModelType, ConstantType>::getCurrentMinScheduler() {
-                return minSched;
+            boost::optional<storm::storage::Scheduler<ConstantType>> SparseDtmcParameterLiftingModelChecker<SparseModelType, ConstantType>::getCurrentMinScheduler() {
+                if (!minSchedChoices) {
+                    return boost::none;
+                }
+                
+                storm::storage::Scheduler<ConstantType> result(minSchedChoices->size());
+                uint_fast64_t state = 0;
+                for (auto const& schedulerChoice : minSchedChoices.get()) {
+                    result.setChoice(schedulerChoice, state);
+                    ++state;
+                }
+                
+                return result;
             }
                     
             template <typename SparseModelType, typename ConstantType>
-            boost::optional<storm::storage::TotalScheduler>& SparseDtmcParameterLiftingModelChecker<SparseModelType, ConstantType>::getCurrentMaxScheduler() {
-                return maxSched;
+            boost::optional<storm::storage::Scheduler<ConstantType>> SparseDtmcParameterLiftingModelChecker<SparseModelType, ConstantType>::getCurrentMaxScheduler() {
+                if (!maxSchedChoices) {
+                    return boost::none;
+                }
+                
+                storm::storage::Scheduler<ConstantType> result(maxSchedChoices->size());
+                uint_fast64_t state = 0;
+                for (auto const& schedulerChoice : maxSchedChoices.get()) {
+                    result.setChoice(schedulerChoice, state);
+                    ++state;
+                }
+                
+                return result;
             }
             
             template class SparseDtmcParameterLiftingModelChecker<storm::models::sparse::Dtmc<storm::RationalFunction>, double>;

@@ -7,7 +7,7 @@
 #include "storm/solver/AbstractEquationSolver.h"
 #include "storm/solver/OptimizationDirection.h"
 #include "storm/storage/sparse/StateType.h"
-#include "storm/storage/TotalScheduler.h"
+#include "storm/storage/Scheduler.h"
 #include "storm/utility/macros.h"
 
 #include "storm/exceptions/InvalidSettingsException.h"
@@ -72,23 +72,21 @@ namespace storm {
             bool hasSchedulers() const;
 
             /*!
-             * Retrieves the generated schedulers. Note: it is only legal to call this function if schedulers were generated.
+             * Retrieves the generated scheduler. Note: it is only legal to call this function if schedulers were generated.
              */
-            storm::storage::TotalScheduler const& getPlayer1Scheduler() const;
-            storm::storage::TotalScheduler const& getPlayer2Scheduler() const;
-
+            storm::storage::Scheduler<ValueType> computePlayer1Scheduler() const;
+            storm::storage::Scheduler<ValueType> computePlayer2Scheduler() const;
+            
             /*!
-             * Retrieves the generated schedulers and takes ownership of it. Note: it is only legal to call this functions
-             * if scheduler were generated and after calling this methods, the solver will not contain the corresponding scheduler
-             * any more (i.e. it is illegal to call this methods again until new schedulers have been generated).
+             * Retrieves the generated (deterministic) choices of the optimal scheduler. Note: it is only legal to call this function if schedulers were generated.
              */
-            std::unique_ptr<storm::storage::TotalScheduler> getPlayer1Scheduler();
-            std::unique_ptr<storm::storage::TotalScheduler> getPlayer2Scheduler();
+            std::vector<uint_fast64_t> const& getPlayer1SchedulerChoices() const;
+            std::vector<uint_fast64_t> const& getPlayer2SchedulerChoices() const;
 
             /*!
              * Sets scheduler hints that might be considered by the solver as an initial guess
              */
-            void setSchedulerHints(storm::storage::TotalScheduler&& player1Scheduler, storm::storage::TotalScheduler&& player2Scheduler);
+            void setSchedulerHints(std::vector<uint_fast64_t>&& player1Choices, std::vector<uint_fast64_t>&& player2Choices);
             
             /*!
              * Returns whether Scheduler hints are available
@@ -145,9 +143,9 @@ namespace storm {
             /// Whether we generate schedulers during solving.
             bool trackSchedulers;
 
-            /// The schedulers (if they could be successfully generated).
-            mutable boost::optional<std::unique_ptr<storm::storage::TotalScheduler>> player1Scheduler;
-            mutable boost::optional<std::unique_ptr<storm::storage::TotalScheduler>> player2Scheduler;
+            /// The scheduler choices that induce the optimal values (if they could be successfully generated).
+            mutable boost::optional<std::vector<uint_fast64_t>> player1SchedulerChoices;
+            mutable boost::optional<std::vector<uint_fast64_t>> player2SchedulerChoices;
             
             // A lower bound if one was set.
             boost::optional<ValueType> lowerBound;
@@ -155,9 +153,9 @@ namespace storm {
             // An upper bound if one was set.
             boost::optional<ValueType> upperBound;
             
-            // schedulers that might be considered by the solver as an initial guess
-            boost::optional<storm::storage::TotalScheduler> player1SchedulerHint;
-            boost::optional<storm::storage::TotalScheduler> player2SchedulerHint;
+            // scheduler choices that might be considered by the solver as an initial guess
+            boost::optional<std::vector<uint_fast64_t>> player1ChoicesHint;
+            boost::optional<std::vector<uint_fast64_t>> player2ChoicesHint;
             
         private:
             /// Whether some of the generated data during solver calls should be cached.
