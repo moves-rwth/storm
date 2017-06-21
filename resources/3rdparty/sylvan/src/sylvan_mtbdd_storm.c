@@ -43,10 +43,16 @@ TASK_IMPL_2(MTBDD, mtbdd_op_divide, MTBDD*, pa, MTBDD*, pb)
             double vval_a = *(double*)&val_a;
             double vval_b = *(double*)&val_b;
             if (vval_a == 0.0) return a;
-            else if (vval_b == 0.0) return b;
-            else {
+            else if (vval_b == 0.0) {
+                if (vval_a > 0.0) {
+                    return mtbdd_double(INFINITY);
+                } else {
+                    return mtbdd_double(-INFINITY);
+                }
+                return b;
+            } else {
                 MTBDD result;
-                if (vval_a == 0.0 || vval_b == 1.0) result = a;
+                if (vval_b == 1.0) result = a;
                 result = mtbdd_double(vval_a / vval_b);
                 return result;
             }
