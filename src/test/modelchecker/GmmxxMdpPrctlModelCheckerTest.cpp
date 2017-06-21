@@ -222,11 +222,11 @@ TEST(GmmxxMdpPrctlModelCheckerTest, SchedulerGeneration) {
     
     ASSERT_TRUE(result->isExplicitQuantitativeCheckResult());
     ASSERT_TRUE(result->asExplicitQuantitativeCheckResult<double>().hasScheduler());
-    storm::storage::Scheduler const& scheduler = result->asExplicitQuantitativeCheckResult<double>().getScheduler();
-    EXPECT_EQ(0ull, scheduler.getChoice(0));
-    EXPECT_EQ(1ull, scheduler.getChoice(1));
-    EXPECT_EQ(0ull, scheduler.getChoice(2));
-    EXPECT_EQ(0ull, scheduler.getChoice(3));
+    storm::storage::Scheduler<double> const& scheduler = result->asExplicitQuantitativeCheckResult<double>().getScheduler();
+    EXPECT_EQ(0ull, scheduler.getChoice(0).getDeterministicChoice());
+    EXPECT_EQ(1ull, scheduler.getChoice(1).getDeterministicChoice());
+    EXPECT_EQ(0ull, scheduler.getChoice(2).getDeterministicChoice());
+    EXPECT_EQ(0ull, scheduler.getChoice(3).getDeterministicChoice());
     
     formula = formulaParser.parseSingleFormulaFromString("Pmax=? [F \"target\"]");
     
@@ -236,11 +236,11 @@ TEST(GmmxxMdpPrctlModelCheckerTest, SchedulerGeneration) {
 
     ASSERT_TRUE(result->isExplicitQuantitativeCheckResult());
     ASSERT_TRUE(result->asExplicitQuantitativeCheckResult<double>().hasScheduler());
-    storm::storage::Scheduler const& scheduler2 = result->asExplicitQuantitativeCheckResult<double>().getScheduler();
-    EXPECT_EQ(1ull, scheduler2.getChoice(0));
-    EXPECT_EQ(2ull, scheduler2.getChoice(1));
-    EXPECT_EQ(0ull, scheduler2.getChoice(2));
-    EXPECT_EQ(0ull, scheduler2.getChoice(3));
+    storm::storage::Scheduler<double> const& scheduler2 = result->asExplicitQuantitativeCheckResult<double>().getScheduler();
+    EXPECT_EQ(1ull, scheduler2.getChoice(0).getDeterministicChoice());
+    EXPECT_EQ(2ull, scheduler2.getChoice(1).getDeterministicChoice());
+    EXPECT_EQ(0ull, scheduler2.getChoice(2).getDeterministicChoice());
+    EXPECT_EQ(0ull, scheduler2.getChoice(3).getDeterministicChoice());
 }
 
 // Test is currently disabled as the computation of this property requires eliminating the zero-reward MECs, which is

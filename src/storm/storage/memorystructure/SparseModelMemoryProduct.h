@@ -37,8 +37,8 @@ namespace storm {
             
         private:
             
-            // Computes for each pair of memory and model state the successor memory state
-            // The resulting vector maps (modelState * memoryStateCount) + memoryState to the corresponding successor state of the memory structure
+            // Computes for each pair of memory state and model transition index the successor memory state
+            // The resulting vector maps (modelTransition * memoryStateCount) + memoryState to the corresponding successor state of the memory structure
             std::vector<uint_fast64_t> computeMemorySuccessors() const;
             
             // Computes the reachable states of the resulting model

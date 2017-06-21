@@ -48,9 +48,15 @@ namespace storm {
                 STORM_LOG_ASSERT(MdpPLChecker, "Underlying Parameter lifting checker has unexpected type");
                 auto exactMdpPLChecker = dynamic_cast<storm::modelchecker::parametric::SparseMdpParameterLiftingModelChecker<SparseModelType, ExactConstantType>*>(this->exactParameterLiftingChecker.get());
                 STORM_LOG_ASSERT(exactMdpPLChecker, "Underlying exact parameter lifting checker has unexpected type");
-                exactMdpPLChecker->getCurrentMaxScheduler() = MdpPLChecker->getCurrentMaxScheduler();
-                exactMdpPLChecker->getCurrentMinScheduler() = MdpPLChecker->getCurrentMinScheduler();
-                exactMdpPLChecker->getCurrentPlayer1Scheduler() = MdpPLChecker->getCurrentPlayer1Scheduler();
+                if (MdpPLChecker->getCurrentMaxScheduler()) {
+                    exactMdpPLChecker->getCurrentMaxScheduler() = MdpPLChecker->getCurrentMaxScheduler()->template toValueType<ExactConstantType>();
+                }
+                if (MdpPLChecker->getCurrentMinScheduler()) {
+                    exactMdpPLChecker->getCurrentMinScheduler() = MdpPLChecker->getCurrentMinScheduler()->template toValueType<ExactConstantType>();
+                }
+                if (MdpPLChecker->getCurrentPlayer1Scheduler()) {
+                    exactMdpPLChecker->getCurrentPlayer1Scheduler() = MdpPLChecker->getCurrentPlayer1Scheduler()->template toValueType<ExactConstantType>();
+                }
             }
             
        

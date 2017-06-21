@@ -6,7 +6,7 @@
 
 #include "storm/modelchecker/parametric/SparseParameterLiftingModelChecker.h"
 #include "storm/storage/BitVector.h"
-#include "storm/storage/TotalScheduler.h"
+#include "storm/storage/Scheduler.h"
 #include "storm/solver/MinMaxLinearEquationSolver.h"
 #include "storm/transformer/ParameterLifter.h"
 #include "storm/logic/FragmentSpecification.h"
@@ -24,8 +24,8 @@ namespace storm {
                 
                 virtual bool canHandle(CheckTask<storm::logic::Formula, typename SparseModelType::ValueType> const& checkTask) const override;
                 
-                boost::optional<storm::storage::TotalScheduler>& getCurrentMinScheduler();
-                boost::optional<storm::storage::TotalScheduler>& getCurrentMaxScheduler();
+                boost::optional<storm::storage::Scheduler<ConstantType>> getCurrentMinScheduler();
+                boost::optional<storm::storage::Scheduler<ConstantType>> getCurrentMaxScheduler();
 
             protected:
                 
@@ -47,7 +47,7 @@ namespace storm {
                 std::unique_ptr<storm::solver::MinMaxLinearEquationSolverFactory<ConstantType>> solverFactory;
                 
                 // Results from the most recent solver call.
-                boost::optional<storm::storage::TotalScheduler> minSched, maxSched;
+                boost::optional<std::vector<uint_fast64_t>> minSchedChoices, maxSchedChoices;
                 std::vector<ConstantType> x;
                 boost::optional<ConstantType> lowerResultBound, upperResultBound;
             };

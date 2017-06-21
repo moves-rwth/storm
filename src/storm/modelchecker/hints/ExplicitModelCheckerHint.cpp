@@ -85,22 +85,22 @@ namespace storm {
         }
         
         template<typename ValueType>
-        storm::storage::TotalScheduler const& ExplicitModelCheckerHint<ValueType>::getSchedulerHint() const {
+        storm::storage::Scheduler<ValueType> const& ExplicitModelCheckerHint<ValueType>::getSchedulerHint() const {
             return *schedulerHint;
         }
         
         template<typename ValueType>
-        storm::storage::TotalScheduler& ExplicitModelCheckerHint<ValueType>::getSchedulerHint() {
+        storm::storage::Scheduler<ValueType>& ExplicitModelCheckerHint<ValueType>::getSchedulerHint() {
             return *schedulerHint;
         }
     
         template<typename ValueType>
-        void ExplicitModelCheckerHint<ValueType>::setSchedulerHint(boost::optional<storm::storage::TotalScheduler> const& schedulerHint) {
+        void ExplicitModelCheckerHint<ValueType>::setSchedulerHint(boost::optional<storm::storage::Scheduler<ValueType>> const& schedulerHint) {
             this->schedulerHint = schedulerHint;
         }
       
         template<typename ValueType>
-        void ExplicitModelCheckerHint<ValueType>::setSchedulerHint(boost::optional<storm::storage::TotalScheduler>&& schedulerHint) {
+        void ExplicitModelCheckerHint<ValueType>::setSchedulerHint(boost::optional<storm::storage::Scheduler<ValueType>>&& schedulerHint) {
             this->schedulerHint = schedulerHint;
         }
     

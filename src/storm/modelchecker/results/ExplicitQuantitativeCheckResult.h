@@ -62,16 +62,16 @@ namespace storm {
             virtual ValueType sum() const override;
             
             bool hasScheduler() const;
-            void setScheduler(std::unique_ptr<storm::storage::Scheduler>&& scheduler);
-            storm::storage::Scheduler const& getScheduler() const;
-            storm::storage::Scheduler& getScheduler();
+            void setScheduler(std::unique_ptr<storm::storage::Scheduler<ValueType>>&& scheduler);
+            storm::storage::Scheduler<ValueType> const& getScheduler() const;
+            storm::storage::Scheduler<ValueType>& getScheduler();
             
         private:
             // The values of the quantitative check result.
             boost::variant<vector_type, map_type> values;
             
             // An optional scheduler that accompanies the values.
-            boost::optional<std::shared_ptr<storm::storage::Scheduler>> scheduler;
+            boost::optional<std::shared_ptr<storm::storage::Scheduler<ValueType>>> scheduler;
         };
     }
 }

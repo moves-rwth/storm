@@ -69,8 +69,8 @@ namespace storm {
             
             template <typename SparseModelType>
             SparseMultiObjectivePreprocessor<SparseModelType>::PreprocessorData::PreprocessorData(SparseModelType const& model) : originalModel(model) {
-                storm::storage::MemoryStructureBuilder memoryBuilder(1);
-                memoryBuilder.setTransition(0,0, storm::logic::Formula::getTrueFormula());
+                storm::storage::MemoryStructureBuilder<ValueType, RewardModelType> memoryBuilder(1, model);
+                memoryBuilder.setTransition(0,0, storm::storage::BitVector(model.getNumberOfStates(), true));
                 memory = std::make_shared<storm::storage::MemoryStructure>(memoryBuilder.build());
                 
                 // The memoryLabelPrefix should not be a prefix of a state label of the given model to ensure uniqueness of label names
@@ -232,24 +232,28 @@ namespace storm {
             template<typename SparseModelType>
             void SparseMultiObjectivePreprocessor<SparseModelType>::preprocessUntilFormula(storm::logic::UntilFormula const& formula, PreprocessorData& data) {
                 
+                storm::modelchecker::SparsePropositionalModelChecker<SparseModelType> mc(data.originalModel);
+                storm::storage::BitVector rightSubformulaResult = mc.check(formula.getRightSubformula())->asExplicitQualitativeCheckResult().getTruthValuesVector();
+                storm::storage::BitVector leftSubformulaResult = mc.check(formula.getLeftSubformula())->asExplicitQualitativeCheckResult().getTruthValuesVector();
                 // Check if the formula is already satisfied in the initial state because then the transformation to expected rewards will fail.
                 if (!data.objectives.back()->lowerTimeBound) {
-                    storm::modelchecker::SparsePropositionalModelChecker<SparseModelType> mc(data.originalModel);
-                    if (!(data.originalModel.getInitialStates() & mc.check(formula.getRightSubformula())->asExplicitQualitativeCheckResult().getTruthValuesVector()).empty()) {
+                    if (!(data.originalModel.getInitialStates() & rightSubformulaResult).empty()) {
                         // TODO: Handle this case more properly
                         STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "The Probability for the objective " << *data.objectives.back()->originalFormula << " is always one as the rhs of the until formula is true in the initial state. This (trivial) case is currently not implemented.");
                     }
                 }
                 
                 // Create a memory structure that stores whether a non-PhiState or a PsiState has already been reached
-                storm::storage::MemoryStructureBuilder builder(2);
+                storm::storage::MemoryStructureBuilder<ValueType, RewardModelType> builder(2, data.originalModel);
                 std::string relevantStatesLabel = data.memoryLabelPrefix + "_obj" + std::to_string(data.objectives.size()) + "_relevant";
                 builder.setLabel(0, relevantStatesLabel);
-                auto negatedLeftSubFormula = std::make_shared<storm::logic::UnaryBooleanStateFormula>(storm::logic::UnaryBooleanStateFormula::OperatorType::Not, formula.getLeftSubformula().asSharedPointer());
-                auto targetFormula = std::make_shared<storm::logic::BinaryBooleanStateFormula>(storm::logic::BinaryBooleanStateFormula::OperatorType::Or, negatedLeftSubFormula, formula.getRightSubformula().asSharedPointer());
-                builder.setTransition(0, 0, std::make_shared<storm::logic::UnaryBooleanStateFormula>(storm::logic::UnaryBooleanStateFormula::OperatorType::Not, targetFormula));
-                builder.setTransition(0, 1, targetFormula);
-                builder.setTransition(1, 1, storm::logic::Formula::getTrueFormula());
+                storm::storage::BitVector nonRelevantStates = ~leftSubformulaResult | rightSubformulaResult;
+                builder.setTransition(0, 0, ~nonRelevantStates);
+                builder.setTransition(0, 1, nonRelevantStates);
+                builder.setTransition(1, 1, storm::storage::BitVector(data.originalModel.getNumberOfStates(), true));
+                for (auto const& initState : data.originalModel.getInitialStates()) {
+                    builder.setInitialMemoryState(initState, nonRelevantStates.get(initState) ? 1 : 0);
+                }
                 storm::storage::MemoryStructure objectiveMemory = builder.build();
                 data.memory = std::make_shared<storm::storage::MemoryStructure>(data.memory->product(objectiveMemory));
                 
@@ -295,15 +299,22 @@ namespace storm {
                     preprocessUntilFormula(storm::logic::UntilFormula(storm::logic::Formula::getTrueFormula(), formula.getSubformula().asSharedPointer()), data);
                     return;
                 }
-                            
+                
+                // Analyze the subformula
+                storm::modelchecker::SparsePropositionalModelChecker<SparseModelType> mc(data.originalModel);
+                storm::storage::BitVector subFormulaResult = mc.check(formula.getSubformula())->asExplicitQualitativeCheckResult().getTruthValuesVector();
+                
                 // Create a memory structure that stores whether a target state has already been reached
-                storm::storage::MemoryStructureBuilder builder(2);
+                storm::storage::MemoryStructureBuilder<ValueType, RewardModelType> builder(2, data.originalModel);
                 // Get a unique label that is not already present in the model
                 std::string relevantStatesLabel = data.memoryLabelPrefix + "_obj" + std::to_string(data.objectives.size()) + "_relevant";
                 builder.setLabel(0, relevantStatesLabel);
-                builder.setTransition(0, 0, std::make_shared<storm::logic::UnaryBooleanStateFormula>(storm::logic::UnaryBooleanStateFormula::OperatorType::Not, formula.getSubformula().asSharedPointer()));
-                builder.setTransition(0, 1, formula.getSubformula().asSharedPointer());
-                builder.setTransition(1, 1, std::make_shared<storm::logic::BooleanLiteralFormula>(true));
+                builder.setTransition(0, 0, ~subFormulaResult);
+                builder.setTransition(0, 1, subFormulaResult);
+                builder.setTransition(1, 1, storm::storage::BitVector(data.originalModel.getNumberOfStates(), true));
+                for (auto const& initState : data.originalModel.getInitialStates()) {
+                    builder.setInitialMemoryState(initState, subFormulaResult.get(initState) ? 1 : 0);
+                }
                 storm::storage::MemoryStructure objectiveMemory = builder.build();
                 data.memory = std::make_shared<storm::storage::MemoryStructure>(data.memory->product(objectiveMemory));
                 

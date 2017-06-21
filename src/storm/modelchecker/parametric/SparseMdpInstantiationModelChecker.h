@@ -8,7 +8,6 @@
 #include "storm/modelchecker/parametric/SparseInstantiationModelChecker.h"
 #include "storm/modelchecker/prctl/SparseMdpPrctlModelChecker.h"
 #include "storm/utility/ModelInstantiator.h"
-#include "storm/storage/TotalScheduler.h"
 
 namespace storm {
     namespace modelchecker {

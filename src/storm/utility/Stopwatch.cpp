@@ -43,7 +43,9 @@ namespace storm {
         }
         
         std::ostream& operator<<(std::ostream& out, Stopwatch const& stopwatch) {
-            out << stopwatch.getTimeInSeconds() << "." << std::setw(3) << std::setfill('0') << (stopwatch.getTimeInMilliseconds() % 1000) << "s";
+            char oldFillChar = out.fill('0');
+            out << stopwatch.getTimeInSeconds() << "." << std::setw(3) << (stopwatch.getTimeInMilliseconds() % 1000) << "s";
+            out.fill(oldFillChar);
             return out;
         }
         
