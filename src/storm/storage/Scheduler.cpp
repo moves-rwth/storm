@@ -96,7 +96,7 @@ namespace storm {
             if (stateValuationsGiven) {
                 widthOfStates += model->getStateValuations().getStateInfo(schedulerChoices.front().size() - 1).length() + 5;
             }
-            widthOfStates = std::max(widthOfStates, 12ull);
+            widthOfStates = std::max(widthOfStates, (uint_fast64_t)12);
             uint_fast64_t numOfSkippedStatesWithUniqueChoice = 0;
             
             out << "___________________________________________________________________" << std::endl;
