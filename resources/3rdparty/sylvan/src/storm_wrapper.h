@@ -25,6 +25,7 @@ extern "C" {
     storm_rational_number_ptr storm_rational_number_clone(storm_rational_number_ptr a);
     storm_rational_number_ptr storm_rational_number_get_zero();
     storm_rational_number_ptr storm_rational_number_get_one();
+    storm_rational_number_ptr storm_rational_number_get_infinity();
     int storm_rational_number_is_zero(storm_rational_number_ptr a);
     uint64_t storm_rational_number_hash(storm_rational_number_ptr const a, uint64_t const seed);
     double storm_rational_number_get_value_double(storm_rational_number_ptr a);
@@ -71,6 +72,7 @@ extern "C" {
     storm_rational_function_ptr storm_rational_function_clone(storm_rational_function_ptr a);
     storm_rational_function_ptr storm_rational_function_get_zero();
     storm_rational_function_ptr storm_rational_function_get_one();
+    storm_rational_number_ptr storm_rational_function_get_infinity();
     int storm_rational_function_is_zero(storm_rational_function_ptr a);
     uint64_t storm_rational_function_hash(storm_rational_function_ptr const a, uint64_t const seed);
     double storm_rational_function_get_value_double(storm_rational_function_ptr a);
