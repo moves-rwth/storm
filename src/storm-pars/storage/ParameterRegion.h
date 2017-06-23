@@ -2,7 +2,7 @@
 
 #include <map>
 
-#include "storm/utility/parametric.h"
+#include "storm-pars/utility/parametric.h"
 
 namespace storm {
     namespace storage {
@@ -61,28 +61,6 @@ namespace storm {
 
             //returns the region as string in the format 0.3<=p<=0.4,0.2<=q<=0.5;
             std::string toString(bool boundariesAsDouble = false) const;
-
-            /*
-             * Can be used to parse a single parameter with its boundaries from a string of the form "0.3<=p<=0.5".
-             * The numbers are parsed as doubles and then converted to SparseDtmcRegionModelChecker::CoefficientType.
-             * The results will be inserted in the given maps
-             *
-             */
-            static void parseParameterBoundaries( Valuation& lowerBoundaries, Valuation& upperBoundaries, std::string const& parameterBoundariesString, std::set<VariableType> const& consideredVariables);
-
-            /*
-             * Can be used to parse a single region from a string of the form "0.3<=p<=0.5,0.4<=q<=0.7".
-             * The numbers are parsed as doubles and then converted to SparseDtmcRegionModelChecker::CoefficientType.
-             *
-             */
-            static ParameterRegion parseRegion(std::string const& regionString, std::set<VariableType> const& consideredVariables);
-
-            /*
-             * Can be used to parse a vector of region from a string of the form "0.3<=p<=0.5,0.4<=q<=0.7;0.1<=p<=0.3,0.2<=q<=0.4".
-             * The numbers are parsed as doubles and then converted to SparseDtmcRegionModelChecker::CoefficientType.
-             *
-             */
-            static std::vector<ParameterRegion> parseMultipleRegions(std::string const& regionsString, std::set<VariableType> const& consideredVariables);
 
         private:
 

@@ -3,8 +3,8 @@
 
 #include <vector>
 
+#include "storm-pars/utility/parametric.h"
 #include "storm/models/sparse/Model.h"
-#include "storm/utility/parametric.h"
 #include "storm/utility/macros.h"
 #include "storm/logic/Formula.h"
 #include "storm/logic/FragmentSpecification.h"
@@ -31,37 +31,38 @@ namespace storm {
              * @return true iff it was successfully validated that parameter lifting is sound on the provided model.
              */
             template<typename ValueType>
-            static bool validateParameterLiftingSound(std::shared_ptr<storm::models::sparse::Model<ValueType>> const& model, std::shared_ptr<storm::logic::Formula const> const& formula) {
+            static bool validateParameterLiftingSound(storm::models::sparse::Model<ValueType> const& model, storm::logic::Formula const& formula) {
                 
                 // Check whether all numbers occurring in the model are multilinear
                 
                 // Transition matrix
-                if (model->isOfType(storm::models::ModelType::Dtmc) || model->isOfType(storm::models::ModelType::Mdp) || model->isOfType(storm::models::ModelType::Ctmc)) {
-                    for (auto const& entry : model->getTransitionMatrix()) {
+                if (model.isOfType(storm::models::ModelType::Dtmc) || model.isOfType(storm::models::ModelType::Mdp) || model.isOfType(storm::models::ModelType::Ctmc)) {
+                    for (auto const& entry : model.getTransitionMatrix()) {
                         if (!storm::utility::parametric::isMultiLinearPolynomial(entry.getValue())) {
                             STORM_LOG_WARN("The input model contains a non-linear polynomial as transition: '" << entry.getValue() << "'. Can not validate that parameter lifting is sound on this model.");
                             return false;
                         }
                     }
-                } else if (model->isOfType(storm::models::ModelType::MarkovAutomaton)) {
+                } else if (model.isOfType(storm::models::ModelType::MarkovAutomaton)) {
+                    auto const& ma = dynamic_cast<storm::models::sparse::MarkovAutomaton<ValueType> const&>(model);
                     // Markov Automata store the probability matrix and the exit rate vector. However, we need to considert the rate matrix.
-                    if (!model->template as<storm::models::sparse::MarkovAutomaton<ValueType>>()->isClosed()) {
+                    if (!ma.isClosed()) {
                         STORM_LOG_ERROR("parameter lifting requires a closed Markov automaton.");
                         return false;
                     }
-                    auto const& rateVector = model->template as<storm::models::sparse::MarkovAutomaton<ValueType>>()->getExitRates();
-                    auto const& markovianStates = model->template as<storm::models::sparse::MarkovAutomaton<ValueType>>()->getMarkovianStates();
-                    for (uint_fast64_t state = 0; state < model->getNumberOfStates(); ++state) {
+                    auto const& rateVector = ma.getExitRates();
+                    auto const& markovianStates = ma.getMarkovianStates();
+                    for (uint_fast64_t state = 0; state < model.getNumberOfStates(); ++state) {
                         if (markovianStates.get(state)) {
                             auto const& exitRate = rateVector[state];
-                            for (auto const& entry : model->getTransitionMatrix().getRowGroup(state)) {
+                            for (auto const& entry : model.getTransitionMatrix().getRowGroup(state)) {
                                 if (!storm::utility::parametric::isMultiLinearPolynomial(storm::utility::simplify(entry.getValue() * exitRate))) {
                                     STORM_LOG_WARN("The input model contains a non-linear polynomial as transition rate: '" << storm::utility::simplify(entry.getValue() * exitRate) << "'. Can not validate that parameter lifting is sound on this model.");
                                     return false;
                                 }
                             }
                         } else {
-                            for (auto const& entry : model->getTransitionMatrix().getRowGroup(state)) {
+                            for (auto const& entry : model.getTransitionMatrix().getRowGroup(state)) {
                                 if (!storm::utility::parametric::isMultiLinearPolynomial(entry.getValue())) {
                                     STORM_LOG_WARN("The input model contains a non-linear polynomial as transition: '" << entry.getValue() << "'. Can not validate that parameter lifting is sound on this model.");
                                     return false;
@@ -75,10 +76,10 @@ namespace storm {
                 }
                 
                 // Rewards
-                if (formula->isRewardOperatorFormula()) {
-                    storm::models::sparse::StandardRewardModel<ValueType> const& rewardModel = formula->asRewardOperatorFormula().hasRewardModelName() ?
-                                                                                    model->getRewardModel(formula->asRewardOperatorFormula().getRewardModelName()) :
-                                                                                    model->getUniqueRewardModel();
+                if (formula.isRewardOperatorFormula()) {
+                    storm::models::sparse::StandardRewardModel<ValueType> const& rewardModel = formula.asRewardOperatorFormula().hasRewardModelName() ?
+                                                                                    model.getRewardModel(formula.asRewardOperatorFormula().getRewardModelName()) :
+                                                                                    model.getUniqueRewardModel();
                     if (rewardModel.hasStateRewards()) {
                         for (auto const& rew : rewardModel.getStateRewardVector()) {
                             if (!storm::utility::parametric::isMultiLinearPolynomial(rew)) {
@@ -91,7 +92,7 @@ namespace storm {
                     // Note: This check could also be done action-wise.
                     std::set<typename storm::utility::parametric::VariableType<ValueType>::type> collectedRewardParameters;
                     if (rewardModel.hasStateActionRewards()) {
-                        if (model->isOfType(storm::models::ModelType::Ctmc) || model->isOfType(storm::models::ModelType::MarkovAutomaton)) {
+                        if (model.isOfType(storm::models::ModelType::Ctmc) || model.isOfType(storm::models::ModelType::MarkovAutomaton)) {
                             for (auto const& rew : rewardModel.getStateActionRewardVector()) {
                                 if (!storm::utility::parametric::isMultiLinearPolynomial(rew)) {
                                     STORM_LOG_WARN("The input model contains a non-linear polynomial as action reward: '" << rew << "'. Can not validate that parameter lifting is sound on this model.");
@@ -120,7 +121,7 @@ namespace storm {
                     }
                     
                     if (!collectedRewardParameters.empty()) {
-                        std::set<typename storm::utility::parametric::VariableType<ValueType>::type> transitionParameters = storm::models::sparse::getProbabilityParameters(*model);
+                        std::set<typename storm::utility::parametric::VariableType<ValueType>::type> transitionParameters = storm::models::sparse::getProbabilityParameters(model);
                         auto rewParIt = collectedRewardParameters.begin();
                         auto trParIt = transitionParameters.begin();
                         while (rewParIt != collectedRewardParameters.end() && trParIt != transitionParameters.end()) {

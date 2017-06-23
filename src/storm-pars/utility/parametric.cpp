@@ -1,6 +1,6 @@
 #include <string>
 
-#include "storm/utility/parametric.h"
+#include "storm-pars/utility/parametric.h"
 #include "storm/utility/constants.h"
 #include "storm/utility/macros.h"
 #include "storm/settings/SettingsManager.h"

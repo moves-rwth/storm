@@ -2,84 +2,49 @@
 
 #include <memory>
 
-#include "storm/modelchecker/parametric/RegionCheckResult.h"
-#include "storm/modelchecker/parametric/SparseInstantiationModelChecker.h"
-#include "storm/modelchecker/parametric/SparseParameterLiftingModelChecker.h"
+#include "storm-pars/modelchecker/results/RegionCheckResult.h"
+#include "storm-pars/modelchecker/results/RegionRefinementCheckResult.h"
+#include "storm-pars/modelchecker/region/RegionResult.h"
+#include "storm-pars/storage/ParameterRegion.h"
+
 #include "storm/modelchecker/CheckTask.h"
-#include "storm/storage/ParameterRegion.h"
-#include "storm/utility/Stopwatch.h"
-#include "storm/utility/NumberTraits.h"
 
 namespace storm {
     namespace modelchecker{
-        namespace parametric{
+        
+        template<typename ParametricType>
+        class RegionModelChecker {
+        public:
             
-            struct RegionCheckerSettings {
-                RegionCheckerSettings();
-                
-                bool applyExactValidation;
-            };
+            typedef typename storm::storage::ParameterRegion<ParametricType>::CoefficientType CoefficientType;
 
-            template<typename SparseModelType, typename ConstantType, typename ExactConstantType = ConstantType>
-            class RegionChecker {
-                static_assert(storm::NumberTraits<ExactConstantType>::IsExact, "Specified type for exact computations is not exact.");
+            RegionModelChecker();
+            virtual ~RegionModelChecker() = default;
+            
+            virtual bool canHandle(CheckTask<storm::logic::Formula, ParametricType> const& checkTask) const = 0;
 
-            public:
-                
-                typedef typename storm::storage::ParameterRegion<typename SparseModelType::ValueType>::CoefficientType CoefficientType;
+            virtual void specifyFormula(CheckTask<storm::logic::Formula, ParametricType> const& checkTask) = 0;
+            
+            /*!
+             * Analyzes the given region.
+             * An initial region result can be given to simplify the analysis (e.g. if the initial result is ExistsSat, we do not check for AllViolated).
+             * If supported by this model checker, it is possible to sample the vertices of the region whenever AllSat/AllViolated could not be shown.
+             */
+            virtual RegionResult analyzeRegion(storm::storage::ParameterRegion<ParametricType> const& region, RegionResult const& initialResult = RegionResult::Unknown, bool sampleVerticesOfRegion = false) = 0;
+            
+             /*!
+             * Analyzes the given regions.
+             * If supported by this model checker, it is possible to sample the vertices of the regions whenever AllSat/AllViolated could not be shown.
+             */
+            std::unique_ptr<storm::modelchecker::RegionCheckResult<ParametricType>> analyzeRegions(std::vector<storm::storage::ParameterRegion<ParametricType>> const& regions, bool sampleVerticesOfRegion = false) ;
+            
+            /*!
+             * Iteratively refines the region until the region analysis yields a conclusive result (AllSat or AllViolated).
+             * The refinement stops as soon as the fraction of the area of the subregions with inconclusive result is less then the given threshold
+             */
+            std::unique_ptr<storm::modelchecker::RegionRefinementCheckResult<ParametricType>> performRegionRefinement(storm::storage::ParameterRegion<ParametricType> const& region, ParametricType const& threshold);
+            
+        };
 
-                RegionChecker(SparseModelType const& parametricModel);
-                virtual ~RegionChecker() = default;
-                
-                RegionCheckerSettings const& getSettings() const;
-                void setSettings(RegionCheckerSettings const& newSettings);
-                
-                void specifyFormula(CheckTask<storm::logic::Formula, typename SparseModelType::ValueType> const& checkTask);
-                
-                /*!
-                 * Analyzes the given region by means of parameter lifting.
-                 * We first check whether there is one point in the region for which the property is satisfied/violated.
-                 * If the given initialResults already indicates that there is such a point, this step is skipped.
-                 * Then, we check whether ALL points in the region violate/satisfy the property
-                 *
-                 */
-                RegionResult analyzeRegion(storm::storage::ParameterRegion<typename SparseModelType::ValueType> const& region, RegionResult const& initialResult = RegionCheckResult::Unknown, bool sampleVerticesOfRegion = false);
-                /*!
-                 * Similar to analyze region but additionaly invokes exact parameter lifting to validate results AllSat or AllViolated
-                 */
-                RegionResult analyzeRegionExactValidation(storm::storage::ParameterRegion<typename SparseModelType::ValueType> const& region, RegionResult const& initialResult = RegionCheckResult::Unknown);
-                
-                /*!
-                 * Iteratively refines the region until parameter lifting yields a conclusive result (AllSat or AllViolated).
-                 * The refinement stops as soon as the fraction of the area of the subregions with inconclusive result is less then the given threshold
-                 */
-                std::vector<std::pair<storm::storage::ParameterRegion<typename SparseModelType::ValueType>, RegionResult>> performRegionRefinement(storm::storage::ParameterRegion<typename SparseModelType::ValueType> const& region, CoefficientType const& threshold);
-                
-                static std::string visualizeResult(std::vector<std::pair<storm::storage::ParameterRegion<typename SparseModelType::ValueType>, RegionResult>> const& result, storm::storage::ParameterRegion<typename SparseModelType::ValueType> const& parameterSpace, typename storm::storage::ParameterRegion<typename SparseModelType::ValueType>::VariableType const& x, typename storm::storage::ParameterRegion<typename SparseModelType::ValueType>::VariableType const& y);
-                
-            protected:
-                SparseModelType const& getConsideredParametricModel() const;
-                
-                virtual void initializeUnderlyingCheckers() = 0;
-                virtual void simplifyParametricModel(CheckTask<storm::logic::Formula, typename SparseModelType::ValueType> const& checkTask) = 0;
-                virtual void applyHintsToExactChecker() = 0;
-                
-                SparseModelType const& parametricModel;
-                RegionCheckerSettings settings;
-                std::unique_ptr<CheckTask<storm::logic::Formula, typename SparseModelType::ValueType>> currentCheckTask;
-                std::shared_ptr<storm::logic::Formula const> currentFormula;
-                std::shared_ptr<SparseModelType> simplifiedModel;
-                
-
-                std::unique_ptr<SparseParameterLiftingModelChecker<SparseModelType, ConstantType>> parameterLiftingChecker;
-                std::unique_ptr<SparseParameterLiftingModelChecker<SparseModelType, ExactConstantType>> exactParameterLiftingChecker;
-                std::unique_ptr<SparseInstantiationModelChecker<SparseModelType, ConstantType>> instantiationChecker;
-                
-                // Information for statistics
-                mutable storm::utility::Stopwatch initializationStopwatch, instantiationCheckerStopwatch, parameterLiftingCheckerStopwatch;
-                mutable uint_fast64_t numOfCorrectedRegions;
-            };
-    
-        } //namespace parametric
     } //namespace modelchecker
 } //namespace storm

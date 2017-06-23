@@ -30,28 +30,12 @@ namespace storm {
                  */
 				std::string exportResultPath() const;
 				
-				/*!
-				 * Retrieves whether the parameter space was declared
-				 */
-				bool isRegionSet() const;
-				
-				/*!
-				 * Retrieves the given parameter spcae
-				 */
-				std::string getRegionString() const;
-				
-				/*!
-				 * Retrieves the threshold considered for iterative region refinement.
-				 * The refinement converges as soon as the fraction of unknown area falls below this threshold
-				 */
-				double getRefinementThreshold() const;
-				
-				/*!
-				 * Retrieves whether exact validation should be performed
-				 */
-				bool isExactValidationSet() const;
-				
                 /*!
+                 * Retrieves whether or not the input model should be simplified before its analysis.
+                 */
+                bool isSimplifySet() const;
+                
+               /*!
                  * Retrieves whether or not derivatives of the resulting rational function are to be generated.
                  *
                  * @return True if the derivatives are to be generated.
@@ -61,12 +45,8 @@ namespace storm {
                 const static std::string moduleName;
                 
             private:
-				const static std::string encodeSmt2StrategyOptionName;
-				const static std::string exportSmt2DestinationPathOptionName;
-				const static std::string exportResultDestinationPathOptionName;
-				const static std::string regionOptionName;
-				const static std::string refinementThresholdOptionName;
-				const static std::string exactValidationOptionName;
+				const static std::string exportResultOptionName;
+                const static std::string simplifyOptionName;
                 const static std::string derivativesOptionName;
             };
             

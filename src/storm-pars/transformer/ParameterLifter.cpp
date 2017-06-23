@@ -1,4 +1,4 @@
-#include "storm/transformer/ParameterLifter.h"
+#include "storm-pars/transformer/ParameterLifter.h"
 
 
 #include "storm/adapters/RationalFunctionAdapter.h"

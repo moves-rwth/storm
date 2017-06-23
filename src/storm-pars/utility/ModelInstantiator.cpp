@@ -1,4 +1,4 @@
-#include "storm/utility/ModelInstantiator.h"
+#include "storm-pars/utility/ModelInstantiator.h"
 #include "storm/models/sparse/StandardRewardModel.h"
 
 namespace storm {

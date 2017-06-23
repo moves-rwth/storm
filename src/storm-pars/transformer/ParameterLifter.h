@@ -6,10 +6,10 @@
 #include <set>
 
 
+#include "storm-pars/storage/ParameterRegion.h"
+#include "storm-pars/utility/parametric.h"
 #include "storm/storage/BitVector.h"
 #include "storm/storage/SparseMatrix.h"
-#include "storm/utility/parametric.h"
-#include "storm/storage/ParameterRegion.h"
 #include "storm/solver/OptimizationDirection.h"
 
 namespace storm {

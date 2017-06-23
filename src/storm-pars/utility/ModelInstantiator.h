@@ -5,12 +5,12 @@
 #include <memory>
 #include <type_traits>
 
+#include "storm-pars/utility/parametric.h"
 #include "storm/models/sparse/Dtmc.h"
 #include "storm/models/sparse/Mdp.h"
 #include "storm/models/sparse/Ctmc.h"
 #include "storm/models/sparse/MarkovAutomaton.h"
 #include "storm/models/sparse/StochasticTwoPlayerGame.h"
-#include "storm/utility/parametric.h"
 #include "storm/utility/constants.h"
 
 namespace storm {

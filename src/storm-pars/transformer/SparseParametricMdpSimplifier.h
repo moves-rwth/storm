@@ -1,7 +1,7 @@
 #pragma once
 
 
-#include "storm/transformer/SparseParametricModelSimplifier.h"
+#include "storm-pars/transformer/SparseParametricModelSimplifier.h"
 
 namespace storm {
     namespace transformer {
