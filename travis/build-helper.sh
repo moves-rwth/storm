@@ -13,7 +13,7 @@ travis_fold() {
 # Helper for distinguishing between different runs
 run() {
   case "$1" in
-  BuildDep)
+  Build1)
     # CMake
     travis_fold start cmake
     rm -rf build
@@ -28,37 +28,18 @@ run() {
     fi
     echo
     travis_fold end cmake
-    # Make resources
-    travis_fold start make_dep
-    make resources -j$N_JOBS
-    make test-resources -j$N_JOBS
-    make l3pp_ext -j$N_JOBS
-    make sylvan -j$N_JOBS
-    travis_fold end make_dep
+    # Make
+    travis_fold start make
+    make -j$N_JOBS
+    travis_fold end make
     ;;
 
-  BuildLib1)
-    # Make libstorm (first try)
-    travis_fold start make_lib
-    cd build
-    make storm -j$N_JOBS
-    travis_fold end make_lib
-    ;;
-
-  BuildLib)
-    # Make libstorm
-    travis_fold start make_lib
-    cd build
-    make storm -j$N_JOBS
-    travis_fold end make_lib
-    ;;
-
-  BuildAll)
-    # Make all
-    travis_fold start make_all
+  Build2 | Build3 | Build4)
+    # Make (run 2-4)
+    travis_fold start make
     cd build
     make -j$N_JOBS
-    travis_fold end make_all
+    travis_fold end make
     ;;
 
   TestAll)
