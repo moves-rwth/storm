@@ -43,19 +43,19 @@ namespace storm {
                  * Then, we check whether ALL points in the region violate/satisfy the property
                  *
                  */
-                RegionCheckResult analyzeRegion(storm::storage::ParameterRegion<typename SparseModelType::ValueType> const& region, RegionCheckResult const& initialResult = RegionCheckResult::Unknown, bool sampleVerticesOfRegion = false);
+                RegionResult analyzeRegion(storm::storage::ParameterRegion<typename SparseModelType::ValueType> const& region, RegionResult const& initialResult = RegionCheckResult::Unknown, bool sampleVerticesOfRegion = false);
                 /*!
                  * Similar to analyze region but additionaly invokes exact parameter lifting to validate results AllSat or AllViolated
                  */
-                RegionCheckResult analyzeRegionExactValidation(storm::storage::ParameterRegion<typename SparseModelType::ValueType> const& region, RegionCheckResult const& initialResult = RegionCheckResult::Unknown);
+                RegionResult analyzeRegionExactValidation(storm::storage::ParameterRegion<typename SparseModelType::ValueType> const& region, RegionResult const& initialResult = RegionCheckResult::Unknown);
                 
                 /*!
                  * Iteratively refines the region until parameter lifting yields a conclusive result (AllSat or AllViolated).
                  * The refinement stops as soon as the fraction of the area of the subregions with inconclusive result is less then the given threshold
                  */
-                std::vector<std::pair<storm::storage::ParameterRegion<typename SparseModelType::ValueType>, RegionCheckResult>> performRegionRefinement(storm::storage::ParameterRegion<typename SparseModelType::ValueType> const& region, CoefficientType const& threshold);
+                std::vector<std::pair<storm::storage::ParameterRegion<typename SparseModelType::ValueType>, RegionResult>> performRegionRefinement(storm::storage::ParameterRegion<typename SparseModelType::ValueType> const& region, CoefficientType const& threshold);
                 
-                static std::string visualizeResult(std::vector<std::pair<storm::storage::ParameterRegion<typename SparseModelType::ValueType>, RegionCheckResult>> const& result, storm::storage::ParameterRegion<typename SparseModelType::ValueType> const& parameterSpace, typename storm::storage::ParameterRegion<typename SparseModelType::ValueType>::VariableType const& x, typename storm::storage::ParameterRegion<typename SparseModelType::ValueType>::VariableType const& y);
+                static std::string visualizeResult(std::vector<std::pair<storm::storage::ParameterRegion<typename SparseModelType::ValueType>, RegionResult>> const& result, storm::storage::ParameterRegion<typename SparseModelType::ValueType> const& parameterSpace, typename storm::storage::ParameterRegion<typename SparseModelType::ValueType>::VariableType const& x, typename storm::storage::ParameterRegion<typename SparseModelType::ValueType>::VariableType const& y);
                 
             protected:
                 SparseModelType const& getConsideredParametricModel() const;

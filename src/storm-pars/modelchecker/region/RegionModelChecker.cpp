@@ -68,8 +68,8 @@ namespace storm {
             }
     
             template <typename SparseModelType, typename ConstantType, typename ExactConstantType>
-            RegionCheckResult RegionChecker<SparseModelType, ConstantType, ExactConstantType>::analyzeRegion(storm::storage::ParameterRegion<typename SparseModelType::ValueType> const& region, RegionCheckResult const& initialResult, bool sampleVerticesOfRegion) {
-                      RegionCheckResult result = initialResult;
+            RegionResult RegionChecker<SparseModelType, ConstantType, ExactConstantType>::analyzeRegion(storm::storage::ParameterRegion<typename SparseModelType::ValueType> const& region, RegionResult const& initialResult, bool sampleVerticesOfRegion) {
+                      RegionResult result = initialResult;
 
                 // Check if we need to check the formula on one point to decide whether to show AllSat or AllViolated
                 instantiationCheckerStopwatch.start();
@@ -120,8 +120,8 @@ namespace storm {
             }
             
             template <typename SparseModelType, typename ConstantType, typename ExactConstantType>
-            RegionCheckResult RegionChecker<SparseModelType, ConstantType, ExactConstantType>::analyzeRegionExactValidation(storm::storage::ParameterRegion<typename SparseModelType::ValueType> const& region, RegionCheckResult const& initialResult) {
-                RegionCheckResult numericResult = analyzeRegion(region, initialResult, false);
+            RegionResult RegionChecker<SparseModelType, ConstantType, ExactConstantType>::analyzeRegionExactValidation(storm::storage::ParameterRegion<typename SparseModelType::ValueType> const& region, RegionResult const& initialResult) {
+                RegionResult numericResult = analyzeRegion(region, initialResult, false);
                 parameterLiftingCheckerStopwatch.start();
                 if (numericResult == RegionCheckResult::AllSat || numericResult == RegionCheckResult::AllViolated) {
                     applyHintsToExactChecker();
@@ -159,7 +159,7 @@ namespace storm {
 
     
             template <typename SparseModelType, typename ConstantType, typename ExactConstantType>
-            std::vector<std::pair<storm::storage::ParameterRegion<typename SparseModelType::ValueType>, RegionCheckResult>> RegionChecker<SparseModelType, ConstantType, ExactConstantType>::performRegionRefinement(storm::storage::ParameterRegion<typename SparseModelType::ValueType> const& region, CoefficientType const& threshold) {
+            std::vector<std::pair<storm::storage::ParameterRegion<typename SparseModelType::ValueType>, RegionResult>> RegionChecker<SparseModelType, ConstantType, ExactConstantType>::performRegionRefinement(storm::storage::ParameterRegion<typename SparseModelType::ValueType> const& region, CoefficientType const& threshold) {
                 STORM_LOG_INFO("Applying refinement on region: " << region.toString(true) << " .");
                 
                 auto areaOfParameterSpace = region.area();
@@ -167,8 +167,8 @@ namespace storm {
                 auto fractionOfAllSatArea = storm::utility::zero<CoefficientType>();
                 auto fractionOfAllViolatedArea = storm::utility::zero<CoefficientType>();
                 
-                std::queue<std::pair<storm::storage::ParameterRegion<typename SparseModelType::ValueType>, RegionCheckResult>> unprocessedRegions;
-                std::vector<std::pair<storm::storage::ParameterRegion<typename SparseModelType::ValueType>, RegionCheckResult>> result;
+                std::queue<std::pair<storm::storage::ParameterRegion<typename SparseModelType::ValueType>, RegionResult>> unprocessedRegions;
+                std::vector<std::pair<storm::storage::ParameterRegion<typename SparseModelType::ValueType>, RegionResult>> result;
                 unprocessedRegions.emplace(region, RegionCheckResult::Unknown);
                 uint_fast64_t numOfAnalyzedRegions = 0;
                 numOfCorrectedRegions = 0;
@@ -211,7 +211,7 @@ namespace storm {
                         default:
                             std::vector<storm::storage::ParameterRegion<typename SparseModelType::ValueType>> newRegions;
                             currentRegion.split(currentRegion.getCenterPoint(), newRegions);
-                            RegionCheckResult initResForNewRegions = (res == RegionCheckResult::CenterSat) ? RegionCheckResult::ExistsSat :
+                            RegionResult initResForNewRegions = (res == RegionCheckResult::CenterSat) ? RegionCheckResult::ExistsSat :
                                                                      ((res == RegionCheckResult::CenterViolated) ? RegionCheckResult::ExistsViolated :
                                                                       RegionCheckResult::Unknown);
                             for(auto& newRegion : newRegions) {
@@ -258,7 +258,7 @@ namespace storm {
             }
     
             template <typename SparseModelType, typename ConstantType, typename ExactConstantType>
-            std::string RegionChecker<SparseModelType, ConstantType, ExactConstantType>::visualizeResult(std::vector<std::pair<storm::storage::ParameterRegion<typename SparseModelType::ValueType>, RegionCheckResult>> const& result, storm::storage::ParameterRegion<typename SparseModelType::ValueType> const& parameterSpace, typename storm::storage::ParameterRegion<typename SparseModelType::ValueType>::VariableType const& x, typename storm::storage::ParameterRegion<typename SparseModelType::ValueType>::VariableType const& y) {
+            std::string RegionChecker<SparseModelType, ConstantType, ExactConstantType>::visualizeResult(std::vector<std::pair<storm::storage::ParameterRegion<typename SparseModelType::ValueType>, RegionResult>> const& result, storm::storage::ParameterRegion<typename SparseModelType::ValueType> const& parameterSpace, typename storm::storage::ParameterRegion<typename SparseModelType::ValueType>::VariableType const& x, typename storm::storage::ParameterRegion<typename SparseModelType::ValueType>::VariableType const& y) {
                 
                 std::stringstream stream;
                 
