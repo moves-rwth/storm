@@ -10,9 +10,11 @@ then
   STLARG="-stdlib=$STL"
 fi
 
+EXITCODE=42
+
 case $OS in
 linux)
-    # Execute docker image on linux
+    # Execute docker image on Linux
     # Stop previous session
     docker rm -f storm &>/dev/null
     # Run container
@@ -32,12 +34,6 @@ linux)
         cd storm;
         travis/build-helper.sh $1 $2"
     EXITCODE=$?
-    if [ $EXITCODE = 124 ] && [ "$2" = "BuildLib1" ]
-    then
-        exit 0
-    else
-        exit $EXITCODE
-    fi
     ;;
 
 osx)
@@ -48,16 +44,17 @@ osx)
     export OS
     gtimeout $TIMEOUT_MAC travis/build-helper.sh "$1" "$2"
     EXITCODE=$?
-    if [ $EXITCODE = 124 ] && [ "$2" = "BuildLib1" ]
-    then
-        exit 0
-    else
-        exit $EXITCODE
-    fi
     ;;
 
 *)
-    # Other OS
+    # Unknown OS
     echo "Unsupported OS: $OS"
     exit 1
 esac
+
+if [[ $EXITCODE == 124 ]] && [[ "$2" == Build* ]] && [[ "$2" != "Build4" ]]
+then
+    exit 0
+else
+    exit $EXITCODE
+fi
