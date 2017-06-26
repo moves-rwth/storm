@@ -14,9 +14,10 @@ travis_fold() {
 run() {
   case "$1" in
   Build1)
-    # CMake
     travis_fold start cmake
+    # Remove old build folder
     rm -rf build
+    # CMake
     mkdir build
     cd build
     cmake .. "${CMAKE_ARGS[@]}"
