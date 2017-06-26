@@ -383,7 +383,7 @@ string(REGEX REPLACE "^[0-9]+\\.[0-9]+\\.[0-9]+\\-[0-9]+\\-([a-z0-9]+).*" "\\1" 
 string(REGEX REPLACE "^[0-9]+\\.[0-9]+\\.[0-9]+\\-[0-9]+\\-[a-z0-9]+\\-(.*)" "\\1" STORM_VERSION_APPENDIX "${STORM_GIT_VERSION_STRING}")
 	
 # now check whether the git version lookup failed
-if (STORM_VERSION_MAJOR STREQUAL "HEAD-HASH-NOTFOUND")
+if (STORM_VERSION_MAJOR MATCHES "NOTFOUND")
 	set(STORM_VERSION_MAJOR 1)
 	set(STORM_VERSION_MINOR 0)
 	set(STORM_VERSION_PATCH 0)
