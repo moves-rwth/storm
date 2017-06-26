@@ -11,25 +11,21 @@
 #include "storm-pars/modelchecker/results/RegionCheckResult.h"
 #include "storm-pars/modelchecker/results/RegionRefinementCheckResult.h"
 #include "storm-pars/modelchecker/region/SparseDtmcParameterLiftingModelChecker.h"
+#include "storm-pars/modelchecker/region/RegionCheckEngine.h"
 #include "storm-pars/modelchecker/region/SparseMdpParameterLiftingModelChecker.h"
 #include "storm-pars/parser/ParameterRegionParser.h"
 
 #include "storm/api/transformation.h"
+#include "storm/utility/file.h"
 #include "storm/models/sparse/Model.h"
 #include "storm/exceptions/UnexpectedException.h"
 #include "storm/exceptions/InvalidOperationException.h"
+#include "storm/exceptions/NotSupportedException.h"
 
 namespace storm {
     
     namespace api {
         
-        
-        enum class RegionModelCheckerType {
-            ParameterLifting,
-            ExactParameterLifting,
-            ValidatingParameterLifting
-        };
-
         template <typename ValueType>
         std::vector<storm::storage::ParameterRegion<ValueType>> parseRegions(std::string const& inputString, std::set<typename storm::storage::ParameterRegion<ValueType>::VariableType> const& consideredVariables) {
             // If the given input string looks like a file (containing a dot and there exists a file with that name),
@@ -42,12 +38,33 @@ namespace storm {
         }
         
         template <typename ValueType>
-        std::vector<storm::storage::ParameterRegion<ValueType>> parseRegions(std::string const& inputString, storm::models::sparse::Model<ValueType> const& model) {
-            auto modelParameters = storm::models::sparse::getProbabilityParameters(*model);
-            auto rewParameters = storm::models::sparse::getRewardParameters(*model);
-            modelParameters.insert(rewParameters.begin(), rewParameters.end());
-            return parseRegions(inputString, modelParameters);
+        std::vector<storm::storage::ParameterRegion<ValueType>> parseRegions(std::string const& inputString, storm::models::ModelBase const& model) {
+            std::set<typename storm::storage::ParameterRegion<ValueType>::VariableType> modelParameters;
+            if (model.isSparseModel()) {
+                auto const& sparseModel = dynamic_cast<storm::models::sparse::Model<ValueType> const&>(model);
+                modelParameters = storm::models::sparse::getProbabilityParameters(sparseModel);
+                auto rewParameters = storm::models::sparse::getRewardParameters(sparseModel);
+                modelParameters.insert(rewParameters.begin(), rewParameters.end());
+            } else {
+                STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Retrieving model parameters is not supported for the given model type.");
+            }
+            return parseRegions<ValueType>(inputString, modelParameters);
         }
+        
+        template <typename ValueType>
+        storm::storage::ParameterRegion<ValueType> parseRegion(std::string const& inputString, std::set<typename storm::storage::ParameterRegion<ValueType>::VariableType> const& consideredVariables) {
+            auto res = parseRegions(inputString, consideredVariables);
+            STORM_LOG_THROW(res.size() == 1, storm::exceptions::InvalidOperationException, "Parsed " << res.size() << " regions but exactly one was expected.");
+            return res.front();
+        }
+        
+        template <typename ValueType>
+        storm::storage::ParameterRegion<ValueType> parseRegion(std::string const& inputString, storm::models::ModelBase const& model) {
+            auto res = parseRegions(inputString, model);
+            STORM_LOG_THROW(res.size() == 1, storm::exceptions::InvalidOperationException, "Parsed " << res.size() << " regions but exactly one was expected.");
+            return res.front();
+        }
+
         
         template <typename ParametricType, typename ConstantType>
         std::unique_ptr<storm::modelchecker::RegionModelChecker<ParametricType>> initializeParameterLiftingRegionModelChecker(std::shared_ptr<storm::models::sparse::Model<ParametricType>> const& model, storm::modelchecker::CheckTask<storm::logic::Formula, ParametricType> const& task) {
@@ -57,17 +74,17 @@ namespace storm {
                     std::vector<std::shared_ptr<storm::logic::Formula const>> taskFormulaAsVector { task.getFormula().asSharedPointer() };
                     auto discreteTimeModel = storm::api::transformContinuousToDiscreteTimeSparseModel(model, taskFormulaAsVector);
                     STORM_LOG_THROW(discreteTimeModel->isOfType(storm::models::ModelType::Dtmc) || discreteTimeModel->isOfType(storm::models::ModelType::Mdp), storm::exceptions::UnexpectedException, "Transformation to discrete time model has failed.");
-                    return initializeParameterLiftingRegionModelChecker(discreteTimeModel, task);
+                    return initializeParameterLiftingRegionModelChecker<ParametricType, ConstantType>(discreteTimeModel, task);
             }
             
             // Obtain the region model checker
             std::unique_ptr<storm::modelchecker::RegionModelChecker<ParametricType>> result;
             if (model->isOfType(storm::models::ModelType::Dtmc)) {
                 auto const& dtmc = *model->template as<storm::models::sparse::Dtmc<ParametricType>>();
-                result = std::make_unique<storm::modelchecker::SparseDtmcParameterLiftingModelChecker<storm::models::sparse::Dtmc<ValueType>, ConstantType>>(dtmc);
+                result = std::make_unique<storm::modelchecker::SparseDtmcParameterLiftingModelChecker<storm::models::sparse::Dtmc<ParametricType>, ConstantType>>(dtmc);
             } else if (model->isOfType(storm::models::ModelType::Mdp)) {
                 auto const& mdp = *model->template as<storm::models::sparse::Mdp<ParametricType>>();
-                result = std::make_unique<storm::modelchecker::SparseMdpParameterLiftingModelChecker<storm::models::sparse::Mdp<ValueType>, ConstantType>>(mdp);
+                result = std::make_unique<storm::modelchecker::SparseMdpParameterLiftingModelChecker<storm::models::sparse::Mdp<ParametricType>, ConstantType>>(mdp);
             } else {
                 STORM_LOG_THROW(false, storm::exceptions::InvalidOperationException, "Unable to perform parameterLifting on the provided model type.");
             }
@@ -78,19 +95,19 @@ namespace storm {
         }
         
         template <typename ParametricType, typename ImpreciseType, typename PreciseType>
-        std::unique_ptr<storm::modelchecker::RegionModelChecker<ValueType>> initializeValidatingRegionModelChecker(std::shared_ptr<storm::models::sparse::Model<ValueType>> const& model, storm::modelchecker::CheckTask<storm::logic::Formula, ParametricType> const& task) {
+        std::unique_ptr<storm::modelchecker::RegionModelChecker<ParametricType>> initializeValidatingRegionModelChecker(std::shared_ptr<storm::models::sparse::Model<ParametricType>> const& model, storm::modelchecker::CheckTask<storm::logic::Formula, ParametricType> const& task) {
             // todo
             return nullptr;
         }
         
         template <typename ValueType>
-        std::unique_ptr<storm::modelchecker::RegionModelChecker<ValueType>> initializeRegionModelChecker(std::shared_ptr<storm::models::sparse::Model<ValueType>> const& model, storm::modelchecker::CheckTask<storm::logic::Formula, ValueType> const& task, RegionModelCheckerType checkerType) {
-            switch (checkerType) {
-                    case RegionModelCheckerType::ParameterLifting:
+        std::unique_ptr<storm::modelchecker::RegionModelChecker<ValueType>> initializeRegionModelChecker(std::shared_ptr<storm::models::sparse::Model<ValueType>> const& model, storm::modelchecker::CheckTask<storm::logic::Formula, ValueType> const& task, storm::modelchecker::RegionCheckEngine engine) {
+            switch (engine) {
+                    case storm::modelchecker::RegionCheckEngine::ParameterLifting:
                             return initializeParameterLiftingRegionModelChecker<ValueType, double>(model, task);
-                    case RegionModelCheckerType::ExactParameterLifting:
+                    case storm::modelchecker::RegionCheckEngine::ExactParameterLifting:
                             return initializeParameterLiftingRegionModelChecker<ValueType, storm::RationalNumber>(model, task);
-                    case RegionModelCheckerType::ValidatingParameterLifting:
+                    case storm::modelchecker::RegionCheckEngine::ValidatingParameterLifting:
                             return initializeValidatingRegionModelChecker<ValueType, double, storm::RationalNumber>(model, task);
                     default:
                             STORM_LOG_THROW(false, storm::exceptions::UnexpectedException, "Unexpected region model checker type.");
@@ -99,25 +116,28 @@ namespace storm {
         }
         
         template <typename ValueType>
-        std::unique_ptr<storm::modelchecker::RegionCheckResult<ValueType>> checkRegionsWithSparseEngine(std::shared_ptr<storm::models::sparse::Model<ValueType>> const& model, storm::modelchecker::CheckTask<storm::logic::Formula, ValueType> const& task, std::vector<storm::storage::ParameterRegion<ValueType>> const& regions, RegionModelCheckerType checkerType) {
-            auto regionChecker = initializeRegionModelChecker(model, task, checkerType);
+        std::unique_ptr<storm::modelchecker::RegionCheckResult<ValueType>> checkRegionsWithSparseEngine(std::shared_ptr<storm::models::sparse::Model<ValueType>> const& model, storm::modelchecker::CheckTask<storm::logic::Formula, ValueType> const& task, std::vector<storm::storage::ParameterRegion<ValueType>> const& regions, storm::modelchecker::RegionCheckEngine engine) {
+            auto regionChecker = initializeRegionModelChecker(model, task, engine);
             return regionChecker->analyzeRegions(regions, true);
         }
     
         
         template <typename ValueType>
-        td::unique_ptr<storm::modelchecker::RegionRefinementCheckResult<ValueType>> checkAndRefineRegionWithSparseEngine(std::shared_ptr<storm::models::sparse::Model<ValueType>> const& model, storm::modelchecker::CheckTask<storm::logic::Formula, ValueType> const& task, storm::storage::ParameterRegion<ValueType> const& region, ValueType const& refinementThreshold) {
-            auto regionChecker = initializeRegionModelChecker(model, task, checkerType);
+        std::unique_ptr<storm::modelchecker::RegionRefinementCheckResult<ValueType>> checkAndRefineRegionWithSparseEngine(std::shared_ptr<storm::models::sparse::Model<ValueType>> const& model, storm::modelchecker::CheckTask<storm::logic::Formula, ValueType> const& task, storm::storage::ParameterRegion<ValueType> const& region, ValueType const& refinementThreshold, storm::modelchecker::RegionCheckEngine engine) {
+            auto regionChecker = initializeRegionModelChecker(model, task, engine);
             return regionChecker->performRegionRefinement(region, refinementThreshold);
         }
         
 
         template <typename ValueType>
-        void exportRegionCheckResultToFile(std::unique_ptr<storm::modelchecker::RegionCheckResult<ValueType>> const& checkResult, std::string const& filename) {
+        void exportRegionCheckResultToFile(std::unique_ptr<storm::modelchecker::CheckResult> const& checkResult, std::string const& filename) {
 
+            auto const* regionCheckResult = dynamic_cast<storm::modelchecker::RegionCheckResult<ValueType> const*>(checkResult.get());
+            STORM_LOG_THROW(regionCheckResult != nullptr, storm::exceptions::UnexpectedException, "Can not export region check result: The given checkresult does not have the expected type.");
+            
             std::ofstream filestream;
-            storm::utility::openFile(path, filestream);
-            for (auto const& res : checkResult->getRegionResults()) {
+            storm::utility::openFile(filename, filestream);
+            for (auto const& res : regionCheckResult->getRegionResults()) {
                     filestream << res.second << ": " << res.first << std::endl;
             }
         }

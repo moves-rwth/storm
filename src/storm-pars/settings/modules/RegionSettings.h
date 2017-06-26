@@ -59,6 +59,7 @@ namespace storm {
                 
             private:
 				const static std::string regionOptionName;
+				const static std::string regionShortOptionName;
 				const static std::string refineOptionName;
 				const static std::string checkEngineOptionName;
 				const static std::string printNoIllustrationOptionName;

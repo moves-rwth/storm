@@ -14,25 +14,26 @@ namespace storm {
             
             const std::string RegionSettings::moduleName = "region";
             const std::string RegionSettings::regionOptionName = "region";
+            const std::string RegionSettings::regionShortOptionName = "reg";
             const std::string RegionSettings::refineOptionName = "refine";
             const std::string RegionSettings::checkEngineOptionName = "engine";
             const std::string RegionSettings::printNoIllustrationOptionName = "noillustration";
             const std::string RegionSettings::printFullResultOptionName = "printfullresult";
             
             RegionSettings::RegionSettings() : ModuleSettings(moduleName) {
-                this->addOption(storm::settings::OptionBuilder(moduleName, regionOptionName, true, "Sets the region(s) considered for analysis.")
-                                .addArgument(storm::settings::ArgumentBuilder::createStringArgument("regioninput", "The region(s) given in format a<=x<=b,c<=y<=d seperated by ';'. Can also be point to a file.").build()).build());
+                this->addOption(storm::settings::OptionBuilder(moduleName, regionOptionName, false, "Sets the region(s) considered for analysis.").setShortName(regionShortOptionName)
+                                .addArgument(storm::settings::ArgumentBuilder::createStringArgument("regioninput", "The region(s) given in format a<=x<=b,c<=y<=d seperated by ';'. Can also be a file.").build()).build());
                 
-                this->addOption(storm::settings::OptionBuilder(moduleName, refineOptionName, true, "Enables region refinement.")
+                this->addOption(storm::settings::OptionBuilder(moduleName, refineOptionName, false, "Enables region refinement.")
                                 .addArgument(storm::settings::ArgumentBuilder::createDoubleArgument("threshold", "Refinement converges if the fraction of unknown area falls below this threshold.").setDefaultValueDouble(0.05).addValidatorDouble(storm::settings::ArgumentValidatorFactory::createDoubleRangeValidatorExcluding(0.0,1.0)).build()).build());
                 
                 std::vector<std::string> engines = {"pl", "exactpl", "validatingpl"};
-                this->addOption(storm::settings::OptionBuilder(moduleName, checkEngineOptionName, false, "Sets which engine is used for analyzing regions.")
+                this->addOption(storm::settings::OptionBuilder(moduleName, checkEngineOptionName, true, "Sets which engine is used for analyzing regions.")
                                 .addArgument(storm::settings::ArgumentBuilder::createStringArgument("name", "The name of the engine to use.").addValidatorString(ArgumentValidatorFactory::createMultipleChoiceValidator(engines)).setDefaultValueString("pl").build()).build());
 
-                this->addOption(storm::settings::OptionBuilder(moduleName, printNoIllustrationOptionName, true, "If set, no illustration of the result is printed.").build());
+                this->addOption(storm::settings::OptionBuilder(moduleName, printNoIllustrationOptionName, false, "If set, no illustration of the result is printed.").build());
                 
-                this->addOption(storm::settings::OptionBuilder(moduleName, printFullResultOptionName, true, "If set, the full result for every region is printed.").build());
+                this->addOption(storm::settings::OptionBuilder(moduleName, printFullResultOptionName, false, "If set, the full result for every region is printed.").build());
             }
             
             bool RegionSettings::isRegionSet() const {
@@ -52,7 +53,7 @@ namespace storm {
             }
             
             storm::modelchecker::RegionCheckEngine RegionSettings::getRegionCheckEngine() const {
-                std::string engineString = this->getOption(regionOptionName).getArgumentByName("regioninput").getValueAsString();
+                std::string engineString = this->getOption(checkEngineOptionName).getArgumentByName("name").getValueAsString();
                 
                 storm::modelchecker::RegionCheckEngine result;
                 if (engineString == "pl") {

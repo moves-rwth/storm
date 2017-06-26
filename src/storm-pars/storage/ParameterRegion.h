@@ -70,6 +70,10 @@ namespace storm {
             Valuation upperBoundaries;
             std::set<VariableType> variables;
         };
+
+        template<typename ParametricType>
+        std::ostream& operator<<(std::ostream& out, ParameterRegion<ParametricType> const& region);
+        
     }
 }
 

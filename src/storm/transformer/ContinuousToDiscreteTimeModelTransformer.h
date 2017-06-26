@@ -14,6 +14,7 @@ namespace storm {
 
         template <typename ValueType, typename RewardModelType = storm::models::sparse::StandardRewardModel<ValueType>>
         class ContinuousToDiscreteTimeModelTransformer {
+        public:
 
             // If this method returns true, the given formula is preserced by the transformation
             static bool preservesFormula(storm::logic::Formula const& formula);

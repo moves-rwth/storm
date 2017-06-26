@@ -164,8 +164,16 @@ namespace storm {
             return regionstring;
         }
         
+        template <typename ParametricType>
+        std::ostream& operator<<(std::ostream& out, ParameterRegion<ParametricType> const& region) {
+            out << region.toString();
+            return out;
+        }
+
+        
 #ifdef STORM_HAVE_CARL
             template class ParameterRegion<storm::RationalFunction>;
+            template std::ostream& operator<<(std::ostream& out, ParameterRegion<storm::RationalFunction> const& region);
 #endif
     }
 }

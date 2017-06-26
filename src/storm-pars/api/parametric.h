@@ -13,7 +13,7 @@ namespace storm {
     namespace api {
         
         template <typename ValueType>
-        bool simplifyParametricModel(std::shared_ptr<storm::models::sparse::Model<ValueType> const& inputModel, std::shared_ptr<storm::logic::Formula const> const& inputFormula, std::shared_ptr<storm::models::sparse::Model<ValueType>& outputModel, std::shared_ptr<storm::logic::Formula const>& outputFormula) {
+        bool simplifyParametricModel(std::shared_ptr<storm::models::sparse::Model<ValueType>> const& inputModel, std::shared_ptr<storm::logic::Formula const> const& inputFormula, std::shared_ptr<storm::models::sparse::Model<ValueType>>& outputModel, std::shared_ptr<storm::logic::Formula const>& outputFormula) {
             
             if (inputModel->isOfType(storm::models::ModelType::Dtmc)) {
                 auto const& dtmc = *inputModel->template as<storm::models::sparse::Dtmc<ValueType>>();

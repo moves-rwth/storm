@@ -41,6 +41,11 @@ namespace storm {
                  * @return True if the derivatives are to be generated.
                  */
                 bool isDerivativesSet() const;
+                
+                /*!
+                 * Retrieves whether Continuous time models should be transformed to discrete time models
+                 */
+                bool transformContinuousModel() const;
 				
                 const static std::string moduleName;
                 
@@ -48,6 +53,8 @@ namespace storm {
 				const static std::string exportResultOptionName;
                 const static std::string simplifyOptionName;
                 const static std::string derivativesOptionName;
+                const static std::string transformContinuousOptionName;
+                const static std::string transformContinuousShortOptionName;
             };
             
         } // namespace modules
