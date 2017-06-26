@@ -215,7 +215,7 @@ if(USE_CARL)
         set(STORM_SHIPPED_CARL OFF)
         set(STORM_HAVE_CARL ON)
         message(STATUS "Storm - Use system version of carl.")
-        message(STATUS "Storm - Linking with carl ${carl_VERSION} (include: ${carl_INCLUDE_DIR}, library ${carl_LIBRARIES}, CARL_USE_CLN_NUMBERS: ${CARL_USE_CLN_NUMBERS}, CARL_USE_GINAC: ${CARL_USE_GINAC}).")
+        message(STATUS "Storm - Linking with preinstalled carl ${carl_VERSION} (include: ${carl_INCLUDE_DIR}, library ${carl_LIBRARIES}, CARL_USE_CLN_NUMBERS: ${CARL_USE_CLN_NUMBERS}, CARL_USE_GINAC: ${CARL_USE_GINAC}).")
         set(STORM_HAVE_CLN ${CARL_USE_CLN_NUMBERS})
         set(STORM_HAVE_GINAC ${CARL_USE_GINAC})
 
@@ -257,8 +257,6 @@ if(USE_CARL)
                 BUILD_BYPRODUCTS ${STORM_3RDPARTY_BINARY_DIR}/carl/lib/libcarl${DYNAMIC_EXT}
         )
         include(${STORM_3RDPARTY_BINARY_DIR}/carl/carlExport/carlConfig.cmake)
-        message("CARL_USE_CLN_NUMBERS: ${CARL_USE_CLN_NUMBERS}, CARL_USE_GINAC: ${CARL_USE_GINAC}")
-
 
         set(STORM_HAVE_CLN ${CARL_USE_CLN_NUMBERS})
         set(STORM_HAVE_GINAC ${CARL_USE_GINAC})
@@ -267,9 +265,12 @@ if(USE_CARL)
         set(carl_INCLUDE_DIR "${STORM_3RDPARTY_BINARY_DIR}/carl/include/")
 		set(carl_LIBRARIES ${STORM_3RDPARTY_BINARY_DIR}/carl/lib/libcarl${DYNAMIC_EXT})
         set(STORM_HAVE_CARL ON)
+
+        message(STATUS "Storm - Linking with shipped carl ${carl_VERSION} (include: ${carl_INCLUDE_DIR}, library ${carl_LIBRARIES}, CARL_USE_CLN_NUMBERS: ${CARL_USE_CLN_NUMBERS}, CARL_USE_GINAC: ${CARL_USE_GINAC}).")
+
         
         # install the carl dynamic library if we build it
-        install(FILES ${STORM_3RDPARTY_BINARY_DIR}/carl/lib/libcarl.1.0.0${DYNAMIC_EXT} DESTINATION lib)
+        install(FILES ${STORM_3RDPARTY_BINARY_DIR}/carl/lib/libcarl.${carl_VERSION}${DYNAMIC_EXT} DESTINATION lib)
     endif()
 
     if(STORM_USE_CLN_RF AND NOT STORM_HAVE_CLN)
