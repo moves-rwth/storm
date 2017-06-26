@@ -3,7 +3,7 @@
 
 : ${N_JOBS:=2}
 : ${TIMEOUT_MAC:=1800}
-: ${TIMEOUT_LINUX:=2500}
+: ${TIMEOUT_LINUX:=2300}
 
 if [ "$STL" != "" ]
 then
