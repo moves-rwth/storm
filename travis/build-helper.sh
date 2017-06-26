@@ -33,6 +33,7 @@ run() {
     travis_fold start make
     make -j$N_JOBS
     travis_fold end make
+    touch skip.txt
     ;;
 
   Build2 | Build3 | Build4)
@@ -41,6 +42,7 @@ run() {
     cd build
     make -j$N_JOBS
     travis_fold end make
+    touch skip.txt
     ;;
 
   TestAll)

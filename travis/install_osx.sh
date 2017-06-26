@@ -23,6 +23,12 @@ install_brew_package() {
   fi
 }
 
+# Skip this run?
+if [ -f build/skip.txt ]
+then
+  exit 0
+fi
+
 # Update packages
 travis_fold start brew_update
 brew update

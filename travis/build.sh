@@ -12,6 +12,17 @@ fi
 
 EXITCODE=42
 
+# Skip this run?
+if [ -f build/skip.txt ]
+then
+  # Remove flag s.t. tests will be executed
+  if [[ "$2" == "Build4" ]]
+  then
+    rm build/skip.txt
+  fi
+  exit 0
+fi
+
 case $OS in
 linux)
     # Execute docker image on Linux
