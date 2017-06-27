@@ -233,6 +233,7 @@ namespace storm {
             if (!instantiationChecker) {
                 instantiationChecker = std::make_unique<storm::modelchecker::SparseMdpInstantiationModelChecker<SparseModelType, ConstantType>>(*this->parametricModel);
                 instantiationChecker->specifyFormula(this->currentCheckTask->template convertValueType<typename SparseModelType::ValueType>());
+                instantiationChecker->setInstantiationsAreGraphPreserving(true);
             }
             return *instantiationChecker;
         }
@@ -302,6 +303,7 @@ namespace storm {
                 result[maybeState] = *maybeStateResIt;
                 ++maybeStateResIt;
             }
+            
             return std::make_unique<storm::modelchecker::ExplicitQuantitativeCheckResult<ConstantType>>(std::move(result));
         }
         
