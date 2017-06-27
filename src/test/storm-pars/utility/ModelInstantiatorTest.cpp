@@ -11,8 +11,8 @@
 #include "storm/settings/SettingsManager.h"
 #include "storm/settings/modules/GeneralSettings.h"
 
+#include "storm-pars/utility/ModelInstantiator.h"
 #include "storm/api/storm.h"
-#include "utility/ModelInstantiator.h"
 #include "storm/models/sparse/Model.h"
 #include "storm/models/sparse/Dtmc.h"
 #include "storm/models/sparse/Mdp.h"
