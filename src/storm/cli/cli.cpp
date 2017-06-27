@@ -391,9 +391,6 @@ namespace storm {
         std::shared_ptr<storm::models::ModelBase> buildModel(storm::settings::modules::CoreSettings::Engine const& engine, SymbolicInput const& input, storm::settings::modules::IOSettings const& ioSettings) {
             storm::utility::Stopwatch modelBuildingWatch(true);
 
-            
-            // Make sure that states in filter are built as label. ALso for bisimulation.
-            
             std::shared_ptr<storm::models::ModelBase> result;
             if (input.model) {
                 if (engine == storm::settings::modules::CoreSettings::Engine::Dd || engine == storm::settings::modules::CoreSettings::Engine::Hybrid) {
@@ -432,7 +429,7 @@ namespace storm {
             }
             
             STORM_LOG_INFO("Performing bisimulation minimization...");
-            return storm::api::performBisimulationMinimization<ValueType>(model, storm::api::extractFormulasFromProperties(input.properties), bisimType);
+            return storm::api::performBisimulationMinimization<ValueType>(model, createFormulasToRespect(input.properties), bisimType);
         }
         
         template <typename ValueType>
