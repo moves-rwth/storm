@@ -18,7 +18,7 @@ namespace storm {
         template <typename SparseModelType, typename ImpreciseType, typename PreciseType>
         ValidatingSparseParameterLiftingModelChecker<SparseModelType, ImpreciseType, PreciseType>::~ValidatingSparseParameterLiftingModelChecker() {
             if (storm::settings::getModule<storm::settings::modules::CoreSettings>().isShowStatisticsSet()) {
-                STORM_PRINT_AND_LOG("Validating Parameter Lifting Model Checker detected " << numOfWrongRegions << " regions where the imprecise method was wrong.");
+                STORM_PRINT_AND_LOG("Validating Parameter Lifting Model Checker detected " << numOfWrongRegions << " regions where the imprecise method was wrong." << std::endl);
             }
         }
         

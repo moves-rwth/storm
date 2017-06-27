@@ -59,16 +59,19 @@ namespace storm {
             for (auto const& res : this->regionResults) {
                 out << res.first.toString() << ": \t" << res.second << std::endl;
             }
+            return out;
         }
         
         template<typename ValueType>
         std::ostream& RegionCheckResult<ValueType>::writeCondensedToStream(std::ostream& out) const {
+            double satPercent = storm::utility::convertNumber<double>(satFraction) * 100.0;
+            double unsatPercent = storm::utility::convertNumber<double>(unsatFraction) * 100.0;
             auto oneHundred = storm::utility::convertNumber<typename storm::storage::ParameterRegion<ValueType>::CoefficientType>(100.0);
             auto one = storm::utility::convertNumber<typename storm::storage::ParameterRegion<ValueType>::CoefficientType>(1.0);
-            out << "Fraction of satisfied area:   " << (satFraction * oneHundred) << std::endl;
-            out << "Fraction of unsatisfied area: " << (unsatFraction * oneHundred) << std::endl;
-            out << "Unknown fraction:             " << ((one - satFraction - unsatFraction) * oneHundred) << std::endl;
-            out << "Total Number of regions:      " << regionResults.size() << std::endl;
+            out << "  Fraction of satisfied area: " << satPercent << "%" << std::endl;
+            out << "Fraction of unsatisfied area: " << unsatPercent << "%" << std::endl;
+            out << "            Unknown fraction: " << (100.0 - satPercent - unsatPercent) << "%" << std::endl;
+            out << "     Total number of regions: " << regionResults.size() << std::endl;
             std::map<storm::modelchecker::RegionResult, uint_fast64_t> counters;
             for (auto const& res : this->regionResults) {
                 ++counters[res.second];
@@ -76,11 +79,13 @@ namespace storm {
             for (auto const& counter : counters) {
                 out << std::setw(28) << counter.first << ": " << counter.second << std::endl;
             }
+            return out;
         }
 
         template<typename ValueType>
         std::ostream& RegionCheckResult<ValueType>::writeIllustrationToStream(std::ostream& out) const {
             STORM_LOG_WARN("Writing illustration of region check result to a stream is not implemented.");
+            return out;
         }
   
         template<typename ValueType>

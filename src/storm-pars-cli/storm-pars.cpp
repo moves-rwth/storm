@@ -137,7 +137,7 @@ namespace storm {
         template<typename ValueType>
         void printInitialStatesResult(std::unique_ptr<storm::modelchecker::CheckResult> const& result, storm::jani::Property const& property, storm::utility::Stopwatch* watch = nullptr) {
             if (result) {
-                STORM_PRINT_AND_LOG("Result (initial states): ");
+                STORM_PRINT_AND_LOG("Result (initial states): " << std::endl);
                 
                 auto const* regionCheckResult = dynamic_cast<storm::modelchecker::RegionCheckResult<ValueType> const*>(result.get());
                 if (regionCheckResult != nullptr) {
@@ -184,7 +184,7 @@ namespace storm {
             verifyProperties<ValueType>(input.properties,
                                         [&model] (std::shared_ptr<storm::logic::Formula const> const& formula) {
                                             std::unique_ptr<storm::modelchecker::CheckResult> result = storm::api::verifyWithSparseEngine<ValueType>(model, storm::api::createTask<ValueType>(formula, true));
-                                            result->filter(storm::modelchecker::ExplicitQualitativeCheckResult(simplificationResult.first->getInitialStates()));
+                                            result->filter(storm::modelchecker::ExplicitQualitativeCheckResult(model->getInitialStates()));
                                             return result;
                                         },
                                         [&model] (std::unique_ptr<storm::modelchecker::CheckResult> const& result) {
