@@ -109,6 +109,15 @@ storm_rational_number_ptr storm_rational_number_get_one() {
     return (storm_rational_number_ptr)result_srn;
 }
 
+storm_rational_number_ptr storm_rational_number_get_infinity() {
+#ifndef RATIONAL_NUMBER_THREAD_SAFE
+    std::lock_guard<std::mutex> lock(rationalNumberMutex);
+#endif
+    
+    storm::RationalNumber* result_srn = new storm::RationalNumber(storm::utility::infinity<storm::RationalNumber>());
+    return (storm_rational_number_ptr)result_srn;
+}
+
 int storm_rational_number_is_zero(storm_rational_number_ptr a) {
 #ifndef RATIONAL_NUMBER_THREAD_SAFE
     std::lock_guard<std::mutex> lock(rationalNumberMutex);
@@ -403,6 +412,16 @@ storm_rational_function_ptr storm_rational_function_get_one() {
     storm::RationalFunction* result_srf = new storm::RationalFunction(storm::utility::one<storm::RationalFunction>());
     return (storm_rational_function_ptr)result_srf;
 }
+
+storm_rational_function_ptr storm_rational_function_get_infinity() {
+#ifndef RATIONAL_FUNCTION_THREAD_SAFE
+    std::lock_guard<std::mutex> lock(rationalFunctionMutex);
+#endif
+    
+    storm::RationalFunction* result_srf = new storm::RationalFunction(storm::utility::infinity<storm::RationalFunction>());
+    return (storm_rational_function_ptr)result_srf;
+}
+
 
 int storm_rational_function_is_zero(storm_rational_function_ptr a) {
 #ifndef RATIONAL_FUNCTION_THREAD_SAFE
