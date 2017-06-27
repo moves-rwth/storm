@@ -48,9 +48,9 @@ namespace storm {
             }
             
             if (model.isOfType(storm::models::ModelType::Ctmc)) {
-                transformer.transform(std::move(*model.template as<storm::models::sparse::Ctmc<ValueType>>()));
+                return transformer.transform(std::move(*model.template as<storm::models::sparse::Ctmc<ValueType>>()));
             } else if (model.isOfType(storm::models::ModelType::MarkovAutomaton)) {
-                transformer.transform(std::move(*model.template as<storm::models::sparse::MarkovAutomaton<ValueType>>()));
+                return transformer.transform(std::move(*model.template as<storm::models::sparse::MarkovAutomaton<ValueType>>()));
             } else {
                 STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Transformation of a " << model.getType() << " to a discrete time model is not supported.");
             }

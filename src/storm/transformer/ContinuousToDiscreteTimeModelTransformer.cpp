@@ -112,8 +112,12 @@ namespace storm {
             for (auto& rewardModel : mdpComponents.rewardModels) {
                 if (rewardModel.second.hasStateRewards()) {
                     auto& stateRewards = rewardModel.second.getStateRewardVector();
-                    for (auto state : ma.getMarkovianStates()) {
-                        stateRewards[state] /= exitRates[state];
+                    for (uint_fast64_t state = 0; state < stateRewards.size(); ++state) {
+                        if (ma.getMarkovianStates().get(state)) {
+                            stateRewards[state] /= exitRates[state];
+                        } else {
+                            stateRewards[state] = storm::utility::zero<ValueType>();
+                        }
                     }
                 }
             }
@@ -149,8 +153,12 @@ namespace storm {
             for (auto& rewardModel : mdpComponents.rewardModels) {
                 if (rewardModel.second.hasStateRewards()) {
                     auto& stateRewards = rewardModel.second.getStateRewardVector();
-                    for (auto state : ma.getMarkovianStates()) {
-                        stateRewards[state] /= exitRates[state];
+                    for (uint_fast64_t state = 0; state < stateRewards.size(); ++state) {
+                        if (ma.getMarkovianStates().get(state)) {
+                            stateRewards[state] /= exitRates[state];
+                        } else {
+                            stateRewards[state] = storm::utility::zero<ValueType>();
+                        }
                     }
                 }
             }
