@@ -128,7 +128,7 @@ namespace storm {
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Woverloaded-shift-op-parentheses"
             
-            filterProperty = (-formulaName >> qi::lit("filter") > qi::lit("(") > filterType_ > qi::lit(",") > stateFormula > -(qi::lit(",") > qi::lit("\"init\"") > qi::lit(")")))[qi::_val = phoenix::bind(&FormulaParserGrammar::createProperty, phoenix::ref(*this), qi::_1, qi::_2, qi::_3)] | (-formulaName >> stateFormula)[qi::_val = phoenix::bind(&FormulaParserGrammar::createPropertyWithDefaultFilterType, phoenix::ref(*this), qi::_1, qi::_2)];
+            filterProperty = (-formulaName >> qi::lit("filter") > qi::lit("(") > filterType_ > qi::lit(",") > stateFormula > qi::lit(",") > stateFormula > qi::lit(")"))[qi::_val = phoenix::bind(&FormulaParserGrammar::createProperty, phoenix::ref(*this), qi::_1, qi::_2, qi::_3, qi::_4)] | (-formulaName >> stateFormula)[qi::_val = phoenix::bind(&FormulaParserGrammar::createPropertyWithDefaultFilterTypeAndStates, phoenix::ref(*this), qi::_1, qi::_2)];
             filterProperty.name("filter property");
 
 #pragma clang diagnostic pop
@@ -332,8 +332,8 @@ namespace storm {
             return std::shared_ptr<storm::logic::Formula const>(new storm::logic::MultiObjectiveFormula(subformulas));
         }
                                                
-        storm::jani::Property FormulaParserGrammar::createProperty(boost::optional<std::string> const& propertyName, storm::modelchecker::FilterType const& filterType, std::shared_ptr<storm::logic::Formula const> const& formula) {
-            storm::jani::FilterExpression filterExpression(formula, filterType);
+        storm::jani::Property FormulaParserGrammar::createProperty(boost::optional<std::string> const& propertyName, storm::modelchecker::FilterType const& filterType, std::shared_ptr<storm::logic::Formula const> const& formula, std::shared_ptr<storm::logic::Formula const> const& states) {
+            storm::jani::FilterExpression filterExpression(formula, filterType, states);
             
             ++propertyCount;
             if (propertyName) {
@@ -343,7 +343,7 @@ namespace storm {
             }
         }
                                                
-        storm::jani::Property FormulaParserGrammar::createPropertyWithDefaultFilterType(boost::optional<std::string> const& propertyName, std::shared_ptr<storm::logic::Formula const> const& formula) {
+        storm::jani::Property FormulaParserGrammar::createPropertyWithDefaultFilterTypeAndStates(boost::optional<std::string> const& propertyName, std::shared_ptr<storm::logic::Formula const> const& formula) {
             ++propertyCount;
             if (propertyName) {
                 return storm::jani::Property(propertyName.get(), formula);
