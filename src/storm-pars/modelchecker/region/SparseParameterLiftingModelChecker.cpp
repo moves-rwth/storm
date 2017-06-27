@@ -1,4 +1,4 @@
-#include "SparseParameterLiftingModelChecker.h"
+#include "storm-pars/modelchecker/region/SparseParameterLiftingModelChecker.h"
 
 #include "storm/adapters/RationalFunctionAdapter.h"
 #include "storm/logic/FragmentSpecification.h"
@@ -15,14 +15,13 @@ namespace storm {
     namespace modelchecker {
         
         template <typename SparseModelType, typename ConstantType>
-        SparseParameterLiftingModelChecker<SparseModelType, ConstantType>::SparseParameterLiftingModelChecker(SparseModelType const& parametricModel) : parametricModel(parametricModel) {
+        SparseParameterLiftingModelChecker<SparseModelType, ConstantType>::SparseParameterLiftingModelChecker() {
             //Intentionally left empty
         }
         
         template <typename SparseModelType, typename ConstantType>
         void SparseParameterLiftingModelChecker<SparseModelType, ConstantType>::specifyFormula(storm::modelchecker::CheckTask<storm::logic::Formula, typename SparseModelType::ValueType> const& checkTask) {
-            STORM_LOG_ASSERT(this->canHandle(checkTask), "specified formula can not be handled by this.");
-            reset();
+
             currentFormula = checkTask.getFormula().asSharedPointer();
             currentCheckTask = std::make_unique<storm::modelchecker::CheckTask<storm::logic::Formula, ConstantType>>(checkTask.substituteFormula(*currentFormula).template convertValueType<ConstantType>());
             
@@ -52,49 +51,74 @@ namespace storm {
         
             STORM_LOG_THROW(this->currentCheckTask->isOnlyInitialStatesRelevantSet(), storm::exceptions::NotSupportedException, "Analyzing regions with parameter lifting requires a property where only the value in the initial states is relevant.");
             STORM_LOG_THROW(this->currentCheckTask->isBoundSet(), storm::exceptions::NotSupportedException, "Analyzing regions with parameter lifting requires a bounded property.");
-            STORM_LOG_THROW(this->parametricModel.getInitialStates().getNumberOfSetBits() == 1, storm::exceptions::NotSupportedException, "Analyzing regions with parameter lifting requires a model with a single initial state.");
+            STORM_LOG_THROW(this->parametricModel->getInitialStates().getNumberOfSetBits() == 1, storm::exceptions::NotSupportedException, "Analyzing regions with parameter lifting requires a model with a single initial state.");
             
             RegionResult result = initialResult;
 
             // Check if we need to check the formula on one point to decide whether to show AllSat or AllViolated
             if (result == RegionResult::Unknown) {
-                 result = getInstantiationChecker().check(region.getCenterPoint())->asExplicitQualitativeCheckResult()[*this->parametricModel.getInitialStates().begin()] ? RegionResult::CenterSat : RegionResult::CenterViolated;
+                 result = getInstantiationChecker().check(region.getCenterPoint())->asExplicitQualitativeCheckResult()[*this->parametricModel->getInitialStates().begin()] ? RegionResult::CenterSat : RegionResult::CenterViolated;
             }
             
             // try to prove AllSat or AllViolated, depending on the obtained result
             if (result == RegionResult::ExistsSat || result == RegionResult::CenterSat) {
                 // show AllSat:
                 storm::solver::OptimizationDirection parameterOptimizationDirection = isLowerBound(this->currentCheckTask->getBound().comparisonType) ? storm::solver::OptimizationDirection::Minimize : storm::solver::OptimizationDirection::Maximize;
-                if (this->check(region, parameterOptimizationDirection)->asExplicitQualitativeCheckResult()[*this->parametricModel.getInitialStates().begin()]) {
+                if (this->check(region, parameterOptimizationDirection)->asExplicitQualitativeCheckResult()[*this->parametricModel->getInitialStates().begin()]) {
                     result = RegionResult::AllSat;
                 } else if (sampleVerticesOfRegion) {
-                    // Check if there is a point in the region for which the property is violated
-                    auto vertices = region.getVerticesOfRegion(region.getVariables());
-                    for (auto const& v : vertices) {
-                        if (!getInstantiationChecker().check(v)->asExplicitQualitativeCheckResult()[*this->parametricModel.getInitialStates().begin()]) {
-                            result = RegionResult::ExistsBoth;
-                        }
-                    }
+                    result = sampleVertices(region, result);
                 }
             } else if (result == RegionResult::ExistsViolated || result == RegionResult::CenterViolated) {
                 // show AllViolated:
                 storm::solver::OptimizationDirection parameterOptimizationDirection = isLowerBound(this->currentCheckTask->getBound().comparisonType) ? storm::solver::OptimizationDirection::Maximize : storm::solver::OptimizationDirection::Minimize;
-                if (!this->check(region, parameterOptimizationDirection)->asExplicitQualitativeCheckResult()[*this->parametricModel.getInitialStates().begin()]) {
+                if (!this->check(region, parameterOptimizationDirection)->asExplicitQualitativeCheckResult()[*this->parametricModel->getInitialStates().begin()]) {
                     result = RegionResult::AllViolated;
                 } else if (sampleVerticesOfRegion) {
-                    // Check if there is a point in the region for which the property is satisfied
-                    auto vertices = region.getVerticesOfRegion(region.getVariables());
-                    for (auto const& v : vertices) {
-                        if (getInstantiationChecker().check(v)->asExplicitQualitativeCheckResult()[*this->parametricModel.getInitialStates().begin()]) {
-                            result = RegionResult::ExistsBoth;
-                        }
-                    }
+                    result = sampleVertices(region, result);
                 }
             } else {
                 STORM_LOG_THROW(false, storm::exceptions::InvalidArgumentException, "When analyzing a region, an invalid initial result was given: " << initialResult);
             }
             return result;
         }
+        
+        template <typename SparseModelType, typename ConstantType>
+        RegionResult SparseParameterLiftingModelChecker<SparseModelType, ConstantType>::sampleVertices(storm::storage::ParameterRegion<typename SparseModelType::ValueType> const& region, RegionResult const& initialResult) {
+            RegionResult result = initialResult;
+            
+            if (result == RegionResult::AllSat || result == RegionResult::AllViolated) {
+                return result;
+            }
+            
+            bool hasSatPoint = result == RegionResult::ExistsViolated || result == RegionResult::CenterViolated;
+            bool hasViolatedPoint = result == RegionResult::ExistsSat || result == RegionResult::CenterSat;
+            
+            // Check if there is a point in the region for which the property is satisfied
+            auto vertices = region.getVerticesOfRegion(region.getVariables());
+            auto vertexIt = vertices.begin();
+            while (vertexIt != vertices.end() && !(hasSatPoint && hasViolatedPoint)) {
+                if (getInstantiationChecker().check(*vertexIt)->asExplicitQualitativeCheckResult()[*this->parametricModel->getInitialStates().begin()]) {
+                    hasSatPoint = true;
+                } else {
+                    hasViolatedPoint = true;
+                }
+                ++vertexIt;
+            }
+            
+            if (hasSatPoint) {
+                if (hasViolatedPoint) {
+                    result = RegionResult::ExistsBoth;
+                } else if (result != RegionResult::CenterSat) {
+                    result = RegionResult::ExistsSat;
+                }
+            } else if (hasViolatedPoint && result != RegionResult::CenterViolated) {
+                result = RegionResult::ExistsViolated;
+            }
+            
+            return result;
+        }
+
 
         template <typename SparseModelType, typename ConstantType>
         std::unique_ptr<CheckResult> SparseParameterLiftingModelChecker<SparseModelType, ConstantType>::check(storm::storage::ParameterRegion<typename SparseModelType::ValueType> const& region, storm::solver::OptimizationDirection const& dirForParameters) {
@@ -104,6 +128,16 @@ namespace storm {
             } else {
                 return quantitativeResult->template asExplicitQuantitativeCheckResult<ConstantType>().compareAgainstBound(this->currentCheckTask->getFormula().asOperatorFormula().getComparisonType(), this->currentCheckTask->getFormula().asOperatorFormula().template getThresholdAs<ConstantType>());
             }
+        }
+        
+        template <typename SparseModelType, typename ConstantType>
+        SparseModelType const& SparseParameterLiftingModelChecker<SparseModelType, ConstantType>::getConsideredParametricModel() const {
+            return *parametricModel;
+        }
+        
+        template <typename SparseModelType, typename ConstantType>
+        CheckTask<storm::logic::Formula, ConstantType> const& SparseParameterLiftingModelChecker<SparseModelType, ConstantType>::getCurrentCheckTask() const {
+            return *currentCheckTask;
         }
 
         template <typename SparseModelType, typename ConstantType>

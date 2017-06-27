@@ -19,11 +19,14 @@ namespace storm {
         template <typename SparseModelType, typename ConstantType>
         class SparseDtmcParameterLiftingModelChecker : public SparseParameterLiftingModelChecker<SparseModelType, ConstantType> {
         public:
-            SparseDtmcParameterLiftingModelChecker(SparseModelType const& parametricModel);
-            SparseDtmcParameterLiftingModelChecker(SparseModelType const& parametricModel, std::unique_ptr<storm::solver::MinMaxLinearEquationSolverFactory<ConstantType>>&& solverFactory);
-                
-            virtual bool canHandle(CheckTask<storm::logic::Formula, typename SparseModelType::ValueType> const& checkTask) const override;
-                
+            SparseDtmcParameterLiftingModelChecker();
+            SparseDtmcParameterLiftingModelChecker(std::unique_ptr<storm::solver::MinMaxLinearEquationSolverFactory<ConstantType>>&& solverFactory);
+            virtual ~SparseDtmcParameterLiftingModelChecker() = default;
+            
+            virtual bool canHandle(std::shared_ptr<storm::models::ModelBase> parametricModel, CheckTask<storm::logic::Formula, typename SparseModelType::ValueType> const& checkTask) const override;
+            virtual void specify(std::shared_ptr<storm::models::ModelBase> parametricModel, CheckTask<storm::logic::Formula, typename SparseModelType::ValueType> const& checkTask) override;
+            void specify(std::shared_ptr<SparseModelType> parametricModel, CheckTask<storm::logic::Formula, typename SparseModelType::ValueType> const& checkTask, bool skipModelSimplification);
+            
             boost::optional<storm::storage::Scheduler<ConstantType>> getCurrentMinScheduler();
             boost::optional<storm::storage::Scheduler<ConstantType>> getCurrentMaxScheduler();
 

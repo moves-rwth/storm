@@ -7,6 +7,7 @@
 #include "storm-pars/modelchecker/region/RegionResult.h"
 #include "storm-pars/storage/ParameterRegion.h"
 
+#include "storm/models/ModelBase.h"
 #include "storm/modelchecker/CheckTask.h"
 
 namespace storm {
@@ -21,9 +22,8 @@ namespace storm {
             RegionModelChecker();
             virtual ~RegionModelChecker() = default;
             
-            virtual bool canHandle(CheckTask<storm::logic::Formula, ParametricType> const& checkTask) const = 0;
-
-            virtual void specifyFormula(CheckTask<storm::logic::Formula, ParametricType> const& checkTask) = 0;
+            virtual bool canHandle(std::shared_ptr<storm::models::ModelBase> parametricModel, CheckTask<storm::logic::Formula, ParametricType> const& checkTask) const = 0;
+            virtual void specify(std::shared_ptr<storm::models::ModelBase> parametricModel, CheckTask<storm::logic::Formula, ParametricType> const& checkTask) = 0;
             
             /*!
              * Analyzes the given region.

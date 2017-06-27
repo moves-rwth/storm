@@ -6,14 +6,16 @@
 #include <memory>
 #include <boost/optional.hpp>
 
-#include "storm-pars/storage/ParameterRegion.h"
-
 #include "storm-pars/modelchecker/results/RegionCheckResult.h"
 #include "storm-pars/modelchecker/results/RegionRefinementCheckResult.h"
-#include "storm-pars/modelchecker/region/SparseDtmcParameterLiftingModelChecker.h"
 #include "storm-pars/modelchecker/region/RegionCheckEngine.h"
+#include "storm-pars/modelchecker/region/SparseDtmcParameterLiftingModelChecker.h"
 #include "storm-pars/modelchecker/region/SparseMdpParameterLiftingModelChecker.h"
+#include "storm-pars/modelchecker/region/ValidatingSparseMdpParameterLiftingModelChecker.h"
+#include "storm-pars/modelchecker/region/ValidatingSparseDtmcParameterLiftingModelChecker.h"
 #include "storm-pars/parser/ParameterRegionParser.h"
+#include "storm-pars/storage/ParameterRegion.h"
+#include "storm-pars/utility/parameterlifting.h"
 
 #include "storm/api/transformation.h"
 #include "storm/utility/file.h"
@@ -53,51 +55,86 @@ namespace storm {
         
         template <typename ValueType>
         storm::storage::ParameterRegion<ValueType> parseRegion(std::string const& inputString, std::set<typename storm::storage::ParameterRegion<ValueType>::VariableType> const& consideredVariables) {
-            auto res = parseRegions(inputString, consideredVariables);
+            // Handle the "empty region" case
+            if (inputString == "" && consideredVariables.empty()) {
+                return storm::storage::ParameterRegion<ValueType>();
+            }
+            
+            auto res = parseRegions<ValueType>(inputString, consideredVariables);
             STORM_LOG_THROW(res.size() == 1, storm::exceptions::InvalidOperationException, "Parsed " << res.size() << " regions but exactly one was expected.");
             return res.front();
         }
         
         template <typename ValueType>
         storm::storage::ParameterRegion<ValueType> parseRegion(std::string const& inputString, storm::models::ModelBase const& model) {
-            auto res = parseRegions(inputString, model);
+            // Handle the "empty region" case
+            if (inputString == "" && !model.hasParameters()) {
+                return storm::storage::ParameterRegion<ValueType>();
+            }
+            
+            auto res = parseRegions<ValueType>(inputString, model);
             STORM_LOG_THROW(res.size() == 1, storm::exceptions::InvalidOperationException, "Parsed " << res.size() << " regions but exactly one was expected.");
             return res.front();
         }
-
         
         template <typename ParametricType, typename ConstantType>
         std::unique_ptr<storm::modelchecker::RegionModelChecker<ParametricType>> initializeParameterLiftingRegionModelChecker(std::shared_ptr<storm::models::sparse::Model<ParametricType>> const& model, storm::modelchecker::CheckTask<storm::logic::Formula, ParametricType> const& task) {
+            
+            STORM_LOG_WARN_COND(storm::utility::parameterlifting::validateParameterLiftingSound(*model, task.getFormula()), "Could not validate whether parameter lifting is applicable. Please validate manually...");
+
+            std::shared_ptr<storm::models::sparse::Model<ParametricType>> consideredModel = model;
+            
             // Treat continuous time models
-            if (model->isOfType(storm::models::ModelType::Ctmc) || model->isOfType(storm::models::ModelType::MarkovAutomaton)) {
+            if (consideredModel->isOfType(storm::models::ModelType::Ctmc) || consideredModel->isOfType(storm::models::ModelType::MarkovAutomaton)) {
                     STORM_LOG_WARN("Parameter lifting not supported for continuous time models. Transforming continuous model to discrete model...");
                     std::vector<std::shared_ptr<storm::logic::Formula const>> taskFormulaAsVector { task.getFormula().asSharedPointer() };
-                    auto discreteTimeModel = storm::api::transformContinuousToDiscreteTimeSparseModel(model, taskFormulaAsVector);
-                    STORM_LOG_THROW(discreteTimeModel->isOfType(storm::models::ModelType::Dtmc) || discreteTimeModel->isOfType(storm::models::ModelType::Mdp), storm::exceptions::UnexpectedException, "Transformation to discrete time model has failed.");
-                    return initializeParameterLiftingRegionModelChecker<ParametricType, ConstantType>(discreteTimeModel, task);
+                    consideredModel = storm::api::transformContinuousToDiscreteTimeSparseModel(consideredModel, taskFormulaAsVector);
+                    STORM_LOG_THROW(consideredModel->isOfType(storm::models::ModelType::Dtmc) || consideredModel->isOfType(storm::models::ModelType::Mdp), storm::exceptions::UnexpectedException, "Transformation to discrete time model has failed.");
             }
             
             // Obtain the region model checker
             std::unique_ptr<storm::modelchecker::RegionModelChecker<ParametricType>> result;
-            if (model->isOfType(storm::models::ModelType::Dtmc)) {
-                auto const& dtmc = *model->template as<storm::models::sparse::Dtmc<ParametricType>>();
-                result = std::make_unique<storm::modelchecker::SparseDtmcParameterLiftingModelChecker<storm::models::sparse::Dtmc<ParametricType>, ConstantType>>(dtmc);
-            } else if (model->isOfType(storm::models::ModelType::Mdp)) {
-                auto const& mdp = *model->template as<storm::models::sparse::Mdp<ParametricType>>();
-                result = std::make_unique<storm::modelchecker::SparseMdpParameterLiftingModelChecker<storm::models::sparse::Mdp<ParametricType>, ConstantType>>(mdp);
+            if (consideredModel->isOfType(storm::models::ModelType::Dtmc)) {
+                result = std::make_unique<storm::modelchecker::SparseDtmcParameterLiftingModelChecker<storm::models::sparse::Dtmc<ParametricType>, ConstantType>>();
+            } else if (consideredModel->isOfType(storm::models::ModelType::Mdp)) {
+                result = std::make_unique<storm::modelchecker::SparseMdpParameterLiftingModelChecker<storm::models::sparse::Mdp<ParametricType>, ConstantType>>();
             } else {
                 STORM_LOG_THROW(false, storm::exceptions::InvalidOperationException, "Unable to perform parameterLifting on the provided model type.");
             }
-                
-            result->specifyFormula(task);
-        
+            
+            result->specify(consideredModel, task);
+            
             return result;
         }
         
         template <typename ParametricType, typename ImpreciseType, typename PreciseType>
         std::unique_ptr<storm::modelchecker::RegionModelChecker<ParametricType>> initializeValidatingRegionModelChecker(std::shared_ptr<storm::models::sparse::Model<ParametricType>> const& model, storm::modelchecker::CheckTask<storm::logic::Formula, ParametricType> const& task) {
-            // todo
-            return nullptr;
+            
+            STORM_LOG_WARN_COND(storm::utility::parameterlifting::validateParameterLiftingSound(*model, task.getFormula()), "Could not validate whether parameter lifting is applicable. Please validate manually...");
+
+            std::shared_ptr<storm::models::sparse::Model<ParametricType>> consideredModel = model;
+            
+            // Treat continuous time models
+            if (consideredModel->isOfType(storm::models::ModelType::Ctmc) || consideredModel->isOfType(storm::models::ModelType::MarkovAutomaton)) {
+                    STORM_LOG_WARN("Parameter lifting not supported for continuous time models. Transforming continuous model to discrete model...");
+                    std::vector<std::shared_ptr<storm::logic::Formula const>> taskFormulaAsVector { task.getFormula().asSharedPointer() };
+                    consideredModel = storm::api::transformContinuousToDiscreteTimeSparseModel(consideredModel, taskFormulaAsVector);
+                    STORM_LOG_THROW(consideredModel->isOfType(storm::models::ModelType::Dtmc) || consideredModel->isOfType(storm::models::ModelType::Mdp), storm::exceptions::UnexpectedException, "Transformation to discrete time model has failed.");
+            }
+            
+            // Obtain the region model checker
+            std::unique_ptr<storm::modelchecker::RegionModelChecker<ParametricType>> result;
+            if (consideredModel->isOfType(storm::models::ModelType::Dtmc)) {
+                result = std::make_unique<storm::modelchecker::ValidatingSparseDtmcParameterLiftingModelChecker<storm::models::sparse::Dtmc<ParametricType>, ImpreciseType, PreciseType>>();
+            } else if (consideredModel->isOfType(storm::models::ModelType::Mdp)) {
+                result = std::make_unique<storm::modelchecker::ValidatingSparseMdpParameterLiftingModelChecker<storm::models::sparse::Mdp<ParametricType>, ImpreciseType, PreciseType>>();
+            } else {
+                STORM_LOG_THROW(false, storm::exceptions::InvalidOperationException, "Unable to perform parameterLifting on the provided model type.");
+            }
+            
+            result->specify(consideredModel, task);
+            
+            return result;
         }
         
         template <typename ValueType>

@@ -179,25 +179,11 @@ namespace storm {
             }
         }
         
-        template<typename ValueType>
-        std::pair<std::shared_ptr<storm::models::sparse::Model<ValueType>>, std::shared_ptr<storm::logic::Formula const>> performSimplification(std::shared_ptr<storm::models::sparse::Model<ValueType>> const& model, std::shared_ptr<storm::logic::Formula const> const& formula) {
-            auto parametricSettings = storm::settings::getModule<storm::settings::modules::ParametricSettings>();
-        
-            std::pair<std::shared_ptr<storm::models::sparse::Model<ValueType>>, std::shared_ptr<storm::logic::Formula const>> result;
-            
-            if (!(parametricSettings.isSimplifySet() && storm::api::simplifyParametricModel<ValueType>(model, formula, result.first, result.second))) {
-                result = std::make_pair(model, formula);
-            }
-            
-            return result;
-        }
-        
         template <typename ValueType>
         void verifyPropertiesWithSparseEngine(std::shared_ptr<storm::models::sparse::Model<ValueType>> const& model, SymbolicInput const& input) {
             verifyProperties<ValueType>(input.properties,
                                         [&model] (std::shared_ptr<storm::logic::Formula const> const& formula) {
-                                            auto simplificationResult = performSimplification(model, formula);
-                                            std::unique_ptr<storm::modelchecker::CheckResult> result = storm::api::verifyWithSparseEngine<ValueType>(simplificationResult.first, storm::api::createTask<ValueType>(simplificationResult.second, true));
+                                            std::unique_ptr<storm::modelchecker::CheckResult> result = storm::api::verifyWithSparseEngine<ValueType>(model, storm::api::createTask<ValueType>(formula, true));
                                             result->filter(storm::modelchecker::ExplicitQualitativeCheckResult(simplificationResult.first->getInitialStates()));
                                             return result;
                                         },
@@ -235,15 +221,13 @@ namespace storm {
                 STORM_PRINT_AND_LOG(" with iterative refinement until " << (1.0 - regionSettings.getRefinementThreshold()) * 100.0 << "% is covered." << std::endl);
                 verificationCallback = [&] (std::shared_ptr<storm::logic::Formula const> const& formula) {
                                         ValueType refinementThreshold = storm::utility::convertNumber<ValueType>(regionSettings.getRefinementThreshold());
-                                        auto simplificationResult = performSimplification(model, formula);
-                                        std::unique_ptr<storm::modelchecker::RegionRefinementCheckResult<ValueType>> result = storm::api::checkAndRefineRegionWithSparseEngine<ValueType>(simplificationResult.first, storm::api::createTask<ValueType>(simplificationResult.second, true), regions.front(), refinementThreshold, engine);
+                                        std::unique_ptr<storm::modelchecker::RegionRefinementCheckResult<ValueType>> result = storm::api::checkAndRefineRegionWithSparseEngine<ValueType>(model, storm::api::createTask<ValueType>(formula, true), regions.front(), refinementThreshold, engine);
                                         return result;
                                     };
             } else {
                 STORM_PRINT_AND_LOG("." << std::endl);
                 verificationCallback = [&] (std::shared_ptr<storm::logic::Formula const> const& formula) {
-                                        auto simplificationResult = performSimplification(model, formula);
-                                        std::unique_ptr<storm::modelchecker::CheckResult> result = storm::api::checkRegionsWithSparseEngine<ValueType>(simplificationResult.first, storm::api::createTask<ValueType>(simplificationResult.second, true), regions, engine);
+                                        std::unique_ptr<storm::modelchecker::CheckResult> result = storm::api::checkRegionsWithSparseEngine<ValueType>(model, storm::api::createTask<ValueType>(formula, true), regions, engine);
                                         return result;
                                     };
             }

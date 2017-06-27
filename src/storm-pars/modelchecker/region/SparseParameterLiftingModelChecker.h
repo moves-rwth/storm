@@ -22,10 +22,9 @@ namespace storm {
         template <typename SparseModelType, typename ConstantType>
         class SparseParameterLiftingModelChecker : public RegionModelChecker<typename SparseModelType::ValueType> {
         public:
-            SparseParameterLiftingModelChecker(SparseModelType const& parametricModel);
+            SparseParameterLiftingModelChecker();
             virtual ~SparseParameterLiftingModelChecker() = default;
             
-            virtual void specifyFormula(CheckTask<storm::logic::Formula, typename SparseModelType::ValueType> const& checkTask) override;
 
             /*!
              * Analyzes the given region by means of parameter lifting.
@@ -37,6 +36,11 @@ namespace storm {
             virtual RegionResult analyzeRegion(storm::storage::ParameterRegion<typename SparseModelType::ValueType> const& region, RegionResult const& initialResult = RegionResult::Unknown, bool sampleVerticesOfRegion = false) override;
 
             /*!
+             * Analyzes the 2^#parameters corner points of the given region.
+             */
+            RegionResult sampleVertices(storm::storage::ParameterRegion<typename SparseModelType::ValueType> const& region, RegionResult const& initialResult = RegionResult::Unknown);
+            
+            /*!
              * Checks the specified formula on the given region by applying parameter lifting (Parameter choices are lifted to nondeterministic choices)
              * This yields a (sound) approximative model checking result.
 
@@ -45,7 +49,12 @@ namespace storm {
              */
             std::unique_ptr<CheckResult> check(storm::storage::ParameterRegion<typename SparseModelType::ValueType> const& region, storm::solver::OptimizationDirection const& dirForParameters);
             
+            
+            SparseModelType const& getConsideredParametricModel() const;
+            CheckTask<storm::logic::Formula, ConstantType> const& getCurrentCheckTask() const;
+            
         protected:
+            void specifyFormula(CheckTask<storm::logic::Formula, typename SparseModelType::ValueType> const& checkTask);
             
             // Resets all data that correspond to the currently defined property.
             virtual void reset() = 0;
@@ -62,7 +71,7 @@ namespace storm {
             virtual std::unique_ptr<CheckResult> computeQuantitativeValues(storm::storage::ParameterRegion<typename SparseModelType::ValueType> const& region, storm::solver::OptimizationDirection const& dirForParameters) = 0;
             
             
-            SparseModelType const& parametricModel;
+            std::shared_ptr<SparseModelType> parametricModel;
             std::unique_ptr<CheckTask<storm::logic::Formula, ConstantType>> currentCheckTask;
 
         private:

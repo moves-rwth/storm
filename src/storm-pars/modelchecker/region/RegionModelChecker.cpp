@@ -40,47 +40,6 @@ namespace storm {
                 return std::make_unique<storm::modelchecker::RegionCheckResult<ParametricType>>(std::move(result));
             }
 
-            /*
-#include "storm/modelchecker/results/ExplicitQualitativeCheckResult.h"
-            template <typename ParametricType, typename ConstantType, typename ExactConstantType>
-            RegionResult RegionModelChecker<ParametricType, ConstantType, ExactConstantType>::analyzeRegionExactValidation(storm::storage::ParameterRegion<typename ParametricType::ValueType> const& region, RegionResult const& initialResult) {
-                RegionResult numericResult = analyzeRegion(region, initialResult, false);
-                parameterLiftingCheckerStopwatch.start();
-                if (numericResult == RegionResult::AllSat || numericResult == RegionResult::AllViolated) {
-                    applyHintsToExactChecker();
-                }
-                if (numericResult == RegionResult::AllSat) {
-                    if(!exactParameterLiftingChecker->check(region, this->currentCheckTask->getOptimizationDirection())->asExplicitQualitativeCheckResult()[*getConsideredParametricModel().getInitialStates().begin()]) {
-                        // Numerical result is wrong; Check whether the region is AllViolated!
-                        STORM_LOG_INFO("Numerical result was wrong for one region... Applying exact methods to obtain the actual result...");
-                        ++numOfCorrectedRegions;
-                        if(!exactParameterLiftingChecker->check(region, storm::solver::invert(this->currentCheckTask->getOptimizationDirection()))->asExplicitQualitativeCheckResult()[*getConsideredParametricModel().getInitialStates().begin()]) {
-                            parameterLiftingCheckerStopwatch.stop();
-                            return RegionResult::AllViolated;
-                        } else {
-                            parameterLiftingCheckerStopwatch.stop();
-                            return RegionResult::Unknown;
-                        }
-                    }
-                } else if (numericResult == RegionResult::AllViolated) {
-                    if(exactParameterLiftingChecker->check(region, storm::solver::invert(this->currentCheckTask->getOptimizationDirection()))->asExplicitQualitativeCheckResult()[*getConsideredParametricModel().getInitialStates().begin()]) {
-                        // Numerical result is wrong; Check whether the region is AllSat!
-                        STORM_LOG_INFO("Numerical result was wrong for one region... Applying exact methods to obtain the actual result...");
-                        ++numOfCorrectedRegions;
-                        if(exactParameterLiftingChecker->check(region, this->currentCheckTask->getOptimizationDirection())->asExplicitQualitativeCheckResult()[*getConsideredParametricModel().getInitialStates().begin()]) {
-                            parameterLiftingCheckerStopwatch.stop();
-                            return RegionResult::AllSat;
-                        } else {
-                            parameterLiftingCheckerStopwatch.stop();
-                            return RegionResult::Unknown;
-                        }
-                    }
-                }
-                parameterLiftingCheckerStopwatch.stop();
-                return numericResult;
-            }
-*/
-    
             template <typename ParametricType>
             std::unique_ptr<storm::modelchecker::RegionRefinementCheckResult<ParametricType>> RegionModelChecker<ParametricType>::performRegionRefinement(storm::storage::ParameterRegion<ParametricType> const& region, ParametricType const& threshold) {
                 STORM_LOG_INFO("Applying refinement on region: " << region.toString(true) << " .");

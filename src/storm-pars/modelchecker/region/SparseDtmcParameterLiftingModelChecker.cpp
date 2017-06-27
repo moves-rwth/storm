@@ -1,5 +1,6 @@
 #include "storm-pars/modelchecker/region/SparseDtmcParameterLiftingModelChecker.h"
-#include "storm-pars/utility/parameterlifting.h"
+
+#include "storm-pars/transformer/SparseParametricDtmcSimplifier.h"
 
 #include "storm/adapters/RationalFunctionAdapter.h"
 #include "storm/modelchecker/propositional/SparsePropositionalModelChecker.h"
@@ -15,27 +16,58 @@
 #include "storm/exceptions/InvalidArgumentException.h"
 #include "storm/exceptions/InvalidPropertyException.h"
 #include "storm/exceptions/NotSupportedException.h"
+#include "storm/exceptions/UnexpectedException.h"
 
 namespace storm {
     namespace modelchecker {
         
         template <typename SparseModelType, typename ConstantType>
-        SparseDtmcParameterLiftingModelChecker<SparseModelType, ConstantType>::SparseDtmcParameterLiftingModelChecker(SparseModelType const& parametricModel) : SparseParameterLiftingModelChecker<SparseModelType, ConstantType>(parametricModel), solverFactory(std::make_unique<storm::solver::GeneralMinMaxLinearEquationSolverFactory<ConstantType>>()) {
+        SparseDtmcParameterLiftingModelChecker<SparseModelType, ConstantType>::SparseDtmcParameterLiftingModelChecker() : SparseDtmcParameterLiftingModelChecker<SparseModelType, ConstantType>(std::make_unique<storm::solver::GeneralMinMaxLinearEquationSolverFactory<ConstantType>>()) {
+            // Intentionally left empty
         }
         
         template <typename SparseModelType, typename ConstantType>
-        SparseDtmcParameterLiftingModelChecker<SparseModelType, ConstantType>::SparseDtmcParameterLiftingModelChecker(SparseModelType const& parametricModel, std::unique_ptr<storm::solver::MinMaxLinearEquationSolverFactory<ConstantType>>&& solverFactory) : SparseParameterLiftingModelChecker<SparseModelType, ConstantType>(parametricModel), solverFactory(std::move(solverFactory)) {
+        SparseDtmcParameterLiftingModelChecker<SparseModelType, ConstantType>::SparseDtmcParameterLiftingModelChecker(std::unique_ptr<storm::solver::MinMaxLinearEquationSolverFactory<ConstantType>>&& solverFactory) : solverFactory(std::move(solverFactory)) {
+            // Intentionally left empty
         }
         
         template <typename SparseModelType, typename ConstantType>
-        bool SparseDtmcParameterLiftingModelChecker<SparseModelType, ConstantType>::canHandle(CheckTask<storm::logic::Formula, typename SparseModelType::ValueType> const& checkTask) const {
-            bool result = checkTask.getFormula().isInFragment(storm::logic::reachability().setRewardOperatorsAllowed(true).setReachabilityRewardFormulasAllowed(true).setBoundedUntilFormulasAllowed(true).setCumulativeRewardFormulasAllowed(true).setStepBoundedUntilFormulasAllowed(true));
-            if (result) {
-                storm::utility::parameterlifting::validateParameterLiftingSound(this->parametricModel, checkTask.getFormula());
-                STORM_LOG_WARN_COND(storm::utility::parameterlifting::validateParameterLiftingSound(this->parametricModel, checkTask.getFormula()), "Could not validate whether parameter lifting is applicable. Please validate manually...");
-            }
+        bool SparseDtmcParameterLiftingModelChecker<SparseModelType, ConstantType>::canHandle(std::shared_ptr<storm::models::ModelBase> parametricModel, CheckTask<storm::logic::Formula, typename SparseModelType::ValueType> const& checkTask) const {
+            bool result = parametricModel->isOfType(storm::models::ModelType::Dtmc);
+            result &= parametricModel->isSparseModel();
+            result &= parametricModel->supportsParameters();
+            auto dtmc = parametricModel->template as<SparseModelType>();
+            result &= static_cast<bool>(dtmc);
+            result &= checkTask.getFormula().isInFragment(storm::logic::reachability().setRewardOperatorsAllowed(true).setReachabilityRewardFormulasAllowed(true).setBoundedUntilFormulasAllowed(true).setCumulativeRewardFormulasAllowed(true).setStepBoundedUntilFormulasAllowed(true).setTimeBoundedUntilFormulasAllowed(true));
             return result;
         }
+        
+        template <typename SparseModelType, typename ConstantType>
+        void SparseDtmcParameterLiftingModelChecker<SparseModelType, ConstantType>::specify(std::shared_ptr<storm::models::ModelBase> parametricModel, CheckTask<storm::logic::Formula, typename SparseModelType::ValueType> const& checkTask) {
+            auto dtmc = parametricModel->template as<SparseModelType>();
+            specify(dtmc, checkTask, false);
+        }
+        
+        template <typename SparseModelType, typename ConstantType>
+        void SparseDtmcParameterLiftingModelChecker<SparseModelType, ConstantType>::specify(std::shared_ptr<SparseModelType> parametricModel, CheckTask<storm::logic::Formula, typename SparseModelType::ValueType> const& checkTask, bool skipModelSimplification) {
+
+            STORM_LOG_ASSERT(this->canHandle(parametricModel, checkTask), "specified model and formula can not be handled by this.");
+         
+            reset();
+            
+            if (skipModelSimplification) {
+                this->parametricModel = parametricModel;
+                this->specifyFormula(checkTask);
+            } else {
+                auto simplifier = storm::transformer::SparseParametricDtmcSimplifier<SparseModelType>(*parametricModel);
+                if (!simplifier.simplify(checkTask.getFormula())) {
+                    STORM_LOG_THROW(false, storm::exceptions::UnexpectedException, "Simplifying the model was not successfull.");
+                }
+                this->parametricModel = simplifier.getSimplifiedModel();
+                this->specifyFormula(checkTask.substituteFormula(*simplifier.getSimplifiedFormula()));
+            }
+        }
+        
         
         template <typename SparseModelType, typename ConstantType>
         void SparseDtmcParameterLiftingModelChecker<SparseModelType, ConstantType>::specifyBoundedUntilFormula(CheckTask<storm::logic::BoundedUntilFormula, ConstantType> const& checkTask) {
@@ -53,25 +85,25 @@ namespace storm {
             STORM_LOG_THROW(*stepBound > 0, storm::exceptions::NotSupportedException, "Can not apply parameter lifting on step bounded formula: The step bound has to be positive.");
 
             // get the results for the subformulas
-            storm::modelchecker::SparsePropositionalModelChecker<SparseModelType> propositionalChecker(this->parametricModel);
+            storm::modelchecker::SparsePropositionalModelChecker<SparseModelType> propositionalChecker(*this->parametricModel);
             STORM_LOG_THROW(propositionalChecker.canHandle(checkTask.getFormula().getLeftSubformula()) && propositionalChecker.canHandle(checkTask.getFormula().getRightSubformula()), storm::exceptions::NotSupportedException, "Parameter lifting with non-propositional subformulas is not supported");
             storm::storage::BitVector phiStates = std::move(propositionalChecker.check(checkTask.getFormula().getLeftSubformula())->asExplicitQualitativeCheckResult().getTruthValuesVector());
             storm::storage::BitVector psiStates = std::move(propositionalChecker.check(checkTask.getFormula().getRightSubformula())->asExplicitQualitativeCheckResult().getTruthValuesVector());
             
             // get the maybeStates
-            maybeStates = storm::utility::graph::performProbGreater0(this->parametricModel.getBackwardTransitions(), phiStates, psiStates, true, *stepBound);
+            maybeStates = storm::utility::graph::performProbGreater0(this->parametricModel->getBackwardTransitions(), phiStates, psiStates, true, *stepBound);
             maybeStates &= ~psiStates;
             
             // set the result for all non-maybe states
-            resultsForNonMaybeStates = std::vector<ConstantType>(this->parametricModel.getNumberOfStates(), storm::utility::zero<ConstantType>());
+            resultsForNonMaybeStates = std::vector<ConstantType>(this->parametricModel->getNumberOfStates(), storm::utility::zero<ConstantType>());
             storm::utility::vector::setVectorValues(resultsForNonMaybeStates, psiStates, storm::utility::one<ConstantType>());
             
             // if there are maybestates, create the parameterLifter
             if (!maybeStates.empty()) {
                 // Create the vector of one-step probabilities to go to target states.
-                std::vector<typename SparseModelType::ValueType> b = this->parametricModel.getTransitionMatrix().getConstrainedRowSumVector(storm::storage::BitVector(this->parametricModel.getTransitionMatrix().getRowCount(), true), psiStates);
+                std::vector<typename SparseModelType::ValueType> b = this->parametricModel->getTransitionMatrix().getConstrainedRowSumVector(storm::storage::BitVector(this->parametricModel->getTransitionMatrix().getRowCount(), true), psiStates);
                 
-                parameterLifter = std::make_unique<storm::transformer::ParameterLifter<typename SparseModelType::ValueType, ConstantType>>(this->parametricModel.getTransitionMatrix(), b, maybeStates, maybeStates);
+                parameterLifter = std::make_unique<storm::transformer::ParameterLifter<typename SparseModelType::ValueType, ConstantType>>(this->parametricModel->getTransitionMatrix(), b, maybeStates, maybeStates);
             }
             
             // We know some bounds for the results so set them
@@ -83,25 +115,25 @@ namespace storm {
         void SparseDtmcParameterLiftingModelChecker<SparseModelType, ConstantType>::specifyUntilFormula(CheckTask<storm::logic::UntilFormula, ConstantType> const& checkTask) {
             
             // get the results for the subformulas
-            storm::modelchecker::SparsePropositionalModelChecker<SparseModelType> propositionalChecker(this->parametricModel);
+            storm::modelchecker::SparsePropositionalModelChecker<SparseModelType> propositionalChecker(*this->parametricModel);
             STORM_LOG_THROW(propositionalChecker.canHandle(checkTask.getFormula().getLeftSubformula()) && propositionalChecker.canHandle(checkTask.getFormula().getRightSubformula()), storm::exceptions::NotSupportedException, "Parameter lifting with non-propositional subformulas is not supported");
             storm::storage::BitVector phiStates = std::move(propositionalChecker.check(checkTask.getFormula().getLeftSubformula())->asExplicitQualitativeCheckResult().getTruthValuesVector());
             storm::storage::BitVector psiStates = std::move(propositionalChecker.check(checkTask.getFormula().getRightSubformula())->asExplicitQualitativeCheckResult().getTruthValuesVector());
             
             // get the maybeStates
-            std::pair<storm::storage::BitVector, storm::storage::BitVector> statesWithProbability01 = storm::utility::graph::performProb01(this->parametricModel.getBackwardTransitions(), phiStates, psiStates);
+            std::pair<storm::storage::BitVector, storm::storage::BitVector> statesWithProbability01 = storm::utility::graph::performProb01(this->parametricModel->getBackwardTransitions(), phiStates, psiStates);
             maybeStates = ~(statesWithProbability01.first | statesWithProbability01.second);
             
             // set the result for all non-maybe states
-            resultsForNonMaybeStates = std::vector<ConstantType>(this->parametricModel.getNumberOfStates(), storm::utility::zero<ConstantType>());
+            resultsForNonMaybeStates = std::vector<ConstantType>(this->parametricModel->getNumberOfStates(), storm::utility::zero<ConstantType>());
             storm::utility::vector::setVectorValues(resultsForNonMaybeStates, statesWithProbability01.second, storm::utility::one<ConstantType>());
             
             // if there are maybestates, create the parameterLifter
             if (!maybeStates.empty()) {
                 // Create the vector of one-step probabilities to go to target states.
-                std::vector<typename SparseModelType::ValueType> b = this->parametricModel.getTransitionMatrix().getConstrainedRowSumVector(storm::storage::BitVector(this->parametricModel.getTransitionMatrix().getRowCount(), true), psiStates);
+                std::vector<typename SparseModelType::ValueType> b = this->parametricModel->getTransitionMatrix().getConstrainedRowSumVector(storm::storage::BitVector(this->parametricModel->getTransitionMatrix().getRowCount(), true), psiStates);
                 
-                parameterLifter = std::make_unique<storm::transformer::ParameterLifter<typename SparseModelType::ValueType, ConstantType>>(this->parametricModel.getTransitionMatrix(), b, maybeStates, maybeStates);
+                parameterLifter = std::make_unique<storm::transformer::ParameterLifter<typename SparseModelType::ValueType, ConstantType>>(this->parametricModel->getTransitionMatrix(), b, maybeStates, maybeStates);
             }
             
             // We know some bounds for the results so set them
@@ -113,29 +145,29 @@ namespace storm {
         void SparseDtmcParameterLiftingModelChecker<SparseModelType, ConstantType>::specifyReachabilityRewardFormula(CheckTask<storm::logic::EventuallyFormula, ConstantType> const& checkTask) {
             
             // get the results for the subformula
-            storm::modelchecker::SparsePropositionalModelChecker<SparseModelType> propositionalChecker(this->parametricModel);
+            storm::modelchecker::SparsePropositionalModelChecker<SparseModelType> propositionalChecker(*this->parametricModel);
             STORM_LOG_THROW(propositionalChecker.canHandle(checkTask.getFormula().getSubformula()), storm::exceptions::NotSupportedException, "Parameter lifting with non-propositional subformulas is not supported");
             storm::storage::BitVector targetStates = std::move(propositionalChecker.check(checkTask.getFormula().getSubformula())->asExplicitQualitativeCheckResult().getTruthValuesVector());
             
             // get the maybeStates
-            storm::storage::BitVector infinityStates = storm::utility::graph::performProb1(this->parametricModel.getBackwardTransitions(), storm::storage::BitVector(this->parametricModel.getNumberOfStates(), true), targetStates);
+            storm::storage::BitVector infinityStates = storm::utility::graph::performProb1(this->parametricModel->getBackwardTransitions(), storm::storage::BitVector(this->parametricModel->getNumberOfStates(), true), targetStates);
             infinityStates.complement();
             maybeStates = ~(targetStates | infinityStates);
             
             // set the result for all the non-maybe states
-            resultsForNonMaybeStates = std::vector<ConstantType>(this->parametricModel.getNumberOfStates(), storm::utility::zero<ConstantType>());
+            resultsForNonMaybeStates = std::vector<ConstantType>(this->parametricModel->getNumberOfStates(), storm::utility::zero<ConstantType>());
             storm::utility::vector::setVectorValues(resultsForNonMaybeStates, infinityStates, storm::utility::infinity<ConstantType>());
             
             // if there are maybestates, create the parameterLifter
             if (!maybeStates.empty()) {
                 // Create the reward vector
-                STORM_LOG_THROW((checkTask.isRewardModelSet() && this->parametricModel.hasRewardModel(checkTask.getRewardModel())) || (!checkTask.isRewardModelSet() && this->parametricModel.hasUniqueRewardModel()), storm::exceptions::InvalidPropertyException, "The reward model specified by the CheckTask is not available in the given model.");
+                STORM_LOG_THROW((checkTask.isRewardModelSet() && this->parametricModel->hasRewardModel(checkTask.getRewardModel())) || (!checkTask.isRewardModelSet() && this->parametricModel->hasUniqueRewardModel()), storm::exceptions::InvalidPropertyException, "The reward model specified by the CheckTask is not available in the given model.");
 
-                typename SparseModelType::RewardModelType const& rewardModel = checkTask.isRewardModelSet() ? this->parametricModel.getRewardModel(checkTask.getRewardModel()) : this->parametricModel.getUniqueRewardModel();
+                typename SparseModelType::RewardModelType const& rewardModel = checkTask.isRewardModelSet() ? this->parametricModel->getRewardModel(checkTask.getRewardModel()) : this->parametricModel->getUniqueRewardModel();
 
-                std::vector<typename SparseModelType::ValueType> b = rewardModel.getTotalRewardVector(this->parametricModel.getTransitionMatrix());
+                std::vector<typename SparseModelType::ValueType> b = rewardModel.getTotalRewardVector(this->parametricModel->getTransitionMatrix());
                 
-                parameterLifter = std::make_unique<storm::transformer::ParameterLifter<typename SparseModelType::ValueType, ConstantType>>(this->parametricModel.getTransitionMatrix(), b, maybeStates, maybeStates);
+                parameterLifter = std::make_unique<storm::transformer::ParameterLifter<typename SparseModelType::ValueType, ConstantType>>(this->parametricModel->getTransitionMatrix(), b, maybeStates, maybeStates);
             }
             
             // We only know a lower bound for the result
@@ -155,15 +187,15 @@ namespace storm {
             STORM_LOG_THROW(*stepBound > 0, storm::exceptions::NotSupportedException, "Can not apply parameter lifting on step bounded formula: The step bound has to be positive.");
             
             //Every state is a maybeState
-            maybeStates = storm::storage::BitVector(this->parametricModel.getTransitionMatrix().getColumnCount(), true);
-            resultsForNonMaybeStates = std::vector<ConstantType>(this->parametricModel.getNumberOfStates());
+            maybeStates = storm::storage::BitVector(this->parametricModel->getTransitionMatrix().getColumnCount(), true);
+            resultsForNonMaybeStates = std::vector<ConstantType>(this->parametricModel->getNumberOfStates());
             
             // Create the reward vector
-            STORM_LOG_THROW((checkTask.isRewardModelSet() && this->parametricModel.hasRewardModel(checkTask.getRewardModel())) || (!checkTask.isRewardModelSet() && this->parametricModel.hasUniqueRewardModel()), storm::exceptions::InvalidPropertyException, "The reward model specified by the CheckTask is not available in the given model.");
-            typename SparseModelType::RewardModelType const& rewardModel = checkTask.isRewardModelSet() ? this->parametricModel.getRewardModel(checkTask.getRewardModel()) : this->parametricModel.getUniqueRewardModel();
-            std::vector<typename SparseModelType::ValueType> b = rewardModel.getTotalRewardVector(this->parametricModel.getTransitionMatrix());
+            STORM_LOG_THROW((checkTask.isRewardModelSet() && this->parametricModel->hasRewardModel(checkTask.getRewardModel())) || (!checkTask.isRewardModelSet() && this->parametricModel->hasUniqueRewardModel()), storm::exceptions::InvalidPropertyException, "The reward model specified by the CheckTask is not available in the given model.");
+            typename SparseModelType::RewardModelType const& rewardModel = checkTask.isRewardModelSet() ? this->parametricModel->getRewardModel(checkTask.getRewardModel()) : this->parametricModel->getUniqueRewardModel();
+            std::vector<typename SparseModelType::ValueType> b = rewardModel.getTotalRewardVector(this->parametricModel->getTransitionMatrix());
             
-            parameterLifter = std::make_unique<storm::transformer::ParameterLifter<typename SparseModelType::ValueType, ConstantType>>(this->parametricModel.getTransitionMatrix(), b, maybeStates, maybeStates);
+            parameterLifter = std::make_unique<storm::transformer::ParameterLifter<typename SparseModelType::ValueType, ConstantType>>(this->parametricModel->getTransitionMatrix(), b, maybeStates, maybeStates);
             
             
             // We only know a lower bound for the result
@@ -173,7 +205,7 @@ namespace storm {
         template <typename SparseModelType, typename ConstantType>
         storm::modelchecker::SparseInstantiationModelChecker<SparseModelType, ConstantType>& SparseDtmcParameterLiftingModelChecker<SparseModelType, ConstantType>::getInstantiationChecker() {
             if (!instantiationChecker) {
-                instantiationChecker = std::make_unique<storm::modelchecker::SparseDtmcInstantiationModelChecker<SparseModelType, ConstantType>>(this->parametricModel);
+                instantiationChecker = std::make_unique<storm::modelchecker::SparseDtmcInstantiationModelChecker<SparseModelType, ConstantType>>(*this->parametricModel);
                 instantiationChecker->specifyFormula(this->currentCheckTask->template convertValueType<typename SparseModelType::ValueType>());
             }
             return *instantiationChecker;
@@ -205,7 +237,7 @@ namespace storm {
             if (this->currentCheckTask->isBoundSet() && solver->hasSchedulerHint()) {
                 // If we reach this point, we know that after applying the hint, the x-values can only become larger (if we maximize) or smaller (if we minimize).
                 std::unique_ptr<storm::solver::TerminationCondition<ConstantType>> termCond;
-                storm::storage::BitVector relevantStatesInSubsystem = this->currentCheckTask->isOnlyInitialStatesRelevantSet() ? this->parametricModel.getInitialStates() % maybeStates : storm::storage::BitVector(maybeStates.getNumberOfSetBits(), true);
+                storm::storage::BitVector relevantStatesInSubsystem = this->currentCheckTask->isOnlyInitialStatesRelevantSet() ? this->parametricModel->getInitialStates() % maybeStates : storm::storage::BitVector(maybeStates.getNumberOfSetBits(), true);
                 if (storm::solver::minimize(dirForParameters)) {
                     // Terminate if the value for ALL relevant states is already below the threshold
                     termCond = std::make_unique<storm::solver::TerminateIfFilteredExtremumBelowThreshold<ConstantType>> (relevantStatesInSubsystem, this->currentCheckTask->getBoundThreshold(), true, false);

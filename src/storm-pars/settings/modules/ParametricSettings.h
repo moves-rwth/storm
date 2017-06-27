@@ -30,11 +30,6 @@ namespace storm {
                  */
 				std::string exportResultPath() const;
 				
-                /*!
-                 * Retrieves whether or not the input model should be simplified before its analysis.
-                 */
-                bool isSimplifySet() const;
-                
                /*!
                  * Retrieves whether or not derivatives of the resulting rational function are to be generated.
                  *
@@ -51,7 +46,6 @@ namespace storm {
                 
             private:
 				const static std::string exportResultOptionName;
-                const static std::string simplifyOptionName;
                 const static std::string derivativesOptionName;
                 const static std::string transformContinuousOptionName;
                 const static std::string transformContinuousShortOptionName;
