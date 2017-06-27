@@ -91,8 +91,8 @@ namespace storm {
                 return result;
             }
             
-            bool hasSatPoint = result == RegionResult::ExistsViolated || result == RegionResult::CenterViolated;
-            bool hasViolatedPoint = result == RegionResult::ExistsSat || result == RegionResult::CenterSat;
+            bool hasSatPoint = result == RegionResult::ExistsSat || result == RegionResult::CenterSat;
+            bool hasViolatedPoint = result == RegionResult::ExistsViolated || result == RegionResult::CenterViolated;
             
             // Check if there is a point in the region for which the property is satisfied
             auto vertices = region.getVerticesOfRegion(region.getVariables());

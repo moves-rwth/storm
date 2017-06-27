@@ -13,6 +13,7 @@ namespace storm {
             typedef typename storm::utility::parametric::CoefficientType<ParametricType>::type CoefficientType;
             typedef typename storm::utility::parametric::Valuation<ParametricType> Valuation;
             
+            ParameterRegion();
             ParameterRegion(Valuation const& lowerBoundaries, Valuation const& upperBoundaries);
             ParameterRegion(Valuation&& lowerBoundaries, Valuation&& upperBoundaries);
             ParameterRegion(ParameterRegion const& other) = default;

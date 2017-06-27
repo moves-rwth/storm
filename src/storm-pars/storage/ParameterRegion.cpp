@@ -8,6 +8,11 @@ namespace storm {
     namespace storage {
 
         template<typename ParametricType>
+        ParameterRegion<ParametricType>::ParameterRegion() {
+            init();
+        }
+        
+        template<typename ParametricType>
         ParameterRegion<ParametricType>::ParameterRegion(Valuation const& lowerBoundaries, Valuation const& upperBoundaries) : lowerBoundaries(lowerBoundaries), upperBoundaries(upperBoundaries) {
             init();
         }
