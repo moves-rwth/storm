@@ -1,0 +1,97 @@
+#include "storm-pars/parser/ParameterRegionParser.h"
+
+#include "storm/utility/macros.h"
+#include "storm/exceptions/InvalidArgumentException.h"
+#include "storm/utility/constants.h"
+#include "storm/utility/file.h"
+
+namespace storm {
+    namespace parser {
+
+        template<typename ParametricType>
+        void ParameterRegionParser<ParametricType>::parseParameterBoundaries(Valuation& lowerBoundaries, Valuation& upperBoundaries, std::string const& parameterBoundariesString, std::set<VariableType> const& consideredVariables) {
+            
+            std::string::size_type positionOfFirstRelation = parameterBoundariesString.find("<=");
+            STORM_LOG_THROW(positionOfFirstRelation!=std::string::npos, storm::exceptions::InvalidArgumentException, "When parsing the region" << parameterBoundariesString << " I could not find  a '<=' after the first number");
+            std::string::size_type positionOfSecondRelation = parameterBoundariesString.find("<=", positionOfFirstRelation+2);
+            STORM_LOG_THROW(positionOfSecondRelation!=std::string::npos, storm::exceptions::InvalidArgumentException, "When parsing the region" << parameterBoundariesString << " I could not find  a '<=' after the parameter");
+
+            std::string parameter = parameterBoundariesString.substr(positionOfFirstRelation+2,positionOfSecondRelation-(positionOfFirstRelation+2));
+            //removes all whitespaces from the parameter string:
+            parameter.erase(std::remove_if (parameter.begin(), parameter.end(), ::isspace), parameter.end());
+            STORM_LOG_THROW(parameter.length()>0, storm::exceptions::InvalidArgumentException, "When parsing the region" << parameterBoundariesString << " I could not find a parameter");
+
+            std::unique_ptr<VariableType> var;
+            for (auto const& v : consideredVariables) {
+                std::stringstream stream;
+                stream << v;
+                std::string vAsString = stream.str();
+                if (parameter == stream.str()) {
+                    var = std::make_unique<VariableType>(v);
+                }
+            }
+            STORM_LOG_ASSERT(var, "Could not find parameter " << parameter << " in the set of considered variables");
+            
+            CoefficientType lb = storm::utility::convertNumber<CoefficientType>(parameterBoundariesString.substr(0,positionOfFirstRelation));
+            CoefficientType ub = storm::utility::convertNumber<CoefficientType>(parameterBoundariesString.substr(positionOfSecondRelation+2));
+            lowerBoundaries.emplace(std::make_pair(*var, lb));
+            upperBoundaries.emplace(std::make_pair(*var, ub));
+        }
+
+        template<typename ParametricType>
+        storm::storage::ParameterRegion<ParametricType> ParameterRegionParser<ParametricType>::parseRegion(std::string const& regionString, std::set<VariableType> const& consideredVariables) {
+            Valuation lowerBoundaries;
+            Valuation upperBoundaries;
+            std::vector<std::string> parameterBoundaries;
+            boost::split(parameterBoundaries, regionString, boost::is_any_of(","));
+            for (auto const& parameterBoundary : parameterBoundaries){
+                if (!std::all_of(parameterBoundary.begin(),parameterBoundary.end(), ::isspace)){ //skip this string if it only consists of space
+                    parseParameterBoundaries(lowerBoundaries, upperBoundaries, parameterBoundary, consideredVariables);
+                }
+            }
+            return storm::storage::ParameterRegion<ParametricType>(std::move(lowerBoundaries), std::move(upperBoundaries));
+        }
+
+        template<typename ParametricType>
+        std::vector<storm::storage::ParameterRegion<ParametricType>> ParameterRegionParser<ParametricType>::parseMultipleRegions(std::string const& regionsString, std::set<VariableType> const& consideredVariables) {
+            std::vector<storm::storage::ParameterRegion<ParametricType>> result;
+            std::vector<std::string> regionsStrVec;
+            boost::split(regionsStrVec, regionsString, boost::is_any_of(";"));
+            for (auto const& regionStr : regionsStrVec){
+                if (!std::all_of(regionStr.begin(),regionStr.end(), ::isspace)){ //skip this string if it only consists of space
+                    result.emplace_back(parseRegion(regionStr, consideredVariables));
+                }
+            }
+            return result;
+        }
+
+        template<typename ParametricType>
+        std::vector<storm::storage::ParameterRegion<ParametricType>> ParameterRegionParser<ParametricType>::parseMultipleRegionsFromFile(std::string const& fileName, std::set<VariableType> const& consideredVariables) {
+     
+            // Open file and initialize result.
+            std::ifstream inputFileStream;
+            storm::utility::openFile(fileName, inputFileStream);
+            
+            std::vector<storm::storage::ParameterRegion<ParametricType>> result;
+            
+            // Now try to parse the contents of the file.
+            try {
+                std::string fileContent((std::istreambuf_iterator<char>(inputFileStream)), (std::istreambuf_iterator<char>()));
+                result = parseMultipleRegions(fileContent, consideredVariables);
+            } catch(std::exception& e) {
+                // In case of an exception properly close the file before passing exception.
+                storm::utility::closeFile(inputFileStream);
+                throw e;
+            }
+            
+            // Close the stream in case everything went smoothly and return result.
+            storm::utility::closeFile(inputFileStream);
+            return result;
+        }
+        
+#ifdef STORM_HAVE_CARL
+            template class ParameterRegionParser<storm::RationalFunction>;
+#endif
+    }
+}
+
