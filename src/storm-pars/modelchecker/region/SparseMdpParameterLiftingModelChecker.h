@@ -47,7 +47,7 @@ namespace storm {
                 
 
         private:
-            void computePlayer1Matrix();
+            void computePlayer1Matrix(boost::optional<storm::storage::BitVector> const& selectedRows = boost::none);
             
             storm::storage::BitVector maybeStates;
             std::vector<ConstantType> resultsForNonMaybeStates;

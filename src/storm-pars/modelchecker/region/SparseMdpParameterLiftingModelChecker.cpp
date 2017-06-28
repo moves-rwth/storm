@@ -187,7 +187,7 @@ namespace storm {
                 storm::storage::BitVector selectedRows = this->parametricModel->getTransitionMatrix().getRowFilter(maybeStates, ~infinityStates);
                 
                 parameterLifter = std::make_unique<storm::transformer::ParameterLifter<typename SparseModelType::ValueType, ConstantType>>(this->parametricModel->getTransitionMatrix(), b, selectedRows, maybeStates);
-                computePlayer1Matrix();
+                computePlayer1Matrix(selectedRows);
                 
                 // Check whether there is an EC consisting of maybestates
                 applyPreviousResultAsHint = !storm::solver::minimize(checkTask.getOptimizationDirection()) || // when maximizing, there can not be an EC within the maybestates
@@ -241,7 +241,7 @@ namespace storm {
         template <typename SparseModelType, typename ConstantType>
         std::unique_ptr<CheckResult> SparseMdpParameterLiftingModelChecker<SparseModelType, ConstantType>::computeQuantitativeValues(storm::storage::ParameterRegion<typename SparseModelType::ValueType> const& region, storm::solver::OptimizationDirection const& dirForParameters) {
             
-            if(maybeStates.empty()) {
+            if (maybeStates.empty()) {
                 return std::make_unique<storm::modelchecker::ExplicitQuantitativeCheckResult<ConstantType>>(resultsForNonMaybeStates);
             }
             
@@ -308,19 +308,31 @@ namespace storm {
         }
         
         template <typename SparseModelType, typename ConstantType>
-        void SparseMdpParameterLiftingModelChecker<SparseModelType, ConstantType>::computePlayer1Matrix() {
+        void SparseMdpParameterLiftingModelChecker<SparseModelType, ConstantType>::computePlayer1Matrix(boost::optional<storm::storage::BitVector> const& selectedRows) {
             uint_fast64_t n = 0;
-            for(auto const& maybeState : maybeStates) {
-                n += this->parametricModel->getTransitionMatrix().getRowGroupSize(maybeState);
+            if (selectedRows) {
+                // only count selected rows
+                n = selectedRows->getNumberOfSetBits();
+            } else {
+                for (auto const& maybeState : maybeStates) {
+                    n += this->parametricModel->getTransitionMatrix().getRowGroupSize(maybeState);
+                }
             }
-            // The player 1 matrix is the identity matrix of size n with the row groups as given by the original matrix
+            
+            // The player 1 matrix is the identity matrix of size n with the row groups as given by the original matrix (potentially without unselected rows)
             storm::storage::SparseMatrixBuilder<storm::storage::sparse::state_type> matrixBuilder(n, n, n, true, true, maybeStates.getNumberOfSetBits());
             uint_fast64_t p1MatrixRow = 0;
             for (auto maybeState : maybeStates){
                 matrixBuilder.newRowGroup(p1MatrixRow);
-                for (uint_fast64_t row = this->parametricModel->getTransitionMatrix().getRowGroupIndices()[maybeState]; row < this->parametricModel->getTransitionMatrix().getRowGroupIndices()[maybeState + 1]; ++row){
-                    matrixBuilder.addNextValue(p1MatrixRow, p1MatrixRow, storm::utility::one<storm::storage::sparse::state_type>());
-                    ++p1MatrixRow;
+                if (selectedRows) {
+                    for (uint_fast64_t row = selectedRows->getNextSetIndex(this->parametricModel->getTransitionMatrix().getRowGroupIndices()[maybeState]); row < this->parametricModel->getTransitionMatrix().getRowGroupIndices()[maybeState + 1]; row = selectedRows->getNextSetIndex(row + 1)) {
+                        matrixBuilder.addNextValue(p1MatrixRow, p1MatrixRow, storm::utility::one<storm::storage::sparse::state_type>());
+                        ++p1MatrixRow;
+                    }
+                } else {
+                    for (uint_fast64_t endOfGroup = p1MatrixRow + this->parametricModel->getTransitionMatrix().getRowGroupSize(maybeState); p1MatrixRow < endOfGroup; ++p1MatrixRow){
+                        matrixBuilder.addNextValue(p1MatrixRow, p1MatrixRow, storm::utility::one<storm::storage::sparse::state_type>());
+                    }
                 }
             }
             player1Matrix = matrixBuilder.build();
