@@ -247,7 +247,6 @@ namespace storm {
                     stateRewardWeights[markovianState] = storm::utility::one<ValueType>() / exitRateVector[markovianState];
                 }
                 std::vector<ValueType> totalRewardVector = rewardModel.getTotalActionRewardVector(transitionMatrix, stateRewardWeights);
-                RewardModelType scaledRewardModel(boost::none, std::move(totalRewardVector));
 
                 return computeLongRunAverageRewards(dir, transitionMatrix, backwardTransitions, exitRateVector, markovianStates, totalRewardVector, minMaxLinearEquationSolverFactory);
            }
