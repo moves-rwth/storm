@@ -9,6 +9,9 @@ add_subdirectory(storm-gspn)
 add_subdirectory(storm-gspn-cli)
 add_subdirectory(storm-dft)
 add_subdirectory(storm-dft-cli)
+add_subdirectory(storm-pars)
+add_subdirectory(storm-pars-cli)
+
 add_subdirectory(test)
 
 set(STORM_TARGETS ${STORM_TARGETS} PARENT_SCOPE)
