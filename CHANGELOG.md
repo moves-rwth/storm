@@ -2,11 +2,15 @@ Changelog
 ==============
 
 This changelog lists only the most important changes. Smaller (bug)fixes as well as non-mature features are not part of the changelog.
-The releases of major and minor versions contain an overview of changes since the last major/minor update. 
+The releases of major and minor versions contain an overview of changes since the last major/minor update.
 
 
 Version 1.0.x
 -------------------
+
+### Version 1.0.2
+
+- Several improvements and fixes in building process
 
 ### Version 1.0.1 (2017/4)
 
