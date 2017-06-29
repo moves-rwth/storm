@@ -655,7 +655,9 @@ namespace storm {
             verifyProperties<ValueType>(input.properties,
                                         [&sparseModel] (std::shared_ptr<storm::logic::Formula const> const& formula) {
                                             std::unique_ptr<storm::modelchecker::CheckResult> result = storm::api::verifyWithSparseEngine<ValueType>(sparseModel, storm::api::createTask<ValueType>(formula, true));
-                                            result->filter(storm::modelchecker::ExplicitQualitativeCheckResult(sparseModel->getInitialStates()));
+                                            if (result) {
+                                                result->filter(storm::modelchecker::ExplicitQualitativeCheckResult(sparseModel->getInitialStates()));
+                                            }
                                             return result;
                                         });
         }
@@ -665,7 +667,9 @@ namespace storm {
             verifyProperties<ValueType>(input.properties, [&model] (std::shared_ptr<storm::logic::Formula const> const& formula) {
                 auto symbolicModel = model->as<storm::models::symbolic::Model<DdType, ValueType>>();
                 std::unique_ptr<storm::modelchecker::CheckResult> result = storm::api::verifyWithHybridEngine<DdType, ValueType>(symbolicModel, storm::api::createTask<ValueType>(formula, true));
-                result->filter(storm::modelchecker::SymbolicQualitativeCheckResult<DdType>(symbolicModel->getReachableStates(), symbolicModel->getInitialStates()));
+                if (result) {
+                    result->filter(storm::modelchecker::SymbolicQualitativeCheckResult<DdType>(symbolicModel->getReachableStates(), symbolicModel->getInitialStates()));
+                }
                 return result;
             });
         }
@@ -675,7 +679,9 @@ namespace storm {
             verifyProperties<ValueType>(input.properties, [&model] (std::shared_ptr<storm::logic::Formula const> const& formula) {
                 auto symbolicModel = model->as<storm::models::symbolic::Model<DdType, ValueType>>();
                 std::unique_ptr<storm::modelchecker::CheckResult> result = storm::api::verifyWithDdEngine<DdType, ValueType>(model->as<storm::models::symbolic::Model<DdType, ValueType>>(), storm::api::createTask<ValueType>(formula, true));
-                result->filter(storm::modelchecker::SymbolicQualitativeCheckResult<DdType>(symbolicModel->getReachableStates(), symbolicModel->getInitialStates()));
+                if (result) {
+                    result->filter(storm::modelchecker::SymbolicQualitativeCheckResult<DdType>(symbolicModel->getReachableStates(), symbolicModel->getInitialStates()));
+                }
                 return result;
             });
         }
