@@ -19,6 +19,7 @@ Version 1.0.x
     * are in smtlib2
 - USE_POPCNT removed in favor of FORCE_POPCNT. The popcnt instruction is used if available due to march=native, unless portable is set. 
     Then, using FORCE_POPCNT enables the use of the SSE 4.2 instruction
+- Parametric model checking is now handled in a separated library/executable called storm-pars
 
 ### Version 1.0.1 (2017/4)
 
