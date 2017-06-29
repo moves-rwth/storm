@@ -100,7 +100,7 @@ namespace storm {
         template<typename ValueType>
         bool StandardMinMaxLinearEquationSolver<ValueType>::solveEquationsPolicyIteration(OptimizationDirection dir, std::vector<ValueType>& x, std::vector<ValueType> const& b) const {
             // Create the initial scheduler.
-            std::vector<storm::storage::sparse::state_type> scheduler = this->schedulerHint ? this->schedulerHint->getChoices() : std::vector<storm::storage::sparse::state_type>(this->A.getRowGroupCount());
+            std::vector<storm::storage::sparse::state_type> scheduler = this->hasSchedulerHint() ? this->choicesHint.get() : std::vector<storm::storage::sparse::state_type>(this->A.getRowGroupCount());
             
             // Get a vector for storing the right-hand side of the inner equation system.
             if(!auxiliaryRowGroupVector) {
@@ -180,7 +180,7 @@ namespace storm {
             
             // If requested, we store the scheduler for retrieval.
             if (this->isTrackSchedulerSet()) {
-                this->scheduler = std::make_unique<storm::storage::TotalScheduler>(std::move(scheduler));
+                this->schedulerChoices = std::move(scheduler);
             }
             
             if(!this->isCachingEnabled()) {
@@ -225,11 +225,11 @@ namespace storm {
                 auxiliaryRowGroupVector = std::make_unique<std::vector<ValueType>>(A.getRowGroupCount());
             }
             
-            if(this->schedulerHint) {
+            if (this->hasSchedulerHint()) {
                 // Resolve the nondeterminism according to the scheduler hint
-                storm::storage::SparseMatrix<ValueType> submatrix = this->A.selectRowsFromRowGroups(this->schedulerHint->getChoices(), true);
+                storm::storage::SparseMatrix<ValueType> submatrix = this->A.selectRowsFromRowGroups(this->choicesHint.get(), true);
                 submatrix.convertToEquationSystem();
-                storm::utility::vector::selectVectorValues<ValueType>(*auxiliaryRowGroupVector, this->schedulerHint->getChoices(), this->A.getRowGroupIndices(), b);
+                storm::utility::vector::selectVectorValues<ValueType>(*auxiliaryRowGroupVector, this->choicesHint.get(), this->A.getRowGroupIndices(), b);
 
                 // Solve the resulting equation system.
                 // Note that the linEqSolver might consider a slightly different interpretation of "equalModuloPrecision". Hence, we iteratively increase its precision.
@@ -281,13 +281,12 @@ namespace storm {
                 if (iterations==0) {
                     linEqSolverA->multiply(x, &b, multiplyResult);
                 }
-                std::vector<storm::storage::sparse::state_type> choices(this->A.getRowGroupCount());
+                this->schedulerChoices = std::vector<uint_fast64_t>(this->A.getRowGroupCount());
                 // Reduce the multiplyResult and keep track of the choices made
-                storm::utility::vector::reduceVectorMinOrMax(dir, multiplyResult, x, this->A.getRowGroupIndices(), &choices);
-                this->scheduler = std::make_unique<storm::storage::TotalScheduler>(std::move(choices));
+                storm::utility::vector::reduceVectorMinOrMax(dir, multiplyResult, x, this->A.getRowGroupIndices(), &this->schedulerChoices.get());
             }
 
-            if(!this->isCachingEnabled()) {
+            if (!this->isCachingEnabled()) {
                 clearCache();
             }
             

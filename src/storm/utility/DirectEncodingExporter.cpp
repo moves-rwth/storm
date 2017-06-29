@@ -1,6 +1,6 @@
 #include "DirectEncodingExporter.h"
 
-#include "storm/adapters/CarlAdapter.h"
+#include "storm/adapters/RationalFunctionAdapter.h"
 #include "storm/utility/constants.h"
 #include "storm/utility/macros.h"
 #include "storm/exceptions/NotImplementedException.h"
@@ -21,17 +21,20 @@ namespace storm {
             // Notice that for CTMCs we write the rate matrix instead of probabilities
 
             // Initialize
+            storm::models::ModelType type = sparseModel->getType();
             std::vector<ValueType> exitRates; // Only for CTMCs and MAs.
             if(sparseModel->getType() == storm::models::ModelType::Ctmc) {
                 exitRates = sparseModel->template as<storm::models::sparse::Ctmc<ValueType>>()->getExitRateVector();
             } else if(sparseModel->getType() == storm::models::ModelType::MarkovAutomaton) {
+                type = storm::models::ModelType::Mdp;
+                STORM_LOG_WARN("Markov automaton is exported as MDP (indication of Markovian choices is not supported in DRN format).");
                 exitRates = sparseModel->template as<storm::models::sparse::MarkovAutomaton<ValueType>>()->getExitRates();
             }
 
             // Write header
             os << "// Exported by storm" << std::endl;
             os << "// Original model type: " << sparseModel->getType() << std::endl;
-            os << "@type: " << sparseModel->getType() << std::endl;
+            os << "@type: " << type << std::endl;
             os << "@parameters" << std::endl;
             if (parameters.empty()) {
                 for (std::string const& parameter : getParameters(sparseModel)) {

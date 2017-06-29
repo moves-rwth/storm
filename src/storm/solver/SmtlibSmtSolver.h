@@ -7,7 +7,7 @@
 #include "storm-config.h"
 #include "storm/solver/SmtSolver.h"
 #include "storm/adapters/Smt2ExpressionAdapter.h"
-#include "storm/adapters/CarlAdapter.h"
+#include "storm/adapters/RationalFunctionAdapter.h"
 
 namespace storm {
     namespace solver {

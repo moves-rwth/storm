@@ -1,6 +1,8 @@
 #ifndef STORM_GENERATOR_PRISMNEXTSTATEGENERATOR_H_
 #define STORM_GENERATOR_PRISMNEXTSTATEGENERATOR_H_
 
+#include <boost/container/flat_set.hpp>
+
 #include "storm/generator/NextStateGenerator.h"
 
 #include "storm/storage/prism/Program.h"
@@ -12,9 +14,10 @@ namespace storm {
         class PrismNextStateGenerator : public NextStateGenerator<ValueType, StateType> {
         public:
             typedef typename NextStateGenerator<ValueType, StateType>::StateToIdCallback StateToIdCallback;
+            typedef boost::container::flat_set<uint_fast64_t> CommandSet;
             
             PrismNextStateGenerator(storm::prism::Program const& program, NextStateGeneratorOptions const& options = NextStateGeneratorOptions());
-            
+
             virtual ModelType getModelType() const override;
             virtual bool isDeterministicModel() const override;
             virtual bool isDiscreteTimeModel() const override;
@@ -26,6 +29,8 @@ namespace storm {
             virtual storm::builder::RewardModelInformation getRewardModelInformation(uint64_t const& index) const override;
             
             virtual storm::models::sparse::StateLabeling label(storm::storage::BitVectorHashMap<StateType> const& states, std::vector<StateType> const& initialStateIndices = {}, std::vector<StateType> const& deadlockStateIndices = {}) override;
+
+            virtual std::shared_ptr<storm::storage::sparse::ChoiceOrigins> generateChoiceOrigins(std::vector<boost::any>& dataForChoiceOrigins) const override;
 
         private:
             void checkValid() const;

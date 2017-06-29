@@ -1,6 +1,6 @@
 #include "storm/models/sparse/Ctmc.h"
 #include "storm/models/sparse/StandardRewardModel.h"
-#include "storm/adapters/CarlAdapter.h"
+#include "storm/adapters/RationalFunctionAdapter.h"
 #include "storm/utility/macros.h"
 
 namespace storm {
@@ -9,26 +9,48 @@ namespace storm {
             
             template <typename ValueType, typename RewardModelType>
             Ctmc<ValueType, RewardModelType>::Ctmc(storm::storage::SparseMatrix<ValueType> const& rateMatrix, storm::models::sparse::StateLabeling const& stateLabeling,
-                                  std::unordered_map<std::string, RewardModelType> const& rewardModels,
-                                  boost::optional<std::vector<LabelSet>> const& optionalChoiceLabeling)
-            : DeterministicModel<ValueType, RewardModelType>(storm::models::ModelType::Ctmc, rateMatrix, stateLabeling, rewardModels, optionalChoiceLabeling) {
-                exitRates = createExitRateVector(this->getTransitionMatrix());
+                                  std::unordered_map<std::string, RewardModelType> const& rewardModels)
+                    : Ctmc<ValueType, RewardModelType>(storm::storage::sparse::ModelComponents<ValueType, RewardModelType>(rateMatrix, stateLabeling, rewardModels, true)) {
+                // Intentionally left empty
             }
             
             template <typename ValueType, typename RewardModelType>
             Ctmc<ValueType, RewardModelType>::Ctmc(storm::storage::SparseMatrix<ValueType>&& rateMatrix, storm::models::sparse::StateLabeling&& stateLabeling,
-                                  std::unordered_map<std::string, RewardModelType>&& rewardModels,
-                                  boost::optional<std::vector<LabelSet>>&& optionalChoiceLabeling)
-            : DeterministicModel<ValueType, RewardModelType>(storm::models::ModelType::Ctmc, std::move(rateMatrix), std::move(stateLabeling), std::move(rewardModels), std::move(optionalChoiceLabeling)) {
-                // It is important to refer to the transition matrix here, because the given rate matrix has been move elsewhere.
-                exitRates = createExitRateVector(this->getTransitionMatrix());
+                                  std::unordered_map<std::string, RewardModelType>&& rewardModels)
+                    : Ctmc<ValueType, RewardModelType>(storm::storage::sparse::ModelComponents<ValueType, RewardModelType>(std::move(rateMatrix), std::move(stateLabeling), std::move(rewardModels), true)) {
+                // Intentionally left empty
             }
             
             template <typename ValueType, typename RewardModelType>
-            Ctmc<ValueType, RewardModelType>::Ctmc(storm::storage::SparseMatrix<ValueType> const& rateMatrix, std::vector<ValueType> const& exitRates, storm::models::sparse::StateLabeling const& stateLabeling,
-                                std::unordered_map<std::string, RewardModelType> const& rewardModels,
-                                boost::optional<std::vector<LabelSet>> const& optionalChoiceLabeling)
-            : DeterministicModel<ValueType, RewardModelType>(storm::models::ModelType::Ctmc, std::move(rateMatrix), std::move(stateLabeling), std::move(rewardModels), std::move(optionalChoiceLabeling)), exitRates(exitRates) {
+            Ctmc<ValueType, RewardModelType>::Ctmc(storm::storage::sparse::ModelComponents<ValueType, RewardModelType> const& components)
+                    : DeterministicModel<ValueType, RewardModelType>(storm::models::ModelType::Ctmc, components) {
+                
+                if (components.exitRates) {
+                    exitRates = components.exitRates.get();
+                } else {
+                    STORM_LOG_ASSERT(components.rateTransitions, "No rate information given for CTMC.");
+                    exitRates = createExitRateVector(this->getTransitionMatrix());
+                }
+                
+                if (!components.rateTransitions) {
+                    this->getTransitionMatrix().scaleRowsInPlace(exitRates);
+                }
+            }
+            
+           template <typename ValueType, typename RewardModelType>
+            Ctmc<ValueType, RewardModelType>::Ctmc(storm::storage::sparse::ModelComponents<ValueType, RewardModelType>&& components)
+                    : DeterministicModel<ValueType, RewardModelType>(storm::models::ModelType::Ctmc, std::move(components)) {
+                
+                if (components.exitRates) {
+                    exitRates = std::move(components.exitRates.get());
+                } else {
+                    STORM_LOG_ASSERT(components.rateTransitions, "No rate information given for CTMC.");
+                    exitRates = createExitRateVector(this->getTransitionMatrix());
+                }
+               
+                if (!components.rateTransitions) {
+                    this->getTransitionMatrix().scaleRowsInPlace(exitRates);
+                }
             }
             
             template <typename ValueType, typename RewardModelType>

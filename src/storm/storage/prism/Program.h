@@ -410,6 +410,19 @@ namespace storm {
             uint_fast64_t getModuleIndexByVariable(std::string const& variableName) const;
             
             /*!
+             * Retrieves the index of the module and the (local) index of the command with the given global command index.
+             *
+             * An exception is thrown if the command index is invalid.
+             *
+             * @note if (x,y) is the result of this method, we have
+             * <code> getModule(x).getCommand(y).getGlobalIndex() == globalCommandIndex </code>
+             *
+             * @param globalCommandIndex the global command index specifying the command that is to be found
+             * @return the index of the module and the (local) index of the found command
+             */
+            std::pair<uint_fast64_t, uint_fast64_t> getModuleCommandIndexByGlobalCommandIndex(uint_fast64_t globalCommandIndex) const;
+            
+            /*!
              * Retrieves whether the program has reward models.
              *
              * @return True iff the program has at least one reward model.

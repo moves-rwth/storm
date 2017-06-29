@@ -1,6 +1,6 @@
 #include "storm/logic/Formula.h"
 #include "storm/utility/initialize.h"
-#include "storm/utility/storm.h"
+#include "storm/api/storm.h"
 #include "storm/cli/cli.h"
 #include "storm/exceptions/BaseException.h"
 
@@ -64,7 +64,7 @@ void analyzeDFT(std::vector<std::string> const& properties, bool symred, bool al
     for (size_t i = 1; i < properties.size(); ++i) {
         propString += ";" + properties[i];
     }
-    std::vector<std::shared_ptr<storm::logic::Formula const>> props = storm::extractFormulasFromProperties(storm::parsePropertiesForExplicit(propString));
+    std::vector<std::shared_ptr<storm::logic::Formula const>> props = storm::api::extractFormulasFromProperties(storm::api::parseProperties(propString));
     STORM_LOG_ASSERT(props.size() > 0, "No properties found.");
 
     // Check model
@@ -193,7 +193,7 @@ int main(const int argc, const char** argv) {
             
             storm::settings::modules::JaniExportSettings const& janiSettings = storm::settings::getModule<storm::settings::modules::JaniExportSettings>();
             if (janiSettings.isJaniFileSet()) {
-                storm::exportJaniModel(*model, {storm::jani::Property("time-bounded", tbUntil), storm::jani::Property("mttf", rewFormula)}, janiSettings.getJaniFilename());
+                storm::api::exportJaniModel(*model, {storm::jani::Property("time-bounded", tbUntil), storm::jani::Property("mttf", rewFormula)}, janiSettings.getJaniFilename());
             }
             
             delete model;

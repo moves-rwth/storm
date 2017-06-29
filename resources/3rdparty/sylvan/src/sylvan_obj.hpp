@@ -23,7 +23,7 @@
 #include <lace.h>
 #include <sylvan.h>
 
-#include "storm/adapters/CarlAdapter.h"
+#include "storm/adapters/RationalFunctionAdapter.h"
 
 namespace sylvan {
 

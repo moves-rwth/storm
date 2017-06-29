@@ -22,7 +22,7 @@ namespace storm {
         BitVector::const_iterator::const_iterator(uint64_t const* dataPtr, uint_fast64_t startIndex, uint_fast64_t endIndex, bool setOnFirstBit) : dataPtr(dataPtr), endIndex(endIndex) {
             if (setOnFirstBit) {
                 // Set the index of the first set bit in the vector.
-                currentIndex = getNextSetIndex(dataPtr, startIndex, endIndex);
+                currentIndex = getNextIndexWithValue(true, dataPtr, startIndex, endIndex);
             } else {
                 currentIndex = startIndex;
             }
@@ -43,13 +43,13 @@ namespace storm {
         }
 
         BitVector::const_iterator& BitVector::const_iterator::operator++() {
-            currentIndex = getNextSetIndex(dataPtr, ++currentIndex, endIndex);
+            currentIndex = getNextIndexWithValue(true, dataPtr, ++currentIndex, endIndex);
             return *this;
         }
 
         BitVector::const_iterator& BitVector::const_iterator::operator+=(size_t n) {
             for(size_t i = 0; i < n; ++i) {
-                currentIndex = getNextSetIndex(dataPtr, ++currentIndex, endIndex);
+                currentIndex = getNextIndexWithValue(true, dataPtr, ++currentIndex, endIndex);
             }
             return *this;
         }
@@ -254,7 +254,9 @@ namespace storm {
         
         void BitVector::grow(uint_fast64_t minimumLength, bool init) {
             if (minimumLength > bitCount) {
-                uint_fast64_t newLength = bitCount;
+                // We double the bitcount as long as it is less then the minimum length.
+                uint_fast64_t newLength = std::max(static_cast<uint_fast64_t>(64), bitCount);
+                // Note that newLength has to be initialized with a non-zero number.
                 while (newLength < minimumLength) {
                     newLength = newLength << 1;
                 }
@@ -628,10 +630,17 @@ namespace storm {
         }
 
         uint_fast64_t BitVector::getNextSetIndex(uint_fast64_t startingIndex) const {
-            return getNextSetIndex(buckets, startingIndex, bitCount);
+            return getNextIndexWithValue(true, buckets, startingIndex, bitCount);
         }
 
-        uint_fast64_t BitVector::getNextSetIndex(uint64_t const* dataPtr, uint_fast64_t startingIndex, uint_fast64_t endIndex) {
+       uint_fast64_t BitVector::getNextUnsetIndex(uint_fast64_t startingIndex) const {
+#ifdef ASSERT_BITVECTOR
+           STORM_LOG_ASSERT(getNextIndexWithValue(false, buckets, startingIndex, bitCount) == (~(*this)).getNextSetIndex(startingIndex), "The result is inconsistent with the next set index of the complement of this bitvector");
+#endif
+            return getNextIndexWithValue(false, buckets, startingIndex, bitCount);
+        }
+
+        uint_fast64_t BitVector::getNextIndexWithValue(bool value, uint64_t const* dataPtr, uint_fast64_t startingIndex, uint_fast64_t endIndex) {
             uint_fast8_t currentBitInByte = startingIndex & mod64mask;
             uint64_t const* bucketIt = dataPtr + (startingIndex >> 6);
             startingIndex = (startingIndex >> 6 << 6);
@@ -642,31 +651,62 @@ namespace storm {
             } else {
                 mask = (1ull << (64 - currentBitInByte)) - 1ull;
             }
-            while (startingIndex < endIndex) {
-                // Compute the remaining bucket content.
-                uint64_t remainingInBucket = *bucketIt & mask;
-
-                // Check if there is at least one bit in the remainder of the bucket that is set to true.
-                if (remainingInBucket != 0) {
-                    // As long as the current bit is not set, move the current bit.
-                    while ((remainingInBucket & (1ull << (63 - currentBitInByte))) == 0) {
-                        ++currentBitInByte;
+            
+            // For efficiency reasons, we branch on the desired value at this point
+            if (value) {
+                while (startingIndex < endIndex) {
+                    // Compute the remaining bucket content.
+                    uint64_t remainingInBucket = *bucketIt & mask;
+    
+                    // Check if there is at least one bit in the remainder of the bucket that is set to true.
+                    if (remainingInBucket != 0) {
+                        // As long as the current bit is not set, move the current bit.
+                        while ((remainingInBucket & (1ull << (63 - currentBitInByte))) == 0) {
+                            ++currentBitInByte;
+                        }
+    
+                        // Only return the index of the set bit if we are still in the valid range.
+                        if (startingIndex + currentBitInByte < endIndex) {
+                            return startingIndex + currentBitInByte;
+                        } else {
+                            return endIndex;
+                        }
                     }
-
-                    // Only return the index of the set bit if we are still in the valid range.
-                    if (startingIndex + currentBitInByte < endIndex) {
-                        return startingIndex + currentBitInByte;
-                    } else {
-                        return endIndex;
-                    }
+    
+                    // Advance to the next bucket.
+                    startingIndex += 64;
+                    ++bucketIt;
+                    mask = -1ull;
+                    currentBitInByte = 0;
                 }
-
-                // Advance to the next bucket.
-                startingIndex += 64;
-                ++bucketIt;
-                mask = -1ull;
-                currentBitInByte = 0;
+            } else {
+                while (startingIndex < endIndex) {
+                    // Compute the remaining bucket content.
+                    uint64_t remainingInBucket = *bucketIt & mask;
+    
+                    // Check if there is at least one bit in the remainder of the bucket that is set to false.
+                    if (remainingInBucket != (-1ull & mask)) {
+                        // As long as the current bit is not false, move the current bit.
+                        while ((remainingInBucket & (1ull << (63 - currentBitInByte))) != 0) {
+                            ++currentBitInByte;
+                        }
+    
+                        // Only return the index of the set bit if we are still in the valid range.
+                        if (startingIndex + currentBitInByte < endIndex) {
+                            return startingIndex + currentBitInByte;
+                        } else {
+                            return endIndex;
+                        }
+                    }
+    
+                    // Advance to the next bucket.
+                    startingIndex += 64;
+                    ++bucketIt;
+                    mask = -1ull;
+                    currentBitInByte = 0;
+                }
             }
+            
             return endIndex;
         }
         

@@ -2,7 +2,7 @@
 
 #include <algorithm>
 #include <unordered_map>
-#include <storm/adapters/NumberAdapter.h>
+#include <storm/adapters/RationalNumberAdapter.h>
 
 #include "storm/utility/macros.h"
 #include "storm/utility/constants.h"
@@ -173,7 +173,7 @@ namespace storm {
                         }
                     }
                 }
-                points = storm::utility::vector::filterVector(points, keptPoints);
+                storm::utility::vector::filterVectorInPlace(points, keptPoints);
 
                 if (generateRelevantVerticesAndVertexSets) {
                     storm::storage::BitVector keptVertices(relevantVertices.size(), true);
@@ -185,7 +185,7 @@ namespace storm {
                             }
                         }
                     }
-                    relevantVertices = storm::utility::vector::filterVector(relevantVertices, keptVertices);
+                    storm::utility::vector::filterVectorInPlace(relevantVertices, keptVertices);
 
                     STORM_LOG_WARN("Can not retrieve vertex sets for degenerated polytope (not implemented)");
                     vertexSets.clear();

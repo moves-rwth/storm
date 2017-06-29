@@ -15,7 +15,7 @@
 #include "../DFTState.h"
 #include "../DFTStateSpaceGenerationQueues.h"
 #include "storm/utility/constants.h"
-#include "storm/adapters/CarlAdapter.h"
+#include "storm/adapters/RationalFunctionAdapter.h"
 
 
 

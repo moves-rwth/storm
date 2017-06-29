@@ -1,13 +1,13 @@
 #include "storm/modelchecker/multiobjective/pcaa/SparsePcaaQuery.h"
 
-#include "storm/adapters/CarlAdapter.h"
+#include "storm/adapters/RationalFunctionAdapter.h"
 #include "storm/models/sparse/Mdp.h"
 #include "storm/models/sparse/MarkovAutomaton.h"
 #include "storm/models/sparse/StandardRewardModel.h"
-#include "storm/modelchecker/multiobjective/pcaa/PcaaObjective.h"
+#include "storm/modelchecker/multiobjective/Objective.h"
 #include "storm/modelchecker/multiobjective/pcaa/SparseMdpPcaaWeightVectorChecker.h"
 #include "storm/modelchecker/multiobjective/pcaa/SparseMaPcaaWeightVectorChecker.h"
-#include "storm/settings//SettingsManager.h"
+#include "storm/settings/SettingsManager.h"
 #include "storm/settings/modules/MultiObjectiveSettings.h"
 #include "storm/storage/geometry/Hyperrectangle.h"
 #include "storm/utility/constants.h"
@@ -22,34 +22,36 @@ namespace storm {
             
             
             template <class SparseModelType, typename GeometryValueType>
-            SparsePcaaQuery<SparseModelType, GeometryValueType>::SparsePcaaQuery(SparsePcaaPreprocessorReturnType<SparseModelType>& preprocessorResult) :
+            SparsePcaaQuery<SparseModelType, GeometryValueType>::SparsePcaaQuery(SparseMultiObjectivePreprocessorReturnType<SparseModelType>& preprocessorResult) :
                 originalModel(preprocessorResult.originalModel), originalFormula(preprocessorResult.originalFormula),
-                preprocessedModel(std::move(preprocessorResult.preprocessedModel)), objectives(std::move(preprocessorResult.objectives)) {
-                initializeWeightVectorChecker(preprocessedModel, objectives, preprocessorResult.actionsWithNegativeReward, preprocessorResult.ecActions, preprocessorResult.possiblyRecurrentStates);
+                preprocessedModel(std::move(*preprocessorResult.preprocessedModel)), objectives(std::move(preprocessorResult.objectives)) {
+                
+                initializeWeightVectorChecker(preprocessedModel, objectives, preprocessorResult.possibleECChoices, preprocessorResult.possibleBottomStates);
                 this->diracWeightVectorsToBeChecked = storm::storage::BitVector(this->objectives.size(), true);
                 this->overApproximation = storm::storage::geometry::Polytope<GeometryValueType>::createUniversalPolytope();
                 this->underApproximation = storm::storage::geometry::Polytope<GeometryValueType>::createEmptyPolytope();
             }
             
             template<>
-            void SparsePcaaQuery<storm::models::sparse::Mdp<double>, storm::RationalNumber>::initializeWeightVectorChecker(storm::models::sparse::Mdp<double> const& model, std::vector<PcaaObjective<double>> const& objectives, storm::storage::BitVector const& actionsWithNegativeReward, storm::storage::BitVector const& ecActions, storm::storage::BitVector const& possiblyRecurrentStates) {
-                this->weightVectorChecker = std::unique_ptr<SparsePcaaWeightVectorChecker<storm::models::sparse::Mdp<double>>>(new SparseMdpPcaaWeightVectorChecker<storm::models::sparse::Mdp<double>>(model, objectives, actionsWithNegativeReward, ecActions, possiblyRecurrentStates));
+            void SparsePcaaQuery<storm::models::sparse::Mdp<double>, storm::RationalNumber>::initializeWeightVectorChecker(storm::models::sparse::Mdp<double> const& model, std::vector<Objective<double>> const& objectives, storm::storage::BitVector const& possibleECActions, storm::storage::BitVector const& possibleBottomStates) {
+                this->weightVectorChecker = std::unique_ptr<SparsePcaaWeightVectorChecker<storm::models::sparse::Mdp<double>>>(new SparseMdpPcaaWeightVectorChecker<storm::models::sparse::Mdp<double>>(model, objectives, possibleECActions, possibleBottomStates));
             }
             
             template<>
-            void SparsePcaaQuery<storm::models::sparse::Mdp<storm::RationalNumber>, storm::RationalNumber>::initializeWeightVectorChecker(storm::models::sparse::Mdp<storm::RationalNumber> const& model, std::vector<PcaaObjective<storm::RationalNumber>> const& objectives, storm::storage::BitVector const& actionsWithNegativeReward, storm::storage::BitVector const& ecActions, storm::storage::BitVector const& possiblyRecurrentStates) {
-                this->weightVectorChecker = std::unique_ptr<SparsePcaaWeightVectorChecker<storm::models::sparse::Mdp<storm::RationalNumber>>>(new SparseMdpPcaaWeightVectorChecker<storm::models::sparse::Mdp<storm::RationalNumber>>(model, objectives, actionsWithNegativeReward, ecActions, possiblyRecurrentStates));
+            void SparsePcaaQuery<storm::models::sparse::Mdp<storm::RationalNumber>, storm::RationalNumber>::initializeWeightVectorChecker(storm::models::sparse::Mdp<storm::RationalNumber> const& model, std::vector<Objective<storm::RationalNumber>> const& objectives, storm::storage::BitVector const& possibleECActions, storm::storage::BitVector const& possibleBottomStates) {
+                this->weightVectorChecker = std::unique_ptr<SparsePcaaWeightVectorChecker<storm::models::sparse::Mdp<storm::RationalNumber>>>(new SparseMdpPcaaWeightVectorChecker<storm::models::sparse::Mdp<storm::RationalNumber>>(model, objectives, possibleECActions, possibleBottomStates));
             }
             
             template<>
-            void SparsePcaaQuery<storm::models::sparse::MarkovAutomaton<double>, storm::RationalNumber>::initializeWeightVectorChecker(storm::models::sparse::MarkovAutomaton<double> const& model, std::vector<PcaaObjective<double>> const& objectives, storm::storage::BitVector const& actionsWithNegativeReward, storm::storage::BitVector const& ecActions, storm::storage::BitVector const& possiblyRecurrentStates) {
-                this->weightVectorChecker = std::unique_ptr<SparsePcaaWeightVectorChecker<storm::models::sparse::MarkovAutomaton<double>>>(new SparseMaPcaaWeightVectorChecker<storm::models::sparse::MarkovAutomaton<double>>(model, objectives, actionsWithNegativeReward, ecActions, possiblyRecurrentStates));
+            void SparsePcaaQuery<storm::models::sparse::MarkovAutomaton<double>, storm::RationalNumber>::initializeWeightVectorChecker(storm::models::sparse::MarkovAutomaton<double> const& model, std::vector<Objective<double>> const& objectives, storm::storage::BitVector const& possibleECActions, storm::storage::BitVector const& possibleBottomStates) {
+                this->weightVectorChecker = std::unique_ptr<SparsePcaaWeightVectorChecker<storm::models::sparse::MarkovAutomaton<double>>>(new SparseMaPcaaWeightVectorChecker<storm::models::sparse::MarkovAutomaton<double>>(model, objectives, possibleECActions, possibleBottomStates));
             }
             
             template<>
-            void SparsePcaaQuery<storm::models::sparse::MarkovAutomaton<storm::RationalNumber>, storm::RationalNumber>::initializeWeightVectorChecker(storm::models::sparse::MarkovAutomaton<storm::RationalNumber> const& model, std::vector<PcaaObjective<storm::RationalNumber>> const& objectives, storm::storage::BitVector const& actionsWithNegativeReward, storm::storage::BitVector const& ecActions, storm::storage::BitVector const& possiblyRecurrentStates) {
-                this->weightVectorChecker = std::unique_ptr<SparsePcaaWeightVectorChecker<storm::models::sparse::MarkovAutomaton<storm::RationalNumber>>>(new SparseMaPcaaWeightVectorChecker<storm::models::sparse::MarkovAutomaton<storm::RationalNumber>>(model, objectives, actionsWithNegativeReward, ecActions, possiblyRecurrentStates));
+            void SparsePcaaQuery<storm::models::sparse::MarkovAutomaton<storm::RationalNumber>, storm::RationalNumber>::initializeWeightVectorChecker(storm::models::sparse::MarkovAutomaton<storm::RationalNumber> const& model, std::vector<Objective<storm::RationalNumber>> const& objectives, storm::storage::BitVector const& possibleECActions, storm::storage::BitVector const& possibleBottomStates) {
+                this->weightVectorChecker = std::unique_ptr<SparsePcaaWeightVectorChecker<storm::models::sparse::MarkovAutomaton<storm::RationalNumber>>>(new SparseMaPcaaWeightVectorChecker<storm::models::sparse::MarkovAutomaton<storm::RationalNumber>>(model, objectives, possibleECActions, possibleBottomStates));
             }
+            
             
             template <class SparseModelType, typename GeometryValueType>
             typename SparsePcaaQuery<SparseModelType, GeometryValueType>::WeightVector SparsePcaaQuery<SparseModelType, GeometryValueType>::findSeparatingVector(Point const& pointToBeSeparated) {
@@ -98,11 +100,18 @@ namespace storm {
                 // Normalize the direction vector so that the entries sum up to one
                 storm::utility::vector::scaleVectorInPlace(direction, storm::utility::one<GeometryValueType>() / std::accumulate(direction.begin(), direction.end(), storm::utility::zero<GeometryValueType>()));
                 weightVectorChecker->check(storm::utility::vector::convertNumericVector<typename SparseModelType::ValueType>(direction));
-                STORM_LOG_DEBUG("weighted objectives checker result (lower bounds) is " << storm::utility::vector::toString(storm::utility::vector::convertNumericVector<double>(weightVectorChecker->getLowerBoundsOfInitialStateResults())));
+                STORM_LOG_DEBUG("weighted objectives checker result (under approximation) is " << storm::utility::vector::toString(storm::utility::vector::convertNumericVector<double>(weightVectorChecker->getUnderApproximationOfInitialStateResults())));
                 RefinementStep step;
                 step.weightVector = direction;
-                step.lowerBoundPoint = storm::utility::vector::convertNumericVector<GeometryValueType>(weightVectorChecker->getLowerBoundsOfInitialStateResults());
-                step.upperBoundPoint = storm::utility::vector::convertNumericVector<GeometryValueType>(weightVectorChecker->getUpperBoundsOfInitialStateResults());
+                step.lowerBoundPoint = storm::utility::vector::convertNumericVector<GeometryValueType>(weightVectorChecker->getUnderApproximationOfInitialStateResults());
+                step.upperBoundPoint = storm::utility::vector::convertNumericVector<GeometryValueType>(weightVectorChecker->getOverApproximationOfInitialStateResults());
+                // For the minimizing objectives, we need to scale the corresponding entries with -1 as we want to consider the downward closure
+                for (uint_fast64_t objIndex = 0; objIndex < this->objectives.size(); ++objIndex) {
+                    if (storm::solver::minimize(this->objectives[objIndex].optimizationDirection)) {
+                        step.lowerBoundPoint[objIndex] *= -storm::utility::one<GeometryValueType>();
+                        step.upperBoundPoint[objIndex] *= -storm::utility::one<GeometryValueType>();
+                    }
+                }
                 refinementSteps.push_back(std::move(step));
                 
                 updateOverApproximation();
@@ -151,7 +160,20 @@ namespace storm {
                 Point result;
                 result.reserve(point.size());
                 for(uint_fast64_t objIndex = 0; objIndex < this->objectives.size(); ++objIndex) {
-                    result.push_back(point[objIndex] * storm::utility::convertNumber<GeometryValueType>(this->objectives[objIndex].toOriginalValueTransformationFactor) + storm::utility::convertNumber<GeometryValueType>(this->objectives[objIndex].toOriginalValueTransformationOffset));
+                    auto const& obj = this->objectives[objIndex];
+                    if (storm::solver::maximize(obj.optimizationDirection)) {
+                        if (obj.considersComplementaryEvent) {
+                            result.push_back(storm::utility::one<GeometryValueType>() - point[objIndex]);
+                        } else {
+                            result.push_back(point[objIndex]);
+                        }
+                    } else {
+                        if (obj.considersComplementaryEvent) {
+                            result.push_back(storm::utility::one<GeometryValueType>() + point[objIndex]);
+                        } else {
+                            result.push_back(-point[objIndex]);
+                        }
+                    }
                 }
                 return result;
             }
@@ -169,8 +191,24 @@ namespace storm {
                 std::vector<GeometryValueType> transformationVector;
                 transformationVector.reserve(numObjectives);
                 for(uint_fast64_t objIndex = 0; objIndex < numObjectives; ++objIndex) {
-                    transformationMatrix[objIndex][objIndex] = storm::utility::convertNumber<GeometryValueType>(this->objectives[objIndex].toOriginalValueTransformationFactor);
-                    transformationVector.push_back(storm::utility::convertNumber<GeometryValueType>(this->objectives[objIndex].toOriginalValueTransformationOffset));
+                    auto const& obj = this->objectives[objIndex];
+                    if (storm::solver::maximize(obj.optimizationDirection)) {
+                        if (obj.considersComplementaryEvent) {
+                            transformationMatrix[objIndex][objIndex] = -storm::utility::one<GeometryValueType>();
+                            transformationVector.push_back(storm::utility::one<GeometryValueType>());
+                        } else {
+                            transformationMatrix[objIndex][objIndex] = storm::utility::one<GeometryValueType>();
+                            transformationVector.push_back(storm::utility::zero<GeometryValueType>());
+                        }
+                    } else {
+                        if (obj.considersComplementaryEvent) {
+                            transformationMatrix[objIndex][objIndex] = storm::utility::one<GeometryValueType>();
+                            transformationVector.push_back(storm::utility::one<GeometryValueType>());
+                        } else {
+                            transformationMatrix[objIndex][objIndex] = -storm::utility::one<GeometryValueType>();
+                            transformationVector.push_back(storm::utility::zero<GeometryValueType>());
+                        }
+                    }
                 }
                 return polytope->affineTransformation(transformationMatrix, transformationVector);
             }

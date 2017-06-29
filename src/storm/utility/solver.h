@@ -7,7 +7,7 @@
 #include <vector>
 #include <memory>
 
-#include "storm/adapters/CarlAdapter.h"
+#include "storm/adapters/RationalFunctionAdapter.h"
 
 #include "storm/storage/sparse/StateType.h"
 #include "storm/storage/dd/DdType.h"

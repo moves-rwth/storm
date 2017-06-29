@@ -1,6 +1,6 @@
 #include "storm/utility/prism.h"
 
-#include "storm/adapters/CarlAdapter.h"
+#include "storm/adapters/RationalFunctionAdapter.h"
 
 #include "storm/storage/expressions/ExpressionManager.h"
 #include "storm/storage/prism/Program.h"

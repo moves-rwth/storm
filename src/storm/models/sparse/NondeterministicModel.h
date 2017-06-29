@@ -14,41 +14,16 @@ namespace storm {
             template<class ValueType, typename RewardModelType = StandardRewardModel<ValueType>>
             class NondeterministicModel: public Model<ValueType, RewardModelType> {
             public:
+                
+                
                 /*!
                  * Constructs a model from the given data.
                  *
-                 * @param modelType The type of the model.
-                 * @param transitionMatrix The matrix representing the transitions in the model.
-                 * @param stateLabeling The labeling of the states.
-                 * @param rewardModels A mapping of reward model names to reward models.
-                 * @param optionalChoiceLabeling A vector that represents the labels associated with the choices of each state.
+                 * @param modelType the type of this model
+                 * @param components The components for this model.
                  */
-                NondeterministicModel(storm::models::ModelType const& modelType,
-                                      storm::storage::SparseMatrix<ValueType> const& transitionMatrix,
-                                      storm::models::sparse::StateLabeling const& stateLabeling,
-                                      std::unordered_map<std::string, RewardModelType> const& rewardModels = std::unordered_map<std::string, RewardModelType>(),
-                                      boost::optional<std::vector<LabelSet>> const& optionalChoiceLabeling = boost::optional<std::vector<LabelSet>>());
-                
-                /*!
-                 * Constructs a model by moving the given data.
-                 *
-                 * @param modelType The type of the model.
-                 * @param transitionMatrix The matrix representing the transitions in the model.
-                 * @param stateLabeling The labeling of the states.
-                 * @param rewardModels A mapping of reward model names to reward models.
-                 * @param optionalChoiceLabeling A vector that represents the labels associated with the choices of each state.
-                 */
-                NondeterministicModel(storm::models::ModelType const& modelType,
-                                      storm::storage::SparseMatrix<ValueType>&& transitionMatrix,
-                                      storm::models::sparse::StateLabeling&& stateLabeling,
-                                      std::unordered_map<std::string, RewardModelType>&& rewardModels = std::unordered_map<std::string, RewardModelType>(),
-                                      boost::optional<std::vector<LabelSet>>&& optionalChoiceLabeling = boost::optional<std::vector<LabelSet>>());
-                
-                NondeterministicModel(NondeterministicModel<ValueType, RewardModelType> const& other) = default;
-                NondeterministicModel& operator=(NondeterministicModel<ValueType, RewardModelType> const& other) = default;
-                
-                NondeterministicModel(NondeterministicModel<ValueType, RewardModelType>&& other) = default;
-                NondeterministicModel& operator=(NondeterministicModel<ValueType, RewardModelType>&& other) = default;
+                NondeterministicModel(ModelType modelType, storm::storage::sparse::ModelComponents<ValueType, RewardModelType> const& components);
+                NondeterministicModel(ModelType modelType, storm::storage::sparse::ModelComponents<ValueType, RewardModelType>&& components);
 
                 /*!
                  * Retrieves the number of (nondeterministic) choices in the model.
@@ -71,21 +46,6 @@ namespace storm {
                  */
                 uint_fast64_t getNumberOfChoices(uint_fast64_t state) const;
                 
-                /*!
-                 * Modifies the state-action reward vector of the given reward model by setting the value specified in
-                 * the map for the corresponding state-action pairs.
-                 *
-                 * @param rewardModel The reward model whose state-action rewards to modify.
-                 * @param modifications A mapping from state-action pairs to the their new reward values.
-                 */
-                void modifyStateActionRewards(RewardModelType& rewardModel, std::map<std::pair<uint_fast64_t, LabelSet>, typename RewardModelType::ValueType> const& modifications) const;
-
-                template<typename T>
-                void modifyStateActionRewards(std::string const& modelName, std::map<uint_fast64_t, T> const& modifications);
-                template<typename T>
-                void modifyStateRewards(std::string const& modelName, std::map<uint_fast64_t, T> const& modifications);
-
-
                 virtual void reduceToStateBasedRewards() override;
                 
                 virtual void printModelInformationToStream(std::ostream& out) const override;

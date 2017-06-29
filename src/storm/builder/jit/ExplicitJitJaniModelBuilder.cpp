@@ -135,7 +135,7 @@ namespace storm {
                     stream << ".";
                     STORM_LOG_THROW(false, storm::exceptions::InvalidArgumentException, "Model still contains these undefined constants: " + stream.str());
                 }
-                    
+                
 #ifdef STORM_HAVE_CARL
                 else if (std::is_same<ValueType, storm::RationalFunction>::value && !this->model.undefinedConstantsAreGraphPreserving()) {
                     STORM_LOG_THROW(false, storm::exceptions::InvalidArgumentException, "The input model contains undefined constants that influence the graph structure of the underlying model, which is not allowed.");
@@ -143,7 +143,7 @@ namespace storm {
 #endif
                 //STORM_LOG_THROW(!model.reusesActionsInComposition(), storm::exceptions::InvalidArgumentException, "The jit JANI model builder currently does not support reusing actions in parallel composition");
 
-                // Comment this in to print the JANI model for debugging purposes. 
+                // Comment this in to print the JANI model for debugging purposes.
                 // this->model.makeStandardJaniCompliant();
                 // storm::jani::JsonExporter::toStream(this->model, std::vector<std::shared_ptr<storm::logic::Formula const>>(), std::cout, false);
             }
@@ -231,7 +231,7 @@ namespace storm {
                 
                 return result;
             }
-                
+            
             template <typename ValueType, typename RewardModelType>
             bool ExplicitJitJaniModelBuilder<ValueType, RewardModelType>::checkCompilerFlagsWork() const {
                 bool result = true;
@@ -239,7 +239,7 @@ namespace storm {
                 try {
                     std::string emptyProgram = R"(
 #include <cstdint>
-                        
+                    
                     int main() {
                         return 0;
                     }
@@ -250,7 +250,7 @@ namespace storm {
                     outputFile += ".out";
                     std::string outputFilename = boost::filesystem::absolute(outputFile).string();
                     boost::optional<std::string> error = execute(compiler + " " + compilerFlags + " " + temporaryFilename + " -o " + outputFilename);
-                        
+                    
                     if (error) {
                         result = false;
                         STORM_LOG_ERROR(problem);
@@ -262,7 +262,7 @@ namespace storm {
                     result = false;
                     STORM_LOG_ERROR(problem);
                 }
-                    
+                
                 return result;
             }
 
@@ -273,7 +273,7 @@ namespace storm {
                 try {
                     std::string program = R"(
 #include <boost/optional.hpp>
-                        
+                    
                     int main() {
                         return 0;
                     }
@@ -284,7 +284,7 @@ namespace storm {
                     outputFile += ".out";
                     std::string outputFilename = boost::filesystem::absolute(outputFile).string();
                     boost::optional<std::string> error = execute(compiler + " " + compilerFlags + " " + temporaryFilename + " -I" + boostIncludeDirectory + " -o " + outputFilename);
-                        
+                    
                     if (error) {
                         result = false;
                         STORM_LOG_ERROR(problem);
@@ -298,7 +298,7 @@ namespace storm {
                 }
                 return result;
             }
-               
+            
             template <typename ValueType, typename RewardModelType>
             bool ExplicitJitJaniModelBuilder<ValueType, RewardModelType>::checkBoostDllAvailable() const {
                 bool result = true;
@@ -331,7 +331,7 @@ namespace storm {
                 }
                 return result;
             }
-                
+            
             template <typename ValueType, typename RewardModelType>
             bool ExplicitJitJaniModelBuilder<ValueType, RewardModelType>::checkStormHeadersAvailable() const {
                 bool result = true;
@@ -365,14 +365,14 @@ namespace storm {
                 }
                 return result;
             }
-                
+            
             template <typename ValueType, typename RewardModelType>
             bool ExplicitJitJaniModelBuilder<ValueType, RewardModelType>::checkCarlAvailable() const {
                 bool result = true;
                 std::string problem = "Unable to compile program using Carl data structures. Is Carls's include directory '" + carlIncludeDirectory + "' set correctly?";
                 try {
                     std::string program = R"(
-#include "storm/adapters/CarlAdapter.h"
+#include "storm/adapters/RationalFunctionAdapter.h"
                         
                     int main() {
                         return 0;
@@ -1651,10 +1651,10 @@ namespace storm {
 #include <boost/dll/alias.hpp>
                 
 {% if exact %}
-#include "storm/adapters/NumberAdapter.h"
+#include "storm/adapters/RationalNumberAdapter.h"
 {% endif %}
 {% if parametric %}
-#include "storm/adapters/CarlAdapter.h"
+#include "storm/adapters/RationalFunctionAdapter.h"
 {% endif %}
                 
 #include "resources/3rdparty/sparsepp/sparsepp.h"

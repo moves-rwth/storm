@@ -478,6 +478,17 @@ namespace storm {
             uint_fast64_t getNextSetIndex(uint_fast64_t startingIndex) const;
             
             /*
+             * Retrieves the index of the bit that is the next bit set to false in the bit vector. If there is none,
+             * this function returns the number of bits this vector holds in total. Put differently, if the return
+             * value is equal to a call to size(), then there is no unset bit after the specified position.
+             *
+             * @param startingIndex The index at which to start the search for the next bit that is not set. The
+             * bit at this index itself is included in the search range.
+             * @return The index of the next bit that is set after the given index.
+             */
+            uint_fast64_t getNextUnsetIndex(uint_fast64_t startingIndex) const;
+            
+            /*
              * Compare two intervals [start1, start1+length] and [start2, start2+length] and swap them if the second
              * one is larger than the first one. After the method the intervals are sorted in decreasing order.
              *
@@ -502,15 +513,16 @@ namespace storm {
             BitVector(uint_fast64_t bucketCount, uint_fast64_t bitCount);
             
             /*!
-             * Retrieves the index of the next bit that is set to true after (and including) the given starting index.
+             * Retrieves the index of the next bit that is set to the given value after (and including) the given starting index.
              *
+             * @param value the value of the bit whose index is to be found.
              * @param dataPtr A pointer to the first bucket of the data storage.
              * @param startingIndex The index where to start the search.
              * @param endIndex The index at which to stop the search.
              * @return The index of the bit that is set after the given starting index, but before the given end index
              * in the given bit vector or endIndex in case the end index was reached.
              */
-            static uint_fast64_t getNextSetIndex(uint64_t const* dataPtr, uint_fast64_t startingIndex, uint_fast64_t endIndex);
+            static uint_fast64_t getNextIndexWithValue(bool value, uint64_t const* dataPtr, uint_fast64_t startingIndex, uint_fast64_t endIndex);
             
             /*!
              * Truncate the last bucket so that no bits are set starting from bitCount.

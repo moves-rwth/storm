@@ -10,7 +10,7 @@
 #include <algorithm>
 #include <functional>
 #include <numeric>
-#include <storm/adapters/CarlAdapter.h>
+#include <storm/adapters/RationalFunctionAdapter.h>
 
 #include <boost/optional.hpp>
 
@@ -120,6 +120,27 @@ namespace storm {
                 std::vector<uint_fast64_t> res = buildVectorForRange(0, v.size());
                 std::sort(res.begin(), res.end(), [&v](uint_fast64_t index1, uint_fast64_t index2) { return v[index1] > v[index2];});
                 return res;
+            }
+            
+            /*!
+             * Returns true iff every element in the given vector is unique, i.e., there are no i,j with i!=j and v[i]==v[j].
+             */
+            template<typename T>
+            bool isUnique(std::vector<T> const& v) {
+                if (v.size() < 2) {
+                    return true;
+                }
+                auto sortedIndices = getSortedIndices(v);
+                auto indexIt = sortedIndices.begin();
+                T const* previous = &v[*indexIt];
+                for (++indexIt; indexIt != sortedIndices.end(); ++indexIt) {
+                    T const& current = v[*indexIt];
+                    if (current==*previous) {
+                        return false;
+                    }
+                    previous = &current;
+                }
+                return true;
             }
             
             /*!
@@ -859,11 +880,29 @@ namespace storm {
                 return result;
             }
             
+            template<typename Type>
+            void filterVectorInPlace(std::vector<Type>& v, storm::storage::BitVector const& filter) {
+                STORM_LOG_ASSERT(v.size() == filter.size(), "The filter size does not match the size of the input vector");
+                uint_fast64_t size = v.size();
+                // we can start our work at the first index where the filter has value zero
+                uint_fast64_t firstUnsetIndex = filter.getNextUnsetIndex(0);
+                if (firstUnsetIndex < size) {
+                    auto vIt = v.begin() + firstUnsetIndex;
+                    for (uint_fast64_t index = filter.getNextSetIndex(firstUnsetIndex + 1); index != size; index = filter.getNextSetIndex(index + 1)) {
+                        *vIt = std::move(v[index]);
+                        ++vIt;
+                    }
+                    v.resize(vIt - v.begin());
+                    v.shrink_to_fit();
+                }
+                STORM_LOG_ASSERT(v.size() == filter.getNumberOfSetBits(), "Result does not match.");
+            }
+            
             template<typename T>
             bool hasNegativeEntry(std::vector<T> const& v){
                 return std::any_of(v.begin(), v.end(), [](T value){return value < storm::utility::zero<T>();});
             }
-            
+                     
             template<typename T>
             bool hasPositiveEntry(std::vector<T> const& v){
                 return std::any_of(v.begin(), v.end(), [](T value){return value > storm::utility::zero<T>();});

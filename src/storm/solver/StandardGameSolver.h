@@ -62,7 +62,7 @@ namespace storm {
             void getInducedMatrixVector(std::vector<ValueType>& x, std::vector<ValueType> const& b, std::vector<uint_fast64_t> const& player1Choices, std::vector<uint_fast64_t> const& player2Choices, storm::storage::SparseMatrix<ValueType>& inducedMatrix, std::vector<ValueType>& inducedVector) const;
             
             // Extracts the choices of the different players for the given solution x.
-            // Returns true iff there are "better" choices for one of the players.
+            // Returns true iff the newly extracted choices yield "better" values then the given choices for one of the players.
             bool extractChoices(OptimizationDirection player1Dir, OptimizationDirection player2Dir, std::vector<ValueType> const& x, std::vector<ValueType> const& b, std::vector<ValueType>& player2ChoiceValues, std::vector<uint_fast64_t>& player1Choices, std::vector<uint_fast64_t>& player2Choices) const;
             
             bool valueImproved(OptimizationDirection dir, ValueType const& value1, ValueType const& value2) const;

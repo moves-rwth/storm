@@ -1,7 +1,7 @@
 #include "storm/solver/TerminationCondition.h"
 #include "storm/utility/vector.h"
 
-#include "storm/adapters/CarlAdapter.h"
+#include "storm/adapters/RationalFunctionAdapter.h"
 
 #include "storm/utility/macros.h"
 

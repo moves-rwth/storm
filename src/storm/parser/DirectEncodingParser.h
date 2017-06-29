@@ -6,7 +6,7 @@
 #include "storm/storage/expressions/ExpressionManager.h"
 #include "storm/parser/ExpressionParser.h"
 #include "storm/storage/expressions/ExpressionEvaluator.h"
-
+#include "storm/storage/sparse/ModelComponents.h"
 
 namespace storm {
     namespace parser {
@@ -66,31 +66,6 @@ namespace storm {
 
         private:
 
-            // A structure holding the individual components of a model.
-            struct ModelComponents {
-
-                // The transition matrix.
-                storm::storage::SparseMatrix<ValueType> transitionMatrix;
-
-                // The state labeling.
-                storm::models::sparse::StateLabeling stateLabeling;
-
-                // The reward models.
-                std::unordered_map<std::string, RewardModelType> rewardModels;
-
-                // A vector that stores a labeling for each choice.
-                boost::optional<std::vector<storm::models::sparse::LabelSet>> choiceLabeling;
-
-                // The exit rates for MAs.
-                std::vector<ValueType> exitRates;
-
-                // The Markovian states for MA.
-                storm::storage::BitVector markovianStates;
-
-                // A flag indicating if the model is non-deterministic.
-                bool nonDeterministic;
-            };
-
             /*!
              * Parse states and return transition matrix.
              *
@@ -100,7 +75,7 @@ namespace storm {
              *
              * @return Transition matrix.
              */
-            static std::shared_ptr<ModelComponents> parseStates(std::istream& file, storm::models::ModelType type, size_t stateSize, ValueParser<ValueType> const& valueParser);
+            static std::shared_ptr<storm::storage::sparse::ModelComponents<ValueType, RewardModelType>> parseStates(std::istream& file, storm::models::ModelType type, size_t stateSize, ValueParser<ValueType> const& valueParser);
         };
 
     } // namespace parser

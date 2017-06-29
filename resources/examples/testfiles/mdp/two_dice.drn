@@ -1,0 +1,867 @@
+// Exported by storm
+// Original model type: MDP
+@type: MDP
+@parameters
+
+@nr_states
+169
+@model
+state 0 [0] init
+	action 0 [1]
+		1 : 0.5
+		2 : 0.5
+	action 1 [1]
+		3 : 0.5
+		4 : 0.5
+state 1 [0]
+	action 0 [1]
+		5 : 0.5
+		6 : 0.5
+	action 1 [1]
+		7 : 0.5
+		8 : 0.5
+state 2 [0]
+	action 0 [1]
+		9 : 0.5
+		10 : 0.5
+	action 1 [1]
+		11 : 0.5
+		12 : 0.5
+state 3 [0]
+	action 0 [1]
+		7 : 0.5
+		11 : 0.5
+	action 1 [1]
+		13 : 0.5
+		14 : 0.5
+state 4 [0]
+	action 0 [1]
+		8 : 0.5
+		12 : 0.5
+	action 1 [1]
+		15 : 0.5
+		16 : 0.5
+state 5 [0]
+	action 0 [1]
+		1 : 0.5
+		17 : 0.5
+	action 1 [1]
+		18 : 0.5
+		19 : 0.5
+state 6 [0]
+	action 0 [1]
+		20 : 0.5
+		21 : 0.5
+	action 1 [1]
+		22 : 0.5
+		23 : 0.5
+state 7 [0]
+	action 0 [1]
+		18 : 0.5
+		22 : 0.5
+	action 1 [1]
+		24 : 0.5
+		25 : 0.5
+state 8 [0]
+	action 0 [1]
+		19 : 0.5
+		23 : 0.5
+	action 1 [1]
+		26 : 0.5
+		27 : 0.5
+state 9 [0]
+	action 0 [1]
+		28 : 0.5
+		29 : 0.5
+	action 1 [1]
+		30 : 0.5
+		31 : 0.5
+state 10 [0]
+	action 0 [1]
+		2 : 0.5
+		32 : 0.5
+	action 1 [1]
+		33 : 0.5
+		34 : 0.5
+state 11 [0]
+	action 0 [1]
+		30 : 0.5
+		33 : 0.5
+	action 1 [1]
+		35 : 0.5
+		36 : 0.5
+state 12 [0]
+	action 0 [1]
+		31 : 0.5
+		34 : 0.5
+	action 1 [1]
+		37 : 0.5
+		38 : 0.5
+state 13 [0]
+	action 0 [1]
+		24 : 0.5
+		35 : 0.5
+	action 1 [1]
+		3 : 0.5
+		39 : 0.5
+state 14 [0]
+	action 0 [1]
+		25 : 0.5
+		36 : 0.5
+	action 1 [1]
+		40 : 0.5
+		41 : 0.5
+state 15 [0]
+	action 0 [1]
+		26 : 0.5
+		37 : 0.5
+	action 1 [1]
+		42 : 0.5
+		43 : 0.5
+state 16 [0]
+	action 0 [1]
+		27 : 0.5
+		38 : 0.5
+	action 1 [1]
+		4 : 0.5
+		44 : 0.5
+state 17 [0]
+	action 0 [1]
+		45 : 0.5
+		46 : 0.5
+state 18 [0]
+	action 0 [1]
+		7 : 0.5
+		45 : 0.5
+	action 1 [1]
+		47 : 0.5
+		48 : 0.5
+state 19 [0]
+	action 0 [1]
+		8 : 0.5
+		46 : 0.5
+	action 1 [1]
+		49 : 0.5
+		50 : 0.5
+state 20 [0]
+	action 0 [1]
+		51 : 0.5
+		52 : 0.5
+state 21 [0]
+	action 0 [1]
+		53 : 0.5
+		54 : 0.5
+state 22 [0]
+	action 0 [1]
+		51 : 0.5
+		53 : 0.5
+	action 1 [1]
+		55 : 0.5
+		56 : 0.5
+state 23 [0]
+	action 0 [1]
+		52 : 0.5
+		54 : 0.5
+	action 1 [1]
+		57 : 0.5
+		58 : 0.5
+state 24 [0]
+	action 0 [1]
+		47 : 0.5
+		55 : 0.5
+	action 1 [1]
+		7 : 0.5
+		59 : 0.5
+state 25 [0]
+	action 0 [1]
+		48 : 0.5
+		56 : 0.5
+	action 1 [1]
+		60 : 0.5
+		61 : 0.5
+state 26 [0]
+	action 0 [1]
+		49 : 0.5
+		57 : 0.5
+	action 1 [1]
+		62 : 0.5
+		63 : 0.5
+state 27 [0]
+	action 0 [1]
+		50 : 0.5
+		58 : 0.5
+	action 1 [1]
+		8 : 0.5
+		64 : 0.5
+state 28 [0]
+	action 0 [1]
+		65 : 0.5
+		66 : 0.5
+state 29 [0]
+	action 0 [1]
+		67 : 0.5
+		68 : 0.5
+state 30 [0]
+	action 0 [1]
+		65 : 0.5
+		67 : 0.5
+	action 1 [1]
+		69 : 0.5
+		70 : 0.5
+state 31 [0]
+	action 0 [1]
+		66 : 0.5
+		68 : 0.5
+	action 1 [1]
+		71 : 0.5
+		72 : 0.5
+state 32 [0]
+	action 0 [1]
+		73 : 0.5
+		74 : 0.5
+state 33 [0]
+	action 0 [1]
+		11 : 0.5
+		73 : 0.5
+	action 1 [1]
+		75 : 0.5
+		76 : 0.5
+state 34 [0]
+	action 0 [1]
+		12 : 0.5
+		74 : 0.5
+	action 1 [1]
+		77 : 0.5
+		78 : 0.5
+state 35 [0]
+	action 0 [1]
+		69 : 0.5
+		75 : 0.5
+	action 1 [1]
+		11 : 0.5
+		79 : 0.5
+state 36 [0]
+	action 0 [1]
+		70 : 0.5
+		76 : 0.5
+	action 1 [1]
+		80 : 0.5
+		81 : 0.5
+state 37 [0]
+	action 0 [1]
+		71 : 0.5
+		77 : 0.5
+	action 1 [1]
+		82 : 0.5
+		83 : 0.5
+state 38 [0]
+	action 0 [1]
+		72 : 0.5
+		78 : 0.5
+	action 1 [1]
+		12 : 0.5
+		84 : 0.5
+state 39 [0]
+	action 0 [1]
+		59 : 0.5
+		79 : 0.5
+state 40 [0]
+	action 0 [1]
+		60 : 0.5
+		80 : 0.5
+state 41 [0]
+	action 0 [1]
+		61 : 0.5
+		81 : 0.5
+state 42 [0]
+	action 0 [1]
+		62 : 0.5
+		82 : 0.5
+state 43 [0]
+	action 0 [1]
+		63 : 0.5
+		83 : 0.5
+state 44 [0]
+	action 0 [1]
+		64 : 0.5
+		84 : 0.5
+state 45 [0]
+	action 0 [1]
+		85 : 0.5
+		86 : 0.5
+state 46 [0]
+	action 0 [1]
+		87 : 0.5
+		88 : 0.5
+state 47 [0]
+	action 0 [1]
+		24 : 0.5
+		85 : 0.5
+	action 1 [1]
+		18 : 0.5
+		89 : 0.5
+state 48 [0]
+	action 0 [1]
+		25 : 0.5
+		86 : 0.5
+	action 1 [1]
+		90 : 0.5
+		91 : 0.5
+state 49 [0]
+	action 0 [1]
+		26 : 0.5
+		87 : 0.5
+	action 1 [1]
+		92 : 0.5
+		93 : 0.5
+state 50 [0]
+	action 0 [1]
+		27 : 0.5
+		88 : 0.5
+	action 1 [1]
+		19 : 0.5
+		94 : 0.5
+state 51 [0]
+	action 0 [1]
+		95 : 0.5
+		96 : 0.5
+state 52 [0]
+	action 0 [1]
+		97 : 0.5
+		98 : 0.5
+state 53 [0]
+	action 0 [1]
+		99 : 0.5
+		100 : 0.5
+state 54 [0]
+	action 0 [1]
+		101 : 0.5
+		102 : 0.5
+state 55 [0]
+	action 0 [1]
+		95 : 0.5
+		99 : 0.5
+	action 1 [1]
+		22 : 0.5
+		103 : 0.5
+state 56 [0]
+	action 0 [1]
+		96 : 0.5
+		100 : 0.5
+	action 1 [1]
+		104 : 0.5
+		105 : 0.5
+state 57 [0]
+	action 0 [1]
+		97 : 0.5
+		101 : 0.5
+	action 1 [1]
+		106 : 0.5
+		107 : 0.5
+state 58 [0]
+	action 0 [1]
+		98 : 0.5
+		102 : 0.5
+	action 1 [1]
+		23 : 0.5
+		108 : 0.5
+state 59 [0]
+	action 0 [1]
+		89 : 0.5
+		103 : 0.5
+state 60 [0]
+	action 0 [1]
+		90 : 0.5
+		104 : 0.5
+state 61 [0]
+	action 0 [1]
+		91 : 0.5
+		105 : 0.5
+state 62 [0]
+	action 0 [1]
+		92 : 0.5
+		106 : 0.5
+state 63 [0]
+	action 0 [1]
+		93 : 0.5
+		107 : 0.5
+state 64 [0]
+	action 0 [1]
+		94 : 0.5
+		108 : 0.5
+state 65 [0]
+	action 0 [1]
+		109 : 0.5
+		110 : 0.5
+state 66 [0]
+	action 0 [1]
+		111 : 0.5
+		112 : 0.5
+state 67 [0]
+	action 0 [1]
+		113 : 0.5
+		114 : 0.5
+state 68 [0]
+	action 0 [1]
+		115 : 0.5
+		116 : 0.5
+state 69 [0]
+	action 0 [1]
+		109 : 0.5
+		113 : 0.5
+	action 1 [1]
+		30 : 0.5
+		117 : 0.5
+state 70 [0]
+	action 0 [1]
+		110 : 0.5
+		114 : 0.5
+	action 1 [1]
+		118 : 0.5
+		119 : 0.5
+state 71 [0]
+	action 0 [1]
+		111 : 0.5
+		115 : 0.5
+	action 1 [1]
+		120 : 0.5
+		121 : 0.5
+state 72 [0]
+	action 0 [1]
+		112 : 0.5
+		116 : 0.5
+	action 1 [1]
+		31 : 0.5
+		122 : 0.5
+state 73 [0]
+	action 0 [1]
+		123 : 0.5
+		124 : 0.5
+state 74 [0]
+	action 0 [1]
+		125 : 0.5
+		126 : 0.5
+state 75 [0]
+	action 0 [1]
+		35 : 0.5
+		123 : 0.5
+	action 1 [1]
+		33 : 0.5
+		127 : 0.5
+state 76 [0]
+	action 0 [1]
+		36 : 0.5
+		124 : 0.5
+	action 1 [1]
+		128 : 0.5
+		129 : 0.5
+state 77 [0]
+	action 0 [1]
+		37 : 0.5
+		125 : 0.5
+	action 1 [1]
+		130 : 0.5
+		131 : 0.5
+state 78 [0]
+	action 0 [1]
+		38 : 0.5
+		126 : 0.5
+	action 1 [1]
+		34 : 0.5
+		132 : 0.5
+state 79 [0]
+	action 0 [1]
+		117 : 0.5
+		127 : 0.5
+state 80 [0]
+	action 0 [1]
+		118 : 0.5
+		128 : 0.5
+state 81 [0]
+	action 0 [1]
+		119 : 0.5
+		129 : 0.5
+state 82 [0]
+	action 0 [1]
+		120 : 0.5
+		130 : 0.5
+state 83 [0]
+	action 0 [1]
+		121 : 0.5
+		131 : 0.5
+state 84 [0]
+	action 0 [1]
+		122 : 0.5
+		132 : 0.5
+state 85 [0]
+	action 0 [1]
+		45 : 0.5
+		133 : 0.5
+state 86 [0]
+	action 0 [1]
+		134 : 0.5
+		135 : 0.5
+state 87 [0]
+	action 0 [1]
+		136 : 0.5
+		137 : 0.5
+state 88 [0]
+	action 0 [1]
+		46 : 0.5
+		138 : 0.5
+state 89 [0]
+	action 0 [1]
+		59 : 0.5
+		133 : 0.5
+state 90 [0]
+	action 0 [1]
+		60 : 0.5
+		134 : 0.5
+state 91 [0]
+	action 0 [1]
+		61 : 0.5
+		135 : 0.5
+state 92 [0]
+	action 0 [1]
+		62 : 0.5
+		136 : 0.5
+state 93 [0]
+	action 0 [1]
+		63 : 0.5
+		137 : 0.5
+state 94 [0]
+	action 0 [1]
+		64 : 0.5
+		138 : 0.5
+state 95 [0]
+	action 0 [1]
+		51 : 0.5
+		139 : 0.5
+state 96 [0]
+	action 0 [1]
+		140 : 0.5
+		141 : 0.5
+state 97 [0]
+	action 0 [1]
+		142 : 0.5
+		143 : 0.5
+state 98 [0]
+	action 0 [1]
+		52 : 0.5
+		144 : 0.5
+state 99 [0]
+	action 0 [1]
+		53 : 0.5
+		145 : 0.5
+state 100 [0]
+	action 0 [1]
+		146 : 0.5
+		147 : 0.5
+state 101 [0]
+	action 0 [1]
+		148 : 0.5
+		149 : 0.5
+state 102 [0]
+	action 0 [1]
+		54 : 0.5
+		150 : 0.5
+state 103 [0]
+	action 0 [1]
+		139 : 0.5
+		145 : 0.5
+state 104 [0]
+	action 0 [1]
+		140 : 0.5
+		146 : 0.5
+state 105 [0]
+	action 0 [1]
+		141 : 0.5
+		147 : 0.5
+state 106 [0]
+	action 0 [1]
+		142 : 0.5
+		148 : 0.5
+state 107 [0]
+	action 0 [1]
+		143 : 0.5
+		149 : 0.5
+state 108 [0]
+	action 0 [1]
+		144 : 0.5
+		150 : 0.5
+state 109 [0]
+	action 0 [1]
+		65 : 0.5
+		151 : 0.5
+state 110 [0]
+	action 0 [1]
+		152 : 0.5
+		153 : 0.5
+state 111 [0]
+	action 0 [1]
+		154 : 0.5
+		155 : 0.5
+state 112 [0]
+	action 0 [1]
+		66 : 0.5
+		156 : 0.5
+state 113 [0]
+	action 0 [1]
+		67 : 0.5
+		157 : 0.5
+state 114 [0]
+	action 0 [1]
+		158 : 0.5
+		159 : 0.5
+state 115 [0]
+	action 0 [1]
+		160 : 0.5
+		161 : 0.5
+state 116 [0]
+	action 0 [1]
+		68 : 0.5
+		162 : 0.5
+state 117 [0]
+	action 0 [1]
+		151 : 0.5
+		157 : 0.5
+state 118 [0]
+	action 0 [1]
+		152 : 0.5
+		158 : 0.5
+state 119 [0]
+	action 0 [1]
+		153 : 0.5
+		159 : 0.5
+state 120 [0]
+	action 0 [1]
+		154 : 0.5
+		160 : 0.5
+state 121 [0]
+	action 0 [1]
+		155 : 0.5
+		161 : 0.5
+state 122 [0]
+	action 0 [1]
+		156 : 0.5
+		162 : 0.5
+state 123 [0]
+	action 0 [1]
+		73 : 0.5
+		163 : 0.5
+state 124 [0]
+	action 0 [1]
+		164 : 0.5
+		165 : 0.5
+state 125 [0]
+	action 0 [1]
+		166 : 0.5
+		167 : 0.5
+state 126 [0]
+	action 0 [1]
+		74 : 0.5
+		168 : 0.5
+state 127 [0]
+	action 0 [1]
+		79 : 0.5
+		163 : 0.5
+state 128 [0]
+	action 0 [1]
+		80 : 0.5
+		164 : 0.5
+state 129 [0]
+	action 0 [1]
+		81 : 0.5
+		165 : 0.5
+state 130 [0]
+	action 0 [1]
+		82 : 0.5
+		166 : 0.5
+state 131 [0]
+	action 0 [1]
+		83 : 0.5
+		167 : 0.5
+state 132 [0]
+	action 0 [1]
+		84 : 0.5
+		168 : 0.5
+state 133 [0] done two
+	action 0 [0]
+		133 : 1
+	action 1 [0]
+		133 : 1
+state 134 [0] done three
+	action 0 [0]
+		134 : 1
+	action 1 [0]
+		134 : 1
+state 135 [0] done four
+	action 0 [0]
+		135 : 1
+	action 1 [0]
+		135 : 1
+state 136 [0] done five
+	action 0 [0]
+		136 : 1
+	action 1 [0]
+		136 : 1
+state 137 [0] done six
+	action 0 [0]
+		137 : 1
+	action 1 [0]
+		137 : 1
+state 138 [0] done seven
+	action 0 [0]
+		138 : 1
+	action 1 [0]
+		138 : 1
+state 139 [0] done three
+	action 0 [0]
+		139 : 1
+	action 1 [0]
+		139 : 1
+state 140 [0] done four
+	action 0 [0]
+		140 : 1
+	action 1 [0]
+		140 : 1
+state 141 [0] done five
+	action 0 [0]
+		141 : 1
+	action 1 [0]
+		141 : 1
+state 142 [0] done six
+	action 0 [0]
+		142 : 1
+	action 1 [0]
+		142 : 1
+state 143 [0] done seven
+	action 0 [0]
+		143 : 1
+	action 1 [0]
+		143 : 1
+state 144 [0] done eight
+	action 0 [0]
+		144 : 1
+	action 1 [0]
+		144 : 1
+state 145 [0] done four
+	action 0 [0]
+		145 : 1
+	action 1 [0]
+		145 : 1
+state 146 [0] done five
+	action 0 [0]
+		146 : 1
+	action 1 [0]
+		146 : 1
+state 147 [0] done six
+	action 0 [0]
+		147 : 1
+	action 1 [0]
+		147 : 1
+state 148 [0] done seven
+	action 0 [0]
+		148 : 1
+	action 1 [0]
+		148 : 1
+state 149 [0] done eight
+	action 0 [0]
+		149 : 1
+	action 1 [0]
+		149 : 1
+state 150 [0] done nine
+	action 0 [0]
+		150 : 1
+	action 1 [0]
+		150 : 1
+state 151 [0] done five
+	action 0 [0]
+		151 : 1
+	action 1 [0]
+		151 : 1
+state 152 [0] done six
+	action 0 [0]
+		152 : 1
+	action 1 [0]
+		152 : 1
+state 153 [0] done seven
+	action 0 [0]
+		153 : 1
+	action 1 [0]
+		153 : 1
+state 154 [0] done eight
+	action 0 [0]
+		154 : 1
+	action 1 [0]
+		154 : 1
+state 155 [0] done nine
+	action 0 [0]
+		155 : 1
+	action 1 [0]
+		155 : 1
+state 156 [0] done ten
+	action 0 [0]
+		156 : 1
+	action 1 [0]
+		156 : 1
+state 157 [0] done six
+	action 0 [0]
+		157 : 1
+	action 1 [0]
+		157 : 1
+state 158 [0] done seven
+	action 0 [0]
+		158 : 1
+	action 1 [0]
+		158 : 1
+state 159 [0] done eight
+	action 0 [0]
+		159 : 1
+	action 1 [0]
+		159 : 1
+state 160 [0] done nine
+	action 0 [0]
+		160 : 1
+	action 1 [0]
+		160 : 1
+state 161 [0] done ten
+	action 0 [0]
+		161 : 1
+	action 1 [0]
+		161 : 1
+state 162 [0] done eleven
+	action 0 [0]
+		162 : 1
+	action 1 [0]
+		162 : 1
+state 163 [0] done seven
+	action 0 [0]
+		163 : 1
+	action 1 [0]
+		163 : 1
+state 164 [0] done eight
+	action 0 [0]
+		164 : 1
+	action 1 [0]
+		164 : 1
+state 165 [0] done nine
+	action 0 [0]
+		165 : 1
+	action 1 [0]
+		165 : 1
+state 166 [0] done ten
+	action 0 [0]
+		166 : 1
+	action 1 [0]
+		166 : 1
+state 167 [0] done eleven
+	action 0 [0]
+		167 : 1
+	action 1 [0]
+		167 : 1
+state 168 [0] done twelve
+	action 0 [0]
+		168 : 1
+	action 1 [0]
+		168 : 1

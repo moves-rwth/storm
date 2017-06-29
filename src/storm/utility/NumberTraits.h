@@ -1,6 +1,6 @@
 #pragma once
 
-#include "storm/adapters/CarlAdapter.h"
+#include "storm/adapters/RationalFunctionAdapter.h"
 
 namespace storm {
     template<typename ValueType>

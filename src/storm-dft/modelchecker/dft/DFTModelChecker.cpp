@@ -202,7 +202,7 @@ namespace storm {
 
                     // Apply bisimulation to new CTMC
                     bisimulationTimer.start();
-                    ctmc =  storm::performDeterministicSparseBisimulationMinimization<storm::models::sparse::Ctmc<ValueType>>(ctmc, properties, storm::storage::BisimulationType::Weak)->template as<storm::models::sparse::Ctmc<ValueType>>();
+                    ctmc =  storm::api::performDeterministicSparseBisimulationMinimization<storm::models::sparse::Ctmc<ValueType>>(ctmc, properties, storm::storage::BisimulationType::Weak)->template as<storm::models::sparse::Ctmc<ValueType>>();
                     bisimulationTimer.stop();
 
                     if (firstTime) {
@@ -214,7 +214,7 @@ namespace storm {
 
                     // Apply bisimulation to parallel composition
                     bisimulationTimer.start();
-                    composedModel =  storm::performDeterministicSparseBisimulationMinimization<storm::models::sparse::Ctmc<ValueType>>(composedModel, properties, storm::storage::BisimulationType::Weak)->template as<storm::models::sparse::Ctmc<ValueType>>();
+                    composedModel = storm::api::performDeterministicSparseBisimulationMinimization<storm::models::sparse::Ctmc<ValueType>>(composedModel, properties, storm::storage::BisimulationType::Weak)->template as<storm::models::sparse::Ctmc<ValueType>>();
                     bisimulationTimer.stop();
 
                     STORM_LOG_DEBUG("No. states (Composed): " << composedModel->getNumberOfStates());
@@ -382,7 +382,7 @@ namespace storm {
             if (model->isOfType(storm::models::ModelType::Ctmc) && storm::settings::getModule<storm::settings::modules::GeneralSettings>().isBisimulationSet()) {
                 bisimulationTimer.start();
                 STORM_LOG_INFO("Bisimulation...");
-                model =  storm::performDeterministicSparseBisimulationMinimization<storm::models::sparse::Ctmc<ValueType>>(model->template as<storm::models::sparse::Ctmc<ValueType>>(), properties, storm::storage::BisimulationType::Weak)->template as<storm::models::sparse::Ctmc<ValueType>>();
+                model =  storm::api::performDeterministicSparseBisimulationMinimization<storm::models::sparse::Ctmc<ValueType>>(model->template as<storm::models::sparse::Ctmc<ValueType>>(), properties, storm::storage::BisimulationType::Weak)->template as<storm::models::sparse::Ctmc<ValueType>>();
                 STORM_LOG_INFO("No. states (Bisimulation): " << model->getNumberOfStates());
                 STORM_LOG_INFO("No. transitions (Bisimulation): " << model->getNumberOfTransitions());
                 bisimulationTimer.stop();
@@ -399,7 +399,7 @@ namespace storm {
                 singleModelCheckingTimer.reset();
                 singleModelCheckingTimer.start();
                 STORM_PRINT_AND_LOG("Model checking property " << *property << " ..." << std::endl);
-                std::unique_ptr<storm::modelchecker::CheckResult> result(storm::verifySparseModel(model, property, true));
+                std::unique_ptr<storm::modelchecker::CheckResult> result(storm::api::verifyWithSparseEngine<ValueType>(model, storm::api::createTask<ValueType>(property, true)));
                 STORM_LOG_ASSERT(result, "Result does not exist.");
                 result->filter(storm::modelchecker::ExplicitQualitativeCheckResult(model->getInitialStates()));
                 ValueType resultValue = result->asExplicitQuantitativeCheckResult<ValueType>().getValueMap().begin()->second;

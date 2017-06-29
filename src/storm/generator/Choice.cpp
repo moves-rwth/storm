@@ -1,11 +1,15 @@
 #include "storm/generator/Choice.h"
 
-#include "storm/adapters/CarlAdapter.h"
+#include <boost/container/flat_set.hpp>
+
+#include "storm/adapters/RationalFunctionAdapter.h"
 
 #include "storm/utility/constants.h"
+#include "storm/builder/ChoiceInformationBuilder.h"
 
 #include "storm/utility/macros.h"
 #include "storm/exceptions/InvalidOperationException.h"
+#include "storm/exceptions/NotImplementedException.h"
 
 namespace storm {
     namespace generator {
@@ -33,17 +37,12 @@ namespace storm {
                 rewardValue += *otherRewIt;
             }
             
-            // Join label sets.
-            if (this->labels) {
-                if (other.labels) {
-                    LabelSet newLabelSet;
-                    std::set_union(this->labels.get().begin(), this->labels.get().end(), other.labels.get().begin(), other.labels.get().end(), std::inserter(newLabelSet, newLabelSet.begin()));
-                    this->labels = std::move(newLabelSet);
-                }
-            } else {
-                if (other.labels) {
-                    this->labels = std::move(other.labels);
-                }
+            // Join label sets and origin data if given.
+            if (other.labels) {
+                this->addLabels(other.labels.get());
+            }
+            if (other.originData) {
+                this->addOriginData(other.originData.get());
             }
         }
         
@@ -68,24 +67,60 @@ namespace storm {
         }
         
         template<typename ValueType, typename StateType>
-        void Choice<ValueType, StateType>::addLabel(uint_fast64_t label) {
+        void Choice<ValueType, StateType>::addLabel(std::string const& newLabel) {
             if (!labels) {
-                labels = LabelSet();
+                labels = std::set<std::string>();
             }
-            labels->insert(label);
+            labels->insert(newLabel);
         }
         
         template<typename ValueType, typename StateType>
-        void Choice<ValueType, StateType>::addLabels(LabelSet const& labelSet) {
-            if (!labels) {
-                labels = LabelSet();
+        void Choice<ValueType, StateType>::addLabels(std::set<std::string> const& newLabels) {
+            if (labels) {
+                labels->insert(newLabels.begin(), newLabels.end());
+            } else {
+                labels = newLabels;
             }
-            labels->insert(labelSet.begin(), labelSet.end());
         }
-        
+            
         template<typename ValueType, typename StateType>
-        boost::container::flat_set<uint_fast64_t> const& Choice<ValueType, StateType>::getLabels() const {
-            return *labels;
+        bool Choice<ValueType, StateType>::hasLabels() const {
+            return labels.is_initialized();
+        }
+            
+        template<typename ValueType, typename StateType>
+        std::set<std::string> const& Choice<ValueType, StateType>::getLabels() const {
+            return labels.get();
+        }
+            
+        template<typename ValueType, typename StateType>
+        void Choice<ValueType, StateType>::addOriginData(boost::any const& data) {
+            if (!this->originData || this->originData->empty()) {
+                this->originData = data;
+            } else {
+                if (!data.empty()) {
+                    // Reaching this point means that the both the existing and the given data are non-empty
+                
+                    auto existingDataAsIndexSet = boost::any_cast<boost::container::flat_set<uint_fast64_t>>(&this->originData.get());
+                    if (existingDataAsIndexSet != nullptr) {
+                        auto givenDataAsIndexSet = boost::any_cast<boost::container::flat_set<uint_fast64_t>>(&data);
+                        STORM_LOG_THROW(givenDataAsIndexSet != nullptr, storm::exceptions::InvalidOperationException, "Types of existing and given choice origin data do not match.");
+                        existingDataAsIndexSet->insert(givenDataAsIndexSet->begin(), givenDataAsIndexSet->end());
+                    } else {
+                        STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "Type of choice origin data (aka " << data.type().name() << ") is not implemented.");
+                    }
+                }
+            }
+        }
+            
+        template<typename ValueType, typename StateType>
+        bool Choice<ValueType, StateType>::hasOriginData() const {
+            return originData.is_initialized();
+        }
+            
+        template<typename ValueType, typename StateType>
+        boost::any const& Choice<ValueType, StateType>::getOriginData() const {
+            return originData.get();
         }
         
         template<typename ValueType, typename StateType>

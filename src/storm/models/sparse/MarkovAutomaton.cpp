@@ -1,6 +1,6 @@
 #include "storm/models/sparse/MarkovAutomaton.h"
 
-#include "storm/adapters/CarlAdapter.h"
+#include "storm/adapters/RationalFunctionAdapter.h"
 #include "storm/models/sparse/StandardRewardModel.h"
 #include "storm/solver/stateelimination/StateEliminator.h"
 #include "storm/storage/FlexibleSparseMatrix.h"
@@ -16,61 +16,44 @@ namespace storm {
             
             template <typename ValueType, typename RewardModelType>
             MarkovAutomaton<ValueType, RewardModelType>::MarkovAutomaton(storm::storage::SparseMatrix<ValueType> const& transitionMatrix,
-                                                        storm::models::sparse::StateLabeling const& stateLabeling,
-                                                        storm::storage::BitVector const& markovianStates,
-                                                        std::vector<ValueType> const& exitRates,
-                                                        std::unordered_map<std::string, RewardModelType> const& rewardModels,
-                                                        boost::optional<std::vector<LabelSet>> const& optionalChoiceLabeling)
-            : NondeterministicModel<ValueType, RewardModelType>(storm::models::ModelType::MarkovAutomaton, transitionMatrix, stateLabeling, rewardModels, optionalChoiceLabeling), markovianStates(markovianStates), exitRates(exitRates), closed(this->checkIsClosed()) {
-                this->turnRatesToProbabilities();
-            }
-            
-            template <typename ValueType, typename RewardModelType>
-            MarkovAutomaton<ValueType, RewardModelType>::MarkovAutomaton(storm::storage::SparseMatrix<ValueType>&& transitionMatrix,
-                                                        storm::models::sparse::StateLabeling&& stateLabeling,
-                                                        storm::storage::BitVector const& markovianStates,
-                                                        std::vector<ValueType> const& exitRates,
-                                                        std::unordered_map<std::string, RewardModelType>&& rewardModels,
-                                                        boost::optional<std::vector<LabelSet>>&& optionalChoiceLabeling)
-            : NondeterministicModel<ValueType, RewardModelType>(storm::models::ModelType::MarkovAutomaton, std::move(transitionMatrix), std::move(stateLabeling), std::move(rewardModels), std::move(optionalChoiceLabeling)), markovianStates(markovianStates), exitRates(std::move(exitRates)), closed(this->checkIsClosed()) {
-                this->turnRatesToProbabilities();
-            }
-        
-            
-            template <typename ValueType, typename RewardModelType>
-            MarkovAutomaton<ValueType, RewardModelType>::MarkovAutomaton(storm::storage::SparseMatrix<ValueType> const& rateMatrix,
                                                                          storm::models::sparse::StateLabeling const& stateLabeling,
                                                                          storm::storage::BitVector const& markovianStates,
-                                                                         std::unordered_map<std::string, RewardModelType> const& rewardModels,
-                                                                         boost::optional<std::vector<LabelSet>> const& optionalChoiceLabeling)
-            : NondeterministicModel<ValueType, RewardModelType>(storm::models::ModelType::MarkovAutomaton, rateMatrix, stateLabeling, rewardModels, optionalChoiceLabeling), markovianStates(markovianStates) {
-                turnRatesToProbabilities();
-                this->closed = checkIsClosed();
+                                                                         std::unordered_map<std::string, RewardModelType> const& rewardModels)
+                    : MarkovAutomaton<ValueType, RewardModelType>(storm::storage::sparse::ModelComponents<ValueType, RewardModelType>(transitionMatrix, stateLabeling, rewardModels, true, markovianStates)) {
+                // Intentionally left empty
             }
-            
-            template <typename ValueType, typename RewardModelType>
-            MarkovAutomaton<ValueType, RewardModelType>::MarkovAutomaton(storm::storage::SparseMatrix<ValueType>&& rateMatrix,
-                                                                         storm::models::sparse::StateLabeling&& stateLabeling,
-                                                                         storm::storage::BitVector&& markovianStates,
-                                                                         std::unordered_map<std::string, RewardModelType>&& rewardModels,
-                                                                         boost::optional<std::vector<LabelSet>>&& optionalChoiceLabeling)
-            : NondeterministicModel<ValueType, RewardModelType>(storm::models::ModelType::MarkovAutomaton, rateMatrix, stateLabeling, rewardModels, optionalChoiceLabeling), markovianStates(markovianStates) {
-                turnRatesToProbabilities();
-                this->closed = checkIsClosed();
-            }
-            
             
             template <typename ValueType, typename RewardModelType>
             MarkovAutomaton<ValueType, RewardModelType>::MarkovAutomaton(storm::storage::SparseMatrix<ValueType>&& transitionMatrix,
                                                                          storm::models::sparse::StateLabeling&& stateLabeling,
-                                                                         storm::storage::BitVector const& markovianStates,
-                                                                         std::vector<ValueType> const& exitRates,
-                                                                         bool probabilities,
-                                                                         std::unordered_map<std::string, RewardModelType>&& rewardModels,
-                                                                         boost::optional<std::vector<LabelSet>>&& optionalChoiceLabeling)
-            : NondeterministicModel<ValueType, RewardModelType>(storm::models::ModelType::MarkovAutomaton, std::move(transitionMatrix), std::move(stateLabeling), std::move(rewardModels), std::move(optionalChoiceLabeling)), markovianStates(markovianStates), exitRates(std::move(exitRates)), closed(this->checkIsClosed()) {
-                STORM_LOG_ASSERT(probabilities, "Matrix must be probabilistic.");
-                STORM_LOG_ASSERT(this->getTransitionMatrix().isProbabilistic(), "Matrix must be probabilistic.");
+                                                                         storm::storage::BitVector&& markovianStates,
+                                                                         std::unordered_map<std::string, RewardModelType>&& rewardModels)
+                    : MarkovAutomaton<ValueType, RewardModelType>(storm::storage::sparse::ModelComponents<ValueType, RewardModelType>(std::move(transitionMatrix), std::move(stateLabeling), std::move(rewardModels), true, std::move(markovianStates))) {
+                // Intentionally left empty
+            }
+            
+            template <typename ValueType, typename RewardModelType>
+            MarkovAutomaton<ValueType, RewardModelType>::MarkovAutomaton(storm::storage::sparse::ModelComponents<ValueType, RewardModelType> const& components) : NondeterministicModel<ValueType, RewardModelType>(ModelType::MarkovAutomaton, components), markovianStates(components.markovianStates.get()) {
+                
+                if (components.exitRates) {
+                    exitRates = components.exitRates.get();
+                }
+                
+                if (components.rateTransitions) {
+                    this->turnRatesToProbabilities();
+                }
+                closed = this->checkIsClosed();
+            }
+            
+            template <typename ValueType, typename RewardModelType>
+            MarkovAutomaton<ValueType, RewardModelType>::MarkovAutomaton(storm::storage::sparse::ModelComponents<ValueType, RewardModelType>&& components) : NondeterministicModel<ValueType, RewardModelType>(ModelType::MarkovAutomaton, std::move(components)), markovianStates(std::move(components.markovianStates.get())) {
+                
+                if (components.exitRates) {
+                    exitRates = std::move(components.exitRates.get());
+                } else {
+                    this->turnRatesToProbabilities();
+                }
+                closed = this->checkIsClosed();
             }
             
             template <typename ValueType, typename RewardModelType>
@@ -140,14 +123,14 @@ namespace storm {
                     this->getTransitionMatrix() = this->getTransitionMatrix().restrictRows(keptChoices);
                     for(auto& rewModel : this->getRewardModels()) {
                         if(rewModel.second.hasStateActionRewards()) {
-                            rewModel.second.getStateActionRewardVector() = storm::utility::vector::filterVector(rewModel.second.getStateActionRewardVector(), keptChoices);
+                            storm::utility::vector::filterVectorInPlace(rewModel.second.getStateActionRewardVector(), keptChoices);
                         }
                         if(rewModel.second.hasTransitionRewards()) {
                             rewModel.second.getTransitionRewardMatrix() = rewModel.second.getTransitionRewardMatrix().restrictRows(keptChoices);
                         }
                     }
                     if(this->hasChoiceLabeling()) {
-                        this->getOptionalChoiceLabeling() = storm::utility::vector::filterVector(this->getOptionalChoiceLabeling().get(), keptChoices);
+                        this->getOptionalChoiceLabeling() = this->getChoiceLabeling().getSubLabeling(keptChoices);
                     }
 
                     // Mark the automaton as closed.
@@ -156,98 +139,27 @@ namespace storm {
             }
             
             template <typename ValueType, typename RewardModelType>
-            void MarkovAutomaton<ValueType, RewardModelType>::writeDotToStream(std::ostream& outStream, bool includeLabeling, storm::storage::BitVector const* subsystem, std::vector<ValueType> const* firstValue, std::vector<ValueType> const* secondValue, std::vector<uint_fast64_t> const* stateColoring, std::vector<std::string> const* colors, std::vector<uint_fast64_t>* scheduler, bool finalizeOutput) const {
-                Model<ValueType, RewardModelType>::writeDotToStream(outStream, includeLabeling, subsystem, firstValue, secondValue, stateColoring, colors, scheduler, false);
-                
-                // Write the probability distributions for all the states.
-                for (uint_fast64_t state = 0; state < this->getNumberOfStates(); ++state) {
-                    uint_fast64_t rowCount = this->getTransitionMatrix().getRowGroupIndices()[state + 1] - this->getTransitionMatrix().getRowGroupIndices()[state];
-                    bool highlightChoice = true;
-                    
-                    // For this, we need to iterate over all available nondeterministic choices in the current state.
-                    for (uint_fast64_t choice = 0; choice < rowCount; ++choice) {
-                        uint_fast64_t rowIndex = this->getTransitionMatrix().getRowGroupIndices()[state] + choice;
-                        typename storm::storage::SparseMatrix<ValueType>::const_rows row = this->getTransitionMatrix().getRow(rowIndex);
-                        
-                        if (scheduler != nullptr) {
-                            // If the scheduler picked the current choice, we will not make it dotted, but highlight it.
-                            if ((*scheduler)[state] == choice) {
-                                highlightChoice = true;
-                            } else {
-                                highlightChoice = false;
-                            }
-                        }
-                        
-                        // If it's not a Markovian state or the current row is the first choice for this state, then we
-                        // are dealing with a probabilitic choice.
-                        if (!markovianStates.get(state) || choice != 0) {
-                            // For each nondeterministic choice, we draw an arrow to an intermediate node to better display
-                            // the grouping of transitions.
-                            outStream << "\t\"" << state << "c" << choice << "\" [shape = \"point\"";
-                            
-                            // If we were given a scheduler to highlight, we do so now.
-                            if (scheduler != nullptr) {
-                                if (highlightChoice) {
-                                    outStream << ", fillcolor=\"red\"";
-                                }
-                            }
-                            outStream << "];" << std::endl;
-                            
-                            outStream << "\t" << state << " -> \"" << state << "c" << choice << "\" [ label= \"" << rowIndex << "\"";
-                            
-                            // If we were given a scheduler to highlight, we do so now.
-                            if (scheduler != nullptr) {
-                                if (highlightChoice) {
-                                    outStream << ", color=\"red\", penwidth = 2";
-                                } else {
-                                    outStream << ", style = \"dotted\"";
-                                }
-                            }
-                            outStream << "];" << std::endl;
-                            
-                            // Now draw all probabilitic arcs that belong to this nondeterminstic choice.
-                            for (auto const& transition : row) {
-                                if (subsystem == nullptr || subsystem->get(transition.getColumn())) {
-                                    outStream << "\t\"" << state << "c" << choice << "\" -> " << transition.getColumn() << " [ label= \"" << transition.getValue() << "\" ]";
-                                    
-                                    // If we were given a scheduler to highlight, we do so now.
-                                    if (scheduler != nullptr) {
-                                        if (highlightChoice) {
-                                            outStream << " [color=\"red\", penwidth = 2]";
-                                        } else {
-                                            outStream << " [style = \"dotted\"]";
-                                        }
-                                    }
-                                    outStream << ";" << std::endl;
-                                }
-                            }
-                        } else {
-                            // In this case we are emitting a Markovian choice, so draw the arrows directly to the target states.
-                            for (auto const& transition : row) {
-                                if (subsystem == nullptr || subsystem->get(transition.getColumn())) {
-                                    outStream << "\t\"" << state << "\" -> " << transition.getColumn() << " [ label= \"" << transition.getValue() << " (" << this->exitRates[state] << ")\" ]";
-                                }
-                            }
-                        }
-                    }
-                }
-                
-                if (finalizeOutput) {
-                    outStream << "}" << std::endl;
-                }
-            }
-            
-            template <typename ValueType, typename RewardModelType>
             void MarkovAutomaton<ValueType, RewardModelType>::turnRatesToProbabilities() {
-                this->exitRates.resize(this->getNumberOfStates());
+                bool assertRates = (this->exitRates.size() == this->getNumberOfStates());
+                if (!assertRates) {
+                    STORM_LOG_THROW(this->exitRates.empty(), storm::exceptions::InvalidArgumentException, "The specified exit rate vector has an unexpected size.");
+                    this->exitRates.reserve(this->getNumberOfStates());
+                }
+                
                 for (uint_fast64_t state = 0; state< this->getNumberOfStates(); ++state) {
                     uint_fast64_t row = this->getTransitionMatrix().getRowGroupIndices()[state];
                     if (this->markovianStates.get(state)) {
-                        this->exitRates[state] = this->getTransitionMatrix().getRowSum(row);
+                        if (assertRates) {
+                        STORM_LOG_THROW(this->exitRates[state] == this->getTransitionMatrix().getRowSum(row), storm::exceptions::InvalidArgumentException, "The specified exit rate is inconsistent with the rate matrix. Difference is " << (this->exitRates[state] - this->getTransitionMatrix().getRowSum(row)) << ".");
+                        } else {
+                            this->exitRates.push_back(this->getTransitionMatrix().getRowSum(row));
+                        }
                         for (auto& transition : this->getTransitionMatrix().getRow(row)) {
                             transition.setValue(transition.getValue() / this->exitRates[state]);
                         }
                         ++row;
+                    } else {
+                        this->exitRates.push_back(storm::utility::zero<ValueType>());
                     }
                     for (; row < this->getTransitionMatrix().getRowGroupIndices()[state+1]; ++row) {
                         STORM_LOG_THROW(storm::utility::isOne(this->getTransitionMatrix().getRowSum(row)), storm::exceptions::InvalidArgumentException, "Entries of transition matrix do not sum up to one for (non-Markovian) choice " << row << " of state " << state << " (sum is " << this->getTransitionMatrix().getRowSum(row) << ").");
@@ -327,15 +239,15 @@ namespace storm {
                 STORM_LOG_TRACE("New CTMC matrix:" << std::endl << rateMatrix);
                 // Construct CTMC
                 storm::models::sparse::StateLabeling stateLabeling = this->getStateLabeling().getSubLabeling(keepStates);
-                boost::optional<std::vector<LabelSet>> optionalChoiceLabeling = this->getOptionalChoiceLabeling();
-                if (optionalChoiceLabeling) {
-                    optionalChoiceLabeling = storm::utility::vector::filterVector(optionalChoiceLabeling.get(), keepStates);
-                }
-                //TODO update reward models according to kept states
+                
+                //TODO update reward models and choice labels according to kept states
                 STORM_LOG_WARN_COND(this->getRewardModels().empty(), "Conversion of MA to CTMC does not preserve rewards.");
                 std::unordered_map<std::string, RewardModelType> rewardModels = this->getRewardModels();
+                STORM_LOG_WARN_COND(!this->hasChoiceLabeling(), "Conversion of MA to CTMC does not preserve choice labels.");
+                STORM_LOG_WARN_COND(!this->hasStateValuations(), "Conversion of MA to CTMC does not preserve choice labels.");
+                STORM_LOG_WARN_COND(!this->hasChoiceOrigins(), "Conversion of MA to CTMC does not preserve choice labels.");
                 
-                return std::make_shared<storm::models::sparse::Ctmc<ValueType, RewardModelType>>(std::move(rateMatrix), std::move(stateLabeling), std::move(rewardModels), std::move(optionalChoiceLabeling));
+                return std::make_shared<storm::models::sparse::Ctmc<ValueType, RewardModelType>>(std::move(rateMatrix), std::move(stateLabeling), std::move(rewardModels));
             }
 
             
@@ -350,7 +262,6 @@ namespace storm {
             
             
             template class MarkovAutomaton<double>;
-//            template class MarkovAutomaton<float>;
 #ifdef STORM_HAVE_CARL
             template class MarkovAutomaton<storm::RationalNumber>;
             

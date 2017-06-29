@@ -194,9 +194,12 @@ TASK_IMPL_2(MTBDD, sylvan_storm_rational_function_op_divide, MTBDD*, pa, MTBDD*,
     /* If both leaves, compute division */
     if (mtbdd_isleaf(a) && mtbdd_isleaf(b)) {
 		storm_rational_function_ptr ma = mtbdd_getstorm_rational_function_ptr(a);
+        storm_rational_function_ptr mb = mtbdd_getstorm_rational_function_ptr(b);
         storm_rational_function_ptr mres;
         if (storm_rational_function_is_zero(ma)) {
             mres = storm_rational_function_get_zero();
+        } else if (storm_rational_function_is_zero(mb)) {
+            mres = storm_rational_function_get_infinity();
         } else {
             storm_rational_function_ptr mb = mtbdd_getstorm_rational_function_ptr(b);
             mres = storm_rational_function_divide(ma, mb);

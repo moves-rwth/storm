@@ -14,7 +14,7 @@
 
 #include "storm/utility/macros.h"
 
-#include "storm/adapters/CarlAdapter.h"
+#include "storm/adapters/RationalFunctionAdapter.h"
 
 namespace storm {
     namespace solver {

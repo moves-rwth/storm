@@ -105,7 +105,7 @@ namespace storm {
         template <>
         double BoundedUntilFormula::getNonStrictUpperBound() const {
             double bound = getUpperBound<double>();
-            STORM_LOG_THROW(bound > 0, storm::exceptions::InvalidPropertyException, "Cannot retrieve non-strict bound from strict zero-bound.");
+            STORM_LOG_THROW(!isUpperBoundStrict() || bound > 0, storm::exceptions::InvalidPropertyException, "Cannot retrieve non-strict bound from strict zero-bound.");
             return bound;
         }
 

@@ -42,6 +42,12 @@ namespace storm {
             virtual void refinePartitionBasedOnSplitter(bisimulation::Block<BlockDataType>& splitter, std::vector<bisimulation::Block<BlockDataType>*>& splitterQueue) override;
 
         private:
+            // Post-processes the initial partition to properly initialize it.
+            void postProcessInitialPartition();
+            
+            // Refines the given block wrt to strong bisimulation.
+            void refinePredecessorBlockOfSplitterStrong(bisimulation::Block<BlockDataType>& block, std::vector<bisimulation::Block<BlockDataType>*>& splitterQueue);
+
             // Refines the predecessor blocks wrt. strong bisimulation.
             void refinePredecessorBlocksOfSplitterStrong(std::list<bisimulation::Block<BlockDataType>*> const& predecessorBlocks, std::vector<bisimulation::Block<BlockDataType>*>& splitterQueue);
 
@@ -98,11 +104,11 @@ namespace storm {
             // of the states.
             void updateSilentProbabilitiesBasedOnTransitions(bisimulation::Block<BlockDataType>& block);
             
-            // Refines the predecessor blocks of the splitter wrt. weak bisimulation in DTMCs.
-            void refinePredecessorBlocksOfSplitterWeak(bisimulation::Block<BlockDataType>& splitter, std::list<bisimulation::Block<BlockDataType>*> const& predecessorBlocks, std::vector<bisimulation::Block<BlockDataType>*>& splitterQueue);
-            
             // Refines the given block wrt to weak bisimulation in DTMCs.
             void refinePredecessorBlockOfSplitterWeak(bisimulation::Block<BlockDataType>& block, std::vector<bisimulation::Block<BlockDataType>*>& splitterQueue);
+
+            // Refines the predecessor blocks of the splitter wrt. weak bisimulation in DTMCs.
+            void refinePredecessorBlocksOfSplitterWeak(bisimulation::Block<BlockDataType>& splitter, std::list<bisimulation::Block<BlockDataType>*> const& predecessorBlocks, std::vector<bisimulation::Block<BlockDataType>*>& splitterQueue);
             
             // Converts the one-step probabilities of going into the splitter into the conditional probabilities needed
             // for weak bisimulation (on DTMCs).
