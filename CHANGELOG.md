@@ -13,7 +13,7 @@ Version 1.0.x
 - Fix for nested formulae
 - JANI: Explicit engine supports custom model compositions.
 - Storm now overwrites files if asked to write files to a specific location
-- Changes in build process to accomodate for changes in carl. Also, more robust against issues with carl
+- Changes in build process to accommodate for changes in carl. Also, more robust against issues with carl
 - Wellformedness constraints on PMCs:
     * include constraints from rewards
     * are in smtlib2
