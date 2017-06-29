@@ -55,22 +55,6 @@ namespace storm {
                  */
                 template <typename ValueType>
                 static ValueType computeLraForMaximalEndComponent(OptimizationDirection dir, storm::storage::SparseMatrix<ValueType> const& transitionMatrix, std::vector<ValueType> const& exitRateVector, storm::storage::BitVector const& markovianStates, storm::storage::BitVector const& goalStates, storm::storage::MaximalEndComponent const& mec);
-                
-                /*!
-                 * Computes the expected reward that is gained from each state before entering any of the goal states.
-                 *
-                 * @param dir Indicates whether minimal or maximal rewards are to be computed.
-                 * @param transitionMatrix The transition matrix of the underlying Markov automaton.
-                 * @param backwardTransitions The reversed transition relation of the underlying Markov automaton.
-                 * @param goalStates The goal states that define until which point rewards are gained.
-                 * @param stateRewards A vector that defines the reward gained in each state. For probabilistic states,
-                 * this is an instantaneous reward that is fully gained and for Markovian states the actually gained
-                 * reward is dependent on the expected time to stay in the state, i.e. it is gouverned by the exit rate
-                 * of the state.
-                 * @return A vector that contains the expected reward for each state of the model.
-                 */
-                template <typename ValueType>
-                static std::vector<ValueType> computeExpectedRewards(OptimizationDirection dir, storm::storage::SparseMatrix<ValueType> const& transitionMatrix, storm::storage::SparseMatrix<ValueType> const& backwardTransitions, storm::storage::BitVector const& goalStates, std::vector<ValueType> const& stateRewards, storm::solver::MinMaxLinearEquationSolverFactory<ValueType> const& minMaxLinearEquationSolverFactory);
             };
             
         }
