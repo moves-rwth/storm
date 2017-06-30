@@ -35,7 +35,7 @@ namespace storm {
             void wellformedRequiresNonNegativeEntries(std::vector<ValueType> const&);
         public:
             /*!
-             * Constructs the a constraint collector for the given DTMC. The constraints are built and ready for
+             * Constructs a constraint collector for the given DTMC. The constraints are built and ready for
              * retrieval after the construction.
              *
              * @param dtmc The DTMC for which to create the constraints.
@@ -47,14 +47,14 @@ namespace storm {
              *
              * @return The set of wellformed-ness constraints.
              */
-            std::unordered_set<typename ConstraintType<ValueType>::val> const&  getWellformedConstraints() const;
+            std::unordered_set<typename ConstraintType<ValueType>::val> const& getWellformedConstraints() const;
             
             /*!
              * Returns the set of graph-preserving constraints.
              *
              * @return The set of graph-preserving constraints.
              */
-            std::unordered_set<typename ConstraintType<ValueType>::val> const&  getGraphPreservingConstraints() const;
+            std::unordered_set<typename ConstraintType<ValueType>::val> const& getGraphPreservingConstraints() const;
             
             /*!
              * Constructs the constraints for the given DTMC.
