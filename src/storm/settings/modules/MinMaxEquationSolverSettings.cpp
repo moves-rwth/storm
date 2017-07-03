@@ -19,7 +19,7 @@ namespace storm {
             const std::string MinMaxEquationSolverSettings::absoluteOptionName = "absolute";
 
             MinMaxEquationSolverSettings::MinMaxEquationSolverSettings() : ModuleSettings(moduleName) {
-                std::vector<std::string> minMaxSolvingTechniques = {"vi", "value-iteration", "pi", "policy-iteration"};
+                std::vector<std::string> minMaxSolvingTechniques = {"vi", "value-iteration", "pi", "policy-iteration", "acyclic"};
                 this->addOption(storm::settings::OptionBuilder(moduleName, solvingMethodOptionName, false, "Sets which min/max linear equation solving technique is preferred.")
                                 .addArgument(storm::settings::ArgumentBuilder::createStringArgument("name", "The name of a min/max linear equation solving technique.").addValidatorString(ArgumentValidatorFactory::createMultipleChoiceValidator(minMaxSolvingTechniques)).setDefaultValueString("vi").build()).build());
                 
@@ -36,6 +36,8 @@ namespace storm {
                     return storm::solver::MinMaxMethod::ValueIteration;
                 } else if (minMaxEquationSolvingTechnique == "policy-iteration" || minMaxEquationSolvingTechnique == "pi") {
                     return storm::solver::MinMaxMethod::PolicyIteration;
+                } else if (minMaxEquationSolvingTechnique == "acyclic") {
+                    return storm::solver::MinMaxMethod::Acyclic;
                 }
                 STORM_LOG_THROW(false, storm::exceptions::IllegalArgumentValueException, "Unknown min/max equation solving technique '" << minMaxEquationSolvingTechnique << "'.");
             }

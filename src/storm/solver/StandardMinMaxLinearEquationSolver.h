@@ -12,7 +12,7 @@ namespace storm {
             StandardMinMaxLinearEquationSolverSettings();
             
             enum class SolutionMethod {
-                ValueIteration, PolicyIteration
+                ValueIteration, PolicyIteration, Acyclic
             };
             
             void setSolutionMethod(SolutionMethod const& solutionMethod);
@@ -51,8 +51,11 @@ namespace storm {
         private:
             bool solveEquationsPolicyIteration(OptimizationDirection dir, std::vector<ValueType>& x, std::vector<ValueType> const& b) const;
             bool solveEquationsValueIteration(OptimizationDirection dir, std::vector<ValueType>& x, std::vector<ValueType> const& b) const;
+            bool solveEquationsAcyclic(OptimizationDirection dir, std::vector<ValueType>& x, std::vector<ValueType> const& b) const;
 
             bool valueImproved(OptimizationDirection dir, ValueType const& value1, ValueType const& value2) const;
+            
+            void computeOptimalValueForRowGroup(uint_fast64_t group, OptimizationDirection dir, std::vector<ValueType>& x, std::vector<ValueType> const& b, uint_fast64_t* choice = nullptr) const;
             
             enum class Status {
                 Converged, TerminatedEarly, MaximalIterationsExceeded, InProgress
@@ -62,7 +65,8 @@ namespace storm {
             mutable std::unique_ptr<storm::solver::LinearEquationSolver<ValueType>> linEqSolverA;
             mutable std::unique_ptr<std::vector<ValueType>> auxiliaryRowVector; // A.rowCount() entries
             mutable std::unique_ptr<std::vector<ValueType>> auxiliaryRowGroupVector; // A.rowGroupCount() entries
-
+            mutable std::unique_ptr<std::vector<uint64_t>> rowGroupOrdering; // A.rowGroupCount() entries
+            
             Status updateStatusIfNotConverged(Status status, std::vector<ValueType> const& x, uint64_t iterations) const;
             void reportStatus(Status status, uint64_t iterations) const;
             

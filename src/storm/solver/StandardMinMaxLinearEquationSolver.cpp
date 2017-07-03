@@ -29,6 +29,7 @@ namespace storm {
             switch (method) {
                 case MinMaxMethod::ValueIteration: this->solutionMethod = SolutionMethod::ValueIteration; break;
                 case MinMaxMethod::PolicyIteration: this->solutionMethod = SolutionMethod::PolicyIteration; break;
+                case MinMaxMethod::Acyclic: this->solutionMethod = SolutionMethod::Acyclic; break;
                 default:
                     STORM_LOG_THROW(false, storm::exceptions::InvalidSettingsException, "Unsupported technique.");
             }
@@ -91,6 +92,8 @@ namespace storm {
                     return solveEquationsValueIteration(dir, x, b);
                 case StandardMinMaxLinearEquationSolverSettings<ValueType>::SolutionMethod::PolicyIteration:
                     return solveEquationsPolicyIteration(dir, x, b);
+                case StandardMinMaxLinearEquationSolverSettings<ValueType>::SolutionMethod::Acyclic:
+                    return solveEquationsAcyclic(dir, x, b);
                 default:
                     STORM_LOG_THROW(false, storm::exceptions::InvalidSettingsException, "This solver does not implement the selected solution method");
             }
@@ -294,6 +297,113 @@ namespace storm {
         }
         
         template<typename ValueType>
+        bool StandardMinMaxLinearEquationSolver<ValueType>::solveEquationsAcyclic(OptimizationDirection dir, std::vector<ValueType>& x, std::vector<ValueType> const& b) const {
+            uint64_t numGroups = this->A.getRowGroupCount();
+
+            // Allocate memory for the scheduler (if required)
+            if (this->isTrackSchedulerSet()) {
+                if (this->schedulerChoices) {
+                    this->schedulerChoices->resize(numGroups);
+                } else {
+                    this->schedulerChoices = std::vector<uint_fast64_t>(numGroups);
+                }
+            }
+            
+            // We now compute a topological sort of the row groups.
+            // If caching is enabled, it might be possible to obtain this sort from the cache.
+            if (this->isCachingEnabled()) {
+                if (rowGroupOrdering) {
+                    for (auto const& group : *rowGroupOrdering) {
+                        computeOptimalValueForRowGroup(group, dir, x, b, this->isTrackSchedulerSet() ? &this->schedulerChoices.get()[group] : nullptr);
+                    }
+                    return true;
+                } else {
+                    rowGroupOrdering = std::make_unique<std::vector<uint64_t>>();
+                    rowGroupOrdering->reserve(numGroups);
+                }
+            }
+            
+            auto transposedMatrix = this->A.transpose(true);
+            
+            // We store the groups that have already been processed, i.e., the groups for which x[group] was already set to the correct value.
+            storm::storage::BitVector processedGroups(numGroups, false);
+            // Furthermore, we keep track of all candidate groups for which we still need to check whether this group can be processed now.
+            // A group can be processed if all successors have already been processed.
+            // Notice that the BitVector candidates is considered in a reversed way, i.e., group i is a candidate iff candidates.get(numGroups - i - 1) is true.
+            // This is due to the observation that groups with higher indices usually need to be processed earlier.
+            storm::storage::BitVector candidates(numGroups, true);
+            uint64_t candidate = numGroups - 1;
+            for (uint64_t numCandidates = candidates.size(); numCandidates > 0; --numCandidates) {
+                candidates.set(numGroups - candidate - 1, false);
+                
+                // Check if the candidate row group has an unprocessed successor
+                bool hasUnprocessedSuccessor = false;
+                for (auto const& entry : this->A.getRowGroup(candidate)) {
+                    if (!processedGroups.get(entry.getColumn())) {
+                        hasUnprocessedSuccessor = true;
+                        break;
+                    }
+                }
+                
+                uint64_t nextCandidate = numGroups - candidates.getNextSetIndex(numGroups - candidate - 1 + 1) - 1;
+                
+                if (!hasUnprocessedSuccessor) {
+                    // This candidate can be processed.
+                    processedGroups.set(candidate);
+                    computeOptimalValueForRowGroup(candidate, dir, x, b, this->isTrackSchedulerSet() ? &this->schedulerChoices.get()[candidate] : nullptr);
+                    if (this->isCachingEnabled()) {
+                        rowGroupOrdering->push_back(candidate);
+                    }
+                    
+                    // Add new candidates
+                    for (auto const& predecessorEntry : transposedMatrix.getRow(candidate)) {
+                        uint64_t predecessor = predecessorEntry.getColumn();
+                        if (!candidates.get(numGroups - predecessor - 1)) {
+                            candidates.set(numGroups - predecessor - 1, true);
+                            nextCandidate = std::max(nextCandidate, predecessor);
+                            ++numCandidates;
+                        }
+                    }
+                }
+                candidate = nextCandidate;
+            }
+            
+            assert(candidates.empty());
+            STORM_LOG_THROW(processedGroups.full(), storm::exceptions::InvalidOperationException, "The MinMax equation system is not acyclic.");
+            return true;
+        }
+        
+        template<typename ValueType>
+        void StandardMinMaxLinearEquationSolver<ValueType>::computeOptimalValueForRowGroup(uint_fast64_t group, OptimizationDirection dir, std::vector<ValueType>& x, std::vector<ValueType> const& b, uint_fast64_t* choice) const {
+            uint64_t row = this->A.getRowGroupIndices()[group];
+            uint64_t groupEnd = this->A.getRowGroupIndices()[group + 1];
+            assert(row != groupEnd);
+            
+            auto bIt = b.begin() + row;
+            ValueType& xi = x[group];
+            xi = this->A.multiplyRowWithVector(row, x) + *bIt;
+            uint64_t optimalRow = row;
+            
+            for (++row, ++bIt; row < groupEnd; ++row, ++bIt) {
+                ValueType choiceVal = this->A.multiplyRowWithVector(row, x) + *bIt;
+                if (minimize(dir)) {
+                    if (choiceVal < xi) {
+                        xi = choiceVal;
+                        optimalRow = row;
+                    }
+                } else {
+                    if (choiceVal > xi) {
+                        xi = choiceVal;
+                        optimalRow = row;
+                    }
+                }
+            }
+            if (choice != nullptr) {
+                *choice = optimalRow - this->A.getRowGroupIndices()[group];
+            }
+        }
+
+        template<typename ValueType>
         void StandardMinMaxLinearEquationSolver<ValueType>::repeatedMultiply(OptimizationDirection dir, std::vector<ValueType>& x, std::vector<ValueType> const* b, uint_fast64_t n) const {
             if(!linEqSolverA) {
                 linEqSolverA = linearEquationSolverFactory->create(A);
@@ -356,6 +466,7 @@ namespace storm {
             linEqSolverA.reset();
             auxiliaryRowVector.reset();
             auxiliaryRowGroupVector.reset();
+            rowGroupOrdering.reset();
             MinMaxLinearEquationSolver<ValueType>::clearCache();
         }
 

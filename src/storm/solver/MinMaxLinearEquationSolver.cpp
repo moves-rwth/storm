@@ -170,7 +170,7 @@ namespace storm {
         std::unique_ptr<MinMaxLinearEquationSolver<ValueType>> GeneralMinMaxLinearEquationSolverFactory<ValueType>::selectSolver(MatrixType&& matrix) const {
             std::unique_ptr<MinMaxLinearEquationSolver<ValueType>> result;
             auto method = storm::settings::getModule<storm::settings::modules::MinMaxEquationSolverSettings>().getMinMaxEquationSolvingMethod();
-            if (method == MinMaxMethod::ValueIteration || method == MinMaxMethod::PolicyIteration) {
+            if (method == MinMaxMethod::ValueIteration || method == MinMaxMethod::PolicyIteration || method == MinMaxMethod::Acyclic) {
                 result = std::make_unique<StandardMinMaxLinearEquationSolver<ValueType>>(std::forward<MatrixType>(matrix), std::make_unique<GeneralLinearEquationSolverFactory<ValueType>>());
             } else if (method == MinMaxMethod::Topological) {
                 result = std::make_unique<TopologicalMinMaxLinearEquationSolver<ValueType>>(std::forward<MatrixType>(matrix));
@@ -187,7 +187,7 @@ namespace storm {
         std::unique_ptr<MinMaxLinearEquationSolver<storm::RationalNumber>> GeneralMinMaxLinearEquationSolverFactory<storm::RationalNumber>::selectSolver(MatrixType&& matrix) const {
             std::unique_ptr<MinMaxLinearEquationSolver<storm::RationalNumber>> result;
             auto method = storm::settings::getModule<storm::settings::modules::MinMaxEquationSolverSettings>().getMinMaxEquationSolvingMethod();
-            STORM_LOG_THROW(method == MinMaxMethod::ValueIteration || method == MinMaxMethod::PolicyIteration, storm::exceptions::InvalidSettingsException, "For this data type only value iteration and policy iteration are available.");
+            STORM_LOG_THROW(method == MinMaxMethod::ValueIteration || method == MinMaxMethod::PolicyIteration || method == MinMaxMethod::Acyclic, storm::exceptions::InvalidSettingsException, "For this data type only value iteration, policy iteration, and acyclic value iteration are available.");
             return std::make_unique<StandardMinMaxLinearEquationSolver<storm::RationalNumber>>(std::forward<MatrixType>(matrix), std::make_unique<GeneralLinearEquationSolverFactory<storm::RationalNumber>>());
         }
 #endif
