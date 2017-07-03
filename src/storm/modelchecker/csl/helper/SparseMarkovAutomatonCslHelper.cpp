@@ -561,10 +561,8 @@ namespace storm {
                 
                 ValueType precision = storm::utility::convertNumber<ValueType>(storm::settings::getModule<storm::settings::modules::GeneralSettings>().getPrecision()) / uniformizationRate;
                 std::vector<ValueType> v(aMarkovian.getRowCount(), storm::utility::zero<ValueType>());
-                std::vector<ValueType> vOld = v;
                 std::vector<ValueType> w = v;
                 std::vector<ValueType> x(aProbabilistic.getRowGroupCount(), storm::utility::zero<ValueType>());
-                std::vector<ValueType> xPrime = x;
                 std::vector<ValueType> b = probabilisticChoiceRewards;
                 auto solver = minMaxLinearEquationSolverFactory.create(std::move(aProbabilistic));
                 solver->setCachingEnabled(true);
@@ -574,22 +572,22 @@ namespace storm {
                     // Compute the expected total rewards for the probabilistic states
                     solver->solveEquations(dir, x, b);
                     
-                    // now compute the values for the markovian states
-                    for (uint_fast64_t row = 0; row < aMarkovian.getRowCount(); ++row) {
-                        v[row] = markovianChoiceRewards[row] + aMarkovianToProbabilistic.multiplyRowWithVector(row, x) + aMarkovian.multiplyRowWithVector(row, w);
+                    // now compute the values for the markovian states. We also keep track of the maximal and minimal difference between two values (for convergence checking)
+                    auto vIt = v.begin();
+                    uint_fast64_t row = 0;
+                    ValueType newValue = markovianChoiceRewards[row] + aMarkovianToProbabilistic.multiplyRowWithVector(row, x) + aMarkovian.multiplyRowWithVector(row, w);
+                    ValueType maxDiff = newValue - *vIt;
+                    ValueType minDiff = maxDiff;
+                    *vIt = newValue;
+                    for (++vIt, ++row; row < aMarkovian.getRowCount(); ++vIt, ++row) {
+                        newValue = markovianChoiceRewards[row] + aMarkovianToProbabilistic.multiplyRowWithVector(row, x) + aMarkovian.multiplyRowWithVector(row, w);
+                        ValueType diff = newValue - *vIt;
+                        maxDiff = std::max(maxDiff, diff);
+                        minDiff = std::min(minDiff, diff);
+                        *vIt = newValue;
                     }
 
                     // Check for convergence
-                    auto vIt = v.begin();
-                    auto vEndIt = v.end();
-                    auto vOldIt = vOld.begin();
-                    ValueType maxDiff = *vIt - *vOldIt;
-                    ValueType minDiff = maxDiff;
-                    for (++vIt, ++vOldIt; vIt != vEndIt; ++vIt, ++vOldIt) {
-                        ValueType diff = *vIt - *vOldIt;
-                        maxDiff = std::max(maxDiff, diff);
-                        minDiff = std::min(minDiff, diff);
-                    }
                     if (maxDiff - minDiff < precision) {
                         break;
                     }
@@ -600,7 +598,6 @@ namespace storm {
                     aProbabilisticToMarkovian.multiplyWithVector(w, b);
                     storm::utility::vector::addVectors(b, probabilisticChoiceRewards, b);
 
-                    vOld = v;
                 }
                 return v.front() * uniformizationRate;
             
