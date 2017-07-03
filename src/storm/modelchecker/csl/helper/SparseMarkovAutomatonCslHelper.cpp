@@ -32,7 +32,7 @@ namespace storm {
         namespace helper {
 
             template <typename ValueType, typename std::enable_if<storm::NumberTraits<ValueType>::SupportsExponential, int>::type>
-            void SparseMarkovAutomatonCslHelper::computeBoundedReachabilityProbabilities(OptimizationDirection dir, storm::storage::SparseMatrix<ValueType> const& transitionMatrix, std::vector<ValueType> const& exitRates, storm::storage::BitVector const& goalStates, storm::storage::BitVector const& markovianNonGoalStates, storm::storage::BitVector const& probabilisticNonGoalStates, std::vector<ValueType>& markovianNonGoalValues, std::vector<ValueType>& probabilisticNonGoalValues, ValueType delta, uint_fast64_t numberOfSteps, storm::solver::MinMaxLinearEquationSolverFactory<ValueType> const& minMaxLinearEquationSolverFactory) {
+            void SparseMarkovAutomatonCslHelper::computeBoundedReachabilityProbabilities(OptimizationDirection dir, storm::storage::SparseMatrix<ValueType> const& transitionMatrix, std::vector<ValueType> const& exitRates, storm::storage::BitVector const& goalStates, storm::storage::BitVector const& markovianNonGoalStates, storm::storage::BitVector const& probabilisticNonGoalStates, std::vector<ValueType>& markovianNonGoalValues, std::vector<ValueType>& probabilisticNonGoalValues, ValueType delta, uint64_t numberOfSteps, storm::solver::MinMaxLinearEquationSolverFactory<ValueType> const& minMaxLinearEquationSolverFactory) {
                 
                 // Start by computing four sparse matrices:
                 // * a matrix aMarkovian with all (discretized) transitions from Markovian non-goal states to all Markovian non-goal states.
@@ -46,7 +46,7 @@ namespace storm {
                 
                 // The matrices with transitions from Markovian states need to be digitized.
                 // Digitize aMarkovian. Based on whether the transition is a self-loop or not, we apply the two digitization rules.
-                uint_fast64_t rowIndex = 0;
+                uint64_t rowIndex = 0;
                 for (auto state : markovianNonGoalStates) {
                     for (auto& element : aMarkovian.getRow(rowIndex)) {
                         ValueType eTerm = std::exp(-exitRates[state] * delta);
@@ -96,7 +96,7 @@ namespace storm {
                 //      and 1_G being the characteristic vector for all goal states.
                 // *    perform one timed-step using v_MS := A_MSwG * v_MS + A_MStoPS * v_PS + (A * 1_G)|MS
                 std::vector<ValueType> markovianNonGoalValuesSwap(markovianNonGoalValues);
-                for (uint_fast64_t currentStep = 0; currentStep < numberOfSteps; ++currentStep) {
+                for (uint64_t currentStep = 0; currentStep < numberOfSteps; ++currentStep) {
                     // Start by (re-)computing bProbabilistic = bProbabilisticFixed + aProbabilisticToMarkovian * vMarkovian.
                     aProbabilisticToMarkovian.multiplyWithVector(markovianNonGoalValues, bProbabilistic);
                     storm::utility::vector::addVectors(bProbabilistic, bProbabilisticFixed, bProbabilistic);
@@ -119,14 +119,14 @@ namespace storm {
             }
              
             template <typename ValueType, typename std::enable_if<!storm::NumberTraits<ValueType>::SupportsExponential, int>::type>
-            void SparseMarkovAutomatonCslHelper::computeBoundedReachabilityProbabilities(OptimizationDirection dir, storm::storage::SparseMatrix<ValueType> const& transitionMatrix, std::vector<ValueType> const& exitRates, storm::storage::BitVector const& goalStates, storm::storage::BitVector const& markovianNonGoalStates, storm::storage::BitVector const& probabilisticNonGoalStates, std::vector<ValueType>& markovianNonGoalValues, std::vector<ValueType>& probabilisticNonGoalValues, ValueType delta, uint_fast64_t numberOfSteps, storm::solver::MinMaxLinearEquationSolverFactory<ValueType> const& minMaxLinearEquationSolverFactory) {
+            void SparseMarkovAutomatonCslHelper::computeBoundedReachabilityProbabilities(OptimizationDirection dir, storm::storage::SparseMatrix<ValueType> const& transitionMatrix, std::vector<ValueType> const& exitRates, storm::storage::BitVector const& goalStates, storm::storage::BitVector const& markovianNonGoalStates, storm::storage::BitVector const& probabilisticNonGoalStates, std::vector<ValueType>& markovianNonGoalValues, std::vector<ValueType>& probabilisticNonGoalValues, ValueType delta, uint64_t numberOfSteps, storm::solver::MinMaxLinearEquationSolverFactory<ValueType> const& minMaxLinearEquationSolverFactory) {
                 STORM_LOG_THROW(false, storm::exceptions::InvalidOperationException, "Computing bounded reachability probabilities is unsupported for this value type.");
             }
                 
             template <typename ValueType, typename std::enable_if<storm::NumberTraits<ValueType>::SupportsExponential, int>::type>
             std::vector<ValueType> SparseMarkovAutomatonCslHelper::computeBoundedUntilProbabilities(OptimizationDirection dir, storm::storage::SparseMatrix<ValueType> const& transitionMatrix, std::vector<ValueType> const& exitRateVector, storm::storage::BitVector const& markovianStates, storm::storage::BitVector const& psiStates, std::pair<double, double> const& boundsPair, storm::solver::MinMaxLinearEquationSolverFactory<ValueType> const& minMaxLinearEquationSolverFactory) {
 
-                uint_fast64_t numberOfStates = transitionMatrix.getRowGroupCount();
+                uint64_t numberOfStates = transitionMatrix.getRowGroupCount();
                
                 // 'Unpack' the bounds to make them more easily accessible.
                 double lowerBound = boundsPair.first;
@@ -140,7 +140,7 @@ namespace storm {
                 ValueType delta = (2 * storm::settings::getModule<storm::settings::modules::GeneralSettings>().getPrecision()) / (upperBound * maxExitRate * maxExitRate);
                 
                 // (2) Compute the number of steps we need to make for the interval.
-                uint_fast64_t numberOfSteps = static_cast<uint_fast64_t>(std::ceil((upperBound - lowerBound) / delta));
+                uint64_t numberOfSteps = static_cast<uint64_t>(std::ceil((upperBound - lowerBound) / delta));
                 STORM_LOG_INFO("Performing " << numberOfSteps << " iterations (delta=" << delta << ") for interval [" << lowerBound << ", " << upperBound << "]." << std::endl);
                 
                 // (3) Compute the non-goal states and initialize two vectors
@@ -165,7 +165,7 @@ namespace storm {
                     storm::utility::vector::setVectorValues<ValueType>(vAllMarkovian, ~psiStates % markovianStates, vMarkovian);
                     
                     // Compute the number of steps to reach the target interval.
-                    numberOfSteps = static_cast<uint_fast64_t>(std::ceil(lowerBound / delta));
+                    numberOfSteps = static_cast<uint64_t>(std::ceil(lowerBound / delta));
                     STORM_LOG_INFO("Performing " << numberOfSteps << " iterations (delta=" << delta << ") for interval [0, " << lowerBound << "]." << std::endl);
                     
                     // Compute the bounded reachability for interval [0, b-a].
@@ -215,7 +215,7 @@ namespace storm {
             template<typename ValueType>
             std::vector<ValueType> SparseMarkovAutomatonCslHelper::computeLongRunAverageProbabilities(OptimizationDirection dir, storm::storage::SparseMatrix<ValueType> const& transitionMatrix, storm::storage::SparseMatrix<ValueType> const& backwardTransitions, std::vector<ValueType> const& exitRateVector, storm::storage::BitVector const& markovianStates, storm::storage::BitVector const& psiStates, storm::solver::MinMaxLinearEquationSolverFactory<ValueType> const& minMaxLinearEquationSolverFactory, bool useLpBasedTechnique) {
             
-                uint_fast64_t numberOfStates = transitionMatrix.getRowGroupCount();
+                uint64_t numberOfStates = transitionMatrix.getRowGroupCount();
 
                 // If there are no goal states, we avoid the computation and directly return zero.
                 if (psiStates.empty()) {
@@ -240,27 +240,27 @@ namespace storm {
             template<typename ValueType, typename RewardModelType>
             std::vector<ValueType> SparseMarkovAutomatonCslHelper::computeLongRunAverageRewards(OptimizationDirection dir, storm::storage::SparseMatrix<ValueType> const& transitionMatrix, storm::storage::SparseMatrix<ValueType> const& backwardTransitions, std::vector<ValueType> const& exitRateVector, storm::storage::BitVector const& markovianStates, RewardModelType const& rewardModel, storm::solver::MinMaxLinearEquationSolverFactory<ValueType> const& minMaxLinearEquationSolverFactory, bool useLpBasedTechnique) {
                 
-                uint_fast64_t numberOfStates = transitionMatrix.getRowGroupCount();
+                uint64_t numberOfStates = transitionMatrix.getRowGroupCount();
 
                 // Start by decomposing the Markov automaton into its MECs.
                 storm::storage::MaximalEndComponentDecomposition<ValueType> mecDecomposition(transitionMatrix, backwardTransitions);
                 
                 // Get some data members for convenience.
-                std::vector<uint_fast64_t> const& nondeterministicChoiceIndices = transitionMatrix.getRowGroupIndices();
+                std::vector<uint64_t> const& nondeterministicChoiceIndices = transitionMatrix.getRowGroupIndices();
                 
                 // Now start with compute the long-run average for all end components in isolation.
                 std::vector<ValueType> lraValuesForEndComponents;
                 
                 // While doing so, we already gather some information for the following steps.
-                std::vector<uint_fast64_t> stateToMecIndexMap(numberOfStates);
+                std::vector<uint64_t> stateToMecIndexMap(numberOfStates);
                 storm::storage::BitVector statesInMecs(numberOfStates);
                 
-                for (uint_fast64_t currentMecIndex = 0; currentMecIndex < mecDecomposition.size(); ++currentMecIndex) {
+                for (uint64_t currentMecIndex = 0; currentMecIndex < mecDecomposition.size(); ++currentMecIndex) {
                     storm::storage::MaximalEndComponent const& mec = mecDecomposition[currentMecIndex];
                     
                     // Gather information for later use.
                     for (auto const& stateChoicesPair : mec) {
-                        uint_fast64_t state = stateChoicesPair.first;
+                        uint64_t state = stateChoicesPair.first;
                         
                         statesInMecs.set(state);
                         stateToMecIndexMap[state] = currentMecIndex;
@@ -272,10 +272,10 @@ namespace storm {
                 
                 // For fast transition rewriting, we build some auxiliary data structures.
                 storm::storage::BitVector statesNotContainedInAnyMec = ~statesInMecs;
-                uint_fast64_t firstAuxiliaryStateIndex = statesNotContainedInAnyMec.getNumberOfSetBits();
-                uint_fast64_t lastStateNotInMecs = 0;
-                uint_fast64_t numberOfStatesNotInMecs = 0;
-                std::vector<uint_fast64_t> statesNotInMecsBeforeIndex;
+                uint64_t firstAuxiliaryStateIndex = statesNotContainedInAnyMec.getNumberOfSetBits();
+                uint64_t lastStateNotInMecs = 0;
+                uint64_t numberOfStatesNotInMecs = 0;
+                std::vector<uint64_t> statesNotInMecsBeforeIndex;
                 statesNotInMecsBeforeIndex.reserve(numberOfStates);
                 for (auto state : statesNotContainedInAnyMec) {
                     while (lastStateNotInMecs <= state) {
@@ -290,11 +290,11 @@ namespace storm {
                 typename storm::storage::SparseMatrixBuilder<ValueType> sspMatrixBuilder(0, 0, 0, false, true, numberOfStatesNotInMecs + mecDecomposition.size());
                 
                 // If the source state is not contained in any MEC, we copy its choices (and perform the necessary modifications).
-                uint_fast64_t currentChoice = 0;
+                uint64_t currentChoice = 0;
                 for (auto state : statesNotContainedInAnyMec) {
                     sspMatrixBuilder.newRowGroup(currentChoice);
                     
-                    for (uint_fast64_t choice = nondeterministicChoiceIndices[state]; choice < nondeterministicChoiceIndices[state + 1]; ++choice, ++currentChoice) {
+                    for (uint64_t choice = nondeterministicChoiceIndices[state]; choice < nondeterministicChoiceIndices[state + 1]; ++choice, ++currentChoice) {
                         std::vector<ValueType> auxiliaryStateToProbabilityMap(mecDecomposition.size());
                         b.push_back(storm::utility::zero<ValueType>());
                         
@@ -310,7 +310,7 @@ namespace storm {
                         }
                         
                         // Now insert all (cumulative) probability values that target an MEC.
-                        for (uint_fast64_t mecIndex = 0; mecIndex < auxiliaryStateToProbabilityMap.size(); ++mecIndex) {
+                        for (uint64_t mecIndex = 0; mecIndex < auxiliaryStateToProbabilityMap.size(); ++mecIndex) {
                             if (auxiliaryStateToProbabilityMap[mecIndex] != 0) {
                                 sspMatrixBuilder.addNextValue(currentChoice, firstAuxiliaryStateIndex + mecIndex, auxiliaryStateToProbabilityMap[mecIndex]);
                             }
@@ -319,15 +319,15 @@ namespace storm {
                 }
                 
                 // Now we are ready to construct the choices for the auxiliary states.
-                for (uint_fast64_t mecIndex = 0; mecIndex < mecDecomposition.size(); ++mecIndex) {
+                for (uint64_t mecIndex = 0; mecIndex < mecDecomposition.size(); ++mecIndex) {
                     storm::storage::MaximalEndComponent const& mec = mecDecomposition[mecIndex];
                     sspMatrixBuilder.newRowGroup(currentChoice);
                     
                     for (auto const& stateChoicesPair : mec) {
-                        uint_fast64_t state = stateChoicesPair.first;
-                        boost::container::flat_set<uint_fast64_t> const& choicesInMec = stateChoicesPair.second;
+                        uint64_t state = stateChoicesPair.first;
+                        boost::container::flat_set<uint64_t> const& choicesInMec = stateChoicesPair.second;
                         
-                        for (uint_fast64_t choice = nondeterministicChoiceIndices[state]; choice < nondeterministicChoiceIndices[state + 1]; ++choice) {
+                        for (uint64_t choice = nondeterministicChoiceIndices[state]; choice < nondeterministicChoiceIndices[state + 1]; ++choice) {
                             std::vector<ValueType> auxiliaryStateToProbabilityMap(mecDecomposition.size());
                             
                             // If the choice is not contained in the MEC itself, we have to add a similar distribution to the auxiliary state.
@@ -346,7 +346,7 @@ namespace storm {
                                 }
                                 
                                 // Now insert all (cumulative) probability values that target an MEC.
-                                for (uint_fast64_t targetMecIndex = 0; targetMecIndex < auxiliaryStateToProbabilityMap.size(); ++targetMecIndex) {
+                                for (uint64_t targetMecIndex = 0; targetMecIndex < auxiliaryStateToProbabilityMap.size(); ++targetMecIndex) {
                                     if (auxiliaryStateToProbabilityMap[targetMecIndex] != 0) {
                                         sspMatrixBuilder.addNextValue(currentChoice, firstAuxiliaryStateIndex + targetMecIndex, auxiliaryStateToProbabilityMap[targetMecIndex]);
                                     }
@@ -401,12 +401,12 @@ namespace storm {
                 
                 // If the mec only consists of a single state, we compute the LRA value directly
                 if (++mec.begin() == mec.end()) {
-                    uint_fast64_t state = mec.begin()->first;
+                    uint64_t state = mec.begin()->first;
                     STORM_LOG_THROW(markovianStates.get(state), storm::exceptions::InvalidOperationException, "Markov Automaton has Zeno behavior. Computation of Long Run Average values not supported.");
                     ValueType result = rewardModel.hasStateRewards() ? rewardModel.getStateReward(state) : storm::utility::zero<ValueType>();
                     if (rewardModel.hasStateActionRewards() || rewardModel.hasTransitionRewards()) {
                         STORM_LOG_ASSERT(mec.begin()->second.size() == 1, "Markovian state has nondeterministic behavior.");
-                        uint_fast64_t choice = *mec.begin()->second.begin();
+                        uint64_t choice = *mec.begin()->second.begin();
                         result += exitRateVector[state] * rewardModel.getTotalStateActionReward(state, choice, transitionMatrix, storm::utility::zero<ValueType>());
                     }
                     return result;
@@ -426,7 +426,7 @@ namespace storm {
                 solver->setOptimizationDirection(invert(dir));
                 
                 // First, we need to create the variables for the problem.
-                std::map<uint_fast64_t, storm::expressions::Variable> stateToVariableMap;
+                std::map<uint64_t, storm::expressions::Variable> stateToVariableMap;
                 for (auto const& stateChoicesPair : mec) {
                     std::string variableName = "x" + std::to_string(stateChoicesPair.first);
                     stateToVariableMap[stateChoicesPair.first] = solver->addUnboundedContinuousVariable(variableName);
@@ -435,14 +435,14 @@ namespace storm {
                 solver->update();
                 
                 // Now we encode the problem as constraints.
-                std::vector<uint_fast64_t> const& nondeterministicChoiceIndices = transitionMatrix.getRowGroupIndices();
+                std::vector<uint64_t> const& nondeterministicChoiceIndices = transitionMatrix.getRowGroupIndices();
                 for (auto const& stateChoicesPair : mec) {
-                    uint_fast64_t state = stateChoicesPair.first;
+                    uint64_t state = stateChoicesPair.first;
                     
                     // Now, based on the type of the state, create a suitable constraint.
                     if (markovianStates.get(state)) {
                         STORM_LOG_ASSERT(stateChoicesPair.second.size() == 1, "Markovian state " << state << " is not deterministic: It has " << stateChoicesPair.second.size() << " choices.");
-                        uint_fast64_t choice = *stateChoicesPair.second.begin();
+                        uint64_t choice = *stateChoicesPair.second.begin();
                         
                         storm::expressions::Expression constraint = stateToVariableMap.at(state);
                         
@@ -519,7 +519,7 @@ namespace storm {
                 typename storm::storage::SparseMatrix<ValueType> aProbabilistic = transitionMatrix.getSubmatrix(false, probabilisticMecChoices, probabilisticMecStates);
                 typename storm::storage::SparseMatrix<ValueType> aProbabilisticToMarkovian = transitionMatrix.getSubmatrix(false, probabilisticMecChoices, markovianMecStates);
                 // The matrices with transitions from Markovian states need to be uniformized.
-                uint_fast64_t subState = 0;
+                uint64_t subState = 0;
                 for (auto state : markovianMecStates) {
                     ValueType uniformizationFactor = exitRateVector[state] / uniformizationRate;
                     for (auto& entry : aMarkovianToProbabilistic.getRow(subState)) {
@@ -543,16 +543,16 @@ namespace storm {
                     ValueType stateRewardScalingFactor = storm::utility::one<ValueType>() / uniformizationRate;
                     ValueType actionRewardScalingFactor = exitRateVector[state] / uniformizationRate;
                     assert(transitionMatrix.getRowGroupSize(state) == 1);
-                    uint_fast64_t choice = transitionMatrix.getRowGroupIndices()[state];
+                    uint64_t choice = transitionMatrix.getRowGroupIndices()[state];
                     markovianChoiceRewards.push_back(rewardModel.getTotalStateActionReward(state, choice, transitionMatrix, stateRewardScalingFactor, actionRewardScalingFactor));
                 }
                 
                 std::vector<ValueType> probabilisticChoiceRewards;
                 probabilisticChoiceRewards.reserve(aProbabilistic.getRowCount());
                 for (auto const& state : probabilisticMecStates) {
-                    uint_fast64_t groupStart = transitionMatrix.getRowGroupIndices()[state];
-                    uint_fast64_t groupEnd = transitionMatrix.getRowGroupIndices()[state + 1];
-                    for (uint_fast64_t choice = probabilisticMecChoices.getNextSetIndex(groupStart); choice < groupEnd; choice = probabilisticMecChoices.getNextSetIndex(choice + 1)) {
+                    uint64_t groupStart = transitionMatrix.getRowGroupIndices()[state];
+                    uint64_t groupEnd = transitionMatrix.getRowGroupIndices()[state + 1];
+                    for (uint64_t choice = probabilisticMecChoices.getNextSetIndex(groupStart); choice < groupEnd; choice = probabilisticMecChoices.getNextSetIndex(choice + 1)) {
                         probabilisticChoiceRewards.push_back(rewardModel.getTotalStateActionReward(state, choice, transitionMatrix, storm::utility::zero<ValueType>()));
                     }
                 }
@@ -574,7 +574,7 @@ namespace storm {
                     
                     // now compute the values for the markovian states. We also keep track of the maximal and minimal difference between two values (for convergence checking)
                     auto vIt = v.begin();
-                    uint_fast64_t row = 0;
+                    uint64_t row = 0;
                     ValueType newValue = markovianChoiceRewards[row] + aMarkovianToProbabilistic.multiplyRowWithVector(row, x) + aMarkovian.multiplyRowWithVector(row, w);
                     ValueType maxDiff = newValue - *vIt;
                     ValueType minDiff = maxDiff;
@@ -615,7 +615,7 @@ namespace storm {
             
             template std::vector<double> SparseMarkovAutomatonCslHelper::computeReachabilityTimes(OptimizationDirection dir, storm::storage::SparseMatrix<double> const& transitionMatrix, storm::storage::SparseMatrix<double> const& backwardTransitions, std::vector<double> const& exitRateVector, storm::storage::BitVector const& markovianStates, storm::storage::BitVector const& psiStates, storm::solver::MinMaxLinearEquationSolverFactory<double> const& minMaxLinearEquationSolverFactory);
                 
-            template void SparseMarkovAutomatonCslHelper::computeBoundedReachabilityProbabilities(OptimizationDirection dir, storm::storage::SparseMatrix<double> const& transitionMatrix, std::vector<double> const& exitRates, storm::storage::BitVector const& goalStates, storm::storage::BitVector const& markovianNonGoalStates, storm::storage::BitVector const& probabilisticNonGoalStates, std::vector<double>& markovianNonGoalValues, std::vector<double>& probabilisticNonGoalValues, double delta, uint_fast64_t numberOfSteps, storm::solver::MinMaxLinearEquationSolverFactory<double> const& minMaxLinearEquationSolverFactory);
+            template void SparseMarkovAutomatonCslHelper::computeBoundedReachabilityProbabilities(OptimizationDirection dir, storm::storage::SparseMatrix<double> const& transitionMatrix, std::vector<double> const& exitRates, storm::storage::BitVector const& goalStates, storm::storage::BitVector const& markovianNonGoalStates, storm::storage::BitVector const& probabilisticNonGoalStates, std::vector<double>& markovianNonGoalValues, std::vector<double>& probabilisticNonGoalValues, double delta, uint64_t numberOfSteps, storm::solver::MinMaxLinearEquationSolverFactory<double> const& minMaxLinearEquationSolverFactory);
                 
             template double SparseMarkovAutomatonCslHelper::computeLraForMaximalEndComponent(OptimizationDirection dir, storm::storage::SparseMatrix<double> const& transitionMatrix, std::vector<double> const& exitRateVector, storm::storage::BitVector const& markovianStates, storm::models::sparse::StandardRewardModel<double> const& rewardModel, storm::storage::MaximalEndComponent const& mec, storm::solver::MinMaxLinearEquationSolverFactory<double> const& minMaxLinearEquationSolverFactory, bool useLpBasedTechnique);
                 
@@ -635,7 +635,7 @@ namespace storm {
             
             template std::vector<storm::RationalNumber> SparseMarkovAutomatonCslHelper::computeReachabilityTimes(OptimizationDirection dir, storm::storage::SparseMatrix<storm::RationalNumber> const& transitionMatrix, storm::storage::SparseMatrix<storm::RationalNumber> const& backwardTransitions, std::vector<storm::RationalNumber> const& exitRateVector, storm::storage::BitVector const& markovianStates, storm::storage::BitVector const& psiStates, storm::solver::MinMaxLinearEquationSolverFactory<storm::RationalNumber> const& minMaxLinearEquationSolverFactory);
                 
-            template void SparseMarkovAutomatonCslHelper::computeBoundedReachabilityProbabilities(OptimizationDirection dir, storm::storage::SparseMatrix<storm::RationalNumber> const& transitionMatrix, std::vector<storm::RationalNumber> const& exitRates, storm::storage::BitVector const& goalStates, storm::storage::BitVector const& markovianNonGoalStates, storm::storage::BitVector const& probabilisticNonGoalStates, std::vector<storm::RationalNumber>& markovianNonGoalValues, std::vector<storm::RationalNumber>& probabilisticNonGoalValues, storm::RationalNumber delta, uint_fast64_t numberOfSteps, storm::solver::MinMaxLinearEquationSolverFactory<storm::RationalNumber> const& minMaxLinearEquationSolverFactory);
+            template void SparseMarkovAutomatonCslHelper::computeBoundedReachabilityProbabilities(OptimizationDirection dir, storm::storage::SparseMatrix<storm::RationalNumber> const& transitionMatrix, std::vector<storm::RationalNumber> const& exitRates, storm::storage::BitVector const& goalStates, storm::storage::BitVector const& markovianNonGoalStates, storm::storage::BitVector const& probabilisticNonGoalStates, std::vector<storm::RationalNumber>& markovianNonGoalValues, std::vector<storm::RationalNumber>& probabilisticNonGoalValues, storm::RationalNumber delta, uint64_t numberOfSteps, storm::solver::MinMaxLinearEquationSolverFactory<storm::RationalNumber> const& minMaxLinearEquationSolverFactory);
                 
             template storm::RationalNumber SparseMarkovAutomatonCslHelper::computeLraForMaximalEndComponent(OptimizationDirection dir, storm::storage::SparseMatrix<storm::RationalNumber> const& transitionMatrix, std::vector<storm::RationalNumber> const& exitRateVector, storm::storage::BitVector const& markovianStates, storm::models::sparse::StandardRewardModel<storm::RationalNumber> const& rewardModel, storm::storage::MaximalEndComponent const& mec, storm::solver::MinMaxLinearEquationSolverFactory<storm::RationalNumber> const& minMaxLinearEquationSolverFactory, bool useLpBasedTechnique);
             
