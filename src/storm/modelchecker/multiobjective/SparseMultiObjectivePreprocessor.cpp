@@ -266,7 +266,7 @@ namespace storm {
             
             template<typename SparseModelType>
             void SparseMultiObjectivePreprocessor<SparseModelType>::preprocessBoundedUntilFormula(storm::logic::BoundedUntilFormula const& formula, PreprocessorData& data) {
-                STORM_LOG_THROW(!data.originalModel.isOfType(storm::models::ModelType::MarkovAutomaton) || !formula.isStepBounded(), storm::exceptions::InvalidPropertyException, "Multi-objective model checking currently does not support STEP-bounded properties for Markov automata.");
+                STORM_LOG_THROW(!data.originalModel.isOfType(storm::models::ModelType::MarkovAutomaton) || !formula.getTimeBoundReference().isStepBound(), storm::exceptions::InvalidPropertyException, "Multi-objective model checking currently does not support STEP-bounded properties for Markov automata.");
                 
                 if (formula.hasLowerBound()) {
                     STORM_LOG_THROW(!formula.getLowerBound().containsVariables(), storm::exceptions::InvalidPropertyException, "The lower time bound for the formula " << formula << " still contains variables");

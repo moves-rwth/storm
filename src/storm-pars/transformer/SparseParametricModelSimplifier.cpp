@@ -78,21 +78,21 @@ namespace storm {
         template<typename SparseModelType>
         bool SparseParametricModelSimplifier<SparseModelType>::simplifyForBoundedUntilProbabilities(storm::logic::ProbabilityOperatorFormula const& formula) {
             // If this method was not overriden by any subclass, simplification is not possible
-            STORM_LOG_DEBUG("Simplification not possible because the formula is not suppoerted. Formula: " << formula);
+            STORM_LOG_DEBUG("Simplification not possible because the formula is not supported. Formula: " << formula);
             return false;
         }
         
         template<typename SparseModelType>
         bool SparseParametricModelSimplifier<SparseModelType>::simplifyForReachabilityRewards(storm::logic::RewardOperatorFormula const& formula) {
             // If this method was not overriden by any subclass, simplification is not possible
-            STORM_LOG_DEBUG("Simplification not possible because the formula is not suppoerted. Formula: " << formula);
+            STORM_LOG_DEBUG("Simplification not possible because the formula is not supported. Formula: " << formula);
             return false;
         }
         
         template<typename SparseModelType>
         bool SparseParametricModelSimplifier<SparseModelType>::simplifyForCumulativeRewards(storm::logic::RewardOperatorFormula const& formula) {
             // If this method was not overriden by any subclass, simplification is not possible
-            STORM_LOG_DEBUG("Simplification not possible because the formula is not suppoerted. Formula: " << formula);
+            STORM_LOG_DEBUG("Simplification not possible because the formula is not supported. Formula: " << formula);
             return false;
         }
         

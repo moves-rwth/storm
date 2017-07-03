@@ -135,7 +135,7 @@ namespace storm {
             
             // obtain the simplified formula for the simplified model
             auto labelFormula = std::make_shared<storm::logic::AtomicLabelFormula const> (targetLabel);
-            auto boundedUntilFormula = std::make_shared<storm::logic::BoundedUntilFormula const>(storm::logic::Formula::getTrueFormula(), labelFormula, boost::none, storm::logic::TimeBound(formula.getSubformula().asBoundedUntilFormula().isUpperBoundStrict(), formula.getSubformula().asBoundedUntilFormula().getUpperBound()), storm::logic::TimeBoundType::Steps);
+            auto boundedUntilFormula = std::make_shared<storm::logic::BoundedUntilFormula const>(storm::logic::Formula::getTrueFormula(), labelFormula, boost::none, storm::logic::TimeBound(formula.getSubformula().asBoundedUntilFormula().isUpperBoundStrict(), formula.getSubformula().asBoundedUntilFormula().getUpperBound()), storm::logic::TimeBoundReference(storm::logic::TimeBoundType::Steps));
             this->simplifiedFormula = std::make_shared<storm::logic::ProbabilityOperatorFormula const>(boundedUntilFormula, formula.getOperatorInformation());
             
             return true;

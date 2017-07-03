@@ -10,7 +10,7 @@
 
 namespace storm {
     namespace logic {
-        BoundedUntilFormula::BoundedUntilFormula(std::shared_ptr<Formula const> const& leftSubformula, std::shared_ptr<Formula const> const& rightSubformula, boost::optional<TimeBound> const& lowerBound, boost::optional<TimeBound> const& upperBound, TimeBoundType const& timeBoundType) : BinaryPathFormula(leftSubformula, rightSubformula), timeBoundType(timeBoundType), lowerBound(lowerBound), upperBound(upperBound) {
+        BoundedUntilFormula::BoundedUntilFormula(std::shared_ptr<Formula const> const& leftSubformula, std::shared_ptr<Formula const> const& rightSubformula, boost::optional<TimeBound> const& lowerBound, boost::optional<TimeBound> const& upperBound, TimeBoundReference const& timeBoundReference) : BinaryPathFormula(leftSubformula, rightSubformula), timeBoundReference(timeBoundReference), lowerBound(lowerBound), upperBound(upperBound) {
             STORM_LOG_THROW(lowerBound || upperBound, storm::exceptions::InvalidArgumentException, "Bounded until formula requires at least one bound.");
         }
         
@@ -26,17 +26,11 @@ namespace storm {
             return visitor.visit(*this, data);
         }
         
-        TimeBoundType const& BoundedUntilFormula::getTimeBoundType() const {
-            return timeBoundType;
+        TimeBoundReference const& BoundedUntilFormula::getTimeBoundReference() const {
+            return timeBoundReference;
         }
         
-        bool BoundedUntilFormula::isStepBounded() const {
-            return timeBoundType == TimeBoundType::Steps;
-        }
-        
-        bool BoundedUntilFormula::isTimeBounded() const {
-            return timeBoundType == TimeBoundType::Time;
-        }
+
         
         bool BoundedUntilFormula::isLowerBoundStrict() const {
             return lowerBound.get().isStrict();

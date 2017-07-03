@@ -12,7 +12,7 @@ namespace storm {
     namespace logic {
         class BoundedUntilFormula : public BinaryPathFormula {
         public:
-            BoundedUntilFormula(std::shared_ptr<Formula const> const& leftSubformula, std::shared_ptr<Formula const> const& rightSubformula, boost::optional<TimeBound> const& lowerBound, boost::optional<TimeBound> const& upperBound, TimeBoundType const& timeBoundType = TimeBoundType::Time);
+            BoundedUntilFormula(std::shared_ptr<Formula const> const& leftSubformula, std::shared_ptr<Formula const> const& rightSubformula, boost::optional<TimeBound> const& lowerBound, boost::optional<TimeBound> const& upperBound, TimeBoundReference const& timeBoundReference);
             
             virtual bool isBoundedUntilFormula() const override;
 
@@ -20,9 +20,8 @@ namespace storm {
             
             virtual boost::any accept(FormulaVisitor const& visitor, boost::any const& data) const override;
             
-            TimeBoundType const& getTimeBoundType() const;
-            bool isStepBounded() const;
-            bool isTimeBounded() const;
+            TimeBoundReference const& getTimeBoundReference() const;
+
             
             bool isLowerBoundStrict() const;
             bool hasLowerBound() const;
@@ -49,7 +48,7 @@ namespace storm {
         private:
             static void checkNoVariablesInBound(storm::expressions::Expression const& bound);
             
-            TimeBoundType timeBoundType;
+            TimeBoundReference timeBoundReference;
             boost::optional<TimeBound> lowerBound;
             boost::optional<TimeBound> upperBound;
         };
