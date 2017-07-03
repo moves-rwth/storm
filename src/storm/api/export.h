@@ -32,7 +32,7 @@ namespace storm {
             std::set<storm::RationalFunctionVariable> vars = result.gatherVariables();
             std::copy(vars.begin(), vars.end(), std::ostream_iterator<storm::RationalFunctionVariable>(filestream, "; "));
             filestream << std::endl;
-            filestream << "!Result: " << result << std::endl;
+            filestream << "!Result: " << result.toString(false, true) << std::endl;
             filestream << "!Well-formed Constraints: " << std::endl;
             std::vector<std::string> stringConstraints;
             std::transform(constraintCollector.getWellformedConstraints().begin(), constraintCollector.getWellformedConstraints().end(), std::back_inserter(stringConstraints), [](carl::Formula<typename storm::Polynomial::PolyType> const& c) ->  std::string { return c.toString();});
