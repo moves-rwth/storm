@@ -615,9 +615,11 @@ namespace storm {
         }
 
         template<typename ValueType>
-        void printInitialStatesResult(std::unique_ptr<storm::modelchecker::CheckResult> const& result, storm::jani::Property const& property, storm::utility::Stopwatch* watch = nullptr) {
+        void printResult(std::unique_ptr<storm::modelchecker::CheckResult> const& result, storm::jani::Property const& property, storm::utility::Stopwatch* watch = nullptr) {
             if (result) {
-                STORM_PRINT_AND_LOG("Result (initial states): ");
+                std::stringstream ss;
+                ss << "'" << *property.getFilter().getStatesFormula() << "'";
+                STORM_PRINT_AND_LOG("Result (for " << (property.getFilter().getStatesFormula()->isInitialFormula() ? "initial" : ss.str()) << " states): ");
                 printFilteredResult<ValueType>(result, property.getFilter().getFilterType());
                 if (watch) {
                     STORM_PRINT_AND_LOG("Time for model checking: " << *watch << "." << std::endl);
@@ -640,8 +642,8 @@ namespace storm {
                 storm::utility::Stopwatch watch(true);
                 std::unique_ptr<storm::modelchecker::CheckResult> result = verificationCallback(property.getRawFormula(), property.getFilter().getStatesFormula());
                 watch.stop();
-                printInitialStatesResult<ValueType>(result, property, &watch);
                 postprocessingCallback(result);
+                printResult<ValueType>(result, property, &watch);
             }
         }
         
