@@ -175,6 +175,10 @@ namespace storm {
             return std::shared_ptr<Formula const>(new BooleanLiteralFormula(true));
         }
         
+        bool Formula::isInitialFormula() const {
+            return this->isAtomicLabelFormula() && this->asAtomicLabelFormula().getLabel() == "init";
+        }
+        
         PathFormula& Formula::asPathFormula() {
             return dynamic_cast<PathFormula&>(*this);
         }

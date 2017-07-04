@@ -113,6 +113,15 @@ namespace storm {
             return dynamic_cast<QualitativeCheckResult const&>(*this);
         }
 
+        template<typename ValueType>
+        QuantitativeCheckResult<ValueType>& CheckResult::asQuantitativeCheckResult() {
+            return static_cast<QuantitativeCheckResult<ValueType> &>(*this);
+        }
+        
+        template<typename ValueType>
+        QuantitativeCheckResult<ValueType> const& CheckResult::asQuantitativeCheckResult() const {
+            return static_cast<QuantitativeCheckResult<ValueType> const&>(*this);
+        }
 
         template <storm::dd::DdType Type>
         SymbolicQualitativeCheckResult<Type>& CheckResult::asSymbolicQualitativeCheckResult() {
@@ -155,6 +164,9 @@ namespace storm {
         }
         
         // Explicitly instantiate the template functions.
+        template QuantitativeCheckResult<double>& CheckResult::asQuantitativeCheckResult();
+        template QuantitativeCheckResult<double> const& CheckResult::asQuantitativeCheckResult() const;
+        
         template ExplicitQuantitativeCheckResult<double>& CheckResult::asExplicitQuantitativeCheckResult();
         template ExplicitQuantitativeCheckResult<double> const& CheckResult::asExplicitQuantitativeCheckResult() const;
         template ExplicitParetoCurveCheckResult<double>& CheckResult::asExplicitParetoCurveCheckResult();
@@ -184,8 +196,14 @@ namespace storm {
 
 
 #ifdef STORM_HAVE_CARL
+        template QuantitativeCheckResult<storm::RationalNumber>& CheckResult::asQuantitativeCheckResult();
+        template QuantitativeCheckResult<storm::RationalNumber> const& CheckResult::asQuantitativeCheckResult() const;
+        
         template ExplicitQuantitativeCheckResult<storm::RationalNumber>& CheckResult::asExplicitQuantitativeCheckResult();
         template ExplicitQuantitativeCheckResult<storm::RationalNumber> const& CheckResult::asExplicitQuantitativeCheckResult() const;
+
+        template QuantitativeCheckResult<storm::RationalFunction>& CheckResult::asQuantitativeCheckResult();
+        template QuantitativeCheckResult<storm::RationalFunction> const& CheckResult::asQuantitativeCheckResult() const;
 
         template ExplicitQuantitativeCheckResult<storm::RationalFunction>& CheckResult::asExplicitQuantitativeCheckResult();
         template ExplicitQuantitativeCheckResult<storm::RationalFunction> const& CheckResult::asExplicitQuantitativeCheckResult() const;

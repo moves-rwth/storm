@@ -352,15 +352,27 @@ namespace storm {
             return input;
         }
         
+        std::vector<std::shared_ptr<storm::logic::Formula const>> createFormulasToRespect(std::vector<storm::jani::Property> const& properties) {
+            std::vector<std::shared_ptr<storm::logic::Formula const>> result = storm::api::extractFormulasFromProperties(properties);
+            
+            for (auto const& property : properties) {
+                if (!property.getFilter().getStatesFormula()->isInitialFormula()) {
+                    result.push_back(property.getFilter().getStatesFormula());
+                }
+            }
+
+            return result;
+        }
+        
         template <storm::dd::DdType DdType, typename ValueType>
         std::shared_ptr<storm::models::ModelBase> buildModelDd(SymbolicInput const& input) {
-            return storm::api::buildSymbolicModel<DdType, ValueType>(input.model.get(), storm::api::extractFormulasFromProperties(input.properties));
+            return storm::api::buildSymbolicModel<DdType, ValueType>(input.model.get(), createFormulasToRespect(input.properties));
         }
 
         template <typename ValueType>
         std::shared_ptr<storm::models::ModelBase> buildModelSparse(SymbolicInput const& input, storm::settings::modules::IOSettings const& ioSettings) {
             auto counterexampleGeneratorSettings = storm::settings::getModule<storm::settings::modules::CounterexampleGeneratorSettings>();
-            return storm::api::buildSparseModel<ValueType>(input.model.get(), storm::api::extractFormulasFromProperties(input.properties), ioSettings.isBuildChoiceLabelsSet(), counterexampleGeneratorSettings.isMinimalCommandSetGenerationSet());
+            return storm::api::buildSparseModel<ValueType>(input.model.get(), createFormulasToRespect(input.properties), ioSettings.isBuildChoiceLabelsSet(), counterexampleGeneratorSettings.isMinimalCommandSetGenerationSet());
         }
 
         template <typename ValueType>
@@ -416,7 +428,7 @@ namespace storm {
             }
             
             STORM_LOG_INFO("Performing bisimulation minimization...");
-            return storm::api::performBisimulationMinimization<ValueType>(model, storm::api::extractFormulasFromProperties(input.properties), bisimType);
+            return storm::api::performBisimulationMinimization<ValueType>(model, createFormulasToRespect(input.properties), bisimType);
         }
         
         template <typename ValueType>
@@ -602,9 +614,11 @@ namespace storm {
         }
 
         template<typename ValueType>
-        void printInitialStatesResult(std::unique_ptr<storm::modelchecker::CheckResult> const& result, storm::jani::Property const& property, storm::utility::Stopwatch* watch = nullptr) {
+        void printResult(std::unique_ptr<storm::modelchecker::CheckResult> const& result, storm::jani::Property const& property, storm::utility::Stopwatch* watch = nullptr) {
             if (result) {
-                STORM_PRINT_AND_LOG("Result (initial states): ");
+                std::stringstream ss;
+                ss << "'" << *property.getFilter().getStatesFormula() << "'";
+                STORM_PRINT_AND_LOG("Result (for " << (property.getFilter().getStatesFormula()->isInitialFormula() ? "initial" : ss.str()) << " states): ");
                 printFilteredResult<ValueType>(result, property.getFilter().getFilterType());
                 if (watch) {
                     STORM_PRINT_AND_LOG("Time for model checking: " << *watch << "." << std::endl);
@@ -621,21 +635,22 @@ namespace storm {
         };
         
         template<typename ValueType>
-        void verifyProperties(std::vector<storm::jani::Property> const& properties, std::function<std::unique_ptr<storm::modelchecker::CheckResult>(std::shared_ptr<storm::logic::Formula const> const& formula)> const& verificationCallback, std::function<void(std::unique_ptr<storm::modelchecker::CheckResult> const&)> const& postprocessingCallback = PostprocessingIdentity()) {
+        void verifyProperties(std::vector<storm::jani::Property> const& properties, std::function<std::unique_ptr<storm::modelchecker::CheckResult>(std::shared_ptr<storm::logic::Formula const> const& formula, std::shared_ptr<storm::logic::Formula const> const& states)> const& verificationCallback, std::function<void(std::unique_ptr<storm::modelchecker::CheckResult> const&)> const& postprocessingCallback = PostprocessingIdentity()) {
             for (auto const& property : properties) {
                 printModelCheckingProperty(property);
                 storm::utility::Stopwatch watch(true);
-                std::unique_ptr<storm::modelchecker::CheckResult> result = verificationCallback(property.getRawFormula());
+                std::unique_ptr<storm::modelchecker::CheckResult> result = verificationCallback(property.getRawFormula(), property.getFilter().getStatesFormula());
                 watch.stop();
-                printInitialStatesResult<ValueType>(result, property, &watch);
                 postprocessingCallback(result);
+                printResult<ValueType>(result, property, &watch);
             }
         }
         
         template <storm::dd::DdType DdType, typename ValueType>
         void verifyWithAbstractionRefinementEngine(SymbolicInput const& input) {
             STORM_LOG_ASSERT(input.model, "Expected symbolic model description.");
-            verifyProperties<ValueType>(input.properties, [&input] (std::shared_ptr<storm::logic::Formula const> const& formula) {
+            verifyProperties<ValueType>(input.properties, [&input] (std::shared_ptr<storm::logic::Formula const> const& formula, std::shared_ptr<storm::logic::Formula const> const& states) {
+                STORM_LOG_THROW(states->isInitialFormula(), storm::exceptions::NotSupportedException, "Abstraction-refinement can only filter initial states.");
                 return storm::api::verifyWithAbstractionRefinementEngine<DdType, ValueType>(input.model.get(), storm::api::createTask<ValueType>(formula, true));
             });
         }
@@ -644,7 +659,8 @@ namespace storm {
         void verifyWithExplorationEngine(SymbolicInput const& input) {
             STORM_LOG_ASSERT(input.model, "Expected symbolic model description.");
             STORM_LOG_THROW((std::is_same<ValueType, double>::value), storm::exceptions::NotSupportedException, "Exploration does not support other data-types than floating points.");
-            verifyProperties<ValueType>(input.properties, [&input] (std::shared_ptr<storm::logic::Formula const> const& formula) {
+            verifyProperties<ValueType>(input.properties, [&input] (std::shared_ptr<storm::logic::Formula const> const& formula, std::shared_ptr<storm::logic::Formula const> const& states) {
+                STORM_LOG_THROW(states->isInitialFormula(), storm::exceptions::NotSupportedException, "Exploration can only filter initial states.");
                 return storm::api::verifyWithExplorationEngine<ValueType>(input.model.get(), storm::api::createTask<ValueType>(formula, true));
             });
         }
@@ -653,35 +669,60 @@ namespace storm {
         void verifyWithSparseEngine(std::shared_ptr<storm::models::ModelBase> const& model, SymbolicInput const& input) {
             auto sparseModel = model->as<storm::models::sparse::Model<ValueType>>();
             verifyProperties<ValueType>(input.properties,
-                                        [&sparseModel] (std::shared_ptr<storm::logic::Formula const> const& formula) {
-                                            std::unique_ptr<storm::modelchecker::CheckResult> result = storm::api::verifyWithSparseEngine<ValueType>(sparseModel, storm::api::createTask<ValueType>(formula, true));
-                                            if (result) {
-                                                result->filter(storm::modelchecker::ExplicitQualitativeCheckResult(sparseModel->getInitialStates()));
+                                        [&sparseModel] (std::shared_ptr<storm::logic::Formula const> const& formula, std::shared_ptr<storm::logic::Formula const> const& states) {
+                                            bool filterForInitialStates = states->isInitialFormula();
+                                            auto task = storm::api::createTask<ValueType>(formula, filterForInitialStates);
+                                            std::unique_ptr<storm::modelchecker::CheckResult> result = storm::api::verifyWithSparseEngine<ValueType>(sparseModel, task);
+                                            
+                                            std::unique_ptr<storm::modelchecker::CheckResult> filter;
+                                            if (filterForInitialStates) {
+                                                filter = std::make_unique<storm::modelchecker::ExplicitQualitativeCheckResult>(sparseModel->getInitialStates());
+                                            } else {
+                                                filter = storm::api::verifyWithSparseEngine<ValueType>(sparseModel, storm::api::createTask<ValueType>(states, false));
                                             }
+                                            result->filter(filter->asQualitativeCheckResult());
                                             return result;
                                         });
         }
 
         template <storm::dd::DdType DdType, typename ValueType>
         void verifyWithHybridEngine(std::shared_ptr<storm::models::ModelBase> const& model, SymbolicInput const& input) {
-            verifyProperties<ValueType>(input.properties, [&model] (std::shared_ptr<storm::logic::Formula const> const& formula) {
+            verifyProperties<ValueType>(input.properties, [&model] (std::shared_ptr<storm::logic::Formula const> const& formula, std::shared_ptr<storm::logic::Formula const> const& states) {
+                bool filterForInitialStates = states->isInitialFormula();
+                auto task = storm::api::createTask<ValueType>(formula, filterForInitialStates);
+                
                 auto symbolicModel = model->as<storm::models::symbolic::Model<DdType, ValueType>>();
-                std::unique_ptr<storm::modelchecker::CheckResult> result = storm::api::verifyWithHybridEngine<DdType, ValueType>(symbolicModel, storm::api::createTask<ValueType>(formula, true));
-                if (result) {
-                    result->filter(storm::modelchecker::SymbolicQualitativeCheckResult<DdType>(symbolicModel->getReachableStates(), symbolicModel->getInitialStates()));
+                std::unique_ptr<storm::modelchecker::CheckResult> result = storm::api::verifyWithHybridEngine<DdType, ValueType>(symbolicModel, task);
+                
+                std::unique_ptr<storm::modelchecker::CheckResult> filter;
+                if (filterForInitialStates) {
+                    filter = std::make_unique<storm::modelchecker::SymbolicQualitativeCheckResult<DdType>>(symbolicModel->getReachableStates(), symbolicModel->getInitialStates());
+                } else {
+                    filter = storm::api::verifyWithHybridEngine<DdType, ValueType>(symbolicModel, storm::api::createTask<ValueType>(states, false));
                 }
+                
+                result->filter(filter->asQualitativeCheckResult());
                 return result;
             });
         }
 
         template <storm::dd::DdType DdType, typename ValueType>
         void verifyWithDdEngine(std::shared_ptr<storm::models::ModelBase> const& model, SymbolicInput const& input) {
-            verifyProperties<ValueType>(input.properties, [&model] (std::shared_ptr<storm::logic::Formula const> const& formula) {
+            verifyProperties<ValueType>(input.properties, [&model] (std::shared_ptr<storm::logic::Formula const> const& formula, std::shared_ptr<storm::logic::Formula const> const& states) {
+                bool filterForInitialStates = states->isInitialFormula();
+                auto task = storm::api::createTask<ValueType>(formula, filterForInitialStates);
+
                 auto symbolicModel = model->as<storm::models::symbolic::Model<DdType, ValueType>>();
                 std::unique_ptr<storm::modelchecker::CheckResult> result = storm::api::verifyWithDdEngine<DdType, ValueType>(model->as<storm::models::symbolic::Model<DdType, ValueType>>(), storm::api::createTask<ValueType>(formula, true));
-                if (result) {
-                    result->filter(storm::modelchecker::SymbolicQualitativeCheckResult<DdType>(symbolicModel->getReachableStates(), symbolicModel->getInitialStates()));
+
+                std::unique_ptr<storm::modelchecker::CheckResult> filter;
+                if (filterForInitialStates) {
+                    filter = std::make_unique<storm::modelchecker::SymbolicQualitativeCheckResult<DdType>>(symbolicModel->getReachableStates(), symbolicModel->getInitialStates());
+                } else {
+                    filter = storm::api::verifyWithDdEngine<DdType, ValueType>(symbolicModel, storm::api::createTask<ValueType>(states, false));
                 }
+                
+                result->filter(filter->asQualitativeCheckResult());
                 return result;
             });
         }

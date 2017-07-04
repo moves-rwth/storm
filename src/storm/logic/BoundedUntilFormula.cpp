@@ -1,5 +1,6 @@
 #include "storm/logic/BoundedUntilFormula.h"
 
+#include "storm/utility/constants.h"
 #include "storm/utility/macros.h"
 #include "storm/exceptions/InvalidArgumentException.h"
 
@@ -77,6 +78,22 @@ namespace storm {
             checkNoVariablesInBound(this->getUpperBound());
             double bound = this->getUpperBound().evaluateAsDouble();
             STORM_LOG_THROW(bound >= 0, storm::exceptions::InvalidPropertyException, "Time-bound must not evaluate to negative number.");
+            return bound;
+        }
+        
+        template <>
+        storm::RationalNumber BoundedUntilFormula::getLowerBound() const {
+            checkNoVariablesInBound(this->getLowerBound());
+            storm::RationalNumber bound = this->getLowerBound().evaluateAsRational();
+            STORM_LOG_THROW(bound >= storm::utility::zero<storm::RationalNumber>(), storm::exceptions::InvalidPropertyException, "Time-bound must not evaluate to negative number.");
+            return bound;
+        }
+        
+        template <>
+        storm::RationalNumber BoundedUntilFormula::getUpperBound() const {
+            checkNoVariablesInBound(this->getUpperBound());
+            storm::RationalNumber bound = this->getLowerBound().evaluateAsRational();
+            STORM_LOG_THROW(bound >= storm::utility::zero<storm::RationalNumber>(), storm::exceptions::InvalidPropertyException, "Time-bound must not evaluate to negative number.");
             return bound;
         }
         

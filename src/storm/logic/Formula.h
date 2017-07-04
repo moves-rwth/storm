@@ -93,10 +93,12 @@ namespace storm {
             
             bool isInFragment(FragmentSpecification const& fragment) const;
             FormulaInformation info() const;
-            
+
             virtual boost::any accept(FormulaVisitor const& visitor, boost::any const& data = boost::any()) const = 0;
             
             static std::shared_ptr<Formula const> getTrueFormula();
+
+            bool isInitialFormula() const;
             
             PathFormula& asPathFormula();
             PathFormula const& asPathFormula() const;
