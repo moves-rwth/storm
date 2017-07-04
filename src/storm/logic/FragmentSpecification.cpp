@@ -141,6 +141,7 @@ namespace storm {
             onlyEventuallyFormuluasInConditionalFormulas = true;
             stepBoundedUntilFormulas = false;
             timeBoundedUntilFormulas = false;
+            rewardBoundedUntilFormulas = false;
             varianceAsMeasureType = false;
             
             qualitativeOperatorResults = true;
@@ -423,7 +424,16 @@ namespace storm {
             this->timeBoundedUntilFormulas = newValue;
             return *this;
         }
-        
+
+        bool FragmentSpecification::areRewardBoundedUntilFormulasAllowed() const {
+            return this->rewardBoundedUntilFormulas;
+        }
+
+        FragmentSpecification& FragmentSpecification::setRewardBoundedUntilFormulasAllowed(bool newValue) {
+            this->rewardBoundedUntilFormulas = newValue;
+            return *this;
+        }
+
         FragmentSpecification& FragmentSpecification::setOperatorsAllowed(bool newValue) {
             this->setProbabilityOperatorsAllowed(newValue);
             this->setRewardOperatorsAllowed(newValue);

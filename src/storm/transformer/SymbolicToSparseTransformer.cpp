@@ -12,22 +12,6 @@ namespace storm {
     namespace transformer {
 
         template<storm::dd::DdType Type, typename ValueType>
-        std::shared_ptr<storm::models::sparse::Model<ValueType>> transformSymbolicToSparseModel(std::shared_ptr<storm::models::symbolic::Model<Type, ValueType>> const& symbolicModel) {
-            switch (symbolicModel->getType()) {
-                case storm::models::ModelType::Dtmc:
-                    return SymbolicDtmcToSparseDtmcTransformer<Type, ValueType>().translate(*symbolicModel->template as<storm::models::symbolic::Dtmc<Type, ValueType>>());
-                case storm::models::ModelType::Mdp:
-                    return SymbolicMdpToSparseMdpTransformer<Type, ValueType>::translate(*symbolicModel->template as<storm::models::symbolic::Mdp<Type, ValueType>>());
-                case storm::models::ModelType::Ctmc:
-                    return SymbolicCtmcToSparseCtmcTransformer<Type, ValueType>::translate(*symbolicModel->template as<storm::models::symbolic::Ctmc<Type, ValueType>>());
-                default:
-                    STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "Transformation of symbolic " << symbolicModel->getType() << " to sparse model is not implemented.");
-            }
-            return nullptr;
-        }
-        
-
-        template<storm::dd::DdType Type, typename ValueType>
         std::shared_ptr<storm::models::sparse::Dtmc<ValueType>> SymbolicDtmcToSparseDtmcTransformer<Type, ValueType>::translate(storm::models::symbolic::Dtmc<Type, ValueType> const& symbolicDtmc) {
             this->odd = symbolicDtmc.getReachableStates().createOdd();
             storm::storage::SparseMatrix<ValueType> transitionMatrix = symbolicDtmc.getTransitionMatrix().toMatrix(this->odd, this->odd);
@@ -121,11 +105,6 @@ namespace storm {
             return std::make_shared<storm::models::sparse::Ctmc<ValueType>>(transitionMatrix, labelling, rewardModels);
         }
 
-        template std::shared_ptr<storm::models::sparse::Model<double>> transformSymbolicToSparseModel<storm::dd::DdType::CUDD, double>(std::shared_ptr<storm::models::symbolic::Model<storm::dd::DdType::CUDD, double>> const& symbolicModel);
-        template std::shared_ptr<storm::models::sparse::Model<double>> transformSymbolicToSparseModel<storm::dd::DdType::Sylvan, double>(std::shared_ptr<storm::models::symbolic::Model<storm::dd::DdType::Sylvan, double>> const& symbolicModel);
-        template std::shared_ptr<storm::models::sparse::Model<storm::RationalNumber>> transformSymbolicToSparseModel<storm::dd::DdType::Sylvan, storm::RationalNumber>(std::shared_ptr<storm::models::symbolic::Model<storm::dd::DdType::Sylvan, storm::RationalNumber>> const& symbolicModel);
-        template std::shared_ptr<storm::models::sparse::Model<storm::RationalFunction>> transformSymbolicToSparseModel<storm::dd::DdType::Sylvan, storm::RationalFunction>(std::shared_ptr<storm::models::symbolic::Model<storm::dd::DdType::Sylvan, storm::RationalFunction>> const& symbolicModel);
-        
         template class SymbolicDtmcToSparseDtmcTransformer<storm::dd::DdType::CUDD, double>;
         template class SymbolicDtmcToSparseDtmcTransformer<storm::dd::DdType::Sylvan, double>;
         template class SymbolicDtmcToSparseDtmcTransformer<storm::dd::DdType::Sylvan, storm::RationalNumber>;

@@ -47,7 +47,7 @@ namespace storm {
                 upperBound = TimeBound(f.isUpperBoundStrict(), f.getUpperBound().substitute(substitution));
             }
 
-            return std::static_pointer_cast<Formula>(std::make_shared<BoundedUntilFormula>(left, right, lowerBound, upperBound, f.getTimeBoundType()));
+            return std::static_pointer_cast<Formula>(std::make_shared<BoundedUntilFormula>(left, right, lowerBound, upperBound, f.getTimeBoundReference()));
         }
         
         boost::any VariableSubstitutionVisitor::visit(CumulativeRewardFormula const& f, boost::any const&) const {

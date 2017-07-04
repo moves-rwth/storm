@@ -194,11 +194,14 @@ namespace storm {
                 upperExclusive = f.isUpperBoundStrict();
             }
             modernjson::json propertyInterval = constructPropertyInterval(lower, lowerExclusive, upper, upperExclusive);
-            
-            if(f.isStepBounded()) {
+
+            auto tbr = f.getTimeBoundReference();
+            if(tbr.isStepBound()) {
                 opDecl["step-bounds"] = propertyInterval;
-            } else {
+            } else if(tbr.isRewardBound()) {
                 opDecl["time-bounds"] = propertyInterval;
+            } else {
+                opDecl["reward-bounds"] = propertyInterval;
             }
             return opDecl;
         }

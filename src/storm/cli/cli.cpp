@@ -26,7 +26,6 @@
 
 #include "storm/settings/SettingsManager.h"
 #include "storm/settings/modules/ResourceSettings.h"
-#include "storm/settings/modules/ParametricSettings.h"
 
 #include <type_traits>
 
@@ -683,13 +682,6 @@ namespace storm {
                                             }
                                             result->filter(filter->asQualitativeCheckResult());
                                             return result;
-                                        },
-                                        [&sparseModel] (std::unique_ptr<storm::modelchecker::CheckResult> const& result) {
-                                            auto parametricSettings = storm::settings::getModule<storm::settings::modules::ParametricSettings>();
-                                            if (std::is_same<ValueType, storm::RationalFunction>::value && sparseModel->isOfType(storm::models::ModelType::Dtmc) && parametricSettings.exportResultToFile()) {
-                                                auto dtmc = sparseModel->template as<storm::models::sparse::Dtmc<storm::RationalFunction>>();
-                                                storm::api::exportParametricResultToFile(result->asExplicitQuantitativeCheckResult<storm::RationalFunction>()[*sparseModel->getInitialStates().begin()], storm::analysis::ConstraintCollector<storm::RationalFunction>(*dtmc), parametricSettings.exportResultPath());
-                                            }
                                         });
         }
 
