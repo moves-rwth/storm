@@ -77,8 +77,10 @@ namespace storm {
             conditionalFormula = untilFormula(qi::_r1)[qi::_val = qi::_1] >> *(qi::lit("||") >> untilFormula(storm::logic::FormulaContext::Probability))[qi::_val = phoenix::bind(&FormulaParserGrammar::createConditionalFormula, phoenix::ref(*this), qi::_val, qi::_1, qi::_r1)];
             conditionalFormula.name("conditional formula");
             
-            timeBound = (-rewardModelName >> (qi::lit("[") > expressionParser > qi::lit(",") > expressionParser > qi::lit("]")))[qi::_val = phoenix::bind(&FormulaParserGrammar::createTimeBoundFromInterval, phoenix::ref(*this), qi::_2, qi::_3, qi::_1)]
-                        | (-rewardModelName >> ((qi::lit("<=")[qi::_a = true, qi::_b = false] | qi::lit("<")[qi::_a = true, qi::_b = true] | qi::lit(">=")[qi::_a = false, qi::_b = false] | qi::lit(">")[qi::_a = false, qi::_b = true]) >> expressionParser))[qi::_val = phoenix::bind(&FormulaParserGrammar::createTimeBoundFromSingleBound, phoenix::ref(*this), qi::_2, qi::_a, qi::_b, qi::_1)];
+            timeBound = ((-rewardModelName >> qi::lit("[")) > expressionParser > qi::lit(",") > expressionParser > qi::lit("]"))
+                            [qi::_val = phoenix::bind(&FormulaParserGrammar::createTimeBoundFromInterval, phoenix::ref(*this), qi::_2, qi::_3, qi::_1)]
+                        | (-rewardModelName >> (qi::lit("<=")[qi::_a = true, qi::_b = false] | qi::lit("<")[qi::_a = true, qi::_b = true] | qi::lit(">=")[qi::_a = false, qi::_b = false] | qi::lit(">")[qi::_a = false, qi::_b = true]) >> expressionParser)
+                            [qi::_val = phoenix::bind(&FormulaParserGrammar::createTimeBoundFromSingleBound, phoenix::ref(*this), qi::_2, qi::_a, qi::_b, qi::_1)];
             timeBound.name("time bound");
             
             pathFormula = conditionalFormula(qi::_r1);
