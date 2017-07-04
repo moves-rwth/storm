@@ -152,10 +152,10 @@ echo CXX version: $($CXX --version)
 echo C++ Standard library location: $(echo '#include <vector>' | $CXX -x c++ -E - | grep 'vector\"' | awk '{print $3}' | sed 's@/vector@@;s@\"@@g' | head -n 1)
 echo Normalized C++ Standard library location: $(readlink -f $(echo '#include <vector>' | $CXX -x c++ -E - | grep 'vector\"' | awk '{print $3}' | sed 's@/vector@@;s@\"@@g' | head -n 1))
 
-case "$1" in
+case "$CONFIG" in
 DefaultDebug)           CMAKE_ARGS=(-DCMAKE_BUILD_TYPE=Debug   -DCMAKE_CXX_FLAGS="$STLARG") ;;
 DefaultRelease)         CMAKE_ARGS=(-DCMAKE_BUILD_TYPE=Release -DCMAKE_CXX_FLAGS="$STLARG") ;;
-*) echo "Error: you need to specify one of the supported postsubmit modes (see postsubmit.sh)."; exit 1 ;;
+*) echo "Unrecognized value of CONFIG: $CONFIG"; exit 1 ;;
 esac
 
 # Restore timestamps of files
@@ -163,4 +163,4 @@ travis_fold start mtime
 ruby travis/mtime_cache/mtime_cache.rb -g travis/mtime_cache/globs.txt -c travis/mtime_cache/cache.json
 travis_fold end mtime
 
-run "$2"
+run "$1"

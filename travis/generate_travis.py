@@ -77,11 +77,11 @@ if __name__ == "__main__":
                 buildConfig += "    - stage: {}\n".format(stage[0])
                 buildConfig += "      os: osx\n"
                 buildConfig += "      compiler: {}\n".format(config[1])
-                buildConfig += "      env: BUILD={} COMPILER={} STL=libc++\n".format(build, compiler)
-                buildConfig += "      install: export OS=osx; export COMPILER='{}'; export STL='libc++';\n".format(compiler)
+                buildConfig += "      env: CONFIG={} COMPILER={} STL=libc++\n".format(build, compiler)
+                buildConfig += "      install:\n"
                 buildConfig += "        travis/install_osx.sh\n"
-                buildConfig += "      script: export OS=osx; export COMPILER='{}'; export STL='libc++';\n".format(compiler)
-                buildConfig += "        travis/build.sh {} {}\n".format(build, stage[1])
+                buildConfig += "      script:\n"
+                buildConfig += "        travis/build.sh {}\n".format(stage[1])
             s += buildConfig
 
         # Linux via Docker
@@ -94,11 +94,11 @@ if __name__ == "__main__":
                 buildConfig += "    - stage: {}\n".format(stage[0])
                 buildConfig += "      os: linux\n"
                 buildConfig += "      compiler: {}\n".format(config[1])
-                buildConfig += "      env: BUILD={} COMPILER={} LINUX={}\n".format(build, compiler, linux)
-                buildConfig += "      install: export OS=linux; export COMPILER='{}'; export LINUX='{}';\n".format(compiler, linux)
+                buildConfig += "      env: CONFIG={} LINUX={} COMPILER={}\n".format(build, linux, compiler)
+                buildConfig += "      install:\n"
                 buildConfig += "        travis/install_linux.sh\n"
-                buildConfig += "      script: export OS=linux; export COMPILER='{}'; export LINUX='{}';\n".format(compiler, linux)
-                buildConfig += "        travis/build.sh {} {}\n".format(build, stage[1])
+                buildConfig += "      script:\n"
+                buildConfig += "        travis/build.sh {}\n".format(stage[1])
                 buildConfig += "      before_cache:\n"
                 buildConfig += "        docker cp storm:/storm/. .\n"
             s += buildConfig

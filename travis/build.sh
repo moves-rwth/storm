@@ -1,14 +1,11 @@
 #!/bin/bash -x
 # Inspired by https://github.com/google/fruit
 
-: ${N_JOBS:=2}
-: ${TIMEOUT_MAC:=1800}
-: ${TIMEOUT_LINUX:=2300}
+N_JOBS=2
+TIMEOUT_MAC=1800
+TIMEOUT_LINUX=2300
 
-if [ "$STL" != "" ]
-then
-  STLARG="-stdlib=$STL"
-fi
+OS=$TRAVIS_OS_NAME
 
 EXITCODE=42
 
@@ -16,7 +13,7 @@ EXITCODE=42
 if [ -f build/skip.txt ]
 then
   # Remove flag s.t. tests will be executed
-  if [[ "$2" == "Build4" ]]
+  if [[ "$1" == "Build4" ]]
   then
     rm build/skip.txt
   fi
@@ -38,22 +35,25 @@ linux)
 
     # Execute main process
     timeout $TIMEOUT_LINUX docker exec storm bash -c "
+        export CONFIG=$CONFIG;
         export COMPILER=$COMPILER;
         export N_JOBS=$N_JOBS;
-        export STLARG=$STLARG;
+        export STLARG=;
         export OS=$OS;
         cd storm;
-        travis/build-helper.sh $1 $2"
+        travis/build-helper.sh $1"
     EXITCODE=$?
     ;;
 
 osx)
     # Mac OSX
+    STLARG="-stdlib=libc++"
+    export CONFIG=$CONFIG
     export COMPILER
     export N_JOBS
     export STLARG
     export OS
-    gtimeout $TIMEOUT_MAC travis/build-helper.sh "$1" "$2"
+    gtimeout $TIMEOUT_MAC travis/build-helper.sh "$1"
     EXITCODE=$?
     ;;
 
@@ -63,7 +63,7 @@ osx)
     exit 1
 esac
 
-if [[ $EXITCODE == 124 ]] && [[ "$2" == Build* ]] && [[ "$2" != "Build4" ]]
+if [[ $EXITCODE == 124 ]] && [[ "$1" == Build* ]] && [[ "$1" != "Build4" ]]
 then
     exit 0
 else

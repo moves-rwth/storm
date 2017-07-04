@@ -35,59 +35,59 @@ jobs:
     - stage: Build (1st run)
       os: osx
       compiler: clang
-      env: BUILD=DefaultDebug COMPILER=clang-4.0 STL=libc++
-      install: export OS=osx; export COMPILER='clang-4.0'; export STL='libc++';
+      env: CONFIG=DefaultDebug COMPILER=clang-4.0 STL=libc++
+      install:
         travis/install_osx.sh
-      script: export OS=osx; export COMPILER='clang-4.0'; export STL='libc++';
-        travis/build.sh DefaultDebug Build1
+      script:
+        travis/build.sh Build1
     - stage: Build (1st run)
       os: osx
       compiler: clang
-      env: BUILD=DefaultRelease COMPILER=clang-4.0 STL=libc++
-      install: export OS=osx; export COMPILER='clang-4.0'; export STL='libc++';
+      env: CONFIG=DefaultRelease COMPILER=clang-4.0 STL=libc++
+      install:
         travis/install_osx.sh
-      script: export OS=osx; export COMPILER='clang-4.0'; export STL='libc++';
-        travis/build.sh DefaultRelease Build1
+      script:
+        travis/build.sh Build1
     # ubuntu-16.10
     - stage: Build (1st run)
       os: linux
       compiler: gcc
-      env: BUILD=DefaultDebug COMPILER=gcc-6 LINUX=ubuntu-16.10
-      install: export OS=linux; export COMPILER='gcc-6'; export LINUX='ubuntu-16.10';
+      env: CONFIG=DefaultDebug LINUX=ubuntu-16.10 COMPILER=gcc-6
+      install:
         travis/install_linux.sh
-      script: export OS=linux; export COMPILER='gcc-6'; export LINUX='ubuntu-16.10';
-        travis/build.sh DefaultDebug Build1
+      script:
+        travis/build.sh Build1
       before_cache:
         docker cp storm:/storm/. .
     - stage: Build (1st run)
       os: linux
       compiler: gcc
-      env: BUILD=DefaultRelease COMPILER=gcc-6 LINUX=ubuntu-16.10
-      install: export OS=linux; export COMPILER='gcc-6'; export LINUX='ubuntu-16.10';
+      env: CONFIG=DefaultRelease LINUX=ubuntu-16.10 COMPILER=gcc-6
+      install:
         travis/install_linux.sh
-      script: export OS=linux; export COMPILER='gcc-6'; export LINUX='ubuntu-16.10';
-        travis/build.sh DefaultRelease Build1
+      script:
+        travis/build.sh Build1
       before_cache:
         docker cp storm:/storm/. .
     # debian-9
     - stage: Build (1st run)
       os: linux
       compiler: gcc
-      env: BUILD=DefaultDebug COMPILER=gcc-6 LINUX=debian-9
-      install: export OS=linux; export COMPILER='gcc-6'; export LINUX='debian-9';
+      env: CONFIG=DefaultDebug LINUX=debian-9 COMPILER=gcc-6
+      install:
         travis/install_linux.sh
-      script: export OS=linux; export COMPILER='gcc-6'; export LINUX='debian-9';
-        travis/build.sh DefaultDebug Build1
+      script:
+        travis/build.sh Build1
       before_cache:
         docker cp storm:/storm/. .
     - stage: Build (1st run)
       os: linux
       compiler: gcc
-      env: BUILD=DefaultRelease COMPILER=gcc-6 LINUX=debian-9
-      install: export OS=linux; export COMPILER='gcc-6'; export LINUX='debian-9';
+      env: CONFIG=DefaultRelease LINUX=debian-9 COMPILER=gcc-6
+      install:
         travis/install_linux.sh
-      script: export OS=linux; export COMPILER='gcc-6'; export LINUX='debian-9';
-        travis/build.sh DefaultRelease Build1
+      script:
+        travis/build.sh Build1
       before_cache:
         docker cp storm:/storm/. .
 
@@ -99,59 +99,59 @@ jobs:
     - stage: Build (2nd run)
       os: osx
       compiler: clang
-      env: BUILD=DefaultDebug COMPILER=clang-4.0 STL=libc++
-      install: export OS=osx; export COMPILER='clang-4.0'; export STL='libc++';
+      env: CONFIG=DefaultDebug COMPILER=clang-4.0 STL=libc++
+      install:
         travis/install_osx.sh
-      script: export OS=osx; export COMPILER='clang-4.0'; export STL='libc++';
-        travis/build.sh DefaultDebug Build2
+      script:
+        travis/build.sh Build2
     - stage: Build (2nd run)
       os: osx
       compiler: clang
-      env: BUILD=DefaultRelease COMPILER=clang-4.0 STL=libc++
-      install: export OS=osx; export COMPILER='clang-4.0'; export STL='libc++';
+      env: CONFIG=DefaultRelease COMPILER=clang-4.0 STL=libc++
+      install:
         travis/install_osx.sh
-      script: export OS=osx; export COMPILER='clang-4.0'; export STL='libc++';
-        travis/build.sh DefaultRelease Build2
+      script:
+        travis/build.sh Build2
     # ubuntu-16.10
     - stage: Build (2nd run)
       os: linux
       compiler: gcc
-      env: BUILD=DefaultDebug COMPILER=gcc-6 LINUX=ubuntu-16.10
-      install: export OS=linux; export COMPILER='gcc-6'; export LINUX='ubuntu-16.10';
+      env: CONFIG=DefaultDebug LINUX=ubuntu-16.10 COMPILER=gcc-6
+      install:
         travis/install_linux.sh
-      script: export OS=linux; export COMPILER='gcc-6'; export LINUX='ubuntu-16.10';
-        travis/build.sh DefaultDebug Build2
+      script:
+        travis/build.sh Build2
       before_cache:
         docker cp storm:/storm/. .
     - stage: Build (2nd run)
       os: linux
       compiler: gcc
-      env: BUILD=DefaultRelease COMPILER=gcc-6 LINUX=ubuntu-16.10
-      install: export OS=linux; export COMPILER='gcc-6'; export LINUX='ubuntu-16.10';
+      env: CONFIG=DefaultRelease LINUX=ubuntu-16.10 COMPILER=gcc-6
+      install:
         travis/install_linux.sh
-      script: export OS=linux; export COMPILER='gcc-6'; export LINUX='ubuntu-16.10';
-        travis/build.sh DefaultRelease Build2
+      script:
+        travis/build.sh Build2
       before_cache:
         docker cp storm:/storm/. .
     # debian-9
     - stage: Build (2nd run)
       os: linux
       compiler: gcc
-      env: BUILD=DefaultDebug COMPILER=gcc-6 LINUX=debian-9
-      install: export OS=linux; export COMPILER='gcc-6'; export LINUX='debian-9';
+      env: CONFIG=DefaultDebug LINUX=debian-9 COMPILER=gcc-6
+      install:
         travis/install_linux.sh
-      script: export OS=linux; export COMPILER='gcc-6'; export LINUX='debian-9';
-        travis/build.sh DefaultDebug Build2
+      script:
+        travis/build.sh Build2
       before_cache:
         docker cp storm:/storm/. .
     - stage: Build (2nd run)
       os: linux
       compiler: gcc
-      env: BUILD=DefaultRelease COMPILER=gcc-6 LINUX=debian-9
-      install: export OS=linux; export COMPILER='gcc-6'; export LINUX='debian-9';
+      env: CONFIG=DefaultRelease LINUX=debian-9 COMPILER=gcc-6
+      install:
         travis/install_linux.sh
-      script: export OS=linux; export COMPILER='gcc-6'; export LINUX='debian-9';
-        travis/build.sh DefaultRelease Build2
+      script:
+        travis/build.sh Build2
       before_cache:
         docker cp storm:/storm/. .
 
@@ -163,59 +163,59 @@ jobs:
     - stage: Build (3rd run)
       os: osx
       compiler: clang
-      env: BUILD=DefaultDebug COMPILER=clang-4.0 STL=libc++
-      install: export OS=osx; export COMPILER='clang-4.0'; export STL='libc++';
+      env: CONFIG=DefaultDebug COMPILER=clang-4.0 STL=libc++
+      install:
         travis/install_osx.sh
-      script: export OS=osx; export COMPILER='clang-4.0'; export STL='libc++';
-        travis/build.sh DefaultDebug Build3
+      script:
+        travis/build.sh Build3
     - stage: Build (3rd run)
       os: osx
       compiler: clang
-      env: BUILD=DefaultRelease COMPILER=clang-4.0 STL=libc++
-      install: export OS=osx; export COMPILER='clang-4.0'; export STL='libc++';
+      env: CONFIG=DefaultRelease COMPILER=clang-4.0 STL=libc++
+      install:
         travis/install_osx.sh
-      script: export OS=osx; export COMPILER='clang-4.0'; export STL='libc++';
-        travis/build.sh DefaultRelease Build3
+      script:
+        travis/build.sh Build3
     # ubuntu-16.10
     - stage: Build (3rd run)
       os: linux
       compiler: gcc
-      env: BUILD=DefaultDebug COMPILER=gcc-6 LINUX=ubuntu-16.10
-      install: export OS=linux; export COMPILER='gcc-6'; export LINUX='ubuntu-16.10';
+      env: CONFIG=DefaultDebug LINUX=ubuntu-16.10 COMPILER=gcc-6
+      install:
         travis/install_linux.sh
-      script: export OS=linux; export COMPILER='gcc-6'; export LINUX='ubuntu-16.10';
-        travis/build.sh DefaultDebug Build3
+      script:
+        travis/build.sh Build3
       before_cache:
         docker cp storm:/storm/. .
     - stage: Build (3rd run)
       os: linux
       compiler: gcc
-      env: BUILD=DefaultRelease COMPILER=gcc-6 LINUX=ubuntu-16.10
-      install: export OS=linux; export COMPILER='gcc-6'; export LINUX='ubuntu-16.10';
+      env: CONFIG=DefaultRelease LINUX=ubuntu-16.10 COMPILER=gcc-6
+      install:
         travis/install_linux.sh
-      script: export OS=linux; export COMPILER='gcc-6'; export LINUX='ubuntu-16.10';
-        travis/build.sh DefaultRelease Build3
+      script:
+        travis/build.sh Build3
       before_cache:
         docker cp storm:/storm/. .
     # debian-9
     - stage: Build (3rd run)
       os: linux
       compiler: gcc
-      env: BUILD=DefaultDebug COMPILER=gcc-6 LINUX=debian-9
-      install: export OS=linux; export COMPILER='gcc-6'; export LINUX='debian-9';
+      env: CONFIG=DefaultDebug LINUX=debian-9 COMPILER=gcc-6
+      install:
         travis/install_linux.sh
-      script: export OS=linux; export COMPILER='gcc-6'; export LINUX='debian-9';
-        travis/build.sh DefaultDebug Build3
+      script:
+        travis/build.sh Build3
       before_cache:
         docker cp storm:/storm/. .
     - stage: Build (3rd run)
       os: linux
       compiler: gcc
-      env: BUILD=DefaultRelease COMPILER=gcc-6 LINUX=debian-9
-      install: export OS=linux; export COMPILER='gcc-6'; export LINUX='debian-9';
+      env: CONFIG=DefaultRelease LINUX=debian-9 COMPILER=gcc-6
+      install:
         travis/install_linux.sh
-      script: export OS=linux; export COMPILER='gcc-6'; export LINUX='debian-9';
-        travis/build.sh DefaultRelease Build3
+      script:
+        travis/build.sh Build3
       before_cache:
         docker cp storm:/storm/. .
 
@@ -227,59 +227,59 @@ jobs:
     - stage: Build (4th run)
       os: osx
       compiler: clang
-      env: BUILD=DefaultDebug COMPILER=clang-4.0 STL=libc++
-      install: export OS=osx; export COMPILER='clang-4.0'; export STL='libc++';
+      env: CONFIG=DefaultDebug COMPILER=clang-4.0 STL=libc++
+      install:
         travis/install_osx.sh
-      script: export OS=osx; export COMPILER='clang-4.0'; export STL='libc++';
-        travis/build.sh DefaultDebug Build4
+      script:
+        travis/build.sh Build4
     - stage: Build (4th run)
       os: osx
       compiler: clang
-      env: BUILD=DefaultRelease COMPILER=clang-4.0 STL=libc++
-      install: export OS=osx; export COMPILER='clang-4.0'; export STL='libc++';
+      env: CONFIG=DefaultRelease COMPILER=clang-4.0 STL=libc++
+      install:
         travis/install_osx.sh
-      script: export OS=osx; export COMPILER='clang-4.0'; export STL='libc++';
-        travis/build.sh DefaultRelease Build4
+      script:
+        travis/build.sh Build4
     # ubuntu-16.10
     - stage: Build (4th run)
       os: linux
       compiler: gcc
-      env: BUILD=DefaultDebug COMPILER=gcc-6 LINUX=ubuntu-16.10
-      install: export OS=linux; export COMPILER='gcc-6'; export LINUX='ubuntu-16.10';
+      env: CONFIG=DefaultDebug LINUX=ubuntu-16.10 COMPILER=gcc-6
+      install:
         travis/install_linux.sh
-      script: export OS=linux; export COMPILER='gcc-6'; export LINUX='ubuntu-16.10';
-        travis/build.sh DefaultDebug Build4
+      script:
+        travis/build.sh Build4
       before_cache:
         docker cp storm:/storm/. .
     - stage: Build (4th run)
       os: linux
       compiler: gcc
-      env: BUILD=DefaultRelease COMPILER=gcc-6 LINUX=ubuntu-16.10
-      install: export OS=linux; export COMPILER='gcc-6'; export LINUX='ubuntu-16.10';
+      env: CONFIG=DefaultRelease LINUX=ubuntu-16.10 COMPILER=gcc-6
+      install:
         travis/install_linux.sh
-      script: export OS=linux; export COMPILER='gcc-6'; export LINUX='ubuntu-16.10';
-        travis/build.sh DefaultRelease Build4
+      script:
+        travis/build.sh Build4
       before_cache:
         docker cp storm:/storm/. .
     # debian-9
     - stage: Build (4th run)
       os: linux
       compiler: gcc
-      env: BUILD=DefaultDebug COMPILER=gcc-6 LINUX=debian-9
-      install: export OS=linux; export COMPILER='gcc-6'; export LINUX='debian-9';
+      env: CONFIG=DefaultDebug LINUX=debian-9 COMPILER=gcc-6
+      install:
         travis/install_linux.sh
-      script: export OS=linux; export COMPILER='gcc-6'; export LINUX='debian-9';
-        travis/build.sh DefaultDebug Build4
+      script:
+        travis/build.sh Build4
       before_cache:
         docker cp storm:/storm/. .
     - stage: Build (4th run)
       os: linux
       compiler: gcc
-      env: BUILD=DefaultRelease COMPILER=gcc-6 LINUX=debian-9
-      install: export OS=linux; export COMPILER='gcc-6'; export LINUX='debian-9';
+      env: CONFIG=DefaultRelease LINUX=debian-9 COMPILER=gcc-6
+      install:
         travis/install_linux.sh
-      script: export OS=linux; export COMPILER='gcc-6'; export LINUX='debian-9';
-        travis/build.sh DefaultRelease Build4
+      script:
+        travis/build.sh Build4
       before_cache:
         docker cp storm:/storm/. .
 
@@ -291,59 +291,59 @@ jobs:
     - stage: Test all
       os: osx
       compiler: clang
-      env: BUILD=DefaultDebug COMPILER=clang-4.0 STL=libc++
-      install: export OS=osx; export COMPILER='clang-4.0'; export STL='libc++';
+      env: CONFIG=DefaultDebug COMPILER=clang-4.0 STL=libc++
+      install:
         travis/install_osx.sh
-      script: export OS=osx; export COMPILER='clang-4.0'; export STL='libc++';
-        travis/build.sh DefaultDebug TestAll
+      script:
+        travis/build.sh TestAll
     - stage: Test all
       os: osx
       compiler: clang
-      env: BUILD=DefaultRelease COMPILER=clang-4.0 STL=libc++
-      install: export OS=osx; export COMPILER='clang-4.0'; export STL='libc++';
+      env: CONFIG=DefaultRelease COMPILER=clang-4.0 STL=libc++
+      install:
         travis/install_osx.sh
-      script: export OS=osx; export COMPILER='clang-4.0'; export STL='libc++';
-        travis/build.sh DefaultRelease TestAll
+      script:
+        travis/build.sh TestAll
     # ubuntu-16.10
     - stage: Test all
       os: linux
       compiler: gcc
-      env: BUILD=DefaultDebug COMPILER=gcc-6 LINUX=ubuntu-16.10
-      install: export OS=linux; export COMPILER='gcc-6'; export LINUX='ubuntu-16.10';
+      env: CONFIG=DefaultDebug LINUX=ubuntu-16.10 COMPILER=gcc-6
+      install:
         travis/install_linux.sh
-      script: export OS=linux; export COMPILER='gcc-6'; export LINUX='ubuntu-16.10';
-        travis/build.sh DefaultDebug TestAll
+      script:
+        travis/build.sh TestAll
       before_cache:
         docker cp storm:/storm/. .
     - stage: Test all
       os: linux
       compiler: gcc
-      env: BUILD=DefaultRelease COMPILER=gcc-6 LINUX=ubuntu-16.10
-      install: export OS=linux; export COMPILER='gcc-6'; export LINUX='ubuntu-16.10';
+      env: CONFIG=DefaultRelease LINUX=ubuntu-16.10 COMPILER=gcc-6
+      install:
         travis/install_linux.sh
-      script: export OS=linux; export COMPILER='gcc-6'; export LINUX='ubuntu-16.10';
-        travis/build.sh DefaultRelease TestAll
+      script:
+        travis/build.sh TestAll
       before_cache:
         docker cp storm:/storm/. .
     # debian-9
     - stage: Test all
       os: linux
       compiler: gcc
-      env: BUILD=DefaultDebug COMPILER=gcc-6 LINUX=debian-9
-      install: export OS=linux; export COMPILER='gcc-6'; export LINUX='debian-9';
+      env: CONFIG=DefaultDebug LINUX=debian-9 COMPILER=gcc-6
+      install:
         travis/install_linux.sh
-      script: export OS=linux; export COMPILER='gcc-6'; export LINUX='debian-9';
-        travis/build.sh DefaultDebug TestAll
+      script:
+        travis/build.sh TestAll
       before_cache:
         docker cp storm:/storm/. .
     - stage: Test all
       os: linux
       compiler: gcc
-      env: BUILD=DefaultRelease COMPILER=gcc-6 LINUX=debian-9
-      install: export OS=linux; export COMPILER='gcc-6'; export LINUX='debian-9';
+      env: CONFIG=DefaultRelease LINUX=debian-9 COMPILER=gcc-6
+      install:
         travis/install_linux.sh
-      script: export OS=linux; export COMPILER='gcc-6'; export LINUX='debian-9';
-        travis/build.sh DefaultRelease TestAll
+      script:
+        travis/build.sh TestAll
       before_cache:
         docker cp storm:/storm/. .
 
