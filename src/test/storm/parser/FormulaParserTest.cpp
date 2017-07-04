@@ -71,6 +71,35 @@ TEST(FormulaParserTest, ProbabilityOperatorTest) {
     EXPECT_FALSE(formula->asProbabilityOperatorFormula().hasOptimalityType());
 }
 
+TEST(FormulaParserTest, UntilOperatorTest) {
+    // API does not allow direct test of until, so we have to pack it in a probability operator.
+    storm::parser::FormulaParser formulaParser;
+
+    std::string input = "P<0.9 [\"a\" U \"b\"]";
+    std::shared_ptr<storm::logic::Formula const> formula(nullptr);
+    ASSERT_NO_THROW(formula = formulaParser.parseSingleFormulaFromString(input));
+    auto const& nested1 = formula->asProbabilityOperatorFormula().getSubformula();
+    EXPECT_TRUE(nested1.isUntilFormula());
+    EXPECT_FALSE(nested1.isBoundedUntilFormula());
+
+    input = "P<0.9 [\"a\" U<=3 \"b\"]";
+    ASSERT_NO_THROW(formula = formulaParser.parseSingleFormulaFromString(input));
+    auto const& nested2 = formula->asProbabilityOperatorFormula().getSubformula();
+    EXPECT_TRUE(nested2.isBoundedUntilFormula());
+    EXPECT_TRUE(nested2.asBoundedUntilFormula().getTimeBoundReference().isTimeBound());
+    EXPECT_EQ(3, nested2.asBoundedUntilFormula().getUpperBound().evaluateAsInt());
+
+    input = "P<0.9 [\"a\" U{\"rewardname\"}<=3 \"b\"]";
+    ASSERT_NO_THROW(formula = formulaParser.parseSingleFormulaFromString(input));
+    auto const& nested3 = formula->asProbabilityOperatorFormula().getSubformula();
+    EXPECT_TRUE(nested3.isBoundedUntilFormula());
+    EXPECT_TRUE(nested3.asBoundedUntilFormula().getTimeBoundReference().isRewardBound()); // This will fail, as we have not finished the parser.
+    //EXPECT_EQ("rewardname", nested3.asBoundedUntilFormula().getTimeBoundReference().getRewardName());
+    EXPECT_EQ(3, nested3.asBoundedUntilFormula().getUpperBound().evaluateAsInt());
+    // TODO: Extend as soon as it does not crash anymore.
+}
+
+
 TEST(FormulaParserTest, RewardOperatorTest) {
     storm::parser::FormulaParser formulaParser;
     
