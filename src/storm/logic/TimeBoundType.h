@@ -36,6 +36,11 @@ namespace storm {
             bool isRewardBound() const {
                 return type == TimeBoundType::Reward;
             }
+            
+            std::string const& getRewardName() const {
+                assert(isRewardBound());
+                return rewardName;
+            }
         };
 
 
