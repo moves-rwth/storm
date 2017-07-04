@@ -198,10 +198,10 @@ namespace storm {
             void addConstant(std::string const& name, bool integer);
             void addProperty(std::vector<storm::jani::Property>& properties, boost::optional<std::string> const& name, std::shared_ptr<storm::logic::Formula const> const& formula);
             
-            std::pair<boost::optional<storm::logic::TimeBound>, boost::optional<storm::logic::TimeBound>> createTimeBoundFromInterval(storm::expressions::Expression const& lowerBound, storm::expressions::Expression const& upperBound) const;
-            std::pair<boost::optional<storm::logic::TimeBound>, boost::optional<storm::logic::TimeBound>> createTimeBoundFromSingleBound(storm::expressions::Expression const& bound, bool upperBound, bool strict) const;
-            
-            // Methods that actually create the expression objects.
+            std::pair<boost::optional<storm::logic::TimeBound>, boost::optional<storm::logic::TimeBound>> createTimeBoundFromInterval(storm::expressions::Expression const& lowerBound, storm::expressions::Expression const& upperBound, boost::optional<std::string> const& rewardName) const;
+            std::pair<boost::optional<storm::logic::TimeBound>, boost::optional<storm::logic::TimeBound>> createTimeBoundFromSingleBound(storm::expressions::Expression const& bound, bool upperBound, bool strict, boost::optional<std::string> const& rewardName) const;
+
+                // Methods that actually create the expression objects.
             std::shared_ptr<storm::logic::Formula const> createInstantaneousRewardFormula(storm::expressions::Expression const& timeBound) const;
             std::shared_ptr<storm::logic::Formula const> createCumulativeRewardFormula(storm::expressions::Expression const& timeBound, bool strict) const;
             std::shared_ptr<storm::logic::Formula const> createTotalRewardFormula() const;

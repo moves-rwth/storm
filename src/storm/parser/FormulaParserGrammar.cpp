@@ -77,7 +77,8 @@ namespace storm {
             conditionalFormula = untilFormula(qi::_r1)[qi::_val = qi::_1] >> *(qi::lit("||") >> untilFormula(storm::logic::FormulaContext::Probability))[qi::_val = phoenix::bind(&FormulaParserGrammar::createConditionalFormula, phoenix::ref(*this), qi::_val, qi::_1, qi::_r1)];
             conditionalFormula.name("conditional formula");
             
-            timeBound = (qi::lit("[") > expressionParser > qi::lit(",") > expressionParser > qi::lit("]"))[qi::_val = phoenix::bind(&FormulaParserGrammar::createTimeBoundFromInterval, phoenix::ref(*this), qi::_1, qi::_2)] | ((qi::lit("<=")[qi::_a = true, qi::_b = false] | qi::lit("<")[qi::_a = true, qi::_b = true] | qi::lit(">=")[qi::_a = false, qi::_b = false] | qi::lit(">")[qi::_a = false, qi::_b = true]) >> expressionParser)[qi::_val = phoenix::bind(&FormulaParserGrammar::createTimeBoundFromSingleBound, phoenix::ref(*this), qi::_1, qi::_a, qi::_b)];
+            timeBound = (-rewardModelName >> (qi::lit("[") > expressionParser > qi::lit(",") > expressionParser > qi::lit("]")))[qi::_val = phoenix::bind(&FormulaParserGrammar::createTimeBoundFromInterval, phoenix::ref(*this), qi::_2, qi::_3, qi::_1)]
+                        | (-rewardModelName >> ((qi::lit("<=")[qi::_a = true, qi::_b = false] | qi::lit("<")[qi::_a = true, qi::_b = true] | qi::lit(">=")[qi::_a = false, qi::_b = false] | qi::lit(">")[qi::_a = false, qi::_b = true]) >> expressionParser))[qi::_val = phoenix::bind(&FormulaParserGrammar::createTimeBoundFromSingleBound, phoenix::ref(*this), qi::_2, qi::_a, qi::_b, qi::_1)];
             timeBound.name("time bound");
             
             pathFormula = conditionalFormula(qi::_r1);
@@ -212,13 +213,16 @@ namespace storm {
             return static_cast<bool>(manager);
         }
         
-        std::pair<boost::optional<storm::logic::TimeBound>, boost::optional<storm::logic::TimeBound>> FormulaParserGrammar::createTimeBoundFromInterval(storm::expressions::Expression const& lowerBound, storm::expressions::Expression const& upperBound) const {
+        std::pair<boost::optional<storm::logic::TimeBound>, boost::optional<storm::logic::TimeBound>> FormulaParserGrammar::createTimeBoundFromInterval(storm::expressions::Expression const& lowerBound, storm::expressions::Expression const& upperBound, boost::optional<std::string> const& rewardName) const {
+            // As soon as it somehow does not break everything anymore, I will change return types here.
+
             storm::logic::TimeBound lower(false, lowerBound);
             storm::logic::TimeBound upper(false, upperBound);
             return std::make_pair(lower, upper);
         }
         
-        std::pair<boost::optional<storm::logic::TimeBound>, boost::optional<storm::logic::TimeBound>> FormulaParserGrammar::createTimeBoundFromSingleBound(storm::expressions::Expression const& bound, bool upperBound, bool strict) const {
+        std::pair<boost::optional<storm::logic::TimeBound>, boost::optional<storm::logic::TimeBound>> FormulaParserGrammar::createTimeBoundFromSingleBound(storm::expressions::Expression const& bound, bool upperBound, bool strict, boost::optional<std::string> const& rewardName) const {
+            // As soon as it somehow does not break everything anymore, I will change return types here.
             if (upperBound) {
                 return std::make_pair(boost::none, storm::logic::TimeBound(strict, bound));
             } else {
