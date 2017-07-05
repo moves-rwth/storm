@@ -8,7 +8,7 @@ file(GLOB_RECURSE STORM_DFT_SOURCES ${PROJECT_SOURCE_DIR}/src/storm-dft/*/*.cpp)
 file(GLOB_RECURSE STORM_DFT_HEADERS ${PROJECT_SOURCE_DIR}/src/storm-dft/*/*.h)
 
 
-# Create storm-pgcl.
+# Create storm-dft.
 add_library(storm-dft SHARED ${STORM_DFT_SOURCES} ${STORM_DFT_HEADERS})
 
 # Remove define symbol for shared libstorm.

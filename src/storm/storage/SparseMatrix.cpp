@@ -104,17 +104,25 @@ namespace storm {
         }
         
         template<typename ValueType>
-        SparseMatrixBuilder<ValueType>::SparseMatrixBuilder(SparseMatrix<ValueType>&& matrix) :  initialRowCountSet(false), initialRowCount(0), initialColumnCountSet(false), initialColumnCount(0), initialEntryCountSet(false), initialEntryCount(0), forceInitialDimensions(false), hasCustomRowGrouping(!matrix.trivialRowGrouping), initialRowGroupCountSet(false), initialRowGroupCount(0), rowGroupIndices(), columnsAndValues(std::move(matrix.columnsAndValues)), rowIndications(std::move(matrix.rowIndications)), currentEntryCount(matrix.entryCount), lastRow(matrix.rowCount - 1), lastColumn(columnsAndValues.back().getColumn()), highestColumn(matrix.getColumnCount() - 1), currentRowGroup() {
+        SparseMatrixBuilder<ValueType>::SparseMatrixBuilder(SparseMatrix<ValueType>&& matrix) :  initialRowCountSet(false), initialRowCount(0), initialColumnCountSet(false), initialColumnCount(0), initialEntryCountSet(false), initialEntryCount(0), forceInitialDimensions(false), hasCustomRowGrouping(!matrix.trivialRowGrouping), initialRowGroupCountSet(false), initialRowGroupCount(0), rowGroupIndices(), columnsAndValues(std::move(matrix.columnsAndValues)), rowIndications(std::move(matrix.rowIndications)), currentEntryCount(matrix.entryCount), currentRowGroup() {
+            
+            lastRow = matrix.rowCount == 0 ? 0 : matrix.rowCount - 1;
+            lastColumn = columnsAndValues.empty() ? 0 : columnsAndValues.back().getColumn();
+            highestColumn = matrix.getColumnCount() == 0 ? 0 : matrix.getColumnCount() - 1;
             
             // If the matrix has a custom row grouping, we move it and remove the last element to make it 'open' again.
             if (hasCustomRowGrouping) {
                 rowGroupIndices = std::move(matrix.rowGroupIndices);
-                rowGroupIndices.get().pop_back();
-                currentRowGroup = rowGroupIndices.get().size() - 1;
+                if (!rowGroupIndices->empty()) {
+                    rowGroupIndices.get().pop_back();
+                }
+                currentRowGroup = rowGroupIndices->empty() ? 0 : rowGroupIndices.get().size() - 1;
             }
             
             // Likewise, we need to 'open' the row indications again.
-            rowIndications.pop_back();
+            if (!rowIndications.empty()) {
+                rowIndications.pop_back();
+            }
         }
         
         template<typename ValueType>
@@ -191,7 +199,10 @@ namespace storm {
         
         template<typename ValueType>
         SparseMatrix<ValueType> SparseMatrixBuilder<ValueType>::build(index_type overriddenRowCount, index_type overriddenColumnCount, index_type overriddenRowGroupCount) {
-            uint_fast64_t rowCount = lastRow + 1;
+            
+            bool hasEntries = currentEntryCount != 0;
+            
+            uint_fast64_t rowCount = hasEntries ? lastRow + 1 : 0;
             if (initialRowCountSet && forceInitialDimensions) {
                 STORM_LOG_THROW(rowCount <= initialRowCount, storm::exceptions::InvalidStateException, "Expected not more than " << initialRowCount << " rows, but got " << rowCount << ".");
                 rowCount = std::max(rowCount, initialRowCount);
@@ -203,12 +214,17 @@ namespace storm {
                 rowIndications.push_back(currentEntryCount);
             }
             
+            // If there are no rows, we need to erase the start index of the current (non-existing) row.
+            if (rowCount == 0) {
+                rowIndications.pop_back();
+            }
+            
             // We put a sentinel element at the last position of the row indices array. This eases iteration work,
             // as now the indices of row i are always between rowIndications[i] and rowIndications[i + 1], also for
             // the first and last row.
             rowIndications.push_back(currentEntryCount);
-            
-            uint_fast64_t columnCount = highestColumn + 1;
+            assert(rowCount == rowIndications.size() - 1);
+            uint_fast64_t columnCount = hasEntries ? highestColumn + 1 : 0;
             if (initialColumnCountSet && forceInitialDimensions) {
                 STORM_LOG_THROW(columnCount <= initialColumnCount, storm::exceptions::InvalidStateException, "Expected not more than " << initialColumnCount << " columns, but got " << columnCount << ".");
                 columnCount = std::max(columnCount, initialColumnCount);
@@ -300,7 +316,7 @@ namespace storm {
             }
 
             highestColumn = maxColumn;
-            lastColumn = columnsAndValues[columnsAndValues.size() - 1].getColumn();
+            lastColumn = columnsAndValues.empty() ? 0 : columnsAndValues[columnsAndValues.size() - 1].getColumn();
         }
 
         template<typename ValueType>

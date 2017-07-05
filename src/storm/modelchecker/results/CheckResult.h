@@ -66,14 +66,10 @@ namespace storm {
             QualitativeCheckResult const& asQualitativeCheckResult() const;
 
             template<typename ValueType>
-            QuantitativeCheckResult<ValueType>& asQuantitativeCheckResult() {
-                return static_cast<QuantitativeCheckResult<ValueType> &>(*this);
-            }
+            QuantitativeCheckResult<ValueType>& asQuantitativeCheckResult();
+            
             template<typename ValueType>
-            QuantitativeCheckResult<ValueType> const& asQuantitativeCheckResult() const {
-                return static_cast<QuantitativeCheckResult<ValueType> const&>(*this);
-            }
-
+            QuantitativeCheckResult<ValueType> const& asQuantitativeCheckResult() const;
 
             ExplicitQualitativeCheckResult& asExplicitQualitativeCheckResult();
             ExplicitQualitativeCheckResult const& asExplicitQualitativeCheckResult() const;

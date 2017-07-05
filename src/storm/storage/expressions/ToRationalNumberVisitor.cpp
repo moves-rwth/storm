@@ -1,6 +1,6 @@
 #include "storm/storage/expressions/ToRationalNumberVisitor.h"
 
-#include "storm/utility/macros.h"
+
 #include "storm/utility/constants.h"
 #include "storm/exceptions/InvalidArgumentException.h"
 #include "storm/exceptions/NotSupportedException.h"
@@ -75,7 +75,7 @@ namespace storm {
                     break;
                 case BinaryNumericalFunctionExpression::OperatorType::Power:
                     STORM_LOG_THROW(storm::utility::isInteger(secondOperandAsRationalNumber), storm::exceptions::InvalidArgumentException, "Exponent of power operator must be a positive integer.");
-                    uint_fast64_t exponentAsInteger = storm::utility::convertNumber<uint_fast64_t>(secondOperandAsRationalNumber);
+                    uint_fast64_t exponentAsInteger = storm::utility::convertNumber<carl::uint>(secondOperandAsRationalNumber);
                     result = storm::utility::pow(firstOperandAsRationalNumber, exponentAsInteger);
                     return result;
                     break;
@@ -128,22 +128,12 @@ namespace storm {
         
         template<typename RationalNumberType>
         boost::any ToRationalNumberVisitor<RationalNumberType>::visit(IntegerLiteralExpression const& expression, boost::any const&) {
-            (void)expression;
-#ifdef STORM_HAVE_CARL
-            return RationalNumberType(carl::rationalize<storm::RationalNumber>(static_cast<size_t>(expression.getValue())));
-#else
-            STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Rational numbers are not supported in this build.");
-#endif
+            return RationalNumberType(carl::rationalize<storm::RationalNumber>(static_cast<carl::uint>(expression.getValue())));
         }
         
         template<typename RationalNumberType>
         boost::any ToRationalNumberVisitor<RationalNumberType>::visit(RationalLiteralExpression const& expression, boost::any const&) {
-            (void)expression;
-#ifdef STORM_HAVE_CARL
             return expression.getValue();
-#else
-            STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Rational numbers are not supported in this build.");
-#endif
         }
         
         template<typename RationalNumberType>
@@ -151,8 +141,8 @@ namespace storm {
             valueMapping[variable] = value;
         }
         
-#ifdef STORM_HAVE_CARL
+
         template class ToRationalNumberVisitor<storm::RationalNumber>;
-#endif
+
     }
 }

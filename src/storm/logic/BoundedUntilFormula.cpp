@@ -1,5 +1,6 @@
 #include "storm/logic/BoundedUntilFormula.h"
 
+#include "storm/utility/constants.h"
 #include "storm/utility/macros.h"
 #include "storm/exceptions/InvalidArgumentException.h"
 
@@ -10,7 +11,7 @@
 
 namespace storm {
     namespace logic {
-        BoundedUntilFormula::BoundedUntilFormula(std::shared_ptr<Formula const> const& leftSubformula, std::shared_ptr<Formula const> const& rightSubformula, boost::optional<TimeBound> const& lowerBound, boost::optional<TimeBound> const& upperBound, TimeBoundType const& timeBoundType) : BinaryPathFormula(leftSubformula, rightSubformula), timeBoundType(timeBoundType), lowerBound(lowerBound), upperBound(upperBound) {
+        BoundedUntilFormula::BoundedUntilFormula(std::shared_ptr<Formula const> const& leftSubformula, std::shared_ptr<Formula const> const& rightSubformula, boost::optional<TimeBound> const& lowerBound, boost::optional<TimeBound> const& upperBound, TimeBoundReference const& timeBoundReference) : BinaryPathFormula(leftSubformula, rightSubformula), timeBoundReference(timeBoundReference), lowerBound(lowerBound), upperBound(upperBound) {
             STORM_LOG_THROW(lowerBound || upperBound, storm::exceptions::InvalidArgumentException, "Bounded until formula requires at least one bound.");
         }
         
@@ -26,17 +27,11 @@ namespace storm {
             return visitor.visit(*this, data);
         }
         
-        TimeBoundType const& BoundedUntilFormula::getTimeBoundType() const {
-            return timeBoundType;
+        TimeBoundReference const& BoundedUntilFormula::getTimeBoundReference() const {
+            return timeBoundReference;
         }
         
-        bool BoundedUntilFormula::isStepBounded() const {
-            return timeBoundType == TimeBoundType::Steps;
-        }
-        
-        bool BoundedUntilFormula::isTimeBounded() const {
-            return timeBoundType == TimeBoundType::Time;
-        }
+
         
         bool BoundedUntilFormula::isLowerBoundStrict() const {
             return lowerBound.get().isStrict();
@@ -83,6 +78,22 @@ namespace storm {
             checkNoVariablesInBound(this->getUpperBound());
             double bound = this->getUpperBound().evaluateAsDouble();
             STORM_LOG_THROW(bound >= 0, storm::exceptions::InvalidPropertyException, "Time-bound must not evaluate to negative number.");
+            return bound;
+        }
+        
+        template <>
+        storm::RationalNumber BoundedUntilFormula::getLowerBound() const {
+            checkNoVariablesInBound(this->getLowerBound());
+            storm::RationalNumber bound = this->getLowerBound().evaluateAsRational();
+            STORM_LOG_THROW(bound >= storm::utility::zero<storm::RationalNumber>(), storm::exceptions::InvalidPropertyException, "Time-bound must not evaluate to negative number.");
+            return bound;
+        }
+        
+        template <>
+        storm::RationalNumber BoundedUntilFormula::getUpperBound() const {
+            checkNoVariablesInBound(this->getUpperBound());
+            storm::RationalNumber bound = this->getLowerBound().evaluateAsRational();
+            STORM_LOG_THROW(bound >= storm::utility::zero<storm::RationalNumber>(), storm::exceptions::InvalidPropertyException, "Time-bound must not evaluate to negative number.");
             return bound;
         }
         

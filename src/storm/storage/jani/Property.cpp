@@ -5,19 +5,17 @@ namespace storm {
         
         
         std::ostream& operator<<(std::ostream& os, FilterExpression const& fe) {
-            return os << "Obtain " << toString(fe.getFilterType()) << " of the 'initial'-states with values described by '" << *fe.getFormula() << "'";
+            return os << "Obtain " << toString(fe.getFilterType()) << " of the '" << fe.getStatesFormula() << "'-states with values described by '" << *fe.getFormula() << "'";
         }
         
         Property::Property(std::string const& name, std::shared_ptr<storm::logic::Formula const> const& formula, std::string const& comment)
-        : name(name), comment(comment), filterExpression(FilterExpression(formula))
-        {
-
+        : name(name), comment(comment), filterExpression(FilterExpression(formula)) {
+            // Intentionally left empty.
         }
         
         Property::Property(std::string const& name, FilterExpression const& fe, std::string const& comment)
-        : name(name), comment(comment), filterExpression(fe)
-        {
-            
+        : name(name), comment(comment), filterExpression(fe) {
+            // Intentionally left empty.
         }
 
         std::string const& Property::getName() const {
@@ -48,6 +46,5 @@ namespace storm {
             return os << "(" << p.getName() << ") : " << p.getFilter();
         }
         
-
     }
 }

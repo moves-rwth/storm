@@ -78,7 +78,7 @@ namespace storm {
         }
         
         template <typename ParametricType, typename ConstantType>
-        std::unique_ptr<storm::modelchecker::RegionModelChecker<ParametricType>> initializeParameterLiftingRegionModelChecker(std::shared_ptr<storm::models::sparse::Model<ParametricType>> const& model, storm::modelchecker::CheckTask<storm::logic::Formula, ParametricType> const& task) {
+        std::shared_ptr<storm::modelchecker::RegionModelChecker<ParametricType>> initializeParameterLiftingRegionModelChecker(std::shared_ptr<storm::models::sparse::Model<ParametricType>> const& model, storm::modelchecker::CheckTask<storm::logic::Formula, ParametricType> const& task) {
             
             STORM_LOG_WARN_COND(storm::utility::parameterlifting::validateParameterLiftingSound(*model, task.getFormula()), "Could not validate whether parameter lifting is applicable. Please validate manually...");
 
@@ -93,22 +93,22 @@ namespace storm {
             }
             
             // Obtain the region model checker
-            std::unique_ptr<storm::modelchecker::RegionModelChecker<ParametricType>> result;
+            std::shared_ptr<storm::modelchecker::RegionModelChecker<ParametricType>> checker;
             if (consideredModel->isOfType(storm::models::ModelType::Dtmc)) {
-                result = std::make_unique<storm::modelchecker::SparseDtmcParameterLiftingModelChecker<storm::models::sparse::Dtmc<ParametricType>, ConstantType>>();
+                checker = std::make_shared<storm::modelchecker::SparseDtmcParameterLiftingModelChecker<storm::models::sparse::Dtmc<ParametricType>, ConstantType>>();
             } else if (consideredModel->isOfType(storm::models::ModelType::Mdp)) {
-                result = std::make_unique<storm::modelchecker::SparseMdpParameterLiftingModelChecker<storm::models::sparse::Mdp<ParametricType>, ConstantType>>();
+                checker = std::make_shared<storm::modelchecker::SparseMdpParameterLiftingModelChecker<storm::models::sparse::Mdp<ParametricType>, ConstantType>>();
             } else {
                 STORM_LOG_THROW(false, storm::exceptions::InvalidOperationException, "Unable to perform parameterLifting on the provided model type.");
             }
             
-            result->specify(consideredModel, task);
+            checker->specify(consideredModel, task);
             
-            return result;
+            return checker;
         }
         
         template <typename ParametricType, typename ImpreciseType, typename PreciseType>
-        std::unique_ptr<storm::modelchecker::RegionModelChecker<ParametricType>> initializeValidatingRegionModelChecker(std::shared_ptr<storm::models::sparse::Model<ParametricType>> const& model, storm::modelchecker::CheckTask<storm::logic::Formula, ParametricType> const& task) {
+        std::shared_ptr<storm::modelchecker::RegionModelChecker<ParametricType>> initializeValidatingRegionModelChecker(std::shared_ptr<storm::models::sparse::Model<ParametricType>> const& model, storm::modelchecker::CheckTask<storm::logic::Formula, ParametricType> const& task) {
             
             STORM_LOG_WARN_COND(storm::utility::parameterlifting::validateParameterLiftingSound(*model, task.getFormula()), "Could not validate whether parameter lifting is applicable. Please validate manually...");
 
@@ -123,22 +123,22 @@ namespace storm {
             }
             
             // Obtain the region model checker
-            std::unique_ptr<storm::modelchecker::RegionModelChecker<ParametricType>> result;
+            std::shared_ptr<storm::modelchecker::RegionModelChecker<ParametricType>> checker;
             if (consideredModel->isOfType(storm::models::ModelType::Dtmc)) {
-                result = std::make_unique<storm::modelchecker::ValidatingSparseDtmcParameterLiftingModelChecker<storm::models::sparse::Dtmc<ParametricType>, ImpreciseType, PreciseType>>();
+                checker = std::make_shared<storm::modelchecker::ValidatingSparseDtmcParameterLiftingModelChecker<storm::models::sparse::Dtmc<ParametricType>, ImpreciseType, PreciseType>>();
             } else if (consideredModel->isOfType(storm::models::ModelType::Mdp)) {
-                result = std::make_unique<storm::modelchecker::ValidatingSparseMdpParameterLiftingModelChecker<storm::models::sparse::Mdp<ParametricType>, ImpreciseType, PreciseType>>();
+                checker = std::make_shared<storm::modelchecker::ValidatingSparseMdpParameterLiftingModelChecker<storm::models::sparse::Mdp<ParametricType>, ImpreciseType, PreciseType>>();
             } else {
                 STORM_LOG_THROW(false, storm::exceptions::InvalidOperationException, "Unable to perform parameterLifting on the provided model type.");
             }
             
-            result->specify(consideredModel, task);
+            checker->specify(consideredModel, task);
             
-            return result;
+            return checker;
         }
         
         template <typename ValueType>
-        std::unique_ptr<storm::modelchecker::RegionModelChecker<ValueType>> initializeRegionModelChecker(std::shared_ptr<storm::models::sparse::Model<ValueType>> const& model, storm::modelchecker::CheckTask<storm::logic::Formula, ValueType> const& task, storm::modelchecker::RegionCheckEngine engine) {
+        std::shared_ptr<storm::modelchecker::RegionModelChecker<ValueType>> initializeRegionModelChecker(std::shared_ptr<storm::models::sparse::Model<ValueType>> const& model, storm::modelchecker::CheckTask<storm::logic::Formula, ValueType> const& task, storm::modelchecker::RegionCheckEngine engine) {
             switch (engine) {
                     case storm::modelchecker::RegionCheckEngine::ParameterLifting:
                             return initializeParameterLiftingRegionModelChecker<ValueType, double>(model, task);

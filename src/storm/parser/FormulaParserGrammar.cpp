@@ -77,7 +77,10 @@ namespace storm {
             conditionalFormula = untilFormula(qi::_r1)[qi::_val = qi::_1] >> *(qi::lit("||") >> untilFormula(storm::logic::FormulaContext::Probability))[qi::_val = phoenix::bind(&FormulaParserGrammar::createConditionalFormula, phoenix::ref(*this), qi::_val, qi::_1, qi::_r1)];
             conditionalFormula.name("conditional formula");
             
-            timeBound = (qi::lit("[") > expressionParser > qi::lit(",") > expressionParser > qi::lit("]"))[qi::_val = phoenix::bind(&FormulaParserGrammar::createTimeBoundFromInterval, phoenix::ref(*this), qi::_1, qi::_2)] | ((qi::lit("<=")[qi::_a = true, qi::_b = false] | qi::lit("<")[qi::_a = true, qi::_b = true] | qi::lit(">=")[qi::_a = false, qi::_b = false] | qi::lit(">")[qi::_a = false, qi::_b = true]) >> expressionParser)[qi::_val = phoenix::bind(&FormulaParserGrammar::createTimeBoundFromSingleBound, phoenix::ref(*this), qi::_1, qi::_a, qi::_b)];
+            timeBound = ((-rewardModelName >> qi::lit("[")) > expressionParser > qi::lit(",") > expressionParser > qi::lit("]"))
+                            [qi::_val = phoenix::bind(&FormulaParserGrammar::createTimeBoundFromInterval, phoenix::ref(*this), qi::_2, qi::_3, qi::_1)]
+                        | (-rewardModelName >> (qi::lit("<=")[qi::_a = true, qi::_b = false] | qi::lit("<")[qi::_a = true, qi::_b = true] | qi::lit(">=")[qi::_a = false, qi::_b = false] | qi::lit(">")[qi::_a = false, qi::_b = true]) >> expressionParser)
+                            [qi::_val = phoenix::bind(&FormulaParserGrammar::createTimeBoundFromSingleBound, phoenix::ref(*this), qi::_2, qi::_a, qi::_b, qi::_1)];
             timeBound.name("time bound");
             
             pathFormula = conditionalFormula(qi::_r1);
@@ -128,7 +131,7 @@ namespace storm {
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Woverloaded-shift-op-parentheses"
             
-            filterProperty = (-formulaName >> qi::lit("filter") > qi::lit("(") > filterType_ > qi::lit(",") > stateFormula > -(qi::lit(",") > qi::lit("\"init\"") > qi::lit(")")))[qi::_val = phoenix::bind(&FormulaParserGrammar::createProperty, phoenix::ref(*this), qi::_1, qi::_2, qi::_3)] | (-formulaName >> stateFormula)[qi::_val = phoenix::bind(&FormulaParserGrammar::createPropertyWithDefaultFilterType, phoenix::ref(*this), qi::_1, qi::_2)];
+            filterProperty = (-formulaName >> qi::lit("filter") > qi::lit("(") > filterType_ > qi::lit(",") > stateFormula > qi::lit(",") > stateFormula > qi::lit(")"))[qi::_val = phoenix::bind(&FormulaParserGrammar::createProperty, phoenix::ref(*this), qi::_1, qi::_2, qi::_3, qi::_4)] | (-formulaName >> stateFormula)[qi::_val = phoenix::bind(&FormulaParserGrammar::createPropertyWithDefaultFilterTypeAndStates, phoenix::ref(*this), qi::_1, qi::_2)];
             filterProperty.name("filter property");
 
 #pragma clang diagnostic pop
@@ -212,17 +215,20 @@ namespace storm {
             return static_cast<bool>(manager);
         }
         
-        std::pair<boost::optional<storm::logic::TimeBound>, boost::optional<storm::logic::TimeBound>> FormulaParserGrammar::createTimeBoundFromInterval(storm::expressions::Expression const& lowerBound, storm::expressions::Expression const& upperBound) const {
+        std::tuple<boost::optional<storm::logic::TimeBound>, boost::optional<storm::logic::TimeBound>, boost::optional<std::string>> FormulaParserGrammar::createTimeBoundFromInterval(storm::expressions::Expression const& lowerBound, storm::expressions::Expression const& upperBound, boost::optional<std::string> const& rewardName) const {
+            // As soon as it somehow does not break everything anymore, I will change return types here.
+
             storm::logic::TimeBound lower(false, lowerBound);
             storm::logic::TimeBound upper(false, upperBound);
-            return std::make_pair(lower, upper);
+            return std::make_tuple(lower, upper, rewardName);
         }
         
-        std::pair<boost::optional<storm::logic::TimeBound>, boost::optional<storm::logic::TimeBound>> FormulaParserGrammar::createTimeBoundFromSingleBound(storm::expressions::Expression const& bound, bool upperBound, bool strict) const {
+        std::tuple<boost::optional<storm::logic::TimeBound>, boost::optional<storm::logic::TimeBound>, boost::optional<std::string>> FormulaParserGrammar::createTimeBoundFromSingleBound(storm::expressions::Expression const& bound, bool upperBound, bool strict, boost::optional<std::string> const& rewardName) const {
+            // As soon as it somehow does not break everything anymore, I will change return types here.
             if (upperBound) {
-                return std::make_pair(boost::none, storm::logic::TimeBound(strict, bound));
+                return std::make_tuple(boost::none, storm::logic::TimeBound(strict, bound), rewardName);
             } else {
-                return std::make_pair(storm::logic::TimeBound(strict, bound), boost::none);
+                return std::make_tuple(storm::logic::TimeBound(strict, bound), boost::none, rewardName);
             }
         }
         
@@ -255,9 +261,13 @@ namespace storm {
             return std::shared_ptr<storm::logic::Formula const>(new storm::logic::AtomicLabelFormula(label));
         }
         
-        std::shared_ptr<storm::logic::Formula const> FormulaParserGrammar::createEventuallyFormula(boost::optional<std::pair<boost::optional<storm::logic::TimeBound>, boost::optional<storm::logic::TimeBound>>> const& timeBound, storm::logic::FormulaContext context, std::shared_ptr<storm::logic::Formula const> const& subformula) const {
+        std::shared_ptr<storm::logic::Formula const> FormulaParserGrammar::createEventuallyFormula(boost::optional<std::tuple<boost::optional<storm::logic::TimeBound>, boost::optional<storm::logic::TimeBound>, boost::optional<std::string>>> const& timeBound, storm::logic::FormulaContext context, std::shared_ptr<storm::logic::Formula const> const& subformula) const {
             if (timeBound) {
-                return std::shared_ptr<storm::logic::Formula const>(new storm::logic::BoundedUntilFormula(createBooleanLiteralFormula(true), subformula, timeBound.get().first, timeBound.get().second, storm::logic::TimeBoundType::Time));
+                if (std::get<2>(timeBound.get())) {
+                    return std::shared_ptr<storm::logic::Formula const>(new storm::logic::BoundedUntilFormula(createBooleanLiteralFormula(true), subformula, std::get<0>(timeBound.get()), std::get<1>(timeBound.get()), storm::logic::TimeBoundReference(std::get<2>(timeBound.get()).get())));
+                } else {
+                    return std::shared_ptr<storm::logic::Formula const>(new storm::logic::BoundedUntilFormula(createBooleanLiteralFormula(true), subformula, std::get<0>(timeBound.get()), std::get<1>(timeBound.get()), storm::logic::TimeBoundReference(storm::logic::TimeBoundType::Time)));
+                }
             } else {
                 return std::shared_ptr<storm::logic::Formula const>(new storm::logic::EventuallyFormula(subformula, context));
             }
@@ -271,9 +281,14 @@ namespace storm {
             return std::shared_ptr<storm::logic::Formula const>(new storm::logic::NextFormula(subformula));
         }
         
-        std::shared_ptr<storm::logic::Formula const> FormulaParserGrammar::createUntilFormula(std::shared_ptr<storm::logic::Formula const> const& leftSubformula, boost::optional<std::pair<boost::optional<storm::logic::TimeBound>, boost::optional<storm::logic::TimeBound>>> const& timeBound, std::shared_ptr<storm::logic::Formula const> const& rightSubformula) {
+        std::shared_ptr<storm::logic::Formula const> FormulaParserGrammar::createUntilFormula(std::shared_ptr<storm::logic::Formula const> const& leftSubformula, boost::optional<std::tuple<boost::optional<storm::logic::TimeBound>, boost::optional<storm::logic::TimeBound>, boost::optional<std::string>>> const& timeBound, std::shared_ptr<storm::logic::Formula const> const& rightSubformula) {
             if (timeBound) {
-                return std::shared_ptr<storm::logic::Formula const>(new storm::logic::BoundedUntilFormula(leftSubformula, rightSubformula, timeBound.get().first, timeBound.get().second, storm::logic::TimeBoundType::Time));
+                if (std::get<2>(timeBound.get())) {
+                    return std::shared_ptr<storm::logic::Formula const>(new storm::logic::BoundedUntilFormula(leftSubformula, rightSubformula, std::get<0>(timeBound.get()), std::get<1>(timeBound.get()), storm::logic::TimeBoundReference(std::get<2>(timeBound.get()).get())));
+                } else {
+                    return std::shared_ptr<storm::logic::Formula const>(new storm::logic::BoundedUntilFormula(leftSubformula, rightSubformula, std::get<0>(timeBound.get()), std::get<1>(timeBound.get()), storm::logic::TimeBoundReference(storm::logic::TimeBoundType::Time)));
+                }
+
             } else {
                 return std::shared_ptr<storm::logic::Formula const>(new storm::logic::UntilFormula(leftSubformula, rightSubformula));
             }
@@ -332,8 +347,8 @@ namespace storm {
             return std::shared_ptr<storm::logic::Formula const>(new storm::logic::MultiObjectiveFormula(subformulas));
         }
                                                
-        storm::jani::Property FormulaParserGrammar::createProperty(boost::optional<std::string> const& propertyName, storm::modelchecker::FilterType const& filterType, std::shared_ptr<storm::logic::Formula const> const& formula) {
-            storm::jani::FilterExpression filterExpression(formula, filterType);
+        storm::jani::Property FormulaParserGrammar::createProperty(boost::optional<std::string> const& propertyName, storm::modelchecker::FilterType const& filterType, std::shared_ptr<storm::logic::Formula const> const& formula, std::shared_ptr<storm::logic::Formula const> const& states) {
+            storm::jani::FilterExpression filterExpression(formula, filterType, states);
             
             ++propertyCount;
             if (propertyName) {
@@ -343,7 +358,7 @@ namespace storm {
             }
         }
                                                
-        storm::jani::Property FormulaParserGrammar::createPropertyWithDefaultFilterType(boost::optional<std::string> const& propertyName, std::shared_ptr<storm::logic::Formula const> const& formula) {
+        storm::jani::Property FormulaParserGrammar::createPropertyWithDefaultFilterTypeAndStates(boost::optional<std::string> const& propertyName, std::shared_ptr<storm::logic::Formula const> const& formula) {
             ++propertyCount;
             if (propertyName) {
                 return storm::jani::Property(propertyName.get(), formula);

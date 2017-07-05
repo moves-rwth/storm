@@ -102,6 +102,9 @@ namespace storm {
             
             bool areTimeBoundedUntilFormulasAllowed() const;
             FragmentSpecification& setTimeBoundedUntilFormulasAllowed(bool newValue);
+
+            bool areRewardBoundedUntilFormulasAllowed() const;
+            FragmentSpecification& setRewardBoundedUntilFormulasAllowed(bool newValue);
             
             bool isVarianceMeasureTypeAllowed() const;
             FragmentSpecification& setVarianceMeasureTypeAllowed(bool newValue);
@@ -162,6 +165,7 @@ namespace storm {
             bool onlyEventuallyFormuluasInConditionalFormulas;
             bool stepBoundedUntilFormulas;
             bool timeBoundedUntilFormulas;
+            bool rewardBoundedUntilFormulas;
             bool varianceAsMeasureType;
             bool quantitativeOperatorResults;
             bool qualitativeOperatorResults;
