@@ -256,7 +256,7 @@ namespace storm {
 
         template<>
         uint_fast64_t convertNumber(ClnRationalNumber const& number) {
-            return carl::toInt<unsigned long>(number);
+            return carl::toInt<carl::uint>(number);
         }
         
         template<>
@@ -386,7 +386,7 @@ namespace storm {
         
         template<>
         uint_fast64_t convertNumber(GmpRationalNumber const& number){
-            return carl::toInt<unsigned long>(number);
+            return carl::toInt<carl::uint>(number);
         }
         
         template<>
@@ -549,8 +549,8 @@ namespace storm {
 #endif
         
         template<>
-        uint_fast64_t convertNumber(RationalFunction const& func) {
-            return carl::toInt<unsigned long>(convertNumber<RationalFunctionCoefficient>(func));
+        carl::uint convertNumber(RationalFunction const& func) {
+            return carl::toInt<carl::uint>(convertNumber<RationalFunctionCoefficient>(func));
         }
         
         template<>
