@@ -22,9 +22,9 @@ run() {
     cd build
     cmake .. "${CMAKE_ARGS[@]}"
     echo
-    echo "Content of CMakeFiles/CMakeError.log:"
     if [ -f "CMakeFiles/CMakeError.log" ]
     then
+      echo "Content of CMakeFiles/CMakeError.log:"
       cat CMakeFiles/CMakeError.log
     fi
     echo
