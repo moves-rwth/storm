@@ -160,6 +160,11 @@ esac
 
 # Restore timestamps of files
 travis_fold start mtime
+if [[ "$1" == "Build1" ]]
+then
+    # Remove old mtime cache
+    rm -rf travis/mtime_cache/cache.json
+fi
 ruby travis/mtime_cache/mtime_cache.rb -g travis/mtime_cache/globs.txt -c travis/mtime_cache/cache.json
 travis_fold end mtime
 
