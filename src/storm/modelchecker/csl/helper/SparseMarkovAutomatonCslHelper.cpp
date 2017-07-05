@@ -284,10 +284,11 @@ namespace storm {
                     }
                     ++numberOfStatesNotInMecs;
                 }
+                uint64_t numberOfSspStates = numberOfStatesNotInMecs + mecDecomposition.size();
                 
                 // Finally, we are ready to create the SSP matrix and right-hand side of the SSP.
                 std::vector<ValueType> b;
-                typename storm::storage::SparseMatrixBuilder<ValueType> sspMatrixBuilder(0, 0, 0, false, true, numberOfStatesNotInMecs + mecDecomposition.size());
+                typename storm::storage::SparseMatrixBuilder<ValueType> sspMatrixBuilder(0, numberOfSspStates , 0, false, true, numberOfSspStates);
                 
                 // If the source state is not contained in any MEC, we copy its choices (and perform the necessary modifications).
                 uint64_t currentChoice = 0;
@@ -328,10 +329,10 @@ namespace storm {
                         boost::container::flat_set<uint64_t> const& choicesInMec = stateChoicesPair.second;
                         
                         for (uint64_t choice = nondeterministicChoiceIndices[state]; choice < nondeterministicChoiceIndices[state + 1]; ++choice) {
-                            std::vector<ValueType> auxiliaryStateToProbabilityMap(mecDecomposition.size());
                             
                             // If the choice is not contained in the MEC itself, we have to add a similar distribution to the auxiliary state.
                             if (choicesInMec.find(choice) == choicesInMec.end()) {
+                                std::vector<ValueType> auxiliaryStateToProbabilityMap(mecDecomposition.size());
                                 b.push_back(storm::utility::zero<ValueType>());
                                 
                                 for (auto element : transitionMatrix.getRow(choice)) {
@@ -363,9 +364,9 @@ namespace storm {
                 }
                 
                 // Finalize the matrix and solve the corresponding system of equations.
-                storm::storage::SparseMatrix<ValueType> sspMatrix = sspMatrixBuilder.build(currentChoice);
+                storm::storage::SparseMatrix<ValueType> sspMatrix = sspMatrixBuilder.build(currentChoice, numberOfSspStates, numberOfSspStates);
                 
-                std::vector<ValueType> x(numberOfStatesNotInMecs + mecDecomposition.size());
+                std::vector<ValueType> x(numberOfSspStates);
                 std::unique_ptr<storm::solver::MinMaxLinearEquationSolver<ValueType>> solver = minMaxLinearEquationSolverFactory.create(sspMatrix);
                 solver->solveEquations(dir, x, b);
                 
