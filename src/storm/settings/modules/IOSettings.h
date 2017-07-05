@@ -99,6 +99,20 @@ namespace storm {
                  * @return The name of the DRN file that contains the model.
                  */
                 std::string getExplicitDRNFilename() const;
+                
+                /*!
+                 * Retrieves whether the explicit option with IMCA was set.
+                 *
+                 * @return True if the explicit option with IMCA was set.
+                 */
+                bool isExplicitIMCASet() const;
+
+                /*!
+                 * Retrieves the name of the file that contains the model in the IMCA format.
+                 *
+                 * @return The name of the IMCA file that contains the model.
+                 */
+                std::string getExplicitIMCAFilename() const;
 
                 /*!
                  * Retrieves whether the PRISM language option was set.
@@ -312,6 +326,8 @@ namespace storm {
                 static const std::string explicitOptionShortName;
                 static const std::string explicitDrnOptionName;
                 static const std::string explicitDrnOptionShortName;
+                static const std::string explicitImcaOptionName;
+                static const std::string explicitImcaOptionShortName;
                 static const std::string prismInputOptionName;
                 static const std::string janiInputOptionName;
                 static const std::string prismToJaniOptionName;

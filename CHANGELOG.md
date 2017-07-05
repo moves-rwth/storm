@@ -21,6 +21,7 @@ Version 1.0.x
     Then, using FORCE_POPCNT enables the use of the SSE 4.2 instruction
 - Parametric model checking is now handled in a separated library/executable called storm-pars
 - Support for long-run average rewwards on Markov automata using the value-iteration based approach by Butkova et al. (TACAS 17)
+- Support for parsing/building models given in the explicit input format of IMCA.
 
 ### Version 1.0.1 (2017/4)
 
