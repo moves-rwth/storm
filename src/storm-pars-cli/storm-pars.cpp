@@ -155,9 +155,10 @@ namespace storm {
                             regionRefinementCheckResult->writeIllustrationToStream(outStream);
                         }
                     }
+                    outStream << std::endl;
                     STORM_PRINT_AND_LOG(outStream.str());
                 } else {
-                    STORM_PRINT_AND_LOG(*result);
+                    STORM_PRINT_AND_LOG(*result << std::endl);
                 }
                 if (watch) {
                     STORM_PRINT_AND_LOG("Time for model checking: " << *watch << "." << std::endl);
@@ -184,7 +185,9 @@ namespace storm {
             verifyProperties<ValueType>(input.properties,
                                         [&model] (std::shared_ptr<storm::logic::Formula const> const& formula) {
                                             std::unique_ptr<storm::modelchecker::CheckResult> result = storm::api::verifyWithSparseEngine<ValueType>(model, storm::api::createTask<ValueType>(formula, true));
-                                            result->filter(storm::modelchecker::ExplicitQualitativeCheckResult(model->getInitialStates()));
+                                            if (result) {
+                                                result->filter(storm::modelchecker::ExplicitQualitativeCheckResult(model->getInitialStates()));
+                                            }
                                             return result;
                                         },
                                         [&model] (std::unique_ptr<storm::modelchecker::CheckResult> const& result) {
