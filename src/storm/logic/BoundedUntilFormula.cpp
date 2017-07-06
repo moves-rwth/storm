@@ -27,6 +27,15 @@ namespace storm {
             return visitor.visit(*this, data);
         }
         
+        void BoundedUntilFormula::gatherReferencedRewardModels(std::set<std::string>& referencedRewardModels) const {
+            if (this->getTimeBoundReference().isRewardBound()) {
+                referencedRewardModels.insert(this->getTimeBoundReference().getRewardName());
+            }
+            this->getLeftSubformula().gatherReferencedRewardModels(referencedRewardModels);
+            this->getRightSubformula().gatherReferencedRewardModels(referencedRewardModels);
+        }
+        
+        
         TimeBoundReference const& BoundedUntilFormula::getTimeBoundReference() const {
             return timeBoundReference;
         }
@@ -92,7 +101,7 @@ namespace storm {
         template <>
         storm::RationalNumber BoundedUntilFormula::getUpperBound() const {
             checkNoVariablesInBound(this->getUpperBound());
-            storm::RationalNumber bound = this->getLowerBound().evaluateAsRational();
+            storm::RationalNumber bound = this->getUpperBound().evaluateAsRational();
             STORM_LOG_THROW(bound >= storm::utility::zero<storm::RationalNumber>(), storm::exceptions::InvalidPropertyException, "Time-bound must not evaluate to negative number.");
             return bound;
         }
@@ -139,6 +148,9 @@ namespace storm {
             this->getLeftSubformula().writeToStream(out);
             
             out << " U";
+            if (this->getTimeBoundReference().isRewardBound()) {
+                out << "{\"" << this->getTimeBoundReference().getRewardName() << "\"}";
+            }
             if (this->hasLowerBound()) {
                 if (this->hasUpperBound()) {
                     if (this->isLowerBoundStrict()) {

@@ -20,6 +20,8 @@ namespace storm {
             
             virtual boost::any accept(FormulaVisitor const& visitor, boost::any const& data) const override;
             
+            virtual void gatherReferencedRewardModels(std::set<std::string>& referencedRewardModels) const override;
+            
             TimeBoundReference const& getTimeBoundReference() const;
 
             
