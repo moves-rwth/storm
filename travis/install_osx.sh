@@ -69,4 +69,5 @@ install_brew_package z3 # optional
 brew tap homebrew/science
 install_brew_package homebrew/science/glpk
 install_brew_package homebrew/science/hwloc
+install_brew_package eigen
 travis_fold end brew_install_dependencies

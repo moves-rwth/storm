@@ -28,6 +28,8 @@ linux)
     # Run container
     set -e
     docker run -d -it --name storm --privileged mvolk/storm-basesystem:$LINUX
+    # Install dependencies
+    docker exec storm apt-get install -qq -y libeigen-dev
     # Copy local content into container
     docker exec storm mkdir storm
     docker cp . storm:/storm
