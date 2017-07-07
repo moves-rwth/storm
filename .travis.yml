@@ -40,6 +40,8 @@ jobs:
         travis/install_osx.sh
       script:
         travis/build.sh Build1
+      after_failure:
+        - find build -iname '*err*.log' -type f -print -exec cat {} \;
     - stage: Build (1st run)
       os: osx
       compiler: clang
@@ -48,6 +50,8 @@ jobs:
         travis/install_osx.sh
       script:
         travis/build.sh Build1
+      after_failure:
+        - find build -iname '*err*.log' -type f -print -exec cat {} \;
     # ubuntu-16.10
     - stage: Build (1st run)
       os: linux
@@ -59,6 +63,8 @@ jobs:
         travis/build.sh Build1
       before_cache:
         docker cp storm:/storm/. .
+      after_failure:
+        - find build -iname '*err*.log' -type f -print -exec cat {} \;
     - stage: Build (1st run)
       os: linux
       compiler: gcc
@@ -69,6 +75,8 @@ jobs:
         travis/build.sh Build1
       before_cache:
         docker cp storm:/storm/. .
+      after_failure:
+        - find build -iname '*err*.log' -type f -print -exec cat {} \;
     # debian-9
     - stage: Build (1st run)
       os: linux
@@ -80,6 +88,8 @@ jobs:
         travis/build.sh Build1
       before_cache:
         docker cp storm:/storm/. .
+      after_failure:
+        - find build -iname '*err*.log' -type f -print -exec cat {} \;
     - stage: Build (1st run)
       os: linux
       compiler: gcc
@@ -90,6 +100,8 @@ jobs:
         travis/build.sh Build1
       before_cache:
         docker cp storm:/storm/. .
+      after_failure:
+        - find build -iname '*err*.log' -type f -print -exec cat {} \;
 
     ###
     # Stage: Build (2nd run)
@@ -104,6 +116,8 @@ jobs:
         travis/install_osx.sh
       script:
         travis/build.sh Build2
+      after_failure:
+        - find build -iname '*err*.log' -type f -print -exec cat {} \;
     - stage: Build (2nd run)
       os: osx
       compiler: clang
@@ -112,6 +126,8 @@ jobs:
         travis/install_osx.sh
       script:
         travis/build.sh Build2
+      after_failure:
+        - find build -iname '*err*.log' -type f -print -exec cat {} \;
     # ubuntu-16.10
     - stage: Build (2nd run)
       os: linux
@@ -123,6 +139,8 @@ jobs:
         travis/build.sh Build2
       before_cache:
         docker cp storm:/storm/. .
+      after_failure:
+        - find build -iname '*err*.log' -type f -print -exec cat {} \;
     - stage: Build (2nd run)
       os: linux
       compiler: gcc
@@ -133,6 +151,8 @@ jobs:
         travis/build.sh Build2
       before_cache:
         docker cp storm:/storm/. .
+      after_failure:
+        - find build -iname '*err*.log' -type f -print -exec cat {} \;
     # debian-9
     - stage: Build (2nd run)
       os: linux
@@ -144,6 +164,8 @@ jobs:
         travis/build.sh Build2
       before_cache:
         docker cp storm:/storm/. .
+      after_failure:
+        - find build -iname '*err*.log' -type f -print -exec cat {} \;
     - stage: Build (2nd run)
       os: linux
       compiler: gcc
@@ -154,6 +176,8 @@ jobs:
         travis/build.sh Build2
       before_cache:
         docker cp storm:/storm/. .
+      after_failure:
+        - find build -iname '*err*.log' -type f -print -exec cat {} \;
 
     ###
     # Stage: Build (3rd run)
@@ -168,6 +192,8 @@ jobs:
         travis/install_osx.sh
       script:
         travis/build.sh Build3
+      after_failure:
+        - find build -iname '*err*.log' -type f -print -exec cat {} \;
     - stage: Build (3rd run)
       os: osx
       compiler: clang
@@ -176,6 +202,8 @@ jobs:
         travis/install_osx.sh
       script:
         travis/build.sh Build3
+      after_failure:
+        - find build -iname '*err*.log' -type f -print -exec cat {} \;
     # ubuntu-16.10
     - stage: Build (3rd run)
       os: linux
@@ -187,6 +215,8 @@ jobs:
         travis/build.sh Build3
       before_cache:
         docker cp storm:/storm/. .
+      after_failure:
+        - find build -iname '*err*.log' -type f -print -exec cat {} \;
     - stage: Build (3rd run)
       os: linux
       compiler: gcc
@@ -197,6 +227,8 @@ jobs:
         travis/build.sh Build3
       before_cache:
         docker cp storm:/storm/. .
+      after_failure:
+        - find build -iname '*err*.log' -type f -print -exec cat {} \;
     # debian-9
     - stage: Build (3rd run)
       os: linux
@@ -208,6 +240,8 @@ jobs:
         travis/build.sh Build3
       before_cache:
         docker cp storm:/storm/. .
+      after_failure:
+        - find build -iname '*err*.log' -type f -print -exec cat {} \;
     - stage: Build (3rd run)
       os: linux
       compiler: gcc
@@ -218,6 +252,8 @@ jobs:
         travis/build.sh Build3
       before_cache:
         docker cp storm:/storm/. .
+      after_failure:
+        - find build -iname '*err*.log' -type f -print -exec cat {} \;
 
     ###
     # Stage: Build (4th run)
@@ -232,6 +268,8 @@ jobs:
         travis/install_osx.sh
       script:
         travis/build.sh Build4
+      after_failure:
+        - find build -iname '*err*.log' -type f -print -exec cat {} \;
     - stage: Build (4th run)
       os: osx
       compiler: clang
@@ -240,6 +278,8 @@ jobs:
         travis/install_osx.sh
       script:
         travis/build.sh Build4
+      after_failure:
+        - find build -iname '*err*.log' -type f -print -exec cat {} \;
     # ubuntu-16.10
     - stage: Build (4th run)
       os: linux
@@ -251,6 +291,8 @@ jobs:
         travis/build.sh Build4
       before_cache:
         docker cp storm:/storm/. .
+      after_failure:
+        - find build -iname '*err*.log' -type f -print -exec cat {} \;
     - stage: Build (4th run)
       os: linux
       compiler: gcc
@@ -261,6 +303,8 @@ jobs:
         travis/build.sh Build4
       before_cache:
         docker cp storm:/storm/. .
+      after_failure:
+        - find build -iname '*err*.log' -type f -print -exec cat {} \;
     # debian-9
     - stage: Build (4th run)
       os: linux
@@ -272,6 +316,8 @@ jobs:
         travis/build.sh Build4
       before_cache:
         docker cp storm:/storm/. .
+      after_failure:
+        - find build -iname '*err*.log' -type f -print -exec cat {} \;
     - stage: Build (4th run)
       os: linux
       compiler: gcc
@@ -282,6 +328,8 @@ jobs:
         travis/build.sh Build4
       before_cache:
         docker cp storm:/storm/. .
+      after_failure:
+        - find build -iname '*err*.log' -type f -print -exec cat {} \;
 
     ###
     # Stage: Test all
@@ -296,6 +344,8 @@ jobs:
         travis/install_osx.sh
       script:
         travis/build.sh TestAll
+      after_failure:
+        - find build -iname '*err*.log' -type f -print -exec cat {} \;
     - stage: Test all
       os: osx
       compiler: clang
@@ -304,6 +354,8 @@ jobs:
         travis/install_osx.sh
       script:
         travis/build.sh TestAll
+      after_failure:
+        - find build -iname '*err*.log' -type f -print -exec cat {} \;
     # ubuntu-16.10
     - stage: Test all
       os: linux
@@ -315,6 +367,8 @@ jobs:
         travis/build.sh TestAll
       before_cache:
         docker cp storm:/storm/. .
+      after_failure:
+        - find build -iname '*err*.log' -type f -print -exec cat {} \;
     - stage: Test all
       os: linux
       compiler: gcc
@@ -325,6 +379,8 @@ jobs:
         travis/build.sh TestAll
       before_cache:
         docker cp storm:/storm/. .
+      after_failure:
+        - find build -iname '*err*.log' -type f -print -exec cat {} \;
     # debian-9
     - stage: Test all
       os: linux
@@ -336,6 +392,8 @@ jobs:
         travis/build.sh TestAll
       before_cache:
         docker cp storm:/storm/. .
+      after_failure:
+        - find build -iname '*err*.log' -type f -print -exec cat {} \;
     - stage: Test all
       os: linux
       compiler: gcc
@@ -346,4 +404,6 @@ jobs:
         travis/build.sh TestAll
       before_cache:
         docker cp storm:/storm/. .
+      after_failure:
+        - find build -iname '*err*.log' -type f -print -exec cat {} \;
 

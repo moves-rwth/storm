@@ -82,6 +82,8 @@ if __name__ == "__main__":
                 buildConfig += "        travis/install_osx.sh\n"
                 buildConfig += "      script:\n"
                 buildConfig += "        travis/build.sh {}\n".format(stage[1])
+                buildConfig += "      after_failure:\n"
+                buildConfig += "        - find build -iname '*err*.log' -type f -print -exec cat {} \;\n"
             s += buildConfig
 
         # Linux via Docker
@@ -101,6 +103,8 @@ if __name__ == "__main__":
                 buildConfig += "        travis/build.sh {}\n".format(stage[1])
                 buildConfig += "      before_cache:\n"
                 buildConfig += "        docker cp storm:/storm/. .\n"
+                buildConfig += "      after_failure:\n"
+                buildConfig += "        - find build -iname '*err*.log' -type f -print -exec cat {} \;\n"
             s += buildConfig
 
     print(s)
