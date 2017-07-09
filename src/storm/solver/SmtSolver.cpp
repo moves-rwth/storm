@@ -91,6 +91,11 @@ namespace storm {
         bool SmtSolver::unsetTimeout() {
             return false;
         }
+        
+        std::string SmtSolver::getSmtLibString() const {
+            STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "This solver does not support exporting the assertions in the SMT-LIB format.");
+            return "ERROR";
+        }
 
     } // namespace solver
 } // namespace storm

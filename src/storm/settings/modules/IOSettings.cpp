@@ -24,6 +24,8 @@ namespace storm {
             const std::string IOSettings::explicitOptionShortName = "exp";
             const std::string IOSettings::explicitDrnOptionName = "explicit-drn";
             const std::string IOSettings::explicitDrnOptionShortName = "drn";
+            const std::string IOSettings::explicitImcaOptionName = "explicit-imca";
+            const std::string IOSettings::explicitImcaOptionShortName = "imca";
             const std::string IOSettings::prismInputOptionName = "prism";
             const std::string IOSettings::janiInputOptionName = "jani";
             const std::string IOSettings::prismToJaniOptionName = "prism2jani";
@@ -61,6 +63,9 @@ namespace storm {
                                 .addArgument(storm::settings::ArgumentBuilder::createStringArgument("labeling filename", "The name of the file from which to read the state labeling.").addValidatorString(ArgumentValidatorFactory::createExistingFileValidator()).build()).build());
                 this->addOption(storm::settings::OptionBuilder(moduleName, explicitDrnOptionName, false, "Parses the model given in the DRN format.").setShortName(explicitDrnOptionShortName)
                                 .addArgument(storm::settings::ArgumentBuilder::createStringArgument("drn filename", "The name of the DRN file containing the model.").addValidatorString(ArgumentValidatorFactory::createExistingFileValidator()).build())
+                                .build());
+                this->addOption(storm::settings::OptionBuilder(moduleName, explicitImcaOptionName, false, "Parses the model given in the IMCA format.").setShortName(explicitImcaOptionShortName)
+                                .addArgument(storm::settings::ArgumentBuilder::createStringArgument("imca filename", "The name of the imca file containing the model.").addValidatorString(ArgumentValidatorFactory::createExistingFileValidator()).build())
                                 .build());
                 this->addOption(storm::settings::OptionBuilder(moduleName, prismInputOptionName, false, "Parses the model given in the PRISM format.")
                                 .addArgument(storm::settings::ArgumentBuilder::createStringArgument("filename", "The name of the file from which to read the PRISM input.").addValidatorString(ArgumentValidatorFactory::createExistingFileValidator()).build()).build());
@@ -134,6 +139,14 @@ namespace storm {
 
             std::string IOSettings::getExplicitDRNFilename() const {
                 return this->getOption(explicitDrnOptionName).getArgumentByName("drn filename").getValueAsString();
+            }
+
+            bool IOSettings::isExplicitIMCASet() const {
+                return this->getOption(explicitImcaOptionName).getHasOptionBeenSet();
+            }
+
+            std::string IOSettings::getExplicitIMCAFilename() const {
+                return this->getOption(explicitImcaOptionName).getArgumentByName("imca filename").getValueAsString();
             }
 
             bool IOSettings::isPrismInputSet() const {

@@ -70,6 +70,8 @@ namespace storm {
             virtual bool setTimeout(uint_fast64_t milliseconds) override;
             
             virtual bool unsetTimeout() override;
+			
+			virtual std::string getSmtLibString() const override;
             
 		private:
 #ifdef STORM_HAVE_Z3

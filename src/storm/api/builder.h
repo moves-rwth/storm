@@ -2,6 +2,7 @@
 
 #include "storm/parser/AutoParser.h"
 #include "storm/parser/DirectEncodingParser.h"
+#include "storm/parser/ImcaMarkovAutomatonParser.h"
 
 #include "storm/storage/SymbolicModelDescription.h"
 
@@ -134,6 +135,16 @@ namespace storm {
         template<>
         inline std::shared_ptr<storm::models::sparse::Model<storm::RationalNumber>> buildExplicitDRNModel(std::string const&) {
             STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Exact models with direct encoding are not supported.");
+        }
+        
+        template<typename ValueType>
+        std::shared_ptr<storm::models::sparse::Model<ValueType>> buildExplicitIMCAModel(std::string const&) {
+            STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Exact models with direct encoding are not supported.");
+        }
+        
+        template<>
+        inline std::shared_ptr<storm::models::sparse::Model<double>> buildExplicitIMCAModel(std::string const& imcaFile) {
+            return storm::parser::ImcaMarkovAutomatonParser<double>::parseImcaFile(imcaFile);
         }
 
 
