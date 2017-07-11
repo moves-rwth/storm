@@ -65,7 +65,19 @@ namespace storm {
                  */
                 void boundedPhaseWithRewardBounds(std::vector<ValueType> const& weightVector, std::vector<ValueType>& weightedRewardVector);
                 
- 
+                
+                /*!
+                 * Discretizes the reward models that occurr at some bounded formula
+                 */
+                void discretizeRewardBounds();
+                
+                
+                
+                
+                std::vector<uint64_t> objIndexToRewardDimensionMapping;
+                std::vector<std::vector<uint64_t>> discretizedActionRewards;
+                std::vector<uint64_t> discretizedRewardBounds;
+
                 
             };
             
