@@ -47,8 +47,8 @@ namespace storm {
         }
         
         template <typename SparseModelType, typename ConstantType>
-        RegionResult SparseParameterLiftingModelChecker<SparseModelType, ConstantType>::analyzeRegion(storm::storage::ParameterRegion<typename SparseModelType::ValueType> const& region, RegionResult const& initialResult, bool sampleVerticesOfRegion) {
-        
+        RegionResult SparseParameterLiftingModelChecker<SparseModelType, ConstantType>::analyzeRegion(storm::storage::ParameterRegion<typename SparseModelType::ValueType> const& region, RegionResultHypothesis const& hypothesis, RegionResult const& initialResult, bool sampleVerticesOfRegion) {
+
             STORM_LOG_THROW(this->currentCheckTask->isOnlyInitialStatesRelevantSet(), storm::exceptions::NotSupportedException, "Analyzing regions with parameter lifting requires a property where only the value in the initial states is relevant.");
             STORM_LOG_THROW(this->currentCheckTask->isBoundSet(), storm::exceptions::NotSupportedException, "Analyzing regions with parameter lifting requires a bounded property.");
             STORM_LOG_THROW(this->parametricModel->getInitialStates().getNumberOfSetBits() == 1, storm::exceptions::NotSupportedException, "Analyzing regions with parameter lifting requires a model with a single initial state.");
@@ -56,12 +56,12 @@ namespace storm {
             RegionResult result = initialResult;
 
             // Check if we need to check the formula on one point to decide whether to show AllSat or AllViolated
-            if (result == RegionResult::Unknown) {
+            if (hypothesis == RegionResultHypothesis::Unknown && result == RegionResult::Unknown) {
                  result = getInstantiationChecker().check(region.getCenterPoint())->asExplicitQualitativeCheckResult()[*this->parametricModel->getInitialStates().begin()] ? RegionResult::CenterSat : RegionResult::CenterViolated;
             }
             
-            // try to prove AllSat or AllViolated, depending on the obtained result
-            if (result == RegionResult::ExistsSat || result == RegionResult::CenterSat) {
+            // try to prove AllSat or AllViolated, depending on the hypothesis or the current result
+            if (hypothesis == RegionResultHypothesis::AllSat || result == RegionResult::ExistsSat || result == RegionResult::CenterSat) {
                 // show AllSat:
                 storm::solver::OptimizationDirection parameterOptimizationDirection = isLowerBound(this->currentCheckTask->getBound().comparisonType) ? storm::solver::OptimizationDirection::Minimize : storm::solver::OptimizationDirection::Maximize;
                 if (this->check(region, parameterOptimizationDirection)->asExplicitQualitativeCheckResult()[*this->parametricModel->getInitialStates().begin()]) {
@@ -69,7 +69,7 @@ namespace storm {
                 } else if (sampleVerticesOfRegion) {
                     result = sampleVertices(region, result);
                 }
-            } else if (result == RegionResult::ExistsViolated || result == RegionResult::CenterViolated) {
+            } else if (hypothesis == RegionResultHypothesis::AllViolated || result == RegionResult::ExistsViolated || result == RegionResult::CenterViolated) {
                 // show AllViolated:
                 storm::solver::OptimizationDirection parameterOptimizationDirection = isLowerBound(this->currentCheckTask->getBound().comparisonType) ? storm::solver::OptimizationDirection::Maximize : storm::solver::OptimizationDirection::Minimize;
                 if (!this->check(region, parameterOptimizationDirection)->asExplicitQualitativeCheckResult()[*this->parametricModel->getInitialStates().begin()]) {

@@ -58,6 +58,9 @@ namespace storm {
                         bool currRegionComplete = false;
                         CoefficientType coveredArea = storm::utility::zero<CoefficientType>();
                         for (auto const& r : this->getRegionResults()) {
+                            if (r.second != storm::modelchecker::RegionResult::AllSat && r.second != storm::modelchecker::RegionResult::AllViolated) {
+                                continue;
+                            }
                             CoefficientType interesctionSizeY = std::min(yUpper, r.first.getUpperBoundary(y)) - std::max(yLower, r.first.getLowerBoundary(y));
                             interesctionSizeY = std::max(interesctionSizeY, storm::utility::zero<CoefficientType>());
                             CoefficientType interesctionSizeX = std::min(xUpper, r.first.getUpperBoundary(x)) - std::max(xLower, r.first.getLowerBoundary(x));

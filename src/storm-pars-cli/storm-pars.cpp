@@ -224,7 +224,7 @@ namespace storm {
                 STORM_PRINT_AND_LOG(" with iterative refinement until " << (1.0 - regionSettings.getRefinementThreshold()) * 100.0 << "% is covered." << std::endl);
                 verificationCallback = [&] (std::shared_ptr<storm::logic::Formula const> const& formula) {
                                         ValueType refinementThreshold = storm::utility::convertNumber<ValueType>(regionSettings.getRefinementThreshold());
-                                        std::unique_ptr<storm::modelchecker::RegionRefinementCheckResult<ValueType>> result = storm::api::checkAndRefineRegionWithSparseEngine<ValueType>(model, storm::api::createTask<ValueType>(formula, true), regions.front(), refinementThreshold, engine);
+                                        std::unique_ptr<storm::modelchecker::RegionRefinementCheckResult<ValueType>> result = storm::api::checkAndRefineRegionWithSparseEngine<ValueType>(model, storm::api::createTask<ValueType>(formula, true), regions.front(), engine, refinementThreshold);
                                         return result;
                                     };
             } else {
@@ -237,7 +237,7 @@ namespace storm {
             
             postprocessingCallback = [&] (std::unique_ptr<storm::modelchecker::CheckResult> const& result) {
                                         if (parametricSettings.exportResultToFile()) {
-                                            storm::api::exportRegionCheckResultToFile<ValueType>(result, parametricSettings.exportResultPath());
+                                            storm::api::exportRegionCheckResultToFile<ValueType>(result, parametricSettings.exportResultPath(), false);
                                         }
                                     };
             

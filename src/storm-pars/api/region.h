@@ -13,6 +13,7 @@
 #include "storm-pars/modelchecker/region/SparseMdpParameterLiftingModelChecker.h"
 #include "storm-pars/modelchecker/region/ValidatingSparseMdpParameterLiftingModelChecker.h"
 #include "storm-pars/modelchecker/region/ValidatingSparseDtmcParameterLiftingModelChecker.h"
+#include "storm-pars/modelchecker/region/RegionResultHypothesis.h"
 #include "storm-pars/parser/ParameterRegionParser.h"
 #include "storm-pars/storage/ParameterRegion.h"
 #include "storm-pars/utility/parameterlifting.h"
@@ -153,21 +154,33 @@ namespace storm {
         }
         
         template <typename ValueType>
-        std::unique_ptr<storm::modelchecker::RegionCheckResult<ValueType>> checkRegionsWithSparseEngine(std::shared_ptr<storm::models::sparse::Model<ValueType>> const& model, storm::modelchecker::CheckTask<storm::logic::Formula, ValueType> const& task, std::vector<storm::storage::ParameterRegion<ValueType>> const& regions, storm::modelchecker::RegionCheckEngine engine) {
+        std::unique_ptr<storm::modelchecker::RegionCheckResult<ValueType>> checkRegionsWithSparseEngine(std::shared_ptr<storm::models::sparse::Model<ValueType>> const& model, storm::modelchecker::CheckTask<storm::logic::Formula, ValueType> const& task, std::vector<storm::storage::ParameterRegion<ValueType>> const& regions, storm::modelchecker::RegionCheckEngine engine, std::vector<storm::modelchecker::RegionResultHypothesis> const& hypotheses, bool sampleVerticesOfRegions) {
             auto regionChecker = initializeRegionModelChecker(model, task, engine);
-            return regionChecker->analyzeRegions(regions, true);
+            return regionChecker->analyzeRegions(regions, hypotheses, sampleVerticesOfRegions);
         }
     
-        
         template <typename ValueType>
-        std::unique_ptr<storm::modelchecker::RegionRefinementCheckResult<ValueType>> checkAndRefineRegionWithSparseEngine(std::shared_ptr<storm::models::sparse::Model<ValueType>> const& model, storm::modelchecker::CheckTask<storm::logic::Formula, ValueType> const& task, storm::storage::ParameterRegion<ValueType> const& region, ValueType const& refinementThreshold, storm::modelchecker::RegionCheckEngine engine) {
+        std::unique_ptr<storm::modelchecker::RegionCheckResult<ValueType>> checkRegionsWithSparseEngine(std::shared_ptr<storm::models::sparse::Model<ValueType>> const& model, storm::modelchecker::CheckTask<storm::logic::Formula, ValueType> const& task, std::vector<storm::storage::ParameterRegion<ValueType>> const& regions, storm::modelchecker::RegionCheckEngine engine, storm::modelchecker::RegionResultHypothesis const& hypothesis = storm::modelchecker::RegionResultHypothesis::Unknown, bool sampleVerticesOfRegions = false) {
+            std::vector<storm::modelchecker::RegionResultHypothesis> hypotheses(regions.size(), hypothesis);
+            return checkRegionsWithSparseEngine(model, task, regions, engine, hypotheses, sampleVerticesOfRegions);
+        }
+    
+        /*!
+         * Checks and iteratively refines the given region with the sparse engine
+         * @param engine The considered region checking engine
+         * @param coverageThreshold if given, the refinement stops as soon as the fraction of the area of the subregions with inconclusive result is less then this threshold
+         * @param refinementDepthThreshold if given, the refinement stops at the given depth. depth=0 means no refinement.
+         * @param hypothesis if not 'unknown', it is only checked whether the hypothesis holds (and NOT the complementary result).
+         */
+        template <typename ValueType>
+        std::unique_ptr<storm::modelchecker::RegionRefinementCheckResult<ValueType>> checkAndRefineRegionWithSparseEngine(std::shared_ptr<storm::models::sparse::Model<ValueType>> const& model, storm::modelchecker::CheckTask<storm::logic::Formula, ValueType> const& task, storm::storage::ParameterRegion<ValueType> const& region, storm::modelchecker::RegionCheckEngine engine, boost::optional<ValueType> const& coverageThreshold, boost::optional<uint64_t> const& refinementDepthThreshold = boost::none, storm::modelchecker::RegionResultHypothesis hypothesis = storm::modelchecker::RegionResultHypothesis::Unknown) {
             auto regionChecker = initializeRegionModelChecker(model, task, engine);
-            return regionChecker->performRegionRefinement(region, refinementThreshold);
+            return regionChecker->performRegionRefinement(region, coverageThreshold, refinementDepthThreshold, hypothesis);
         }
         
 
         template <typename ValueType>
-        void exportRegionCheckResultToFile(std::unique_ptr<storm::modelchecker::CheckResult> const& checkResult, std::string const& filename) {
+        void exportRegionCheckResultToFile(std::unique_ptr<storm::modelchecker::CheckResult> const& checkResult, std::string const& filename, bool onlyConclusiveResults = false) {
 
             auto const* regionCheckResult = dynamic_cast<storm::modelchecker::RegionCheckResult<ValueType> const*>(checkResult.get());
             STORM_LOG_THROW(regionCheckResult != nullptr, storm::exceptions::UnexpectedException, "Can not export region check result: The given checkresult does not have the expected type.");
@@ -175,7 +188,9 @@ namespace storm {
             std::ofstream filestream;
             storm::utility::openFile(filename, filestream);
             for (auto const& res : regionCheckResult->getRegionResults()) {
+                if (!onlyConclusiveResults || res.second == storm::modelchecker::RegionResult::AllViolated || res.second == storm::modelchecker::RegionResult::AllSat) {
                     filestream << res.second << ": " << res.first << std::endl;
+                }
             }
         }
     

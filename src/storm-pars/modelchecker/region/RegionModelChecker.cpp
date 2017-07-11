@@ -28,31 +28,40 @@ namespace storm {
             }
         
             template <typename ParametricType>
-            std::unique_ptr<storm::modelchecker::RegionCheckResult<ParametricType>> RegionModelChecker<ParametricType>::analyzeRegions(std::vector<storm::storage::ParameterRegion<ParametricType>> const& regions, bool sampleVerticesOfRegion) {
+            std::unique_ptr<storm::modelchecker::RegionCheckResult<ParametricType>> RegionModelChecker<ParametricType>::analyzeRegions(std::vector<storm::storage::ParameterRegion<ParametricType>> const& regions, std::vector<RegionResultHypothesis> const& hypotheses, bool sampleVerticesOfRegion) {
                 
+                STORM_LOG_THROW(regions.size() == hypotheses.size(), storm::exceptions::InvalidArgumentException, "The number of regions and the number of hypotheses do not match");
                 std::vector<std::pair<storm::storage::ParameterRegion<ParametricType>, storm::modelchecker::RegionResult>> result;
                 
+                auto hypothesisIt = hypotheses.begin();
                 for (auto const& region : regions) {
-                    storm::modelchecker::RegionResult regionRes = analyzeRegion(region, storm::modelchecker::RegionResult::Unknown, sampleVerticesOfRegion);
+                    storm::modelchecker::RegionResult regionRes = analyzeRegion(region, *hypothesisIt, storm::modelchecker::RegionResult::Unknown, sampleVerticesOfRegion);
                     result.emplace_back(region, regionRes);
+                    ++hypothesisIt;
                 }
                 
                 return std::make_unique<storm::modelchecker::RegionCheckResult<ParametricType>>(std::move(result));
             }
 
             template <typename ParametricType>
-            std::unique_ptr<storm::modelchecker::RegionRefinementCheckResult<ParametricType>> RegionModelChecker<ParametricType>::performRegionRefinement(storm::storage::ParameterRegion<ParametricType> const& region, ParametricType const& threshold) {
+            std::unique_ptr<storm::modelchecker::RegionRefinementCheckResult<ParametricType>> RegionModelChecker<ParametricType>::performRegionRefinement(storm::storage::ParameterRegion<ParametricType> const& region, boost::optional<ParametricType> const& coverageThreshold, boost::optional<uint64_t> depthThreshold, RegionResultHypothesis const& hypothesis) {
                 STORM_LOG_INFO("Applying refinement on region: " << region.toString(true) << " .");
                 
-                auto thresholdAsCoefficient = storm::utility::convertNumber<CoefficientType>(threshold);
+                auto thresholdAsCoefficient = coverageThreshold ? storm::utility::convertNumber<CoefficientType>(coverageThreshold.get()) : storm::utility::zero<CoefficientType>();
                 auto areaOfParameterSpace = region.area();
                 auto fractionOfUndiscoveredArea = storm::utility::one<CoefficientType>();
                 auto fractionOfAllSatArea = storm::utility::zero<CoefficientType>();
                 auto fractionOfAllViolatedArea = storm::utility::zero<CoefficientType>();
                 
-                std::queue<std::pair<storm::storage::ParameterRegion<ParametricType>, RegionResult>> unprocessedRegions;
+                // The resulting (sub-)regions
                 std::vector<std::pair<storm::storage::ParameterRegion<ParametricType>, RegionResult>> result;
+                
+                // FIFO queues storing the data for the regions that we still need to process.
+                std::queue<std::pair<storm::storage::ParameterRegion<ParametricType>, RegionResult>> unprocessedRegions;
+                std::queue<uint64_t> refinementDepths;
                 unprocessedRegions.emplace(region, RegionResult::Unknown);
+                refinementDepths.push(0);
+                
                 uint_fast64_t numOfAnalyzedRegions = 0;
                 CoefficientType displayedProgress = storm::utility::zero<CoefficientType>();
                 if (storm::settings::getModule<storm::settings::modules::CoreSettings>().isShowStatisticsSet()) {
@@ -69,12 +78,13 @@ namespace storm {
                     displayedProgress = storm::utility::zero<CoefficientType>();
                 }
 
-                while (fractionOfUndiscoveredArea > thresholdAsCoefficient) {
-                    STORM_LOG_THROW(!unprocessedRegions.empty(), storm::exceptions::InvalidStateException, "Threshold for undiscovered area not reached but no unprocessed regions left.");
-                    STORM_LOG_INFO("Analyzing region #" << numOfAnalyzedRegions << " (" << storm::utility::convertNumber<double>(fractionOfUndiscoveredArea) * 100 << "% still unknown)");
+                while (fractionOfUndiscoveredArea > thresholdAsCoefficient && !unprocessedRegions.empty()) {
+                    assert(unprocessedRegions.size() == refinementDepths.size());
+                    uint64_t currentDepth = refinementDepths.front();
+                    STORM_LOG_INFO("Analyzing region #" << numOfAnalyzedRegions << " (Refinement depth " << currentDepth << "; " << storm::utility::convertNumber<double>(fractionOfUndiscoveredArea) * 100 << "% still unknown)");
                     auto& currentRegion = unprocessedRegions.front().first;
                     auto& res = unprocessedRegions.front().second;
-                    res = analyzeRegion(currentRegion, res, false);
+                    res = analyzeRegion(currentRegion, hypothesis, res, false);
                     switch (res) {
                         case RegionResult::AllSat:
                             fractionOfUndiscoveredArea -= currentRegion.area() / areaOfParameterSpace;
@@ -87,24 +97,38 @@ namespace storm {
                             result.push_back(std::move(unprocessedRegions.front()));
                             break;
                         default:
-                            std::vector<storm::storage::ParameterRegion<ParametricType>> newRegions;
-                            currentRegion.split(currentRegion.getCenterPoint(), newRegions);
-                            RegionResult initResForNewRegions = (res == RegionResult::CenterSat) ? RegionResult::ExistsSat :
-                                                                     ((res == RegionResult::CenterViolated) ? RegionResult::ExistsViolated :
-                                                                      RegionResult::Unknown);
-                            for(auto& newRegion : newRegions) {
-                                unprocessedRegions.emplace(std::move(newRegion), initResForNewRegions);
+                            // Split the region as long as the desired refinement depth is not reached.
+                            if (!depthThreshold || currentDepth < depthThreshold.get()) {
+                                std::vector<storm::storage::ParameterRegion<ParametricType>> newRegions;
+                                currentRegion.split(currentRegion.getCenterPoint(), newRegions);
+                                RegionResult initResForNewRegions = (res == RegionResult::CenterSat) ? RegionResult::ExistsSat :
+                                                                         ((res == RegionResult::CenterViolated) ? RegionResult::ExistsViolated :
+                                                                          RegionResult::Unknown);
+                                for (auto& newRegion : newRegions) {
+                                    unprocessedRegions.emplace(std::move(newRegion), initResForNewRegions);
+                                    refinementDepths.push(currentDepth + 1);
+                                }
+                            } else {
+                                // If the region is not further refined, it is still added to the result
+                                result.push_back(std::move(unprocessedRegions.front()));
                             }
                             break;
                     }
                     ++numOfAnalyzedRegions;
                     unprocessedRegions.pop();
+                    refinementDepths.pop();
                     if (storm::settings::getModule<storm::settings::modules::CoreSettings>().isShowStatisticsSet()) {
                         while (displayedProgress < storm::utility::one<CoefficientType>() - fractionOfUndiscoveredArea) {
                             STORM_PRINT_AND_LOG("#");
                             displayedProgress += storm::utility::convertNumber<CoefficientType>(0.01);
                         }
                     }
+                }
+                
+                // Add the still unprocessed regions to the result
+                while (!unprocessedRegions.empty()) {
+                    result.push_back(std::move(unprocessedRegions.front()));
+                    unprocessedRegions.pop();
                 }
                 
                 if (storm::settings::getModule<storm::settings::modules::CoreSettings>().isShowStatisticsSet()) {
