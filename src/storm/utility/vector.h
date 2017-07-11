@@ -19,6 +19,8 @@
 #include "storm/utility/macros.h"
 #include "storm/solver/OptimizationDirection.h"
 
+#include "storm/exceptions/NotImplementedException.h"
+
 namespace storm {
     namespace utility {
         namespace vector {
@@ -868,7 +870,62 @@ namespace storm {
                 }
 				return resultVector;
 			}
+            
+            template<typename ValueType, typename TargetValueType>
+            typename std::enable_if<std::is_same<ValueType, storm::RationalFunction>::value,  std::pair<std::vector<TargetValueType>, ValueType>>::type
+            toIntegralVector(std::vector<ValueType> const& vec) {
+                
+                // Collect the numbers occurring in the input vector
+                std::set<ValueType> occurringNonZeroNumbers;
+                for (auto const& v : vec) {
+                    if (!storm::utility::isZero(v)) {
+                        occurringNonZeroNumbers.insert(v);
+                    }
+                }
+                
+                // Compute the scaling factor
+                ValueType factor;
+                if (occurringNonZeroNumbers.empty()) {
+                    factor = storm::utility::one<ValueType>();
+                } else if (occurringNonZeroNumbers.size() == 1) {
+                    factor = storm::utility::one<ValueType>() / (*occurringNonZeroNumbers.begin());
+                } else {
+                    // Obtain the least common multiple of the denominators of the occurring numbers.
+                    // We can then multiply the numbers with the lcm to obtain integers.
+                    auto numberIt = occurringNonZeroNumbers.begin();
+                    ValueType lcm = storm::utility::asFraction(*numberIt).second;
+                    for (++numberIt; numberIt != occurringNonZeroNumbers.end(); ++numberIt) {
+                        lcm = carl::lcm(lcm, storm::utility::asFraction(*numberIt).second);
+                    }
+                    // Multiply all values with the lcm. To reduce the range of considered integers, we also obtain the gcd of the results.
+                    numberIt = occurringNonZeroNumbers.begin();
+                    ValueType gcd = *numberIt * lcm;
+                    for (++numberIt; numberIt != occurringNonZeroNumbers.end(); ++numberIt) {
+                        gcd = carl::gcd(gcd, static_cast<ValueType>(*numberIt * lcm));
+                    }
+                    
+                    factor = gcd / lcm;
+                    
+                }
+                
+                // Build the result
+                std::vector<TargetValueType> result;
+                result.resize(vec.size());
+                for (auto const& v : vec) {
+                    result.push_back(storm::utility::convertNumber<TargetValueType, ValueType>(v / factor));
+                    STORM_LOG_ASSERT(storm::utility::isInteger(result.back()), "Resulting number '" << result.back() << "' is not integral.");
+                }
+                return std::make_pair(std::move(result), std::move(factor));
+                
+            }
 
+            template<typename ValueType, typename TargetValueType>
+            typename std::enable_if<!std::is_same<ValueType, storm::RationalFunction>::value,  std::pair<std::vector<TargetValueType>, ValueType>>::type
+            toIntegralVector(std::vector<ValueType> const& vec) {
+                STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "Functionality not implemented.");
+                return std::pair<std::vector<TargetValueType>, ValueType>();
+            }
+            
             template<typename Type>
             std::vector<Type> filterVector(std::vector<Type> const& in, storm::storage::BitVector const& filter) {
                 std::vector<Type> result;

@@ -295,6 +295,11 @@ namespace storm {
         ClnRationalNumber convertNumber(std::string const& number) {
             return carl::parse<ClnRationalNumber>(number);
         }
+        
+        template<>
+        std::pair<ClnRationalNumber, ClnRationalNumber> asFraction(ClnRationalNumber const& number) {
+            return std::make_pair(carl::getNum(number), carl::getDenom(number));
+        }
 
         template<>
         ClnRationalNumber sqrt(ClnRationalNumber const& number) {
@@ -426,6 +431,11 @@ namespace storm {
             return carl::parse<GmpRationalNumber>(number);
         }
         
+        template<>
+        std::pair<GmpRationalNumber, GmpRationalNumber> asFraction(GmpRationalNumber const& number) {
+            return std::make_pair(carl::getNum(number), carl::getDenom(number));
+        }
+
         template<>
         GmpRationalNumber sqrt(GmpRationalNumber const& number) {
             return carl::sqrt(number);
