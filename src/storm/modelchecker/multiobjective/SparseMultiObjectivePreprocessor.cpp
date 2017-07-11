@@ -375,7 +375,7 @@ namespace storm {
                 std::set<std::string> relevantRewardModels;
                 for (auto const& obj : result.objectives) {
                     relevantRewardModels.insert(*obj.rewardModelName);
-                    if (obj.timeBoundReference->isRewardBound()) {
+                    if (obj.timeBoundReference && obj.timeBoundReference->isRewardBound()) {
                         relevantRewardModels.insert(obj.timeBoundReference->getRewardName());
                     }
                 }
