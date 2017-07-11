@@ -20,6 +20,7 @@ namespace storm {
             const std::string JitBuilderSettings::boostIncludeDirectoryOptionName = "boost";
             const std::string JitBuilderSettings::carlIncludeDirectoryOptionName = "carl";
             const std::string JitBuilderSettings::compilerFlagsOptionName = "cxxflags";
+            const std::string JitBuilderSettings::optimizationLevelOptionName = "opt";
 
             JitBuilderSettings::JitBuilderSettings() : ModuleSettings(moduleName) {
                 this->addOption(storm::settings::OptionBuilder(moduleName, doctorOptionName, false, "Show debugging information on why the jit-based model builder is not working on your system.").build());
@@ -33,6 +34,8 @@ namespace storm {
                                 .addArgument(storm::settings::ArgumentBuilder::createStringArgument("dir", "The directory containing the carl headers.").build()).build());
                 this->addOption(storm::settings::OptionBuilder(moduleName, compilerFlagsOptionName, false, "The flags passed to the compiler.")
                                 .addArgument(storm::settings::ArgumentBuilder::createStringArgument("flags", "The compiler flags.").build()).build());
+                this->addOption(storm::settings::OptionBuilder(moduleName, optimizationLevelOptionName, false, "The optimization level to use.")
+                                .addArgument(storm::settings::ArgumentBuilder::createUnsignedIntegerArgument("level", "The compiler flags.").setDefaultValueUnsignedInteger(3).build()).build());
             }
             
             bool JitBuilderSettings::isCompilerSet() const {
@@ -77,6 +80,10 @@ namespace storm {
             
             std::string JitBuilderSettings::getCompilerFlags() const {
                 return this->getOption(compilerFlagsOptionName).getArgumentByName("flags").getValueAsString();
+            }
+            
+            uint64_t JitBuilderSettings::getOptimizationLevel() const {
+                return this->getOption(optimizationLevelOptionName).getArgumentByName("level").getValueAsUnsignedInteger();
             }
             
             void JitBuilderSettings::finalize() {
