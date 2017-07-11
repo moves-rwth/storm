@@ -1,7 +1,7 @@
 #include "storm/modelchecker/multiobjective/SparseMultiObjectivePreprocessor.h"
 
 #include <algorithm>
-#include <storm/transformer/GoalStateMerger.h>
+#include <set>
 
 #include "storm/models/sparse/Mdp.h"
 #include "storm/models/sparse/MarkovAutomaton.h"
@@ -12,7 +12,7 @@
 #include "storm/storage/memorystructure/MemoryStructureBuilder.h"
 #include "storm/storage/memorystructure/SparseModelMemoryProduct.h"
 #include "storm/storage/expressions/ExpressionManager.h"
-#include "storm/transformer/SubsystemBuilder.h"
+#include "storm/transformer/GoalStateMerger.h"
 #include "storm/utility/macros.h"
 #include "storm/utility/vector.h"
 #include "storm/utility/graph.h"
@@ -266,8 +266,6 @@ namespace storm {
             
             template<typename SparseModelType>
             void SparseMultiObjectivePreprocessor<SparseModelType>::preprocessBoundedUntilFormula(storm::logic::BoundedUntilFormula const& formula, PreprocessorData& data) {
-                STORM_LOG_THROW(!data.originalModel.isOfType(storm::models::ModelType::MarkovAutomaton) || !formula.getTimeBoundReference().isStepBound(), storm::exceptions::InvalidPropertyException, "Multi-objective model checking currently does not support STEP-bounded properties for Markov automata.");
-                
                 if (formula.hasLowerBound()) {
                     STORM_LOG_THROW(!formula.getLowerBound().containsVariables(), storm::exceptions::InvalidPropertyException, "The lower time bound for the formula " << formula << " still contains variables");
                     if (!storm::utility::isZero(formula.getLowerBound<double>()) || formula.isLowerBoundStrict()) {
@@ -280,6 +278,8 @@ namespace storm {
                         data.objectives.back()->upperTimeBound = storm::logic::TimeBound(formula.isUpperBoundStrict(), formula.getUpperBound());
                     }
                 }
+                
+                data.objectives.back()->timeBoundReference = formula.getTimeBoundReference();
                 preprocessUntilFormula(storm::logic::UntilFormula(formula.getLeftSubformula().asSharedPointer(), formula.getRightSubformula().asSharedPointer()), data);
             }
             
@@ -375,6 +375,9 @@ namespace storm {
                 std::set<std::string> relevantRewardModels;
                 for (auto const& obj : result.objectives) {
                     relevantRewardModels.insert(*obj.rewardModelName);
+                    if (obj.timeBoundReference->isRewardBound()) {
+                        relevantRewardModels.insert(obj.timeBoundReference->getRewardName());
+                    }
                 }
                 
                 // Build a subsystem that discards states that yield infinite reward for all schedulers.

@@ -41,6 +41,10 @@ namespace storm {
             template <class SparseMaModelType>
             void SparseMaPcaaWeightVectorChecker<SparseMaModelType>::boundedPhase(std::vector<ValueType> const& weightVector, std::vector<ValueType>& weightedRewardVector) {
                 
+                for (auto const& obj : this->objectives) {
+                    STORM_LOG_THROW(!obj.timeBoundReference || obj.timeBoundReference->isTimeBound(), storm::exceptions::InvalidPropertyException, "Multi-objective model checking of Markov automata is only supported for time-bounded formulass.");
+                }
+                
                 // Split the preprocessed model into transitions from/to probabilistic/Markovian states.
                 SubModel MS = createSubModel(true, weightedRewardVector);
                 SubModel PS = createSubModel(false, weightedRewardVector);

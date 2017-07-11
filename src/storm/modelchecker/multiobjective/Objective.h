@@ -5,6 +5,7 @@
 #include "storm/logic/Formula.h"
 #include "storm/logic/Bound.h"
 #include "storm/logic/TimeBound.h"
+#include "storm/logic/TimeBoundType.h"
 #include "storm/solver/OptimizationDirection.h"
 
 namespace storm {
@@ -28,8 +29,9 @@ namespace storm {
                 // if originalFormula does ot specifies one, the direction is derived from the bound.
                 storm::solver::OptimizationDirection optimizationDirection;
                 
-                // Lower and upper time/step bouds
+                // Lower and upper time/step/reward bouds
                 boost::optional<storm::logic::TimeBound> lowerTimeBound, upperTimeBound;
+                boost::optional<storm::logic::TimeBoundReference> timeBoundReference;
                 
                 boost::optional<ValueType> lowerResultBound, upperResultBound;
                 
