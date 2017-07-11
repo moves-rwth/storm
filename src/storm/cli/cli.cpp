@@ -311,8 +311,6 @@ namespace storm {
                 transformToJani |= transformToJaniForJit;
                 
                 if (transformToJani) {
-                    SymbolicInput output;
-
                     storm::prism::Program const& model = output.model.get().asPrismProgram();
                     auto modelAndRenaming = model.toJaniWithLabelRenaming(true);
                     output.model = modelAndRenaming.first;
