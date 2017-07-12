@@ -163,6 +163,8 @@ if(Z3_FOUND)
 
     add_imported_library(z3 SHARED ${Z3_LIBRARIES} ${Z3_INCLUDE_DIRS})
     list(APPEND STORM_DEP_TARGETS z3_SHARED)
+else()
+    message (WARNING "Storm - Z3 not found. Building of Prism/JANI models will not be supported.")
 endif(Z3_FOUND)
 
 #############################################################
@@ -184,8 +186,8 @@ if (STORM_USE_GUROBI)
     set(STORM_HAVE_GUROBI ${GUROBI_FOUND})
     if (GUROBI_FOUND)
         message (STATUS "Storm - Linking with Gurobi.")
-        add_imported_library(Gurobi "" ${GUROBI_LIBRARY} ${GUROBI_INCLUDE_DIRS})
-		list(APPEND STORM_DEP_TARGETS Gurobi)
+        add_imported_library(Gurobi SHARED ${GUROBI_LIBRARY} ${GUROBI_INCLUDE_DIRS})
+		list(APPEND STORM_DEP_TARGETS Gurobi_SHARED)
     endif()
 else()
     set(STORM_HAVE_GUROBI OFF)
@@ -205,6 +207,9 @@ include(${STORM_3RDPARTY_SOURCE_DIR}/include_cudd.cmake)
 #############################################################
 
 set(STORM_HAVE_CARL OFF)
+set(CARL_MINYEAR 17)
+set(CARL_MINMONTH 06)
+set(CARL_MINPATCH 0)
 if(USE_CARL)
 	if (NOT STORM_FORCE_SHIPPED_CARL)
     	find_package(carl QUIET)
@@ -218,10 +223,22 @@ if(USE_CARL)
         else()
             message(SEND_ERROR "File ${carlLOCATION} does not exist, did you build carl?")
         endif()
+        if(${carl_MINORYEARVERSION} LESS ${CARL_MINYEAR})
+            message(SEND_ERROR "Carl outdated, require ${CARL_MINYEAR}.${CARL_MINMONTH}.${CARL_MINPATCH}, have ${carl_VERSION}")
+        elseif(${carl_MINORYEARVERSION} EQUAL ${CARL_MINYEAR})
+            if(${carl_MINORMONTHVERSION} LESS ${CARL_MINMONTH})
+                message(SEND_ERROR "Carl outdated, require ${CARL_MINYEAR}.${CARL_MINMONTH}.${CARL_MINPATCH}, have ${carl_VERSION}")
+             elseif(${carl_MINORMONTHVERSION} EQUAL ${CARL_MINMONTH})
+                if(${carl_MAINTENANCEVERSION} LESS ${CARL_MINPATCH})
+                    message(SEND_ERROR "Carl outdated, require ${CARL_MINYEAR}.${CARL_MINMONTH}.${CARL_MINPATCH}, have ${carl_VERSION}")
+                endif()
+            endif()
+        endif()
+
         set(STORM_SHIPPED_CARL OFF)
         set(STORM_HAVE_CARL ON)
         message(STATUS "Storm - Use system version of carl.")
-        message(STATUS "Storm - Linking with carl ${carl_VERSION} (CARL_USE_CLN_NUMBERS: ${CARL_USE_CLN_NUMBERS}, CARL_USE_GINAC: ${CARL_USE_GINAC}).")
+        message(STATUS "Storm - Linking with preinstalled carl ${carl_VERSION} (include: ${carl_INCLUDE_DIR}, library ${carl_LIBRARIES}, CARL_USE_CLN_NUMBERS: ${CARL_USE_CLN_NUMBERS}, CARL_USE_GINAC: ${CARL_USE_GINAC}).")
         set(STORM_HAVE_CLN ${CARL_USE_CLN_NUMBERS})
         set(STORM_HAVE_GINAC ${CARL_USE_GINAC})
 
@@ -231,7 +248,7 @@ if(USE_CARL)
 		message("START CARL CONFIG PROCESS")
 		file(MAKE_DIRECTORY ${STORM_3RDPARTY_BINARY_DIR}/carl_download) 
 		execute_process(
-		COMMAND ${CMAKE_COMMAND} ${STORM_3RDPARTY_SOURCE_DIR}/carl "-DSTORM_3RDPARTY_BINARY_DIR=${STORM_3RDPARTY_BINARY_DIR}" "-DUSE_CLN_NUMBERS=ON" "-DUSE_GINAC=ON" "-DBoost_LIBRARY_DIRS=${Boost_LIBRARY_DIRS}" "-DBoost_INCLUDE_DIRS=${Boost_INCLUDE_DIRS}" "-DTHREAD_SAFE=ON"
+		COMMAND ${CMAKE_COMMAND} ${STORM_3RDPARTY_SOURCE_DIR}/carl "-DSTORM_3RDPARTY_BINARY_DIR=${STORM_3RDPARTY_BINARY_DIR}" "-DBoost_LIBRARY_DIRS=${Boost_LIBRARY_DIRS}" "-DBoost_INCLUDE_DIRS=${Boost_INCLUDE_DIRS}"
 		WORKING_DIRECTORY ${STORM_3RDPARTY_BINARY_DIR}/carl_download
 		OUTPUT_VARIABLE carlconfig_out
 		RESULT_VARIABLE carlconfig_result)
@@ -262,9 +279,7 @@ if(USE_CARL)
 				LOG_INSTALL ON
                 BUILD_BYPRODUCTS ${STORM_3RDPARTY_BINARY_DIR}/carl/lib/libcarl${DYNAMIC_EXT}
         )
-        include(${STORM_3RDPARTY_BINARY_DIR}/carl/carlConfig.cmake)
-        message("CARL_USE_CLN_NUMBERS: ${CARL_USE_CLN_NUMBERS}, CARL_USE_GINAC: ${CARL_USE_GINAC}")
-
+        include(${STORM_3RDPARTY_BINARY_DIR}/carl/carlExport/carlConfig.cmake)
 
         set(STORM_HAVE_CLN ${CARL_USE_CLN_NUMBERS})
         set(STORM_HAVE_GINAC ${CARL_USE_GINAC})
@@ -273,9 +288,12 @@ if(USE_CARL)
         set(carl_INCLUDE_DIR "${STORM_3RDPARTY_BINARY_DIR}/carl/include/")
 		set(carl_LIBRARIES ${STORM_3RDPARTY_BINARY_DIR}/carl/lib/libcarl${DYNAMIC_EXT})
         set(STORM_HAVE_CARL ON)
+
+        message(STATUS "Storm - Linking with shipped carl ${carl_VERSION} (include: ${carl_INCLUDE_DIR}, library ${carl_LIBRARIES}, CARL_USE_CLN_NUMBERS: ${CARL_USE_CLN_NUMBERS}, CARL_USE_GINAC: ${CARL_USE_GINAC}).")
+
         
         # install the carl dynamic library if we build it
-        install(FILES ${STORM_3RDPARTY_BINARY_DIR}/carl/lib/libcarl.1.0.0${DYNAMIC_EXT} DESTINATION lib)
+        install(FILES ${STORM_3RDPARTY_BINARY_DIR}/carl/lib/libcarl.${carl_VERSION}${DYNAMIC_EXT} DESTINATION lib)
     endif()
 
     if(STORM_USE_CLN_RF AND NOT STORM_HAVE_CLN)
@@ -394,6 +412,12 @@ include(${STORM_3RDPARTY_SOURCE_DIR}/include_xerces.cmake)
 ##
 #############################################################
 
+if(STORM_SHIPPED_CARL)
+    set(sylvan_dep carl)
+else()
+    set(sylvan_dep lib_carl)
+endif()
+
 ExternalProject_Add(
         sylvan
         DOWNLOAD_COMMAND ""
@@ -406,6 +430,7 @@ ExternalProject_Add(
         INSTALL_DIR ${STORM_3RDPARTY_BINARY_DIR}/sylvan
         LOG_CONFIGURE ON
         LOG_BUILD ON
+        DEPENDS ${sylvan_dep}
         BUILD_BYPRODUCTS ${STORM_3RDPARTY_BINARY_DIR}/sylvan/src/libsylvan${STATIC_EXT}
 )
 
@@ -417,9 +442,7 @@ message(STATUS "Storm - Using shipped version of sylvan.")
 message(STATUS "Storm - Linking with sylvan.")
 add_imported_library(sylvan STATIC ${Sylvan_LIBRARY} ${Sylvan_INCLUDE_DIR})
 add_dependencies(sylvan_STATIC sylvan)
-if(STORM_SHIPPED_CARL)
-	add_dependencies(sylvan carl)
-endif()
+
 list(APPEND STORM_DEP_TARGETS sylvan_STATIC)
 
 find_package(Hwloc QUIET REQUIRED)

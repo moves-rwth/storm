@@ -2,7 +2,7 @@
 
 #include "storm/models/sparse/StandardRewardModel.h"
 
-#include "storm/adapters/CarlAdapter.h"
+#include "storm/adapters/RationalFunctionAdapter.h"
 
 namespace storm {
     namespace models {
@@ -12,10 +12,8 @@ namespace storm {
             StochasticTwoPlayerGame<ValueType, RewardModelType>::StochasticTwoPlayerGame(storm::storage::SparseMatrix<storm::storage::sparse::state_type> const& player1Matrix,
                                                                                          storm::storage::SparseMatrix<ValueType> const& player2Matrix,
                                                                                          storm::models::sparse::StateLabeling const& stateLabeling,
-                                                                                         std::unordered_map<std::string, RewardModelType> const& rewardModels,
-                                                                                         boost::optional<std::vector<LabelSet>> const& optionalPlayer1ChoiceLabeling,
-                                                                                         boost::optional<std::vector<LabelSet>> const& optionalPlayer2ChoiceLabeling)
-            : NondeterministicModel<ValueType>(storm::models::ModelType::S2pg, player2Matrix, stateLabeling, rewardModels, optionalPlayer2ChoiceLabeling), player1Matrix(player1Matrix), player1ChoiceLabeling(optionalPlayer1ChoiceLabeling) {
+                                                                                         std::unordered_map<std::string, RewardModelType> const& rewardModels)
+            : StochasticTwoPlayerGame<ValueType, RewardModelType>(storm::storage::sparse::ModelComponents<ValueType, RewardModelType>(player2Matrix, stateLabeling, rewardModels, false, boost::none, player1Matrix)) {
                 // Intentionally left empty.
             }
             
@@ -24,11 +22,19 @@ namespace storm {
             StochasticTwoPlayerGame<ValueType, RewardModelType>::StochasticTwoPlayerGame(storm::storage::SparseMatrix<storm::storage::sparse::state_type>&& player1Matrix,
                                                                                          storm::storage::SparseMatrix<ValueType>&& player2Matrix,
                                                                                          storm::models::sparse::StateLabeling&& stateLabeling,
-                                                                                         std::unordered_map<std::string, RewardModelType>&& rewardModels,
-                                                                                         boost::optional<std::vector<LabelSet>>&& optionalPlayer1ChoiceLabeling,
-                                                                                         boost::optional<std::vector<LabelSet>>&& optionalPlayer2ChoiceLabeling)
-            : NondeterministicModel<ValueType>(storm::models::ModelType::S2pg, std::move(player2Matrix), std::move(stateLabeling), std::move(rewardModels), std::move(optionalPlayer2ChoiceLabeling)), player1Matrix(std::move(player1Matrix)), player1ChoiceLabeling(std::move(optionalPlayer1ChoiceLabeling)) {
+                                                                                         std::unordered_map<std::string, RewardModelType>&& rewardModels)
+            : StochasticTwoPlayerGame<ValueType, RewardModelType>(storm::storage::sparse::ModelComponents<ValueType, RewardModelType>(std::move(player2Matrix), std::move(stateLabeling), std::move(rewardModels), false, boost::none, std::move(player1Matrix))) {
                 // Intentionally left empty.
+            }
+            
+            template <typename ValueType, typename RewardModelType>
+            StochasticTwoPlayerGame<ValueType, RewardModelType>::StochasticTwoPlayerGame(storm::storage::sparse::ModelComponents<ValueType, RewardModelType> const& components) : NondeterministicModel<ValueType, RewardModelType>(ModelType::S2pg, components), player1Matrix(components.player1Matrix.get()) {
+                // Intentionally left empty
+            }
+        
+            template <typename ValueType, typename RewardModelType>
+            StochasticTwoPlayerGame<ValueType, RewardModelType>::StochasticTwoPlayerGame(storm::storage::sparse::ModelComponents<ValueType, RewardModelType>&& components) : NondeterministicModel<ValueType, RewardModelType>(ModelType::S2pg, std::move(components)), player1Matrix(std::move(components.player1Matrix.get())) {
+                // Intentionally left empty
             }
             
             template <typename ValueType, typename RewardModelType>
@@ -42,29 +48,19 @@ namespace storm {
             }
             
             template <typename ValueType, typename RewardModelType>
-            bool StochasticTwoPlayerGame<ValueType, RewardModelType>::hasPlayer1ChoiceLabeling() const {
-                return static_cast<bool>(player1ChoiceLabeling);
-            }
-            
-            template <typename ValueType, typename RewardModelType>
-            std::vector<LabelSet> const& StochasticTwoPlayerGame<ValueType, RewardModelType>::getPlayer1ChoiceLabeling() const {
-                return player1ChoiceLabeling.get();
-            }
-
-            template <typename ValueType, typename RewardModelType>
             bool StochasticTwoPlayerGame<ValueType, RewardModelType>::hasPlayer2ChoiceLabeling() const {
                 return this->hasChoiceLabeling();
             }
             
             template <typename ValueType, typename RewardModelType>
-            std::vector<LabelSet> const& StochasticTwoPlayerGame<ValueType, RewardModelType>::getPlayer2ChoiceLabeling() const {
+            storm::models::sparse::ChoiceLabeling const& StochasticTwoPlayerGame<ValueType, RewardModelType>::getPlayer2ChoiceLabeling() const {
                 return this->getChoiceLabeling();
             }
             
             template class StochasticTwoPlayerGame<double>;
-//            template class StochasticTwoPlayerGame<float>;
             
 #ifdef STORM_HAVE_CARL
+            template class StochasticTwoPlayerGame<double, storm::models::sparse::StandardRewardModel<storm::Interval>>;
             template class StochasticTwoPlayerGame<storm::RationalFunction>;
             template class StochasticTwoPlayerGame<storm::RationalNumber>;
 #endif

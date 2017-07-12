@@ -23,7 +23,7 @@ namespace storm {
             template<class T>
             static std::unique_ptr<gmm::csr_matrix<T>> toGmmxxSparseMatrix(storm::storage::SparseMatrix<T> const& matrix) {
                 uint_fast64_t realNonZeros = matrix.getEntryCount();
-                STORM_LOG_DEBUG("Converting matrix with " << realNonZeros << " non-zeros to gmm++ format.");
+                STORM_LOG_DEBUG("Converting " << matrix.getRowCount() << "x" << matrix.getColumnCount() << " matrix with " << realNonZeros << " non-zeros to gmm++ format.");
                 
                 // Prepare the resulting matrix.
                 std::unique_ptr<gmm::csr_matrix<T>> result(new gmm::csr_matrix<T>(matrix.getRowCount(), matrix.getColumnCount()));

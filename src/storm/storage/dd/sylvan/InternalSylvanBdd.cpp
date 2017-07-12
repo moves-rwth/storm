@@ -13,7 +13,7 @@
 #include "storm/exceptions/InvalidOperationException.h"
 #include "storm/exceptions/NotSupportedException.h"
 
-#include "storm/adapters/CarlAdapter.h"
+#include "storm/adapters/RationalFunctionAdapter.h"
 #include "storm-config.h"
 
 namespace storm {

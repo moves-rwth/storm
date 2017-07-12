@@ -30,6 +30,8 @@ namespace storm {
                 bool isCompilerFlagsSet() const;
                 std::string getCompilerFlags() const;
                 
+                uint64_t getOptimizationLevel() const;
+                
                 bool check() const override;
                 void finalize() override;
                 
@@ -42,6 +44,7 @@ namespace storm {
                 static const std::string carlIncludeDirectoryOptionName;
                 static const std::string compilerFlagsOptionName;
                 static const std::string doctorOptionName;
+                static const std::string optimizationLevelOptionName;
             };
             
         }

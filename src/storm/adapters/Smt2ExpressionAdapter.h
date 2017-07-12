@@ -4,7 +4,7 @@
 #include <unordered_map>
 
 #include "storm-config.h"
-#include "storm/adapters/CarlAdapter.h"
+#include "storm/adapters/RationalFunctionAdapter.h"
 #include "storm/storage/expressions/Expressions.h"
 #include "storm/storage/expressions/ExpressionManager.h"
 #include "storm/utility/macros.h"

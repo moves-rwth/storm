@@ -1,11 +1,14 @@
 #include "storm/modelchecker/multiobjective/pcaa/SparseMdpPcaaWeightVectorChecker.h"
 
-#include "storm/adapters/CarlAdapter.h"
+#include "storm/adapters/RationalFunctionAdapter.h"
 #include "storm/models/sparse/Mdp.h"
 #include "storm/models/sparse/StandardRewardModel.h"
 #include "storm/utility/macros.h"
 #include "storm/utility/vector.h"
 #include "storm/exceptions/InvalidPropertyException.h"
+#include "storm/exceptions/IllegalArgumentException.h"
+#include "storm/exceptions/NotSupportedException.h"
+#include "storm/exceptions/UnexpectedException.h"
 
 
 namespace storm {
@@ -28,6 +31,24 @@ namespace storm {
             
             template <class SparseMdpModelType>
             void SparseMdpPcaaWeightVectorChecker<SparseMdpModelType>::boundedPhase(std::vector<ValueType> const& weightVector, std::vector<ValueType>& weightedRewardVector) {
+                // Check whether reward bounded objectives occur.
+                bool containsRewardBoundedObjectives = false;
+                for (auto const& obj : this->objectives) {
+                    if (obj.timeBoundReference && obj.timeBoundReference->isRewardBound()) {
+                        containsRewardBoundedObjectives = true;
+                        break;
+                    }
+                }
+                
+                if (containsRewardBoundedObjectives) {
+                    boundedPhaseWithRewardBounds(weightVector, weightedRewardVector);
+                } else {
+                    boundedPhaseOnlyStepBounds(weightVector, weightedRewardVector);
+                }
+            }
+
+            template <class SparseMdpModelType>
+            void SparseMdpPcaaWeightVectorChecker<SparseMdpModelType>::boundedPhaseOnlyStepBounds(std::vector<ValueType> const& weightVector, std::vector<ValueType>& weightedRewardVector) {
                 // Allocate some memory so this does not need to happen for each time epoch
                 std::vector<uint_fast64_t> optimalChoicesInCurrentEpoch(this->model.getNumberOfStates());
                 std::vector<ValueType> choiceValues(weightedRewardVector.size());
@@ -96,6 +117,13 @@ namespace storm {
                     --currentEpoch;
                 }
             }
+            
+            
+            template <class SparseMdpModelType>
+            void SparseMdpPcaaWeightVectorChecker<SparseMdpModelType>::boundedPhaseWithRewardBounds(std::vector<ValueType> const& weightVector, std::vector<ValueType>& weightedRewardVector) {
+                STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Multi-objective model checking with reward bounded objectives is not supported.");
+            }
+            
             
             template class SparseMdpPcaaWeightVectorChecker<storm::models::sparse::Mdp<double>>;
 #ifdef STORM_HAVE_CARL

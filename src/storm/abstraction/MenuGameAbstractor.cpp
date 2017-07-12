@@ -10,7 +10,7 @@
 #include "storm/utility/file.h"
 
 #include "storm-config.h"
-#include "storm/adapters/CarlAdapter.h"
+#include "storm/adapters/RationalFunctionAdapter.h"
 
 namespace storm {
     namespace abstraction {

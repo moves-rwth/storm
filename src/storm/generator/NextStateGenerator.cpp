@@ -1,6 +1,6 @@
 #include "storm/generator/NextStateGenerator.h"
 
-#include "storm/adapters/CarlAdapter.h"
+#include "storm/adapters/RationalFunctionAdapter.h"
 
 #include "storm/logic/Formulas.h"
 
@@ -146,6 +146,12 @@ namespace storm {
         template<typename ValueType, typename StateType>
         storm::expressions::SimpleValuation NextStateGenerator<ValueType, StateType>::toValuation(CompressedState const& state) const {
             return unpackStateIntoValuation(state, variableInformation, *expressionManager);
+        }
+        
+        template<typename ValueType, typename StateType>
+        std::shared_ptr<storm::storage::sparse::ChoiceOrigins> NextStateGenerator<ValueType, StateType>::generateChoiceOrigins(std::vector<boost::any>& dataForChoiceOrigins) const {
+            STORM_LOG_ERROR_COND(!options.isBuildChoiceOriginsSet(), "Generating choice origins is not supported for the considered model format.");
+            return nullptr;
         }
 
         template class NextStateGenerator<double>;

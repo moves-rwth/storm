@@ -1,5 +1,6 @@
 #include "storm/logic/BoundedUntilFormula.h"
 
+#include "storm/utility/constants.h"
 #include "storm/utility/macros.h"
 #include "storm/exceptions/InvalidArgumentException.h"
 
@@ -10,7 +11,7 @@
 
 namespace storm {
     namespace logic {
-        BoundedUntilFormula::BoundedUntilFormula(std::shared_ptr<Formula const> const& leftSubformula, std::shared_ptr<Formula const> const& rightSubformula, boost::optional<TimeBound> const& lowerBound, boost::optional<TimeBound> const& upperBound, TimeBoundType const& timeBoundType) : BinaryPathFormula(leftSubformula, rightSubformula), timeBoundType(timeBoundType), lowerBound(lowerBound), upperBound(upperBound) {
+        BoundedUntilFormula::BoundedUntilFormula(std::shared_ptr<Formula const> const& leftSubformula, std::shared_ptr<Formula const> const& rightSubformula, boost::optional<TimeBound> const& lowerBound, boost::optional<TimeBound> const& upperBound, TimeBoundReference const& timeBoundReference) : BinaryPathFormula(leftSubformula, rightSubformula), timeBoundReference(timeBoundReference), lowerBound(lowerBound), upperBound(upperBound) {
             STORM_LOG_THROW(lowerBound || upperBound, storm::exceptions::InvalidArgumentException, "Bounded until formula requires at least one bound.");
         }
         
@@ -26,17 +27,20 @@ namespace storm {
             return visitor.visit(*this, data);
         }
         
-        TimeBoundType const& BoundedUntilFormula::getTimeBoundType() const {
-            return timeBoundType;
+        void BoundedUntilFormula::gatherReferencedRewardModels(std::set<std::string>& referencedRewardModels) const {
+            if (this->getTimeBoundReference().isRewardBound()) {
+                referencedRewardModels.insert(this->getTimeBoundReference().getRewardName());
+            }
+            this->getLeftSubformula().gatherReferencedRewardModels(referencedRewardModels);
+            this->getRightSubformula().gatherReferencedRewardModels(referencedRewardModels);
         }
         
-        bool BoundedUntilFormula::isStepBounded() const {
-            return timeBoundType == TimeBoundType::Steps;
+        
+        TimeBoundReference const& BoundedUntilFormula::getTimeBoundReference() const {
+            return timeBoundReference;
         }
         
-        bool BoundedUntilFormula::isTimeBounded() const {
-            return timeBoundType == TimeBoundType::Time;
-        }
+
         
         bool BoundedUntilFormula::isLowerBoundStrict() const {
             return lowerBound.get().isStrict();
@@ -87,6 +91,22 @@ namespace storm {
         }
         
         template <>
+        storm::RationalNumber BoundedUntilFormula::getLowerBound() const {
+            checkNoVariablesInBound(this->getLowerBound());
+            storm::RationalNumber bound = this->getLowerBound().evaluateAsRational();
+            STORM_LOG_THROW(bound >= storm::utility::zero<storm::RationalNumber>(), storm::exceptions::InvalidPropertyException, "Time-bound must not evaluate to negative number.");
+            return bound;
+        }
+        
+        template <>
+        storm::RationalNumber BoundedUntilFormula::getUpperBound() const {
+            checkNoVariablesInBound(this->getUpperBound());
+            storm::RationalNumber bound = this->getUpperBound().evaluateAsRational();
+            STORM_LOG_THROW(bound >= storm::utility::zero<storm::RationalNumber>(), storm::exceptions::InvalidPropertyException, "Time-bound must not evaluate to negative number.");
+            return bound;
+        }
+        
+        template <>
         uint64_t BoundedUntilFormula::getLowerBound() const {
             checkNoVariablesInBound(this->getLowerBound());
             int_fast64_t bound = this->getLowerBound().evaluateAsInt();
@@ -105,7 +125,7 @@ namespace storm {
         template <>
         double BoundedUntilFormula::getNonStrictUpperBound() const {
             double bound = getUpperBound<double>();
-            STORM_LOG_THROW(bound > 0, storm::exceptions::InvalidPropertyException, "Cannot retrieve non-strict bound from strict zero-bound.");
+            STORM_LOG_THROW(!isUpperBoundStrict() || bound > 0, storm::exceptions::InvalidPropertyException, "Cannot retrieve non-strict bound from strict zero-bound.");
             return bound;
         }
 
@@ -128,6 +148,9 @@ namespace storm {
             this->getLeftSubformula().writeToStream(out);
             
             out << " U";
+            if (this->getTimeBoundReference().isRewardBound()) {
+                out << "{\"" << this->getTimeBoundReference().getRewardName() << "\"}";
+            }
             if (this->hasLowerBound()) {
                 if (this->hasUpperBound()) {
                     if (this->isLowerBoundStrict()) {

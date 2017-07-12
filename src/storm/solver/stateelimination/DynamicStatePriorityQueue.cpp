@@ -1,6 +1,6 @@
 #include "storm/solver/stateelimination/DynamicStatePriorityQueue.h"
 
-#include "storm/adapters/CarlAdapter.h"
+#include "storm/adapters/RationalFunctionAdapter.h"
 
 #include "storm/utility/macros.h"
 #include "storm/utility/constants.h"

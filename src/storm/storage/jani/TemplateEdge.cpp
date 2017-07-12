@@ -12,7 +12,7 @@ namespace storm {
         }
 
         TemplateEdge::TemplateEdge(storm::expressions::Expression const& guard, OrderedAssignments const& assignments, std::vector<TemplateEdgeDestination> const& destinations)
-                : guard(guard), assignments(assignments), destinations(destinations) {
+                : guard(guard), destinations(destinations), assignments(assignments) {
             // Intentionally left empty.
         }
         

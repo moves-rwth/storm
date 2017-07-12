@@ -5,7 +5,7 @@
 #include <boost/optional.hpp>
 
 #include "storm/modelchecker/hints/ModelCheckerHint.h"
-#include "storm/storage/TotalScheduler.h"
+#include "storm/storage/Scheduler.h"
 
 namespace storm {
     namespace modelchecker {
@@ -46,10 +46,10 @@ namespace storm {
             void setMaybeStates(storm::storage::BitVector&& maybeStates);
             
             bool hasSchedulerHint() const;
-            storm::storage::TotalScheduler const& getSchedulerHint() const;
-            storm::storage::TotalScheduler& getSchedulerHint();
-            void setSchedulerHint(boost::optional<storage::TotalScheduler> const& schedulerHint);
-            void setSchedulerHint(boost::optional<storage::TotalScheduler>&& schedulerHint);
+            storm::storage::Scheduler<ValueType> const& getSchedulerHint() const;
+            storm::storage::Scheduler<ValueType>& getSchedulerHint();
+            void setSchedulerHint(boost::optional<storage::Scheduler<ValueType>> const& schedulerHint);
+            void setSchedulerHint(boost::optional<storage::Scheduler<ValueType>>&& schedulerHint);
             
             // If set, it is assumed that there are no end components that consist only of maybestates.
             // May only be enabled iff maybestates are given.
@@ -58,7 +58,7 @@ namespace storm {
             
         private:
             boost::optional<std::vector<ValueType>> resultHint;
-            boost::optional<storm::storage::TotalScheduler> schedulerHint;
+            boost::optional<storm::storage::Scheduler<ValueType>> schedulerHint;
             
             bool computeOnlyMaybeStates;
             boost::optional<storm::storage::BitVector> maybeStates;

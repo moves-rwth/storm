@@ -9,6 +9,8 @@ namespace storm {
     namespace utility {
         namespace cli {
         
+            std::string getCurrentWorkingDirectory();
+
             std::map<storm::expressions::Variable, storm::expressions::Expression> parseConstantDefinitionString(storm::expressions::ExpressionManager const& manager, std::string const& constantDefinitionString);
             
             std::vector<std::string> parseCommaSeparatedStrings(std::string const& input);

@@ -2,7 +2,7 @@
 
 #include <map>
 
-#include "storm/adapters/CarlAdapter.h"
+#include "storm/adapters/RationalFunctionAdapter.h"
 #include "storm/models/sparse/Mdp.h"
 #include "storm/models/sparse/MarkovAutomaton.h"
 #include "storm/models/sparse/StandardRewardModel.h"
@@ -37,7 +37,8 @@ namespace storm {
                     checkHasBeenCalled(false),
                     objectiveResults(objectives.size()),
                     offsetsToUnderApproximation(objectives.size()),
-                    offsetsToOverApproximation(objectives.size()) {
+                    offsetsToOverApproximation(objectives.size()),
+                    optimalChoices(model.getNumberOfStates(), 0) {
                 
                 // set data for unbounded objectives
                 for(uint_fast64_t objIndex = 0; objIndex < objectives.size(); ++objIndex) {
@@ -86,6 +87,7 @@ namespace storm {
                 }
                 
                 unboundedWeightedPhase(weightedRewardVector, weightedLowerResultBound, weightedUpperResultBound);
+                
                 unboundedIndividualPhase(weightVector);
                 // Only invoke boundedPhase if necessarry, i.e., if there is at least one objective with a time bound
                 for(auto const& obj : this->objectives) {
@@ -136,19 +138,27 @@ namespace storm {
             }
             
             template <class SparseModelType>
-            storm::storage::TotalScheduler const& SparsePcaaWeightVectorChecker<SparseModelType>::getScheduler() const {
+            storm::storage::Scheduler<typename SparsePcaaWeightVectorChecker<SparseModelType>::ValueType> SparsePcaaWeightVectorChecker<SparseModelType>::computeScheduler() const {
                 STORM_LOG_THROW(this->checkHasBeenCalled, storm::exceptions::IllegalFunctionCallException, "Tried to retrieve results but check(..) has not been called before.");
                 for(auto const& obj : this->objectives) {
                     STORM_LOG_THROW(!obj.lowerTimeBound && !obj.upperTimeBound, storm::exceptions::NotImplementedException, "Scheduler retrival is not implemented for timeBounded objectives.");
                 }
-                return scheduler;
+                
+                storm::storage::Scheduler<ValueType> result(this->optimalChoices.size());
+                uint_fast64_t state = 0;
+                for (auto const& choice : optimalChoices) {
+                    result.setChoice(choice, state);
+                    ++state;
+                }
+                return result;
             }
             
             template <class SparseModelType>
             void SparsePcaaWeightVectorChecker<SparseModelType>::unboundedWeightedPhase(std::vector<ValueType> const& weightedRewardVector, boost::optional<ValueType> const& lowerResultBound, boost::optional<ValueType> const& upperResultBound) {
-                if(this->objectivesWithNoUpperTimeBound.empty() || !storm::utility::vector::hasNonZeroEntry(weightedRewardVector)) {
+                
+                if (this->objectivesWithNoUpperTimeBound.empty() || !storm::utility::vector::hasNonZeroEntry(weightedRewardVector)) {
                     this->weightedResult = std::vector<ValueType>(model.getNumberOfStates(), storm::utility::zero<ValueType>());
-                    this->scheduler = storm::storage::TotalScheduler(model.getNumberOfStates());
+                    this->optimalChoices = std::vector<uint_fast64_t>(model.getNumberOfStates(), 0);
                     return;
                 }
                 
@@ -183,16 +193,13 @@ namespace storm {
                 solver->solveEquations(subResult, subRewardVector);
 
                 this->weightedResult = std::vector<ValueType>(model.getNumberOfStates());
-                std::vector<uint_fast64_t> optimalChoices(model.getNumberOfStates());
                 
-                transformReducedSolutionToOriginalModel(ecEliminatorResult.matrix, subResult, solver->getScheduler()->getChoices(), ecEliminatorResult.newToOldRowMapping, ecEliminatorResult.oldToNewStateMapping, this->weightedResult, optimalChoices);
-                
-                this->scheduler = storm::storage::TotalScheduler(std::move(optimalChoices));
+                transformReducedSolutionToOriginalModel(ecEliminatorResult.matrix, subResult, solver->getSchedulerChoices(), ecEliminatorResult.newToOldRowMapping, ecEliminatorResult.oldToNewStateMapping, this->weightedResult, this->optimalChoices);
             }
             
             template <class SparseModelType>
             void SparsePcaaWeightVectorChecker<SparseModelType>::unboundedIndividualPhase(std::vector<ValueType> const& weightVector) {
-               if (objectivesWithNoUpperTimeBound.getNumberOfSetBits() == 1 && storm::utility::isOne(weightVector[*objectivesWithNoUpperTimeBound.begin()])) {
+                if (objectivesWithNoUpperTimeBound.getNumberOfSetBits() == 1 && storm::utility::isOne(weightVector[*objectivesWithNoUpperTimeBound.begin()])) {
                    uint_fast64_t objIndex = *objectivesWithNoUpperTimeBound.begin();
                    objectiveResults[objIndex] = weightedResult;
                    if (storm::solver::minimize(objectives[objIndex].optimizationDirection)) {
@@ -203,8 +210,8 @@ namespace storm {
                             objectiveResults[objIndex2] = std::vector<ValueType>(model.getNumberOfStates(), storm::utility::zero<ValueType>());
                         }
                     }
-               } else {
-                   storm::storage::SparseMatrix<ValueType> deterministicMatrix = model.getTransitionMatrix().selectRowsFromRowGroups(this->scheduler.getChoices(), true);
+                } else {
+                   storm::storage::SparseMatrix<ValueType> deterministicMatrix = model.getTransitionMatrix().selectRowsFromRowGroups(this->optimalChoices, true);
                    storm::storage::SparseMatrix<ValueType> deterministicBackwardTransitions = deterministicMatrix.transpose();
                    std::vector<ValueType> deterministicStateRewards(deterministicMatrix.getRowCount());
                    storm::solver::GeneralLinearEquationSolverFactory<ValueType> linearEquationSolverFactory;
@@ -219,7 +226,7 @@ namespace storm {
                        if (objectivesWithNoUpperTimeBound.get(objIndex)) {
                            offsetsToUnderApproximation[objIndex] = storm::utility::zero<ValueType>();
                            offsetsToOverApproximation[objIndex] = storm::utility::zero<ValueType>();
-                           storm::utility::vector::selectVectorValues(deterministicStateRewards, this->scheduler.getChoices(), model.getTransitionMatrix().getRowGroupIndices(), discreteActionRewards[objIndex]);
+                           storm::utility::vector::selectVectorValues(deterministicStateRewards, this->optimalChoices, model.getTransitionMatrix().getRowGroupIndices(), discreteActionRewards[objIndex]);
                            storm::storage::BitVector statesWithRewards = ~storm::utility::vector::filterZero(deterministicStateRewards);
                            // As maybestates we pick the states from which a state with reward is reachable
                            storm::storage::BitVector maybeStates = storm::utility::graph::performProbGreater0(deterministicBackwardTransitions, storm::storage::BitVector(deterministicMatrix.getRowCount(), true), statesWithRewards);

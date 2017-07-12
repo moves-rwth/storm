@@ -7,7 +7,7 @@
 
 #include "storm/storage/sparse/StateType.h"
 
-#include "storm/adapters/CarlAdapter.h"
+#include "storm/adapters/RationalFunctionAdapter.h"
 
 #include "storm/settings/modules/EliminationSettings.h"
 

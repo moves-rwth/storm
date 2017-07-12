@@ -2,7 +2,7 @@
 #include "utility/OsDetection.h"
 #include "storm-config.h"
 
-#include "storm/adapters/CarlAdapter.h"
+#include "storm/adapters/RationalFunctionAdapter.h"
 
 #include "storm/storage/sparse/StateType.h"
 #include "storm/storage/dd/Bdd.h"
@@ -385,8 +385,7 @@ namespace storm {
             }
             
             template <typename T>
-            storm::storage::PartialScheduler computeSchedulerStayingInStates(storm::storage::BitVector const& states, storm::storage::SparseMatrix<T> const& transitionMatrix) {
-                storm::storage::PartialScheduler result;
+            void computeSchedulerStayingInStates(storm::storage::BitVector const& states, storm::storage::SparseMatrix<T> const& transitionMatrix, storm::storage::Scheduler<T>& scheduler) {
                 std::vector<uint_fast64_t> const& nondeterministicChoiceIndices = transitionMatrix.getRowGroupIndices();
                 
                 for (auto const& state : states) {
@@ -399,18 +398,17 @@ namespace storm {
                             }
                         }
                         if (allSuccessorsInStates) {
-                            result.setChoice(state, choice - nondeterministicChoiceIndices[state]);
+                            for (uint_fast64_t memState = 0; memState < scheduler.getNumberOfMemoryStates(); ++memState) {
+                                scheduler.setChoice(choice - nondeterministicChoiceIndices[state], state, memState);
+                            }
                             break;
                         }
                     }
                 }
-                
-                return result;
             }
             
             template <typename T>
-            storm::storage::PartialScheduler computeSchedulerWithOneSuccessorInStates(storm::storage::BitVector const& states, storm::storage::SparseMatrix<T> const& transitionMatrix) {
-                storm::storage::PartialScheduler result;
+            void computeSchedulerWithOneSuccessorInStates(storm::storage::BitVector const& states, storm::storage::SparseMatrix<T> const& transitionMatrix, storm::storage::Scheduler<T>& scheduler) {
                 std::vector<uint_fast64_t> const& nondeterministicChoiceIndices = transitionMatrix.getRowGroupIndices();
                 
                 for (auto const& state : states) {
@@ -423,20 +421,19 @@ namespace storm {
                             }
                         }
                         if (oneSuccessorInStates) {
-                            result.setChoice(state, choice - nondeterministicChoiceIndices[state]);
+                            for (uint_fast64_t memState = 0; memState < scheduler.getNumberOfMemoryStates(); ++memState) {
+                                scheduler.setChoice(choice - nondeterministicChoiceIndices[state], state, memState);
+                            }
                             break;
                         }
                     }
                 }
-                
-                return result;
             }
             
             template <typename T>
-            storm::storage::PartialScheduler computeSchedulerProbGreater0E(storm::storage::SparseMatrix<T> const& transitionMatrix, storm::storage::SparseMatrix<T> const& backwardTransitions, storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates, boost::optional<storm::storage::BitVector> const& rowFilter) {
+            void computeSchedulerProbGreater0E(storm::storage::SparseMatrix<T> const& transitionMatrix, storm::storage::SparseMatrix<T> const& backwardTransitions, storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates, storm::storage::Scheduler<T>& scheduler, boost::optional<storm::storage::BitVector> const& rowFilter) {
                 //Perform backwards DFS from psiStates and find a valid choice for each visited state.
                 
-                storm::storage::PartialScheduler result;
                 std::vector<uint_fast64_t> stack;
                 storm::storage::BitVector currentStates(psiStates); //the states that are either psiStates or for which we have found a valid choice.
                 stack.insert(stack.end(), currentStates.begin(), currentStates.end());
@@ -462,7 +459,9 @@ namespace storm {
                                     }
                                 }
                                 if(foundValidChoice){
-                                    result.setChoice(predecessor, row - transitionMatrix.getRowGroupIndices()[predecessor]);
+                                    for (uint_fast64_t memState = 0; memState < scheduler.getNumberOfMemoryStates(); ++memState) {
+                                        scheduler.setChoice(row - transitionMatrix.getRowGroupIndices()[predecessor], predecessor, memState);
+                                    }
                                     currentStates.set(predecessor, true);
                                     stack.push_back(predecessor);
                                     break;
@@ -472,18 +471,24 @@ namespace storm {
                         }
                     }
                 }
-                return result;
             }
             
             template <typename T>
-            storm::storage::PartialScheduler computeSchedulerProb0E(storm::storage::BitVector const& prob0EStates, storm::storage::SparseMatrix<T> const& transitionMatrix) {
-                return computeSchedulerStayingInStates(prob0EStates, transitionMatrix);
+            void computeSchedulerProb0E(storm::storage::BitVector const& prob0EStates, storm::storage::SparseMatrix<T> const& transitionMatrix, storm::storage::Scheduler<T>& scheduler) {
+                computeSchedulerStayingInStates(prob0EStates, transitionMatrix, scheduler);
             }
             
             template <typename T>
-            storm::storage::PartialScheduler computeSchedulerProb1E(storm::storage::BitVector const& prob1EStates, storm::storage::SparseMatrix<T> const& transitionMatrix, storm::storage::SparseMatrix<T> const& backwardTransitions, storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates) {
+            void computeSchedulerProb1E(storm::storage::BitVector const& prob1EStates, storm::storage::SparseMatrix<T> const& transitionMatrix, storm::storage::SparseMatrix<T> const& backwardTransitions, storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates, storm::storage::Scheduler<T>& scheduler) {
                 
-                storm::storage::PartialScheduler result;
+                // set an arbitrary choice for the psi states.
+                for (auto const& psiState : psiStates) {
+                    for (uint_fast64_t memState = 0; memState < scheduler.getNumberOfMemoryStates(); ++memState) {
+                        scheduler.setChoice(0, psiState, memState);
+                    }
+                }
+                
+                // Now perform a backwards search from the psi states and store choices with prob. 1
                 std::vector<uint_fast64_t> const& nondeterministicChoiceIndices = transitionMatrix.getRowGroupIndices();
                 std::vector<uint_fast64_t> stack;
                 storm::storage::BitVector currentStates(psiStates);
@@ -513,7 +518,9 @@ namespace storm {
                                 // If all successors for a given nondeterministic choice are in the prob1E state set, we
                                 // perform a backward search from that state.
                                 if (allSuccessorsInProb1EStates && hasSuccessorInCurrentStates) {
-                                    result.setChoice(predecessorEntryIt->getColumn(), row - nondeterministicChoiceIndices[predecessorEntryIt->getColumn()]);
+                                    for (uint_fast64_t memState = 0; memState < scheduler.getNumberOfMemoryStates(); ++memState) {
+                                        scheduler.setChoice(row - nondeterministicChoiceIndices[predecessorEntryIt->getColumn()], predecessorEntryIt->getColumn(), memState);
+                                    }
                                     currentStates.set(predecessorEntryIt->getColumn(), true);
                                     stack.push_back(predecessorEntryIt->getColumn());
                                     break;
@@ -522,8 +529,6 @@ namespace storm {
                         }
                     }
                 }
-                
-                return result;
             }
             
             template <typename T>
@@ -1309,11 +1314,11 @@ namespace storm {
             
             
             
-            template storm::storage::PartialScheduler computeSchedulerProbGreater0E(storm::storage::SparseMatrix<double> const& transitionMatrix, storm::storage::SparseMatrix<double> const& backwardTransitions, storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates, boost::optional<storm::storage::BitVector> const& rowFilter);
+            template void computeSchedulerProbGreater0E(storm::storage::SparseMatrix<double> const& transitionMatrix, storm::storage::SparseMatrix<double> const& backwardTransitions, storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates, storm::storage::Scheduler<double>& scheduler, boost::optional<storm::storage::BitVector> const& rowFilter);
             
-            template storm::storage::PartialScheduler computeSchedulerProb0E(storm::storage::BitVector const& prob0EStates, storm::storage::SparseMatrix<double> const& transitionMatrix);
+            template void computeSchedulerProb0E(storm::storage::BitVector const& prob0EStates, storm::storage::SparseMatrix<double> const& transitionMatrix, storm::storage::Scheduler<double>& scheduler);
             
-            template storm::storage::PartialScheduler computeSchedulerProb1E(storm::storage::BitVector const& prob1EStates, storm::storage::SparseMatrix<double> const& transitionMatrix, storm::storage::SparseMatrix<double> const& backwardTransitions, storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates);
+            template void computeSchedulerProb1E(storm::storage::BitVector const& prob1EStates, storm::storage::SparseMatrix<double> const& transitionMatrix, storm::storage::SparseMatrix<double> const& backwardTransitions, storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates, storm::storage::Scheduler<double>& scheduler);
             
             template storm::storage::BitVector performProbGreater0E(storm::storage::SparseMatrix<double> const& backwardTransitions, storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates, bool useStepBound = false, uint_fast64_t maximalSteps = 0) ;
             
@@ -1354,62 +1359,6 @@ namespace storm {
             
             template std::vector<uint_fast64_t> getTopologicalSort(storm::storage::SparseMatrix<double> const& matrix) ;
             
-            
-            
-            template storm::storage::BitVector getReachableStates(storm::storage::SparseMatrix<float> const& transitionMatrix, storm::storage::BitVector const& initialStates, storm::storage::BitVector const& constraintStates, storm::storage::BitVector const& targetStates, bool useStepBound, uint_fast64_t maximalSteps);
-            
-            template storm::storage::BitVector getBsccCover(storm::storage::SparseMatrix<float> const& transitionMatrix);
-          
-            template std::vector<uint_fast64_t> getDistances(storm::storage::SparseMatrix<float> const& transitionMatrix, storm::storage::BitVector const& initialStates, boost::optional<storm::storage::BitVector> const& subsystem);
-            
-            
-            template storm::storage::BitVector performProbGreater0(storm::storage::SparseMatrix<float> const& backwardTransitions, storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates, bool useStepBound = false, uint_fast64_t maximalSteps = 0);
-            
-            template storm::storage::BitVector performProb1(storm::storage::SparseMatrix<float> const& backwardTransitions, storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates, storm::storage::BitVector const& statesWithProbabilityGreater0);
-            
-            
-            template storm::storage::BitVector performProb1(storm::storage::SparseMatrix<float> const& backwardTransitions, storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates);
-            
-            
-            template std::pair<storm::storage::BitVector, storm::storage::BitVector> performProb01(storm::models::sparse::DeterministicModel<float> const& model, storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates);
-            
-            
-            template std::pair<storm::storage::BitVector, storm::storage::BitVector> performProb01(storm::storage::SparseMatrix<float> const& backwardTransitions, storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates);
-            
-            
-            
-            template storm::storage::BitVector performProbGreater0E(storm::storage::SparseMatrix<float> const& backwardTransitions, storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates, bool useStepBound = false, uint_fast64_t maximalSteps = 0) ;
-            
-            template storm::storage::BitVector performProb0A(storm::storage::SparseMatrix<float> const& backwardTransitions, storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates);
-            
-            template storm::storage::BitVector performProb1E(storm::storage::SparseMatrix<float> const& transitionMatrix, std::vector<uint_fast64_t> const& nondeterministicChoiceIndices, storm::storage::SparseMatrix<float> const& backwardTransitions, storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates);
-            
-            
-            template storm::storage::BitVector performProb1E(storm::models::sparse::NondeterministicModel<float> const& model, storm::storage::SparseMatrix<float> const& backwardTransitions, storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates);
-            
-            template std::pair<storm::storage::BitVector, storm::storage::BitVector> performProb01Max(storm::storage::SparseMatrix<float> const& transitionMatrix, std::vector<uint_fast64_t> const& nondeterministicChoiceIndices, storm::storage::SparseMatrix<float> const& backwardTransitions, storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates) ;
-            
-            
-            template std::pair<storm::storage::BitVector, storm::storage::BitVector> performProb01Max(storm::models::sparse::NondeterministicModel<float> const& model, storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates) ;
-            
-            template storm::storage::BitVector performProbGreater0A(storm::storage::SparseMatrix<float> const& transitionMatrix, std::vector<uint_fast64_t> const& nondeterministicChoiceIndices, storm::storage::SparseMatrix<float> const& backwardTransitions, storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates, bool useStepBound = false, uint_fast64_t maximalSteps = 0, boost::optional<storm::storage::BitVector> const& choiceConstraint = boost::none);
-            
-            
-            template storm::storage::BitVector performProb0E(storm::models::sparse::NondeterministicModel<float> const& model, storm::storage::SparseMatrix<float> const& backwardTransitions, storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates);
-            template storm::storage::BitVector performProb0E(storm::storage::SparseMatrix<float> const& transitionMatrix, std::vector<uint_fast64_t> const& nondeterministicChoiceIndices,  storm::storage::SparseMatrix<float> const& backwardTransitions, storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates) ;
-            
-            template storm::storage::BitVector performProb1A(storm::models::sparse::NondeterministicModel<float> const& model, storm::storage::SparseMatrix<float> const& backwardTransitions, storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates);
-            template storm::storage::BitVector performProb1A( storm::storage::SparseMatrix<float> const& transitionMatrix, std::vector<uint_fast64_t> const& nondeterministicChoiceIndices, storm::storage::SparseMatrix<float> const& backwardTransitions, storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates);
-            
-            template std::pair<storm::storage::BitVector, storm::storage::BitVector> performProb01Min(storm::storage::SparseMatrix<float> const& transitionMatrix, std::vector<uint_fast64_t> const& nondeterministicChoiceIndices, storm::storage::SparseMatrix<float> const& backwardTransitions, storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates) ;
-            
-            
-            template std::pair<storm::storage::BitVector, storm::storage::BitVector> performProb01Min(storm::models::sparse::NondeterministicModel<float> const& model, storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates);
-            
-            
-            template std::vector<uint_fast64_t> getTopologicalSort(storm::storage::SparseMatrix<float> const& matrix);
-
-
             // Instantiations for storm::RationalNumber.
 #ifdef STORM_HAVE_CARL
             template storm::storage::BitVector getReachableStates(storm::storage::SparseMatrix<storm::RationalNumber> const& transitionMatrix, storm::storage::BitVector const& initialStates, storm::storage::BitVector const& constraintStates, storm::storage::BitVector const& targetStates, bool useStepBound, uint_fast64_t maximalSteps);
@@ -1430,11 +1379,11 @@ namespace storm {
             
             template std::pair<storm::storage::BitVector, storm::storage::BitVector> performProb01(storm::storage::SparseMatrix<storm::RationalNumber> const& backwardTransitions, storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates);
             
-            template storm::storage::PartialScheduler computeSchedulerProbGreater0E(storm::storage::SparseMatrix<storm::RationalNumber> const& transitionMatrix, storm::storage::SparseMatrix<storm::RationalNumber> const& backwardTransitions, storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates, boost::optional<storm::storage::BitVector> const& rowFilter);
+            template void computeSchedulerProbGreater0E(storm::storage::SparseMatrix<storm::RationalNumber> const& transitionMatrix, storm::storage::SparseMatrix<storm::RationalNumber> const& backwardTransitions, storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates, storm::storage::Scheduler<storm::RationalNumber>& scheduler, boost::optional<storm::storage::BitVector> const& rowFilter);
             
-            template storm::storage::PartialScheduler computeSchedulerProb0E(storm::storage::BitVector const& prob0EStates, storm::storage::SparseMatrix<storm::RationalNumber> const& transitionMatrix);
+            template void computeSchedulerProb0E(storm::storage::BitVector const& prob0EStates, storm::storage::SparseMatrix<storm::RationalNumber> const& transitionMatrix, storm::storage::Scheduler<storm::RationalNumber>& scheduler);
             
-            template storm::storage::PartialScheduler computeSchedulerProb1E(storm::storage::BitVector const& prob1EStates, storm::storage::SparseMatrix<storm::RationalNumber> const& transitionMatrix, storm::storage::SparseMatrix<storm::RationalNumber> const& backwardTransitions, storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates);
+            template void computeSchedulerProb1E(storm::storage::BitVector const& prob1EStates, storm::storage::SparseMatrix<storm::RationalNumber> const& transitionMatrix, storm::storage::SparseMatrix<storm::RationalNumber> const& backwardTransitions, storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates, storm::storage::Scheduler<storm::RationalNumber>& scheduler);
             
             template storm::storage::BitVector performProbGreater0E(storm::storage::SparseMatrix<storm::RationalNumber> const& backwardTransitions, storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates, bool useStepBound = false, uint_fast64_t maximalSteps = 0) ;
             

@@ -30,7 +30,6 @@
 #include "storm/settings/modules/GlpkSettings.h"
 #include "storm/settings/modules/GurobiSettings.h"
 #include "storm/settings/modules/Smt2SmtSolverSettings.h"
-#include "storm/settings/modules/ParametricSettings.h"
 #include "storm/settings/modules/TopologicalValueIterationEquationSolverSettings.h"
 #include "storm/settings/modules/ExplorationSettings.h"
 #include "storm/settings/modules/ResourceSettings.h"
@@ -351,7 +350,7 @@ namespace storm {
             for (uint_fast64_t i = 0; i < argumentCache.size(); ++i) {
                 ArgumentBase& argument = option->getArgument(i);
                 bool conversionOk = argument.setFromStringValue(argumentCache[i]);
-                STORM_LOG_THROW(conversionOk, storm::exceptions::OptionParserException, "Conversion of value of argument '" << argument.getName() << "' to its type failed.");
+                STORM_LOG_THROW(conversionOk, storm::exceptions::OptionParserException, "Value '" << argumentCache[i] << "' is invalid for argument '" << argument.getName() << "' of option " << option->getModuleName() << ":" << option->getLongName() << ".");
             }
             
             // In case there are optional arguments that were not set, we set them to their default value.
@@ -527,7 +526,6 @@ namespace storm {
             storm::settings::addModule<storm::settings::modules::GlpkSettings>();
             storm::settings::addModule<storm::settings::modules::GurobiSettings>();
             storm::settings::addModule<storm::settings::modules::TopologicalValueIterationEquationSolverSettings>();
-            storm::settings::addModule<storm::settings::modules::ParametricSettings>();
             storm::settings::addModule<storm::settings::modules::Smt2SmtSolverSettings>();
             storm::settings::addModule<storm::settings::modules::ExplorationSettings>();
             storm::settings::addModule<storm::settings::modules::ResourceSettings>();

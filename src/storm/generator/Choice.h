@@ -3,9 +3,10 @@
 
 #include <cstdint>
 #include <functional>
+#include <set>
 
 #include <boost/optional.hpp>
-#include <boost/container/flat_set.hpp>
+#include <boost/any.hpp>
 
 #include "storm/storage/Distribution.h"
 
@@ -16,8 +17,6 @@ namespace storm {
         template<typename ValueType, typename StateType=uint32_t>
         struct Choice {
         public:
-            typedef boost::container::flat_set<uint_fast64_t> LabelSet;
-            
             Choice(uint_fast64_t actionIndex = 0, bool markovian = false);
             
             Choice(Choice const& other) = default;
@@ -71,21 +70,41 @@ namespace storm {
              *
              * @param label The label to associate with this choice.
              */
-            void addLabel(uint_fast64_t label);
+            void addLabel(std::string const& label);
             
             /*!
              * Adds the given label set to the labels associated with this choice.
              *
              * @param labelSet The label set to associate with this choice.
              */
-            void addLabels(LabelSet const& labelSet);
+            void addLabels(std::set<std::string> const& labels);
+            
+            /*!
+             * Returns whether there are labels defined for this choice
+             */
+            bool hasLabels() const;
             
             /*!
              * Retrieves the set of labels associated with this choice.
              *
              * @return The set of labels associated with this choice.
              */
-            LabelSet const& getLabels() const;
+            std::set<std::string> const& getLabels() const;
+            
+            /*!
+             * Adds the given data that specifies the origin of this choice w.r.t. the model specification
+             */
+            void addOriginData(boost::any const& data);
+            
+            /*!
+             * Returns whether there is origin data defined for this choice
+             */
+            bool hasOriginData() const;
+            
+            /*!
+             * Returns the origin data associated with this choice.
+             */
+            boost::any const& getOriginData() const;
             
             /*!
              * Retrieves the index of the action of this choice.
@@ -147,8 +166,11 @@ namespace storm {
             // The reward values associated with this choice.
             std::vector<ValueType> rewards;
             
-            // The labels that are associated with this choice.
-            boost::optional<LabelSet> labels;
+            // The data that stores what part of the model specification induced this choice
+            boost::optional<boost::any> originData;
+            
+            // The labels of this choice
+            boost::optional<std::set<std::string>> labels;
         };
 
         template<typename ValueType, typename StateType>

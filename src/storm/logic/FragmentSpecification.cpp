@@ -88,6 +88,7 @@ namespace storm {
             FragmentSpecification multiObjective = propositional();
             
             multiObjective.setMultiObjectiveFormulasAllowed(true);
+            multiObjective.setMultiObjectiveFormulaAtTopLevelRequired(true);
             multiObjective.setOperatorsAtTopLevelOfMultiObjectiveFormulasRequired(true);
             multiObjective.setProbabilityOperatorsAllowed(true);
             multiObjective.setUntilFormulasAllowed(true);
@@ -141,12 +142,14 @@ namespace storm {
             onlyEventuallyFormuluasInConditionalFormulas = true;
             stepBoundedUntilFormulas = false;
             timeBoundedUntilFormulas = false;
+            rewardBoundedUntilFormulas = false;
             varianceAsMeasureType = false;
             
             qualitativeOperatorResults = true;
             quantitativeOperatorResults = true;
             
             operatorAtTopLevelRequired = false;
+            multiObjectiveFormulaAtTopLevelRequired = false;
             operatorsAtTopLevelOfMultiObjectiveFormulasRequired = false;
         }
         
@@ -423,7 +426,16 @@ namespace storm {
             this->timeBoundedUntilFormulas = newValue;
             return *this;
         }
-        
+
+        bool FragmentSpecification::areRewardBoundedUntilFormulasAllowed() const {
+            return this->rewardBoundedUntilFormulas;
+        }
+
+        FragmentSpecification& FragmentSpecification::setRewardBoundedUntilFormulasAllowed(bool newValue) {
+            this->rewardBoundedUntilFormulas = newValue;
+            return *this;
+        }
+
         FragmentSpecification& FragmentSpecification::setOperatorsAllowed(bool newValue) {
             this->setProbabilityOperatorsAllowed(newValue);
             this->setRewardOperatorsAllowed(newValue);
@@ -476,6 +488,15 @@ namespace storm {
         
         FragmentSpecification& FragmentSpecification::setOperatorAtTopLevelRequired(bool newValue) {
             operatorAtTopLevelRequired = newValue;
+            return *this;
+        }
+
+        bool FragmentSpecification::isMultiObjectiveFormulaAtTopLevelRequired() const {
+            return multiObjectiveFormulaAtTopLevelRequired;
+        }
+        
+        FragmentSpecification& FragmentSpecification::setMultiObjectiveFormulaAtTopLevelRequired(bool newValue) {
+            multiObjectiveFormulaAtTopLevelRequired = newValue;
             return *this;
         }
 

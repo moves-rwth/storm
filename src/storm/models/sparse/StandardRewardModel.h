@@ -4,8 +4,9 @@
 #include <boost/optional.hpp>
 
 #include "storm/storage/SparseMatrix.h"
+#include "storm/utility/constants.h"
 #include "storm/utility/OsDetection.h"
-#include "storm/adapters/CarlAdapter.h"
+#include "storm/adapters/RationalFunctionAdapter.h"
 
 namespace storm {
     namespace models {
@@ -161,6 +162,19 @@ namespace storm {
                  * @return The transition reward matrix if there is one.
                  */
                 boost::optional<storm::storage::SparseMatrix<ValueType>> const& getOptionalTransitionRewardMatrix() const;
+
+                /*!
+                 * Retrieves the total reward for the given state action pair (including (scaled) state rewards, action rewards and transition rewards
+                 *
+                 * @param stateIndex The index of the considered state
+                 * @param choiceIndex The index of the considered choice
+                 * @param transitionMatrix The matrix that is used to weight the values of the transition reward matrix.
+                 * @param stateRewardWeight The weight that is used to scale the state reward
+                 * @param actionRewardWeight The weight that is used to scale the action based rewards (includes action and transition rewards).
+                 * @return
+                 */
+                template<typename MatrixValueType>
+                ValueType getTotalStateActionReward(uint_fast64_t stateIndex, uint_fast64_t choiceIndex, storm::storage::SparseMatrix<MatrixValueType> const& transitionMatrix, MatrixValueType const& stateRewardWeight = storm::utility::one<MatrixValueType>(), MatrixValueType const& actionRewardWeight = storm::utility::one<MatrixValueType>()) const;
                 
                 /*!
                  * Creates a new reward model by restricting the actions of the action-based rewards.

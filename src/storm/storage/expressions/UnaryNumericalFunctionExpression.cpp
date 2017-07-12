@@ -2,7 +2,7 @@
 
 #include <boost/variant.hpp>
 
-#include "storm/adapters/NumberAdapter.h"
+#include "storm/adapters/RationalNumberAdapter.h"
 #include "storm/storage/expressions/UnaryNumericalFunctionExpression.h"
 #include "storm/storage/expressions/IntegerLiteralExpression.h"
 #include "storm/storage/expressions/RationalLiteralExpression.h"

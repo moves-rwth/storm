@@ -360,6 +360,15 @@ namespace storm {
             STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Storm is compiled without Z3 support.");
 #endif
         }
+		
+		std::string Z3SmtSolver::getSmtLibString() const {
+#ifdef STORM_HAVE_Z3
+			return solver->to_smt2();
+#else
+            STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Storm is compiled without Z3 support.");
+#endif
+		}
+
 
 	}
 }

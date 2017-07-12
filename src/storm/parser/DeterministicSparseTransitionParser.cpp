@@ -16,7 +16,7 @@
 #include "storm/settings/SettingsManager.h"
 #include "storm/settings/modules/CoreSettings.h"
 
-#include "storm/adapters/CarlAdapter.h"
+#include "storm/adapters/RationalFunctionAdapter.h"
 #include "storm/utility/macros.h"
 namespace storm {
     namespace parser {

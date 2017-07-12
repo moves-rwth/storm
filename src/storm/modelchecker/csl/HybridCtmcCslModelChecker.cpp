@@ -83,7 +83,7 @@ namespace storm {
             SymbolicQualitativeCheckResult<DdType> const& leftResult = leftResultPointer->asSymbolicQualitativeCheckResult<DdType>();
             SymbolicQualitativeCheckResult<DdType> const& rightResult = rightResultPointer->asSymbolicQualitativeCheckResult<DdType>();
             
-            STORM_LOG_THROW(!pathFormula.isStepBounded(), storm::exceptions::NotImplementedException, "Currently step-bounded properties on CTMCs are not supported.");
+            STORM_LOG_THROW(!pathFormula.getTimeBoundReference().isStepBound(), storm::exceptions::NotImplementedException, "Currently step-bounded properties on CTMCs are not supported.");
             double lowerBound = 0;
             double upperBound = 0;
             if (pathFormula.hasLowerBound()) {
@@ -133,6 +133,7 @@ namespace storm {
         template class HybridCtmcCslModelChecker<storm::models::symbolic::Ctmc<storm::dd::DdType::Sylvan, double>>;
 
         template class HybridCtmcCslModelChecker<storm::models::symbolic::Ctmc<storm::dd::DdType::Sylvan, storm::RationalNumber>>;
+        template class HybridCtmcCslModelChecker<storm::models::symbolic::Ctmc<storm::dd::DdType::Sylvan, storm::RationalFunction>>;
 
     } // namespace modelchecker
 } // namespace storm

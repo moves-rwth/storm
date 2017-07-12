@@ -7,7 +7,7 @@
 #include <map>
 #include <mutex>
 
-#include "storm/adapters/CarlAdapter.h"
+#include "storm/adapters/RationalFunctionAdapter.h"
 #include "storm/utility/constants.h"
 #include "storm/exceptions/InvalidOperationException.h"
 
@@ -111,6 +111,15 @@ storm_rational_number_ptr storm_rational_number_get_one() {
     return (storm_rational_number_ptr)result_srn;
 }
 
+storm_rational_number_ptr storm_rational_number_get_infinity() {
+#ifndef RATIONAL_NUMBER_THREAD_SAFE
+    std::lock_guard<std::mutex> lock(rationalNumberMutex);
+#endif
+    
+    storm::RationalNumber* result_srn = new storm::RationalNumber(storm::utility::infinity<storm::RationalNumber>());
+    return (storm_rational_number_ptr)result_srn;
+}
+
 int storm_rational_number_is_zero(storm_rational_number_ptr a) {
 #ifndef RATIONAL_NUMBER_THREAD_SAFE
     std::lock_guard<std::mutex> lock(rationalNumberMutex);
@@ -194,8 +203,8 @@ storm_rational_number_ptr storm_rational_number_pow(storm_rational_number_ptr a,
     
     storm::RationalNumber const& srn_a = *(storm::RationalNumber const*)a;
     storm::RationalNumber const& srn_b = *(storm::RationalNumber const*)b;
-    
-    uint64_t exponentAsInteger = carl::toInt<unsigned long>(srn_b);
+
+    carl::uint exponentAsInteger = carl::toInt<carl::uint>(srn_b);
     storm::RationalNumber* result_srn = new storm::RationalNumber(carl::pow(srn_a, exponentAsInteger));
     return (storm_rational_number_ptr)result_srn;
 }
@@ -406,6 +415,16 @@ storm_rational_function_ptr storm_rational_function_get_one() {
     return (storm_rational_function_ptr)result_srf;
 }
 
+storm_rational_function_ptr storm_rational_function_get_infinity() {
+#ifndef RATIONAL_FUNCTION_THREAD_SAFE
+    std::lock_guard<std::mutex> lock(rationalFunctionMutex);
+#endif
+    
+    storm::RationalFunction* result_srf = new storm::RationalFunction(storm::utility::infinity<storm::RationalFunction>());
+    return (storm_rational_function_ptr)result_srf;
+}
+
+
 int storm_rational_function_is_zero(storm_rational_function_ptr a) {
 #ifndef RATIONAL_FUNCTION_THREAD_SAFE
     std::lock_guard<std::mutex> lock(rationalFunctionMutex);
@@ -498,7 +517,7 @@ storm_rational_function_ptr storm_rational_function_pow(storm_rational_function_
     storm::RationalFunction const& srf_a = *(storm::RationalFunction const*)a;
     storm::RationalFunction const& srf_b = *(storm::RationalFunction const*)b;
     
-    uint64_t exponentAsInteger = carl::toInt<unsigned long>(srf_b.nominatorAsNumber());
+    carl::uint exponentAsInteger = carl::toInt<carl::uint>(srf_b.nominatorAsNumber());
     storm::RationalFunction* result_srf = new storm::RationalFunction(carl::pow(srf_a, exponentAsInteger));
     return (storm_rational_function_ptr)result_srf;
 }

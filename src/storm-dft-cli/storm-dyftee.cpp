@@ -1,6 +1,6 @@
 #include "storm/logic/Formula.h"
 #include "storm/utility/initialize.h"
-#include "storm/utility/storm.h"
+#include "storm/api/storm.h"
 #include "storm/cli/cli.h"
 #include "storm/exceptions/BaseException.h"
 
@@ -64,7 +64,7 @@ void analyzeDFT(std::vector<std::string> const& properties, bool symred, bool al
     for (size_t i = 1; i < properties.size(); ++i) {
         propString += ";" + properties[i];
     }
-    std::vector<std::shared_ptr<storm::logic::Formula const>> props = storm::extractFormulasFromProperties(storm::parsePropertiesForExplicit(propString));
+    std::vector<std::shared_ptr<storm::logic::Formula const>> props = storm::api::extractFormulasFromProperties(storm::api::parseProperties(propString));
     STORM_LOG_ASSERT(props.size() > 0, "No properties found.");
 
     // Check model
@@ -185,7 +185,7 @@ int main(const int argc, const char** argv) {
 
             storm::expressions::Expression targetExpression = exprManager->integer(1) == topfailedVar.getExpressionVariable().getExpression();
             auto evtlFormula = std::make_shared<storm::logic::AtomicExpressionFormula>(targetExpression);
-            auto tbFormula = std::make_shared<storm::logic::BoundedUntilFormula>(std::make_shared<storm::logic::BooleanLiteralFormula>(true), evtlFormula, storm::logic::TimeBound(false, exprManager->integer(0)), storm::logic::TimeBound(false, exprManager->integer(10)), storm::logic::TimeBoundType::Time);
+            auto tbFormula = std::make_shared<storm::logic::BoundedUntilFormula>(std::make_shared<storm::logic::BooleanLiteralFormula>(true), evtlFormula, storm::logic::TimeBound(false, exprManager->integer(0)), storm::logic::TimeBound(false, exprManager->integer(10)), storm::logic::TimeBoundReference(storm::logic::TimeBoundType::Time));
             auto tbUntil = std::make_shared<storm::logic::ProbabilityOperatorFormula>(tbFormula);
             
             auto evFormula = std::make_shared<storm::logic::EventuallyFormula>(evtlFormula, storm::logic::FormulaContext::Time);
@@ -193,7 +193,7 @@ int main(const int argc, const char** argv) {
             
             storm::settings::modules::JaniExportSettings const& janiSettings = storm::settings::getModule<storm::settings::modules::JaniExportSettings>();
             if (janiSettings.isJaniFileSet()) {
-                storm::exportJaniModel(*model, {storm::jani::Property("time-bounded", tbUntil), storm::jani::Property("mttf", rewFormula)}, janiSettings.getJaniFilename());
+                storm::api::exportJaniModel(*model, {storm::jani::Property("time-bounded", tbUntil), storm::jani::Property("mttf", rewFormula)}, janiSettings.getJaniFilename());
             }
             
             delete model;

@@ -53,7 +53,7 @@ namespace storm {
         void MinMaxLinearEquationSolver<ValueType>::setTrackScheduler(bool trackScheduler) {
             this->trackScheduler = trackScheduler;
             if (!this->trackScheduler) {
-                scheduler = boost::none;
+                schedulerChoices = boost::none;
             }
         }
         
@@ -64,19 +64,25 @@ namespace storm {
         
         template<typename ValueType>
         bool MinMaxLinearEquationSolver<ValueType>::hasScheduler() const {
-            return static_cast<bool>(scheduler);
+            return static_cast<bool>(schedulerChoices);
         }
         
         template<typename ValueType>
-        storm::storage::TotalScheduler const& MinMaxLinearEquationSolver<ValueType>::getScheduler() const {
-            STORM_LOG_THROW(scheduler, storm::exceptions::IllegalFunctionCallException, "Cannot retrieve scheduler, because none was generated.");
-            return *scheduler.get();
+        storm::storage::Scheduler<ValueType> MinMaxLinearEquationSolver<ValueType>::computeScheduler() const {
+            STORM_LOG_THROW(hasScheduler(), storm::exceptions::IllegalFunctionCallException, "Cannot retrieve scheduler, because none was generated.");
+            storm::storage::Scheduler<ValueType> result(schedulerChoices->size());
+            uint_fast64_t state = 0;
+            for (auto const& schedulerChoice : schedulerChoices.get()) {
+                result.setChoice(schedulerChoice, state);
+                ++state;
+            }
+            return result;
         }
         
         template<typename ValueType>
-        std::unique_ptr<storm::storage::TotalScheduler> MinMaxLinearEquationSolver<ValueType>:: getScheduler() {
-            STORM_LOG_THROW(scheduler, storm::exceptions::IllegalFunctionCallException, "Cannot retrieve scheduler, because none was generated.");
-            return std::move(scheduler.get());
+        std::vector<uint_fast64_t> const& MinMaxLinearEquationSolver<ValueType>::getSchedulerChoices() const {
+            STORM_LOG_THROW(hasScheduler(), storm::exceptions::IllegalFunctionCallException, "Cannot retrieve scheduler choices, because they were not generated.");
+            return schedulerChoices.get();
         }
         
         template<typename ValueType>
@@ -115,13 +121,13 @@ namespace storm {
         }
         
         template<typename ValueType>
-        void MinMaxLinearEquationSolver<ValueType>::setSchedulerHint(storm::storage::TotalScheduler&& scheduler) {
-            schedulerHint = scheduler;
+        void MinMaxLinearEquationSolver<ValueType>::setSchedulerHint(std::vector<uint_fast64_t>&& choices) {
+            choicesHint = std::move(choices);
         }
         
         template<typename ValueType>
         bool MinMaxLinearEquationSolver<ValueType>::hasSchedulerHint() const {
-            return schedulerHint.is_initialized();
+            return choicesHint.is_initialized();
         }
         
         template<typename ValueType>
@@ -164,7 +170,7 @@ namespace storm {
         std::unique_ptr<MinMaxLinearEquationSolver<ValueType>> GeneralMinMaxLinearEquationSolverFactory<ValueType>::selectSolver(MatrixType&& matrix) const {
             std::unique_ptr<MinMaxLinearEquationSolver<ValueType>> result;
             auto method = storm::settings::getModule<storm::settings::modules::MinMaxEquationSolverSettings>().getMinMaxEquationSolvingMethod();
-            if (method == MinMaxMethod::ValueIteration || method == MinMaxMethod::PolicyIteration) {
+            if (method == MinMaxMethod::ValueIteration || method == MinMaxMethod::PolicyIteration || method == MinMaxMethod::Acyclic) {
                 result = std::make_unique<StandardMinMaxLinearEquationSolver<ValueType>>(std::forward<MatrixType>(matrix), std::make_unique<GeneralLinearEquationSolverFactory<ValueType>>());
             } else if (method == MinMaxMethod::Topological) {
                 result = std::make_unique<TopologicalMinMaxLinearEquationSolver<ValueType>>(std::forward<MatrixType>(matrix));
@@ -181,7 +187,7 @@ namespace storm {
         std::unique_ptr<MinMaxLinearEquationSolver<storm::RationalNumber>> GeneralMinMaxLinearEquationSolverFactory<storm::RationalNumber>::selectSolver(MatrixType&& matrix) const {
             std::unique_ptr<MinMaxLinearEquationSolver<storm::RationalNumber>> result;
             auto method = storm::settings::getModule<storm::settings::modules::MinMaxEquationSolverSettings>().getMinMaxEquationSolvingMethod();
-            STORM_LOG_THROW(method == MinMaxMethod::ValueIteration || method == MinMaxMethod::PolicyIteration, storm::exceptions::InvalidSettingsException, "For this data type only value iteration and policy iteration are available.");
+            STORM_LOG_THROW(method == MinMaxMethod::ValueIteration || method == MinMaxMethod::PolicyIteration || method == MinMaxMethod::Acyclic, storm::exceptions::InvalidSettingsException, "For this data type only value iteration, policy iteration, and acyclic value iteration are available.");
             return std::make_unique<StandardMinMaxLinearEquationSolver<storm::RationalNumber>>(std::forward<MatrixType>(matrix), std::make_unique<GeneralLinearEquationSolverFactory<storm::RationalNumber>>());
         }
 #endif

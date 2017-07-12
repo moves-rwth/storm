@@ -12,8 +12,9 @@
 #include "storm/exceptions/NotSupportedException.h"
 #include "storm/settings/SettingsManager.h"
 
-#include "storm/adapters/CarlAdapter.h"
+#include "storm/adapters/RationalFunctionAdapter.h"
 #include "storm/utility/constants.h"
+#include "storm/utility/builder.h"
 #include "storm/utility/macros.h"
 #include "storm/utility/file.h"
 
@@ -68,6 +69,9 @@ namespace storm {
             STORM_LOG_THROW(boost::starts_with(line, "@type: "), storm::exceptions::WrongFormatException, "Expected model type.");
             storm::models::ModelType type = storm::models::getModelType(line.substr(7));
             STORM_LOG_TRACE("Model type: " << type);
+            STORM_LOG_THROW(type != storm::models::ModelType::MarkovAutomaton, storm::exceptions::NotSupportedException, "Markov Automata in DRN format are not supported (unclear indication of Markovian Choices in DRN format)");
+            STORM_LOG_THROW(type != storm::models::ModelType::S2pg, storm::exceptions::NotSupportedException, "Stochastic Two Player Games in DRN format are not supported.");
+            
             // Parse parameters
             std::getline(file, line);
             STORM_LOG_THROW(line == "@parameters", storm::exceptions::WrongFormatException, "Expected parameter declaration.");
@@ -91,54 +95,41 @@ namespace storm {
             std::getline(file, line);
             STORM_LOG_THROW(line == "@model", storm::exceptions::WrongFormatException, "Expected model declaration.");
 
-            // Construct transition matrix
-            std::shared_ptr<ModelComponents> modelComponents = parseStates(file, type, nrStates, valueParser);
-
+            // Construct model components
+            std::shared_ptr<storm::storage::sparse::ModelComponents<ValueType, RewardModelType>> modelComponents = parseStates(file, type, nrStates, valueParser);
+            
             // Done parsing
             storm::utility::closeFile(file);
 
             // Build model
-            switch (type) {
-                case storm::models::ModelType::Dtmc:
-                {
-                    STORM_LOG_THROW(false, storm::exceptions::FileIoException, "DTMC not supported.");
-                }
-                case storm::models::ModelType::Ctmc:
-                {
-                    return std::make_shared<storm::models::sparse::Ctmc<ValueType, RewardModelType>>(std::move(modelComponents->transitionMatrix), std::move(modelComponents->stateLabeling), std::move(modelComponents->rewardModels), std::move(modelComponents->choiceLabeling));
-                }
-                case storm::models::ModelType::Mdp:
-                {
-                    STORM_LOG_THROW(false, storm::exceptions::FileIoException, "MDP not supported.");
-                }
-                case storm::models::ModelType::MarkovAutomaton:
-                {
-                    return std::make_shared<storm::models::sparse::MarkovAutomaton<ValueType, RewardModelType>>(std::move(modelComponents->transitionMatrix), std::move(modelComponents->stateLabeling), std::move(modelComponents->markovianStates), std::move(modelComponents->exitRates));
-                }
-                default:
-                    STORM_LOG_THROW(false, storm::exceptions::FileIoException, "Unknown/Unhandled model type " << type << " which cannot be parsed.");
-            }
+            return storm::utility::builder::buildModelFromComponents(type, std::move(*modelComponents));
         }
 
         template<typename ValueType, typename RewardModelType>
-        std::shared_ptr<typename DirectEncodingParser<ValueType, RewardModelType>::ModelComponents> DirectEncodingParser<ValueType, RewardModelType>::parseStates(std::istream& file, storm::models::ModelType type, size_t stateSize, ValueParser<ValueType> const& valueParser) {
+        std::shared_ptr<storm::storage::sparse::ModelComponents<ValueType, RewardModelType>> DirectEncodingParser<ValueType, RewardModelType>::parseStates(std::istream& file, storm::models::ModelType type, size_t stateSize, ValueParser<ValueType> const& valueParser) {
             // Initialize
-            std::shared_ptr<ModelComponents> modelComponents = std::make_shared<ModelComponents>();
-            modelComponents->nonDeterministic = (type == storm::models::ModelType::Mdp || type == storm::models::ModelType::MarkovAutomaton);
-            storm::storage::SparseMatrixBuilder<ValueType> builder = storm::storage::SparseMatrixBuilder<ValueType>(0, 0, 0, false, modelComponents->nonDeterministic, 0);
+            auto modelComponents = std::make_shared<storm::storage::sparse::ModelComponents<ValueType, RewardModelType>>();
+            bool nonDeterministic = (type == storm::models::ModelType::Mdp || type == storm::models::ModelType::MarkovAutomaton);
+            storm::storage::SparseMatrixBuilder<ValueType> builder = storm::storage::SparseMatrixBuilder<ValueType>(0, 0, 0, false, nonDeterministic, 0);
             modelComponents->stateLabeling = storm::models::sparse::StateLabeling(stateSize);
 
+            // We parse rates for continuous time models.
+            if (type == storm::models::ModelType::Ctmc) {
+                modelComponents->rateTransitions = true;
+            }
+            
             // Iterate over all lines
             std::string line;
             size_t row = 0;
             size_t state = 0;
-            bool first = true;
+            bool firstState = true;
+            bool firstAction = true;
             while (std::getline(file, line)) {
                 STORM_LOG_TRACE("Parsing: " << line);
                 if (boost::starts_with(line, "state ")) {
                     // New state
-                    if (first) {
-                        first = false;
+                    if (firstState) {
+                        firstState = false;
                     } else {
                         ++state;
                     }
@@ -177,13 +168,14 @@ namespace storm {
                     }
                     STORM_LOG_TRACE("New state " << state);
                     STORM_LOG_ASSERT(state == parsedId, "State ids do not correspond.");
-                    if (modelComponents->nonDeterministic) {
+                    if (nonDeterministic) {
+                        STORM_LOG_TRACE("new Row Group starts at " << row << ".");
                         builder.newRowGroup(row);
                     }
                 } else if (boost::starts_with(line, "\taction ")) {
                     // New action
-                    if (first) {
-                        first = false;
+                    if (firstAction) {
+                        firstAction = false;
                     } else {
                         ++row;
                     }
@@ -208,13 +200,13 @@ namespace storm {
                     size_t target = boost::lexical_cast<size_t>(line.substr(2, posColon-3));
                     std::string valueStr = line.substr(posColon+2);
                     ValueType value = valueParser.parseValue(valueStr);
-                    STORM_LOG_TRACE("Transition " << state << " -> " << target << ": " << value);
-                    builder.addNextValue(state, target, value);
+                    STORM_LOG_TRACE("Transition " << row << " -> " << target << ": " << value);
+                    builder.addNextValue(row, target, value);
                 }
             }
 
             STORM_LOG_TRACE("Finished parsing");
-            modelComponents->transitionMatrix = builder.build(stateSize, stateSize);
+            modelComponents->transitionMatrix = builder.build(row + 1, stateSize, nonDeterministic ? stateSize : 0);
             STORM_LOG_TRACE("Built matrix");
             return modelComponents;
         }

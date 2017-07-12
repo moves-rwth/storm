@@ -11,7 +11,7 @@
 #include "storm/utility/solver.h"
 #include "storm/solver/SolveGoal.h"
 
-#include "storm/adapters/CarlAdapter.h"
+#include "storm/adapters/RationalFunctionAdapter.h"
 
 namespace storm {
     namespace storage {
@@ -39,7 +39,9 @@ namespace storm {
 
                 static MDPSparseModelCheckingHelperReturnType<ValueType> computeUntilProbabilities(OptimizationDirection dir, storm::storage::SparseMatrix<ValueType> const& transitionMatrix, storm::storage::SparseMatrix<ValueType> const& backwardTransitions, storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates, bool qualitative, bool produceScheduler, storm::solver::MinMaxLinearEquationSolverFactory<ValueType> const& minMaxLinearEquationSolverFactory, ModelCheckerHint const& hint = ModelCheckerHint());
 
-                static MDPSparseModelCheckingHelperReturnType<ValueType> computeValuesOnlyMaybeStates(storm::solver::SolveGoal const& goal, storm::storage::SparseMatrix<ValueType> const& transitionMatrix, storm::storage::SparseMatrix<ValueType> const& backwardTransitions, storm::storage::BitVector const& maybeStates, storm::storage::SparseMatrix<ValueType> const& submatrix, std::vector<ValueType> const& b, bool produceScheduler, storm::solver::MinMaxLinearEquationSolverFactory<ValueType> const& minMaxLinearEquationSolverFactory, ModelCheckerHint const& hint = ModelCheckerHint(), bool skipECWithinMaybeStatesCheck = false, boost::optional<ValueType> const& lowerResultBound = boost::none, boost::optional<ValueType> const& upperResultBound = boost::none);
+                static std::pair<boost::optional<std::vector<ValueType>>, boost::optional<std::vector<uint_fast64_t>>> extractHintInformationForMaybeStates(storm::storage::SparseMatrix<ValueType> const& transitionMatrix, storm::storage::SparseMatrix<ValueType> const& backwardTransitions, storm::storage::BitVector const& maybeStates, boost::optional<storm::storage::BitVector> const& selectedChoices, ModelCheckerHint const& hint, bool skipECWithinMaybeStatesCheck);
+                
+                static std::pair<std::vector<ValueType>, boost::optional<std::vector<uint_fast64_t>>> computeValuesOnlyMaybeStates(storm::solver::SolveGoal const& goal, storm::storage::SparseMatrix<ValueType> const& submatrix, std::vector<ValueType> const& b, bool produceScheduler, storm::solver::MinMaxLinearEquationSolverFactory<ValueType> const& minMaxLinearEquationSolverFactory, boost::optional<std::vector<ValueType>>&& hintValues = boost::none, boost::optional<std::vector<uint_fast64_t>>&& hintChoices = boost::none, boost::optional<ValueType> const& lowerResultBound = boost::none, boost::optional<ValueType> const& upperResultBound = boost::none);
                 
                 static MDPSparseModelCheckingHelperReturnType<ValueType> computeUntilProbabilities(storm::solver::SolveGoal const& goal, storm::storage::SparseMatrix<ValueType> const& transitionMatrix, storm::storage::SparseMatrix<ValueType> const& backwardTransitions, storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates, bool qualitative, bool produceScheduler, storm::solver::MinMaxLinearEquationSolverFactory<ValueType> const& minMaxLinearEquationSolverFactory, ModelCheckerHint const& hint = ModelCheckerHint());
                 

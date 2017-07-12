@@ -181,7 +181,7 @@ namespace storm {
             qi::rule<Iterator, std::shared_ptr<storm::logic::Formula const>(storm::logic::FormulaContext), Skipper> globallyFormula;
             qi::rule<Iterator, std::shared_ptr<storm::logic::Formula const>(storm::logic::FormulaContext), Skipper> untilFormula;
             
-            qi::rule<Iterator, std::pair<boost::optional<storm::logic::TimeBound>, boost::optional<storm::logic::TimeBound>>(), qi::locals<bool, bool>, Skipper> timeBound;
+            qi::rule<Iterator, std::tuple<boost::optional<storm::logic::TimeBound>, boost::optional<storm::logic::TimeBound>, boost::optional<std::string>>(), qi::locals<bool, bool>, Skipper> timeBound;
             
             qi::rule<Iterator, std::shared_ptr<storm::logic::Formula const>(), Skipper> rewardPathFormula;
             qi::rule<Iterator, std::shared_ptr<storm::logic::Formula const>(), qi::locals<bool>, Skipper> cumulativeRewardFormula;
@@ -197,11 +197,11 @@ namespace storm {
             bool areConstantDefinitionsAllowed() const;
             void addConstant(std::string const& name, bool integer);
             void addProperty(std::vector<storm::jani::Property>& properties, boost::optional<std::string> const& name, std::shared_ptr<storm::logic::Formula const> const& formula);
-            
-            std::pair<boost::optional<storm::logic::TimeBound>, boost::optional<storm::logic::TimeBound>> createTimeBoundFromInterval(storm::expressions::Expression const& lowerBound, storm::expressions::Expression const& upperBound) const;
-            std::pair<boost::optional<storm::logic::TimeBound>, boost::optional<storm::logic::TimeBound>> createTimeBoundFromSingleBound(storm::expressions::Expression const& bound, bool upperBound, bool strict) const;
-            
-            // Methods that actually create the expression objects.
+
+            std::tuple<boost::optional<storm::logic::TimeBound>, boost::optional<storm::logic::TimeBound>, boost::optional<std::string>> createTimeBoundFromInterval(storm::expressions::Expression const& lowerBound, storm::expressions::Expression const& upperBound, boost::optional<std::string> const& rewardName) const;
+            std::tuple<boost::optional<storm::logic::TimeBound>, boost::optional<storm::logic::TimeBound>, boost::optional<std::string>> createTimeBoundFromSingleBound(storm::expressions::Expression const& bound, bool upperBound, bool strict, boost::optional<std::string> const& rewardName) const;
+
+                // Methods that actually create the expression objects.
             std::shared_ptr<storm::logic::Formula const> createInstantaneousRewardFormula(storm::expressions::Expression const& timeBound) const;
             std::shared_ptr<storm::logic::Formula const> createCumulativeRewardFormula(storm::expressions::Expression const& timeBound, bool strict) const;
             std::shared_ptr<storm::logic::Formula const> createTotalRewardFormula() const;
@@ -209,10 +209,10 @@ namespace storm {
             std::shared_ptr<storm::logic::Formula const> createAtomicExpressionFormula(storm::expressions::Expression const& expression) const;
             std::shared_ptr<storm::logic::Formula const> createBooleanLiteralFormula(bool literal) const;
             std::shared_ptr<storm::logic::Formula const> createAtomicLabelFormula(std::string const& label) const;
-            std::shared_ptr<storm::logic::Formula const> createEventuallyFormula(boost::optional<std::pair<boost::optional<storm::logic::TimeBound>, boost::optional<storm::logic::TimeBound>>> const& timeBound, storm::logic::FormulaContext context, std::shared_ptr<storm::logic::Formula const> const& subformula) const;
+            std::shared_ptr<storm::logic::Formula const> createEventuallyFormula(boost::optional<std::tuple<boost::optional<storm::logic::TimeBound>, boost::optional<storm::logic::TimeBound>, boost::optional<std::string>>> const& timeBound, storm::logic::FormulaContext context, std::shared_ptr<storm::logic::Formula const> const& subformula) const;
             std::shared_ptr<storm::logic::Formula const> createGloballyFormula(std::shared_ptr<storm::logic::Formula const> const& subformula) const;
             std::shared_ptr<storm::logic::Formula const> createNextFormula(std::shared_ptr<storm::logic::Formula const> const& subformula) const;
-            std::shared_ptr<storm::logic::Formula const> createUntilFormula(std::shared_ptr<storm::logic::Formula const> const& leftSubformula, boost::optional<std::pair<boost::optional<storm::logic::TimeBound>, boost::optional<storm::logic::TimeBound>>> const& timeBound, std::shared_ptr<storm::logic::Formula const> const& rightSubformula);
+            std::shared_ptr<storm::logic::Formula const> createUntilFormula(std::shared_ptr<storm::logic::Formula const> const& leftSubformula, boost::optional<std::tuple<boost::optional<storm::logic::TimeBound>, boost::optional<storm::logic::TimeBound>, boost::optional<std::string>>> const& timeBound, std::shared_ptr<storm::logic::Formula const> const& rightSubformula);
             std::shared_ptr<storm::logic::Formula const> createConditionalFormula(std::shared_ptr<storm::logic::Formula const> const& leftSubformula, std::shared_ptr<storm::logic::Formula const> const& rightSubformula, storm::logic::FormulaContext context) const;
             storm::logic::OperatorInformation createOperatorInformation(boost::optional<storm::OptimizationDirection> const& optimizationDirection, boost::optional<storm::logic::ComparisonType> const& comparisonType, boost::optional<storm::expressions::Expression> const& threshold) const;
             std::shared_ptr<storm::logic::Formula const> createLongRunAverageOperatorFormula(storm::logic::OperatorInformation const& operatorInformation, std::shared_ptr<storm::logic::Formula const> const& subformula) const;
@@ -223,8 +223,8 @@ namespace storm {
             std::shared_ptr<storm::logic::Formula const> createUnaryBooleanStateFormula(std::shared_ptr<storm::logic::Formula const> const& subformula, boost::optional<storm::logic::UnaryBooleanStateFormula::OperatorType> const& operatorType);
             std::shared_ptr<storm::logic::Formula const> createMultiObjectiveFormula(std::vector<std::shared_ptr<storm::logic::Formula const>> const& subformulas);
             
-            storm::jani::Property createProperty(boost::optional<std::string> const& propertyName, storm::modelchecker::FilterType const& filterType, std::shared_ptr<storm::logic::Formula const> const& formula);
-            storm::jani::Property createPropertyWithDefaultFilterType(boost::optional<std::string> const& propertyName, std::shared_ptr<storm::logic::Formula const> const& formula);
+            storm::jani::Property createProperty(boost::optional<std::string> const& propertyName, storm::modelchecker::FilterType const& filterType, std::shared_ptr<storm::logic::Formula const> const& formula, std::shared_ptr<storm::logic::Formula const> const& states);
+            storm::jani::Property createPropertyWithDefaultFilterTypeAndStates(boost::optional<std::string> const& propertyName, std::shared_ptr<storm::logic::Formula const> const& formula);
             
             // An error handler function.
             phoenix::function<SpiritErrorHandler> handler;

@@ -7,7 +7,7 @@
 #include "storm/storage/expressions/Variable.h"
 #include "storm/storage/dd/DdType.h"
 
-#include "storm/adapters/CarlAdapter.h"
+#include "storm/adapters/RationalFunctionAdapter.h"
 
 namespace storm {
     namespace dd {

@@ -34,13 +34,13 @@ namespace storm {
         template<typename SparseMarkovAutomatonModelType>
         bool SparseMarkovAutomatonCslModelChecker<SparseMarkovAutomatonModelType>::canHandle(CheckTask<storm::logic::Formula, ValueType> const& checkTask) const {
             storm::logic::Formula const& formula = checkTask.getFormula();
-            if(formula.isInFragment(storm::logic::csl().setGloballyFormulasAllowed(false).setNextFormulasAllowed(false).setReachabilityRewardFormulasAllowed(true).setTimeAllowed(true).setLongRunAverageProbabilitiesAllowed(true))) {
+            if(formula.isInFragment(storm::logic::csl().setGloballyFormulasAllowed(false).setNextFormulasAllowed(false).setRewardOperatorsAllowed(true).setReachabilityRewardFormulasAllowed(true).setTimeAllowed(true).setLongRunAverageProbabilitiesAllowed(true).setLongRunAverageRewardFormulasAllowed(true))) {
                 return true;
             } else {
                 // Check whether we consider a multi-objective formula
                 // For multi-objective model checking, each initial state  requires an individual scheduler (in contrast to single objective model checking). Let's exclude multiple initial states.
-                if(this->getModel().getInitialStates().getNumberOfSetBits() > 1) return false;
-                if(!checkTask.isOnlyInitialStatesRelevantSet()) return false;
+                if (this->getModel().getInitialStates().getNumberOfSetBits() > 1) return false;
+                if (!checkTask.isOnlyInitialStatesRelevantSet()) return false;
                 return formula.isInFragment(storm::logic::multiObjective().setTimeAllowed(true).setTimeBoundedUntilFormulasAllowed(true));
             }
         }
@@ -54,7 +54,7 @@ namespace storm {
             std::unique_ptr<CheckResult> rightResultPointer = this->check(pathFormula.getRightSubformula());
             ExplicitQualitativeCheckResult const& rightResult = rightResultPointer->asExplicitQualitativeCheckResult();
 
-            STORM_LOG_THROW(!pathFormula.isStepBounded(), storm::exceptions::NotImplementedException, "Currently step-bounded properties on MAs are not supported.");
+            STORM_LOG_THROW(!pathFormula.getTimeBoundReference().isStepBound(), storm::exceptions::NotImplementedException, "Currently step-bounded properties on MAs are not supported.");
             double lowerBound = 0;
             double upperBound = 0;
             if (pathFormula.hasLowerBound()) {
@@ -106,7 +106,15 @@ namespace storm {
             std::vector<ValueType> result = storm::modelchecker::helper::SparseMarkovAutomatonCslHelper::computeLongRunAverageProbabilities(checkTask.getOptimizationDirection(), this->getModel().getTransitionMatrix(), this->getModel().getBackwardTransitions(), this->getModel().getExitRates(), this->getModel().getMarkovianStates(), subResult.getTruthValuesVector(), *minMaxLinearEquationSolverFactory);
             return std::unique_ptr<CheckResult>(new ExplicitQuantitativeCheckResult<ValueType>(std::move(result)));
         }
-                
+        
+        template<typename SparseMarkovAutomatonModelType>
+        std::unique_ptr<CheckResult> SparseMarkovAutomatonCslModelChecker<SparseMarkovAutomatonModelType>::computeLongRunAverageRewards(storm::logic::RewardMeasureType rewardMeasureType, CheckTask<storm::logic::LongRunAverageRewardFormula, ValueType> const& checkTask) {
+            STORM_LOG_THROW(checkTask.isOptimizationDirectionSet(), storm::exceptions::InvalidPropertyException, "Formula needs to specify whether minimal or maximal values are to be computed on nondeterministic model.");
+            STORM_LOG_THROW(this->getModel().isClosed(), storm::exceptions::InvalidPropertyException, "Unable to compute long run average rewards in non-closed Markov automaton.");
+            std::vector<ValueType> result = storm::modelchecker::helper::SparseMarkovAutomatonCslHelper::computeLongRunAverageRewards<ValueType, RewardModelType>(checkTask.getOptimizationDirection(), this->getModel().getTransitionMatrix(), this->getModel().getBackwardTransitions(), this->getModel().getExitRates(), this->getModel().getMarkovianStates(), checkTask.isRewardModelSet() ? this->getModel().getRewardModel(checkTask.getRewardModel()) : this->getModel().getRewardModel(""), *minMaxLinearEquationSolverFactory);
+            return std::unique_ptr<CheckResult>(new ExplicitQuantitativeCheckResult<ValueType>(std::move(result)));
+        }
+        
         template<typename SparseMarkovAutomatonModelType>
         std::unique_ptr<CheckResult> SparseMarkovAutomatonCslModelChecker<SparseMarkovAutomatonModelType>::computeReachabilityTimes(storm::logic::RewardMeasureType, CheckTask<storm::logic::EventuallyFormula, ValueType> const& checkTask) {
             storm::logic::EventuallyFormula const& eventuallyFormula = checkTask.getFormula();

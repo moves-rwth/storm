@@ -4,7 +4,7 @@
 #include <random>
 #include <chrono>
 
-#include "storm/adapters/CarlAdapter.h"
+#include "storm/adapters/RationalFunctionAdapter.h"
 
 #include "storm/settings/modules/EliminationSettings.h"
 #include "storm/settings/modules/CoreSettings.h"

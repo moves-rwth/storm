@@ -9,7 +9,7 @@
 
 #include "storm/exceptions/InvalidArgumentException.h"
 
-#include "storm/adapters/CarlAdapter.h"
+#include "storm/adapters/RationalFunctionAdapter.h"
 #include "storm/utility/macros.h"
 
 namespace storm {
@@ -99,7 +99,7 @@ namespace storm {
 
         template<>
         storm::storage::sparse::state_type convertNumber(long long const& number){
-            return static_cast<double>(number);
+            return static_cast<storm::storage::sparse::state_type>(number);
         }
 
         template<typename ValueType>
@@ -256,7 +256,7 @@ namespace storm {
 
         template<>
         uint_fast64_t convertNumber(ClnRationalNumber const& number) {
-            return carl::toInt<unsigned long>(number);
+            return carl::toInt<carl::uint>(number);
         }
         
         template<>
@@ -386,7 +386,7 @@ namespace storm {
         
         template<>
         uint_fast64_t convertNumber(GmpRationalNumber const& number){
-            return carl::toInt<unsigned long>(number);
+            return carl::toInt<carl::uint>(number);
         }
         
         template<>
@@ -549,8 +549,8 @@ namespace storm {
 #endif
         
         template<>
-        uint_fast64_t convertNumber(RationalFunction const& func) {
-            return carl::toInt<unsigned long>(convertNumber<RationalFunctionCoefficient>(func));
+        carl::uint convertNumber(RationalFunction const& func) {
+            return carl::toInt<carl::uint>(convertNumber<RationalFunctionCoefficient>(func));
         }
         
         template<>

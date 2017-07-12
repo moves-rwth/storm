@@ -24,6 +24,9 @@ namespace storm {
             if (specification.isOperatorAtTopLevelRequired()) {
                 result &= f.isOperatorFormula();
             }
+            if (specification.isMultiObjectiveFormulaAtTopLevelRequired()) {
+                result &= f.isMultiObjectiveFormula();
+            }
             
             return result;
         }
@@ -58,10 +61,14 @@ namespace storm {
                 result = result && !f.getLeftSubformula().isPathFormula();
                 result = result && !f.getRightSubformula().isPathFormula();
             }
-            if (f.isStepBounded()) {
+            auto tbr = f.getTimeBoundReference();
+            if (tbr.isStepBound()) {
                 result = result && inherited.getSpecification().areStepBoundedUntilFormulasAllowed();
-            } else {
+            } else if(tbr.isTimeBound()) {
                 result = result && inherited.getSpecification().areTimeBoundedUntilFormulasAllowed();
+            } else {
+                assert(tbr.isRewardBound());
+                result = result && inherited.getSpecification().areRewardBoundedUntilFormulasAllowed();
             }
             result = result && boost::any_cast<bool>(f.getLeftSubformula().accept(*this, data));
             result = result && boost::any_cast<bool>(f.getRightSubformula().accept(*this, data));

@@ -50,25 +50,35 @@ namespace storm {
                 for (auto const& transition : dtmc.getRows(state)) {
                     sum += transition.getValue();
                     if (!storm::utility::isConstant(transition.getValue())) {
+                        // Assert: 0 <= transition <= 1
                         if (transition.getValue().denominator().isConstant()) {
-                            if (transition.getValue().denominatorAsNumber() > 0) {
+                            if (transition.getValue().denominator().constantPart() > 0) {
+                                // Assert: nom <= denom
                                 wellformedConstraintSet.emplace((transition.getValue().nominator() - transition.getValue().denominator()).polynomial(), storm::CompareRelation::LEQ);
+                                // Assert: nom >= 0
                                 wellformedConstraintSet.emplace(transition.getValue().nominator().polynomial(), storm::CompareRelation::GEQ);
-                            } else if (transition.getValue().denominatorAsNumber() < 0) {
+                            } else if (transition.getValue().denominator().constantPart() < 0) {
+                                // Assert nom >= denom
                                 wellformedConstraintSet.emplace((transition.getValue().nominator() - transition.getValue().denominator()).polynomial(), storm::CompareRelation::GEQ);
+                                // Assert: nom <= 0
                                 wellformedConstraintSet.emplace(transition.getValue().nominator().polynomial(), storm::CompareRelation::LEQ);
                             } else {
-                                assert(false); // Should fail before.
+                                STORM_LOG_ASSERT(false, "Denominator must not equal 0.");
                             }
                         } else {
+                            // Assert: denom != 0
                             wellformedConstraintSet.emplace(transition.getValue().denominator().polynomial(), storm::CompareRelation::NEQ);
-                            wellformedConstraintSet.emplace(carl::FormulaType::ITE, typename ConstraintType<ValueType>::val(transition.getValue().nominator().polynomial(), storm::CompareRelation::GREATER), typename ConstraintType<ValueType>::val(transition.getValue().nominator().polynomial(), storm::CompareRelation::GEQ), typename ConstraintType<ValueType>::val(transition.getValue().nominator().polynomial(), storm::CompareRelation::LEQ));
+                             // Assert: transition >= 0 <==> if denom > 0 then nom >= 0 else nom <= 0
+                            wellformedConstraintSet.emplace(carl::FormulaType::ITE, typename ConstraintType<ValueType>::val(transition.getValue().denominator().polynomial(), storm::CompareRelation::GREATER), typename ConstraintType<ValueType>::val(transition.getValue().nominator().polynomial(), storm::CompareRelation::GEQ), typename ConstraintType<ValueType>::val(transition.getValue().nominator().polynomial(), storm::CompareRelation::LEQ));
+                             // TODO: Assert: transition <= 1 <==> if denom > 0 then nom - denom <= 0 else nom - denom >= 0
                         }
+                        // Assert: transition > 0
                         graphPreservingConstraintSet.emplace(transition.getValue().nominator().polynomial(), storm::CompareRelation::NEQ);
                     }
                 }
                 STORM_LOG_ASSERT(!storm::utility::isConstant(sum) || storm::utility::isOne(sum), "If the sum is a constant, it must be equal to 1.");
                 if(!storm::utility::isConstant(sum)) {
+                    // Assert: sum == 1
                     wellformedConstraintSet.emplace((sum.nominator() - sum.denominator()).polynomial(), storm::CompareRelation::EQ);
                 }
 
@@ -106,7 +116,6 @@ namespace storm {
         void ConstraintCollector<ValueType>::operator()(storm::models::sparse::Dtmc<ValueType> const& dtmc) {
             process(dtmc);
         }
-
 
         template class ConstraintCollector<storm::RationalFunction>;
     }

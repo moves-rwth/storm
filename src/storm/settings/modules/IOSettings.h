@@ -99,6 +99,20 @@ namespace storm {
                  * @return The name of the DRN file that contains the model.
                  */
                 std::string getExplicitDRNFilename() const;
+                
+                /*!
+                 * Retrieves whether the explicit option with IMCA was set.
+                 *
+                 * @return True if the explicit option with IMCA was set.
+                 */
+                bool isExplicitIMCASet() const;
+
+                /*!
+                 * Retrieves the name of the file that contains the model in the IMCA format.
+                 *
+                 * @return The name of the IMCA file that contains the model.
+                 */
+                std::string getExplicitIMCAFilename() const;
 
                 /*!
                  * Retrieves whether the PRISM language option was set.
@@ -164,6 +178,20 @@ namespace storm {
                  * @return True if additional checks are to be performed.
                  */
                 bool isExplorationChecksSet() const;
+                
+                /*!
+                 * Retrieves whether to show information about exploration progress.
+                 *
+                 * @return True if information is to be shown.
+                 */
+                bool isExplorationShowProgressSet() const;
+                
+                /*!
+                 * Retrieves the delay for printing information about the exploration progress.
+                 *
+                 * @return The desired delay in seconds. If 0, no information about the progress shall be printed.
+                 */
+                uint64_t getExplorationShowProgressDelay() const;
                 
                 /*!
                  * Retrieves the exploration order if it was set.
@@ -312,12 +340,16 @@ namespace storm {
                 static const std::string explicitOptionShortName;
                 static const std::string explicitDrnOptionName;
                 static const std::string explicitDrnOptionShortName;
+                static const std::string explicitImcaOptionName;
+                static const std::string explicitImcaOptionShortName;
                 static const std::string prismInputOptionName;
                 static const std::string janiInputOptionName;
                 static const std::string prismToJaniOptionName;
                 static const std::string jitOptionName;
                 static const std::string explorationChecksOptionName;
                 static const std::string explorationChecksOptionShortName;
+                static const std::string explorationShowProgressOptionName;
+                static const std::string explorationShowProgressOptionShortName;
                 static const std::string explorationOrderOptionName;
                 static const std::string explorationOrderOptionShortName;
                 static const std::string transitionRewardsOptionName;

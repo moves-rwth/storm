@@ -6,7 +6,7 @@
 #include "storm/parser/SpiritErrorHandler.h"
 #include "storm/storage/expressions/OperatorType.h"
 
-#include "storm/adapters/NumberAdapter.h"
+#include "storm/adapters/RationalNumberAdapter.h"
 
 namespace storm {
     namespace expressions {

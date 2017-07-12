@@ -15,7 +15,7 @@
 
 #include "storm/logic/FragmentSpecification.h"
 
-#include "storm/adapters/CarlAdapter.h"
+#include "storm/adapters/RationalFunctionAdapter.h"
 
 #include "storm/exceptions/InvalidStateException.h"
 #include "storm/exceptions/InvalidPropertyException.h"
@@ -60,7 +60,7 @@ namespace storm {
             ExplicitQualitativeCheckResult const& leftResult = leftResultPointer->asExplicitQualitativeCheckResult();;
             ExplicitQualitativeCheckResult const& rightResult = rightResultPointer->asExplicitQualitativeCheckResult();
 
-            STORM_LOG_THROW(!pathFormula.isStepBounded(), storm::exceptions::NotImplementedException, "Currently step-bounded properties on CTMCs are not supported.");
+            STORM_LOG_THROW(!pathFormula.getTimeBoundReference().isStepBound(), storm::exceptions::NotImplementedException, "Currently step-bounded properties on CTMCs are not supported.");
             double lowerBound = 0;
             double upperBound = 0;
             if (pathFormula.hasLowerBound()) {

@@ -7,7 +7,7 @@
 #include "storm/utility/OsDetection.h"
 
 #include "storm/storage/sparse/StateType.h"
-#include "storm/storage/PartialScheduler.h"
+#include "storm/storage/Scheduler.h"
 #include "storm/models/sparse/NondeterministicModel.h"
 #include "storm/models/sparse/DeterministicModel.h"
 #include "storm/storage/dd/DdType.h"
@@ -245,9 +245,10 @@ namespace storm {
              *
              * @param states The set of states for which to compute the scheduler that stays in this very set.
              * @param transitionMatrix The transition matrix.
+             * @param scheduler The resulting scheduler. The scheduler is only set at the given states.
              */
             template <typename T>
-            storm::storage::PartialScheduler computeSchedulerStayingInStates(storm::storage::BitVector const& states, storm::storage::SparseMatrix<T> const& transitionMatrix);
+            void computeSchedulerStayingInStates(storm::storage::BitVector const& states, storm::storage::SparseMatrix<T> const& transitionMatrix, storm::storage::Scheduler<T>& scheduler);
 
             /*!
              * Computes a scheduler for the given states that chooses an action that has at least one successor in the
@@ -256,9 +257,10 @@ namespace storm {
              * @param states The set of states for which to compute the scheduler that chooses an action with a successor
              * in this very set.
              * @param transitionMatrix The transition matrix.
+             * @param scheduler The resulting scheduler. The scheduler is only set at the given states.
              */
             template <typename T>
-            storm::storage::PartialScheduler computeSchedulerWithOneSuccessorInStates(storm::storage::BitVector const& states, storm::storage::SparseMatrix<T> const& transitionMatrix);
+            void computeSchedulerWithOneSuccessorInStates(storm::storage::BitVector const& states, storm::storage::SparseMatrix<T> const& transitionMatrix, storm::storage::Scheduler<T>& scheduler);
             
             /*!
              * Computes a scheduler for the ProbGreater0E-States such that in the induced system the given psiStates are reachable via phiStates
@@ -268,22 +270,23 @@ namespace storm {
              * @param phiStates The set of states satisfying phi.
              * @param psiStates The set of states satisfying psi.
              * @param rowFilter If given, the returned scheduler will only pick choices such that rowFilter is true for the corresponding matrixrow.
-             * @return A Scheduler for the ProbGreater0E-States
+             * @param scheduler The resulting scheduler for the ProbGreater0E-States. The scheduler is not set at prob0A states.
              *
              * @note No choice is defined for ProbGreater0E-States if all the probGreater0-choices violate the row filter.
              *       This also holds for states that only reach psi via such states.
              */
             template <typename T>
-            storm::storage::PartialScheduler computeSchedulerProbGreater0E(storm::storage::SparseMatrix<T> const& transitionMatrix, storm::storage::SparseMatrix<T> const& backwardTransitions, storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates, boost::optional<storm::storage::BitVector> const& rowFilter = boost::none);
+            void computeSchedulerProbGreater0E(storm::storage::SparseMatrix<T> const& transitionMatrix, storm::storage::SparseMatrix<T> const& backwardTransitions, storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates, storm::storage::Scheduler<T>& scheduler, boost::optional<storm::storage::BitVector> const& rowFilter = boost::none);
 
             /*!
              * Computes a scheduler for the given states that have a scheduler that has a probability 0.
              *
              * @param prob0EStates The states that have a scheduler achieving probablity 0.
              * @param transitionMatrix The transition matrix of the system.
+             * @param scheduler The resulting scheduler for the prob0EStates States. The scheduler is not set at probGreater0A states.
              */
             template <typename T>
-            storm::storage::PartialScheduler computeSchedulerProb0E(storm::storage::BitVector const& prob0EStates, storm::storage::SparseMatrix<T> const& transitionMatrix);
+            void computeSchedulerProb0E(storm::storage::BitVector const& prob0EStates, storm::storage::SparseMatrix<T> const& transitionMatrix, storm::storage::Scheduler<T>& scheduler);
 
             /*!
              * Computes a scheduler for the given prob1EStates such that in the induced system the given psiStates are reached with probability 1.
@@ -293,10 +296,10 @@ namespace storm {
              * @param backwardTransitions The reversed transition relation.
              * @param phiStates The set of states satisfying phi.
              * @param psiStates The set of states satisfying psi.
-             * @return A scheduler for the Prob1E-States
+             * @param scheduler The resulting scheduler for the prob1EStates. The scheduler is not set at the remaining states.
              */
             template <typename T>
-            storm::storage::PartialScheduler computeSchedulerProb1E(storm::storage::BitVector const& prob1EStates, storm::storage::SparseMatrix<T> const& transitionMatrix, storm::storage::SparseMatrix<T> const& backwardTransitions, storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates);
+            void computeSchedulerProb1E(storm::storage::BitVector const& prob1EStates, storm::storage::SparseMatrix<T> const& transitionMatrix, storm::storage::SparseMatrix<T> const& backwardTransitions, storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates, storm::storage::Scheduler<T>& scheduler);
             
             /*!
              * Computes the sets of states that have probability greater 0 of satisfying phi until psi under at least

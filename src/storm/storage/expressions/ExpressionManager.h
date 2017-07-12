@@ -12,7 +12,7 @@
 
 #include "storm/storage/expressions/Variable.h"
 #include "storm/storage/expressions/Expression.h"
-#include "storm/adapters/CarlAdapter.h"
+#include "storm/adapters/RationalFunctionAdapter.h"
 #include "storm/utility/OsDetection.h"
 
 namespace storm {

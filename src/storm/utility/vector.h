@@ -10,7 +10,7 @@
 #include <algorithm>
 #include <functional>
 #include <numeric>
-#include <storm/adapters/CarlAdapter.h>
+#include <storm/adapters/RationalFunctionAdapter.h>
 
 #include <boost/optional.hpp>
 
@@ -120,6 +120,27 @@ namespace storm {
                 std::vector<uint_fast64_t> res = buildVectorForRange(0, v.size());
                 std::sort(res.begin(), res.end(), [&v](uint_fast64_t index1, uint_fast64_t index2) { return v[index1] > v[index2];});
                 return res;
+            }
+            
+            /*!
+             * Returns true iff every element in the given vector is unique, i.e., there are no i,j with i!=j and v[i]==v[j].
+             */
+            template<typename T>
+            bool isUnique(std::vector<T> const& v) {
+                if (v.size() < 2) {
+                    return true;
+                }
+                auto sortedIndices = getSortedIndices(v);
+                auto indexIt = sortedIndices.begin();
+                T const* previous = &v[*indexIt];
+                for (++indexIt; indexIt != sortedIndices.end(); ++indexIt) {
+                    T const& current = v[*indexIt];
+                    if (current==*previous) {
+                        return false;
+                    }
+                    previous = &current;
+                }
+                return true;
             }
             
             /*!

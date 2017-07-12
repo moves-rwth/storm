@@ -20,7 +20,7 @@ namespace storm {
         class MemoryStructure {
         public:
             
-            typedef std::vector<std::vector<std::shared_ptr<storm::logic::Formula const>>> TransitionMatrix;
+            typedef std::vector<std::vector<boost::optional<storm::storage::BitVector>>> TransitionMatrix;
             
             /*!
              * Creates a memory structure with the given transition matrix and the given memory state labeling.
@@ -34,11 +34,12 @@ namespace storm {
              * @param transitionMatrix The transition matrix
              * @param memoryStateLabeling A labeling of the memory states to specify, e.g., accepting states
              */
-            MemoryStructure(TransitionMatrix const& transitionMatrix, storm::models::sparse::StateLabeling const& memoryStateLabeling);
-            MemoryStructure(TransitionMatrix&& transitionMatrix, storm::models::sparse::StateLabeling&& memoryStateLabeling);
+            MemoryStructure(TransitionMatrix const& transitionMatrix, storm::models::sparse::StateLabeling const& memoryStateLabeling, std::vector<uint_fast64_t> const& initialMemoryStates);
+            MemoryStructure(TransitionMatrix&& transitionMatrix, storm::models::sparse::StateLabeling&& memoryStateLabeling, std::vector<uint_fast64_t>&& initialMemoryStates);
             
             TransitionMatrix const& getTransitionMatrix() const;
             storm::models::sparse::StateLabeling const& getStateLabeling() const;
+            std::vector<uint_fast64_t> const& getInitialMemoryStates() const;
             uint_fast64_t getNumberOfStates() const;
             
             /*!
@@ -60,6 +61,7 @@ namespace storm {
         private:
             TransitionMatrix transitions;
             storm::models::sparse::StateLabeling stateLabeling;
+            std::vector<uint_fast64_t> initialMemoryStates;
         };
         
     }

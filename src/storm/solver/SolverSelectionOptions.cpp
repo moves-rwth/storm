@@ -10,7 +10,8 @@ namespace storm {
                     return "value";
                 case MinMaxMethod::Topological:
                     return "topological";
-
+                case MinMaxMethod::Acyclic:
+                    return "acyclic";
             }
             return "invalid";
         }

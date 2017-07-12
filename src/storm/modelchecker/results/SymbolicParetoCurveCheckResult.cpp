@@ -1,7 +1,7 @@
 
 #include "storm/modelchecker/results/SymbolicParetoCurveCheckResult.h"
 
-#include "storm/adapters/CarlAdapter.h"
+#include "storm/adapters/RationalFunctionAdapter.h"
 #include "storm/modelchecker/results/SymbolicQualitativeCheckResult.h"
 #include "storm/utility/macros.h"
 #include "storm/storage/dd/DdManager.h"

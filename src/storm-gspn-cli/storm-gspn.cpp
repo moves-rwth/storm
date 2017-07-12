@@ -11,7 +11,7 @@
 #include "storm/utility/macros.h"
 #include "storm/utility/initialize.h"
 
-#include "utility/storm.h"
+#include "api/storm.h"
 #include "storm/cli/cli.h"
 
 #include "storm/parser/FormulaParser.h"
@@ -97,7 +97,7 @@ int main(const int argc, const char **argv) {
         }
         boost::optional<std::set<std::string>> propertyFilter;
         storm::parser::FormulaParser formulaParser(gspn->getExpressionManager());
-        std::vector<storm::jani::Property> properties  = storm::parseProperties(formulaParser, formulaString, propertyFilter);
+        std::vector<storm::jani::Property> properties  = storm::api::parseProperties(formulaParser, formulaString, propertyFilter);
 
         if (!gspn->isValid()) {
             STORM_LOG_ERROR("The gspn is not valid.");
@@ -112,7 +112,7 @@ int main(const int argc, const char **argv) {
         
         if(storm::settings::getModule<storm::settings::modules::JaniExportSettings>().isJaniFileSet()) {
             storm::jani::Model* model = storm::buildJani(*gspn);
-            storm::exportJaniModel(*model, properties, storm::settings::getModule<storm::settings::modules::JaniExportSettings>().getJaniFilename());
+            storm::api::exportJaniModel(*model, properties, storm::settings::getModule<storm::settings::modules::JaniExportSettings>().getJaniFilename());
             delete model;
         }
 

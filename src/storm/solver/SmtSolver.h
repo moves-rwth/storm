@@ -71,15 +71,10 @@ namespace storm {
             
 			SmtSolver(SmtSolver const& other) = default;
 
-#ifndef WINDOWS
 			SmtSolver(SmtSolver&& other) = default;
-#endif
 			SmtSolver& operator=(SmtSolver const& other) = default;
-
-#ifndef WINDOWS
 			SmtSolver& operator=(SmtSolver&& other) = default;
-#endif
-            
+   
 			/*!
              * Pushes a backtracking point on the solver's stack. A following call to pop() deletes exactly those
              * assertions from the solver's stack that were added after this call.
@@ -153,10 +148,8 @@ namespace storm {
              * @return Sat if the conjunction of the asserted expressions together with the provided assumptions is
              * satisfiable, Unsat if it is unsatisfiable and Unknown if the solver could not determine satisfiability.
 			 */
-#ifndef WINDOWS
 			virtual CheckResult checkWithAssumptions(std::initializer_list<storm::expressions::Expression> const& assumptions) = 0;
-#endif
-            
+   
 			/*!
              * If the last call to check() or checkWithAssumptions() returned Sat, this method retrieves a model that
              * satisfies all assertions on the solver's stack (as well as provided assumptions), provided that the
@@ -292,6 +285,13 @@ namespace storm {
              */
             virtual bool unsetTimeout();
             
+			/*!
+			 * If supported by the solver, this function returns the current assertions in the SMT-LIB format.
+			 *
+			 * @return the current assertions in the SMT-LIB format.
+			 */
+			virtual std::string getSmtLibString() const;
+			
         private:
             // The manager responsible for the expressions that interact with this solver.
             storm::expressions::ExpressionManager& manager;
