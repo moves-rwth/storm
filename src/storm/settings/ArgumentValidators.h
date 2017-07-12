@@ -70,6 +70,8 @@ namespace storm {
             static std::shared_ptr<ArgumentValidator<uint64_t>> createUnsignedRangeValidatorExcluding(uint64_t lowerBound, uint64_t upperBound);
             static std::shared_ptr<ArgumentValidator<double>> createDoubleRangeValidatorExcluding(double lowerBound, double upperBound);
             
+            static std::shared_ptr<ArgumentValidator<double>> createDoubleRangeValidatorIncluding(double lowerBound, double upperBound);
+            
             static std::shared_ptr<ArgumentValidator<int64_t>> createIntegerGreaterValidator(int_fast64_t lowerBound);
             static std::shared_ptr<ArgumentValidator<uint64_t>> createUnsignedGreaterValidator(uint64_t lowerBound);
             static std::shared_ptr<ArgumentValidator<double>> createDoubleGreaterValidator(double lowerBound);
@@ -86,6 +88,9 @@ namespace storm {
         private:
             template <typename ValueType>
             static std::shared_ptr<ArgumentValidator<ValueType>> createRangeValidatorExcluding(ValueType lowerBound, ValueType upperBound);
+            
+            template <typename ValueType>
+            static std::shared_ptr<ArgumentValidator<ValueType>> createRangeValidatorIncluding(ValueType lowerBound, ValueType upperBound);
             
             template <typename ValueType>
             static std::shared_ptr<ArgumentValidator<ValueType>> createGreaterValidator(ValueType lowerBound, bool equalAllowed);

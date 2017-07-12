@@ -133,6 +133,10 @@ namespace storm {
             return createRangeValidatorExcluding<double>(lowerBound, upperBound);
         }
         
+        std::shared_ptr<ArgumentValidator<double>> ArgumentValidatorFactory::createDoubleRangeValidatorIncluding(double lowerBound, double upperBound) {
+            return createRangeValidatorIncluding<double>(lowerBound, upperBound);
+        }
+        
         std::shared_ptr<ArgumentValidator<int64_t>> ArgumentValidatorFactory::createIntegerGreaterValidator(int_fast64_t lowerBound) {
             return createGreaterValidator<int64_t>(lowerBound, false);
         }
@@ -172,6 +176,11 @@ namespace storm {
         template <typename ValueType>
         std::shared_ptr<ArgumentValidator<ValueType>> ArgumentValidatorFactory::createRangeValidatorExcluding(ValueType lowerBound, ValueType upperBound) {
             return std::make_unique<RangeArgumentValidator<ValueType>>(lowerBound, upperBound, false, false);
+        }
+        
+        template <typename ValueType>
+        std::shared_ptr<ArgumentValidator<ValueType>> ArgumentValidatorFactory::createRangeValidatorIncluding(ValueType lowerBound, ValueType upperBound) {
+            return std::make_unique<RangeArgumentValidator<ValueType>>(lowerBound, upperBound, true, true);
         }
         
         template <typename ValueType>
