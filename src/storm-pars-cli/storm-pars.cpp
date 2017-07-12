@@ -209,22 +209,31 @@ namespace storm {
             std::function<std::unique_ptr<storm::modelchecker::CheckResult>(std::shared_ptr<storm::logic::Formula const> const& formula)> verificationCallback;
             std::function<void(std::unique_ptr<storm::modelchecker::CheckResult> const&)> postprocessingCallback;
             
-            if (regions.size() == 1) {
-                STORM_PRINT_AND_LOG(std::endl << "Analyzing parameter region " << regions.front());
+            STORM_PRINT_AND_LOG(std::endl);
+            if (regionSettings.isHypothesisSet()) {
+                STORM_PRINT_AND_LOG("Checking hypothesis " << regionSettings.getHypothesis() << " on ");
             } else {
-                STORM_PRINT_AND_LOG(std::endl << "Analyzing " << regions.size() << " parameter regions");
+                STORM_PRINT_AND_LOG("Analyzing ");
             }
-                
+            if (regions.size() == 1) {
+                STORM_PRINT_AND_LOG("parameter region " << regions.front());
+            } else {
+                STORM_PRINT_AND_LOG(regions.size() << " parameter regions");
+            }
             auto engine = regionSettings.getRegionCheckEngine();
             STORM_PRINT_AND_LOG(" using " << engine);
         
             // Check the given set of regions with or without refinement
             if (regionSettings.isRefineSet()) {
                 STORM_LOG_THROW(regions.size() == 1, storm::exceptions::NotSupportedException, "Region refinement is not supported for multiple initial regions.");
-                STORM_PRINT_AND_LOG(" with iterative refinement until " << (1.0 - regionSettings.getRefinementThreshold()) * 100.0 << "% is covered." << std::endl);
+                STORM_PRINT_AND_LOG(" with iterative refinement until " << (1.0 - regionSettings.getCoverageThreshold()) * 100.0 << "% is covered." << (regionSettings.isDepthLimitSet() ? " Depth limit is " + std::to_string(regionSettings.getDepthLimit()) + "." : "") << std::endl);
                 verificationCallback = [&] (std::shared_ptr<storm::logic::Formula const> const& formula) {
-                                        ValueType refinementThreshold = storm::utility::convertNumber<ValueType>(regionSettings.getRefinementThreshold());
-                                        std::unique_ptr<storm::modelchecker::RegionRefinementCheckResult<ValueType>> result = storm::api::checkAndRefineRegionWithSparseEngine<ValueType>(model, storm::api::createTask<ValueType>(formula, true), regions.front(), engine, refinementThreshold);
+                                        ValueType refinementThreshold = storm::utility::convertNumber<ValueType>(regionSettings.getCoverageThreshold());
+                                        boost::optional<uint64_t> optionalDepthLimit;
+                                        if (regionSettings.isDepthLimitSet()) {
+                                            optionalDepthLimit = regionSettings.getDepthLimit();
+                                        }
+                                        std::unique_ptr<storm::modelchecker::RegionRefinementCheckResult<ValueType>> result = storm::api::checkAndRefineRegionWithSparseEngine<ValueType>(model, storm::api::createTask<ValueType>(formula, true), regions.front(), engine, refinementThreshold, optionalDepthLimit, regionSettings.getHypothesis());
                                         return result;
                                     };
             } else {
@@ -237,7 +246,7 @@ namespace storm {
             
             postprocessingCallback = [&] (std::unique_ptr<storm::modelchecker::CheckResult> const& result) {
                                         if (parametricSettings.exportResultToFile()) {
-                                            storm::api::exportRegionCheckResultToFile<ValueType>(result, parametricSettings.exportResultPath(), false);
+                                            storm::api::exportRegionCheckResultToFile<ValueType>(result, parametricSettings.exportResultPath());
                                         }
                                     };
             
