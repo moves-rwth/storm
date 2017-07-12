@@ -131,6 +131,11 @@ namespace storm {
             uint_fast64_t currentRowGroup = 0;
             uint_fast64_t currentRow = 0;
 
+            auto timeOfStart = std::chrono::high_resolution_clock::now();
+            auto timeOfLastMessage = std::chrono::high_resolution_clock::now();
+            uint64_t numberOfExploredStates = 0;
+            uint64_t numberOfExploredStatesSinceLastMessage = 0;
+            
             // Perform a search through the model.
             while (!statesToExplore.empty()) {
                 // Get the first state in the queue.
@@ -233,6 +238,21 @@ namespace storm {
                         ++currentRow;
                     }
                     ++currentRowGroup;
+                }
+                
+                if (generator->getOptions().isExplorationShowProgressSet()) {
+                    ++numberOfExploredStatesSinceLastMessage;
+                    ++numberOfExploredStates;
+                    
+                    auto now = std::chrono::high_resolution_clock::now();
+                    auto durationSinceLastMessage = std::chrono::duration_cast<std::chrono::seconds>(now - timeOfLastMessage).count();
+                    if (static_cast<uint64_t>(durationSinceLastMessage) >= generator->getOptions().getExplorationShowProgressDelay()) {
+                        auto statesPerSecond = numberOfExploredStatesSinceLastMessage / durationSinceLastMessage;
+                        auto durationSinceStart = std::chrono::duration_cast<std::chrono::seconds>(now - timeOfStart).count();
+                        std::cout << "Explored " << numberOfExploredStates << " states in " << durationSinceStart << " seconds (currently " << statesPerSecond << " states per second)." << std::endl;
+                        timeOfLastMessage = std::chrono::high_resolution_clock::now();
+                        numberOfExploredStatesSinceLastMessage = 0;
+                    }
                 }
             }
             

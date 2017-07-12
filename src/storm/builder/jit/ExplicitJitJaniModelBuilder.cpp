@@ -527,6 +527,15 @@ namespace storm {
                 }
                 modelData["exploration_checks"] = cpptempl::make_data(list);
                 list = cpptempl::data_list();
+                if (options.isExplorationShowProgressSet()) {
+                    list.push_back(cpptempl::data_map());
+                }
+                modelData["expl_progress"] = cpptempl::make_data(list);
+                
+                std::stringstream progressDelayStream;
+                progressDelayStream << options.getExplorationShowProgressDelay();
+                modelData["expl_progress_interval"] = cpptempl::make_data(progressDelayStream.str());
+                list = cpptempl::data_list();
                 if (std::is_same<storm::RationalNumber, ValueType>::value) {
                     list.push_back(cpptempl::data_map());
                 }
@@ -541,7 +550,7 @@ namespace storm {
                     list.push_back(cpptempl::data_map());
                 }
                 modelData["double"] = cpptempl::make_data(list);
-
+                
                 list = cpptempl::data_list();
                 if (storm::settings::getModule<storm::settings::modules::CoreSettings>().isDontFixDeadlocksSet()) {
                     list.push_back(cpptempl::data_map());
@@ -1646,12 +1655,17 @@ namespace storm {
                 std::string sourceTemplate = R"(
 #define NDEBUG
                 
+{% if expl_progress %}
+#define EXPL_PROGRESS
+{% endif %}
+                
 #include <cstdint>
 #include <iostream>
 #include <vector>
 #include <queue>
 #include <cmath>
 #include <unordered_map>
+#include <chrono>
 #include <boost/dll/alias.hpp>
                 
 {% if exact %}
@@ -2179,7 +2193,7 @@ namespace storm {
                             
                             class JitBuilder : public JitModelBuilderInterface<IndexType, ValueType> {
                             public:
-                                JitBuilder(ModelComponentsBuilder<IndexType, ValueType>& modelComponentsBuilder) : JitModelBuilderInterface(modelComponentsBuilder) {
+                                JitBuilder(ModelComponentsBuilder<IndexType, ValueType>& modelComponentsBuilder) : JitModelBuilderInterface(modelComponentsBuilder), timeOfStart(std::chrono::high_resolution_clock::now()), timeOfLastMessage(std::chrono::high_resolution_clock::now()), numberOfExploredStates(0), numberOfExploredStatesSinceLastMessage(0) {
                                     {% for state in initialStates %}{
                                         StateType state;
                                         {% for assignment in state %}state.{$assignment.variable} = {$assignment.value};
@@ -2262,6 +2276,7 @@ namespace storm {
                                     getOrAddIndex(initialState, statesToExplore);
                                     
                                     StateBehaviour<IndexType, ValueType> behaviour;
+                                    
                                     while (!statesToExplore.empty()) {
                                         StateType currentState = statesToExplore.get();
                                         IndexType currentIndex = getIndex(currentState);
@@ -2300,6 +2315,21 @@ namespace storm {
 
                                         this->addStateBehaviour(currentIndex, behaviour);
                                         behaviour.clear();
+                                        
+#ifdef EXPL_PROGRESS
+                                        ++numberOfExploredStatesSinceLastMessage;
+                                        ++numberOfExploredStates;
+
+                                        auto now = std::chrono::high_resolution_clock::now();
+                                        auto durationSinceLastMessage = std::chrono::duration_cast<std::chrono::seconds>(now - timeOfLastMessage).count();
+                                        if (static_cast<uint64_t>(durationSinceLastMessage) >= {$expl_progress_interval}) {
+                                            auto statesPerSecond = numberOfExploredStatesSinceLastMessage / durationSinceLastMessage;
+                                            auto durationSinceStart = std::chrono::duration_cast<std::chrono::seconds>(now - timeOfStart).count();
+                                            std::cout << "Explored " << numberOfExploredStates << " states in " << durationSinceStart << " seconds (currently " << statesPerSecond << " states per second)." << std::endl;
+                                            timeOfLastMessage = std::chrono::high_resolution_clock::now();
+                                            numberOfExploredStatesSinceLastMessage = 0;
+                                        }
+#endif
                                     }
                                 }
                                 
@@ -2395,14 +2425,22 @@ namespace storm {
                                 }
                                 
                             private:
+                                // State storage.
                                 spp::sparse_hash_map<StateType, IndexType> stateIds;
                                 std::vector<StateType> initialStates;
                                 std::vector<IndexType> deadlockStates;
-                                
+
+                                // Edges.
                                 {% for edge in nonsynch_edges %}Edge edge_{$edge.name};
                                 {% endfor %}
                                 {% for edge in synch_edges %}Edge edge_{$edge.name};
                                 {% endfor %}
+                                
+                                // Statistics.
+                                std::chrono::high_resolution_clock::time_point timeOfStart;
+                                std::chrono::high_resolution_clock::time_point timeOfLastMessage;
+                                uint64_t numberOfExploredStates;
+                                uint64_t numberOfExploredStatesSinceLastMessage;
                             };
                             
                             BOOST_DLL_ALIAS(storm::builder::jit::JitBuilder::create, create_builder)
