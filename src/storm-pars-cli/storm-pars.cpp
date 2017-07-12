@@ -239,7 +239,7 @@ namespace storm {
             } else {
                 STORM_PRINT_AND_LOG("." << std::endl);
                 verificationCallback = [&] (std::shared_ptr<storm::logic::Formula const> const& formula) {
-                                        std::unique_ptr<storm::modelchecker::CheckResult> result = storm::api::checkRegionsWithSparseEngine<ValueType>(model, storm::api::createTask<ValueType>(formula, true), regions, engine);
+                                        std::unique_ptr<storm::modelchecker::CheckResult> result = storm::api::checkRegionsWithSparseEngine<ValueType>(model, storm::api::createTask<ValueType>(formula, true), regions, engine, regionSettings.getHypothesis());
                                         return result;
                                     };
             }
