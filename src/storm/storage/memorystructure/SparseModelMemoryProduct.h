@@ -14,9 +14,7 @@ namespace storm {
         /*!
          * This class builds the product of the given sparse model and the given memory structure.
          * This is similar to the well-known product of a model with a deterministic rabin automaton.
-         * Note: we already do one memory-structure-step for the initial state, i.e., if s is an initial state of
-         * the given model and s satisfies memoryStructure.getTransitionMatrix[0][n], then (s,n) will be the corresponding
-         * initial state of the resulting model.
+         * The product contains only the reachable states of the product
          *
          * The states of the resulting sparse model will have the original state labels plus the labels of this
          * memory structure.
@@ -28,11 +26,18 @@ namespace storm {
             
             SparseModelMemoryProduct(storm::models::sparse::Model<ValueType> const& sparseModel, storm::storage::MemoryStructure const& memoryStructure);
             
+            // Enforces that the given model and memory state as well as the successor(s) are considered reachable -- even if they are not reachable from an initial state.
+            void addReachableState(uint64_t const& modelState, uint64_t const& memoryState);
+    
+            // Enforces that every state is considered reachable. If this is set, the result has size #modelStates * #memoryStates
+            void setBuildFullProduct();
+            
             // Invokes the building of the product
             std::shared_ptr<storm::models::sparse::Model<ValueType>> build();
             
             // Retrieves the state of the resulting model that represents the given memory and model state.
-            // An invalid index is returned, if the specifyied state does not exist (i.e., if it is not reachable).
+            // Should only be called AFTER calling build();
+            // An invalid index is returned, if the specifyied state does not exist (i.e., if it is not part of product).
             uint64_t const& getResultState(uint64_t const& modelState, uint64_t const& memoryState) const;
             
         private:
@@ -42,13 +47,13 @@ namespace storm {
             std::vector<uint64_t> computeMemorySuccessors() const;
             
             // Computes the reachable states of the resulting model
-            storm::storage::BitVector computeReachableStates(std::vector<uint64_t> const& memorySuccessors, storm::storage::BitVector const& initialStates) const;
+            void computeReachableStates(std::vector<uint64_t> const& memorySuccessors, storm::storage::BitVector const& initialStates);
             
             // Methods that build the model components
             // Matrix for deterministic models
-            storm::storage::SparseMatrix<ValueType> buildDeterministicTransitionMatrix(storm::storage::BitVector const& reachableStates, std::vector<uint64_t> const& memorySuccessors) const;
+            storm::storage::SparseMatrix<ValueType> buildDeterministicTransitionMatrix(std::vector<uint64_t> const& memorySuccessors) const;
             // Matrix for nondeterministic models
-            storm::storage::SparseMatrix<ValueType> buildNondeterministicTransitionMatrix(storm::storage::BitVector const& reachableStates, std::vector<uint64_t> const& memorySuccessors) const;
+            storm::storage::SparseMatrix<ValueType> buildNondeterministicTransitionMatrix(std::vector<uint64_t> const& memorySuccessors) const;
             // State labeling. Note: DOES NOT ADD A LABEL FOR THE INITIAL STATES
             storm::models::sparse::StateLabeling buildStateLabeling(storm::storage::SparseMatrix<ValueType> const& resultTransitionMatrix) const;
             // Reward models
@@ -61,7 +66,9 @@ namespace storm {
             // Maps (modelState * memoryStateCount) + memoryState to the state in the result that represents (memoryState,modelState)
             std::vector<uint64_t> toResultStateMapping;
             
-
+            // Indicates which states are considered reachable. (s, m) is reachable if this BitVector is true at (s * memoryStateCount) + m
+            storm::storage::BitVector reachableStates;
+            
             storm::models::sparse::Model<ValueType> const& model;
             storm::storage::MemoryStructure const& memory;
             
