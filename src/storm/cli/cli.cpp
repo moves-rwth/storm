@@ -311,8 +311,6 @@ namespace storm {
                 transformToJani |= transformToJaniForJit;
                 
                 if (transformToJani) {
-                    SymbolicInput output;
-
                     storm::prism::Program const& model = output.model.get().asPrismProgram();
                     auto modelAndRenaming = model.toJaniWithLabelRenaming(true);
                     output.model = modelAndRenaming.first;
@@ -683,7 +681,9 @@ namespace storm {
                                             } else {
                                                 filter = storm::api::verifyWithSparseEngine<ValueType>(sparseModel, storm::api::createTask<ValueType>(states, false));
                                             }
-                                            result->filter(filter->asQualitativeCheckResult());
+                                            if (result && filter) {
+                                                result->filter(filter->asQualitativeCheckResult());
+                                            }
                                             return result;
                                         });
         }
@@ -703,8 +703,9 @@ namespace storm {
                 } else {
                     filter = storm::api::verifyWithHybridEngine<DdType, ValueType>(symbolicModel, storm::api::createTask<ValueType>(states, false));
                 }
-                
-                result->filter(filter->asQualitativeCheckResult());
+                if (result && filter) {
+                    result->filter(filter->asQualitativeCheckResult());
+                }
                 return result;
             });
         }
@@ -724,8 +725,9 @@ namespace storm {
                 } else {
                     filter = storm::api::verifyWithDdEngine<DdType, ValueType>(symbolicModel, storm::api::createTask<ValueType>(states, false));
                 }
-                
-                result->filter(filter->asQualitativeCheckResult());
+                if (result && filter) {
+                    result->filter(filter->asQualitativeCheckResult());
+                }
                 return result;
             });
         }

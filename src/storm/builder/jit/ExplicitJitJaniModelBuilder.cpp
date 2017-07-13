@@ -73,12 +73,16 @@ namespace storm {
                 if (settings.isCompilerFlagsSet()) {
                     compilerFlags = settings.getCompilerFlags();
                 } else {
+                    std::stringstream flagStream;
 #ifdef LINUX
-                    compilerFlags = "-std=c++14 -fPIC -O3 -march=native -shared";
+                    flagStream << "-std=c++14 -fPIC -march=native -shared ";
 #endif
 #ifdef MACOSX
-                    compilerFlags = "-std=c++14 -stdlib=libc++ -fPIC -march=native -O3 -shared -undefined dynamic_lookup ";
+                    flagStream << "-std=c++14 -stdlib=libc++ -fPIC -march=native -shared -undefined dynamic_lookup ";
 #endif
+                    
+                    flagStream << "-O" << settings.getOptimizationLevel();
+                    compilerFlags = flagStream.str();
                 }
                 if (settings.isBoostIncludeDirectorySet()) {
                     boostIncludeDirectory = settings.getBoostIncludeDirectory();
@@ -523,6 +527,15 @@ namespace storm {
                 }
                 modelData["exploration_checks"] = cpptempl::make_data(list);
                 list = cpptempl::data_list();
+                if (options.isExplorationShowProgressSet()) {
+                    list.push_back(cpptempl::data_map());
+                }
+                modelData["expl_progress"] = cpptempl::make_data(list);
+                
+                std::stringstream progressDelayStream;
+                progressDelayStream << options.getExplorationShowProgressDelay();
+                modelData["expl_progress_interval"] = cpptempl::make_data(progressDelayStream.str());
+                list = cpptempl::data_list();
                 if (std::is_same<storm::RationalNumber, ValueType>::value) {
                     list.push_back(cpptempl::data_map());
                 }
@@ -537,7 +550,7 @@ namespace storm {
                     list.push_back(cpptempl::data_map());
                 }
                 modelData["double"] = cpptempl::make_data(list);
-
+                
                 list = cpptempl::data_list();
                 if (storm::settings::getModule<storm::settings::modules::CoreSettings>().isDontFixDeadlocksSet()) {
                     list.push_back(cpptempl::data_map());
@@ -1171,7 +1184,7 @@ namespace storm {
                     indent(vectorSource, indentLevel) << "}" << std::endl << std::endl;
                 }
                 
-                indent(vectorSource, indentLevel) << "void get_edges_" << synchronizationVectorIndex << "(StateType const& state, std::vector<std::reference_wrapper<Edge const>>& edges, uint64_t position) {" << std::endl;
+                indent(vectorSource, indentLevel) << "void get_edges_" << synchronizationVectorIndex << "(StateType const& state, TransientVariables const& transientIn, std::vector<std::reference_wrapper<Edge const>>& edges, uint64_t position) {" << std::endl;
                 position = 0;
                 uint64_t participatingPosition = 0;
                 for (auto const& inputActionName : synchronizationVector.getInput()) {
@@ -1184,7 +1197,7 @@ namespace storm {
                         for (auto const& edge : automaton.getEdges()) {
                             if (edge.getActionIndex() == actionIndex) {
                                 std::string edgeName = automaton.getName() + "_" + std::to_string(edgeIndex);
-                                indent(vectorSource, indentLevel + 2) << "if (edge_enabled_" << edgeName  << "(state)) {" << std::endl;
+                                indent(vectorSource, indentLevel + 2) << "if (edge_enabled_" << edgeName  << "(state, transientIn)) {" << std::endl;
                                 indent(vectorSource, indentLevel + 3) << "edges.emplace_back(edge_" << edgeName << ");" << std::endl;
                                 indent(vectorSource, indentLevel + 2) << "}" << std::endl;
                             }
@@ -1198,7 +1211,7 @@ namespace storm {
                 }
                 indent(vectorSource, indentLevel) << "}" << std::endl << std::endl;
                 
-                indent(vectorSource, indentLevel) << "void exploreSynchronizationVector_" << synchronizationVectorIndex << "(StateType const& state, StateBehaviour<IndexType, ValueType>& behaviour, StateSet<StateType>& statesToExplore) {" << std::endl;
+                indent(vectorSource, indentLevel) << "void exploreSynchronizationVector_" << synchronizationVectorIndex << "(StateType const& state, TransientVariables const& transientIn, StateBehaviour<IndexType, ValueType>& behaviour, StateSet<StateType>& statesToExplore) {" << std::endl;
                 indent(vectorSource, indentLevel + 1) << "#ifndef NDEBUG" << std::endl;
                 indent(vectorSource, indentLevel + 1) << "std::cout << \"exploring synchronization vector " << synchronizationVectorIndex << "\" << std::endl;" << std::endl;
                 indent(vectorSource, indentLevel + 1) << "#endif" << std::endl;
@@ -1207,7 +1220,7 @@ namespace storm {
                 participatingPosition = 0;
                 for (auto const& input : synchronizationVector.getInput()) {
                     if (!storm::jani::SynchronizationVector::isNoActionInput(input)) {
-                        indent(vectorSource, indentLevel + 1) << "get_edges_" << synchronizationVectorIndex << "(state, edges[" << participatingPosition << "], " << participatingPosition << ");" << std::endl;
+                        indent(vectorSource, indentLevel + 1) << "get_edges_" << synchronizationVectorIndex << "(state, transientIn, edges[" << participatingPosition << "], " << participatingPosition << ");" << std::endl;
                         indent(vectorSource, indentLevel + 1) << "if (edges[" << participatingPosition << "].empty()) {" << std::endl;
                         indent(vectorSource, indentLevel + 2) << "return;" << std::endl;
                         indent(vectorSource, indentLevel + 1) << "}" << std::endl;
@@ -1642,12 +1655,17 @@ namespace storm {
                 std::string sourceTemplate = R"(
 #define NDEBUG
                 
+{% if expl_progress %}
+#define EXPL_PROGRESS
+{% endif %}
+                
 #include <cstdint>
 #include <iostream>
 #include <vector>
 #include <queue>
 #include <cmath>
 #include <unordered_map>
+#include <chrono>
 #include <boost/dll/alias.hpp>
                 
 {% if exact %}
@@ -1902,7 +1920,7 @@ namespace storm {
                             {% endif %}
                             
                             // Non-synchronizing edges.
-                            {% for edge in nonsynch_edges %}static bool edge_enabled_{$edge.name}(StateType const& in) {
+                            {% for edge in nonsynch_edges %}static bool edge_enabled_{$edge.name}(StateType const& in, TransientVariables const& transientIn) {
                                 if ({$edge.guard}) {
                                     return true;
                                 }
@@ -1979,7 +1997,7 @@ namespace storm {
                             {% endfor %}{% endfor %}
                             
                             // Synchronizing edges.
-                            {% for edge in synch_edges %}static bool edge_enabled_{$edge.name}(StateType const& in) {
+                            {% for edge in synch_edges %}static bool edge_enabled_{$edge.name}(StateType const& in, TransientVariables const& transientIn) {
                                 if ({$edge.guard}) {
                                     return true;
                                 }
@@ -2109,7 +2127,7 @@ namespace storm {
                                 DestinationWithoutTransientFunctionPtr destinationWithoutTransientFunction;
                             };
                             
-                            typedef bool (*EdgeEnabledFunctionPtr)(StateType const&);
+                            typedef bool (*EdgeEnabledFunctionPtr)(StateType const&, TransientVariables const& transientIn);
                             typedef void (*EdgeTransientFunctionPtr)(StateType const&, TransientVariables const& transientIn, TransientVariables& out {% if exploration_checks %}, VariableWrites& variableWrites {% endif %});
                             
                             class Edge {
@@ -2124,8 +2142,8 @@ namespace storm {
                                     // Intentionally left empty.
                                 }
                                 
-                                bool isEnabled(StateType const& in) const {
-                                    return edgeEnabledFunction(in);
+                                bool isEnabled(StateType const& in, TransientVariables const& transientIn) const {
+                                    return edgeEnabledFunction(in, transientIn);
                                 }
                                 
                                 void addDestination(Destination const& destination) {
@@ -2175,7 +2193,7 @@ namespace storm {
                             
                             class JitBuilder : public JitModelBuilderInterface<IndexType, ValueType> {
                             public:
-                                JitBuilder(ModelComponentsBuilder<IndexType, ValueType>& modelComponentsBuilder) : JitModelBuilderInterface(modelComponentsBuilder) {
+                                JitBuilder(ModelComponentsBuilder<IndexType, ValueType>& modelComponentsBuilder) : JitModelBuilderInterface(modelComponentsBuilder), timeOfStart(std::chrono::high_resolution_clock::now()), timeOfLastMessage(std::chrono::high_resolution_clock::now()), numberOfExploredStates(0), numberOfExploredStatesSinceLastMessage(0) {
                                     {% for state in initialStates %}{
                                         StateType state;
                                         {% for assignment in state %}state.{$assignment.variable} = {$assignment.value};
@@ -2258,6 +2276,7 @@ namespace storm {
                                     getOrAddIndex(initialState, statesToExplore);
                                     
                                     StateBehaviour<IndexType, ValueType> behaviour;
+                                    
                                     while (!statesToExplore.empty()) {
                                         StateType currentState = statesToExplore.get();
                                         IndexType currentIndex = getIndex(currentState);
@@ -2281,10 +2300,10 @@ namespace storm {
                                             {% endfor %}
                                             
                                             // Explore all edges that do not take part in synchronization vectors.
-                                            exploreNonSynchronizingEdges(currentState, behaviour, statesToExplore);
+                                            exploreNonSynchronizingEdges(currentState, transientOut, behaviour, statesToExplore);
                                             
                                             // Explore all edges that participate in synchronization vectors.
-                                            exploreSynchronizingEdges(currentState, behaviour, statesToExplore);
+                                            exploreSynchronizingEdges(currentState, transientOut, behaviour, statesToExplore);
                                         }
 
                                         {% if dontFixDeadlocks %}
@@ -2296,6 +2315,21 @@ namespace storm {
 
                                         this->addStateBehaviour(currentIndex, behaviour);
                                         behaviour.clear();
+                                        
+#ifdef EXPL_PROGRESS
+                                        ++numberOfExploredStatesSinceLastMessage;
+                                        ++numberOfExploredStates;
+
+                                        auto now = std::chrono::high_resolution_clock::now();
+                                        auto durationSinceLastMessage = std::chrono::duration_cast<std::chrono::seconds>(now - timeOfLastMessage).count();
+                                        if (static_cast<uint64_t>(durationSinceLastMessage) >= {$expl_progress_interval}) {
+                                            auto statesPerSecond = numberOfExploredStatesSinceLastMessage / durationSinceLastMessage;
+                                            auto durationSinceStart = std::chrono::duration_cast<std::chrono::seconds>(now - timeOfStart).count();
+                                            std::cout << "Explored " << numberOfExploredStates << " states in " << durationSinceStart << " seconds (currently " << statesPerSecond << " states per second)." << std::endl;
+                                            timeOfLastMessage = std::chrono::high_resolution_clock::now();
+                                            numberOfExploredStatesSinceLastMessage = 0;
+                                        }
+#endif
                                     }
                                 }
                                 
@@ -2307,7 +2341,7 @@ namespace storm {
                                     return false;
                                 }
                                 
-                                void exploreNonSynchronizingEdges(StateType const& in, StateBehaviour<IndexType, ValueType>& behaviour, StateSet<StateType>& statesToExplore) {
+                                void exploreNonSynchronizingEdges(StateType const& in, TransientVariables const& transientIn, StateBehaviour<IndexType, ValueType>& behaviour, StateSet<StateType>& statesToExplore) {
                                     {% for edge in nonsynch_edges %}{
                                         if ({$edge.guard}) {
                                             Choice<IndexType, ValueType>& choice = behaviour.addChoice(!model_is_deterministic() && !model_is_discrete_time() && {$edge.markovian});
@@ -2347,9 +2381,9 @@ namespace storm {
                                 {% for vector in synch_vectors %}{$vector.functions}
                                 {% endfor %}
                                 
-                                void exploreSynchronizingEdges(StateType const& state, StateBehaviour<IndexType, ValueType>& behaviour, StateSet<StateType>& statesToExplore) {
+                                void exploreSynchronizingEdges(StateType const& state, TransientVariables const& transientIn, StateBehaviour<IndexType, ValueType>& behaviour, StateSet<StateType>& statesToExplore) {
                                     {% for vector in synch_vectors %}{
-                                        exploreSynchronizationVector_{$vector.index}(state, behaviour, statesToExplore);
+                                        exploreSynchronizationVector_{$vector.index}(state, transientIn, behaviour, statesToExplore);
                                     }
                                     {% endfor %}
                                 }
@@ -2391,14 +2425,22 @@ namespace storm {
                                 }
                                 
                             private:
+                                // State storage.
                                 spp::sparse_hash_map<StateType, IndexType> stateIds;
                                 std::vector<StateType> initialStates;
                                 std::vector<IndexType> deadlockStates;
-                                
+
+                                // Edges.
                                 {% for edge in nonsynch_edges %}Edge edge_{$edge.name};
                                 {% endfor %}
                                 {% for edge in synch_edges %}Edge edge_{$edge.name};
                                 {% endfor %}
+                                
+                                // Statistics.
+                                std::chrono::high_resolution_clock::time_point timeOfStart;
+                                std::chrono::high_resolution_clock::time_point timeOfLastMessage;
+                                uint64_t numberOfExploredStates;
+                                uint64_t numberOfExploredStatesSinceLastMessage;
                             };
                             
                             BOOST_DLL_ALIAS(storm::builder::jit::JitBuilder::create, create_builder)

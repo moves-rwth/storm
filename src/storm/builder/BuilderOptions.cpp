@@ -35,7 +35,7 @@ namespace storm {
             return boost::get<storm::expressions::Expression>(labelOrExpression);
         }
         
-        BuilderOptions::BuilderOptions(bool buildAllRewardModels, bool buildAllLabels) : buildAllRewardModels(buildAllRewardModels), buildAllLabels(buildAllLabels), buildChoiceLabels(false), buildStateValuations(false), buildChoiceOrigins(false), explorationChecks(false) {
+        BuilderOptions::BuilderOptions(bool buildAllRewardModels, bool buildAllLabels) : buildAllRewardModels(buildAllRewardModels), buildAllLabels(buildAllLabels), buildChoiceLabels(false), buildStateValuations(false), buildChoiceOrigins(false), explorationChecks(false), explorationShowProgress(false), explorationShowProgressDelay(0) {
             // Intentionally left empty.
         }
         
@@ -55,6 +55,8 @@ namespace storm {
             }
             
             explorationChecks = storm::settings::getModule<storm::settings::modules::IOSettings>().isExplorationChecksSet();
+            explorationShowProgress = storm::settings::getModule<storm::settings::modules::IOSettings>().isExplorationShowProgressSet();
+            explorationShowProgressDelay = storm::settings::getModule<storm::settings::modules::IOSettings>().getExplorationShowProgressDelay();
         }
         
         void BuilderOptions::preserveFormula(storm::logic::Formula const& formula) {
@@ -162,6 +164,14 @@ namespace storm {
 
         bool BuilderOptions::isExplorationChecksSet() const {
             return explorationChecks;
+        }
+        
+        bool BuilderOptions::isExplorationShowProgressSet() const {
+            return explorationShowProgress;
+        }
+
+        uint64_t BuilderOptions::getExplorationShowProgressDelay() const {
+            return explorationShowProgressDelay;
         }
 
         BuilderOptions& BuilderOptions::setExplorationChecks(bool newValue) {
