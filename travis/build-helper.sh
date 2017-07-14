@@ -27,28 +27,18 @@ run() {
     fi
     echo
     travis_fold end cmake
+    ;& # fall-through to make step
+
+  Build2 | Build3 | Build4)
     # Make
     travis_fold start make
-    make -j$N_JOBS
-    travis_fold end make
-    touch skip.txt
-    ;;
-
-  Build2 | Build3)
-    # Make (run 2-3)
-    travis_fold start make
     cd build
     make -j$N_JOBS
     travis_fold end make
-    touch skip.txt
-    ;;
-
-  Build4)
-    # Make (run 2-4)
-    travis_fold start make
-    cd build
-    make -j$N_JOBS
-    travis_fold end make
+    if [[ "$1" != "Build4" ]]
+    then
+        touch skip.txt
+    fi
     ;;
 
   TestAll)
