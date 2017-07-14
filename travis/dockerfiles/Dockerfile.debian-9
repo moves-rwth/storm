@@ -8,6 +8,7 @@ RUN apt-get update -qq && apt-get install -y --no-install-recommends \
     cmake \
     libboost-all-dev \
     libcln-dev \
+    libeigen3-dev \
     libgmp-dev \
     libginac-dev \
     automake \
