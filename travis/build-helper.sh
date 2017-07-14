@@ -15,8 +15,6 @@ run() {
   case "$1" in
   Build1)
     travis_fold start cmake
-    # Remove old build folder
-    rm -rf build
     # CMake
     mkdir build
     cd build

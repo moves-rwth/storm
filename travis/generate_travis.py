@@ -79,9 +79,11 @@ if __name__ == "__main__":
                 buildConfig += "      compiler: {}\n".format(config[1])
                 buildConfig += "      env: CONFIG={} COMPILER={} STL=libc++\n".format(build, compiler)
                 buildConfig += "      install:\n"
-                buildConfig += "        travis/install_osx.sh\n"
+                if stage[1] == "Build1":
+                    buildConfig += "        - rm -rf build\n"
+                buildConfig += "        - travis/install_osx.sh\n"
                 buildConfig += "      script:\n"
-                buildConfig += "        travis/build.sh {}\n".format(stage[1])
+                buildConfig += "        - travis/build.sh {}\n".format(stage[1])
                 buildConfig += "      after_failure:\n"
                 buildConfig += "        - find build -iname '*err*.log' -type f -print -exec cat {} \;\n"
             s += buildConfig
@@ -98,11 +100,13 @@ if __name__ == "__main__":
                 buildConfig += "      compiler: {}\n".format(config[1])
                 buildConfig += "      env: CONFIG={} LINUX={} COMPILER={}\n".format(build, linux, compiler)
                 buildConfig += "      install:\n"
-                buildConfig += "        travis/install_linux.sh\n"
+                if stage[1] == "Build1":
+                    buildConfig += "        - rm -rf build\n"
+                buildConfig += "        - travis/install_linux.sh\n"
                 buildConfig += "      script:\n"
-                buildConfig += "        travis/build.sh {}\n".format(stage[1])
+                buildConfig += "        - travis/build.sh {}\n".format(stage[1])
                 buildConfig += "      before_cache:\n"
-                buildConfig += "        docker cp storm:/storm/. .\n"
+                buildConfig += "        - docker cp storm:/storm/. .\n"
                 buildConfig += "      after_failure:\n"
                 buildConfig += "        - find build -iname '*err*.log' -type f -print -exec cat {} \;\n"
             s += buildConfig
