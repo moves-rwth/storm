@@ -271,7 +271,7 @@ if(USE_CARL)
 				LOG_INSTALL ON
                 BUILD_BYPRODUCTS ${STORM_3RDPARTY_BINARY_DIR}/carl/lib/libcarl${DYNAMIC_EXT}
         )
-        include(${STORM_3RDPARTY_BINARY_DIR}/carl/carlExport/carlConfig.cmake)
+        include(${STORM_3RDPARTY_BINARY_DIR}/carl/carlConfig.cmake)
 
         set(STORM_HAVE_CLN ${CARL_USE_CLN_NUMBERS})
         set(STORM_HAVE_GINAC ${CARL_USE_GINAC})
