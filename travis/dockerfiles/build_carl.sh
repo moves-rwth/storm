@@ -1,6 +1,6 @@
 #!/bin/bash
 echo "Building Carl..."
-git clone -b singleton_fix https://github.com/smtrat/carl.git
+git clone https://github.com/smtrat/carl.git
 cd carl
 mkdir build
 cd build
