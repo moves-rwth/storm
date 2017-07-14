@@ -26,6 +26,7 @@ run() {
       cat CMakeFiles/CMakeError.log
     fi
     echo
+    cd ..
     travis_fold end cmake
     ;& # fall-through to make step
 
