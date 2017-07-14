@@ -13,32 +13,36 @@ travis_fold() {
 # Helper for distinguishing between different runs
 run() {
   case "$1" in
-  Build1)
-    travis_fold start cmake
-    # CMake
-    mkdir build
-    cd build
-    cmake .. "${CMAKE_ARGS[@]}"
-    echo
-    if [ -f "CMakeFiles/CMakeError.log" ]
+  Build1 | Build2 | Build3 | Build4)
+    if [[ "$1" == "Build1" ]]
     then
-      echo "Content of CMakeFiles/CMakeError.log:"
-      cat CMakeFiles/CMakeError.log
+        # CMake
+        travis_fold start cmake
+        mkdir build
+        cd build
+        cmake .. "${CMAKE_ARGS[@]}"
+        echo
+        if [ -f "CMakeFiles/CMakeError.log" ]
+        then
+          echo "Content of CMakeFiles/CMakeError.log:"
+          cat CMakeFiles/CMakeError.log
+        fi
+        echo
+        cd ..
+        travis_fold end cmake
     fi
-    echo
-    cd ..
-    travis_fold end cmake
-    ;& # fall-through to make step
 
-  Build2 | Build3 | Build4)
     # Make
     travis_fold start make
     cd build
     make -j$N_JOBS
     travis_fold end make
+    # Set skip-file
     if [[ "$1" != "Build4" ]]
     then
         touch skip.txt
+    else
+        rm -rf skip.txt
     fi
     ;;
 
