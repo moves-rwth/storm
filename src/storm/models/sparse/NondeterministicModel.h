@@ -5,6 +5,13 @@
 #include "storm/utility/OsDetection.h"
 
 namespace storm {
+    
+    // Forward declare Scheduler class.
+    namespace storage {
+        template <typename ValueType>
+        class Scheduler;
+    }
+    
     namespace models {
         namespace sparse {
             
@@ -47,6 +54,13 @@ namespace storm {
                 uint_fast64_t getNumberOfChoices(uint_fast64_t state) const;
                 
                 virtual void reduceToStateBasedRewards() override;
+                
+                /*!
+                 * Applies the given scheduler to this model.
+                 * @param scheduler the considered scheduler.
+                 * @param dropUnreachableStates if set, the resulting model only considers the states that are reachable from an initial state
+                 */
+                std::shared_ptr<storm::models::sparse::Model<ValueType, RewardModelType>> applyScheduler(storm::storage::Scheduler<ValueType> const& scheduler, bool dropUnreachableStates = true);
                 
                 virtual void printModelInformationToStream(std::ostream& out) const override;
                 
