@@ -2,6 +2,9 @@
 
 #include "storm/models/sparse/StandardRewardModel.h"
 #include "storm/models/sparse/MarkovAutomaton.h"
+#include "storm/storage/Scheduler.h"
+#include "storm/storage/memorystructure/MemoryStructureBuilder.h"
+#include "storm/storage/memorystructure/SparseModelMemoryProduct.h"
 
 #include "storm/adapters/RationalFunctionAdapter.h"
 
@@ -44,6 +47,23 @@ namespace storm {
                 for (auto& rewardModel : this->getRewardModels()) {
                     rewardModel.second.reduceToStateBasedRewards(this->getTransitionMatrix(), false);
                 }
+            }
+            
+            template<typename ValueType, typename RewardModelType>
+            std::shared_ptr<storm::models::sparse::Model<ValueType, RewardModelType>> NondeterministicModel<ValueType, RewardModelType>::applyScheduler(storm::storage::Scheduler<ValueType> const& scheduler, bool dropUnreachableStates) {
+                boost::optional<storm::storage::SparseModelMemoryProduct<ValueType>> memoryProduct;
+                if (scheduler.isMemorylessScheduler()) {
+                    storm::storage::MemoryStructure memStruct = storm::storage::MemoryStructureBuilder<ValueType, RewardModelType>::buildTrivialMemoryStructure(*this);
+                    memoryProduct = memStruct.product(*this);
+                } else {
+                    boost::optional<storm::storage::MemoryStructure> const& memStruct = scheduler.getMemoryStructure();
+                    STORM_LOG_ASSERT(memStruct, "Memoryless scheduler without memory structure.");
+                    memoryProduct = memStruct->product(*this);
+                }
+                if (!dropUnreachableStates) {
+                    memoryProduct->setBuildFullProduct();
+                }
+                return memoryProduct->build(scheduler);
             }
             
             template<typename ValueType, typename RewardModelType>
