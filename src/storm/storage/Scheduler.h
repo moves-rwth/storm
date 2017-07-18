@@ -70,6 +70,11 @@ namespace storm {
              * Retrieves the number of memory states this scheduler considers.
              */
             uint_fast64_t getNumberOfMemoryStates() const;
+            
+            /*!
+             * Retrieves the memory structure associated with this scheduler
+             */
+            boost::optional<storm::storage::MemoryStructure> const& getMemoryStructure() const;
 
             /*!
              * Returns a copy of this scheduler with the new value type
