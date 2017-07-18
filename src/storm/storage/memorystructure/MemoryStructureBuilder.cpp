@@ -83,6 +83,13 @@ namespace storm {
             return MemoryStructure(std::move(transitions), std::move(stateLabeling), std::move(initialMemoryStates));
         }
         
+        template <typename ValueType, typename RewardModelType>
+        MemoryStructure MemoryStructureBuilder<ValueType, RewardModelType>::buildTrivialMemoryStructure(storm::models::sparse::Model<ValueType, RewardModelType> const& model) {
+            MemoryStructureBuilder<ValueType, RewardModelType> memoryBuilder(1, model);
+            memoryBuilder.setTransition(0,0, storm::storage::BitVector(model.getNumberOfStates(), true));
+            return memoryBuilder.build();
+        }
+
         template class MemoryStructureBuilder<double>;
         template class MemoryStructureBuilder<storm::RationalNumber>;
         template class MemoryStructureBuilder<storm::RationalFunction>;

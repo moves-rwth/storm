@@ -69,9 +69,7 @@ namespace storm {
             
             template <typename SparseModelType>
             SparseMultiObjectivePreprocessor<SparseModelType>::PreprocessorData::PreprocessorData(SparseModelType const& model) : originalModel(model) {
-                storm::storage::MemoryStructureBuilder<ValueType, RewardModelType> memoryBuilder(1, model);
-                memoryBuilder.setTransition(0,0, storm::storage::BitVector(model.getNumberOfStates(), true));
-                memory = std::make_shared<storm::storage::MemoryStructure>(memoryBuilder.build());
+                memory = std::make_shared<storm::storage::MemoryStructure>(storm::storage::MemoryStructureBuilder<ValueType, RewardModelType>::buildTrivialMemoryStructure(model));
                 
                 // The memoryLabelPrefix should not be a prefix of a state label of the given model to ensure uniqueness of label names
                 memoryLabelPrefix = "mem";
