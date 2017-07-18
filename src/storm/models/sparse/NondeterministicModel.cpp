@@ -52,7 +52,8 @@ namespace storm {
             template<typename ValueType, typename RewardModelType>
             std::shared_ptr<storm::models::sparse::Model<ValueType, RewardModelType>> NondeterministicModel<ValueType, RewardModelType>::applyScheduler(storm::storage::Scheduler<ValueType> const& scheduler, bool dropUnreachableStates) {
                 if (scheduler.isMemorylessScheduler()) {
-                    auto memoryProduct = storm::storage::MemoryStructureBuilder<ValueType, RewardModelType>::buildTrivialMemoryStructure(*this).product(*this);
+                    auto memStruct = storm::storage::MemoryStructureBuilder<ValueType, RewardModelType>::buildTrivialMemoryStructure(*this);
+                    auto memoryProduct = memStruct.product(*this);
                     if (!dropUnreachableStates) {
                         memoryProduct.setBuildFullProduct();
                     }
