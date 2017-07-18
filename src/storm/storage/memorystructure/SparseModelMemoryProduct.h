@@ -8,6 +8,7 @@
 #include "storm/storage/memorystructure/MemoryStructure.h"
 #include "storm/models/sparse/Model.h"
 #include "storm/models/sparse/StandardRewardModel.h"
+#include "storm/storage/Scheduler.h"
 
 namespace storm {
     namespace storage {
@@ -32,8 +33,8 @@ namespace storm {
             // Enforces that every state is considered reachable. If this is set, the result has size #modelStates * #memoryStates
             void setBuildFullProduct();
             
-            // Invokes the building of the product
-            std::shared_ptr<storm::models::sparse::Model<ValueType>> build();
+            // Invokes the building of the product under the specified scheduler (if given).
+            std::shared_ptr<storm::models::sparse::Model<ValueType>> build(boost::optional<storm::storage::Scheduler<ValueType>> const& scheduler = boost::none);
             
             // Retrieves the state of the resulting model that represents the given memory and model state.
             // Should only be called AFTER calling build();
@@ -47,20 +48,22 @@ namespace storm {
             std::vector<uint64_t> computeMemorySuccessors() const;
             
             // Computes the reachable states of the resulting model
-            void computeReachableStates(std::vector<uint64_t> const& memorySuccessors, storm::storage::BitVector const& initialStates);
+            void computeReachableStates(std::vector<uint64_t> const& memorySuccessors, storm::storage::BitVector const& initialStates, boost::optional<storm::storage::Scheduler<ValueType>> const& scheduler);
             
             // Methods that build the model components
             // Matrix for deterministic models
             storm::storage::SparseMatrix<ValueType> buildDeterministicTransitionMatrix(std::vector<uint64_t> const& memorySuccessors) const;
             // Matrix for nondeterministic models
             storm::storage::SparseMatrix<ValueType> buildNondeterministicTransitionMatrix(std::vector<uint64_t> const& memorySuccessors) const;
+            // Matrix for models that consider a scheduler
+            storm::storage::SparseMatrix<ValueType> buildTransitionMatrixForScheduler(std::vector<uint64_t> const& memorySuccessors, storm::storage::Scheduler<ValueType> const& scheduler) const;
             // State labeling. Note: DOES NOT ADD A LABEL FOR THE INITIAL STATES
             storm::models::sparse::StateLabeling buildStateLabeling(storm::storage::SparseMatrix<ValueType> const& resultTransitionMatrix) const;
             // Reward models
-            std::unordered_map<std::string, storm::models::sparse::StandardRewardModel<ValueType>> buildRewardModels(storm::storage::SparseMatrix<ValueType> const& resultTransitionMatrix, std::vector<uint64_t> const& memorySuccessors) const;
+            std::unordered_map<std::string, storm::models::sparse::StandardRewardModel<ValueType>> buildRewardModels(storm::storage::SparseMatrix<ValueType> const& resultTransitionMatrix, std::vector<uint64_t> const& memorySuccessors, boost::optional<storm::storage::Scheduler<ValueType>> const& scheduler) const;
             
             // Builds the resulting model
-            std::shared_ptr<storm::models::sparse::Model<ValueType>> buildResult(storm::storage::SparseMatrix<ValueType>&& matrix, storm::models::sparse::StateLabeling&& labeling, std::unordered_map<std::string, storm::models::sparse::StandardRewardModel<ValueType>>&& rewardModels) const;
+            std::shared_ptr<storm::models::sparse::Model<ValueType>> buildResult(storm::storage::SparseMatrix<ValueType>&& matrix, storm::models::sparse::StateLabeling&& labeling, std::unordered_map<std::string, storm::models::sparse::StandardRewardModel<ValueType>>&& rewardModels, boost::optional<storm::storage::Scheduler<ValueType>> const& scheduler) const;
             
             
             // Maps (modelState * memoryStateCount) + memoryState to the state in the result that represents (memoryState,modelState)
