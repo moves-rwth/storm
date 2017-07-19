@@ -5,6 +5,7 @@
 #include "storm/models/sparse/StandardRewardModel.h"
 #include "storm/utility/macros.h"
 #include "storm/utility/vector.h"
+#include "storm/logic/Formulas.h"
 #include "storm/exceptions/InvalidPropertyException.h"
 #include "storm/exceptions/IllegalArgumentException.h"
 #include "storm/exceptions/NotSupportedException.h"
@@ -21,24 +22,22 @@ namespace storm {
                                                                                                    storm::storage::BitVector const& possibleECActions,
                                                                                                    storm::storage::BitVector const& possibleBottomStates) :
                 SparsePcaaWeightVectorChecker<SparseMdpModelType>(model, objectives, possibleECActions, possibleBottomStates) {
-                // set the state action rewards
+                // set the state action rewards. Also do some sanity checks on the objectives.
                 for (uint_fast64_t objIndex = 0; objIndex < this->objectives.size(); ++objIndex) {
-                    typename SparseMdpModelType::RewardModelType const& rewModel = this->model.getRewardModel(*this->objectives[objIndex].rewardModelName);
-                    STORM_LOG_ASSERT(!rewModel.hasTransitionRewards(), "Reward model has transition rewards which is not expected.");
+                    auto const& formula = *objectives[objIndex].formula;
+                    STORM_LOG_THROW(formula.isRewardOperatorFormula() && formula.asRewardOperatorFormula().hasRewardModelName(), storm::exceptions::UnexpectedException, "Unexpected type of operator formula: " << formula);
+                    STORM_LOG_THROW(formula.getSubformula().isCumulativeRewardFormula() || formula.getSubformula().isTotalRewardFormula(), storm::exceptions::UnexpectedException, "Unexpected type of sub-formula: " << formula.getSubformula());
+                    typename SparseMdpModelType::RewardModelType const& rewModel = this->model.getRewardModel(formula.asRewardOperatorFormula().getRewardModelName());
+                    STORM_LOG_THROW(!rewModel.hasTransitionRewards(), storm::exceptions::NotSupportedException, "Reward model has transition rewards which is not expected.");
                     this->discreteActionRewards[objIndex] = rewModel.getTotalRewardVector(this->model.getTransitionMatrix());
                 }
             }
             
             template <class SparseMdpModelType>
             void SparseMdpPcaaWeightVectorChecker<SparseMdpModelType>::boundedPhase(std::vector<ValueType> const& weightVector, std::vector<ValueType>& weightedRewardVector) {
-                // Check whether reward bounded objectives occur.
+                // Currently, only step bounds are considered.
+                // TODO: Check whether reward bounded objectives occur.
                 bool containsRewardBoundedObjectives = false;
-                for (auto const& obj : this->objectives) {
-                    if (obj.timeBoundReference && obj.timeBoundReference->isRewardBound()) {
-                        containsRewardBoundedObjectives = true;
-                        break;
-                    }
-                }
                 
                 if (containsRewardBoundedObjectives) {
                     boundedPhaseWithRewardBounds(weightVector, weightedRewardVector);
@@ -56,12 +55,10 @@ namespace storm {
                 // Get for each occurring timeBound the indices of the objectives with that bound.
                 std::map<uint_fast64_t, storm::storage::BitVector, std::greater<uint_fast64_t>> stepBounds;
                 for (uint_fast64_t objIndex = 0; objIndex < this->objectives.size(); ++objIndex) {
-                    auto const& obj = this->objectives[objIndex];
-                    STORM_LOG_THROW(!obj.lowerTimeBound, storm::exceptions::InvalidPropertyException, "Lower step bounds are not supported by this model checker");
-                    if (obj.upperTimeBound) {
-                        STORM_LOG_THROW(!obj.upperTimeBound->getBound().containsVariables(), storm::exceptions::InvalidPropertyException, "The step bound '" << obj.upperTimeBound->getBound() << " contains undefined variables");
-                        uint_fast64_t stepBound = (uint_fast64_t) obj.upperTimeBound->getBound().evaluateAsInt();
-                        if (obj.upperTimeBound->isStrict()) {
+                    if (this->objectives[objIndex].formula->getSubformula().isCumulativeRewardFormula()) {
+                        auto const& subformula = this->objectives[objIndex].formula->getSubformula().asCumulativeRewardFormula();
+                        uint_fast64_t stepBound = subformula.template getBound<uint_fast64_t>();
+                        if (subformula.isBoundStrict()) {
                             --stepBound;
                         }
                         auto stepBoundIt = stepBounds.insert(std::make_pair(stepBound, storm::storage::BitVector(this->objectives.size(), false))).first;
@@ -85,7 +82,7 @@ namespace storm {
                         consideredObjectives |= stepBoundIt->second;
                         for(auto objIndex : stepBoundIt->second) {
                             // This objective now plays a role in the weighted sum
-                            ValueType factor = storm::solver::minimize(this->objectives[objIndex].optimizationDirection) ? -weightVector[objIndex] : weightVector[objIndex];
+                            ValueType factor = storm::solver::minimize(this->objectives[objIndex].formula->getOptimalityType()) ? -weightVector[objIndex] : weightVector[objIndex];
                             storm::utility::vector::addScaledVector(weightedRewardVector, this->discreteActionRewards[objIndex], factor);
                         }
                         ++stepBoundIt;

@@ -58,8 +58,9 @@ namespace storm {
                             objectiveRewards[row] = preprocessedModel.getTransitionMatrix().getConstrainedRowSum(row, goalStates);
                         }
                     }
-                    STORM_LOG_ASSERT(this->objective->rewardModelName.is_initialized(), "No reward model name has been specified");
-                    preprocessedModel.addRewardModel(this->objective->rewardModelName.get(), typename SparseModelType::RewardModelType(boost::none, std::move(objectiveRewards)));
+                    STORM_LOG_ASSERT(this->objective->formula->isRewardOperatorFormula(), "No reward operator formula.");
+                    STORM_LOG_ASSERT(this->objective->formula->asRewardOperatorFormula().hasRewardModelName(), "No reward model name has been specified");
+                    preprocessedModel.addRewardModel(this->objective->formula->asRewardOperatorFormula().getRewardModelName(), typename SparseModelType::RewardModelType(boost::none, std::move(objectiveRewards)));
                 }
                         
             private:
@@ -91,8 +92,9 @@ namespace storm {
                             std::fill_n(objectiveRewards.getStateActionRewardVector().begin() + preprocessedModel.getTransitionMatrix().getRowGroupIndices()[state], preprocessedModel.getTransitionMatrix().getRowGroupSize(state), storm::utility::zero<typename SparseModelType::ValueType>());
                         }
                     }
-                    STORM_LOG_ASSERT(this->objective->rewardModelName.is_initialized(), "No reward model name has been specified");
-                    preprocessedModel.addRewardModel(this->objective->rewardModelName.get(), std::move(objectiveRewards));
+                    STORM_LOG_ASSERT(this->objective->formula->isRewardOperatorFormula(), "No reward operator formula.");
+                    STORM_LOG_ASSERT(this->objective->formula->asRewardOperatorFormula().hasRewardModelName(), "No reward model name has been specified");
+                    preprocessedModel.addRewardModel(this->objective->formula->asRewardOperatorFormula().getRewardModelName(), std::move(objectiveRewards));
                 }
                         
             private:
@@ -117,8 +119,10 @@ namespace storm {
                     
                     std::vector<typename SparseModelType::ValueType> timeRewards(preprocessedModel.getNumberOfStates(), storm::utility::zero<typename SparseModelType::ValueType>());
                     storm::utility::vector::setVectorValues(timeRewards, dynamic_cast<storm::models::sparse::MarkovAutomaton<typename SparseModelType::ValueType> const&>(preprocessedModel).getMarkovianStates() & relevantStates, storm::utility::one<typename SparseModelType::ValueType>());
-                    STORM_LOG_ASSERT(this->objective->rewardModelName.is_initialized(), "No reward model name has been specified");
-                    preprocessedModel.addRewardModel(this->objective->rewardModelName.get(), typename SparseModelType::RewardModelType(std::move(timeRewards)));
+
+                    STORM_LOG_ASSERT(this->objective->formula->isRewardOperatorFormula(), "No reward operator formula.");
+                    STORM_LOG_ASSERT(this->objective->formula->asRewardOperatorFormula().hasRewardModelName(), "No reward model name has been specified");
+                    preprocessedModel.addRewardModel(this->objective->formula->asRewardOperatorFormula().getRewardModelName(), typename SparseModelType::RewardModelType(std::move(timeRewards)));
                 }
                         
             private:
