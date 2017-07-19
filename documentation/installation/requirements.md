@@ -49,7 +49,7 @@ Required:
 - autoreconf
 - doxygen
 - glpk
-- hwloc (on some systems)
+- hwloc
 
 Recommended:
 - Z3 (not strictly required, but already needed for standard tasks like PRISM/JANI model building)
