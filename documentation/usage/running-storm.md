@@ -173,7 +173,7 @@ For [nondeterministic models (MDPs and MAs)](models.html#models-with-nondetermin
 
 ### Multi-objective Model Checking of a Markov Automaton
 
-Storm supports multi-objective model checking: In non-deterministic models, different objectives might require different choices of actions in order to satisfy the property.
+Storm supports multi-objective model checking: In nondeterministic models, different objectives might require different choices of actions in order to satisfy the property.
 This induces trade-offs between different strategies. Multi-objective model checking reveals such trade-offs by computing the Pareto curve. An example is given below.
 
 #### Example 3 (Pareto Curves)
