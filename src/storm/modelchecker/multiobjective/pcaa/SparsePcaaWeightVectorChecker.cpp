@@ -12,6 +12,7 @@
 #include "storm/utility/graph.h"
 #include "storm/utility/macros.h"
 #include "storm/utility/vector.h"
+#include "storm/logic/Formulas.h"
 
 #include "storm/exceptions/IllegalFunctionCallException.h"
 #include "storm/exceptions/UnexpectedException.h"
@@ -42,10 +43,11 @@ namespace storm {
                 
                 // set data for unbounded objectives
                 for(uint_fast64_t objIndex = 0; objIndex < objectives.size(); ++objIndex) {
-                    auto const& obj = objectives[objIndex];
-                    if (!obj.upperTimeBound) {
+                    auto const& formula = *objectives[objIndex].formula;
+                    if (formula.getSubformula().isTotalRewardFormula()) {
                         objectivesWithNoUpperTimeBound.set(objIndex, true);
-                        actionsWithoutRewardInUnboundedPhase &= model.getRewardModel(*obj.rewardModelName).getChoicesWithZeroReward(model.getTransitionMatrix());
+                        STORM_LOG_ASSERT(formula.isRewardOperatorFormula() && formula.asRewardOperatorFormula().hasRewardModelName(), "Unexpected type of operator formula.");
+                        actionsWithoutRewardInUnboundedPhase &= model.getRewardModel(formula.asRewardOperatorFormula().getRewardModelName()).getChoicesWithZeroReward(model.getTransitionMatrix());
                     }
                 }
             }
@@ -59,26 +61,27 @@ namespace storm {
                 boost::optional<ValueType> weightedLowerResultBound = storm::utility::zero<ValueType>();
                 boost::optional<ValueType> weightedUpperResultBound = storm::utility::zero<ValueType>();
                 for (auto objIndex : objectivesWithNoUpperTimeBound) {
-                    if (storm::solver::minimize(objectives[objIndex].optimizationDirection)) {
-                        if (objectives[objIndex].lowerResultBound && weightedUpperResultBound) {
-                            weightedUpperResultBound.get() -= weightVector[objIndex] * objectives[objIndex].lowerResultBound.get();
+                    auto const& obj = objectives[objIndex];
+                    if (storm::solver::minimize(objectives[objIndex].formula->getOptimalityType())) {
+                        if (obj.lowerResultBound && weightedUpperResultBound) {
+                            weightedUpperResultBound.get() -= weightVector[objIndex] * obj.lowerResultBound.get();
                         } else {
                             weightedUpperResultBound = boost::none;
                         }
-                        if (objectives[objIndex].upperResultBound && weightedLowerResultBound) {
-                            weightedLowerResultBound.get() -= weightVector[objIndex] * objectives[objIndex].upperResultBound.get();
+                        if (obj.upperResultBound && weightedLowerResultBound) {
+                            weightedLowerResultBound.get() -= weightVector[objIndex] * obj.upperResultBound.get();
                         } else {
                             weightedLowerResultBound = boost::none;
                         }
                         storm::utility::vector::addScaledVector(weightedRewardVector, discreteActionRewards[objIndex], -weightVector[objIndex]);
                     } else {
-                        if (objectives[objIndex].lowerResultBound && weightedLowerResultBound) {
-                            weightedLowerResultBound.get() += weightVector[objIndex] * objectives[objIndex].lowerResultBound.get();
+                        if (obj.lowerResultBound && weightedLowerResultBound) {
+                            weightedLowerResultBound.get() += weightVector[objIndex] * obj.lowerResultBound.get();
                         } else {
                             weightedLowerResultBound = boost::none;
                         }
-                        if (objectives[objIndex].upperResultBound && weightedUpperResultBound) {
-                            weightedUpperResultBound.get() += weightVector[objIndex] * objectives[objIndex].upperResultBound.get();
+                        if (obj.upperResultBound && weightedUpperResultBound) {
+                            weightedUpperResultBound.get() += weightVector[objIndex] * obj.upperResultBound.get();
                         } else {
                             weightedUpperResultBound = boost::none;
                         }
@@ -90,8 +93,8 @@ namespace storm {
                 
                 unboundedIndividualPhase(weightVector);
                 // Only invoke boundedPhase if necessarry, i.e., if there is at least one objective with a time bound
-                for(auto const& obj : this->objectives) {
-                    if(obj.lowerTimeBound || obj.upperTimeBound) {
+                for (auto const& obj : this->objectives) {
+                    if (!obj.formula->getSubformula().isTotalRewardFormula()) {
                         boundedPhase(weightVector, weightedRewardVector);
                         break;
                     }
@@ -140,8 +143,8 @@ namespace storm {
             template <class SparseModelType>
             storm::storage::Scheduler<typename SparsePcaaWeightVectorChecker<SparseModelType>::ValueType> SparsePcaaWeightVectorChecker<SparseModelType>::computeScheduler() const {
                 STORM_LOG_THROW(this->checkHasBeenCalled, storm::exceptions::IllegalFunctionCallException, "Tried to retrieve results but check(..) has not been called before.");
-                for(auto const& obj : this->objectives) {
-                    STORM_LOG_THROW(!obj.lowerTimeBound && !obj.upperTimeBound, storm::exceptions::NotImplementedException, "Scheduler retrival is not implemented for timeBounded objectives.");
+                for (auto const& obj : this->objectives) {
+                    STORM_LOG_THROW(obj.formula->getSubformula().isTotalRewardFormula(), storm::exceptions::NotImplementedException, "Scheduler retrival is only implemented for objectives without time-bound.");
                 }
                 
                 storm::storage::Scheduler<ValueType> result(this->optimalChoices.size());
@@ -202,7 +205,7 @@ namespace storm {
                 if (objectivesWithNoUpperTimeBound.getNumberOfSetBits() == 1 && storm::utility::isOne(weightVector[*objectivesWithNoUpperTimeBound.begin()])) {
                    uint_fast64_t objIndex = *objectivesWithNoUpperTimeBound.begin();
                    objectiveResults[objIndex] = weightedResult;
-                   if (storm::solver::minimize(objectives[objIndex].optimizationDirection)) {
+                   if (storm::solver::minimize(objectives[objIndex].formula->getOptimalityType())) {
                        storm::utility::vector::scaleVectorInPlace(objectiveResults[objIndex], -storm::utility::one<ValueType>());
                    }
                     for (uint_fast64_t objIndex2 = 0; objIndex2 < objectives.size(); ++objIndex2) {
@@ -235,7 +238,7 @@ namespace storm {
                            if (!storm::utility::isZero(weightVector[objIndex])) {
                                objectiveResults[objIndex] = weightedSumOfUncheckedObjectives;
                                ValueType scalingFactor = storm::utility::one<ValueType>() / sumOfWeightsOfUncheckedObjectives;
-                               if (storm::solver::minimize(obj.optimizationDirection)) {
+                               if (storm::solver::minimize(obj.formula->getOptimalityType())) {
                                    scalingFactor *= -storm::utility::one<ValueType>();
                                }
                                storm::utility::vector::scaleVectorInPlace(objectiveResults[objIndex], scalingFactor);

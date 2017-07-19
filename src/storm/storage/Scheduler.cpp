@@ -87,6 +87,11 @@ namespace storm {
         }
 
         template <typename ValueType>
+        boost::optional<storm::storage::MemoryStructure> const& Scheduler<ValueType>::getMemoryStructure() const {
+            return memoryStructure;
+        }
+
+        template <typename ValueType>
         void Scheduler<ValueType>::printToStream(std::ostream& out, std::shared_ptr<storm::models::sparse::Model<ValueType>> model, bool skipUniqueChoices) const {
             STORM_LOG_THROW(model == nullptr || model->getNumberOfStates() == schedulerChoices.front().size(), storm::exceptions::InvalidOperationException, "The given model is not compatible with this scheduler.");
             

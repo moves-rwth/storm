@@ -26,7 +26,7 @@ namespace storm {
             
             template <class SparseModelType>
             SparseCbAchievabilityQuery<SparseModelType>::SparseCbAchievabilityQuery(SparseMultiObjectivePreprocessorReturnType<SparseModelType>& preprocessorResult) : SparseCbQuery<SparseModelType>(preprocessorResult) {
-                STORM_LOG_ASSERT(preprocessorResult.queryType==SparseMultiObjectivePreprocessorReturnType<SparseModelType>::QueryType::Achievability, "Invalid query Type");
+                STORM_LOG_ASSERT(preprocessorResult.queryType == SparseMultiObjectivePreprocessorReturnType<SparseModelType>::QueryType::Achievability, "Invalid query Type");
                 solver = storm::utility::solver::SmtSolverFactory().create(*this->expressionManager);
             }
 
@@ -134,35 +134,33 @@ namespace storm {
             void SparseCbAchievabilityQuery<SparseModelType>::addObjectiveConstraints() {
                 storm::expressions::Expression zero = this->expressionManager->rational(storm::utility::zero<ValueType>());
                 for (Objective<ValueType> const& obj : this->objectives) {
-                    if (obj.rewardModelName) {
-                        STORM_LOG_THROW(obj.bound, storm::exceptions::InvalidOperationException, "Invoked achievability query but no bound was specified for at least one objective.");
-                        STORM_LOG_THROW(!obj.lowerTimeBound && !obj.upperTimeBound, storm::exceptions::NotSupportedException, "Constraint based method currently does not support step bounds");
-                        std::vector<ValueType> rewards = getActionBasedExpectedRewards(*obj.rewardModelName);
-                        storm::expressions::Expression objValue = zero;
-                        for (uint_fast64_t choice = 0; choice < rewards.size(); ++choice) {
-                            if (!storm::utility::isZero(rewards[choice])) {
-                                objValue = objValue + (this->expressionManager->rational(rewards[choice]) * expectedChoiceVariables[choice].getExpression());
-                            }
+                    STORM_LOG_THROW(obj.formula->isRewardOperatorFormula() && obj.formula->getSubformula().isTotalRewardFormula(), storm::exceptions::InvalidOperationException, "Constraint-based solver only supports total-reward objectives. Got " << *obj.formula << " instead.");
+                    STORM_LOG_THROW(obj.formula->hasBound(), storm::exceptions::InvalidOperationException, "Invoked achievability query but no bound was specified for at least one objective.");
+                    STORM_LOG_THROW(obj.formula->asRewardOperatorFormula().hasRewardModelName(), storm::exceptions::InvalidOperationException, "Expected reward operator with a reward model name. Got " << *obj.formula << " instead.");
+                    std::vector<ValueType> rewards = getActionBasedExpectedRewards(obj.formula->asRewardOperatorFormula().getRewardModelName());
+                    storm::expressions::Expression objValue = zero;
+                    for (uint_fast64_t choice = 0; choice < rewards.size(); ++choice) {
+                        if (!storm::utility::isZero(rewards[choice])) {
+                            objValue = objValue + (this->expressionManager->rational(rewards[choice]) * expectedChoiceVariables[choice].getExpression());
                         }
-                        // We need to actually evaluate the threshold as rational number. Otherwise a threshold like '<=16/9' might be considered as 1 due to integer division
-                        STORM_LOG_THROW(!obj.bound->threshold.containsVariables(), storm::exceptions::InvalidOperationException, "The threshold for one objective still contains undefined variables");
-                        storm::expressions::Expression threshold = this->expressionManager->rational(obj.bound->threshold.evaluateAsRational());
-                        switch (obj.bound->comparisonType) {
-                            case storm::logic::ComparisonType::Greater:
-                                solver->add( objValue > threshold);
-                                break;
-                            case storm::logic::ComparisonType::GreaterEqual:
-                                solver->add( objValue >= threshold);
-                                break;
-                            case storm::logic::ComparisonType::Less:
-                                solver->add( objValue < threshold);
-                                break;
-                            case storm::logic::ComparisonType::LessEqual:
-                                solver->add( objValue <= threshold);
-                                break;
-                            default:
-                                STORM_LOG_THROW(false, storm::exceptions::InvalidOperationException, "One or more objectives have an invalid comparison type");
-                        }
+                    }
+                    // We need to actually evaluate the threshold as rational number. Otherwise a threshold like '<=16/9' might be considered as 1 due to integer division
+                    storm::expressions::Expression threshold = this->expressionManager->rational(obj.formula->getThreshold().evaluateAsRational());
+                    switch (obj.formula->getBound().comparisonType) {
+                        case storm::logic::ComparisonType::Greater:
+                            solver->add( objValue > threshold);
+                            break;
+                        case storm::logic::ComparisonType::GreaterEqual:
+                            solver->add( objValue >= threshold);
+                            break;
+                        case storm::logic::ComparisonType::Less:
+                            solver->add( objValue < threshold);
+                            break;
+                        case storm::logic::ComparisonType::LessEqual:
+                            solver->add( objValue <= threshold);
+                            break;
+                        default:
+                            STORM_LOG_THROW(false, storm::exceptions::InvalidOperationException, "One or more objectives have an invalid comparison type");
                     }
                 }
             }

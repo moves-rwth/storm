@@ -31,18 +31,17 @@ namespace storm {
             void SparsePcaaAchievabilityQuery<SparseModelType, GeometryValueType>::initializeThresholdData() {
                 thresholds.reserve(this->objectives.size());
                 strictThresholds = storm::storage::BitVector(this->objectives.size(), false);
-                for(uint_fast64_t objIndex = 0; objIndex < this->objectives.size(); ++objIndex) {
-                    auto const& obj = this->objectives[objIndex];
-                    STORM_LOG_ASSERT(obj.bound.is_initialized(), "Achievability query invoked but there is an objective without bound.");
-                    STORM_LOG_THROW(!obj.bound->threshold.containsVariables(), storm::exceptions::InvalidOperationException, "There is an objective whose bound contains undefined variables.");
-                    thresholds.push_back(storm::utility::convertNumber<GeometryValueType>(obj.bound->threshold.evaluateAsRational()));
-                    if (storm::solver::minimize(obj.optimizationDirection)) {
-                        STORM_LOG_ASSERT(!storm::logic::isLowerBound(obj.bound->comparisonType), "Minimizing objective should not specify an upper bound.");
+                for (uint_fast64_t objIndex = 0; objIndex < this->objectives.size(); ++objIndex) {
+                    auto const& formula = *this->objectives[objIndex].formula;
+                    STORM_LOG_ASSERT(formula.hasBound(), "Achievability query invoked but there is an objective without bound.");
+                    thresholds.push_back(formula.template getThresholdAs<GeometryValueType>());
+                    if (storm::solver::minimize(formula.getOptimalityType())) {
+                        STORM_LOG_ASSERT(!storm::logic::isLowerBound(formula.getBound().comparisonType), "Minimizing objective should not specify an upper bound.");
                         // Values for minimizing objectives will be negated in order to convert them to maximizing objectives.
                         // Hence, we also negate the threshold
                         thresholds.back() *= -storm::utility::one<GeometryValueType>();
                     }
-                    strictThresholds.set(objIndex, storm::logic::isStrict(obj.bound->comparisonType));
+                    strictThresholds.set(objIndex, storm::logic::isStrict(formula.getBound().comparisonType));
                 }
             }
             
