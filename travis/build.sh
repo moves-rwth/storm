@@ -2,7 +2,7 @@
 # Inspired by https://github.com/google/fruit
 
 N_JOBS=2
-TIMEOUT_MAC=1800
+TIMEOUT_MAC=1600
 TIMEOUT_LINUX=2300
 
 OS=$TRAVIS_OS_NAME
