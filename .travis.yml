@@ -11,7 +11,7 @@ language: cpp
 
 # Enable caching
 cache:
-  timeout: 600
+  timeout: 1000
   directories:
   - build
   - travis/mtime_cache

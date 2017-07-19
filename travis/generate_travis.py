@@ -44,7 +44,7 @@ if __name__ == "__main__":
     s += "\n"
     s += "# Enable caching\n"
     s += "cache:\n"
-    s += "  timeout: 600\n"
+    s += "  timeout: 1000\n"
     s += "  directories:\n"
     s += "  - build\n"
     s += "  - travis/mtime_cache\n"
