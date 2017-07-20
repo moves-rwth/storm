@@ -11,10 +11,20 @@
 
 namespace storm {
     namespace logic {
-        BoundedUntilFormula::BoundedUntilFormula(std::shared_ptr<Formula const> const& leftSubformula, std::shared_ptr<Formula const> const& rightSubformula, boost::optional<TimeBound> const& lowerBound, boost::optional<TimeBound> const& upperBound, TimeBoundReference const& timeBoundReference) : BinaryPathFormula(leftSubformula, rightSubformula), timeBoundReference(timeBoundReference), lowerBound(lowerBound), upperBound(upperBound) {
+        BoundedUntilFormula::BoundedUntilFormula(std::shared_ptr<Formula const> const& leftSubformula, std::shared_ptr<Formula const> const& rightSubformula, boost::optional<TimeBound> const& lowerBound, boost::optional<TimeBound> const& upperBound, TimeBoundReference const& timeBoundReference) : BinaryPathFormula(leftSubformula, rightSubformula), timeBoundReference({timeBoundReference}), lowerBound({lowerBound}), upperBound({upperBound}) {
             STORM_LOG_THROW(lowerBound || upperBound, storm::exceptions::InvalidArgumentException, "Bounded until formula requires at least one bound.");
         }
-        
+
+        BoundedUntilFormula::BoundedUntilFormula(std::shared_ptr<Formula const> const& leftSubformula, std::shared_ptr<Formula const> const& rightSubformula,std::vector<boost::optional<TimeBound>> const& lowerBounds, std::vector<boost::optional<TimeBound>> const& upperBounds, std::vector<TimeBoundReference> const& timeBoundReferences) : BinaryPathFormula(leftSubformula, rightSubformula), timeBoundReference(timeBoundReferences), lowerBound(lowerBounds), upperBound(upperBounds) {
+            assert(timeBoundReferences.size() == upperBound.size());
+            assert(timeBoundReferences.size() == lowerBound.size());
+            STORM_LOG_THROW(this->getDimension() != 0, storm::exceptions::InvalidArgumentException, "Bounded until formula requires at least one dimension.");
+            for(unsigned i = 0; i < timeBoundReferences.size(); ++i) {
+                STORM_LOG_THROW(hasLowerBound(i) || hasUpperBound(i), storm::exceptions::InvalidArgumentException, "Bounded until formula requires at least one bound in each dimension.");
+            }
+        }
+
+
         bool BoundedUntilFormula::isBoundedUntilFormula() const {
             return true;
         }
@@ -28,111 +38,141 @@ namespace storm {
         }
         
         void BoundedUntilFormula::gatherReferencedRewardModels(std::set<std::string>& referencedRewardModels) const {
-            if (this->getTimeBoundReference().isRewardBound()) {
-                referencedRewardModels.insert(this->getTimeBoundReference().getRewardName());
+            for (unsigned i = 0; i < this->getDimension(); ++i) {
+                if (this->getTimeBoundReference(i).isRewardBound()) {
+                    referencedRewardModels.insert(this->getTimeBoundReference().getRewardName());
+                }
             }
+
             this->getLeftSubformula().gatherReferencedRewardModels(referencedRewardModels);
             this->getRightSubformula().gatherReferencedRewardModels(referencedRewardModels);
         }
         
         
-        TimeBoundReference const& BoundedUntilFormula::getTimeBoundReference() const {
-            return timeBoundReference;
+        TimeBoundReference const& BoundedUntilFormula::getTimeBoundReference(unsigned i) const {
+            assert(i < timeBoundReference.size());
+            return timeBoundReference.at(i);
         }
         
+        bool BoundedUntilFormula::isMultiDimensional() const {
+            assert(timeBoundReference.size() != 0);
+            return timeBoundReference.size() > 1;
+        }
 
+        unsigned BoundedUntilFormula::getDimension() const {
+            return timeBoundReference.size();
+        }
         
-        bool BoundedUntilFormula::isLowerBoundStrict() const {
-            return lowerBound.get().isStrict();
+        bool BoundedUntilFormula::isLowerBoundStrict(unsigned i) const {
+            assert(i < lowerBound.size());
+            return lowerBound.at(i).get().isStrict();
         }
         
         bool BoundedUntilFormula::hasLowerBound() const {
-            return static_cast<bool>(lowerBound);
-        }
-        
-        bool BoundedUntilFormula::hasIntegerLowerBound() const {
-            return lowerBound.get().getBound().hasIntegerType();
+            for(auto const& lb : lowerBound) {
+                if (static_cast<bool>(lb)) {
+                    return true;
+                }
+            }
+            return false;
         }
 
-        bool BoundedUntilFormula::isUpperBoundStrict() const {
-            return upperBound.get().isStrict();
+        bool BoundedUntilFormula::hasLowerBound(unsigned i) const {
+            return static_cast<bool>(lowerBound.at(i));
+        }
+        
+        bool BoundedUntilFormula::hasIntegerLowerBound(unsigned i) const {
+            return lowerBound.at(i).get().getBound().hasIntegerType();
+        }
+
+        bool BoundedUntilFormula::isUpperBoundStrict(unsigned i) const {
+            return upperBound.at(i).get().isStrict();
         }
 
         bool BoundedUntilFormula::hasUpperBound() const {
-            return static_cast<bool>(upperBound);
+            for(auto const& ub : upperBound) {
+                if (static_cast<bool>(ub)) {
+                    return true;
+                }
+            }
+            return false;
         }
 
-        bool BoundedUntilFormula::hasIntegerUpperBound() const {
-            return upperBound.get().getBound().hasIntegerType();
+        bool BoundedUntilFormula::hasUpperBound(unsigned i) const {
+            return static_cast<bool>(upperBound.at(i));
         }
 
-        storm::expressions::Expression const& BoundedUntilFormula::getLowerBound() const {
-            return lowerBound.get().getBound();
+        bool BoundedUntilFormula::hasIntegerUpperBound(unsigned i) const {
+            return upperBound.at(i).get().getBound().hasIntegerType();
+        }
+
+        storm::expressions::Expression const& BoundedUntilFormula::getLowerBound(unsigned i) const {
+            return lowerBound.at(i).get().getBound();
         }
         
-        storm::expressions::Expression const& BoundedUntilFormula::getUpperBound() const {
-            return upperBound.get().getBound();
+        storm::expressions::Expression const& BoundedUntilFormula::getUpperBound(unsigned i) const {
+            return upperBound.at(i).get().getBound();
         }
         
         template <>
-        double BoundedUntilFormula::getLowerBound() const {
+        double BoundedUntilFormula::getLowerBound(unsigned i) const {
             checkNoVariablesInBound(this->getLowerBound());
-            double bound = this->getLowerBound().evaluateAsDouble();
+            double bound = this->getLowerBound(i).evaluateAsDouble();
             STORM_LOG_THROW(bound >= 0, storm::exceptions::InvalidPropertyException, "Time-bound must not evaluate to negative number.");
             return bound;
         }
         
         template <>
-        double BoundedUntilFormula::getUpperBound() const {
+        double BoundedUntilFormula::getUpperBound(unsigned i) const {
             checkNoVariablesInBound(this->getUpperBound());
-            double bound = this->getUpperBound().evaluateAsDouble();
+            double bound = this->getUpperBound(i).evaluateAsDouble();
             STORM_LOG_THROW(bound >= 0, storm::exceptions::InvalidPropertyException, "Time-bound must not evaluate to negative number.");
             return bound;
         }
         
         template <>
-        storm::RationalNumber BoundedUntilFormula::getLowerBound() const {
-            checkNoVariablesInBound(this->getLowerBound());
-            storm::RationalNumber bound = this->getLowerBound().evaluateAsRational();
+        storm::RationalNumber BoundedUntilFormula::getLowerBound(unsigned i) const {
+            checkNoVariablesInBound(this->getLowerBound(i));
+            storm::RationalNumber bound = this->getLowerBound(i).evaluateAsRational();
             STORM_LOG_THROW(bound >= storm::utility::zero<storm::RationalNumber>(), storm::exceptions::InvalidPropertyException, "Time-bound must not evaluate to negative number.");
             return bound;
         }
         
         template <>
-        storm::RationalNumber BoundedUntilFormula::getUpperBound() const {
-            checkNoVariablesInBound(this->getUpperBound());
-            storm::RationalNumber bound = this->getUpperBound().evaluateAsRational();
+        storm::RationalNumber BoundedUntilFormula::getUpperBound(unsigned i) const {
+            checkNoVariablesInBound(this->getUpperBound(i));
+            storm::RationalNumber bound = this->getUpperBound(i).evaluateAsRational();
             STORM_LOG_THROW(bound >= storm::utility::zero<storm::RationalNumber>(), storm::exceptions::InvalidPropertyException, "Time-bound must not evaluate to negative number.");
             return bound;
         }
         
         template <>
-        uint64_t BoundedUntilFormula::getLowerBound() const {
-            checkNoVariablesInBound(this->getLowerBound());
-            int_fast64_t bound = this->getLowerBound().evaluateAsInt();
+        uint64_t BoundedUntilFormula::getLowerBound(unsigned i) const {
+            checkNoVariablesInBound(this->getLowerBound(i));
+            int_fast64_t bound = this->getLowerBound(i).evaluateAsInt();
             STORM_LOG_THROW(bound >= 0, storm::exceptions::InvalidPropertyException, "Time-bound must not evaluate to negative number.");
             return static_cast<uint64_t>(bound);
         }
         
         template <>
-        uint64_t BoundedUntilFormula::getUpperBound() const {
-            checkNoVariablesInBound(this->getUpperBound());
-            int_fast64_t bound = this->getUpperBound().evaluateAsInt();
+        uint64_t BoundedUntilFormula::getUpperBound(unsigned i) const {
+            checkNoVariablesInBound(this->getUpperBound(i));
+            int_fast64_t bound = this->getUpperBound(i).evaluateAsInt();
             STORM_LOG_THROW(bound >= 0, storm::exceptions::InvalidPropertyException, "Time-bound must not evaluate to negative number.");
             return static_cast<uint64_t>(bound);
         }
         
         template <>
-        double BoundedUntilFormula::getNonStrictUpperBound() const {
-            double bound = getUpperBound<double>();
-            STORM_LOG_THROW(!isUpperBoundStrict() || bound > 0, storm::exceptions::InvalidPropertyException, "Cannot retrieve non-strict bound from strict zero-bound.");
+        double BoundedUntilFormula::getNonStrictUpperBound(unsigned i) const {
+            double bound = getUpperBound<double>(i);
+            STORM_LOG_THROW(!isUpperBoundStrict(i) || bound > 0, storm::exceptions::InvalidPropertyException, "Cannot retrieve non-strict bound from strict zero-bound.");
             return bound;
         }
 
         template <>
-        uint64_t BoundedUntilFormula::getNonStrictUpperBound() const {
-            int_fast64_t bound = getUpperBound<uint64_t>();
-            if (isUpperBoundStrict()) {
+        uint64_t BoundedUntilFormula::getNonStrictUpperBound(unsigned i) const {
+            int_fast64_t bound = getUpperBound<uint64_t>(i);
+            if (isUpperBoundStrict(i)) {
                 STORM_LOG_THROW(bound > 0, storm::exceptions::InvalidPropertyException, "Cannot retrieve non-strict bound from strict zero-bound.");
                 return bound - 1;
             } else {
@@ -148,41 +188,53 @@ namespace storm {
             this->getLeftSubformula().writeToStream(out);
             
             out << " U";
-            if (this->getTimeBoundReference().isRewardBound()) {
-                out << "{\"" << this->getTimeBoundReference().getRewardName() << "\"}";
+            if (this->isMultiDimensional()) {
+                out << "[";
             }
-            if (this->hasLowerBound()) {
-                if (this->hasUpperBound()) {
-                    if (this->isLowerBoundStrict()) {
-                        out << "(";
+            for(unsigned i = 0; i < this->getDimension(); ++i) {
+                if (i > 0) {
+                    out << ",";
+                }
+                if (this->getTimeBoundReference(i).isRewardBound()) {
+                    out << "{\"" << this->getTimeBoundReference(i).getRewardName() << "\"}";
+                }
+                if (this->hasLowerBound(i)) {
+                    if (this->hasUpperBound(i)) {
+                        if (this->isLowerBoundStrict(i)) {
+                            out << "(";
+                        } else {
+                            out << "[";
+                        }
+                        out << this->getLowerBound(i);
+                        out << ", ";
+                        out << this->getUpperBound(i);
+                        if (this->isUpperBoundStrict(i)) {
+                            out << ")";
+                        } else {
+                            out << "]";
+                        }
                     } else {
-                        out << "[";
-                    }
-                    out << this->getLowerBound();
-                    out << ", ";
-                    out << this->getUpperBound();
-                    if (this->isUpperBoundStrict()) {
-                        out << ")";
-                    } else {
-                        out << "]";
+                        if (this->isLowerBoundStrict(i)) {
+                            out << ">";
+                        } else {
+                            out << ">=";
+                        }
+                        out << getLowerBound(i);
                     }
                 } else {
-                    if (this->isLowerBoundStrict()) {
-                        out << ">";
+                    if (this->isUpperBoundStrict(i)) {
+                        out << "<";
                     } else {
-                        out << ">=";
+                        out << "<=";
                     }
-                    out << getLowerBound();
+                    out << this->getUpperBound(i);
                 }
-            } else {
-                if (this->isUpperBoundStrict()) {
-                    out << "<";
-                } else {
-                    out << "<=";
-                }
-                out << this->getUpperBound();
+                out << " ";
             }
-            out << " ";
+            if (this->isMultiDimensional()) {
+                out << "]";
+            }
+
             
             this->getRightSubformula().writeToStream(out);
             return out;

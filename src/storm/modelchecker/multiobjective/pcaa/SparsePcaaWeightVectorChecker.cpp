@@ -270,8 +270,8 @@ namespace storm {
 
                                // Set the result for this objective accordingly
                                storm::utility::vector::setVectorValues<ValueType>(objectiveResults[objIndex], maybeStates, x);
-                               storm::utility::vector::setVectorValues<ValueType>(objectiveResults[objIndex], ~maybeStates, storm::utility::zero<ValueType>());
                            }
+                           storm::utility::vector::setVectorValues<ValueType>(objectiveResults[objIndex], ~maybeStates, storm::utility::zero<ValueType>());
 
                            // Update the estimate for the next objectives.
                            if (!storm::utility::isZero(weightVector[objIndex])) {

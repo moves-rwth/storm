@@ -248,7 +248,7 @@ namespace storm {
                     uint64_t modelRow = model.getTransitionMatrix().getRowGroupIndices()[modelState];
                     uint64_t groupEnd = model.getTransitionMatrix().getRowGroupIndices()[modelState + 1];
                     hasTrivialNondeterminism = hasTrivialNondeterminism && (groupEnd == modelRow + 1);
-                    for (; groupEnd; ++modelRow) {
+                    for (; modelRow < groupEnd; ++modelRow) {
                         ++numResChoices;
                         numResTransitions += model.getTransitionMatrix().getRow(modelRow).getNumberOfEntries();
                     }
