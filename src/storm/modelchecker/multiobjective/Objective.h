@@ -2,7 +2,7 @@
 
 #include <boost/optional.hpp>
 
-#include "storm/logic/Formula.h"
+#include "storm/logic/Formulas.h"
 #include "storm/logic/Bound.h"
 #include "storm/logic/TimeBound.h"
 #include "storm/logic/TimeBoundType.h"
