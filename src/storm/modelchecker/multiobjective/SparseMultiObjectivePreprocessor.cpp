@@ -69,9 +69,7 @@ namespace storm {
             
             template <typename SparseModelType>
             SparseMultiObjectivePreprocessor<SparseModelType>::PreprocessorData::PreprocessorData(SparseModelType const& model) : originalModel(model) {
-                storm::storage::MemoryStructureBuilder<ValueType, RewardModelType> memoryBuilder(1, model);
-                memoryBuilder.setTransition(0,0, storm::storage::BitVector(model.getNumberOfStates(), true));
-                memory = std::make_shared<storm::storage::MemoryStructure>(memoryBuilder.build());
+                memory = std::make_shared<storm::storage::MemoryStructure>(storm::storage::MemoryStructureBuilder<ValueType, RewardModelType>::buildTrivialMemoryStructure(model));
                 
                 // The memoryLabelPrefix should not be a prefix of a state label of the given model to ensure uniqueness of label names
                 memoryLabelPrefix = "mem";
@@ -115,80 +113,81 @@ namespace storm {
                 
                 Objective<ValueType>& objective = *data.objectives.back();
                 
-                objective.considersComplementaryEvent = false;
+                // Check whether the complementary event is considered
+                objective.considersComplementaryEvent = formula.isProbabilityOperatorFormula() && formula.getSubformula().isGloballyFormula();
                 
+                storm::logic::OperatorInformation opInfo;
                 if (formula.hasBound()) {
-                    STORM_LOG_THROW(!formula.getBound().threshold.containsVariables(), storm::exceptions::InvalidPropertyException, "The formula " << formula << "considers a non-constant threshold");
-                    objective.bound = formula.getBound();
-                    if (storm::logic::isLowerBound(formula.getBound().comparisonType)) {
-                        objective.optimizationDirection = storm::solver::OptimizationDirection::Maximize;
-                    } else {
-                        objective.optimizationDirection = storm::solver::OptimizationDirection::Minimize;
-                    }
-                    STORM_LOG_WARN_COND(!formula.hasOptimalityType() || formula.getOptimalityType() == objective.optimizationDirection, "Optimization direction of formula " << formula << " ignored as the formula also specifies a threshold.");
-                } else if (formula.hasOptimalityType()){
-                    objective.optimizationDirection = formula.getOptimalityType();
-                } else {
-                    STORM_LOG_THROW(false, storm::exceptions::InvalidPropertyException, "Current objective " << formula << " does not specify whether to minimize or maximize");
-                }
-                
-                if (formula.isProbabilityOperatorFormula()){
-                    preprocessProbabilityOperatorFormula(formula.asProbabilityOperatorFormula(), data);
-                } else if (formula.isRewardOperatorFormula()){
-                    preprocessRewardOperatorFormula(formula.asRewardOperatorFormula(), data);
-                } else if (formula.isTimeOperatorFormula()){
-                    preprocessTimeOperatorFormula(formula.asTimeOperatorFormula(), data);
-                } else {
-                    STORM_LOG_THROW(false, storm::exceptions::InvalidPropertyException, "Could not preprocess the objective " << formula << " because it is not supported");
-                }
-                
-                // Invert the bound and optimization direction (if necessary)
-                if (objective.considersComplementaryEvent) {
-                    if (objective.bound) {
-                        objective.bound->threshold = objective.bound->threshold.getManager().rational(storm::utility::one<storm::RationalNumber>()) - objective.bound->threshold;
-                        switch (objective.bound->comparisonType) {
+                    opInfo.bound = formula.getBound();
+                    // Invert the bound (if necessary)
+                    if (objective.considersComplementaryEvent) {
+                        opInfo.bound->threshold = opInfo.bound->threshold.getManager().rational(storm::utility::one<storm::RationalNumber>()) - opInfo.bound->threshold;
+                        switch (opInfo.bound->comparisonType) {
                             case storm::logic::ComparisonType::Greater:
-                                objective.bound->comparisonType = storm::logic::ComparisonType::Less;
+                                opInfo.bound->comparisonType = storm::logic::ComparisonType::Less;
                                 break;
                             case storm::logic::ComparisonType::GreaterEqual:
-                                objective.bound->comparisonType = storm::logic::ComparisonType::LessEqual;
+                                opInfo.bound->comparisonType = storm::logic::ComparisonType::LessEqual;
                                 break;
                             case storm::logic::ComparisonType::Less:
-                                objective.bound->comparisonType = storm::logic::ComparisonType::Greater;
+                                opInfo.bound->comparisonType = storm::logic::ComparisonType::Greater;
                                 break;
                             case storm::logic::ComparisonType::LessEqual:
-                                objective.bound->comparisonType = storm::logic::ComparisonType::GreaterEqual;
+                                opInfo.bound->comparisonType = storm::logic::ComparisonType::GreaterEqual;
                                 break;
                             default:
                                 STORM_LOG_THROW(false, storm::exceptions::InvalidPropertyException, "Current objective " << formula << " has unexpected comparison type");
                         }
                     }
-                    objective.optimizationDirection = storm::solver::invert(objective.optimizationDirection);
+                    if (storm::logic::isLowerBound(opInfo.bound->comparisonType)) {
+                        opInfo.optimalityType = storm::solver::OptimizationDirection::Maximize;
+                    } else {
+                        opInfo.optimalityType = storm::solver::OptimizationDirection::Minimize;
+                    }
+                    STORM_LOG_WARN_COND(!formula.hasOptimalityType(), "Optimization direction of formula " << formula << " ignored as the formula also specifies a threshold.");
+                } else if (formula.hasOptimalityType()){
+                    opInfo.optimalityType = formula.getOptimalityType();
+                    // Invert the optimality type (if necessary)
+                    if (objective.considersComplementaryEvent) {
+                        opInfo.optimalityType = storm::solver::invert(opInfo.optimalityType.get());
+                    }
+                } else {
+                    STORM_LOG_THROW(false, storm::exceptions::InvalidPropertyException, "Objective " << formula << " does not specify whether to minimize or maximize");
+                }
+                
+                if (formula.isProbabilityOperatorFormula()){
+                    preprocessProbabilityOperatorFormula(formula.asProbabilityOperatorFormula(), opInfo, data);
+                } else if (formula.isRewardOperatorFormula()){
+                    preprocessRewardOperatorFormula(formula.asRewardOperatorFormula(), opInfo, data);
+                } else if (formula.isTimeOperatorFormula()){
+                    preprocessTimeOperatorFormula(formula.asTimeOperatorFormula(), opInfo, data);
+                } else {
+                    STORM_LOG_THROW(false, storm::exceptions::InvalidPropertyException, "Could not preprocess the objective " << formula << " because it is not supported");
                 }
             }
             
             template<typename SparseModelType>
-            void SparseMultiObjectivePreprocessor<SparseModelType>::preprocessProbabilityOperatorFormula(storm::logic::ProbabilityOperatorFormula const& formula, PreprocessorData& data) {
+            void SparseMultiObjectivePreprocessor<SparseModelType>::preprocessProbabilityOperatorFormula(storm::logic::ProbabilityOperatorFormula const& formula, storm::logic::OperatorInformation const& opInfo, PreprocessorData& data) {
                 
                 // Probabilities are between zero and one
                 data.objectives.back()->lowerResultBound = storm::utility::zero<ValueType>();
                 data.objectives.back()->upperResultBound = storm::utility::one<ValueType>();
                 
                 if (formula.getSubformula().isUntilFormula()){
-                    preprocessUntilFormula(formula.getSubformula().asUntilFormula(), data);
+                    preprocessUntilFormula(formula.getSubformula().asUntilFormula(), opInfo, data);
                 } else if (formula.getSubformula().isBoundedUntilFormula()){
-                    preprocessBoundedUntilFormula(formula.getSubformula().asBoundedUntilFormula(), data);
+                    preprocessBoundedUntilFormula(formula.getSubformula().asBoundedUntilFormula(), opInfo, data);
                 } else if (formula.getSubformula().isGloballyFormula()){
-                    preprocessGloballyFormula(formula.getSubformula().asGloballyFormula(), data);
+                    preprocessGloballyFormula(formula.getSubformula().asGloballyFormula(), opInfo, data);
                 } else if (formula.getSubformula().isEventuallyFormula()){
-                    preprocessEventuallyFormula(formula.getSubformula().asEventuallyFormula(), data);
+                    preprocessEventuallyFormula(formula.getSubformula().asEventuallyFormula(), opInfo, data);
                 } else {
                     STORM_LOG_THROW(false, storm::exceptions::InvalidPropertyException, "The subformula of " << formula << " is not supported.");
                 }
             }
 
             template<typename SparseModelType>
-            void SparseMultiObjectivePreprocessor<SparseModelType>::preprocessRewardOperatorFormula(storm::logic::RewardOperatorFormula const& formula, PreprocessorData& data) {
+            void SparseMultiObjectivePreprocessor<SparseModelType>::preprocessRewardOperatorFormula(storm::logic::RewardOperatorFormula const& formula, storm::logic::OperatorInformation const& opInfo, PreprocessorData& data) {
                 
                 STORM_LOG_THROW((formula.hasRewardModelName() && data.originalModel.hasRewardModel(formula.getRewardModelName()))
                                 || (!formula.hasRewardModelName() && data.originalModel.hasUniqueRewardModel()), storm::exceptions::InvalidPropertyException, "The reward model is not unique or the formula " << formula << " does not specify an existing reward model.");
@@ -205,43 +204,39 @@ namespace storm {
                 data.objectives.back()->lowerResultBound = storm::utility::zero<ValueType>();
                 
                 if (formula.getSubformula().isEventuallyFormula()){
-                    preprocessEventuallyFormula(formula.getSubformula().asEventuallyFormula(), data, rewardModelName);
+                    preprocessEventuallyFormula(formula.getSubformula().asEventuallyFormula(), opInfo, data, rewardModelName);
                 } else if (formula.getSubformula().isCumulativeRewardFormula()) {
-                    preprocessCumulativeRewardFormula(formula.getSubformula().asCumulativeRewardFormula(), data, rewardModelName);
+                    preprocessCumulativeRewardFormula(formula.getSubformula().asCumulativeRewardFormula(), opInfo, data, rewardModelName);
                 } else if (formula.getSubformula().isTotalRewardFormula()) {
-                    preprocessTotalRewardFormula(data, rewardModelName);
+                    preprocessTotalRewardFormula(opInfo, data, rewardModelName);
                 } else {
                     STORM_LOG_THROW(false, storm::exceptions::InvalidPropertyException, "The subformula of " << formula << " is not supported.");
                 }
             }
 
             template<typename SparseModelType>
-            void SparseMultiObjectivePreprocessor<SparseModelType>::preprocessTimeOperatorFormula(storm::logic::TimeOperatorFormula const& formula, PreprocessorData& data) {
+            void SparseMultiObjectivePreprocessor<SparseModelType>::preprocessTimeOperatorFormula(storm::logic::TimeOperatorFormula const& formula, storm::logic::OperatorInformation const& opInfo, PreprocessorData& data) {
                 // Time formulas are only supported for Markov automata
                 STORM_LOG_THROW(data.originalModel.isOfType(storm::models::ModelType::MarkovAutomaton), storm::exceptions::InvalidPropertyException, "Time operator formulas are only supported for Markov automata.");
                 
                 data.objectives.back()->lowerResultBound = storm::utility::zero<ValueType>();
                 
                 if (formula.getSubformula().isEventuallyFormula()){
-                    preprocessEventuallyFormula(formula.getSubformula().asEventuallyFormula(), data);
+                    preprocessEventuallyFormula(formula.getSubformula().asEventuallyFormula(), opInfo, data);
                 } else {
                     STORM_LOG_THROW(false, storm::exceptions::InvalidPropertyException, "The subformula of " << formula << " is not supported.");
                 }
             }
             
             template<typename SparseModelType>
-            void SparseMultiObjectivePreprocessor<SparseModelType>::preprocessUntilFormula(storm::logic::UntilFormula const& formula, PreprocessorData& data) {
+            void SparseMultiObjectivePreprocessor<SparseModelType>::preprocessUntilFormula(storm::logic::UntilFormula const& formula, storm::logic::OperatorInformation const& opInfo, PreprocessorData& data, std::shared_ptr<storm::logic::Formula const> subformula) {
                 
                 storm::modelchecker::SparsePropositionalModelChecker<SparseModelType> mc(data.originalModel);
                 storm::storage::BitVector rightSubformulaResult = mc.check(formula.getRightSubformula())->asExplicitQualitativeCheckResult().getTruthValuesVector();
                 storm::storage::BitVector leftSubformulaResult = mc.check(formula.getLeftSubformula())->asExplicitQualitativeCheckResult().getTruthValuesVector();
                 // Check if the formula is already satisfied in the initial state because then the transformation to expected rewards will fail.
-                if (!data.objectives.back()->lowerTimeBound) {
-                    if (!(data.originalModel.getInitialStates() & rightSubformulaResult).empty()) {
-                        // TODO: Handle this case more properly
-                        STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "The Probability for the objective " << *data.objectives.back()->originalFormula << " is always one as the rhs of the until formula is true in the initial state. This (trivial) case is currently not implemented.");
-                    }
-                }
+                // TODO: Handle this case more properly
+                STORM_LOG_THROW((data.originalModel.getInitialStates() & rightSubformulaResult).empty(), storm::exceptions::NotImplementedException, "The Probability for the objective " << *data.objectives.back()->originalFormula << " is always one as the rhs of the until formula is true in the initial state. This (trivial) case is currently not implemented.");
                 
                 // Create a memory structure that stores whether a non-PhiState or a PsiState has already been reached
                 storm::storage::MemoryStructureBuilder<ValueType, RewardModelType> builder(2, data.originalModel);
@@ -257,7 +252,11 @@ namespace storm {
                 storm::storage::MemoryStructure objectiveMemory = builder.build();
                 data.memory = std::make_shared<storm::storage::MemoryStructure>(data.memory->product(objectiveMemory));
                 
-                data.objectives.back()->rewardModelName = data.rewardModelNamePrefix + std::to_string(data.objectives.size());
+                std::string rewardModelName = data.rewardModelNamePrefix + std::to_string(data.objectives.size());
+                if (subformula == nullptr) {
+                    subformula = std::make_shared<storm::logic::TotalRewardFormula>();
+                }
+                data.objectives.back()->formula = std::make_shared<storm::logic::RewardOperatorFormula>(subformula, rewardModelName, opInfo);
                 
                 auto relevantStatesFormula = std::make_shared<storm::logic::AtomicLabelFormula>(relevantStatesLabel);
                 data.tasks.push_back(std::make_shared<SparseMultiObjectivePreprocessorReachProbToTotalRewTask<SparseModelType>>(data.objectives.back(), relevantStatesFormula, formula.getRightSubformula().asSharedPointer()));
@@ -265,38 +264,37 @@ namespace storm {
             }
             
             template<typename SparseModelType>
-            void SparseMultiObjectivePreprocessor<SparseModelType>::preprocessBoundedUntilFormula(storm::logic::BoundedUntilFormula const& formula, PreprocessorData& data) {
-                if (formula.hasLowerBound()) {
-                    STORM_LOG_THROW(!formula.getLowerBound().containsVariables(), storm::exceptions::InvalidPropertyException, "The lower time bound for the formula " << formula << " still contains variables");
-                    if (!storm::utility::isZero(formula.getLowerBound<double>()) || formula.isLowerBoundStrict()) {
-                        data.objectives.back()->lowerTimeBound = storm::logic::TimeBound(formula.isLowerBoundStrict(), formula.getLowerBound());
-                    }
-                }
-                if (formula.hasUpperBound()) {
-                    STORM_LOG_THROW(!formula.getUpperBound().containsVariables(), storm::exceptions::InvalidPropertyException, "The Upper time bound for the formula " << formula << " still contains variables");
-                    if (!storm::utility::isInfinity(formula.getUpperBound<double>())) {
-                        data.objectives.back()->upperTimeBound = storm::logic::TimeBound(formula.isUpperBoundStrict(), formula.getUpperBound());
-                    }
-                }
+            void SparseMultiObjectivePreprocessor<SparseModelType>::preprocessBoundedUntilFormula(storm::logic::BoundedUntilFormula const& formula, storm::logic::OperatorInformation const& opInfo, PreprocessorData& data) {
                 
-                data.objectives.back()->timeBoundReference = formula.getTimeBoundReference();
-                preprocessUntilFormula(storm::logic::UntilFormula(formula.getLeftSubformula().asSharedPointer(), formula.getRightSubformula().asSharedPointer()), data);
+                // Check how to handle this query
+                if (!formula.getTimeBoundReference().isRewardBound() && (!formula.hasLowerBound() || (!formula.isLowerBoundStrict() && storm::utility::isZero(formula.template getLowerBound<storm::RationalNumber>())))) {
+                    std::shared_ptr<storm::logic::Formula const> subformula;
+                    if (!formula.hasUpperBound()) {
+                        // The formula is actually unbounded
+                        subformula = std::make_shared<storm::logic::TotalRewardFormula>();
+                    } else {
+                        STORM_LOG_THROW(!data.originalModel.isOfType(storm::models::ModelType::MarkovAutomaton) || formula.getTimeBoundReference().isTimeBound(), storm::exceptions::InvalidPropertyException, "Bounded until formulas for Markov Automata are only allowed when time bounds are considered.");
+                        storm::logic::TimeBound bound(formula.isUpperBoundStrict(), formula.getUpperBound());
+                        subformula = std::make_shared<storm::logic::CumulativeRewardFormula>(bound, formula.getTimeBoundReference().getType());
+                    }
+                    preprocessUntilFormula(storm::logic::UntilFormula(formula.getLeftSubformula().asSharedPointer(), formula.getRightSubformula().asSharedPointer()), opInfo, data, subformula);
+                } else {
+                    STORM_LOG_THROW(false, storm::exceptions::InvalidPropertyException, "Property " << formula << "is not supported");
+                }
             }
             
             template<typename SparseModelType>
-            void SparseMultiObjectivePreprocessor<SparseModelType>::preprocessGloballyFormula(storm::logic::GloballyFormula const& formula, PreprocessorData& data) {
-                // The formula will be transformed to an until formula for the complementary event.
-                data.objectives.back()->considersComplementaryEvent = true;
-                
+            void SparseMultiObjectivePreprocessor<SparseModelType>::preprocessGloballyFormula(storm::logic::GloballyFormula const& formula, storm::logic::OperatorInformation const& opInfo, PreprocessorData& data) {
+                // The formula is transformed to an until formula for the complementary event.
                 auto negatedSubformula = std::make_shared<storm::logic::UnaryBooleanStateFormula>(storm::logic::UnaryBooleanStateFormula::OperatorType::Not, formula.getSubformula().asSharedPointer());
                 
-                preprocessUntilFormula(storm::logic::UntilFormula(storm::logic::Formula::getTrueFormula(), negatedSubformula), data);
+                preprocessUntilFormula(storm::logic::UntilFormula(storm::logic::Formula::getTrueFormula(), negatedSubformula), opInfo, data);
             }
             
             template<typename SparseModelType>
-            void SparseMultiObjectivePreprocessor<SparseModelType>::preprocessEventuallyFormula(storm::logic::EventuallyFormula const& formula, PreprocessorData& data, boost::optional<std::string> const& optionalRewardModelName) {
+            void SparseMultiObjectivePreprocessor<SparseModelType>::preprocessEventuallyFormula(storm::logic::EventuallyFormula const& formula, storm::logic::OperatorInformation const& opInfo, PreprocessorData& data, boost::optional<std::string> const& optionalRewardModelName) {
                 if (formula.isReachabilityProbabilityFormula()){
-                    preprocessUntilFormula(storm::logic::UntilFormula(storm::logic::Formula::getTrueFormula(), formula.getSubformula().asSharedPointer()), data);
+                    preprocessUntilFormula(storm::logic::UntilFormula(storm::logic::Formula::getTrueFormula(), formula.getSubformula().asSharedPointer()), opInfo, data);
                     return;
                 }
                 
@@ -320,7 +318,9 @@ namespace storm {
                 
                 auto relevantStatesFormula = std::make_shared<storm::logic::AtomicLabelFormula>(relevantStatesLabel);
                 
-                data.objectives.back()->rewardModelName = data.rewardModelNamePrefix + std::to_string(data.objectives.size());
+                std::string auxRewardModelName = data.rewardModelNamePrefix + std::to_string(data.objectives.size());
+                auto totalRewardFormula = std::make_shared<storm::logic::TotalRewardFormula>();
+                data.objectives.back()->formula = std::make_shared<storm::logic::RewardOperatorFormula>(totalRewardFormula, auxRewardModelName, opInfo);
                 data.finiteRewardCheckObjectives.set(data.objectives.size() - 1, true);
                 
                 if (formula.isReachabilityRewardFormula()) {
@@ -336,23 +336,19 @@ namespace storm {
             }
             
             template<typename SparseModelType>
-            void SparseMultiObjectivePreprocessor<SparseModelType>::preprocessCumulativeRewardFormula(storm::logic::CumulativeRewardFormula const& formula, PreprocessorData& data, boost::optional<std::string> const& optionalRewardModelName) {
+            void SparseMultiObjectivePreprocessor<SparseModelType>::preprocessCumulativeRewardFormula(storm::logic::CumulativeRewardFormula const& formula, storm::logic::OperatorInformation const& opInfo, PreprocessorData& data, boost::optional<std::string> const& optionalRewardModelName) {
                 STORM_LOG_THROW(data.originalModel.isOfType(storm::models::ModelType::Mdp), storm::exceptions::InvalidPropertyException, "Cumulative reward formulas are not supported for the given model type.");
                 
-                STORM_LOG_THROW(!formula.getBound().containsVariables(), storm::exceptions::InvalidPropertyException, "The time bound for the formula " << formula << " still contains variables");
-                if (!storm::utility::isInfinity(formula.getBound<double>())) {
-                    data.objectives.back()->upperTimeBound = storm::logic::TimeBound(formula.isBoundStrict(), formula.getBound());
-                }
-
-                assert(optionalRewardModelName.is_initialized());
-                data.objectives.back()->rewardModelName = *optionalRewardModelName;
-
+                storm::logic::TimeBound bound(formula.isBoundStrict(), formula.getBound());
+                auto cumulativeRewardFormula = std::make_shared<storm::logic::CumulativeRewardFormula>(bound, storm::logic::TimeBoundType::Steps);
+                data.objectives.back()->formula = std::make_shared<storm::logic::RewardOperatorFormula>(cumulativeRewardFormula, *optionalRewardModelName, opInfo);
             }
             
             template<typename SparseModelType>
-            void SparseMultiObjectivePreprocessor<SparseModelType>::preprocessTotalRewardFormula(PreprocessorData& data, boost::optional<std::string> const& optionalRewardModelName) {
-                assert(optionalRewardModelName.is_initialized());
-                data.objectives.back()->rewardModelName = *optionalRewardModelName;
+            void SparseMultiObjectivePreprocessor<SparseModelType>::preprocessTotalRewardFormula(storm::logic::OperatorInformation const& opInfo, PreprocessorData& data, boost::optional<std::string> const& optionalRewardModelName) {
+                
+                auto totalRewardFormula = std::make_shared<storm::logic::TotalRewardFormula>();
+                data.objectives.back()->formula = std::make_shared<storm::logic::RewardOperatorFormula>(totalRewardFormula, *optionalRewardModelName, opInfo);
                 data.finiteRewardCheckObjectives.set(data.objectives.size() - 1, true);
             }
             
@@ -374,9 +370,10 @@ namespace storm {
                 
                 std::set<std::string> relevantRewardModels;
                 for (auto const& obj : result.objectives) {
-                    relevantRewardModels.insert(*obj.rewardModelName);
-                    if (obj.timeBoundReference->isRewardBound()) {
-                        relevantRewardModels.insert(obj.timeBoundReference->getRewardName());
+                    if (obj.formula->isRewardOperatorFormula()) {
+                        relevantRewardModels.insert(obj.formula->asRewardOperatorFormula().getRewardModelName());
+                    } else {
+                        STORM_LOG_ASSERT(false, "Unknown formula type.");
                     }
                 }
                 
@@ -409,7 +406,7 @@ namespace storm {
             typename SparseMultiObjectivePreprocessor<SparseModelType>::ReturnType::QueryType SparseMultiObjectivePreprocessor<SparseModelType>::getQueryType(std::vector<Objective<ValueType>> const& objectives) {
                 uint_fast64_t numOfObjectivesWithThreshold = 0;
                 for (auto& obj : objectives) {
-                    if (obj.bound) {
+                    if (obj.formula->hasBound()) {
                         ++numOfObjectivesWithThreshold;
                     }
                 }
@@ -436,8 +433,12 @@ namespace storm {
                 // Get the choices that yield non-zero reward
                 storm::storage::BitVector zeroRewardChoices(result.preprocessedModel->getNumberOfChoices(), true);
                 for (auto const& obj : result.objectives) {
-                    auto const& rewModel = result.preprocessedModel->getRewardModel(*obj.rewardModelName);
-                    zeroRewardChoices &= rewModel.getChoicesWithZeroReward(transitions);
+                    if (obj.formula->isRewardOperatorFormula()) {
+                        auto const& rewModel = result.preprocessedModel->getRewardModel(obj.formula->asRewardOperatorFormula().getRewardModelName());
+                        zeroRewardChoices &= rewModel.getChoicesWithZeroReward(transitions);
+                    } else {
+                        STORM_LOG_ASSERT(false, "Unknown formula type.");
+                    }
                 }
                 
                 // Get the states that have reward for at least one (or for all) choices assigned to it.
@@ -478,8 +479,9 @@ namespace storm {
                 storm::storage::BitVector maxRewardsToCheck(result.preprocessedModel->getNumberOfChoices(), true);
                 bool hasMinRewardToCheck = false;
                 for (auto const& objIndex : finiteRewardCheckObjectives) {
-                    auto const& rewModel = result.preprocessedModel->getRewardModel(result.objectives[objIndex].rewardModelName.get());
-                    if (storm::solver::minimize(result.objectives[objIndex].optimizationDirection)) {
+                    STORM_LOG_ASSERT(result.objectives[objIndex].formula->isRewardOperatorFormula(), "Objective needs to be checked for finite reward but has no reward operator.");
+                    auto const& rewModel = result.preprocessedModel->getRewardModel(result.objectives[objIndex].formula->asRewardOperatorFormula().getRewardModelName());
+                    if (storm::solver::minimize(result.objectives[objIndex].formula->getOptimalityType())) {
                         hasMinRewardToCheck = true;
                     } else {
                         maxRewardsToCheck &= rewModel.getChoicesWithZeroReward(transitions);

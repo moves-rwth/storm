@@ -57,6 +57,11 @@ namespace storm {
              */
             MemoryStructure build();
             
+            /*!
+             * Builds a trivial memory structure for the given model (consisting of a single memory state)
+             */
+            static MemoryStructure buildTrivialMemoryStructure(storm::models::sparse::Model<ValueType, RewardModelType> const& model);
+            
 
         private:
             storm::models::sparse::Model<ValueType, RewardModelType> const& model;

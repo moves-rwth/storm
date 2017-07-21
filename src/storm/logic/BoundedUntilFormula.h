@@ -1,5 +1,4 @@
-#ifndef STORM_LOGIC_BOUNDEDUNTILFORMULA_H_
-#define STORM_LOGIC_BOUNDEDUNTILFORMULA_H_
+#pragma once
 
 #include <boost/optional.hpp>
 
@@ -13,7 +12,8 @@ namespace storm {
         class BoundedUntilFormula : public BinaryPathFormula {
         public:
             BoundedUntilFormula(std::shared_ptr<Formula const> const& leftSubformula, std::shared_ptr<Formula const> const& rightSubformula, boost::optional<TimeBound> const& lowerBound, boost::optional<TimeBound> const& upperBound, TimeBoundReference const& timeBoundReference);
-            
+            BoundedUntilFormula(std::shared_ptr<Formula const> const& leftSubformula, std::shared_ptr<Formula const> const& rightSubformula, std::vector<boost::optional<TimeBound>> const& lowerBounds, std::vector<boost::optional<TimeBound>> const& upperBounds, std::vector<TimeBoundReference> const& timeBoundReferences);
+
             virtual bool isBoundedUntilFormula() const override;
 
             virtual bool isProbabilityPathFormula() const override;
@@ -22,39 +22,43 @@ namespace storm {
             
             virtual void gatherReferencedRewardModels(std::set<std::string>& referencedRewardModels) const override;
             
-            TimeBoundReference const& getTimeBoundReference() const;
+            TimeBoundReference const& getTimeBoundReference(unsigned i = 0) const;
 
             
-            bool isLowerBoundStrict() const;
+            bool isLowerBoundStrict(unsigned i = 0) const;
             bool hasLowerBound() const;
-            bool hasIntegerLowerBound() const;
+            bool hasLowerBound(unsigned i) const;
+            bool hasIntegerLowerBound(unsigned i = 0) const;
 
-            bool isUpperBoundStrict() const;
+            bool isUpperBoundStrict(unsigned i = 0) const;
             bool hasUpperBound() const;
-            bool hasIntegerUpperBound() const;
+            bool hasUpperBound(unsigned i) const;
+            bool hasIntegerUpperBound(unsigned i = 0) const;
+
+            bool isMultiDimensional() const;
+            unsigned getDimension() const;
             
-            storm::expressions::Expression const& getLowerBound() const;
-            storm::expressions::Expression const& getUpperBound() const;
+            storm::expressions::Expression const& getLowerBound(unsigned i = 0) const;
+            storm::expressions::Expression const& getUpperBound(unsigned i = 0) const;
             
             template <typename ValueType>
-            ValueType getLowerBound() const;
+            ValueType getLowerBound(unsigned i = 0) const;
 
             template <typename ValueType>
-            ValueType getUpperBound() const;
+            ValueType getUpperBound(unsigned i = 0) const;
             
             template <typename ValueType>
-            ValueType getNonStrictUpperBound() const;
+            ValueType getNonStrictUpperBound(unsigned i = 0) const;
 
             virtual std::ostream& writeToStream(std::ostream& out) const override;
             
         private:
             static void checkNoVariablesInBound(storm::expressions::Expression const& bound);
             
-            TimeBoundReference timeBoundReference;
-            boost::optional<TimeBound> lowerBound;
-            boost::optional<TimeBound> upperBound;
+            std::vector<TimeBoundReference> timeBoundReference;
+            std::vector<boost::optional<TimeBound>> lowerBound;
+            std::vector<boost::optional<TimeBound>> upperBound;
         };
     }
 }
 
-#endif /* STORM_LOGIC_BOUNDEDUNTILFORMULA_H_ */

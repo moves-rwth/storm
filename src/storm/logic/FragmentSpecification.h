@@ -118,6 +118,9 @@ namespace storm {
             bool isOperatorAtTopLevelRequired() const;
             FragmentSpecification& setOperatorAtTopLevelRequired(bool newValue);
             
+            bool isMultiObjectiveFormulaAtTopLevelRequired() const;
+            FragmentSpecification& setMultiObjectiveFormulaAtTopLevelRequired(bool newValue);
+            
             bool areOperatorsAtTopLevelOfMultiObjectiveFormulasRequired() const;
             FragmentSpecification& setOperatorsAtTopLevelOfMultiObjectiveFormulasRequired(bool newValue);
             
@@ -170,6 +173,7 @@ namespace storm {
             bool quantitativeOperatorResults;
             bool qualitativeOperatorResults;
             bool operatorAtTopLevelRequired;
+            bool multiObjectiveFormulaAtTopLevelRequired;
             bool operatorsAtTopLevelOfMultiObjectiveFormulasRequired;
         };
         

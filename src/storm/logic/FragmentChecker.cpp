@@ -24,6 +24,9 @@ namespace storm {
             if (specification.isOperatorAtTopLevelRequired()) {
                 result &= f.isOperatorFormula();
             }
+            if (specification.isMultiObjectiveFormulaAtTopLevelRequired()) {
+                result &= f.isMultiObjectiveFormula();
+            }
             
             return result;
         }

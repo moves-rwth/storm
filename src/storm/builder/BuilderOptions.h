@@ -94,6 +94,8 @@ namespace storm {
             bool isBuildAllRewardModelsSet() const;
             bool isBuildAllLabelsSet() const;
             bool isExplorationChecksSet() const;
+            bool isExplorationShowProgressSet() const;
+            uint64_t getExplorationShowProgressDelay() const;
             
             BuilderOptions& setBuildAllRewardModels();
             BuilderOptions& addRewardModel(std::string const& rewardModelName);
@@ -139,6 +141,12 @@ namespace storm {
             
             /// A flag that stores whether exploration checks are to be performed.
             bool explorationChecks;
+            
+            /// A flag that stores whether the progress of exploration is to be printed.
+            bool explorationShowProgress;
+            
+            /// The delay for printing progress information.
+            uint64_t explorationShowProgressDelay;
         };
         
     }

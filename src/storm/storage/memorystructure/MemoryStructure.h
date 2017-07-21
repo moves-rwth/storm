@@ -6,11 +6,12 @@
 #include "storm/logic/Formula.h"
 #include "storm/models/sparse/StateLabeling.h"
 #include "storm/models/sparse/Model.h"
+#include "storm/models/sparse/StandardRewardModel.h"
 
 namespace storm {
     namespace storage {
         
-        template <typename ValueType>
+        template <typename ValueType, typename RewardModelType>
         class SparseModelMemoryProduct;
         
         /*!
@@ -53,8 +54,8 @@ namespace storm {
              * Builds the product of this memory structure and the given sparse model.
              * An exception is thrown if the state labelings of this memory structure and the given model are not disjoint.
              */
-            template <typename ValueType>
-            SparseModelMemoryProduct<ValueType> product(storm::models::sparse::Model<ValueType> const& sparseModel) const;
+            template <typename ValueType, typename RewardModelType = storm::models::sparse::StandardRewardModel<ValueType>>
+            SparseModelMemoryProduct<ValueType, RewardModelType> product(storm::models::sparse::Model<ValueType, RewardModelType> const& sparseModel) const;
             
             std::string toString() const;
 

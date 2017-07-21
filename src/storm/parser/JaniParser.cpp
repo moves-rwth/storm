@@ -165,9 +165,8 @@ namespace storm {
             if (piStructure.count("lower") > 0) {
                 pi.lowerBound = parseExpression(piStructure.at("lower"), "Lower bound for property interval", {}, {});
                 // TODO substitute constants.
+                std::cout << "have lower bound" << std::endl;
                 STORM_LOG_THROW(!pi.lowerBound.containsVariables(), storm::exceptions::NotSupportedException, "Only constant expressions are supported as lower bounds");
-               
-                
             }
             if (piStructure.count("lower-exclusive") > 0) {
                 STORM_LOG_THROW(pi.lowerBound.isInitialized(), storm::exceptions::InvalidJaniException, "Lower-exclusive can only be set if a lower bound is present");
@@ -175,16 +174,17 @@ namespace storm {
                 
             }
             if (piStructure.count("upper") > 0) {
+                std::cout << "have upper bound" << std::endl;
                 pi.upperBound = parseExpression(piStructure.at("upper"), "Upper bound for property interval", {}, {});
                 // TODO substitute constants.
                 STORM_LOG_THROW(!pi.upperBound.containsVariables(), storm::exceptions::NotSupportedException, "Only constant expressions are supported as upper bounds");
                 
             }
             if (piStructure.count("upper-exclusive") > 0) {
-                STORM_LOG_THROW(pi.lowerBound.isInitialized(), storm::exceptions::InvalidJaniException, "Lower-exclusive can only be set if a lower bound is present");
-                pi.lowerBoundStrict = piStructure.at("upper-exclusive");
+                STORM_LOG_THROW(pi.upperBound.isInitialized(), storm::exceptions::InvalidJaniException, "Lower-exclusive can only be set if a lower bound is present");
+                pi.upperBoundStrict = piStructure.at("upper-exclusive");
             }
-            STORM_LOG_THROW(pi.lowerBound.isInitialized() || pi.upperBound.isInitialized(), storm::exceptions::InvalidJaniException, "Bounded operators must be bounded");
+            STORM_LOG_THROW(pi.lowerBound.isInitialized() || pi.upperBound.isInitialized(), storm::exceptions::InvalidJaniException, "Bounded operator must have a bounded interval, but no bounds found in '" << piStructure << "'");
             return pi;
             
             
@@ -367,22 +367,38 @@ namespace storm {
                         return std::make_shared<storm::logic::BoundedUntilFormula const>(args[0], args[1], storm::logic::TimeBound(pi.lowerBoundStrict, pi.lowerBound), storm::logic::TimeBound(pi.upperBoundStrict, pi.upperBound), storm::logic::TimeBoundReference(storm::logic::TimeBoundType::Time));
                         
                     } else if (propertyStructure.count("reward-bounds") > 0 ) {
-                        storm::jani::PropertyInterval pi = parsePropertyInterval(propertyStructure.at("reward-bounds"));
-                        STORM_LOG_THROW(pi.hasUpperBound(), storm::exceptions::NotSupportedException, "Storm only supports time-bounded until with an upper bound.");
-                        STORM_LOG_THROW(propertyStructure.at("reward-bounds").count("exp") == 1, storm::exceptions::InvalidJaniException, "Expecting reward-expression for operator " << opString << " in  " << context);
-                        storm::expressions::Expression rewExpr = parseExpression(propertyStructure.at("reward-bounds").at("exp"), "Reward expression in " + context, globalVars, constants);
-                        STORM_LOG_THROW(!rewExpr.isVariable(), storm::exceptions::NotSupportedException, "Storm currently does not support complex reward expressions.");
-                        std::string rewardName = rewExpr.getVariables().begin()->getName();
-                        STORM_LOG_WARN("Reward-type (steps, time) is deduced from model type.");
-                        double lowerBound = 0.0;
-                        if(pi.hasLowerBound()) {
-                            lowerBound = pi.lowerBound.evaluateAsDouble();
+                        std::vector<boost::optional<storm::logic::TimeBound>> lowerBounds;
+                        std::vector<boost::optional<storm::logic::TimeBound>> upperBounds;
+                        std::vector<storm::logic::TimeBoundReference> tbReferences;
+                        for (auto const& rbStructure : propertyStructure.at("reward-bounds")) {
+                            storm::jani::PropertyInterval pi = parsePropertyInterval(rbStructure.at("bounds"));
+                            STORM_LOG_THROW(pi.hasUpperBound(), storm::exceptions::NotSupportedException, "Storm only supports time-bounded until with an upper bound.");
+                            STORM_LOG_THROW(rbStructure.count("exp") == 1, storm::exceptions::InvalidJaniException, "Expecting reward-expression for operator " << opString << " in  " << context);
+                            storm::expressions::Expression rewExpr = parseExpression(rbStructure.at("exp"), "Reward expression in " + context, globalVars, constants);
+                            STORM_LOG_THROW(rewExpr.isVariable(), storm::exceptions::NotSupportedException, "Storm currently does not support complex reward expressions.");
+                            std::string rewardName = rewExpr.getVariables().begin()->getName();
+                            STORM_LOG_WARN("Reward-type (steps, time) is deduced from model type.");
+                            double lowerBound = 0.0;
+                            if(pi.hasLowerBound()) {
+                                lowerBound = pi.lowerBound.evaluateAsDouble();
+                            }
+                            double upperBound = pi.upperBound.evaluateAsDouble();
+                            STORM_LOG_THROW(lowerBound >= 0, storm::exceptions::InvalidJaniException, "(Lower) time-bounds cannot be negative");
+                            STORM_LOG_THROW(upperBound >= 0, storm::exceptions::InvalidJaniException, "(Upper) time-bounds cannot be negative");
+                            if (pi.hasLowerBound()) {
+                                lowerBounds.push_back(storm::logic::TimeBound(pi.lowerBoundStrict, pi.lowerBound));
+                            } else {
+                                lowerBounds.push_back(boost::none);
+                            }
+                            if (pi.hasUpperBound()) {
+                                upperBounds.push_back(storm::logic::TimeBound(pi.upperBoundStrict, pi.upperBound));
+                            } else {
+                                upperBounds.push_back(boost::none);
+                            }
+                            tbReferences.push_back(storm::logic::TimeBoundReference(rewardName));
                         }
-                        double upperBound = pi.upperBound.evaluateAsDouble();
-                        STORM_LOG_THROW(lowerBound >= 0, storm::exceptions::InvalidJaniException, "(Lower) time-bounds cannot be negative");
-                        STORM_LOG_THROW(upperBound >= 0, storm::exceptions::InvalidJaniException, "(Upper) time-bounds cannot be negative");
-                        STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Reward bounded properties are not supported by storm");
-                        return std::make_shared<storm::logic::BoundedUntilFormula const>(args[0], args[1], storm::logic::TimeBound(pi.lowerBoundStrict, pi.lowerBound), storm::logic::TimeBound(pi.upperBoundStrict, pi.upperBound), storm::logic::TimeBoundReference(rewardName));
+                        auto res = std::make_shared<storm::logic::BoundedUntilFormula const>(args[0], args[1], lowerBounds, upperBounds, tbReferences);
+                        return res;
 
                     }
                     if (args[0]->isTrueFormula()) {

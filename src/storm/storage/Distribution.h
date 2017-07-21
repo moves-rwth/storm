@@ -73,7 +73,7 @@ namespace storm {
              * entry is removed.
              */
             void shiftProbability(StateType const& fromState, StateType const& toState, ValueType const& probability, storm::utility::ConstantsComparator<ValueType> const& comparator = storm::utility::ConstantsComparator<ValueType>());
-                        
+
             /*!
              * Retrieves an iterator to the elements in this distribution.
              *
@@ -131,6 +131,14 @@ namespace storm {
             std::size_t size() const;
             
             bool less(Distribution<ValueType, StateType> const& other, storm::utility::ConstantsComparator<ValueType> const& comparator) const;
+            
+            
+            /*!
+             * Returns the probability of the given state
+             * @param state The state for which the probability is returned.
+             * @return The probability of the given state.
+             */
+            ValueType getProbability(StateType const& state) const;
             
         private:
             // A list of states and the probabilities that are assigned to them.

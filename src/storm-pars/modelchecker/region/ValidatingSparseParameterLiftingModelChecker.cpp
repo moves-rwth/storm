@@ -28,9 +28,10 @@ namespace storm {
         };
  
         template <typename SparseModelType, typename ImpreciseType, typename PreciseType>
-        RegionResult ValidatingSparseParameterLiftingModelChecker<SparseModelType, ImpreciseType, PreciseType>::analyzeRegion(storm::storage::ParameterRegion<typename SparseModelType::ValueType> const& region, RegionResult const& initialResult, bool sampleVerticesOfRegion) {
+        RegionResult ValidatingSparseParameterLiftingModelChecker<SparseModelType, ImpreciseType, PreciseType>::analyzeRegion(storm::storage::ParameterRegion<typename SparseModelType::ValueType> const& region, RegionResultHypothesis const& hypothesis, RegionResult const& initialResult, bool sampleVerticesOfRegion) {
+
         
-            RegionResult currentResult = getImpreciseChecker().analyzeRegion(region, initialResult);
+            RegionResult currentResult = getImpreciseChecker().analyzeRegion(region, hypothesis, initialResult, false);
             
             if (currentResult == RegionResult::AllSat || currentResult == RegionResult::AllViolated) {
                 applyHintsToPreciseChecker();
@@ -48,13 +49,15 @@ namespace storm {
                     currentResult = RegionResult::Unknown;
                     ++numOfWrongRegions;
                     
-                    // Check the other direction
-                    parameterOptDir = storm::solver::invert(parameterOptDir);
-                    preciseResult = getPreciseChecker().check(region, parameterOptDir)->asExplicitQualitativeCheckResult()[*getPreciseChecker().getConsideredParametricModel().getInitialStates().begin()];
-                    if (preciseResult && parameterOptDir == getPreciseChecker().getCurrentCheckTask().getOptimizationDirection()) {
-                        currentResult = RegionResult::AllSat;
-                    } else if (!preciseResult && parameterOptDir == storm::solver::invert(getPreciseChecker().getCurrentCheckTask().getOptimizationDirection())) {
-                        currentResult = RegionResult::AllViolated;
+                    // Check the other direction in case no hypothesis was given
+                    if (hypothesis == RegionResultHypothesis::Unknown) {
+                        parameterOptDir = storm::solver::invert(parameterOptDir);
+                        preciseResult = getPreciseChecker().check(region, parameterOptDir)->asExplicitQualitativeCheckResult()[*getPreciseChecker().getConsideredParametricModel().getInitialStates().begin()];
+                        if (preciseResult && parameterOptDir == getPreciseChecker().getCurrentCheckTask().getOptimizationDirection()) {
+                            currentResult = RegionResult::AllSat;
+                        } else if (!preciseResult && parameterOptDir == storm::solver::invert(getPreciseChecker().getCurrentCheckTask().getOptimizationDirection())) {
+                            currentResult = RegionResult::AllViolated;
+                        }
                     }
                 }
             }

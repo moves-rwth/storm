@@ -28,12 +28,8 @@ namespace storm {
 
             /*!
              * Analyzes the given region by means of parameter lifting.
-             * We first check whether there is one point in the region for which the property is satisfied/violated.
-             * If the given initialResults already indicates that there is such a point, this step is skipped.
-             * Then, we check whether ALL points in the region violate/satisfy the property
-             *
              */
-            virtual RegionResult analyzeRegion(storm::storage::ParameterRegion<typename SparseModelType::ValueType> const& region, RegionResult const& initialResult = RegionResult::Unknown, bool sampleVerticesOfRegion = false) override;
+            virtual RegionResult analyzeRegion(storm::storage::ParameterRegion<typename SparseModelType::ValueType> const& region, RegionResultHypothesis const& hypothesis = RegionResultHypothesis::Unknown, RegionResult const& initialResult = RegionResult::Unknown, bool sampleVerticesOfRegion = false) override;
 
             /*!
              * Analyzes the 2^#parameters corner points of the given region.

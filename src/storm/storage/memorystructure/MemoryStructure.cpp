@@ -106,9 +106,9 @@ namespace storm {
             return MemoryStructure(std::move(resultTransitions), std::move(resultLabeling), std::move(resultInitialMemoryStates));
         }
             
-        template <typename ValueType>
-        SparseModelMemoryProduct<ValueType> MemoryStructure::product(storm::models::sparse::Model<ValueType> const& sparseModel) const {
-            return SparseModelMemoryProduct<ValueType>(sparseModel, *this);
+        template <typename ValueType, typename RewardModelType>
+        SparseModelMemoryProduct<ValueType, RewardModelType> MemoryStructure::product(storm::models::sparse::Model<ValueType, RewardModelType> const& sparseModel) const {
+            return SparseModelMemoryProduct<ValueType, RewardModelType>(sparseModel, *this);
         }
         
         std::string MemoryStructure::toString() const {
@@ -143,7 +143,9 @@ namespace storm {
         }
         
         template SparseModelMemoryProduct<double> MemoryStructure::product(storm::models::sparse::Model<double> const& sparseModel) const;
+        template SparseModelMemoryProduct<double, storm::models::sparse::StandardRewardModel<storm::Interval>> MemoryStructure::product(storm::models::sparse::Model<double, storm::models::sparse::StandardRewardModel<storm::Interval>> const& sparseModel) const;
         template SparseModelMemoryProduct<storm::RationalNumber> MemoryStructure::product(storm::models::sparse::Model<storm::RationalNumber> const& sparseModel) const;
+        template SparseModelMemoryProduct<storm::RationalFunction> MemoryStructure::product(storm::models::sparse::Model<storm::RationalFunction> const& sparseModel) const;
     }
 }
 

@@ -8,9 +8,11 @@
 #include "storm/utility/macros.h"
 #include "storm/utility/vector.h"
 #include "storm/solver/GmmxxLinearEquationSolver.h"
+#include "storm/logic/Formulas.h"
 
 #include "storm/exceptions/InvalidOperationException.h"
 #include "storm/exceptions/InvalidPropertyException.h"
+#include "storm/exceptions/UnexpectedException.h"
 
 namespace storm {
     namespace modelchecker {
@@ -25,13 +27,17 @@ namespace storm {
             SparsePcaaWeightVectorChecker<SparseMaModelType>(model, objectives, possibleECActions, possibleBottomStates) {
                 // Set the (discretized) state action rewards.
                 this->discreteActionRewards.resize(objectives.size());
-                for(auto objIndex : this->objectivesWithNoUpperTimeBound) {
-                    typename SparseMaModelType::RewardModelType const& rewModel = this->model.getRewardModel(*this->objectives[objIndex].rewardModelName);
+                for (auto objIndex : this->objectivesWithNoUpperTimeBound) {
+                    auto const& formula = *objectives[objIndex].formula;
+                    STORM_LOG_THROW(formula.isRewardOperatorFormula() && formula.asRewardOperatorFormula().hasRewardModelName(), storm::exceptions::UnexpectedException, "Unexpected type of operator formula: " << formula);
+                    STORM_LOG_THROW(formula.getSubformula().isTotalRewardFormula() || (formula.getSubformula().isCumulativeRewardFormula() && formula.getSubformula().asCumulativeRewardFormula().isTimeBounded()), storm::exceptions::UnexpectedException, "Unexpected type of sub-formula: " << formula.getSubformula());
+                    STORM_LOG_WARN_COND(!formula.getSubformula().isCumulativeRewardFormula() || (objectives[objIndex].originalFormula->isProbabilityOperatorFormula() && objectives[objIndex].originalFormula->asProbabilityOperatorFormula().getSubformula().isBoundedUntilFormula()), "Objective " << objectives[objIndex].originalFormula << " was simplified to a cumulative reward formula. Correctness of the algorithm is unknown for this type of property.");
+                    typename SparseMaModelType::RewardModelType const& rewModel = this->model.getRewardModel(formula.asRewardOperatorFormula().getRewardModelName());
                     STORM_LOG_ASSERT(!rewModel.hasTransitionRewards(), "Preprocessed Reward model has transition rewards which is not expected.");
                     this->discreteActionRewards[objIndex] = rewModel.hasStateActionRewards() ? rewModel.getStateActionRewardVector() : std::vector<ValueType>(this->model.getTransitionMatrix().getRowCount(), storm::utility::zero<ValueType>());
-                    if(rewModel.hasStateRewards()) {
+                    if (rewModel.hasStateRewards()) {
                         // Note that state rewards are earned over time and thus play no role for probabilistic states
-                        for(auto markovianState : this->model.getMarkovianStates()) {
+                        for (auto markovianState : this->model.getMarkovianStates()) {
                             this->discreteActionRewards[objIndex][this->model.getTransitionMatrix().getRowGroupIndices()[markovianState]] += rewModel.getStateReward(markovianState) / this->model.getExitRate(markovianState);
                         }
                     }
@@ -40,10 +46,6 @@ namespace storm {
             
             template <class SparseMaModelType>
             void SparseMaPcaaWeightVectorChecker<SparseMaModelType>::boundedPhase(std::vector<ValueType> const& weightVector, std::vector<ValueType>& weightedRewardVector) {
-                
-                for (auto const& obj : this->objectives) {
-                    STORM_LOG_THROW(!obj.timeBoundReference || obj.timeBoundReference->isTimeBound(), storm::exceptions::InvalidPropertyException, "Multi-objective model checking of Markov automata is only supported for time-bounded formulass.");
-                }
                 
                 // Split the preprocessed model into transitions from/to probabilistic/Markovian states.
                 SubModel MS = createSubModel(true, weightedRewardVector);
@@ -82,7 +84,7 @@ namespace storm {
                     
                     // Compute values that can be obtained at Markovian states after letting one (digitized) time unit pass.
                     // Only perform such a step if there is time left.
-                    if(currentEpoch>0) {
+                    if (currentEpoch>0) {
                         performMSStep(MS, PS, consideredObjectives, weightVector);
                         --currentEpoch;
                     } else {
@@ -93,7 +95,7 @@ namespace storm {
                 // compose the results from MS and PS
                 storm::utility::vector::setVectorValues(this->weightedResult, MS.states, MS.weightedSolutionVector);
                 storm::utility::vector::setVectorValues(this->weightedResult, PS.states, PS.weightedSolutionVector);
-                for(uint_fast64_t objIndex = 0; objIndex < this->objectives.size(); ++objIndex) {
+                for (uint_fast64_t objIndex = 0; objIndex < this->objectives.size(); ++objIndex) {
                     storm::utility::vector::setVectorValues(this->objectiveResults[objIndex], MS.states, MS.objectiveSolutionVectors[objIndex]);
                     storm::utility::vector::setVectorValues(this->objectiveResults[objIndex], PS.states, PS.objectiveSolutionVectors[objIndex]);
                 }
@@ -118,16 +120,16 @@ namespace storm {
                 result.weightedRewardVector.resize(result.getNumberOfChoices());
                 storm::utility::vector::selectVectorValues(result.weightedRewardVector, result.choices, weightedRewardVector);
                 result.objectiveRewardVectors.resize(this->objectives.size());
-                for(uint_fast64_t objIndex = 0; objIndex < this->objectives.size(); ++objIndex) {
+                for (uint_fast64_t objIndex = 0; objIndex < this->objectives.size(); ++objIndex) {
                     std::vector<ValueType>& objVector = result.objectiveRewardVectors[objIndex];
                     objVector = std::vector<ValueType>(result.weightedRewardVector.size(), storm::utility::zero<ValueType>());
-                    if(this->objectivesWithNoUpperTimeBound.get(objIndex)) {
+                    if (this->objectivesWithNoUpperTimeBound.get(objIndex)) {
                         storm::utility::vector::selectVectorValues(objVector, result.choices, this->discreteActionRewards[objIndex]);
                     } else {
-                        typename SparseMaModelType::RewardModelType const& rewModel = this->model.getRewardModel(*this->objectives[objIndex].rewardModelName);
+                       typename SparseMaModelType::RewardModelType const& rewModel = this->model.getRewardModel(this->objectives[objIndex].formula->asRewardOperatorFormula().getRewardModelName());
                         STORM_LOG_ASSERT(!rewModel.hasTransitionRewards(), "Preprocessed Reward model has transition rewards which is not expected.");
                         STORM_LOG_ASSERT(!rewModel.hasStateRewards(), "State rewards for bounded objectives for MAs are not expected (bounded rewards are not supported).");
-                        if(rewModel.hasStateActionRewards()) {
+                        if (rewModel.hasStateActionRewards()) {
                             storm::utility::vector::selectVectorValues(objVector, result.choices, rewModel.getStateActionRewardVector());
                         }
                     }
@@ -136,7 +138,7 @@ namespace storm {
                 result.weightedSolutionVector.resize(result.getNumberOfStates());
                 storm::utility::vector::selectVectorValues(result.weightedSolutionVector, result.states, this->weightedResult);
                 result.objectiveSolutionVectors.resize(this->objectives.size());
-                for(uint_fast64_t objIndex = 0; objIndex < this->objectives.size(); ++objIndex) {
+                for (uint_fast64_t objIndex = 0; objIndex < this->objectives.size(); ++objIndex) {
                     result.objectiveSolutionVectors[objIndex].resize(result.weightedSolutionVector.size());
                     storm::utility::vector::selectVectorValues(result.objectiveSolutionVectors[objIndex], result.states, this->objectiveResults[objIndex]);
                 }
@@ -163,11 +165,10 @@ namespace storm {
                 std::vector<VT> timeBounds;
                 std::vector<VT> eToPowerOfMinusMaxRateTimesBound;
                 VT smallestNonZeroBound = storm::utility::zero<VT>();
-                for(auto const& obj : this->objectives) {
-                    if(obj.upperTimeBound){
-                        STORM_LOG_THROW(!obj.upperTimeBound->getBound().containsVariables(), storm::exceptions::InvalidOperationException, "The time bound '" << obj.upperTimeBound->getBound() << " contains undefined variables");
-                        timeBounds.push_back(storm::utility::convertNumber<VT>(obj.upperTimeBound->getBound().evaluateAsRational()));
-                        STORM_LOG_ASSERT(!storm::utility::isZero(timeBounds.back()), "Got zero-valued upper time bound.");
+                for (auto const& obj : this->objectives) {
+                    if (obj.formula->getSubformula().isCumulativeRewardFormula()) {
+                        timeBounds.push_back(obj.formula->getSubformula().asCumulativeRewardFormula().template getBound<VT>());
+                        STORM_LOG_THROW(!storm::utility::isZero(timeBounds.back()), storm::exceptions::InvalidPropertyException, "Got zero-valued upper time bound. This is not suppoted.");
                         eToPowerOfMinusMaxRateTimesBound.push_back(std::exp(-maxRate * timeBounds.back()));
                         smallestNonZeroBound = storm::utility::isZero(smallestNonZeroBound) ? timeBounds.back() : std::min(smallestNonZeroBound, timeBounds.back());
                     } else {
@@ -175,7 +176,7 @@ namespace storm {
                         eToPowerOfMinusMaxRateTimesBound.push_back(storm::utility::zero<VT>());
                     }
                 }
-                if(storm::utility::isZero(smallestNonZeroBound)) {
+                if (storm::utility::isZero(smallestNonZeroBound)) {
                     // There are no time bounds. In this case, one is a valid digitization constant.
                     return storm::utility::one<VT>();
                 }
@@ -189,16 +190,16 @@ namespace storm {
                 VT delta = smallestNonZeroBound / smallestStepBound;
                 while(true) {
                     bool deltaValid = true;
-                    for(auto const& objIndex : objectivesWithTimeBound) {
+                    for (auto const& objIndex : objectivesWithTimeBound) {
                         auto const& timeBound = timeBounds[objIndex];
-                        if(timeBound/delta != std::floor(timeBound/delta)) {
+                        if (timeBound/delta != std::floor(timeBound/delta)) {
                             deltaValid = false;
                             break;
                         }
                     }
-                    if(deltaValid) {
+                    if (deltaValid) {
                         VT weightedPrecisionForCurrentDelta = storm::utility::zero<VT>();
-                        for(uint_fast64_t objIndex = 0; objIndex < this->objectives.size(); ++objIndex) {
+                        for (uint_fast64_t objIndex = 0; objIndex < this->objectives.size(); ++objIndex) {
                             VT precisionOfObj = storm::utility::zero<VT>();
                             if (objectivesWithTimeBound.get(objIndex)) {
                                 precisionOfObj += storm::utility::one<VT>() - (eToPowerOfMinusMaxRateTimesBound[objIndex] * storm::utility::pow(storm::utility::one<VT>() + maxRate * delta, timeBounds[objIndex] / delta) );
@@ -207,7 +208,7 @@ namespace storm {
                         }
                         deltaValid &= weightedPrecisionForCurrentDelta <= goalPrecisionTimesNorm;
                     }
-                    if(deltaValid) {
+                    if (deltaValid) {
                         break;
                     }
                     ++smallestStepBound;
@@ -229,19 +230,19 @@ namespace storm {
             void SparseMaPcaaWeightVectorChecker<SparseMaModelType>::digitize(SubModel& MS, VT const& digitizationConstant) const {
                 std::vector<VT> rateVector(MS.getNumberOfChoices());
                 storm::utility::vector::selectVectorValues(rateVector, MS.states, this->model.getExitRates());
-                for(uint_fast64_t row = 0; row < rateVector.size(); ++row) {
+                for (uint_fast64_t row = 0; row < rateVector.size(); ++row) {
                     VT const eToMinusRateTimesDelta = std::exp(-rateVector[row] * digitizationConstant);
-                    for(auto& entry : MS.toMS.getRow(row)) {
+                    for (auto& entry : MS.toMS.getRow(row)) {
                         entry.setValue((storm::utility::one<VT>() - eToMinusRateTimesDelta) * entry.getValue());
-                        if(entry.getColumn() == row) {
+                        if (entry.getColumn() == row) {
                             entry.setValue(entry.getValue() + eToMinusRateTimesDelta);
                         }
                     }
-                    for(auto& entry : MS.toPS.getRow(row)) {
+                    for (auto& entry : MS.toPS.getRow(row)) {
                         entry.setValue((storm::utility::one<VT>() - eToMinusRateTimesDelta) * entry.getValue());
                     }
                     MS.weightedRewardVector[row] *= storm::utility::one<VT>() - eToMinusRateTimesDelta;
-                    for(auto& objVector : MS.objectiveRewardVectors) {
+                    for (auto& objVector : MS.objectiveRewardVectors) {
                         objVector[row] *= storm::utility::one<VT>() - eToMinusRateTimesDelta;
                     }
                 }
@@ -258,13 +259,12 @@ namespace storm {
             void SparseMaPcaaWeightVectorChecker<SparseMaModelType>::digitizeTimeBounds(TimeBoundMap& upperTimeBounds, VT const& digitizationConstant) {
                 
                 VT const maxRate = this->model.getMaximalExitRate();
-                for(uint_fast64_t objIndex = 0; objIndex < this->objectives.size(); ++objIndex) {
+                for (uint_fast64_t objIndex = 0; objIndex < this->objectives.size(); ++objIndex) {
                     auto const& obj = this->objectives[objIndex];
-                    STORM_LOG_THROW(!obj.lowerTimeBound, storm::exceptions::InvalidPropertyException, "Lower time bounds are not supported by this model checker");
                     VT errorTowardsZero = storm::utility::zero<VT>();
                     VT errorAwayFromZero = storm::utility::zero<VT>();
-                    if(obj.upperTimeBound) {
-                        VT timeBound = storm::utility::convertNumber<VT>(obj.upperTimeBound->getBound().evaluateAsRational());
+                    if (obj.formula->getSubformula().isCumulativeRewardFormula()) {
+                        VT timeBound = obj.formula->getSubformula().asCumulativeRewardFormula().template getBound<VT>();
                         uint_fast64_t digitizedBound = storm::utility::convertNumber<uint_fast64_t>(timeBound/digitizationConstant);
                         auto timeBoundIt = upperTimeBounds.insert(std::make_pair(digitizedBound, storm::storage::BitVector(this->objectives.size(), false))).first;
                         timeBoundIt->second.set(objIndex);
@@ -272,7 +272,7 @@ namespace storm {
                         digitizationError -= std::exp(-maxRate * timeBound) * storm::utility::pow(storm::utility::one<VT>() + maxRate * digitizationConstant, digitizedBound);
                         errorAwayFromZero += digitizationError;
                     }
-                    if (storm::solver::maximize(obj.optimizationDirection)) {
+                    if (storm::solver::maximize(obj.formula->getOptimalityType())) {
                         this->offsetsToUnderApproximation[objIndex] = -errorTowardsZero;
                         this->offsetsToOverApproximation[objIndex] = errorAwayFromZero;
                     } else {
@@ -324,11 +324,11 @@ namespace storm {
             template <class SparseMaModelType>
             void SparseMaPcaaWeightVectorChecker<SparseMaModelType>::updateDataToCurrentEpoch(SubModel& MS, SubModel& PS, MinMaxSolverData& minMax, storm::storage::BitVector& consideredObjectives, uint_fast64_t const& currentEpoch, std::vector<ValueType> const& weightVector, TimeBoundMap::iterator& upperTimeBoundIt, TimeBoundMap const& upperTimeBounds) {
                 
-                if(upperTimeBoundIt != upperTimeBounds.end() && currentEpoch == upperTimeBoundIt->first) {
+                if (upperTimeBoundIt != upperTimeBounds.end() && currentEpoch == upperTimeBoundIt->first) {
                     consideredObjectives |= upperTimeBoundIt->second;
-                    for(auto objIndex : upperTimeBoundIt->second) {
+                    for (auto objIndex : upperTimeBoundIt->second) {
                         // This objective now plays a role in the weighted sum
-                        ValueType factor = storm::solver::minimize(this->objectives[objIndex].optimizationDirection) ? -weightVector[objIndex] : weightVector[objIndex];
+                        ValueType factor = storm::solver::minimize(this->objectives[objIndex].formula->getOptimalityType()) ? -weightVector[objIndex] : weightVector[objIndex];
                         storm::utility::vector::addScaledVector(MS.weightedRewardVector, MS.objectiveRewardVectors[objIndex], factor);
                         storm::utility::vector::addScaledVector(PS.weightedRewardVector, PS.objectiveRewardVectors[objIndex], factor);
                     }
@@ -345,16 +345,16 @@ namespace storm {
                 // compute a choice vector for the probabilistic states that is optimal w.r.t. the weighted reward vector
                 minMax.solver->solveEquations(PS.weightedSolutionVector, minMax.b);
                 auto const& newChoices = minMax.solver->getSchedulerChoices();
-                if(consideredObjectives.getNumberOfSetBits() == 1 && storm::utility::isOne(weightVector[*consideredObjectives.begin()])) {
+                if (consideredObjectives.getNumberOfSetBits() == 1 && storm::utility::isOne(weightVector[*consideredObjectives.begin()])) {
                     // In this case there is no need to perform the computation on the individual objectives
                     optimalChoicesAtCurrentEpoch = newChoices;
                     PS.objectiveSolutionVectors[*consideredObjectives.begin()] = PS.weightedSolutionVector;
-                    if (storm::solver::minimize(this->objectives[*consideredObjectives.begin()].optimizationDirection)) {
+                    if (storm::solver::minimize(this->objectives[*consideredObjectives.begin()].formula->getOptimalityType())) {
                         storm::utility::vector::scaleVectorInPlace(PS.objectiveSolutionVectors[*consideredObjectives.begin()], -storm::utility::one<ValueType>());
                     }
                 } else {
                     // check whether the linEqSolver needs to be updated, i.e., whether the scheduler has changed
-                    if(linEq.solver == nullptr || newChoices != optimalChoicesAtCurrentEpoch) {
+                    if (linEq.solver == nullptr || newChoices != optimalChoicesAtCurrentEpoch) {
                         optimalChoicesAtCurrentEpoch = newChoices;
                         linEq.solver = nullptr;
                         storm::storage::SparseMatrix<ValueType> linEqMatrix = PS.toPS.selectRowsFromRowGroups(optimalChoicesAtCurrentEpoch, true);
@@ -365,17 +365,17 @@ namespace storm {
                     
                     // Get the results for the individual objectives.
                     // Note that we do not consider an estimate for each objective (as done in the unbounded phase) since the results from the previous epoch are already pretty close
-                    for(auto objIndex : consideredObjectives) {
+                    for (auto objIndex : consideredObjectives) {
                         auto const& objectiveRewardVectorPS = PS.objectiveRewardVectors[objIndex];
                         auto const& objectiveSolutionVectorMS = MS.objectiveSolutionVectors[objIndex];
                         // compute rhs of equation system, i.e., PS.toMS * x + Rewards
                         // To safe some time, only do this for the obtained optimal choices
                         auto itGroupIndex = PS.toPS.getRowGroupIndices().begin();
                         auto itChoiceOffset = optimalChoicesAtCurrentEpoch.begin();
-                        for(auto& bValue : linEq.b) {
+                        for (auto& bValue : linEq.b) {
                             uint_fast64_t row = (*itGroupIndex) + (*itChoiceOffset);
                             bValue = objectiveRewardVectorPS[row];
-                            for(auto const& entry : PS.toMS.getRow(row)){
+                            for (auto const& entry : PS.toMS.getRow(row)){
                                 bValue += entry.getValue() * objectiveSolutionVectorMS[entry.getColumn()];
                             }
                             ++itGroupIndex;
@@ -393,14 +393,14 @@ namespace storm {
                 storm::utility::vector::addVectors(MS.weightedRewardVector, MS.auxChoiceValues, MS.weightedSolutionVector);
                 MS.toPS.multiplyWithVector(PS.weightedSolutionVector, MS.auxChoiceValues);
                 storm::utility::vector::addVectors(MS.weightedSolutionVector, MS.auxChoiceValues, MS.weightedSolutionVector);
-                if(consideredObjectives.getNumberOfSetBits() == 1 && storm::utility::isOne(weightVector[*consideredObjectives.begin()])) {
+                if (consideredObjectives.getNumberOfSetBits() == 1 && storm::utility::isOne(weightVector[*consideredObjectives.begin()])) {
                     // In this case there is no need to perform the computation on the individual objectives
                     MS.objectiveSolutionVectors[*consideredObjectives.begin()] = MS.weightedSolutionVector;
-                    if (storm::solver::minimize(this->objectives[*consideredObjectives.begin()].optimizationDirection)) {
+                    if (storm::solver::minimize(this->objectives[*consideredObjectives.begin()].formula->getOptimalityType())) {
                         storm::utility::vector::scaleVectorInPlace(MS.objectiveSolutionVectors[*consideredObjectives.begin()], -storm::utility::one<ValueType>());
                     }
                 } else {
-                    for(auto objIndex : consideredObjectives) {
+                    for (auto objIndex : consideredObjectives) {
                         MS.toMS.multiplyWithVector(MS.objectiveSolutionVectors[objIndex], MS.auxChoiceValues);
                         storm::utility::vector::addVectors(MS.objectiveRewardVectors[objIndex], MS.auxChoiceValues, MS.objectiveSolutionVectors[objIndex]);
                         MS.toPS.multiplyWithVector(PS.objectiveSolutionVectors[objIndex], MS.auxChoiceValues);

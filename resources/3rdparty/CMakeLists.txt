@@ -271,7 +271,7 @@ if(USE_CARL)
 				LOG_INSTALL ON
                 BUILD_BYPRODUCTS ${STORM_3RDPARTY_BINARY_DIR}/carl/lib/libcarl${DYNAMIC_EXT}
         )
-        include(${STORM_3RDPARTY_BINARY_DIR}/carl/carlExport/carlConfig.cmake)
+        include(${STORM_3RDPARTY_BINARY_DIR}/carl/carlConfig.cmake)
 
         set(STORM_HAVE_CLN ${CARL_USE_CLN_NUMBERS})
         set(STORM_HAVE_GINAC ${CARL_USE_GINAC})
@@ -404,6 +404,12 @@ include(${STORM_3RDPARTY_SOURCE_DIR}/include_xerces.cmake)
 ##
 #############################################################
 
+if(STORM_SHIPPED_CARL)
+    set(sylvan_dep carl)
+else()
+    set(sylvan_dep lib_carl)
+endif()
+
 ExternalProject_Add(
         sylvan
         DOWNLOAD_COMMAND ""
@@ -416,6 +422,7 @@ ExternalProject_Add(
         INSTALL_DIR ${STORM_3RDPARTY_BINARY_DIR}/sylvan
         LOG_CONFIGURE ON
         LOG_BUILD ON
+        DEPENDS ${sylvan_dep}
         BUILD_BYPRODUCTS ${STORM_3RDPARTY_BINARY_DIR}/sylvan/src/libsylvan${STATIC_EXT}
 )
 
@@ -427,9 +434,7 @@ message(STATUS "Storm - Using shipped version of sylvan.")
 message(STATUS "Storm - Linking with sylvan.")
 add_imported_library(sylvan STATIC ${Sylvan_LIBRARY} ${Sylvan_INCLUDE_DIR})
 add_dependencies(sylvan_STATIC sylvan)
-if(STORM_SHIPPED_CARL)
-	add_dependencies(sylvan carl)
-endif()
+
 list(APPEND STORM_DEP_TARGETS sylvan_STATIC)
 
 find_package(Hwloc QUIET REQUIRED)

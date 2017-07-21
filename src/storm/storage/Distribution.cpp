@@ -156,6 +156,18 @@ namespace storm {
             return false;
         }
         
+        template<typename ValueType, typename StateType>
+        ValueType Distribution<ValueType, StateType>::getProbability(StateType const& state) const {
+            auto it = this->distribution.find(state);
+            if (it == this->distribution.end()) {
+                return storm::utility::zero<ValueType>();
+            } else {
+                return it->second;
+            }
+        }
+        
+
+        
         template class Distribution<double>;
         template std::ostream& operator<<(std::ostream& out, Distribution<double> const& distribution);
         template class Distribution<double, uint_fast64_t>;

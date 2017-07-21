@@ -8,61 +8,71 @@
 #include "storm/storage/memorystructure/MemoryStructure.h"
 #include "storm/models/sparse/Model.h"
 #include "storm/models/sparse/StandardRewardModel.h"
+#include "storm/storage/Scheduler.h"
 
 namespace storm {
     namespace storage {
         /*!
          * This class builds the product of the given sparse model and the given memory structure.
          * This is similar to the well-known product of a model with a deterministic rabin automaton.
-         * Note: we already do one memory-structure-step for the initial state, i.e., if s is an initial state of
-         * the given model and s satisfies memoryStructure.getTransitionMatrix[0][n], then (s,n) will be the corresponding
-         * initial state of the resulting model.
+         * The product contains only the reachable states of the product
          *
          * The states of the resulting sparse model will have the original state labels plus the labels of this
          * memory structure.
          * An exception is thrown if the state labelings are not disjoint.
          */
-        template <typename ValueType>
+        template <typename ValueType, typename RewardModelType = storm::models::sparse::StandardRewardModel<ValueType>>
         class SparseModelMemoryProduct {
         public:
             
-            SparseModelMemoryProduct(storm::models::sparse::Model<ValueType> const& sparseModel, storm::storage::MemoryStructure const& memoryStructure);
+            SparseModelMemoryProduct(storm::models::sparse::Model<ValueType, RewardModelType> const& sparseModel, storm::storage::MemoryStructure const& memoryStructure);
             
-            // Invokes the building of the product
-            std::shared_ptr<storm::models::sparse::Model<ValueType>> build();
+            // Enforces that the given model and memory state as well as the successor(s) are considered reachable -- even if they are not reachable from an initial state.
+            void addReachableState(uint64_t const& modelState, uint64_t const& memoryState);
+    
+            // Enforces that every state is considered reachable. If this is set, the result has size #modelStates * #memoryStates
+            void setBuildFullProduct();
+            
+            // Invokes the building of the product under the specified scheduler (if given).
+            std::shared_ptr<storm::models::sparse::Model<ValueType, RewardModelType>> build(boost::optional<storm::storage::Scheduler<ValueType>> const& scheduler = boost::none);
             
             // Retrieves the state of the resulting model that represents the given memory and model state.
-            // An invalid index is returned, if the specifyied state does not exist (i.e., if it is not reachable).
-            uint_fast64_t const& getResultState(uint_fast64_t const& modelState, uint_fast64_t const& memoryState) const;
+            // Should only be called AFTER calling build();
+            // An invalid index is returned, if the specifyied state does not exist (i.e., if it is not part of product).
+            uint64_t const& getResultState(uint64_t const& modelState, uint64_t const& memoryState) const;
             
         private:
             
             // Computes for each pair of memory state and model transition index the successor memory state
             // The resulting vector maps (modelTransition * memoryStateCount) + memoryState to the corresponding successor state of the memory structure
-            std::vector<uint_fast64_t> computeMemorySuccessors() const;
+            std::vector<uint64_t> computeMemorySuccessors() const;
             
             // Computes the reachable states of the resulting model
-            storm::storage::BitVector computeReachableStates(std::vector<uint_fast64_t> const& memorySuccessors, storm::storage::BitVector const& initialStates) const;
+            void computeReachableStates(std::vector<uint64_t> const& memorySuccessors, storm::storage::BitVector const& initialStates, boost::optional<storm::storage::Scheduler<ValueType>> const& scheduler);
             
             // Methods that build the model components
             // Matrix for deterministic models
-            storm::storage::SparseMatrix<ValueType> buildDeterministicTransitionMatrix(storm::storage::BitVector const& reachableStates, std::vector<uint_fast64_t> const& memorySuccessors) const;
+            storm::storage::SparseMatrix<ValueType> buildDeterministicTransitionMatrix(std::vector<uint64_t> const& memorySuccessors) const;
             // Matrix for nondeterministic models
-            storm::storage::SparseMatrix<ValueType> buildNondeterministicTransitionMatrix(storm::storage::BitVector const& reachableStates, std::vector<uint_fast64_t> const& memorySuccessors) const;
+            storm::storage::SparseMatrix<ValueType> buildNondeterministicTransitionMatrix(std::vector<uint64_t> const& memorySuccessors) const;
+            // Matrix for models that consider a scheduler
+            storm::storage::SparseMatrix<ValueType> buildTransitionMatrixForScheduler(std::vector<uint64_t> const& memorySuccessors, storm::storage::Scheduler<ValueType> const& scheduler) const;
             // State labeling. Note: DOES NOT ADD A LABEL FOR THE INITIAL STATES
             storm::models::sparse::StateLabeling buildStateLabeling(storm::storage::SparseMatrix<ValueType> const& resultTransitionMatrix) const;
             // Reward models
-            std::unordered_map<std::string, storm::models::sparse::StandardRewardModel<ValueType>> buildRewardModels(storm::storage::SparseMatrix<ValueType> const& resultTransitionMatrix, std::vector<uint_fast64_t> const& memorySuccessors) const;
+            std::unordered_map<std::string, RewardModelType> buildRewardModels(storm::storage::SparseMatrix<ValueType> const& resultTransitionMatrix, std::vector<uint64_t> const& memorySuccessors, boost::optional<storm::storage::Scheduler<ValueType>> const& scheduler) const;
             
             // Builds the resulting model
-            std::shared_ptr<storm::models::sparse::Model<ValueType>> buildResult(storm::storage::SparseMatrix<ValueType>&& matrix, storm::models::sparse::StateLabeling&& labeling, std::unordered_map<std::string, storm::models::sparse::StandardRewardModel<ValueType>>&& rewardModels) const;
+            std::shared_ptr<storm::models::sparse::Model<ValueType, RewardModelType>> buildResult(storm::storage::SparseMatrix<ValueType>&& matrix, storm::models::sparse::StateLabeling&& labeling, std::unordered_map<std::string, RewardModelType>&& rewardModels, boost::optional<storm::storage::Scheduler<ValueType>> const& scheduler) const;
             
             
             // Maps (modelState * memoryStateCount) + memoryState to the state in the result that represents (memoryState,modelState)
-            std::vector<uint_fast64_t> toResultStateMapping;
+            std::vector<uint64_t> toResultStateMapping;
             
-
-            storm::models::sparse::Model<ValueType> const& model;
+            // Indicates which states are considered reachable. (s, m) is reachable if this BitVector is true at (s * memoryStateCount) + m
+            storm::storage::BitVector reachableStates;
+            
+            storm::models::sparse::Model<ValueType, RewardModelType> const& model;
             storm::storage::MemoryStructure const& memory;
             
         };
