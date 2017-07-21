@@ -4,6 +4,7 @@
 #include <vector>
 
 #include "storm/modelchecker/multiobjective/pcaa/SparsePcaaWeightVectorChecker.h"
+#include "storm/modelchecker/multiobjective/rewardbounded/MultiDimensionalRewardUnfolding.h"
 
 namespace storm {
     namespace modelchecker {
@@ -65,18 +66,9 @@ namespace storm {
                  */
                 void boundedPhaseWithRewardBounds(std::vector<ValueType> const& weightVector, std::vector<ValueType>& weightedRewardVector);
                 
+                void computeEpochSolution(typename MultiDimensionalRewardUnfolding<ValueType>::Epoch const& epoch, std::vector<ValueType> const& weightVector);
                 
-                /*!
-                 * Discretizes the reward models that occurr at some bounded formula
-                 */
-                void discretizeRewardBounds();
-                
-                
-                
-                
-                std::vector<uint64_t> objIndexToRewardDimensionMapping;
-                std::vector<std::vector<uint64_t>> discretizedActionRewards;
-                std::vector<uint64_t> discretizedRewardBounds;
+                std::unique_ptr<MultiDimensionalRewardUnfolding<ValueType>> rewardUnfolding;
 
                 
             };
