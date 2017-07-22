@@ -25,7 +25,7 @@ namespace storm {
             template <typename StateType, typename ValueType> class StateGeneration;
             template <typename StateType, typename ValueType> class ExplorationInformation;
             template <typename StateType, typename ValueType> class Bounds;
-            template <typename StateType, typename ValueType> class Statistics;
+            template <typename StateType, typename ValueType> struct Statistics;
         }
         
         using namespace exploration_detail;
