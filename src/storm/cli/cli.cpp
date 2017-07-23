@@ -481,8 +481,25 @@ namespace storm {
         }
         
         template <storm::dd::DdType DdType, typename ValueType>
+        std::shared_ptr<storm::models::Model<ValueType>> preprocessDdModelBisimulation(std::shared_ptr<storm::models::symbolic::Model<DdType, ValueType>> const& model, SymbolicInput const& input, storm::settings::modules::BisimulationSettings const& bisimulationSettings) {
+            STORM_LOG_WARN_COND(!bisimulationSettings.isWeakBisimulationSet(), "Weak bisimulation is currently not supported on DDs. Falling back to strong bisimulation.");
+            
+            STORM_LOG_INFO("Performing bisimulation minimization...");
+            return storm::api::performBisimulationMinimization<DdType, ValueType>(model, createFormulasToRespect(input.properties));
+        }
+        
+        template <storm::dd::DdType DdType, typename ValueType>
         std::pair<std::shared_ptr<storm::models::ModelBase>, bool> preprocessDdModel(std::shared_ptr<storm::models::symbolic::Model<DdType, ValueType>> const& model, SymbolicInput const& input) {
-            return std::make_pair(model, false);
+            auto bisimulationSettings = storm::settings::getModule<storm::settings::modules::BisimulationSettings>();
+            auto generalSettings = storm::settings::getModule<storm::settings::modules::GeneralSettings>();
+            std::pair<std::shared_ptr<storm::models::Model<ValueType>>, bool> result = std::make_pair(model, false);
+            
+            if (generalSettings.isBisimulationSet()) {
+                result.first = preprocessDdModelBisimulation(model, input, bisimulationSettings);
+                result.second = true;
+            }
+            
+            return result;
         }
 
         template <storm::dd::DdType DdType, typename ValueType>

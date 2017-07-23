@@ -3,6 +3,9 @@
 #include "storm/storage/bisimulation/DeterministicModelBisimulationDecomposition.h"
 #include "storm/storage/bisimulation/NondeterministicModelBisimulationDecomposition.h"
 
+#include "storm/storage/dd/DdType.h"
+#include "storm/storage/dd/BisimulationDecomposition.h"
+
 #include "storm/utility/macros.h"
 #include "storm/exceptions/NotSupportedException.h"
 
@@ -51,5 +54,20 @@ namespace storm {
             }
         }
         
+        template <storm::dd::DdType DdType, typename ValueType>
+        typename std::enable_if<DdType == storm::dd::DdType::Sylvan || std::is_same<ValueType, double>::value, std::shared_ptr<storm::models::Model<ValueType>>>::type performBisimulationMinimization(std::shared_ptr<storm::models::symbolic::Model<DdType, ValueType>> const& model, std::vector<std::shared_ptr<storm::logic::Formula const>> const& formulas) {
+            STORM_LOG_THROW(model->isOfType(storm::models::ModelType::Dtmc) || model->isOfType(storm::models::ModelType::Ctmc), storm::exceptions::NotSupportedException, "Symbolic bisimulation minimization is currently only available for DTMCs and CTMCs.");
+
+            storm::dd::BisimulationDecomposition<DdType, ValueType> decomposition(*model, formulas);
+            decomposition.compute();
+            return decomposition.getQuotient();
+        }
+        
+        template <storm::dd::DdType DdType, typename ValueType>
+        typename std::enable_if<DdType != storm::dd::DdType::Sylvan && !std::is_same<ValueType, double>::value, std::shared_ptr<storm::models::Model<ValueType>>>::type performBisimulationMinimization(std::shared_ptr<storm::models::symbolic::Model<DdType, ValueType>> const& model, std::vector<std::shared_ptr<storm::logic::Formula const>> const& formulas) {
+            STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Symbolic bisimulation minimization is not supported for this combination of DD library and value type.");
+            return nullptr;
+        }
+
     }
 }

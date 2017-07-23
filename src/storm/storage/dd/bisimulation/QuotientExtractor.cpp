@@ -492,17 +492,12 @@ namespace storm {
                 InternalSparseQuotientExtractor<DdType, ValueType> sparseExtractor(model.getManager(), model.getRowVariables());
                 storm::storage::SparseMatrix<ValueType> quotientTransitionMatrix = sparseExtractor.extractTransitionMatrix(model.getTransitionMatrix(), partition);
                 
-                std::cout << "Matrix has " << quotientTransitionMatrix.getEntryCount() << " entries" << std::endl;
-                
                 storm::models::sparse::StateLabeling quotientStateLabeling(partition.getNumberOfBlocks());
                 quotientStateLabeling.addLabel("init", sparseExtractor.extractStates(model.getInitialStates(), partition));
-                std::cout << "init: " << quotientStateLabeling.getStates("init").getNumberOfSetBits() << std::endl;
                 quotientStateLabeling.addLabel("deadlock", sparseExtractor.extractStates(model.getDeadlockStates(), partition));
-                std::cout << "deadlock: " << quotientStateLabeling.getStates("init").getNumberOfSetBits() << std::endl;
                 
                 for (auto const& label : partition.getPreservationInformation().getLabels()) {
                     quotientStateLabeling.addLabel(label, sparseExtractor.extractStates(model.getStates(label), partition));
-                    std::cout << label << ": " << quotientStateLabeling.getStates(label).getNumberOfSetBits() << std::endl;
                 }
                 for (auto const& expression : partition.getPreservationInformation().getExpressions()) {
                     std::stringstream stream;
@@ -513,11 +508,9 @@ namespace storm {
                         STORM_LOG_WARN("Duplicate label '" << expressionAsString << "', dropping second label definition.");
                     } else {
                         quotientStateLabeling.addLabel(stream.str(), sparseExtractor.extractStates(model.getStates(expression), partition));
-                        std::cout << stream.str() << ": " << quotientStateLabeling.getStates(stream.str()).getNumberOfSetBits() << std::endl;
                     }
                 }
 
-                
                 std::shared_ptr<storm::models::sparse::Model<ValueType>> result;
                 if (model.getType() == storm::models::ModelType::Dtmc) {
                     result = std::make_shared<storm::models::sparse::Dtmc<ValueType>>(std::move(quotientTransitionMatrix), std::move(quotientStateLabeling));

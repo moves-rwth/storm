@@ -135,9 +135,8 @@ namespace storm {
             bool fixCurrentRow = row == lastRow && column < lastColumn;
             
             // If the element is in the same row and column as the previous entry, we add them up.
-            if (row == lastRow && column == lastColumn) {
-                columnsAndValues.back().setColumn(column);
-                columnsAndValues.back().setValue(value);
+            if (row == lastRow && column == lastColumn && !columnsAndValues.empty()) {
+                columnsAndValues.back().setValue(columnsAndValues.back().getValue() + value);
             } else {
                 // If we switched to another row, we have to adjust the missing entries in the row indices vector.
                 if (row != lastRow) {
