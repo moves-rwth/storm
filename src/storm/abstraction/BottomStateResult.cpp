@@ -8,7 +8,7 @@ namespace storm {
             // Intentionally left empty.
         }
         
-        template class BottomStateResult<storm::dd::DdType::CUDD>;
-        template class BottomStateResult<storm::dd::DdType::Sylvan>;
+        template struct BottomStateResult<storm::dd::DdType::CUDD>;
+        template struct BottomStateResult<storm::dd::DdType::Sylvan>;
     }
 }
