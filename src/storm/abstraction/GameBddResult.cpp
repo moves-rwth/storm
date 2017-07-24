@@ -13,8 +13,8 @@ namespace storm {
             // Intentionally left empty.
         }
         
-        template class GameBddResult<storm::dd::DdType::CUDD>;
-        template class GameBddResult<storm::dd::DdType::Sylvan>;
+        template struct GameBddResult<storm::dd::DdType::CUDD>;
+        template struct GameBddResult<storm::dd::DdType::Sylvan>;
         
     }
 }

@@ -18,7 +18,7 @@ namespace storm {
         class Variable;
         class Composition;
         class Property;
-        class PropertyInterval;
+        struct PropertyInterval;
     }
     
     namespace logic {
