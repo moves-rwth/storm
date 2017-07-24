@@ -98,6 +98,16 @@ These classes provide the same interface as std::unordered_map and std::unordere
 
 - Since items are not grouped into buckets, Bucket APIs have been adapted: `max_bucket_count` is equivalent to `max_size`, and `bucket_count` returns the sparsetable size, which is normally at least twice the number of items inserted into the hash_map.
 
+## Memory allocator on Windows (when building with Visual Studio)
+
+When building with the Microsoft compiler, we provide a custom allocator because the default one (from the Visual C++ runtime) fragments memory when reallocating. 
+
+This is desirable *only* when creating large sparsepp hash maps. If you create lots of small hash_maps, memory usage may increase instead of decreasing as expected.  The reason is that, for each instance of a hash_map, the custom memory allocator creates a new memory space to allocate from, which is typically 4K, so it may be a big waste if just a few items are allocated.
+
+In order to use the custom spp allocator, define the following preprocessor variable before including `<spp/spp.h>`:
+
+`#define SPP_USE_SPP_ALLOC 1`
+
 ## Integer keys, and other hash function considerations.
 
 1. For basic integer types, sparsepp provides a default hash function which does some mixing of the bits of the keys (see [Integer Hashing](http://burtleburtle.net/bob/hash/integer.html)). This prevents a pathological case where inserted keys are sequential (1, 2, 3, 4, ...), and the lookup on non-present keys becomes very slow. 
@@ -229,7 +239,7 @@ This support is implemented in the following APIs:
     bool unserialize(Serializer serializer, INPUT *stream);
 ```
 
-The following example demontrates how a simple sparse_hash_map can be written to a file, and then read back. The serializer we use read and writes to a file using the stdio APIs, but it would be equally simple to write a serialized using the stream APIS:
+The following example demonstrates how a simple sparse_hash_map can be written to a file, and then read back. The serializer we use read and writes to a file using the stdio APIs, but it would be equally simple to write a serialized using the stream APIS:
 
 ```c++
 #include <cstdio>
@@ -319,7 +329,7 @@ int main(int argc, char* argv[])
 
 ## Thread safety
 
-Sparsepp follows the trade safety rules of the Standard C++ library. In Particular:
+Sparsepp follows the thread safety rules of the Standard C++ library. In Particular:
 
 - A single sparsepp hash table is thread safe for reading from multiple threads. For example, given a hash table A, it is safe to read A from thread 1 and from thread 2 simultaneously.
 
