@@ -6,6 +6,7 @@
 #include "storm/modelchecker/multiobjective/Objective.h"
 #include "storm/models/sparse/Mdp.h"
 #include "storm/utility/vector.h"
+#include "storm/storage/memorystructure/MemoryStructure.h"
 
 namespace storm {
     namespace modelchecker {
@@ -28,7 +29,7 @@ namespace storm {
                     std::vector<std::vector<ValueType>> objectiveValues;
                 };
                 
-                typedef std::vector<uint64_t> Epoch; // The number of reward steps that are "left" for each dimension
+                typedef std::vector<int64_t> Epoch; // The number of reward steps that are "left" for each dimension
                 typedef uint64_t EpochClass; // Collection of epochs that consider the same epoch model
                 
                 /*
@@ -54,7 +55,13 @@ namespace storm {
                 EpochSolution const& getEpochSolution(Epoch const& epoch);
                 
             private:
-                EpochClass getClassOfEpoch(Epoch const& epoch);
+            
+                void initialize();
+                EpochClass getClassOfEpoch(Epoch const& epoch) const;
+                Epoch getSuccessorEpoch(Epoch const& epoch, Epoch const& step) const;
+                
+                EpochModel computeModelForEpoch(Epoch const& epoch);
+                storm::storage::MemoryStructure computeMemoryStructureForEpoch(Epoch const& epoch) const;
                 
                 
                 storm::models::sparse::Mdp<ValueType> const& model;
