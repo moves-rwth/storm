@@ -50,6 +50,8 @@ namespace storm {
             template <typename ValueType>
             ValueType getNonStrictUpperBound(unsigned i = 0) const;
 
+            std::shared_ptr<BoundedUntilFormula const> restrictToDimension(unsigned i) const;
+            
             virtual std::ostream& writeToStream(std::ostream& out) const override;
             
         private:

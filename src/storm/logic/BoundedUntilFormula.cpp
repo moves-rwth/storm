@@ -184,6 +184,10 @@ namespace storm {
             STORM_LOG_THROW(!bound.containsVariables(), storm::exceptions::InvalidOperationException, "Cannot evaluate time-bound '" << bound << "' as it contains undefined constants.");
         }
         
+        std::shared_ptr<BoundedUntilFormula const> BoundedUntilFormula::restrictToDimension(unsigned i) const {
+            return std::make_shared<BoundedUntilFormula const>(this->getLeftSubformula().asSharedPointer(), this->getRightSubformula().asSharedPointer(), lowerBound.at(i), upperBound.at(i), this->getTimeBoundReference(i));
+        }
+
         std::ostream& BoundedUntilFormula::writeToStream(std::ostream& out) const {
             this->getLeftSubformula().writeToStream(out);
             
