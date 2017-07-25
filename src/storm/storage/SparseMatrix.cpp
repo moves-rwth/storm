@@ -193,13 +193,15 @@ namespace storm {
             ++currentRowGroup;
             
             // Close all rows from the most recent one to the starting row.
-            for (index_type i = lastRow + 1; i <= startingRow; ++i) {
+            for (index_type i = lastRow + 1; i < startingRow; ++i) {
                 rowIndications.push_back(currentEntryCount);
             }
             
-            // Reset the most recently seen row/column to allow for proper insertion of the following elements.
-            lastRow = startingRow;
-            lastColumn = 0;
+            if (lastRow + 1 < startingRow) {
+                // Reset the most recently seen row/column to allow for proper insertion of the following elements.
+                lastRow = startingRow - 1;
+                lastColumn = 0;
+            }
         }
         
         template<typename ValueType>
@@ -228,7 +230,7 @@ namespace storm {
             // as now the indices of row i are always between rowIndications[i] and rowIndications[i + 1], also for
             // the first and last row.
             rowIndications.push_back(currentEntryCount);
-            assert(rowCount == rowIndications.size() - 1);
+            STORM_LOG_ASSERT(rowCount == rowIndications.size() - 1, "Wrong sizes of vectors.");
             uint_fast64_t columnCount = hasEntries ? highestColumn + 1 : 0;
             if (initialColumnCountSet && forceInitialDimensions) {
                 STORM_LOG_THROW(columnCount <= initialColumnCount, storm::exceptions::InvalidStateException, "Expected not more than " << initialColumnCount << " columns, but got " << columnCount << ".");
@@ -1589,8 +1591,9 @@ namespace storm {
         template<typename ValueType>
         bool SparseMatrix<ValueType>::isProbabilistic() const {
             storm::utility::ConstantsComparator<ValueType> comparator;
-            for(index_type row = 0; row < this->rowCount; ++row) {
-                if(!comparator.isOne(getRowSum(row))) {
+            for (index_type row = 0; row < this->rowCount; ++row) {
+                ValueType sum = getRowSum(row);
+                if (!comparator.isOne(sum)) {
                     return false;
                 }
             }

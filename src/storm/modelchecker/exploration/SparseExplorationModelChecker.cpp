@@ -476,12 +476,25 @@ namespace storm {
             }
             
             // Set the bounds of the identified states.
+            std::cout << "prob0: " << statesWithProbability0 << std::endl;
             for (auto state : statesWithProbability0) {
+                // Skip the sink state as it is not contained in the original system.
+                if (state == sink) {
+                    continue;
+                }
+                
+                std::cout << "setting 0 for state " << state << std::endl;
                 StateType originalState = relevantStates[state];
+                std::cout << "original state is " << originalState << ", size: " << relevantStates.size() << std::endl;
                 bounds.setUpperBoundForState(originalState, explorationInformation, storm::utility::zero<ValueType>());
                 explorationInformation.addTerminalState(originalState);
             }
             for (auto state : statesWithProbability1) {
+                // Skip the sink state as it is not contained in the original system.
+                if (state == sink) {
+                    continue;
+                }
+
                 StateType originalState = relevantStates[state];
                 bounds.setLowerBoundForState(originalState, explorationInformation, storm::utility::one<ValueType>());
                 explorationInformation.addTerminalState(originalState);

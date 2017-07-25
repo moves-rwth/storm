@@ -98,11 +98,13 @@ namespace storm {
             
             template<typename StateType, typename ValueType>
             void Bounds<StateType, ValueType>::setUpperBoundForState(StateType const& state, ExplorationInformation<StateType, ValueType> const& explorationInformation, ValueType const& value) {
+                std::cout << "setting value " << value << " for state " << state << " with row group " << explorationInformation.getRowGroup(state) << std::endl;
                 setUpperBoundForRowGroup(explorationInformation.getRowGroup(state), value);
             }
             
             template<typename StateType, typename ValueType>
             void Bounds<StateType, ValueType>::setUpperBoundForRowGroup(StateType const& group, ValueType const& value) {
+                std::cout << "setting value " << value << " for state (row group) " << group << " where size is " << boundsPerState.size() << std::endl;
                 boundsPerState[group].second = value;
             }
             

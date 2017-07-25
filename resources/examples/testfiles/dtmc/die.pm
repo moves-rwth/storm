@@ -24,3 +24,6 @@ rewards "coin_flips"
 endrewards
 
 label "one" = s=7&d=1;
+label "two" = s=7&d=2;
+label "three" = s=7&d=3;
+label "done" = s=7;
