@@ -293,6 +293,9 @@ namespace storm {
             // Stores the currently active row group. This is used for correctly constructing the row grouping of the
             // matrix.
             index_type currentRowGroup;
+            
+            // A flag that stores whether the current row group does not yet contain an element.
+            bool currentRowGroupEmpty;
         };
         
         /*!

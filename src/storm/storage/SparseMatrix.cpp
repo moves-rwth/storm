@@ -210,10 +210,19 @@ namespace storm {
             bool hasEntries = currentEntryCount != 0;
             
             uint_fast64_t rowCount = hasEntries ? lastRow + 1 : 0;
+
+            // If the last row group was empty, we need to add one more to the row count, because otherwise this empty row is not counted.
+            if (hasCustomRowGrouping) {
+                if (lastRow < rowGroupIndices->back()) {
+                    ++rowCount;
+                }
+            }
+            
             if (initialRowCountSet && forceInitialDimensions) {
                 STORM_LOG_THROW(rowCount <= initialRowCount, storm::exceptions::InvalidStateException, "Expected not more than " << initialRowCount << " rows, but got " << rowCount << ".");
                 rowCount = std::max(rowCount, initialRowCount);
             }
+            
             rowCount = std::max(rowCount, overriddenRowCount);
             
             // If the current row count was overridden, we may need to add empty rows.

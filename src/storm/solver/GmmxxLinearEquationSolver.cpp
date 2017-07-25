@@ -224,10 +224,11 @@ namespace storm {
         
         template<typename ValueType>
         void GmmxxLinearEquationSolver<ValueType>::multiply(std::vector<ValueType>& x, std::vector<ValueType> const* b, std::vector<ValueType>& result) const {
-            if(!gmmxxA) {
+            if (!gmmxxA) {
                 gmmxxA = storm::adapters::GmmxxAdapter::toGmmxxSparseMatrix<ValueType>(*A);
             }
             if (b) {
+                std::cout << "A: " << A->getRowCount() << "x" << A->getColumnCount() << ", x: " << x.size() << ", b: " << b->size() << ", r: " << result.size() << std::endl;
                 gmm::mult_add(*gmmxxA, x, *b, result);
             } else {
                 gmm::mult(*gmmxxA, x, result);

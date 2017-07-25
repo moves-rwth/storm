@@ -440,8 +440,9 @@ namespace storm {
                 // duplicate work is the following. Optimally, we would only do the MEC decomposition, because we need
                 // it anyway. However, when only detecting (accepting) MECs, we do not infer which of the other states
                 // (not contained in MECs) also have probability 0/1.
-                statesWithProbability0 = storm::utility::graph::performProb0A(transposedMatrix, allStates, targetStates);
                 targetStates.set(sink, true);
+                statesWithProbability0 = storm::utility::graph::performProb0A(transposedMatrix, allStates, targetStates);
+                targetStates.set(sink, false);
                 statesWithProbability1 = storm::utility::graph::performProb1E(relevantStatesMatrix, relevantStatesMatrix.getRowGroupIndices(), transposedMatrix, allStates, targetStates);
                 
                 storm::storage::MaximalEndComponentDecomposition<ValueType> mecDecomposition(relevantStatesMatrix, relevantStatesMatrix.transpose(true));
@@ -449,7 +450,8 @@ namespace storm {
                 STORM_LOG_TRACE("Successfully computed MEC decomposition. Found " << (mecDecomposition.size() > 1 ? (mecDecomposition.size() - 1) : 0) << " MEC(s).");
                 
                 // If the decomposition contains only the MEC consisting of the sink state, we count it as 'failed'.
-                if (mecDecomposition.size() > 1) {
+                STORM_LOG_ASSERT(mecDecomposition.size() > 0, "Expected at least one MEC (the trivial sink MEC).");
+                if (mecDecomposition.size() == 1) {
                     ++stats.failedEcDetections;
                 } else {
                     stats.totalNumberOfEcDetected += mecDecomposition.size() - 1;
@@ -476,16 +478,14 @@ namespace storm {
             }
             
             // Set the bounds of the identified states.
-            std::cout << "prob0: " << statesWithProbability0 << std::endl;
+            STORM_LOG_ASSERT((statesWithProbability0 & statesWithProbability1).empty(), "States with probability 0 and 1 overlap.");
             for (auto state : statesWithProbability0) {
                 // Skip the sink state as it is not contained in the original system.
                 if (state == sink) {
                     continue;
                 }
                 
-                std::cout << "setting 0 for state " << state << std::endl;
                 StateType originalState = relevantStates[state];
-                std::cout << "original state is " << originalState << ", size: " << relevantStates.size() << std::endl;
                 bounds.setUpperBoundForState(originalState, explorationInformation, storm::utility::zero<ValueType>());
                 explorationInformation.addTerminalState(originalState);
             }
