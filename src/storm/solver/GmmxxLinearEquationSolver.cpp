@@ -228,7 +228,6 @@ namespace storm {
                 gmmxxA = storm::adapters::GmmxxAdapter::toGmmxxSparseMatrix<ValueType>(*A);
             }
             if (b) {
-                std::cout << "A: " << A->getRowCount() << "x" << A->getColumnCount() << ", x: " << x.size() << ", b: " << b->size() << ", r: " << result.size() << std::endl;
                 gmm::mult_add(*gmmxxA, x, *b, result);
             } else {
                 gmm::mult(*gmmxxA, x, result);
