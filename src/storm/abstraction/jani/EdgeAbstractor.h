@@ -43,7 +43,7 @@ namespace storm {
         class AbstractionInformation;
 
         template <storm::dd::DdType DdType>
-        class BottomStateResult;
+        struct BottomStateResult;
 
         namespace jani {
             template <storm::dd::DdType DdType, typename ValueType>

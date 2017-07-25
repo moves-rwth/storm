@@ -174,11 +174,11 @@ namespace storm {
             return out;
         }
         
-        template class Choice<double>;
+        template struct Choice<double>;
 
 #ifdef STORM_HAVE_CARL
-        template class Choice<storm::RationalNumber>;
-        template class Choice<storm::RationalFunction>;
+        template struct Choice<storm::RationalNumber>;
+        template struct Choice<storm::RationalFunction>;
 #endif
     }
 }

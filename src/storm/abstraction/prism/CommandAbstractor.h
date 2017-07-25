@@ -42,7 +42,7 @@ namespace storm {
         class AbstractionInformation;
 
         template <storm::dd::DdType DdType>
-        class BottomStateResult;
+        struct BottomStateResult;
 
         namespace prism {
             template <storm::dd::DdType DdType, typename ValueType>

@@ -24,7 +24,10 @@ namespace storm {
                 assert(rewardName != ""); // Empty reward name is reserved.
             }
 
-
+            TimeBoundType getType() const {
+                return type;
+            }
+            
             bool isStepBound() const {
                 return type ==  TimeBoundType::Steps;
             }

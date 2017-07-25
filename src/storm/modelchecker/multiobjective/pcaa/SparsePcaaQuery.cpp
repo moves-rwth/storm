@@ -107,7 +107,7 @@ namespace storm {
                 step.upperBoundPoint = storm::utility::vector::convertNumericVector<GeometryValueType>(weightVectorChecker->getOverApproximationOfInitialStateResults());
                 // For the minimizing objectives, we need to scale the corresponding entries with -1 as we want to consider the downward closure
                 for (uint_fast64_t objIndex = 0; objIndex < this->objectives.size(); ++objIndex) {
-                    if (storm::solver::minimize(this->objectives[objIndex].optimizationDirection)) {
+                    if (storm::solver::minimize(this->objectives[objIndex].formula->getOptimalityType())) {
                         step.lowerBoundPoint[objIndex] *= -storm::utility::one<GeometryValueType>();
                         step.upperBoundPoint[objIndex] *= -storm::utility::one<GeometryValueType>();
                     }
@@ -161,7 +161,7 @@ namespace storm {
                 result.reserve(point.size());
                 for(uint_fast64_t objIndex = 0; objIndex < this->objectives.size(); ++objIndex) {
                     auto const& obj = this->objectives[objIndex];
-                    if (storm::solver::maximize(obj.optimizationDirection)) {
+                    if (storm::solver::maximize(obj.formula->getOptimalityType())) {
                         if (obj.considersComplementaryEvent) {
                             result.push_back(storm::utility::one<GeometryValueType>() - point[objIndex]);
                         } else {
@@ -192,7 +192,7 @@ namespace storm {
                 transformationVector.reserve(numObjectives);
                 for(uint_fast64_t objIndex = 0; objIndex < numObjectives; ++objIndex) {
                     auto const& obj = this->objectives[objIndex];
-                    if (storm::solver::maximize(obj.optimizationDirection)) {
+                    if (storm::solver::maximize(obj.formula->getOptimalityType())) {
                         if (obj.considersComplementaryEvent) {
                             transformationMatrix[objIndex][objIndex] = -storm::utility::one<GeometryValueType>();
                             transformationVector.push_back(storm::utility::one<GeometryValueType>());

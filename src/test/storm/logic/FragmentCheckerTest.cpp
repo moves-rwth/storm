@@ -145,24 +145,15 @@ TEST(FragmentCheckerTest, MultiObjective) {
     std::shared_ptr<storm::logic::Formula const> formula;
     
     ASSERT_NO_THROW(formula = formulaParser.parseSingleFormulaFromString("\"label\""));
-    EXPECT_TRUE(checker.conformsToSpecification(*formula, multiobjective));
+    EXPECT_FALSE(checker.conformsToSpecification(*formula, multiobjective));
     
     ASSERT_NO_THROW(formula = formulaParser.parseSingleFormulaFromString("P=? [F \"label\"]"));
-    EXPECT_TRUE(checker.conformsToSpecification(*formula, multiobjective));
-    
-    ASSERT_NO_THROW(formula = formulaParser.parseSingleFormulaFromString("P=? [F P=? [F \"label\"]]"));
-    EXPECT_TRUE(checker.conformsToSpecification(*formula, multiobjective));
-    
-    ASSERT_NO_THROW(formula = formulaParser.parseSingleFormulaFromString("R=? [F \"label\"]"));
-    EXPECT_TRUE(checker.conformsToSpecification(*formula, multiobjective));
-    
-    ASSERT_NO_THROW(formula = formulaParser.parseSingleFormulaFromString("R=? [C]"));
-    EXPECT_TRUE(checker.conformsToSpecification(*formula, multiobjective));
-    
-    ASSERT_NO_THROW(formula = formulaParser.parseSingleFormulaFromString("P=? [F[0.5,1] \"label\"]"));
-    EXPECT_TRUE(checker.conformsToSpecification(*formula, multiobjective));
+    EXPECT_FALSE(checker.conformsToSpecification(*formula, multiobjective));
     
     ASSERT_NO_THROW(formula = formulaParser.parseSingleFormulaFromString("multi(R<0.3 [ C ], P<0.6 [F \"label\"] & \"label\" & R<=4[F \"label\"])"));
+    EXPECT_FALSE(checker.conformsToSpecification(*formula, multiobjective));
+    
+    ASSERT_NO_THROW(formula = formulaParser.parseSingleFormulaFromString("Pmax=? [ F multi(R<0.3 [ C ], P<0.6 [F \"label\"] & \"label\" & R<=4[F \"label\"])]"));
     EXPECT_FALSE(checker.conformsToSpecification(*formula, multiobjective));
     
     ASSERT_NO_THROW(formula = formulaParser.parseSingleFormulaFromString("multi(R<0.3 [ C ], P<0.6 [F \"label\"], \"label\", R<=4[F \"label\"])"));

@@ -39,7 +39,7 @@ namespace storm {
                 out << "EC detections: " << ecDetections << " (" << failedEcDetections << " failed, " << totalNumberOfEcDetected << " EC(s) detected)" << std::endl;
             }
          
-            template class Statistics<uint32_t, double>;
+            template struct Statistics<uint32_t, double>;
             
         }
     }

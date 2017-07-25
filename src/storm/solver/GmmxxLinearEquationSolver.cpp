@@ -242,18 +242,17 @@ namespace storm {
         uint_fast64_t GmmxxLinearEquationSolver<ValueType>::solveLinearEquationSystemWithJacobi(std::vector<ValueType>& x, std::vector<ValueType> const& b) const {
             
             // Get a Jacobi decomposition of the matrix A (if not already available).
-            if(!jacobiDecomposition) {
+            if (!jacobiDecomposition) {
                 std::pair<storm::storage::SparseMatrix<ValueType>, std::vector<ValueType>> nativeJacobiDecomposition = A->getJacobiDecomposition();
                 // Convert the LU matrix to gmm++'s format.
-                jacobiDecomposition = std::make_unique<std::pair<gmm::csr_matrix<ValueType>, std::vector<ValueType>>>(*storm::adapters::GmmxxAdapter::toGmmxxSparseMatrix<ValueType>(std::move(nativeJacobiDecomposition.first)),
-                                                                                                                      std::move(nativeJacobiDecomposition.second));
+                jacobiDecomposition = std::make_unique<std::pair<gmm::csr_matrix<ValueType>, std::vector<ValueType>>>(*storm::adapters::GmmxxAdapter::toGmmxxSparseMatrix<ValueType>(std::move(nativeJacobiDecomposition.first)), std::move(nativeJacobiDecomposition.second));
             }
             gmm::csr_matrix<ValueType> const& jacobiLU = jacobiDecomposition->first;
             std::vector<ValueType> const& jacobiD = jacobiDecomposition->second;
         
             std::vector<ValueType>* currentX = &x;
             
-            if(!this->cachedRowVector) {
+            if (!this->cachedRowVector) {
                 this->cachedRowVector = std::make_unique<std::vector<ValueType>>(getMatrixRowCount());
             }
             std::vector<ValueType>* nextX = this->cachedRowVector.get();

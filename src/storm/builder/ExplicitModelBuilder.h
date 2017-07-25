@@ -43,7 +43,7 @@ namespace storm {
         using namespace storm::generator;
         
         // Forward-declare classes.
-        template <typename ValueType> struct RewardModelBuilder;
+        template <typename ValueType> class RewardModelBuilder;
         class ChoiceInformationBuilder;
         
         template<typename ValueType, typename RewardModelType = storm::models::sparse::StandardRewardModel<ValueType>, typename StateType = uint32_t>
