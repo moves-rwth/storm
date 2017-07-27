@@ -17,11 +17,14 @@ namespace storm {
             class MultiDimensionalRewardUnfolding {
             public:
                 
+                typedef std::vector<int64_t> Epoch; // The number of reward steps that are "left" for each dimension
+                typedef uint64_t EpochClass; // Collection of epochs that consider the same epoch model
                 
                 struct EpochModel {
                     storm::storage::SparseMatrix<ValueType> rewardTransitions;
                     storm::storage::SparseMatrix<ValueType> intermediateTransitions;
                     std::vector<std::vector<ValueType>> objectiveRewards;
+                    std::vector<boost::optional<Epoch>> epochSteps;
                 };
                 
                 struct EpochSolution {
@@ -29,8 +32,6 @@ namespace storm {
                     std::vector<std::vector<ValueType>> objectiveValues;
                 };
                 
-                typedef std::vector<int64_t> Epoch; // The number of reward steps that are "left" for each dimension
-                typedef uint64_t EpochClass; // Collection of epochs that consider the same epoch model
                 
                 /*
                  *

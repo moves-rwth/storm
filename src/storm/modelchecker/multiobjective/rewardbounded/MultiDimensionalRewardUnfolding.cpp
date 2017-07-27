@@ -3,6 +3,8 @@
 #include "storm/utility/macros.h"
 #include "storm/logic/Formulas.h"
 #include "storm/storage/memorystructure/MemoryStructureBuilder.h"
+#include "storm/storage/memorystructure/SparseModelMemoryProduct.h"
+
 #include "storm/modelchecker/propositional/SparsePropositionalModelChecker.h"
 #include "storm/modelchecker/results/ExplicitQualitativeCheckResult.h"
 
@@ -135,12 +137,44 @@ namespace storm {
                 }
             }
             
-            
-            
             template<typename ValueType>
             typename MultiDimensionalRewardUnfolding<ValueType>::EpochModel  MultiDimensionalRewardUnfolding<ValueType>::computeModelForEpoch(Epoch const& epoch) {
                 
                 storm::storage::MemoryStructure memory = computeMemoryStructureForEpoch(epoch);
+                auto modelMemoryProductBuilder = memory.product(model);
+                modelMemoryProductBuilder.setBuildFullProduct();
+                auto modelMemoryProduct = modelMemoryProductBuilder.build()->template as<storm::models::sparse::Mdp<ValueType>>();
+                
+                storm::storage::SparseMatrix<ValueType> const& allTransitions = modelMemoryProduct->getTransitionMatrix();
+                EpochModel result;
+                storm::storage::BitVector rewardChoices(allTransitions.getRowCount(), false);
+                result.epochSteps.resize(modelMemoryProduct->getNumberOfChoices());
+                for (uint64_t modelState = 0; modelState < model.getNumberOfStates(); ++modelState) {
+                    uint64_t numChoices = allTransitions.getRowGroupSize(modelState);
+                    uint64_t firstChoice = allTransitions.getRowGroupIndices()[modelState];
+                    for (uint64_t choiceOffset = 0; choiceOffset < numChoices; ++choiceOffset) {
+                        Epoch step;
+                        bool isZeroStep = true;
+                        for (uint64_t dim = 0; dim < epoch.size(); ++dim) {
+                            step.push_back(scaledRewards[dim][firstChoice + choiceOffset]);
+                            isZeroStep = isZeroStep && (step.back() == 0 || epoch[dim] < 0);
+                        }
+                        if (!isZeroStep) {
+                            for (uint64_t memState = 0; memState < memory.getNumberOfStates(); ++memState) {
+                                uint64_t productState = modelMemoryProductBuilder.getResultState(modelState, memState);
+                                uint64_t productChoice = allTransitions.getRowGroupIndices()[productState] + choiceOffset;
+                                assert(productChoice < allTransitions.getRowGroupIndices()[productState + 1]);
+                                result.epochSteps[productChoice] = step;
+                                rewardChoices.set(productChoice, true);
+                            }
+                        }
+                    }
+                }
+                
+                result.rewardTransitions = allTransitions.filterEntries(rewardChoices);
+                result.intermediateTransitions = allTransitions.filterEntries(~rewardChoices);
+                
+                result.objectiveRewards.resize(objectives.size());
                 
                 
             }
