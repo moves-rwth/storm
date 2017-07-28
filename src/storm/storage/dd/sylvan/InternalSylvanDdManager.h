@@ -121,6 +121,11 @@ namespace storm {
             void triggerReordering();
             
             /*!
+             * Performs a debug check if available.
+             */
+            void debugCheck() const;
+            
+            /*!
              * Retrieves the number of DD variables managed by this manager.
              *
              * @return The number of managed variables.

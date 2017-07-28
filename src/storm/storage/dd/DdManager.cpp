@@ -464,6 +464,11 @@ namespace storm {
             return &internalDdManager;
         }
         
+        template<DdType LibraryType>
+        void DdManager<LibraryType>::debugCheck() const {
+            internalDdManager.debugCheck();
+        }
+        
         template class DdManager<DdType::CUDD>;
         
         template Add<DdType::CUDD, double> DdManager<DdType::CUDD>::getAddZero() const;

@@ -26,7 +26,7 @@ namespace storm {
             
             EigenEquationSolverSettings::EigenEquationSolverSettings() : ModuleSettings(moduleName) {
                 std::vector<std::string> methods = {"sparselu", "bicgstab", "dgmres", "gmres"};
-                this->addOption(storm::settings::OptionBuilder(moduleName, techniqueOptionName, true, "The method to be used for solving linear equation systems with the eigen solver.").addArgument(storm::settings::ArgumentBuilder::createStringArgument("name", "The name of the method to use.").addValidatorString(ArgumentValidatorFactory::createMultipleChoiceValidator(methods)).setDefaultValueString("sparselu").build()).build());
+                this->addOption(storm::settings::OptionBuilder(moduleName, techniqueOptionName, true, "The method to be used for solving linear equation systems with the eigen solver.").addArgument(storm::settings::ArgumentBuilder::createStringArgument("name", "The name of the method to use.").addValidatorString(ArgumentValidatorFactory::createMultipleChoiceValidator(methods)).setDefaultValueString("gmres").build()).build());
                 
                 // Register available preconditioners.
                 std::vector<std::string> preconditioner = {"ilu", "diagonal", "none"};

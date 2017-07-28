@@ -290,6 +290,11 @@ namespace storm {
              * @return The internal DD manager.
              */
             InternalDdManager<LibraryType> const& getInternalDdManager() const;
+            
+            /*!
+             * Performs a debug check if available.
+             */
+            void debugCheck() const;
 
         private:
             /*!

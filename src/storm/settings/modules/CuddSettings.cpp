@@ -17,12 +17,15 @@ namespace storm {
             const std::string CuddSettings::moduleName = "cudd";
             const std::string CuddSettings::precisionOptionName = "precision";
             const std::string CuddSettings::maximalMemoryOptionName = "maxmem";
-            const std::string CuddSettings::reorderOptionName = "reorder";
+            const std::string CuddSettings::reorderOptionName = "dynreorder";
+            const std::string CuddSettings::reorderTechniqueOptionName = "reordertechnique";
             
             CuddSettings::CuddSettings() : ModuleSettings(moduleName) {
                 this->addOption(storm::settings::OptionBuilder(moduleName, precisionOptionName, true, "Sets the precision used by Cudd.").addArgument(storm::settings::ArgumentBuilder::createDoubleArgument("value", "The precision up to which to constants are considered to be different.").setDefaultValueDouble(1e-15).addValidatorDouble(ArgumentValidatorFactory::createDoubleRangeValidatorExcluding(0.0, 1.0)).build()).build());
                 
                 this->addOption(storm::settings::OptionBuilder(moduleName, maximalMemoryOptionName, true, "Sets the upper bound of memory available to Cudd in MB.").addArgument(storm::settings::ArgumentBuilder::createUnsignedIntegerArgument("value", "The memory available to Cudd (0 means unlimited).").setDefaultValueUnsignedInteger(4096).build()).build());
+
+                this->addOption(storm::settings::OptionBuilder(moduleName, reorderOptionName, false, "Sets whether dynamic reordering is allowed.").build());
                 
                 std::vector<std::string> reorderingTechniques;
                 reorderingTechniques.push_back("none");
@@ -43,7 +46,7 @@ namespace storm {
                 reorderingTechniques.push_back("annealing");
                 reorderingTechniques.push_back("genetic");
                 reorderingTechniques.push_back("exact");
-                this->addOption(storm::settings::OptionBuilder(moduleName, reorderOptionName, true, "Sets the reordering technique used by Cudd.").addArgument(storm::settings::ArgumentBuilder::createStringArgument("method", "Sets which technique is used by Cudd's reordering routines.").setDefaultValueString("gsift").addValidatorString(ArgumentValidatorFactory::createMultipleChoiceValidator(reorderingTechniques)).build()).build());
+                this->addOption(storm::settings::OptionBuilder(moduleName, reorderTechniqueOptionName, true, "Sets the reordering technique used by Cudd.").addArgument(storm::settings::ArgumentBuilder::createStringArgument("method", "Sets which technique is used by Cudd's reordering routines.").setDefaultValueString("gsift").addValidatorString(ArgumentValidatorFactory::createMultipleChoiceValidator(reorderingTechniques)).build()).build());
             }
             
             double CuddSettings::getConstantPrecision() const {
@@ -54,8 +57,12 @@ namespace storm {
                 return this->getOption(maximalMemoryOptionName).getArgumentByName("value").getValueAsUnsignedInteger();
             }
             
+            bool CuddSettings::isReorderingEnabled() const {
+                return this->getOption(reorderOptionName).getHasOptionBeenSet();
+            }
+            
             CuddSettings::ReorderingTechnique CuddSettings::getReorderingTechnique() const {
-                std::string reorderingTechniqueAsString = this->getOption(reorderOptionName).getArgumentByName("method").getValueAsString();
+                std::string reorderingTechniqueAsString = this->getOption(reorderTechniqueOptionName).getArgumentByName("method").getValueAsString();
                 if (reorderingTechniqueAsString == "none") {
                     return CuddSettings::ReorderingTechnique::None;
                 } else if (reorderingTechniqueAsString == "random") {

@@ -10,10 +10,12 @@ namespace storm {
         
         InternalDdManager<DdType::CUDD>::InternalDdManager() : cuddManager(), reorderingTechnique(CUDD_REORDER_NONE), numberOfDdVariables(0) {
             this->cuddManager.SetMaxMemory(static_cast<unsigned long>(storm::settings::getModule<storm::settings::modules::CuddSettings>().getMaximalMemory() * 1024ul * 1024ul));
-            this->cuddManager.SetEpsilon(storm::settings::getModule<storm::settings::modules::CuddSettings>().getConstantPrecision());
+            
+            auto const& settings = storm::settings::getModule<storm::settings::modules::CuddSettings>();
+            this->cuddManager.SetEpsilon(settings.getConstantPrecision());
             
             // Now set the selected reordering technique.
-            storm::settings::modules::CuddSettings::ReorderingTechnique reorderingTechniqueAsSetting = storm::settings::getModule<storm::settings::modules::CuddSettings>().getReorderingTechnique();
+            storm::settings::modules::CuddSettings::ReorderingTechnique reorderingTechniqueAsSetting = settings.getReorderingTechnique();
             switch (reorderingTechniqueAsSetting) {
                 case storm::settings::modules::CuddSettings::ReorderingTechnique::None: this->reorderingTechnique = CUDD_REORDER_NONE; break;
                 case storm::settings::modules::CuddSettings::ReorderingTechnique::Random: this->reorderingTechnique = CUDD_REORDER_RANDOM; break;
@@ -34,6 +36,8 @@ namespace storm {
                 case storm::settings::modules::CuddSettings::ReorderingTechnique::Genetic: this->reorderingTechnique = CUDD_REORDER_GENETIC; break;
                 case storm::settings::modules::CuddSettings::ReorderingTechnique::Exact: this->reorderingTechnique = CUDD_REORDER_EXACT; break;
             }
+            
+            this->allowDynamicReordering(settings.isReorderingEnabled());
         }
         
         InternalDdManager<DdType::CUDD>::~InternalDdManager() {
@@ -109,6 +113,11 @@ namespace storm {
         
         void InternalDdManager<DdType::CUDD>::triggerReordering() {
             this->getCuddManager().ReduceHeap(this->reorderingTechnique, 0);
+        }
+        
+        void InternalDdManager<DdType::CUDD>::debugCheck() const {
+            this->getCuddManager().CheckKeys();
+            this->getCuddManager().DebugCheck();
         }
         
         cudd::Cudd& InternalDdManager<DdType::CUDD>::getCuddManager() {

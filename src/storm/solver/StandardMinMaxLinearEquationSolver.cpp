@@ -106,7 +106,7 @@ namespace storm {
             std::vector<storm::storage::sparse::state_type> scheduler = this->hasSchedulerHint() ? this->choicesHint.get() : std::vector<storm::storage::sparse::state_type>(this->A.getRowGroupCount());
             
             // Get a vector for storing the right-hand side of the inner equation system.
-            if(!auxiliaryRowGroupVector) {
+            if (!auxiliaryRowGroupVector) {
                 auxiliaryRowGroupVector = std::make_unique<std::vector<ValueType>>(this->A.getRowGroupCount());
             }
             std::vector<ValueType>& subB = *auxiliaryRowGroupVector;

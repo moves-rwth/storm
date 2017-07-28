@@ -207,6 +207,10 @@ namespace storm {
             STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Operation is not supported by sylvan.");
         }
         
+        void InternalDdManager<DdType::Sylvan>::debugCheck() const {
+            STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Operation is not supported by sylvan.");
+        }
+        
         uint_fast64_t InternalDdManager<DdType::Sylvan>::getNumberOfDdVariables() const {
             return nextFreeVariableIndex;
         }
