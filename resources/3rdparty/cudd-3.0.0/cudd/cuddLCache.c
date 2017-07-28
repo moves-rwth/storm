@@ -1343,7 +1343,7 @@ cuddHashTableResize(
 	    while (item != NULL) {
 		next = item->next;
 		key = item->key;
-		posn = ddLCHash2(key[0], key[0], shift);
+		posn = ddLCHash1(key[0], shift);
 		item->next = buckets[posn];
 		buckets[posn] = item;
 		item = next;
