@@ -20,7 +20,7 @@ namespace storm {
             // Set the identifier mapping to actually generate expressions.
             expressionParser.setIdentifierMapping(&identifiers_);
             
-            longRunAverageRewardFormula = (qi::lit("LRA") | qi::lit("S"))[qi::_val = phoenix::bind(&FormulaParserGrammar::createLongRunAverageRewardFormula, phoenix::ref(*this))];
+            longRunAverageRewardFormula = (qi::lit("LRA") | qi::lit("S") | qi::lit("MP"))[qi::_val = phoenix::bind(&FormulaParserGrammar::createLongRunAverageRewardFormula, phoenix::ref(*this))];
             longRunAverageRewardFormula.name("long run average reward formula");
             
             instantaneousRewardFormula = (qi::lit("I=") > expressionParser)[qi::_val = phoenix::bind(&FormulaParserGrammar::createInstantaneousRewardFormula, phoenix::ref(*this), qi::_1)];
