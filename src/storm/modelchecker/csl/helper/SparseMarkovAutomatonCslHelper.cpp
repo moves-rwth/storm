@@ -415,10 +415,10 @@ namespace storm {
                 }
                 
                 // Solve MEC with the method specified in the settings
-                storm::solver::MinMaxMethod method = storm::settings::getModule<storm::settings::modules::MinMaxEquationSolverSettings>().getMinMaxEquationSolvingMethod();
-                if (method == storm::solver::MinMaxMethod::LinearProgramming) {
+                storm::solver::LraMethod method = storm::settings::getModule<storm::settings::modules::MinMaxEquationSolverSettings>().getLraMethod();
+                if (method == storm::solver::LraMethod::LinearProgramming) {
                     return computeLraForMaximalEndComponentLP(dir, transitionMatrix, exitRateVector, markovianStates, rewardModel, mec);
-                } else if (method == storm::solver::MinMaxMethod::ValueIteration) {
+                } else if (method == storm::solver::LraMethod::ValueIteration) {
                     return computeLraForMaximalEndComponentVI(dir, transitionMatrix, exitRateVector, markovianStates, rewardModel, mec, minMaxLinearEquationSolverFactory);
                 } else {
                     STORM_LOG_THROW(false, storm::exceptions::InvalidSettingsException, "Unsupported technique.");

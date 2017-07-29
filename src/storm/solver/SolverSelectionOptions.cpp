@@ -18,6 +18,16 @@ namespace storm {
             return "invalid";
         }
         
+        std::string toString(LraMethod m) {
+            switch(m) {
+                case LraMethod::LinearProgramming:
+                    return "linearprogramming";
+                case LraMethod::ValueIteration:
+                    return "valueiteration";
+            }
+            return "invalid";
+        }
+        
         std::string toString(LpSolverType t) {
             switch(t) {
                 case LpSolverType::Gurobi:

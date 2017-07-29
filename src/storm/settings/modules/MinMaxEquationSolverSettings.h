@@ -75,6 +75,13 @@ namespace storm {
                  */
                 ConvergenceCriterion getConvergenceCriterion() const;
                 
+                /*!
+                 * Retrieves the selected long run average method.
+                 *
+                 * @return The selected long run average method.
+                 */
+                storm::solver::LraMethod getLraMethod() const;
+                
                 // The name of the module.
                 static const std::string moduleName;
                 
@@ -84,6 +91,7 @@ namespace storm {
                 static const std::string maximalIterationsOptionShortName;
                 static const std::string precisionOptionName;
                 static const std::string absoluteOptionName;
+                static const std::string lraMethodOptionName;
             };
             
         }

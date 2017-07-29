@@ -17,6 +17,7 @@ namespace storm {
             const std::string MinMaxEquationSolverSettings::maximalIterationsOptionShortName = "i";
             const std::string MinMaxEquationSolverSettings::precisionOptionName = "precision";
             const std::string MinMaxEquationSolverSettings::absoluteOptionName = "absolute";
+            const std::string MinMaxEquationSolverSettings::lraMethodOptionName = "lramethod";
 
             MinMaxEquationSolverSettings::MinMaxEquationSolverSettings() : ModuleSettings(moduleName) {
                 std::vector<std::string> minMaxSolvingTechniques = {"vi", "value-iteration", "pi", "policy-iteration", "linear-programming", "lp", "acyclic"};
@@ -28,6 +29,11 @@ namespace storm {
                 this->addOption(storm::settings::OptionBuilder(moduleName, precisionOptionName, false, "The precision used for detecting convergence of iterative methods.").addArgument(storm::settings::ArgumentBuilder::createDoubleArgument("value", "The precision to achieve.").setDefaultValueDouble(1e-06).addValidatorDouble(ArgumentValidatorFactory::createDoubleRangeValidatorExcluding(0.0, 1.0)).build()).build());
 
                 this->addOption(storm::settings::OptionBuilder(moduleName, absoluteOptionName, false, "Sets whether the relative or the absolute error is considered for detecting convergence.").build());
+
+                std::vector<std::string> lraMethods = {"vi", "value-iteration", "linear-programming", "lp"};
+                this->addOption(storm::settings::OptionBuilder(moduleName, lraMethodOptionName, false, "Sets which method is preferred for computing long run averages.")
+                                .addArgument(storm::settings::ArgumentBuilder::createStringArgument("name", "The name of a long run average computation method.").addValidatorString(ArgumentValidatorFactory::createMultipleChoiceValidator(lraMethods)).setDefaultValueString("vi").build()).build());
+
             }
             
             storm::solver::MinMaxMethod MinMaxEquationSolverSettings::getMinMaxEquationSolvingMethod() const {
@@ -71,6 +77,17 @@ namespace storm {
             MinMaxEquationSolverSettings::ConvergenceCriterion MinMaxEquationSolverSettings::getConvergenceCriterion() const {
                 return this->getOption(absoluteOptionName).getHasOptionBeenSet() ? MinMaxEquationSolverSettings::ConvergenceCriterion::Absolute : MinMaxEquationSolverSettings::ConvergenceCriterion::Relative;
             }
+            
+            storm::solver::LraMethod MinMaxEquationSolverSettings::getLraMethod() const {
+                std::string lraMethodString = this->getOption(lraMethodOptionName).getArgumentByName("name").getValueAsString();
+                if (lraMethodString == "value-iteration" || lraMethodString == "vi") {
+                    return storm::solver::LraMethod::ValueIteration;
+                } else if (lraMethodString == "linear-programming" || lraMethodString == "lp") {
+                    return storm::solver::LraMethod::LinearProgramming;
+                }
+                STORM_LOG_THROW(false, storm::exceptions::IllegalArgumentValueException, "Unknown lra solving technique '" << lraMethodString << "'.");
+            }
+
             
         }
     }
