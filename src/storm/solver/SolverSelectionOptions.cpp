@@ -8,6 +8,8 @@ namespace storm {
                     return "policy";
                 case MinMaxMethod::ValueIteration:
                     return "value";
+                case MinMaxMethod::LinearProgramming:
+                    return "linearprogramming";
                 case MinMaxMethod::Topological:
                     return "topological";
                 case MinMaxMethod::Acyclic:
