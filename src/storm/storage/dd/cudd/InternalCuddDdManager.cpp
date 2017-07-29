@@ -85,7 +85,9 @@ namespace storm {
                 }
             }
             
-            // Connect the two variables so they are not 'torn apart' during dynamic reordering.
+            // Connect the variables so they are not 'torn apart' by dynamic reordering.
+            // Note that MTR_FIXED preserves the order of the layers. While this is not always necessary to preserve,
+            // (for example) the hybrid engine relies on this connection, so we choose MTR_FIXED instead of MTR_DEFAULT.
             cuddManager.MakeTreeNode(result.front().getIndex(), numberOfLayers, MTR_FIXED);
             
             // Keep track of the number of variables.
