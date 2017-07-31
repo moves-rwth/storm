@@ -8,7 +8,11 @@
 #include "storm/logic/AtomicExpressionFormula.h"
 #include "storm/logic/AtomicLabelFormula.h"
 
+#include "storm/settings/SettingsManager.h"
+#include "storm/settings/modules/BisimulationSettings.h"
+
 #include "storm/utility/macros.h"
+#include "storm/exceptions/NotSupportedException.h"
 #include "storm/exceptions/InvalidPropertyException.h"
 
 namespace storm {
@@ -41,34 +45,34 @@ namespace storm {
             }
 
             template<storm::dd::DdType DdType, typename ValueType>
-            Partition<DdType, ValueType> Partition<DdType, ValueType>::create(storm::models::symbolic::Model<DdType, ValueType> const& model) {
-                return create(model, model.getLabels());
+            Partition<DdType, ValueType> Partition<DdType, ValueType>::create(storm::models::symbolic::Model<DdType, ValueType> const& model, storm::storage::BisimulationType const& bisimulationType) {
+                return create(model, model.getLabels(), bisimulationType);
             }
             
             template<storm::dd::DdType DdType, typename ValueType>
-            Partition<DdType, ValueType> Partition<DdType, ValueType>::create(storm::models::symbolic::Model<DdType, ValueType> const& model, std::vector<std::string> const& labels) {
+            Partition<DdType, ValueType> Partition<DdType, ValueType>::create(storm::models::symbolic::Model<DdType, ValueType> const& model, std::vector<std::string> const& labels, storm::storage::BisimulationType const& bisimulationType) {
                 std::shared_ptr<PreservationInformation> preservationInformation = std::make_shared<PreservationInformation>();
                 std::vector<storm::expressions::Expression> expressions;
                 for (auto const& label : labels) {
                     preservationInformation->addLabel(label);
                     expressions.push_back(model.getExpression(label));
                 }
-                return create(model, expressions, preservationInformation);
+                return create(model, expressions, preservationInformation, bisimulationType);
             }
             
             template<storm::dd::DdType DdType, typename ValueType>
-            Partition<DdType, ValueType> Partition<DdType, ValueType>::create(storm::models::symbolic::Model<DdType, ValueType> const& model, std::vector<storm::expressions::Expression> const& expressions) {
+            Partition<DdType, ValueType> Partition<DdType, ValueType>::create(storm::models::symbolic::Model<DdType, ValueType> const& model, std::vector<storm::expressions::Expression> const& expressions, storm::storage::BisimulationType const& bisimulationType) {
                 std::shared_ptr<PreservationInformation> preservationInformation = std::make_shared<PreservationInformation>();
                 for (auto const& expression : expressions) {
                     preservationInformation->addExpression(expression);
                 }
-                return create(model, expressions, preservationInformation);
+                return create(model, expressions, preservationInformation, bisimulationType);
             }
             
             template<storm::dd::DdType DdType, typename ValueType>
-            Partition<DdType, ValueType> Partition<DdType, ValueType>::create(storm::models::symbolic::Model<DdType, ValueType> const& model, std::vector<std::shared_ptr<storm::logic::Formula const>> const& formulas) {
+            Partition<DdType, ValueType> Partition<DdType, ValueType>::create(storm::models::symbolic::Model<DdType, ValueType> const& model, std::vector<std::shared_ptr<storm::logic::Formula const>> const& formulas, storm::storage::BisimulationType const& bisimulationType) {
                 if (formulas.empty()) {
-                    return create(model);
+                    return create(model, bisimulationType);
                 }
                     
                 std::shared_ptr<PreservationInformation> preservationInformation = std::make_shared<PreservationInformation>();
@@ -93,11 +97,14 @@ namespace storm {
                     expressionVector.emplace_back(expression);
                 }
                 
-                return create(model, expressionVector, preservationInformation);
+                return create(model, expressionVector, preservationInformation, bisimulationType);
             }
             
             template<storm::dd::DdType DdType, typename ValueType>
-            Partition<DdType, ValueType> Partition<DdType, ValueType>::create(storm::models::symbolic::Model<DdType, ValueType> const& model, std::vector<storm::expressions::Expression> const& expressions, std::shared_ptr<PreservationInformation> const& preservationInformation) {
+            Partition<DdType, ValueType> Partition<DdType, ValueType>::create(storm::models::symbolic::Model<DdType, ValueType> const& model, std::vector<storm::expressions::Expression> const& expressions, std::shared_ptr<PreservationInformation> const& preservationInformation, storm::storage::BisimulationType const& bisimulationType) {
+                
+                STORM_LOG_THROW(bisimulationType == storm::storage::BisimulationType::Strong, storm::exceptions::NotSupportedException, "Currently only strong bisimulation is supported.");
+                
                 storm::dd::DdManager<DdType>& manager = model.getManager();
                 
                 std::vector<storm::dd::Bdd<DdType>> stateSets;
@@ -119,6 +126,20 @@ namespace storm {
                     return Partition<DdType, ValueType>(preservationInformation, partitionBddAndBlockCount.first.template toAdd<ValueType>(), blockVariables, partitionBddAndBlockCount.second);
                 } else {
                     return Partition<DdType, ValueType>(preservationInformation, partitionBddAndBlockCount.first, blockVariables, partitionBddAndBlockCount.second);
+                }
+            }
+            
+            template<storm::dd::DdType DdType, typename ValueType>
+            uint64_t Partition<DdType, ValueType>::getNumberOfStates() const {
+                return this->getStates().getNonZeroCount();
+            }
+            
+            template<storm::dd::DdType DdType, typename ValueType>
+            storm::dd::Bdd<DdType> Partition<DdType, ValueType>::getStates() const {
+                if (this->storedAsAdd()) {
+                    return this->asAdd().notZero().existsAbstract({this->getBlockVariable()});
+                } else {
+                    return this->asBdd().existsAbstract({this->getBlockVariable()});
                 }
             }
             

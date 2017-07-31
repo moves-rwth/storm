@@ -68,6 +68,7 @@ namespace storm {
             for (auto const& v : ddVariables) {
                 indicesAndLevels.emplace_back(v.getIndex(), v.getLevel());
             }
+            
             return indicesAndLevels;
         }
         

@@ -83,6 +83,7 @@ namespace storm {
                     
                     // Create the number of rows necessary for the matrix.
                     this->entries.resize(partition.getNumberOfBlocks());
+                    STORM_LOG_TRACE("Partition has " << partition.getNumberOfStates() << " states in " << partition.getNumberOfBlocks() << " blocks.");
                     
                     storm::storage::BitVector encoding(this->stateVariablesIndicesAndLevels.size());
                     extractTransitionMatrixRec(transitionMatrix.getInternalAdd().getCuddDdNode(), partition.asAdd().getInternalAdd().getCuddDdNode(), partition.asAdd().getInternalAdd().getCuddDdNode(), 0, encoding);
@@ -106,11 +107,16 @@ namespace storm {
                         return *blockCacheEntry;
                     }
                 
+//                    FILE* fp = fopen("block.dot" , "w");
+//                    Cudd_DumpDot(ddman, 1, &blockEncoding, nullptr, nullptr, fp);
+//                    fclose(fp);
+                    
                     uint64_t result = 0;
                     uint64_t offset = 0;
                     while (blockEncoding != Cudd_ReadOne(ddman)) {
-                        if (Cudd_T(blockEncoding) != Cudd_ReadZero(ddman)) {
-                            blockEncoding = Cudd_T(blockEncoding);
+                        DdNode* then = Cudd_T(blockEncoding);
+                        if (then != Cudd_ReadZero(ddman)) {
+                            blockEncoding = then;
                             result |= 1ull << offset;
                         } else {
                             blockEncoding = Cudd_E(blockEncoding);
@@ -205,6 +211,7 @@ namespace storm {
                         DdNode* te = transitionMatrixNode;
                         DdNode* et = transitionMatrixNode;
                         DdNode* ee = transitionMatrixNode;
+                        STORM_LOG_ASSERT(transitionMatrixVariable >= this->stateVariablesIndicesAndLevels[currentIndex].first, "Illegal top variable of transition matrix.");
                         if (transitionMatrixVariable == this->stateVariablesIndicesAndLevels[currentIndex].first) {
                             DdNode* t = Cudd_T(transitionMatrixNode);
                             DdNode* e = Cudd_E(transitionMatrixNode);
@@ -226,16 +233,17 @@ namespace storm {
                             }
                         } else {
                             if (transitionMatrixVariable == this->stateVariablesIndicesAndLevels[currentIndex].first + 1) {
-                                tt = Cudd_T(transitionMatrixNode);
-                                te = Cudd_E(transitionMatrixNode);
+                                tt = et = Cudd_T(transitionMatrixNode);
+                                te = ee = Cudd_E(transitionMatrixNode);
                             } else {
-                                tt = te = transitionMatrixNode;
+                                tt = te = et = ee = transitionMatrixNode;
                             }
                         }
                         
                         // Move through partition (for source state).
                         DdNode* sourceT;
                         DdNode* sourceE;
+                        STORM_LOG_ASSERT(sourcePartitionVariable >= this->stateVariablesIndicesAndLevels[currentIndex].first, "Illegal top variable of source partition.");
                         if (sourcePartitionVariable == this->stateVariablesIndicesAndLevels[currentIndex].first) {
                             sourceT = Cudd_T(sourcePartitionNode);
                             sourceE = Cudd_E(sourcePartitionNode);
@@ -246,6 +254,7 @@ namespace storm {
                         // Move through partition (for target state).
                         DdNode* targetT;
                         DdNode* targetE;
+                        STORM_LOG_ASSERT(targetPartitionVariable >= this->stateVariablesIndicesAndLevels[currentIndex].first, "Illegal top variable of source partition.");
                         if (targetPartitionVariable == this->stateVariablesIndicesAndLevels[currentIndex].first) {
                             targetT = Cudd_T(targetPartitionNode);
                             targetE = Cudd_E(targetPartitionNode);
@@ -422,10 +431,10 @@ namespace storm {
                             }
                         } else {
                             if (transitionMatrixVariable == this->stateVariablesIndicesAndLevels[currentIndex].first + 1) {
-                                tt = sylvan_high(transitionMatrixNode);
-                                te = sylvan_low(transitionMatrixNode);
+                                tt = et = sylvan_high(transitionMatrixNode);
+                                te = ee = sylvan_low(transitionMatrixNode);
                             } else {
-                                tt = te = transitionMatrixNode;
+                                tt = te = et = ee = transitionMatrixNode;
                             }
                         }
                         
@@ -490,6 +499,8 @@ namespace storm {
             template<storm::dd::DdType DdType, typename ValueType>
             std::shared_ptr<storm::models::sparse::Model<ValueType>> QuotientExtractor<DdType, ValueType>::extractSparseQuotient(storm::models::symbolic::Model<DdType, ValueType> const& model, Partition<DdType, ValueType> const& partition) {
                 InternalSparseQuotientExtractor<DdType, ValueType> sparseExtractor(model.getManager(), model.getRowVariables());
+                auto states = partition.getStates().swapVariables(model.getRowColumnMetaVariablePairs());
+                
                 storm::storage::SparseMatrix<ValueType> quotientTransitionMatrix = sparseExtractor.extractTransitionMatrix(model.getTransitionMatrix(), partition);
                 
                 storm::models::sparse::StateLabeling quotientStateLabeling(partition.getNumberOfBlocks());

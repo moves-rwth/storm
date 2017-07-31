@@ -162,7 +162,7 @@ namespace storm {
             }
             
             template<storm::dd::DdType Type, typename ValueType>
-            storm::dd::Bdd<Type> Model<Type, ValueType>::getQualitativeTransitionMatrix() const {
+            storm::dd::Bdd<Type> Model<Type, ValueType>::getQualitativeTransitionMatrix(bool) const {
                 return this->getTransitionMatrix().notZero();
             }
             

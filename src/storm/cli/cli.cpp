@@ -485,7 +485,7 @@ namespace storm {
             STORM_LOG_WARN_COND(!bisimulationSettings.isWeakBisimulationSet(), "Weak bisimulation is currently not supported on DDs. Falling back to strong bisimulation.");
             
             STORM_LOG_INFO("Performing bisimulation minimization...");
-            return storm::api::performBisimulationMinimization<DdType, ValueType>(model, createFormulasToRespect(input.properties));
+            return storm::api::performBisimulationMinimization<DdType, ValueType>(model, createFormulasToRespect(input.properties), storm::storage::BisimulationType::Strong, bisimulationSettings.getSignatureMode());
         }
         
         template <storm::dd::DdType DdType, typename ValueType>

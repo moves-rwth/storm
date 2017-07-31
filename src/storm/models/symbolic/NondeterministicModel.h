@@ -113,6 +113,15 @@ namespace storm {
                  */
                 storm::dd::Bdd<Type> getIllegalSuccessorMask() const;
                 
+                /*!
+                 * Retrieves the matrix qualitatively (i.e. without probabilities) representing the transitions of the
+                 * model.
+                 *
+                 * @param keepNondeterminism If false, the matrix will abstract from the nondeterminism variables.
+                 * @return A matrix representing the qualitative transitions of the model.
+                 */
+                virtual storm::dd::Bdd<Type> getQualitativeTransitionMatrix(bool keepNondeterminism = true) const override;
+                
                 virtual void printModelInformationToStream(std::ostream& out) const override;
                 
             protected:

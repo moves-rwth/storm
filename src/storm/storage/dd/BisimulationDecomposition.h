@@ -4,8 +4,9 @@
 #include <vector>
 
 #include "storm/storage/dd/DdType.h"
-
+#include "storm/storage/bisimulation/BisimulationType.h"
 #include "storm/storage/dd/bisimulation/Partition.h"
+#include "storm/storage/dd/bisimulation/SignatureMode.h"
 
 #include "storm/models/symbolic/Model.h"
 
@@ -21,14 +22,14 @@ namespace storm {
                 Initialized, InComputation, FixedPoint
             };
             
-            BisimulationDecomposition(storm::models::symbolic::Model<DdType, ValueType> const& model);
-            BisimulationDecomposition(storm::models::symbolic::Model<DdType, ValueType> const& model, std::vector<std::shared_ptr<storm::logic::Formula const>> const& formulas);
+            BisimulationDecomposition(storm::models::symbolic::Model<DdType, ValueType> const& model, storm::storage::BisimulationType const& bisimulationType);
+            BisimulationDecomposition(storm::models::symbolic::Model<DdType, ValueType> const& model, std::vector<std::shared_ptr<storm::logic::Formula const>> const& formulas, storm::storage::BisimulationType const& bisimulationType);
             BisimulationDecomposition(storm::models::symbolic::Model<DdType, ValueType> const& model, bisimulation::Partition<DdType, ValueType> const& initialPartition);
             
             /*!
              * Computes the decomposition.
              */
-            void compute();
+            void compute(bisimulation::SignatureMode const& mode = bisimulation::SignatureMode::Eager);
             
             /*!
              * Retrieves the quotient model after the bisimulation decomposition was computed.

@@ -7,6 +7,7 @@
 #include "storm/storage/Decomposition.h"
 #include "storm/storage/StateBlock.h"
 #include "storm/storage/bisimulation/Partition.h"
+#include "storm/storage/bisimulation/BisimulationType.h"
 #include "storm/solver/OptimizationDirection.h"
 
 #include "storm/logic/Formulas.h"
@@ -18,15 +19,12 @@ namespace storm {
     namespace utility {
         template <typename ValueType> class ConstantsComparator;
     }
-
+    
     namespace logic {
         class Formula;
     }
     
     namespace storage {
-
-        enum class BisimulationType { Strong, Weak };
-        enum class BisimulationTypeChoice { Strong, Weak, FromSettings };
         
         inline BisimulationType resolveBisimulationTypeChoice(BisimulationTypeChoice c) {
             switch(c) {
@@ -40,8 +38,8 @@ namespace storm {
                     } else {
                         return BisimulationType::Strong;
                     }
-                    
             }
+            return BisimulationType::Strong;
         }
         
         /*!
@@ -89,7 +87,7 @@ namespace storm {
                 
                 /**
                  * Sets the bisimulation type. If the bisimulation type is set to weak,
-                 * we also change the bounded flag (as bounded properties are not preserved under 
+                 * we also change the bounded flag (as bounded properties are not preserved under
                  * weak bisimulation).
                  */
                 void setType(BisimulationType t) {
@@ -136,7 +134,7 @@ namespace storm {
                 
             private:
                 boost::optional<OptimizationDirection> optimalityType;
-
+                
                 /// A flag that indicates whether or not the state-rewards of the model are to be respected (and should
                 /// be kept in the quotient model, if one is built).
                 bool keepRewards;
@@ -155,7 +153,7 @@ namespace storm {
                  * @param formula The only formula to check.
                  */
                 void preserveSingleFormula(ModelType const& model, storm::logic::Formula const& formula);
-
+                
                 /*!
                  * Adds the given expressions and labels to the set of respected atomic propositions.
                  *
@@ -189,7 +187,7 @@ namespace storm {
              * @return The quotient model.
              */
             std::shared_ptr<ModelType> getQuotient() const;
-
+            
             /*!
              * Computes the decomposition of the model into bisimulation equivalence classes. If requested, a quotient
              * model is built.
@@ -263,7 +261,7 @@ namespace storm {
             
             // The model to decompose.
             ModelType const& model;
-
+            
             // The backward transitions of the model.
             storm::storage::SparseMatrix<ValueType> backwardTransitions;
             

@@ -8,22 +8,18 @@
 #include "storm/exceptions/InvalidOperationException.h"
 #include "storm/exceptions/NotSupportedException.h"
 
-#include <sylvan_table.h>
-
-extern llmsset_t nodes;
-
 namespace storm {
     namespace dd {
         
         using namespace bisimulation;
         
         template <storm::dd::DdType DdType, typename ValueType>
-        BisimulationDecomposition<DdType, ValueType>::BisimulationDecomposition(storm::models::symbolic::Model<DdType, ValueType> const& model) : BisimulationDecomposition(model, bisimulation::Partition<DdType, ValueType>::create(model)) {
+        BisimulationDecomposition<DdType, ValueType>::BisimulationDecomposition(storm::models::symbolic::Model<DdType, ValueType> const& model, storm::storage::BisimulationType const& bisimulationType) : BisimulationDecomposition(model, bisimulation::Partition<DdType, ValueType>::create(model, bisimulationType)) {
             // Intentionally left empty.
         }
         
         template <storm::dd::DdType DdType, typename ValueType>
-        BisimulationDecomposition<DdType, ValueType>::BisimulationDecomposition(storm::models::symbolic::Model<DdType, ValueType> const& model, std::vector<std::shared_ptr<storm::logic::Formula const>> const& formulas) : BisimulationDecomposition(model, bisimulation::Partition<DdType, ValueType>::create(model, formulas)) {
+        BisimulationDecomposition<DdType, ValueType>::BisimulationDecomposition(storm::models::symbolic::Model<DdType, ValueType> const& model, std::vector<std::shared_ptr<storm::logic::Formula const>> const& formulas, storm::storage::BisimulationType const& bisimulationType) : BisimulationDecomposition(model, bisimulation::Partition<DdType, ValueType>::create(model, formulas, bisimulationType)) {
             // Intentionally left empty.
         }
         
@@ -33,7 +29,7 @@ namespace storm {
         }
         
         template <storm::dd::DdType DdType, typename ValueType>
-        void BisimulationDecomposition<DdType, ValueType>::compute() {
+        void BisimulationDecomposition<DdType, ValueType>::compute(bisimulation::SignatureMode const& mode) {
             this->status = Status::InComputation;
             auto start = std::chrono::high_resolution_clock::now();
             std::chrono::high_resolution_clock::duration totalSignatureTime(0);
@@ -45,27 +41,41 @@ namespace storm {
 #endif
             
             SignatureRefiner<DdType, ValueType> refiner(model.getManager(), currentPartition.getBlockVariable(), model.getRowVariables());
-            SignatureComputer<DdType, ValueType> signatureComputer(model);
+            SignatureComputer<DdType, ValueType> signatureComputer(model, mode);
             bool done = false;
             uint64_t iterations = 0;
             while (!done) {
                 ++iterations;
                 auto iterationStart = std::chrono::high_resolution_clock::now();
 
-                auto signatureStart = std::chrono::high_resolution_clock::now();
-                Signature<DdType, ValueType> signature = signatureComputer.compute(currentPartition);
-                auto signatureEnd = std::chrono::high_resolution_clock::now();
-                totalSignatureTime += (signatureEnd - signatureStart);
+                std::chrono::milliseconds::rep signatureTime = 0;
+                std::chrono::milliseconds::rep refinementTime = 0;
                 
-                auto refinementStart = std::chrono::high_resolution_clock::now();
-                Partition<DdType, ValueType> newPartition = refiner.refine(currentPartition, signature);
-                auto refinementEnd = std::chrono::high_resolution_clock::now();
-                totalRefinementTime += (refinementEnd - refinementStart);
-                
-                auto signatureTime = std::chrono::duration_cast<std::chrono::milliseconds>(signatureEnd - signatureStart).count();
-                auto refinementTime = std::chrono::duration_cast<std::chrono::milliseconds>(refinementEnd - refinementStart).count();
+                Partition<DdType, ValueType> newPartition;
+                for (uint64_t index = 0, end = signatureComputer.getNumberOfSignatures(); index < end; ++index) {
+                    auto signatureStart = std::chrono::high_resolution_clock::now();
+                    Signature<DdType, ValueType> signature = signatureComputer.compute(currentPartition, index);
+                    auto signatureEnd = std::chrono::high_resolution_clock::now();
+                    totalSignatureTime += (signatureEnd - signatureStart);
+                    STORM_LOG_DEBUG("Signature " << iterations << "[" << index << "] DD has " << signature.getSignatureAdd().getNodeCount() << " nodes and partition DD has " << currentPartition.getNodeCount() << " nodes.");
+                    
+                    auto refinementStart = std::chrono::high_resolution_clock::now();
+                    newPartition = refiner.refine(currentPartition, signature);
+                    auto refinementEnd = std::chrono::high_resolution_clock::now();
+                    totalRefinementTime += (refinementEnd - refinementStart);
+
+                    signatureTime += std::chrono::duration_cast<std::chrono::milliseconds>(signatureEnd - signatureStart).count();
+                    refinementTime = std::chrono::duration_cast<std::chrono::milliseconds>(refinementEnd - refinementStart).count();
+                    
+                    // Potentially exit early in case we have refined the partition already. 
+                    if (newPartition.getNumberOfBlocks() > currentPartition.getNumberOfBlocks()) {
+                        break;
+                    }
+                }
+
                 auto iterationTime = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::high_resolution_clock::now() - iterationStart).count();
-                STORM_LOG_DEBUG("Iteration " << iterations << " produced " << newPartition.getNumberOfBlocks() << " blocks and was completed in " << iterationTime << "ms (signature: " << signatureTime << "ms, refinement: " << refinementTime << "ms). Signature DD has " << signature.getSignatureAdd().getNodeCount() << " nodes and partition DD has " << currentPartition.getNodeCount() << " nodes.");
+
+                STORM_LOG_DEBUG("Iteration " << iterations << " produced " << newPartition.getNumberOfBlocks() << " blocks and was completed in " << iterationTime << "ms (signature: " << signatureTime << "ms, refinement: " << refinementTime << "ms).");
 
                 if (currentPartition == newPartition) {
                     done = true;

@@ -8,6 +8,7 @@
 #include "storm/storage/dd/DdType.h"
 #include "storm/storage/dd/Add.h"
 #include "storm/storage/dd/Bdd.h"
+#include "storm/storage/bisimulation/BisimulationType.h"
 
 #include "storm/models/symbolic/Model.h"
 
@@ -35,23 +36,24 @@ namespace storm {
                 /*!
                  * Creates a partition from the given model that respects all labels.
                  */
-                static Partition create(storm::models::symbolic::Model<DdType, ValueType> const& model);
+                static Partition create(storm::models::symbolic::Model<DdType, ValueType> const& model, storm::storage::BisimulationType const& bisimulationType);
 
                 /*!
                  * Creates a partition from the given model that respects the given labels.
                  */
-                static Partition create(storm::models::symbolic::Model<DdType, ValueType> const& model, std::vector<std::string> const& labels);
+                static Partition create(storm::models::symbolic::Model<DdType, ValueType> const& model, std::vector<std::string> const& labels, storm::storage::BisimulationType const& bisimulationType);
 
                 /*!
                  * Creates a partition from the given model that respects the given expressions.
                  */
-                static Partition create(storm::models::symbolic::Model<DdType, ValueType> const& model, std::vector<storm::expressions::Expression> const& expressions);
+                static Partition create(storm::models::symbolic::Model<DdType, ValueType> const& model, std::vector<storm::expressions::Expression> const& expressions, storm::storage::BisimulationType const& bisimulationType);
 
                 /*!
                  * Creates a partition from the given model that preserves the given formulas.
                  */
-                static Partition create(storm::models::symbolic::Model<DdType, ValueType> const& model, std::vector<std::shared_ptr<storm::logic::Formula const>> const& formulas);
+                static Partition create(storm::models::symbolic::Model<DdType, ValueType> const& model, std::vector<std::shared_ptr<storm::logic::Formula const>> const& formulas, storm::storage::BisimulationType const& bisimulationType);
                 
+                uint64_t getNumberOfStates() const;
                 uint64_t getNumberOfBlocks() const;
                 
                 bool storedAsAdd() const;
@@ -66,6 +68,8 @@ namespace storm {
                 uint64_t getNextFreeBlockIndex() const;
                 uint64_t getNodeCount() const;
 
+                storm::dd::Bdd<DdType> getStates() const;
+                
                 PreservationInformation const& getPreservationInformation() const;
                 
             private:
@@ -98,7 +102,7 @@ namespace storm {
                 /*!
                  * Creates a partition from the given model that respects the given expressions.
                  */
-                static Partition create(storm::models::symbolic::Model<DdType, ValueType> const& model, std::vector<storm::expressions::Expression> const& expressions, std::shared_ptr<PreservationInformation> const& preservationInformation);
+                static Partition create(storm::models::symbolic::Model<DdType, ValueType> const& model, std::vector<storm::expressions::Expression> const& expressions, std::shared_ptr<PreservationInformation> const& preservationInformation, storm::storage::BisimulationType const& bisimulationType);
                 
                 static std::pair<storm::dd::Bdd<DdType>, uint64_t> createPartitionBdd(storm::dd::DdManager<DdType> const& manager, storm::models::symbolic::Model<DdType, ValueType> const& model, std::vector<storm::dd::Bdd<DdType>> const& stateSets, storm::expressions::Variable const& blockVariable);
                 

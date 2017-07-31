@@ -3,6 +3,8 @@
 
 #include "storm/settings/modules/ModuleSettings.h"
 
+#include "storm/storage/dd/bisimulation/SignatureMode.h"
+
 namespace storm {
     namespace settings {
         namespace modules {
@@ -48,6 +50,11 @@ namespace storm {
                  */
                 bool isUseRepresentativesSet() const;
                 
+                /*!
+                 * Retrieves the mode to compute signatures.
+                 */
+                storm::dd::bisimulation::SignatureMode getSignatureMode() const;
+                
                 virtual bool check() const override;
                 
                 // The name of the module.
@@ -58,6 +65,7 @@ namespace storm {
                 static const std::string typeOptionName;
                 static const std::string representativeOptionName;
                 static const std::string quotientFormatOptionName;
+                static const std::string signatureModeOptionName;
             };
         } // namespace modules
     } // namespace settings

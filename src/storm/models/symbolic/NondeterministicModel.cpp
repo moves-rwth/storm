@@ -96,6 +96,15 @@ namespace storm {
                 illegalMask = !(this->getTransitionMatrix().notZero().existsAbstract(this->getColumnVariables())) && this->getReachableStates();
             }
             
+            template<storm::dd::DdType Type, typename ValueType>
+            storm::dd::Bdd<Type> NondeterministicModel<Type, ValueType>::getQualitativeTransitionMatrix(bool keepNondeterminism) const {
+                if (!keepNondeterminism) {
+                    return this->getTransitionMatrix().notZero().existsAbstract(this->getNondeterminismVariables());
+                } else {
+                    return Model<Type, ValueType>::getQualitativeTransitionMatrix(keepNondeterminism);
+                }
+            }
+            
             // Explicitly instantiate the template class.
             template class NondeterministicModel<storm::dd::DdType::CUDD, double>;
             template class NondeterministicModel<storm::dd::DdType::Sylvan, double>;

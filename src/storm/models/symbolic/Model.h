@@ -204,9 +204,10 @@ namespace storm {
                  * Retrieves the matrix qualitatively (i.e. without probabilities) representing the transitions of the
                  * model.
                  *
+                 * @param keepNondeterminism If false, the matrix will abstract from the nondeterminism variables.
                  * @return A matrix representing the qualitative transitions of the model.
                  */
-                storm::dd::Bdd<Type> getQualitativeTransitionMatrix() const;
+                virtual storm::dd::Bdd<Type> getQualitativeTransitionMatrix(bool keepNondeterminism = true) const;
                 
                 /*!
                  * Retrieves the meta variables used to encode the rows of the transition matrix and the vector indices.
