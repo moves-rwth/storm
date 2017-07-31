@@ -196,22 +196,28 @@ namespace storm {
         template<typename ValueType>
         class MinMaxLinearEquationSolverFactory {
         public:
-            MinMaxLinearEquationSolverFactory(bool trackScheduler = false);
+            MinMaxLinearEquationSolverFactory(MinMaxMethodSelection const& method = MinMaxMethodSelection::FROMSETTINGS, bool trackScheduler = false);
 
             virtual std::unique_ptr<MinMaxLinearEquationSolver<ValueType>> create(storm::storage::SparseMatrix<ValueType> const& matrix) const = 0;
             virtual std::unique_ptr<MinMaxLinearEquationSolver<ValueType>> create(storm::storage::SparseMatrix<ValueType>&& matrix) const;
 
             void setTrackScheduler(bool value);
             bool isTrackSchedulerSet() const;
+            
+            virtual void setMinMaxMethod(MinMaxMethodSelection const& newMethod);
+            virtual void setMinMaxMethod(MinMaxMethod const& newMethod);
+            
+            MinMaxMethod const& getMinMaxMethod() const;
 
         private:
             bool trackScheduler;
+            MinMaxMethod method;
         };
 
         template<typename ValueType>
         class GeneralMinMaxLinearEquationSolverFactory : public MinMaxLinearEquationSolverFactory<ValueType> {
         public:
-            GeneralMinMaxLinearEquationSolverFactory(bool trackScheduler = false);
+            GeneralMinMaxLinearEquationSolverFactory(MinMaxMethodSelection const& method = MinMaxMethodSelection::FROMSETTINGS, bool trackScheduler = false);
 
             virtual std::unique_ptr<MinMaxLinearEquationSolver<ValueType>> create(storm::storage::SparseMatrix<ValueType> const& matrix) const override;
             virtual std::unique_ptr<MinMaxLinearEquationSolver<ValueType>> create(storm::storage::SparseMatrix<ValueType>&& matrix) const override;

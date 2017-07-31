@@ -8,10 +8,22 @@ namespace storm {
                     return "policy";
                 case MinMaxMethod::ValueIteration:
                     return "value";
+                case MinMaxMethod::LinearProgramming:
+                    return "linearprogramming";
                 case MinMaxMethod::Topological:
                     return "topological";
                 case MinMaxMethod::Acyclic:
                     return "acyclic";
+            }
+            return "invalid";
+        }
+        
+        std::string toString(LraMethod m) {
+            switch(m) {
+                case LraMethod::LinearProgramming:
+                    return "linearprogramming";
+                case LraMethod::ValueIteration:
+                    return "valueiteration";
             }
             return "invalid";
         }

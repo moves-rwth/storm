@@ -44,6 +44,8 @@ namespace storm {
              */
             NextStateGenerator(storm::expressions::ExpressionManager const& expressionManager, NextStateGeneratorOptions const& options);
             
+            virtual ~NextStateGenerator() = default;
+            
             uint64_t getStateSize() const;
             virtual ModelType getModelType() const = 0;
             virtual bool isDeterministicModel() const = 0;

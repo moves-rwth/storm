@@ -592,10 +592,7 @@ Cudd_SharingSize(
 //     * to deal with functions that depend on more than 1023, but less
 //     * than 2044 variables and don't have too many minterms.
 //     */
-//    printf("vars: %i, min_exp: %.400f, %i\n", nvars, DBL_MIN_EXP, DBL_MIN_EXP);
-//    printf("1: %f, 2: %i \n", (double)(nvars + DBL_MIN_EXP), (nvars + DBL_MIN_EXP));
 //    max = pow(2.0,(double)(nvars + DBL_MIN_EXP));
-//    printf("max: %f, DD_PLUS_INF_VAL: %.50f\n", max, DD_PLUS_INF_VAL);
 //    if (max >= DD_PLUS_INF_VAL) {
 //        return((double)CUDD_OUT_OF_MEM);
 //    }
@@ -615,10 +612,8 @@ Cudd_SharingSize(
 //        /* Minterm count is too large to be scaled back. */
 //        return(DD_PLUS_INF_VAL);
 //    } else {
-//        printf("in third case: %.400f\n", res);
 //        /* Undo the scaling. */
 //        res *= pow(2.0,(double)-DBL_MIN_EXP);
-//        printf("after rescaling: %f\n", res);
 //        return(res);
 //    }
 //

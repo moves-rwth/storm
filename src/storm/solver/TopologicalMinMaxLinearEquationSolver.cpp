@@ -458,7 +458,7 @@ namespace storm {
         }
 
         template<typename ValueType>
-        TopologicalMinMaxLinearEquationSolverFactory<ValueType>::TopologicalMinMaxLinearEquationSolverFactory(bool trackScheduler) : MinMaxLinearEquationSolverFactory<ValueType>(trackScheduler) {
+        TopologicalMinMaxLinearEquationSolverFactory<ValueType>::TopologicalMinMaxLinearEquationSolverFactory(bool trackScheduler) : MinMaxLinearEquationSolverFactory<ValueType>(MinMaxMethodSelection::Topological, trackScheduler) {
             // Intentionally left empty.
         }
         
