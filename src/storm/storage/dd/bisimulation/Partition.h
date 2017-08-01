@@ -30,28 +30,9 @@ namespace storm {
                 bool operator==(Partition<DdType, ValueType> const& other);
                 
                 Partition<DdType, ValueType> replacePartition(storm::dd::Add<DdType, ValueType> const& newPartitionAdd, uint64_t nextFreeBlockIndex) const;
-
                 Partition<DdType, ValueType> replacePartition(storm::dd::Bdd<DdType> const& newPartitionBdd, uint64_t nextFreeBlockIndex) const;
 
-                /*!
-                 * Creates a partition from the given model that respects all labels.
-                 */
-                static Partition create(storm::models::symbolic::Model<DdType, ValueType> const& model, storm::storage::BisimulationType const& bisimulationType);
-
-                /*!
-                 * Creates a partition from the given model that respects the given labels.
-                 */
-                static Partition create(storm::models::symbolic::Model<DdType, ValueType> const& model, std::vector<std::string> const& labels, storm::storage::BisimulationType const& bisimulationType);
-
-                /*!
-                 * Creates a partition from the given model that respects the given expressions.
-                 */
-                static Partition create(storm::models::symbolic::Model<DdType, ValueType> const& model, std::vector<storm::expressions::Expression> const& expressions, storm::storage::BisimulationType const& bisimulationType);
-
-                /*!
-                 * Creates a partition from the given model that preserves the given formulas.
-                 */
-                static Partition create(storm::models::symbolic::Model<DdType, ValueType> const& model, std::vector<std::shared_ptr<storm::logic::Formula const>> const& formulas, storm::storage::BisimulationType const& bisimulationType);
+                static Partition create(storm::models::symbolic::Model<DdType, ValueType> const& model, storm::storage::BisimulationType const& bisimulationType, PreservationInformation const& preservationInformation);
                 
                 uint64_t getNumberOfStates() const;
                 uint64_t getNumberOfBlocks() const;
@@ -69,14 +50,11 @@ namespace storm {
                 uint64_t getNodeCount() const;
 
                 storm::dd::Bdd<DdType> getStates() const;
-                
-                PreservationInformation const& getPreservationInformation() const;
-                
+                                
             private:
                 /*!
                  * Creates a new partition from the given data.
                  *
-                 * @param preservationInformation Informatin about which labels/expressions this partition preserves.
                  * @param partitionAdd An ADD that maps encoding over the state/row variables and the block variable to
                  * one iff the state is in the block.
                  * @param blockVariables The variables to use for the block encoding. Its range must be [0, x] where x is
@@ -84,12 +62,11 @@ namespace storm {
                  * @param nextFreeBlockIndex The next free block index. The existing blocks must be encoded with indices
                  * between 0 and this number.
                  */
-                Partition(std::shared_ptr<PreservationInformation> preservationInformation, storm::dd::Add<DdType, ValueType> const& partitionAdd, std::pair<storm::expressions::Variable, storm::expressions::Variable> const& blockVariables, uint64_t nextFreeBlockIndex);
+                Partition(storm::dd::Add<DdType, ValueType> const& partitionAdd, std::pair<storm::expressions::Variable, storm::expressions::Variable> const& blockVariables, uint64_t nextFreeBlockIndex);
                 
                 /*!
                  * Creates a new partition from the given data.
                  *
-                 * @param preservationInformation Informatin about which labels/expressions this partition preserves.
                  * @param partitionBdd A BDD that maps encoding over the state/row variables and the block variable to
                  * true iff the state is in the block.
                  * @param blockVariables The variables to use for the block encoding. Their range must be [0, x] where x is
@@ -97,18 +74,16 @@ namespace storm {
                  * @param nextFreeBlockIndex The next free block index. The existing blocks must be encoded with indices
                  * between 0 and this number.
                  */
-                Partition(std::shared_ptr<PreservationInformation> preservationInformation, storm::dd::Bdd<DdType> const& partitionBdd, std::pair<storm::expressions::Variable, storm::expressions::Variable> const& blockVariables, uint64_t nextFreeBlockIndex);
+                Partition(storm::dd::Bdd<DdType> const& partitionBdd, std::pair<storm::expressions::Variable, storm::expressions::Variable> const& blockVariables, uint64_t nextFreeBlockIndex);
                 
                 /*!
                  * Creates a partition from the given model that respects the given expressions.
                  */
-                static Partition create(storm::models::symbolic::Model<DdType, ValueType> const& model, std::vector<storm::expressions::Expression> const& expressions, std::shared_ptr<PreservationInformation> const& preservationInformation, storm::storage::BisimulationType const& bisimulationType);
+                static Partition create(storm::models::symbolic::Model<DdType, ValueType> const& model, std::vector<storm::expressions::Expression> const& expressions, storm::storage::BisimulationType const& bisimulationType);
                 
                 static std::pair<storm::dd::Bdd<DdType>, uint64_t> createPartitionBdd(storm::dd::DdManager<DdType> const& manager, storm::models::symbolic::Model<DdType, ValueType> const& model, std::vector<storm::dd::Bdd<DdType>> const& stateSets, storm::expressions::Variable const& blockVariable);
                 
                 static std::pair<storm::expressions::Variable, storm::expressions::Variable> createBlockVariables(storm::dd::DdManager<DdType>& manager, uint64_t numberOfDdVariables);
-
-                std::shared_ptr<PreservationInformation> preservationInformation;
                 
                 /// The DD representing the partition. The DD is over the row variables of the model and the block variable.
                 boost::variant<storm::dd::Bdd<DdType>, storm::dd::Add<DdType, ValueType>> partition;

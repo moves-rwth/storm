@@ -20,12 +20,12 @@ namespace storm {
         namespace bisimulation {
             
             template<storm::dd::DdType DdType, typename ValueType>
-            Partition<DdType, ValueType>::Partition(std::shared_ptr<PreservationInformation> preservationInformation, storm::dd::Add<DdType, ValueType> const& partitionAdd, std::pair<storm::expressions::Variable, storm::expressions::Variable> const& blockVariables, uint64_t nextFreeBlockIndex) : preservationInformation(preservationInformation), partition(partitionAdd), blockVariables(blockVariables), nextFreeBlockIndex(nextFreeBlockIndex) {
+            Partition<DdType, ValueType>::Partition(storm::dd::Add<DdType, ValueType> const& partitionAdd, std::pair<storm::expressions::Variable, storm::expressions::Variable> const& blockVariables, uint64_t nextFreeBlockIndex) : partition(partitionAdd), blockVariables(blockVariables), nextFreeBlockIndex(nextFreeBlockIndex) {
                 // Intentionally left empty.
             }
 
             template<storm::dd::DdType DdType, typename ValueType>
-            Partition<DdType, ValueType>::Partition(std::shared_ptr<PreservationInformation> preservationInformation, storm::dd::Bdd<DdType> const& partitionBdd, std::pair<storm::expressions::Variable, storm::expressions::Variable> const& blockVariables, uint64_t nextFreeBlockIndex) : preservationInformation(preservationInformation), partition(partitionBdd), blockVariables(blockVariables), nextFreeBlockIndex(nextFreeBlockIndex) {
+            Partition<DdType, ValueType>::Partition(storm::dd::Bdd<DdType> const& partitionBdd, std::pair<storm::expressions::Variable, storm::expressions::Variable> const& blockVariables, uint64_t nextFreeBlockIndex) : partition(partitionBdd), blockVariables(blockVariables), nextFreeBlockIndex(nextFreeBlockIndex) {
                 // Intentionally left empty.
             }
 
@@ -36,72 +36,27 @@ namespace storm {
             
             template<storm::dd::DdType DdType, typename ValueType>
             Partition<DdType, ValueType> Partition<DdType, ValueType>::replacePartition(storm::dd::Add<DdType, ValueType> const& newPartitionAdd, uint64_t nextFreeBlockIndex) const {
-                return Partition<DdType, ValueType>(preservationInformation, newPartitionAdd, blockVariables, nextFreeBlockIndex);
+                return Partition<DdType, ValueType>(newPartitionAdd, blockVariables, nextFreeBlockIndex);
             }
 
             template<storm::dd::DdType DdType, typename ValueType>
             Partition<DdType, ValueType> Partition<DdType, ValueType>::replacePartition(storm::dd::Bdd<DdType> const& newPartitionBdd, uint64_t nextFreeBlockIndex) const {
-                return Partition<DdType, ValueType>(preservationInformation, newPartitionBdd, blockVariables, nextFreeBlockIndex);
+                return Partition<DdType, ValueType>(newPartitionBdd, blockVariables, nextFreeBlockIndex);
             }
 
             template<storm::dd::DdType DdType, typename ValueType>
-            Partition<DdType, ValueType> Partition<DdType, ValueType>::create(storm::models::symbolic::Model<DdType, ValueType> const& model, storm::storage::BisimulationType const& bisimulationType) {
-                return create(model, model.getLabels(), bisimulationType);
-            }
-            
-            template<storm::dd::DdType DdType, typename ValueType>
-            Partition<DdType, ValueType> Partition<DdType, ValueType>::create(storm::models::symbolic::Model<DdType, ValueType> const& model, std::vector<std::string> const& labels, storm::storage::BisimulationType const& bisimulationType) {
-                std::shared_ptr<PreservationInformation> preservationInformation = std::make_shared<PreservationInformation>();
-                std::vector<storm::expressions::Expression> expressions;
-                for (auto const& label : labels) {
-                    preservationInformation->addLabel(label);
-                    expressions.push_back(model.getExpression(label));
+            Partition<DdType, ValueType> Partition<DdType, ValueType>::create(storm::models::symbolic::Model<DdType, ValueType> const& model, storm::storage::BisimulationType const& bisimulationType, PreservationInformation const& preservationInformation) {
+                
+                std::vector<storm::expressions::Expression> expressionVector;
+                for (auto const& expression : preservationInformation.getExpressions()) {
+                    expressionVector.emplace_back(expression);
                 }
-                return create(model, expressions, preservationInformation, bisimulationType);
+                
+                return create(model, expressionVector, bisimulationType);
             }
             
             template<storm::dd::DdType DdType, typename ValueType>
             Partition<DdType, ValueType> Partition<DdType, ValueType>::create(storm::models::symbolic::Model<DdType, ValueType> const& model, std::vector<storm::expressions::Expression> const& expressions, storm::storage::BisimulationType const& bisimulationType) {
-                std::shared_ptr<PreservationInformation> preservationInformation = std::make_shared<PreservationInformation>();
-                for (auto const& expression : expressions) {
-                    preservationInformation->addExpression(expression);
-                }
-                return create(model, expressions, preservationInformation, bisimulationType);
-            }
-            
-            template<storm::dd::DdType DdType, typename ValueType>
-            Partition<DdType, ValueType> Partition<DdType, ValueType>::create(storm::models::symbolic::Model<DdType, ValueType> const& model, std::vector<std::shared_ptr<storm::logic::Formula const>> const& formulas, storm::storage::BisimulationType const& bisimulationType) {
-                if (formulas.empty()) {
-                    return create(model, bisimulationType);
-                }
-                    
-                std::shared_ptr<PreservationInformation> preservationInformation = std::make_shared<PreservationInformation>();
-                std::set<std::string> labels;
-                std::set<storm::expressions::Expression> expressions;
-                
-                for (auto const& formula : formulas) {
-                    for (auto const& expressionFormula : formula->getAtomicExpressionFormulas()) {
-                        expressions.insert(expressionFormula->getExpression());
-                        preservationInformation->addExpression(expressionFormula->getExpression());
-                    }
-                    for (auto const& labelFormula : formula->getAtomicLabelFormulas()) {
-                        std::string const& label = labelFormula->getLabel();
-                        STORM_LOG_THROW(model.hasLabel(label), storm::exceptions::InvalidPropertyException, "Property refers to illegal label '" << label << "'.");
-                        preservationInformation->addLabel(label);
-                        expressions.insert(model.getExpression(label));
-                    }
-                }
-                
-                std::vector<storm::expressions::Expression> expressionVector;
-                for (auto const& expression : expressions) {
-                    expressionVector.emplace_back(expression);
-                }
-                
-                return create(model, expressionVector, preservationInformation, bisimulationType);
-            }
-            
-            template<storm::dd::DdType DdType, typename ValueType>
-            Partition<DdType, ValueType> Partition<DdType, ValueType>::create(storm::models::symbolic::Model<DdType, ValueType> const& model, std::vector<storm::expressions::Expression> const& expressions, std::shared_ptr<PreservationInformation> const& preservationInformation, storm::storage::BisimulationType const& bisimulationType) {
                 
                 STORM_LOG_THROW(bisimulationType == storm::storage::BisimulationType::Strong, storm::exceptions::NotSupportedException, "Currently only strong bisimulation is supported.");
                 
@@ -123,9 +78,9 @@ namespace storm {
                 
                 // Store the partition as an ADD only in the case of CUDD.
                 if (DdType == storm::dd::DdType::CUDD) {
-                    return Partition<DdType, ValueType>(preservationInformation, partitionBddAndBlockCount.first.template toAdd<ValueType>(), blockVariables, partitionBddAndBlockCount.second);
+                    return Partition<DdType, ValueType>(partitionBddAndBlockCount.first.template toAdd<ValueType>(), blockVariables, partitionBddAndBlockCount.second);
                 } else {
-                    return Partition<DdType, ValueType>(preservationInformation, partitionBddAndBlockCount.first, blockVariables, partitionBddAndBlockCount.second);
+                    return Partition<DdType, ValueType>(partitionBddAndBlockCount.first, blockVariables, partitionBddAndBlockCount.second);
                 }
             }
             
