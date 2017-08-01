@@ -46,8 +46,9 @@ namespace storm {
             
             virtual void clearCache() const override;
 
-            virtual ValueType getPrecision() const override;
-            virtual bool getRelative() const override;
+            ValueType getPrecision() const;
+            bool getRelative() const;
+            
         private:
             bool solveEquationsPolicyIteration(OptimizationDirection dir, std::vector<ValueType>& x, std::vector<ValueType> const& b) const;
             bool solveEquationsValueIteration(OptimizationDirection dir, std::vector<ValueType>& x, std::vector<ValueType> const& b) const;
