@@ -444,7 +444,7 @@ namespace storm {
             };
             
             template<storm::dd::DdType DdType, typename ValueType>
-            SignatureRefiner<DdType, ValueType>::SignatureRefiner(storm::dd::DdManager<DdType> const& manager, storm::expressions::Variable const& blockVariable, std::set<storm::expressions::Variable> const& stateVariables) : manager(manager), stateVariables(stateVariables) {
+            SignatureRefiner<DdType, ValueType>::SignatureRefiner(storm::dd::DdManager<DdType> const& manager, storm::expressions::Variable const& blockVariable, std::set<storm::expressions::Variable> const& stateVariables) : manager(&manager), stateVariables(stateVariables) {
                 uint64_t lastStateLevel = 0;
                 for (auto const& stateVariable : stateVariables) {
                     lastStateLevel = std::max(lastStateLevel, manager.getMetaVariable(stateVariable).getHighestLevel());

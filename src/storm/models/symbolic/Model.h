@@ -9,6 +9,7 @@
 #include "storm/storage/expressions/Expression.h"
 #include "storm/storage/expressions/Variable.h"
 #include "storm/storage/dd/DdType.h"
+#include "storm/storage/dd/Add.h"
 #include "storm/storage/dd/Bdd.h"
 #include "storm/models/Model.h"
 #include "storm/utility/OsDetection.h"
@@ -21,9 +22,6 @@ namespace storm {
         
         template<storm::dd::DdType Type>
         class Dd;
-        
-        template<storm::dd::DdType Type, typename ValueType>
-        class Add;
         
         template<storm::dd::DdType Type>
         class DdManager;

@@ -8,6 +8,8 @@
 #include "storm/logic/AtomicExpressionFormula.h"
 #include "storm/logic/AtomicLabelFormula.h"
 
+#include "storm/models/symbolic/Mdp.h"
+
 #include "storm/settings/SettingsManager.h"
 #include "storm/settings/modules/BisimulationSettings.h"
 
@@ -18,6 +20,11 @@
 namespace storm {
     namespace dd {
         namespace bisimulation {
+            
+            template<storm::dd::DdType DdType, typename ValueType>
+            Partition<DdType, ValueType>::Partition() : nextFreeBlockIndex(0) {
+                // Intentionally left empty.
+            }
             
             template<storm::dd::DdType DdType, typename ValueType>
             Partition<DdType, ValueType>::Partition(storm::dd::Add<DdType, ValueType> const& partitionAdd, std::pair<storm::expressions::Variable, storm::expressions::Variable> const& blockVariables, uint64_t nextFreeBlockIndex) : partition(partitionAdd), blockVariables(blockVariables), nextFreeBlockIndex(nextFreeBlockIndex) {
@@ -45,7 +52,7 @@ namespace storm {
             }
 
             template<storm::dd::DdType DdType, typename ValueType>
-            Partition<DdType, ValueType> Partition<DdType, ValueType>::create(storm::models::symbolic::Model<DdType, ValueType> const& model, storm::storage::BisimulationType const& bisimulationType, PreservationInformation const& preservationInformation) {
+            Partition<DdType, ValueType> Partition<DdType, ValueType>::create(storm::models::symbolic::Model<DdType, ValueType> const& model, storm::storage::BisimulationType const& bisimulationType, PreservationInformation<DdType, ValueType> const& preservationInformation) {
                 
                 std::vector<storm::expressions::Expression> expressionVector;
                 for (auto const& expression : preservationInformation.getExpressions()) {
@@ -57,7 +64,6 @@ namespace storm {
             
             template<storm::dd::DdType DdType, typename ValueType>
             Partition<DdType, ValueType> Partition<DdType, ValueType>::create(storm::models::symbolic::Model<DdType, ValueType> const& model, std::vector<storm::expressions::Expression> const& expressions, storm::storage::BisimulationType const& bisimulationType) {
-                
                 STORM_LOG_THROW(bisimulationType == storm::storage::BisimulationType::Strong, storm::exceptions::NotSupportedException, "Currently only strong bisimulation is supported.");
                 
                 storm::dd::DdManager<DdType>& manager = model.getManager();
@@ -72,6 +78,13 @@ namespace storm {
                     auto const& ddMetaVariable = manager.getMetaVariable(metaVariable);
                     numberOfDdVariables += ddMetaVariable.getNumberOfDdVariables();
                 }
+                if (model.getType() == storm::models::ModelType::Mdp) {
+                    auto mdp = model.template as<storm::models::symbolic::Mdp<DdType, ValueType>>();
+                    for (auto const& metaVariable : mdp->getNondeterminismVariables()) {
+                        auto const& ddMetaVariable = manager.getMetaVariable(metaVariable);
+                        numberOfDdVariables += ddMetaVariable.getNumberOfDdVariables();
+                    }
+                }
                 
                 std::pair<storm::expressions::Variable, storm::expressions::Variable> blockVariables = createBlockVariables(manager, numberOfDdVariables);
                 std::pair<storm::dd::Bdd<DdType>, uint64_t> partitionBddAndBlockCount = createPartitionBdd(manager, model, stateSets, blockVariables.first);
@@ -81,6 +94,18 @@ namespace storm {
                     return Partition<DdType, ValueType>(partitionBddAndBlockCount.first.template toAdd<ValueType>(), blockVariables, partitionBddAndBlockCount.second);
                 } else {
                     return Partition<DdType, ValueType>(partitionBddAndBlockCount.first, blockVariables, partitionBddAndBlockCount.second);
+                }
+            }
+            
+            template<storm::dd::DdType DdType, typename ValueType>
+            Partition<DdType, ValueType> Partition<DdType, ValueType>::createTrivialChoicePartition(storm::models::symbolic::NondeterministicModel<DdType, ValueType> const& model, std::pair<storm::expressions::Variable, storm::expressions::Variable> const& blockVariables) {
+                storm::dd::Bdd<DdType> choicePartitionBdd = !model.getIllegalSuccessorMask() && model.getManager().getEncoding(blockVariables.first, 0, false);
+                
+                // Store the partition as an ADD only in the case of CUDD.
+                if (DdType == storm::dd::DdType::CUDD) {
+                    return Partition<DdType, ValueType>(choicePartitionBdd.template toAdd<ValueType>(), blockVariables, 1);
+                } else {
+                    return Partition<DdType, ValueType>(choicePartitionBdd, blockVariables, 1);
                 }
             }
             
@@ -124,6 +149,11 @@ namespace storm {
             }
             
             template<storm::dd::DdType DdType, typename ValueType>
+            std::pair<storm::expressions::Variable, storm::expressions::Variable> const& Partition<DdType, ValueType>::getBlockVariables() const {
+                return blockVariables;
+            }
+            
+            template<storm::dd::DdType DdType, typename ValueType>
             storm::expressions::Variable const& Partition<DdType, ValueType>::getBlockVariable() const {
                 return blockVariables.first;
             }
@@ -145,11 +175,6 @@ namespace storm {
                 } else {
                     return asAdd().getNodeCount();
                 }
-            }
-            
-            template<storm::dd::DdType DdType, typename ValueType>
-            PreservationInformation const& Partition<DdType, ValueType>::getPreservationInformation() const {
-                return *preservationInformation;
             }
             
             template<storm::dd::DdType DdType>

@@ -1,10 +1,12 @@
 #include "storm/storage/dd/BisimulationDecomposition.h"
 
+#include "storm/storage/dd/bisimulation/Partition.h"
 #include "storm/storage/dd/bisimulation/PartitionRefiner.h"
-
+#include "storm/storage/dd/bisimulation/MdpPartitionRefiner.h"
 #include "storm/storage/dd/bisimulation/QuotientExtractor.h"
 
 #include "storm/models/symbolic/Model.h"
+#include "storm/models/symbolic/Mdp.h"
 
 #include "storm/utility/macros.h"
 #include "storm/exceptions/InvalidOperationException.h"
@@ -14,19 +16,28 @@ namespace storm {
     namespace dd {
         
         using namespace bisimulation;
+
+        template <storm::dd::DdType DdType, typename ValueType>
+        std::unique_ptr<PartitionRefiner<DdType, ValueType>> createRefiner(storm::models::symbolic::Model<DdType, ValueType> const& model, Partition<DdType, ValueType> const& initialPartition) {
+            if (model.isOfType(storm::models::ModelType::Mdp)) {
+                return std::make_unique<MdpPartitionRefiner<DdType, ValueType>>(*model.template as<storm::models::symbolic::Mdp<DdType, ValueType>>(), initialPartition);
+            } else {
+                return std::make_unique<PartitionRefiner<DdType, ValueType>>(model, initialPartition);
+            }
+        }
         
         template <storm::dd::DdType DdType, typename ValueType>
-        BisimulationDecomposition<DdType, ValueType>::BisimulationDecomposition(storm::models::symbolic::Model<DdType, ValueType> const& model, storm::storage::BisimulationType const& bisimulationType) : BisimulationDecomposition(model, bisimulation::Partition<DdType, ValueType>::create(model, bisimulationType)) {
+        BisimulationDecomposition<DdType, ValueType>::BisimulationDecomposition(storm::models::symbolic::Model<DdType, ValueType> const& model, storm::storage::BisimulationType const& bisimulationType) : model(model), preservationInformation(model, bisimulationType), refiner(createRefiner(model, Partition<DdType, ValueType>::create(model, bisimulationType, preservationInformation))) {
             // Intentionally left empty.
         }
         
         template <storm::dd::DdType DdType, typename ValueType>
-        BisimulationDecomposition<DdType, ValueType>::BisimulationDecomposition(storm::models::symbolic::Model<DdType, ValueType> const& model, std::vector<std::shared_ptr<storm::logic::Formula const>> const& formulas, storm::storage::BisimulationType const& bisimulationType) : BisimulationDecomposition(model, bisimulation::Partition<DdType, ValueType>::create(model, formulas, bisimulationType)) {
+        BisimulationDecomposition<DdType, ValueType>::BisimulationDecomposition(storm::models::symbolic::Model<DdType, ValueType> const& model, std::vector<std::shared_ptr<storm::logic::Formula const>> const& formulas, storm::storage::BisimulationType const& bisimulationType) : model(model), preservationInformation(model, formulas, bisimulationType), refiner(createRefiner(model, Partition<DdType, ValueType>::create(model, bisimulationType, preservationInformation))) {
             // Intentionally left empty.
         }
         
         template <storm::dd::DdType DdType, typename ValueType>
-        BisimulationDecomposition<DdType, ValueType>::BisimulationDecomposition(storm::models::symbolic::Model<DdType, ValueType> const& model, Partition<DdType, ValueType> const& initialPartition) : model(model), refiner(std::make_unique<PartitionRefiner<DdType, ValueType>>(model, initialPartition)) {
+        BisimulationDecomposition<DdType, ValueType>::BisimulationDecomposition(storm::models::symbolic::Model<DdType, ValueType> const& model, Partition<DdType, ValueType> const& initialPartition, bisimulation::PreservationInformation<DdType, ValueType> const& preservationInformation) : model(model), preservationInformation(preservationInformation), refiner(createRefiner(model, initialPartition)) {
             STORM_LOG_THROW(!model.hasRewardModel(), storm::exceptions::NotSupportedException, "Symbolic bisimulation currently does not support preserving rewards.");
         }
         
@@ -61,7 +72,7 @@ namespace storm {
 
             STORM_LOG_TRACE("Starting quotient extraction.");
             QuotientExtractor<DdType, ValueType> extractor;
-            std::shared_ptr<storm::models::Model<ValueType>> quotient = extractor.extract(model, refiner->getStatePartition());
+            std::shared_ptr<storm::models::Model<ValueType>> quotient = extractor.extract(model, refiner->getStatePartition(), preservationInformation);
             STORM_LOG_TRACE("Quotient extraction done.");
             
             return quotient;

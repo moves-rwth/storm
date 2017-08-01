@@ -480,13 +480,13 @@ namespace storm {
             }
             
             template<storm::dd::DdType DdType, typename ValueType>
-            std::shared_ptr<storm::models::Model<ValueType>> QuotientExtractor<DdType, ValueType>::extract(storm::models::symbolic::Model<DdType, ValueType> const& model, Partition<DdType, ValueType> const& partition) {
+            std::shared_ptr<storm::models::Model<ValueType>> QuotientExtractor<DdType, ValueType>::extract(storm::models::symbolic::Model<DdType, ValueType> const& model, Partition<DdType, ValueType> const& partition, PreservationInformation<DdType, ValueType> const& preservationInformation) {
                 auto start = std::chrono::high_resolution_clock::now();
                 std::shared_ptr<storm::models::Model<ValueType>> result;
                 if (quotientFormat == storm::settings::modules::BisimulationSettings::QuotientFormat::Sparse) {
-                    result = extractSparseQuotient(model, partition);
+                    result = extractSparseQuotient(model, partition, preservationInformation);
                 } else {
-                    result = extractDdQuotient(model, partition);
+                    result = extractDdQuotient(model, partition, preservationInformation);
                 }
                 auto end = std::chrono::high_resolution_clock::now();
                 STORM_LOG_TRACE("Quotient extraction completed in " << std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count() << "ms.");
@@ -497,7 +497,7 @@ namespace storm {
             }
             
             template<storm::dd::DdType DdType, typename ValueType>
-            std::shared_ptr<storm::models::sparse::Model<ValueType>> QuotientExtractor<DdType, ValueType>::extractSparseQuotient(storm::models::symbolic::Model<DdType, ValueType> const& model, Partition<DdType, ValueType> const& partition) {
+            std::shared_ptr<storm::models::sparse::Model<ValueType>> QuotientExtractor<DdType, ValueType>::extractSparseQuotient(storm::models::symbolic::Model<DdType, ValueType> const& model, Partition<DdType, ValueType> const& partition, PreservationInformation<DdType, ValueType> const& preservationInformation) {
                 InternalSparseQuotientExtractor<DdType, ValueType> sparseExtractor(model.getManager(), model.getRowVariables());
                 auto states = partition.getStates().swapVariables(model.getRowColumnMetaVariablePairs());
                 
@@ -507,10 +507,10 @@ namespace storm {
                 quotientStateLabeling.addLabel("init", sparseExtractor.extractStates(model.getInitialStates(), partition));
                 quotientStateLabeling.addLabel("deadlock", sparseExtractor.extractStates(model.getDeadlockStates(), partition));
                 
-                for (auto const& label : partition.getPreservationInformation().getLabels()) {
+                for (auto const& label : preservationInformation.getLabels()) {
                     quotientStateLabeling.addLabel(label, sparseExtractor.extractStates(model.getStates(label), partition));
                 }
-                for (auto const& expression : partition.getPreservationInformation().getExpressions()) {
+                for (auto const& expression : preservationInformation.getExpressions()) {
                     std::stringstream stream;
                     stream << expression;
                     std::string expressionAsString = stream.str();
@@ -533,12 +533,12 @@ namespace storm {
             }
 
             template<storm::dd::DdType DdType, typename ValueType>
-            std::shared_ptr<storm::models::symbolic::Model<DdType, ValueType>> QuotientExtractor<DdType, ValueType>::extractDdQuotient(storm::models::symbolic::Model<DdType, ValueType> const& model, Partition<DdType, ValueType> const& partition) {
-                return extractQuotientUsingBlockVariables(model, partition);
+            std::shared_ptr<storm::models::symbolic::Model<DdType, ValueType>> QuotientExtractor<DdType, ValueType>::extractDdQuotient(storm::models::symbolic::Model<DdType, ValueType> const& model, Partition<DdType, ValueType> const& partition, PreservationInformation<DdType, ValueType> const& preservationInformation) {
+                return extractQuotientUsingBlockVariables(model, partition, preservationInformation);
             }
 
             template<storm::dd::DdType DdType, typename ValueType>
-            std::shared_ptr<storm::models::symbolic::Model<DdType, ValueType>> QuotientExtractor<DdType, ValueType>::extractQuotientUsingBlockVariables(storm::models::symbolic::Model<DdType, ValueType> const& model, Partition<DdType, ValueType> const& partition) {
+            std::shared_ptr<storm::models::symbolic::Model<DdType, ValueType>> QuotientExtractor<DdType, ValueType>::extractQuotientUsingBlockVariables(storm::models::symbolic::Model<DdType, ValueType> const& model, Partition<DdType, ValueType> const& partition, PreservationInformation<DdType, ValueType> const& preservationInformation) {
                 auto modelType = model.getType();
                 
                 if (modelType == storm::models::ModelType::Dtmc || modelType == storm::models::ModelType::Ctmc) {
@@ -568,10 +568,10 @@ namespace storm {
                     storm::dd::Bdd<DdType> deadlockStates = !quotientTransitionMatrixBdd.existsAbstract(blockPrimeVariableSet) && reachableStates;
                     
                     std::map<std::string, storm::dd::Bdd<DdType>> preservedLabelBdds;
-                    for (auto const& label : partition.getPreservationInformation().getLabels()) {
+                    for (auto const& label : preservationInformation.getLabels()) {
                         preservedLabelBdds.emplace(label, (model.getStates(label) && partitionAsBddOverRowVariables).existsAbstract(model.getRowVariables()));
                     }
-                    for (auto const& expression : partition.getPreservationInformation().getExpressions()) {
+                    for (auto const& expression : preservationInformation.getExpressions()) {
                         std::stringstream stream;
                         stream << expression;
                         std::string expressionAsString = stream.str();
@@ -597,7 +597,7 @@ namespace storm {
             }
             
             template<storm::dd::DdType DdType, typename ValueType>
-            std::shared_ptr<storm::models::symbolic::Model<DdType, ValueType>> QuotientExtractor<DdType, ValueType>::extractQuotientUsingOriginalVariables(storm::models::symbolic::Model<DdType, ValueType> const& model, Partition<DdType, ValueType> const& partition) {
+            std::shared_ptr<storm::models::symbolic::Model<DdType, ValueType>> QuotientExtractor<DdType, ValueType>::extractQuotientUsingOriginalVariables(storm::models::symbolic::Model<DdType, ValueType> const& model, Partition<DdType, ValueType> const& partition, PreservationInformation<DdType, ValueType> const& preservationInformation) {
                 auto modelType = model.getType();
                 
                 if (modelType == storm::models::ModelType::Dtmc || modelType == storm::models::ModelType::Ctmc) {
@@ -619,10 +619,10 @@ namespace storm {
                     storm::dd::Bdd<DdType> deadlockStates = !quotientTransitionMatrixBdd.existsAbstract(model.getColumnVariables()) && reachableStates;
                     
                     std::map<std::string, storm::dd::Bdd<DdType>> preservedLabelBdds;
-                    for (auto const& label : partition.getPreservationInformation().getLabels()) {
+                    for (auto const& label : preservationInformation.getLabels()) {
                         preservedLabelBdds.emplace(label, (model.getStates(label) && partitionAsBddOverRowVariables).existsAbstract(model.getRowVariables()));
                     }
-                    for (auto const& expression : partition.getPreservationInformation().getExpressions()) {
+                    for (auto const& expression : preservationInformation.getExpressions()) {
                         std::stringstream stream;
                         stream << expression;
                         std::string expressionAsString = stream.str();

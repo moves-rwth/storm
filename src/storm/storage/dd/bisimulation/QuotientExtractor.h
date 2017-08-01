@@ -8,6 +8,7 @@
 #include "storm/models/sparse/Model.h"
 
 #include "storm/storage/dd/bisimulation/Partition.h"
+#include "storm/storage/dd/bisimulation/PreservationInformation.h"
 
 #include "storm/settings/modules/BisimulationSettings.h"
 
@@ -20,14 +21,14 @@ namespace storm {
             public:
                 QuotientExtractor();
                 
-                std::shared_ptr<storm::models::Model<ValueType>> extract(storm::models::symbolic::Model<DdType, ValueType> const& model, Partition<DdType, ValueType> const& partition);
+                std::shared_ptr<storm::models::Model<ValueType>> extract(storm::models::symbolic::Model<DdType, ValueType> const& model, Partition<DdType, ValueType> const& partition, PreservationInformation<DdType, ValueType> const& preservationInformation);
                 
             private:
-                std::shared_ptr<storm::models::sparse::Model<ValueType>> extractSparseQuotient(storm::models::symbolic::Model<DdType, ValueType> const& model, Partition<DdType, ValueType> const& partition);
+                std::shared_ptr<storm::models::sparse::Model<ValueType>> extractSparseQuotient(storm::models::symbolic::Model<DdType, ValueType> const& model, Partition<DdType, ValueType> const& partition, PreservationInformation<DdType, ValueType> const& preservationInformation);
                 
-                std::shared_ptr<storm::models::symbolic::Model<DdType, ValueType>> extractDdQuotient(storm::models::symbolic::Model<DdType, ValueType> const& model, Partition<DdType, ValueType> const& partition);
-                std::shared_ptr<storm::models::symbolic::Model<DdType, ValueType>> extractQuotientUsingBlockVariables(storm::models::symbolic::Model<DdType, ValueType> const& model, Partition<DdType, ValueType> const& partition);
-                std::shared_ptr<storm::models::symbolic::Model<DdType, ValueType>> extractQuotientUsingOriginalVariables(storm::models::symbolic::Model<DdType, ValueType> const& model, Partition<DdType, ValueType> const& partition);
+                std::shared_ptr<storm::models::symbolic::Model<DdType, ValueType>> extractDdQuotient(storm::models::symbolic::Model<DdType, ValueType> const& model, Partition<DdType, ValueType> const& partition, PreservationInformation<DdType, ValueType> const& preservationInformation);
+                std::shared_ptr<storm::models::symbolic::Model<DdType, ValueType>> extractQuotientUsingBlockVariables(storm::models::symbolic::Model<DdType, ValueType> const& model, Partition<DdType, ValueType> const& partition, PreservationInformation<DdType, ValueType> const& preservationInformation);
+                std::shared_ptr<storm::models::symbolic::Model<DdType, ValueType>> extractQuotientUsingOriginalVariables(storm::models::symbolic::Model<DdType, ValueType> const& model, Partition<DdType, ValueType> const& partition, PreservationInformation<DdType, ValueType> const& preservationInformation);
                 
                 bool useRepresentatives;
                 storm::settings::modules::BisimulationSettings::QuotientFormat quotientFormat;

@@ -28,7 +28,7 @@ namespace storm {
                  * @param mode The signature mode to use.
                  * @return False iff the partition is stable and no refinement was actually performed.
                  */
-                bool refine(bisimulation::SignatureMode const& mode = bisimulation::SignatureMode::Eager);
+                virtual bool refine(SignatureMode const& mode = SignatureMode::Eager);
                 
                 /*!
                  * Retrieves the current state partition in the refinement process.
@@ -41,6 +41,8 @@ namespace storm {
                 Status getStatus() const;
                 
             protected:
+                Partition<DdType, ValueType> internalRefine(SignatureRefiner<DdType, ValueType>& signatureRefiner, Partition<DdType, ValueType> const& oldPartition, SignatureMode const& mode = SignatureMode::Eager);
+                
                 // The current status.
                 Status status;
                 

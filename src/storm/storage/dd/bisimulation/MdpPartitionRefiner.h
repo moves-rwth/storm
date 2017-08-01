@@ -3,13 +3,20 @@
 #include "storm/storage/dd/bisimulation/PartitionRefiner.h"
 
 namespace storm {
+    namespace models {
+        namespace symbolic {
+            template <storm::dd::DdType DdType, typename ValueType>
+            class Mdp;
+        }
+    }
+    
     namespace dd {
         namespace bisimulation {
             
             template <storm::dd::DdType DdType, typename ValueType>
             class MdpPartitionRefiner : public PartitionRefiner<DdType, ValueType> {
             public:
-                MdpPartitionRefiner(storm::models::symbolic::Model<DdType, ValueType> const& model, Partition<DdType, ValueType> const& initialStatePartition);
+                MdpPartitionRefiner(storm::models::symbolic::Mdp<DdType, ValueType> const& mdp, Partition<DdType, ValueType> const& initialStatePartition);
                 
                 /*!
                  * Refines the partition.
@@ -17,7 +24,7 @@ namespace storm {
                  * @param mode The signature mode to use.
                  * @return False iff the partition is stable and no refinement was actually performed.
                  */
-                bool refine(bisimulation::SignatureMode const& mode = bisimulation::SignatureMode::Eager);
+                virtual bool refine(bisimulation::SignatureMode const& mode = bisimulation::SignatureMode::Eager) override;
                 
                 /*!
                  * Retrieves the current choice partition in the refinement process.

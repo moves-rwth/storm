@@ -1,5 +1,7 @@
 #pragma once
 
+#include <memory>
+
 #include "storm/storage/dd/DdType.h"
 
 #include "storm/storage/dd/bisimulation/Partition.h"
@@ -15,6 +17,7 @@ namespace storm {
             template<storm::dd::DdType DdType, typename ValueType>
             class SignatureRefiner {
             public:
+                SignatureRefiner() = default;
                 SignatureRefiner(storm::dd::DdManager<DdType> const& manager, storm::expressions::Variable const& blockVariable, std::set<storm::expressions::Variable> const& stateVariables);
                 
                 ~SignatureRefiner();
@@ -23,13 +26,13 @@ namespace storm {
 
             private:
                 // The manager responsible for the DDs.
-                storm::dd::DdManager<DdType> const& manager;
+                storm::dd::DdManager<DdType> const* manager;
                 
                 // The variables encodin the states.
-                std::set<storm::expressions::Variable> const& stateVariables;
+                std::set<storm::expressions::Variable> stateVariables;
                 
                 // The internal refiner.
-                std::unique_ptr<InternalSignatureRefiner<DdType, ValueType>> internalRefiner;
+                std::shared_ptr<InternalSignatureRefiner<DdType, ValueType>> internalRefiner;
             };
             
         }

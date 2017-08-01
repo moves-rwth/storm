@@ -39,6 +39,17 @@ namespace storm {
             }
             
             /*!
+             * Casts the model into the model type given by the template parameter.
+             *
+             * @return A shared pointer of the requested type that points to the model if the cast succeeded and a null
+             * pointer otherwise.
+             */
+            template <typename ModelType>
+            std::shared_ptr<ModelType const> as() const {
+                return std::dynamic_pointer_cast<ModelType const>(this->shared_from_this());
+            }
+            
+            /*!
              *	@brief Return the actual type of the model.
              *
              *	Each model must implement this method.

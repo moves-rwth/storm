@@ -11,6 +11,7 @@
 #include "storm/storage/bisimulation/BisimulationType.h"
 
 #include "storm/models/symbolic/Model.h"
+#include "storm/models/symbolic/NondeterministicModel.h"
 
 namespace storm {
     namespace logic {
@@ -20,19 +21,21 @@ namespace storm {
     namespace dd {
         namespace bisimulation {
             
+            template<storm::dd::DdType DdType, typename ValueType>
             class PreservationInformation;
             
             template<storm::dd::DdType DdType, typename ValueType>
             class Partition {
             public:
-                Partition() = default;
+                Partition();
                 
                 bool operator==(Partition<DdType, ValueType> const& other);
                 
                 Partition<DdType, ValueType> replacePartition(storm::dd::Add<DdType, ValueType> const& newPartitionAdd, uint64_t nextFreeBlockIndex) const;
                 Partition<DdType, ValueType> replacePartition(storm::dd::Bdd<DdType> const& newPartitionBdd, uint64_t nextFreeBlockIndex) const;
 
-                static Partition create(storm::models::symbolic::Model<DdType, ValueType> const& model, storm::storage::BisimulationType const& bisimulationType, PreservationInformation const& preservationInformation);
+                static Partition create(storm::models::symbolic::Model<DdType, ValueType> const& model, storm::storage::BisimulationType const& bisimulationType, PreservationInformation<DdType, ValueType> const& preservationInformation);
+                static Partition createTrivialChoicePartition(storm::models::symbolic::NondeterministicModel<DdType, ValueType> const& model, std::pair<storm::expressions::Variable, storm::expressions::Variable> const& blockVariables);
                 
                 uint64_t getNumberOfStates() const;
                 uint64_t getNumberOfBlocks() const;
@@ -42,7 +45,8 @@ namespace storm {
                 
                 storm::dd::Add<DdType, ValueType> const& asAdd() const;
                 storm::dd::Bdd<DdType> const& asBdd() const;
-                
+
+                std::pair<storm::expressions::Variable, storm::expressions::Variable> const& getBlockVariables() const;
                 storm::expressions::Variable const& getBlockVariable() const;
                 storm::expressions::Variable const& getPrimedBlockVariable() const;
                 
