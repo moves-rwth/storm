@@ -70,21 +70,27 @@ namespace storm {
                  */
                 virtual std::unique_ptr<storm::solver::LpSolver> create(std::string const& name) const;
                 virtual std::unique_ptr<storm::solver::LpSolver> create(std::string const& name, storm::solver::LpSolverTypeSelection solvType) const;
+                
+                virtual std::unique_ptr<LpSolverFactory> clone() const;
+
             };
             
             class GlpkLpSolverFactory : public LpSolverFactory {
             public:
                 virtual std::unique_ptr<storm::solver::LpSolver> create(std::string const& name) const override;
+                virtual std::unique_ptr<LpSolverFactory> clone() const override;
             };
             
             class GurobiLpSolverFactory : public LpSolverFactory {
             public:
                 virtual std::unique_ptr<storm::solver::LpSolver> create(std::string const& name) const override;
+                virtual std::unique_ptr<LpSolverFactory> clone() const override;
             };
 
             class Z3LpSolverFactory : public LpSolverFactory {
             public:
                 virtual std::unique_ptr<storm::solver::LpSolver> create(std::string const& name) const override;
+                virtual std::unique_ptr<LpSolverFactory> clone() const override;
             };
             
             std::unique_ptr<storm::solver::LpSolver> getLpSolver(std::string const& name, storm::solver::LpSolverTypeSelection solvType = storm::solver::LpSolverTypeSelection::FROMSETTINGS) ;

@@ -46,18 +46,34 @@ namespace storm {
                 return LpSolverFactory::create(name, storm::solver::LpSolverTypeSelection::FROMSETTINGS);
             }
             
+            std::unique_ptr<LpSolverFactory> LpSolverFactory::clone() const {
+                return std::make_unique<LpSolverFactory>(*this);
+            }
+  
             std::unique_ptr<storm::solver::LpSolver> GlpkLpSolverFactory::create(std::string const& name) const {
                 return LpSolverFactory::create(name, storm::solver::LpSolverTypeSelection::Glpk);
+            }
+            
+            std::unique_ptr<LpSolverFactory> GlpkLpSolverFactory::clone() const {
+                return std::make_unique<GlpkLpSolverFactory>(*this);
             }
             
             std::unique_ptr<storm::solver::LpSolver> GurobiLpSolverFactory::create(std::string const& name) const {
                 return LpSolverFactory::create(name, storm::solver::LpSolverTypeSelection::Gurobi);
             }
-            
+     
+            std::unique_ptr<LpSolverFactory> GurobiLpSolverFactory::clone() const {
+                return std::make_unique<GurobiLpSolverFactory>(*this);
+            }
+    
             std::unique_ptr<storm::solver::LpSolver> Z3LpSolverFactory::create(std::string const& name) const {
                 return LpSolverFactory::create(name, storm::solver::LpSolverTypeSelection::Z3);
             }
             
+            std::unique_ptr<LpSolverFactory> Z3LpSolverFactory::clone() const {
+                return std::make_unique<Z3LpSolverFactory>(*this);
+            }
+    
             std::unique_ptr<storm::solver::LpSolver> getLpSolver(std::string const& name, storm::solver::LpSolverTypeSelection solvType) {
                 std::unique_ptr<storm::utility::solver::LpSolverFactory> factory(new LpSolverFactory());
                 return factory->create(name, solvType);
