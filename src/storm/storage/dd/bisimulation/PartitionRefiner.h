@@ -40,7 +40,7 @@ namespace storm {
                  */
                 Status getStatus() const;
                 
-            private:
+            protected:
                 // The current status.
                 Status status;
                 
@@ -53,7 +53,7 @@ namespace storm {
                 // The object used to compute the signatures.
                 SignatureComputer<DdType, ValueType> signatureComputer;
                 
-                // The object used to refine the partition(s) based on the signatures.
+                // The object used to refine the state partition based on the signatures.
                 SignatureRefiner<DdType, ValueType> signatureRefiner;
                 
                 // Time measurements.

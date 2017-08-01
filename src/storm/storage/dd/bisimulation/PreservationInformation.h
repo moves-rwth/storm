@@ -11,7 +11,6 @@ namespace storm {
             
             class PreservationInformation {
             public:
-                
                 PreservationInformation() = default;
                 
                 void addLabel(std::string const& label);
