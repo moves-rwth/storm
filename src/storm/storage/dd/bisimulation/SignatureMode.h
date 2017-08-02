@@ -4,7 +4,7 @@ namespace storm {
     namespace dd {
         namespace bisimulation {
         
-            enum class SignatureMode { Eager, Lazy };
+            enum class SignatureMode { Eager, Lazy, Qualitative };
             
         }
     }

@@ -45,9 +45,9 @@ namespace storm {
                         STORM_LOG_DEBUG("Signature " << refinements << "[" << index << "] DD has " << signature.getSignatureAdd().getNodeCount() << " nodes.");
                         
                         signature.getSignatureAdd().exportToDot("sig" + std::to_string(refinements) + ".dot");
-                        if (refinements == 1) {
-                            exit(-1);
-                        }
+//                        if (refinements == 1) {
+//                            exit(-1);
+//                        }
                         
                         auto refinementStart = std::chrono::high_resolution_clock::now();
                         newPartition = signatureRefiner.refine(statePartition, signature);

@@ -7,8 +7,10 @@ namespace storm {
         namespace bisimulation {
             
             template<storm::dd::DdType DdType, typename ValueType>
-            MdpPartitionRefiner<DdType, ValueType>::MdpPartitionRefiner(storm::models::symbolic::Mdp<DdType, ValueType> const& mdp, Partition<DdType, ValueType> const& initialStatePartition) : PartitionRefiner<DdType, ValueType>(mdp, initialStatePartition), choicePartition(Partition<DdType, ValueType>::createTrivialChoicePartition(mdp, initialStatePartition.getBlockVariables())), stateSignatureComputer(mdp.getQualitativeTransitionMatrix(false), mdp.getColumnAndNondeterminismVariables()), stateSignatureRefiner(mdp.getManager(), this->statePartition.getBlockVariable(), mdp.getRowVariables()) {
+            MdpPartitionRefiner<DdType, ValueType>::MdpPartitionRefiner(storm::models::symbolic::Mdp<DdType, ValueType> const& mdp, Partition<DdType, ValueType> const& initialStatePartition) : PartitionRefiner<DdType, ValueType>(mdp, initialStatePartition), choicePartition(Partition<DdType, ValueType>::createTrivialChoicePartition(mdp, initialStatePartition.getBlockVariables())), stateSignatureComputer(mdp.getQualitativeTransitionMatrix(), mdp.getColumnAndNondeterminismVariables(), SignatureMode::Qualitative, true), stateSignatureRefiner(mdp.getManager(), this->statePartition.getBlockVariable(), mdp.getRowVariables()) {
                 // Intentionally left empty.
+                
+                mdp.getTransitionMatrix().exportToDot("fulltrans.dot");
             }
             
             template<storm::dd::DdType DdType, typename ValueType>
@@ -26,9 +28,11 @@ namespace storm {
                     this->status = Status::FixedPoint;
                     return false;
                 } else {
-                    // If the choice partition changed, refine the state partition. Use eager mode as abstracting from the probabilities is not worth doing.
+                    this->choicePartition = newChoicePartition;
+                    
+                    // If the choice partition changed, refine the state partition. Use qualitative mode we must properly abstract from choice counts.
                     STORM_LOG_TRACE("Refining state partition.");
-                    Partition<DdType, ValueType> newStatePartition = this->internalRefine(this->stateSignatureComputer, this->stateSignatureRefiner, this->statePartition, this->choicePartition, SignatureMode::Eager);
+                    Partition<DdType, ValueType> newStatePartition = this->internalRefine(this->stateSignatureComputer, this->stateSignatureRefiner, this->statePartition, this->choicePartition, SignatureMode::Qualitative);
                     
                     if (newStatePartition == this->statePartition) {
                         this->status = Status::FixedPoint;

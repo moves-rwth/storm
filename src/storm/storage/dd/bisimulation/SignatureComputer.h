@@ -42,10 +42,10 @@ namespace storm {
             public:
                 friend class SignatureIterator<DdType, ValueType>;
                 
-                SignatureComputer(storm::models::symbolic::Model<DdType, ValueType> const& model, SignatureMode const& mode = SignatureMode::Eager);
-                SignatureComputer(storm::dd::Add<DdType, ValueType> const& transitionMatrix, std::set<storm::expressions::Variable> const& columnVariables, SignatureMode const& mode = SignatureMode::Eager);
-                SignatureComputer(storm::dd::Bdd<DdType> const& qualitativeTransitionMatrix, std::set<storm::expressions::Variable> const& columnVariables, SignatureMode const& mode = SignatureMode::Eager);
-                SignatureComputer(storm::dd::Add<DdType, ValueType> const& transitionMatrix, boost::optional<storm::dd::Bdd<DdType>> const& qualitativeTransitionMatrix, std::set<storm::expressions::Variable> const& columnVariables, SignatureMode const& mode = SignatureMode::Eager);
+                SignatureComputer(storm::models::symbolic::Model<DdType, ValueType> const& model, SignatureMode const& mode = SignatureMode::Eager, bool ensureQualitative = false);
+                SignatureComputer(storm::dd::Add<DdType, ValueType> const& transitionMatrix, std::set<storm::expressions::Variable> const& columnVariables, SignatureMode const& mode = SignatureMode::Eager, bool ensureQualitative = false);
+                SignatureComputer(storm::dd::Bdd<DdType> const& qualitativeTransitionMatrix, std::set<storm::expressions::Variable> const& columnVariables, SignatureMode const& mode = SignatureMode::Eager, bool ensureQualitative = false);
+                SignatureComputer(storm::dd::Add<DdType, ValueType> const& transitionMatrix, boost::optional<storm::dd::Bdd<DdType>> const& qualitativeTransitionMatrix, std::set<storm::expressions::Variable> const& columnVariables, SignatureMode const& mode = SignatureMode::Eager, bool ensureQualitative = false);
 
                 void setSignatureMode(SignatureMode const& newMode);
 
@@ -55,6 +55,10 @@ namespace storm {
                 /// Methods to compute the signatures.
                 Signature<DdType, ValueType> getFullSignature(Partition<DdType, ValueType> const& partition) const;
                 Signature<DdType, ValueType> getQualitativeSignature(Partition<DdType, ValueType> const& partition) const;
+                
+                bool qualitativeTransitionMatrixIsBdd() const;
+                storm::dd::Bdd<DdType> const& getQualitativeTransitionMatrixAsBdd() const;
+                storm::dd::Add<DdType, ValueType> const& getQualitativeTransitionMatrixAsAdd() const;
                 
                 SignatureMode const& getSignatureMode() const;
                                 
@@ -67,8 +71,11 @@ namespace storm {
                 /// The mode to use for signature computation.
                 SignatureMode mode;
                 
+                /// A flag indicating whether the qualitative signature needs to make sure that the result is in fact qualitative.
+                bool ensureQualitative;
+                
                 /// Only used when using lazy signatures is enabled.
-                mutable boost::optional<storm::dd::Add<DdType, ValueType>> transitionMatrix01;
+                mutable boost::optional<boost::variant<storm::dd::Bdd<DdType>, storm::dd::Add<DdType, ValueType>>> transitionMatrix01;
             };
             
         }

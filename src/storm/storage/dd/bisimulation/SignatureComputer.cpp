@@ -16,23 +16,35 @@ namespace storm {
             
             template<storm::dd::DdType DdType, typename ValueType>
             bool SignatureIterator<DdType, ValueType>::hasNext() const {
-                if (signatureComputer.getSignatureMode() == SignatureMode::Eager) {
-                    return position < 1;
-                } else {
-                    return position < 2;
+                switch (signatureComputer.getSignatureMode()) {
+                    case SignatureMode::Qualitative:
+                    case SignatureMode::Eager: return position < 1;
+                    case SignatureMode::Lazy: return position < 2;
                 }
             }
             
             template<storm::dd::DdType DdType, typename ValueType>
             Signature<DdType, ValueType> SignatureIterator<DdType, ValueType>::next() {
                 auto mode = signatureComputer.getSignatureMode();
-                STORM_LOG_THROW((mode == SignatureMode::Eager && position < 1) || (mode == SignatureMode::Lazy && position < 2), storm::exceptions::OutOfRangeException, "Iterator is out of range.");
+                STORM_LOG_THROW((mode == SignatureMode::Eager && position < 1) || (mode == SignatureMode::Lazy && position < 2) || (mode == SignatureMode::Qualitative && position < 1), storm::exceptions::OutOfRangeException, "Iterator is out of range.");
                 Signature<DdType, ValueType> result;
                 
-                if (mode == SignatureMode::Eager || position == 1) {
-                    result = signatureComputer.getFullSignature(partition);
-                } else if (position == 0) {
-                    result = signatureComputer.getQualitativeSignature(partition);
+                if (mode == SignatureMode::Eager) {
+                    if (position == 0) {
+                        result = signatureComputer.getFullSignature(partition);
+                    }
+                } else if (mode == SignatureMode::Lazy) {
+                    if (position == 0) {
+                        result = signatureComputer.getQualitativeSignature(partition);
+                    } else {
+                        result = signatureComputer.getFullSignature(partition);
+                    }
+                } else if (mode == SignatureMode::Qualitative) {
+                    if (position == 0) {
+                        result = signatureComputer.getQualitativeSignature(partition);
+                    }
+                } else {
+                    STORM_LOG_ASSERT(false, "Unknown signature mode.");
                 }
                 
                 ++position;
@@ -40,29 +52,29 @@ namespace storm {
             }
             
             template<storm::dd::DdType DdType, typename ValueType>
-            SignatureComputer<DdType, ValueType>::SignatureComputer(storm::models::symbolic::Model<DdType, ValueType> const& model, SignatureMode const& mode) : SignatureComputer(model.getTransitionMatrix(), boost::none, model.getColumnVariables(), mode) {
+            SignatureComputer<DdType, ValueType>::SignatureComputer(storm::models::symbolic::Model<DdType, ValueType> const& model, SignatureMode const& mode, bool ensureQualitative) : SignatureComputer(model.getTransitionMatrix(), boost::none, model.getColumnVariables(), mode, ensureQualitative) {
                 // Intentionally left empty.
             }
             
             template<storm::dd::DdType DdType, typename ValueType>
-            SignatureComputer<DdType, ValueType>::SignatureComputer(storm::dd::Add<DdType, ValueType> const& transitionMatrix, std::set<storm::expressions::Variable> const& columnVariables, SignatureMode const& mode) : SignatureComputer(transitionMatrix, boost::none, columnVariables, mode) {
+            SignatureComputer<DdType, ValueType>::SignatureComputer(storm::dd::Add<DdType, ValueType> const& transitionMatrix, std::set<storm::expressions::Variable> const& columnVariables, SignatureMode const& mode, bool ensureQualitative) : SignatureComputer(transitionMatrix, boost::none, columnVariables, mode, ensureQualitative) {
                 // Intentionally left empty.
             }
             
             template<storm::dd::DdType DdType, typename ValueType>
-            SignatureComputer<DdType, ValueType>::SignatureComputer(storm::dd::Bdd<DdType> const& qualitativeTransitionMatrix, std::set<storm::expressions::Variable> const& columnVariables, SignatureMode const& mode) : SignatureComputer(qualitativeTransitionMatrix.template toAdd<ValueType>(), boost::none, columnVariables, mode) {
+            SignatureComputer<DdType, ValueType>::SignatureComputer(storm::dd::Bdd<DdType> const& qualitativeTransitionMatrix, std::set<storm::expressions::Variable> const& columnVariables, SignatureMode const& mode, bool ensureQualitative) : SignatureComputer(qualitativeTransitionMatrix.template toAdd<ValueType>(), boost::none, columnVariables, mode, ensureQualitative) {
                 // Intentionally left empty.
             }
             
             template<storm::dd::DdType DdType, typename ValueType>
-            SignatureComputer<DdType, ValueType>::SignatureComputer(storm::dd::Add<DdType, ValueType> const& transitionMatrix, boost::optional<storm::dd::Bdd<DdType>> const& qualitativeTransitionMatrix, std::set<storm::expressions::Variable> const& columnVariables, SignatureMode const& mode) : transitionMatrix(transitionMatrix), columnVariables(columnVariables), mode(mode) {
+            SignatureComputer<DdType, ValueType>::SignatureComputer(storm::dd::Add<DdType, ValueType> const& transitionMatrix, boost::optional<storm::dd::Bdd<DdType>> const& qualitativeTransitionMatrix, std::set<storm::expressions::Variable> const& columnVariables, SignatureMode const& mode, bool ensureQualitative) : transitionMatrix(transitionMatrix), columnVariables(columnVariables), mode(mode), ensureQualitative(ensureQualitative) {
                 if (DdType == storm::dd::DdType::Sylvan) {
                     this->transitionMatrix = this->transitionMatrix.notZero().ite(this->transitionMatrix, this->transitionMatrix.getDdManager().template getAddUndefined<ValueType>());
                 }
                 
                 if (qualitativeTransitionMatrix) {
-                    if (DdType == storm::dd::DdType::Sylvan) {
-                        this->transitionMatrix01 = qualitativeTransitionMatrix.get().ite(this->transitionMatrix.getDdManager().template getAddOne<ValueType>(), this->transitionMatrix.getDdManager().template getAddUndefined<ValueType>());
+                    if (DdType == storm::dd::DdType::Sylvan || ensureQualitative) {
+                        this->transitionMatrix01 = qualitativeTransitionMatrix.get();
                     } else {
                         this->transitionMatrix01 = qualitativeTransitionMatrix.get().template toAdd<ValueType>();
                     }
@@ -86,40 +98,54 @@ namespace storm {
             
             template<storm::dd::DdType DdType, typename ValueType>
             Signature<DdType, ValueType> SignatureComputer<DdType, ValueType>::getFullSignature(Partition<DdType, ValueType> const& partition) const {
-                this->transitionMatrix.exportToDot("trans.dot");
                 if (partition.storedAsBdd()) {
                     return Signature<DdType, ValueType>(this->transitionMatrix.multiplyMatrix(partition.asBdd(), columnVariables));
                 } else {
-                    auto result = Signature<DdType, ValueType>(this->transitionMatrix.multiplyMatrix(partition.asAdd(), columnVariables));
-                    
-                    std::cout << "abstracting vars" << std::endl;
-                    for (auto const& v : columnVariables) {
-                        std::cout << v.getName() << std::endl;
-                    }
-                    std::cout << "----" << std::endl;
-                    result.getSignatureAdd().exportToDot("fullsig.dot");
-                    
-                    return result;
+                    return Signature<DdType, ValueType>(this->transitionMatrix.multiplyMatrix(partition.asAdd(), columnVariables));
                 }
             }
             
             template<storm::dd::DdType DdType, typename ValueType>
             Signature<DdType, ValueType> SignatureComputer<DdType, ValueType>::getQualitativeSignature(Partition<DdType, ValueType> const& partition) const {
-                if (this->mode == SignatureMode::Lazy && !transitionMatrix01) {
-                    if (DdType == storm::dd::DdType::Sylvan) {
-                        this->transitionMatrix01 = this->transitionMatrix.notZero().ite(this->transitionMatrix.getDdManager().template getAddOne<ValueType>(), this->transitionMatrix.getDdManager().template getAddUndefined<ValueType>());
+                if (!transitionMatrix01) {
+                    if (DdType == storm::dd::DdType::Sylvan || this->ensureQualitative) {
+                        this->transitionMatrix01 = this->transitionMatrix.notZero();
                     } else {
                         this->transitionMatrix01 = this->transitionMatrix.notZero().template toAdd<ValueType>();
                     }
                 }
 
                 if (partition.storedAsBdd()) {
-                    return Signature<DdType, ValueType>(this->transitionMatrix01.get().multiplyMatrix(partition.asBdd(), columnVariables));
+                    return this->getQualitativeTransitionMatrixAsBdd().andExists(partition.asBdd(), columnVariables).template toAdd<ValueType>();
                 } else {
-                    return Signature<DdType, ValueType>(this->transitionMatrix01.get().multiplyMatrix(partition.asAdd(), columnVariables));
+                    if (this->qualitativeTransitionMatrixIsBdd()) {
+                        this->getQualitativeTransitionMatrixAsBdd().template toAdd<ValueType>().exportToDot("lasttrans.dot");
+                        partition.asAdd().exportToDot("lastpart.dot");
+                        this->getQualitativeTransitionMatrixAsBdd().andExists(partition.asAdd().toBdd(), columnVariables).template toAdd<ValueType>().exportToDot("lastresult.dot");
+                        return Signature<DdType, ValueType>(this->getQualitativeTransitionMatrixAsBdd().andExists(partition.asAdd().toBdd(), columnVariables).template toAdd<ValueType>());
+                    } else {
+                        return Signature<DdType, ValueType>(this->getQualitativeTransitionMatrixAsAdd().multiplyMatrix(partition.asAdd(), columnVariables));
+                    }
                 }
             }
 
+            template<storm::dd::DdType DdType, typename ValueType>
+            bool SignatureComputer<DdType, ValueType>::qualitativeTransitionMatrixIsBdd() const {
+                return transitionMatrix01.get().which() == 0;
+            }
+            
+            template<storm::dd::DdType DdType, typename ValueType>
+            storm::dd::Bdd<DdType> const& SignatureComputer<DdType, ValueType>::getQualitativeTransitionMatrixAsBdd() const {
+                STORM_LOG_ASSERT(this->transitionMatrix01, "Missing qualitative transition matrix.");
+                return boost::get<storm::dd::Bdd<DdType>>(this->transitionMatrix01.get());
+            }
+            
+            template<storm::dd::DdType DdType, typename ValueType>
+            storm::dd::Add<DdType, ValueType> const& SignatureComputer<DdType, ValueType>::getQualitativeTransitionMatrixAsAdd() const {
+                STORM_LOG_ASSERT(this->transitionMatrix01, "Missing qualitative transition matrix.");
+                return boost::get<storm::dd::Add<DdType, ValueType>>(this->transitionMatrix01.get());
+            }
+            
             template class SignatureIterator<storm::dd::DdType::CUDD, double>;
             template class SignatureIterator<storm::dd::DdType::Sylvan, double>;
             template class SignatureIterator<storm::dd::DdType::Sylvan, storm::RationalNumber>;
