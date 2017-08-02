@@ -173,6 +173,16 @@ namespace storm {
             }
             
             template<storm::dd::DdType Type, typename ValueType>
+            std::set<storm::expressions::Variable> Model<Type, ValueType>::getRowAndNondeterminismVariables() const {
+                return rowVariables;
+            }
+            
+            template<storm::dd::DdType Type, typename ValueType>
+            std::set<storm::expressions::Variable> Model<Type, ValueType>::getColumnAndNondeterminismVariables() const {
+                return columnVariables;
+            }
+            
+            template<storm::dd::DdType Type, typename ValueType>
             std::vector<std::pair<storm::expressions::Variable, storm::expressions::Variable>> const& Model<Type, ValueType>::getRowColumnMetaVariablePairs() const {
                 return rowColumnMetaVariablePairs;
             }

@@ -34,9 +34,12 @@ namespace storm {
             private:
                 // The choice partition in the refinement process.
                 Partition<DdType, ValueType> choicePartition;
+
+                // The object used to compute the state signatures.
+                SignatureComputer<DdType, ValueType> stateSignatureComputer;
                 
-                // The object used to refine the choice partition based on the signatures.
-                SignatureRefiner<DdType, ValueType> choiceSignatureRefiner;
+                // The object used to refine the state partition based on the signatures.
+                SignatureRefiner<DdType, ValueType> stateSignatureRefiner;
             };
             
         }

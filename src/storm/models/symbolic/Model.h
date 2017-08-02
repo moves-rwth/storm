@@ -222,6 +222,20 @@ namespace storm {
                 std::set<storm::expressions::Variable> const& getColumnVariables() const;
                 
                 /*!
+                 * Retrieves all meta variables used to encode rows and nondetermism.
+                 *
+                 * @return All meta variables used to encode rows and nondetermism.
+                 */
+                virtual std::set<storm::expressions::Variable> getRowAndNondeterminismVariables() const;
+
+                /*!
+                 * Retrieves all meta variables used to encode columns and nondetermism.
+                 *
+                 * @return All meta variables used to encode columns and nondetermism.
+                 */
+                virtual std::set<storm::expressions::Variable> getColumnAndNondeterminismVariables() const;
+
+                /*!
                  * Retrieves the pairs of row and column meta variables.
                  *
                  * @return The pairs of row and column meta variables.

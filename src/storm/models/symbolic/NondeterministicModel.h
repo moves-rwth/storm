@@ -99,6 +99,9 @@ namespace storm {
                  */
                 std::set<storm::expressions::Variable> const& getNondeterminismVariables() const;
                 
+                virtual std::set<storm::expressions::Variable> getRowAndNondeterminismVariables() const override;
+                virtual std::set<storm::expressions::Variable> getColumnAndNondeterminismVariables() const override;
+
                 /*!
                  * Retrieves a BDD characterizing all illegal nondeterminism encodings in the model.
                  *

@@ -5,13 +5,13 @@ namespace storm {
         namespace bisimulation {
             
             template <storm::dd::DdType DdType, typename ValueType>
-            PartitionRefiner<DdType, ValueType>::PartitionRefiner(storm::models::symbolic::Model<DdType, ValueType> const& model, Partition<DdType, ValueType> const& initialStatePartition) : status(Status::Initialized), refinements(0), statePartition(initialStatePartition), signatureComputer(model), signatureRefiner(model.getManager(), statePartition.getBlockVariable(), model.getRowVariables()) {
+            PartitionRefiner<DdType, ValueType>::PartitionRefiner(storm::models::symbolic::Model<DdType, ValueType> const& model, Partition<DdType, ValueType> const& initialStatePartition) : status(Status::Initialized), refinements(0), statePartition(initialStatePartition), signatureComputer(model), signatureRefiner(model.getManager(), statePartition.getBlockVariable(), model.getRowAndNondeterminismVariables()) {
                 // Intentionally left empty.
             }
             
             template <storm::dd::DdType DdType, typename ValueType>
             bool PartitionRefiner<DdType, ValueType>::refine(SignatureMode const& mode) {
-                Partition<DdType, ValueType> newStatePartition = this->internalRefine(signatureRefiner, statePartition, mode);
+                Partition<DdType, ValueType> newStatePartition = this->internalRefine(signatureComputer, signatureRefiner, statePartition, statePartition, mode);
                 if (statePartition == newStatePartition) {
                     this->status = Status::FixedPoint;
                     return false;
@@ -22,13 +22,13 @@ namespace storm {
             }
             
             template <storm::dd::DdType DdType, typename ValueType>
-            Partition<DdType, ValueType> PartitionRefiner<DdType, ValueType>::internalRefine(SignatureRefiner<DdType, ValueType>& signatureRefiner, Partition<DdType, ValueType> const& oldPartition, SignatureMode const& mode) {
+            Partition<DdType, ValueType> PartitionRefiner<DdType, ValueType>::internalRefine(SignatureComputer<DdType, ValueType>& signatureComputer, SignatureRefiner<DdType, ValueType>& signatureRefiner, Partition<DdType, ValueType> const& oldPartition, Partition<DdType, ValueType> const& targetPartition, SignatureMode const& mode) {
                 auto start = std::chrono::high_resolution_clock::now();
                 
                 if (this->status != Status::FixedPoint) {
                     this->status = Status::InComputation;
                     
-                    this->signatureComputer.setSignatureMode(mode);
+                    signatureComputer.setSignatureMode(mode);
                     
                     std::chrono::milliseconds::rep signatureTime = 0;
                     std::chrono::milliseconds::rep refinementTime = 0;
@@ -36,7 +36,7 @@ namespace storm {
                     bool refined = false;
                     uint64_t index = 0;
                     Partition<DdType, ValueType> newPartition;
-                    auto signatureIterator = signatureComputer.compute(oldPartition);
+                    auto signatureIterator = signatureComputer.compute(targetPartition);
                     while (signatureIterator.hasNext() && !refined) {
                         auto signatureStart = std::chrono::high_resolution_clock::now();
                         auto signature = signatureIterator.next();
@@ -44,10 +44,17 @@ namespace storm {
                         totalSignatureTime += (signatureEnd - signatureStart);
                         STORM_LOG_DEBUG("Signature " << refinements << "[" << index << "] DD has " << signature.getSignatureAdd().getNodeCount() << " nodes.");
                         
+                        signature.getSignatureAdd().exportToDot("sig" + std::to_string(refinements) + ".dot");
+                        if (refinements == 1) {
+                            exit(-1);
+                        }
+                        
                         auto refinementStart = std::chrono::high_resolution_clock::now();
                         newPartition = signatureRefiner.refine(statePartition, signature);
                         auto refinementEnd = std::chrono::high_resolution_clock::now();
                         totalRefinementTime += (refinementEnd - refinementStart);
+                        
+                        newPartition.asAdd().exportToDot("newpart" + std::to_string(refinements) + ".dot");
                         
                         signatureTime += std::chrono::duration_cast<std::chrono::milliseconds>(signatureEnd - signatureStart).count();
                         refinementTime = std::chrono::duration_cast<std::chrono::milliseconds>(refinementEnd - refinementStart).count();

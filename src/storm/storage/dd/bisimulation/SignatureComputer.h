@@ -43,28 +43,32 @@ namespace storm {
                 friend class SignatureIterator<DdType, ValueType>;
                 
                 SignatureComputer(storm::models::symbolic::Model<DdType, ValueType> const& model, SignatureMode const& mode = SignatureMode::Eager);
+                SignatureComputer(storm::dd::Add<DdType, ValueType> const& transitionMatrix, std::set<storm::expressions::Variable> const& columnVariables, SignatureMode const& mode = SignatureMode::Eager);
+                SignatureComputer(storm::dd::Bdd<DdType> const& qualitativeTransitionMatrix, std::set<storm::expressions::Variable> const& columnVariables, SignatureMode const& mode = SignatureMode::Eager);
+                SignatureComputer(storm::dd::Add<DdType, ValueType> const& transitionMatrix, boost::optional<storm::dd::Bdd<DdType>> const& qualitativeTransitionMatrix, std::set<storm::expressions::Variable> const& columnVariables, SignatureMode const& mode = SignatureMode::Eager);
 
                 void setSignatureMode(SignatureMode const& newMode);
 
                 SignatureIterator<DdType, ValueType> compute(Partition<DdType, ValueType> const& partition);
                 
             private:
+                /// Methods to compute the signatures.
                 Signature<DdType, ValueType> getFullSignature(Partition<DdType, ValueType> const& partition) const;
-
                 Signature<DdType, ValueType> getQualitativeSignature(Partition<DdType, ValueType> const& partition) const;
                 
                 SignatureMode const& getSignatureMode() const;
-                
-                storm::models::symbolic::Model<DdType, ValueType> const& model;
-                
-                // The transition matrix to use for the signature computation.
+                                
+                /// The transition matrix to use for the signature computation.
                 storm::dd::Add<DdType, ValueType> transitionMatrix;
+                
+                /// The set of variables from which to abstract when performing matrix-vector multiplication.
+                std::set<storm::expressions::Variable> columnVariables;
 
-                // The mode to use for signature computation.
+                /// The mode to use for signature computation.
                 SignatureMode mode;
                 
-                // Only used when using lazy signatures is enabled.
-                boost::optional<storm::dd::Add<DdType, ValueType>> transitionMatrix01;
+                /// Only used when using lazy signatures is enabled.
+                mutable boost::optional<storm::dd::Add<DdType, ValueType>> transitionMatrix01;
             };
             
         }
