@@ -22,7 +22,7 @@ $ cd carl
 $ mkdir build
 $ cd build
 $ cmake -DUSE_CLN_NUMBERS=ON -DUSE_GINAC=ON -DTHREAD_SAFE=ON ..
-$ make
+$ make lib_carl
 ```
 
 Once it is build, it will register itself to cmake so Storm can find your build automatically.
