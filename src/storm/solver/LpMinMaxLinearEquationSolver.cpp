@@ -75,6 +75,26 @@ namespace storm {
             for (; xIt != x.end(); ++xIt, ++vIt) {
                 *xIt = storm::utility::convertNumber<ValueType>(solver->getContinuousValue(*vIt));
             }
+            
+            // If requested, we store the scheduler for retrieval.
+            if (this->isTrackSchedulerSet()) {
+                this->schedulerChoices = std::vector<uint_fast64_t>(this->A.getRowGroupCount());
+                for (uint64_t rowGroup = 0; rowGroup < this->A.getRowGroupCount(); ++rowGroup) {
+                    uint64_t row = this->A.getRowGroupIndices()[rowGroup];
+                    uint64_t optimalChoiceIndex = 0;
+                    uint64_t currChoice = 0;
+                    ValueType optimalGroupValue = this->A.multiplyRowWithVector(row, x) + b[row];
+                    for (++row, ++currChoice; row < this->A.getRowGroupIndices()[rowGroup + 1]; ++row, ++currChoice) {
+                        ValueType rowValue = this->A.multiplyRowWithVector(row, x) + b[row];
+                        if ((minimize(dir) && rowValue < optimalGroupValue) || (maximize(dir) && rowValue > optimalGroupValue)) {
+                            optimalGroupValue = rowValue;
+                            optimalChoiceIndex = currChoice;
+                        }
+                    }
+                    this->schedulerChoices.get()[rowGroup] = optimalChoiceIndex;
+                }
+            }
+
             return true;
         }
        
