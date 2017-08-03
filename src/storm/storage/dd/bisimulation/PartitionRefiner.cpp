@@ -44,17 +44,10 @@ namespace storm {
                         totalSignatureTime += (signatureEnd - signatureStart);
                         STORM_LOG_DEBUG("Signature " << refinements << "[" << index << "] DD has " << signature.getSignatureAdd().getNodeCount() << " nodes.");
                         
-//                        signature.getSignatureAdd().exportToDot("sig" + std::to_string(refinements) + ".dot");
-//                        if (refinements == 1) {
-//                            exit(-1);
-//                        }
-                        
                         auto refinementStart = std::chrono::high_resolution_clock::now();
                         newPartition = signatureRefiner.refine(statePartition, signature);
                         auto refinementEnd = std::chrono::high_resolution_clock::now();
                         totalRefinementTime += (refinementEnd - refinementStart);
-                        
-//                        newPartition.asAdd().exportToDot("newpart" + std::to_string(refinements) + ".dot");
                         
                         signatureTime += std::chrono::duration_cast<std::chrono::milliseconds>(signatureEnd - signatureStart).count();
                         refinementTime = std::chrono::duration_cast<std::chrono::milliseconds>(refinementEnd - refinementStart).count();

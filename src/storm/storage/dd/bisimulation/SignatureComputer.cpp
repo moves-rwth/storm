@@ -119,9 +119,6 @@ namespace storm {
                     return this->getQualitativeTransitionMatrixAsBdd().andExists(partition.asBdd(), columnVariables).template toAdd<ValueType>();
                 } else {
                     if (this->qualitativeTransitionMatrixIsBdd()) {
-                        this->getQualitativeTransitionMatrixAsBdd().template toAdd<ValueType>().exportToDot("lasttrans.dot");
-                        partition.asAdd().exportToDot("lastpart.dot");
-                        this->getQualitativeTransitionMatrixAsBdd().andExists(partition.asAdd().toBdd(), columnVariables).template toAdd<ValueType>().exportToDot("lastresult.dot");
                         return Signature<DdType, ValueType>(this->getQualitativeTransitionMatrixAsBdd().andExists(partition.asAdd().toBdd(), columnVariables).template toAdd<ValueType>());
                     } else {
                         return Signature<DdType, ValueType>(this->getQualitativeTransitionMatrixAsAdd().multiplyMatrix(partition.asAdd(), columnVariables));

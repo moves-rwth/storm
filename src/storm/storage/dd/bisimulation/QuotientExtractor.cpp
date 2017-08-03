@@ -4,6 +4,7 @@
 
 #include "storm/models/symbolic/Dtmc.h"
 #include "storm/models/symbolic/Ctmc.h"
+#include "storm/models/symbolic/Mdp.h"
 #include "storm/models/symbolic/StandardRewardModel.h"
 
 #include "storm/models/sparse/Dtmc.h"
@@ -541,7 +542,7 @@ namespace storm {
             std::shared_ptr<storm::models::symbolic::Model<DdType, ValueType>> QuotientExtractor<DdType, ValueType>::extractQuotientUsingBlockVariables(storm::models::symbolic::Model<DdType, ValueType> const& model, Partition<DdType, ValueType> const& partition, PreservationInformation<DdType, ValueType> const& preservationInformation) {
                 auto modelType = model.getType();
                 
-                if (modelType == storm::models::ModelType::Dtmc || modelType == storm::models::ModelType::Ctmc) {
+                if (modelType == storm::models::ModelType::Dtmc || modelType == storm::models::ModelType::Ctmc || modelType == storm::models::ModelType::Mdp) {
                     std::set<storm::expressions::Variable> blockVariableSet = {partition.getBlockVariable()};
                     std::set<storm::expressions::Variable> blockPrimeVariableSet = {partition.getPrimedBlockVariable()};
                     std::vector<std::pair<storm::expressions::Variable, storm::expressions::Variable>> blockMetaVariablePairs = {std::make_pair(partition.getBlockVariable(), partition.getPrimedBlockVariable())};
@@ -554,9 +555,12 @@ namespace storm {
                     }
                     
                     storm::dd::Add<DdType, ValueType> partitionAsAdd = partitionAsBdd.template toAdd<ValueType>();
+                    partitionAsAdd.exportToDot("partition.dot");
                     auto start = std::chrono::high_resolution_clock::now();
                     storm::dd::Add<DdType, ValueType> quotientTransitionMatrix = model.getTransitionMatrix().multiplyMatrix(partitionAsAdd.renameVariables(blockVariableSet, blockPrimeVariableSet), model.getColumnVariables());
+                    quotientTransitionMatrix.exportToDot("trans-1.dot");
                     quotientTransitionMatrix = quotientTransitionMatrix.multiplyMatrix(partitionAsAdd.renameVariables(model.getColumnVariables(), model.getRowVariables()), model.getRowVariables());
+                    quotientTransitionMatrix.exportToDot("quottrans.dot");
                     auto end = std::chrono::high_resolution_clock::now();
                     STORM_LOG_TRACE("Quotient transition matrix extracted in " << std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count() << "ms.");
                     storm::dd::Bdd<DdType> quotientTransitionMatrixBdd = quotientTransitionMatrix.notZero();
@@ -588,8 +592,12 @@ namespace storm {
 
                     if (modelType == storm::models::ModelType::Dtmc) {
                         return std::shared_ptr<storm::models::symbolic::Dtmc<DdType, ValueType>>(new storm::models::symbolic::Dtmc<DdType, ValueType>(model.getManager().asSharedPointer(), reachableStates, initialStates, deadlockStates, quotientTransitionMatrix, blockVariableSet, blockPrimeVariableSet, blockMetaVariablePairs, preservedLabelBdds, {}));
-                    } else {
+                    } else if (modelType == storm::models::ModelType::Ctmc) {
                         return std::shared_ptr<storm::models::symbolic::Ctmc<DdType, ValueType>>(new storm::models::symbolic::Ctmc<DdType, ValueType>(model.getManager().asSharedPointer(), reachableStates, initialStates, deadlockStates, quotientTransitionMatrix, blockVariableSet, blockPrimeVariableSet, blockMetaVariablePairs, preservedLabelBdds, {}));
+                    } else if (modelType == storm::models::ModelType::Mdp) {
+                        return std::shared_ptr<storm::models::symbolic::Mdp<DdType, ValueType>>(new storm::models::symbolic::Mdp<DdType, ValueType>(model.getManager().asSharedPointer(), reachableStates, initialStates, deadlockStates, quotientTransitionMatrix, blockVariableSet, blockPrimeVariableSet, blockMetaVariablePairs, model.getNondeterminismVariables(), preservedLabelBdds, {}));
+                    } else {
+                        STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Unsupported quotient type.");
                     }
                 } else {
                     STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Cannot extract quotient for this model type.");
