@@ -18,7 +18,7 @@ namespace storm {
             class SignatureRefiner {
             public:
                 SignatureRefiner() = default;
-                SignatureRefiner(storm::dd::DdManager<DdType> const& manager, storm::expressions::Variable const& blockVariable, std::set<storm::expressions::Variable> const& stateVariables);
+                SignatureRefiner(storm::dd::DdManager<DdType> const& manager, storm::expressions::Variable const& blockVariable, std::set<storm::expressions::Variable> const& stateVariables, std::set<storm::expressions::Variable> const& nondeterminismVariables = std::set<storm::expressions::Variable>());
                 
                 ~SignatureRefiner();
                 
