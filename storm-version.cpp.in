@@ -7,7 +7,8 @@ namespace storm {
 
         const unsigned StormVersion::versionMajor = @STORM_VERSION_MAJOR@;
         const unsigned StormVersion::versionMinor = @STORM_VERSION_MINOR@;
-        const unsigned StormVersion::versionPatch = @STORM_VERSION_PATCH@;
+        const unsigned StormVersion::versionPatch = @STORM_VERSION_DEV_PATCH@;
+        const bool StormVersion::versionDev = @STORM_VERSION_DEV@;
         const std::string StormVersion::gitRevisionHash = "@STORM_VERSION_GIT_HASH@";
         const unsigned StormVersion::commitsAhead = @STORM_VERSION_COMMITS_AHEAD@;
         const boost::optional<bool> StormVersion::dirty = @STORM_VERSION_DIRTY@;
