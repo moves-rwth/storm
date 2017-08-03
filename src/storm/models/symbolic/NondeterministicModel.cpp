@@ -63,20 +63,6 @@ namespace storm {
             }
             
             template<storm::dd::DdType Type, typename ValueType>
-            std::set<storm::expressions::Variable> NondeterministicModel<Type, ValueType>::getRowAndNondeterminismVariables() const {
-                std::set<storm::expressions::Variable> result;
-                std::set_union(this->getRowVariables().begin(), this->getRowVariables().end(), this->getNondeterminismVariables().begin(), this->getNondeterminismVariables().end(), std::inserter(result, result.begin()));
-                return result;
-            }
-            
-            template<storm::dd::DdType Type, typename ValueType>
-            std::set<storm::expressions::Variable> NondeterministicModel<Type, ValueType>::getColumnAndNondeterminismVariables() const {
-                std::set<storm::expressions::Variable> result;
-                std::set_union(this->getColumnVariables().begin(), this->getColumnVariables().end(), this->getNondeterminismVariables().begin(), this->getNondeterminismVariables().end(), std::inserter(result, result.begin()));
-                return result;
-            }
-            
-            template<storm::dd::DdType Type, typename ValueType>
             storm::dd::Bdd<Type> const& NondeterministicModel<Type, ValueType>::getIllegalMask() const {
                 return illegalMask;
             }

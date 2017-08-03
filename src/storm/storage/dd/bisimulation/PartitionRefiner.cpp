@@ -5,7 +5,7 @@ namespace storm {
         namespace bisimulation {
             
             template <storm::dd::DdType DdType, typename ValueType>
-            PartitionRefiner<DdType, ValueType>::PartitionRefiner(storm::models::symbolic::Model<DdType, ValueType> const& model, Partition<DdType, ValueType> const& initialStatePartition) : status(Status::Initialized), refinements(0), statePartition(initialStatePartition), signatureComputer(model), signatureRefiner(model.getManager(), statePartition.getBlockVariable(), model.getRowAndNondeterminismVariables()) {
+            PartitionRefiner<DdType, ValueType>::PartitionRefiner(storm::models::symbolic::Model<DdType, ValueType> const& model, Partition<DdType, ValueType> const& initialStatePartition) : status(Status::Initialized), refinements(0), statePartition(initialStatePartition), signatureComputer(model), signatureRefiner(model.getManager(), statePartition.getBlockVariable(), model.getRowAndNondeterminismVariables(), model.getNondeterminismVariables()) {
                 // Intentionally left empty.
             }
             
@@ -44,7 +44,7 @@ namespace storm {
                         totalSignatureTime += (signatureEnd - signatureStart);
                         STORM_LOG_DEBUG("Signature " << refinements << "[" << index << "] DD has " << signature.getSignatureAdd().getNodeCount() << " nodes.");
                         
-                        signature.getSignatureAdd().exportToDot("sig" + std::to_string(refinements) + ".dot");
+//                        signature.getSignatureAdd().exportToDot("sig" + std::to_string(refinements) + ".dot");
 //                        if (refinements == 1) {
 //                            exit(-1);
 //                        }
@@ -54,7 +54,7 @@ namespace storm {
                         auto refinementEnd = std::chrono::high_resolution_clock::now();
                         totalRefinementTime += (refinementEnd - refinementStart);
                         
-                        newPartition.asAdd().exportToDot("newpart" + std::to_string(refinements) + ".dot");
+//                        newPartition.asAdd().exportToDot("newpart" + std::to_string(refinements) + ".dot");
                         
                         signatureTime += std::chrono::duration_cast<std::chrono::milliseconds>(signatureEnd - signatureStart).count();
                         refinementTime = std::chrono::duration_cast<std::chrono::milliseconds>(refinementEnd - refinementStart).count();

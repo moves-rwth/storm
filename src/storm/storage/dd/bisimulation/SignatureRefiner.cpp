@@ -99,16 +99,12 @@ namespace storm {
                     reuseBlocksCache.clear();
                     nextFreeBlockIndex = oldPartition.getNextFreeBlockIndex();
 
-                    internalDdManager.debugCheck();
-
                     // Perform the actual recursive refinement step.
                     DdNodePtr result = refine(oldPartition.asAdd().getInternalAdd().getCuddDdNode(), signatureAdd.getInternalAdd().getCuddDdNode(), nondeterminismVariables.getInternalBdd().getCuddDdNode(), nonBlockVariables.getInternalBdd().getCuddDdNode());
 
                     // Construct resulting ADD from the obtained node and the meta information.
                     storm::dd::InternalAdd<storm::dd::DdType::CUDD, ValueType> internalNewPartitionAdd(&internalDdManager, cudd::ADD(internalDdManager.getCuddManager(), result));
                     storm::dd::Add<storm::dd::DdType::CUDD, ValueType> newPartitionAdd(oldPartition.asAdd().getDdManager(), internalNewPartitionAdd, oldPartition.asAdd().getContainedMetaVariables());
-                    
-                    internalDdManager.debugCheck();
                     
                     return newPartitionAdd;
                 }
@@ -154,28 +150,48 @@ namespace storm {
                     } else {
                         // If there are more variables that belong to the non-block part of the encoding, we need to recursively descend.
                         
-                        // Remember an offset that indicates whether the top variable is a nondeterminism variable or not.
-                        short offset = 1;
-                        if (!Cudd_IsConstant(nondeterminismVariablesNode) && Cudd_NodeReadIndex(nondeterminismVariablesNode) == Cudd_NodeReadIndex(nonBlockVariablesNode)) {
-                            offset = 0;
-                        }
-                        
+                        bool skippedBoth = true;
                         DdNode* partitionThen;
                         DdNode* partitionElse;
-                        if (Cudd_NodeReadIndex(partitionNode) - offset == Cudd_NodeReadIndex(nonBlockVariablesNode)) {
-                            partitionThen = Cudd_T(partitionNode);
-                            partitionElse = Cudd_E(partitionNode);
-                        } else {
-                            partitionThen = partitionElse = partitionNode;
-                        }
-                        
                         DdNode* signatureThen;
                         DdNode* signatureElse;
-                        if (Cudd_NodeReadIndex(signatureNode) == Cudd_NodeReadIndex(nonBlockVariablesNode)) {
-                            signatureThen = Cudd_T(signatureNode);
-                            signatureElse = Cudd_E(signatureNode);
-                        } else {
-                            signatureThen = signatureElse = signatureNode;
+                        short offset = 1;
+                        while (skippedBoth && !Cudd_IsConstant(nonBlockVariablesNode)) {
+                            // Remember an offset that indicates whether the top variable is a nondeterminism variable or not.
+                            offset = 1;
+                            if (!Cudd_IsConstant(nondeterminismVariablesNode) && Cudd_NodeReadIndex(nondeterminismVariablesNode) == Cudd_NodeReadIndex(nonBlockVariablesNode)) {
+                                offset = 0;
+                            }
+                            
+                            if (Cudd_NodeReadIndex(partitionNode) - offset == Cudd_NodeReadIndex(nonBlockVariablesNode)) {
+                                partitionThen = Cudd_T(partitionNode);
+                                partitionElse = Cudd_E(partitionNode);
+                                skippedBoth = false;
+                            } else {
+                                partitionThen = partitionElse = partitionNode;
+                            }
+                            
+                            if (Cudd_NodeReadIndex(signatureNode) == Cudd_NodeReadIndex(nonBlockVariablesNode)) {
+                                signatureThen = Cudd_T(signatureNode);
+                                signatureElse = Cudd_E(signatureNode);
+                                skippedBoth = false;
+                            } else {
+                                signatureThen = signatureElse = signatureNode;
+                            }
+                            
+                            // If both (signature and partition) skipped the next variable, we fast-forward.
+                            if (skippedBoth) {
+                                // If the current variable is a nondeterminism variable, we need to advance both variable sets otherwise just the non-block variables.
+                                nonBlockVariablesNode = Cudd_T(nonBlockVariablesNode);
+                                if (offset == 0) {
+                                    nondeterminismVariablesNode = Cudd_T(nondeterminismVariablesNode);
+                                }
+                            }
+                        }
+                        
+                        // If there are no more non-block variables remaining, make a recursive call to enter the base case.
+                        if (Cudd_IsConstant(nonBlockVariablesNode)) {
+                            return refine(partitionNode, signatureNode, nondeterminismVariablesNode, nonBlockVariablesNode);
                         }
                         
                         DdNode* thenResult = refine(partitionThen, signatureThen, offset == 0 ? Cudd_T(nondeterminismVariablesNode) : nondeterminismVariablesNode, Cudd_T(nonBlockVariablesNode));
@@ -315,24 +331,13 @@ namespace storm {
                     
                     STORM_LOG_ASSERT(partitionNode != mtbdd_false, "Expected non-false node.");
 
-//                    ++numberOfVisitedNodes;
-
                     // Check the cache whether we have seen the same node before.
-//                    ++signatureCacheLookups;
-//                    auto start = std::chrono::high_resolution_clock::now();
-                    std::unique_ptr<MTBDD>& sigCacheEntrySmartPtr = signatureCache[std::make_pair(signatureNode, partitionNode)];
-                    if (sigCacheEntrySmartPtr) {
-//                        ++signatureCacheHits;
+                    auto nodePair = std::make_pair(signatureNode, partitionNode);
+                    auto it = signatureCache.find(nodePair);
+                    if (it != signatureCache.end()) {
                         // If so, we return the corresponding result.
-//                        auto end = std::chrono::high_resolution_clock::now();
-//                        totalSignatureCacheLookupTime += end - start;
-                        return *sigCacheEntrySmartPtr;
+                        return it->second;
                     }
-//                    auto end = std::chrono::high_resolution_clock::now();
-//                    totalSignatureCacheLookupTime += end - start;
-                    
-                    MTBDD* newEntryPtr = new MTBDD;
-                    sigCacheEntrySmartPtr.reset(newEntryPtr);
                     
                     sylvan_gc_test();
                     
@@ -341,55 +346,62 @@ namespace storm {
                         // If this is the first time (in this traversal) that we encounter this signature, we check
                         // whether we can assign the old block number to it.
 
-                        //                        start = std::chrono::high_resolution_clock::now();
                         auto& reuseBlockEntry = reuseBlocksCache[partitionNode];
-                        //                        end = std::chrono::high_resolution_clock::now();
-                        //                        totalReuseBlocksLookupTime += end - start;
                         if (!reuseBlockEntry.isReused()) {
                             reuseBlockEntry.setReused();
                             reuseBlocksCache.emplace(partitionNode, true);
-                            //                            start = std::chrono::high_resolution_clock::now();
-                            *newEntryPtr = partitionNode;
-                            //                            end = std::chrono::high_resolution_clock::now();
-                            //                            totalSignatureCacheStoreTime += end - start;
+                            signatureCache[nodePair] = partitionNode;
                             return partitionNode;
                         } else {
-                            //                            start = std::chrono::high_resolution_clock::now();
                             BDD result = encodeBlock(nextFreeBlockIndex++);
-                            //                            end = std::chrono::high_resolution_clock::now();
-                            //                            totalBlockEncodingTime += end - start;
-                            
-                            //                            start = std::chrono::high_resolution_clock::now();
-                            *newEntryPtr = result;
-                            //                            end = std::chrono::high_resolution_clock::now();
-                            //                            totalSignatureCacheStoreTime += end - start;
+                            signatureCache[nodePair] = result;
                             return result;
                         }
                     } else {
                         // If there are more variables that belong to the non-block part of the encoding, we need to recursively descend.
                         
-                        // Remember an offset that indicates whether the top variable is a nondeterminism variable or not.
-                        short offset = 1;
-                        if (!sylvan_isconst(nondeterminismVariablesNode) && sylvan_var(nondeterminismVariablesNode) == sylvan_var(nonBlockVariablesNode)) {
-                            offset = 0;
-                        }
-
+                        bool skippedBoth = true;
                         BDD partitionThen;
                         BDD partitionElse;
-                        if (sylvan_var(partitionNode) - offset == sylvan_var(nonBlockVariablesNode)) {
-                            partitionThen = sylvan_high(partitionNode);
-                            partitionElse = sylvan_low(partitionNode);
-                        } else {
-                            partitionThen = partitionElse = partitionNode;
-                        }
-                        
                         MTBDD signatureThen;
                         MTBDD signatureElse;
-                        if (sylvan_var(signatureNode) == sylvan_var(nonBlockVariablesNode)) {
-                            signatureThen = sylvan_high(signatureNode);
-                            signatureElse = sylvan_low(signatureNode);
-                        } else {
-                            signatureThen = signatureElse = signatureNode;
+                        short offset = 1;
+                        while (skippedBoth && !sylvan_isconst(nonBlockVariablesNode)) {
+                            // Remember an offset that indicates whether the top variable is a nondeterminism variable or not.
+                            offset = 1;
+                            if (!sylvan_isconst(nondeterminismVariablesNode) && sylvan_var(nondeterminismVariablesNode) == sylvan_var(nonBlockVariablesNode)) {
+                                offset = 0;
+                            }
+
+                            if (sylvan_var(partitionNode) - offset == sylvan_var(nonBlockVariablesNode)) {
+                                partitionThen = sylvan_high(partitionNode);
+                                partitionElse = sylvan_low(partitionNode);
+                                skippedBoth = false;
+                            } else {
+                                partitionThen = partitionElse = partitionNode;
+                            }
+                            
+                            if (sylvan_var(signatureNode) == sylvan_var(nonBlockVariablesNode)) {
+                                signatureThen = sylvan_high(signatureNode);
+                                signatureElse = sylvan_low(signatureNode);
+                                skippedBoth = false;
+                            } else {
+                                signatureThen = signatureElse = signatureNode;
+                            }
+                            
+                            // If both (signature and partition) skipped the next variable, we fast-forward.
+                            if (skippedBoth) {
+                                // If the current variable is a nondeterminism variable, we need to advance both variable sets otherwise just the non-block variables.
+                                nonBlockVariablesNode = sylvan_high(nonBlockVariablesNode);
+                                if (offset == 0) {
+                                    nondeterminismVariablesNode = sylvan_high(nondeterminismVariablesNode);
+                                }
+                            }
+                        }
+                        
+                        // If there are no more non-block variables remaining, make a recursive call to enter the base case.
+                        if (sylvan_isconst(nonBlockVariablesNode)) {
+                            return refine(partitionNode, signatureNode, nondeterminismVariablesNode, nonBlockVariablesNode);
                         }
                         
                         BDD thenResult = refine(partitionThen, signatureThen, offset == 0 ? sylvan_high(nondeterminismVariablesNode) : nondeterminismVariablesNode, sylvan_high(nonBlockVariablesNode));
@@ -400,17 +412,11 @@ namespace storm {
                             result = thenResult;
                         } else {
                             // Get the node to connect the subresults.
-                            //                            start = std::chrono::high_resolution_clock::now();
                             result = sylvan_makenode(sylvan_var(nonBlockVariablesNode) + offset, elseResult, thenResult);
-                            //                            end = std::chrono::high_resolution_clock::now();
-                            //                            totalMakeNodeTime += end - start;
                         }
                         
                         // Store the result in the cache.
-                        //                        start = std::chrono::high_resolution_clock::now();
-                        *newEntryPtr = result;
-                        //                        end = std::chrono::high_resolution_clock::now();
-                        //                        totalSignatureCacheStoreTime += end - start;
+                        signatureCache[nodePair] = result;
                         
                         return result;
                     }
@@ -434,7 +440,7 @@ namespace storm {
                 uint64_t numberOfRefinements;
                 
                 // The cache used to identify states with identical signature.
-                spp::sparse_hash_map<std::pair<MTBDD, MTBDD>, std::unique_ptr<MTBDD>, SylvanMTBDDPairHash> signatureCache;
+                spp::sparse_hash_map<std::pair<MTBDD, MTBDD>, MTBDD, SylvanMTBDDPairHash> signatureCache;
                 
                 // The cache used to identify which old block numbers have already been reused.
                 spp::sparse_hash_map<MTBDD, ReuseWrapper> reuseBlocksCache;

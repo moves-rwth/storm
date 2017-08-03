@@ -592,7 +592,7 @@ namespace storm {
                         return std::shared_ptr<storm::models::symbolic::Ctmc<DdType, ValueType>>(new storm::models::symbolic::Ctmc<DdType, ValueType>(model.getManager().asSharedPointer(), reachableStates, initialStates, deadlockStates, quotientTransitionMatrix, blockVariableSet, blockPrimeVariableSet, blockMetaVariablePairs, preservedLabelBdds, {}));
                     }
                 } else {
-                    STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Cannot exctract quotient for this model type.");
+                    STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Cannot extract quotient for this model type.");
                 }
             }
             

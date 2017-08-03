@@ -174,12 +174,21 @@ namespace storm {
             
             template<storm::dd::DdType Type, typename ValueType>
             std::set<storm::expressions::Variable> Model<Type, ValueType>::getRowAndNondeterminismVariables() const {
-                return rowVariables;
+                std::set<storm::expressions::Variable> result;
+                std::set_union(this->getRowVariables().begin(), this->getRowVariables().end(), this->getNondeterminismVariables().begin(), this->getNondeterminismVariables().end(), std::inserter(result, result.begin()));
+                return result;
             }
             
             template<storm::dd::DdType Type, typename ValueType>
             std::set<storm::expressions::Variable> Model<Type, ValueType>::getColumnAndNondeterminismVariables() const {
-                return columnVariables;
+                std::set<storm::expressions::Variable> result;
+                std::set_union(this->getColumnVariables().begin(), this->getColumnVariables().end(), this->getNondeterminismVariables().begin(), this->getNondeterminismVariables().end(), std::inserter(result, result.begin()));
+                return result;
+            }
+            
+            template<storm::dd::DdType Type, typename ValueType>
+            std::set<storm::expressions::Variable> const& Model<Type, ValueType>::getNondeterminismVariables() const {
+                return emptyVariableSet;
             }
             
             template<storm::dd::DdType Type, typename ValueType>

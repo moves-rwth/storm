@@ -226,14 +226,21 @@ namespace storm {
                  *
                  * @return All meta variables used to encode rows and nondetermism.
                  */
-                virtual std::set<storm::expressions::Variable> getRowAndNondeterminismVariables() const;
+                std::set<storm::expressions::Variable> getRowAndNondeterminismVariables() const;
 
                 /*!
                  * Retrieves all meta variables used to encode columns and nondetermism.
                  *
                  * @return All meta variables used to encode columns and nondetermism.
                  */
-                virtual std::set<storm::expressions::Variable> getColumnAndNondeterminismVariables() const;
+                std::set<storm::expressions::Variable> getColumnAndNondeterminismVariables() const;
+
+                /*!
+                 * Retrieves all meta variables used to encode the nondeterminism.
+                 *
+                 * @return All meta variables used to encode the nondeterminism.
+                 */
+                virtual std::set<storm::expressions::Variable> const& getNondeterminismVariables() const;
 
                 /*!
                  * Retrieves the pairs of row and column meta variables.
@@ -311,7 +318,6 @@ namespace storm {
                 std::set<storm::RationalFunctionVariable> const& getParameters() const;
                 
             protected:
-                
                 /*!
                  * Sets the transition matrix of the model.
                  *
@@ -389,6 +395,9 @@ namespace storm {
                 
                 // The parameters. Only meaningful for models over rational functions.
                 std::set<storm::RationalFunctionVariable> parameters;
+                
+                // An empty variable set that can be used when references to non-existing sets need to be returned.
+                std::set<storm::expressions::Variable> emptyVariableSet;
             };
             
         } // namespace symbolic
