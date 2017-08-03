@@ -23,7 +23,7 @@ namespace storm {
         bool LpMinMaxLinearEquationSolver<ValueType>::solveEquations(OptimizationDirection dir, std::vector<ValueType>& x, std::vector<ValueType> const& b) const {
             
             // Set up the LP solver
-            std::unique_ptr<storm::solver::LpSolver> solver = lpSolverFactory->create("MinMaxLinearEquationSolver");
+            std::unique_ptr<storm::solver::LpSolver> solver = lpSolverFactory->create("");
             solver->setOptimizationDirection(invert(dir));
             
             // Create a variable for each row group
@@ -58,7 +58,7 @@ namespace storm {
                     } else {
                         rowConstraint = variables[rowGroup].getExpression() >= rowConstraint;
                     }
-                    solver->addConstraint("row" + std::to_string(row), rowConstraint);
+                    solver->addConstraint("", rowConstraint);
                 }
             }
             
