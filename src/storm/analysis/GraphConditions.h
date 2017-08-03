@@ -31,6 +31,9 @@ namespace storm {
             // A set of constraints that makes sure that the underlying graph of the model does not change depending
             // on the parameter values.
             std::unordered_set<typename ConstraintType<ValueType>::val> graphPreservingConstraintSet;
+
+            // A set of variables
+            std::set<storm::RationalFunctionVariable> variableSet;
             
             void wellformedRequiresNonNegativeEntries(std::vector<ValueType> const&);
         public:
@@ -55,6 +58,12 @@ namespace storm {
              * @return The set of graph-preserving constraints.
              */
             std::unordered_set<typename ConstraintType<ValueType>::val> const& getGraphPreservingConstraints() const;
+
+            /*!
+             * Returns the set of variables in the model
+             * @return
+             */
+            std::set<storm::RationalFunctionVariable> const& getVariables() const;
             
             /*!
              * Constructs the constraints for the given DTMC.
