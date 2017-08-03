@@ -95,14 +95,20 @@ Check the output carefully for errors and warnings. If all requirements are prop
 
 If the configuration step went smoothly, the compilation step should run through. Feel free to use the compilation time for a coffee or stroll through the park.
 
-To compile all of Storm's binaries, enter
+To compile all of Storm's binaries including all tests, enter
 
 ```console
 $ make
 ```
 
+To only build the binaries (starting from version 1.1), enter
+
+```console
+$ make binaries
+```
+
 {:.alert .alert-info}
-If you just want to compile Storm's main command-line interface, typing `make storm-main` suffices. To see which targets you need to build, we refer to the table of [available executables]({{ site.github.url }}/documentation/usage/running-storm.html#storms-executables){:.alert-link}
+If you just want to compile Storm's main command-line interface, typing `make storm-main` suffices. To see which targets you need to build, we refer to the table of [available executables]({{ site.github.url }}/documentation/usage/running-storm.html#storms-executables).{:.alert-link}
 
 {:.alert .alert-info}
 If you have multiple cores at your disposal and at least 8GB of memory, you can execute
