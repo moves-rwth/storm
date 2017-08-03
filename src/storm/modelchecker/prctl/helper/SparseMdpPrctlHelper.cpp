@@ -801,7 +801,7 @@ namespace storm {
             template<typename ValueType>
             template<typename RewardModelType>
             ValueType SparseMdpPrctlHelper<ValueType>::computeLraForMaximalEndComponentLP(OptimizationDirection dir, storm::storage::SparseMatrix<ValueType> const& transitionMatrix, RewardModelType const& rewardModel, storm::storage::MaximalEndComponent const& mec) {
-                std::shared_ptr<storm::solver::LpSolver> solver = storm::utility::solver::getLpSolver("LRA for MEC");
+                std::shared_ptr<storm::solver::LpSolver<ValueType>> solver = storm::utility::solver::getLpSolver<ValueType>("LRA for MEC");
                 solver->setOptimizationDirection(invert(dir));
                 
                 // First, we need to create the variables for the problem.
@@ -822,10 +822,10 @@ namespace storm {
                         storm::expressions::Expression constraint = -lambda;
                         
                         for (auto element : transitionMatrix.getRow(choice)) {
-                            constraint = constraint + stateToVariableMap.at(element.getColumn()) * solver->getConstant(storm::utility::convertNumber<double>(element.getValue()));
+                            constraint = constraint + stateToVariableMap.at(element.getColumn()) * solver->getConstant(element.getValue());
                         }
                         typename RewardModelType::ValueType r = rewardModel.getTotalStateActionReward(state, choice, transitionMatrix);
-                        constraint = solver->getConstant(storm::utility::convertNumber<double>(r)) + constraint;
+                        constraint = solver->getConstant(r) + constraint;
                         
                         if (dir == OptimizationDirection::Minimize) {
                             constraint = stateToVariableMap.at(state) <= constraint;
@@ -837,7 +837,7 @@ namespace storm {
                 }
                 
                 solver->optimize();
-                return storm::utility::convertNumber<ValueType>(solver->getContinuousValue(lambda));
+                return solver->getContinuousValue(lambda);
             }
             
             template<typename ValueType>

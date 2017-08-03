@@ -427,8 +427,8 @@ namespace storm {
             
             template<typename ValueType, typename RewardModelType>
             ValueType SparseMarkovAutomatonCslHelper::computeLraForMaximalEndComponentLP(OptimizationDirection dir, storm::storage::SparseMatrix<ValueType> const& transitionMatrix, std::vector<ValueType> const& exitRateVector, storm::storage::BitVector const& markovianStates, RewardModelType const& rewardModel, storm::storage::MaximalEndComponent const& mec) {
-                std::unique_ptr<storm::utility::solver::LpSolverFactory> lpSolverFactory(new storm::utility::solver::LpSolverFactory());
-                std::unique_ptr<storm::solver::LpSolver> solver = lpSolverFactory->create("LRA for MEC");
+                std::unique_ptr<storm::utility::solver::LpSolverFactory<ValueType>> lpSolverFactory(new storm::utility::solver::LpSolverFactory<ValueType>());
+                std::unique_ptr<storm::solver::LpSolver<ValueType>> solver = lpSolverFactory->create("LRA for MEC");
                 solver->setOptimizationDirection(invert(dir));
                 
                 // First, we need to create the variables for the problem.
@@ -437,7 +437,7 @@ namespace storm {
                     std::string variableName = "x" + std::to_string(stateChoicesPair.first);
                     stateToVariableMap[stateChoicesPair.first] = solver->addUnboundedContinuousVariable(variableName);
                 }
-                storm::expressions::Variable k = solver->addUnboundedContinuousVariable("k", 1);
+                storm::expressions::Variable k = solver->addUnboundedContinuousVariable("k", storm::utility::one<ValueType>());
                 solver->update();
                 
                 // Now we encode the problem as constraints.
@@ -487,7 +487,7 @@ namespace storm {
                 }
                 
                 solver->optimize();
-                return storm::utility::convertNumber<ValueType>(solver->getContinuousValue(k));
+                return solver->getContinuousValue(k);
             }
             
             template<typename ValueType, typename RewardModelType>
