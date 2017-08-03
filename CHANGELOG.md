@@ -11,7 +11,7 @@ Long run average computation via LRA, LP based MDP model checking, parametric mo
 ### Version 1.1.0 (2017/8)
 
 - Support for long-run average rewards on MDPs and Markov automata using a value-iteration based approach.
-    Then, using FORCE_POPCNT enables the use of the SSE 4.2 instruction
+- Storm can now check MDPs and Markov Automata (i.e. MinMax equation systems) via Linear Programming.
 - Parametric model checking is now handled in a separated library/executable called storm-pars.
 - Wellformedness constraints on PMCs:
     * include constraints from rewards
@@ -24,6 +24,7 @@ Long run average computation via LRA, LP based MDP model checking, parametric mo
 - Storm now overwrites files if asked to write files to a specific location.
 - Changes in build process to accommodate for changes in carl. Also, more robust against issues with carl.
 - USE_POPCNT removed in favor of FORCE_POPCNT. The popcnt instruction is used if available due to march=native, unless portable is set.
+    Then, using FORCE_POPCNT enables the use of the SSE 4.2 instruction
 
 
 Version 1.0.x
