@@ -68,7 +68,7 @@ Furthermore, we recommend the usage of [Homebrew](https://brew.sh){:target="_bla
 
 - Required:
 ``` console
-$ brew install cln ginac autoconf cmake doxygen
+$ brew install cln ginac automake cmake doxygen
 $ brew install boost --c++11
 $ brew install gmp --c++11
 $ brew tap homebrew/science

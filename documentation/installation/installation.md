@@ -49,6 +49,9 @@ and continue with the guide on how to [run Storm]({{ site.github.url }}/document
 
 This guide helps you building a standard version of Storm. There are plenty of configuration options, please check our [configuration guide](manual-configuration.html) if you want to build a non-standard version. Most notably, you will have to set additional options if you want to include solvers that are not shipped with Storm (for example Gurobi or MathSAT). However, the defaults should be suitable in most cases.
 
+{:.alert .alert-danger}
+Before proceeding with the following steps, make sure that you have set up all [dependencies as required](requirements.html).
+
 ### Obtaining the source code
 
 The source code can be downloaded from [GitHub](https://github.com/moves-rwth/storm){:target="_blank"}. You can either clone the git repository
