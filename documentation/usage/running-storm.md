@@ -24,6 +24,12 @@ Storm takes [many languages](languages.html) as input. For some of these formats
         <td><a href="running-storm.html#running-storm-on-prism-jani-or-explicit-input">Running Storm on PRISM, JANI or explicit input</a></td>
     </tr>
     <tr>
+        <td><a href="languages.html#prism">PRISM</a>, <a href="languages.html#jani">JANI</a>, <a href="languages.html#explicit">explicit</a></td>
+        <td>storm-pars</td>
+        <td>storm-pars-cli</td>
+        <td><a href="running-storm.html#running-storm-on-parametric-models">Running Storm on parametric models</a></td>
+    </tr>
+    <tr>
         <td><a href="languages.html#dfts">DFTs</a>
         </td><td>storm-dft</td>
         <td>storm-dft-cli</td>
@@ -271,6 +277,10 @@ $ storm --explicit die.tra die.lab --transrew die.tra.rew --prop "R=? [F \"done\
 
 {% include includes/show_output.html class="explicit_die_dtmc_output_expected_coinflips" path="explicit/die_expected_coinflips.out" %}
 
+## Running Storm on parametric models
+
+{:.alert .alert-info}
+Coming soon.
 
 ## Running Storm on GSPNs
 
