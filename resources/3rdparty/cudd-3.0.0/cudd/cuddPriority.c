@@ -1,3 +1,4 @@
+
 /**
   @file
 
@@ -1314,36 +1315,36 @@ Cudd_bddClosestCube(
   DdNode *g,
   int *distance)
 {
-    DdNode *res, *acube;
-    CUDD_VALUE_TYPE rdist;
+    DdNode *res, *acube = NULL;
+    CUDD_VALUE_TYPE rdist = DD_PLUS_INF_VAL;
+    CUDD_VALUE_TYPE epsilon = Cudd_ReadEpsilon(dd);
 
-    /* Compute the cube and distance as a single ADD. */
     do {
+        /* Compute the cube and distance as a single ADD. */
+        Cudd_SetEpsilon(dd,(CUDD_VALUE_TYPE)0.0);
 	dd->reordered = 0;
 	res = cuddBddClosestCube(dd,f,g,CUDD_CONST_INDEX + 1.0);
+        Cudd_SetEpsilon(dd,epsilon);
+        if (dd->reordered == 0) {
+            if (res == NULL) {
+                if (dd->errorCode == CUDD_TIMEOUT_EXPIRED && dd->timeoutHandler) {
+                    dd->timeoutHandler(dd, dd->tohArg);
+                }
+                return(NULL);
+            }
+            cuddRef(res);
+            /* Unpack distance and cube. */
+            acube = separateCube(dd, res, &rdist);
+            Cudd_RecursiveDeref(dd, res);
+        }
     } while (dd->reordered == 1);
-    if (res == NULL) {
+    if (acube == NULL) {
         if (dd->errorCode == CUDD_TIMEOUT_EXPIRED && dd->timeoutHandler) {
             dd->timeoutHandler(dd, dd->tohArg);
         }
         return(NULL);
     }
-    cuddRef(res);
-
-    /* Unpack distance and cube. */
-    do {
-	dd->reordered = 0;
-	acube = separateCube(dd, res, &rdist);
-    } while (dd->reordered == 1);
-    if (acube == NULL) {
-	Cudd_RecursiveDeref(dd, res);
-        if (dd->errorCode == CUDD_TIMEOUT_EXPIRED && dd->timeoutHandler) {
-            dd->timeoutHandler(dd, dd->tohArg);
-        }
-	return(NULL);
-    }
     cuddRef(acube);
-    Cudd_RecursiveDeref(dd, res);
 
     /* Convert cube from ADD to BDD. */
     do {

@@ -16,7 +16,7 @@
 #include <cmath>
 
 TEST(Z3LpSolver, LPOptimizeMax) {
-    storm::solver::Z3LpSolver solver(storm::OptimizationDirection::Maximize);
+    storm::solver::Z3LpSolver<double> solver(storm::OptimizationDirection::Maximize);
     storm::expressions::Variable x;
     storm::expressions::Variable y;
     storm::expressions::Variable z;
@@ -49,7 +49,7 @@ TEST(Z3LpSolver, LPOptimizeMax) {
 }
 
 TEST(Z3LpSolver, LPOptimizeMin) {
-    storm::solver::Z3LpSolver solver(storm::OptimizationDirection::Minimize);
+    storm::solver::Z3LpSolver<double> solver(storm::OptimizationDirection::Minimize);
     storm::expressions::Variable x;
     storm::expressions::Variable y;
     storm::expressions::Variable z;
@@ -82,7 +82,7 @@ TEST(Z3LpSolver, LPOptimizeMin) {
 }
 
 TEST(Z3LpSolver, MILPOptimizeMax) {
-    storm::solver::Z3LpSolver solver(storm::OptimizationDirection::Maximize);
+    storm::solver::Z3LpSolver<double> solver(storm::OptimizationDirection::Maximize);
     storm::expressions::Variable x;
     storm::expressions::Variable y;
     storm::expressions::Variable z;
@@ -115,7 +115,7 @@ TEST(Z3LpSolver, MILPOptimizeMax) {
 }
 
 TEST(Z3LpSolver, MILPOptimizeMin) {
-    storm::solver::Z3LpSolver solver(storm::OptimizationDirection::Minimize);
+    storm::solver::Z3LpSolver<double> solver(storm::OptimizationDirection::Minimize);
     storm::expressions::Variable x;
     storm::expressions::Variable y;
     storm::expressions::Variable z;
@@ -148,7 +148,7 @@ TEST(Z3LpSolver, MILPOptimizeMin) {
 }
 
 TEST(Z3LpSolver, LPInfeasible) {
-    storm::solver::Z3LpSolver solver(storm::OptimizationDirection::Maximize);
+    storm::solver::Z3LpSolver<double> solver(storm::OptimizationDirection::Maximize);
     storm::expressions::Variable x;
     storm::expressions::Variable y;
     storm::expressions::Variable z;
@@ -174,7 +174,7 @@ TEST(Z3LpSolver, LPInfeasible) {
 }
 
 TEST(Z3LpSolver, MILPInfeasible) {
-    storm::solver::Z3LpSolver solver(storm::OptimizationDirection::Maximize);
+    storm::solver::Z3LpSolver<double> solver(storm::OptimizationDirection::Maximize);
     storm::expressions::Variable x;
     storm::expressions::Variable y;
     storm::expressions::Variable z;
@@ -200,7 +200,7 @@ TEST(Z3LpSolver, MILPInfeasible) {
 }
 
 TEST(Z3LpSolver, LPUnbounded) {
-    storm::solver::Z3LpSolver solver(storm::OptimizationDirection::Maximize);
+    storm::solver::Z3LpSolver<double> solver(storm::OptimizationDirection::Maximize);
     storm::expressions::Variable x;
     storm::expressions::Variable y;
     storm::expressions::Variable z;
@@ -224,7 +224,7 @@ TEST(Z3LpSolver, LPUnbounded) {
 }
 
 TEST(Z3LpSolver, MILPUnbounded) {
-    storm::solver::Z3LpSolver solver(storm::OptimizationDirection::Maximize);
+    storm::solver::Z3LpSolver<double> solver(storm::OptimizationDirection::Maximize);
     storm::expressions::Variable x;
     storm::expressions::Variable y;
     storm::expressions::Variable z;

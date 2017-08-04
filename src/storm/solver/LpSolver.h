@@ -18,6 +18,7 @@ namespace storm {
         /*!
          * An interface that captures the functionality of an LP solver.
          */
+        template<typename ValueType>
         class LpSolver {
         public:
             // An enumeration to represent whether the objective function is to be minimized or maximized.
@@ -45,7 +46,7 @@ namespace storm {
              * @param objectiveFunctionCoefficient The coefficient with which the variable appears in the objective
              * function. If omitted (or set to zero), the variable is irrelevant for the objective value.
              */
-            virtual storm::expressions::Variable addBoundedContinuousVariable(std::string const& name, double lowerBound, double upperBound, double objectiveFunctionCoefficient = 0) = 0;
+            virtual storm::expressions::Variable addBoundedContinuousVariable(std::string const& name, ValueType lowerBound, ValueType upperBound, ValueType objectiveFunctionCoefficient = 0) = 0;
             
             /*!
              * Registers a lower-bounded continuous variable, i.e. a variable that may take all real values up to its
@@ -56,7 +57,7 @@ namespace storm {
              * @param objectiveFunctionCoefficient The coefficient with which the variable appears in the objective
              * function. If omitted (or set to zero), the variable is irrelevant for the objective value.
              */
-            virtual storm::expressions::Variable addLowerBoundedContinuousVariable(std::string const& name, double lowerBound, double objectiveFunctionCoefficient = 0) = 0;
+            virtual storm::expressions::Variable addLowerBoundedContinuousVariable(std::string const& name, ValueType lowerBound, ValueType objectiveFunctionCoefficient = 0) = 0;
 
             /*!
              * Registers an upper-bounded continuous variable, i.e. a variable that may take all real values up to its
@@ -67,7 +68,7 @@ namespace storm {
              * @param objectiveFunctionCoefficient The coefficient with which the variable appears in the objective
              * function. If omitted (or set to zero), the variable is irrelevant for the objective value.
              */
-            virtual storm::expressions::Variable addUpperBoundedContinuousVariable(std::string const& name, double upperBound, double objectiveFunctionCoefficient = 0) = 0;
+            virtual storm::expressions::Variable addUpperBoundedContinuousVariable(std::string const& name, ValueType upperBound, ValueType objectiveFunctionCoefficient = 0) = 0;
             
             /*!
              * Registers a unbounded continuous variable, i.e. a variable that may take all real values.
@@ -76,7 +77,7 @@ namespace storm {
              * @param objectiveFunctionCoefficient The coefficient with which the variable appears in the objective
              * function. If omitted (or set to zero), the variable is irrelevant for the objective value.
              */
-            virtual storm::expressions::Variable addUnboundedContinuousVariable(std::string const& name, double objectiveFunctionCoefficient = 0) = 0;
+            virtual storm::expressions::Variable addUnboundedContinuousVariable(std::string const& name, ValueType objectiveFunctionCoefficient = 0) = 0;
             
             /*!
              * Registers an upper- and lower-bounded integer variable, i.e. a variable that may take all integer values
@@ -88,7 +89,7 @@ namespace storm {
              * @param objectiveFunctionCoefficient The coefficient with which the variable appears in the objective
              * function. If omitted (or set to zero), the variable is irrelevant for the objective value.
              */
-            virtual storm::expressions::Variable addBoundedIntegerVariable(std::string const& name, double lowerBound, double upperBound, double objectiveFunctionCoefficient = 0) = 0;
+            virtual storm::expressions::Variable addBoundedIntegerVariable(std::string const& name, ValueType lowerBound, ValueType upperBound, ValueType objectiveFunctionCoefficient = 0) = 0;
             
             /*!
              * Registers a lower-bounded integer variable, i.e. a variable that may take all integer values up to its
@@ -99,7 +100,7 @@ namespace storm {
              * @param objectiveFunctionCoefficient The coefficient with which the variable appears in the objective
              * function. If omitted (or set to zero), the variable is irrelevant for the objective value.
              */
-            virtual storm::expressions::Variable addLowerBoundedIntegerVariable(std::string const& name, double lowerBound, double objectiveFunctionCoefficient = 0) = 0;
+            virtual storm::expressions::Variable addLowerBoundedIntegerVariable(std::string const& name, ValueType lowerBound, ValueType objectiveFunctionCoefficient = 0) = 0;
             
             /*!
              * Registers an upper-bounded integer variable, i.e. a variable that may take all integer values up to its
@@ -110,7 +111,7 @@ namespace storm {
              * @param objectiveFunctionCoefficient The coefficient with which the variable appears in the objective
              * function. If omitted (or set to zero), the variable is irrelevant for the objective value.
              */
-            virtual storm::expressions::Variable addUpperBoundedIntegerVariable(std::string const& name, double upperBound, double objectiveFunctionCoefficient = 0) = 0;
+            virtual storm::expressions::Variable addUpperBoundedIntegerVariable(std::string const& name, ValueType upperBound, ValueType objectiveFunctionCoefficient = 0) = 0;
 
             /*!
              * Registers an unbounded integer variable, i.e. a variable that may take all integer values.
@@ -119,7 +120,7 @@ namespace storm {
              * @param objectiveFunctionCoefficient The coefficient with which the variable appears in the objective
              * function. If omitted (or set to zero), the variable is irrelevant for the objective value.
              */
-            virtual storm::expressions::Variable addUnboundedIntegerVariable(std::string const& name, double objectiveFunctionCoefficient = 0) = 0;
+            virtual storm::expressions::Variable addUnboundedIntegerVariable(std::string const& name, ValueType objectiveFunctionCoefficient = 0) = 0;
             
             /*!
              * Registers a boolean variable, i.e. a variable that may be either 0 or 1.
@@ -128,7 +129,7 @@ namespace storm {
              * @param objectiveFunctionCoefficient The coefficient with which the variable appears in the objective
              * function. If omitted (or set to zero), the variable is irrelevant for the objective value.
              */
-            virtual storm::expressions::Variable addBinaryVariable(std::string const& name, double objectiveFunctionCoefficient = 0) = 0;
+            virtual storm::expressions::Variable addBinaryVariable(std::string const& name, ValueType objectiveFunctionCoefficient = 0) = 0;
             
             /*!
              * Retrieves an expression that characterizes the given constant value.
@@ -136,7 +137,7 @@ namespace storm {
              * @param value The value of the constant.
              * @return The resulting expression.
              */
-            storm::expressions::Expression getConstant(double value) const;
+            storm::expressions::Expression getConstant(ValueType value) const;
             
             /*!
              * Updates the model to make the variables that have been declared since the last call to <code>update</code>
@@ -209,7 +210,7 @@ namespace storm {
              * @param variable The variable whose integer value (in the optimal solution) to retrieve.
              * @return The value of the continuous variable in the optimal solution.
              */
-            virtual double getContinuousValue(storm::expressions::Variable const& variable) const = 0;
+            virtual ValueType getContinuousValue(storm::expressions::Variable const& variable) const = 0;
 
             /*!
              * Retrieves the value of the objective function. Note that this may only be called, if the model was found
@@ -217,7 +218,7 @@ namespace storm {
              *
              * @return The value of the objective function in the optimal solution.
              */
-            virtual double getObjectiveValue() const = 0;
+            virtual ValueType getObjectiveValue() const = 0;
             
             /*!
              * Writes the current LP problem to the given file.

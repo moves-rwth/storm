@@ -41,6 +41,11 @@ namespace storm {
                  * Retrieves whether Continuous time models should be transformed to discrete time models
                  */
                 bool transformContinuousModel() const;
+
+                /*
+                 * Retrieves whether instead of model checking, only the wellformedness constraints should be obtained.
+                 */
+                bool onlyObtainConstraints() const;
 				
                 const static std::string moduleName;
                 
@@ -49,6 +54,7 @@ namespace storm {
                 const static std::string derivativesOptionName;
                 const static std::string transformContinuousOptionName;
                 const static std::string transformContinuousShortOptionName;
+                const static std::string onlyWellformednessConstraintsOptionName;
             };
             
         } // namespace modules

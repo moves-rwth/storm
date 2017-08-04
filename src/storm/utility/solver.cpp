@@ -27,7 +27,8 @@ namespace storm {
                 return std::unique_ptr<storm::solver::SymbolicGameSolver<Type, ValueType>>(new storm::solver::SymbolicGameSolver<Type, ValueType>(A, allRows, illegalPlayer1Mask, illegalPlayer2Mask, rowMetaVariables, columnMetaVariables, rowColumnMetaVariablePairs, player1Variables, player2Variables));
             }
             
-            std::unique_ptr<storm::solver::LpSolver> LpSolverFactory::create(std::string const& name, storm::solver::LpSolverTypeSelection solvT) const {
+            template<typename ValueType>
+            std::unique_ptr<storm::solver::LpSolver<ValueType>> LpSolverFactory<ValueType>::create(std::string const& name, storm::solver::LpSolverTypeSelection solvT) const {
                 storm::solver::LpSolverType t;
                 if(solvT == storm::solver::LpSolverTypeSelection::FROMSETTINGS) {
                     t = storm::settings::getModule<storm::settings::modules::CoreSettings>().getLpSolver();
@@ -35,31 +36,56 @@ namespace storm {
                     t = convert(solvT);
                 }
                 switch (t) {
-                    case storm::solver::LpSolverType::Gurobi: return std::unique_ptr<storm::solver::LpSolver>(new storm::solver::GurobiLpSolver(name));
-                    case storm::solver::LpSolverType::Glpk: return std::unique_ptr<storm::solver::LpSolver>(new storm::solver::GlpkLpSolver(name));
-                    case storm::solver::LpSolverType::Z3: return std::unique_ptr<storm::solver::LpSolver>(new storm::solver::Z3LpSolver(name));
+                    case storm::solver::LpSolverType::Gurobi: return std::unique_ptr<storm::solver::LpSolver<ValueType>>(new storm::solver::GurobiLpSolver<ValueType>(name));
+                    case storm::solver::LpSolverType::Glpk: return std::unique_ptr<storm::solver::LpSolver<ValueType>>(new storm::solver::GlpkLpSolver<ValueType>(name));
+                    case storm::solver::LpSolverType::Z3: return std::unique_ptr<storm::solver::LpSolver<ValueType>>(new storm::solver::Z3LpSolver<ValueType>(name));
                 }
                 return nullptr;
             }
             
-            std::unique_ptr<storm::solver::LpSolver> LpSolverFactory::create(std::string const& name) const {
-                return LpSolverFactory::create(name, storm::solver::LpSolverTypeSelection::FROMSETTINGS);
+            template<typename ValueType>
+            std::unique_ptr<storm::solver::LpSolver<ValueType>> LpSolverFactory<ValueType>::create(std::string const& name) const {
+                return LpSolverFactory<ValueType>::create(name, storm::solver::LpSolverTypeSelection::FROMSETTINGS);
             }
             
-            std::unique_ptr<storm::solver::LpSolver> GlpkLpSolverFactory::create(std::string const& name) const {
-                return LpSolverFactory::create(name, storm::solver::LpSolverTypeSelection::Glpk);
+            template<typename ValueType>
+            std::unique_ptr<LpSolverFactory<ValueType>> LpSolverFactory<ValueType>::clone() const {
+                return std::make_unique<LpSolverFactory<ValueType>>(*this);
+            }
+  
+            template<typename ValueType>
+            std::unique_ptr<storm::solver::LpSolver<ValueType>> GlpkLpSolverFactory<ValueType>::create(std::string const& name) const {
+                return LpSolverFactory<ValueType>::create(name, storm::solver::LpSolverTypeSelection::Glpk);
             }
             
-            std::unique_ptr<storm::solver::LpSolver> GurobiLpSolverFactory::create(std::string const& name) const {
-                return LpSolverFactory::create(name, storm::solver::LpSolverTypeSelection::Gurobi);
+            template<typename ValueType>
+            std::unique_ptr<LpSolverFactory<ValueType>> GlpkLpSolverFactory<ValueType>::clone() const {
+                return std::make_unique<GlpkLpSolverFactory<ValueType>>(*this);
             }
             
-            std::unique_ptr<storm::solver::LpSolver> Z3LpSolverFactory::create(std::string const& name) const {
-                return LpSolverFactory::create(name, storm::solver::LpSolverTypeSelection::Z3);
+            template<typename ValueType>
+            std::unique_ptr<storm::solver::LpSolver<ValueType>> GurobiLpSolverFactory<ValueType>::create(std::string const& name) const {
+                return LpSolverFactory<ValueType>::create(name, storm::solver::LpSolverTypeSelection::Gurobi);
+            }
+     
+            template<typename ValueType>
+            std::unique_ptr<LpSolverFactory<ValueType>> GurobiLpSolverFactory<ValueType>::clone() const {
+                return std::make_unique<GurobiLpSolverFactory<ValueType>>(*this);
+            }
+    
+            template<typename ValueType>
+            std::unique_ptr<storm::solver::LpSolver<ValueType>> Z3LpSolverFactory<ValueType>::create(std::string const& name) const {
+                return LpSolverFactory<ValueType>::create(name, storm::solver::LpSolverTypeSelection::Z3);
             }
             
-            std::unique_ptr<storm::solver::LpSolver> getLpSolver(std::string const& name, storm::solver::LpSolverTypeSelection solvType) {
-                std::unique_ptr<storm::utility::solver::LpSolverFactory> factory(new LpSolverFactory());
+            template<typename ValueType>
+            std::unique_ptr<LpSolverFactory<ValueType>> Z3LpSolverFactory<ValueType>::clone() const {
+                return std::make_unique<Z3LpSolverFactory<ValueType>>(*this);
+            }
+    
+            template<typename ValueType>
+            std::unique_ptr<storm::solver::LpSolver<ValueType>> getLpSolver(std::string const& name, storm::solver::LpSolverTypeSelection solvType) {
+                std::unique_ptr<storm::utility::solver::LpSolverFactory<ValueType>> factory(new LpSolverFactory<ValueType>());
                 return factory->create(name, solvType);
             }
             
@@ -87,6 +113,16 @@ namespace storm {
             
             template class SymbolicGameSolverFactory<storm::dd::DdType::CUDD, double>;
             template class SymbolicGameSolverFactory<storm::dd::DdType::Sylvan, double>;
+            template class LpSolverFactory<double>;
+            template class LpSolverFactory<storm::RationalNumber>;
+            template class GlpkLpSolverFactory<double>;
+            template class GlpkLpSolverFactory<storm::RationalNumber>;
+            template class GurobiLpSolverFactory<double>;
+            template class GurobiLpSolverFactory<storm::RationalNumber>;
+            template class Z3LpSolverFactory<double>;
+            template class Z3LpSolverFactory<storm::RationalNumber>;
+            template std::unique_ptr<storm::solver::LpSolver<double>> getLpSolver(std::string const& name, storm::solver::LpSolverTypeSelection solvType);
+            template std::unique_ptr<storm::solver::LpSolver<storm::RationalNumber>> getLpSolver(std::string const& name, storm::solver::LpSolverTypeSelection solvType);
         }
     }
 }

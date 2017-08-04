@@ -1,4 +1,7 @@
- #include "storm/modelchecker/prctl/helper/SparseMdpPrctlHelper.h"
+#include "storm/modelchecker/prctl/helper/SparseMdpPrctlHelper.h"
+
+#include <boost/container/flat_map.hpp>
+
 
 #include "storm/modelchecker/results/ExplicitQuantitativeCheckResult.h"
 #include "storm/modelchecker/hints/ExplicitModelCheckerHint.h"
@@ -17,6 +20,9 @@
 
 #include "storm/solver/MinMaxLinearEquationSolver.h"
 #include "storm/solver/LpSolver.h"
+ 
+#include "storm/settings/SettingsManager.h"
+#include "storm/settings/modules/MinMaxEquationSolverSettings.h"
 
 #include "storm/exceptions/InvalidStateException.h"
 #include "storm/exceptions/InvalidPropertyException.h"
@@ -503,17 +509,31 @@ namespace storm {
             
             template<typename ValueType>
             std::vector<ValueType> SparseMdpPrctlHelper<ValueType>::computeLongRunAverageProbabilities(OptimizationDirection dir, storm::storage::SparseMatrix<ValueType> const& transitionMatrix, storm::storage::SparseMatrix<ValueType> const& backwardTransitions, storm::storage::BitVector const& psiStates, storm::solver::MinMaxLinearEquationSolverFactory<ValueType> const& minMaxLinearEquationSolverFactory) {
+                
                 // If there are no goal states, we avoid the computation and directly return zero.
-                uint_fast64_t numberOfStates = transitionMatrix.getRowGroupCount();
                 if (psiStates.empty()) {
-                    return std::vector<ValueType>(numberOfStates, storm::utility::zero<ValueType>());
+                    return std::vector<ValueType>(transitionMatrix.getRowGroupCount(), storm::utility::zero<ValueType>());
                 }
                 
                 // Likewise, if all bits are set, we can avoid the computation and set.
-                if ((~psiStates).empty()) {
-                    return std::vector<ValueType>(numberOfStates, storm::utility::one<ValueType>());
+                if (psiStates.full()) {
+                    return std::vector<ValueType>(transitionMatrix.getRowGroupCount(), storm::utility::one<ValueType>());
                 }
                 
+                // Reduce long run average probabilities to long run average rewards by
+                // building a reward model assigning one reward to every psi state
+                std::vector<ValueType> stateRewards(psiStates.size(), storm::utility::zero<ValueType>());
+                storm::utility::vector::setVectorValues(stateRewards, psiStates, storm::utility::one<ValueType>());
+                storm::models::sparse::StandardRewardModel<ValueType> rewardModel(std::move(stateRewards));
+                return computeLongRunAverageRewards(dir, transitionMatrix, backwardTransitions, rewardModel, minMaxLinearEquationSolverFactory);
+            }
+            
+            template<typename ValueType>
+            template<typename RewardModelType>
+            std::vector<ValueType> SparseMdpPrctlHelper<ValueType>::computeLongRunAverageRewards(OptimizationDirection dir, storm::storage::SparseMatrix<ValueType> const& transitionMatrix, storm::storage::SparseMatrix<ValueType> const& backwardTransitions, RewardModelType const& rewardModel, storm::solver::MinMaxLinearEquationSolverFactory<ValueType> const& minMaxLinearEquationSolverFactory) {
+                
+                uint64_t numberOfStates = transitionMatrix.getRowGroupCount();
+
                 // Start by decomposing the MDP into its MECs.
                 storm::storage::MaximalEndComponentDecomposition<ValueType> mecDecomposition(transitionMatrix, backwardTransitions);
                 
@@ -529,7 +549,7 @@ namespace storm {
                 for (uint_fast64_t currentMecIndex = 0; currentMecIndex < mecDecomposition.size(); ++currentMecIndex) {
                     storm::storage::MaximalEndComponent const& mec = mecDecomposition[currentMecIndex];
                     
-                    lraValuesForEndComponents[currentMecIndex] = computeLraForMaximalEndComponent(dir, transitionMatrix, psiStates, mec);
+                    lraValuesForEndComponents[currentMecIndex] = computeLraForMaximalEndComponent(dir, transitionMatrix, rewardModel, mec, minMaxLinearEquationSolverFactory);
                     
                     // Gather information for later use.
                     for (auto const& stateChoicesPair : mec) {
@@ -555,7 +575,9 @@ namespace storm {
                 
                 // Finally, we are ready to create the SSP matrix and right-hand side of the SSP.
                 std::vector<ValueType> b;
-                typename storm::storage::SparseMatrixBuilder<ValueType> sspMatrixBuilder(0, 0, 0, false, true, numberOfStatesNotInMecs + mecDecomposition.size());
+                uint64_t numberOfSspStates = numberOfStatesNotInMecs + mecDecomposition.size();
+
+                typename storm::storage::SparseMatrixBuilder<ValueType> sspMatrixBuilder(0, numberOfSspStates, 0, false, true, numberOfSspStates);
                 
                 // If the source state is not contained in any MEC, we copy its choices (and perform the necessary modifications).
                 uint_fast64_t currentChoice = 0;
@@ -596,10 +618,9 @@ namespace storm {
                         boost::container::flat_set<uint_fast64_t> const& choicesInMec = stateChoicesPair.second;
                         
                         for (uint_fast64_t choice = nondeterministicChoiceIndices[state]; choice < nondeterministicChoiceIndices[state + 1]; ++choice) {
-                            std::vector<ValueType> auxiliaryStateToProbabilityMap(mecDecomposition.size());
-                            
                             // If the choice is not contained in the MEC itself, we have to add a similar distribution to the auxiliary state.
                             if (choicesInMec.find(choice) == choicesInMec.end()) {
+                                std::vector<ValueType> auxiliaryStateToProbabilityMap(mecDecomposition.size());
                                 b.push_back(storm::utility::zero<ValueType>());
                                 
                                 for (auto element : transitionMatrix.getRow(choice)) {
@@ -631,9 +652,9 @@ namespace storm {
                 }
                 
                 // Finalize the matrix and solve the corresponding system of equations.
-                storm::storage::SparseMatrix<ValueType> sspMatrix = sspMatrixBuilder.build(currentChoice);
+                storm::storage::SparseMatrix<ValueType> sspMatrix = sspMatrixBuilder.build(currentChoice, numberOfSspStates, numberOfSspStates);
                 
-                std::vector<ValueType> sspResult(numberOfStatesNotInMecs + mecDecomposition.size());
+                std::vector<ValueType> sspResult(numberOfSspStates);
                 std::unique_ptr<storm::solver::MinMaxLinearEquationSolver<ValueType>> solver = minMaxLinearEquationSolverFactory.create(std::move(sspMatrix));
                 solver->solveEquations(dir, sspResult, b);
                 
@@ -652,8 +673,135 @@ namespace storm {
             }
             
             template<typename ValueType>
-            ValueType SparseMdpPrctlHelper<ValueType>::computeLraForMaximalEndComponent(OptimizationDirection dir, storm::storage::SparseMatrix<ValueType> const& transitionMatrix, storm::storage::BitVector const& psiStates, storm::storage::MaximalEndComponent const& mec) {
-                std::shared_ptr<storm::solver::LpSolver> solver = storm::utility::solver::getLpSolver("LRA for MEC");
+            template<typename RewardModelType>
+            ValueType SparseMdpPrctlHelper<ValueType>::computeLraForMaximalEndComponent(OptimizationDirection dir, storm::storage::SparseMatrix<ValueType> const& transitionMatrix, RewardModelType const& rewardModel, storm::storage::MaximalEndComponent const& mec, storm::solver::MinMaxLinearEquationSolverFactory<ValueType> const& minMaxLinearEquationSolverFactory) {
+                
+                // If the mec only consists of a single state, we compute the LRA value directly
+                if (++mec.begin() == mec.end()) {
+                    uint64_t state = mec.begin()->first;
+                    auto choiceIt = mec.begin()->second.begin();
+                    ValueType result = rewardModel.getTotalStateActionReward(state, *choiceIt, transitionMatrix);
+                    for (++choiceIt; choiceIt != mec.begin()->second.end(); ++choiceIt) {
+                        if (storm::solver::minimize(dir)) {
+                            result = std::min(result, rewardModel.getTotalStateActionReward(state, *choiceIt, transitionMatrix));
+                        } else {
+                            result = std::max(result, rewardModel.getTotalStateActionReward(state, *choiceIt, transitionMatrix));
+                        }
+                    }
+                    return result;
+                }
+                
+                // Solve MEC with the method specified in the settings
+                storm::solver::LraMethod method = storm::settings::getModule<storm::settings::modules::MinMaxEquationSolverSettings>().getLraMethod();
+                if (method == storm::solver::LraMethod::LinearProgramming) {
+                    return computeLraForMaximalEndComponentLP(dir, transitionMatrix, rewardModel, mec);
+                } else if (method == storm::solver::LraMethod::ValueIteration) {
+                    return computeLraForMaximalEndComponentVI(dir, transitionMatrix, rewardModel, mec, minMaxLinearEquationSolverFactory);
+                } else {
+                    STORM_LOG_THROW(false, storm::exceptions::InvalidSettingsException, "Unsupported technique.");
+                }
+            }
+            
+            template<typename ValueType>
+            template<typename RewardModelType>
+            ValueType SparseMdpPrctlHelper<ValueType>::computeLraForMaximalEndComponentVI(OptimizationDirection dir, storm::storage::SparseMatrix<ValueType> const& transitionMatrix, RewardModelType const& rewardModel, storm::storage::MaximalEndComponent const& mec, storm::solver::MinMaxLinearEquationSolverFactory<ValueType> const& minMaxLinearEquationSolverFactory) {
+                
+                // Initialize data about the mec
+                storm::storage::BitVector mecStates(transitionMatrix.getRowGroupCount(), false);
+                storm::storage::BitVector mecChoices(transitionMatrix.getRowCount(), false);
+                for (auto const& stateChoicesPair : mec) {
+                    mecStates.set(stateChoicesPair.first);
+                    for (auto const& choice : stateChoicesPair.second) {
+                        mecChoices.set(choice);
+                    }
+                }
+                
+                boost::container::flat_map<uint64_t, uint64_t> toSubModelStateMapping;
+                uint64_t currState = 0;
+                toSubModelStateMapping.reserve(mecStates.getNumberOfSetBits());
+                for (auto const& mecState : mecStates) {
+                    toSubModelStateMapping.insert(std::pair<uint64_t, uint64_t>(mecState, currState));
+                    ++currState;
+                }
+                
+                // Get a transition matrix that only considers the states and choices within the MEC
+                storm::storage::SparseMatrixBuilder<ValueType> mecTransitionBuilder(mecChoices.getNumberOfSetBits(), mecStates.getNumberOfSetBits(), 0, true, true, mecStates.getNumberOfSetBits());
+                std::vector<ValueType> choiceRewards;
+                choiceRewards.reserve(mecChoices.getNumberOfSetBits());
+                uint64_t currRow = 0;
+                ValueType selfLoopProb = storm::utility::convertNumber<ValueType>(0.1); // todo try other values
+                ValueType scalingFactor = storm::utility::one<ValueType>() - selfLoopProb;
+                for (auto const& mecState : mecStates) {
+                    mecTransitionBuilder.newRowGroup(currRow);
+                    uint64_t groupStart = transitionMatrix.getRowGroupIndices()[mecState];
+                    uint64_t groupEnd = transitionMatrix.getRowGroupIndices()[mecState + 1];
+                    for (uint64_t choice = mecChoices.getNextSetIndex(groupStart); choice < groupEnd; choice = mecChoices.getNextSetIndex(choice + 1)) {
+                        bool insertedDiagElement = false;
+                        for (auto const& entry : transitionMatrix.getRow(choice)) {
+                            uint64_t column = toSubModelStateMapping[entry.getColumn()];
+                            if (!insertedDiagElement && entry.getColumn() > mecState) {
+                                mecTransitionBuilder.addNextValue(currRow, toSubModelStateMapping[mecState], selfLoopProb);
+                                insertedDiagElement = true;
+                            }
+                            if (!insertedDiagElement && entry.getColumn() == mecState) {
+                                mecTransitionBuilder.addNextValue(currRow, column, selfLoopProb + scalingFactor * entry.getValue());
+                                insertedDiagElement = true;
+                            } else {
+                                mecTransitionBuilder.addNextValue(currRow, column,  scalingFactor * entry.getValue());
+                            }
+                        }
+                        if (!insertedDiagElement) {
+                            mecTransitionBuilder.addNextValue(currRow, toSubModelStateMapping[mecState], selfLoopProb);
+                        }
+                        
+                        // Compute the rewards obtained for this choice
+                        choiceRewards.push_back(scalingFactor * rewardModel.getTotalStateActionReward(mecState, choice, transitionMatrix));
+                        
+                        ++currRow;
+                    }
+                }
+                auto mecTransitions = mecTransitionBuilder.build();
+                STORM_LOG_ASSERT(mecTransitions.isProbabilistic(), "The MEC-Matrix is not probabilistic.");
+                
+                // start the iterations
+                ValueType precision = storm::utility::convertNumber<ValueType>(storm::settings::getModule<storm::settings::modules::MinMaxEquationSolverSettings>().getPrecision());
+                std::vector<ValueType> x(mecTransitions.getRowGroupCount(), storm::utility::zero<ValueType>());
+                std::vector<ValueType> xPrime = x;
+                auto solver = minMaxLinearEquationSolverFactory.create(std::move(mecTransitions));
+                solver->setCachingEnabled(true);
+                ValueType maxDiff, minDiff;
+                while (true) {
+                    // Compute the obtained rewards for the next step
+                    solver->repeatedMultiply(dir, x, &choiceRewards, 1);
+                    
+                    // update xPrime and check for convergence
+                    // to avoid large (and numerically unstable) x-values, we substract a reference value.
+                    auto xIt = x.begin();
+                    auto xPrimeIt = xPrime.begin();
+                    ValueType refVal = *xIt;
+                    maxDiff = *xIt - *xPrimeIt;
+                    minDiff = maxDiff;
+                    *xIt -= refVal;
+                    *xPrimeIt = *xIt;
+                    for (++xIt, ++xPrimeIt; xIt != x.end(); ++xIt, ++xPrimeIt) {
+                        ValueType diff = *xIt - *xPrimeIt;
+                        maxDiff = std::max(maxDiff, diff);
+                        minDiff = std::min(minDiff, diff);
+                        *xIt -= refVal;
+                        *xPrimeIt = *xIt;
+                    }
+
+                    if ((maxDiff - minDiff) < precision) {
+                        break;
+                    }
+                }
+                return (maxDiff + minDiff) / (storm::utility::convertNumber<ValueType>(2.0) * scalingFactor);
+            }
+            
+            template<typename ValueType>
+            template<typename RewardModelType>
+            ValueType SparseMdpPrctlHelper<ValueType>::computeLraForMaximalEndComponentLP(OptimizationDirection dir, storm::storage::SparseMatrix<ValueType> const& transitionMatrix, RewardModelType const& rewardModel, storm::storage::MaximalEndComponent const& mec) {
+                std::shared_ptr<storm::solver::LpSolver<ValueType>> solver = storm::utility::solver::getLpSolver<ValueType>("LRA for MEC");
                 solver->setOptimizationDirection(invert(dir));
                 
                 // First, we need to create the variables for the problem.
@@ -672,15 +820,12 @@ namespace storm {
                     // Now, based on the type of the state, create a suitable constraint.
                     for (auto choice : stateChoicesPair.second) {
                         storm::expressions::Expression constraint = -lambda;
-                        ValueType r = 0;
                         
                         for (auto element : transitionMatrix.getRow(choice)) {
-                            constraint = constraint + stateToVariableMap.at(element.getColumn()) * solver->getConstant(storm::utility::convertNumber<double>(element.getValue()));
-                            if (psiStates.get(element.getColumn())) {
-                                r += element.getValue();
-                            }
+                            constraint = constraint + stateToVariableMap.at(element.getColumn()) * solver->getConstant(element.getValue());
                         }
-                        constraint = solver->getConstant(storm::utility::convertNumber<double>(r)) + constraint;
+                        typename RewardModelType::ValueType r = rewardModel.getTotalStateActionReward(state, choice, transitionMatrix);
+                        constraint = solver->getConstant(r) + constraint;
                         
                         if (dir == OptimizationDirection::Minimize) {
                             constraint = stateToVariableMap.at(state) <= constraint;
@@ -692,7 +837,7 @@ namespace storm {
                 }
                 
                 solver->optimize();
-                return storm::utility::convertNumber<ValueType>(solver->getContinuousValue(lambda));
+                return solver->getContinuousValue(lambda);
             }
             
             template<typename ValueType>
@@ -803,6 +948,10 @@ namespace storm {
             template std::vector<double> SparseMdpPrctlHelper<double>::computeCumulativeRewards(OptimizationDirection dir, storm::storage::SparseMatrix<double> const& transitionMatrix, storm::models::sparse::StandardRewardModel<double> const& rewardModel, uint_fast64_t stepBound, storm::solver::MinMaxLinearEquationSolverFactory<double> const& minMaxLinearEquationSolverFactory);
             template MDPSparseModelCheckingHelperReturnType<double> SparseMdpPrctlHelper<double>::computeReachabilityRewards(OptimizationDirection dir, storm::storage::SparseMatrix<double> const& transitionMatrix, storm::storage::SparseMatrix<double> const& backwardTransitions, storm::models::sparse::StandardRewardModel<double> const& rewardModel, storm::storage::BitVector const& targetStates, bool qualitative, bool produceScheduler, storm::solver::MinMaxLinearEquationSolverFactory<double> const& minMaxLinearEquationSolverFactory, ModelCheckerHint const& hint);
             template MDPSparseModelCheckingHelperReturnType<double> SparseMdpPrctlHelper<double>::computeReachabilityRewards(storm::solver::SolveGoal const& goal, storm::storage::SparseMatrix<double> const& transitionMatrix, storm::storage::SparseMatrix<double> const& backwardTransitions, storm::models::sparse::StandardRewardModel<double> const& rewardModel, storm::storage::BitVector const& targetStates, bool qualitative, bool produceScheduler, storm::solver::MinMaxLinearEquationSolverFactory<double> const& minMaxLinearEquationSolverFactory, ModelCheckerHint const& hint);
+            template std::vector<double> SparseMdpPrctlHelper<double>::computeLongRunAverageRewards(OptimizationDirection dir, storm::storage::SparseMatrix<double> const& transitionMatrix, storm::storage::SparseMatrix<double> const& backwardTransitions, storm::models::sparse::StandardRewardModel<double> const& rewardModel, storm::solver::MinMaxLinearEquationSolverFactory<double> const& minMaxLinearEquationSolverFactory);
+            template double SparseMdpPrctlHelper<double>::computeLraForMaximalEndComponent(OptimizationDirection dir, storm::storage::SparseMatrix<double> const& transitionMatrix, storm::models::sparse::StandardRewardModel<double> const& rewardModel, storm::storage::MaximalEndComponent const& mec, storm::solver::MinMaxLinearEquationSolverFactory<double> const& minMaxLinearEquationSolverFactory);
+            template double SparseMdpPrctlHelper<double>::computeLraForMaximalEndComponentVI(OptimizationDirection dir, storm::storage::SparseMatrix<double> const& transitionMatrix, storm::models::sparse::StandardRewardModel<double> const& rewardModel, storm::storage::MaximalEndComponent const& mec, storm::solver::MinMaxLinearEquationSolverFactory<double> const& minMaxLinearEquationSolverFactory);
+            template double SparseMdpPrctlHelper<double>::computeLraForMaximalEndComponentLP(OptimizationDirection dir, storm::storage::SparseMatrix<double> const& transitionMatrix, storm::models::sparse::StandardRewardModel<double> const& rewardModel, storm::storage::MaximalEndComponent const& mec);
 
 #ifdef STORM_HAVE_CARL
             template class SparseMdpPrctlHelper<storm::RationalNumber>;
@@ -810,6 +959,11 @@ namespace storm {
             template std::vector<storm::RationalNumber> SparseMdpPrctlHelper<storm::RationalNumber>::computeCumulativeRewards(OptimizationDirection dir, storm::storage::SparseMatrix<storm::RationalNumber> const& transitionMatrix, storm::models::sparse::StandardRewardModel<storm::RationalNumber> const& rewardModel, uint_fast64_t stepBound, storm::solver::MinMaxLinearEquationSolverFactory<storm::RationalNumber> const& minMaxLinearEquationSolverFactory);
             template MDPSparseModelCheckingHelperReturnType<storm::RationalNumber> SparseMdpPrctlHelper<storm::RationalNumber>::computeReachabilityRewards(OptimizationDirection dir, storm::storage::SparseMatrix<storm::RationalNumber> const& transitionMatrix, storm::storage::SparseMatrix<storm::RationalNumber> const& backwardTransitions, storm::models::sparse::StandardRewardModel<storm::RationalNumber> const& rewardModel, storm::storage::BitVector const& targetStates, bool qualitative, bool produceScheduler, storm::solver::MinMaxLinearEquationSolverFactory<storm::RationalNumber> const& minMaxLinearEquationSolverFactory, ModelCheckerHint const& hint);
             template MDPSparseModelCheckingHelperReturnType<storm::RationalNumber> SparseMdpPrctlHelper<storm::RationalNumber>::computeReachabilityRewards(storm::solver::SolveGoal const& goal, storm::storage::SparseMatrix<storm::RationalNumber> const& transitionMatrix, storm::storage::SparseMatrix<storm::RationalNumber> const& backwardTransitions, storm::models::sparse::StandardRewardModel<storm::RationalNumber> const& rewardModel, storm::storage::BitVector const& targetStates, bool qualitative, bool produceScheduler, storm::solver::MinMaxLinearEquationSolverFactory<storm::RationalNumber> const& minMaxLinearEquationSolverFactory, ModelCheckerHint const& hint);
+            template std::vector<storm::RationalNumber> SparseMdpPrctlHelper<storm::RationalNumber>::computeLongRunAverageRewards(OptimizationDirection dir, storm::storage::SparseMatrix<storm::RationalNumber> const& transitionMatrix, storm::storage::SparseMatrix<storm::RationalNumber> const& backwardTransitions, storm::models::sparse::StandardRewardModel<storm::RationalNumber> const& rewardModel, storm::solver::MinMaxLinearEquationSolverFactory<storm::RationalNumber> const& minMaxLinearEquationSolverFactory);
+            template storm::RationalNumber SparseMdpPrctlHelper<storm::RationalNumber>::computeLraForMaximalEndComponent(OptimizationDirection dir, storm::storage::SparseMatrix<storm::RationalNumber> const& transitionMatrix, storm::models::sparse::StandardRewardModel<storm::RationalNumber> const& rewardModel, storm::storage::MaximalEndComponent const& mec, storm::solver::MinMaxLinearEquationSolverFactory<storm::RationalNumber> const& minMaxLinearEquationSolverFactory);
+            template storm::RationalNumber SparseMdpPrctlHelper<storm::RationalNumber>::computeLraForMaximalEndComponentVI(OptimizationDirection dir, storm::storage::SparseMatrix<storm::RationalNumber> const& transitionMatrix, storm::models::sparse::StandardRewardModel<storm::RationalNumber> const& rewardModel, storm::storage::MaximalEndComponent const& mec, storm::solver::MinMaxLinearEquationSolverFactory<storm::RationalNumber> const& minMaxLinearEquationSolverFactory);
+            template storm::RationalNumber SparseMdpPrctlHelper<storm::RationalNumber>::computeLraForMaximalEndComponentLP(OptimizationDirection dir, storm::storage::SparseMatrix<storm::RationalNumber> const& transitionMatrix, storm::models::sparse::StandardRewardModel<storm::RationalNumber> const& rewardModel, storm::storage::MaximalEndComponent const& mec);
+
 #endif
         }
     }
