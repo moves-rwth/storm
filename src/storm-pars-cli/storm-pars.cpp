@@ -194,7 +194,7 @@ namespace storm {
                                             auto parametricSettings = storm::settings::getModule<storm::settings::modules::ParametricSettings>();
                                             if (parametricSettings.exportResultToFile() && model->isOfType(storm::models::ModelType::Dtmc)) {
                                                 auto dtmc = model->template as<storm::models::sparse::Dtmc<ValueType>>();
-                                                storm::api::exportParametricResultToFile(result->asExplicitQuantitativeCheckResult<ValueType>()[*model->getInitialStates().begin()],storm::analysis::ConstraintCollector<ValueType>(*dtmc), parametricSettings.exportResultPath());
+                                                storm::api::exportParametricResultToFile(boost::make_optional<ValueType>(result->asExplicitQuantitativeCheckResult<ValueType>()[*model->getInitialStates().begin()]),storm::analysis::ConstraintCollector<ValueType>(*dtmc), parametricSettings.exportResultPath());
                                             }
                                         });
         }
@@ -272,6 +272,7 @@ namespace storm {
         void processInputWithValueTypeAndDdlib(SymbolicInput& input) {
             auto coreSettings = storm::settings::getModule<storm::settings::modules::CoreSettings>();
             auto ioSettings = storm::settings::getModule<storm::settings::modules::IOSettings>();
+            auto parSettings = storm::settings::getModule<storm::settings::modules::ParametricSettings>();
             
             auto engine = coreSettings.getEngine();
             STORM_LOG_THROW(engine == storm::settings::modules::CoreSettings::Engine::Sparse || engine == storm::settings::modules::CoreSettings::Engine::Hybrid || engine == storm::settings::modules::CoreSettings::Engine::Dd, storm::exceptions::InvalidSettingsException, "The selected engine is not supported for parametric models.");
@@ -296,9 +297,27 @@ namespace storm {
             }
             
             std::vector<storm::storage::ParameterRegion<ValueType>> regions = parseRegions<ValueType>(model);
-            
+
+
+
             if (model) {
                 storm::cli::exportModel<DdType, ValueType>(model, input);
+            }
+
+            if (parSettings.onlyObtainConstraints()) {
+                STORM_LOG_THROW(parSettings.exportResultToFile(), storm::exceptions::InvalidSettingsException, "When computing constraints, export path has to be specified.");
+                if (model->isOfType(storm::models::ModelType::Dtmc)) {
+                    auto dtmc = model->template as<storm::models::sparse::Dtmc<ValueType>>();
+                    storm::api::exportParametricResultToFile<ValueType>(boost::none, storm::analysis::ConstraintCollector<ValueType>(*dtmc),parSettings.exportResultPath());
+                    return;
+                } else {
+                    STORM_LOG_THROW(parSettings.exportResultToFile(), storm::exceptions::NotImplementedException, "Constraints for MDPs and CTMCs not implemented.");
+
+                }
+
+            }
+
+            if (model) {
                 verifyParametricModel<DdType, ValueType>(model, input, regions);
             }
         }

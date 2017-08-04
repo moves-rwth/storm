@@ -109,8 +109,7 @@ TEST(GmmxxMinMaxLinearEquationSolver, SolveWithPolicyIteration) {
 	std::vector<double> x(1);
 	std::vector<double> b = { 0.099, 0.5 };
 
-    auto factory = storm::solver::GmmxxMinMaxLinearEquationSolverFactory<double>();
-    factory.getSettings().setSolutionMethod(storm::solver::StandardMinMaxLinearEquationSolverSettings<double>::SolutionMethod::PolicyIteration);
+    auto factory = storm::solver::GmmxxMinMaxLinearEquationSolverFactory<double>(storm::solver::MinMaxMethodSelection::PolicyIteration);
     auto solver = factory.create(A);
     
 	ASSERT_NO_THROW(solver->solveEquations(storm::OptimizationDirection::Minimize, x, b));

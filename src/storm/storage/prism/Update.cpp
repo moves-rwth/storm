@@ -2,6 +2,7 @@
 
 #include <algorithm>
 #include <boost/algorithm/string/join.hpp>
+#include <storm/exceptions/IllegalArgumentException.h>
 
 #include "storm/utility/macros.h"
 #include "storm/exceptions/OutOfRangeException.h"
@@ -9,6 +10,7 @@
 namespace storm {
     namespace prism {
         Update::Update(uint_fast64_t globalIndex, storm::expressions::Expression const& likelihoodExpression, std::vector<storm::prism::Assignment> const& assignments, std::string const& filename, uint_fast64_t lineNumber) : LocatedInformation(filename, lineNumber), likelihoodExpression(likelihoodExpression), assignments(assignments), variableToAssignmentIndexMap(), globalIndex(globalIndex) {
+            STORM_LOG_ASSERT(likelihoodExpression.containsVariables() || likelihoodExpression.evaluateAsRational() >= 0, "Negative likelihood expressions are not allowed.");
             std::sort(this->assignments.begin(), this->assignments.end(), [] (storm::prism::Assignment const& assignment1, storm::prism::Assignment const& assignment2) {
                 bool smaller = assignment1.getVariable().getType().isBooleanType() && !assignment2.getVariable().getType().isBooleanType();
                 if (!smaller) {
@@ -64,9 +66,10 @@ namespace storm {
             for (auto const& assignment : this->getAssignments()) {
                 newAssignments.emplace_back(assignment.substitute(substitution));
             }
-            
+            auto newLikelihoodExpression = this->getLikelihoodExpression().substitute(substitution);
+            STORM_LOG_THROW(likelihoodExpression.containsVariables() || likelihoodExpression.evaluateAsRational() >= 0, storm::exceptions::IllegalArgumentException, "Substitution yielding negative probabilities in '" << this->getLikelihoodExpression() << "' are not allowed.");
             // FIXME: The expression could be simplified, but 1/K (where K is an int) is then resolved to 0, which is incorrect (for probabilities).
-            return Update(this->getGlobalIndex(), this->getLikelihoodExpression().substitute(substitution), newAssignments, this->getFilename(), this->getLineNumber());
+            return Update(this->getGlobalIndex(), newLikelihoodExpression, newAssignments, this->getFilename(), this->getLineNumber());
         }
         
         Update Update::removeIdentityAssignments() const {

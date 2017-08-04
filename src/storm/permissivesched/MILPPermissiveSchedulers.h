@@ -25,7 +25,7 @@ class MilpPermissiveSchedulerComputation : public PermissiveSchedulerComputation
         private:
            
             bool mCalledOptimizer = false;
-            storm::solver::LpSolver& solver;
+            storm::solver::LpSolver<double>& solver;
             std::unordered_map<storm::storage::StateActionPair, storm::expressions::Variable> multistrategyVariables;
             std::unordered_map<uint_fast64_t, storm::expressions::Variable> mProbVariables;
             std::unordered_map<uint_fast64_t, storm::expressions::Variable> mAlphaVariables;
@@ -34,7 +34,7 @@ class MilpPermissiveSchedulerComputation : public PermissiveSchedulerComputation
             
         public:
             
-            MilpPermissiveSchedulerComputation(storm::solver::LpSolver& milpsolver, storm::models::sparse::Mdp<double, RM> const& mdp, storm::storage::BitVector const& goalstates, storm::storage::BitVector const& sinkstates)
+            MilpPermissiveSchedulerComputation(storm::solver::LpSolver<double>& milpsolver, storm::models::sparse::Mdp<double, RM> const& mdp, storm::storage::BitVector const& goalstates, storm::storage::BitVector const& sinkstates)
                 :  PermissiveSchedulerComputation<RM>(mdp, goalstates, sinkstates), solver(milpsolver)
             {
                 

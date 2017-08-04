@@ -1587,7 +1587,7 @@ namespace storm {
         typename SparseMatrix<ValueType>::index_type SparseMatrix<ValueType>::getNonconstantRowGroupCount() const {
             index_type nonConstRowGroups = 0;
             for (index_type rowGroup=0; rowGroup < this->getRowGroupCount(); ++rowGroup) {
-                for( auto const& entry : this->getRowGroup(rowGroup)){
+                for (auto const& entry : this->getRowGroup(rowGroup)){
                     if(!storm::utility::isConstant(entry.getValue())){
                         ++nonConstRowGroups;
                         break;
@@ -1601,9 +1601,15 @@ namespace storm {
         bool SparseMatrix<ValueType>::isProbabilistic() const {
             storm::utility::ConstantsComparator<ValueType> comparator;
             for (index_type row = 0; row < this->rowCount; ++row) {
-                ValueType sum = getRowSum(row);
-                if (!comparator.isOne(sum)) {
+                if (!comparator.isOne(getRowSum(row))) {
                     return false;
+                }
+            }
+            for (auto const& entry : *this) {
+                if (comparator.isConstant(entry.getValue())) {
+                    if (comparator.isLess(entry.getValue(), storm::utility::zero<ValueType>())) {
+                        return false;
+                    }
                 }
             }
             return true;

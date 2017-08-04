@@ -115,18 +115,6 @@ namespace storm {
              */
             std::vector<uint_fast64_t> const& getSchedulerChoices() const;
 
-            /**
-             * Gets the precision after which the solver takes two numbers as equal.
-             *
-             * @see getRelative()
-             */
-            virtual ValueType getPrecision() const = 0;
-
-            /**
-             *  Gets whether the precision is taken to be absolute or relative
-             */
-            virtual bool getRelative() const = 0;
-            
             /*!
              * Sets whether some of the generated data during solver calls should be cached.
              * This possibly decreases the runtime of subsequent calls but also increases memory consumption.
@@ -196,22 +184,28 @@ namespace storm {
         template<typename ValueType>
         class MinMaxLinearEquationSolverFactory {
         public:
-            MinMaxLinearEquationSolverFactory(bool trackScheduler = false);
+            MinMaxLinearEquationSolverFactory(MinMaxMethodSelection const& method = MinMaxMethodSelection::FROMSETTINGS, bool trackScheduler = false);
 
             virtual std::unique_ptr<MinMaxLinearEquationSolver<ValueType>> create(storm::storage::SparseMatrix<ValueType> const& matrix) const = 0;
             virtual std::unique_ptr<MinMaxLinearEquationSolver<ValueType>> create(storm::storage::SparseMatrix<ValueType>&& matrix) const;
 
             void setTrackScheduler(bool value);
             bool isTrackSchedulerSet() const;
+            
+            virtual void setMinMaxMethod(MinMaxMethodSelection const& newMethod);
+            virtual void setMinMaxMethod(MinMaxMethod const& newMethod);
+            
+            MinMaxMethod const& getMinMaxMethod() const;
 
         private:
             bool trackScheduler;
+            MinMaxMethod method;
         };
 
         template<typename ValueType>
         class GeneralMinMaxLinearEquationSolverFactory : public MinMaxLinearEquationSolverFactory<ValueType> {
         public:
-            GeneralMinMaxLinearEquationSolverFactory(bool trackScheduler = false);
+            GeneralMinMaxLinearEquationSolverFactory(MinMaxMethodSelection const& method = MinMaxMethodSelection::FROMSETTINGS, bool trackScheduler = false);
 
             virtual std::unique_ptr<MinMaxLinearEquationSolver<ValueType>> create(storm::storage::SparseMatrix<ValueType> const& matrix) const override;
             virtual std::unique_ptr<MinMaxLinearEquationSolver<ValueType>> create(storm::storage::SparseMatrix<ValueType>&& matrix) const override;

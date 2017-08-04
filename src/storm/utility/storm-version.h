@@ -18,6 +18,9 @@ namespace storm {
             /// The patch version of Storm.
             const static unsigned versionPatch;
             
+            /// Flag indicating if the version of Storm is a development version.
+            const static bool versionDev;
+            
             /// The short hash of the git commit this build is based on
             const static std::string gitRevisionHash;
             
@@ -42,12 +45,18 @@ namespace storm {
             static std::string shortVersionString() {
                 std::stringstream sstream;
                 sstream << versionMajor << "." << versionMinor << "." << versionPatch;
+                if (versionDev) {
+                    sstream << " (dev)";
+                }
                 return sstream.str();
             }
             
             static std::string longVersionString() {
                 std::stringstream sstream;
                 sstream << "Version " << versionMajor << "." <<  versionMinor << "." << versionPatch;
+                if (versionDev) {
+                    sstream << " (dev)";
+                }
                 if (commitsAhead) {
                     sstream << " (+ " << commitsAhead << " commits)";
                 }
@@ -71,7 +80,7 @@ namespace storm {
             static std::string buildInfo() {
                 std::stringstream sstream;
                 sstream << "Compiled on " << systemName << " " << systemVersion << " using " << cxxCompiler << " with flags '" << cxxFlags << "'";
-                return sstream.str();	
+                return sstream.str();
             }
         };
     }

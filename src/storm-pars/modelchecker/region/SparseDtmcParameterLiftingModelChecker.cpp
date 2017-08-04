@@ -222,14 +222,11 @@ namespace storm {
             parameterLifter->specifyRegion(region, dirForParameters);
             
             // Set up the solver
-            auto solver = solverFactory->create(parameterLifter->getMatrix());
-            if (storm::NumberTraits<ConstantType>::IsExact && dynamic_cast<storm::solver::StandardMinMaxLinearEquationSolver<ConstantType>*>(solver.get())) {
+            if (storm::NumberTraits<ConstantType>::IsExact && solverFactory->getMinMaxMethod() == storm::solver::MinMaxMethod::ValueIteration) {
                 STORM_LOG_INFO("Parameter Lifting: Setting solution method for exact MinMaxSolver to policy iteration");
-                auto* standardSolver = dynamic_cast<storm::solver::StandardMinMaxLinearEquationSolver<ConstantType>*>(solver.get());
-                auto settings = standardSolver->getSettings();
-                settings.setSolutionMethod(storm::solver::StandardMinMaxLinearEquationSolverSettings<ConstantType>::SolutionMethod::PolicyIteration);
-                standardSolver->setSettings(settings);
+                solverFactory->setMinMaxMethod(storm::solver::MinMaxMethod::PolicyIteration);
             }
+            auto solver = solverFactory->create(parameterLifter->getMatrix());
             if (lowerResultBound) solver->setLowerBound(lowerResultBound.get());
             if (upperResultBound) solver->setUpperBound(upperResultBound.get());
             if (!stepBound) solver->setTrackScheduler(true);

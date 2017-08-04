@@ -443,23 +443,35 @@ namespace storm {
         }
         
         storm::prism::StateReward PrismParser::createStateReward(storm::expressions::Expression statePredicateExpression, storm::expressions::Expression rewardValueExpression) const {
-            return storm::prism::StateReward(statePredicateExpression, rewardValueExpression, this->getFilename());
+            if (this->secondRun) {
+                return storm::prism::StateReward(statePredicateExpression, rewardValueExpression, this->getFilename());
+            } else {
+                return storm::prism::StateReward();
+            }
         }
         
         storm::prism::StateActionReward PrismParser::createStateActionReward(boost::optional<std::string> const& actionName, storm::expressions::Expression statePredicateExpression, storm::expressions::Expression rewardValueExpression, GlobalProgramInformation& globalProgramInformation) const {
-            std::string realActionName = actionName ? actionName.get() : "";
-            
-            auto const& nameIndexPair = globalProgramInformation.actionIndices.find(realActionName);
-            STORM_LOG_THROW(nameIndexPair != globalProgramInformation.actionIndices.end(), storm::exceptions::WrongFormatException, "Transition reward refers to illegal action '" << realActionName << "'.");
-            return storm::prism::StateActionReward(nameIndexPair->second, realActionName, statePredicateExpression, rewardValueExpression, this->getFilename());
+            if (this->secondRun) {
+                std::string realActionName = actionName ? actionName.get() : "";
+                
+                auto const& nameIndexPair = globalProgramInformation.actionIndices.find(realActionName);
+                STORM_LOG_THROW(nameIndexPair != globalProgramInformation.actionIndices.end(), storm::exceptions::WrongFormatException, "Transition reward refers to illegal action '" << realActionName << "'.");
+                return storm::prism::StateActionReward(nameIndexPair->second, realActionName, statePredicateExpression, rewardValueExpression, this->getFilename());
+            } else {
+                return storm::prism::StateActionReward();
+            }
         }
         
         storm::prism::TransitionReward PrismParser::createTransitionReward(boost::optional<std::string> const& actionName, storm::expressions::Expression sourceStatePredicateExpression, storm::expressions::Expression targetStatePredicateExpression, storm::expressions::Expression rewardValueExpression, GlobalProgramInformation& globalProgramInformation) const {
-            std::string realActionName = actionName ? actionName.get() : "";
-
-            auto const& nameIndexPair = globalProgramInformation.actionIndices.find(realActionName);
-            STORM_LOG_THROW(nameIndexPair != globalProgramInformation.actionIndices.end(), storm::exceptions::WrongFormatException, "Transition reward refers to illegal action '" << realActionName << "'.");
-            return storm::prism::TransitionReward(nameIndexPair->second, realActionName, sourceStatePredicateExpression, targetStatePredicateExpression, rewardValueExpression, this->getFilename());
+            if (this->secondRun) {
+                std::string realActionName = actionName ? actionName.get() : "";
+    
+                auto const& nameIndexPair = globalProgramInformation.actionIndices.find(realActionName);
+                STORM_LOG_THROW(nameIndexPair != globalProgramInformation.actionIndices.end(), storm::exceptions::WrongFormatException, "Transition reward refers to illegal action '" << realActionName << "'.");
+                return storm::prism::TransitionReward(nameIndexPair->second, realActionName, sourceStatePredicateExpression, targetStatePredicateExpression, rewardValueExpression, this->getFilename());
+            } else {
+                return storm::prism::TransitionReward();
+            }
         }
         
         storm::prism::Assignment PrismParser::createAssignment(std::string const& variableName, storm::expressions::Expression assignedExpression) const {

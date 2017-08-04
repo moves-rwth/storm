@@ -1,4 +1,3 @@
-#include <storm/exceptions/NotImplementedException.h>
 #include "storm/storage/geometry/NativePolytope.h"
 
 #include "storm/utility/macros.h"
@@ -11,6 +10,7 @@
 
 #include "storm/exceptions/InvalidArgumentException.h"
 #include "storm/exceptions/UnexpectedException.h"
+#include "storm/exceptions/NotImplementedException.h"
 
 namespace storm {
     namespace storage {
@@ -307,7 +307,7 @@ namespace storm {
                     return std::make_pair(Point(), false);
                 }
 
-                storm::solver::Z3LpSolver solver(storm::solver::OptimizationDirection::Maximize);
+                storm::solver::Z3LpSolver<ValueType> solver(storm::solver::OptimizationDirection::Maximize);
                 std::vector<storm::expressions::Variable> variables;
                 variables.reserve(A.cols());
                 for (StormEigen::Index i = 0; i < A.cols(); ++i) {
@@ -323,7 +323,7 @@ namespace storm {
                     auto result = std::make_pair(Point(), true);
                     result.first.reserve(variables.size());
                     for (auto const& var : variables) {
-                        result.first.push_back(storm::utility::convertNumber<ValueType>((solver.getExactContinuousValue(var))));
+                        result.first.push_back(solver.getContinuousValue(var));
                     }
                     return result;
                 } else {
@@ -338,11 +338,11 @@ namespace storm {
                     return std::make_pair(EigenVector(), false);
                 }
 
-                storm::solver::Z3LpSolver solver(storm::solver::OptimizationDirection::Maximize);
+                storm::solver::Z3LpSolver<ValueType> solver(storm::solver::OptimizationDirection::Maximize);
                 std::vector<storm::expressions::Variable> variables;
                 variables.reserve(A.cols());
                 for (StormEigen::Index i = 0; i < A.cols(); ++i) {
-                    variables.push_back(solver.addUnboundedContinuousVariable("x" + std::to_string(i), direction(i)));
+                    variables.push_back(solver.addUnboundedContinuousVariable("x" + std::to_string(i), static_cast<ValueType>(direction(i))));
                 }
                 std::vector<storm::expressions::Expression> constraints = getConstraints(solver.getManager(), variables);
                 for (auto const&  constraint: constraints) {
@@ -353,7 +353,7 @@ namespace storm {
                 if (solver.isOptimal()) {
                     auto result = std::make_pair(EigenVector(A.cols()), true);
                     for (StormEigen::Index i = 0; i < A.cols(); ++i) {
-                        result.first(i) = storm::utility::convertNumber<ValueType>(solver.getExactContinuousValue(variables[i]));
+                        result.first(i) = solver.getContinuousValue(variables[i]);
                     }
                     return result;
                 } else {
