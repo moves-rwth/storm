@@ -57,16 +57,16 @@ Before proceeding with the following steps, make sure that you have set up all [
 The source code can be downloaded from [GitHub](https://github.com/moves-rwth/storm){:target="_blank"}. You can either clone the git repository
 ```console
 $ git clone https://github.com/moves-rwth/storm.git
-$ git checkout tags/1.0.0
+$ git checkout tags/1.0.1
 ```
 or download a zip archive with the latest stable release:
 ```console
-$ wget https://github.com/moves-rwth/archive/1.0.0.zip
-$ unzip 1.0.0.zip
+$ wget https://github.com/moves-rwth/storm/archive/1.0.1.zip
+$ unzip 1.0.1.zip
 ```
 
 {:.alert .alert-info}
-If you want the most recent version of Storm rather than the stable version, you can omit the `git checkout tags/1.0.0` when cloning the repository or use the archive [https://github.com/moves-rwth/archive/master.zip](https://github.com/moves-rwth/archive/master.zip){:.alert-link}, respectively.
+If you want the most recent version of Storm rather than the stable version, you can omit the `git checkout tags/1.0.0` when cloning the repository or use the archive [https://github.com/moves-rwth/storm/archive/master.zip](https://github.com/moves-rwth/storm/archive/master.zip){:.alert-link}, respectively.
 
 In the following, we will use `STORM_DIR` to refer to the root directory of Storm. If you want, you can set an environment variable to ease the following steps via
 ```console
@@ -108,7 +108,7 @@ $ make binaries
 ```
 
 {:.alert .alert-info}
-If you just want to compile Storm's main command-line interface, typing `make storm-main` suffices. To see which targets you need to build, we refer to the table of [available executables]({{ site.github.url }}/documentation/usage/running-storm.html#storms-executables).{:.alert-link}
+If you just want to compile Storm's main command-line interface, typing `make storm-main` suffices. To see which targets you need to build, we refer to the table of [available executables]({{ site.github.url }}/documentation/usage/running-storm.html#storms-executables){:.alert-link}.
 
 {:.alert .alert-info}
 If you have multiple cores at your disposal and at least 8GB of memory, you can execute
