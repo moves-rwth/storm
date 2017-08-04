@@ -542,13 +542,26 @@ namespace storm {
             std::shared_ptr<storm::models::symbolic::Model<DdType, ValueType>> QuotientExtractor<DdType, ValueType>::extractQuotientUsingBlockVariables(storm::models::symbolic::Model<DdType, ValueType> const& model, Partition<DdType, ValueType> const& partition, PreservationInformation<DdType, ValueType> const& preservationInformation) {
                 auto modelType = model.getType();
                 
+                bool useRepresentativesForThisExtraction = this->useRepresentatives;
                 if (modelType == storm::models::ModelType::Dtmc || modelType == storm::models::ModelType::Ctmc || modelType == storm::models::ModelType::Mdp) {
+                    if (modelType == storm::models::ModelType::Mdp) {
+                        STORM_LOG_WARN_COND(!useRepresentativesForThisExtraction, "Using representatives is unsupported for MDPs, falling back to regular extraction.");
+                        useRepresentativesForThisExtraction = false;
+                    }
+                    
+                    // Sanity checks.
+                    STORM_LOG_ASSERT(partition.getNumberOfStates() == model.getNumberOfStates(), "Mismatching partition size.");
+                    partition.getStates().renameVariables(model.getColumnVariables(), model.getRowVariables()).exportToDot("partstates.dot");
+                    model.getReachableStates().exportToDot("origstates.dot");
+                    std::cout << "equal? " << (partition.getStates().renameVariables(model.getColumnVariables(), model.getRowVariables()).template toAdd<ValueType>().notZero() == model.getReachableStates().template toAdd<ValueType>().notZero()) << std::endl;
+                    STORM_LOG_ASSERT(partition.getStates().renameVariables(model.getColumnVariables(), model.getRowVariables()) == model.getReachableStates(), "Mismatching partition.");
+                    
                     std::set<storm::expressions::Variable> blockVariableSet = {partition.getBlockVariable()};
                     std::set<storm::expressions::Variable> blockPrimeVariableSet = {partition.getPrimedBlockVariable()};
                     std::vector<std::pair<storm::expressions::Variable, storm::expressions::Variable>> blockMetaVariablePairs = {std::make_pair(partition.getBlockVariable(), partition.getPrimedBlockVariable())};
                     
                     storm::dd::Bdd<DdType> partitionAsBdd = partition.storedAsBdd() ? partition.asBdd() : partition.asAdd().notZero();
-                    if (useRepresentatives) {
+                    if (useRepresentativesForThisExtraction) {
                         storm::dd::Bdd<DdType> partitionAsBddOverPrimedBlockVariable = partitionAsBdd.renameVariables(blockVariableSet, blockPrimeVariableSet);
                         storm::dd::Bdd<DdType> representativePartition = partitionAsBddOverPrimedBlockVariable.existsAbstractRepresentative(model.getColumnVariables()).renameVariables(model.getColumnVariables(), blockVariableSet);
                         partitionAsBdd = (representativePartition && partitionAsBddOverPrimedBlockVariable).existsAbstract(blockPrimeVariableSet);
@@ -556,12 +569,26 @@ namespace storm {
                     
                     storm::dd::Add<DdType, ValueType> partitionAsAdd = partitionAsBdd.template toAdd<ValueType>();
                     partitionAsAdd.exportToDot("partition.dot");
+                    model.getTransitionMatrix().sumAbstract(model.getColumnVariables()).exportToDot("origdist.dot");
                     auto start = std::chrono::high_resolution_clock::now();
                     storm::dd::Add<DdType, ValueType> quotientTransitionMatrix = model.getTransitionMatrix().multiplyMatrix(partitionAsAdd.renameVariables(blockVariableSet, blockPrimeVariableSet), model.getColumnVariables());
+                    STORM_LOG_ASSERT(quotientTransitionMatrix.sumAbstract(blockPrimeVariableSet).equalModuloPrecision(model.getTransitionMatrix().sumAbstract(model.getColumnVariables()), ValueType(1e-6)), "Expected something else.");
+                    quotientTransitionMatrix.sumAbstract(blockPrimeVariableSet).exportToDot("sanity.dot");
                     quotientTransitionMatrix.exportToDot("trans-1.dot");
+                    partitionAsAdd = partitionAsAdd / partitionAsAdd.sumAbstract(model.getColumnVariables());
                     quotientTransitionMatrix = quotientTransitionMatrix.multiplyMatrix(partitionAsAdd.renameVariables(model.getColumnVariables(), model.getRowVariables()), model.getRowVariables());
                     quotientTransitionMatrix.exportToDot("quottrans.dot");
+                    auto partCount = partitionAsAdd.sumAbstract(model.getColumnVariables());
+                    partCount.exportToDot("partcount.dot");
                     auto end = std::chrono::high_resolution_clock::now();
+                    
+                    // Check quotient matrix for sanity.
+                    auto quotdist = quotientTransitionMatrix.sumAbstract(blockPrimeVariableSet);
+                    quotdist.exportToDot("quotdists.dot");
+                    (quotdist / partCount).exportToDot("distcount.dot");
+                    STORM_LOG_ASSERT(quotientTransitionMatrix.greater(storm::utility::one<ValueType>()).isZero(), "Illegal entries in quotient matrix.");
+                    STORM_LOG_ASSERT(quotientTransitionMatrix.sumAbstract(blockPrimeVariableSet).equalModuloPrecision(quotientTransitionMatrix.notZero().existsAbstract(blockPrimeVariableSet).template toAdd<ValueType>(), ValueType(1e-6)), "Illegal non-probabilistic matrix.");
+                    
                     STORM_LOG_TRACE("Quotient transition matrix extracted in " << std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count() << "ms.");
                     storm::dd::Bdd<DdType> quotientTransitionMatrixBdd = quotientTransitionMatrix.notZero();
                     
@@ -616,9 +643,14 @@ namespace storm {
                     storm::dd::Add<DdType, ValueType> partitionAsAdd = partition.storedAsBdd() ? partition.asBdd().template toAdd<ValueType>() : partition.asAdd();
                     storm::dd::Add<DdType, ValueType> quotientTransitionMatrix = model.getTransitionMatrix().multiplyMatrix(partitionAsAdd, model.getColumnVariables());
                     quotientTransitionMatrix = quotientTransitionMatrix.renameVariables(blockVariableSet, model.getColumnVariables());
+                    partitionAsAdd = partitionAsAdd / partitionAsAdd.sumAbstract(model.getColumnVariables());
                     quotientTransitionMatrix = quotientTransitionMatrix.multiplyMatrix(partitionAsAdd, model.getRowVariables());
                     quotientTransitionMatrix = quotientTransitionMatrix.renameVariables(blockVariableSet, model.getRowVariables());
                     storm::dd::Bdd<DdType> quotientTransitionMatrixBdd = quotientTransitionMatrix.notZero();
+                    
+                    // Check quotient matrix for sanity.
+                    STORM_LOG_ASSERT(quotientTransitionMatrix.greater(storm::utility::one<ValueType>()).isZero(), "Illegal entries in quotient matrix.");
+                    STORM_LOG_ASSERT(quotientTransitionMatrix.sumAbstract(blockPrimeVariableSet).equalModuloPrecision(quotientTransitionMatrix.notZero().existsAbstract(blockPrimeVariableSet).template toAdd<ValueType>(), ValueType(1e-6)), "Illegal non-probabilistic matrix.");
                     
                     storm::dd::Bdd<DdType> partitionAsBdd = partition.storedAsBdd() ? partition.asBdd() : partition.asAdd().notZero();
                     storm::dd::Bdd<DdType> partitionAsBddOverRowVariables = partitionAsBdd.renameVariables(model.getColumnVariables(), model.getRowVariables());
