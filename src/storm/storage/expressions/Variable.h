@@ -130,9 +130,9 @@ namespace storm {
             bool hasRationalType() const;
 
             /*!
-             * Checks whether the variable is of boolean type.
+             * Checks whether the variable is of numerical type.
              *
-             * @return True iff the variable if of boolean type.
+             * @return True iff the variable if of numerical type.
              */
             bool hasNumericalType() const;
 
