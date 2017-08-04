@@ -1,6 +1,9 @@
-#include <sylvan_mtbdd_int.h>
+#include <stdint.h>
+#include <math.h>
+#include "sylvan_int.h"
 
 #include "storm_wrapper.h"
+#include "sylvan_mtbdd_storm.h"
 
 // Import the types created for rational numbers and functions.
 extern uint32_t srn_type;
@@ -552,11 +555,6 @@ int mtbdd_iszero(MTBDD dd) {
 
 int mtbdd_isnonzero(MTBDD dd) {
     return mtbdd_iszero(dd) ? 0 : 1;
-}
-
-MTBDD
-mtbdd_ithvar(uint32_t level) {
-    return mtbdd_makenode(level, mtbdd_false, mtbdd_true);
 }
 
 TASK_IMPL_2(MTBDD, mtbdd_op_complement, MTBDD, a, size_t, k)

@@ -1,3 +1,7 @@
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /**
  * Binary operation Divide (for MTBDDs of same type)
  * Only for MTBDDs where all leaves are Integer or Double.
@@ -148,3 +152,7 @@ TASK_DECL_3(BDD, mtbdd_max_abstract_representative, MTBDD, MTBDD, uint32_t);
 
 TASK_DECL_3(MTBDD, mtbdd_uapply_nocache, MTBDD, mtbdd_uapply_op, size_t);
 #define mtbdd_uapply_nocache(dd, op, param) CALL(mtbdd_uapply_nocache, dd, op, param)
+
+#ifdef __cplusplus
+}
+#endif

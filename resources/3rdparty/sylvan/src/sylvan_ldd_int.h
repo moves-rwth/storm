@@ -1,6 +1,6 @@
 /*
  * Copyright 2011-2016 Formal Methods and Tools, University of Twente
- * Copyright 2016 Tom van Dijk, Johannes Kepler University Linz
+ * Copyright 2016-2017 Tom van Dijk, Johannes Kepler University Linz
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,24 +15,7 @@
  * limitations under the License.
  */
 
-/*#include <sylvan_config.h>
-
-#include <assert.h>
-#include <inttypes.h>
-#include <math.h>
-#include <pthread.h>
-#include <stdint.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-
-#include <sylvan.h>
-#include <sylvan_int.h>
-
-#include <avl.h>
-#include <sylvan_refs.h>
-#include <sha2.h>
-*/
+/* Do not include this file directly. Instead, include sylvan_int.h */
 
 /**
  * Internals for LDDs
@@ -51,7 +34,11 @@ typedef struct __attribute__((packed)) mddnode {
     uint64_t a, b;
 } * mddnode_t; // 16 bytes
 
-#define LDD_GETNODE(mdd) ((mddnode_t)llmsset_index_to_ptr(nodes, mdd))
+static inline mddnode_t
+LDD_GETNODE(MDD mdd)
+{
+    return ((mddnode_t)llmsset_index_to_ptr(nodes, mdd));
+}
 
 static inline uint32_t __attribute__((unused))
 mddnode_getvalue(mddnode_t n)

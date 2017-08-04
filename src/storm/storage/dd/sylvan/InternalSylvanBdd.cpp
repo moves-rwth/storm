@@ -213,7 +213,7 @@ namespace storm {
         
         uint_fast64_t InternalBdd<DdType::Sylvan>::getNodeCount() const {
             // We have to add one to also count the false-leaf, which is the only leaf appearing in BDDs.
-            return static_cast<uint_fast64_t>(this->sylvanBdd.NodeCount()) + 1;
+            return static_cast<uint_fast64_t>(this->sylvanBdd.NodeCount());
         }
         
         bool InternalBdd<DdType::Sylvan>::isOne() const {

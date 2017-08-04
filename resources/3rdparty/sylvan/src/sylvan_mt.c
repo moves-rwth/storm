@@ -15,15 +15,10 @@
  * limitations under the License.
  */
 
-#include <sylvan_config.h>
-
-#include <assert.h>
-#include <inttypes.h>
-#include <stdlib.h>
-#include <string.h>
-
-#include <sylvan_mt.h>
 #include <sylvan_int.h> // for llmsset*, nodes, sylvan_register_quit
+
+#include <inttypes.h>
+#include <string.h>
 
 /**
  * Handling of custom leaves "registry"

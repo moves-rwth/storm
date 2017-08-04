@@ -13,15 +13,15 @@ static int workers = 0; // autodetect
 static int verbose = 0;
 static char* model_filename = NULL; // filename of model
 static char* bdd_filename = NULL; // filename of output BDD
-static char* sizes = "22,27,21,26"; // default sizes
 static int check_results = 0;
+static int no_reachable = 0;
 
 /* argp configuration */
 static struct argp_option options[] =
 {
     {"workers", 'w', "<workers>", 0, "Number of workers (default=0: autodetect)", 0},
-    {"table-sizes", 1, "<tablesize>,<tablemax>,<cachesize>,<cachemax>", 0, "Sizes of nodes table and operation cache as powers of 2", 0},
-    {"check-results", 2, 0, 0, "Check new transition relations ", 0},
+    {"check-results", 2, 0, 0, "Check new transition relations", 0},
+    {"no-reachable", 1, 0, 0, "Do not write reachabile states", 0},
     {"verbose", 'v', 0, 0, "Set verbose", 0},
     {0, 0, 0, 0, 0, 0}
 };
@@ -37,7 +37,7 @@ parse_opt(int key, char *arg, struct argp_state *state)
         verbose = 1;
         break;
     case 1:
-        sizes = arg;
+        no_reachable = 1;
         break;
     case 2:
         check_results = 1;
@@ -58,65 +58,110 @@ parse_opt(int key, char *arg, struct argp_state *state)
 
 static struct argp argp = { options, parse_opt, "<model> [<output-bdd>]", 0, 0, 0, 0 };
 
-/* Globals */
+/**
+ * Types (set and relation)
+ */
 typedef struct set
 {
-    MDD mdd;
-    MDD proj;
+    MDD dd;
 } *set_t;
 
 typedef struct relation
 {
-    MDD mdd;
-    MDD meta;
+    MDD dd;
+    MDD meta; // for relprod
+    int r_k, w_k, *r_proj, *w_proj;
 } *rel_t;
 
-static size_t vector_size; // size of vector
+static int vector_size; // size of vector
 static int next_count; // number of partitions of the transition relation
 static rel_t *next; // each partition of the transition relation
 static int actionbits = 0;
 static int has_actions = 0;
 
-#define Abort(...) { fprintf(stderr, __VA_ARGS__); exit(-1); }
+#define Abort(...) { fprintf(stderr, __VA_ARGS__); fprintf(stderr, "Abort at line %d!\n", __LINE__); exit(-1); }
 
 /* Load a set from file */
 #define set_load(f) CALL(set_load, f)
 TASK_1(set_t, set_load, FILE*, f)
 {
-    lddmc_serialize_fromfile(f);
-
-    size_t mdd;
-    size_t proj;
-    int size;
-
-    if (fread(&mdd, sizeof(size_t), 1, f) != 1) Abort("Invalid input file!\n");
-    if (fread(&proj, sizeof(size_t), 1, f) != 1) Abort("Invalid input file!\n");
-    if (fread(&size, sizeof(int), 1, f) != 1) Abort("Invalid input file!\n");
-
     set_t set = (set_t)malloc(sizeof(struct set));
-    set->mdd = lddmc_ref(lddmc_serialize_get_reversed(mdd));
-    set->proj = lddmc_ref(lddmc_serialize_get_reversed(proj));
+
+    int k;
+    if (fread(&k, sizeof(int), 1, f) != 1) Abort("Invalid input file!");
+    if (k != -1) Abort("Invalid input file!");
+
+    lddmc_serialize_fromfile(f);
+    size_t dd;
+    if (fread(&dd, sizeof(size_t), 1, f) != 1) Abort("Invalid input file!");
+    set->dd = lddmc_serialize_get_reversed(dd);
+    lddmc_protect(&set->dd);
 
     return set;
 }
 
 /* Load a relation from file */
-#define rel_load(f) CALL(rel_load, f)
-TASK_1(rel_t, rel_load, FILE*, f)
+#define rel_load_proj(f) CALL(rel_load_proj, f)
+TASK_1(rel_t, rel_load_proj, FILE*, f)
 {
-    lddmc_serialize_fromfile(f);
-
-    size_t mdd;
-    size_t meta;
-
-    if (fread(&mdd, sizeof(size_t), 1, f) != 1) Abort("Invalid input file!\n");
-    if (fread(&meta, sizeof(size_t), 1, f) != 1) Abort("Invalid input file!\n");
+    int r_k, w_k;
+    if (fread(&r_k, sizeof(int), 1, f) != 1) Abort("Invalid file format.");
+    if (fread(&w_k, sizeof(int), 1, f) != 1) Abort("Invalid file format.");
 
     rel_t rel = (rel_t)malloc(sizeof(struct relation));
-    rel->mdd = lddmc_ref(lddmc_serialize_get_reversed(mdd));
-    rel->meta = lddmc_ref(lddmc_serialize_get_reversed(meta));
+    rel->r_k = r_k;
+    rel->w_k = w_k;
+    rel->r_proj = (int*)malloc(sizeof(int[rel->r_k]));
+    rel->w_proj = (int*)malloc(sizeof(int[rel->w_k]));
+
+    if (fread(rel->r_proj, sizeof(int), rel->r_k, f) != (size_t)rel->r_k) Abort("Invalid file format.");
+    if (fread(rel->w_proj, sizeof(int), rel->w_k, f) != (size_t)rel->w_k) Abort("Invalid file format.");
+
+    int *r_proj = rel->r_proj;
+    int *w_proj = rel->w_proj;
+
+    /* Compute the meta */
+    uint32_t meta[vector_size*2+2];
+    memset(meta, 0, sizeof(uint32_t[vector_size*2+2]));
+    int r_i=0, w_i=0, i=0, j=0;
+    for (;;) {
+        int type = 0;
+        if (r_i < r_k && r_proj[r_i] == i) {
+            r_i++;
+            type += 1; // read
+        }
+        if (w_i < w_k && w_proj[w_i] == i) {
+            w_i++;
+            type += 2; // write
+        }
+        if (type == 0) meta[j++] = 0;
+        else if (type == 1) { meta[j++] = 3; }
+        else if (type == 2) { meta[j++] = 4; }
+        else if (type == 3) { meta[j++] = 1; meta[j++] = 2; }
+        if (r_i == r_k && w_i == w_k) {
+            meta[j++] = 5; // action label
+            meta[j++] = (uint32_t)-1;
+            break;
+        }
+        i++;
+    }
+
+    rel->meta = lddmc_cube((uint32_t*)meta, j);
+    rel->dd = lddmc_false;
+
+    lddmc_protect(&rel->meta);
+    lddmc_protect(&rel->dd);
 
     return rel;
+}
+
+#define rel_load(f, rel) CALL(rel_load, f, rel)
+VOID_TASK_2(rel_load, FILE*, f, rel_t, rel)
+{
+    lddmc_serialize_fromfile(f);
+    size_t dd;
+    if (fread(&dd, sizeof(size_t), 1, f) != 1) Abort("Invalid input file!");
+    rel->dd = lddmc_serialize_get_reversed(dd);
 }
 
 /**
@@ -199,7 +244,7 @@ VOID_TASK_3(compute_highest_action, MDD, dd, MDD, meta, uint32_t*, target)
  */
 static uint64_t bdd_from_ldd_id;
 #define bdd_from_ldd(dd, bits, firstvar) CALL(bdd_from_ldd, dd, bits, firstvar)
-TASK_3(MTBDD, bdd_from_ldd, MDD, dd, MDD, bits_mdd, uint32_t, firstvar)
+TASK_3(MTBDD, bdd_from_ldd, MDD, dd, MDD, bits_dd, uint32_t, firstvar)
 {
     /* simple for leaves */
     if (dd == lddmc_false) return mtbdd_false;
@@ -208,16 +253,16 @@ TASK_3(MTBDD, bdd_from_ldd, MDD, dd, MDD, bits_mdd, uint32_t, firstvar)
     MTBDD result;
     /* get from cache */
     /* note: some assumptions about the encoding... */
-    if (cache_get3(bdd_from_ldd_id, dd, bits_mdd, firstvar, &result)) return result;
+    if (cache_get3(bdd_from_ldd_id, dd, bits_dd, firstvar, &result)) return result;
 
     mddnode_t n = LDD_GETNODE(dd);
-    mddnode_t nbits = LDD_GETNODE(bits_mdd);
+    mddnode_t nbits = LDD_GETNODE(bits_dd);
     int bits = (int)mddnode_getvalue(nbits);
 
-    /* spawn right, same bits_mdd and firstvar */
-    mtbdd_refs_spawn(SPAWN(bdd_from_ldd, mddnode_getright(n), bits_mdd, firstvar));
+    /* spawn right, same bits_dd and firstvar */
+    mtbdd_refs_spawn(SPAWN(bdd_from_ldd, mddnode_getright(n), bits_dd, firstvar));
 
-    /* call down, with next bits_mdd and firstvar */
+    /* call down, with next bits_dd and firstvar */
     MTBDD down = CALL(bdd_from_ldd, mddnode_getdown(n), mddnode_getdown(nbits), firstvar + 2*bits);
 
     /* encode current value */
@@ -239,7 +284,7 @@ TASK_3(MTBDD, bdd_from_ldd, MDD, dd, MDD, bits_mdd, uint32_t, firstvar)
     mtbdd_refs_pop(2);
 
     /* put in cache */
-    cache_put3(bdd_from_ldd_id, dd, bits_mdd, firstvar, result);
+    cache_put3(bdd_from_ldd_id, dd, bits_dd, firstvar, result);
 
     return result;
 }
@@ -249,7 +294,7 @@ TASK_3(MTBDD, bdd_from_ldd, MDD, dd, MDD, bits_mdd, uint32_t, firstvar)
  */
 static uint64_t bdd_from_ldd_rel_id;
 #define bdd_from_ldd_rel(dd, bits, firstvar, meta) CALL(bdd_from_ldd_rel, dd, bits, firstvar, meta)
-TASK_4(MTBDD, bdd_from_ldd_rel, MDD, dd, MDD, bits_mdd, uint32_t, firstvar, MDD, meta)
+TASK_4(MTBDD, bdd_from_ldd_rel, MDD, dd, MDD, bits_dd, uint32_t, firstvar, MDD, meta)
 {
     if (dd == lddmc_false) return mtbdd_false;
     if (dd == lddmc_true) return mtbdd_true;
@@ -266,11 +311,11 @@ TASK_4(MTBDD, bdd_from_ldd_rel, MDD, dd, MDD, bits_mdd, uint32_t, firstvar, MDD,
 
     MTBDD result;
     /* note: assumptions */
-    if (cache_get4(bdd_from_ldd_rel_id, dd, bits_mdd, firstvar, meta, &result)) return result;
+    if (cache_get4(bdd_from_ldd_rel_id, dd, bits_dd, firstvar, meta, &result)) return result;
 
     const mddnode_t n = LDD_GETNODE(dd);
     const mddnode_t nmeta = LDD_GETNODE(meta);
-    const mddnode_t nbits = LDD_GETNODE(bits_mdd);
+    const mddnode_t nbits = LDD_GETNODE(bits_dd);
     const int bits = (int)mddnode_getvalue(nbits);
 
     const uint32_t vmeta = mddnode_getvalue(nmeta);
@@ -285,10 +330,10 @@ TASK_4(MTBDD, bdd_from_ldd_rel, MDD, dd, MDD, bits_mdd, uint32_t, firstvar, MDD,
         assert(mddnode_getright(n) != mtbdd_true);
 
         /* spawn right */
-        mtbdd_refs_spawn(SPAWN(bdd_from_ldd_rel, mddnode_getright(n), bits_mdd, firstvar, meta));
+        mtbdd_refs_spawn(SPAWN(bdd_from_ldd_rel, mddnode_getright(n), bits_dd, firstvar, meta));
 
         /* compute down with same bits / firstvar */
-        MTBDD down = bdd_from_ldd_rel(mddnode_getdown(n), bits_mdd, firstvar, mddnode_getdown(nmeta));
+        MTBDD down = bdd_from_ldd_rel(mddnode_getdown(n), bits_dd, firstvar, mddnode_getdown(nmeta));
         mtbdd_refs_push(down);
 
         /* encode read value */
@@ -319,7 +364,7 @@ TASK_4(MTBDD, bdd_from_ldd_rel, MDD, dd, MDD, bits_mdd, uint32_t, firstvar, MDD,
 
         /* spawn right */
         assert(mddnode_getright(n) != mtbdd_true);
-        mtbdd_refs_spawn(SPAWN(bdd_from_ldd_rel, mddnode_getright(n), bits_mdd, firstvar, meta));
+        mtbdd_refs_spawn(SPAWN(bdd_from_ldd_rel, mddnode_getright(n), bits_dd, firstvar, meta));
 
         /* get recursive result */
         MTBDD down = CALL(bdd_from_ldd_rel, mddnode_getdown(n), mddnode_getdown(nbits), firstvar + 2*bits, mddnode_getdown(nmeta));
@@ -358,7 +403,7 @@ TASK_4(MTBDD, bdd_from_ldd_rel, MDD, dd, MDD, bits_mdd, uint32_t, firstvar, MDD,
         assert(!mddnode_getcopy(n));  // do not process read copy nodes
 
         /* spawn right */
-        mtbdd_refs_spawn(SPAWN(bdd_from_ldd_rel, mddnode_getright(n), bits_mdd, firstvar, meta));
+        mtbdd_refs_spawn(SPAWN(bdd_from_ldd_rel, mddnode_getright(n), bits_dd, firstvar, meta));
 
         /* get recursive result */
         MTBDD down = CALL(bdd_from_ldd_rel, mddnode_getdown(n), mddnode_getdown(nbits), firstvar + 2*bits, mddnode_getdown(nmeta));
@@ -402,7 +447,7 @@ TASK_4(MTBDD, bdd_from_ldd_rel, MDD, dd, MDD, bits_mdd, uint32_t, firstvar, MDD,
         assert(vmeta <= 5);
     }
 
-    cache_put4(bdd_from_ldd_rel_id, dd, bits_mdd, firstvar, meta, result);
+    cache_put4(bdd_from_ldd_rel_id, dd, bits_dd, firstvar, meta, result);
 
     return result;
 }
@@ -411,7 +456,7 @@ TASK_4(MTBDD, bdd_from_ldd_rel, MDD, dd, MDD, bits_mdd, uint32_t, firstvar, MDD,
  * Compute the BDD equivalent of the meta variable (to a variables cube)
  */
 MTBDD
-meta_to_bdd(MDD meta, MDD bits_mdd, uint32_t firstvar)
+meta_to_bdd(MDD meta, MDD bits_dd, uint32_t firstvar)
 {
     if (meta == lddmc_false || meta == lddmc_true) return mtbdd_true;
 
@@ -430,10 +475,10 @@ meta_to_bdd(MDD meta, MDD bits_mdd, uint32_t firstvar)
     
     if (vmeta == 1) {
         /* return recursive result, don't go down on bits */
-        return meta_to_bdd(mddnode_getdown(nmeta), bits_mdd, firstvar);
+        return meta_to_bdd(mddnode_getdown(nmeta), bits_dd, firstvar);
     }
 
-    const mddnode_t nbits = LDD_GETNODE(bits_mdd);
+    const mddnode_t nbits = LDD_GETNODE(bits_dd);
     const int bits = (int)mddnode_getvalue(nbits);
 
     /* compute recursive result */
@@ -448,16 +493,6 @@ meta_to_bdd(MDD meta, MDD bits_mdd, uint32_t firstvar)
     }
 
     return res;
-}
-
-static char*
-to_h(double size, char *buf)
-{
-    const char* units[] = {"B", "KB", "MB", "GB", "TB", "PB", "EB", "ZB", "YB"};
-    int i = 0;
-    for (;size>1024;size/=1024) i++;
-    sprintf(buf, "%.*f %s", i, size, units[i]);
-    return buf;
 }
 
 VOID_TASK_0(gc_start)
@@ -475,37 +510,13 @@ main(int argc, char **argv)
 {
     argp_parse(&argp, argc, argv, 0, 0, 0);
 
-    // Parse table sizes
-    int tablesize, maxtablesize, cachesize, maxcachesize;
-    if (sscanf(sizes, "%d,%d,%d,%d", &tablesize, &maxtablesize, &cachesize, &maxcachesize) != 4) {
-        Abort("Invalid string for --table-sizes, try e.g. --table-sizes=23,28,22,27");
-    }
-    if (tablesize < 10 || maxtablesize < 10 || cachesize < 10 || maxcachesize < 10 ||
-            tablesize > 40 || maxtablesize > 40 || cachesize > 40 || maxcachesize > 40) {
-        Abort("Invalid string for --table-sizes, must be between 10 and 40");
-    }
-    if (tablesize > maxtablesize) {
-        Abort("Invalid string for --table-sizes, tablesize is larger than maxtablesize");
-    }
-    if (cachesize > maxcachesize) {
-        Abort("Invalid string for --table-sizes, cachesize is larger than maxcachesize");
-    }
-
-    // Report table sizes
-    char buf[32];
-    to_h((1ULL<<maxtablesize)*24+(1ULL<<maxcachesize)*36, buf);
-    printf("Sylvan allocates %s virtual memory for nodes table and operation cache.\n", buf);
-    to_h((1ULL<<tablesize)*24+(1ULL<<cachesize)*36, buf);
-    printf("Initial nodes table and operation cache requires %s.\n", buf);
-
     // Init Lace
     lace_init(workers, 1000000); // auto-detect number of workers, use a 1,000,000 size task queue
     lace_startup(0, NULL, NULL); // auto-detect program stack, do not use a callback for startup
-
     LACE_ME;
 
     // Init Sylvan
-    sylvan_set_sizes(1LL<<21, 1LL<<27, 1LL<<20, 1LL<<26);
+    sylvan_set_limits(1LL<<30, 1, 10);
     sylvan_init_package();
     sylvan_init_ldd();
     sylvan_init_mtbdd();
@@ -523,34 +534,20 @@ main(int argc, char **argv)
     if (f == NULL) Abort("Cannot open file '%s'!\n", model_filename);
 
     // Read integers per vector
-    if (fread(&vector_size, sizeof(size_t), 1, f) != 1) Abort("Invalid input file!\n");
+    if (fread(&vector_size, sizeof(int), 1, f) != 1) Abort("Invalid input file!\n");
 
     // Read initial state
-    if (verbose) {
-        printf("Loading initial state... ");
-        fflush(stdout);
-    }
+    if (verbose) printf("Loading initial state.\n");
     set_t initial = set_load(f);
-    if (verbose) printf("done.\n");
 
     // Read number of transitions
     if (fread(&next_count, sizeof(int), 1, f) != 1) Abort("Invalid input file!\n");
     next = (rel_t*)malloc(sizeof(rel_t) * next_count);
 
     // Read transitions
-    if (verbose) {
-        printf("Loading transition relations... ");
-        fflush(stdout);
-    }
-    int i;
-    for (i=0; i<next_count; i++) {
-        next[i] = rel_load(f);
-        if (verbose) {
-            printf("%d, ", i);
-            fflush(stdout);
-        }
-    }
-    if (verbose) printf("done.\n");
+    if (verbose) printf("Loading transition relations.\n");
+    for (int i=0; i<next_count; i++) next[i] = rel_load_proj(f);
+    for (int i=0; i<next_count; i++) rel_load(f, next[i]);
 
     // Read whether reachable states are stored
     int has_reachable = 0;
@@ -558,16 +555,13 @@ main(int argc, char **argv)
     if (has_reachable == 0) Abort("Input file missing reachable states!\n");
 
     // Read reachable states
-    if (verbose) {
-        printf("Loading reachable states... ");
-        fflush(stdout);
-    }
+    if (verbose) printf("Loading reachable states.\n");
     set_t states = set_load(f);
-    if (verbose) printf("done.\n");
     
     // Read number of action labels
     int action_labels_count = 0;
-    if (fread(&action_labels_count, sizeof(int), 1, f) != 1) Abort("Input file missing action label count!\n");
+    if (fread(&action_labels_count, sizeof(int), 1, f) != 1) action_labels_count = 0;
+    // ignore: Abort("Input file missing action label count!\n");
 
     // Read action labels
     char *action_labels[action_labels_count];
@@ -587,11 +581,11 @@ main(int argc, char **argv)
 
     // Report statistics
     if (verbose) {
-        printf("%zu integers per state, %d transition groups\n", vector_size, next_count);
+        printf("%d integers per state, %d transition groups\n", vector_size, next_count);
         printf("LDD nodes:\n");
-        printf("Initial states: %zu LDD nodes\n", lddmc_nodecount(initial->mdd));
-        for (i=0; i<next_count; i++) {
-            printf("Transition %d: %zu LDD nodes\n", i, lddmc_nodecount(next[i]->mdd));
+        printf("Initial states: %zu LDD nodes\n", lddmc_nodecount(initial->dd));
+        for (int i=0; i<next_count; i++) {
+            printf("Transition %d: %zu LDD nodes\n", i, lddmc_nodecount(next[i]->dd));
         }
     }
 
@@ -600,28 +594,18 @@ main(int argc, char **argv)
 
     // Compute highest value at each level (from reachable states)
     uint32_t highest[vector_size];
-    for (size_t i=0; i<vector_size; i++) highest[i] = 0;
-    compute_highest(states->mdd, highest);
+    for (int i=0; i<vector_size; i++) highest[i] = 0;
+    compute_highest(states->dd, highest);
 
     // Compute highest action label value (from transition relations)
     uint32_t highest_action = 0;
     for (int i=0; i<next_count; i++) {
-        compute_highest_action(next[i]->mdd, next[i]->meta, &highest_action);
+        compute_highest_action(next[i]->dd, next[i]->meta, &highest_action);
     }
-
-    // Report highest integers
-    /*
-    printf("Highest integer per level: ");
-    for (size_t i=0; i<vector_size; i++) {
-        if (i>0) printf(", ");
-        printf("%u", highest[i]);
-    }
-    printf("\n");
-    */
 
     // Compute number of bits for each level
     int bits[vector_size];
-    for (size_t i=0; i<vector_size; i++) {
+    for (int i=0; i<vector_size; i++) {
         bits[i] = 0;
         while (highest[i] != 0) {
             bits[i]++;
@@ -641,7 +625,7 @@ main(int argc, char **argv)
     // Report number of bits
     if (verbose) {
         printf("Bits per level: ");
-        for (size_t i=0; i<vector_size; i++) {
+        for (int i=0; i<vector_size; i++) {
             if (i>0) printf(", ");
             printf("%d", bits[i]);
         }
@@ -650,15 +634,15 @@ main(int argc, char **argv)
     }
 
     // Compute bits MDD
-    MDD bits_mdd = lddmc_true;
-    for (size_t i=0; i<vector_size; i++) {
-        bits_mdd = lddmc_makenode(bits[vector_size-i-1], bits_mdd, lddmc_false);
+    MDD bits_dd = lddmc_true;
+    for (int i=0; i<vector_size; i++) {
+        bits_dd = lddmc_makenode(bits[vector_size-i-1], bits_dd, lddmc_false);
     }
-    lddmc_ref(bits_mdd);
+    lddmc_ref(bits_dd);
 
     // Compute total number of bits
     int totalbits = 0;
-    for (size_t i=0; i<vector_size; i++) {
+    for (int i=0; i<vector_size; i++) {
         totalbits += bits[i];
     }
 
@@ -677,28 +661,23 @@ main(int argc, char **argv)
     if (f == NULL) Abort("Cannot open file '%s'!\n", bdd_filename);
 
     // Write domain...
-    int vector_size = 1;
-    fwrite(&totalbits, sizeof(int), 1, f);  // use number of bits as vector size
-    fwrite(&vector_size, sizeof(int), 1, f);  // set each to 1
+    fwrite(&vector_size, sizeof(int), 1, f);
+    fwrite(bits, sizeof(int), vector_size, f);
     fwrite(&actionbits, sizeof(int), 1, f);
 
     // Write initial state...
-    MTBDD new_initial = bdd_from_ldd(initial->mdd, bits_mdd, 0);
-    assert((size_t)mtbdd_satcount(new_initial, totalbits) == (size_t)lddmc_satcount_cached(initial->mdd));
+    MTBDD new_initial = bdd_from_ldd(initial->dd, bits_dd, 0);
+    assert((size_t)mtbdd_satcount(new_initial, totalbits) == (size_t)lddmc_satcount_cached(initial->dd));
     mtbdd_refs_push(new_initial);
     {
-        size_t a = sylvan_serialize_add(new_initial);
-        size_t b = sylvan_serialize_add(state_vars);
-        size_t s = totalbits;
-        sylvan_serialize_tofile(f);
-        fwrite(&a, sizeof(size_t), 1, f);
-        fwrite(&s, sizeof(size_t), 1, f);
-        fwrite(&b, sizeof(size_t), 1, f);
+        int k = -1;
+        fwrite(&k, sizeof(int), 1, f);
+        mtbdd_writer_tobinary(f, &new_initial, 1);
     }
 
     // Custom operation that converts to BDD given number of bits for each level
-    MTBDD new_states = bdd_from_ldd(states->mdd, bits_mdd, 0);
-    assert((size_t)mtbdd_satcount(new_states, totalbits) == (size_t)lddmc_satcount_cached(states->mdd));
+    MTBDD new_states = bdd_from_ldd(states->dd, bits_dd, 0);
+    assert((size_t)mtbdd_satcount(new_states, totalbits) == (size_t)lddmc_satcount_cached(states->dd));
     mtbdd_refs_push(new_states);
 
     // Report size of BDD
@@ -710,51 +689,52 @@ main(int argc, char **argv)
     // Write number of transitions
     fwrite(&next_count, sizeof(int), 1, f);
 
-    // Write transitions
+    // Write meta for each transition
+    for (int i=0; i<next_count; i++) {
+        fwrite(&next[i]->r_k, sizeof(int), 1, f);
+        fwrite(&next[i]->w_k, sizeof(int), 1, f);
+        fwrite(next[i]->r_proj, sizeof(int), next[i]->r_k, f);
+        fwrite(next[i]->w_proj, sizeof(int), next[i]->w_k, f);
+    }
+
+    // Write BDD for each transition
     for (int i=0; i<next_count; i++) {
         // Compute new transition relation
-        MTBDD new_rel = bdd_from_ldd_rel(next[i]->mdd, bits_mdd, 0, next[i]->meta);
+        MTBDD new_rel = bdd_from_ldd_rel(next[i]->dd, bits_dd, 0, next[i]->meta);
         mtbdd_refs_push(new_rel);
-
-        // Compute new <variables> for the current transition relation
-        MTBDD new_vars = meta_to_bdd(next[i]->meta, bits_mdd, 0);
-        mtbdd_refs_push(new_vars);
-
-        if (check_results) {
-            // Test if the transition is correctly converted
-            MTBDD test = sylvan_relnext(new_states, new_rel, new_vars);
-            mtbdd_refs_push(test);
-            MDD succ = lddmc_relprod(states->mdd, next[i]->mdd, next[i]->meta);
-            lddmc_refs_push(succ);
-            MTBDD test2 = bdd_from_ldd(succ, bits_mdd, 0);
-            if (test != test2) Abort("Conversion error!\n");
-            mtbdd_refs_pop(1);
-            lddmc_refs_pop(1);
-        }
+        mtbdd_writer_tobinary(f, &new_rel, 1);
 
         // Report number of nodes
         if (verbose) printf("Transition %d: %zu BDD nodes\n", i, mtbdd_nodecount(new_rel));
 
-        size_t a = sylvan_serialize_add(new_rel);
-        size_t b = sylvan_serialize_add(new_vars);
-        sylvan_serialize_tofile(f);
-        fwrite(&a, sizeof(size_t), 1, f);
-        fwrite(&b, sizeof(size_t), 1, f);
+        if (check_results) {
+            // Compute new <variables> for the current transition relation
+            MTBDD new_vars = meta_to_bdd(next[i]->meta, bits_dd, 0);
+            mtbdd_refs_push(new_vars);
+
+            // Test if the transition is correctly converted
+            MTBDD test = sylvan_relnext(new_states, new_rel, new_vars);
+            mtbdd_refs_push(test);
+            MDD succ = lddmc_relprod(states->dd, next[i]->dd, next[i]->meta);
+            lddmc_refs_push(succ);
+            MTBDD test2 = bdd_from_ldd(succ, bits_dd, 0);
+            if (test != test2) Abort("Conversion error!\n");
+            lddmc_refs_pop(1);
+            mtbdd_refs_pop(2);
+        }
+
+        mtbdd_refs_pop(1);
     }
 
     // Write reachable states
-    has_reachable = 1;
+    if (no_reachable) has_reachable = 0;
     fwrite(&has_reachable, sizeof(int), 1, f);
-
-    {
-        size_t a = sylvan_serialize_add(new_states);
-        size_t b = sylvan_serialize_add(state_vars);
-        size_t s = totalbits;
-        sylvan_serialize_tofile(f);
-        fwrite(&a, sizeof(size_t), 1, f);
-        fwrite(&s, sizeof(size_t), 1, f);
-        fwrite(&b, sizeof(size_t), 1, f);
+    if (has_reachable) {
+        int k = -1;
+        fwrite(&k, sizeof(int), 1, f);
+        mtbdd_writer_tobinary(f, &new_states, 1);
     }
+    mtbdd_refs_pop(1);  // new_states
 
     // Write action labels
     fwrite(&action_labels_count, sizeof(int), 1, f);

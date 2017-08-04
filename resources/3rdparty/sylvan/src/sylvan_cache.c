@@ -1,6 +1,6 @@
 /*
  * Copyright 2011-2016 Formal Methods and Tools, University of Twente
- * Copyright 2016 Tom van Dijk, Johannes Kepler University Linz
+ * Copyright 2016-2017 Tom van Dijk, Johannes Kepler University Linz
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,17 +15,18 @@
  * limitations under the License.
  */
 
+#include <sylvan_int.h>
+
 #include <errno.h>  // for errno
-#include <stdio.h>  // for fprintf
-#include <stdint.h> // for uint32_t etc
-#include <stdlib.h> // for exit
 #include <string.h> // for strerror
 #include <sys/mman.h> // for mmap
 
-#include <sylvan_cache.h>
-
 #ifndef MAP_ANONYMOUS
 #define MAP_ANONYMOUS MAP_ANON
+#endif
+
+#ifndef CACHE_MASK
+#define CACHE_MASK 1
 #endif
 
 #ifndef compiler_barrier

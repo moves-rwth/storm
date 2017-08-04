@@ -1,5 +1,5 @@
 /*
- * Copyright 2016 Tom van Dijk, Johannes Kepler University Linz
+ * Copyright 2016-2017 Tom van Dijk, Johannes Kepler University Linz
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,12 +14,10 @@
  * limitations under the License.
  */
 
-#include <assert.h>
-#include <stdio.h>
-#include <sys/mman.h> // for mmap, munmap, etc
-
 #include <sylvan.h>
 #include <sylvan_sl.h>
+
+#include <sys/mman.h> // for mmap, munmap, etc
 
 /* A SL_DEPTH of 6 means 32 bytes per bucket, of 14 means 64 bytes per bucket.
    However, there is a very large performance drop with only 6 levels. */

@@ -1,6 +1,6 @@
 /*
  * Copyright 2011-2016 Formal Methods and Tools, University of Twente
- * Copyright 2016 Tom van Dijk, Johannes Kepler University Linz
+ * Copyright 2016-2017 Tom van Dijk, Johannes Kepler University Linz
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,13 +19,14 @@
  * This is an implementation of GMP mpq custom leaves of MTBDDs
  */
 
-#ifndef SYLVAN_GMP_H
-#define SYLVAN_GMP_H
-
 #include <sylvan.h>
 #include <gmp.h>
 
+#ifndef SYLVAN_GMP_H
+#define SYLVAN_GMP_H
+
 #ifdef __cplusplus
+namespace sylvan {
 extern "C" {
 #endif /* __cplusplus */
 
@@ -184,6 +185,7 @@ TASK_DECL_2(MTBDD, gmp_strict_threshold_d, MTBDD, double);
 #define gmp_strict_threshold_d(dd, value) CALL(gmp_strict_threshold_d, dd, value)
 
 #ifdef __cplusplus
+}
 }
 #endif /* __cplusplus */
 
