@@ -24,6 +24,12 @@ namespace storm {
         }
 
         template <typename ValueType>
+        std::set<storm::RationalFunctionVariable> const& ConstraintCollector<ValueType>::getVariables() const {
+            return this->variableSet;
+        }
+
+
+        template <typename ValueType>
         void ConstraintCollector<ValueType>::wellformedRequiresNonNegativeEntries(std::vector<ValueType> const& vec) {
             for(auto const& entry : vec) {
                 if (!storm::utility::isConstant(entry)) {
@@ -50,6 +56,8 @@ namespace storm {
                 for (auto const& transition : dtmc.getRows(state)) {
                     sum += transition.getValue();
                     if (!storm::utility::isConstant(transition.getValue())) {
+                        auto const& transitionVars = transition.getValue().gatherVariables();
+                        variableSet.insert(transitionVars.begin(), transitionVars.end());
                         // Assert: 0 <= transition <= 1
                         if (transition.getValue().denominator().isConstant()) {
                             assert(transition.getValue().denominator().constantPart() != 0);

@@ -69,6 +69,8 @@ add_custom_target(copy_storm_headers DEPENDS ${STORM_OUTPUT_HEADERS} ${STORM_LIB
 add_dependencies(storm copy_storm_headers)
 add_dependencies(storm copy_resources_headers)
 
+add_dependencies(binaries storm-main)
+
 # installation
 install(TARGETS storm RUNTIME DESTINATION bin LIBRARY DESTINATION lib)
 install(TARGETS storm-main RUNTIME DESTINATION bin LIBRARY DESTINATION lib OPTIONAL)

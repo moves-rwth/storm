@@ -18,7 +18,8 @@ namespace storm {
         /*!
          * A class that implements the LpSolver interface using glpk as the background solver.
          */
-        class GlpkLpSolver : public LpSolver {
+        template<typename ValueType>
+        class GlpkLpSolver : public LpSolver<ValueType> {
         public:
             /*!
              * Constructs a solver with the given name and model sense.
@@ -57,19 +58,19 @@ namespace storm {
             virtual ~GlpkLpSolver();
             
             // Methods to add continuous variables.
-            virtual storm::expressions::Variable addBoundedContinuousVariable(std::string const& name, double lowerBound, double upperBound, double objectiveFunctionCoefficient = 0) override;
-            virtual storm::expressions::Variable addLowerBoundedContinuousVariable(std::string const& name, double lowerBound, double objectiveFunctionCoefficient = 0) override;
-            virtual storm::expressions::Variable addUpperBoundedContinuousVariable(std::string const& name, double upperBound, double objectiveFunctionCoefficient = 0) override;
-            virtual storm::expressions::Variable addUnboundedContinuousVariable(std::string const& name, double objectiveFunctionCoefficient = 0) override;
+            virtual storm::expressions::Variable addBoundedContinuousVariable(std::string const& name, ValueType lowerBound, ValueType upperBound, ValueType objectiveFunctionCoefficient = 0) override;
+            virtual storm::expressions::Variable addLowerBoundedContinuousVariable(std::string const& name, ValueType lowerBound, ValueType objectiveFunctionCoefficient = 0) override;
+            virtual storm::expressions::Variable addUpperBoundedContinuousVariable(std::string const& name, ValueType upperBound, ValueType objectiveFunctionCoefficient = 0) override;
+            virtual storm::expressions::Variable addUnboundedContinuousVariable(std::string const& name, ValueType objectiveFunctionCoefficient = 0) override;
             
             // Methods to add integer variables.
-            virtual storm::expressions::Variable addBoundedIntegerVariable(std::string const& name, double lowerBound, double upperBound, double objectiveFunctionCoefficient = 0) override;
-            virtual storm::expressions::Variable addLowerBoundedIntegerVariable(std::string const& name, double lowerBound, double objectiveFunctionCoefficient = 0) override;
-            virtual storm::expressions::Variable addUpperBoundedIntegerVariable(std::string const& name, double upperBound, double objectiveFunctionCoefficient = 0) override;
-            virtual storm::expressions::Variable addUnboundedIntegerVariable(std::string const& name, double objectiveFunctionCoefficient = 0) override;
+            virtual storm::expressions::Variable addBoundedIntegerVariable(std::string const& name, ValueType lowerBound, ValueType upperBound, ValueType objectiveFunctionCoefficient = 0) override;
+            virtual storm::expressions::Variable addLowerBoundedIntegerVariable(std::string const& name, ValueType lowerBound, ValueType objectiveFunctionCoefficient = 0) override;
+            virtual storm::expressions::Variable addUpperBoundedIntegerVariable(std::string const& name, ValueType upperBound, ValueType objectiveFunctionCoefficient = 0) override;
+            virtual storm::expressions::Variable addUnboundedIntegerVariable(std::string const& name, ValueType objectiveFunctionCoefficient = 0) override;
 
             // Methods to add binary variables.
-            virtual storm::expressions::Variable addBinaryVariable(std::string const& name, double objectiveFunctionCoefficient = 0) override;
+            virtual storm::expressions::Variable addBinaryVariable(std::string const& name, ValueType objectiveFunctionCoefficient = 0) override;
 
             // Methods to incorporate recent changes.
             virtual void update() const override;
@@ -84,10 +85,10 @@ namespace storm {
             virtual bool isOptimal() const override;
 
             // Methods to retrieve values of variables and the objective function in the optimal solutions.
-            virtual double getContinuousValue(storm::expressions::Variable const& name) const override;
+            virtual ValueType getContinuousValue(storm::expressions::Variable const& name) const override;
             virtual int_fast64_t getIntegerValue(storm::expressions::Variable const& name) const override;
             virtual bool getBinaryValue(storm::expressions::Variable const& name) const override;
-            virtual double getObjectiveValue() const override;
+            virtual ValueType getObjectiveValue() const override;
 
             // Methods to print the LP problem to a file.
             virtual void writeModelToFile(std::string const& filename) const override;
@@ -103,7 +104,7 @@ namespace storm {
              * @param upperBound The upper bound of the range of the variable.
              * @param objectiveFunctionCoefficient The coefficient of the variable in the objective function.
              */
-            void addVariable(storm::expressions::Variable const& variable, int variableType, int boundType, double lowerBound, double upperBound, double objectiveFunctionCoefficient);
+            void addVariable(storm::expressions::Variable const& variable, int variableType, int boundType, ValueType lowerBound, ValueType upperBound, ValueType objectiveFunctionCoefficient);
             
             // The glpk LP problem.
             glp_prob* lp;
@@ -153,39 +154,39 @@ namespace storm {
                 throw storm::exceptions::NotImplementedException() << "This version of storm was compiled without support for glpk. Yet, a method was called that requires this support. Please choose a version of support with glpk support.";
             }
             
-            virtual storm::expressions::Variable addBoundedContinuousVariable(std::string const& name, double lowerBound, double upperBound, double objectiveFunctionCoefficient = 0) override {
+            virtual storm::expressions::Variable addBoundedContinuousVariable(std::string const& name, ValueType lowerBound, ValueType upperBound, ValueType objectiveFunctionCoefficient = 0) override {
                 throw storm::exceptions::NotImplementedException() << "This version of storm was compiled without support for glpk. Yet, a method was called that requires this support. Please choose a version of support with glpk support.";
             }
             
-            virtual storm::expressions::Variable addLowerBoundedContinuousVariable(std::string const& name, double lowerBound, double objectiveFunctionCoefficient = 0) override {
+            virtual storm::expressions::Variable addLowerBoundedContinuousVariable(std::string const& name, ValueType lowerBound, ValueType objectiveFunctionCoefficient = 0) override {
                 throw storm::exceptions::NotImplementedException() << "This version of storm was compiled without support for glpk. Yet, a method was called that requires this support. Please choose a version of support with glpk support.";
             }
             
-            virtual storm::expressions::Variable addUpperBoundedContinuousVariable(std::string const& name, double upperBound, double objectiveFunctionCoefficient = 0) override {
+            virtual storm::expressions::Variable addUpperBoundedContinuousVariable(std::string const& name, ValueType upperBound, ValueType objectiveFunctionCoefficient = 0) override {
                 throw storm::exceptions::NotImplementedException() << "This version of storm was compiled without support for glpk. Yet, a method was called that requires this support. Please choose a version of support with glpk support.";
             }
             
-            virtual storm::expressions::Variable addUnboundedContinuousVariable(std::string const& name, double objectiveFunctionCoefficient = 0) override {
+            virtual storm::expressions::Variable addUnboundedContinuousVariable(std::string const& name, ValueType objectiveFunctionCoefficient = 0) override {
                 throw storm::exceptions::NotImplementedException() << "This version of storm was compiled without support for glpk. Yet, a method was called that requires this support. Please choose a version of support with glpk support.";
             }
             
-            virtual storm::expressions::Variable addBoundedIntegerVariable(std::string const& name, double lowerBound, double upperBound, double objectiveFunctionCoefficient = 0) override {
+            virtual storm::expressions::Variable addBoundedIntegerVariable(std::string const& name, ValueType lowerBound, ValueType upperBound, ValueType objectiveFunctionCoefficient = 0) override {
                 throw storm::exceptions::NotImplementedException() << "This version of storm was compiled without support for glpk. Yet, a method was called that requires this support. Please choose a version of support with glpk support.";
             }
             
-            virtual storm::expressions::Variable addLowerBoundedIntegerVariable(std::string const& name, double lowerBound, double objectiveFunctionCoefficient = 0) override {
+            virtual storm::expressions::Variable addLowerBoundedIntegerVariable(std::string const& name, ValueType lowerBound, ValueType objectiveFunctionCoefficient = 0) override {
                 throw storm::exceptions::NotImplementedException() << "This version of storm was compiled without support for glpk. Yet, a method was called that requires this support. Please choose a version of support with glpk support.";
             }
             
-            virtual storm::expressions::Variable addUpperBoundedIntegerVariable(std::string const& name, double upperBound, double objectiveFunctionCoefficient = 0) override {
+            virtual storm::expressions::Variable addUpperBoundedIntegerVariable(std::string const& name, ValueType upperBound, ValueType objectiveFunctionCoefficient = 0) override {
                 throw storm::exceptions::NotImplementedException() << "This version of storm was compiled without support for glpk. Yet, a method was called that requires this support. Please choose a version of support with glpk support.";
             }
             
-            virtual storm::expressions::Variable addUnboundedIntegerVariable(std::string const& name, double objectiveFunctionCoefficient = 0) override {
+            virtual storm::expressions::Variable addUnboundedIntegerVariable(std::string const& name, ValueType objectiveFunctionCoefficient = 0) override {
                 throw storm::exceptions::NotImplementedException() << "This version of storm was compiled without support for glpk. Yet, a method was called that requires this support. Please choose a version of support with glpk support.";
             }
             
-            virtual storm::expressions::Variable addBinaryVariable(std::string const& name, double objectiveFunctionCoefficient = 0) override {
+            virtual storm::expressions::Variable addBinaryVariable(std::string const& name, ValueType objectiveFunctionCoefficient = 0) override {
                 throw storm::exceptions::NotImplementedException() << "This version of storm was compiled without support for glpk. Yet, a method was called that requires this support. Please choose a version of support with glpk support.";
             }
             
@@ -213,7 +214,7 @@ namespace storm {
                 throw storm::exceptions::NotImplementedException() << "This version of storm was compiled without support for glpk. Yet, a method was called that requires this support. Please choose a version of support with glpk support.";
             }
             
-            virtual double getContinuousValue(storm::expressions::Variable const& variable) const override {
+            virtual ValueType getContinuousValue(storm::expressions::Variable const& variable) const override {
                 throw storm::exceptions::NotImplementedException() << "This version of storm was compiled without support for glpk. Yet, a method was called that requires this support. Please choose a version of support with glpk support.";
             }
             
@@ -225,7 +226,7 @@ namespace storm {
                 throw storm::exceptions::NotImplementedException() << "This version of storm was compiled without support for glpk. Yet, a method was called that requires this support. Please choose a version of support with glpk support.";
             }
             
-            virtual double getObjectiveValue() const override {
+            virtual ValueType getObjectiveValue() const override {
                 throw storm::exceptions::NotImplementedException() << "This version of storm was compiled without support for glpk. Yet, a method was called that requires this support. Please choose a version of support with glpk support.";
             }
             

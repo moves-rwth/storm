@@ -30,7 +30,9 @@ namespace storm {
         template<typename V>
         class MinMaxLinearEquationSolver;
         
+        template<typename ValueType>
         class LpSolver;
+        
         class SmtSolver;
     }
 
@@ -60,6 +62,7 @@ namespace storm {
                 virtual std::unique_ptr<storm::solver::SymbolicGameSolver<Type, ValueType>> create(storm::dd::Add<Type, ValueType> const& A, storm::dd::Bdd<Type> const& allRows, storm::dd::Bdd<Type> const& illegalPlayer1Mask, storm::dd::Bdd<Type> const& illegalPlayer2Mask, std::set<storm::expressions::Variable> const& rowMetaVariables, std::set<storm::expressions::Variable> const& columnMetaVariables, std::vector<std::pair<storm::expressions::Variable, storm::expressions::Variable>> const& rowColumnMetaVariablePairs, std::set<storm::expressions::Variable> const& player1Variables, std::set<storm::expressions::Variable> const& player2Variables) const;
             };
 
+            template<typename ValueType>
             class LpSolverFactory {
             public:
                 /*!
@@ -68,26 +71,36 @@ namespace storm {
                  * @param name The name of the LP solver.
                  * @return A pointer to the newly created solver.
                  */
-                virtual std::unique_ptr<storm::solver::LpSolver> create(std::string const& name) const;
-                virtual std::unique_ptr<storm::solver::LpSolver> create(std::string const& name, storm::solver::LpSolverTypeSelection solvType) const;
+                virtual std::unique_ptr<storm::solver::LpSolver<ValueType>> create(std::string const& name) const;
+                virtual std::unique_ptr<storm::solver::LpSolver<ValueType>> create(std::string const& name, storm::solver::LpSolverTypeSelection solvType) const;
+                
+                virtual std::unique_ptr<LpSolverFactory<ValueType>> clone() const;
+
             };
             
-            class GlpkLpSolverFactory : public LpSolverFactory {
+            template<typename ValueType>
+            class GlpkLpSolverFactory : public LpSolverFactory<ValueType> {
             public:
-                virtual std::unique_ptr<storm::solver::LpSolver> create(std::string const& name) const override;
+                virtual std::unique_ptr<storm::solver::LpSolver<ValueType>> create(std::string const& name) const override;
+                virtual std::unique_ptr<LpSolverFactory<ValueType>> clone() const override;
             };
             
-            class GurobiLpSolverFactory : public LpSolverFactory {
+            template<typename ValueType>
+            class GurobiLpSolverFactory : public LpSolverFactory<ValueType> {
             public:
-                virtual std::unique_ptr<storm::solver::LpSolver> create(std::string const& name) const override;
+                virtual std::unique_ptr<storm::solver::LpSolver<ValueType>> create(std::string const& name) const override;
+                virtual std::unique_ptr<LpSolverFactory<ValueType>> clone() const override;
             };
 
-            class Z3LpSolverFactory : public LpSolverFactory {
+            template<typename ValueType>
+            class Z3LpSolverFactory : public LpSolverFactory<ValueType> {
             public:
-                virtual std::unique_ptr<storm::solver::LpSolver> create(std::string const& name) const override;
+                virtual std::unique_ptr<storm::solver::LpSolver<ValueType>> create(std::string const& name) const override;
+                virtual std::unique_ptr<LpSolverFactory<ValueType>> clone() const override;
             };
             
-            std::unique_ptr<storm::solver::LpSolver> getLpSolver(std::string const& name, storm::solver::LpSolverTypeSelection solvType = storm::solver::LpSolverTypeSelection::FROMSETTINGS) ;
+            template<typename ValueType>
+            std::unique_ptr<storm::solver::LpSolver<ValueType>> getLpSolver(std::string const& name, storm::solver::LpSolverTypeSelection solvType = storm::solver::LpSolverTypeSelection::FROMSETTINGS) ;
 
             class SmtSolverFactory {
             public:

@@ -5,6 +5,7 @@
 #include "storm/solver/LinearEquationSolver.h"
 #include "storm/solver/IterativeMinMaxLinearEquationSolver.h"
 #include "storm/solver/TopologicalMinMaxLinearEquationSolver.h"
+#include "storm/solver/LpMinMaxLinearEquationSolver.h"
 
 #include "storm/settings/SettingsManager.h"
 #include "storm/settings/modules/MinMaxEquationSolverSettings.h"
@@ -195,6 +196,8 @@ namespace storm {
                 result = std::make_unique<IterativeMinMaxLinearEquationSolver<ValueType>>(std::forward<MatrixType>(matrix), std::make_unique<GeneralLinearEquationSolverFactory<ValueType>>(), iterativeSolverSettings);
             } else if (method == MinMaxMethod::Topological) {
                 result = std::make_unique<TopologicalMinMaxLinearEquationSolver<ValueType>>(std::forward<MatrixType>(matrix));
+            } else if (method == MinMaxMethod::LinearProgramming) {
+                result = std::make_unique<LpMinMaxLinearEquationSolver<ValueType>>(std::forward<MatrixType>(matrix), std::make_unique<GeneralLinearEquationSolverFactory<ValueType>>(), std::make_unique<storm::utility::solver::LpSolverFactory<ValueType>>());
             } else {
                 STORM_LOG_THROW(false, storm::exceptions::InvalidSettingsException, "Unsupported technique.");
             }
@@ -208,10 +211,16 @@ namespace storm {
         std::unique_ptr<MinMaxLinearEquationSolver<storm::RationalNumber>> GeneralMinMaxLinearEquationSolverFactory<storm::RationalNumber>::selectSolver(MatrixType&& matrix) const {
             std::unique_ptr<MinMaxLinearEquationSolver<storm::RationalNumber>> result;
             auto method = this->getMinMaxMethod();
-            STORM_LOG_THROW(method == MinMaxMethod::ValueIteration || method == MinMaxMethod::PolicyIteration || method == MinMaxMethod::Acyclic, storm::exceptions::InvalidSettingsException, "For this data type only value iteration, policy iteration, and acyclic value iteration are available.");
-            IterativeMinMaxLinearEquationSolverSettings<storm::RationalNumber> iterativeSolverSettings;
-            iterativeSolverSettings.setSolutionMethod(method);
-            return std::make_unique<IterativeMinMaxLinearEquationSolver<storm::RationalNumber>>(std::forward<MatrixType>(matrix), std::make_unique<GeneralLinearEquationSolverFactory<storm::RationalNumber>>(), iterativeSolverSettings);
+            if (method == MinMaxMethod::ValueIteration || method == MinMaxMethod::PolicyIteration || method == MinMaxMethod::Acyclic) {
+                IterativeMinMaxLinearEquationSolverSettings<storm::RationalNumber> iterativeSolverSettings;
+                iterativeSolverSettings.setSolutionMethod(method);
+                result =  std::make_unique<IterativeMinMaxLinearEquationSolver<storm::RationalNumber>>(std::forward<MatrixType>(matrix), std::make_unique<GeneralLinearEquationSolverFactory<storm::RationalNumber>>(), iterativeSolverSettings);
+            } else if (method == MinMaxMethod::LinearProgramming) {
+                result = std::make_unique<LpMinMaxLinearEquationSolver<storm::RationalNumber>>(std::forward<MatrixType>(matrix), std::make_unique<GeneralLinearEquationSolverFactory<storm::RationalNumber>>(), std::make_unique<storm::utility::solver::LpSolverFactory<storm::RationalNumber>>());
+            } else {
+                STORM_LOG_THROW(false, storm::exceptions::InvalidSettingsException, "The selected method is not available for this data type.");
+            }
+            return result;
         }
 #endif
         template class MinMaxLinearEquationSolver<float>;

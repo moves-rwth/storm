@@ -23,7 +23,7 @@ namespace storm {
             goalstates = storm::utility::graph::performProb1A(mdp, backwardTransitions, storm::storage::BitVector(goalstates.size(), true), goalstates);
             storm::storage::BitVector sinkstates = storm::utility::graph::performProb0A(backwardTransitions, storm::storage::BitVector(goalstates.size(), true), goalstates);
             
-            auto solver = storm::utility::solver::getLpSolver("Gurobi", storm::solver::LpSolverTypeSelection::Gurobi);
+            auto solver = storm::utility::solver::getLpSolver<double>("Gurobi", storm::solver::LpSolverTypeSelection::Gurobi);
             MilpPermissiveSchedulerComputation<storm::models::sparse::StandardRewardModel<double>> comp(*solver, mdp, goalstates, sinkstates);
             STORM_LOG_THROW(!storm::logic::isStrict(safeProp.getComparisonType()), storm::exceptions::NotImplementedException, "Strict bounds are not supported");
             comp.calculatePermissiveScheduler(storm::logic::isLowerBound(safeProp.getComparisonType()), safeProp.getThresholdAs<double>());

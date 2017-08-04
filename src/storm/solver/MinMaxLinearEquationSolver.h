@@ -115,18 +115,6 @@ namespace storm {
              */
             std::vector<uint_fast64_t> const& getSchedulerChoices() const;
 
-            /**
-             * Gets the precision after which the solver takes two numbers as equal.
-             *
-             * @see getRelative()
-             */
-            virtual ValueType getPrecision() const = 0;
-
-            /**
-             *  Gets whether the precision is taken to be absolute or relative
-             */
-            virtual bool getRelative() const = 0;
-            
             /*!
              * Sets whether some of the generated data during solver calls should be cached.
              * This possibly decreases the runtime of subsequent calls but also increases memory consumption.

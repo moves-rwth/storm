@@ -90,8 +90,11 @@ namespace storm {
             storm::jani::ModelType type = storm::jani::getModelType(modeltypestring);
             STORM_LOG_THROW(type != storm::jani::ModelType::UNDEFINED, storm::exceptions::InvalidJaniException, "model type " + modeltypestring + " not recognized");
             storm::jani::Model model(name, type, version, expressionManager);
-            STORM_LOG_THROW(parsedStructure.count("actions") < 2, storm::exceptions::InvalidJaniException, "Action-declarations can be given at most once.");
-            parseActions(parsedStructure.at("actions"), model);
+            size_t actionCount = parsedStructure.count("actions");
+            STORM_LOG_THROW(actionCount < 2, storm::exceptions::InvalidJaniException, "Action-declarations can be given at most once.");
+            if (actionCount > 0) {
+                parseActions(parsedStructure.at("actions"), model);
+            }
             size_t constantsCount = parsedStructure.count("constants");
             std::unordered_map<std::string, std::shared_ptr<storm::jani::Constant>> constants;
             STORM_LOG_THROW(constantsCount < 2, storm::exceptions::InvalidJaniException, "Constant-declarations can be given at most once.");

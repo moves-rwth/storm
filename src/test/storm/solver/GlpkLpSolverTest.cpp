@@ -16,7 +16,7 @@
 #include <cmath>
 
 TEST(GlpkLpSolver, LPOptimizeMax) {
-    storm::solver::GlpkLpSolver solver(storm::OptimizationDirection::Maximize);
+    storm::solver::GlpkLpSolver<double> solver(storm::OptimizationDirection::Maximize);
     storm::expressions::Variable x;
     storm::expressions::Variable y;
     storm::expressions::Variable z;
@@ -49,7 +49,7 @@ TEST(GlpkLpSolver, LPOptimizeMax) {
 }
 
 TEST(GlpkLpSolver, LPOptimizeMin) {
-    storm::solver::GlpkLpSolver solver(storm::OptimizationDirection::Minimize);
+    storm::solver::GlpkLpSolver<double> solver(storm::OptimizationDirection::Minimize);
     storm::expressions::Variable x;
     storm::expressions::Variable y;
     storm::expressions::Variable z;
@@ -82,7 +82,7 @@ TEST(GlpkLpSolver, LPOptimizeMin) {
 }
 
 TEST(GlpkLpSolver, MILPOptimizeMax) {
-    storm::solver::GlpkLpSolver solver(storm::OptimizationDirection::Maximize);
+    storm::solver::GlpkLpSolver<double> solver(storm::OptimizationDirection::Maximize);
     storm::expressions::Variable x;
     storm::expressions::Variable y;
     storm::expressions::Variable z;
@@ -115,7 +115,7 @@ TEST(GlpkLpSolver, MILPOptimizeMax) {
 }
 
 TEST(GlpkLpSolver, MILPOptimizeMin) {
-    storm::solver::GlpkLpSolver solver(storm::OptimizationDirection::Minimize);
+    storm::solver::GlpkLpSolver<double> solver(storm::OptimizationDirection::Minimize);
     storm::expressions::Variable x;
     storm::expressions::Variable y;
     storm::expressions::Variable z;
@@ -148,7 +148,7 @@ TEST(GlpkLpSolver, MILPOptimizeMin) {
 }
 
 TEST(GlpkLpSolver, LPInfeasible) {
-    storm::solver::GlpkLpSolver solver(storm::OptimizationDirection::Maximize);
+    storm::solver::GlpkLpSolver<double> solver(storm::OptimizationDirection::Maximize);
     storm::expressions::Variable x;
     storm::expressions::Variable y;
     storm::expressions::Variable z;
@@ -174,7 +174,7 @@ TEST(GlpkLpSolver, LPInfeasible) {
 }
 
 TEST(GlpkLpSolver, MILPInfeasible) {
-    storm::solver::GlpkLpSolver solver(storm::OptimizationDirection::Maximize);
+    storm::solver::GlpkLpSolver<double> solver(storm::OptimizationDirection::Maximize);
     storm::expressions::Variable x;
     storm::expressions::Variable y;
     storm::expressions::Variable z;
@@ -200,7 +200,7 @@ TEST(GlpkLpSolver, MILPInfeasible) {
 }
 
 TEST(GlpkLpSolver, LPUnbounded) {
-    storm::solver::GlpkLpSolver solver(storm::OptimizationDirection::Maximize);
+    storm::solver::GlpkLpSolver<double> solver(storm::OptimizationDirection::Maximize);
     storm::expressions::Variable x;
     storm::expressions::Variable y;
     storm::expressions::Variable z;
@@ -224,7 +224,7 @@ TEST(GlpkLpSolver, LPUnbounded) {
 }
 
 TEST(GlpkLpSolver, MILPUnbounded) {
-    storm::solver::GlpkLpSolver solver(storm::OptimizationDirection::Maximize);
+    storm::solver::GlpkLpSolver<double> solver(storm::OptimizationDirection::Maximize);
     storm::expressions::Variable x;
     storm::expressions::Variable y;
     storm::expressions::Variable z;
