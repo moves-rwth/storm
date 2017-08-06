@@ -9,6 +9,7 @@
 #include "storm/logic/AtomicLabelFormula.h"
 
 #include "storm/models/symbolic/Mdp.h"
+#include "storm/models/symbolic/StandardRewardModel.h"
 
 #include "storm/settings/SettingsManager.h"
 #include "storm/settings/modules/BisimulationSettings.h"

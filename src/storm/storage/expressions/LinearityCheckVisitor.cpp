@@ -125,7 +125,7 @@ namespace storm {
             STORM_LOG_THROW(false, storm::exceptions::InvalidOperationException, "Illegal unary numerical expression operator.");
         }
         
-        boost::any LinearityCheckVisitor::visit(BooleanLiteralExpression const& expression, boost::any const& data) {
+        boost::any LinearityCheckVisitor::visit(BooleanLiteralExpression const&, boost::any const& data) {
             bool booleanIsLinear = boost::any_cast<bool>(data);
             
             if (booleanIsLinear) {

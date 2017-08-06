@@ -551,9 +551,6 @@ namespace storm {
                     
                     // Sanity checks.
                     STORM_LOG_ASSERT(partition.getNumberOfStates() == model.getNumberOfStates(), "Mismatching partition size.");
-                    partition.getStates().renameVariables(model.getColumnVariables(), model.getRowVariables()).exportToDot("partstates.dot");
-                    model.getReachableStates().exportToDot("origstates.dot");
-                    std::cout << "equal? " << (partition.getStates().renameVariables(model.getColumnVariables(), model.getRowVariables()).template toAdd<ValueType>().notZero() == model.getReachableStates().template toAdd<ValueType>().notZero()) << std::endl;
                     STORM_LOG_ASSERT(partition.getStates().renameVariables(model.getColumnVariables(), model.getRowVariables()) == model.getReachableStates(), "Mismatching partition.");
                     
                     std::set<storm::expressions::Variable> blockVariableSet = {partition.getBlockVariable()};
@@ -567,36 +564,10 @@ namespace storm {
                         partitionAsBdd = (representativePartition && partitionAsBddOverPrimedBlockVariable).existsAbstract(blockPrimeVariableSet);
                     }
                     
-                    storm::dd::Add<DdType, ValueType> partitionAsAdd = partitionAsBdd.template toAdd<ValueType>();
-                    partitionAsAdd.exportToDot("partition.dot");
-                    model.getTransitionMatrix().sumAbstract(model.getColumnVariables()).exportToDot("origdist.dot");
                     auto start = std::chrono::high_resolution_clock::now();
-                    storm::dd::Add<DdType, ValueType> quotientTransitionMatrix = model.getTransitionMatrix().multiplyMatrix(partitionAsAdd.renameVariables(blockVariableSet, blockPrimeVariableSet), model.getColumnVariables());
-                    STORM_LOG_ASSERT(quotientTransitionMatrix.sumAbstract(blockPrimeVariableSet).equalModuloPrecision(model.getTransitionMatrix().sumAbstract(model.getColumnVariables()), ValueType(1e-6)), "Expected something else.");
-                    quotientTransitionMatrix.sumAbstract(blockPrimeVariableSet).exportToDot("sanity.dot");
-                    quotientTransitionMatrix.exportToDot("trans-1.dot");
-                    partitionAsAdd = partitionAsAdd / partitionAsAdd.sumAbstract(model.getColumnVariables());
-                    quotientTransitionMatrix = quotientTransitionMatrix.multiplyMatrix(partitionAsAdd.renameVariables(model.getColumnVariables(), model.getRowVariables()), model.getRowVariables());
-                    quotientTransitionMatrix.exportToDot("quottrans.dot");
-                    auto partCount = partitionAsAdd.sumAbstract(model.getColumnVariables());
-                    partCount.exportToDot("partcount.dot");
-                    auto end = std::chrono::high_resolution_clock::now();
-                    
-                    // Check quotient matrix for sanity.
-                    auto quotdist = quotientTransitionMatrix.sumAbstract(blockPrimeVariableSet);
-                    quotdist.exportToDot("quotdists.dot");
-                    (quotdist / partCount).exportToDot("distcount.dot");
-                    STORM_LOG_ASSERT(quotientTransitionMatrix.greater(storm::utility::one<ValueType>()).isZero(), "Illegal entries in quotient matrix.");
-                    STORM_LOG_ASSERT(quotientTransitionMatrix.sumAbstract(blockPrimeVariableSet).equalModuloPrecision(quotientTransitionMatrix.notZero().existsAbstract(blockPrimeVariableSet).template toAdd<ValueType>(), ValueType(1e-6)), "Illegal non-probabilistic matrix.");
-                    
-                    STORM_LOG_TRACE("Quotient transition matrix extracted in " << std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count() << "ms.");
-                    storm::dd::Bdd<DdType> quotientTransitionMatrixBdd = quotientTransitionMatrix.notZero();
-                    
-                    start = std::chrono::high_resolution_clock::now();
                     storm::dd::Bdd<DdType> partitionAsBddOverRowVariables = partitionAsBdd.renameVariables(model.getColumnVariables(), model.getRowVariables());
                     storm::dd::Bdd<DdType> reachableStates = partitionAsBdd.existsAbstract(model.getColumnVariables());
                     storm::dd::Bdd<DdType> initialStates = (model.getInitialStates() && partitionAsBddOverRowVariables).existsAbstract(model.getRowVariables());
-                    storm::dd::Bdd<DdType> deadlockStates = !quotientTransitionMatrixBdd.existsAbstract(blockPrimeVariableSet) && reachableStates;
                     
                     std::map<std::string, storm::dd::Bdd<DdType>> preservedLabelBdds;
                     for (auto const& label : preservationInformation.getLabels()) {
@@ -614,9 +585,29 @@ namespace storm {
                             preservedLabelBdds.emplace(stream.str(), (model.getStates(expression) && partitionAsBddOverRowVariables).existsAbstract(model.getRowVariables()));
                         }
                     }
-                    end = std::chrono::high_resolution_clock::now();
+                    auto end = std::chrono::high_resolution_clock::now();
                     STORM_LOG_TRACE("Quotient labels extracted in " << std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count() << "ms.");
 
+                    storm::dd::Add<DdType, ValueType> partitionAsAdd = partitionAsBdd.template toAdd<ValueType>();
+                    start = std::chrono::high_resolution_clock::now();
+                    storm::dd::Add<DdType, ValueType> quotientTransitionMatrix = model.getTransitionMatrix().multiplyMatrix(partitionAsAdd.renameVariables(blockVariableSet, blockPrimeVariableSet), model.getColumnVariables());
+                    
+                    // Pick a representative from each block.
+                    partitionAsBdd = partitionAsBdd.existsAbstractRepresentative(model.getColumnVariables());
+                    partitionAsAdd = partitionAsBdd.template toAdd<ValueType>();
+                    
+                    quotientTransitionMatrix = quotientTransitionMatrix.multiplyMatrix(partitionAsAdd.renameVariables(model.getColumnVariables(), model.getRowVariables()), model.getRowVariables());
+                    end = std::chrono::high_resolution_clock::now();
+                    
+                    // Check quotient matrix for sanity.
+                    STORM_LOG_ASSERT(quotientTransitionMatrix.greater(storm::utility::one<ValueType>()).isZero(), "Illegal entries in quotient matrix.");
+                    STORM_LOG_ASSERT(quotientTransitionMatrix.sumAbstract(blockPrimeVariableSet).equalModuloPrecision(quotientTransitionMatrix.notZero().existsAbstract(blockPrimeVariableSet).template toAdd<ValueType>(), ValueType(1e-6)), "Illegal non-probabilistic matrix.");
+                    
+                    STORM_LOG_TRACE("Quotient transition matrix extracted in " << std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count() << "ms.");
+
+                    storm::dd::Bdd<DdType> quotientTransitionMatrixBdd = quotientTransitionMatrix.notZero();
+                    storm::dd::Bdd<DdType> deadlockStates = !quotientTransitionMatrixBdd.existsAbstract(blockPrimeVariableSet) && reachableStates;
+                    
                     if (modelType == storm::models::ModelType::Dtmc) {
                         return std::shared_ptr<storm::models::symbolic::Dtmc<DdType, ValueType>>(new storm::models::symbolic::Dtmc<DdType, ValueType>(model.getManager().asSharedPointer(), reachableStates, initialStates, deadlockStates, quotientTransitionMatrix, blockVariableSet, blockPrimeVariableSet, blockMetaVariablePairs, preservedLabelBdds, {}));
                     } else if (modelType == storm::models::ModelType::Ctmc) {

@@ -514,6 +514,7 @@ namespace storm {
                 result = preprocessDdModel<DdType, ValueType>(result.first->as<storm::models::symbolic::Model<DdType, ValueType>>(), input);
             }
             
+            preprocessingWatch.stop();
             if (result.second) {
                 STORM_PRINT_AND_LOG(std::endl << "Time for model preprocessing: " << preprocessingWatch << "." << std::endl << std::endl);
             }

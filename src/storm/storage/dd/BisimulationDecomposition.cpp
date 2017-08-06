@@ -7,6 +7,7 @@
 
 #include "storm/models/symbolic/Model.h"
 #include "storm/models/symbolic/Mdp.h"
+#include "storm/models/symbolic/StandardRewardModel.h"
 
 #include "storm/utility/macros.h"
 #include "storm/exceptions/InvalidOperationException.h"

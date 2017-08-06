@@ -67,8 +67,8 @@ namespace storm {
                     maxTableSize >>= 1;
                 }
                 
-                uint64_t initialTableSize = 1ull << std::max(powerOfTwo - 4, 16ull);
-                uint64_t initialCacheSize = 1ull << std::max(powerOfTwo - 4, 16ull);
+                uint64_t initialTableSize = 1ull << std::max(powerOfTwo - 4, static_cast<uint_fast64_t>(16));
+                uint64_t initialCacheSize = initialTableSize;
                 
                 STORM_LOG_DEBUG("Initializing sylvan. Initial/max table size: " << initialTableSize << "/" << maxTableSize << ", initial/max cache size: " << initialCacheSize << "/" << maxCacheSize << ".");
                 sylvan::Sylvan::initPackage(initialTableSize, maxTableSize, initialCacheSize, maxCacheSize);

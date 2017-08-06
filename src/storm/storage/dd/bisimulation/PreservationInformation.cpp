@@ -2,6 +2,8 @@
 
 #include "storm/logic/Formulas.h"
 
+#include "storm/models/symbolic/StandardRewardModel.h"
+
 #include "storm/utility/macros.h"
 #include "storm/exceptions/InvalidPropertyException.h"
 
@@ -15,7 +17,7 @@ namespace storm {
             }
             
             template <storm::dd::DdType DdType, typename ValueType>
-            PreservationInformation<DdType, ValueType>::PreservationInformation(storm::models::symbolic::Model<DdType, ValueType> const& model, std::vector<std::string> const& labels, storm::storage::BisimulationType const& bisimulationType) {
+            PreservationInformation<DdType, ValueType>::PreservationInformation(storm::models::symbolic::Model<DdType, ValueType> const& model, std::vector<std::string> const& labels, storm::storage::BisimulationType const&) {
                 for (auto const& label : labels) {
                     this->addLabel(label);
                     this->addExpression(model.getExpression(label));
@@ -23,14 +25,14 @@ namespace storm {
             }
             
             template <storm::dd::DdType DdType, typename ValueType>
-            PreservationInformation<DdType, ValueType>::PreservationInformation(storm::models::symbolic::Model<DdType, ValueType> const& model, std::vector<storm::expressions::Expression> const& expressions, storm::storage::BisimulationType const& bisimulationType) {
+            PreservationInformation<DdType, ValueType>::PreservationInformation(storm::models::symbolic::Model<DdType, ValueType> const& model, std::vector<storm::expressions::Expression> const& expressions, storm::storage::BisimulationType const&) {
                 for (auto const& e : expressions) {
                     this->addExpression(e);
                 }
             }
             
             template <storm::dd::DdType DdType, typename ValueType>
-            PreservationInformation<DdType, ValueType>::PreservationInformation(storm::models::symbolic::Model<DdType, ValueType> const& model, std::vector<std::shared_ptr<storm::logic::Formula const>> const& formulas, storm::storage::BisimulationType const& bisimulationType) {
+            PreservationInformation<DdType, ValueType>::PreservationInformation(storm::models::symbolic::Model<DdType, ValueType> const& model, std::vector<std::shared_ptr<storm::logic::Formula const>> const& formulas, storm::storage::BisimulationType const&) {
                 if (formulas.empty()) {
                     // Default to respect all labels if no formulas are given.
                     for (auto const& label : model.getLabels()) {

@@ -1,6 +1,7 @@
 #include "storm/storage/dd/bisimulation/MdpPartitionRefiner.h"
 
 #include "storm/models/symbolic/Mdp.h"
+#include "storm/models/symbolic/StandardRewardModel.h"
 
 namespace storm {
     namespace dd {
@@ -9,8 +10,6 @@ namespace storm {
             template<storm::dd::DdType DdType, typename ValueType>
             MdpPartitionRefiner<DdType, ValueType>::MdpPartitionRefiner(storm::models::symbolic::Mdp<DdType, ValueType> const& mdp, Partition<DdType, ValueType> const& initialStatePartition) : PartitionRefiner<DdType, ValueType>(mdp, initialStatePartition), choicePartition(Partition<DdType, ValueType>::createTrivialChoicePartition(mdp, initialStatePartition.getBlockVariables())), stateSignatureComputer(mdp.getQualitativeTransitionMatrix(), mdp.getColumnAndNondeterminismVariables(), SignatureMode::Qualitative, true), stateSignatureRefiner(mdp.getManager(), this->statePartition.getBlockVariable(), mdp.getRowVariables()) {
                 // Intentionally left empty.
-                
-                mdp.getTransitionMatrix().exportToDot("fulltrans.dot");
             }
             
             template<storm::dd::DdType DdType, typename ValueType>

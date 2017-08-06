@@ -1,5 +1,7 @@
 #include "storm/storage/dd/bisimulation/PartitionRefiner.h"
 
+#include "storm/models/symbolic/StandardRewardModel.h"
+
 namespace storm {
     namespace dd {
         namespace bisimulation {
