@@ -611,7 +611,7 @@ namespace storm {
                 summationVariables &= ddVariable;
             }
             
-            return InternalAdd<DdType::Sylvan, ValueType>(ddManager, this->sylvanMtbdd.AndExists(otherMatrix.getSylvanBdd().GetBDD(), summationVariables.getSylvanBdd()));
+            return InternalAdd<DdType::Sylvan, ValueType>(ddManager, this->sylvanMtbdd.AndExists(sylvan::Bdd(otherMatrix.getSylvanBdd().GetBDD()), summationVariables.getSylvanBdd()));
         }
 
 #ifdef STORM_HAVE_CARL
@@ -622,7 +622,7 @@ namespace storm {
                 summationVariables &= ddVariable;
             }
             
-            return InternalAdd<DdType::Sylvan, storm::RationalFunction>(ddManager, this->sylvanMtbdd.AndExistsRF(otherMatrix.getSylvanBdd().GetBDD(), summationVariables.getSylvanBdd()));
+            return InternalAdd<DdType::Sylvan, storm::RationalFunction>(ddManager, this->sylvanMtbdd.AndExistsRF(sylvan::Bdd(otherMatrix.getSylvanBdd().GetBDD()), summationVariables.getSylvanBdd()));
         }
 #endif
 
@@ -633,7 +633,7 @@ namespace storm {
                 summationVariables &= ddVariable;
             }
             
-            return InternalAdd<DdType::Sylvan, storm::RationalNumber>(ddManager, this->sylvanMtbdd.AndExistsRN(otherMatrix.getSylvanBdd().GetBDD(), summationVariables.getSylvanBdd()));
+            return InternalAdd<DdType::Sylvan, storm::RationalNumber>(ddManager, this->sylvanMtbdd.AndExistsRN(sylvan::Bdd(otherMatrix.getSylvanBdd().GetBDD()), summationVariables.getSylvanBdd()));
         }
 
         template<typename ValueType>
