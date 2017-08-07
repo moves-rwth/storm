@@ -1,5 +1,10 @@
 #include "storm/cli/cli.h"
 
+#include <chrono>
+#include <ctime>
+#include <sstream>
+#include <iomanip>
+
 #include "storm/storage/SymbolicModelDescription.h"
 
 #include "storm/models/ModelBase.h"
@@ -82,6 +87,14 @@ namespace storm {
             return 0;
         }
         
+        std::string currentTimeAndDate() {
+            auto now = std::chrono::system_clock::now();
+            auto in_time_t = std::chrono::system_clock::to_time_t(now);
+            
+            std::stringstream ss;
+            ss << std::put_time(std::localtime(&in_time_t), "%d/%m/%Y %X");
+            return ss.str();
+        }
         
         void printHeader(std::string const& name, const int argc, const char* argv[]) {
             STORM_PRINT(name << " " << storm::utility::StormVersion::shortVersionString() << std::endl << std::endl);
@@ -96,7 +109,8 @@ namespace storm {
             
             if (!command.empty()) {
                 STORM_PRINT("Command line arguments: " << commandStream.str() << std::endl);
-                STORM_PRINT("Current working directory: " << storm::utility::cli::getCurrentWorkingDirectory() << std::endl << std::endl);
+                STORM_PRINT("Current working directory: " << storm::utility::cli::getCurrentWorkingDirectory() << std::endl);
+                STORM_PRINT("Current date/time: " << currentTimeAndDate() << std::endl << std::endl);
             }
         }
         
