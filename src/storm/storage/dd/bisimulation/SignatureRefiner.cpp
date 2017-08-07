@@ -405,7 +405,9 @@ namespace storm {
                         }
                         
                         BDD thenResult = refine(partitionThen, signatureThen, offset == 0 ? sylvan_high(nondeterminismVariablesNode) : nondeterminismVariablesNode, sylvan_high(nonBlockVariablesNode));
+                        bdd_refs_push(thenResult);
                         BDD elseResult = refine(partitionElse, signatureElse, offset == 0 ? sylvan_high(nondeterminismVariablesNode) : nondeterminismVariablesNode, sylvan_high(nonBlockVariablesNode));
+                        bdd_refs_push(elseResult);
                         
                         BDD result;
                         if (thenResult == elseResult) {
@@ -414,6 +416,9 @@ namespace storm {
                             // Get the node to connect the subresults.
                             result = sylvan_makenode(sylvan_var(nonBlockVariablesNode) + offset, elseResult, thenResult);
                         }
+                        
+                        // Dispose of the intermediate results.
+                        bdd_refs_pop(2);
                         
                         // Store the result in the cache.
                         signatureCache[nodePair] = result;
