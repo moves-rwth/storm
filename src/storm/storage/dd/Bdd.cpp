@@ -141,19 +141,19 @@ namespace storm {
         template<DdType LibraryType>
         Bdd<LibraryType> Bdd<LibraryType>::existsAbstract(std::set<storm::expressions::Variable> const& metaVariables) const {
             Bdd<LibraryType> cube = getCube(this->getDdManager(), metaVariables);
-            return Bdd<LibraryType>(this->getDdManager(), internalBdd.existsAbstract(cube), Dd<LibraryType>::subtractMetaVariables(*this, cube));
+            return Bdd<LibraryType>(this->getDdManager(), internalBdd.existsAbstract(cube.getInternalBdd()), Dd<LibraryType>::subtractMetaVariables(*this, cube));
         }
         
         template<DdType LibraryType>
         Bdd<LibraryType> Bdd<LibraryType>::existsAbstractRepresentative(std::set<storm::expressions::Variable> const& metaVariables) const {
             Bdd<LibraryType> cube = getCube(this->getDdManager(), metaVariables);
-            return Bdd<LibraryType>(this->getDdManager(), internalBdd.existsAbstractRepresentative(cube), this->getContainedMetaVariables());
+            return Bdd<LibraryType>(this->getDdManager(), internalBdd.existsAbstractRepresentative(cube.getInternalBdd()), this->getContainedMetaVariables());
         }
 
         template<DdType LibraryType>
         Bdd<LibraryType> Bdd<LibraryType>::universalAbstract(std::set<storm::expressions::Variable> const& metaVariables) const {
             Bdd<LibraryType> cube = getCube(this->getDdManager(), metaVariables);
-            return Bdd<LibraryType>(this->getDdManager(), internalBdd.universalAbstract(cube), Dd<LibraryType>::subtractMetaVariables(*this, cube));
+            return Bdd<LibraryType>(this->getDdManager(), internalBdd.universalAbstract(cube.getInternalBdd()), Dd<LibraryType>::subtractMetaVariables(*this, cube));
         }
         
         template<DdType LibraryType>
@@ -165,17 +165,17 @@ namespace storm {
             std::set<storm::expressions::Variable> containedMetaVariables;
             std::set_difference(unionOfMetaVariables.begin(), unionOfMetaVariables.end(), existentialVariables.begin(), existentialVariables.end(), std::inserter(containedMetaVariables, containedMetaVariables.begin()));
             
-            return Bdd<LibraryType>(this->getDdManager(), internalBdd.andExists(other, cube), containedMetaVariables);
+            return Bdd<LibraryType>(this->getDdManager(), internalBdd.andExists(other.getInternalBdd(), cube.getInternalBdd()), containedMetaVariables);
         }
         
         template<DdType LibraryType>
         Bdd<LibraryType> Bdd<LibraryType>::constrain(Bdd<LibraryType> const& constraint) const {
-            return Bdd<LibraryType>(this->getDdManager(), internalBdd.constrain(constraint), Dd<LibraryType>::joinMetaVariables(*this, constraint));
+            return Bdd<LibraryType>(this->getDdManager(), internalBdd.constrain(constraint.getInternalBdd()), Dd<LibraryType>::joinMetaVariables(*this, constraint));
         }
         
         template<DdType LibraryType>
         Bdd<LibraryType> Bdd<LibraryType>::restrict(Bdd<LibraryType> const& constraint) const {
-            return Bdd<LibraryType>(this->getDdManager(), internalBdd.restrict(constraint), Dd<LibraryType>::joinMetaVariables(*this, constraint));
+            return Bdd<LibraryType>(this->getDdManager(), internalBdd.restrict(constraint.getInternalBdd()), Dd<LibraryType>::joinMetaVariables(*this, constraint));
         }
         
         template<DdType LibraryType>
@@ -187,7 +187,7 @@ namespace storm {
             for (auto const& metaVariable : rowMetaVariables) {
                 DdMetaVariable<LibraryType> const& variable = this->getDdManager().getMetaVariable(metaVariable);
                 for (auto const& ddVariable : variable.getDdVariables()) {
-                    rowVariables.push_back(ddVariable);
+                    rowVariables.push_back(ddVariable.getInternalBdd());
                 }
             }
             
@@ -195,11 +195,11 @@ namespace storm {
             for (auto const& metaVariable : columnMetaVariables) {
                 DdMetaVariable<LibraryType> const& variable = this->getDdManager().getMetaVariable(metaVariable);
                 for (auto const& ddVariable : variable.getDdVariables()) {
-                    columnVariables.push_back(ddVariable);
+                    columnVariables.push_back(ddVariable.getInternalBdd());
                 }
             }
             
-            return Bdd<LibraryType>(this->getDdManager(), internalBdd.relationalProduct(relation, rowVariables, columnVariables), newMetaVariables);
+            return Bdd<LibraryType>(this->getDdManager(), internalBdd.relationalProduct(relation.getInternalBdd(), rowVariables, columnVariables), newMetaVariables);
         }
         
         template<DdType LibraryType>
@@ -211,7 +211,7 @@ namespace storm {
             for (auto const& metaVariable : rowMetaVariables) {
                 DdMetaVariable<LibraryType> const& variable = this->getDdManager().getMetaVariable(metaVariable);
                 for (auto const& ddVariable : variable.getDdVariables()) {
-                    rowVariables.push_back(ddVariable);
+                    rowVariables.push_back(ddVariable.getInternalBdd());
                 }
             }
             
@@ -219,11 +219,11 @@ namespace storm {
             for (auto const& metaVariable : columnMetaVariables) {
                 DdMetaVariable<LibraryType> const& variable = this->getDdManager().getMetaVariable(metaVariable);
                 for (auto const& ddVariable : variable.getDdVariables()) {
-                    columnVariables.push_back(ddVariable);
+                    columnVariables.push_back(ddVariable.getInternalBdd());
                 }
             }
             
-            return Bdd<LibraryType>(this->getDdManager(), internalBdd.inverseRelationalProduct(relation, rowVariables, columnVariables), newMetaVariables);
+            return Bdd<LibraryType>(this->getDdManager(), internalBdd.inverseRelationalProduct(relation.getInternalBdd(), rowVariables, columnVariables), newMetaVariables);
         }
         
         template<DdType LibraryType>
@@ -235,7 +235,7 @@ namespace storm {
             for (auto const& metaVariable : rowMetaVariables) {
                 DdMetaVariable<LibraryType> const& variable = this->getDdManager().getMetaVariable(metaVariable);
                 for (auto const& ddVariable : variable.getDdVariables()) {
-                    rowVariables.push_back(ddVariable);
+                    rowVariables.push_back(ddVariable.getInternalBdd());
                 }
             }
             
@@ -243,11 +243,11 @@ namespace storm {
             for (auto const& metaVariable : columnMetaVariables) {
                 DdMetaVariable<LibraryType> const& variable = this->getDdManager().getMetaVariable(metaVariable);
                 for (auto const& ddVariable : variable.getDdVariables()) {
-                    columnVariables.push_back(ddVariable);
+                    columnVariables.push_back(ddVariable.getInternalBdd());
                 }
             }
             
-            return Bdd<LibraryType>(this->getDdManager(), internalBdd.inverseRelationalProductWithExtendedRelation(relation, rowVariables, columnVariables), newMetaVariables);
+            return Bdd<LibraryType>(this->getDdManager(), internalBdd.inverseRelationalProductWithExtendedRelation(relation.getInternalBdd(), rowVariables, columnVariables), newMetaVariables);
         }
         
         template<DdType LibraryType>
@@ -278,10 +278,10 @@ namespace storm {
                 }
                 
                 for (auto const& ddVariable : variable1.getDdVariables()) {
-                    from.push_back(ddVariable);
+                    from.emplace_back(ddVariable.getInternalBdd());
                 }
                 for (auto const& ddVariable : variable2.getDdVariables()) {
-                    to.push_back(ddVariable);
+                    to.emplace_back(ddVariable.getInternalBdd());
                 }
             }
             
@@ -301,14 +301,14 @@ namespace storm {
                 STORM_LOG_THROW(this->containsMetaVariable(metaVariable), storm::exceptions::InvalidOperationException, "Cannot rename variable '" << metaVariable.getName() << "' that is not present.");
                 DdMetaVariable<LibraryType> const& ddMetaVariable = this->getDdManager().getMetaVariable(metaVariable);
                 for (auto const& ddVariable : ddMetaVariable.getDdVariables()) {
-                    fromBdds.push_back(ddVariable);
+                    fromBdds.push_back(ddVariable.getInternalBdd());
                 }
             }
             for (auto const& metaVariable : to) {
                 STORM_LOG_THROW(!this->containsMetaVariable(metaVariable), storm::exceptions::InvalidOperationException, "Cannot rename to variable '" << metaVariable.getName() << "' that is already present.");
                 DdMetaVariable<LibraryType> const& ddMetaVariable = this->getDdManager().getMetaVariable(metaVariable);
                 for (auto const& ddVariable : ddMetaVariable.getDdVariables()) {
-                    toBdds.push_back(ddVariable);
+                    toBdds.push_back(ddVariable.getInternalBdd());
                 }
             }
             
@@ -416,11 +416,6 @@ namespace storm {
             storm::storage::BitVector result(this->getNonZeroCount());
             internalBdd.filterExplicitVector(odd, this->getSortedVariableIndices(), values, result);
             return result;
-        }
-        
-        template<DdType LibraryType>
-        Bdd<LibraryType>::operator InternalBdd<LibraryType>() const {
-            return internalBdd;
         }
         
         template class Bdd<DdType::CUDD>;

@@ -384,11 +384,6 @@ namespace storm {
             friend struct FromVectorHelper;
             
         private:
-            /*!
-             * We provide a conversion operator from the BDD to its internal type to ease calling the internal functions.
-             */
-            operator InternalBdd<LibraryType>() const;
-            
             // The internal BDD that depends on the chosen library.
             InternalBdd<LibraryType> internalBdd;
         };
