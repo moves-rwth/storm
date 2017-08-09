@@ -8,8 +8,7 @@ Benchmarks
 ----------------------------
 
 Example input files for Storm can be obtained from  
-https://github.com/moves-rwth/storm-examples.  
-Running `make example-files` automatically obtains these files.
+https://github.com/moves-rwth/storm-examples.
 
 Further examples and benchmarks can be found in the following repositories:
 
