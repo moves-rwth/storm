@@ -526,8 +526,12 @@ namespace storm {
                 InternalSparseQuotientExtractor<DdType, ValueType> sparseExtractor(model.getManager(), model.getRowVariables(), model.getNondeterminismVariables());
                 auto states = partition.getStates().swapVariables(model.getRowColumnMetaVariablePairs());
                 
+                auto start = std::chrono::high_resolution_clock::now();
                 storm::storage::SparseMatrix<ValueType> quotientTransitionMatrix = sparseExtractor.extractTransitionMatrix(model.getTransitionMatrix(), partition);
+                auto end = std::chrono::high_resolution_clock::now();
+                STORM_LOG_TRACE("Quotient transition matrix extracted in " << std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count() << "ms.");
                 
+                start = std::chrono::high_resolution_clock::now();
                 storm::models::sparse::StateLabeling quotientStateLabeling(partition.getNumberOfBlocks());
                 quotientStateLabeling.addLabel("init", sparseExtractor.extractStates(model.getInitialStates(), partition));
                 quotientStateLabeling.addLabel("deadlock", sparseExtractor.extractStates(model.getDeadlockStates(), partition));
@@ -546,6 +550,8 @@ namespace storm {
                         quotientStateLabeling.addLabel(stream.str(), sparseExtractor.extractStates(model.getStates(expression), partition));
                     }
                 }
+                end = std::chrono::high_resolution_clock::now();
+                STORM_LOG_TRACE("Quotient labels extracted in " << std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count() << "ms.");
 
                 std::shared_ptr<storm::models::sparse::Model<ValueType>> result;
                 if (model.getType() == storm::models::ModelType::Dtmc) {

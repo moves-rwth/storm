@@ -12,7 +12,6 @@ TASK_IMPL_3(BDD, sylvan_existsRepresentative, BDD, a, BDD, variables, BDDVAR, pr
 	if (aRegular == sylvan_false) {
 		if (aIsNegated) {
 			if (sylvan_set_isempty(variables)) {
-				//printf("return in preprocessing...2\n");
 				return sylvan_true;
 			} else {
 				//printf("return in preprocessing...3\n");
@@ -35,18 +34,22 @@ TASK_IMPL_3(BDD, sylvan_existsRepresentative, BDD, a, BDD, variables, BDDVAR, pr
 			return a;
 		}
 	} else if (sylvan_set_isempty(variables)) {
-		//printf("return in preprocessing...4\n");
 		return a;
 	}
+    
+    BDD result;
+    if (cache_get3(CACHE_MTBDD_ABSTRACT_REPRESENTATIVE, a, variables, (size_t)2, &result)) {
+        sylvan_stats_count(MTBDD_ABSTRACT_CACHED);
+        return result;
+    }
+    
 	/* From now on, f and cube are non-constant. */
 	bddnode_t na = MTBDD_GETNODE(a);
     BDDVAR level = bddnode_getvariable(na);
 
     bddnode_t nv = MTBDD_GETNODE(variables);
     BDDVAR vv = bddnode_getvariable(nv);
-
-	//printf("a level %i and cube level %i\n", level, vv);
-
+    
 	/* Abstract a variable that does not appear in f. */
     if (level > vv) {
 		BDD _v = sylvan_set_next(variables);
@@ -64,7 +67,6 @@ TASK_IMPL_3(BDD, sylvan_existsRepresentative, BDD, a, BDD, variables, BDDVAR, pr
         }
         sylvan_deref(res);
 
-		//printf("return after abstr. var that does not appear in f...\n");
        	return res1;
     }
 
@@ -128,13 +130,14 @@ TASK_IMPL_3(BDD, sylvan_existsRepresentative, BDD, a, BDD, variables, BDDVAR, pr
             return sylvan_invalid;
         }
 
-        // cuddCacheInsert2(manager, Cudd_bddExistAbstractRepresentative, f, cube, res);
-		// TODO: CACHING HERE
+        /* Store in cache */
+        if (cache_put3(CACHE_MTBDD_ABSTRACT_REPRESENTATIVE, a, variables, (size_t)2, res)) {
+            sylvan_stats_count(MTBDD_ABSTRACT_CACHEDPUT);
+        }
 		
 		sylvan_deref(res1Inf);
 		sylvan_deref(res2Inf);
 		
-		//printf("return properly computed result...\n");
         return res;
     } else { /* if (level == vv) */
         BDD res1 = CALL(sylvan_existsRepresentative, aLow, variables, level);
@@ -162,7 +165,11 @@ TASK_IMPL_3(BDD, sylvan_existsRepresentative, BDD, a, BDD, variables, BDDVAR, pr
 		sylvan_deref(res1);
 		sylvan_deref(res2);
 		
-		//printf("return of last case...\n");
+        /* Store in cache */
+        if (cache_put3(CACHE_MTBDD_ABSTRACT_REPRESENTATIVE, a, variables, (size_t)2, res)) {
+            sylvan_stats_count(MTBDD_ABSTRACT_CACHEDPUT);
+        }
+        
         return res;
     }
 	

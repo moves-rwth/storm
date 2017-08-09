@@ -616,11 +616,18 @@ TASK_IMPL_3(BDD, mtbdd_min_abstract_representative, MTBDD, a, BDD, v, BDDVAR, pr
 		return res1;
     }
 	
+    /* Check cache */
+    MTBDD result;
+    if (cache_get3(CACHE_MTBDD_ABSTRACT_REPRESENTATIVE, a, v, (size_t)1, &result)) {
+        sylvan_stats_count(MTBDD_ABSTRACT_CACHED);
+        return result;
+    }
+    
 	mtbddnode_t na = MTBDD_GETNODE(a);
 	uint32_t va = mtbddnode_getvariable(na);
 	bddnode_t nv = MTBDD_GETNODE(v);
 	BDDVAR vv = bddnode_getvariable(nv);
-
+    
     /* Abstract a variable that does not appear in a. */
     if (va > vv) {
 		BDD _v = sylvan_set_next(v);
@@ -638,13 +645,6 @@ TASK_IMPL_3(BDD, mtbdd_min_abstract_representative, MTBDD, a, BDD, v, BDDVAR, pr
         }
         sylvan_deref(res);
        	return res1;
-    }
-    
-    /* Check cache */
-    MTBDD result;
-    if (cache_get3(CACHE_MTBDD_ABSTRACT_REPRESENTATIVE, a, v, (size_t)1, &result)) {
-        sylvan_stats_count(MTBDD_ABSTRACT_CACHED);
-        return result;
     }
     
     MTBDD E = mtbdd_getlow(a);
@@ -796,12 +796,19 @@ TASK_IMPL_3(BDD, mtbdd_max_abstract_representative, MTBDD, a, MTBDD, v, uint32_t
         
 		return res1;
     }
-	
+
+    /* Check cache */
+    MTBDD result;
+    if (cache_get3(CACHE_MTBDD_ABSTRACT_REPRESENTATIVE, a, v, (size_t)0, &result)) {
+        sylvan_stats_count(MTBDD_ABSTRACT_CACHED);
+        return result;
+    }
+
 	mtbddnode_t na = MTBDD_GETNODE(a);
 	uint32_t va = mtbddnode_getvariable(na);
 	bddnode_t nv = MTBDD_GETNODE(v);
 	BDDVAR vv = bddnode_getvariable(nv);
-
+    
     /* Abstract a variable that does not appear in a. */
     if (vv < va) {
 		BDD _v = sylvan_set_next(v);
@@ -819,13 +826,6 @@ TASK_IMPL_3(BDD, mtbdd_max_abstract_representative, MTBDD, a, MTBDD, v, uint32_t
         }
         sylvan_deref(res);
        	return res1;
-    }
-    
-    /* Check cache */
-    MTBDD result;
-    if (cache_get3(CACHE_MTBDD_ABSTRACT_REPRESENTATIVE, a, v, (size_t)0, &result)) {
-        sylvan_stats_count(MTBDD_ABSTRACT_CACHED);
-        return result;
     }
     
     MTBDD E = mtbdd_getlow(a);
