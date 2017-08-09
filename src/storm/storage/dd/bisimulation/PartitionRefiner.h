@@ -22,6 +22,8 @@ namespace storm {
             public:
                 PartitionRefiner(storm::models::symbolic::Model<DdType, ValueType> const& model, Partition<DdType, ValueType> const& initialStatePartition);
                 
+                virtual ~PartitionRefiner() = default;
+                
                 /*!
                  * Refines the partition. 
                  *

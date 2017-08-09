@@ -482,9 +482,6 @@ namespace storm {
             }
             
             template<storm::dd::DdType DdType, typename ValueType>
-            SignatureRefiner<DdType, ValueType>::~SignatureRefiner() = default;
-            
-            template<storm::dd::DdType DdType, typename ValueType>
             Partition<DdType, ValueType> SignatureRefiner<DdType, ValueType>::refine(Partition<DdType, ValueType> const& oldPartition, Signature<DdType, ValueType> const& signature) {
                 return internalRefiner->refine(oldPartition, signature);
             }
