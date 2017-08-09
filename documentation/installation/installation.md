@@ -54,19 +54,18 @@ Before proceeding with the following steps, make sure that you have set up all [
 
 ### Obtaining the source code
 
-The source code can be downloaded from [GitHub](https://github.com/moves-rwth/storm){:target="_blank"}. You can either clone the git repository
+The source code of the latest stable release can be downloaded from [GitHub](https://github.com/moves-rwth/storm/releases/latest){:target="_blank"}. You can either clone the git repository
 ```console
-$ git clone https://github.com/moves-rwth/storm.git
-$ git checkout tags/1.0.1
+$ git clone -b stable https://github.com/moves-rwth/storm.git
 ```
 or download a zip archive with the latest stable release:
 ```console
-$ wget https://github.com/moves-rwth/storm/archive/1.0.1.zip
-$ unzip 1.0.1.zip
+$ wget https://github.com/moves-rwth/storm/archive/stable.zip
+$ unzip stable.zip
 ```
 
 {:.alert .alert-info}
-If you want the most recent version of Storm rather than the stable version, you can omit the `git checkout tags/1.0.0` when cloning the repository or use the archive [https://github.com/moves-rwth/storm/archive/master.zip](https://github.com/moves-rwth/storm/archive/master.zip){:.alert-link}, respectively.
+If you want the most recent version of Storm rather than the stable version, you can replace the `-b stable` with `-b master` when cloning the repository or use the archive [https://github.com/moves-rwth/storm/archive/master.zip](https://github.com/moves-rwth/storm/archive/master.zip){:.alert-link}, respectively.
 
 In the following, we will use `STORM_DIR` to refer to the root directory of Storm. If you want, you can set an environment variable to ease the following steps via
 ```console
@@ -101,7 +100,7 @@ To compile all of Storm's binaries including all tests, enter
 $ make
 ```
 
-To only build the binaries (starting from version 1.1), enter
+To only build the binaries (available from version 1.1 on), enter
 
 ```console
 $ make binaries
