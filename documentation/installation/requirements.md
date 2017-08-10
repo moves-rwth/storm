@@ -9,7 +9,7 @@ categories: [Installation]
 {% include includes/toc.html %}
 
 
-Storm depends on several other tools. Partly, they are packed with storm. This page describes dependencies which are assumed to be present on the target system.
+Storm depends on several other tools. Partly, they are packed with Storm. This page describes dependencies which are assumed to be present on the target system.
 We both give a general list, as well as operating system specific hints how to install them.
 
 ## Dependencies
