@@ -7,6 +7,9 @@
 
 #include "storm/storage/dd/cudd/InternalCuddDdManager.h"
 
+#include "storm/storage/dd/cudd/utility.h"
+#include "storm/storage/dd/sylvan/utility.h"
+
 #include "storm/utility/macros.h"
 #include "storm/exceptions/InvalidSettingsException.h"
 #include "storm/exceptions/NotImplementedException.h"
@@ -24,33 +27,6 @@
 namespace storm {
     namespace dd {
         namespace bisimulation {
-            
-            struct CuddPointerPairHash {
-                std::size_t operator()(std::pair<DdNode const*, DdNode const*> const& pair) const {
-                    std::size_t seed = std::hash<DdNode const*>()(pair.first);
-                    spp::hash_combine(seed, pair.second);
-                    return seed;
-                }
-            };
-            
-            struct SylvanMTBDDPairHash {
-                std::size_t operator()(std::pair<MTBDD, MTBDD> const& pair) const {
-                    std::size_t seed = std::hash<MTBDD>()(pair.first);
-                    spp::hash_combine(seed, pair.second);
-                    return seed;
-                }
-            };
-            
-            struct SylvanMTBDDPairLess {
-                std::size_t operator()(std::pair<MTBDD, MTBDD> const& a, std::pair<MTBDD, MTBDD> const& b) const {
-                    if (a.first < b.first) {
-                        return true;
-                    } else if (a.first == b.first && a.second < b.second) {
-                        return true;
-                    }
-                    return false;
-                }
-            };
             
             template<storm::dd::DdType DdType, typename ValueType>
             class InternalSignatureRefiner;

@@ -1,5 +1,7 @@
 #include "storm/storage/dd/bisimulation/QuotientExtractor.h"
 
+#include <boost/container/flat_map.hpp>
+
 #include "storm/storage/dd/DdManager.h"
 
 #include "storm/models/symbolic/Dtmc.h"
@@ -12,6 +14,9 @@
 #include "storm/models/sparse/StandardRewardModel.h"
 
 #include "storm/storage/dd/bisimulation/PreservationInformation.h"
+
+#include "storm/storage/dd/cudd/utility.h"
+#include "storm/storage/dd/sylvan/utility.h"
 
 #include "storm/settings/SettingsManager.h"
 
@@ -53,21 +58,78 @@ namespace storm {
                         auto const& ddMetaVariable = manager.getMetaVariable(variable);
                         allSourceVariablesCube &= ddMetaVariable.getCube();
                         nondeterminismVariablesCube &= ddMetaVariable.getCube();
+                        
+                        std::vector<std::pair<uint64_t, uint64_t>> indicesAndLevels = ddMetaVariable.getIndicesAndLevels();
+                        nondeterminismVariablesIndicesAndLevels.insert(nondeterminismVariablesIndicesAndLevels.end(), indicesAndLevels.begin(), indicesAndLevels.end());
                     }
                     
                     // Sort the indices by their levels.
                     std::sort(sourceVariablesIndicesAndLevels.begin(), sourceVariablesIndicesAndLevels.end(), [] (std::pair<uint64_t, uint64_t> const& a, std::pair<uint64_t, uint64_t> const& b) { return a.second < b.second; } );
+                    std::sort(nondeterminismVariablesIndicesAndLevels.begin(), nondeterminismVariablesIndicesAndLevels.end(), [] (std::pair<uint64_t, uint64_t> const& a, std::pair<uint64_t, uint64_t> const& b) { return a.second < b.second; } );
                 }
 
             protected:
                 storm::storage::SparseMatrix<ValueType> createMatrixFromEntries(Partition<DdType, ValueType> const& partition) {
-                    for (auto& row : entries) {
-                        std::sort(row.begin(), row.end(), [] (storm::storage::MatrixEntry<uint_fast64_t, ValueType> const& a, storm::storage::MatrixEntry<uint_fast64_t, ValueType> const& b) { return a.getColumn() < b.getColumn(); } );
+                    if (!deterministicEntries.empty()) {
+                        return createMatrixFromDeterministicEntries(partition);
+                    } else {
+                        return createMatrixFromNondeterministicEntries(partition);
+                    }
+                }
+                
+                storm::storage::SparseMatrix<ValueType> createMatrixFromNondeterministicEntries(Partition<DdType, ValueType> const& partition) {
+                    bool nontrivialRowGrouping = false;
+                    uint64_t numberOfChoices = 0;
+                    for (auto& group : nondeterministicEntries) {
+                        for (auto& choice : group) {
+                            auto& row = choice.second;
+                            std::sort(row.begin(), row.end(),
+                                      [] (storm::storage::MatrixEntry<uint_fast64_t, ValueType> const& a, storm::storage::MatrixEntry<uint_fast64_t, ValueType> const& b) {
+                                          return a.getColumn() < b.getColumn();
+                                      });
+                            ++numberOfChoices;
+                        }
+                        nontrivialRowGrouping |= group.size() > 1;
+                    }
+                    
+                    storm::storage::SparseMatrixBuilder<ValueType> builder(numberOfChoices, partition.getNumberOfBlocks(), 0, false, nontrivialRowGrouping);
+                    uint64_t rowCounter = 0;
+                    for (auto& group : nondeterministicEntries) {
+                        for (auto& choice : group) {
+                            auto& row = choice.second;
+                            for (auto const& entry : row) {
+                                builder.addNextValue(rowCounter, entry.getColumn(), entry.getValue());
+                            }
+                        
+                            // Free storage for row.
+                            row.clear();
+                            row.shrink_to_fit();
+                        
+                            ++rowCounter;
+                        }
+                        
+                        group.clear();
+                        
+                        if (nontrivialRowGrouping) {
+                            builder.newRowGroup(rowCounter);
+                        }
+                    }
+                    nondeterministicEntries.clear();
+                    nondeterministicEntries.shrink_to_fit();
+                    return builder.build();
+                }
+
+                storm::storage::SparseMatrix<ValueType> createMatrixFromDeterministicEntries(Partition<DdType, ValueType> const& partition) {
+                    for (auto& row : deterministicEntries) {
+                        std::sort(row.begin(), row.end(),
+                                  [] (storm::storage::MatrixEntry<uint_fast64_t, ValueType> const& a, storm::storage::MatrixEntry<uint_fast64_t, ValueType> const& b) {
+                                      return a.getColumn() < b.getColumn();
+                                  });
                     }
                     
                     storm::storage::SparseMatrixBuilder<ValueType> builder(partition.getNumberOfBlocks(), partition.getNumberOfBlocks());
                     uint64_t rowCounter = 0;
-                    for (auto& row : entries) {
+                    for (auto& row : deterministicEntries) {
                         for (auto const& entry : row) {
                             builder.addNextValue(rowCounter, entry.getColumn(), entry.getValue());
                         }
@@ -79,15 +141,37 @@ namespace storm {
                         ++rowCounter;
                     }
                     
+                    deterministicEntries.clear();
+                    deterministicEntries.shrink_to_fit();
+                    
                     return builder.build();
                 }
                 
+                void addMatrixEntry(storm::storage::BitVector const& nondeterminismEncoding, uint64_t sourceBlockIndex, uint64_t targetBlockIndex, ValueType const& value) {
+                    if (nondeterminismVariablesIndicesAndLevels.empty()) {
+                        this->deterministicEntries[sourceBlockIndex].emplace_back(targetBlockIndex, value);
+                    } else {
+                        this->nondeterministicEntries[sourceBlockIndex][nondeterminismEncoding].emplace_back(targetBlockIndex, value);
+                    }
+                }
+                
+                void reserveMatrixEntries(uint64_t numberOfStates) {
+                    if (nondeterminismVariablesIndicesAndLevels.empty()) {
+                        this->deterministicEntries.resize(numberOfStates);
+                    } else {
+                        this->nondeterministicEntries.resize(numberOfStates);
+                    }
+                }
+
                 // The manager responsible for the DDs.
                 storm::dd::DdManager<DdType> const& manager;
                 
                 // The indices and levels of all state variables.
                 std::vector<std::pair<uint64_t, uint64_t>> sourceVariablesIndicesAndLevels;
-                
+
+                // The indices and levels of all state variables.
+                std::vector<std::pair<uint64_t, uint64_t>> nondeterminismVariablesIndicesAndLevels;
+
                 // Useful cubes needed in the translation.
                 storm::dd::Bdd<DdType> stateVariablesCube;
                 storm::dd::Bdd<DdType> allSourceVariablesCube;
@@ -96,8 +180,11 @@ namespace storm {
                 // A hash map that stores the unique source state representative for each source block index.
                 spp::sparse_hash_map<uint64_t, std::unique_ptr<storm::storage::BitVector>> uniqueSourceRepresentative;
 
-                // The entries of the matrix that is built.
-                std::vector<std::vector<storm::storage::MatrixEntry<uint_fast64_t, ValueType>>> entries;
+                // The entries of the matrix that is built if the model is deterministic (DTMC, CTMC).
+                std::vector<std::vector<storm::storage::MatrixEntry<uint_fast64_t, ValueType>>> deterministicEntries;
+
+                // The entries of the matrix that is built if the model is nondeterministic (MDP).
+                std::vector<boost::container::flat_map<storm::storage::BitVector, std::vector<storm::storage::MatrixEntry<uint_fast64_t, ValueType>>>> nondeterministicEntries;
             };
             
             template<typename ValueType>
@@ -111,11 +198,12 @@ namespace storm {
                     STORM_LOG_ASSERT(partition.storedAsAdd(), "Expected partition stored as ADD.");
                     
                     // Create the number of rows necessary for the matrix.
-                    this->entries.resize(partition.getNumberOfBlocks());
+                    this->reserveMatrixEntries(partition.getNumberOfBlocks());
                     STORM_LOG_TRACE("Partition has " << partition.getNumberOfStates() << " states in " << partition.getNumberOfBlocks() << " blocks.");
                     
-                    storm::storage::BitVector encoding(this->sourceVariablesIndicesAndLevels.size());
-                    extractTransitionMatrixRec(transitionMatrix.getInternalAdd().getCuddDdNode(), partition.asAdd().getInternalAdd().getCuddDdNode(), partition.asAdd().getInternalAdd().getCuddDdNode(), 0, encoding);
+                    storm::storage::BitVector stateEncoding(this->sourceVariablesIndicesAndLevels.size());
+                    storm::storage::BitVector nondeterminismEncoding(this->nondeterminismVariablesIndicesAndLevels.size());
+                    extractTransitionMatrixRec(transitionMatrix.getInternalAdd().getCuddDdNode(), partition.asAdd().getInternalAdd().getCuddDdNode(), partition.asAdd().getInternalAdd().getCuddDdNode(), 0, stateEncoding, nondeterminismEncoding);
                     
                     return this->createMatrixFromEntries(partition);
                 }
@@ -203,7 +291,7 @@ namespace storm {
                     }
                 }
                 
-                void extractTransitionMatrixRec(DdNode* transitionMatrixNode, DdNode* sourcePartitionNode, DdNode* targetPartitionNode, uint64_t currentIndex, storm::storage::BitVector& sourceState) {
+                void extractTransitionMatrixRec(DdNode* transitionMatrixNode, DdNode* sourcePartitionNode, DdNode* targetPartitionNode, uint64_t sourceStateEncodingIndex, storm::storage::BitVector& sourceStateEncoding, storm::storage::BitVector const& nondeterminismEncoding, uint64_t factor = 1) {
                     // For the empty DD, we do not need to add any entries. Note that the partition nodes cannot be zero
                     // as all states of the model have to be contained.
                     if (transitionMatrixNode == Cudd_ReadZero(ddman)) {
@@ -211,23 +299,22 @@ namespace storm {
                     }
 
                     // If we have moved through all source variables, we must have arrived at a target block encoding.
-                    if (currentIndex == sourceState.size()) {
+                    if (sourceStateEncodingIndex == sourceStateEncoding.size()) {
                         // Decode the source block.
                         uint64_t sourceBlockIndex = decodeBlockIndex(sourcePartitionNode);
                         
                         std::unique_ptr<storm::storage::BitVector>& sourceRepresentative = this->uniqueSourceRepresentative[sourceBlockIndex];
-                        if (sourceRepresentative && *sourceRepresentative != sourceState) {
+                        if (sourceRepresentative && *sourceRepresentative != sourceStateEncoding) {
                             // In this case, we have picked a different representative and must not record any entries now.
                             return;
                         }
                         
                         // Otherwise, we record the new representative.
-                        sourceRepresentative.reset(new storm::storage::BitVector(sourceState));
+                        sourceRepresentative.reset(new storm::storage::BitVector(sourceStateEncoding));
                         
-                        // Decode the target block.
+                        // Decode the target block and add entry to matrix.
                         uint64_t targetBlockIndex = decodeBlockIndex(targetPartitionNode);
-                        
-                        this->entries[sourceBlockIndex].emplace_back(targetBlockIndex, Cudd_V(transitionMatrixNode));
+                        this->addMatrixEntry(nondeterminismEncoding, sourceBlockIndex, targetBlockIndex, factor * Cudd_V(transitionMatrixNode));
                     } else {
                         // Determine the levels in the DDs.
                         uint64_t transitionMatrixVariable = Cudd_NodeReadIndex(transitionMatrixNode);
@@ -239,28 +326,27 @@ namespace storm {
                         DdNode* te = transitionMatrixNode;
                         DdNode* et = transitionMatrixNode;
                         DdNode* ee = transitionMatrixNode;
-                        STORM_LOG_ASSERT(transitionMatrixVariable >= this->sourceVariablesIndicesAndLevels[currentIndex].first, "Illegal top variable of transition matrix.");
-                        if (transitionMatrixVariable == this->sourceVariablesIndicesAndLevels[currentIndex].first) {
+                        STORM_LOG_ASSERT(transitionMatrixVariable >= this->sourceVariablesIndicesAndLevels[sourceStateEncodingIndex].first, "Illegal top variable of transition matrix.");
+                        if (transitionMatrixVariable == this->sourceVariablesIndicesAndLevels[sourceStateEncodingIndex].first) {
                             DdNode* t = Cudd_T(transitionMatrixNode);
-                            DdNode* e = Cudd_E(transitionMatrixNode);
-                            
                             uint64_t tVariable = Cudd_NodeReadIndex(t);
-                            if (tVariable == this->sourceVariablesIndicesAndLevels[currentIndex].first + 1) {
+                            if (tVariable == this->sourceVariablesIndicesAndLevels[sourceStateEncodingIndex].first + 1) {
                                 tt = Cudd_T(t);
                                 te = Cudd_E(t);
                             } else {
                                 tt = te = t;
                             }
                             
+                            DdNode* e = Cudd_E(transitionMatrixNode);
                             uint64_t eVariable = Cudd_NodeReadIndex(e);
-                            if (eVariable == this->sourceVariablesIndicesAndLevels[currentIndex].first + 1) {
+                            if (eVariable == this->sourceVariablesIndicesAndLevels[sourceStateEncodingIndex].first + 1) {
                                 et = Cudd_T(e);
                                 ee = Cudd_E(e);
                             } else {
                                 et = ee = e;
                             }
                         } else {
-                            if (transitionMatrixVariable == this->sourceVariablesIndicesAndLevels[currentIndex].first + 1) {
+                            if (transitionMatrixVariable == this->sourceVariablesIndicesAndLevels[sourceStateEncodingIndex].first + 1) {
                                 tt = et = Cudd_T(transitionMatrixNode);
                                 te = ee = Cudd_E(transitionMatrixNode);
                             } else {
@@ -269,34 +355,44 @@ namespace storm {
                         }
                         
                         // Move through partition (for source state).
+                        bool skippedInSourcePartition = false;
                         DdNode* sourceT;
                         DdNode* sourceE;
-                        STORM_LOG_ASSERT(sourcePartitionVariable >= this->sourceVariablesIndicesAndLevels[currentIndex].first, "Illegal top variable of source partition.");
-                        if (sourcePartitionVariable == this->sourceVariablesIndicesAndLevels[currentIndex].first) {
+                        STORM_LOG_ASSERT(sourcePartitionVariable >= this->sourceVariablesIndicesAndLevels[sourceStateEncodingIndex].first, "Illegal top variable of source partition.");
+                        if (sourcePartitionVariable == this->sourceVariablesIndicesAndLevels[sourceStateEncodingIndex].first) {
                             sourceT = Cudd_T(sourcePartitionNode);
                             sourceE = Cudd_E(sourcePartitionNode);
                         } else {
                             sourceT = sourceE = sourcePartitionNode;
+                            skippedInSourcePartition = true;
                         }
                         
                         // Move through partition (for target state).
+                        bool skippedInTargetPartition = false;
                         DdNode* targetT;
                         DdNode* targetE;
-                        STORM_LOG_ASSERT(targetPartitionVariable >= this->sourceVariablesIndicesAndLevels[currentIndex].first, "Illegal top variable of source partition.");
-                        if (targetPartitionVariable == this->sourceVariablesIndicesAndLevels[currentIndex].first) {
+                        STORM_LOG_ASSERT(targetPartitionVariable >= this->sourceVariablesIndicesAndLevels[sourceStateEncodingIndex].first, "Illegal top variable of source partition.");
+                        if (targetPartitionVariable == this->sourceVariablesIndicesAndLevels[sourceStateEncodingIndex].first) {
                             targetT = Cudd_T(targetPartitionNode);
                             targetE = Cudd_E(targetPartitionNode);
                         } else {
                             targetT = targetE = targetPartitionNode;
+                            skippedInTargetPartition = true;
                         }
                         
-                        sourceState.set(currentIndex, true);
-                        extractTransitionMatrixRec(tt, sourceT, targetT, currentIndex + 1, sourceState);
-                        extractTransitionMatrixRec(te, sourceT, targetE, currentIndex + 1, sourceState);
+                        // If we skipped the variable in the source partition, we only have to choose one of the two representatives.
+                        if (!skippedInSourcePartition) {
+                            sourceStateEncoding.set(sourceStateEncodingIndex, true);
+                            extractTransitionMatrixRec(tt, sourceT, targetT, sourceStateEncodingIndex + 1, sourceStateEncoding, nondeterminismEncoding, factor);
+                            extractTransitionMatrixRec(te, sourceT, targetE, sourceStateEncodingIndex + 1, sourceStateEncoding, nondeterminismEncoding, factor);
+                        }
                         
-                        sourceState.set(currentIndex, false);
-                        extractTransitionMatrixRec(et, sourceE, targetT, currentIndex + 1, sourceState);
-                        extractTransitionMatrixRec(ee, sourceE, targetE, currentIndex + 1, sourceState);
+                        sourceStateEncoding.set(sourceStateEncodingIndex, false);
+                        // If we skipped the variable in the target partition, just count the one representative twice.
+                        if (!skippedInTargetPartition) {
+                            extractTransitionMatrixRec(et, sourceE, targetT, sourceStateEncodingIndex + 1, sourceStateEncoding, nondeterminismEncoding, factor);
+                        }
+                        extractTransitionMatrixRec(ee, sourceE, targetE, sourceStateEncodingIndex + 1, sourceStateEncoding, nondeterminismEncoding, skippedInTargetPartition ? factor << 1 : factor);
                     }
                 }
 
@@ -316,10 +412,11 @@ namespace storm {
                     STORM_LOG_ASSERT(partition.storedAsBdd(), "Expected partition stored as BDD.");
                     
                     // Create the number of rows necessary for the matrix.
-                    this->entries.resize(partition.getNumberOfBlocks());
-                    
-                    storm::storage::BitVector encoding(this->sourceVariablesIndicesAndLevels.size());
-                    extractTransitionMatrixRec(transitionMatrix.getInternalAdd().getSylvanMtbdd().GetMTBDD(), partition.asBdd().getInternalBdd().getSylvanBdd().GetBDD(), partition.asBdd().getInternalBdd().getSylvanBdd().GetBDD(), 0, encoding);
+                    this->reserveMatrixEntries(partition.getNumberOfBlocks());
+
+                    storm::storage::BitVector stateEncoding(this->sourceVariablesIndicesAndLevels.size());
+                    storm::storage::BitVector nondeterminismEncoding;
+                    extractTransitionMatrixRec(transitionMatrix.getInternalAdd().getSylvanMtbdd().GetMTBDD(), partition.asBdd().getInternalBdd().getSylvanBdd().GetBDD(), partition.asBdd().getInternalBdd().getSylvanBdd().GetBDD(), 0, stateEncoding, nondeterminismEncoding);
                     
                     return this->createMatrixFromEntries(partition);
                 }
@@ -400,7 +497,7 @@ namespace storm {
                     }
                 }
                 
-                void extractTransitionMatrixRec(MTBDD transitionMatrixNode, BDD sourcePartitionNode, BDD targetPartitionNode, uint64_t currentIndex, storm::storage::BitVector& sourceState) {
+                void extractTransitionMatrixRec(MTBDD transitionMatrixNode, BDD sourcePartitionNode, BDD targetPartitionNode, uint64_t currentIndex, storm::storage::BitVector& sourceState, storm::storage::BitVector const& nondeterminismEncoding) {
                     // For the empty DD, we do not need to add any entries. Note that the partition nodes cannot be zero
                     // as all states of the model have to be contained.
                     if (mtbdd_iszero(transitionMatrixNode)) {
@@ -424,7 +521,7 @@ namespace storm {
                         // Decode the target block.
                         uint64_t targetBlockIndex = decodeBlockIndex(targetPartitionNode);
                         
-                        this->entries[sourceBlockIndex].emplace_back(targetBlockIndex, storm::dd::InternalAdd<storm::dd::DdType::Sylvan, ValueType>::getValue(transitionMatrixNode));
+                        this->addMatrixEntry(nondeterminismEncoding, sourceBlockIndex, targetBlockIndex, storm::dd::InternalAdd<storm::dd::DdType::Sylvan, ValueType>::getValue(transitionMatrixNode));
                     } else {
                         // Determine the levels in the DDs.
                         uint64_t transitionMatrixVariable = sylvan_isconst(transitionMatrixNode) ? 0xffffffff : sylvan_var(transitionMatrixNode);
@@ -485,12 +582,12 @@ namespace storm {
                         }
                         
                         sourceState.set(currentIndex, true);
-                        extractTransitionMatrixRec(tt, sourceT, targetT, currentIndex + 1, sourceState);
-                        extractTransitionMatrixRec(te, sourceT, targetE, currentIndex + 1, sourceState);
+                        extractTransitionMatrixRec(tt, sourceT, targetT, currentIndex + 1, sourceState, nondeterminismEncoding);
+                        extractTransitionMatrixRec(te, sourceT, targetE, currentIndex + 1, sourceState, nondeterminismEncoding);
                         
                         sourceState.set(currentIndex, false);
-                        extractTransitionMatrixRec(et, sourceE, targetT, currentIndex + 1, sourceState);
-                        extractTransitionMatrixRec(ee, sourceE, targetE, currentIndex + 1, sourceState);
+                        extractTransitionMatrixRec(et, sourceE, targetT, currentIndex + 1, sourceState, nondeterminismEncoding);
+                        extractTransitionMatrixRec(ee, sourceE, targetE, currentIndex + 1, sourceState, nondeterminismEncoding);
                     }
                 }
                 

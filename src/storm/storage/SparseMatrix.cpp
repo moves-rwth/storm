@@ -1601,7 +1601,9 @@ namespace storm {
         bool SparseMatrix<ValueType>::isProbabilistic() const {
             storm::utility::ConstantsComparator<ValueType> comparator;
             for (index_type row = 0; row < this->rowCount; ++row) {
-                if (!comparator.isOne(getRowSum(row))) {
+                auto rowSum = getRowSum(row);
+                if (!comparator.isOne(rowSum)) {
+                    std::cout << "row sum of row " << row << " is " << rowSum << std::endl;
                     return false;
                 }
             }
