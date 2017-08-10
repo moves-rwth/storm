@@ -12,10 +12,13 @@ This guide shows you the options you have to install Storm. For this, we are goi
 
 We currently provide two ways of installing Storm:
 
-- [Homebrew](#homebrew)
 - [from source](#building-storm-from-source)
+- via a package manager; we currently support the following package managers:
+    - [Homebrew](#homebrew)
+    - The [AUR](https://aur.archlinux.org/packages/stormchecker-git/), thanks to [Sascha Wunderlich](https://www.saschawunderlich.de/university/)!
 
-If you just want to run Storm and you want to run it natively on your machine, then we recommend installing it via [Homebrew](#homebrew). However, if you want or need to make changes to the Storm code base, you have to obtain the source code and [build it](#building-storm-from-source) yourself. While this is not always a breeze (depending on your operating system), we spent some effort on making this process as easy as possible.
+If you just want to run Storm and you want to run it natively on your machine, then we recommend installing it via a package manager. However, if you want or need to make changes to the Storm code base, you have to obtain the source code and [build it](#building-storm-from-source) yourself. While this is not always a breeze (depending on your operating system), we spent some effort on making this process as easy as possible.
+
 
 ## Homebrew
 

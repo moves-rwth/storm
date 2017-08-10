@@ -8,17 +8,9 @@ categories: [Installation]
 
 {% include includes/toc.html %}
 
-## Supported OS
 
-Currently, we provide support for
-
-- <i class="fa fa-apple" aria-hidden="true"></i> macOS 10.12 "Sierra"
-- <i class="icon-debian"></i> Debian 9 "Stretch"
-- <i class="icon-ubuntu"></i> Ubuntu 16.10 "Yakkety Yak"
-
-which are known to enable the easy installation of Storm. Other Linux distributions are likely to work too, but it may take significant effort to get the required versions of the dependencies up and running. For example, thanks to [Joachim Klein](http://www.inf.tu-dresden.de/index.php?node_id=1473){:target="_blank"}, there is a [script]({{ site.github.url }}/resources/scripts/installation/storm-build-debian-jessie.sh) that installs Storm and some crucial dependencies on Debian 8 "Jessie".
-
-In the following, we will detail all dependencies of Storm and how to install them on the supported platforms.
+Storm depends on several other tools. Partly, they are packed with storm. This page describes dependencies which are assumed to be present on the target system.
+We both give a general list, as well as operating system specific hints how to install them.
 
 ## Dependencies
 
@@ -52,9 +44,22 @@ Required:
 - hwloc
 
 Recommended:
-- Z3 (not strictly required, but already needed for standard tasks like PRISM/JANI model building)
+- [Z3](https://github.com/Z3Prover/z3) (not strictly required, but already needed for standard tasks like PRISM/JANI model building)
 - xercesc (installation prevents an expensive part of the build step)
 - [MathSAT](http://mathsat.fbk.eu/){:target="_blank"} (needed by the abstraction refinement engine, needs to be configured manually during the [configuration](manual-configuration.html#mathsat))
+
+
+## Supported Operating Systems
+
+Currently, we provide support for
+
+- <i class="fa fa-apple" aria-hidden="true"></i> macOS 10.12 "Sierra"
+- <i class="icon-debian"></i> Debian 9 "Stretch"
+- <i class="icon-ubuntu"></i> Ubuntu 16.10 "Yakkety Yak"
+
+which are known to enable the easy installation of Storm. Other Linux distributions are likely to work too, but it may take significant effort to get the required versions of the dependencies up and running. For example, thanks to [Joachim Klein](http://www.inf.tu-dresden.de/index.php?node_id=1473){:target="_blank"}, there is a [script]({{ site.github.url }}/resources/scripts/installation/storm-build-debian-jessie.sh) that installs Storm and some crucial dependencies on Debian 8 "Jessie".
+
+In the following, we will detail all dependencies of Storm and how to install them on the supported platforms.
 
 ## OS specific preparations
 
