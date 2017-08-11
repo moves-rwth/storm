@@ -3,7 +3,7 @@
 configs_linux = [
     # OS, compiler
     ("ubuntu-16.10", "gcc", "-6"),
-    ("debian-9", "gcc", "-6"),
+    #("debian-9", "gcc", "-6"),
 ]
 
 # Configurations for Mac

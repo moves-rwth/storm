@@ -89,33 +89,6 @@ jobs:
         - docker cp storm:/storm/. .
       after_failure:
         - find build -iname '*err*.log' -type f -print -exec cat {} \;
-    # debian-9
-    - stage: Build (1st run)
-      os: linux
-      compiler: gcc
-      env: CONFIG=DefaultDebug LINUX=debian-9 COMPILER=gcc-6
-      install:
-        - rm -rf build
-        - travis/install_linux.sh
-      script:
-        - travis/build.sh Build1
-      before_cache:
-        - docker cp storm:/storm/. .
-      after_failure:
-        - find build -iname '*err*.log' -type f -print -exec cat {} \;
-    - stage: Build (1st run)
-      os: linux
-      compiler: gcc
-      env: CONFIG=DefaultRelease LINUX=debian-9 COMPILER=gcc-6
-      install:
-        - rm -rf build
-        - travis/install_linux.sh
-      script:
-        - travis/build.sh Build1
-      before_cache:
-        - docker cp storm:/storm/. .
-      after_failure:
-        - find build -iname '*err*.log' -type f -print -exec cat {} \;
 
     ###
     # Stage: Build (2nd run)
@@ -159,31 +132,6 @@ jobs:
       os: linux
       compiler: gcc
       env: CONFIG=DefaultRelease LINUX=ubuntu-16.10 COMPILER=gcc-6
-      install:
-        - travis/install_linux.sh
-      script:
-        - travis/build.sh Build2
-      before_cache:
-        - docker cp storm:/storm/. .
-      after_failure:
-        - find build -iname '*err*.log' -type f -print -exec cat {} \;
-    # debian-9
-    - stage: Build (2nd run)
-      os: linux
-      compiler: gcc
-      env: CONFIG=DefaultDebug LINUX=debian-9 COMPILER=gcc-6
-      install:
-        - travis/install_linux.sh
-      script:
-        - travis/build.sh Build2
-      before_cache:
-        - docker cp storm:/storm/. .
-      after_failure:
-        - find build -iname '*err*.log' -type f -print -exec cat {} \;
-    - stage: Build (2nd run)
-      os: linux
-      compiler: gcc
-      env: CONFIG=DefaultRelease LINUX=debian-9 COMPILER=gcc-6
       install:
         - travis/install_linux.sh
       script:
@@ -243,31 +191,6 @@ jobs:
         - docker cp storm:/storm/. .
       after_failure:
         - find build -iname '*err*.log' -type f -print -exec cat {} \;
-    # debian-9
-    - stage: Build (3rd run)
-      os: linux
-      compiler: gcc
-      env: CONFIG=DefaultDebug LINUX=debian-9 COMPILER=gcc-6
-      install:
-        - travis/install_linux.sh
-      script:
-        - travis/build.sh Build3
-      before_cache:
-        - docker cp storm:/storm/. .
-      after_failure:
-        - find build -iname '*err*.log' -type f -print -exec cat {} \;
-    - stage: Build (3rd run)
-      os: linux
-      compiler: gcc
-      env: CONFIG=DefaultRelease LINUX=debian-9 COMPILER=gcc-6
-      install:
-        - travis/install_linux.sh
-      script:
-        - travis/build.sh Build3
-      before_cache:
-        - docker cp storm:/storm/. .
-      after_failure:
-        - find build -iname '*err*.log' -type f -print -exec cat {} \;
 
     ###
     # Stage: Build (4th run)
@@ -319,31 +242,6 @@ jobs:
         - docker cp storm:/storm/. .
       after_failure:
         - find build -iname '*err*.log' -type f -print -exec cat {} \;
-    # debian-9
-    - stage: Build (4th run)
-      os: linux
-      compiler: gcc
-      env: CONFIG=DefaultDebug LINUX=debian-9 COMPILER=gcc-6
-      install:
-        - travis/install_linux.sh
-      script:
-        - travis/build.sh Build4
-      before_cache:
-        - docker cp storm:/storm/. .
-      after_failure:
-        - find build -iname '*err*.log' -type f -print -exec cat {} \;
-    - stage: Build (4th run)
-      os: linux
-      compiler: gcc
-      env: CONFIG=DefaultRelease LINUX=debian-9 COMPILER=gcc-6
-      install:
-        - travis/install_linux.sh
-      script:
-        - travis/build.sh Build4
-      before_cache:
-        - docker cp storm:/storm/. .
-      after_failure:
-        - find build -iname '*err*.log' -type f -print -exec cat {} \;
 
     ###
     # Stage: Test all
@@ -387,31 +285,6 @@ jobs:
       os: linux
       compiler: gcc
       env: CONFIG=DefaultRelease LINUX=ubuntu-16.10 COMPILER=gcc-6
-      install:
-        - travis/install_linux.sh
-      script:
-        - travis/build.sh TestAll
-      before_cache:
-        - docker cp storm:/storm/. .
-      after_failure:
-        - find build -iname '*err*.log' -type f -print -exec cat {} \;
-    # debian-9
-    - stage: Test all
-      os: linux
-      compiler: gcc
-      env: CONFIG=DefaultDebug LINUX=debian-9 COMPILER=gcc-6
-      install:
-        - travis/install_linux.sh
-      script:
-        - travis/build.sh TestAll
-      before_cache:
-        - docker cp storm:/storm/. .
-      after_failure:
-        - find build -iname '*err*.log' -type f -print -exec cat {} \;
-    - stage: Test all
-      os: linux
-      compiler: gcc
-      env: CONFIG=DefaultRelease LINUX=debian-9 COMPILER=gcc-6
       install:
         - travis/install_linux.sh
       script:
