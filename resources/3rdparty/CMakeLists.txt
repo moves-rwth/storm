@@ -210,109 +210,107 @@ set(STORM_HAVE_CARL OFF)
 set(CARL_MINYEAR 17)
 set(CARL_MINMONTH 06)
 set(CARL_MINPATCH 0)
-if(USE_CARL)
-	if (NOT STORM_FORCE_SHIPPED_CARL)
-    	find_package(carl QUIET)
-	endif()
-    if(carl_FOUND AND NOT STORM_FORCE_SHIPPED_CARL)
-        get_target_property(carlLOCATION lib_carl LOCATION)
-        if(${carlLOCATION} STREQUAL "carlLOCATION-NOTFOUND")
-            message(SEND_ERROR "Library location for carl is not found, did you build carl?")
-        elseif(EXISTS ${carlLOCATION})
-            #empty on purpose
-        else()
-            message(SEND_ERROR "File ${carlLOCATION} does not exist, did you build carl?")
-        endif()
-        if(${carl_MINORYEARVERSION} LESS ${CARL_MINYEAR})
+if (NOT STORM_FORCE_SHIPPED_CARL)
+    if (NOT "${STORM_CARL_DIR_HINT}" STREQUAL "")
+		find_package(carl QUIET PATHS ${STORM_CARL_DIR_HINT} NO_DEFAULT_PATH)
+    endif()
+	if (NOT carl_FOUND)
+		find_package(carl QUIET)
+    endif()
+endif()
+if(carl_FOUND AND NOT STORM_FORCE_SHIPPED_CARL)
+    get_target_property(carlLOCATION lib_carl LOCATION)
+    if(${carlLOCATION} STREQUAL "carlLOCATION-NOTFOUND")
+        message(SEND_ERROR "Library location for carl is not found, did you build carl?")
+    elseif(EXISTS ${carlLOCATION})
+        #empty on purpose
+    else()
+        message(SEND_ERROR "File ${carlLOCATION} does not exist, did you build carl?")
+    endif()
+    if(${carl_MINORYEARVERSION} LESS ${CARL_MINYEAR})
+        message(SEND_ERROR "Carl outdated, require ${CARL_MINYEAR}.${CARL_MINMONTH}.${CARL_MINPATCH}, have ${carl_VERSION}")
+    elseif(${carl_MINORYEARVERSION} EQUAL ${CARL_MINYEAR})
+        if(${carl_MINORMONTHVERSION} LESS ${CARL_MINMONTH})
             message(SEND_ERROR "Carl outdated, require ${CARL_MINYEAR}.${CARL_MINMONTH}.${CARL_MINPATCH}, have ${carl_VERSION}")
-        elseif(${carl_MINORYEARVERSION} EQUAL ${CARL_MINYEAR})
-            if(${carl_MINORMONTHVERSION} LESS ${CARL_MINMONTH})
+         elseif(${carl_MINORMONTHVERSION} EQUAL ${CARL_MINMONTH})
+            if(${carl_MAINTENANCEVERSION} LESS ${CARL_MINPATCH})
                 message(SEND_ERROR "Carl outdated, require ${CARL_MINYEAR}.${CARL_MINMONTH}.${CARL_MINPATCH}, have ${carl_VERSION}")
-             elseif(${carl_MINORMONTHVERSION} EQUAL ${CARL_MINMONTH})
-                if(${carl_MAINTENANCEVERSION} LESS ${CARL_MINPATCH})
-                    message(SEND_ERROR "Carl outdated, require ${CARL_MINYEAR}.${CARL_MINMONTH}.${CARL_MINPATCH}, have ${carl_VERSION}")
-                endif()
             endif()
         endif()
+    endif()
 
-        set(STORM_SHIPPED_CARL OFF)
-        set(STORM_HAVE_CARL ON)
-        message(STATUS "Storm - Use system version of carl.")
-        message(STATUS "Storm - Linking with preinstalled carl ${carl_VERSION} (include: ${carl_INCLUDE_DIR}, library ${carl_LIBRARIES}, CARL_USE_CLN_NUMBERS: ${CARL_USE_CLN_NUMBERS}, CARL_USE_GINAC: ${CARL_USE_GINAC}).")
-        set(STORM_HAVE_CLN ${CARL_USE_CLN_NUMBERS})
-        set(STORM_HAVE_GINAC ${CARL_USE_GINAC})
-
-    else()
-		set(STORM_SHIPPED_CARL ON)
-		# The first external project will be built at *configure stage*
-		message("START CARL CONFIG PROCESS")
-		file(MAKE_DIRECTORY ${STORM_3RDPARTY_BINARY_DIR}/carl_download) 
-		execute_process(
-		COMMAND ${CMAKE_COMMAND} ${STORM_3RDPARTY_SOURCE_DIR}/carl "-DSTORM_3RDPARTY_BINARY_DIR=${STORM_3RDPARTY_BINARY_DIR}" "-DBoost_LIBRARY_DIRS=${Boost_LIBRARY_DIRS}" "-DBoost_INCLUDE_DIRS=${Boost_INCLUDE_DIRS}"
+    set(STORM_SHIPPED_CARL OFF)
+    set(STORM_HAVE_CARL ON)
+    message(STATUS "Storm - Use system version of carl.")
+    message(STATUS "Storm - Linking with preinstalled carl ${carl_VERSION} (include: ${carl_INCLUDE_DIR}, library ${carl_LIBRARIES}, CARL_USE_CLN_NUMBERS: ${CARL_USE_CLN_NUMBERS}, CARL_USE_GINAC: ${CARL_USE_GINAC}).")
+    set(STORM_HAVE_CLN ${CARL_USE_CLN_NUMBERS})
+    set(STORM_HAVE_GINAC ${CARL_USE_GINAC})
+else()
+	set(STORM_SHIPPED_CARL ON)
+	# The first external project will be built at *configure stage*
+	message("START CARL CONFIG PROCESS")
+	file(MAKE_DIRECTORY ${STORM_3RDPARTY_BINARY_DIR}/carl_download) 
+	execute_process(
+	COMMAND ${CMAKE_COMMAND} ${STORM_3RDPARTY_SOURCE_DIR}/carl "-DSTORM_3RDPARTY_BINARY_DIR=${STORM_3RDPARTY_BINARY_DIR}" "-DBoost_LIBRARY_DIRS=${Boost_LIBRARY_DIRS}" "-DBoost_INCLUDE_DIRS=${Boost_INCLUDE_DIRS}"
+	WORKING_DIRECTORY ${STORM_3RDPARTY_BINARY_DIR}/carl_download
+	OUTPUT_VARIABLE carlconfig_out
+	RESULT_VARIABLE carlconfig_result)
+								
+	if(NOT carlconfig_result)
+		message("${carlconfig_out}")
+	endif()
+	execute_process(
+		COMMAND ${CMAKE_COMMAND} --build . --target carl-config
 		WORKING_DIRECTORY ${STORM_3RDPARTY_BINARY_DIR}/carl_download
 		OUTPUT_VARIABLE carlconfig_out
-		RESULT_VARIABLE carlconfig_result)
-								
+		RESULT_VARIABLE carlconfig_result
+		)
 		if(NOT carlconfig_result)
-			message("${carlconfig_out}")
-		endif()
-		execute_process(
-			COMMAND ${CMAKE_COMMAND} --build . --target carl-config
-			WORKING_DIRECTORY ${STORM_3RDPARTY_BINARY_DIR}/carl_download
-			OUTPUT_VARIABLE carlconfig_out
-			RESULT_VARIABLE carlconfig_result
-			)
-			if(NOT carlconfig_result)
-			message("${carlconfig_out}")
-		endif()
-    	message("END CARL CONFIG PROCESS")
-    	
-        message(STATUS "Storm - Using shipped version of carl.")
-        ExternalProject_Add(
-                carl
-                SOURCE_DIR ${STORM_3RDPARTY_BINARY_DIR}/carl
-                CONFIGURE_COMMAND ""
-                BUILD_IN_SOURCE 1
-                BUILD_COMMAND make lib_carl
-                INSTALL_COMMAND make install
-                LOG_BUILD ON
-				LOG_INSTALL ON
-                BUILD_BYPRODUCTS ${STORM_3RDPARTY_BINARY_DIR}/carl/lib/libcarl${DYNAMIC_EXT}
-        )
-        include(${STORM_3RDPARTY_BINARY_DIR}/carl/carlConfig.cmake)
-
-        set(STORM_HAVE_CLN ${CARL_USE_CLN_NUMBERS})
-        set(STORM_HAVE_GINAC ${CARL_USE_GINAC})
-
-		add_dependencies(resources carl)
-        set(carl_INCLUDE_DIR "${STORM_3RDPARTY_BINARY_DIR}/carl/include/")
-		set(carl_LIBRARIES ${STORM_3RDPARTY_BINARY_DIR}/carl/lib/libcarl${DYNAMIC_EXT})
-        set(STORM_HAVE_CARL ON)
-
-        message(STATUS "Storm - Linking with shipped carl ${carl_VERSION} (include: ${carl_INCLUDE_DIR}, library ${carl_LIBRARIES}, CARL_USE_CLN_NUMBERS: ${CARL_USE_CLN_NUMBERS}, CARL_USE_GINAC: ${CARL_USE_GINAC}).")
-
-        
-        # install the carl dynamic library if we build it
-        install(FILES ${STORM_3RDPARTY_BINARY_DIR}/carl/lib/libcarl.${carl_VERSION}${DYNAMIC_EXT} DESTINATION lib)
-    endif()
-
-    if(STORM_USE_CLN_RF AND NOT STORM_HAVE_CLN)
-		message(FATAL_ERROR "Cannot use CLN numbers if carl is build without.")
+		message("${carlconfig_out}")
 	endif()
-    if(STORM_USE_CLN_RF AND NOT STORM_HAVE_GINAC)
-        message(FATAL_ERROR "Cannot use CLN numbers if carl is build without ginac.")
-    endif()
+    message("END CARL CONFIG PROCESS")
+    	
+    message(STATUS "Storm - Using shipped version of carl.")
+    ExternalProject_Add(
+            carl
+            SOURCE_DIR ${STORM_3RDPARTY_BINARY_DIR}/carl
+            CONFIGURE_COMMAND ""
+            BUILD_IN_SOURCE 1
+            BUILD_COMMAND make lib_carl
+            INSTALL_COMMAND make install
+            LOG_BUILD ON
+			LOG_INSTALL ON
+            BUILD_BYPRODUCTS ${STORM_3RDPARTY_BINARY_DIR}/carl/lib/libcarl${DYNAMIC_EXT}
+    )
+    include(${STORM_3RDPARTY_BINARY_DIR}/carl/carlConfig.cmake)
 
+    set(STORM_HAVE_CLN ${CARL_USE_CLN_NUMBERS})
+    set(STORM_HAVE_GINAC ${CARL_USE_GINAC})
 
-    #The library that needs symbols must be first, then the library that resolves the symbol.
+	add_dependencies(resources carl)
+    set(carl_INCLUDE_DIR "${STORM_3RDPARTY_BINARY_DIR}/carl/include/")
+	set(carl_LIBRARIES ${STORM_3RDPARTY_BINARY_DIR}/carl/lib/libcarl${DYNAMIC_EXT})
+    set(STORM_HAVE_CARL ON)
 
-    list(APPEND STORM_DEP_IMP_TARGETS lib_carl)
-    if(STORM_USE_CLN_EA OR STORM_USE_CLN_RF)
-        list(APPEND STORM_DEP_IMP_TARGETS GINAC_SHARED CLN_SHARED)
-    endif()
-    list(APPEND STORM_DEP_IMP_TARGETS GMPXX_SHARED GMP_SHARED)
-
+    message(STATUS "Storm - Linking with shipped carl ${carl_VERSION} (include: ${carl_INCLUDE_DIR}, library ${carl_LIBRARIES}, CARL_USE_CLN_NUMBERS: ${CARL_USE_CLN_NUMBERS}, CARL_USE_GINAC: ${CARL_USE_GINAC}).")
+        
+    # install the carl dynamic library if we built it
+    install(FILES ${STORM_3RDPARTY_BINARY_DIR}/carl/lib/libcarl.${carl_VERSION}${DYNAMIC_EXT} DESTINATION lib)
 endif()
+
+if(STORM_USE_CLN_RF AND NOT STORM_HAVE_CLN)
+	message(FATAL_ERROR "Cannot use CLN numbers if carl is build without.")
+endif()
+if(STORM_USE_CLN_RF AND NOT STORM_HAVE_GINAC)
+    message(FATAL_ERROR "Cannot use CLN numbers if carl is build without ginac.")
+endif()
+
+# The library that needs symbols must be first, then the library that resolves the symbol.
+list(APPEND STORM_DEP_IMP_TARGETS lib_carl)
+if(STORM_USE_CLN_EA OR STORM_USE_CLN_RF)
+    list(APPEND STORM_DEP_IMP_TARGETS GINAC_SHARED CLN_SHARED)
+endif()
+list(APPEND STORM_DEP_IMP_TARGETS GMPXX_SHARED GMP_SHARED)
 
 
 #############################################################
