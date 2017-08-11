@@ -1,5 +1,5 @@
-Storm
-==============================
+Storm - A Modern Probabilistic Model Checker
+============================================
 [![Build Status](https://travis-ci.org/moves-rwth/storm.svg?branch=master)](https://travis-ci.org/moves-rwth/storm)
 
 For more instructions, check out the documentation found in [Getting Started](http://www.stormchecker.org/getting-started.html).
