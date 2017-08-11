@@ -39,6 +39,7 @@ if __name__ == "__main__":
     s += "branches:\n"
     s += "  only:\n"
     s += "  - master\n"
+    s += "  - stable\n"
     s += "dist: trusty\n"
     s += "language: cpp\n"
     s += "\n"
