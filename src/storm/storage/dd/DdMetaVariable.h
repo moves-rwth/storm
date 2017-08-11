@@ -16,7 +16,7 @@ namespace storm {
         class Add;
 
         // An enumeration for all legal types of meta variables.
-        enum class MetaVariableType { Bool, Int };
+        enum class MetaVariableType { Bool, Int, BitVector };
         
         // Declare DdMetaVariable class so we can then specialize it for the different DD types.
         template<DdType LibraryType>
@@ -53,12 +53,27 @@ namespace storm {
             int_fast64_t getLow() const;
             
             /*!
+             * Retrieves whether the variable has an upper bound.
+             *
+             * @return True iff the variable has an upper bound.
+             */
+            bool hasHigh() const;
+            
+            /*!
              * Retrieves the highest value of the range of the variable.
              *
              * @return The highest value of the range of the variable.
              */
             int_fast64_t getHigh() const;
 
+            /*!
+             * Retrieves whether the meta variable can represent the given value.
+             *
+             * @param value The value to check for legality.
+             * @return True iff the value is legal.
+             */
+            bool canRepresent(int_fast64_t value) const;
+            
             /*!
              * Retrieves the number of DD variables for this meta variable.
              *
@@ -99,14 +114,15 @@ namespace storm {
              * @param manager A pointer to the manager that is responsible for this meta variable.
              */
             DdMetaVariable(std::string const& name, int_fast64_t low, int_fast64_t high, std::vector<Bdd<LibraryType>> const& ddVariables);
-            
+
             /*!
              * Creates a boolean meta variable with the given name.
+             * @param type The type of the meta variable.
              * @param name The name of the meta variable.
              * @param ddVariables The vector of variables used to encode this variable.
              * @param manager A pointer to the manager that is responsible for this meta variable.
              */
-            DdMetaVariable(std::string const& name, std::vector<Bdd<LibraryType>> const& ddVariables);
+            DdMetaVariable(MetaVariableType const& type, std::string const& name, std::vector<Bdd<LibraryType>> const& ddVariables);
             
             /*!
              * Retrieves the variables used to encode the meta variable.
@@ -130,7 +146,7 @@ namespace storm {
             int_fast64_t low;
             
             // The highest value of the range of the variable.
-            int_fast64_t high;
+            boost::optional<int_fast64_t> high;
             
             // The vector of variables that are used to encode the meta variable.
             std::vector<Bdd<LibraryType>> ddVariables;

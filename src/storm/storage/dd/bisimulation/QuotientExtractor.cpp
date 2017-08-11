@@ -291,7 +291,7 @@ namespace storm {
                     }
                 }
                 
-                void extractTransitionMatrixRec(DdNode* transitionMatrixNode, DdNode* sourcePartitionNode, DdNode* targetPartitionNode, uint64_t sourceStateEncodingIndex, storm::storage::BitVector& sourceStateEncoding, storm::storage::BitVector const& nondeterminismEncoding, uint64_t factor = 1) {
+                void extractTransitionMatrixRec(DdNode* transitionMatrixNode, DdNode* sourcePartitionNode, DdNode* targetPartitionNode, uint64_t sourceStateEncodingIndex, storm::storage::BitVector& sourceStateEncoding, storm::storage::BitVector const& nondeterminismEncoding, ValueType factor = 1) {
                     // For the empty DD, we do not need to add any entries. Note that the partition nodes cannot be zero
                     // as all states of the model have to be contained.
                     if (transitionMatrixNode == Cudd_ReadZero(ddman)) {
@@ -392,7 +392,7 @@ namespace storm {
                         if (!skippedInTargetPartition) {
                             extractTransitionMatrixRec(et, sourceE, targetT, sourceStateEncodingIndex + 1, sourceStateEncoding, nondeterminismEncoding, factor);
                         }
-                        extractTransitionMatrixRec(ee, sourceE, targetE, sourceStateEncodingIndex + 1, sourceStateEncoding, nondeterminismEncoding, skippedInTargetPartition ? factor << 1 : factor);
+                        extractTransitionMatrixRec(ee, sourceE, targetE, sourceStateEncodingIndex + 1, sourceStateEncoding, nondeterminismEncoding, skippedInTargetPartition ? 2 * factor : factor);
                     }
                 }
 

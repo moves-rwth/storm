@@ -10,7 +10,16 @@ namespace storm {
         }
         
         template<DdType LibraryType>
-        DdMetaVariable<LibraryType>::DdMetaVariable(std::string const& name, std::vector<Bdd<LibraryType>> const& ddVariables) : name(name), type(MetaVariableType::Bool), low(0), high(1), ddVariables(ddVariables) {
+        DdMetaVariable<LibraryType>::DdMetaVariable(MetaVariableType const& type, std::string const& name, std::vector<Bdd<LibraryType>> const& ddVariables) : name(name), type(type), low(0), ddVariables(ddVariables) {
+            STORM_LOG_ASSERT(type == MetaVariableType::Bool || type == MetaVariableType::BitVector, "Cannot create this type of meta variable in this constructor.");
+            if (ddVariables.size() < 63) {
+                this->high = (1ull << ddVariables.size()) - 1;
+            }
+            
+            // Correct type in the case of boolean variables.
+            if (ddVariables.size() == 1) {
+                this->type = MetaVariableType::Bool;
+            }
             this->createCube();
         }
         
@@ -31,7 +40,21 @@ namespace storm {
         
         template<DdType LibraryType>
         int_fast64_t DdMetaVariable<LibraryType>::getHigh() const {
-            return this->high;
+            return this->high.get();
+        }
+        
+        template<DdType LibraryType>
+        bool DdMetaVariable<LibraryType>::hasHigh() const {
+            return static_cast<bool>(this->high);
+        }
+        
+        template<DdType LibraryType>
+        bool DdMetaVariable<LibraryType>::canRepresent(int_fast64_t value) const {
+            bool result = value >= this->low;
+            if (result && high) {
+                return value <= this->high;
+            }
+            return false;
         }
         
         template<DdType LibraryType>

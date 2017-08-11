@@ -29,11 +29,7 @@ namespace storm {
                     ++counter;
                 }
                 
-                if (metaVariable.getType() == storm::dd::MetaVariableType::Bool) {
-                    newMetaVariables = ddManager.addMetaVariable(newMetaVariableName + std::to_string(counter), 3);
-                } else {
-                    newMetaVariables = ddManager.addMetaVariable(newMetaVariableName + std::to_string(counter), metaVariable.getLow(), metaVariable.getHigh(), 3);
-                }
+                newMetaVariables = ddManager.cloneVariable(metaVariablePair.first, newMetaVariableName + std::to_string(counter), 3);
                 
                 newRowVariables.insert(newMetaVariables[0]);
                 newColumnVariables.insert(newMetaVariables[1]);

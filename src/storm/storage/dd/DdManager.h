@@ -148,6 +148,15 @@ namespace storm {
             Bdd<LibraryType> getCube(std::set<storm::expressions::Variable> const& variables) const;
 
             /*!
+             * Clones the given meta variable and optionally changes the number of layers of the variable.
+             *
+             * @param variable The variable to clone.
+             * @param newVariableName The name of the variable to crate.
+             * @param numberOfLayers The number of layers of the variable to crate
+             */
+            std::vector<storm::expressions::Variable> cloneVariable(storm::expressions::Variable const& variable, std::string const& newVariableName, boost::optional<uint64_t> const& numberOfLayers = boost::none);
+            
+            /*!
              * Adds an integer meta variable with the given range with two layers (a 'normal' and a 'primed' one).
              *
              * @param variableName The name of the new variable.
@@ -297,6 +306,15 @@ namespace storm {
             void debugCheck() const;
 
         private:
+            /*!
+             * Creates a meta variable with the given number of DD variables and layers.
+             *
+             * @param type The type of the meta variable to create.
+             * @param name The name of the variable.
+             * @param numberOfLayers The number of layers of this variable (must be greater or equal 1).
+             */
+            std::vector<storm::expressions::Variable> addMetaVariableHelper(MetaVariableType const& type, std::string const& name, uint64_t numberOfDdVariables, uint64_t numberOfLayers, boost::optional<std::pair<MetaVariablePosition, storm::expressions::Variable>> const& position = boost::none, boost::optional<std::pair<int_fast64_t, int_fast64_t>> const& bounds = boost::none);
+            
             /*!
              * Retrieves a list of names of the DD variables in the order of their index.
              *
