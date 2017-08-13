@@ -7,7 +7,6 @@
 #include <carl/core/VariablePool.h>
 #include <carl/core/FactorizedPolynomial.h>
 #include <carl/core/Relation.h>
-#include <carl/core/SimpleConstraint.h>
 #include <carl/util/stringparser.h>
 
 namespace carl {
@@ -58,5 +57,5 @@ namespace storm {
     
     typedef carl::RationalFunction<Polynomial, true> RationalFunction;
     typedef carl::Interval<double> Interval;
-    template<typename T> using ArithConstraint = carl::SimpleConstraint<T>;
 }
+
