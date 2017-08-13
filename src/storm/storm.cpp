@@ -1,7 +1,7 @@
 #include "storm/utility/macros.h"
 #include "storm/exceptions/BaseException.h"
 
-#include "storm/cli/cli.h"
+#include "storm-cli-utilities/cli.h"
 
 /*!
  * Main entry point of the executable storm.

@@ -1,37 +1,37 @@
-#include "storm/cli/cli.h"
+#include "cli.h"
 
 #include "storm/storage/SymbolicModelDescription.h"
 
 #include "storm/models/ModelBase.h"
 
-#include "storm/settings/modules/DebugSettings.h"
-#include "storm/settings/modules/IOSettings.h"
-#include "storm/settings/modules/CoreSettings.h"
 #include "storm/exceptions/OptionParserException.h"
-#include "storm/settings/modules/ResourceSettings.h"
-#include "storm/settings/modules/JaniExportSettings.h"
 
 #include "storm/modelchecker/results/SymbolicQualitativeCheckResult.h"
 
 #include "storm/models/sparse/StandardRewardModel.h"
 #include "storm/models/symbolic/StandardRewardModel.h"
 
+#include "storm/settings/SettingsManager.h"
+#include "storm/settings/modules/ResourceSettings.h"
+#include "storm/settings/modules/JitBuilderSettings.h"
+#include "storm/settings/modules/DebugSettings.h"
+#include "storm/settings/modules/IOSettings.h"
+#include "storm/settings/modules/CoreSettings.h"
+#include "storm/settings/modules/ResourceSettings.h"
+#include "storm/settings/modules/JaniExportSettings.h"
+
 #include "storm/utility/resources.h"
 #include "storm/utility/file.h"
 #include "storm/utility/storm-version.h"
-#include "storm/utility/cli.h"
+#include "storm/utility/macros.h"
 
 #include "storm/utility/initialize.h"
 #include "storm/utility/Stopwatch.h"
-
-#include "storm/settings/SettingsManager.h"
-#include "storm/settings/modules/ResourceSettings.h"
 
 #include <type_traits>
 
 #include "storm/api/storm.h"
 
-#include "storm/utility/macros.h"
 
 // Includes for the linked libraries and versions header.
 #ifdef STORM_HAVE_INTELTBB
@@ -65,12 +65,12 @@ namespace storm {
             storm::utility::setUp();
             storm::cli::printHeader("Storm", argc, argv);
             storm::settings::initializeAll("Storm", "storm");
-            
+
             storm::utility::Stopwatch totalTimer(true);
             if (!storm::cli::parseOptions(argc, argv)) {
                 return -1;
             }
-            
+
             processOptions();
 
             totalTimer.stop();
@@ -370,7 +370,15 @@ namespace storm {
         template <typename ValueType>
         std::shared_ptr<storm::models::ModelBase> buildModelSparse(SymbolicInput const& input, storm::settings::modules::IOSettings const& ioSettings) {
             auto counterexampleGeneratorSettings = storm::settings::getModule<storm::settings::modules::CounterexampleGeneratorSettings>();
-            return storm::api::buildSparseModel<ValueType>(input.model.get(), createFormulasToRespect(input.properties), ioSettings.isBuildChoiceLabelsSet(), counterexampleGeneratorSettings.isMinimalCommandSetGenerationSet());
+            storm::builder::BuilderOptions options(createFormulasToRespect(input.properties));
+            options.setBuildChoiceLabels(ioSettings.isBuildChoiceLabelsSet());
+            options.setBuildChoiceOrigins(counterexampleGeneratorSettings.isMinimalCommandSetGenerationSet());
+            options.setBuildAllLabels(ioSettings.isBuildFullModelSet());
+            options.setBuildAllRewardModels(ioSettings.isBuildFullModelSet());
+            if (ioSettings.isBuildFullModelSet()) {
+                options.clearTerminalStates();
+            }
+            return storm::api::buildSparseModel<ValueType>(input.model.get(), options, ioSettings.isJitSet(), storm::settings::getModule<storm::settings::modules::JitBuilderSettings>().isDoctorSet());
         }
 
         template <typename ValueType>

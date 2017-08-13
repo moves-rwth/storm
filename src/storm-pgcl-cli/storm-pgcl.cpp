@@ -2,7 +2,7 @@
 
 #include "logic/Formula.h"
 #include "utility/initialize.h"
-#include "storm/cli/cli.h"
+#include "storm-cli-utilities/cli.h"
 #include "storm/exceptions/BaseException.h"
 #include "storm/utility/macros.h"
 #include <boost/lexical_cast.hpp>
