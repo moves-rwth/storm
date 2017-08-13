@@ -12,7 +12,7 @@
 #include "storm/utility/initialize.h"
 
 #include "api/storm.h"
-#include "storm/cli/cli.h"
+#include "storm-cli-utilities/cli.h"
 
 #include "storm/parser/FormulaParser.h"
 
@@ -27,7 +27,7 @@
 
 #include "storm/exceptions/FileIoException.h"
 
-#include "storm/settings/modules/GeneralSettings.h"
+#include "storm/settings/modules/IOSettings.h"
 #include "storm/settings/modules/GSPNSettings.h"
 #include "storm/settings/modules/GSPNExportSettings.h"
 #include "storm/settings/modules/CoreSettings.h"

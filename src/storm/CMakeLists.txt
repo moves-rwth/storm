@@ -49,7 +49,7 @@ set(STORM_TARGETS ${STORM_TARGETS} PARENT_SCOPE)
 
 # Create storm.
 add_executable(storm-main ${STORM_MAIN_SOURCES} ${STORM_MAIN_HEADERS})
-target_link_libraries(storm-main PUBLIC storm)
+target_link_libraries(storm-main PUBLIC storm storm-cli-utilities)
 set_target_properties(storm-main PROPERTIES OUTPUT_NAME "storm")
 
 # Install storm headers to include directory.

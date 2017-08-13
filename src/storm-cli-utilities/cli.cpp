@@ -1,4 +1,4 @@
-#include "storm/cli/cli.h"
+#include "cli.h"
 
 #include "storm/storage/SymbolicModelDescription.h"
 
@@ -65,12 +65,12 @@ namespace storm {
             storm::utility::setUp();
             storm::cli::printHeader("Storm", argc, argv);
             storm::settings::initializeAll("Storm", "storm");
-            
+
             storm::utility::Stopwatch totalTimer(true);
             if (!storm::cli::parseOptions(argc, argv)) {
                 return -1;
             }
-            
+
             processOptions();
 
             totalTimer.stop();
