@@ -97,17 +97,17 @@ namespace storm {
             bool isExplorationShowProgressSet() const;
             uint64_t getExplorationShowProgressDelay() const;
             
-            BuilderOptions& setBuildAllRewardModels();
+            BuilderOptions& setBuildAllRewardModels(bool newValue = true);
             BuilderOptions& addRewardModel(std::string const& rewardModelName);
-            BuilderOptions& setBuildAllLabels();
+            BuilderOptions& setBuildAllLabels(bool newValue = true);
             BuilderOptions& addLabel(storm::expressions::Expression const& expression);
             BuilderOptions& addLabel(std::string const& labelName);
             BuilderOptions& addTerminalExpression(storm::expressions::Expression const& expression, bool value);
             BuilderOptions& addTerminalLabel(std::string const& label, bool value);
-            BuilderOptions& setBuildChoiceLabels(bool newValue);
-            BuilderOptions& setBuildStateValuations(bool newValue);
-            BuilderOptions& setBuildChoiceOrigins(bool newValue);
-            BuilderOptions& setExplorationChecks(bool newValue);
+            BuilderOptions& setBuildChoiceLabels(bool newValue = true);
+            BuilderOptions& setBuildStateValuations(bool newValue = true);
+            BuilderOptions& setBuildChoiceOrigins(bool newValue = true);
+            BuilderOptions& setExplorationChecks(bool newValue = true);
             
         private:
             /// A flag that indicates whether all reward models are to be built. In this case, the reward model names are

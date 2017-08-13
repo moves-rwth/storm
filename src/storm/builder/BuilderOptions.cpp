@@ -157,8 +157,8 @@ namespace storm {
             return buildAllLabels;
         }
         
-        BuilderOptions& BuilderOptions::setBuildAllRewardModels() {
-            buildAllRewardModels = true;
+        BuilderOptions& BuilderOptions::setBuildAllRewardModels(bool newValue) {
+            buildAllRewardModels = newValue;
             return *this;
         }
 
@@ -185,8 +185,8 @@ namespace storm {
             return *this;
         }
         
-        BuilderOptions& BuilderOptions::setBuildAllLabels() {
-            buildAllLabels = true;
+        BuilderOptions& BuilderOptions::setBuildAllLabels(bool newValue) {
+            buildAllLabels = newValue;
             return *this;
         }
         
