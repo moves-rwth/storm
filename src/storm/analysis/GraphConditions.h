@@ -8,12 +8,12 @@
 
 namespace storm {
     namespace analysis {
-        
+
         template <typename ValueType, typename Enable=void>
         struct ConstraintType {
-            typedef storm::ArithConstraint<ValueType> val;
+            typedef void* val;
         };
-        
+
         template<typename ValueType>
         struct ConstraintType<ValueType, typename std::enable_if<std::is_same<storm::RationalFunction, ValueType>::value>::type> {
             typedef carl::Formula<typename ValueType::PolyType::PolyType> val;
