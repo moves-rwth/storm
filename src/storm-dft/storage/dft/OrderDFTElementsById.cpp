@@ -22,12 +22,12 @@ namespace storm {
 
 
         // Explicitly instantiate the class.
-        template class OrderElementsById<double>;
-        template class OrderElementsByRank<double>;
+        template struct OrderElementsById<double>;
+        template struct OrderElementsByRank<double>;
 
 #ifdef STORM_HAVE_CARL
-        template class OrderElementsById<RationalFunction>;
-        template class OrderElementsByRank<RationalFunction>;
+        template struct OrderElementsById<RationalFunction>;
+        template struct OrderElementsByRank<RationalFunction>;
 #endif
     }
 }

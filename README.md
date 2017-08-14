@@ -1,23 +1,23 @@
-Storm 
-==============================
+Storm - A Modern Probabilistic Model Checker
+============================================
+[![Build Status](https://travis-ci.org/moves-rwth/storm.svg?branch=master)](https://travis-ci.org/moves-rwth/storm)
 
-For more instructions, check out the documentation found in [Getting Started](https://moves-rwth.github.io/storm/getting-started.html)
+For more instructions, check out the documentation found in [Getting Started](http://www.stormchecker.org/getting-started.html).
 
 
 Benchmarks
 ----------------------------
 
-Example input files for storm can be obtained from  
-https://github.com/moves-rwth/storm-examples.  
-Running make example-files automatically obtains these files.
+Example input files for Storm can be obtained from  
+https://github.com/moves-rwth/storm-examples.
 
-Further examples and benchmarks found in the following repositories:
+Further examples and benchmarks can be found in the following repositories:
 
 * **Prism files** (DTMC, MDP, CTMC):  
-http://www.prismmodelchecker.org/benchmarks/
+http://www.prismmodelchecker.org/benchmarks
 * **Jani files** (DTMC, MDP, CTMC, MA):  
-http://jani-spec.org/
-* **GSPN**s:   
+http://jani-spec.org
+* **GSPN**s:  
 (private, contact: sebastian.junges@cs.rwth-aachen.de)
 * **DFT**s:  
 https://github.com/moves-rwth/dft-examples
@@ -31,8 +31,8 @@ Storm has been developed at RWTH Aachen University.
 
 ###### Principal developers
 * Christian Dehnert
-* Joost-Pieter Katoen
 * Sebastian Junges
+* Joost-Pieter Katoen
 * Matthias Volk
 
 ###### Developers (lexicographical order)
@@ -40,7 +40,7 @@ Storm has been developed at RWTH Aachen University.
 * David Korzeniewski
 * Tim Quatmann
 
-###### Contributors (lexicographical order) 
+###### Contributors (lexicographical order)
 * Dimitri Bohlender
 * Harold Bruintjes
 * Michael Deutschen

@@ -23,10 +23,6 @@
 #include "storm/builder/ExplicitModelBuilder.h"
 #include "storm/builder/jit/ExplicitJitJaniModelBuilder.h"
 
-#include "storm/settings/SettingsManager.h"
-#include "storm/settings/modules/IOSettings.h"
-#include "storm/settings/modules/JitBuilderSettings.h"
-
 #include "storm/utility/macros.h"
 #include "storm/exceptions/NotSupportedException.h"
 
@@ -62,29 +58,18 @@ namespace storm {
         }
 
         template<typename ValueType>
-        std::shared_ptr<storm::models::sparse::Model<ValueType>> buildSparseModel(storm::storage::SymbolicModelDescription const& model, std::vector<std::shared_ptr<storm::logic::Formula const>> const& formulas, bool buildChoiceLabels = false, bool buildChoiceOrigins = false, bool buildStateValuations = false) {
-            storm::builder::BuilderOptions options(formulas);
-
-            if (storm::settings::getModule<storm::settings::modules::IOSettings>().isBuildFullModelSet()) {
-                options.setBuildAllLabels();
-                options.setBuildAllRewardModels();
-                options.clearTerminalStates();
-            }
-            options.setBuildChoiceLabels(buildChoiceLabels);
-            options.setBuildChoiceOrigins(buildChoiceOrigins);
-            options.setBuildStateValuations(buildStateValuations);
-            
-            if (storm::settings::getModule<storm::settings::modules::IOSettings>().isJitSet()) {
+        std::shared_ptr<storm::models::sparse::Model<ValueType>> buildSparseModel(storm::storage::SymbolicModelDescription const& model, storm::builder::BuilderOptions const& options, bool jit = false, bool doctor = false) {
+            if (jit) {
                 STORM_LOG_THROW(model.isJaniModel(), storm::exceptions::NotSupportedException, "Cannot use JIT-based model builder for non-JANI model.");
-                
+
                 storm::builder::jit::ExplicitJitJaniModelBuilder<ValueType> builder(model.asJaniModel(), options);
-                
-                if (storm::settings::getModule<storm::settings::modules::JitBuilderSettings>().isDoctorSet()) {
+
+                if (doctor) {
                     bool result = builder.doctor();
                     STORM_LOG_THROW(result, storm::exceptions::NotSupportedException, "The JIT-based model builder cannot be used on your system.");
                     STORM_LOG_INFO("The JIT-based model builder seems to be working.");
                 }
-                
+
                 return builder.build();
             } else {
                 std::shared_ptr<storm::generator::NextStateGenerator<ValueType, uint32_t>> generator;
@@ -98,6 +83,14 @@ namespace storm {
                 storm::builder::ExplicitModelBuilder<ValueType> builder(generator);
                 return builder.build();
             }
+        }
+
+        template<typename ValueType>
+        std::shared_ptr<storm::models::sparse::Model<ValueType>> buildSparseModel(storm::storage::SymbolicModelDescription const& model, std::vector<std::shared_ptr<storm::logic::Formula const>> const& formulas, bool jit = false, bool doctor = false) {
+            storm::builder::BuilderOptions options(formulas);
+            return buildSparseModel<ValueType>(model, options, jit, doctor);
+
+
         }
         
         template<typename ValueType, typename RewardModelType = storm::models::sparse::StandardRewardModel<ValueType>>

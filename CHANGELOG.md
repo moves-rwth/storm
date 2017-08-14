@@ -6,7 +6,6 @@ The releases of major and minor versions contain an overview of changes since th
 
 Version 1.1.x
 -------------
-Long run average computation via LRA, LP based MDP model checking, parametric model checking has an own binary
 
 ### Version 1.1.0 (2017/8)
 

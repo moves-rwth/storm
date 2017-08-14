@@ -52,3 +52,7 @@ nbproject/
 *.out
 resources/3rdparty/cudd-3.0.0/Makefile.in
 resources/3rdparty/cudd-3.0.0/aclocal.m4
+# Python config
+stormpy/setup.cfg
+# Travis helpers
+travis/mtime_cache/cache.json

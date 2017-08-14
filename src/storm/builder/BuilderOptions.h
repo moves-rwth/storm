@@ -81,9 +81,21 @@ namespace storm {
              * model.
              */
             void setTerminalStatesFromFormula(storm::logic::Formula const& formula);
-            
+
+            /*!
+             * Which reward models are built
+             * @return
+             */
             std::vector<std::string> const& getRewardModelNames() const;
+            /*!
+             * Which labels are built
+             * @return
+             */
             std::set<std::string> const& getLabelNames() const;
+            /*!
+             * Which expression labels are built
+             * @return
+             */
             std::vector<storm::expressions::Expression> const& getExpressionLabels() const;
             std::vector<std::pair<LabelOrExpression, bool>> const& getTerminalStates() const;
             bool hasTerminalStates() const;
@@ -96,18 +108,53 @@ namespace storm {
             bool isExplorationChecksSet() const;
             bool isExplorationShowProgressSet() const;
             uint64_t getExplorationShowProgressDelay() const;
-            
-            BuilderOptions& setBuildAllRewardModels();
+
+            /**
+             * Should all reward models be built? If not set, only required reward models are build.
+             * @param newValue The new value (default true)
+             * @return this
+             */
+            BuilderOptions& setBuildAllRewardModels(bool newValue = true);
+            /**
+             * Add an additional reward model to build
+             * @param newValue The name of the extra reward model
+             * @return this
+             */
             BuilderOptions& addRewardModel(std::string const& rewardModelName);
-            BuilderOptions& setBuildAllLabels();
+            /**
+             * Should all reward models be built? If not set, only required reward models are build.
+             * @param newValue The new value (default true)
+             * @return this
+             */
+            BuilderOptions& setBuildAllLabels(bool newValue = true);
             BuilderOptions& addLabel(storm::expressions::Expression const& expression);
             BuilderOptions& addLabel(std::string const& labelName);
             BuilderOptions& addTerminalExpression(storm::expressions::Expression const& expression, bool value);
             BuilderOptions& addTerminalLabel(std::string const& label, bool value);
-            BuilderOptions& setBuildChoiceLabels(bool newValue);
-            BuilderOptions& setBuildStateValuations(bool newValue);
-            BuilderOptions& setBuildChoiceOrigins(bool newValue);
-            BuilderOptions& setExplorationChecks(bool newValue);
+            /**
+             * Should the choice labels be built?
+             * @param newValue The new value (default true)
+             * @return this
+             */
+            BuilderOptions& setBuildChoiceLabels(bool newValue = true);
+            /**
+             * Should the state valuation mapping be built?
+             * @param newValue The new value (default true)
+             * @return this
+             */
+            BuilderOptions& setBuildStateValuations(bool newValue = true);
+            /**
+             * Should the origins the different choices be built?
+             * @param newValue The new value (default true)
+             * @return this
+             */
+            BuilderOptions& setBuildChoiceOrigins(bool newValue = true);
+            /**
+             * Should extra checks be performed during exploration
+             * @param newValue The new value (default true)
+             * @return this
+             */
+            BuilderOptions& setExplorationChecks(bool newValue = true);
             
         private:
             /// A flag that indicates whether all reward models are to be built. In this case, the reward model names are
