@@ -337,6 +337,33 @@ namespace storm {
             std::transform(this->buckets, this->buckets + this->bucketCount(), this->buckets, [] (uint64_t const& a) { return ~a; });
             truncateLastBucket();
         }
+        
+        void BitVector::increment() {
+            uint64_t firstUnsetIndex = getNextUnsetIndex(0);
+            
+            // If there is no unset index, we clear the whole vector
+            if (firstUnsetIndex == this->bitCount) {
+                this->clear();
+            } else {
+                
+                // All previous buckets have to be set to zero
+                uint64_t bucketIndex = firstUnsetIndex >> 6;
+                std::fill_n(buckets, bucketIndex, 0);
+                
+                // modify the bucket in which the unset entry lies in
+                uint64_t& bucket = this->buckets[bucketIndex];
+                uint64_t indexInBucket = firstUnsetIndex & mod64mask;
+                if (indexInBucket > 0) {
+                    // Clear all bits before the index
+                    uint64_t mask = ~(-1ull << (64 - indexInBucket));
+                    bucket &= mask;
+                }
+                
+                // Set the bit at the index
+                uint64_t mask = 1ull << (63 - indexInBucket);
+                bucket |= mask;
+            }
+        }
 
         BitVector BitVector::implies(BitVector const& other) const {
             STORM_LOG_ASSERT(bitCount == other.bitCount, "Length of the bit vectors does not match.");
