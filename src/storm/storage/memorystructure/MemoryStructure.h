@@ -24,16 +24,16 @@ namespace storm {
             typedef std::vector<std::vector<boost::optional<storm::storage::BitVector>>> TransitionMatrix;
             
             /*!
-             * Creates a memory structure with the given transition matrix and the given memory state labeling.
-             * The initial state is always the state with index 0.
-             * The transition matrix is assumed to contain propositional state formulas. The entry
-             * transitionMatrix[m][n] specifies the set of model states which trigger a transition from memory
-             * state m to memory state n.
-             * Transitions are assumed to be deterministic and complete, i.e., the formulas in
-             * transitionMatrix[m] form a partition of the state space of the considered model.
+             * Creates a memory structure with the given transition matrix, the given memory state labeling, and
+             * the given initial states.
+             * The entry transitionMatrix[m][n] specifies the set of model transitions which trigger a transition
+             * from memory state m to memory state n.
+             * Transitions are assumed to be deterministic and complete, i.e., the sets in in
+             * transitionMatrix[m] form a partition of the transitions of the considered model.
              *
              * @param transitionMatrix The transition matrix
              * @param memoryStateLabeling A labeling of the memory states to specify, e.g., accepting states
+             * @param initialMemoryStates assigns an initial memory state to each initial state of the model.
              */
             MemoryStructure(TransitionMatrix const& transitionMatrix, storm::models::sparse::StateLabeling const& memoryStateLabeling, std::vector<uint_fast64_t> const& initialMemoryStates);
             MemoryStructure(TransitionMatrix&& transitionMatrix, storm::models::sparse::StateLabeling&& memoryStateLabeling, std::vector<uint_fast64_t>&& initialMemoryStates);

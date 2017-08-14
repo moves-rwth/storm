@@ -15,6 +15,11 @@ namespace storm {
         }
         
         template <typename ValueType, typename RewardModelType>
+        MemoryStructureBuilder<ValueType, RewardModelType>::MemoryStructureBuilder(MemoryStructure const& memoryStructure, storm::models::sparse::Model<ValueType, RewardModelType> const& model) : model(model), transitions(memoryStructure.getTransitionMatrix()), stateLabeling(memoryStructure.getStateLabeling()), initialMemoryStates(memoryStructure.getInitialMemoryStates()) {
+            // Intentionally left empty
+        }
+        
+        template <typename ValueType, typename RewardModelType>
         void MemoryStructureBuilder<ValueType, RewardModelType>::setInitialMemoryState(uint_fast64_t initialModelState, uint_fast64_t initialMemoryState) {
             STORM_LOG_THROW(model.getInitialStates().get(initialModelState), storm::exceptions::InvalidOperationException, "Invalid index of initial model state: " << initialMemoryState << ". This is not an initial state of the model.");
             STORM_LOG_THROW(initialMemoryState < transitions.size(), storm::exceptions::InvalidOperationException, "Invalid index of initial memory state: " << initialMemoryState << ". There are only " << transitions.size() << " states in this memory structure.");
