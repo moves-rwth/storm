@@ -1,5 +1,6 @@
 #pragma once
 
+#include <boost/optional.hpp>
 
 #include "storm/storage/BitVector.h"
 #include "storm/storage/SparseMatrix.h"
@@ -71,6 +72,7 @@ namespace storm {
                 storm::storage::BitVector allowedBottomStates;
                 
                 std::vector<std::pair<std::shared_ptr<storm::logic::Formula const>, uint64_t>> subObjectives;
+                std::vector<boost::optional<std::string>> memoryLabels;
                 std::vector<std::vector<uint64_t>> scaledRewards;
                 std::vector<ValueType> scalingFactors;
                 
