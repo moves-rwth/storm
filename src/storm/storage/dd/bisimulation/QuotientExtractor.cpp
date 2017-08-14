@@ -197,9 +197,6 @@ namespace storm {
                 storm::storage::SparseMatrix<ValueType> extractTransitionMatrix(storm::dd::Add<storm::dd::DdType::CUDD, ValueType> const& transitionMatrix, Partition<storm::dd::DdType::CUDD, ValueType> const& partition) {
                     STORM_LOG_ASSERT(partition.storedAsAdd(), "Expected partition stored as ADD.");
                     
-                    transitionMatrix.exportToDot("trans.dot");
-                    partition.asAdd().exportToDot("part.dot");
-                    
                     // Create the number of rows necessary for the matrix.
                     this->reserveMatrixEntries(partition.getNumberOfBlocks());
                     STORM_LOG_TRACE("Partition has " << partition.getNumberOfStates() << " states in " << partition.getNumberOfBlocks() << " blocks.");
