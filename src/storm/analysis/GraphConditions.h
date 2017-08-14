@@ -38,12 +38,12 @@ namespace storm {
             void wellformedRequiresNonNegativeEntries(std::vector<ValueType> const&);
         public:
             /*!
-             * Constructs a constraint collector for the given DTMC. The constraints are built and ready for
+             * Constructs a constraint collector for the given Model. The constraints are built and ready for
              * retrieval after the construction.
              *
-             * @param dtmc The DTMC for which to create the constraints.
+             * @param model The Model for which to create the constraints.
              */
-            ConstraintCollector(storm::models::sparse::Dtmc<ValueType> const& dtmc);
+            ConstraintCollector(storm::models::sparse::Model<ValueType> const& model);
             
             /*!
              * Returns the set of wellformed-ness constraints.
@@ -66,18 +66,18 @@ namespace storm {
             std::set<storm::RationalFunctionVariable> const& getVariables() const;
             
             /*!
-             * Constructs the constraints for the given DTMC.
+             * Constructs the constraints for the given Model.
              *
-             * @param dtmc The DTMC for which to create the constraints.
+             * @param model The DTMC for which to create the constraints.
              */
-            void process(storm::models::sparse::Dtmc<ValueType> const& dtmc);
+            void process(storm::models::sparse::Model<ValueType> const& model);
             
             /*!
-             * Constructs the constraints for the given DTMC by calling the process method.
+             * Constructs the constraints for the given Model by calling the process method.
              *
-             * @param dtmc The DTMC for which to create the constraints.
+             * @param model The Model for which to create the constraints.
              */
-            void operator()(storm::models::sparse::Dtmc<ValueType> const& dtmc);
+            void operator()(storm::models::sparse::Model<ValueType> const& model);
             
         };
         
