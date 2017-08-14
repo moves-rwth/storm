@@ -7,6 +7,11 @@ The releases of major and minor versions contain an overview of changes since th
 Version 1.1.x
 -------------
 
+### Version 1.1.1
+- c++ api changes: Building model takes BuilderOptions instead of extended list of Booleans, does not depend on settings anymore.
+- storm-cli-utilities now contains cli related stuff, instead of storm-lib
+- storm-pars: support for welldefinedness constraints in mdps.
+
 ### Version 1.1.0 (2017/8)
 
 - Support for long-run average rewards on MDPs and Markov automata using a value-iteration based approach.
