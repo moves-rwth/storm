@@ -1,5 +1,7 @@
 #include "storm/storage/dd/bisimulation/SignatureRefiner.h"
 
+#include <cstdio>
+
 #include <unordered_map>
 #include <boost/container/flat_map.hpp>
 
@@ -57,7 +59,13 @@ namespace storm {
             class InternalSignatureRefiner<storm::dd::DdType::CUDD, ValueType> {
             public:
                 InternalSignatureRefiner(storm::dd::DdManager<storm::dd::DdType::CUDD> const& manager, storm::expressions::Variable const& blockVariable, storm::dd::Bdd<storm::dd::DdType::CUDD> const& nondeterminismVariables, storm::dd::Bdd<storm::dd::DdType::CUDD> const& nonBlockVariables) : manager(manager), internalDdManager(manager.getInternalDdManager()), blockVariable(blockVariable), nondeterminismVariables(nondeterminismVariables), nonBlockVariables(nonBlockVariables), nextFreeBlockIndex(0), numberOfRefinements(0), lastNumberOfVisitedNodes(10000), signatureCache(lastNumberOfVisitedNodes), reuseBlocksCache(lastNumberOfVisitedNodes) {
-                    // Intentionally left empty.
+
+                    // Initialize precomputed data.
+                    auto const& ddMetaVariable = manager.getMetaVariable(blockVariable);
+                    blockDdVariableIndices = ddMetaVariable.getIndices();
+                    
+                    // Create initialized block encoding where all variables are "don't care".
+                    blockEncoding = std::vector<int>(static_cast<uint64_t>(internalDdManager.getCuddManager().ReadSize()), static_cast<int>(2));
                 }
                 
                 Partition<storm::dd::DdType::CUDD, ValueType> refine(Partition<storm::dd::DdType::CUDD, ValueType> const& oldPartition, Signature<storm::dd::DdType::CUDD, ValueType> const& signature) {
@@ -83,6 +91,21 @@ namespace storm {
                     storm::dd::Add<storm::dd::DdType::CUDD, ValueType> newPartitionAdd(oldPartition.asAdd().getDdManager(), internalNewPartitionAdd, oldPartition.asAdd().getContainedMetaVariables());
                     
                     return newPartitionAdd;
+                }
+                
+                DdNodePtr encodeBlock(uint64_t blockIndex) {
+                    for (auto const& blockDdVariableIndex : blockDdVariableIndices) {
+                        blockEncoding[blockDdVariableIndex] = blockIndex & 1 ? 1 : 0;
+                        blockIndex >>= 1;
+                    }
+                    ::DdManager* ddMan = internalDdManager.getCuddManager().getManager();
+                    DdNodePtr bddEncoding = Cudd_CubeArrayToBdd(ddMan, blockEncoding.data());
+                    Cudd_Ref(bddEncoding);
+                    DdNodePtr result = Cudd_BddToAdd(ddMan, bddEncoding);
+                    Cudd_Ref(result);
+                    Cudd_RecursiveDeref(ddMan, bddEncoding);
+                    Cudd_Deref(result);
+                    return result;
                 }
                 
                 DdNodePtr refine(DdNode* partitionNode, DdNode* signatureNode, DdNode* nondeterminismVariablesNode, DdNode* nonBlockVariablesNode) {
@@ -112,15 +135,8 @@ namespace storm {
                             signatureCache[nodePair] = partitionNode;
                             return partitionNode;
                         } else {
-                            DdNode* result;
-                            {
-                                storm::dd::Add<storm::dd::DdType::CUDD, ValueType> blockEncoding = manager.getEncoding(blockVariable, nextFreeBlockIndex, false).template toAdd<ValueType>();
-                                ++nextFreeBlockIndex;
-                                result = blockEncoding.getInternalAdd().getCuddDdNode();
-                                Cudd_Ref(result);
-                            }
+                            DdNode* result = encodeBlock(nextFreeBlockIndex++);
                             signatureCache[nodePair] = result;
-                            Cudd_Deref(result);
                             return result;
                         }
                     } else {
@@ -206,6 +222,12 @@ namespace storm {
                 // The cubes representing all non-block and all nondeterminism variables, respectively.
                 storm::dd::Bdd<storm::dd::DdType::CUDD> nondeterminismVariables;
                 storm::dd::Bdd<storm::dd::DdType::CUDD> nonBlockVariables;
+                
+                // The indices of the DD variables associated with the block variable.
+                std::vector<uint64_t> blockDdVariableIndices;
+                
+                // A vector used for encoding block indices.
+                std::vector<int> blockEncoding;
                 
                 // The current number of blocks of the new partition.
                 uint64_t nextFreeBlockIndex;

@@ -197,6 +197,9 @@ namespace storm {
                 storm::storage::SparseMatrix<ValueType> extractTransitionMatrix(storm::dd::Add<storm::dd::DdType::CUDD, ValueType> const& transitionMatrix, Partition<storm::dd::DdType::CUDD, ValueType> const& partition) {
                     STORM_LOG_ASSERT(partition.storedAsAdd(), "Expected partition stored as ADD.");
                     
+                    transitionMatrix.exportToDot("trans.dot");
+                    partition.asAdd().exportToDot("part.dot");
+                    
                     // Create the number of rows necessary for the matrix.
                     this->reserveMatrixEntries(partition.getNumberOfBlocks());
                     STORM_LOG_TRACE("Partition has " << partition.getNumberOfStates() << " states in " << partition.getNumberOfBlocks() << " blocks.");
@@ -291,7 +294,7 @@ namespace storm {
                     }
                 }
                 
-                void extractTransitionMatrixRec(DdNode* transitionMatrixNode, DdNode* sourcePartitionNode, DdNode* targetPartitionNode, uint64_t sourceStateEncodingIndex, storm::storage::BitVector& sourceStateEncoding, storm::storage::BitVector const& nondeterminismEncoding, ValueType factor = 1) {
+                void extractTransitionMatrixRec(DdNode* transitionMatrixNode, DdNode* sourcePartitionNode, DdNode* targetPartitionNode, uint64_t sourceStateEncodingIndex, storm::storage::BitVector& sourceStateEncoding, storm::storage::BitVector const& nondeterminismEncoding, ValueType const& factor = 1) {
                     // For the empty DD, we do not need to add any entries. Note that the partition nodes cannot be zero
                     // as all states of the model have to be contained.
                     if (transitionMatrixNode == Cudd_ReadZero(ddman)) {
@@ -322,6 +325,9 @@ namespace storm {
                         uint64_t targetPartitionVariable = Cudd_NodeReadIndex(targetPartitionNode) - 1;
                         
                         // Move through transition matrix.
+                        bool skippedSourceInMatrix = false;
+                        bool skippedTargetTInMatrix = false;
+                        bool skippedTargetEInMatrix = false;
                         DdNode* tt = transitionMatrixNode;
                         DdNode* te = transitionMatrixNode;
                         DdNode* et = transitionMatrixNode;
@@ -335,6 +341,7 @@ namespace storm {
                                 te = Cudd_E(t);
                             } else {
                                 tt = te = t;
+                                skippedTargetTInMatrix = true;
                             }
                             
                             DdNode* e = Cudd_E(transitionMatrixNode);
@@ -344,13 +351,16 @@ namespace storm {
                                 ee = Cudd_E(e);
                             } else {
                                 et = ee = e;
+                                skippedTargetEInMatrix = true;
                             }
                         } else {
+                            skippedSourceInMatrix = true;
                             if (transitionMatrixVariable == this->sourceVariablesIndicesAndLevels[sourceStateEncodingIndex].first + 1) {
                                 tt = et = Cudd_T(transitionMatrixNode);
                                 te = ee = Cudd_E(transitionMatrixNode);
                             } else {
                                 tt = te = et = ee = transitionMatrixNode;
+                                skippedTargetTInMatrix = skippedTargetEInMatrix = true;
                             }
                         }
                         
@@ -383,8 +393,10 @@ namespace storm {
                         // If we skipped the variable in the source partition, we only have to choose one of the two representatives.
                         if (!skippedInSourcePartition) {
                             sourceStateEncoding.set(sourceStateEncodingIndex, true);
-                            extractTransitionMatrixRec(tt, sourceT, targetT, sourceStateEncodingIndex + 1, sourceStateEncoding, nondeterminismEncoding, factor);
-                            extractTransitionMatrixRec(te, sourceT, targetE, sourceStateEncodingIndex + 1, sourceStateEncoding, nondeterminismEncoding, factor);
+                            if (!skippedInTargetPartition) {
+                                extractTransitionMatrixRec(tt, sourceT, targetT, sourceStateEncodingIndex + 1, sourceStateEncoding, nondeterminismEncoding, factor);
+                            }
+                            extractTransitionMatrixRec(te, sourceT, targetE, sourceStateEncodingIndex + 1, sourceStateEncoding, nondeterminismEncoding, skippedTargetTInMatrix && skippedInTargetPartition ? 2 * factor : factor);
                         }
                         
                         sourceStateEncoding.set(sourceStateEncodingIndex, false);
@@ -392,7 +404,7 @@ namespace storm {
                         if (!skippedInTargetPartition) {
                             extractTransitionMatrixRec(et, sourceE, targetT, sourceStateEncodingIndex + 1, sourceStateEncoding, nondeterminismEncoding, factor);
                         }
-                        extractTransitionMatrixRec(ee, sourceE, targetE, sourceStateEncodingIndex + 1, sourceStateEncoding, nondeterminismEncoding, skippedInTargetPartition ? 2 * factor : factor);
+                        extractTransitionMatrixRec(ee, sourceE, targetE, sourceStateEncodingIndex + 1, sourceStateEncoding, nondeterminismEncoding, skippedTargetEInMatrix && skippedInTargetPartition ? 2 * factor : factor);
                     }
                 }
 
@@ -497,7 +509,7 @@ namespace storm {
                     }
                 }
                 
-                void extractTransitionMatrixRec(MTBDD transitionMatrixNode, BDD sourcePartitionNode, BDD targetPartitionNode, uint64_t currentIndex, storm::storage::BitVector& sourceState, storm::storage::BitVector const& nondeterminismEncoding) {
+                void extractTransitionMatrixRec(MTBDD transitionMatrixNode, BDD sourcePartitionNode, BDD targetPartitionNode, uint64_t currentIndex, storm::storage::BitVector& sourceState, storm::storage::BitVector const& nondeterminismEncoding, ValueType const& factor = storm::utility::one<ValueType>()) {
                     // For the empty DD, we do not need to add any entries. Note that the partition nodes cannot be zero
                     // as all states of the model have to be contained.
                     if (mtbdd_iszero(transitionMatrixNode)) {
@@ -518,10 +530,9 @@ namespace storm {
                         // Otherwise, we record the new representative.
                         sourceRepresentative.reset(new storm::storage::BitVector(sourceState));
                         
-                        // Decode the target block.
+                        // Decode the target block and add matrix entry.
                         uint64_t targetBlockIndex = decodeBlockIndex(targetPartitionNode);
-                        
-                        this->addMatrixEntry(nondeterminismEncoding, sourceBlockIndex, targetBlockIndex, storm::dd::InternalAdd<storm::dd::DdType::Sylvan, ValueType>::getValue(transitionMatrixNode));
+                        this->addMatrixEntry(nondeterminismEncoding, sourceBlockIndex, targetBlockIndex, factor * storm::dd::InternalAdd<storm::dd::DdType::Sylvan, ValueType>::getValue(transitionMatrixNode));
                     } else {
                         // Determine the levels in the DDs.
                         uint64_t transitionMatrixVariable = sylvan_isconst(transitionMatrixNode) ? 0xffffffff : sylvan_var(transitionMatrixNode);
@@ -529,6 +540,9 @@ namespace storm {
                         uint64_t targetPartitionVariable = sylvan_var(targetPartitionNode) - 1;
                         
                         // Move through transition matrix.
+                        bool skippedSourceInMatrix = false;
+                        bool skippedTargetTInMatrix = false;
+                        bool skippedTargetEInMatrix = false;
                         MTBDD tt = transitionMatrixNode;
                         MTBDD te = transitionMatrixNode;
                         MTBDD et = transitionMatrixNode;
@@ -543,6 +557,7 @@ namespace storm {
                                 te = sylvan_low(t);
                             } else {
                                 tt = te = t;
+                                skippedTargetTInMatrix = true;
                             }
                             
                             uint64_t eVariable = sylvan_isconst(e) ? 0xffffffff : sylvan_var(e);
@@ -551,17 +566,21 @@ namespace storm {
                                 ee = sylvan_low(e);
                             } else {
                                 et = ee = e;
+                                skippedTargetEInMatrix = true;
                             }
                         } else {
+                            skippedSourceInMatrix = true;
                             if (transitionMatrixVariable == this->sourceVariablesIndicesAndLevels[currentIndex].first + 1) {
                                 tt = et = sylvan_high(transitionMatrixNode);
                                 te = ee = sylvan_low(transitionMatrixNode);
                             } else {
                                 tt = te = et = ee = transitionMatrixNode;
+                                skippedTargetTInMatrix = skippedTargetEInMatrix = true;
                             }
                         }
                         
                         // Move through partition (for source state).
+                        bool skippedInSourcePartition = false;
                         MTBDD sourceT;
                         MTBDD sourceE;
                         if (sourcePartitionVariable == this->sourceVariablesIndicesAndLevels[currentIndex].first) {
@@ -569,9 +588,11 @@ namespace storm {
                             sourceE = sylvan_low(sourcePartitionNode);
                         } else {
                             sourceT = sourceE = sourcePartitionNode;
+                            skippedInSourcePartition = true;
                         }
                         
                         // Move through partition (for target state).
+                        bool skippedInTargetPartition = false;
                         MTBDD targetT;
                         MTBDD targetE;
                         if (targetPartitionVariable == this->sourceVariablesIndicesAndLevels[currentIndex].first) {
@@ -579,15 +600,25 @@ namespace storm {
                             targetE = sylvan_low(targetPartitionNode);
                         } else {
                             targetT = targetE = targetPartitionNode;
+                            skippedInTargetPartition = true;
                         }
                         
-                        sourceState.set(currentIndex, true);
-                        extractTransitionMatrixRec(tt, sourceT, targetT, currentIndex + 1, sourceState, nondeterminismEncoding);
-                        extractTransitionMatrixRec(te, sourceT, targetE, currentIndex + 1, sourceState, nondeterminismEncoding);
+                        // If we skipped the variable in the source partition, we only have to choose one of the two representatives.
+                        if (!skippedInSourcePartition) {
+                            sourceState.set(currentIndex, true);
+                            // If we skipped the variable in the target partition, just count the one representative twice.
+                            if (!skippedInTargetPartition) {
+                                extractTransitionMatrixRec(tt, sourceT, targetT, currentIndex + 1, sourceState, nondeterminismEncoding, factor);
+                            }
+                            extractTransitionMatrixRec(te, sourceT, targetE, currentIndex + 1, sourceState, nondeterminismEncoding, skippedTargetTInMatrix && skippedInTargetPartition ? 2 * factor : factor);
+                        }
                         
                         sourceState.set(currentIndex, false);
-                        extractTransitionMatrixRec(et, sourceE, targetT, currentIndex + 1, sourceState, nondeterminismEncoding);
-                        extractTransitionMatrixRec(ee, sourceE, targetE, currentIndex + 1, sourceState, nondeterminismEncoding);
+                        // If we skipped the variable in the target partition, just count the one representative twice.
+                        if (!skippedInTargetPartition) {
+                            extractTransitionMatrixRec(et, sourceE, targetT, currentIndex + 1, sourceState, nondeterminismEncoding, factor);
+                        }
+                        extractTransitionMatrixRec(ee, sourceE, targetE, currentIndex + 1, sourceState, nondeterminismEncoding, skippedTargetEInMatrix && skippedInTargetPartition ? 2 * factor : factor);
                     }
                 }
                 

@@ -89,14 +89,21 @@ namespace storm {
             Bdd<LibraryType> const& getCube() const;
             
             /*!
+             * Retrieves the highest index of all DD variables belonging to this meta variable.
+             */
+            uint64_t getLowestIndex() const;
+            
+            /*!
              * Retrieves the highest level of all DD variables belonging to this meta variable.
              */
             uint64_t getHighestLevel() const;
             
             /*!
-             * Retrieves the indices of the DD variables associated with this meta variable sorted by level.
+             * Retrieves the indices of the DD variables associated with this meta variable.
+             *
+             * @param sortedByLevel If true, the indices are sorted by their level.
              */
-            std::vector<uint64_t> getIndices() const;
+            std::vector<uint64_t> getIndices(bool sortedByLevel = true) const;
             
             /*!
              * Retrieves the indices and levels of the DD variables associated with this meta variable.
@@ -123,6 +130,11 @@ namespace storm {
              * @param manager A pointer to the manager that is responsible for this meta variable.
              */
             DdMetaVariable(MetaVariableType const& type, std::string const& name, std::vector<Bdd<LibraryType>> const& ddVariables);
+            
+            /*!
+             * Precomputes the lowest index of any DD variable associated with this meta variable.
+             */
+            void precomputeLowestIndex();
             
             /*!
              * Retrieves the variables used to encode the meta variable.
@@ -153,6 +165,9 @@ namespace storm {
             
             // The cube consisting of all variables that encode the meta variable.
             Bdd<LibraryType> cube;
+            
+            // The lowest index of any DD variable of this meta variable.
+            uint64_t lowestIndex;
         };
     }
 }
