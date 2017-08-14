@@ -24,8 +24,10 @@ namespace storm {
                 struct EpochModel {
                     storm::storage::SparseMatrix<ValueType> rewardTransitions;
                     storm::storage::SparseMatrix<ValueType> intermediateTransitions;
-                    std::vector<std::vector<ValueType>> objectiveRewards;
                     std::vector<boost::optional<Epoch>> epochSteps;
+                    std::vector<std::vector<ValueType>> objectiveRewards;
+                    std::vector<storm::storage::BitVector> objectiveRewardFilter;
+                    std::vector<storm::storage::BitVector> relevantStates;
                 };
                 
                 struct EpochSolution {
@@ -62,21 +64,23 @@ namespace storm {
                 EpochClass getClassOfEpoch(Epoch const& epoch) const;
                 Epoch getSuccessorEpoch(Epoch const& epoch, Epoch const& step) const;
                 
-                EpochModel computeModelForEpoch(Epoch const& epoch);
+                std::shared_ptr<EpochModel> computeModelForEpoch(Epoch const& epoch);
                 storm::storage::MemoryStructure computeMemoryStructureForEpoch(Epoch const& epoch) const;
+                std::vector<std::vector<ValueType>> computeObjectiveRewardsForEpoch(Epoch const& epoch, std::shared_ptr<storm::models::sparse::Mdp<ValueType>> const& modelMemoryProduct) const;
                 
                 
                 storm::models::sparse::Mdp<ValueType> const& model;
                 std::vector<storm::modelchecker::multiobjective::Objective<ValueType>> const& objectives;
                 storm::storage::BitVector possibleECActions;
                 storm::storage::BitVector allowedBottomStates;
-                
+
+                std::vector<storm::storage::BitVector> objectiveDimensions;
                 std::vector<std::pair<std::shared_ptr<storm::logic::Formula const>, uint64_t>> subObjectives;
                 std::vector<boost::optional<std::string>> memoryLabels;
                 std::vector<std::vector<uint64_t>> scaledRewards;
                 std::vector<ValueType> scalingFactors;
                 
-                std::map<EpochClass, EpochModel> epochModels;
+                std::map<EpochClass, std::shared_ptr<EpochModel>> epochModels;
                 std::map<Epoch, EpochSolution> epochSolutions;
             };
         }

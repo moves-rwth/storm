@@ -72,6 +72,17 @@ namespace storm {
                         memoryLabels.push_back(boost::none);
                     }
                 }
+                
+                // Compute a mapping for each objective to the set of dimensions it considers
+                for (uint64_t objIndex = 0; objIndex < this->objectives.size(); ++objIndex) {
+                    storm::storage::BitVector dimensions(subObjectives.size(), false);
+                    for (uint64_t subObjIndex = 0; subObjIndex < subObjectives.size(); ++subObjIndex) {
+                        if (subObjectives[subObjIndex].second == objIndex) {
+                            dimensions.set(subObjIndex, true);
+                        }
+                    }
+                    objectiveDimensions.push_back(std::move(dimensions));
+                }
             }
             
             template<typename ValueType>
@@ -140,17 +151,49 @@ namespace storm {
     
             template<typename ValueType>
             typename MultiDimensionalRewardUnfolding<ValueType>::EpochModel const& MultiDimensionalRewardUnfolding<ValueType>::getModelForEpoch(Epoch const& epoch) {
+                
+                // Get the model for the considered class of epochs
                 EpochClass classOfEpoch = getClassOfEpoch(epoch);
                 auto findRes = epochModels.find(classOfEpoch);
+                std::shared_ptr<EpochModel> epochModel;
                 if (findRes != epochModels.end()) {
-                    return findRes->second;
+                    epochModel = findRes->second;
                 } else {
-                    return epochModels.insert(std::make_pair(classOfEpoch, computeModelForEpoch(epoch))).first->second;
+                    epochModel = epochModels.insert(std::make_pair(classOfEpoch, computeModelForEpoch(epoch))).first->second;
                 }
+                
+                // Filter out all objective rewards that we do not receive in this particular epoch
+                epochModel->objectiveRewardFilter.resize(objectives.size());
+                for (uint64_t objIndex = 0; objIndex < objectives.size(); ++objIndex) {
+                    storm::storage::BitVector& filter = epochModel->objectiveRewardFilter[objIndex];
+                    filter.resize(epochModel->objectiveRewards[objIndex].size());
+                    if (objectiveDimensions[objIndex].empty()) {
+                        filter.clear();
+                        filter.complement();
+                    } else {
+                        for (uint64_t state = 0; state < epochModel->rewardTransitions.getRowGroupCount(); ++state) {
+                            for (uint64_t choice = epochModel->rewardTransitions.getRowGroupIndices()[state]; choice < epochModel->rewardTransitions.getRowGroupIndices()[state + 1]; ++choice) {
+                                for (auto const& dim : objectiveDimensions[objIndex]) {
+                                    auto successorEpoch = epoch[dim] - (epochModel->epochSteps[choice].is_initialized() ? epochModel->epochSteps[choice].get()[dim] : 0);
+                                    if (successorEpoch >= 0) {
+                                        filter.set(choice, true);
+                                    } else if (epochModel->relevantStates[dim].get(state)) {
+                                        filter.set(choice, false);
+                                        break;
+                                    } else {
+                                        filter.set(choice, true);
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+                
+                return *epochModel;
             }
             
             template<typename ValueType>
-            typename MultiDimensionalRewardUnfolding<ValueType>::EpochModel  MultiDimensionalRewardUnfolding<ValueType>::computeModelForEpoch(Epoch const& epoch) {
+            std::shared_ptr<typename MultiDimensionalRewardUnfolding<ValueType>::EpochModel>  MultiDimensionalRewardUnfolding<ValueType>::computeModelForEpoch(Epoch const& epoch) {
                 
                 storm::storage::MemoryStructure memory = computeMemoryStructureForEpoch(epoch);
                 auto modelMemoryProductBuilder = memory.product(model);
@@ -158,12 +201,12 @@ namespace storm {
                 auto modelMemoryProduct = modelMemoryProductBuilder.build()->template as<storm::models::sparse::Mdp<ValueType>>();
                 
                 storm::storage::SparseMatrix<ValueType> const& allTransitions = modelMemoryProduct->getTransitionMatrix();
-                EpochModel result;
+                std::shared_ptr<EpochModel> result = std::make_shared<EpochModel>();
                 storm::storage::BitVector rewardChoices(allTransitions.getRowCount(), false);
-                result.epochSteps.resize(modelMemoryProduct->getNumberOfChoices());
+                result->epochSteps.resize(modelMemoryProduct->getNumberOfChoices());
                 for (uint64_t modelState = 0; modelState < model.getNumberOfStates(); ++modelState) {
-                    uint64_t numChoices = allTransitions.getRowGroupSize(modelState);
-                    uint64_t firstChoice = allTransitions.getRowGroupIndices()[modelState];
+                    uint64_t numChoices = model.getTransitionMatrix().getRowGroupSize(modelState);
+                    uint64_t firstChoice = model.getTransitionMatrix().getRowGroupIndices()[modelState];
                     for (uint64_t choiceOffset = 0; choiceOffset < numChoices; ++choiceOffset) {
                         Epoch step;
                         bool isZeroStep = true;
@@ -176,95 +219,29 @@ namespace storm {
                                 uint64_t productState = modelMemoryProductBuilder.getResultState(modelState, memState);
                                 uint64_t productChoice = allTransitions.getRowGroupIndices()[productState] + choiceOffset;
                                 assert(productChoice < allTransitions.getRowGroupIndices()[productState + 1]);
-                                result.epochSteps[productChoice] = step;
+                                result->epochSteps[productChoice] = step;
                                 rewardChoices.set(productChoice, true);
                             }
                         }
                     }
                 }
                 
-                result.rewardTransitions = allTransitions.filterEntries(rewardChoices);
-                result.intermediateTransitions = allTransitions.filterEntries(~rewardChoices);
+                result->rewardTransitions = allTransitions.filterEntries(rewardChoices);
+                result->intermediateTransitions = allTransitions.filterEntries(~rewardChoices);
                 
-                result.objectiveRewards.reserve(objectives.size());
-                for (uint64_t objIndex = 0; objIndex < objectives.size(); ++objIndex) {
-                    auto const& formula = *this->objectives[objIndex].formula;
-                    if (formula.isProbabilityOperatorFormula()) {
-                        storm::modelchecker::SparsePropositionalModelChecker<storm::models::sparse::Mdp<ValueType>> mc(*modelMemoryProduct);
-                        storm::storage::BitVector dimensions(subObjectives.size(), false);
-                        std::vector<uint64_t> dimensionIndexMap;
-                        for (uint64_t subObjIndex = 0; subObjIndex < subObjectives.size(); ++subObjIndex) {
-                            if (subObjectives[subObjIndex].second == objIndex) {
-                                dimensions.set(subObjIndex, true);
-                                dimensionIndexMap.push_back(subObjIndex);
-                            }
-                        }
-                        
-                        std::shared_ptr<storm::logic::Formula const> sinkStatesFormula;
-                        for (auto const& dim : dimensions) {
-                            auto memLabelFormula = std::make_shared<storm::logic::AtomicLabelFormula>(memoryLabels[dim].get());
-                            if (sinkStatesFormula) {
-                                sinkStatesFormula = std::make_shared<storm::logic::BinaryBooleanStateFormula>(storm::logic::BinaryBooleanStateFormula::OperatorType::Or, sinkStatesFormula, memLabelFormula);
-                            } else {
-                                sinkStatesFormula = memLabelFormula;
-                            }
-                        }
-                        sinkStatesFormula = std::make_shared<storm::logic::UnaryBooleanStateFormula>(storm::logic::UnaryBooleanStateFormula::OperatorType::Not, sinkStatesFormula);
-                        
-                        std::vector<ValueType> objRew(allTransitions.getRowCount(), storm::utility::zero<ValueType>());
-                        storm::storage::BitVector relevantObjectives(dimensions.getNumberOfSetBits());
-                        
-                        while (!relevantObjectives.full()) {
-                            relevantObjectives.increment();
-                            std::shared_ptr<storm::logic::Formula const> relevantStatesFormula;
-                            std::shared_ptr<storm::logic::Formula const> goalStatesFormula =  storm::logic::CloneVisitor().clone(*sinkStatesFormula);
-                            for (uint64_t subObjIndex = 0; objIndex < dimensionIndexMap.size(); ++objIndex) {
-                                std::shared_ptr<storm::logic::Formula> memLabelFormula = std::make_shared<storm::logic::AtomicLabelFormula>(memoryLabels[dimensionIndexMap[subObjIndex]].get());
-                                if (relevantObjectives.get(subObjIndex)) {
-                                    auto rightSubFormula = subObjectives[dimensionIndexMap[subObjIndex]].first->asBoundedUntilFormula().getRightSubformula().asSharedPointer();
-                                    goalStatesFormula = std::make_shared<storm::logic::BinaryBooleanStateFormula>(storm::logic::BinaryBooleanStateFormula::OperatorType::And, goalStatesFormula, rightSubFormula);
-                                } else {
-                                    memLabelFormula = std::make_shared<storm::logic::UnaryBooleanStateFormula>(storm::logic::UnaryBooleanStateFormula::OperatorType::Not, memLabelFormula);
-                                }
-                                if (relevantStatesFormula) {
-                                    relevantStatesFormula = std::make_shared<storm::logic::BinaryBooleanStateFormula>(storm::logic::BinaryBooleanStateFormula::OperatorType::And, relevantStatesFormula, memLabelFormula);
-                                } else {
-                                    relevantStatesFormula = memLabelFormula;
-                                }
-                            }
-                            
-                            storm::storage::BitVector relevantStates = mc.check(*relevantStatesFormula)->asExplicitQualitativeCheckResult().getTruthValuesVector();
-                            storm::storage::BitVector goalStates = mc.check(*goalStatesFormula)->asExplicitQualitativeCheckResult().getTruthValuesVector();
-                            storm::utility::vector::addVectors(objRew, allTransitions.getConstrainedRowGroupSumVector(relevantStates, goalStates), objRew);
-                        }
-                        
-                        result.objectiveRewards.push_back(std::move(objRew));
-                        
-                        // TODO
-                        // Check if the formula is already satisfied in the initial state
-                        //        STORM_LOG_THROW((data.originalModel.getInitialStates() & rightSubformulaResult).empty(), storm::exceptions::NotImplementedException, "The Probability for the objective " << *data.objectives.back()->originalFormula << " is always one as the rhs of the until formula is true in the initial state. This (trivial) case is currently not implemented.");
-                        
-                        
-                    } else if (formula.isRewardOperatorFormula()) {
-                        auto const& rewModel = modelMemoryProduct->getRewardModel(formula.asRewardOperatorFormula().getRewardModelName());
-                        STORM_LOG_THROW(!rewModel.hasTransitionRewards(), storm::exceptions::NotSupportedException, "Reward model has transition rewards which is not expected.");
-                        bool rewardCollectedInEpoch = true;
-                        if (formula.getSubformula().isCumulativeRewardFormula()) {
-                            uint64_t dim = 0;
-                            for (; subObjectives[dim].second != objIndex; ++dim);
-                            rewardCollectedInEpoch = epoch[dim] >= 0;
-                        } else {
-                            STORM_LOG_THROW(formula.getSubformula().isTotalRewardFormula(), storm::exceptions::UnexpectedException, "Unexpected type of formula " << formula);
-                        }
-                        if (rewardCollectedInEpoch) {
-                            result.objectiveRewards.push_back(rewModel.getTotalRewardVector(modelMemoryProduct->getTransitionMatrix()));
-                        } else {
-                            result.objectiveRewards.emplace_back(allTransitions.getRowCount(), storm::utility::zero<ValueType>());
-                        }
+                result->objectiveRewards = computeObjectiveRewardsForEpoch(epoch, modelMemoryProduct);
+ 
+                storm::modelchecker::SparsePropositionalModelChecker<storm::models::sparse::Mdp<ValueType>> mc(*modelMemoryProduct);
+                result->relevantStates.reserve(subObjectives.size());
+                for (auto const& relevantStatesLabel : memoryLabels) {
+                    if (relevantStatesLabel) {
+                        auto relevantStatesFormula = std::make_shared<storm::logic::AtomicLabelFormula>(relevantStatesLabel.get());
+                        result->relevantStates.push_back(mc.check(*relevantStatesFormula)->asExplicitQualitativeCheckResult().getTruthValuesVector());
                     } else {
-                        STORM_LOG_THROW(false, storm::exceptions::UnexpectedException, "Unexpected type of formula " << formula);
+                        result->relevantStates.push_back(storm::storage::BitVector(modelMemoryProduct->getNumberOfStates(), true));
                     }
                 }
+                
                 return result;
             }
             
@@ -282,14 +259,7 @@ namespace storm {
                     
                     storm::storage::MemoryStructure objMemory = storm::storage::MemoryStructureBuilder<ValueType>::buildTrivialMemoryStructure(model);
 
-                    storm::storage::BitVector dimensions(subObjectives.size(), false);
-                    for (uint64_t subObjIndex = 0; subObjIndex < subObjectives.size(); ++subObjIndex) {
-                        if (subObjectives[subObjIndex].second == objIndex) {
-                            dimensions.set(subObjIndex, true);
-                        }
-                    }
-                    
-                    for (auto const& dim : dimensions) {
+                    for (auto const& dim : objectiveDimensions[objIndex]) {
                         auto const& subObj = subObjectives[dim];
                         if (subObj.first->isBoundedUntilFormula()) {
                             // Create a memory structure that stores whether a PsiState has already been reached
@@ -316,14 +286,14 @@ namespace storm {
                     
                     // find the memory state that represents that none of the subobjective is relative anymore
                     storm::storage::BitVector sinkStates(objMemory.getNumberOfStates(), true);
-                    for (auto const& dim : dimensions) {
+                    for (auto const& dim : objectiveDimensions[objIndex]) {
                         sinkStates = sinkStates & ~objMemory.getStateLabeling().getStates(memoryLabels[dim].get());
                     }
                     assert(sinkStates.getNumberOfSetBits() == 1);
                     
                     // When a constraint of at least one until formula is violated, we need to switch to the sink memory state
                     storm::storage::MemoryStructureBuilder<ValueType> objMemBuilder(objMemory, model);
-                    for (auto const& dim : dimensions) {
+                    for (auto const& dim : objectiveDimensions[objIndex]) {
                         auto const& subObj = subObjectives[dim];
                         storm::storage::BitVector constraintModelStates =
                                 ~(mc.check(subObj.first->asBoundedUntilFormula().getLeftSubformula())->asExplicitQualitativeCheckResult().getTruthValuesVector() |
@@ -339,7 +309,88 @@ namespace storm {
                 return memory;
             }
          
-            
+            template<typename ValueType>
+            std::vector<std::vector<ValueType>> MultiDimensionalRewardUnfolding<ValueType>::computeObjectiveRewardsForEpoch(Epoch const& epoch, std::shared_ptr<storm::models::sparse::Mdp<ValueType>> const& modelMemoryProduct) const {
+                std::vector<std::vector<ValueType>> objectiveRewards;
+                objectiveRewards.reserve(objectives.size());
+                
+                for (uint64_t objIndex = 0; objIndex < objectives.size(); ++objIndex) {
+                    auto const& formula = *this->objectives[objIndex].formula;
+                    if (formula.isProbabilityOperatorFormula()) {
+                        storm::modelchecker::SparsePropositionalModelChecker<storm::models::sparse::Mdp<ValueType>> mc(*modelMemoryProduct);
+                        std::vector<uint64_t> dimensionIndexMap;
+                        for (auto const& globalDimensionIndex : objectiveDimensions[objIndex]) {
+                            dimensionIndexMap.push_back(globalDimensionIndex);
+                        }
+                        
+                        std::shared_ptr<storm::logic::Formula const> sinkStatesFormula;
+                        for (auto const& dim : objectiveDimensions[objIndex]) {
+                            auto memLabelFormula = std::make_shared<storm::logic::AtomicLabelFormula>(memoryLabels[dim].get());
+                            if (sinkStatesFormula) {
+                                sinkStatesFormula = std::make_shared<storm::logic::BinaryBooleanStateFormula>(storm::logic::BinaryBooleanStateFormula::OperatorType::Or, sinkStatesFormula, memLabelFormula);
+                            } else {
+                                sinkStatesFormula = memLabelFormula;
+                            }
+                        }
+                        sinkStatesFormula = std::make_shared<storm::logic::UnaryBooleanStateFormula>(storm::logic::UnaryBooleanStateFormula::OperatorType::Not, sinkStatesFormula);
+                        
+                        std::vector<ValueType> objRew(modelMemoryProduct->getTransitionMatrix().getRowCount(), storm::utility::zero<ValueType>());
+                        storm::storage::BitVector relevantObjectives(objectiveDimensions[objIndex].getNumberOfSetBits());
+                        
+                        while (!relevantObjectives.full()) {
+                            relevantObjectives.increment();
+                            std::shared_ptr<storm::logic::Formula const> relevantStatesFormula;
+                            std::shared_ptr<storm::logic::Formula const> goalStatesFormula =  storm::logic::CloneVisitor().clone(*sinkStatesFormula);
+                            for (uint64_t subObjIndex = 0; subObjIndex < dimensionIndexMap.size(); ++subObjIndex) {
+                                std::shared_ptr<storm::logic::Formula> memLabelFormula = std::make_shared<storm::logic::AtomicLabelFormula>(memoryLabels[dimensionIndexMap[subObjIndex]].get());
+                                if (relevantObjectives.get(subObjIndex)) {
+                                    auto rightSubFormula = subObjectives[dimensionIndexMap[subObjIndex]].first->asBoundedUntilFormula().getRightSubformula().asSharedPointer();
+                                    goalStatesFormula = std::make_shared<storm::logic::BinaryBooleanStateFormula>(storm::logic::BinaryBooleanStateFormula::OperatorType::And, goalStatesFormula, rightSubFormula);
+                                } else {
+                                    memLabelFormula = std::make_shared<storm::logic::UnaryBooleanStateFormula>(storm::logic::UnaryBooleanStateFormula::OperatorType::Not, memLabelFormula);
+                                }
+                                if (relevantStatesFormula) {
+                                    relevantStatesFormula = std::make_shared<storm::logic::BinaryBooleanStateFormula>(storm::logic::BinaryBooleanStateFormula::OperatorType::And, relevantStatesFormula, memLabelFormula);
+                                } else {
+                                    relevantStatesFormula = memLabelFormula;
+                                }
+                            }
+                            
+                            storm::storage::BitVector relevantStates = mc.check(*relevantStatesFormula)->asExplicitQualitativeCheckResult().getTruthValuesVector();
+                            storm::storage::BitVector goalStates = mc.check(*goalStatesFormula)->asExplicitQualitativeCheckResult().getTruthValuesVector();
+                            storm::utility::vector::addVectors(objRew, modelMemoryProduct->getTransitionMatrix().getConstrainedRowGroupSumVector(relevantStates, goalStates), objRew);
+                        }
+                        
+                        objectiveRewards.push_back(std::move(objRew));
+                        
+                        // TODO
+                        // Check if the formula is already satisfied in the initial state
+                        //        STORM_LOG_THROW((data.originalModel.getInitialStates() & rightSubformulaResult).empty(), storm::exceptions::NotImplementedException, "The Probability for the objective " << *data.objectives.back()->originalFormula << " is always one as the rhs of the until formula is true in the initial state. This (trivial) case is currently not implemented.");
+                        
+                        
+                    } else if (formula.isRewardOperatorFormula()) {
+                        auto const& rewModel = modelMemoryProduct->getRewardModel(formula.asRewardOperatorFormula().getRewardModelName());
+                        STORM_LOG_THROW(!rewModel.hasTransitionRewards(), storm::exceptions::NotSupportedException, "Reward model has transition rewards which is not expected.");
+                        bool rewardCollectedInEpoch = true;
+                        if (formula.getSubformula().isCumulativeRewardFormula()) {
+                            assert(objectiveDimensions[objIndex].getNumberOfSetBits() == 1);
+                            rewardCollectedInEpoch = epoch[*objectiveDimensions[objIndex].begin()] >= 0;
+                        } else {
+                            STORM_LOG_THROW(formula.getSubformula().isTotalRewardFormula(), storm::exceptions::UnexpectedException, "Unexpected type of formula " << formula);
+                        }
+                        if (rewardCollectedInEpoch) {
+                            objectiveRewards.push_back(rewModel.getTotalRewardVector(modelMemoryProduct->getTransitionMatrix()));
+                        } else {
+                            objectiveRewards.emplace_back(modelMemoryProduct->getTransitionMatrix().getRowCount(), storm::utility::zero<ValueType>());
+                        }
+                    } else {
+                        STORM_LOG_THROW(false, storm::exceptions::UnexpectedException, "Unexpected type of formula " << formula);
+                    }
+                }
+                
+                return objectiveRewards;
+            }
+
             template<typename ValueType>
             void MultiDimensionalRewardUnfolding<ValueType>::setEpochSolution(Epoch const& epoch, EpochSolution const& solution) {
                 epochSolutions.emplace(epoch, solution);
