@@ -50,7 +50,7 @@ namespace storm {
                 // For multi-objective model checking, each initial state requires an individual scheduler (in contrast to single-objective model checking). Let's exclude multiple initial states.
                 if (this->getModel().getInitialStates().getNumberOfSetBits() > 1) return false;
                 if (!checkTask.isOnlyInitialStatesRelevantSet()) return false;
-                return formula.isInFragment(storm::logic::multiObjective().setCumulativeRewardFormulasAllowed(true));
+                return formula.isInFragment(storm::logic::multiObjective().setCumulativeRewardFormulasAllowed(true).setRewardBoundedUntilFormulasAllowed(true));
             }
         }
         
