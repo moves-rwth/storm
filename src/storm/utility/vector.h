@@ -872,7 +872,7 @@ namespace storm {
 			}
             
             template<typename ValueType, typename TargetValueType>
-            typename std::enable_if<std::is_same<ValueType, storm::RationalFunction>::value,  std::pair<std::vector<TargetValueType>, ValueType>>::type
+            typename std::enable_if<std::is_same<ValueType, storm::RationalNumber>::value,  std::pair<std::vector<TargetValueType>, ValueType>>::type
             toIntegralVector(std::vector<ValueType> const& vec) {
                 
                 // Collect the numbers occurring in the input vector
@@ -910,7 +910,7 @@ namespace storm {
                 
                 // Build the result
                 std::vector<TargetValueType> result;
-                result.resize(vec.size());
+                result.reserve(vec.size());
                 for (auto const& v : vec) {
                     result.push_back(storm::utility::convertNumber<TargetValueType, ValueType>(v / factor));
                     STORM_LOG_ASSERT(storm::utility::isInteger(result.back()), "Resulting number '" << result.back() << "' is not integral.");
@@ -920,10 +920,13 @@ namespace storm {
             }
 
             template<typename ValueType, typename TargetValueType>
-            typename std::enable_if<!std::is_same<ValueType, storm::RationalFunction>::value,  std::pair<std::vector<TargetValueType>, ValueType>>::type
+            typename std::enable_if<!std::is_same<ValueType, storm::RationalNumber>::value,  std::pair<std::vector<TargetValueType>, ValueType>>::type
             toIntegralVector(std::vector<ValueType> const& vec) {
-                STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "Functionality not implemented.");
-                return std::pair<std::vector<TargetValueType>, ValueType>();
+                // TODO: avoid converting back and forth
+                auto rationalNumberVec = convertNumericVector<storm::RationalNumber>(vec);
+                auto rationalNumberResult = toIntegralVector<storm::RationalNumber, TargetValueType>(rationalNumberVec);
+                
+                return std::make_pair(std::move(rationalNumberResult.first), storm::utility::convertNumber<ValueType>(rationalNumberResult.second));
             }
             
             template<typename Type>
