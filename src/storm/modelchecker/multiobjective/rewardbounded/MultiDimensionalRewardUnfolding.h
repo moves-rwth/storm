@@ -29,6 +29,7 @@ namespace storm {
                     std::vector<std::vector<ValueType>> objectiveRewards;
                     std::vector<storm::storage::BitVector> objectiveRewardFilter;
                     std::vector<storm::storage::BitVector> relevantStates;
+                    storm::storage::BitVector initialStates;
                 };
                 
                 struct EpochSolution {

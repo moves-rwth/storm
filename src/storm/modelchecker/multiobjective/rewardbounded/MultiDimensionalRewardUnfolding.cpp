@@ -242,6 +242,8 @@ namespace storm {
                     }
                 }
                 
+                result->initialStates = modelMemoryProduct->getInitialStates();
+                
                 return result;
             }
             
