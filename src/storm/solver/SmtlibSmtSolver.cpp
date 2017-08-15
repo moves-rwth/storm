@@ -102,33 +102,6 @@ namespace storm {
             writeCommand("( assert " + expressionAdapter->translateExpression(leftHandSide, relation, rightHandSide) + " )", true);
         }
         
-        void SmtlibSmtSolver::add(storm::ArithConstraint<storm::RationalFunction> const& constraint) {
-            add(constraint.lhs(), constraint.rel());
-        }
-        
-        void SmtlibSmtSolver::add(storm::ArithConstraint<storm::RawPolynomial> const& constraint) {
-            //if some of the occurring variables are not declared yet, we will have to.
-            std::set<storm::RationalFunctionVariable> variables = constraint.lhs().gatherVariables();
-            std::vector<std::string> const varDeclarations = expressionAdapter->checkForUndeclaredVariables(variables);
-            for (auto declaration : varDeclarations){
-                writeCommand(declaration, true);
-            }
-            writeCommand("( assert " + expressionAdapter->translateExpression(constraint) + " )", true);
-        }
-        
-        void SmtlibSmtSolver::add(storm::RationalFunctionVariable const& guard, typename storm::ArithConstraint<storm::Polynomial> const& constraint){
-            STORM_LOG_THROW((guard.getType()==carl::VariableType::VT_BOOL), storm::exceptions::IllegalArgumentException, "Tried to add a guarded constraint, but the guard is not of type bool.");
-            //if some of the occurring variables are not declared yet, we will have to (including the guard!).
-            std::set<storm::RationalFunctionVariable> variables = constraint.lhs().gatherVariables();
-            variables.insert(guard);
-            std::vector<std::string> const varDeclarations = expressionAdapter->checkForUndeclaredVariables(variables);
-            for (auto declaration : varDeclarations){
-                writeCommand(declaration, true);
-            }
-            std::string guardName= carl::VariablePool::getInstance().getName(guard, this->useReadableVarNames);
-            writeCommand("( assert (=> " + guardName + " " + expressionAdapter->translateExpression(constraint) + " ) )", true);
-        }
-        
         void SmtlibSmtSolver::add(const storm::RationalFunctionVariable& variable, bool value){
             STORM_LOG_THROW((variable.getType()==carl::VariableType::VT_BOOL), storm::exceptions::IllegalArgumentException, "Tried to add a constraint that consists of a non-boolean variable.");
             std::set<storm::RationalFunctionVariable> variableSet;

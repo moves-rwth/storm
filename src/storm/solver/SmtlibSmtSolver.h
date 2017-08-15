@@ -51,12 +51,7 @@ namespace storm {
             //adds the constraint "leftHandSide relation rightHandSide"
             virtual void add(storm::RationalFunction const& leftHandSide, storm::CompareRelation const& relation, storm::RationalFunction const& rightHandSide=storm::RationalFunction(0));
             
-            //adds the given carl constraint
-            void add(typename storm::ArithConstraint<storm::RationalFunction> const& constraint);
-            void add(typename storm::ArithConstraint<storm::RawPolynomial> const& constraint);
-            
-            // adds the given carl constraint that is guarded by the given guard. The guard should have type 'bool'
-            void add(storm::RationalFunctionVariable const& guard, typename storm::ArithConstraint<storm::Polynomial> const& constraint);
+          
             
             // asserts that the given variable has the given value. The variable should have type 'bool'
             void add(storm::RationalFunctionVariable const& variable, bool value);
@@ -65,10 +60,9 @@ namespace storm {
             virtual CheckResult check() override;
 
             virtual CheckResult checkWithAssumptions(std::set<storm::expressions::Expression> const& assumptions) override;
-#ifndef WINDOWS
+
             virtual CheckResult checkWithAssumptions(std::initializer_list<storm::expressions::Expression> const& assumptions) override;
-#endif
-            
+
             bool isNeedsRestart() const;
             
             //Todo: some of these might be added in the future
