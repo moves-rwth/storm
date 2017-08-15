@@ -132,6 +132,23 @@ namespace storm {
             Add<LibraryType, ValueType> getIdentity(storm::expressions::Variable const& variable) const;
             
             /*!
+             * Retrieves a BDD in which an encoding is mapped to true iff the meta variables of each pair encode the same value.
+             *
+             * @param variablePairs The variable pairs for which to compute the identity.
+             * @param restrictToFirstRange If set, the identity will be restricted to the legal range of the first variable.
+             */
+            Bdd<LibraryType> getIdentity(std::vector<std::pair<storm::expressions::Variable, storm::expressions::Variable>> const& variablePairs, bool restrictToFirstRange = true) const;
+
+            /*!
+             * Retrieves a BDD in which an encoding is mapped to true iff the two meta variables encode the same value.
+             * 
+             * @param first The first meta variable in the identity.
+             * @param second The second meta variable in the identity.
+             * @param restrictToFirstRange If set, the identity will be restricted to the legal range of the first variable.
+             */
+            Bdd<LibraryType> getIdentity(storm::expressions::Variable const& first, storm::expressions::Variable const& second, bool restrictToFirstRange = true) const;
+
+            /*!
              * Retrieves a BDD that is the cube of the variables representing the given meta variable.
              *
              * @param variable The expression variable associated with the meta variable.

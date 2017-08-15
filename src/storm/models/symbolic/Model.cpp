@@ -208,7 +208,7 @@ namespace storm {
             
             template<storm::dd::DdType Type, typename ValueType>
             storm::dd::Add<Type, ValueType> Model<Type, ValueType>::getRowColumnIdentity() const {
-                return storm::utility::dd::getRowColumnDiagonal<Type, ValueType>(this->getManager(), this->getRowColumnMetaVariablePairs());
+                return (storm::utility::dd::getRowColumnDiagonal<Type>(this->getManager(), this->getRowColumnMetaVariablePairs()) && this->getReachableStates()).template toAdd<ValueType>();
             }
             
             template<storm::dd::DdType Type, typename ValueType>

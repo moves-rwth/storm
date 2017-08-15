@@ -61,6 +61,13 @@ namespace storm {
             InternalBdd<DdType::Sylvan> getBddZero() const;
             
             /*!
+             * Retrieves a BDD that maps to true iff the encoding is less or equal than the given bound.
+             *
+             * @return A BDD with encodings corresponding to values less or equal than the bound.
+             */
+            InternalBdd<DdType::Sylvan> getBddEncodingLessOrEqualThan(uint64_t bound, InternalBdd<DdType::Sylvan> const& cube, uint64_t numberOfDdVariables) const;
+
+            /*!
              * Retrieves an ADD representing the constant zero function.
              *
              * @return An ADD representing the constant zero function.
@@ -133,6 +140,9 @@ namespace storm {
             uint_fast64_t getNumberOfDdVariables() const;
             
         private:
+            // Helper function to create the BDD whose encodings are below a given bound.
+            BDD getBddEncodingLessOrEqualThanRec(uint64_t minimalValue, uint64_t maximalValue, uint64_t bound, BDD cube, uint64_t remainingDdVariables) const;
+            
             // A counter for the number of instances of this class. This is used to determine when to initialize and
             // quit the sylvan. This is because Sylvan does not know the concept of managers but implicitly has a
             // 'global' manager.

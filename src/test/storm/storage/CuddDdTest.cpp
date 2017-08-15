@@ -414,7 +414,7 @@ TEST(CuddDd, RangeTest) {
     
     storm::dd::Bdd<storm::dd::DdType::CUDD> range;
     ASSERT_NO_THROW(range = manager->getRange(x.first));
-    
+        
     EXPECT_EQ(9ul, range.getNonZeroCount());
     EXPECT_EQ(1ul, range.getLeafCount());
     EXPECT_EQ(5ul, range.getNodeCount());

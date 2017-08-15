@@ -198,18 +198,13 @@ namespace storm {
                             result = thenResult;
                         } else {
                             // Get the node to connect the subresults.
-                            DdNode* var = Cudd_addIthVar(ddman, Cudd_NodeReadIndex(nonBlockVariablesNode) + offset);
-                            Cudd_Ref(var);
-                            result = Cudd_addIte(ddman, var, thenResult, elseResult);
-                            Cudd_Ref(result);
-                            Cudd_RecursiveDeref(ddman, var);
+                            result = cuddUniqueInter(ddman, Cudd_NodeReadIndex(nonBlockVariablesNode) + offset, thenResult, elseResult);
                             Cudd_Deref(thenResult);
                             Cudd_Deref(elseResult);
                         }
                         
                         // Store the result in the cache.
                         signatureCache[nodePair] = result;
-                        Cudd_Deref(result);
                         
                         return result;
                     }

@@ -122,15 +122,20 @@ namespace storm {
         template<DdType LibraryType>
         Bdd<LibraryType> DdManager<LibraryType>::getRange(storm::expressions::Variable const& variable) const {
             storm::dd::DdMetaVariable<LibraryType> const& metaVariable = this->getMetaVariable(variable);
-            STORM_LOG_THROW(metaVariable.hasHigh(), storm::exceptions::InvalidOperationException, "Cannot create range for meta variable.");
-            
-            Bdd<LibraryType> result = this->getBddZero();
-            
-            for (int_fast64_t value = metaVariable.getLow(); value <= metaVariable.getHigh(); ++value) {
-                result |= this->getEncoding(variable, value);
+
+            if (metaVariable.hasHigh()) {
+                return Bdd<LibraryType>(*this, internalDdManager.getBddEncodingLessOrEqualThan(static_cast<uint64_t>(metaVariable.getHigh() - metaVariable.getLow()), metaVariable.getCube().getInternalBdd(), metaVariable.getNumberOfDdVariables()), {variable});
+//                Bdd<LibraryType> result = this->getBddZero();
+//                for (int_fast64_t value = metaVariable.getLow(); value <= metaVariable.getHigh(); ++value) {
+//                    result |= this->getEncoding(variable, value);
+//                }
+//                return result;
+            } else {
+                // If there is no upper bound on this variable, the whole range is valid.
+                Bdd<LibraryType> result = this->getBddOne();
+                result.addMetaVariable(variable);
+                return result;
             }
-            
-            return result;
         }
 
         template<DdType LibraryType>
@@ -146,6 +151,33 @@ namespace storm {
             return result;
         }
 		
+        template<DdType LibraryType>
+        Bdd<LibraryType> DdManager<LibraryType>::getIdentity(std::vector<std::pair<storm::expressions::Variable, storm::expressions::Variable>> const& variablePairs, bool restrictToFirstRange) const {
+            auto result = this->getBddOne();
+            for (auto const& pair : variablePairs) {
+                result &= this->getIdentity(pair.first, pair.second, restrictToFirstRange);
+            }
+            return result;
+        }
+        
+        template<DdType LibraryType>
+        Bdd<LibraryType> DdManager<LibraryType>::getIdentity(storm::expressions::Variable const& first, storm::expressions::Variable const& second, bool restrictToFirstRange) const {
+            auto const& firstMetaVariable = this->getMetaVariable(first);
+            auto const& secondMetaVariable = this->getMetaVariable(second);
+            
+            STORM_LOG_THROW(firstMetaVariable.getNumberOfDdVariables() == secondMetaVariable.getNumberOfDdVariables(), storm::exceptions::InvalidOperationException, "Mismatching sizes of meta variables.");
+            
+            auto const& firstDdVariables = firstMetaVariable.getDdVariables();
+            auto const& secondDdVariables = secondMetaVariable.getDdVariables();
+
+            auto result = restrictToFirstRange ? this->getRange(first) : this->getBddOne();
+            for (auto it1 = firstDdVariables.begin(), it2 = secondDdVariables.begin(), ite1 = firstDdVariables.end(); it1 != ite1; ++it1, ++it2) {
+                result &= it1->iff(*it2);
+            }
+            
+            return result;
+        }
+        
         template<DdType LibraryType>
         Bdd<LibraryType> DdManager<LibraryType>::getCube(storm::expressions::Variable const& variable) const {
             return getCube({variable});

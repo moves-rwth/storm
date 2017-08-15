@@ -368,8 +368,8 @@ namespace storm {
                     
                     // Add the identity and ranges of the location variables to the ones of the automaton.
                     std::pair<storm::expressions::Variable, storm::expressions::Variable> const& locationVariables = result.automatonToLocationDdVariableMap[automaton.getName()];
-                    storm::dd::Add<Type, ValueType> variableIdentity = result.manager->template getIdentity<ValueType>(locationVariables.first).equals(result.manager->template getIdentity<ValueType>(locationVariables.second)).template toAdd<ValueType>() * result.manager->getRange(locationVariables.first).template toAdd<ValueType>() * result.manager->getRange(locationVariables.second).template toAdd<ValueType>();
-                    identity &= variableIdentity.toBdd();
+                    storm::dd::Bdd<Type> variableIdentity = result.manager->getIdentity(locationVariables.first, locationVariables.second);
+                    identity &= variableIdentity;
                     range &= result.manager->getRange(locationVariables.first);
                     
                     // Then create variables for the variables of the automaton.
@@ -420,8 +420,8 @@ namespace storm {
                 result.columnMetaVariables.insert(variablePair.second);
                 result.variableToColumnMetaVariableMap->emplace(variable.getExpressionVariable(), variablePair.second);
                 
-                storm::dd::Add<Type, ValueType> variableIdentity = result.manager->template getIdentity<ValueType>(variablePair.first).equals(result.manager->template getIdentity<ValueType>(variablePair.second)).template toAdd<ValueType>() * result.manager->getRange(variablePair.first).template toAdd<ValueType>() * result.manager->getRange(variablePair.second).template toAdd<ValueType>();
-                result.variableToIdentityMap.emplace(variable.getExpressionVariable(), variableIdentity);
+                storm::dd::Bdd<Type> variableIdentity = result.manager->getIdentity(variablePair.first, variablePair.second);
+                result.variableToIdentityMap.emplace(variable.getExpressionVariable(), variableIdentity.template toAdd<ValueType>());
                 result.rowColumnMetaVariablePairs.push_back(variablePair);
                 result.variableToRangeMap.emplace(variablePair.first, result.manager->getRange(variablePair.first));
                 result.variableToRangeMap.emplace(variablePair.second, result.manager->getRange(variablePair.second));
@@ -440,8 +440,8 @@ namespace storm {
                 result.columnMetaVariables.insert(variablePair.second);
                 result.variableToColumnMetaVariableMap->emplace(variable.getExpressionVariable(), variablePair.second);
                 
-                storm::dd::Add<Type, ValueType> variableIdentity = result.manager->template getIdentity<ValueType>(variablePair.first).equals(result.manager->template getIdentity<ValueType>(variablePair.second)).template toAdd<ValueType>();
-                result.variableToIdentityMap.emplace(variable.getExpressionVariable(), variableIdentity);
+                storm::dd::Bdd<Type> variableIdentity = result.manager->getIdentity(variablePair.first, variablePair.second);
+                result.variableToIdentityMap.emplace(variable.getExpressionVariable(), variableIdentity.template toAdd<ValueType>());
                 
                 result.variableToRangeMap.emplace(variablePair.first, result.manager->getRange(variablePair.first));
                 result.variableToRangeMap.emplace(variablePair.second, result.manager->getRange(variablePair.second));

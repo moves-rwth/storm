@@ -57,6 +57,42 @@ namespace storm {
             return InternalBdd<DdType::CUDD>(this, cuddManager.bddZero());
         }
         
+        InternalBdd<DdType::CUDD> InternalDdManager<DdType::CUDD>::getBddEncodingLessOrEqualThan(uint64_t bound, InternalBdd<DdType::CUDD> const& cube, uint64_t numberOfDdVariables) const {
+            DdNodePtr node = this->getBddEncodingLessOrEqualThanRec(0, (1ull << numberOfDdVariables) - 1, bound, cube.getCuddDdNode(), numberOfDdVariables);
+            STORM_LOG_ASSERT(node != nullptr, "Wut?");
+            FILE* fp = fopen("range.dot", "w");
+            Cudd_DumpDot(cuddManager.getManager(), 1, &node, nullptr, nullptr, fp);
+            fclose(fp);
+            
+            auto tmp = cudd::BDD(cuddManager, node);
+            return InternalBdd<DdType::CUDD>(this, tmp);
+        }
+        
+        DdNodePtr InternalDdManager<DdType::CUDD>::getBddEncodingLessOrEqualThanRec(uint64_t minimalValue, uint64_t maximalValue, uint64_t bound, DdNodePtr cube, uint64_t remainingDdVariables) const {
+            std::cout << minimalValue << " / " << maximalValue << " -> " << bound << std::endl;
+            if (maximalValue <= bound) {
+                return Cudd_ReadOne(cuddManager.getManager());
+            } else if (minimalValue > bound) {
+                return Cudd_ReadLogicZero(cuddManager.getManager());
+            }
+            
+            STORM_LOG_ASSERT(remainingDdVariables > 0, "Expected more remaining DD variables.");
+            STORM_LOG_ASSERT(!Cudd_IsConstant(cube), "Expected non-constant cube.");
+            uint64_t newRemainingDdVariables = remainingDdVariables - 1;
+            DdNodePtr elseResult = getBddEncodingLessOrEqualThanRec(minimalValue, maximalValue & ~(1ull << newRemainingDdVariables), bound, Cudd_T(cube), newRemainingDdVariables);
+            Cudd_Ref(elseResult);
+            DdNodePtr thenResult = getBddEncodingLessOrEqualThanRec(minimalValue | (1ull << newRemainingDdVariables), maximalValue, bound, Cudd_T(cube), newRemainingDdVariables);
+            Cudd_Ref(thenResult);
+            STORM_LOG_ASSERT(thenResult != elseResult, "Expected different results.");
+            
+            std::cout << "creating " << Cudd_NodeReadIndex(cube) << " -> " << thenResult << " / " << elseResult << std::endl;
+            DdNodePtr result = cuddUniqueInter(cuddManager.getManager(), Cudd_NodeReadIndex(cube), thenResult, elseResult);
+            std::cout << "result " << result << std::endl;
+            Cudd_Deref(thenResult);
+            Cudd_Deref(elseResult);
+            return result;
+        }
+        
         template<typename ValueType>
         InternalAdd<DdType::CUDD, ValueType> InternalDdManager<DdType::CUDD>::getAddZero() const {
             return InternalAdd<DdType::CUDD, ValueType>(this, cuddManager.addZero());

@@ -189,8 +189,8 @@ namespace storm {
                     columnMetaVariables.insert(variablePair.second);
                     variableToColumnMetaVariableMap->emplace(integerVariable.getExpressionVariable(), variablePair.second);
                     
-                    storm::dd::Add<Type, ValueType> variableIdentity = manager->template getIdentity<ValueType>(variablePair.first).equals(manager->template getIdentity<ValueType>(variablePair.second)).template toAdd<ValueType>() * manager->getRange(variablePair.first).template toAdd<ValueType>() * manager->getRange(variablePair.second).template toAdd<ValueType>();
-                    variableToIdentityMap.emplace(integerVariable.getExpressionVariable(), variableIdentity);
+                    storm::dd::Bdd<Type> variableIdentity = manager->getIdentity(variablePair.first, variablePair.second);
+                    variableToIdentityMap.emplace(integerVariable.getExpressionVariable(), variableIdentity.template toAdd<ValueType>());
                     rowColumnMetaVariablePairs.push_back(variablePair);
                     
                     allGlobalVariables.insert(integerVariable.getExpressionVariable());
@@ -206,8 +206,8 @@ namespace storm {
                     columnMetaVariables.insert(variablePair.second);
                     variableToColumnMetaVariableMap->emplace(booleanVariable.getExpressionVariable(), variablePair.second);
                     
-                    storm::dd::Add<Type, ValueType> variableIdentity = manager->template getIdentity<ValueType>(variablePair.first).equals(manager->template getIdentity<ValueType>(variablePair.second)).template toAdd<ValueType>();
-                    variableToIdentityMap.emplace(booleanVariable.getExpressionVariable(), variableIdentity);
+                    storm::dd::Bdd<Type> variableIdentity = manager->getIdentity(variablePair.first, variablePair.second);
+                    variableToIdentityMap.emplace(booleanVariable.getExpressionVariable(), variableIdentity.template toAdd<ValueType>());
                     
                     rowColumnMetaVariablePairs.push_back(variablePair);
                     allGlobalVariables.insert(booleanVariable.getExpressionVariable());
@@ -230,7 +230,7 @@ namespace storm {
                         columnMetaVariables.insert(variablePair.second);
                         variableToColumnMetaVariableMap->emplace(integerVariable.getExpressionVariable(), variablePair.second);
                         
-                        storm::dd::Bdd<Type> variableIdentity = manager->template getIdentity<ValueType>(variablePair.first).equals(manager->template getIdentity<ValueType>(variablePair.second)) && manager->getRange(variablePair.first) && manager->getRange(variablePair.second);
+                        storm::dd::Bdd<Type> variableIdentity = manager->getIdentity(variablePair.first, variablePair.second);
                         variableToIdentityMap.emplace(integerVariable.getExpressionVariable(), variableIdentity.template toAdd<ValueType>());
                         moduleIdentity &= variableIdentity;
                         moduleRange &= manager->getRange(variablePair.first);
@@ -247,7 +247,7 @@ namespace storm {
                         columnMetaVariables.insert(variablePair.second);
                         variableToColumnMetaVariableMap->emplace(booleanVariable.getExpressionVariable(), variablePair.second);
                         
-                        storm::dd::Bdd<Type> variableIdentity = manager->template getIdentity<ValueType>(variablePair.first).equals(manager->template getIdentity<ValueType>(variablePair.second)) && manager->getRange(variablePair.first) && manager->getRange(variablePair.second);
+                        storm::dd::Bdd<Type> variableIdentity = manager->getIdentity(variablePair.first, variablePair.second);
                         variableToIdentityMap.emplace(booleanVariable.getExpressionVariable(), variableIdentity.template toAdd<ValueType>());
                         moduleIdentity &= variableIdentity;
                         moduleRange &= manager->getRange(variablePair.first);

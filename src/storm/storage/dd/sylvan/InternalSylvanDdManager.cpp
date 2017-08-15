@@ -129,6 +129,28 @@ namespace storm {
             return InternalBdd<DdType::Sylvan>(this, sylvan::Bdd::bddZero());
         }
         
+        InternalBdd<DdType::Sylvan> InternalDdManager<DdType::Sylvan>::getBddEncodingLessOrEqualThan(uint64_t bound, InternalBdd<DdType::Sylvan> const& cube, uint64_t numberOfDdVariables) const {
+            return InternalBdd<DdType::Sylvan>(this, sylvan::Bdd(this->getBddEncodingLessOrEqualThanRec(0, (1ull << numberOfDdVariables) - 1, bound, cube.getSylvanBdd().GetBDD(), numberOfDdVariables)));
+        }
+        
+        BDD InternalDdManager<DdType::Sylvan>::getBddEncodingLessOrEqualThanRec(uint64_t minimalValue, uint64_t maximalValue, uint64_t bound, BDD cube, uint64_t remainingDdVariables) const {
+            if (maximalValue <= bound) {
+                return sylvan_true;
+            } else if (minimalValue > bound) {
+                return sylvan_false;
+            }
+            
+            STORM_LOG_ASSERT(remainingDdVariables > 0, "Expected more remaining DD variables.");
+            uint64_t newRemainingDdVariables = remainingDdVariables - 1;
+            BDD elseResult = getBddEncodingLessOrEqualThanRec(minimalValue, maximalValue & ~(1ull << newRemainingDdVariables), bound, sylvan_high(cube), newRemainingDdVariables);
+            bdd_refs_push(elseResult);
+            BDD thenResult = getBddEncodingLessOrEqualThanRec(minimalValue | (1ull << newRemainingDdVariables), maximalValue, bound, sylvan_high(cube), newRemainingDdVariables);
+            bdd_refs_push(elseResult);
+            BDD result = sylvan_makenode(sylvan_var(cube), elseResult, thenResult);
+            bdd_refs_pop(2);
+            return result;
+        }
+        
         template<>
         InternalAdd<DdType::Sylvan, double> InternalDdManager<DdType::Sylvan>::getAddZero() const {
             return InternalAdd<DdType::Sylvan, double>(this, sylvan::Mtbdd::doubleTerminal(storm::utility::zero<double>()));
