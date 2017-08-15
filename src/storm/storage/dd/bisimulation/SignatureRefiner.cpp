@@ -198,7 +198,11 @@ namespace storm {
                             result = thenResult;
                         } else {
                             // Get the node to connect the subresults.
-                            result = cuddUniqueInter(ddman, Cudd_NodeReadIndex(nonBlockVariablesNode) + offset, thenResult, elseResult);
+                            bool complemented = Cudd_IsComplement(thenResult);
+                            result = cuddUniqueInter(ddman, Cudd_NodeReadIndex(nonBlockVariablesNode) + offset, Cudd_Regular(thenResult), complemented ? Cudd_Not(elseResult) : elseResult);
+                            if (complemented) {
+                                result = Cudd_Not(result);
+                            }
                             Cudd_Deref(thenResult);
                             Cudd_Deref(elseResult);
                         }
