@@ -202,7 +202,7 @@ namespace storm {
                 
                 storm::storage::SparseMatrix<ValueType> const& allTransitions = modelMemoryProduct->getTransitionMatrix();
                 std::shared_ptr<EpochModel> result = std::make_shared<EpochModel>();
-                storm::storage::BitVector rewardChoices(allTransitions.getRowCount(), false);
+                result->rewardChoices = storm::storage::BitVector(allTransitions.getRowCount(), false);
                 result->epochSteps.resize(modelMemoryProduct->getNumberOfChoices());
                 for (uint64_t modelState = 0; modelState < model.getNumberOfStates(); ++modelState) {
                     uint64_t numChoices = model.getTransitionMatrix().getRowGroupSize(modelState);
@@ -220,14 +220,14 @@ namespace storm {
                                 uint64_t productChoice = allTransitions.getRowGroupIndices()[productState] + choiceOffset;
                                 assert(productChoice < allTransitions.getRowGroupIndices()[productState + 1]);
                                 result->epochSteps[productChoice] = step;
-                                rewardChoices.set(productChoice, true);
+                                result->rewardChoices.set(productChoice, true);
                             }
                         }
                     }
                 }
                 
-                result->rewardTransitions = allTransitions.filterEntries(rewardChoices);
-                result->intermediateTransitions = allTransitions.filterEntries(~rewardChoices);
+                result->rewardTransitions = allTransitions.filterEntries(result->rewardChoices);
+                result->intermediateTransitions = allTransitions.filterEntries(~result->rewardChoices);
                 
                 result->objectiveRewards = computeObjectiveRewardsForEpoch(epoch, modelMemoryProduct);
  

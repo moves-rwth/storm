@@ -24,6 +24,7 @@ namespace storm {
                 struct EpochModel {
                     storm::storage::SparseMatrix<ValueType> rewardTransitions;
                     storm::storage::SparseMatrix<ValueType> intermediateTransitions;
+                    storm::storage::BitVector rewardChoices;
                     std::vector<boost::optional<Epoch>> epochSteps;
                     std::vector<std::vector<ValueType>> objectiveRewards;
                     std::vector<storm::storage::BitVector> objectiveRewardFilter;
