@@ -31,7 +31,7 @@ namespace storm {
             /*!
              * An enum for the different model types.
              */
-            enum class ModelType {UNDEFINED, DTMC, CTMC, MDP, CTMDP, MA};
+            enum class ModelType {UNDEFINED, DTMC, CTMC, MDP, CTMDP, MA, POMDP};
             
             enum class ValidityCheckLevel  : unsigned {VALIDINPUT = 0, READYFORPROCESSING = 1};
             
@@ -84,6 +84,11 @@ namespace storm {
              * Retrieves whether the model is one without nondeterministic choices, i.e. a DTMC or a CTMC.
              */
             bool isDeterministicModel() const;
+
+            /*!
+             * Retrieves whether the model has restricted observability
+             */
+            bool isPartiallyObservable() const;
 
             /*!
              * Retrieves whether there are undefined constants of any type in the program.

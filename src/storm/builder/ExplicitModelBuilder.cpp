@@ -73,6 +73,8 @@ namespace storm {
                     return storm::utility::builder::buildModelFromComponents(storm::models::ModelType::Ctmc, buildModelComponents());
                 case storm::generator::ModelType::MDP:
                     return storm::utility::builder::buildModelFromComponents(storm::models::ModelType::Mdp, buildModelComponents());
+                case storm::generator::ModelType::POMDP:
+                    return storm::utility::builder::buildModelFromComponents(storm::models::ModelType::Pomdp, buildModelComponents());
                 case storm::generator::ModelType::MA:
                     return storm::utility::builder::buildModelFromComponents(storm::models::ModelType::MarkovAutomaton, buildModelComponents());
                 default:

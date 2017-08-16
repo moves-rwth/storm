@@ -133,6 +133,11 @@ namespace storm {
         bool JaniNextStateGenerator<ValueType, StateType>::isDiscreteTimeModel() const {
             return model.isDiscreteTimeModel();
         }
+
+        template<typename ValueType, typename StateType>
+        bool JaniNextStateGenerator<ValueType, StateType>::isPartiallyObservable() const {
+            return false;
+        };
         
         template<typename ValueType, typename StateType>
         uint64_t JaniNextStateGenerator<ValueType, StateType>::getLocation(CompressedState const& state, LocationVariableInformation const& locationVariable) const {

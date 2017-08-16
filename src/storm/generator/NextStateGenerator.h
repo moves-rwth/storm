@@ -28,7 +28,8 @@ namespace storm {
             DTMC,
             CTMC,
             MDP,
-            MA
+            MA,
+            POMDP
         };
         
         template<typename ValueType, typename StateType = uint32_t>
@@ -50,6 +51,7 @@ namespace storm {
             virtual ModelType getModelType() const = 0;
             virtual bool isDeterministicModel() const = 0;
             virtual bool isDiscreteTimeModel() const = 0;
+            virtual bool isPartiallyObservable() const = 0;
             virtual std::vector<StateType> getInitialStates(StateToIdCallback const& stateToIdCallback) = 0;
             
             void load(CompressedState const& state);

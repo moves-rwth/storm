@@ -60,13 +60,10 @@ namespace storm {
             }
 
             template class Mdp<double>;
-
-#ifdef STORM_HAVE_CARL
             template class Mdp<storm::RationalNumber>;
 
             template class Mdp<double, storm::models::sparse::StandardRewardModel<storm::Interval>>;
             template class Mdp<storm::RationalFunction>;
-#endif
         } // namespace sparse
     } // namespace models
 } // namespace storm

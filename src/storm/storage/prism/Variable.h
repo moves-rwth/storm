@@ -60,6 +60,11 @@ namespace storm {
              * @return The expression associated with this variable.
              */
             storm::expressions::Expression getExpression() const;
+
+            /*!
+             * Retrieves whether the variable is observable.
+             */
+            bool isObservable() const;
             
             /*!
              * Equips the variable with an initial value based on its type if not initial value is present.
@@ -75,10 +80,11 @@ namespace storm {
              *
              * @param variable The associated expression variable.
              * @param initialValueExpression The constant expression that defines the initial value of the variable.
+             * @param observable Whether the variable is listed as observable
              * @param filename The filename in which the variable is defined.
              * @param lineNumber The line number in which the variable is defined.
              */
-            Variable(storm::expressions::Variable const& variable, storm::expressions::Expression const& initialValueExpression, std::string const& filename = "", uint_fast64_t lineNumber = 0);
+            Variable(storm::expressions::Variable const& variable, storm::expressions::Expression const& initialValueExpression, bool observable = false, std::string const& filename = "", uint_fast64_t lineNumber = 0);
             
             /*!
              * Creates a copy of the given variable and performs the provided renaming.
@@ -87,10 +93,11 @@ namespace storm {
              * @param oldVariable The variable to copy.
              * @param newName New name of this variable.
              * @param renaming A mapping from variables to the expressions with which they are to be replaced.
+             * @param observable Whether the variable is listed as observable
              * @param filename The filename in which the variable is defined.
              * @param lineNumber The line number in which the variable is defined.
              */
-            Variable(storm::expressions::ExpressionManager& manager, Variable const& oldVariable, std::string const& newName, std::map<storm::expressions::Variable, storm::expressions::Expression> const& renaming, std::string const& filename = "", uint_fast64_t lineNumber = 0);
+            Variable(storm::expressions::ExpressionManager& manager, Variable const& oldVariable, std::string const& newName, std::map<storm::expressions::Variable, storm::expressions::Expression> const& renaming, bool observable = false, std::string const& filename = "", uint_fast64_t lineNumber = 0);
             
         private:
             // The expression variable associated with this variable.
@@ -98,6 +105,9 @@ namespace storm {
             
             // The constant expression defining the initial value of the variable.
             storm::expressions::Expression initialValueExpression;
+
+            // Whether this variable is a so-called observable. If true, the variable is listed as observable
+            bool observable;
         };
         
     } // namespace prism

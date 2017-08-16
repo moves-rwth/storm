@@ -44,6 +44,7 @@ namespace storm {
             bool hasInitialConstruct;
             storm::prism::InitialConstruct initialConstruct;
             boost::optional<storm::prism::SystemCompositionConstruct> systemCompositionConstruct;
+
             
             // Counters to provide unique indexing for commands and updates.
             uint_fast64_t currentCommandIndex;
@@ -77,7 +78,8 @@ namespace storm {
                     ("ctmc", storm::prism::Program::ModelType::CTMC)
                     ("mdp", storm::prism::Program::ModelType::MDP)
                     ("ctmdp", storm::prism::Program::ModelType::CTMDP)
-                    ("ma", storm::prism::Program::ModelType::MA);
+                    ("ma", storm::prism::Program::ModelType::MA)
+                    ("pomdp", storm::prism::Program::ModelType::POMDP);
                 }
             };
             
@@ -89,21 +91,22 @@ namespace storm {
                     ("mdp", 3)
                     ("ctmdp", 4)
                     ("ma", 5)
-                    ("const", 6)
-                    ("int", 7)
-                    ("bool", 8)
-                    ("module", 9)
-                    ("endmodule", 10)
-                    ("rewards", 11)
-                    ("endrewards", 12)
-                    ("true", 13)
-                    ("false", 14)
-                    ("min", 15)
-                    ("max", 16)
-                    ("floor", 17)
-                    ("ceil", 18)
-                    ("init", 19)
-                    ("endinit", 20);
+                    ("pomdp", 6)
+                    ("const", 7)
+                    ("int", 8)
+                    ("bool", 9)
+                    ("module", 10)
+                    ("endmodule", 11)
+                    ("rewards", 12)
+                    ("endrewards", 13)
+                    ("true", 14)
+                    ("false", 15)
+                    ("min", 16)
+                    ("max", 17)
+                    ("floor", 18)
+                    ("ceil", 19)
+                    ("init", 20)
+                    ("endinit", 21);
                 }
             };
             
@@ -157,7 +160,9 @@ namespace storm {
              * @return The name of the file currently being parsed.
              */
             std::string const& getFilename() const;
-            
+
+            std::vector<std::string> observables;
+
             // A function used for annotating the entities with their position.
             phoenix::function<PositionAnnotation> annotate;
             
@@ -207,7 +212,9 @@ namespace storm {
             
             // Rules for initial states expression.
             qi::rule<Iterator, qi::unused_type(GlobalProgramInformation&), Skipper> initialStatesConstruct;
-            
+
+            qi::rule<Iterator, qi::unused_type(), Skipper> observablesConstruct;
+
             // Rules for the system composition.
             qi::rule<Iterator, qi::unused_type(GlobalProgramInformation&), Skipper> systemCompositionConstruct;
             qi::rule<Iterator, std::shared_ptr<storm::prism::Composition>(), Skipper> parallelComposition;
