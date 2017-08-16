@@ -58,8 +58,10 @@ namespace storm {
                                     auto const& rewardModel = this->model.getRewardModel(rewardName);
                                     STORM_LOG_THROW(!rewardModel.hasTransitionRewards(), storm::exceptions::NotSupportedException, "Transition rewards are currently not supported as reward bounds.");
                                     std::vector<ValueType> actionRewards = rewardModel.getTotalRewardVector(this->model.getTransitionMatrix());
+                                    std::cout << "action rewards " << storm::utility::vector::toString(actionRewards) << std::endl;
                                     auto discretizedRewardsAndFactor = storm::utility::vector::toIntegralVector<ValueType, uint64_t>(actionRewards);
                                     scaledRewards.push_back(std::move(discretizedRewardsAndFactor.first));
+                                    std::cout << "scaled rewards " << storm::utility::vector::toString(scaledRewards.back()) << std::endl;
                                     scalingFactors.push_back(std::move(discretizedRewardsAndFactor.second));
                                 }
                             }
@@ -134,16 +136,19 @@ namespace storm {
                 seenEpochs.insert(startEpoch);
                 dfsStack.push_back(startEpoch);
                 while (!dfsStack.empty()) {
-                    Epoch currEpoch = std::move(dfsStack.back());
-                    dfsStack.pop_back();
+                    bool hasUnseenSuccessor = false;
                     for (auto const& step : steps) {
-                        Epoch successorEpoch = getSuccessorEpoch(currEpoch, step);
+                        Epoch successorEpoch = getSuccessorEpoch(dfsStack.back(), step);
                         if (seenEpochs.find(successorEpoch) == seenEpochs.end()) {
                             seenEpochs.insert(successorEpoch);
                             dfsStack.push_back(std::move(successorEpoch));
+                            hasUnseenSuccessor = true;
                         }
                     }
-                    result.push_back(std::move(currEpoch));
+                    if (!hasUnseenSuccessor) {
+                        result.push_back(std::move(dfsStack.back()));
+                        dfsStack.pop_back();
+                    }
                 }
                 
                 return result;
@@ -189,6 +194,9 @@ namespace storm {
                     }
                 }
                 
+                std::cout << "Epoch model for epoch: " << storm::utility::vector::toString(epoch) << std::endl;
+                std::cout << "Reward choices in this epoch are " << epochModel->rewardChoices << std::endl;
+                
                 return *epochModel;
             }
             
@@ -211,6 +219,7 @@ namespace storm {
                         Epoch step;
                         bool isZeroStep = true;
                         for (uint64_t dim = 0; dim < epoch.size(); ++dim) {
+                            std::cout << " scaled rewards " << storm::utility::vector::toString(scaledRewards[dim]) << std::endl;
                             step.push_back(scaledRewards[dim][firstChoice + choiceOffset]);
                             isZeroStep = isZeroStep && (step.back() == 0 || epoch[dim] < 0);
                         }
