@@ -1603,7 +1603,6 @@ namespace storm {
             for (index_type row = 0; row < this->rowCount; ++row) {
                 auto rowSum = getRowSum(row);
                 if (!comparator.isOne(rowSum)) {
-                    std::cout << "row sum of row " << row << " is " << rowSum << std::endl;
                     return false;
                 }
             }

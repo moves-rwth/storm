@@ -28,7 +28,6 @@ namespace storm {
                 
                 std::shared_ptr<storm::models::symbolic::Model<DdType, ValueType>> extractDdQuotient(storm::models::symbolic::Model<DdType, ValueType> const& model, Partition<DdType, ValueType> const& partition, PreservationInformation<DdType, ValueType> const& preservationInformation);
                 std::shared_ptr<storm::models::symbolic::Model<DdType, ValueType>> extractQuotientUsingBlockVariables(storm::models::symbolic::Model<DdType, ValueType> const& model, Partition<DdType, ValueType> const& partition, PreservationInformation<DdType, ValueType> const& preservationInformation);
-                std::shared_ptr<storm::models::symbolic::Model<DdType, ValueType>> extractQuotientUsingOriginalVariables(storm::models::symbolic::Model<DdType, ValueType> const& model, Partition<DdType, ValueType> const& partition, PreservationInformation<DdType, ValueType> const& preservationInformation);
                 
                 bool useRepresentatives;
                 storm::settings::modules::BisimulationSettings::QuotientFormat quotientFormat;

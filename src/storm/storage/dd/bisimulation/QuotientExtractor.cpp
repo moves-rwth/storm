@@ -33,6 +33,182 @@ namespace storm {
         namespace bisimulation {
 
             template<storm::dd::DdType DdType, typename ValueType>
+            class InternalRepresentativeComputer;
+
+            template<storm::dd::DdType DdType, typename ValueType>
+            class InternalRepresentativeComputerBase {
+            public:
+                InternalRepresentativeComputerBase(Partition<DdType, ValueType> const& partition, std::set<storm::expressions::Variable> const& rowVariables, std::set<storm::expressions::Variable> const& columnVariables) : partition(partition), rowVariables(rowVariables), columnVariables(columnVariables) {
+                    if (partition.storedAsAdd()) {
+                        ddManager = &partition.asAdd().getDdManager();
+                    } else {
+                        ddManager = &partition.asBdd().getDdManager();
+                    }
+                    internalDdManager = &ddManager->getInternalDdManager();
+                    
+                    // Create state variables cube.
+                    this->columnVariablesCube = ddManager->getBddOne();
+                    for (auto const& var : columnVariables) {
+                        auto const& metaVariable = ddManager->getMetaVariable(var);
+                        this->columnVariablesCube &= metaVariable.getCube();
+                    }
+                }
+                
+            protected:
+                storm::dd::DdManager<DdType> const* ddManager;
+                storm::dd::InternalDdManager<DdType> const* internalDdManager;
+
+                Partition<DdType, ValueType> const& partition;
+                std::set<storm::expressions::Variable> const& rowVariables;
+                std::set<storm::expressions::Variable> const& columnVariables;
+                storm::dd::Bdd<DdType> columnVariablesCube;
+            };
+
+            template<typename ValueType>
+            class InternalRepresentativeComputer<storm::dd::DdType::CUDD, ValueType> : public InternalRepresentativeComputerBase<storm::dd::DdType::CUDD, ValueType> {
+            public:
+                InternalRepresentativeComputer(Partition<storm::dd::DdType::CUDD, ValueType> const& partition, std::set<storm::expressions::Variable> const& rowVariables, std::set<storm::expressions::Variable> const& columnVariables) : InternalRepresentativeComputerBase<storm::dd::DdType::CUDD, ValueType>(partition, rowVariables, columnVariables) {
+                    this->ddman = this->internalDdManager->getCuddManager().getManager();
+                }
+                
+                storm::dd::Bdd<storm::dd::DdType::CUDD> getRepresentatives() {
+                    return storm::dd::Bdd<storm::dd::DdType::CUDD>(*this->ddManager, storm::dd::InternalBdd<storm::dd::DdType::CUDD>(this->internalDdManager, cudd::BDD(this->internalDdManager->getCuddManager(), this->getRepresentativesRec(this->partition.asAdd().getInternalAdd().getCuddDdNode(), this->columnVariablesCube.getInternalBdd().getCuddDdNode()))), this->rowVariables);
+                }
+                
+            private:
+                DdNodePtr getRepresentativesRec(DdNodePtr partitionNode, DdNodePtr stateVariablesCube) {
+                    if (partitionNode == Cudd_ReadZero(ddman)) {
+                        return Cudd_ReadLogicZero(ddman);
+                    }
+                    
+                    // If we visited the node before, there is no block that we still need to cover.
+                    if (visitedNodes.find(partitionNode) != visitedNodes.end()) {
+                        return Cudd_ReadLogicZero(ddman);
+                    }
+                    
+                    // If we hit a block variable and have not yet terminated the DFS earlier, it means we have a new representative.
+                    if (Cudd_IsConstant(stateVariablesCube)) {
+                        visitedNodes.emplace(partitionNode, true);
+                        return Cudd_ReadOne(ddman);
+                    } else {
+                        bool skipped = false;
+                        DdNodePtr elsePartitionNode;
+                        DdNodePtr thenPartitionNode;
+                        if (Cudd_NodeReadIndex(partitionNode) == Cudd_NodeReadIndex(stateVariablesCube)) {
+                            elsePartitionNode = Cudd_E(partitionNode);
+                            thenPartitionNode = Cudd_T(partitionNode);
+                        } else {
+                            elsePartitionNode = thenPartitionNode = partitionNode;
+                            skipped = true;
+                        }
+                        
+                        if (!skipped) {
+                            visitedNodes.emplace(partitionNode, true);
+                        }
+                        
+                        // Otherwise, recursively proceed with DFS.
+                        DdNodePtr elseResult = getRepresentativesRec(elsePartitionNode, Cudd_T(stateVariablesCube));
+                        Cudd_Ref(elseResult);
+
+                        DdNodePtr thenResult = nullptr;
+                        if (!skipped) {
+                            thenResult = getRepresentativesRec(thenPartitionNode, Cudd_T(stateVariablesCube));
+                            Cudd_Ref(thenResult);
+                            
+                            if (thenResult == elseResult) {
+                                Cudd_Deref(elseResult);
+                                Cudd_Deref(thenResult);
+                                return elseResult;
+                            } else {
+                                bool complement = Cudd_IsComplement(thenResult);
+                                auto result = cuddUniqueInter(ddman, Cudd_NodeReadIndex(stateVariablesCube) - 1, Cudd_Regular(thenResult), complement ? Cudd_Not(elseResult) : elseResult);
+                                Cudd_Deref(elseResult);
+                                Cudd_Deref(thenResult);
+                                return complement ? Cudd_Not(result) : result;
+                            }
+                        } else {
+                            auto result = Cudd_Not(cuddUniqueInter(ddman, Cudd_NodeReadIndex(stateVariablesCube) - 1, Cudd_ReadOne(ddman), Cudd_Not(elseResult)));
+                            Cudd_Deref(elseResult);
+                            return result;
+                        }
+                    }
+                }
+                
+                ::DdManager* ddman;
+                spp::sparse_hash_map<DdNode const*, bool> visitedNodes;
+            };
+
+            template<typename ValueType>
+            class InternalRepresentativeComputer<storm::dd::DdType::Sylvan, ValueType> : public InternalRepresentativeComputerBase<storm::dd::DdType::Sylvan, ValueType> {
+            public:
+                InternalRepresentativeComputer(Partition<storm::dd::DdType::Sylvan, ValueType> const& partition, std::set<storm::expressions::Variable> const& rowVariables, std::set<storm::expressions::Variable> const& columnVariables) : InternalRepresentativeComputerBase<storm::dd::DdType::Sylvan, ValueType>(partition, rowVariables, columnVariables) {
+                    // Intentionally left empty.
+                }
+                
+                storm::dd::Bdd<storm::dd::DdType::Sylvan> getRepresentatives() {
+                    return storm::dd::Bdd<storm::dd::DdType::Sylvan>(*this->ddManager, storm::dd::InternalBdd<storm::dd::DdType::Sylvan>(this->internalDdManager, sylvan::Bdd(this->getRepresentativesRec(this->partition.asBdd().getInternalBdd().getSylvanBdd().GetBDD(), this->columnVariablesCube.getInternalBdd().getSylvanBdd().GetBDD()))), this->rowVariables);
+                }
+
+            private:
+                BDD getRepresentativesRec(BDD partitionNode, BDD stateVariablesCube) {
+                    if (partitionNode == sylvan_false) {
+                        return sylvan_false;
+                    }
+                    
+                    // If we visited the node before, there is no block that we still need to cover.
+                    if (visitedNodes.find(partitionNode) != visitedNodes.end()) {
+                        return sylvan_false;
+                    }
+                    
+                    // If we hit a block variable and have not yet terminated the DFS earlier, it means we have a new representative.
+                    if (sylvan_isconst(stateVariablesCube)) {
+                        visitedNodes.emplace(partitionNode, true);
+                        return sylvan_true;
+                    } else {
+                        bool skipped = false;
+                        BDD elsePartitionNode;
+                        BDD thenPartitionNode;
+                        if (sylvan_var(partitionNode) == sylvan_var(stateVariablesCube)) {
+                            elsePartitionNode = sylvan_low(partitionNode);
+                            thenPartitionNode = sylvan_high(partitionNode);
+                        } else {
+                            elsePartitionNode = thenPartitionNode = partitionNode;
+                            skipped = true;
+                        }
+                        
+                        if (!skipped) {
+                            visitedNodes.emplace(partitionNode, true);
+                        }
+                        
+                        // Otherwise, recursively proceed with DFS.
+                        BDD elseResult = getRepresentativesRec(elsePartitionNode, sylvan_high(stateVariablesCube));
+                        mtbdd_refs_push(elseResult);
+                        
+                        BDD thenResult;
+                        if (!skipped) {
+                            thenResult = getRepresentativesRec(thenPartitionNode, sylvan_high(stateVariablesCube));
+                            mtbdd_refs_push(thenResult);
+                            
+                            if (thenResult == elseResult) {
+                                mtbdd_refs_pop(2);
+                                return elseResult;
+                            } else {
+                                auto result = sylvan_makenode(sylvan_var(stateVariablesCube) - 1, elseResult, thenResult);
+                                mtbdd_refs_pop(2);
+                                return result;
+                            }
+                        } else {
+                            auto result = sylvan_makenode(sylvan_var(stateVariablesCube) - 1, elseResult, sylvan_false);
+                            mtbdd_refs_pop(1);
+                            return result;
+                        }
+                    }
+                }
+                
+                spp::sparse_hash_map<BDD, bool> visitedNodes;
+            };
+
+            template<storm::dd::DdType DdType, typename ValueType>
             class InternalSparseQuotientExtractor;
 
             template<storm::dd::DdType DdType, typename ValueType>
@@ -651,14 +827,23 @@ namespace storm {
                 InternalSparseQuotientExtractor<DdType, ValueType> sparseExtractor(model.getManager(), model.getRowVariables(), model.getNondeterminismVariables());
                 auto states = partition.getStates().swapVariables(model.getRowColumnMetaVariablePairs());
                 
+                storm::dd::Bdd<DdType> partitionAsBdd = partition.storedAsAdd() ? partition.asAdd().toBdd() : partition.asBdd();
+                partitionAsBdd = partitionAsBdd.renameVariables(model.getColumnVariables(), model.getRowVariables());
+                partitionAsBdd.template toAdd<ValueType>().exportToDot("partition.dot");
+
                 auto start = std::chrono::high_resolution_clock::now();
-                storm::storage::SparseMatrix<ValueType> quotientTransitionMatrix = sparseExtractor.extractTransitionMatrix(model.getTransitionMatrix(), partition);
+                // FIXME: Use partition as BDD in representative computation.
+                auto representatives = InternalRepresentativeComputer<DdType, ValueType>(partition, model.getRowVariables(), model.getColumnVariables()).getRepresentatives();
+                representatives.template toAdd<ValueType>().exportToDot("repr.dot");
+                (model.getTransitionMatrix() * representatives.template toAdd<ValueType>()).exportToDot("extract.dot");
+                storm::storage::SparseMatrix<ValueType> quotientTransitionMatrix = sparseExtractor.extractTransitionMatrix(model.getTransitionMatrix() * representatives.template toAdd<ValueType>(), partition);
                 auto end = std::chrono::high_resolution_clock::now();
                 STORM_LOG_TRACE("Quotient transition matrix extracted in " << std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count() << "ms.");
                 
                 start = std::chrono::high_resolution_clock::now();
+                storm::dd::Odd odd = representatives.createOdd();
                 storm::models::sparse::StateLabeling quotientStateLabeling(partition.getNumberOfBlocks());
-                quotientStateLabeling.addLabel("init", sparseExtractor.extractStates(model.getInitialStates(), partition));
+                quotientStateLabeling.addLabel("init", ((model.getInitialStates() && partitionAsBdd).existsAbstract(model.getRowVariables()) && partitionAsBdd && representatives).existsAbstract({partition.getBlockVariable()}).toVector(odd));
                 quotientStateLabeling.addLabel("deadlock", sparseExtractor.extractStates(model.getDeadlockStates(), partition));
                 
                 for (auto const& label : preservationInformation.getLabels()) {
@@ -743,15 +928,15 @@ namespace storm {
                     auto end = std::chrono::high_resolution_clock::now();
                     STORM_LOG_TRACE("Quotient labels extracted in " << std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count() << "ms.");
 
-                    storm::dd::Add<DdType, ValueType> partitionAsAdd = partitionAsBdd.template toAdd<ValueType>();
                     start = std::chrono::high_resolution_clock::now();
-                    storm::dd::Add<DdType, ValueType> quotientTransitionMatrix = model.getTransitionMatrix().multiplyMatrix(partitionAsAdd.renameVariables(blockVariableSet, blockPrimeVariableSet), model.getColumnVariables());
+                    storm::dd::Add<DdType, ValueType> quotientTransitionMatrix = model.getTransitionMatrix().multiplyMatrix(partitionAsBdd.renameVariables(blockVariableSet, blockPrimeVariableSet), model.getColumnVariables());
                     
                     // Pick a representative from each block.
-                    partitionAsBdd = partitionAsBdd.existsAbstractRepresentative(model.getColumnVariables());
-                    partitionAsAdd = partitionAsBdd.template toAdd<ValueType>();
+                    auto representatives = InternalRepresentativeComputer<DdType, ValueType>(partition, model.getRowVariables(), model.getColumnVariables()).getRepresentatives();
+                    partitionAsBdd = representatives && partitionAsBdd.renameVariables(model.getColumnVariables(), model.getRowVariables());
+                    storm::dd::Add<DdType, ValueType> partitionAsAdd = partitionAsBdd.template toAdd<ValueType>();
                     
-                    quotientTransitionMatrix = quotientTransitionMatrix.multiplyMatrix(partitionAsAdd.renameVariables(model.getColumnVariables(), model.getRowVariables()), model.getRowVariables());
+                    quotientTransitionMatrix = quotientTransitionMatrix.multiplyMatrix(partitionAsAdd, model.getRowVariables());
                     end = std::chrono::high_resolution_clock::now();
                     
                     // Check quotient matrix for sanity.
@@ -776,61 +961,7 @@ namespace storm {
                     STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Cannot extract quotient for this model type.");
                 }
             }
-            
-            template<storm::dd::DdType DdType, typename ValueType>
-            std::shared_ptr<storm::models::symbolic::Model<DdType, ValueType>> QuotientExtractor<DdType, ValueType>::extractQuotientUsingOriginalVariables(storm::models::symbolic::Model<DdType, ValueType> const& model, Partition<DdType, ValueType> const& partition, PreservationInformation<DdType, ValueType> const& preservationInformation) {
-                auto modelType = model.getType();
-                
-                if (modelType == storm::models::ModelType::Dtmc || modelType == storm::models::ModelType::Ctmc) {
-                    std::set<storm::expressions::Variable> blockVariableSet = {partition.getBlockVariable()};
-                    std::set<storm::expressions::Variable> blockPrimeVariableSet = {partition.getPrimedBlockVariable()};
-                    std::vector<std::pair<storm::expressions::Variable, storm::expressions::Variable>> blockMetaVariablePairs = {std::make_pair(partition.getBlockVariable(), partition.getPrimedBlockVariable())};
-                    
-                    storm::dd::Add<DdType, ValueType> partitionAsAdd = partition.storedAsBdd() ? partition.asBdd().template toAdd<ValueType>() : partition.asAdd();
-                    storm::dd::Add<DdType, ValueType> quotientTransitionMatrix = model.getTransitionMatrix().multiplyMatrix(partitionAsAdd, model.getColumnVariables());
-                    quotientTransitionMatrix = quotientTransitionMatrix.renameVariables(blockVariableSet, model.getColumnVariables());
-                    partitionAsAdd = partitionAsAdd / partitionAsAdd.sumAbstract(model.getColumnVariables());
-                    quotientTransitionMatrix = quotientTransitionMatrix.multiplyMatrix(partitionAsAdd, model.getRowVariables());
-                    quotientTransitionMatrix = quotientTransitionMatrix.renameVariables(blockVariableSet, model.getRowVariables());
-                    storm::dd::Bdd<DdType> quotientTransitionMatrixBdd = quotientTransitionMatrix.notZero();
-                    
-                    // Check quotient matrix for sanity.
-                    STORM_LOG_ASSERT(quotientTransitionMatrix.greater(storm::utility::one<ValueType>()).isZero(), "Illegal entries in quotient matrix.");
-                    STORM_LOG_ASSERT(quotientTransitionMatrix.sumAbstract(blockPrimeVariableSet).equalModuloPrecision(quotientTransitionMatrix.notZero().existsAbstract(blockPrimeVariableSet).template toAdd<ValueType>(), ValueType(1e-6)), "Illegal non-probabilistic matrix.");
-                    
-                    storm::dd::Bdd<DdType> partitionAsBdd = partition.storedAsBdd() ? partition.asBdd() : partition.asAdd().notZero();
-                    storm::dd::Bdd<DdType> partitionAsBddOverRowVariables = partitionAsBdd.renameVariables(model.getColumnVariables(), model.getRowVariables());
-                    storm::dd::Bdd<DdType> reachableStates = partitionAsBdd.existsAbstract(model.getColumnVariables()).renameVariables(blockVariableSet, model.getRowVariables());
-                    storm::dd::Bdd<DdType> initialStates = (model.getInitialStates() && partitionAsBdd.renameVariables(model.getColumnVariables(), model.getRowVariables())).existsAbstract(model.getRowVariables()).renameVariables(blockVariableSet, model.getRowVariables());
-                    storm::dd::Bdd<DdType> deadlockStates = !quotientTransitionMatrixBdd.existsAbstract(model.getColumnVariables()) && reachableStates;
-                    
-                    std::map<std::string, storm::dd::Bdd<DdType>> preservedLabelBdds;
-                    for (auto const& label : preservationInformation.getLabels()) {
-                        preservedLabelBdds.emplace(label, (model.getStates(label) && partitionAsBddOverRowVariables).existsAbstract(model.getRowVariables()));
-                    }
-                    for (auto const& expression : preservationInformation.getExpressions()) {
-                        std::stringstream stream;
-                        stream << expression;
-                        std::string expressionAsString = stream.str();
                         
-                        auto it = preservedLabelBdds.find(expressionAsString);
-                        if (it != preservedLabelBdds.end()) {
-                            STORM_LOG_WARN("Duplicate label '" << expressionAsString << "', dropping second label definition.");
-                        } else {
-                            preservedLabelBdds.emplace(stream.str(), (model.getStates(expression) && partitionAsBddOverRowVariables).existsAbstract(model.getRowVariables()));
-                        }
-                    }
-                    
-                    if (modelType == storm::models::ModelType::Dtmc) {
-                        return std::shared_ptr<storm::models::symbolic::Dtmc<DdType, ValueType>>(new storm::models::symbolic::Dtmc<DdType, ValueType>(model.getManager().asSharedPointer(), reachableStates, initialStates, deadlockStates, quotientTransitionMatrix, model.getRowVariables(), model.getColumnVariables(), model.getRowColumnMetaVariablePairs(), preservedLabelBdds, {}));
-                    } else {
-                        return std::shared_ptr<storm::models::symbolic::Ctmc<DdType, ValueType>>(new storm::models::symbolic::Ctmc<DdType, ValueType>(model.getManager().asSharedPointer(), reachableStates, initialStates, deadlockStates, quotientTransitionMatrix, blockVariableSet, blockPrimeVariableSet, blockMetaVariablePairs, preservedLabelBdds, {}));
-                    }
-                } else {
-                    STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Cannot exctract quotient for this model type.");
-                }
-            }
-            
             template class QuotientExtractor<storm::dd::DdType::CUDD, double>;
             
             template class QuotientExtractor<storm::dd::DdType::Sylvan, double>;
