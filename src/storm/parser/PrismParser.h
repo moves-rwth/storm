@@ -161,7 +161,7 @@ namespace storm {
              */
             std::string const& getFilename() const;
 
-            std::vector<std::string> observables;
+            mutable std::set<std::string> observables;
 
             // A function used for annotating the entities with their position.
             phoenix::function<PositionAnnotation> annotate;
@@ -282,7 +282,9 @@ namespace storm {
             storm::prism::Module createModule(std::string const& moduleName, std::vector<storm::prism::BooleanVariable> const& booleanVariables, std::vector<storm::prism::IntegerVariable> const& integerVariables, std::vector<storm::prism::Command> const& commands, GlobalProgramInformation& globalProgramInformation) const;
             storm::prism::Module createRenamedModule(std::string const& newModuleName, std::string const& oldModuleName, std::map<std::string, std::string> const& renaming, GlobalProgramInformation& globalProgramInformation) const;
             storm::prism::Program createProgram(GlobalProgramInformation const& globalProgramInformation) const;
-            
+            void createObservablesList(std::vector<std::string> const& observables);
+
+
             void removeInitialConstruct(GlobalProgramInformation& globalProgramInformation) const;
             
             // An error handler function.

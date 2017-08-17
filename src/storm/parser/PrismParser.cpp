@@ -145,7 +145,7 @@ namespace storm {
             initialStatesConstruct = (qi::lit("init") > expression_ > qi::lit("endinit"))[qi::_pass = phoenix::bind(&PrismParser::addInitialStatesConstruct, phoenix::ref(*this), qi::_1, qi::_r1)];
             initialStatesConstruct.name("initial construct");
 
-            observablesConstruct = (qi::lit("observables") > +(identifier)> qi::lit("endobservables"));
+            observablesConstruct = (qi::lit("observables") > (identifier % qi::lit(",") )> qi::lit("endobservables"))[phoenix::bind(&PrismParser::createObservablesList, phoenix::ref(*this), qi::_1)];
             observablesConstruct.name("observables construct");
             
             systemCompositionConstruct = (qi::lit("system") > parallelComposition > qi::lit("endsystem"))[phoenix::bind(&PrismParser::addSystemCompositionConstruct, phoenix::ref(*this), qi::_1, qi::_r1)];
@@ -534,7 +534,11 @@ namespace storm {
                     }
                 }
             }
-            bool observable = false; // TODO
+            bool observable = this->observables.count(variableName) > 0;
+            if(observable) {
+                this->observables.erase(variableName);
+                std::cout << variableName << " is observable." << std::endl;
+            }
             return storm::prism::BooleanVariable(manager->getVariable(variableName), initialValueExpression, observable, this->getFilename());
         }
         
@@ -551,8 +555,18 @@ namespace storm {
                     }
                 }
             }
-            bool observable = false; // TODO
+            bool observable = this->observables.count(variableName) > 0;
+            if(observable) {
+                this->observables.erase(variableName);
+                std::cout << variableName << " is observable." << std::endl;
+            }
+
             return storm::prism::IntegerVariable(manager->getVariable(variableName), lowerBoundExpression, upperBoundExpression, initialValueExpression, observable, this->getFilename());
+        }
+
+        void PrismParser::createObservablesList(std::vector<std::string> const& observables) {
+            this->observables.insert(observables.begin(), observables.end());
+            // We need this list to be filled in both runs.
         }
         
         storm::prism::Module PrismParser::createModule(std::string const& moduleName, std::vector<storm::prism::BooleanVariable> const& booleanVariables, std::vector<storm::prism::IntegerVariable> const& integerVariables, std::vector<storm::prism::Command> const& commands, GlobalProgramInformation& globalProgramInformation) const {

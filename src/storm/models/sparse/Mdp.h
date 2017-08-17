@@ -24,7 +24,7 @@ namespace storm {
                  */
                 Mdp(storm::storage::SparseMatrix<ValueType> const& transitionMatrix,
                     storm::models::sparse::StateLabeling const& stateLabeling,
-                    std::unordered_map<std::string, RewardModelType> const& rewardModels = std::unordered_map<std::string, RewardModelType>());
+                    std::unordered_map<std::string, RewardModelType> const& rewardModels = std::unordered_map<std::string, RewardModelType>(), ModelType type = ModelType::Mdp);
                 
                 /*!
                  * Constructs a model by moving the given data.
@@ -35,15 +35,15 @@ namespace storm {
                  */
                 Mdp(storm::storage::SparseMatrix<ValueType>&& transitionMatrix,
                     storm::models::sparse::StateLabeling&& stateLabeling,
-                    std::unordered_map<std::string, RewardModelType>&& rewardModels = std::unordered_map<std::string, RewardModelType>());
+                    std::unordered_map<std::string, RewardModelType>&& rewardModels = std::unordered_map<std::string, RewardModelType>(), ModelType type = ModelType::Mdp);
                 
                 /*!
                  * Constructs a model from the given data.
                  *
                  * @param components The components for this model.
                  */
-                Mdp(storm::storage::sparse::ModelComponents<ValueType, RewardModelType> const& components);
-                Mdp(storm::storage::sparse::ModelComponents<ValueType, RewardModelType>&& components);
+                Mdp(storm::storage::sparse::ModelComponents<ValueType, RewardModelType> const& components, ModelType type = ModelType::Mdp);
+                Mdp(storm::storage::sparse::ModelComponents<ValueType, RewardModelType>&& components, ModelType type = ModelType::Mdp);
                 
                 Mdp(Mdp<ValueType, RewardModelType> const& other) = default;
                 Mdp& operator=(Mdp<ValueType, RewardModelType> const& other) = default;
