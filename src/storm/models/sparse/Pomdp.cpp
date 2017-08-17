@@ -15,13 +15,33 @@ namespace storm {
             }
 
             template <typename ValueType, typename RewardModelType>
-            Pomdp<ValueType, RewardModelType>::Pomdp(storm::storage::sparse::ModelComponents<ValueType, RewardModelType> const &components) : Mdp<ValueType, RewardModelType>(components, storm::models::ModelType::Pomdp) {
-
+            Pomdp<ValueType, RewardModelType>::Pomdp(storm::storage::sparse::ModelComponents<ValueType, RewardModelType> const &components) : Mdp<ValueType, RewardModelType>(components, storm::models::ModelType::Pomdp), observations(components.observabilityClasses.get()) {
+                computeNrObservations();
             }
 
             template <typename ValueType, typename RewardModelType>
-            Pomdp<ValueType, RewardModelType>::Pomdp(storm::storage::sparse::ModelComponents<ValueType, RewardModelType> &&components): Mdp<ValueType, RewardModelType>(components, storm::models::ModelType::Pomdp) {
+            Pomdp<ValueType, RewardModelType>::Pomdp(storm::storage::sparse::ModelComponents<ValueType, RewardModelType> &&components): Mdp<ValueType, RewardModelType>(components, storm::models::ModelType::Pomdp), observations(components.observabilityClasses.get()) {
+                computeNrObservations();
+            }
 
+            template<typename ValueType, typename RewardModelType>
+            void Pomdp<ValueType, RewardModelType>::printModelInformationToStream(std::ostream& out) const {
+                this->printModelInformationHeaderToStream(out);
+                out << "Choices: \t" << this->getNumberOfChoices() << std::endl;
+                out << "Observations: \t" << this->nrObservations << std::endl;
+                this->printModelInformationFooterToStream(out);
+            }
+
+            template<typename ValueType, typename RewardModelType>
+            void Pomdp<ValueType, RewardModelType>::computeNrObservations() {
+                uint64_t highestEntry = 0;
+                for (uint32_t entry : observations) {
+                    if (entry > highestEntry) {
+                        highestEntry = entry;
+                    }
+                }
+                nrObservations = highestEntry;
+                // In debug mode, ensure that every observability is used.
             }
 
 

@@ -328,7 +328,14 @@ namespace storm {
                 auto originData = choiceInformationBuilder.buildDataOfChoiceOrigins(modelComponents.transitionMatrix.getRowCount());
                 modelComponents.choiceOrigins = generator->generateChoiceOrigins(originData);
             }
-            
+            if (generator->isPartiallyObservable()) {
+                std::vector<uint32_t> classes;
+                classes.resize(stateStorage.getNumberOfStates());
+                for (auto const& bitVectorIndexPair : stateStorage.stateToId) {
+                    classes[bitVectorIndexPair.second] = generator->observabilityClass(bitVectorIndexPair.first);
+                }
+                modelComponents.observabilityClasses = classes;
+            }
             return modelComponents;
         }
         

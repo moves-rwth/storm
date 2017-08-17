@@ -43,6 +43,46 @@ namespace storm {
             return result;
         }
 
+        storm::storage::BitVector computeObservabilityMask(VariableInformation const& variableInformation) {
+            storm::storage::BitVector result(variableInformation.getTotalBitOffset(true));
+            for (auto const& locationVariable : variableInformation.locationVariables) {
+                if (locationVariable.observable) {
+                    for (uint64_t i = locationVariable.bitOffset; i < locationVariable.bitOffset + locationVariable.bitWidth; ++i) {
+                        result.set(i, true);
+                    }
+                }
+            }
+
+            for (auto const& booleanVariable : variableInformation.booleanVariables) {
+                if (booleanVariable.observable) {
+                    result.set(booleanVariable.bitOffset, true);
+                }
+            }
+
+            for (auto const& integerVariable : variableInformation.integerVariables) {
+                if (integerVariable.observable) {
+                    for (uint64_t i = integerVariable.bitOffset; i < integerVariable.bitOffset + integerVariable.bitWidth; ++i) {
+                        result.set(i, true);
+                    }
+                }
+            }
+            return result;
+        }
+
+        uint32_t unpackStateToObservabilityClass(CompressedState const& state, std::unordered_map<storm::storage::BitVector,uint32_t>& observabilityMap, storm::storage::BitVector const& mask) {
+            STORM_LOG_ASSERT(state.size() == mask.size(), "Mask should be as long as state.");
+            storm::storage::BitVector observeClass = state & mask;
+            auto it = observabilityMap.find(observeClass);
+            if (it != observabilityMap.end()) {
+                return it->second;
+            } else {
+                uint32_t newClassIndex = observabilityMap.size();
+                observabilityMap.emplace(observeClass, newClassIndex);
+                return newClassIndex;
+            }
+        }
+
+
         template void unpackStateIntoEvaluator<double>(CompressedState const& state, VariableInformation const& variableInformation, storm::expressions::ExpressionEvaluator<double>& evaluator);
         storm::expressions::SimpleValuation unpackStateIntoValuation(CompressedState const& state, VariableInformation const& variableInformation, storm::expressions::ExpressionManager const& manager);
 

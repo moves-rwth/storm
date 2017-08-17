@@ -154,6 +154,17 @@ namespace storm {
             return nullptr;
         }
 
+        template<typename ValueType, typename StateType>
+        uint32_t NextStateGenerator<ValueType, StateType>::observabilityClass(CompressedState const &state) const {
+            if (this->mask.size() == 0) {
+                this->mask = computeObservabilityMask(variableInformation);
+                std::cout << mask.size() << std::endl;
+            }
+            std::cout << state.size() << std::endl;
+
+            return unpackStateToObservabilityClass(state, observabilityMap, mask);
+        }
+
         template class NextStateGenerator<double>;
 
 #ifdef STORM_HAVE_CARL

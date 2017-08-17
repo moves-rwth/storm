@@ -53,8 +53,16 @@ namespace storm {
 
                 Pomdp &operator=(Pomdp <ValueType, RewardModelType> &&other) = default;
 
+                virtual void printModelInformationToStream(std::ostream& out) const override;
+
+
             protected:
-                StateLabeling observations;
+                // TODO: consider a bitvector based presentation (depending on our needs).
+                std::vector<uint32_t> observations;
+
+                uint64_t nrObservations;
+
+                void computeNrObservations();
             };
         }
     }

@@ -17,10 +17,9 @@ namespace storm {
     }
     
     namespace generator {
-        
         // A structure storing information about the boolean variables of the model.
         struct BooleanVariableInformation {
-            BooleanVariableInformation(storm::expressions::Variable const& variable, uint_fast64_t bitOffset, bool global = false);
+            BooleanVariableInformation(storm::expressions::Variable const& variable, uint_fast64_t bitOffset, bool global, bool observable);
             
             // The boolean variable.
             storm::expressions::Variable variable;
@@ -30,11 +29,14 @@ namespace storm {
 
             // A flag indicating whether the variable is a global one.
             bool global;
+
+            //
+            bool observable;
         };
         
         // A structure storing information about the integer variables of the model.
         struct IntegerVariableInformation {
-            IntegerVariableInformation(storm::expressions::Variable const& variable, int_fast64_t lowerBound, int_fast64_t upperBound, uint_fast64_t bitOffset, uint_fast64_t bitWidth, bool global = false);
+            IntegerVariableInformation(storm::expressions::Variable const& variable, int_fast64_t lowerBound, int_fast64_t upperBound, uint_fast64_t bitOffset, uint_fast64_t bitWidth, bool global, bool observable);
             
             // The integer variable.
             storm::expressions::Variable variable;
@@ -53,11 +55,13 @@ namespace storm {
             
             // A flag indicating whether the variable is a global one.
             bool global;
+
+            bool observable;
         };
         
         // A structure storing information about the location variables of the model.
         struct LocationVariableInformation {
-            LocationVariableInformation(storm::expressions::Variable const& variable, uint64_t highestValue, uint_fast64_t bitOffset, uint_fast64_t bitWidth);
+            LocationVariableInformation(storm::expressions::Variable const& variable, uint64_t highestValue, uint_fast64_t bitOffset, uint_fast64_t bitWidth, bool observable);
 
             // The expression variable for this location.
             storm::expressions::Variable variable;
@@ -70,6 +74,8 @@ namespace storm {
             
             // Its bit width in the compressed state.
             uint_fast64_t bitWidth;
+
+            bool observable;
         };
         
         // A structure storing information about the used variables of the program.
