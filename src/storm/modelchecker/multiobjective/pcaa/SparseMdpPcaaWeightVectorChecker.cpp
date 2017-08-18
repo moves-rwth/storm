@@ -29,11 +29,13 @@ namespace storm {
                 // set the state action rewards. Also do some sanity checks on the objectives.
                 for (uint_fast64_t objIndex = 0; objIndex < this->objectives.size(); ++objIndex) {
                     auto const& formula = *objectives[objIndex].formula;
-                    STORM_LOG_THROW(formula.isRewardOperatorFormula() && formula.asRewardOperatorFormula().hasRewardModelName(), storm::exceptions::UnexpectedException, "Unexpected type of operator formula: " << formula);
-                    STORM_LOG_THROW(formula.getSubformula().isCumulativeRewardFormula() || formula.getSubformula().isTotalRewardFormula(), storm::exceptions::UnexpectedException, "Unexpected type of sub-formula: " << formula.getSubformula());
-                    typename SparseMdpModelType::RewardModelType const& rewModel = this->model.getRewardModel(formula.asRewardOperatorFormula().getRewardModelName());
-                    STORM_LOG_THROW(!rewModel.hasTransitionRewards(), storm::exceptions::NotSupportedException, "Reward model has transition rewards which is not expected.");
-                    this->discreteActionRewards[objIndex] = rewModel.getTotalRewardVector(this->model.getTransitionMatrix());
+                    if (!(formula.isProbabilityOperatorFormula() && formula.getSubformula().isBoundedUntilFormula())) {
+                        STORM_LOG_THROW(formula.isRewardOperatorFormula() && formula.asRewardOperatorFormula().hasRewardModelName(), storm::exceptions::UnexpectedException, "Unexpected type of operator formula: " << formula);
+                        STORM_LOG_THROW(formula.getSubformula().isCumulativeRewardFormula() || formula.getSubformula().isTotalRewardFormula(), storm::exceptions::UnexpectedException, "Unexpected type of sub-formula: " << formula.getSubformula());
+                        typename SparseMdpModelType::RewardModelType const& rewModel = this->model.getRewardModel(formula.asRewardOperatorFormula().getRewardModelName());
+                        STORM_LOG_THROW(!rewModel.hasTransitionRewards(), storm::exceptions::NotSupportedException, "Reward model has transition rewards which is not expected.");
+                        this->discreteActionRewards[objIndex] = rewModel.getTotalRewardVector(this->model.getTransitionMatrix());
+                    }
                 }
             }
             
@@ -135,11 +137,10 @@ namespace storm {
                     computeEpochSolution(epoch, weightVector);
                 }
                 
-                auto solution = rewardUnfolding->getEpochSolution(initEpoch);
-                uint64_t initStateInUnfoldedModel = *rewardUnfolding->getModelForEpoch(initEpoch).initialStates.begin();
-                this->weightedResult[*this->model.getInitialStates().begin()] = solution.weightedValues[initStateInUnfoldedModel];
+                auto solution = rewardUnfolding->getInitialStateResult(initEpoch);
+                this->weightedResult[*this->model.getInitialStates().begin()] = solution.weightedValue;
                 for (uint64_t objIndex = 0; objIndex < this->objectives.size(); ++objIndex) {
-                    this->objectiveResults[objIndex][*this->model.getInitialStates().begin()] = solution.objectiveValues[objIndex][initStateInUnfoldedModel];
+                    this->objectiveResults[objIndex][*this->model.getInitialStates().begin()] = solution.objectiveValues[objIndex];
                     // Todo: we currently assume precise results...
                     this->offsetsToUnderApproximation[objIndex] = storm::utility::zero<ValueType>();
                     this->offsetsToOverApproximation[objIndex] = storm::utility::zero<ValueType>();
@@ -149,78 +150,73 @@ namespace storm {
     
             template <class SparseMdpModelType>
             void SparseMdpPcaaWeightVectorChecker<SparseMdpModelType>::computeEpochSolution(typename MultiDimensionalRewardUnfolding<ValueType>::Epoch const& epoch, std::vector<ValueType> const& weightVector) {
-                auto const& epochModel = rewardUnfolding->getModelForEpoch(epoch);
-                typename MultiDimensionalRewardUnfolding<ValueType>::EpochSolution result;
-                result.weightedValues.resize(epochModel.intermediateTransitions.getRowGroupCount());
+                auto const& epochModel = rewardUnfolding->setCurrentEpoch(epoch);
+                std::vector<typename MultiDimensionalRewardUnfolding<ValueType>::SolutionType> result(epochModel.epochMatrix.getRowGroupCount());
+                
                 
                 // Formulate a min-max equation system max(A*x+b)=x for the weighted sum of the objectives
-                std::vector<ValueType> b(epochModel.rewardChoices.size(), storm::utility::zero<ValueType>());
+                std::vector<ValueType> b(epochModel.epochMatrix.getRowCount(), storm::utility::zero<ValueType>());
                 for (uint64_t objIndex = 0; objIndex < this->objectives.size(); ++objIndex) {
-                    ValueType const& weight = weightVector[objIndex];
+                    ValueType weight = storm::solver::minimize(this->objectives[objIndex].formula->getOptimalityType()) ? -weightVector[objIndex] : weightVector[objIndex];
                     if (!storm::utility::isZero(weight)) {
                         std::vector<ValueType> const& objectiveReward = epochModel.objectiveRewards[objIndex];
+                        std::cout << "ObjRew filter for obj #" << objIndex << " is " << epochModel.objectiveRewardFilter[objIndex] << std::endl;
                         for (auto const& choice : epochModel.objectiveRewardFilter[objIndex]) {
                             b[choice] += weight * objectiveReward[choice];
                         }
                     }
                 }
-                for (auto const& choice : epochModel.rewardChoices) {
-                    typename MultiDimensionalRewardUnfolding<ValueType>::Epoch const& step = epochModel.epochSteps[choice].get();
-                    assert(step.size() == epoch.size());
-                    typename MultiDimensionalRewardUnfolding<ValueType>::Epoch targetEpoch;
-                    targetEpoch.reserve(epoch.size());
-                    for (auto eIt = epoch.begin(), sIt = step.begin(); eIt != epoch.end(); ++eIt, ++sIt) {
-                        targetEpoch.push_back(std::max(*eIt - *sIt, (int64_t) -1));
-                    }
-                    b[choice] = epochModel.rewardTransitions.multiplyRowWithVector(choice, rewardUnfolding->getEpochSolution(targetEpoch).weightedValues);
+                auto stepSolutionIt = epochModel.stepSolutions.begin();
+                for (auto const& choice : epochModel.stepChoices) {
+                    b[choice] += stepSolutionIt->weightedValue;
+                    ++stepSolutionIt;
                 }
+                std::cout << "MinMax b is " << storm::utility::vector::toString(b) << std::endl;
                 
                 // Invoke the min max solver
                 storm::solver::GeneralMinMaxLinearEquationSolverFactory<ValueType> minMaxSolverFactory;
-                auto minMaxSolver = minMaxSolverFactory.create(epochModel.intermediateTransitions);
+                auto minMaxSolver = minMaxSolverFactory.create(epochModel.epochMatrix);
                 minMaxSolver->setOptimizationDirection(storm::solver::OptimizationDirection::Maximize);
                 minMaxSolver->setTrackScheduler(true);
                 //minMaxSolver->setCachingEnabled(true);
-                minMaxSolver->solveEquations(result.weightedValues, b);
+                std::vector<ValueType> x(result.size(), storm::utility::zero<ValueType>());
+                minMaxSolver->solveEquations(x, b);
+                for (uint64_t state = 0; state < x.size(); ++state) {
+                    result[state].weightedValue = x[state];
+                }
                 
                 // Formulate for each objective the linear equation system induced by the performed choices
                 auto const& choices = minMaxSolver->getSchedulerChoices();
-                storm::storage::SparseMatrix<ValueType> subMatrix = epochModel.intermediateTransitions.selectRowsFromRowGroups(choices, true);
+                storm::storage::SparseMatrix<ValueType> subMatrix = epochModel.epochMatrix.selectRowsFromRowGroups(choices, true);
                 subMatrix.convertToEquationSystem();
                 storm::solver::GeneralLinearEquationSolverFactory<ValueType> linEqSolverFactory;
                 auto linEqSolver = linEqSolverFactory.create(std::move(subMatrix));
                 b.resize(choices.size());
-                result.objectiveValues.reserve(this->objectives.size());
+                // TODO: start with a better initial guess
+                x.resize(choices.size());
                 for (uint64_t objIndex = 0; objIndex < this->objectives.size(); ++objIndex) {
                     std::vector<ValueType> const& objectiveReward = epochModel.objectiveRewards[objIndex];
-                    // TODO: start with a better initial guess
-                    result.objectiveValues.emplace_back(choices.size(), storm::utility::convertNumber<ValueType>(0.5));
                     for (uint64_t state = 0; state < choices.size(); ++state) {
-                        uint64_t choice = epochModel.intermediateTransitions.getRowGroupIndices()[state] + choices[state];
+                        uint64_t choice = epochModel.epochMatrix.getRowGroupIndices()[state] + choices[state];
                         if (epochModel.objectiveRewardFilter[objIndex].get(choice)) {
                             b[state] = objectiveReward[choice];
                         } else {
                             b[state] = storm::utility::zero<ValueType>();
                         }
-                        if (epochModel.rewardChoices.get(choice)) {
-                            typename MultiDimensionalRewardUnfolding<ValueType>::Epoch const& step = epochModel.epochSteps[choice].get();
-                            assert(step.size() == epoch.size());
-                            typename MultiDimensionalRewardUnfolding<ValueType>::Epoch targetEpoch;
-                            targetEpoch.reserve(epoch.size());
-                            for (auto eIt = epoch.begin(), sIt = step.begin(); eIt != epoch.end(); ++eIt, ++sIt) {
-                                targetEpoch.push_back(std::max(*eIt - *sIt, (int64_t) -1));
-                            }
-                            b[state] += epochModel.rewardTransitions.multiplyRowWithVector(choice, rewardUnfolding->getEpochSolution(targetEpoch).objectiveValues[objIndex]);
+                        if (epochModel.stepChoices.get(choice)) {
+                            b[state] += epochModel.stepSolutions[epochModel.stepChoices.getNumberOfSetBitsBeforeIndex(choice)].objectiveValues[objIndex];
                         }
                     }
-                    
-                    linEqSolver->solveEquations(result.objectiveValues.back(), b);
+                    std::cout << "LinEq b is " << storm::utility::vector::toString(b) << std::endl;
+                    linEqSolver->solveEquations(x, b);
+                    for (uint64_t state = 0; state < choices.size(); ++state) {
+                        result[state].objectiveValues.push_back(x[state]);
+                    }
                 }
                 
-                rewardUnfolding->setEpochSolution(epoch, std::move(result));
+                rewardUnfolding->setSolutionForCurrentEpoch(result);
             }
 
-            
             
             template class SparseMdpPcaaWeightVectorChecker<storm::models::sparse::Mdp<double>>;
 #ifdef STORM_HAVE_CARL

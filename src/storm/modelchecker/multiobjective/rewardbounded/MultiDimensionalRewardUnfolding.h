@@ -8,6 +8,9 @@
 #include "storm/models/sparse/Mdp.h"
 #include "storm/utility/vector.h"
 #include "storm/storage/memorystructure/MemoryStructure.h"
+#include "storm/storage/memorystructure/SparseModelMemoryProduct.h"
+#include "storm/transformer/EndComponentEliminator.h"
+
 
 namespace storm {
     namespace modelchecker {
@@ -21,22 +24,19 @@ namespace storm {
                 typedef std::vector<int64_t> Epoch; // The number of reward steps that are "left" for each dimension
                 typedef uint64_t EpochClass; // Collection of epochs that consider the same epoch model
                 
+                struct SolutionType {
+                    ValueType weightedValue;
+                    std::vector<ValueType> objectiveValues;
+                };
+
                 struct EpochModel {
-                    storm::storage::SparseMatrix<ValueType> rewardTransitions;
-                    storm::storage::SparseMatrix<ValueType> intermediateTransitions;
-                    storm::storage::BitVector rewardChoices;
-                    std::vector<boost::optional<Epoch>> epochSteps;
+                    storm::storage::SparseMatrix<ValueType> epochMatrix;
+                    storm::storage::BitVector stepChoices;
+                    std::vector<SolutionType> stepSolutions;
                     std::vector<std::vector<ValueType>> objectiveRewards;
                     std::vector<storm::storage::BitVector> objectiveRewardFilter;
-                    std::vector<storm::storage::BitVector> relevantStates;
-                    storm::storage::BitVector initialStates;
+                    
                 };
-                
-                struct EpochSolution {
-                    std::vector<ValueType> weightedValues;
-                    std::vector<std::vector<ValueType>> objectiveValues;
-                };
-                
                 
                 /*
                  *
@@ -54,36 +54,63 @@ namespace storm {
                 
                 Epoch getStartEpoch();
                 std::vector<Epoch> getEpochComputationOrder(Epoch const& startEpoch);
-                EpochModel const& getModelForEpoch(Epoch const& epoch);
                 
-                void setEpochSolution(Epoch const& epoch, EpochSolution const& solution);
-                void setEpochSolution(Epoch const& epoch, EpochSolution&& solution);
-                EpochSolution const& getEpochSolution(Epoch const& epoch);
+                EpochModel const& setCurrentEpoch(Epoch const& epoch);
+                
+                void setSolutionForCurrentEpoch(std::vector<SolutionType> const& reducedModelStateSolutions);
+                SolutionType const& getInitialStateResult(Epoch const& epoch) const;
+                
                 
             private:
+                void setCurrentEpochClass(Epoch const& epoch);
             
                 void initialize();
                 EpochClass getClassOfEpoch(Epoch const& epoch) const;
                 Epoch getSuccessorEpoch(Epoch const& epoch, Epoch const& step) const;
                 
-                std::shared_ptr<EpochModel> computeModelForEpoch(Epoch const& epoch);
-                storm::storage::MemoryStructure computeMemoryStructureForEpoch(Epoch const& epoch) const;
-                std::vector<std::vector<ValueType>> computeObjectiveRewardsForEpoch(Epoch const& epoch, std::shared_ptr<storm::models::sparse::Mdp<ValueType>> const& modelMemoryProduct) const;
+                std::vector<std::vector<ValueType>> computeObjectiveRewardsForProduct(Epoch const& epoch) const;
+                storm::storage::MemoryStructure computeMemoryStructure() const;
+                std::vector<storm::storage::BitVector> computeMemoryStateMap(storm::storage::MemoryStructure const& memory) const;
+
+                storm::storage::BitVector const& convertMemoryState(uint64_t const& memoryState) const;
+                uint64_t convertMemoryState(storm::storage::BitVector const& memoryState) const;
                 
+                uint64_t getProductState(uint64_t const& modelState, uint64_t const& memoryState) const;
+                uint64_t getModelState(uint64_t const& productState) const;
+                uint64_t getMemoryState(uint64_t const& productState) const;
+                
+                SolutionType getZeroSolution() const;
+                void addScaledSolution(SolutionType& solution, SolutionType const& solutionToAdd, ValueType const& scalingFactor) const;
+                
+                void setSolutionForCurrentEpoch(uint64_t const& productState, SolutionType const& solution);
+                SolutionType const& getStateSolution(Epoch const& epoch, uint64_t const& productState) const;
                 
                 storm::models::sparse::Mdp<ValueType> const& model;
                 std::vector<storm::modelchecker::multiobjective::Objective<ValueType>> const& objectives;
                 storm::storage::BitVector possibleECActions;
                 storm::storage::BitVector allowedBottomStates;
+                
+                std::shared_ptr<storm::models::sparse::Mdp<ValueType>> modelMemoryProduct;
+                std::shared_ptr<storm::storage::SparseModelMemoryProduct<ValueType>> productBuilder;
+                std::vector<storm::storage::BitVector> memoryStateMap;
+                std::vector<boost::optional<Epoch>> productEpochSteps;
+                storm::storage::BitVector productAllowedBottomStates;
+                std::vector<uint64_t> modelStates;
+                std::vector<uint64_t> memoryStates;
+                std::vector<uint64_t> productChoiceToStateMapping;
+                typename storm::transformer::EndComponentEliminator<ValueType>::EndComponentEliminatorReturnType ecElimResult;
+                std::set<Epoch> possibleEpochSteps;
+                
+                EpochModel epochModel;
+                boost::optional<Epoch> currentEpoch;
+                
 
                 std::vector<storm::storage::BitVector> objectiveDimensions;
                 std::vector<std::pair<std::shared_ptr<storm::logic::Formula const>, uint64_t>> subObjectives;
                 std::vector<boost::optional<std::string>> memoryLabels;
-                std::vector<std::vector<uint64_t>> scaledRewards;
                 std::vector<ValueType> scalingFactors;
                 
-                std::map<EpochClass, std::shared_ptr<EpochModel>> epochModels;
-                std::map<Epoch, EpochSolution> epochSolutions;
+                std::map<std::vector<int64_t>, SolutionType> solutions;
             };
         }
     }

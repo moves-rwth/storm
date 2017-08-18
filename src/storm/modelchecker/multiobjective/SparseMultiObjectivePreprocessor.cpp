@@ -267,7 +267,9 @@ namespace storm {
             void SparseMultiObjectivePreprocessor<SparseModelType>::preprocessBoundedUntilFormula(storm::logic::BoundedUntilFormula const& formula, storm::logic::OperatorInformation const& opInfo, PreprocessorData& data) {
                 
                 // Check how to handle this query
-                if (!formula.getTimeBoundReference().isRewardBound() && (!formula.hasLowerBound() || (!formula.isLowerBoundStrict() && storm::utility::isZero(formula.template getLowerBound<storm::RationalNumber>())))) {
+                if (formula.getDimension() != 1 || formula.getTimeBoundReference().isRewardBound()) {
+                    data.objectives.back()->formula = std::make_shared<storm::logic::ProbabilityOperatorFormula>(formula.asSharedPointer(), opInfo);
+                } else if (!formula.hasLowerBound() || (!formula.isLowerBoundStrict() && storm::utility::isZero(formula.template getLowerBound<storm::RationalNumber>()))) {
                     std::shared_ptr<storm::logic::Formula const> subformula;
                     if (!formula.hasUpperBound()) {
                         // The formula is actually unbounded
@@ -370,11 +372,7 @@ namespace storm {
                 
                 std::set<std::string> relevantRewardModels;
                 for (auto const& obj : result.objectives) {
-                    if (obj.formula->isRewardOperatorFormula()) {
-                        relevantRewardModels.insert(obj.formula->asRewardOperatorFormula().getRewardModelName());
-                    } else {
-                        STORM_LOG_ASSERT(false, "Unknown formula type.");
-                    }
+                    obj.formula->gatherReferencedRewardModels(relevantRewardModels);
                 }
                 
                 // Build a subsystem that discards states that yield infinite reward for all schedulers.
@@ -437,7 +435,9 @@ namespace storm {
                         auto const& rewModel = result.preprocessedModel->getRewardModel(obj.formula->asRewardOperatorFormula().getRewardModelName());
                         zeroRewardChoices &= rewModel.getChoicesWithZeroReward(transitions);
                     } else {
-                        STORM_LOG_ASSERT(false, "Unknown formula type.");
+                        zeroRewardChoices.clear();
+                        STORM_LOG_WARN("Formula type not handled properly");
+                        //STORM_LOG_ASSERT(false, "Unknown formula type.");
                     }
                 }
                 
