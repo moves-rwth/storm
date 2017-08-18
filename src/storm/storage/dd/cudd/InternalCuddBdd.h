@@ -443,14 +443,13 @@ namespace storm {
              * @param dd The DD for which to build the ODD.
              * @param manager The manager responsible for the DD.
              * @param currentLevel The currently considered level in the DD.
-             * @param complement A flag indicating whether or not the given node is to be considered as complemented.
              * @param maxLevel The number of levels that need to be considered.
              * @param ddVariableIndices The (sorted) indices of all DD variables that need to be considered.
              * @param uniqueTableForLevels A vector of unique tables, one for each level to be considered, that keeps
              * ODD nodes for the same DD and level unique.
              * @return A pointer to the constructed ODD for the given arguments.
              */
-            static std::shared_ptr<Odd> createOddRec(DdNode const* dd, cudd::Cudd const& manager, uint_fast64_t currentLevel, bool complement, uint_fast64_t maxLevel, std::vector<uint_fast64_t> const& ddVariableIndices, std::vector<std::unordered_map<std::pair<DdNode const*, bool>, std::shared_ptr<Odd>, HashFunctor>>& uniqueTableForLevels);
+            static std::shared_ptr<Odd> createOddRec(DdNode const* dd, cudd::Cudd const& manager, uint_fast64_t currentLevel, uint_fast64_t maxLevel, std::vector<uint_fast64_t> const& ddVariableIndices, std::vector<std::unordered_map<DdNode const*, std::shared_ptr<Odd>>>& uniqueTableForLevels);
             
             /*!
              * Adds the selected values the target vector.

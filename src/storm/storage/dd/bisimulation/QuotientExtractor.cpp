@@ -214,89 +214,43 @@ namespace storm {
             template<storm::dd::DdType DdType, typename ValueType>
             class InternalSparseQuotientExtractorBase {
             public:
-                InternalSparseQuotientExtractorBase(storm::dd::DdManager<DdType> const& manager, std::set<storm::expressions::Variable> const& stateVariables, std::set<storm::expressions::Variable> const& nondeterminismVariables) : manager(manager) {
-                    
-                    // Initialize cubes.
-                    stateVariablesCube = manager.getBddOne();
-                    allSourceVariablesCube = manager.getBddOne();
-                    nondeterminismVariablesCube = manager.getBddOne();
-                    
+                InternalSparseQuotientExtractorBase(storm::dd::DdManager<DdType> const& manager, std::set<storm::expressions::Variable> const& rowVariables, std::set<storm::expressions::Variable> const& columnVariables, std::set<storm::expressions::Variable> const& nondeterminismVariables, Partition<DdType, ValueType> const& partition, storm::dd::Bdd<DdType> const& representatives, storm::dd::Odd const& odd) : manager(manager), partition(partition), representatives(representatives), odd(odd) {
                     // Create cubes.
-                    for (auto const& variable : stateVariables) {
+                    rowVariablesCube = manager.getBddOne();
+                    for (auto const& variable : rowVariables) {
                         auto const& ddMetaVariable = manager.getMetaVariable(variable);
-                        std::vector<std::pair<uint64_t, uint64_t>> indicesAndLevels = ddMetaVariable.getIndicesAndLevels();
-                        sourceVariablesIndicesAndLevels.insert(sourceVariablesIndicesAndLevels.end(), indicesAndLevels.begin(), indicesAndLevels.end());
-                        
-                        allSourceVariablesCube &= ddMetaVariable.getCube();
-                        stateVariablesCube &= ddMetaVariable.getCube();
+                        rowVariablesCube &= ddMetaVariable.getCube();
                     }
+                    columnVariablesCube = manager.getBddOne();
+                    for (auto const& variable : columnVariables) {
+                        auto const& ddMetaVariable = manager.getMetaVariable(variable);
+                        columnVariablesCube &= ddMetaVariable.getCube();
+                    }
+                    nondeterminismVariablesCube = manager.getBddOne();
                     for (auto const& variable : nondeterminismVariables) {
                         auto const& ddMetaVariable = manager.getMetaVariable(variable);
-                        allSourceVariablesCube &= ddMetaVariable.getCube();
                         nondeterminismVariablesCube &= ddMetaVariable.getCube();
-                        
-                        std::vector<std::pair<uint64_t, uint64_t>> indicesAndLevels = ddMetaVariable.getIndicesAndLevels();
-                        nondeterminismVariablesIndicesAndLevels.insert(nondeterminismVariablesIndicesAndLevels.end(), indicesAndLevels.begin(), indicesAndLevels.end());
                     }
-                    
-                    // Sort the indices by their levels.
-                    std::sort(sourceVariablesIndicesAndLevels.begin(), sourceVariablesIndicesAndLevels.end(), [] (std::pair<uint64_t, uint64_t> const& a, std::pair<uint64_t, uint64_t> const& b) { return a.second < b.second; } );
-                    std::sort(nondeterminismVariablesIndicesAndLevels.begin(), nondeterminismVariablesIndicesAndLevels.end(), [] (std::pair<uint64_t, uint64_t> const& a, std::pair<uint64_t, uint64_t> const& b) { return a.second < b.second; } );
+                    allSourceVariablesCube = rowVariablesCube && nondeterminismVariablesCube;
                 }
 
             protected:
-                storm::storage::SparseMatrix<ValueType> createMatrixFromEntries(Partition<DdType, ValueType> const& partition) {
-                    if (!deterministicEntries.empty()) {
-                        return createMatrixFromDeterministicEntries(partition);
-                    } else {
-                        return createMatrixFromNondeterministicEntries(partition);
-                    }
-                }
+                // The manager responsible for the DDs.
+                storm::dd::DdManager<DdType> const& manager;
                 
-                storm::storage::SparseMatrix<ValueType> createMatrixFromNondeterministicEntries(Partition<DdType, ValueType> const& partition) {
-                    bool nontrivialRowGrouping = false;
-                    uint64_t numberOfChoices = 0;
-                    for (auto& group : nondeterministicEntries) {
-                        for (auto& choice : group) {
-                            auto& row = choice.second;
-                            std::sort(row.begin(), row.end(),
-                                      [] (storm::storage::MatrixEntry<uint_fast64_t, ValueType> const& a, storm::storage::MatrixEntry<uint_fast64_t, ValueType> const& b) {
-                                          return a.getColumn() < b.getColumn();
-                                      });
-                            ++numberOfChoices;
-                        }
-                        nontrivialRowGrouping |= group.size() > 1;
-                    }
-                    
-                    storm::storage::SparseMatrixBuilder<ValueType> builder(numberOfChoices, partition.getNumberOfBlocks(), 0, false, nontrivialRowGrouping);
-                    uint64_t rowCounter = 0;
-                    for (auto& group : nondeterministicEntries) {
-                        for (auto& choice : group) {
-                            auto& row = choice.second;
-                            for (auto const& entry : row) {
-                                builder.addNextValue(rowCounter, entry.getColumn(), entry.getValue());
-                            }
-                        
-                            // Free storage for row.
-                            row.clear();
-                            row.shrink_to_fit();
-                        
-                            ++rowCounter;
-                        }
-                        
-                        group.clear();
-                        
-                        if (nontrivialRowGrouping) {
-                            builder.newRowGroup(rowCounter);
-                        }
-                    }
-                    nondeterministicEntries.clear();
-                    nondeterministicEntries.shrink_to_fit();
-                    return builder.build();
-                }
-
-                storm::storage::SparseMatrix<ValueType> createMatrixFromDeterministicEntries(Partition<DdType, ValueType> const& partition) {
-                    for (auto& row : deterministicEntries) {
+                // Useful cubes needed in the translation.
+                storm::dd::Bdd<DdType> rowVariablesCube;
+                storm::dd::Bdd<DdType> columnVariablesCube;
+                storm::dd::Bdd<DdType> allSourceVariablesCube;
+                storm::dd::Bdd<DdType> nondeterminismVariablesCube;
+                
+                // Information about the state partition.
+                Partition<DdType, ValueType> partition;
+                storm::dd::Bdd<DdType> representatives;
+                storm::dd::Odd const& odd;
+                
+                storm::storage::SparseMatrix<ValueType> createMatrixFromEntries() {
+                    for (auto& row : matrixEntries) {
                         std::sort(row.begin(), row.end(),
                                   [] (storm::storage::MatrixEntry<uint_fast64_t, ValueType> const& a, storm::storage::MatrixEntry<uint_fast64_t, ValueType> const& b) {
                                       return a.getColumn() < b.getColumn();
@@ -305,7 +259,7 @@ namespace storm {
                     
                     storm::storage::SparseMatrixBuilder<ValueType> builder(partition.getNumberOfBlocks(), partition.getNumberOfBlocks());
                     uint64_t rowCounter = 0;
-                    for (auto& row : deterministicEntries) {
+                    for (auto& row : matrixEntries) {
                         for (auto const& entry : row) {
                             builder.addNextValue(rowCounter, entry.getColumn(), entry.getValue());
                         }
@@ -317,483 +271,332 @@ namespace storm {
                         ++rowCounter;
                     }
                     
-                    deterministicEntries.clear();
-                    deterministicEntries.shrink_to_fit();
+                    matrixEntries.clear();
+                    matrixEntries.shrink_to_fit();
                     
                     return builder.build();
                 }
-                
-                void addMatrixEntry(storm::storage::BitVector const& nondeterminismEncoding, uint64_t sourceBlockIndex, uint64_t targetBlockIndex, ValueType const& value) {
-                    if (nondeterminismVariablesIndicesAndLevels.empty()) {
-                        this->deterministicEntries[sourceBlockIndex].emplace_back(targetBlockIndex, value);
-                    } else {
-                        this->nondeterministicEntries[sourceBlockIndex][nondeterminismEncoding].emplace_back(targetBlockIndex, value);
-                    }
+
+                void addMatrixEntry(uint64_t sourceBlockIndex, uint64_t targetBlockIndex, ValueType const& value) {
+                    this->matrixEntries[sourceBlockIndex].emplace_back(targetBlockIndex, value);
                 }
                 
                 void reserveMatrixEntries(uint64_t numberOfStates) {
-                    if (nondeterminismVariablesIndicesAndLevels.empty()) {
-                        this->deterministicEntries.resize(numberOfStates);
-                    } else {
-                        this->nondeterministicEntries.resize(numberOfStates);
-                    }
+                    this->matrixEntries.resize(numberOfStates);
                 }
 
-                // The manager responsible for the DDs.
-                storm::dd::DdManager<DdType> const& manager;
-                
-                // The indices and levels of all state variables.
-                std::vector<std::pair<uint64_t, uint64_t>> sourceVariablesIndicesAndLevels;
-
-                // The indices and levels of all state variables.
-                std::vector<std::pair<uint64_t, uint64_t>> nondeterminismVariablesIndicesAndLevels;
-
-                // Useful cubes needed in the translation.
-                storm::dd::Bdd<DdType> stateVariablesCube;
-                storm::dd::Bdd<DdType> allSourceVariablesCube;
-                storm::dd::Bdd<DdType> nondeterminismVariablesCube;
-
-                // A hash map that stores the unique source state representative for each source block index.
-                spp::sparse_hash_map<uint64_t, std::unique_ptr<storm::storage::BitVector>> uniqueSourceRepresentative;
-
                 // The entries of the matrix that is built if the model is deterministic (DTMC, CTMC).
-                std::vector<std::vector<storm::storage::MatrixEntry<uint_fast64_t, ValueType>>> deterministicEntries;
-
-                // The entries of the matrix that is built if the model is nondeterministic (MDP).
-                std::vector<boost::container::flat_map<storm::storage::BitVector, std::vector<storm::storage::MatrixEntry<uint_fast64_t, ValueType>>>> nondeterministicEntries;
+                std::vector<std::vector<storm::storage::MatrixEntry<uint_fast64_t, ValueType>>> matrixEntries;
             };
             
             template<typename ValueType>
             class InternalSparseQuotientExtractor<storm::dd::DdType::CUDD, ValueType> : public InternalSparseQuotientExtractorBase<storm::dd::DdType::CUDD, ValueType> {
             public:
-                InternalSparseQuotientExtractor(storm::dd::DdManager<storm::dd::DdType::CUDD> const& manager, std::set<storm::expressions::Variable> const& stateVariables, std::set<storm::expressions::Variable> const& nondeterminismVariables) : InternalSparseQuotientExtractorBase<storm::dd::DdType::CUDD, ValueType>(manager, stateVariables, nondeterminismVariables), ddman(this->manager.getInternalDdManager().getCuddManager().getManager()) {
-                    // Intentionally left empty.
-                }
-                
-                storm::storage::SparseMatrix<ValueType> extractTransitionMatrix(storm::dd::Add<storm::dd::DdType::CUDD, ValueType> const& transitionMatrix, Partition<storm::dd::DdType::CUDD, ValueType> const& partition) {
-                    STORM_LOG_ASSERT(partition.storedAsAdd(), "Expected partition stored as ADD.");
-                    
-                    // Create the number of rows necessary for the matrix.
-                    this->reserveMatrixEntries(partition.getNumberOfBlocks());
-                    STORM_LOG_TRACE("Partition has " << partition.getNumberOfStates() << " states in " << partition.getNumberOfBlocks() << " blocks.");
-                    
-                    storm::storage::BitVector stateEncoding(this->sourceVariablesIndicesAndLevels.size());
-                    storm::storage::BitVector nondeterminismEncoding(this->nondeterminismVariablesIndicesAndLevels.size());
-                    extractTransitionMatrixRec(transitionMatrix.getInternalAdd().getCuddDdNode(), partition.asAdd().getInternalAdd().getCuddDdNode(), partition.asAdd().getInternalAdd().getCuddDdNode(), 0, stateEncoding, nondeterminismEncoding);
-                    
-                    return this->createMatrixFromEntries(partition);
-                }
-                
-                storm::storage::BitVector extractStates(storm::dd::Bdd<storm::dd::DdType::CUDD> const& states, Partition<storm::dd::DdType::CUDD, ValueType> const& partition) {
-                    STORM_LOG_ASSERT(partition.storedAsAdd(), "Expected partition stored as ADD.");
+                InternalSparseQuotientExtractor(storm::dd::DdManager<storm::dd::DdType::CUDD> const& manager, std::set<storm::expressions::Variable> const& rowVariables, std::set<storm::expressions::Variable> const& columnVariables, std::set<storm::expressions::Variable> const& nondeterminismVariables, Partition<storm::dd::DdType::CUDD, ValueType> const& partition, storm::dd::Bdd<storm::dd::DdType::CUDD> const& representatives, storm::dd::Odd const& odd) : InternalSparseQuotientExtractorBase<storm::dd::DdType::CUDD, ValueType>(manager, rowVariables, columnVariables, nondeterminismVariables, partition, representatives, odd), ddman(this->manager.getInternalDdManager().getCuddManager().getManager()) {
 
-                    storm::storage::BitVector result(partition.getNumberOfBlocks());
-                    extractStatesRec(states.getInternalBdd().getCuddDdNode(), partition.asAdd().getInternalAdd().getCuddDdNode(), this->stateVariablesCube.getInternalBdd().getCuddDdNode(), result);
+                    STORM_LOG_ASSERT(this->partition.storedAsAdd(), "Expected partition to be stored as an ADD.");
+                    this->partition.asAdd().exportToDot("part.dot");
+                    odd.exportToDot("odd.dot");
+                    this->representatives.exportToDot("reprbdd.dot");
+                    this->representatives.template toAdd<ValueType>().exportToDot("repr.dot");
+                    this->createBlockToOffsetMapping();
+                }
+                
+                storm::storage::SparseMatrix<ValueType> extractTransitionMatrix(storm::dd::Add<storm::dd::DdType::CUDD, ValueType> const& transitionMatrix) {
+                    // Create the number of rows necessary for the matrix.
+                    this->reserveMatrixEntries(this->partition.getNumberOfBlocks());
+                    STORM_LOG_TRACE("Partition has " << this->partition.getNumberOfStates() << " states in " << this->partition.getNumberOfBlocks() << " blocks.");
                     
-                    return result;
+                    extractTransitionMatrixRec(transitionMatrix.getInternalAdd().getCuddDdNode(), this->odd, 0, this->partition.asAdd().getInternalAdd().getCuddDdNode(), this->representatives.getInternalBdd().getCuddDdNode(), this->allSourceVariablesCube.getInternalBdd().getCuddDdNode());
+                    
+                    return this->createMatrixFromEntries();
                 }
                 
             private:
-                uint64_t decodeBlockIndex(DdNode* blockEncoding) {
-                    std::unique_ptr<uint64_t>& blockCacheEntry = blockDecodeCache[blockEncoding];
-                    if (blockCacheEntry) {
-                        return *blockCacheEntry;
-                    }
-                
-//                    FILE* fp = fopen("block.dot" , "w");
-//                    Cudd_DumpDot(ddman, 1, &blockEncoding, nullptr, nullptr, fp);
-//                    fclose(fp);
-                    
-                    uint64_t result = 0;
-                    uint64_t offset = 0;
-                    while (blockEncoding != Cudd_ReadOne(ddman)) {
-                        DdNode* then = Cudd_T(blockEncoding);
-                        if (then != Cudd_ReadZero(ddman)) {
-                            blockEncoding = then;
-                            result |= 1ull << offset;
-                        } else {
-                            blockEncoding = Cudd_E(blockEncoding);
-                        }
-                        ++offset;
-                    }
-                    
-                    blockCacheEntry.reset(new uint64_t(result));
-                    
-                    return result;
+                void createBlockToOffsetMapping() {
+                    this->createBlockToOffsetMappingRec(this->partition.asAdd().getInternalAdd().getCuddDdNode(), this->representatives.getInternalBdd().getCuddDdNode(), this->rowVariablesCube.getInternalBdd().getCuddDdNode(), this->odd, 0);
+                    STORM_LOG_ASSERT(blockToOffset.size() == this->partition.getNumberOfBlocks(), "Mismatching block-to-offset mapping: " << blockToOffset.size() << " vs. " << this->partition.getNumberOfBlocks() << ".");
                 }
                 
-                void extractStatesRec(DdNode* statesNode, DdNode* partitionNode, DdNode* stateVariablesNode, storm::storage::BitVector& result) {
-                    if (statesNode == Cudd_ReadLogicZero(ddman)) {
+                void createBlockToOffsetMappingRec(DdNodePtr partitionNode, DdNodePtr representativesNode, DdNodePtr variables, storm::dd::Odd const& odd, uint64_t offset) {
+                    if (representativesNode == Cudd_ReadLogicZero(ddman)) {
+                        std::cout << "returning early" << std::endl;
                         return;
                     }
                     
-                    bool skippedBoth = true;
-                    DdNode* tStates;
-                    DdNode* eStates;
-                    DdNode* tPartition;
-                    DdNode* ePartition;
-                    bool negate = false;
-                    while (skippedBoth && !Cudd_IsConstant(stateVariablesNode)) {
-                        if (Cudd_NodeReadIndex(statesNode) == Cudd_NodeReadIndex(stateVariablesNode)) {
-                            tStates = Cudd_T(statesNode);
-                            eStates = Cudd_E(statesNode);
-                            negate = Cudd_IsComplement(statesNode);
-                            skippedBoth = false;
-                        } else {
-                            tStates = eStates = statesNode;
-                        }
-                        
-                        if (Cudd_NodeReadIndex(partitionNode) == Cudd_NodeReadIndex(stateVariablesNode) + 1) {
-                            tPartition = Cudd_T(partitionNode);
-                            ePartition = Cudd_E(partitionNode);
-                            skippedBoth = false;
-                        } else {
-                            tPartition = ePartition = partitionNode;
-                        }
-                        
-                        if (skippedBoth) {
-                            stateVariablesNode = Cudd_T(stateVariablesNode);
-                        }
+                    if (representativesNode == Cudd_ReadOne(ddman)) {
+                        std::cout << "repr is one" << std::endl;
+                    }
+                    if (partitionNode == Cudd_ReadOne(ddman)) {
+                        std::cout << "part is zero" << std::endl;
+                    } else if (partitionNode == Cudd_ReadOne(ddman)) {
+                        std::cout << "part is one" << std::endl;
                     }
                     
-                    if (Cudd_IsConstant(stateVariablesNode)) {
-                        // If there is no more state variables, it means that we arrived at a block encoding in which there is a state in the state set.
-                        result.set(decodeBlockIndex(partitionNode));
-                        return;
+                    std::cout << "got call " << partitionNode << ", " << representativesNode << ", " << variables << ", " << offset << ", " << Cudd_IsConstant(variables) << std::endl;
+                    
+                    if (Cudd_IsConstant(variables)) {
+                        STORM_LOG_ASSERT(odd.isTerminalNode(), "Expected terminal node.");
+                        std::cout << "inserting " << partitionNode << " -> " << offset << std::endl;
+                        STORM_LOG_ASSERT(blockToOffset.find(partitionNode) == blockToOffset.end(), "Duplicate entry.");
+                        blockToOffset[partitionNode] = offset;
                     } else {
-                        // Otherwise, we need to recursively descend.
-                        extractStatesRec(negate ? Cudd_Not(tStates) : tStates, tPartition, Cudd_T(stateVariablesNode), result);
-                        extractStatesRec(negate ? Cudd_Not(eStates) : eStates, ePartition, Cudd_T(stateVariablesNode), result);
+                        STORM_LOG_ASSERT(!odd.isTerminalNode(), "Expected non-terminal node.");
+                        DdNodePtr partitionT;
+                        DdNodePtr partitionE;
+                        if (Cudd_NodeReadIndex(partitionNode) == Cudd_NodeReadIndex(variables) + 1) {
+                            partitionT = Cudd_T(partitionNode);
+                            partitionE = Cudd_E(partitionNode);
+                        } else {
+                            std::cout << "[1] skipped " << Cudd_NodeReadIndex(variables) << ", got " << Cudd_NodeReadIndex(partitionNode) << std::endl;
+                            partitionT = partitionE = partitionNode;
+                        }
+                        
+                        DdNodePtr representativesT;
+                        DdNodePtr representativesE;
+                        if (Cudd_NodeReadIndex(representativesNode) == Cudd_NodeReadIndex(variables)) {
+                            representativesT = Cudd_T(representativesNode);
+                            representativesE = Cudd_E(representativesNode);
+                        } else {
+                            std::cout << "[2] skipped " << Cudd_NodeReadIndex(variables) << ", got " << Cudd_NodeReadIndex(representativesNode) << std::endl;
+                            representativesT = representativesE = representativesNode;
+                        }
+                        
+                        if (representativesT != representativesE && Cudd_IsComplement(representativesNode)) {
+                            representativesE = Cudd_Not(representativesE);
+                            representativesT = Cudd_Not(representativesT);
+                        }
+                        
+                        std::cout << "else" << std::endl;
+                        createBlockToOffsetMappingRec(partitionE, representativesE, Cudd_T(variables), odd.getElseSuccessor(), offset);
+                        std::cout << "then with offset " << odd.getElseOffset() << std::endl;
+                        createBlockToOffsetMappingRec(partitionT, representativesT, Cudd_T(variables), odd.getThenSuccessor(), offset + odd.getElseOffset());
                     }
+                    std::cout << "returning" << std::endl;
                 }
                 
-                void extractTransitionMatrixRec(DdNode* transitionMatrixNode, DdNode* sourcePartitionNode, DdNode* targetPartitionNode, uint64_t sourceStateEncodingIndex, storm::storage::BitVector& sourceStateEncoding, storm::storage::BitVector const& nondeterminismEncoding, ValueType const& factor = 1) {
+                void extractTransitionMatrixRec(DdNodePtr transitionMatrixNode, storm::dd::Odd const& sourceOdd, uint64_t sourceOffset, DdNodePtr targetPartitionNode, DdNodePtr representativesNode, DdNodePtr variables) {
                     // For the empty DD, we do not need to add any entries. Note that the partition nodes cannot be zero
                     // as all states of the model have to be contained.
-                    if (transitionMatrixNode == Cudd_ReadZero(ddman)) {
+                    if (transitionMatrixNode == Cudd_ReadZero(ddman) || representativesNode == Cudd_ReadLogicZero(ddman)) {
                         return;
                     }
 
                     // If we have moved through all source variables, we must have arrived at a target block encoding.
-                    if (sourceStateEncodingIndex == sourceStateEncoding.size()) {
-                        // Decode the source block.
-                        uint64_t sourceBlockIndex = decodeBlockIndex(sourcePartitionNode);
-                        
-                        std::unique_ptr<storm::storage::BitVector>& sourceRepresentative = this->uniqueSourceRepresentative[sourceBlockIndex];
-                        if (sourceRepresentative && *sourceRepresentative != sourceStateEncoding) {
-                            // In this case, we have picked a different representative and must not record any entries now.
-                            return;
+                    if (Cudd_IsConstant(variables)) {
+                        STORM_LOG_ASSERT(Cudd_IsConstant(transitionMatrixNode), "Expected constant node.");
+                        this->addMatrixEntry(sourceOffset, blockToOffset.at(targetPartitionNode), Cudd_V(transitionMatrixNode));
+                    } else {
+                        DdNodePtr t;
+                        DdNodePtr tt;
+                        DdNodePtr te;
+                        DdNodePtr e;
+                        DdNodePtr et;
+                        DdNodePtr ee;
+                        if (Cudd_NodeReadIndex(transitionMatrixNode) == Cudd_NodeReadIndex(variables)) {
+                            // Source node was not skipped in transition matrix.
+                            t = Cudd_T(transitionMatrixNode);
+                            e = Cudd_E(transitionMatrixNode);
+                        } else {
+                            t = e = transitionMatrixNode;
                         }
                         
-                        // Otherwise, we record the new representative.
-                        sourceRepresentative.reset(new storm::storage::BitVector(sourceStateEncoding));
-                        
-                        // Decode the target block and add entry to matrix.
-                        uint64_t targetBlockIndex = decodeBlockIndex(targetPartitionNode);
-                        this->addMatrixEntry(nondeterminismEncoding, sourceBlockIndex, targetBlockIndex, factor * Cudd_V(transitionMatrixNode));
-                    } else {
-                        // Determine the levels in the DDs.
-                        uint64_t transitionMatrixVariable = Cudd_NodeReadIndex(transitionMatrixNode);
-                        uint64_t sourcePartitionVariable = Cudd_NodeReadIndex(sourcePartitionNode) - 1;
-                        uint64_t targetPartitionVariable = Cudd_NodeReadIndex(targetPartitionNode) - 1;
-                        
-                        // Move through transition matrix.
-                        bool skippedSourceInMatrix = false;
-                        bool skippedTargetTInMatrix = false;
-                        bool skippedTargetEInMatrix = false;
-                        DdNode* tt = transitionMatrixNode;
-                        DdNode* te = transitionMatrixNode;
-                        DdNode* et = transitionMatrixNode;
-                        DdNode* ee = transitionMatrixNode;
-                        STORM_LOG_ASSERT(transitionMatrixVariable >= this->sourceVariablesIndicesAndLevels[sourceStateEncodingIndex].first, "Illegal top variable of transition matrix.");
-                        if (transitionMatrixVariable == this->sourceVariablesIndicesAndLevels[sourceStateEncodingIndex].first) {
-                            DdNode* t = Cudd_T(transitionMatrixNode);
-                            uint64_t tVariable = Cudd_NodeReadIndex(t);
-                            if (tVariable == this->sourceVariablesIndicesAndLevels[sourceStateEncodingIndex].first + 1) {
-                                tt = Cudd_T(t);
-                                te = Cudd_E(t);
-                            } else {
-                                tt = te = t;
-                                skippedTargetTInMatrix = true;
-                            }
-                            
-                            DdNode* e = Cudd_E(transitionMatrixNode);
-                            uint64_t eVariable = Cudd_NodeReadIndex(e);
-                            if (eVariable == this->sourceVariablesIndicesAndLevels[sourceStateEncodingIndex].first + 1) {
+                        if (Cudd_NodeReadIndex(t) == Cudd_NodeReadIndex(variables) + 1) {
+                            // Target node was not skipped in transition matrix.
+                            tt = Cudd_T(t);
+                            te = Cudd_E(t);
+                        } else {
+                            // Target node was skipped in transition matrix.
+                            tt = te = t;
+                        }
+                        if (t != e) {
+                            if (Cudd_NodeReadIndex(e) == Cudd_NodeReadIndex(variables) + 1) {
+                                // Target node was not skipped in transition matrix.
                                 et = Cudd_T(e);
                                 ee = Cudd_E(e);
                             } else {
+                                // Target node was skipped in transition matrix.
                                 et = ee = e;
-                                skippedTargetEInMatrix = true;
                             }
                         } else {
-                            skippedSourceInMatrix = true;
-                            if (transitionMatrixVariable == this->sourceVariablesIndicesAndLevels[sourceStateEncodingIndex].first + 1) {
-                                tt = et = Cudd_T(transitionMatrixNode);
-                                te = ee = Cudd_E(transitionMatrixNode);
-                            } else {
-                                tt = te = et = ee = transitionMatrixNode;
-                                skippedTargetTInMatrix = skippedTargetEInMatrix = true;
-                            }
+                            et = tt;
+                            ee = te;
                         }
                         
-                        // Move through partition (for source state).
-                        bool skippedInSourcePartition = false;
-                        DdNode* sourceT;
-                        DdNode* sourceE;
-                        STORM_LOG_ASSERT(sourcePartitionVariable >= this->sourceVariablesIndicesAndLevels[sourceStateEncodingIndex].first, "Illegal top variable of source partition.");
-                        if (sourcePartitionVariable == this->sourceVariablesIndicesAndLevels[sourceStateEncodingIndex].first) {
-                            sourceT = Cudd_T(sourcePartitionNode);
-                            sourceE = Cudd_E(sourcePartitionNode);
-                        } else {
-                            sourceT = sourceE = sourcePartitionNode;
-                            skippedInSourcePartition = true;
-                        }
-                        
-                        // Move through partition (for target state).
-                        bool skippedInTargetPartition = false;
-                        DdNode* targetT;
-                        DdNode* targetE;
-                        STORM_LOG_ASSERT(targetPartitionVariable >= this->sourceVariablesIndicesAndLevels[sourceStateEncodingIndex].first, "Illegal top variable of source partition.");
-                        if (targetPartitionVariable == this->sourceVariablesIndicesAndLevels[sourceStateEncodingIndex].first) {
+                        DdNodePtr targetT;
+                        DdNodePtr targetE;
+                        if (Cudd_NodeReadIndex(targetPartitionNode) == Cudd_NodeReadIndex(variables) + 1) {
+                            // Node was not skipped in target partition.
                             targetT = Cudd_T(targetPartitionNode);
                             targetE = Cudd_E(targetPartitionNode);
                         } else {
+                            // Node was skipped in target partition.
                             targetT = targetE = targetPartitionNode;
-                            skippedInTargetPartition = true;
                         }
                         
-                        // If we skipped the variable in the source partition, we only have to choose one of the two representatives.
-                        if (!skippedInSourcePartition) {
-                            sourceStateEncoding.set(sourceStateEncodingIndex, true);
-                            if (!skippedInTargetPartition) {
-                                extractTransitionMatrixRec(tt, sourceT, targetT, sourceStateEncodingIndex + 1, sourceStateEncoding, nondeterminismEncoding, factor);
-                            }
-                            extractTransitionMatrixRec(te, sourceT, targetE, sourceStateEncodingIndex + 1, sourceStateEncoding, nondeterminismEncoding, skippedTargetTInMatrix && skippedInTargetPartition ? 2 * factor : factor);
+                        DdNodePtr representativesT;
+                        DdNodePtr representativesE;
+                        if (Cudd_NodeReadIndex(representativesNode) == Cudd_NodeReadIndex(variables)) {
+                            // Node was not skipped in representatives.
+                            representativesT = Cudd_T(representativesNode);
+                            representativesE = Cudd_E(representativesNode);
+                        } else {
+                            // Node was skipped in representatives.
+                            representativesT = representativesE = representativesNode;
                         }
                         
-                        sourceStateEncoding.set(sourceStateEncodingIndex, false);
-                        // If we skipped the variable in the target partition, just count the one representative twice.
-                        if (!skippedInTargetPartition) {
-                            extractTransitionMatrixRec(et, sourceE, targetT, sourceStateEncodingIndex + 1, sourceStateEncoding, nondeterminismEncoding, factor);
+                        if (representativesT != representativesE && Cudd_IsComplement(representativesNode)) {
+                            representativesT = Cudd_Not(representativesT);
+                            representativesE = Cudd_Not(representativesE);
                         }
-                        extractTransitionMatrixRec(ee, sourceE, targetE, sourceStateEncodingIndex + 1, sourceStateEncoding, nondeterminismEncoding, skippedTargetEInMatrix && skippedInTargetPartition ? 2 * factor : factor);
+                        
+                        extractTransitionMatrixRec(ee, sourceOdd.getElseSuccessor(), sourceOffset, targetE, representativesE, Cudd_T(variables));
+                        extractTransitionMatrixRec(et, sourceOdd.getElseSuccessor(), sourceOffset, targetT, representativesE, Cudd_T(variables));
+                        extractTransitionMatrixRec(te, sourceOdd.getThenSuccessor(), sourceOffset + sourceOdd.getElseOffset(), targetE, representativesT, Cudd_T(variables));
+                        extractTransitionMatrixRec(tt, sourceOdd.getThenSuccessor(), sourceOffset + sourceOdd.getElseOffset(), targetT, representativesT, Cudd_T(variables));
                     }
                 }
 
                 ::DdManager* ddman;
                 
-                spp::sparse_hash_map<DdNode const*, std::unique_ptr<uint64_t>> blockDecodeCache;
+                // A mapping from blocks (stored in terms of a DD node) to the offset of the corresponding block.
+                spp::sparse_hash_map<DdNode const*, uint64_t> blockToOffset;
             };
 
             template<typename ValueType>
             class InternalSparseQuotientExtractor<storm::dd::DdType::Sylvan, ValueType> : public InternalSparseQuotientExtractorBase<storm::dd::DdType::Sylvan, ValueType> {
             public:
-                InternalSparseQuotientExtractor(storm::dd::DdManager<storm::dd::DdType::Sylvan> const& manager, std::set<storm::expressions::Variable> const& stateVariables, std::set<storm::expressions::Variable> const& nondeterminismVariables) : InternalSparseQuotientExtractorBase<storm::dd::DdType::Sylvan, ValueType>(manager, stateVariables, nondeterminismVariables) {
-                    // Intentionally left empty.
+                InternalSparseQuotientExtractor(storm::dd::DdManager<storm::dd::DdType::Sylvan> const& manager, std::set<storm::expressions::Variable> const& rowVariables, std::set<storm::expressions::Variable> const& columnVariables, std::set<storm::expressions::Variable> const& nondeterminismVariables, Partition<storm::dd::DdType::Sylvan, ValueType> const& partition, storm::dd::Bdd<storm::dd::DdType::Sylvan> const& representatives, storm::dd::Odd const& odd) : InternalSparseQuotientExtractorBase<storm::dd::DdType::Sylvan, ValueType>(manager, rowVariables, columnVariables, nondeterminismVariables, partition, representatives, odd) {
+                    
+                    STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Möööp");
+                    STORM_LOG_ASSERT(partition.storedAsBdd(), "Expected partition stored as BDD.");
                 }
                 
-                storm::storage::SparseMatrix<ValueType> extractTransitionMatrix(storm::dd::Add<storm::dd::DdType::Sylvan, ValueType> const& transitionMatrix, Partition<storm::dd::DdType::Sylvan, ValueType> const& partition) {
-                    STORM_LOG_ASSERT(partition.storedAsBdd(), "Expected partition stored as BDD.");
-                    
-                    // Create the number of rows necessary for the matrix.
-                    this->reserveMatrixEntries(partition.getNumberOfBlocks());
-
-                    storm::storage::BitVector stateEncoding(this->sourceVariablesIndicesAndLevels.size());
-                    storm::storage::BitVector nondeterminismEncoding;
-                    extractTransitionMatrixRec(transitionMatrix.getInternalAdd().getSylvanMtbdd().GetMTBDD(), partition.asBdd().getInternalBdd().getSylvanBdd().GetBDD(), partition.asBdd().getInternalBdd().getSylvanBdd().GetBDD(), 0, stateEncoding, nondeterminismEncoding);
-                    
-                    return this->createMatrixFromEntries(partition);
-                }
-                
-                storm::storage::BitVector extractStates(storm::dd::Bdd<storm::dd::DdType::Sylvan> const& states, Partition<storm::dd::DdType::Sylvan, ValueType> const& partition) {
-                    STORM_LOG_ASSERT(partition.storedAsBdd(), "Expected partition stored as BDD.");
-                    
-                    storm::storage::BitVector result(partition.getNumberOfBlocks());
-                    extractStatesRec(states.getInternalBdd().getSylvanBdd().GetBDD(), partition.asBdd().getInternalBdd().getSylvanBdd().GetBDD(), this->stateVariablesCube.getInternalBdd().getSylvanBdd().GetBDD(), result);
-                    
-                    return result;
+                storm::storage::SparseMatrix<ValueType> extractTransitionMatrix(storm::dd::Add<storm::dd::DdType::Sylvan, ValueType> const& transitionMatrix) {
+                    STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Möööp");
+//                    // Create the number of rows necessary for the matrix.
+//                    this->reserveMatrixEntries(partition.getNumberOfBlocks());
+//
+//                    storm::storage::BitVector stateEncoding(this->sourceVariablesIndicesAndLevels.size());
+//                    storm::storage::BitVector nondeterminismEncoding;
+//                    extractTransitionMatrixRec(transitionMatrix.getInternalAdd().getSylvanMtbdd().GetMTBDD(), partition.asBdd().getInternalBdd().getSylvanBdd().GetBDD(), partition.asBdd().getInternalBdd().getSylvanBdd().GetBDD(), 0, stateEncoding, nondeterminismEncoding);
+//                    
+//                    return this->createMatrixFromEntries(partition);
                 }
                 
             private:
-                uint64_t decodeBlockIndex(BDD blockEncoding) {
-                    std::unique_ptr<uint64_t>& blockCacheEntry = blockDecodeCache[blockEncoding];
-                    if (blockCacheEntry) {
-                        return *blockCacheEntry;
-                    }
-                    
-                    uint64_t result = 0;
-                    uint64_t offset = 0;
-                    while (blockEncoding != sylvan_true) {
-                        if (sylvan_high(blockEncoding) != sylvan_false) {
-                            blockEncoding = sylvan_high(blockEncoding);
-                            result |= 1ull << offset;
-                        } else {
-                            blockEncoding = sylvan_low(blockEncoding);
-                        }
-                        ++offset;
-                    }
-                    
-                    blockCacheEntry.reset(new uint64_t(result));
-                    
-                    return result;
-                }
-                
-                void extractStatesRec(BDD statesNode, BDD partitionNode, BDD stateVariablesNode, storm::storage::BitVector& result) {
-                    if (statesNode == sylvan_false) {
-                        return;
-                    }
-                    
-                    bool skippedBoth = true;
-                    BDD tStates;
-                    BDD eStates;
-                    BDD tPartition;
-                    BDD ePartition;
-                    while (skippedBoth && !sylvan_isconst(stateVariablesNode)) {
-                        if (sylvan_var(statesNode) == sylvan_var(stateVariablesNode)) {
-                            tStates = sylvan_high(statesNode);
-                            eStates = sylvan_low(statesNode);
-                            skippedBoth = false;
-                        } else {
-                            tStates = eStates = statesNode;
-                        }
-                        
-                        if (sylvan_var(partitionNode) == sylvan_var(stateVariablesNode) + 1) {
-                            tPartition = sylvan_high(partitionNode);
-                            ePartition = sylvan_low(partitionNode);
-                            skippedBoth = false;
-                        } else {
-                            tPartition = ePartition = partitionNode;
-                        }
-                        
-                        if (skippedBoth) {
-                            stateVariablesNode = sylvan_high(stateVariablesNode);
-                        }
-                    }
-                    
-                    if (sylvan_isconst(stateVariablesNode)) {
-                        // If there is no more state variables, it means that we arrived at a block encoding in which there is a state in the state set.
-                        result.set(decodeBlockIndex(partitionNode));
-                        return;
-                    } else {
-                        // Otherwise, we need to recursively descend.
-                        extractStatesRec(tStates, tPartition, sylvan_high(stateVariablesNode), result);
-                        extractStatesRec(eStates, ePartition, sylvan_high(stateVariablesNode), result);
-                    }
-                }
-                
-                void extractTransitionMatrixRec(MTBDD transitionMatrixNode, BDD sourcePartitionNode, BDD targetPartitionNode, uint64_t currentIndex, storm::storage::BitVector& sourceState, storm::storage::BitVector const& nondeterminismEncoding, ValueType const& factor = storm::utility::one<ValueType>()) {
-                    // For the empty DD, we do not need to add any entries. Note that the partition nodes cannot be zero
-                    // as all states of the model have to be contained.
-                    if (mtbdd_iszero(transitionMatrixNode)) {
-                        return;
-                    }
-                    
-                    // If we have moved through all source variables, we must have arrived at a target block encoding.
-                    if (currentIndex == sourceState.size()) {
-                        // Decode the source block.
-                        uint64_t sourceBlockIndex = decodeBlockIndex(sourcePartitionNode);
-                        
-                        std::unique_ptr<storm::storage::BitVector>& sourceRepresentative = this->uniqueSourceRepresentative[sourceBlockIndex];
-                        if (sourceRepresentative && *sourceRepresentative != sourceState) {
-                            // In this case, we have picked a different representative and must not record any entries now.
-                            return;
-                        }
-                        
-                        // Otherwise, we record the new representative.
-                        sourceRepresentative.reset(new storm::storage::BitVector(sourceState));
-                        
-                        // Decode the target block and add matrix entry.
-                        uint64_t targetBlockIndex = decodeBlockIndex(targetPartitionNode);
-                        this->addMatrixEntry(nondeterminismEncoding, sourceBlockIndex, targetBlockIndex, factor * storm::dd::InternalAdd<storm::dd::DdType::Sylvan, ValueType>::getValue(transitionMatrixNode));
-                    } else {
-                        // Determine the levels in the DDs.
-                        uint64_t transitionMatrixVariable = sylvan_isconst(transitionMatrixNode) ? 0xffffffff : sylvan_var(transitionMatrixNode);
-                        uint64_t sourcePartitionVariable = sylvan_var(sourcePartitionNode) - 1;
-                        uint64_t targetPartitionVariable = sylvan_var(targetPartitionNode) - 1;
-                        
-                        // Move through transition matrix.
-                        bool skippedSourceInMatrix = false;
-                        bool skippedTargetTInMatrix = false;
-                        bool skippedTargetEInMatrix = false;
-                        MTBDD tt = transitionMatrixNode;
-                        MTBDD te = transitionMatrixNode;
-                        MTBDD et = transitionMatrixNode;
-                        MTBDD ee = transitionMatrixNode;
-                        if (transitionMatrixVariable == this->sourceVariablesIndicesAndLevels[currentIndex].first) {
-                            MTBDD t = sylvan_high(transitionMatrixNode);
-                            MTBDD e = sylvan_low(transitionMatrixNode);
-                            
-                            uint64_t tVariable = sylvan_isconst(t) ? 0xffffffff : sylvan_var(t);
-                            if (tVariable == this->sourceVariablesIndicesAndLevels[currentIndex].first + 1) {
-                                tt = sylvan_high(t);
-                                te = sylvan_low(t);
-                            } else {
-                                tt = te = t;
-                                skippedTargetTInMatrix = true;
-                            }
-                            
-                            uint64_t eVariable = sylvan_isconst(e) ? 0xffffffff : sylvan_var(e);
-                            if (eVariable == this->sourceVariablesIndicesAndLevels[currentIndex].first + 1) {
-                                et = sylvan_high(e);
-                                ee = sylvan_low(e);
-                            } else {
-                                et = ee = e;
-                                skippedTargetEInMatrix = true;
-                            }
-                        } else {
-                            skippedSourceInMatrix = true;
-                            if (transitionMatrixVariable == this->sourceVariablesIndicesAndLevels[currentIndex].first + 1) {
-                                tt = et = sylvan_high(transitionMatrixNode);
-                                te = ee = sylvan_low(transitionMatrixNode);
-                            } else {
-                                tt = te = et = ee = transitionMatrixNode;
-                                skippedTargetTInMatrix = skippedTargetEInMatrix = true;
-                            }
-                        }
-                        
-                        // Move through partition (for source state).
-                        bool skippedInSourcePartition = false;
-                        MTBDD sourceT;
-                        MTBDD sourceE;
-                        if (sourcePartitionVariable == this->sourceVariablesIndicesAndLevels[currentIndex].first) {
-                            sourceT = sylvan_high(sourcePartitionNode);
-                            sourceE = sylvan_low(sourcePartitionNode);
-                        } else {
-                            sourceT = sourceE = sourcePartitionNode;
-                            skippedInSourcePartition = true;
-                        }
-                        
-                        // Move through partition (for target state).
-                        bool skippedInTargetPartition = false;
-                        MTBDD targetT;
-                        MTBDD targetE;
-                        if (targetPartitionVariable == this->sourceVariablesIndicesAndLevels[currentIndex].first) {
-                            targetT = sylvan_high(targetPartitionNode);
-                            targetE = sylvan_low(targetPartitionNode);
-                        } else {
-                            targetT = targetE = targetPartitionNode;
-                            skippedInTargetPartition = true;
-                        }
-                        
-                        // If we skipped the variable in the source partition, we only have to choose one of the two representatives.
-                        if (!skippedInSourcePartition) {
-                            sourceState.set(currentIndex, true);
-                            // If we skipped the variable in the target partition, just count the one representative twice.
-                            if (!skippedInTargetPartition) {
-                                extractTransitionMatrixRec(tt, sourceT, targetT, currentIndex + 1, sourceState, nondeterminismEncoding, factor);
-                            }
-                            extractTransitionMatrixRec(te, sourceT, targetE, currentIndex + 1, sourceState, nondeterminismEncoding, skippedTargetTInMatrix && skippedInTargetPartition ? 2 * factor : factor);
-                        }
-                        
-                        sourceState.set(currentIndex, false);
-                        // If we skipped the variable in the target partition, just count the one representative twice.
-                        if (!skippedInTargetPartition) {
-                            extractTransitionMatrixRec(et, sourceE, targetT, currentIndex + 1, sourceState, nondeterminismEncoding, factor);
-                        }
-                        extractTransitionMatrixRec(ee, sourceE, targetE, currentIndex + 1, sourceState, nondeterminismEncoding, skippedTargetEInMatrix && skippedInTargetPartition ? 2 * factor : factor);
-                    }
-                }
+//                void extractTransitionMatrixRec(MTBDD transitionMatrixNode, BDD sourcePartitionNode, BDD targetPartitionNode, uint64_t currentIndex, storm::storage::BitVector& sourceState, storm::storage::BitVector const& nondeterminismEncoding, ValueType const& factor = storm::utility::one<ValueType>()) {
+//                    // For the empty DD, we do not need to add any entries. Note that the partition nodes cannot be zero
+//                    // as all states of the model have to be contained.
+//                    if (mtbdd_iszero(transitionMatrixNode)) {
+//                        return;
+//                    }
+//                    
+//                    // If we have moved through all source variables, we must have arrived at a target block encoding.
+//                    if (currentIndex == sourceState.size()) {
+//                        // Decode the source block.
+//                        uint64_t sourceBlockIndex = decodeBlockIndex(sourcePartitionNode);
+//                        
+//                        std::unique_ptr<storm::storage::BitVector>& sourceRepresentative = this->uniqueSourceRepresentative[sourceBlockIndex];
+//                        if (sourceRepresentative && *sourceRepresentative != sourceState) {
+//                            // In this case, we have picked a different representative and must not record any entries now.
+//                            return;
+//                        }
+//                        
+//                        // Otherwise, we record the new representative.
+//                        sourceRepresentative.reset(new storm::storage::BitVector(sourceState));
+//                        
+//                        // Decode the target block and add matrix entry.
+//                        uint64_t targetBlockIndex = decodeBlockIndex(targetPartitionNode);
+//                        this->addMatrixEntry(nondeterminismEncoding, sourceBlockIndex, targetBlockIndex, factor * storm::dd::InternalAdd<storm::dd::DdType::Sylvan, ValueType>::getValue(transitionMatrixNode));
+//                    } else {
+//                        // Determine the levels in the DDs.
+//                        uint64_t transitionMatrixVariable = sylvan_isconst(transitionMatrixNode) ? 0xffffffff : sylvan_var(transitionMatrixNode);
+//                        uint64_t sourcePartitionVariable = sylvan_var(sourcePartitionNode) - 1;
+//                        uint64_t targetPartitionVariable = sylvan_var(targetPartitionNode) - 1;
+//                        
+//                        // Move through transition matrix.
+//                        bool skippedSourceInMatrix = false;
+//                        bool skippedTargetTInMatrix = false;
+//                        bool skippedTargetEInMatrix = false;
+//                        MTBDD tt = transitionMatrixNode;
+//                        MTBDD te = transitionMatrixNode;
+//                        MTBDD et = transitionMatrixNode;
+//                        MTBDD ee = transitionMatrixNode;
+//                        if (transitionMatrixVariable == this->sourceVariablesIndicesAndLevels[currentIndex].first) {
+//                            MTBDD t = sylvan_high(transitionMatrixNode);
+//                            MTBDD e = sylvan_low(transitionMatrixNode);
+//                            
+//                            uint64_t tVariable = sylvan_isconst(t) ? 0xffffffff : sylvan_var(t);
+//                            if (tVariable == this->sourceVariablesIndicesAndLevels[currentIndex].first + 1) {
+//                                tt = sylvan_high(t);
+//                                te = sylvan_low(t);
+//                            } else {
+//                                tt = te = t;
+//                                skippedTargetTInMatrix = true;
+//                            }
+//                            
+//                            uint64_t eVariable = sylvan_isconst(e) ? 0xffffffff : sylvan_var(e);
+//                            if (eVariable == this->sourceVariablesIndicesAndLevels[currentIndex].first + 1) {
+//                                et = sylvan_high(e);
+//                                ee = sylvan_low(e);
+//                            } else {
+//                                et = ee = e;
+//                                skippedTargetEInMatrix = true;
+//                            }
+//                        } else {
+//                            skippedSourceInMatrix = true;
+//                            if (transitionMatrixVariable == this->sourceVariablesIndicesAndLevels[currentIndex].first + 1) {
+//                                tt = et = sylvan_high(transitionMatrixNode);
+//                                te = ee = sylvan_low(transitionMatrixNode);
+//                            } else {
+//                                tt = te = et = ee = transitionMatrixNode;
+//                                skippedTargetTInMatrix = skippedTargetEInMatrix = true;
+//                            }
+//                        }
+//                        
+//                        // Move through partition (for source state).
+//                        bool skippedInSourcePartition = false;
+//                        MTBDD sourceT;
+//                        MTBDD sourceE;
+//                        if (sourcePartitionVariable == this->sourceVariablesIndicesAndLevels[currentIndex].first) {
+//                            sourceT = sylvan_high(sourcePartitionNode);
+//                            sourceE = sylvan_low(sourcePartitionNode);
+//                        } else {
+//                            sourceT = sourceE = sourcePartitionNode;
+//                            skippedInSourcePartition = true;
+//                        }
+//                        
+//                        // Move through partition (for target state).
+//                        bool skippedInTargetPartition = false;
+//                        MTBDD targetT;
+//                        MTBDD targetE;
+//                        if (targetPartitionVariable == this->sourceVariablesIndicesAndLevels[currentIndex].first) {
+//                            targetT = sylvan_high(targetPartitionNode);
+//                            targetE = sylvan_low(targetPartitionNode);
+//                        } else {
+//                            targetT = targetE = targetPartitionNode;
+//                            skippedInTargetPartition = true;
+//                        }
+//                        
+//                        // If we skipped the variable in the source partition, we only have to choose one of the two representatives.
+//                        if (!skippedInSourcePartition) {
+//                            sourceState.set(currentIndex, true);
+//                            // If we skipped the variable in the target partition, just count the one representative twice.
+//                            if (!skippedInTargetPartition || !skippedTargetTInMatrix) {
+//                                extractTransitionMatrixRec(tt, sourceT, targetT, currentIndex + 1, sourceState, nondeterminismEncoding, factor);
+//                            }
+//                            extractTransitionMatrixRec(te, sourceT, targetE, currentIndex + 1, sourceState, nondeterminismEncoding, skippedTargetTInMatrix && skippedInTargetPartition ? 2 * factor : factor);
+//                        }
+//                        
+//                        sourceState.set(currentIndex, false);
+//                        // If we skipped the variable in the target partition, just count the one representative twice.
+//                        if (!skippedInTargetPartition || !skippedTargetEInMatrix) {
+//                            extractTransitionMatrixRec(et, sourceE, targetT, currentIndex + 1, sourceState, nondeterminismEncoding, factor);
+//                        }
+//                        extractTransitionMatrixRec(ee, sourceE, targetE, currentIndex + 1, sourceState, nondeterminismEncoding, skippedTargetEInMatrix && skippedInTargetPartition ? 2 * factor : factor);
+//                    }
+//                }
                 
                 spp::sparse_hash_map<BDD, std::unique_ptr<uint64_t>> blockDecodeCache;
             };
@@ -824,30 +627,29 @@ namespace storm {
             
             template<storm::dd::DdType DdType, typename ValueType>
             std::shared_ptr<storm::models::sparse::Model<ValueType>> QuotientExtractor<DdType, ValueType>::extractSparseQuotient(storm::models::symbolic::Model<DdType, ValueType> const& model, Partition<DdType, ValueType> const& partition, PreservationInformation<DdType, ValueType> const& preservationInformation) {
-                InternalSparseQuotientExtractor<DdType, ValueType> sparseExtractor(model.getManager(), model.getRowVariables(), model.getNondeterminismVariables());
                 auto states = partition.getStates().swapVariables(model.getRowColumnMetaVariablePairs());
                 
                 storm::dd::Bdd<DdType> partitionAsBdd = partition.storedAsAdd() ? partition.asAdd().toBdd() : partition.asBdd();
                 partitionAsBdd = partitionAsBdd.renameVariables(model.getColumnVariables(), model.getRowVariables());
-                partitionAsBdd.template toAdd<ValueType>().exportToDot("partition.dot");
 
                 auto start = std::chrono::high_resolution_clock::now();
                 // FIXME: Use partition as BDD in representative computation.
                 auto representatives = InternalRepresentativeComputer<DdType, ValueType>(partition, model.getRowVariables(), model.getColumnVariables()).getRepresentatives();
-                representatives.template toAdd<ValueType>().exportToDot("repr.dot");
-                (model.getTransitionMatrix() * representatives.template toAdd<ValueType>()).exportToDot("extract.dot");
-                storm::storage::SparseMatrix<ValueType> quotientTransitionMatrix = sparseExtractor.extractTransitionMatrix(model.getTransitionMatrix() * representatives.template toAdd<ValueType>(), partition);
+                STORM_LOG_ASSERT(representatives.getNonZeroCount() == partition.getNumberOfBlocks(), "Representatives size does not match that of the partition: " << representatives.getNonZeroCount() << " vs. " << partition.getNumberOfBlocks() << ".");
+                storm::dd::Odd odd = representatives.createOdd();
+                STORM_LOG_ASSERT(odd.getTotalOffset() == representatives.getNonZeroCount(), "Mismatching ODD.");
+                InternalSparseQuotientExtractor<DdType, ValueType> sparseExtractor(model.getManager(), model.getRowVariables(), model.getColumnVariables(), model.getNondeterminismVariables(), partition, representatives, odd);
+                storm::storage::SparseMatrix<ValueType> quotientTransitionMatrix = sparseExtractor.extractTransitionMatrix(model.getTransitionMatrix());
                 auto end = std::chrono::high_resolution_clock::now();
                 STORM_LOG_TRACE("Quotient transition matrix extracted in " << std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count() << "ms.");
                 
                 start = std::chrono::high_resolution_clock::now();
-                storm::dd::Odd odd = representatives.createOdd();
                 storm::models::sparse::StateLabeling quotientStateLabeling(partition.getNumberOfBlocks());
                 quotientStateLabeling.addLabel("init", ((model.getInitialStates() && partitionAsBdd).existsAbstract(model.getRowVariables()) && partitionAsBdd && representatives).existsAbstract({partition.getBlockVariable()}).toVector(odd));
-                quotientStateLabeling.addLabel("deadlock", sparseExtractor.extractStates(model.getDeadlockStates(), partition));
+                quotientStateLabeling.addLabel("deadlock", ((model.getDeadlockStates() && partitionAsBdd).existsAbstract(model.getRowVariables()) && partitionAsBdd && representatives).existsAbstract({partition.getBlockVariable()}).toVector(odd));
                 
                 for (auto const& label : preservationInformation.getLabels()) {
-                    quotientStateLabeling.addLabel(label, sparseExtractor.extractStates(model.getStates(label), partition));
+                    quotientStateLabeling.addLabel(label, (model.getStates(label) && representatives).toVector(odd));
                 }
                 for (auto const& expression : preservationInformation.getExpressions()) {
                     std::stringstream stream;
@@ -857,7 +659,7 @@ namespace storm {
                     if (quotientStateLabeling.containsLabel(expressionAsString)) {
                         STORM_LOG_WARN("Duplicate label '" << expressionAsString << "', dropping second label definition.");
                     } else {
-                        quotientStateLabeling.addLabel(stream.str(), sparseExtractor.extractStates(model.getStates(expression), partition));
+                        quotientStateLabeling.addLabel(stream.str(), (model.getStates(expression) && representatives).toVector(odd));
                     }
                 }
                 end = std::chrono::high_resolution_clock::now();

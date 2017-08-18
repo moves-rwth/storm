@@ -4,6 +4,7 @@
 #include <vector>
 #include <map>
 #include <memory>
+#include <unordered_set>
 
 namespace storm {
     namespace dd {
@@ -125,7 +126,7 @@ namespace storm {
              * @param levelToOddNodesMap A mapping of the level to the ODD node.
              * @param The level of the current node.
              */
-            void addToLevelToOddNodesMap(std::map<uint_fast64_t, std::vector<std::reference_wrapper<storm::dd::Odd const>>>& levelToOddNodesMap, uint_fast64_t level = 0) const;
+            void addToLevelToOddNodesMap(std::map<uint_fast64_t, std::unordered_set<storm::dd::Odd const*>>& levelToOddNodesMap, uint_fast64_t level = 0) const;
             
             /*!
              * Adds the values of the old explicit values to the new explicit values where the positions in the old vector
