@@ -428,6 +428,11 @@ namespace storm {
             void clear();
                         
             /*!
+             * Sets all bits from the bit vector. Calling full() after this operation will yield true.
+             */
+            void fill();
+            
+            /*!
              * Returns the number of bits that are set to true in this bit vector.
              *
              * @return The number of bits that are set to true in this bit vector.

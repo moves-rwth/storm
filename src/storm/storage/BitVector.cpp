@@ -576,6 +576,10 @@ namespace storm {
         void BitVector::clear() {
             std::fill_n(buckets, this->bucketCount(), 0);
         }
+        
+        void BitVector::fill() {
+            std::fill_n(buckets, this->bucketCount(), -1ull);
+        }
 
         uint_fast64_t BitVector::getNumberOfSetBits() const {
             return getNumberOfSetBitsBeforeIndex(bitCount);
