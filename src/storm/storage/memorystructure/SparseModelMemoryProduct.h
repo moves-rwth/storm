@@ -72,6 +72,8 @@ namespace storm {
             // Indicates which states are considered reachable. (s, m) is reachable if this BitVector is true at (s * memoryStateCount) + m
             storm::storage::BitVector reachableStates;
             
+            uint64_t const memoryStateCount;
+            
             storm::models::sparse::Model<ValueType, RewardModelType> const& model;
             storm::storage::MemoryStructure const& memory;
             
