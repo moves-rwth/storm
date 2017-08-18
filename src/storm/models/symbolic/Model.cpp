@@ -256,10 +256,15 @@ namespace storm {
             }
             
             template<storm::dd::DdType Type, typename ValueType>
+            std::unordered_map<std::string, typename Model<Type, ValueType>::RewardModelType>& Model<Type, ValueType>::getRewardModels() {
+                return this->rewardModels;
+            }
+
+            template<storm::dd::DdType Type, typename ValueType>
             std::unordered_map<std::string, typename Model<Type, ValueType>::RewardModelType> const& Model<Type, ValueType>::getRewardModels() const {
                 return this->rewardModels;
             }
-            
+
             template<storm::dd::DdType Type, typename ValueType>
             void Model<Type, ValueType>::printModelInformationToStream(std::ostream& out) const {
                 this->printModelInformationHeaderToStream(out);

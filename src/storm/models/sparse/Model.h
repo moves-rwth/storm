@@ -292,16 +292,7 @@ namespace storm {
                  * @return The choice origins, if they're saved.
                  */
                 boost::optional<std::shared_ptr<storm::storage::sparse::ChoiceOrigins>>&  getOptionalChoiceOrigins();
-                
-                
-                /*!
-                 * Converts the transition rewards of all reward models to state-based rewards. For deterministic models,
-                 * this reduces the rewards to state rewards only. For nondeterminstic models, the reward models will
-                 * contain state rewards and state-action rewards. Note that this transformation does not preserve all
-                 * properties, but it preserves expected rewards.
-                 */
-                virtual void reduceToStateBasedRewards() = 0;
-                                
+                                                
                 /*!
                  * Prints information about the model to the specified stream.
                  *

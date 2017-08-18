@@ -91,6 +91,13 @@ namespace storm {
             }
             
             template<storm::dd::DdType Type, typename ValueType>
+            void NondeterministicModel<Type, ValueType>::reduceToStateBasedRewards() {
+                for (auto& rewardModel : this->getRewardModels()) {
+                    rewardModel.second.reduceToStateBasedRewards(this->getTransitionMatrix(), this->getRowVariables(), this->getColumnVariables(), false);
+                }
+            }
+            
+            template<storm::dd::DdType Type, typename ValueType>
             void NondeterministicModel<Type, ValueType>::createIllegalMask() {
                 // Prepare the mask of illegal nondeterministic choices.
                 illegalMask = !(this->getTransitionMatrix().notZero().existsAbstract(this->getColumnVariables())) && this->getReachableStates();

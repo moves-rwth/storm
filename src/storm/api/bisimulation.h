@@ -43,6 +43,7 @@ namespace storm {
             
             STORM_LOG_THROW(model->isOfType(storm::models::ModelType::Dtmc) || model->isOfType(storm::models::ModelType::Ctmc) || model->isOfType(storm::models::ModelType::Mdp), storm::exceptions::NotSupportedException, "Bisimulation minimization is currently only available for DTMCs, CTMCs and MDPs.");
 
+            // Try to get rid of non state-rewards to easy bisimulation computation.
             model->reduceToStateBasedRewards();
 
             if (model->isOfType(storm::models::ModelType::Dtmc)) {
@@ -60,6 +61,9 @@ namespace storm {
             STORM_LOG_THROW(model->isOfType(storm::models::ModelType::Dtmc) || model->isOfType(storm::models::ModelType::Ctmc) || model->isOfType(storm::models::ModelType::Mdp), storm::exceptions::NotSupportedException, "Symbolic bisimulation minimization is currently only available for DTMCs and CTMCs.");
             STORM_LOG_THROW(bisimulationType == storm::storage::BisimulationType::Strong, storm::exceptions::NotSupportedException, "Currently only strong bisimulation is supported.");
 
+            // Try to get rid of non state-rewards to easy bisimulation computation.
+            model->reduceToStateBasedRewards();
+            
             storm::dd::BisimulationDecomposition<DdType, ValueType> decomposition(*model, formulas, bisimulationType);
             decomposition.compute(mode);
             return decomposition.getQuotient();

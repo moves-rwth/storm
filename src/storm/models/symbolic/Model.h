@@ -298,6 +298,7 @@ namespace storm {
                  */
                 bool hasRewardModel() const;
 
+                std::unordered_map<std::string, RewardModelType>& getRewardModels();
                 std::unordered_map<std::string, RewardModelType> const& getRewardModels() const;
                 
                 /*!

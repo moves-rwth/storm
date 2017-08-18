@@ -124,6 +124,8 @@ namespace storm {
                 
                 virtual void printModelInformationToStream(std::ostream& out) const override;
                 
+                virtual void reduceToStateBasedRewards() override;
+                
             protected:
             
                 virtual void printDdVariableInformationToStream(std::ostream& out) const override;
