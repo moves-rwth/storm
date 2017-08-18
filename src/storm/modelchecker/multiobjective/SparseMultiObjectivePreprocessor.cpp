@@ -177,6 +177,8 @@ namespace storm {
                     preprocessUntilFormula(formula.getSubformula().asUntilFormula(), opInfo, data);
                 } else if (formula.getSubformula().isBoundedUntilFormula()){
                     preprocessBoundedUntilFormula(formula.getSubformula().asBoundedUntilFormula(), opInfo, data);
+                } else if (formula.getSubformula().isMultiObjectiveFormula()){
+                    preprocessMultiObjectiveSubformula(formula.getSubformula().asMultiObjectiveFormula(), opInfo, data);
                 } else if (formula.getSubformula().isGloballyFormula()){
                     preprocessGloballyFormula(formula.getSubformula().asGloballyFormula(), opInfo, data);
                 } else if (formula.getSubformula().isEventuallyFormula()){
@@ -261,6 +263,15 @@ namespace storm {
                 auto relevantStatesFormula = std::make_shared<storm::logic::AtomicLabelFormula>(relevantStatesLabel);
                 data.tasks.push_back(std::make_shared<SparseMultiObjectivePreprocessorReachProbToTotalRewTask<SparseModelType>>(data.objectives.back(), relevantStatesFormula, formula.getRightSubformula().asSharedPointer()));
                 
+            }
+            
+            template<typename SparseModelType>
+            void SparseMultiObjectivePreprocessor<SparseModelType>::preprocessMultiObjectiveSubformula(storm::logic::MultiObjectiveFormula const& formula, storm::logic::OperatorInformation const& opInfo, PreprocessorData& data) {
+                // Check whether only bounded until formulas are contained
+                for (auto const& f : formula.getSubformulas()) {
+                    STORM_LOG_THROW(f->isBoundedUntilFormula(), storm::exceptions::InvalidPropertyException, "MultiObjective subformulas are only allowed if they all contain bounded until formulas");
+                }
+                data.objectives.back()->formula = std::make_shared<storm::logic::ProbabilityOperatorFormula>(formula.asSharedPointer(), opInfo);
             }
             
             template<typename SparseModelType>

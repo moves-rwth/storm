@@ -29,7 +29,7 @@ namespace storm {
                 // set the state action rewards. Also do some sanity checks on the objectives.
                 for (uint_fast64_t objIndex = 0; objIndex < this->objectives.size(); ++objIndex) {
                     auto const& formula = *objectives[objIndex].formula;
-                    if (!(formula.isProbabilityOperatorFormula() && formula.getSubformula().isBoundedUntilFormula())) {
+                    if (!(formula.isProbabilityOperatorFormula() && (formula.getSubformula().isBoundedUntilFormula() || formula.getSubformula().isMultiObjectiveFormula()))) {
                         STORM_LOG_THROW(formula.isRewardOperatorFormula() && formula.asRewardOperatorFormula().hasRewardModelName(), storm::exceptions::UnexpectedException, "Unexpected type of operator formula: " << formula);
                         STORM_LOG_THROW(formula.getSubformula().isCumulativeRewardFormula() || formula.getSubformula().isTotalRewardFormula(), storm::exceptions::UnexpectedException, "Unexpected type of sub-formula: " << formula.getSubformula());
                         typename SparseMdpModelType::RewardModelType const& rewModel = this->model.getRewardModel(formula.asRewardOperatorFormula().getRewardModelName());
@@ -44,7 +44,7 @@ namespace storm {
                 // Currently, only step bounds are considered.
                 bool containsRewardBoundedObjectives = false;
                 for (uint_fast64_t objIndex = 0; objIndex < this->objectives.size(); ++objIndex) {
-                    if (this->objectives[objIndex].formula->getSubformula().isBoundedUntilFormula()) {
+                    if (this->objectives[objIndex].formula->isProbabilityOperatorFormula()) {
                         containsRewardBoundedObjectives = true;
                         break;
                     }
