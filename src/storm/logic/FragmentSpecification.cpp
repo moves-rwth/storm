@@ -89,7 +89,8 @@ namespace storm {
             
             multiObjective.setMultiObjectiveFormulasAllowed(true);
             multiObjective.setMultiObjectiveFormulaAtTopLevelRequired(true);
-            multiObjective.setOperatorsAtTopLevelOfMultiObjectiveFormulasRequired(true);
+            multiObjective.setNestedMultiObjectiveFormulasAllowed(true);
+            multiObjective.setOperatorsAtTopLevelOfMultiObjectiveFormulasRequired(false);
             multiObjective.setProbabilityOperatorsAllowed(true);
             multiObjective.setUntilFormulasAllowed(true);
             multiObjective.setGloballyFormulasAllowed(true);
