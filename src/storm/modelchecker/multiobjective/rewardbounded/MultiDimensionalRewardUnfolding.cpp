@@ -60,10 +60,8 @@ namespace storm {
                                     auto const& rewardModel = this->model.getRewardModel(rewardName);
                                     STORM_LOG_THROW(!rewardModel.hasTransitionRewards(), storm::exceptions::NotSupportedException, "Transition rewards are currently not supported as reward bounds.");
                                     std::vector<ValueType> actionRewards = rewardModel.getTotalRewardVector(this->model.getTransitionMatrix());
-                                    std::cout << "action rewards " << storm::utility::vector::toString(actionRewards) << std::endl;
                                     auto discretizedRewardsAndFactor = storm::utility::vector::toIntegralVector<ValueType, uint64_t>(actionRewards);
                                     epochSteps.push_back(std::move(discretizedRewardsAndFactor.first));
-                                    std::cout << "scaled rewards " << storm::utility::vector::toString(epochSteps.back()) << std::endl;
                                     scalingFactors.push_back(std::move(discretizedRewardsAndFactor.second));
                                 }
                             }
@@ -100,12 +98,6 @@ namespace storm {
                     possibleEpochSteps.insert(step);
                 }
                 
-                std::cout << "epoch steps are ..." << std::endl;
-                for (uint64_t dim = 0; dim < epochSteps.size(); ++dim) {
-                    std::cout << "   dim " << dim << " : " << storm::utility::vector::toString(epochSteps[dim]) << std::endl;
-                }
-                
-                
                 // build the model x memory product
                 auto memoryStructure = computeMemoryStructure();
                 memoryStateMap = computeMemoryStateMap(memoryStructure);
@@ -113,11 +105,6 @@ namespace storm {
                 // todo: we only need to build the reachable states + the full model for each memory state encoding that all subObjectives of an objective are irrelevant
                 productBuilder->setBuildFullProduct();
                 modelMemoryProduct = productBuilder->build()->template as<storm::models::sparse::Mdp<ValueType>>();
-                
-                std::cout << "Orig model Transitions: " << std::endl << model.getTransitionMatrix() << std::endl;
-                std::cout << "Memory: " << std::endl << memoryStructure.toString() << std::endl;
-                std::cout << "Product transitions: " << std::endl << modelMemoryProduct->getTransitionMatrix() << std::endl;
-                
                 
                 productEpochSteps.resize(modelMemoryProduct->getNumberOfChoices());
                 for (uint64_t modelState = 0; modelState < model.getNumberOfStates(); ++modelState) {
@@ -130,15 +117,12 @@ namespace storm {
                             step.push_back(epochSteps[dim][firstChoice + choiceOffset]);
                             isZeroStep = isZeroStep && step.back() == 0;
                         }
-                        std::cout << "step #" << modelState << "." << choiceOffset << " is " << storm::utility::vector::toString(step) << std::endl;
                         if (!isZeroStep) {
-                        std::cout << "   (non-zero step)" << std::endl;
                             for (uint64_t memState = 0; memState < memoryStateMap.size(); ++memState) {
                                 uint64_t productState = getProductState(modelState, memState);
                                 uint64_t productChoice = modelMemoryProduct->getTransitionMatrix().getRowGroupIndices()[productState] + choiceOffset;
                                 assert(productChoice < modelMemoryProduct->getTransitionMatrix().getRowGroupIndices()[productState + 1]);
                                 productEpochSteps[productChoice] = step;
-                                std::cout << " set step at product choice " << productChoice << std::endl;
                             }
                         }
                     }
@@ -221,7 +205,6 @@ namespace storm {
                         }
                     }
                     if (!hasUnseenSuccessor) {
-                        std::cout << "ADDING EPOCH to computation order: " << storm::utility::vector::toString(dfsStack.back()) << std::endl;
                         result.push_back(std::move(dfsStack.back()));
                         dfsStack.pop_back();
                     }
@@ -232,7 +215,6 @@ namespace storm {
             
             template<typename ValueType>
             typename MultiDimensionalRewardUnfolding<ValueType>::EpochModel const& MultiDimensionalRewardUnfolding<ValueType>::setCurrentEpoch(Epoch const& epoch) {
-                std::cout << "Setting epoch to " << storm::utility::vector::toString(epoch) << std::endl;
 
                 // Check if we need to update the current epoch class
                 if (!currentEpoch || getClassOfEpoch(epoch) != getClassOfEpoch(currentEpoch.get())) {
@@ -282,17 +264,12 @@ namespace storm {
                 
                 currentEpoch = epoch;
                 
-                
-                
-                std::cout << "epoch matrix is " << std::endl << epochModel.epochMatrix << std::endl;
                 return epochModel;
                 
             }
             
             template<typename ValueType>
             void MultiDimensionalRewardUnfolding<ValueType>::setCurrentEpochClass(Epoch const& epoch) {
-                std::cout << "Setting class for epoch " << storm::utility::vector::toString(epoch) << std::endl;
-                
                 auto productObjectiveRewards = computeObjectiveRewardsForProduct(epoch);
                 
                 
@@ -300,7 +277,6 @@ namespace storm {
                 uint64_t choice = 0;
                 for (auto const& step : productEpochSteps) {
                     if (step) {
-                        std::cout << "   step at choice " << choice << " is " << storm::utility::vector::toString(step.get()) << std::endl;
                         auto eIt = epoch.begin();
                         for (auto const& s : step.get()) {
                             if (s != 0 && *eIt >= 0) {
@@ -312,23 +288,16 @@ namespace storm {
                     }
                     ++choice;
                 }
-                std::cout << "step choices is " << stepChoices << std::endl;
-                std::cout << "Matrix before filter: " << std::endl << modelMemoryProduct->getTransitionMatrix() << std::endl << std::endl;
                 epochModel.epochMatrix = modelMemoryProduct->getTransitionMatrix().filterEntries(~stepChoices);
                 
                 storm::storage::BitVector zeroObjRewardChoices(modelMemoryProduct->getNumberOfChoices(), true);
                 for (auto const& objRewards : productObjectiveRewards) {
-                    std::cout << "objectiveRewards: " << storm::utility::vector::toString(objRewards) << std::endl;
                     zeroObjRewardChoices &= storm::utility::vector::filterZero(objRewards);
                 }
                 
-                std::cout << "Matrix before ec elim: " << std::endl << epochModel.epochMatrix << std::endl << std::endl;
-                std::cout << "zeroObjRewChoices: " << zeroObjRewardChoices << std::endl;
-                std::cout << "productAllowedBottomStates: " << productAllowedBottomStates << std::endl;
                 ecElimResult = storm::transformer::EndComponentEliminator<ValueType>::transform(epochModel.epochMatrix, storm::storage::BitVector(modelMemoryProduct->getNumberOfStates(), true), zeroObjRewardChoices & ~stepChoices, productAllowedBottomStates);
                 
                 epochModel.epochMatrix = std::move(ecElimResult.matrix);
-                std::cout << "matrix       redu: " << std::endl << epochModel.epochMatrix << std::endl;
                 
                 epochModel.stepChoices = storm::storage::BitVector(epochModel.epochMatrix.getRowCount(), false);
                 for (uint64_t choice = 0; choice < epochModel.epochMatrix.getRowCount(); ++choice) {
@@ -336,8 +305,6 @@ namespace storm {
                         epochModel.stepChoices.set(choice, true);
                     }
                 }
-                std::cout << "step choices orig: " << stepChoices << std::endl;
-                std::cout << "step choices redu: " << epochModel.stepChoices << std::endl;
                 STORM_LOG_ASSERT(epochModel.stepChoices.getNumberOfSetBits() == stepChoices.getNumberOfSetBits(), "The number of choices leading outside of the epoch does not match for the reduced and unreduced epochMatrix");
                 
                 epochModel.objectiveRewards.clear();
@@ -506,11 +473,9 @@ namespace storm {
                             }
                             storm::storage::MemoryStructure subObjMem = subObjMemBuilder.build();
                             
-                            std::cout << "   subObjMem: " << std::endl << subObjMem.toString() << std::endl;
                             objMemory = objMemory.product(subObjMem);
                         }
                     }
-                    std::cout << "   objMemory before: " << std::endl << objMemory.toString() << std::endl;
                     
                     // find the memory state that represents that all subObjectives are decided (i.e., Psi_i has been reached for all i)
                     storm::storage::BitVector decidedState(objMemory.getNumberOfStates(), true);
@@ -532,11 +497,8 @@ namespace storm {
                     }
                      */
                     auto objMemory = objMemoryBuilder.build();
-                    std::cout << "   objMemory : " << std::endl << objMemory.toString() << std::endl;
                     memory = memory.product(objMemory);
                 }
-                
-                    std::cout << "   final memory: " << std::endl << memory.toString() << std::endl;
                 return memory;
             }
             

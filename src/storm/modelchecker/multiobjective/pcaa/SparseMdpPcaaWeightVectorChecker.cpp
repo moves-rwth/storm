@@ -160,7 +160,6 @@ namespace storm {
                     ValueType weight = storm::solver::minimize(this->objectives[objIndex].formula->getOptimalityType()) ? -weightVector[objIndex] : weightVector[objIndex];
                     if (!storm::utility::isZero(weight)) {
                         std::vector<ValueType> const& objectiveReward = epochModel.objectiveRewards[objIndex];
-                        std::cout << "ObjRew filter for obj #" << objIndex << " is " << epochModel.objectiveRewardFilter[objIndex] << std::endl;
                         for (auto const& choice : epochModel.objectiveRewardFilter[objIndex]) {
                             b[choice] += weight * objectiveReward[choice];
                         }
@@ -171,7 +170,6 @@ namespace storm {
                     b[choice] += stepSolutionIt->weightedValue;
                     ++stepSolutionIt;
                 }
-                std::cout << "MinMax b is " << storm::utility::vector::toString(b) << std::endl;
                 
                 // Invoke the min max solver
                 storm::solver::GeneralMinMaxLinearEquationSolverFactory<ValueType> minMaxSolverFactory;
@@ -207,7 +205,6 @@ namespace storm {
                             b[state] += epochModel.stepSolutions[epochModel.stepChoices.getNumberOfSetBitsBeforeIndex(choice)].objectiveValues[objIndex];
                         }
                     }
-                    std::cout << "LinEq b is " << storm::utility::vector::toString(b) << std::endl;
                     linEqSolver->solveEquations(x, b);
                     for (uint64_t state = 0; state < choices.size(); ++state) {
                         result[state].objectiveValues.push_back(x[state]);
