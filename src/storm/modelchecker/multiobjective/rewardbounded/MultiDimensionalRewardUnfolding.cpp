@@ -45,7 +45,7 @@ namespace storm {
                             auto const& boundedUntilFormula = subformula->asBoundedUntilFormula();
                             for (uint64_t dim = 0; dim < boundedUntilFormula.getDimension(); ++dim) {
                                 subObjectives.push_back(std::make_pair(boundedUntilFormula.restrictToDimension(dim), objIndex));
-                                std::string memLabel = "obj" + std::to_string(objIndex) + "-" + std::to_string(dim) + "_maybe";
+                                std::string memLabel = "dim" + std::to_string(subObjectives.size()) + "_maybe";
                                 while (model.getStateLabeling().containsLabel(memLabel)) {
                                     memLabel = "_" + memLabel;
                                 }
