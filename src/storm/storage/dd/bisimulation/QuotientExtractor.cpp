@@ -127,7 +127,12 @@ namespace storm {
                                 return complement ? Cudd_Not(result) : result;
                             }
                         } else {
-                            auto result = Cudd_Not(cuddUniqueInter(ddman, Cudd_NodeReadIndex(stateVariablesCube) - 1, Cudd_ReadOne(ddman), Cudd_Not(elseResult)));
+                            DdNodePtr result;
+                            if (elseResult == Cudd_ReadLogicZero(ddman)) {
+                                result = elseResult;
+                            } else {
+                                result = Cudd_Not(cuddUniqueInter(ddman, Cudd_NodeReadIndex(stateVariablesCube) - 1, Cudd_ReadOne(ddman), Cudd_Not(elseResult)));
+                            }
                             Cudd_Deref(elseResult);
                             return result;
                         }
@@ -198,7 +203,12 @@ namespace storm {
                                 return result;
                             }
                         } else {
-                            auto result = sylvan_makenode(sylvan_var(stateVariablesCube) - 1, elseResult, sylvan_false);
+                            BDD result;
+                            if (elseResult == sylvan_false) {
+                                result = elseResult;
+                            } else {
+                                result = sylvan_makenode(sylvan_var(stateVariablesCube) - 1, elseResult, sylvan_false);
+                            }
                             mtbdd_refs_pop(1);
                             return result;
                         }
@@ -295,10 +305,6 @@ namespace storm {
                 InternalSparseQuotientExtractor(storm::dd::DdManager<storm::dd::DdType::CUDD> const& manager, std::set<storm::expressions::Variable> const& rowVariables, std::set<storm::expressions::Variable> const& columnVariables, std::set<storm::expressions::Variable> const& nondeterminismVariables, Partition<storm::dd::DdType::CUDD, ValueType> const& partition, storm::dd::Bdd<storm::dd::DdType::CUDD> const& representatives, storm::dd::Odd const& odd) : InternalSparseQuotientExtractorBase<storm::dd::DdType::CUDD, ValueType>(manager, rowVariables, columnVariables, nondeterminismVariables, partition, representatives, odd), ddman(this->manager.getInternalDdManager().getCuddManager().getManager()) {
 
                     STORM_LOG_ASSERT(this->partition.storedAsAdd(), "Expected partition to be stored as an ADD.");
-                    this->partition.asAdd().exportToDot("part.dot");
-                    odd.exportToDot("odd.dot");
-                    this->representatives.exportToDot("reprbdd.dot");
-                    this->representatives.template toAdd<ValueType>().exportToDot("repr.dot");
                     this->createBlockToOffsetMapping();
                 }
                 
@@ -319,25 +325,13 @@ namespace storm {
                 }
                 
                 void createBlockToOffsetMappingRec(DdNodePtr partitionNode, DdNodePtr representativesNode, DdNodePtr variables, storm::dd::Odd const& odd, uint64_t offset) {
+                    STORM_LOG_ASSERT(partitionNode != Cudd_ReadZero(ddman) || representativesNode == Cudd_ReadLogicZero(ddman), "Expected representative to be zero if the partition is zero.");
                     if (representativesNode == Cudd_ReadLogicZero(ddman)) {
-                        std::cout << "returning early" << std::endl;
                         return;
                     }
                     
-                    if (representativesNode == Cudd_ReadOne(ddman)) {
-                        std::cout << "repr is one" << std::endl;
-                    }
-                    if (partitionNode == Cudd_ReadOne(ddman)) {
-                        std::cout << "part is zero" << std::endl;
-                    } else if (partitionNode == Cudd_ReadOne(ddman)) {
-                        std::cout << "part is one" << std::endl;
-                    }
-                    
-                    std::cout << "got call " << partitionNode << ", " << representativesNode << ", " << variables << ", " << offset << ", " << Cudd_IsConstant(variables) << std::endl;
-                    
                     if (Cudd_IsConstant(variables)) {
                         STORM_LOG_ASSERT(odd.isTerminalNode(), "Expected terminal node.");
-                        std::cout << "inserting " << partitionNode << " -> " << offset << std::endl;
                         STORM_LOG_ASSERT(blockToOffset.find(partitionNode) == blockToOffset.end(), "Duplicate entry.");
                         blockToOffset[partitionNode] = offset;
                     } else {
@@ -348,7 +342,6 @@ namespace storm {
                             partitionT = Cudd_T(partitionNode);
                             partitionE = Cudd_E(partitionNode);
                         } else {
-                            std::cout << "[1] skipped " << Cudd_NodeReadIndex(variables) << ", got " << Cudd_NodeReadIndex(partitionNode) << std::endl;
                             partitionT = partitionE = partitionNode;
                         }
                         
@@ -358,7 +351,6 @@ namespace storm {
                             representativesT = Cudd_T(representativesNode);
                             representativesE = Cudd_E(representativesNode);
                         } else {
-                            std::cout << "[2] skipped " << Cudd_NodeReadIndex(variables) << ", got " << Cudd_NodeReadIndex(representativesNode) << std::endl;
                             representativesT = representativesE = representativesNode;
                         }
                         
@@ -367,12 +359,9 @@ namespace storm {
                             representativesT = Cudd_Not(representativesT);
                         }
                         
-                        std::cout << "else" << std::endl;
                         createBlockToOffsetMappingRec(partitionE, representativesE, Cudd_T(variables), odd.getElseSuccessor(), offset);
-                        std::cout << "then with offset " << odd.getElseOffset() << std::endl;
                         createBlockToOffsetMappingRec(partitionT, representativesT, Cudd_T(variables), odd.getThenSuccessor(), offset + odd.getElseOffset());
                     }
-                    std::cout << "returning" << std::endl;
                 }
                 
                 void extractTransitionMatrixRec(DdNodePtr transitionMatrixNode, storm::dd::Odd const& sourceOdd, uint64_t sourceOffset, DdNodePtr targetPartitionNode, DdNodePtr representativesNode, DdNodePtr variables) {
@@ -468,137 +457,137 @@ namespace storm {
             public:
                 InternalSparseQuotientExtractor(storm::dd::DdManager<storm::dd::DdType::Sylvan> const& manager, std::set<storm::expressions::Variable> const& rowVariables, std::set<storm::expressions::Variable> const& columnVariables, std::set<storm::expressions::Variable> const& nondeterminismVariables, Partition<storm::dd::DdType::Sylvan, ValueType> const& partition, storm::dd::Bdd<storm::dd::DdType::Sylvan> const& representatives, storm::dd::Odd const& odd) : InternalSparseQuotientExtractorBase<storm::dd::DdType::Sylvan, ValueType>(manager, rowVariables, columnVariables, nondeterminismVariables, partition, representatives, odd) {
                     
-                    STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Möööp");
                     STORM_LOG_ASSERT(partition.storedAsBdd(), "Expected partition stored as BDD.");
+                    this->createBlockToOffsetMapping();
                 }
                 
                 storm::storage::SparseMatrix<ValueType> extractTransitionMatrix(storm::dd::Add<storm::dd::DdType::Sylvan, ValueType> const& transitionMatrix) {
-                    STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Möööp");
-//                    // Create the number of rows necessary for the matrix.
-//                    this->reserveMatrixEntries(partition.getNumberOfBlocks());
-//
-//                    storm::storage::BitVector stateEncoding(this->sourceVariablesIndicesAndLevels.size());
-//                    storm::storage::BitVector nondeterminismEncoding;
-//                    extractTransitionMatrixRec(transitionMatrix.getInternalAdd().getSylvanMtbdd().GetMTBDD(), partition.asBdd().getInternalBdd().getSylvanBdd().GetBDD(), partition.asBdd().getInternalBdd().getSylvanBdd().GetBDD(), 0, stateEncoding, nondeterminismEncoding);
-//                    
-//                    return this->createMatrixFromEntries(partition);
+                    // Create the number of rows necessary for the matrix.
+                    this->reserveMatrixEntries(this->partition.getNumberOfBlocks());
+                    extractTransitionMatrixRec(transitionMatrix.getInternalAdd().getSylvanMtbdd().GetMTBDD(), this->odd, 0, this->partition.asBdd().getInternalBdd().getSylvanBdd().GetBDD(), this->representatives.getInternalBdd().getSylvanBdd().GetBDD(), this->allSourceVariablesCube.getInternalBdd().getSylvanBdd().GetBDD());
+                    return this->createMatrixFromEntries();
                 }
                 
             private:
-//                void extractTransitionMatrixRec(MTBDD transitionMatrixNode, BDD sourcePartitionNode, BDD targetPartitionNode, uint64_t currentIndex, storm::storage::BitVector& sourceState, storm::storage::BitVector const& nondeterminismEncoding, ValueType const& factor = storm::utility::one<ValueType>()) {
-//                    // For the empty DD, we do not need to add any entries. Note that the partition nodes cannot be zero
-//                    // as all states of the model have to be contained.
-//                    if (mtbdd_iszero(transitionMatrixNode)) {
-//                        return;
-//                    }
-//                    
-//                    // If we have moved through all source variables, we must have arrived at a target block encoding.
-//                    if (currentIndex == sourceState.size()) {
-//                        // Decode the source block.
-//                        uint64_t sourceBlockIndex = decodeBlockIndex(sourcePartitionNode);
-//                        
-//                        std::unique_ptr<storm::storage::BitVector>& sourceRepresentative = this->uniqueSourceRepresentative[sourceBlockIndex];
-//                        if (sourceRepresentative && *sourceRepresentative != sourceState) {
-//                            // In this case, we have picked a different representative and must not record any entries now.
-//                            return;
-//                        }
-//                        
-//                        // Otherwise, we record the new representative.
-//                        sourceRepresentative.reset(new storm::storage::BitVector(sourceState));
-//                        
-//                        // Decode the target block and add matrix entry.
-//                        uint64_t targetBlockIndex = decodeBlockIndex(targetPartitionNode);
-//                        this->addMatrixEntry(nondeterminismEncoding, sourceBlockIndex, targetBlockIndex, factor * storm::dd::InternalAdd<storm::dd::DdType::Sylvan, ValueType>::getValue(transitionMatrixNode));
-//                    } else {
-//                        // Determine the levels in the DDs.
-//                        uint64_t transitionMatrixVariable = sylvan_isconst(transitionMatrixNode) ? 0xffffffff : sylvan_var(transitionMatrixNode);
-//                        uint64_t sourcePartitionVariable = sylvan_var(sourcePartitionNode) - 1;
-//                        uint64_t targetPartitionVariable = sylvan_var(targetPartitionNode) - 1;
-//                        
-//                        // Move through transition matrix.
-//                        bool skippedSourceInMatrix = false;
-//                        bool skippedTargetTInMatrix = false;
-//                        bool skippedTargetEInMatrix = false;
-//                        MTBDD tt = transitionMatrixNode;
-//                        MTBDD te = transitionMatrixNode;
-//                        MTBDD et = transitionMatrixNode;
-//                        MTBDD ee = transitionMatrixNode;
-//                        if (transitionMatrixVariable == this->sourceVariablesIndicesAndLevels[currentIndex].first) {
-//                            MTBDD t = sylvan_high(transitionMatrixNode);
-//                            MTBDD e = sylvan_low(transitionMatrixNode);
-//                            
-//                            uint64_t tVariable = sylvan_isconst(t) ? 0xffffffff : sylvan_var(t);
-//                            if (tVariable == this->sourceVariablesIndicesAndLevels[currentIndex].first + 1) {
-//                                tt = sylvan_high(t);
-//                                te = sylvan_low(t);
-//                            } else {
-//                                tt = te = t;
-//                                skippedTargetTInMatrix = true;
-//                            }
-//                            
-//                            uint64_t eVariable = sylvan_isconst(e) ? 0xffffffff : sylvan_var(e);
-//                            if (eVariable == this->sourceVariablesIndicesAndLevels[currentIndex].first + 1) {
-//                                et = sylvan_high(e);
-//                                ee = sylvan_low(e);
-//                            } else {
-//                                et = ee = e;
-//                                skippedTargetEInMatrix = true;
-//                            }
-//                        } else {
-//                            skippedSourceInMatrix = true;
-//                            if (transitionMatrixVariable == this->sourceVariablesIndicesAndLevels[currentIndex].first + 1) {
-//                                tt = et = sylvan_high(transitionMatrixNode);
-//                                te = ee = sylvan_low(transitionMatrixNode);
-//                            } else {
-//                                tt = te = et = ee = transitionMatrixNode;
-//                                skippedTargetTInMatrix = skippedTargetEInMatrix = true;
-//                            }
-//                        }
-//                        
-//                        // Move through partition (for source state).
-//                        bool skippedInSourcePartition = false;
-//                        MTBDD sourceT;
-//                        MTBDD sourceE;
-//                        if (sourcePartitionVariable == this->sourceVariablesIndicesAndLevels[currentIndex].first) {
-//                            sourceT = sylvan_high(sourcePartitionNode);
-//                            sourceE = sylvan_low(sourcePartitionNode);
-//                        } else {
-//                            sourceT = sourceE = sourcePartitionNode;
-//                            skippedInSourcePartition = true;
-//                        }
-//                        
-//                        // Move through partition (for target state).
-//                        bool skippedInTargetPartition = false;
-//                        MTBDD targetT;
-//                        MTBDD targetE;
-//                        if (targetPartitionVariable == this->sourceVariablesIndicesAndLevels[currentIndex].first) {
-//                            targetT = sylvan_high(targetPartitionNode);
-//                            targetE = sylvan_low(targetPartitionNode);
-//                        } else {
-//                            targetT = targetE = targetPartitionNode;
-//                            skippedInTargetPartition = true;
-//                        }
-//                        
-//                        // If we skipped the variable in the source partition, we only have to choose one of the two representatives.
-//                        if (!skippedInSourcePartition) {
-//                            sourceState.set(currentIndex, true);
-//                            // If we skipped the variable in the target partition, just count the one representative twice.
-//                            if (!skippedInTargetPartition || !skippedTargetTInMatrix) {
-//                                extractTransitionMatrixRec(tt, sourceT, targetT, currentIndex + 1, sourceState, nondeterminismEncoding, factor);
-//                            }
-//                            extractTransitionMatrixRec(te, sourceT, targetE, currentIndex + 1, sourceState, nondeterminismEncoding, skippedTargetTInMatrix && skippedInTargetPartition ? 2 * factor : factor);
-//                        }
-//                        
-//                        sourceState.set(currentIndex, false);
-//                        // If we skipped the variable in the target partition, just count the one representative twice.
-//                        if (!skippedInTargetPartition || !skippedTargetEInMatrix) {
-//                            extractTransitionMatrixRec(et, sourceE, targetT, currentIndex + 1, sourceState, nondeterminismEncoding, factor);
-//                        }
-//                        extractTransitionMatrixRec(ee, sourceE, targetE, currentIndex + 1, sourceState, nondeterminismEncoding, skippedTargetEInMatrix && skippedInTargetPartition ? 2 * factor : factor);
-//                    }
-//                }
+                void createBlockToOffsetMapping() {
+                    this->createBlockToOffsetMappingRec(this->partition.asBdd().getInternalBdd().getSylvanBdd().GetBDD(), this->representatives.getInternalBdd().getSylvanBdd().GetBDD(), this->rowVariablesCube.getInternalBdd().getSylvanBdd().GetBDD(), this->odd, 0);
+                    STORM_LOG_ASSERT(blockToOffset.size() == this->partition.getNumberOfBlocks(), "Mismatching block-to-offset mapping: " << blockToOffset.size() << " vs. " << this->partition.getNumberOfBlocks() << ".");
+                }
                 
-                spp::sparse_hash_map<BDD, std::unique_ptr<uint64_t>> blockDecodeCache;
+                void createBlockToOffsetMappingRec(BDD partitionNode, BDD representativesNode, BDD variables, storm::dd::Odd const& odd, uint64_t offset) {
+                    STORM_LOG_ASSERT(partitionNode != sylvan_false || representativesNode == sylvan_false, "Expected representative to be zero if the partition is zero.");
+                    if (representativesNode == sylvan_false) {
+                        return;
+                    }
+                    
+                    if (sylvan_isconst(variables)) {
+                        STORM_LOG_ASSERT(odd.isTerminalNode(), "Expected terminal node.");
+                        STORM_LOG_ASSERT(blockToOffset.find(partitionNode) == blockToOffset.end(), "Duplicate entry.");
+                        blockToOffset[partitionNode] = offset;
+                    } else {
+                        STORM_LOG_ASSERT(!odd.isTerminalNode(), "Expected non-terminal node.");
+                        BDD partitionT;
+                        BDD partitionE;
+                        if (sylvan_var(partitionNode) == sylvan_var(variables) + 1) {
+                            partitionT = sylvan_high(partitionNode);
+                            partitionE = sylvan_low(partitionNode);
+                        } else {
+                            partitionT = partitionE = partitionNode;
+                        }
+                        
+                        BDD representativesT;
+                        BDD representativesE;
+                        if (sylvan_var(representativesNode) == sylvan_var(variables)) {
+                            representativesT = sylvan_high(representativesNode);
+                            representativesE = sylvan_low(representativesNode);
+                        } else {
+                            representativesT = representativesE = representativesNode;
+                        }
+                        
+                        createBlockToOffsetMappingRec(partitionE, representativesE, sylvan_high(variables), odd.getElseSuccessor(), offset);
+                        createBlockToOffsetMappingRec(partitionT, representativesT, sylvan_high(variables), odd.getThenSuccessor(), offset + odd.getElseOffset());
+                    }
+                }
+                
+                void extractTransitionMatrixRec(MTBDD transitionMatrixNode, storm::dd::Odd const& sourceOdd, uint64_t sourceOffset, BDD targetPartitionNode, BDD representativesNode, BDD variables) {
+                    // For the empty DD, we do not need to add any entries. Note that the partition nodes cannot be zero
+                    // as all states of the model have to be contained.
+                    if (mtbdd_iszero(transitionMatrixNode) || representativesNode == sylvan_false) {
+                        return;
+                    }
+                    
+                    // If we have moved through all source variables, we must have arrived at a target block encoding.
+                    if (sylvan_isconst(variables)) {
+                        STORM_LOG_ASSERT(sylvan_isconst(transitionMatrixNode), "Expected constant node.");
+                        this->addMatrixEntry(sourceOffset, blockToOffset.at(targetPartitionNode), storm::dd::InternalAdd<storm::dd::DdType::Sylvan, ValueType>::getValue(transitionMatrixNode));
+                    } else {
+                        MTBDD t;
+                        MTBDD tt;
+                        MTBDD te;
+                        MTBDD e;
+                        MTBDD et;
+                        MTBDD ee;
+                        if (sylvan_var(transitionMatrixNode) == sylvan_var(variables)) {
+                            // Source node was not skipped in transition matrix.
+                            t = sylvan_high(transitionMatrixNode);
+                            e = sylvan_low(transitionMatrixNode);
+                        } else {
+                            t = e = transitionMatrixNode;
+                        }
+                        
+                        if (sylvan_var(t) == sylvan_var(variables) + 1) {
+                            // Target node was not skipped in transition matrix.
+                            tt = sylvan_high(t);
+                            te = sylvan_low(t);
+                        } else {
+                            // Target node was skipped in transition matrix.
+                            tt = te = t;
+                        }
+                        if (t != e) {
+                            if (sylvan_var(e) == sylvan_var(variables) + 1) {
+                                // Target node was not skipped in transition matrix.
+                                et = sylvan_high(e);
+                                ee = sylvan_low(e);
+                            } else {
+                                // Target node was skipped in transition matrix.
+                                et = ee = e;
+                            }
+                        } else {
+                            et = tt;
+                            ee = te;
+                        }
+                        
+                        BDD targetT;
+                        BDD targetE;
+                        if (sylvan_var(targetPartitionNode) == sylvan_var(variables) + 1) {
+                            // Node was not skipped in target partition.
+                            targetT = sylvan_high(targetPartitionNode);
+                            targetE = sylvan_low(targetPartitionNode);
+                        } else {
+                            // Node was skipped in target partition.
+                            targetT = targetE = targetPartitionNode;
+                        }
+                        
+                        BDD representativesT;
+                        BDD representativesE;
+                        if (sylvan_var(representativesNode) == sylvan_var(variables)) {
+                            // Node was not skipped in representatives.
+                            representativesT = sylvan_high(representativesNode);
+                            representativesE = sylvan_low(representativesNode);
+                        } else {
+                            // Node was skipped in representatives.
+                            representativesT = representativesE = representativesNode;
+                        }
+                        
+                        extractTransitionMatrixRec(ee, sourceOdd.getElseSuccessor(), sourceOffset, targetE, representativesE, sylvan_high(variables));
+                        extractTransitionMatrixRec(et, sourceOdd.getElseSuccessor(), sourceOffset, targetT, representativesE, sylvan_high(variables));
+                        extractTransitionMatrixRec(te, sourceOdd.getThenSuccessor(), sourceOffset + sourceOdd.getElseOffset(), targetE, representativesT, sylvan_high(variables));
+                        extractTransitionMatrixRec(tt, sourceOdd.getThenSuccessor(), sourceOffset + sourceOdd.getElseOffset(), targetT, representativesT, sylvan_high(variables));
+                    }
+                }
+                
+                // A mapping from blocks (stored in terms of a DD node) to the offset of the corresponding block.
+                spp::sparse_hash_map<BDD, uint64_t> blockToOffset;
             };
 
             template<storm::dd::DdType DdType, typename ValueType>
@@ -636,6 +625,7 @@ namespace storm {
                 // FIXME: Use partition as BDD in representative computation.
                 auto representatives = InternalRepresentativeComputer<DdType, ValueType>(partition, model.getRowVariables(), model.getColumnVariables()).getRepresentatives();
                 STORM_LOG_ASSERT(representatives.getNonZeroCount() == partition.getNumberOfBlocks(), "Representatives size does not match that of the partition: " << representatives.getNonZeroCount() << " vs. " << partition.getNumberOfBlocks() << ".");
+                STORM_LOG_ASSERT((representatives && partitionAsBdd).existsAbstract(model.getRowVariables()) == partitionAsBdd.existsAbstract(model.getRowVariables()), "Representatives do not cover all blocks.");
                 storm::dd::Odd odd = representatives.createOdd();
                 STORM_LOG_ASSERT(odd.getTotalOffset() == representatives.getNonZeroCount(), "Mismatching ODD.");
                 InternalSparseQuotientExtractor<DdType, ValueType> sparseExtractor(model.getManager(), model.getRowVariables(), model.getColumnVariables(), model.getNondeterminismVariables(), partition, representatives, odd);
