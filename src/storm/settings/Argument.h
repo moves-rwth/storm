@@ -85,6 +85,8 @@ namespace storm {
             
             void setFromDefaultValue() override;
             
+            virtual bool wasSetFromDefaultValue() const override;
+
             virtual std::string getValueAsString() const override;
             
             virtual int_fast64_t getValueAsInteger() const override;
@@ -115,6 +117,9 @@ namespace storm {
             
             // A flag indicating whether a default value has been provided.
             bool hasDefaultValue;
+            
+            // A flag indicating whether the argument was set from the default value.
+            bool wasSetFromDefaultValueFlag;
             
             /*!
              * Sets the default value of the argument to the provided value.

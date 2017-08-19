@@ -50,6 +50,10 @@ namespace storm {
                 STORM_LOG_THROW(false, storm::exceptions::IllegalArgumentValueException, "Unknown min/max equation solving technique '" << minMaxEquationSolvingTechnique << "'.");
             }
             
+            bool MinMaxEquationSolverSettings::isMinMaxEquationSolvingMethodSetFromDefaultValue() const {
+                return !this->getOption(solvingMethodOptionName).getArgumentByName("name").getHasBeenSet() || this->getOption(solvingMethodOptionName).getArgumentByName("name").wasSetFromDefaultValue();
+            }
+            
             bool MinMaxEquationSolverSettings::isMinMaxEquationSolvingMethodSet() const {
                 return this->getOption(solvingMethodOptionName).getHasOptionBeenSet();
             }
