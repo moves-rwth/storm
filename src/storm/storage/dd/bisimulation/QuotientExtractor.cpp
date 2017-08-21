@@ -1,6 +1,6 @@
 #include "storm/storage/dd/bisimulation/QuotientExtractor.h"
 
-#include <boost/container/flat_map.hpp>
+#include <numeric>
 
 #include "storm/storage/dd/DdManager.h"
 
@@ -11,6 +11,7 @@
 
 #include "storm/models/sparse/Dtmc.h"
 #include "storm/models/sparse/Ctmc.h"
+#include "storm/models/sparse/Mdp.h"
 #include "storm/models/sparse/StandardRewardModel.h"
 
 #include "storm/storage/dd/bisimulation/PreservationInformation.h"
@@ -224,41 +225,38 @@ namespace storm {
             template<storm::dd::DdType DdType, typename ValueType>
             class InternalSparseQuotientExtractorBase {
             public:
-                InternalSparseQuotientExtractorBase(storm::dd::DdManager<DdType> const& manager, std::set<storm::expressions::Variable> const& rowVariables, std::set<storm::expressions::Variable> const& columnVariables, std::set<storm::expressions::Variable> const& nondeterminismVariables, Partition<DdType, ValueType> const& partition, storm::dd::Bdd<DdType> const& representatives, storm::dd::Odd const& odd) : manager(manager), partition(partition), representatives(representatives), odd(odd) {
+                InternalSparseQuotientExtractorBase(storm::models::symbolic::Model<DdType, ValueType> const& model, Partition<DdType, ValueType> const& partition, storm::dd::Bdd<DdType> const& representatives) : manager(model.getManager()), isNondeterministic(false), partition(partition), representatives(representatives), matrixEntriesCreated(false) {
                     // Create cubes.
                     rowVariablesCube = manager.getBddOne();
-                    for (auto const& variable : rowVariables) {
+                    for (auto const& variable : model.getRowVariables()) {
                         auto const& ddMetaVariable = manager.getMetaVariable(variable);
                         rowVariablesCube &= ddMetaVariable.getCube();
                     }
                     columnVariablesCube = manager.getBddOne();
-                    for (auto const& variable : columnVariables) {
+                    for (auto const& variable : model.getColumnVariables()) {
                         auto const& ddMetaVariable = manager.getMetaVariable(variable);
                         columnVariablesCube &= ddMetaVariable.getCube();
                     }
                     nondeterminismVariablesCube = manager.getBddOne();
-                    for (auto const& variable : nondeterminismVariables) {
+                    for (auto const& variable : model.getNondeterminismVariables()) {
                         auto const& ddMetaVariable = manager.getMetaVariable(variable);
                         nondeterminismVariablesCube &= ddMetaVariable.getCube();
                     }
                     allSourceVariablesCube = rowVariablesCube && nondeterminismVariablesCube;
+                    isNondeterministic = !nondeterminismVariablesCube.isOne();
+                    
+                    // Create ODDs.
+                    this->odd = representatives.createOdd();
+                    if (this->isNondeterministic) {
+                        this->nondeterminismOdd = (model.getQualitativeTransitionMatrix().existsAbstract(model.getColumnVariables()) && this->representatives).createOdd();
+                    }
                 }
 
+                storm::dd::Odd const& getOdd() const {
+                    return this->odd;
+                }
+                
             protected:
-                // The manager responsible for the DDs.
-                storm::dd::DdManager<DdType> const& manager;
-                
-                // Useful cubes needed in the translation.
-                storm::dd::Bdd<DdType> rowVariablesCube;
-                storm::dd::Bdd<DdType> columnVariablesCube;
-                storm::dd::Bdd<DdType> allSourceVariablesCube;
-                storm::dd::Bdd<DdType> nondeterminismVariablesCube;
-                
-                // Information about the state partition.
-                Partition<DdType, ValueType> partition;
-                storm::dd::Bdd<DdType> representatives;
-                storm::dd::Odd const& odd;
-                
                 storm::storage::SparseMatrix<ValueType> createMatrixFromEntries() {
                     for (auto& row : matrixEntries) {
                         std::sort(row.begin(), row.end(),
@@ -267,9 +265,26 @@ namespace storm {
                                   });
                     }
                     
-                    storm::storage::SparseMatrixBuilder<ValueType> builder(partition.getNumberOfBlocks(), partition.getNumberOfBlocks());
+                    std::vector<uint64_t> rowPermutation(matrixEntries.size());
+                    std::iota(rowPermutation.begin(), rowPermutation.end(), 0ull);
+                    if (this->isNondeterministic) {
+                        std::sort(rowPermutation.begin(), rowPermutation.end(), [this] (uint64_t first, uint64_t second) { return this->rowToState[first] < this->rowToState[second]; } );
+                    }
+                    
                     uint64_t rowCounter = 0;
-                    for (auto& row : matrixEntries) {
+                    uint64_t lastState = this->isNondeterministic ? rowToState[rowPermutation.front()] : 0;
+                    storm::storage::SparseMatrixBuilder<ValueType> builder(matrixEntries.size(), partition.getNumberOfBlocks(), 0, true, this->isNondeterministic);
+                    if (this->isNondeterministic) {
+                        builder.newRowGroup(0);
+                    }
+                    for (auto& rowIdx : rowPermutation) {
+                        // For nondeterministic models, open a new row group.
+                        if (this->isNondeterministic && rowToState[rowIdx] != lastState) {
+                            builder.newRowGroup(rowCounter);
+                            lastState = rowToState[rowIdx];
+                        }
+                        
+                        auto& row = matrixEntries[rowIdx];
                         for (auto const& entry : row) {
                             builder.addNextValue(rowCounter, entry.getColumn(), entry.getValue());
                         }
@@ -287,22 +302,59 @@ namespace storm {
                     return builder.build();
                 }
 
-                void addMatrixEntry(uint64_t sourceBlockIndex, uint64_t targetBlockIndex, ValueType const& value) {
-                    this->matrixEntries[sourceBlockIndex].emplace_back(targetBlockIndex, value);
+                void addMatrixEntry(uint64_t row, uint64_t column, ValueType const& value) {
+                    this->matrixEntries[row].emplace_back(column, value);
                 }
                 
-                void reserveMatrixEntries(uint64_t numberOfStates) {
-                    this->matrixEntries.resize(numberOfStates);
+                void createMatrixEntryStorage() {
+                    if (matrixEntriesCreated) {
+                        matrixEntries.clear();
+                        if (isNondeterministic) {
+                            rowToState.clear();
+                        }
+                    }
+                    matrixEntries.resize(this->isNondeterministic ? nondeterminismOdd.getTotalOffset() : odd.getTotalOffset());
+                    if (isNondeterministic) {
+                        rowToState.resize(matrixEntries.size());
+                    }
+                }
+                
+                void assignRowToState(uint64_t row, uint64_t state) {
+                    rowToState[row] = state;
                 }
 
-                // The entries of the matrix that is built if the model is deterministic (DTMC, CTMC).
+                // The manager responsible for the DDs.
+                storm::dd::DdManager<DdType> const& manager;
+                
+                // A flag that stores whether we need to take care of nondeterminism.
+                bool isNondeterministic;
+                
+                // Useful cubes needed in the translation.
+                storm::dd::Bdd<DdType> rowVariablesCube;
+                storm::dd::Bdd<DdType> columnVariablesCube;
+                storm::dd::Bdd<DdType> allSourceVariablesCube;
+                storm::dd::Bdd<DdType> nondeterminismVariablesCube;
+                
+                // Information about the state partition.
+                Partition<DdType, ValueType> partition;
+                storm::dd::Bdd<DdType> representatives;
+                storm::dd::Odd odd;
+                storm::dd::Odd nondeterminismOdd;
+                
+                // A flag that stores whether the underlying storage for matrix entries has been created.
+                bool matrixEntriesCreated;
+                
+                // The entries of the quotient matrix that is built.
                 std::vector<std::vector<storm::storage::MatrixEntry<uint_fast64_t, ValueType>>> matrixEntries;
+                
+                // A vector storing for each row which state it belongs to.
+                std::vector<uint64_t> rowToState;
             };
             
             template<typename ValueType>
             class InternalSparseQuotientExtractor<storm::dd::DdType::CUDD, ValueType> : public InternalSparseQuotientExtractorBase<storm::dd::DdType::CUDD, ValueType> {
             public:
-                InternalSparseQuotientExtractor(storm::dd::DdManager<storm::dd::DdType::CUDD> const& manager, std::set<storm::expressions::Variable> const& rowVariables, std::set<storm::expressions::Variable> const& columnVariables, std::set<storm::expressions::Variable> const& nondeterminismVariables, Partition<storm::dd::DdType::CUDD, ValueType> const& partition, storm::dd::Bdd<storm::dd::DdType::CUDD> const& representatives, storm::dd::Odd const& odd) : InternalSparseQuotientExtractorBase<storm::dd::DdType::CUDD, ValueType>(manager, rowVariables, columnVariables, nondeterminismVariables, partition, representatives, odd), ddman(this->manager.getInternalDdManager().getCuddManager().getManager()) {
+                InternalSparseQuotientExtractor(storm::models::symbolic::Model<storm::dd::DdType::CUDD, ValueType> const& model, Partition<storm::dd::DdType::CUDD, ValueType> const& partition, storm::dd::Bdd<storm::dd::DdType::CUDD> const& representatives) : InternalSparseQuotientExtractorBase<storm::dd::DdType::CUDD, ValueType>(model, partition, representatives), ddman(this->manager.getInternalDdManager().getCuddManager().getManager()) {
 
                     STORM_LOG_ASSERT(this->partition.storedAsAdd(), "Expected partition to be stored as an ADD.");
                     this->createBlockToOffsetMapping();
@@ -310,11 +362,9 @@ namespace storm {
                 
                 storm::storage::SparseMatrix<ValueType> extractTransitionMatrix(storm::dd::Add<storm::dd::DdType::CUDD, ValueType> const& transitionMatrix) {
                     // Create the number of rows necessary for the matrix.
-                    this->reserveMatrixEntries(this->partition.getNumberOfBlocks());
                     STORM_LOG_TRACE("Partition has " << this->partition.getNumberOfStates() << " states in " << this->partition.getNumberOfBlocks() << " blocks.");
-                    
-                    extractTransitionMatrixRec(transitionMatrix.getInternalAdd().getCuddDdNode(), this->odd, 0, this->partition.asAdd().getInternalAdd().getCuddDdNode(), this->representatives.getInternalBdd().getCuddDdNode(), this->allSourceVariablesCube.getInternalBdd().getCuddDdNode());
-                    
+                    this->createMatrixEntryStorage();
+                    extractTransitionMatrixRec(transitionMatrix.getInternalAdd().getCuddDdNode(), this->isNondeterministic ? this->nondeterminismOdd : this->odd, 0, this->partition.asAdd().getInternalAdd().getCuddDdNode(), this->representatives.getInternalBdd().getCuddDdNode(), this->allSourceVariablesCube.getInternalBdd().getCuddDdNode(), this->nondeterminismVariablesCube.getInternalBdd().getCuddDdNode(), this->isNondeterministic ? &this->odd : nullptr, 0);
                     return this->createMatrixFromEntries();
                 }
                 
@@ -364,7 +414,7 @@ namespace storm {
                     }
                 }
                 
-                void extractTransitionMatrixRec(DdNodePtr transitionMatrixNode, storm::dd::Odd const& sourceOdd, uint64_t sourceOffset, DdNodePtr targetPartitionNode, DdNodePtr representativesNode, DdNodePtr variables) {
+                void extractTransitionMatrixRec(DdNodePtr transitionMatrixNode, storm::dd::Odd const& sourceOdd, uint64_t sourceOffset, DdNodePtr targetPartitionNode, DdNodePtr representativesNode, DdNodePtr variables, DdNodePtr nondeterminismVariables, storm::dd::Odd const* stateOdd, uint64_t stateOffset) {
                     // For the empty DD, we do not need to add any entries. Note that the partition nodes cannot be zero
                     // as all states of the model have to be contained.
                     if (transitionMatrixNode == Cudd_ReadZero(ddman) || representativesNode == Cudd_ReadLogicZero(ddman)) {
@@ -375,74 +425,97 @@ namespace storm {
                     if (Cudd_IsConstant(variables)) {
                         STORM_LOG_ASSERT(Cudd_IsConstant(transitionMatrixNode), "Expected constant node.");
                         this->addMatrixEntry(sourceOffset, blockToOffset.at(targetPartitionNode), Cudd_V(transitionMatrixNode));
+                        if (stateOdd) {
+                            this->assignRowToState(sourceOffset, stateOffset);
+                        }
                     } else {
-                        DdNodePtr t;
-                        DdNodePtr tt;
-                        DdNodePtr te;
-                        DdNodePtr e;
-                        DdNodePtr et;
-                        DdNodePtr ee;
-                        if (Cudd_NodeReadIndex(transitionMatrixNode) == Cudd_NodeReadIndex(variables)) {
-                            // Source node was not skipped in transition matrix.
-                            t = Cudd_T(transitionMatrixNode);
-                            e = Cudd_E(transitionMatrixNode);
-                        } else {
-                            t = e = transitionMatrixNode;
-                        }
+                        // Determine whether the next variable is a nondeterminism variable.
+                        bool nextVariableIsNondeterminismVariable = !Cudd_IsConstant(nondeterminismVariables) && Cudd_NodeReadIndex(nondeterminismVariables) == Cudd_NodeReadIndex(variables);
                         
-                        if (Cudd_NodeReadIndex(t) == Cudd_NodeReadIndex(variables) + 1) {
-                            // Target node was not skipped in transition matrix.
-                            tt = Cudd_T(t);
-                            te = Cudd_E(t);
+                        if (nextVariableIsNondeterminismVariable) {
+                            DdNodePtr t;
+                            DdNodePtr e;
+                            
+                            // Determine whether the variable was skipped in the matrix.
+                            if (Cudd_NodeReadIndex(transitionMatrixNode) == Cudd_NodeReadIndex(variables)) {
+                                t = Cudd_T(transitionMatrixNode);
+                                e = Cudd_E(transitionMatrixNode);
+                            } else {
+                                t = e = transitionMatrixNode;
+                            }
+                            
+                            STORM_LOG_ASSERT(stateOdd, "Expected separate state ODD.");
+                            extractTransitionMatrixRec(e, sourceOdd.getElseSuccessor(), sourceOffset, targetPartitionNode, representativesNode, Cudd_T(variables), Cudd_T(nondeterminismVariables), stateOdd, stateOffset);
+                            extractTransitionMatrixRec(t, sourceOdd.getThenSuccessor(), sourceOffset + sourceOdd.getElseOffset(), targetPartitionNode, representativesNode, Cudd_T(variables), Cudd_T(nondeterminismVariables), stateOdd, stateOffset);
                         } else {
-                            // Target node was skipped in transition matrix.
-                            tt = te = t;
-                        }
-                        if (t != e) {
-                            if (Cudd_NodeReadIndex(e) == Cudd_NodeReadIndex(variables) + 1) {
+                            DdNodePtr t;
+                            DdNodePtr tt;
+                            DdNodePtr te;
+                            DdNodePtr e;
+                            DdNodePtr et;
+                            DdNodePtr ee;
+                            if (Cudd_NodeReadIndex(transitionMatrixNode) == Cudd_NodeReadIndex(variables)) {
+                                // Source node was not skipped in transition matrix.
+                                t = Cudd_T(transitionMatrixNode);
+                                e = Cudd_E(transitionMatrixNode);
+                            } else {
+                                t = e = transitionMatrixNode;
+                            }
+                            
+                            if (Cudd_NodeReadIndex(t) == Cudd_NodeReadIndex(variables) + 1) {
                                 // Target node was not skipped in transition matrix.
-                                et = Cudd_T(e);
-                                ee = Cudd_E(e);
+                                tt = Cudd_T(t);
+                                te = Cudd_E(t);
                             } else {
                                 // Target node was skipped in transition matrix.
-                                et = ee = e;
+                                tt = te = t;
                             }
-                        } else {
-                            et = tt;
-                            ee = te;
+                            if (t != e) {
+                                if (Cudd_NodeReadIndex(e) == Cudd_NodeReadIndex(variables) + 1) {
+                                    // Target node was not skipped in transition matrix.
+                                    et = Cudd_T(e);
+                                    ee = Cudd_E(e);
+                                } else {
+                                    // Target node was skipped in transition matrix.
+                                    et = ee = e;
+                                }
+                            } else {
+                                et = tt;
+                                ee = te;
+                            }
+                            
+                            DdNodePtr targetT;
+                            DdNodePtr targetE;
+                            if (Cudd_NodeReadIndex(targetPartitionNode) == Cudd_NodeReadIndex(variables) + 1) {
+                                // Node was not skipped in target partition.
+                                targetT = Cudd_T(targetPartitionNode);
+                                targetE = Cudd_E(targetPartitionNode);
+                            } else {
+                                // Node was skipped in target partition.
+                                targetT = targetE = targetPartitionNode;
+                            }
+                            
+                            DdNodePtr representativesT;
+                            DdNodePtr representativesE;
+                            if (Cudd_NodeReadIndex(representativesNode) == Cudd_NodeReadIndex(variables)) {
+                                // Node was not skipped in representatives.
+                                representativesT = Cudd_T(representativesNode);
+                                representativesE = Cudd_E(representativesNode);
+                            } else {
+                                // Node was skipped in representatives.
+                                representativesT = representativesE = representativesNode;
+                            }
+                            
+                            if (representativesT != representativesE && Cudd_IsComplement(representativesNode)) {
+                                representativesT = Cudd_Not(representativesT);
+                                representativesE = Cudd_Not(representativesE);
+                            }
+                            
+                            extractTransitionMatrixRec(ee, sourceOdd.getElseSuccessor(), sourceOffset, targetE, representativesE, Cudd_T(variables), nondeterminismVariables, stateOdd ? &stateOdd->getElseSuccessor() : stateOdd, stateOffset);
+                            extractTransitionMatrixRec(et, sourceOdd.getElseSuccessor(), sourceOffset, targetT, representativesE, Cudd_T(variables), nondeterminismVariables, stateOdd ? &stateOdd->getElseSuccessor() : stateOdd, stateOffset);
+                            extractTransitionMatrixRec(te, sourceOdd.getThenSuccessor(), sourceOffset + sourceOdd.getElseOffset(), targetE, representativesT, Cudd_T(variables), nondeterminismVariables, stateOdd ? &stateOdd->getThenSuccessor() : stateOdd, stateOffset + (stateOdd ? stateOdd->getElseOffset() : 0));
+                            extractTransitionMatrixRec(tt, sourceOdd.getThenSuccessor(), sourceOffset + sourceOdd.getElseOffset(), targetT, representativesT, Cudd_T(variables), nondeterminismVariables, stateOdd ? &stateOdd->getThenSuccessor() : stateOdd, stateOffset + (stateOdd ? stateOdd->getElseOffset() : 0));
                         }
-                        
-                        DdNodePtr targetT;
-                        DdNodePtr targetE;
-                        if (Cudd_NodeReadIndex(targetPartitionNode) == Cudd_NodeReadIndex(variables) + 1) {
-                            // Node was not skipped in target partition.
-                            targetT = Cudd_T(targetPartitionNode);
-                            targetE = Cudd_E(targetPartitionNode);
-                        } else {
-                            // Node was skipped in target partition.
-                            targetT = targetE = targetPartitionNode;
-                        }
-                        
-                        DdNodePtr representativesT;
-                        DdNodePtr representativesE;
-                        if (Cudd_NodeReadIndex(representativesNode) == Cudd_NodeReadIndex(variables)) {
-                            // Node was not skipped in representatives.
-                            representativesT = Cudd_T(representativesNode);
-                            representativesE = Cudd_E(representativesNode);
-                        } else {
-                            // Node was skipped in representatives.
-                            representativesT = representativesE = representativesNode;
-                        }
-                        
-                        if (representativesT != representativesE && Cudd_IsComplement(representativesNode)) {
-                            representativesT = Cudd_Not(representativesT);
-                            representativesE = Cudd_Not(representativesE);
-                        }
-                        
-                        extractTransitionMatrixRec(ee, sourceOdd.getElseSuccessor(), sourceOffset, targetE, representativesE, Cudd_T(variables));
-                        extractTransitionMatrixRec(et, sourceOdd.getElseSuccessor(), sourceOffset, targetT, representativesE, Cudd_T(variables));
-                        extractTransitionMatrixRec(te, sourceOdd.getThenSuccessor(), sourceOffset + sourceOdd.getElseOffset(), targetE, representativesT, Cudd_T(variables));
-                        extractTransitionMatrixRec(tt, sourceOdd.getThenSuccessor(), sourceOffset + sourceOdd.getElseOffset(), targetT, representativesT, Cudd_T(variables));
                     }
                 }
 
@@ -455,7 +528,7 @@ namespace storm {
             template<typename ValueType>
             class InternalSparseQuotientExtractor<storm::dd::DdType::Sylvan, ValueType> : public InternalSparseQuotientExtractorBase<storm::dd::DdType::Sylvan, ValueType> {
             public:
-                InternalSparseQuotientExtractor(storm::dd::DdManager<storm::dd::DdType::Sylvan> const& manager, std::set<storm::expressions::Variable> const& rowVariables, std::set<storm::expressions::Variable> const& columnVariables, std::set<storm::expressions::Variable> const& nondeterminismVariables, Partition<storm::dd::DdType::Sylvan, ValueType> const& partition, storm::dd::Bdd<storm::dd::DdType::Sylvan> const& representatives, storm::dd::Odd const& odd) : InternalSparseQuotientExtractorBase<storm::dd::DdType::Sylvan, ValueType>(manager, rowVariables, columnVariables, nondeterminismVariables, partition, representatives, odd) {
+                InternalSparseQuotientExtractor(storm::models::symbolic::Model<storm::dd::DdType::Sylvan, ValueType> const& model, Partition<storm::dd::DdType::Sylvan, ValueType> const& partition, storm::dd::Bdd<storm::dd::DdType::Sylvan> const& representatives) : InternalSparseQuotientExtractorBase<storm::dd::DdType::Sylvan, ValueType>(model, partition, representatives) {
                     
                     STORM_LOG_ASSERT(partition.storedAsBdd(), "Expected partition stored as BDD.");
                     this->createBlockToOffsetMapping();
@@ -463,8 +536,8 @@ namespace storm {
                 
                 storm::storage::SparseMatrix<ValueType> extractTransitionMatrix(storm::dd::Add<storm::dd::DdType::Sylvan, ValueType> const& transitionMatrix) {
                     // Create the number of rows necessary for the matrix.
-                    this->reserveMatrixEntries(this->partition.getNumberOfBlocks());
-                    extractTransitionMatrixRec(transitionMatrix.getInternalAdd().getSylvanMtbdd().GetMTBDD(), this->odd, 0, this->partition.asBdd().getInternalBdd().getSylvanBdd().GetBDD(), this->representatives.getInternalBdd().getSylvanBdd().GetBDD(), this->allSourceVariablesCube.getInternalBdd().getSylvanBdd().GetBDD());
+                    this->createMatrixEntryStorage();
+                    extractTransitionMatrixRec(transitionMatrix.getInternalAdd().getSylvanMtbdd().GetMTBDD(), this->isNondeterministic ? this->nondeterminismOdd : this->odd, 0, this->partition.asBdd().getInternalBdd().getSylvanBdd().GetBDD(), this->representatives.getInternalBdd().getSylvanBdd().GetBDD(), this->allSourceVariablesCube.getInternalBdd().getSylvanBdd().GetBDD(), this->nondeterminismVariablesCube.getInternalBdd().getSylvanBdd().GetBDD(), this->isNondeterministic ? &this->odd : nullptr, 0);
                     return this->createMatrixFromEntries();
                 }
                 
@@ -509,7 +582,7 @@ namespace storm {
                     }
                 }
                 
-                void extractTransitionMatrixRec(MTBDD transitionMatrixNode, storm::dd::Odd const& sourceOdd, uint64_t sourceOffset, BDD targetPartitionNode, BDD representativesNode, BDD variables) {
+                void extractTransitionMatrixRec(MTBDD transitionMatrixNode, storm::dd::Odd const& sourceOdd, uint64_t sourceOffset, BDD targetPartitionNode, BDD representativesNode, BDD variables, BDD nondeterminismVariables, storm::dd::Odd const* stateOdd, uint64_t stateOffset) {
                     // For the empty DD, we do not need to add any entries. Note that the partition nodes cannot be zero
                     // as all states of the model have to be contained.
                     if (mtbdd_iszero(transitionMatrixNode) || representativesNode == sylvan_false) {
@@ -518,71 +591,94 @@ namespace storm {
                     
                     // If we have moved through all source variables, we must have arrived at a target block encoding.
                     if (sylvan_isconst(variables)) {
-                        STORM_LOG_ASSERT(sylvan_isconst(transitionMatrixNode), "Expected constant node.");
+                        STORM_LOG_ASSERT(mtbdd_isleaf(transitionMatrixNode), "Expected constant node.");
                         this->addMatrixEntry(sourceOffset, blockToOffset.at(targetPartitionNode), storm::dd::InternalAdd<storm::dd::DdType::Sylvan, ValueType>::getValue(transitionMatrixNode));
+                        if (stateOdd) {
+                            this->assignRowToState(sourceOffset, stateOffset);
+                        }
                     } else {
-                        MTBDD t;
-                        MTBDD tt;
-                        MTBDD te;
-                        MTBDD e;
-                        MTBDD et;
-                        MTBDD ee;
-                        if (sylvan_var(transitionMatrixNode) == sylvan_var(variables)) {
-                            // Source node was not skipped in transition matrix.
-                            t = sylvan_high(transitionMatrixNode);
-                            e = sylvan_low(transitionMatrixNode);
-                        } else {
-                            t = e = transitionMatrixNode;
-                        }
+                        // Determine whether the next variable is a nondeterminism variable.
+                        bool nextVariableIsNondeterminismVariable = !sylvan_isconst(nondeterminismVariables) && sylvan_var(nondeterminismVariables) == sylvan_var(variables);
                         
-                        if (sylvan_var(t) == sylvan_var(variables) + 1) {
-                            // Target node was not skipped in transition matrix.
-                            tt = sylvan_high(t);
-                            te = sylvan_low(t);
+                        if (nextVariableIsNondeterminismVariable) {
+                            MTBDD t;
+                            MTBDD e;
+                            
+                            // Determine whether the variable was skipped in the matrix.
+                            if (sylvan_var(transitionMatrixNode) == sylvan_var(variables)) {
+                                t = sylvan_high(transitionMatrixNode);
+                                e = sylvan_low(transitionMatrixNode);
+                            } else {
+                                t = e = transitionMatrixNode;
+                            }
+                            
+                            STORM_LOG_ASSERT(stateOdd, "Expected separate state ODD.");
+                            extractTransitionMatrixRec(e, sourceOdd.getElseSuccessor(), sourceOffset, targetPartitionNode, representativesNode, sylvan_high(variables), sylvan_high(nondeterminismVariables), stateOdd, stateOffset);
+                            extractTransitionMatrixRec(t, sourceOdd.getThenSuccessor(), sourceOffset + sourceOdd.getElseOffset(), targetPartitionNode, representativesNode, sylvan_high(variables), sylvan_high(nondeterminismVariables), stateOdd, stateOffset);
                         } else {
-                            // Target node was skipped in transition matrix.
-                            tt = te = t;
-                        }
-                        if (t != e) {
-                            if (sylvan_var(e) == sylvan_var(variables) + 1) {
+                            MTBDD t;
+                            MTBDD tt;
+                            MTBDD te;
+                            MTBDD e;
+                            MTBDD et;
+                            MTBDD ee;
+                            if (sylvan_var(transitionMatrixNode) == sylvan_var(variables)) {
+                                // Source node was not skipped in transition matrix.
+                                t = sylvan_high(transitionMatrixNode);
+                                e = sylvan_low(transitionMatrixNode);
+                            } else {
+                                t = e = transitionMatrixNode;
+                            }
+                            
+                            if (sylvan_var(t) == sylvan_var(variables) + 1) {
                                 // Target node was not skipped in transition matrix.
-                                et = sylvan_high(e);
-                                ee = sylvan_low(e);
+                                tt = sylvan_high(t);
+                                te = sylvan_low(t);
                             } else {
                                 // Target node was skipped in transition matrix.
-                                et = ee = e;
+                                tt = te = t;
                             }
-                        } else {
-                            et = tt;
-                            ee = te;
+                            if (t != e) {
+                                if (sylvan_var(e) == sylvan_var(variables) + 1) {
+                                    // Target node was not skipped in transition matrix.
+                                    et = sylvan_high(e);
+                                    ee = sylvan_low(e);
+                                } else {
+                                    // Target node was skipped in transition matrix.
+                                    et = ee = e;
+                                }
+                            } else {
+                                et = tt;
+                                ee = te;
+                            }
+                            
+                            BDD targetT;
+                            BDD targetE;
+                            if (sylvan_var(targetPartitionNode) == sylvan_var(variables) + 1) {
+                                // Node was not skipped in target partition.
+                                targetT = sylvan_high(targetPartitionNode);
+                                targetE = sylvan_low(targetPartitionNode);
+                            } else {
+                                // Node was skipped in target partition.
+                                targetT = targetE = targetPartitionNode;
+                            }
+                            
+                            BDD representativesT;
+                            BDD representativesE;
+                            if (sylvan_var(representativesNode) == sylvan_var(variables)) {
+                                // Node was not skipped in representatives.
+                                representativesT = sylvan_high(representativesNode);
+                                representativesE = sylvan_low(representativesNode);
+                            } else {
+                                // Node was skipped in representatives.
+                                representativesT = representativesE = representativesNode;
+                            }
+                            
+                            extractTransitionMatrixRec(ee, sourceOdd.getElseSuccessor(), sourceOffset, targetE, representativesE, sylvan_high(variables), nondeterminismVariables, stateOdd ? &stateOdd->getElseSuccessor() : stateOdd, stateOffset);
+                            extractTransitionMatrixRec(et, sourceOdd.getElseSuccessor(), sourceOffset, targetT, representativesE, sylvan_high(variables), nondeterminismVariables, stateOdd ? &stateOdd->getElseSuccessor() : stateOdd, stateOffset);
+                            extractTransitionMatrixRec(te, sourceOdd.getThenSuccessor(), sourceOffset + sourceOdd.getElseOffset(), targetE, representativesT, sylvan_high(variables), nondeterminismVariables, stateOdd ? &stateOdd->getThenSuccessor() : stateOdd, stateOffset + (stateOdd ? stateOdd->getElseOffset() : 0));
+                            extractTransitionMatrixRec(tt, sourceOdd.getThenSuccessor(), sourceOffset + sourceOdd.getElseOffset(), targetT, representativesT, sylvan_high(variables), nondeterminismVariables, stateOdd ? &stateOdd->getThenSuccessor() : stateOdd, stateOffset + (stateOdd ? stateOdd->getElseOffset() : 0));
                         }
-                        
-                        BDD targetT;
-                        BDD targetE;
-                        if (sylvan_var(targetPartitionNode) == sylvan_var(variables) + 1) {
-                            // Node was not skipped in target partition.
-                            targetT = sylvan_high(targetPartitionNode);
-                            targetE = sylvan_low(targetPartitionNode);
-                        } else {
-                            // Node was skipped in target partition.
-                            targetT = targetE = targetPartitionNode;
-                        }
-                        
-                        BDD representativesT;
-                        BDD representativesE;
-                        if (sylvan_var(representativesNode) == sylvan_var(variables)) {
-                            // Node was not skipped in representatives.
-                            representativesT = sylvan_high(representativesNode);
-                            representativesE = sylvan_low(representativesNode);
-                        } else {
-                            // Node was skipped in representatives.
-                            representativesT = representativesE = representativesNode;
-                        }
-                        
-                        extractTransitionMatrixRec(ee, sourceOdd.getElseSuccessor(), sourceOffset, targetE, representativesE, sylvan_high(variables));
-                        extractTransitionMatrixRec(et, sourceOdd.getElseSuccessor(), sourceOffset, targetT, representativesE, sylvan_high(variables));
-                        extractTransitionMatrixRec(te, sourceOdd.getThenSuccessor(), sourceOffset + sourceOdd.getElseOffset(), targetE, representativesT, sylvan_high(variables));
-                        extractTransitionMatrixRec(tt, sourceOdd.getThenSuccessor(), sourceOffset + sourceOdd.getElseOffset(), targetT, representativesT, sylvan_high(variables));
                     }
                 }
                 
@@ -626,9 +722,9 @@ namespace storm {
                 auto representatives = InternalRepresentativeComputer<DdType, ValueType>(partition, model.getRowVariables(), model.getColumnVariables()).getRepresentatives();
                 STORM_LOG_ASSERT(representatives.getNonZeroCount() == partition.getNumberOfBlocks(), "Representatives size does not match that of the partition: " << representatives.getNonZeroCount() << " vs. " << partition.getNumberOfBlocks() << ".");
                 STORM_LOG_ASSERT((representatives && partitionAsBdd).existsAbstract(model.getRowVariables()) == partitionAsBdd.existsAbstract(model.getRowVariables()), "Representatives do not cover all blocks.");
-                storm::dd::Odd odd = representatives.createOdd();
+                InternalSparseQuotientExtractor<DdType, ValueType> sparseExtractor(model, partition, representatives);
+                storm::dd::Odd const& odd = sparseExtractor.getOdd();
                 STORM_LOG_ASSERT(odd.getTotalOffset() == representatives.getNonZeroCount(), "Mismatching ODD.");
-                InternalSparseQuotientExtractor<DdType, ValueType> sparseExtractor(model.getManager(), model.getRowVariables(), model.getColumnVariables(), model.getNondeterminismVariables(), partition, representatives, odd);
                 storm::storage::SparseMatrix<ValueType> quotientTransitionMatrix = sparseExtractor.extractTransitionMatrix(model.getTransitionMatrix());
                 auto end = std::chrono::high_resolution_clock::now();
                 STORM_LOG_TRACE("Quotient transition matrix extracted in " << std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count() << "ms.");
@@ -660,6 +756,8 @@ namespace storm {
                     result = std::make_shared<storm::models::sparse::Dtmc<ValueType>>(std::move(quotientTransitionMatrix), std::move(quotientStateLabeling));
                 } else if (model.getType() == storm::models::ModelType::Ctmc) {
                     result = std::make_shared<storm::models::sparse::Ctmc<ValueType>>(std::move(quotientTransitionMatrix), std::move(quotientStateLabeling));
+                } else if (model.getType() == storm::models::ModelType::Mdp) {
+                    result = std::make_shared<storm::models::sparse::Mdp<ValueType>>(std::move(quotientTransitionMatrix), std::move(quotientStateLabeling));
                 }
                 
                 return result;
