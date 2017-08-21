@@ -278,6 +278,13 @@ namespace storm {
                 RewardModelType const& getUniqueRewardModel() const;
 
                 /*!
+                 * Retrieves the name of the unique reward model, if there exists exactly one. Otherwise, an exception is thrown.
+                 *
+                 * @return The name of the unique reward model.
+                 */
+                std::string const& getUniqueRewardModelName() const;
+
+                /*!
                  * Retrieves the unique reward model, if there exists exactly one. Otherwise, an exception is thrown.
                  *
                  * @return The requested reward model.

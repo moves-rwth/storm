@@ -28,13 +28,16 @@ namespace storm {
                 
                 void addLabel(std::string const& label);
                 void addExpression(storm::expressions::Expression const& expression);
+                void addRewardModel(std::string const& name);
                 
                 std::set<std::string> const& getLabels() const;
                 std::set<storm::expressions::Expression> const& getExpressions() const;
+                std::set<std::string> const& getRewardModelNames() const;
                 
             private:
                 std::set<std::string> labels;
                 std::set<storm::expressions::Expression> expressions;
+                std::set<std::string> rewardModelNames;
             };
             
         }

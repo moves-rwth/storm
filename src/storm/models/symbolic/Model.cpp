@@ -240,6 +240,12 @@ namespace storm {
             }
             
             template<storm::dd::DdType Type, typename ValueType>
+            std::string const& Model<Type, ValueType>::getUniqueRewardModelName() const {
+                STORM_LOG_THROW(this->hasUniqueRewardModel(), storm::exceptions::InvalidOperationException, "Cannot retrieve name of unique reward model, because there is no unique one.");
+                return this->rewardModels.cbegin()->first;
+            }
+            
+            template<storm::dd::DdType Type, typename ValueType>
             typename Model<Type, ValueType>::RewardModelType& Model<Type, ValueType>::getUniqueRewardModel() {
                 STORM_LOG_THROW(this->hasUniqueRewardModel(), storm::exceptions::InvalidOperationException, "Cannot retrieve unique reward model, because there is no unique one.");
                 return this->rewardModels.begin()->second;

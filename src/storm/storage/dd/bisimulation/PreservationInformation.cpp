@@ -39,10 +39,10 @@ namespace storm {
                         this->addLabel(label);
                         this->addExpression(model.getExpression(label));
                     }
+                    for (auto const& rewardModel : model.getRewardModels()) {
+                        this->addRewardModel(rewardModel.first);
+                    }
                 } else {
-                    std::set<std::string> labels;
-                    std::set<storm::expressions::Expression> expressions;
-                    
                     for (auto const& formula : formulas) {
                         for (auto const& expressionFormula : formula->getAtomicExpressionFormulas()) {
                             this->addExpression(expressionFormula->getExpression());
@@ -53,11 +53,18 @@ namespace storm {
                             STORM_LOG_THROW(model.hasLabel(label), storm::exceptions::InvalidPropertyException, "Property refers to illegal label '" << label << "'.");
                             this->addExpression(model.getExpression(label));
                         }
-                    }
-                    
-                    std::vector<storm::expressions::Expression> expressionVector;
-                    for (auto const& expression : expressions) {
-                        expressionVector.emplace_back(expression);
+                        for (auto const& rewardModel : formula->getReferencedRewardModels()) {
+                            if (rewardModel == "") {
+                                if (model.hasRewardModel("")) {
+                                    this->addRewardModel(rewardModel);
+                                } else {
+                                    STORM_LOG_THROW(model.hasUniqueRewardModel(), storm::exceptions::InvalidPropertyException, "Property refers to the default reward model, but it does not exist or is not unique.");
+                                    this->addRewardModel(model.getUniqueRewardModelName());
+                                }
+                            } else {
+                                this->addRewardModel(rewardModel);
+                            }
+                        }
                     }
                 }
             }
@@ -73,6 +80,11 @@ namespace storm {
             }
             
             template <storm::dd::DdType DdType, typename ValueType>
+            void PreservationInformation<DdType, ValueType>::addRewardModel(std::string const& name) {
+                rewardModelNames.insert(name);
+            }
+            
+            template <storm::dd::DdType DdType, typename ValueType>
             std::set<std::string> const& PreservationInformation<DdType, ValueType>::getLabels() const {
                 return labels;
             }
@@ -80,6 +92,11 @@ namespace storm {
             template <storm::dd::DdType DdType, typename ValueType>
             std::set<storm::expressions::Expression> const& PreservationInformation<DdType, ValueType>::getExpressions() const {
                 return expressions;
+            }
+            
+            template <storm::dd::DdType DdType, typename ValueType>
+            std::set<std::string> const& PreservationInformation<DdType, ValueType>::getRewardModelNames() const {
+                return rewardModelNames;
             }
             
             template class PreservationInformation<storm::dd::DdType::CUDD, double>;
