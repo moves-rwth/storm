@@ -1,9 +1,7 @@
 #ifndef STORM_MODELS_SPARSE_MDP_H_
 #define STORM_MODELS_SPARSE_MDP_H_
 
-#include "storm/storage/StateActionPair.h"
 #include "storm/models/sparse/NondeterministicModel.h"
-#include "storm/utility/OsDetection.h"
 
 namespace storm {
     namespace models {
@@ -50,12 +48,6 @@ namespace storm {
                 
                 Mdp(Mdp<ValueType, RewardModelType>&& other) = default;
                 Mdp& operator=(Mdp<ValueType, RewardModelType>&& other) = default;
-
-
-                /*!
-                 *  For a state/action pair, get the choice index referring to the state-action pair.
-                 */
-                uint_fast64_t getChoiceIndex(storm::storage::StateActionPair const& stateactPair) const;
             };
             
         } // namespace sparse

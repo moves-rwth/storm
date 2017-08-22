@@ -2,7 +2,7 @@
 #define STORM_MODELS_SPARSE_NONDETERMINISTICMODEL_H_
 
 #include "storm/models/sparse/Model.h"
-#include "storm/utility/OsDetection.h"
+#include "storm/storage/StateActionPair.h"
 
 namespace storm {
     
@@ -54,7 +54,11 @@ namespace storm {
                 uint_fast64_t getNumberOfChoices(uint_fast64_t state) const;
                 
                 virtual void reduceToStateBasedRewards() override;
-                
+
+                /*!
+                 *  For a state/action pair, get the choice index referring to the state-action pair.
+                 */
+                uint_fast64_t getChoiceIndex(storm::storage::StateActionPair const& stateactPair) const;
                 /*!
                  * Applies the given scheduler to this model.
                  * @param scheduler the considered scheduler.
