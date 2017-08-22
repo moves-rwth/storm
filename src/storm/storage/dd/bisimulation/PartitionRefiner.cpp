@@ -2,6 +2,9 @@
 
 #include "storm/models/symbolic/StandardRewardModel.h"
 
+#include "storm/utility/macros.h"
+#include "storm/exceptions/NotSupportedException.h"
+
 namespace storm {
     namespace dd {
         namespace bisimulation {
@@ -67,6 +70,36 @@ namespace storm {
                 } else {
                     return oldPartition;
                 }
+            }
+            
+            template <storm::dd::DdType DdType, typename ValueType>
+            bool PartitionRefiner<DdType, ValueType>::refineWrtRewardModel(storm::models::symbolic::Model<DdType, ValueType> const& model, storm::models::symbolic::StandardRewardModel<DdType, ValueType> const& rewardModel) {
+                STORM_LOG_THROW(rewardModel.hasTransitionRewards(), storm::exceptions::NotSupportedException, "Symbolic bisimulation currently does not support transition rewards.");
+                bool result = false;
+                if (rewardModel.hasStateActionRewards()) {
+                    result |= refineWrtStateActionRewards(model, rewardModel.getStateActionRewardVector());
+                }
+                if (rewardModel.hasStateRewards()) {
+                    result |= refineWrtStateRewards(model, rewardModel.getStateActionRewardVector());
+                }
+                return result;
+            }
+            
+            template <storm::dd::DdType DdType, typename ValueType>
+            bool PartitionRefiner<DdType, ValueType>::refineWrtStateRewards(storm::models::symbolic::Model<DdType, ValueType> const& model, storm::dd::Add<DdType, ValueType> const& stateRewards) {
+                Partition<DdType, ValueType> newPartition = signatureRefiner.refine(statePartition, Signature<DdType, ValueType>(stateRewards));
+                if (newPartition == statePartition) {
+                    return false;
+                } else {
+                    this->statePartition = newPartition;
+                    return true;
+                }
+            }
+            
+            template <storm::dd::DdType DdType, typename ValueType>
+            bool PartitionRefiner<DdType, ValueType>::refineWrtStateActionRewards(storm::models::symbolic::Model<DdType, ValueType> const& model, storm::dd::Add<DdType, ValueType> const& stateActionRewards) {
+                // By default, we treat state-action rewards just like state-rewards, which works for DTMCs and CTMCs.
+                return refineWrtStateRewards(model, stateActionRewards);
             }
             
             template <storm::dd::DdType DdType, typename ValueType>

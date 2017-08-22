@@ -62,6 +62,8 @@ namespace storm {
                  */
                 std::vector<ValueType>& getExitRateVector();
 
+                virtual void reduceToStateBasedRewards() override;
+                
             private:
                 /*!
                  * Computes the exit rate vector based on the given rate matrix.

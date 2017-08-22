@@ -21,7 +21,7 @@ namespace storm {
                 // For this, we use the signature computer/refiner of this class.
                 
                 STORM_LOG_TRACE("Refining choice partition.");
-                Partition<DdType, ValueType> newChoicePartition = this->internalRefine(this->signatureComputer, this->signatureRefiner, choicePartition, this->statePartition, mode);
+                Partition<DdType, ValueType> newChoicePartition = this->internalRefine(this->signatureComputer, this->signatureRefiner, this->choicePartition, this->statePartition, mode);
                 
                 if (newChoicePartition == choicePartition) {
                     this->status = Status::FixedPoint;
@@ -46,6 +46,11 @@ namespace storm {
             template<storm::dd::DdType DdType, typename ValueType>
             Partition<DdType, ValueType> const& MdpPartitionRefiner<DdType, ValueType>::getChoicePartition() const {
                 return choicePartition;
+            }
+            
+            template<storm::dd::DdType DdType, typename ValueType>
+            bool MdpPartitionRefiner<DdType, ValueType>::refineWrtStateActionRewards(storm::models::symbolic::Model<DdType, ValueType> const& model, storm::dd::Add<DdType, ValueType> const& stateActionRewards) {
+                Partition<DdType, ValueType> newChoicePartition = this->signatureRefiner.refine(this->choicePartition, Signature<DdType, ValueType>(stateActionRewards));
             }
             
             template class MdpPartitionRefiner<storm::dd::DdType::CUDD, double>;

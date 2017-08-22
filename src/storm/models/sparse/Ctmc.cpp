@@ -72,6 +72,13 @@ namespace storm {
                 return exitRates;
             }
             
+            template<typename ValueType, typename RewardModelType>
+            void Ctmc<ValueType, RewardModelType>::reduceToStateBasedRewards() {
+                for (auto& rewardModel : this->getRewardModels()) {
+                    rewardModel.second.reduceToStateBasedRewards(this->getTransitionMatrix(), true, &exitRates);
+                }
+            }
+            
             template class Ctmc<double>;
 
 #ifdef STORM_HAVE_CARL
