@@ -51,13 +51,6 @@ namespace storm {
                 Mdp(Mdp<ValueType, RewardModelType>&& other) = default;
                 Mdp& operator=(Mdp<ValueType, RewardModelType>&& other) = default;
 
-                /*!
-                 * Constructs an MDP by copying the current MDP and restricting the choices of each state to the ones given by the bitvector.
-                 * 
-                 * @param enabledActions A BitVector of lenght numberOfChoices(), which is one iff the action should be kept.
-                 * @return A subMDP.
-                 */
-                Mdp<ValueType, RewardModelType> restrictChoices(storm::storage::BitVector const& enabledActions) const;
 
                 /*!
                  *  For a state/action pair, get the choice index referring to the state-action pair.
