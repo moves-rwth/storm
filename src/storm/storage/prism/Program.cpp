@@ -1684,6 +1684,7 @@ namespace storm {
                 case Program::ModelType::MDP: out << "mdp"; break;
                 case Program::ModelType::CTMDP: out << "ctmdp"; break;
                 case Program::ModelType::MA: out << "ma"; break;
+                case Program::ModelType::POMDP: out << "pomdp"; break;
             }
             return out;
         }

@@ -55,6 +55,11 @@ namespace storm {
 
                 virtual void printModelInformationToStream(std::ostream& out) const override;
 
+                uint32_t getObservation(uint64_t state) const;
+
+                uint64_t getNrObservations() const;
+
+
 
             protected:
                 // TODO: consider a bitvector based presentation (depending on our needs).

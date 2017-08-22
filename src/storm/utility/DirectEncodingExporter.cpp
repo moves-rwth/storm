@@ -8,6 +8,7 @@
 #include "storm/models/sparse/Mdp.h"
 #include "storm/models/sparse/Ctmc.h"
 #include "storm/models/sparse/MarkovAutomaton.h"
+#include "storm/models/sparse/Pomdp.h"
 
 #include "storm/models/sparse/StandardRewardModel.h"
 
@@ -73,6 +74,10 @@ namespace storm {
 
                 if (!first) {
                     os << "]";
+                }
+
+                if (sparseModel->getType() == storm::models::ModelType::Pomdp) {
+                    os << " {" << sparseModel->template as<storm::models::sparse::Pomdp<ValueType>>()->getObservation(group) << "}";
                 }
 
                 // Write labels

@@ -44,6 +44,16 @@ namespace storm {
                 // In debug mode, ensure that every observability is used.
             }
 
+            template<typename ValueType, typename RewardModelType>
+            uint32_t Pomdp<ValueType, RewardModelType>::getObservation(uint64_t state) const {
+                return observations.at(state);
+            }
+
+            template<typename ValueType, typename RewardModelType>
+            uint64_t Pomdp<ValueType, RewardModelType>::getNrObservations() const {
+                return nrObservations;
+            }
+
 
             template class Pomdp<double>;
             template class Pomdp<storm::RationalNumber>;

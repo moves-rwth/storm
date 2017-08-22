@@ -109,10 +109,11 @@ namespace storm {
         std::shared_ptr<storm::storage::sparse::ModelComponents<ValueType, RewardModelType>> DirectEncodingParser<ValueType, RewardModelType>::parseStates(std::istream& file, storm::models::ModelType type, size_t stateSize, ValueParser<ValueType> const& valueParser) {
             // Initialize
             auto modelComponents = std::make_shared<storm::storage::sparse::ModelComponents<ValueType, RewardModelType>>();
-            bool nonDeterministic = (type == storm::models::ModelType::Mdp || type == storm::models::ModelType::MarkovAutomaton);
+            bool nonDeterministic = (type == storm::models::ModelType::Mdp || type == storm::models::ModelType::MarkovAutomaton || type == storm::models::ModelType::Pomdp);
             storm::storage::SparseMatrixBuilder<ValueType> builder = storm::storage::SparseMatrixBuilder<ValueType>(0, 0, 0, false, nonDeterministic, 0);
             modelComponents->stateLabeling = storm::models::sparse::StateLabeling(stateSize);
-
+            modelComponents->observabilityClasses = std::vector<uint32_t>();
+            modelComponents->observabilityClasses->resize(stateSize);
             // We parse rates for continuous time models.
             if (type == storm::models::ModelType::Ctmc) {
                 modelComponents->rateTransitions = true;
@@ -152,6 +153,19 @@ namespace storm {
                             STORM_LOG_WARN("Rewards were not imported");
                             line = line.substr(posEndReward+1);
                         }
+
+                        if (type == storm::models::ModelType::Pomdp) {
+                            if (boost::starts_with(line, "{")) {
+                                size_t posEndObservation = line.find("}");
+                                std::string observation = line.substr(1, posEndObservation-1);
+                                STORM_LOG_TRACE("State observation " << observations);
+                                modelComponents->observabilityClasses.get()[state] = std::stoi(observation);
+                                line = line.substr(posEndObservation+1);
+                            } else {
+                                STORM_LOG_THROW(false, storm::exceptions::WrongFormatException, "Expected an observation for state " << state << ".");
+                            }
+                        }
+
                         // Check for labels
                         std::vector<std::string> labels;
                         boost::split(labels, line, boost::is_any_of(" "));

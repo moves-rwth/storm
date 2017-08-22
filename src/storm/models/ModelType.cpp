@@ -17,7 +17,7 @@ namespace storm {
                 return ModelType::MarkovAutomaton;
             } else if (type == "S2PG") {
                 return ModelType::S2pg;
-            } else if (type == "Pomdp") {
+            } else if (type == "POMDP") {
                 return ModelType::Pomdp;
             } else {
                 STORM_LOG_THROW(false, storm::exceptions::InvalidTypeException, "Type " << type << "not known.");
