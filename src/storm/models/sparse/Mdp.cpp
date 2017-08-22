@@ -39,27 +39,7 @@ namespace storm {
                 // Intentionally left empty
             }
    
-            template <typename ValueType, typename RewardModelType>
-            Mdp<ValueType, RewardModelType> Mdp<ValueType, RewardModelType>::restrictChoices(storm::storage::BitVector const& enabledChoices) const {
-                storm::storage::sparse::ModelComponents<ValueType, RewardModelType> newComponents(this->getTransitionMatrix().restrictRows(enabledChoices));
-                newComponents.stateLabeling = this->getStateLabeling();
-                for (auto const& rewardModel : this->getRewardModels()) {
-                    newComponents.rewardModels.emplace(rewardModel.first, rewardModel.second.restrictActions(enabledChoices));
-                }
-                if (this->hasChoiceLabeling()) {
-                    newComponents.choiceLabeling = this->getChoiceLabeling().getSubLabeling(enabledChoices);
-                }
-                newComponents.stateValuations = this->getOptionalStateValuations();
-                if (this->hasChoiceOrigins()) {
-                    newComponents.choiceOrigins = this->getChoiceOrigins()->selectChoices(enabledChoices);
-                }
-                return Mdp<ValueType, RewardModelType>(std::move(newComponents));
-            }
 
-            template<typename ValueType, typename RewardModelType>
-            uint_least64_t Mdp<ValueType, RewardModelType>::getChoiceIndex(storm::storage::StateActionPair const& stateactPair) const {
-                return this->getNondeterministicChoiceIndices()[stateactPair.getState()]+stateactPair.getAction();
-            }
 
             template class Mdp<double>;
             template class Mdp<storm::RationalNumber>;
