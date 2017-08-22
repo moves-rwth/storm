@@ -58,7 +58,6 @@ namespace storm {
 
                 for (auto transitionIt = model.getTransitionMatrix().begin(action); transitionIt != model.getTransitionMatrix().end(action); ++transitionIt) {
                     auto const& transition = *transitionIt;
-                    std::cout << transition.getValue() << std::endl;
                     sum += transition.getValue();
                     if (!storm::utility::isConstant(transition.getValue())) {
                         auto const& transitionVars = transition.getValue().gatherVariables();
