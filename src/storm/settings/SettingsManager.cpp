@@ -271,7 +271,7 @@ namespace storm {
             return moduleIterator->second->getPrintLengthOfLongestOption();
         }
         
-        void SettingsManager::addModule(std::unique_ptr<modules::ModuleSettings>&& moduleSettings) {
+        void SettingsManager::addModule(std::unique_ptr<modules::ModuleSettings>&& moduleSettings, bool doRegister) {
             auto moduleIterator = this->modules.find(moduleSettings->getModuleName());
             STORM_LOG_THROW(moduleIterator == this->modules.end(), storm::exceptions::IllegalFunctionCallException, "Unable to register module '" << moduleSettings->getModuleName() << "' because a module with the same name already exists.");
             
@@ -281,12 +281,15 @@ namespace storm {
             this->modules.emplace(moduleSettings->getModuleName(), std::move(moduleSettings));
             auto iterator = this->modules.find(moduleName);
             std::unique_ptr<modules::ModuleSettings> const& settings = iterator->second;
-            
-            // Now register the options of the module.
-            this->moduleOptions.emplace(moduleName, std::vector<std::shared_ptr<Option>>());
-            for (auto const& option : settings->getOptions()) {
-                this->addOption(option);
+
+            if (doRegister) {
+                // Now register the options of the module.
+                this->moduleOptions.emplace(moduleName, std::vector<std::shared_ptr<Option>>());
+                for (auto const& option : settings->getOptions()) {
+                    this->addOption(option);
+                }
             }
+
         }
         
         void SettingsManager::addOption(std::shared_ptr<Option> const& option) {
