@@ -23,9 +23,9 @@ namespace storm {
                  * @param optionalStateActionRewardVector The reward values associated with state-action pairs.
                  * @param optionalTransitionRewardMatrix The reward values associated with the transitions of the model.
                  */
-                StandardRewardModel(boost::optional<std::vector<ValueType>> const& optionalStateRewardVector = boost::optional<std::vector<ValueType>>(),
-                                    boost::optional<std::vector<ValueType>> const& optionalStateActionRewardVector = boost::optional<std::vector<ValueType>>(),
-                                    boost::optional<storm::storage::SparseMatrix<ValueType>> const& optionalTransitionRewardMatrix = boost::optional<storm::storage::SparseMatrix<ValueType>>());
+                StandardRewardModel(boost::optional<std::vector<ValueType>> const& optionalStateRewardVector = boost::none,
+                                    boost::optional<std::vector<ValueType>> const& optionalStateActionRewardVector = boost::none,
+                                    boost::optional<storm::storage::SparseMatrix<ValueType>> const& optionalTransitionRewardMatrix = boost::none);
                 
                 /*!
                  * Constructs a reward model by moving the given data.
@@ -34,9 +34,9 @@ namespace storm {
                  * @param optionalStateActionRewardVector The reward values associated with state-action pairs.
                  * @param optionalTransitionRewardMatrix The reward values associated with the transitions of the model.
                  */
-                StandardRewardModel(boost::optional<std::vector<ValueType>>&& optionalStateRewardVector = boost::optional<std::vector<ValueType>>(),
-                            boost::optional<std::vector<ValueType>>&& optionalStateActionRewardVector = boost::optional<std::vector<ValueType>>(),
-                            boost::optional<storm::storage::SparseMatrix<ValueType>>&& optionalTransitionRewardMatrix = boost::optional<storm::storage::SparseMatrix<ValueType>>());
+                StandardRewardModel(boost::optional<std::vector<ValueType>>&& optionalStateRewardVector = boost::none,
+                                    boost::optional<std::vector<ValueType>>&& optionalStateActionRewardVector = boost::none,
+                                    boost::optional<storm::storage::SparseMatrix<ValueType>>&& optionalTransitionRewardMatrix = boost::none);
                 
                 StandardRewardModel(StandardRewardModel<ValueType> const& dtmc) = default;
                 StandardRewardModel& operator=(StandardRewardModel<ValueType> const& dtmc) = default;

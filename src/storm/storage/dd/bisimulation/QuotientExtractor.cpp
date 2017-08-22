@@ -226,7 +226,7 @@ namespace storm {
             template<storm::dd::DdType DdType, typename ValueType>
             class InternalSparseQuotientExtractorBase {
             public:
-                InternalSparseQuotientExtractorBase(storm::models::symbolic::Model<DdType, ValueType> const& model, storm::dd::Bdd<DdType> const& partitionBdd, storm::dd::Bdd<DdType> const& representatives, uint64_t numberOfBlocks) : manager(model.getManager()), isNondeterministic(false), partitionBdd(partitionBdd), numberOfBlocks(numberOfBlocks), representatives(representatives), matrixEntriesCreated(false) {
+                InternalSparseQuotientExtractorBase(storm::models::symbolic::Model<DdType, ValueType> const& model, storm::dd::Bdd<DdType> const& partitionBdd, storm::expressions::Variable const& blockVariable, uint64_t numberOfBlocks, storm::dd::Bdd<DdType> const& representatives) : model(model), manager(model.getManager()), isNondeterministic(false), partitionBdd(partitionBdd), numberOfBlocks(numberOfBlocks), blockVariable(blockVariable), representatives(representatives), matrixEntriesCreated(false) {
                     // Create cubes.
                     rowVariablesCube = manager.getBddOne();
                     for (auto const& variable : model.getRowVariables()) {
@@ -251,15 +251,52 @@ namespace storm {
                     if (this->isNondeterministic) {
                         this->nondeterminismOdd = (model.getQualitativeTransitionMatrix().existsAbstract(model.getColumnVariables()) && this->representatives).createOdd();
                     }
-                    
+
                     STORM_LOG_TRACE("Partition has " << partitionBdd.existsAbstract(model.getRowVariables()).getNonZeroCount() << " states in " << this->numberOfBlocks << " blocks.");
                 }
 
-                storm::dd::Odd const& getOdd() const {
-                    return this->odd;
+                storm::storage::SparseMatrix<ValueType> extractTransitionMatrix(storm::dd::Add<DdType, ValueType> const& transitionMatrix) {
+                    return extractMatrixInternal(transitionMatrix);
                 }
                 
+                std::vector<ValueType> extractStateVector(storm::dd::Add<DdType, ValueType> const& vector) {
+                    return extractVectorInternal(vector, this->rowVariablesCube, this->odd);
+                }
+
+                std::vector<ValueType> extractStateActionVector(storm::dd::Add<DdType, ValueType> const& vector) {
+                    if (!this->isNondeterministic) {
+                        return extractStateVector(vector);
+                    } else {
+                        STORM_LOG_ASSERT(!this->rowPermutation.empty(), "Expected proper row permutation.");
+                        std::vector<ValueType> valueVector = extractVectorInternal(vector, this->allSourceVariablesCube, this->nondeterminismOdd);
+                        
+                        // Reorder the values according to the known row permutation.
+                        for (uint64_t position = 0; position < valueVector.size(); ) {
+                            if (rowPermutation[position] != position) {
+                                std::swap(valueVector[position], valueVector[rowPermutation[position]]);
+                                std::swap(rowPermutation[position], rowPermutation[rowPermutation[position]]);
+                            } else {
+                                ++position;
+                            }
+                        }
+
+                        return valueVector;
+                    }
+                }
+                
+                storm::storage::BitVector extractSetAll(storm::dd::Bdd<DdType> const& set) {
+                    return (set && representatives).toVector(this->odd);
+                }
+
+                storm::storage::BitVector extractSetExists(storm::dd::Bdd<DdType> const& set) {
+                    return ((set && partitionBdd).existsAbstract(model.getRowVariables()) && partitionBdd && representatives).existsAbstract({this->blockVariable}).toVector(this->odd);
+                }
+
             protected:
+                virtual storm::storage::SparseMatrix<ValueType> extractMatrixInternal(storm::dd::Add<DdType, ValueType> const& matrix) = 0;
+                
+                virtual std::vector<ValueType> extractVectorInternal(storm::dd::Add<DdType, ValueType> const& vector, storm::dd::Bdd<DdType> const& variablesCube, storm::dd::Odd const& odd) = 0;
+                
                 storm::storage::SparseMatrix<ValueType> createMatrixFromEntries() {
                     for (auto& row : matrixEntries) {
                         std::sort(row.begin(), row.end(),
@@ -268,7 +305,7 @@ namespace storm {
                                   });
                     }
                     
-                    std::vector<uint64_t> rowPermutation(matrixEntries.size());
+                    rowPermutation = std::vector<uint64_t>(matrixEntries.size());
                     std::iota(rowPermutation.begin(), rowPermutation.end(), 0ull);
                     if (this->isNondeterministic) {
                         std::sort(rowPermutation.begin(), rowPermutation.end(), [this] (uint64_t first, uint64_t second) { return this->rowToState[first] < this->rowToState[second]; } );
@@ -299,6 +336,8 @@ namespace storm {
                         ++rowCounter;
                     }
                     
+                    rowToState.clear();
+                    rowToState.shrink_to_fit();
                     matrixEntries.clear();
                     matrixEntries.shrink_to_fit();
                     
@@ -326,6 +365,8 @@ namespace storm {
                     rowToState[row] = state;
                 }
 
+                storm::models::symbolic::Model<DdType, ValueType> const& model;
+                
                 // The manager responsible for the DDs.
                 storm::dd::DdManager<DdType> const& manager;
                 
@@ -341,6 +382,7 @@ namespace storm {
                 // Information about the state partition.
                 storm::dd::Bdd<DdType> partitionBdd;
                 uint64_t numberOfBlocks;
+                storm::expressions::Variable blockVariable;
                 storm::dd::Bdd<DdType> representatives;
                 storm::dd::Odd odd;
                 storm::dd::Odd nondeterminismOdd;
@@ -353,23 +395,31 @@ namespace storm {
                 
                 // A vector storing for each row which state it belongs to.
                 std::vector<uint64_t> rowToState;
+                
+                // A vector storing the row permutation for nondeterministic models.
+                std::vector<uint64_t> rowPermutation;
             };
             
             template<typename ValueType>
             class InternalSparseQuotientExtractor<storm::dd::DdType::CUDD, ValueType> : public InternalSparseQuotientExtractorBase<storm::dd::DdType::CUDD, ValueType> {
             public:
-                InternalSparseQuotientExtractor(storm::models::symbolic::Model<storm::dd::DdType::CUDD, ValueType> const& model, storm::dd::Bdd<storm::dd::DdType::CUDD> const& partitionBdd, storm::dd::Bdd<storm::dd::DdType::CUDD> const& representatives, uint64_t numberOfBlocks) : InternalSparseQuotientExtractorBase<storm::dd::DdType::CUDD, ValueType>(model, partitionBdd, representatives, numberOfBlocks), ddman(this->manager.getInternalDdManager().getCuddManager().getManager()) {
+                InternalSparseQuotientExtractor(storm::models::symbolic::Model<storm::dd::DdType::CUDD, ValueType> const& model, storm::dd::Bdd<storm::dd::DdType::CUDD> const& partitionBdd, storm::expressions::Variable const& blockVariable, uint64_t numberOfBlocks, storm::dd::Bdd<storm::dd::DdType::CUDD> const& representatives) : InternalSparseQuotientExtractorBase<storm::dd::DdType::CUDD, ValueType>(model, partitionBdd, blockVariable, numberOfBlocks, representatives), ddman(this->manager.getInternalDdManager().getCuddManager().getManager()) {
                     this->createBlockToOffsetMapping();
                 }
-                
-                storm::storage::SparseMatrix<ValueType> extractTransitionMatrix(storm::dd::Add<storm::dd::DdType::CUDD, ValueType> const& transitionMatrix) {
-                    // Create the number of rows necessary for the matrix.
+            
+            private:
+                virtual storm::storage::SparseMatrix<ValueType> extractMatrixInternal(storm::dd::Add<storm::dd::DdType::CUDD, ValueType> const& matrix) override {
                     this->createMatrixEntryStorage();
-                    extractTransitionMatrixRec(transitionMatrix.getInternalAdd().getCuddDdNode(), this->isNondeterministic ? this->nondeterminismOdd : this->odd, 0, this->partitionBdd.getInternalBdd().getCuddDdNode(), this->representatives.getInternalBdd().getCuddDdNode(), this->allSourceVariablesCube.getInternalBdd().getCuddDdNode(), this->nondeterminismVariablesCube.getInternalBdd().getCuddDdNode(), this->isNondeterministic ? &this->odd : nullptr, 0);
+                    extractTransitionMatrixRec(matrix.getInternalAdd().getCuddDdNode(), this->isNondeterministic ? this->nondeterminismOdd : this->odd, 0, this->partitionBdd.getInternalBdd().getCuddDdNode(), this->representatives.getInternalBdd().getCuddDdNode(), this->allSourceVariablesCube.getInternalBdd().getCuddDdNode(), this->nondeterminismVariablesCube.getInternalBdd().getCuddDdNode(), this->isNondeterministic ? &this->odd : nullptr, 0);
                     return this->createMatrixFromEntries();
                 }
                 
-            private:
+                virtual std::vector<ValueType> extractVectorInternal(storm::dd::Add<storm::dd::DdType::CUDD, ValueType> const& vector, storm::dd::Bdd<storm::dd::DdType::CUDD> const& variablesCube, storm::dd::Odd const& odd) override {
+                    std::vector<ValueType> result(odd.getTotalOffset());
+                    extractVectorRec(vector.getInternalAdd().getCuddDdNode(), this->representatives.getInternalBdd().getCuddDdNode(), variablesCube.getInternalBdd().getCuddDdNode(), odd, 0, result);
+                    return result;
+                }
+                
                 void createBlockToOffsetMapping() {
                     this->createBlockToOffsetMappingRec(this->partitionBdd.getInternalBdd().getCuddDdNode(), this->representatives.getInternalBdd().getCuddDdNode(), this->rowVariablesCube.getInternalBdd().getCuddDdNode(), this->odd, 0);
                     STORM_LOG_ASSERT(blockToOffset.size() == this->numberOfBlocks, "Mismatching block-to-offset mapping: " << blockToOffset.size() << " vs. " << this->numberOfBlocks << ".");
@@ -417,6 +467,42 @@ namespace storm {
                         
                         createBlockToOffsetMappingRec(partitionE, representativesE, Cudd_T(variables), odd.getElseSuccessor(), offset);
                         createBlockToOffsetMappingRec(partitionT, representativesT, Cudd_T(variables), odd.getThenSuccessor(), offset + odd.getElseOffset());
+                    }
+                }
+                
+                void extractVectorRec(DdNodePtr vector, DdNodePtr representativesNode, DdNodePtr variables, storm::dd::Odd const& odd, uint64_t offset, std::vector<ValueType>& result) {
+                    if (representativesNode == Cudd_ReadLogicZero(ddman)) {
+                        return;
+                    }
+                    
+                    if (Cudd_IsConstant(variables)) {
+                        result[offset] = Cudd_V(vector);
+                    } else {
+                        DdNodePtr vectorT;
+                        DdNodePtr vectorE;
+                        if (Cudd_NodeReadIndex(vector) == Cudd_NodeReadIndex(variables)) {
+                            vectorT = Cudd_T(vector);
+                            vectorE = Cudd_E(vector);
+                        } else {
+                            vectorT = vectorE = vector;
+                        }
+                        
+                        DdNodePtr representativesT;
+                        DdNodePtr representativesE;
+                        if (Cudd_NodeReadIndex(representativesNode) == Cudd_NodeReadIndex(variables)) {
+                            representativesT = Cudd_T(representativesNode);
+                            representativesE = Cudd_E(representativesNode);
+                            
+                            if (Cudd_IsComplement(representativesNode)) {
+                                representativesT = Cudd_Not(representativesT);
+                                representativesE = Cudd_Not(representativesE);
+                            }
+                        } else {
+                            representativesT = representativesE = representativesNode;
+                        }
+                        
+                        extractVectorRec(vectorE, representativesE, Cudd_T(variables), odd.getElseSuccessor(), offset, result);
+                        extractVectorRec(vectorT, representativesT, Cudd_T(variables), odd.getThenSuccessor(), offset + odd.getElseOffset(), result);
                     }
                 }
                 
@@ -539,18 +625,54 @@ namespace storm {
             template<typename ValueType>
             class InternalSparseQuotientExtractor<storm::dd::DdType::Sylvan, ValueType> : public InternalSparseQuotientExtractorBase<storm::dd::DdType::Sylvan, ValueType> {
             public:
-                InternalSparseQuotientExtractor(storm::models::symbolic::Model<storm::dd::DdType::Sylvan, ValueType> const& model, storm::dd::Bdd<storm::dd::DdType::Sylvan> const& partitionBdd, storm::dd::Bdd<storm::dd::DdType::Sylvan> const& representatives, uint64_t numberOfBlocks) : InternalSparseQuotientExtractorBase<storm::dd::DdType::Sylvan, ValueType>(model, partitionBdd, representatives, numberOfBlocks) {
+                InternalSparseQuotientExtractor(storm::models::symbolic::Model<storm::dd::DdType::Sylvan, ValueType> const& model, storm::dd::Bdd<storm::dd::DdType::Sylvan> const& partitionBdd, storm::expressions::Variable const& blockVariable, uint64_t numberOfBlocks, storm::dd::Bdd<storm::dd::DdType::Sylvan> const& representatives) : InternalSparseQuotientExtractorBase<storm::dd::DdType::Sylvan, ValueType>(model, partitionBdd, blockVariable, numberOfBlocks, representatives) {
                     this->createBlockToOffsetMapping();
                 }
                 
-                storm::storage::SparseMatrix<ValueType> extractTransitionMatrix(storm::dd::Add<storm::dd::DdType::Sylvan, ValueType> const& transitionMatrix) {
-                    // Create the number of rows necessary for the matrix.
+            private:
+                virtual storm::storage::SparseMatrix<ValueType> extractMatrixInternal(storm::dd::Add<storm::dd::DdType::Sylvan, ValueType> const& matrix) override {
                     this->createMatrixEntryStorage();
-                    extractTransitionMatrixRec(transitionMatrix.getInternalAdd().getSylvanMtbdd().GetMTBDD(), this->isNondeterministic ? this->nondeterminismOdd : this->odd, 0, this->partitionBdd.getInternalBdd().getSylvanBdd().GetBDD(), this->representatives.getInternalBdd().getSylvanBdd().GetBDD(), this->allSourceVariablesCube.getInternalBdd().getSylvanBdd().GetBDD(), this->nondeterminismVariablesCube.getInternalBdd().getSylvanBdd().GetBDD(), this->isNondeterministic ? &this->odd : nullptr, 0);
+                    extractTransitionMatrixRec(matrix.getInternalAdd().getSylvanMtbdd().GetMTBDD(), this->isNondeterministic ? this->nondeterminismOdd : this->odd, 0, this->partitionBdd.getInternalBdd().getSylvanBdd().GetBDD(), this->representatives.getInternalBdd().getSylvanBdd().GetBDD(), this->allSourceVariablesCube.getInternalBdd().getSylvanBdd().GetBDD(), this->nondeterminismVariablesCube.getInternalBdd().getSylvanBdd().GetBDD(), this->isNondeterministic ? &this->odd : nullptr, 0);
                     return this->createMatrixFromEntries();
                 }
                 
-            private:
+                virtual std::vector<ValueType> extractVectorInternal(storm::dd::Add<storm::dd::DdType::Sylvan, ValueType> const& vector, storm::dd::Bdd<storm::dd::DdType::Sylvan> const& variablesCube, storm::dd::Odd const& odd) override {
+                    std::vector<ValueType> result(odd.getTotalOffset());
+                    extractVectorRec(vector.getInternalAdd().getSylvanMtbdd().GetMTBDD(), this->representatives.getInternalBdd().getSylvanBdd().GetBDD(), variablesCube.getInternalBdd().getSylvanBdd().GetBDD(), odd, 0, result);
+                    return result;
+                }
+                
+                void extractVectorRec(MTBDD vector, BDD representativesNode, BDD variables, storm::dd::Odd const& odd, uint64_t offset, std::vector<ValueType>& result) {
+                    if (representativesNode == sylvan_false) {
+                        return;
+                    }
+                    
+                    if (sylvan_isconst(variables)) {
+                        result[offset] = storm::dd::InternalAdd<storm::dd::DdType::Sylvan, ValueType>::getValue(vector);
+                    } else {
+                        MTBDD vectorT;
+                        MTBDD vectorE;
+                        if (sylvan_var(vector) == sylvan_var(variables)) {
+                            vectorT = sylvan_high(vector);
+                            vectorE = sylvan_low(vector);
+                        } else {
+                            vectorT = vectorE = vector;
+                        }
+                        
+                        BDD representativesT;
+                        BDD representativesE;
+                        if (sylvan_var(representativesNode) == sylvan_var(variables)) {
+                            representativesT = sylvan_high(representativesNode);
+                            representativesE = sylvan_low(representativesNode);
+                        } else {
+                            representativesT = representativesE = representativesNode;
+                        }
+                        
+                        extractVectorRec(vectorE, representativesE, sylvan_high(variables), odd.getElseSuccessor(), offset, result);
+                        extractVectorRec(vectorT, representativesT, sylvan_high(variables), odd.getThenSuccessor(), offset + odd.getElseOffset(), result);
+                    }
+                }
+                
                 void createBlockToOffsetMapping() {
                     this->createBlockToOffsetMappingRec(this->partitionBdd.getInternalBdd().getSylvanBdd().GetBDD(), this->representatives.getInternalBdd().getSylvanBdd().GetBDD(), this->rowVariablesCube.getInternalBdd().getSylvanBdd().GetBDD(), this->odd, 0);
                     STORM_LOG_ASSERT(blockToOffset.size() == this->numberOfBlocks, "Mismatching block-to-offset mapping: " << blockToOffset.size() << " vs. " << this->numberOfBlocks << ".");
@@ -730,20 +852,18 @@ namespace storm {
                 auto representatives = InternalRepresentativeComputer<DdType>(partitionAsBdd, model.getRowVariables()).getRepresentatives();
                 STORM_LOG_ASSERT(representatives.getNonZeroCount() == partition.getNumberOfBlocks(), "Representatives size does not match that of the partition: " << representatives.getNonZeroCount() << " vs. " << partition.getNumberOfBlocks() << ".");
                 STORM_LOG_ASSERT((representatives && partitionAsBdd).existsAbstract(model.getRowVariables()) == partitionAsBdd.existsAbstract(model.getRowVariables()), "Representatives do not cover all blocks.");
-                InternalSparseQuotientExtractor<DdType, ValueType> sparseExtractor(model, partitionAsBdd, representatives, partition.getNumberOfBlocks());
-                storm::dd::Odd const& odd = sparseExtractor.getOdd();
-                STORM_LOG_ASSERT(odd.getTotalOffset() == representatives.getNonZeroCount(), "Mismatching ODD.");
+                InternalSparseQuotientExtractor<DdType, ValueType> sparseExtractor(model, partitionAsBdd, partition.getBlockVariable(), partition.getNumberOfBlocks(), representatives);
                 storm::storage::SparseMatrix<ValueType> quotientTransitionMatrix = sparseExtractor.extractTransitionMatrix(model.getTransitionMatrix());
                 auto end = std::chrono::high_resolution_clock::now();
                 STORM_LOG_TRACE("Quotient transition matrix extracted in " << std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count() << "ms.");
                 
                 start = std::chrono::high_resolution_clock::now();
                 storm::models::sparse::StateLabeling quotientStateLabeling(partition.getNumberOfBlocks());
-                quotientStateLabeling.addLabel("init", ((model.getInitialStates() && partitionAsBdd).existsAbstract(model.getRowVariables()) && partitionAsBdd && representatives).existsAbstract({partition.getBlockVariable()}).toVector(odd));
-                quotientStateLabeling.addLabel("deadlock", ((model.getDeadlockStates() && partitionAsBdd).existsAbstract(model.getRowVariables()) && partitionAsBdd && representatives).existsAbstract({partition.getBlockVariable()}).toVector(odd));
+                quotientStateLabeling.addLabel("init", sparseExtractor.extractSetExists(model.getInitialStates()));
+                quotientStateLabeling.addLabel("deadlock", sparseExtractor.extractSetExists(model.getDeadlockStates()));
                 
                 for (auto const& label : preservationInformation.getLabels()) {
-                    quotientStateLabeling.addLabel(label, (model.getStates(label) && representatives).toVector(odd));
+                    quotientStateLabeling.addLabel(label, sparseExtractor.extractSetAll(model.getStates(label)));
                 }
                 for (auto const& expression : preservationInformation.getExpressions()) {
                     std::stringstream stream;
@@ -753,19 +873,39 @@ namespace storm {
                     if (quotientStateLabeling.containsLabel(expressionAsString)) {
                         STORM_LOG_WARN("Duplicate label '" << expressionAsString << "', dropping second label definition.");
                     } else {
-                        quotientStateLabeling.addLabel(stream.str(), (model.getStates(expression) && representatives).toVector(odd));
+                        quotientStateLabeling.addLabel(stream.str(), sparseExtractor.extractSetAll(model.getStates(expression)));
                     }
                 }
                 end = std::chrono::high_resolution_clock::now();
                 STORM_LOG_TRACE("Quotient labels extracted in " << std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count() << "ms.");
 
+                start = std::chrono::high_resolution_clock::now();
+                std::unordered_map<std::string, storm::models::sparse::StandardRewardModel<ValueType>> quotientRewardModels;
+                for (auto const& rewardModelName : preservationInformation.getRewardModelNames()) {
+                    auto const& rewardModel = model.getRewardModel(rewardModelName);
+                    
+                    boost::optional<std::vector<ValueType>> quotientStateRewards;
+                    if (rewardModel.hasStateRewards()) {
+                        quotientStateRewards = sparseExtractor.extractStateVector(rewardModel.getStateRewardVector());
+                    }
+                    
+                    boost::optional<std::vector<ValueType>> quotientStateActionRewards;
+                    if (rewardModel.hasStateActionRewards()) {
+                        quotientStateActionRewards = sparseExtractor.extractStateActionVector(rewardModel.getStateActionRewardVector());
+                    }
+                    
+                    quotientRewardModels.emplace(rewardModelName, storm::models::sparse::StandardRewardModel<ValueType>(std::move(quotientStateRewards), std::move(quotientStateActionRewards), boost::none));
+                }
+                start = std::chrono::high_resolution_clock::now();
+                STORM_LOG_TRACE("Reward models extracted in " << std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count() << "ms.");
+
                 std::shared_ptr<storm::models::sparse::Model<ValueType>> result;
                 if (model.getType() == storm::models::ModelType::Dtmc) {
-                    result = std::make_shared<storm::models::sparse::Dtmc<ValueType>>(std::move(quotientTransitionMatrix), std::move(quotientStateLabeling));
+                    result = std::make_shared<storm::models::sparse::Dtmc<ValueType>>(std::move(quotientTransitionMatrix), std::move(quotientStateLabeling), std::move(quotientRewardModels));
                 } else if (model.getType() == storm::models::ModelType::Ctmc) {
-                    result = std::make_shared<storm::models::sparse::Ctmc<ValueType>>(std::move(quotientTransitionMatrix), std::move(quotientStateLabeling));
+                    result = std::make_shared<storm::models::sparse::Ctmc<ValueType>>(std::move(quotientTransitionMatrix), std::move(quotientStateLabeling), std::move(quotientRewardModels));
                 } else if (model.getType() == storm::models::ModelType::Mdp) {
-                    result = std::make_shared<storm::models::sparse::Mdp<ValueType>>(std::move(quotientTransitionMatrix), std::move(quotientStateLabeling));
+                    result = std::make_shared<storm::models::sparse::Mdp<ValueType>>(std::move(quotientTransitionMatrix), std::move(quotientStateLabeling), std::move(quotientRewardModels));
                 }
                 
                 return result;
@@ -846,6 +986,7 @@ namespace storm {
                     storm::dd::Bdd<DdType> quotientTransitionMatrixBdd = quotientTransitionMatrix.notZero();
                     storm::dd::Bdd<DdType> deadlockStates = !quotientTransitionMatrixBdd.existsAbstract(blockPrimeVariableSet) && reachableStates;
                     
+                    start = std::chrono::high_resolution_clock::now();
                     std::unordered_map<std::string, storm::models::symbolic::StandardRewardModel<DdType, ValueType>> quotientRewardModels;
                     for (auto const& rewardModelName : preservationInformation.getRewardModelNames()) {
                         auto const& rewardModel = model.getRewardModel(rewardModelName);
@@ -862,7 +1003,9 @@ namespace storm {
                         
                         quotientRewardModels.emplace(rewardModelName, storm::models::symbolic::StandardRewardModel<DdType, ValueType>(quotientStateRewards, quotientStateActionRewards, boost::none));
                     }
-                    
+                    end = std::chrono::high_resolution_clock::now();
+                    STORM_LOG_TRACE("Reward models extracted in " << std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count() << "ms.");
+
                     if (modelType == storm::models::ModelType::Dtmc) {
                         return std::shared_ptr<storm::models::symbolic::Dtmc<DdType, ValueType>>(new storm::models::symbolic::Dtmc<DdType, ValueType>(model.getManager().asSharedPointer(), reachableStates, initialStates, deadlockStates, quotientTransitionMatrix, blockVariableSet, blockPrimeVariableSet, blockMetaVariablePairs, preservedLabelBdds, quotientRewardModels));
                     } else if (modelType == storm::models::ModelType::Ctmc) {
