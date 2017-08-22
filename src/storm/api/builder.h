@@ -39,12 +39,22 @@ namespace storm {
                 typename storm::builder::DdPrismModelBuilder<LibraryType, ValueType>::Options options;
                 options = typename storm::builder::DdPrismModelBuilder<LibraryType, ValueType>::Options(formulas);
                 
+                if (storm::settings::getModule<storm::settings::modules::IOSettings>().isBuildFullModelSet()) {
+                    options.buildAllLabels = true;
+                    options.buildAllRewardModels = true;
+                }
+                
                 storm::builder::DdPrismModelBuilder<LibraryType, ValueType> builder;
                 return builder.build(model.asPrismProgram(), options);
             } else {
                 STORM_LOG_THROW(model.isJaniModel(), storm::exceptions::NotSupportedException, "Building symbolic model from this model description is unsupported.");
                 typename storm::builder::DdJaniModelBuilder<LibraryType, ValueType>::Options options;
                 options = typename storm::builder::DdJaniModelBuilder<LibraryType, ValueType>::Options(formulas);
+                
+                if (storm::settings::getModule<storm::settings::modules::IOSettings>().isBuildFullModelSet()) {
+                    options.buildAllLabels = true;
+                    options.buildAllRewardModels = true;
+                }
                 
                 storm::builder::DdJaniModelBuilder<LibraryType, ValueType> builder;
                 return builder.build(model.asJaniModel(), options);

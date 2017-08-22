@@ -1854,6 +1854,7 @@ namespace storm {
                 }
             } else {
                 auto const& globalVariables = model.getGlobalVariables();
+                
                 for (auto const& rewardModelName : options.getRewardModelNames()) {
                     if (globalVariables.hasVariable(rewardModelName)) {
                         result.push_back(globalVariables.getVariable(rewardModelName).getExpressionVariable());
@@ -1866,7 +1867,12 @@ namespace storm {
                 // If no reward model was yet added, but there was one that was given in the options, we try to build the
                 // standard reward model.
                 if (result.empty() && !options.getRewardModelNames().empty()) {
-                    result.push_back(globalVariables.getTransientVariables().front().getExpressionVariable());
+                    for (auto const& variable : globalVariables.getTransientVariables()) {
+                        if (variable.isRealVariable() || variable.isUnboundedIntegerVariable()) {
+                            result.push_back(variable.getExpressionVariable());
+                            break;
+                        }
+                    }
                 }
             }
             
