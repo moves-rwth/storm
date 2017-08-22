@@ -59,6 +59,8 @@ namespace storm {
 
                 uint64_t getNrObservations() const;
 
+                std::vector<uint32_t> const& getObservations() const;
+
 
 
             protected:

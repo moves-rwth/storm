@@ -34,6 +34,7 @@
 #include "storm-cli-utilities/model-handling.h"
 
 #include "storm-pomdp/transformer/ApplyFiniteSchedulerToPomdp.h"
+#include "storm-pomdp/transformer/GlobalPOMDPSelfLoopEliminator.h"
 
 /*!
  * Initialize the settings manager.
@@ -97,8 +98,14 @@ int main(const int argc, const char** argv) {
 
         storm::cli::SymbolicInput symbolicInput = storm::cli::parseAndPreprocessSymbolicInput();
         auto model = storm::cli::buildPreprocessExportModelWithValueTypeAndDdlib<storm::dd::DdType::Sylvan, storm::RationalNumber>(symbolicInput, engine);
-        STORM_LOG_THROW(model->getType() == storm::models::ModelType::Pomdp, storm::exceptions::WrongFormatException, "Expected a POMDP.");
-        storm::transformer::ApplyFiniteSchedulerToPomdp<storm::RationalNumber> toPMCTransformer(*(model->template as<storm::models::sparse::Pomdp<storm::RationalNumber>>()));
+        STORM_LOG_THROW(model && model->getType() == storm::models::ModelType::Pomdp, storm::exceptions::WrongFormatException, "Expected a POMDP.");
+        // CHECK if prop maximizes, only apply in those situations
+        std::shared_ptr<storm::models::sparse::Pomdp<storm::RationalNumber>> pomdp = model->template as<storm::models::sparse::Pomdp<storm::RationalNumber>>();
+        storm::transformer::GlobalPOMDPSelfLoopEliminator<storm::RationalNumber> selfLoopEliminator(*pomdp);
+        pomdp = selfLoopEliminator.transform();
+
+        storm::transformer::ApplyFiniteSchedulerToPomdp<storm::RationalNumber> toPMCTransformer(*pomdp);
+
 
         if (pomdpSettings.isExportToParametricSet()) {
             auto const &pmc = toPMCTransformer.transform();

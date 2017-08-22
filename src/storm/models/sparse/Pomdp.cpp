@@ -6,12 +6,12 @@ namespace storm {
 
             template <typename ValueType, typename RewardModelType>
             Pomdp<ValueType, RewardModelType>::Pomdp(storm::storage::SparseMatrix<ValueType> const &transitionMatrix, storm::models::sparse::StateLabeling const &stateLabeling, std::unordered_map <std::string, RewardModelType> const &rewardModels) : Mdp<ValueType, RewardModelType>(transitionMatrix, stateLabeling, rewardModels, storm::models::ModelType::Pomdp) {
-                // Intentionally left blank.
+                computeNrObservations();
             }
 
             template <typename ValueType, typename RewardModelType>
             Pomdp<ValueType, RewardModelType>::Pomdp(storm::storage::SparseMatrix<ValueType> &&transitionMatrix, storm::models::sparse::StateLabeling &&stateLabeling, std::unordered_map <std::string, RewardModelType> &&rewardModels) : Mdp<ValueType, RewardModelType>(transitionMatrix, stateLabeling, rewardModels, storm::models::ModelType::Pomdp) {
-                // Intentionally left empty.
+                computeNrObservations();
             }
 
             template <typename ValueType, typename RewardModelType>
@@ -40,7 +40,7 @@ namespace storm {
                         highestEntry = entry;
                     }
                 }
-                nrObservations = highestEntry;
+                nrObservations = highestEntry + 1; // Smallest entry should be zero.
                 // In debug mode, ensure that every observability is used.
             }
 
@@ -53,6 +53,13 @@ namespace storm {
             uint64_t Pomdp<ValueType, RewardModelType>::getNrObservations() const {
                 return nrObservations;
             }
+
+            template<typename ValueType, typename RewardModelType>
+            std::vector<uint32_t> const& Pomdp<ValueType, RewardModelType>::getObservations() const {
+                return observations;
+            }
+
+
 
 
             template class Pomdp<double>;

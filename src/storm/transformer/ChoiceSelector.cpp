@@ -1,5 +1,7 @@
+#include <storm/exceptions/NotImplementedException.h>
 #include "storm/transformer/ChoiceSelector.h"
 #include "storm/models/sparse/Mdp.h"
+#include "storm/models/sparse/Pomdp.h"
 
 namespace  storm {
     namespace transformer {
@@ -18,9 +20,17 @@ namespace  storm {
             if (inputModel.hasChoiceOrigins()) {
                 newComponents.choiceOrigins = inputModel.getChoiceOrigins()->selectChoices(enabledActions);
             }
-            return std::make_shared<storm::models::sparse::Mdp<ValueType, RewardModelType>>(std::move(newComponents));
+            STORM_LOG_THROW(inputModel.getType() != storm::models::ModelType::MarkovAutomaton, storm::exceptions::NotImplementedException, "Selecting choices is not implemented for MA.");
+            if(inputModel.getType() == storm::models::ModelType::Pomdp) {
+                newComponents.observabilityClasses = static_cast<storm::models::sparse::Pomdp<ValueType,RewardModelType> const&>(inputModel).getObservations();
+                return std::make_shared<storm::models::sparse::Pomdp<ValueType, RewardModelType>>(std::move(newComponents));
+            } else {
+                return std::make_shared<storm::models::sparse::Mdp<ValueType, RewardModelType>>(std::move(newComponents));
+            }
+
         }
 
         template class ChoiceSelector<double>;
+        template class ChoiceSelector<storm::RationalNumber>;
     }
 }
