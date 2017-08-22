@@ -29,17 +29,17 @@ namespace storm {
         
         template <storm::dd::DdType DdType, typename ValueType>
         BisimulationDecomposition<DdType, ValueType>::BisimulationDecomposition(storm::models::symbolic::Model<DdType, ValueType> const& model, storm::storage::BisimulationType const& bisimulationType) : model(model), preservationInformation(model, bisimulationType), refiner(createRefiner(model, Partition<DdType, ValueType>::create(model, bisimulationType, preservationInformation))) {
-            // Intentionally left empty.
+            this->refineWrtRewardModels();
         }
         
         template <storm::dd::DdType DdType, typename ValueType>
         BisimulationDecomposition<DdType, ValueType>::BisimulationDecomposition(storm::models::symbolic::Model<DdType, ValueType> const& model, std::vector<std::shared_ptr<storm::logic::Formula const>> const& formulas, storm::storage::BisimulationType const& bisimulationType) : model(model), preservationInformation(model, formulas, bisimulationType), refiner(createRefiner(model, Partition<DdType, ValueType>::create(model, bisimulationType, preservationInformation))) {
-            // Intentionally left empty.
+            this->refineWrtRewardModels();
         }
         
         template <storm::dd::DdType DdType, typename ValueType>
         BisimulationDecomposition<DdType, ValueType>::BisimulationDecomposition(storm::models::symbolic::Model<DdType, ValueType> const& model, Partition<DdType, ValueType> const& initialPartition, bisimulation::PreservationInformation<DdType, ValueType> const& preservationInformation) : model(model), preservationInformation(preservationInformation), refiner(createRefiner(model, initialPartition)) {
-            STORM_LOG_THROW(!model.hasRewardModel(), storm::exceptions::NotSupportedException, "Symbolic bisimulation currently does not support preserving rewards.");
+            this->refineWrtRewardModels();
         }
         
         template <storm::dd::DdType DdType, typename ValueType>
@@ -77,6 +77,14 @@ namespace storm {
             STORM_LOG_TRACE("Quotient extraction done.");
             
             return quotient;
+        }
+        
+        template <storm::dd::DdType DdType, typename ValueType>
+        void BisimulationDecomposition<DdType, ValueType>::refineWrtRewardModels() {
+            for (auto const& rewardModelName : this->preservationInformation.getRewardModelNames()) {
+                auto const& rewardModel = this->model.getRewardModel(rewardModelName);
+                refiner->refineWrtRewardModel(rewardModel);
+            }
         }
         
         template class BisimulationDecomposition<storm::dd::DdType::CUDD, double>;

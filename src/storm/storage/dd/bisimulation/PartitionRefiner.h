@@ -36,7 +36,7 @@ namespace storm {
                  * Refines the partition wrt. to the reward model.
                  * @return True iff the partition is stable and no refinement was actually performed.
                  */
-                bool refineWrtRewardModel(storm::models::symbolic::Model<DdType, ValueType> const& model, storm::models::symbolic::StandardRewardModel<DdType, ValueType> const& rewardModel);
+                bool refineWrtRewardModel(storm::models::symbolic::StandardRewardModel<DdType, ValueType> const& rewardModel);
                 
                 /*!
                  * Retrieves the current state partition in the refinement process.
@@ -51,8 +51,8 @@ namespace storm {
             protected:
                 Partition<DdType, ValueType> internalRefine(SignatureComputer<DdType, ValueType>& stateSignatureComputer, SignatureRefiner<DdType, ValueType>& signatureRefiner, Partition<DdType, ValueType> const& oldPartition, Partition<DdType, ValueType> const& targetPartition, SignatureMode const& mode = SignatureMode::Eager);
                 
-                virtual bool refineWrtStateRewards(storm::models::symbolic::Model<DdType, ValueType> const& model, storm::dd::Add<DdType, ValueType> const& stateRewards);
-                virtual bool refineWrtStateActionRewards(storm::models::symbolic::Model<DdType, ValueType> const& model, storm::dd::Add<DdType, ValueType> const& stateActionRewards);
+                virtual bool refineWrtStateRewards(storm::dd::Add<DdType, ValueType> const& stateRewards);
+                virtual bool refineWrtStateActionRewards(storm::dd::Add<DdType, ValueType> const& stateActionRewards);
                 
                 // The current status.
                 Status status;

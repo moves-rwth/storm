@@ -49,8 +49,14 @@ namespace storm {
             }
             
             template<storm::dd::DdType DdType, typename ValueType>
-            bool MdpPartitionRefiner<DdType, ValueType>::refineWrtStateActionRewards(storm::models::symbolic::Model<DdType, ValueType> const& model, storm::dd::Add<DdType, ValueType> const& stateActionRewards) {
+            bool MdpPartitionRefiner<DdType, ValueType>::refineWrtStateActionRewards(storm::dd::Add<DdType, ValueType> const& stateActionRewards) {
                 Partition<DdType, ValueType> newChoicePartition = this->signatureRefiner.refine(this->choicePartition, Signature<DdType, ValueType>(stateActionRewards));
+                if (newChoicePartition == this->choicePartition) {
+                    return false;
+                } else {
+                    this->choicePartition = newChoicePartition;
+                    return true;
+                }
             }
             
             template class MdpPartitionRefiner<storm::dd::DdType::CUDD, double>;

@@ -1240,7 +1240,7 @@ namespace storm {
                         }
                         stateActionRewardDd *= stateActionDd.get();
                     } else if (generationInfo.program.getModelType() == storm::prism::Program::ModelType::DTMC || generationInfo.program.getModelType() == storm::prism::Program::ModelType::CTMC) {
-                        // For CTMCs, we need to multiply the entries with the exit rate of the corresponding action.
+                        // For DTMCs and CTMC, we need to multiply the entries with the multiplicity/exit rate of the corresponding action.
                         stateActionRewardDd *= actionDd.transitionsDd.sumAbstract(generationInfo.columnMetaVariables);
                     }
                     

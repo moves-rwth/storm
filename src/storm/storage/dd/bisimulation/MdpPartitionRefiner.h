@@ -32,7 +32,7 @@ namespace storm {
                 Partition<DdType, ValueType> const& getChoicePartition() const;
                 
             private:
-                virtual bool refineWrtStateActionRewards(storm::models::symbolic::Model<DdType, ValueType> const& model, storm::dd::Add<DdType, ValueType> const& stateActionRewards) override;
+                virtual bool refineWrtStateActionRewards(storm::dd::Add<DdType, ValueType> const& stateActionRewards) override;
                 
                 // The choice partition in the refinement process.
                 Partition<DdType, ValueType> choicePartition;

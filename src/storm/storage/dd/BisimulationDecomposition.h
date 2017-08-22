@@ -50,6 +50,8 @@ namespace storm {
             std::shared_ptr<storm::models::Model<ValueType>> getQuotient() const;
             
         private:
+            void refineWrtRewardModels();
+            
             // The model for which to compute the bisimulation decomposition.
             storm::models::symbolic::Model<DdType, ValueType> const& model;
             
