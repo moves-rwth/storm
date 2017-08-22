@@ -226,7 +226,7 @@ namespace storm {
             template<storm::dd::DdType DdType, typename ValueType>
             class InternalSparseQuotientExtractorBase {
             public:
-                InternalSparseQuotientExtractorBase(storm::models::symbolic::Model<DdType, ValueType> const& model, Partition<DdType, ValueType> const& partition, storm::dd::Bdd<DdType> const& representatives) : manager(model.getManager()), isNondeterministic(false), partition(partition), representatives(representatives), matrixEntriesCreated(false) {
+                InternalSparseQuotientExtractorBase(storm::models::symbolic::Model<DdType, ValueType> const& model, storm::dd::Bdd<DdType> const& partitionBdd, storm::dd::Bdd<DdType> const& representatives, uint64_t numberOfBlocks) : manager(model.getManager()), isNondeterministic(false), partitionBdd(partitionBdd), numberOfBlocks(numberOfBlocks), representatives(representatives), matrixEntriesCreated(false) {
                     // Create cubes.
                     rowVariablesCube = manager.getBddOne();
                     for (auto const& variable : model.getRowVariables()) {
@@ -251,6 +251,8 @@ namespace storm {
                     if (this->isNondeterministic) {
                         this->nondeterminismOdd = (model.getQualitativeTransitionMatrix().existsAbstract(model.getColumnVariables()) && this->representatives).createOdd();
                     }
+                    
+                    STORM_LOG_TRACE("Partition has " << partitionBdd.existsAbstract(model.getRowVariables()).getNonZeroCount() << " states in " << this->numberOfBlocks << " blocks.");
                 }
 
                 storm::dd::Odd const& getOdd() const {
@@ -274,7 +276,7 @@ namespace storm {
                     
                     uint64_t rowCounter = 0;
                     uint64_t lastState = this->isNondeterministic ? rowToState[rowPermutation.front()] : 0;
-                    storm::storage::SparseMatrixBuilder<ValueType> builder(matrixEntries.size(), partition.getNumberOfBlocks(), 0, true, this->isNondeterministic);
+                    storm::storage::SparseMatrixBuilder<ValueType> builder(matrixEntries.size(), this->numberOfBlocks, 0, true, this->isNondeterministic);
                     if (this->isNondeterministic) {
                         builder.newRowGroup(0);
                     }
@@ -337,7 +339,8 @@ namespace storm {
                 storm::dd::Bdd<DdType> nondeterminismVariablesCube;
                 
                 // Information about the state partition.
-                Partition<DdType, ValueType> partition;
+                storm::dd::Bdd<DdType> partitionBdd;
+                uint64_t numberOfBlocks;
                 storm::dd::Bdd<DdType> representatives;
                 storm::dd::Odd odd;
                 storm::dd::Odd nondeterminismOdd;
@@ -355,28 +358,25 @@ namespace storm {
             template<typename ValueType>
             class InternalSparseQuotientExtractor<storm::dd::DdType::CUDD, ValueType> : public InternalSparseQuotientExtractorBase<storm::dd::DdType::CUDD, ValueType> {
             public:
-                InternalSparseQuotientExtractor(storm::models::symbolic::Model<storm::dd::DdType::CUDD, ValueType> const& model, Partition<storm::dd::DdType::CUDD, ValueType> const& partition, storm::dd::Bdd<storm::dd::DdType::CUDD> const& representatives) : InternalSparseQuotientExtractorBase<storm::dd::DdType::CUDD, ValueType>(model, partition, representatives), ddman(this->manager.getInternalDdManager().getCuddManager().getManager()) {
-
-                    STORM_LOG_ASSERT(this->partition.storedAsAdd(), "Expected partition to be stored as an ADD.");
+                InternalSparseQuotientExtractor(storm::models::symbolic::Model<storm::dd::DdType::CUDD, ValueType> const& model, storm::dd::Bdd<storm::dd::DdType::CUDD> const& partitionBdd, storm::dd::Bdd<storm::dd::DdType::CUDD> const& representatives, uint64_t numberOfBlocks) : InternalSparseQuotientExtractorBase<storm::dd::DdType::CUDD, ValueType>(model, partitionBdd, representatives, numberOfBlocks), ddman(this->manager.getInternalDdManager().getCuddManager().getManager()) {
                     this->createBlockToOffsetMapping();
                 }
                 
                 storm::storage::SparseMatrix<ValueType> extractTransitionMatrix(storm::dd::Add<storm::dd::DdType::CUDD, ValueType> const& transitionMatrix) {
                     // Create the number of rows necessary for the matrix.
-                    STORM_LOG_TRACE("Partition has " << this->partition.getNumberOfStates() << " states in " << this->partition.getNumberOfBlocks() << " blocks.");
                     this->createMatrixEntryStorage();
-                    extractTransitionMatrixRec(transitionMatrix.getInternalAdd().getCuddDdNode(), this->isNondeterministic ? this->nondeterminismOdd : this->odd, 0, this->partition.asAdd().getInternalAdd().getCuddDdNode(), this->representatives.getInternalBdd().getCuddDdNode(), this->allSourceVariablesCube.getInternalBdd().getCuddDdNode(), this->nondeterminismVariablesCube.getInternalBdd().getCuddDdNode(), this->isNondeterministic ? &this->odd : nullptr, 0);
+                    extractTransitionMatrixRec(transitionMatrix.getInternalAdd().getCuddDdNode(), this->isNondeterministic ? this->nondeterminismOdd : this->odd, 0, this->partitionBdd.getInternalBdd().getCuddDdNode(), this->representatives.getInternalBdd().getCuddDdNode(), this->allSourceVariablesCube.getInternalBdd().getCuddDdNode(), this->nondeterminismVariablesCube.getInternalBdd().getCuddDdNode(), this->isNondeterministic ? &this->odd : nullptr, 0);
                     return this->createMatrixFromEntries();
                 }
                 
             private:
                 void createBlockToOffsetMapping() {
-                    this->createBlockToOffsetMappingRec(this->partition.asAdd().getInternalAdd().getCuddDdNode(), this->representatives.getInternalBdd().getCuddDdNode(), this->rowVariablesCube.getInternalBdd().getCuddDdNode(), this->odd, 0);
-                    STORM_LOG_ASSERT(blockToOffset.size() == this->partition.getNumberOfBlocks(), "Mismatching block-to-offset mapping: " << blockToOffset.size() << " vs. " << this->partition.getNumberOfBlocks() << ".");
+                    this->createBlockToOffsetMappingRec(this->partitionBdd.getInternalBdd().getCuddDdNode(), this->representatives.getInternalBdd().getCuddDdNode(), this->rowVariablesCube.getInternalBdd().getCuddDdNode(), this->odd, 0);
+                    STORM_LOG_ASSERT(blockToOffset.size() == this->numberOfBlocks, "Mismatching block-to-offset mapping: " << blockToOffset.size() << " vs. " << this->numberOfBlocks << ".");
                 }
                 
                 void createBlockToOffsetMappingRec(DdNodePtr partitionNode, DdNodePtr representativesNode, DdNodePtr variables, storm::dd::Odd const& odd, uint64_t offset) {
-                    STORM_LOG_ASSERT(partitionNode != Cudd_ReadZero(ddman) || representativesNode == Cudd_ReadLogicZero(ddman), "Expected representative to be zero if the partition is zero.");
+                    STORM_LOG_ASSERT(partitionNode != Cudd_ReadLogicZero(ddman) || representativesNode == Cudd_ReadLogicZero(ddman), "Expected representative to be zero if the partition is zero.");
                     if (representativesNode == Cudd_ReadLogicZero(ddman)) {
                         return;
                     }
@@ -389,9 +389,14 @@ namespace storm {
                         STORM_LOG_ASSERT(!odd.isTerminalNode(), "Expected non-terminal node.");
                         DdNodePtr partitionT;
                         DdNodePtr partitionE;
-                        if (Cudd_NodeReadIndex(partitionNode) == Cudd_NodeReadIndex(variables) + 1) {
+                        if (Cudd_NodeReadIndex(partitionNode) == Cudd_NodeReadIndex(variables)) {
                             partitionT = Cudd_T(partitionNode);
                             partitionE = Cudd_E(partitionNode);
+
+                            if (Cudd_IsComplement(partitionNode)) {
+                                partitionE = Cudd_Not(partitionE);
+                                partitionT = Cudd_Not(partitionT);
+                            }
                         } else {
                             partitionT = partitionE = partitionNode;
                         }
@@ -401,13 +406,13 @@ namespace storm {
                         if (Cudd_NodeReadIndex(representativesNode) == Cudd_NodeReadIndex(variables)) {
                             representativesT = Cudd_T(representativesNode);
                             representativesE = Cudd_E(representativesNode);
+                            
+                            if (Cudd_IsComplement(representativesNode)) {
+                                representativesE = Cudd_Not(representativesE);
+                                representativesT = Cudd_Not(representativesT);
+                            }
                         } else {
                             representativesT = representativesE = representativesNode;
-                        }
-                        
-                        if (representativesT != representativesE && Cudd_IsComplement(representativesNode)) {
-                            representativesE = Cudd_Not(representativesE);
-                            representativesT = Cudd_Not(representativesT);
                         }
                         
                         createBlockToOffsetMappingRec(partitionE, representativesE, Cudd_T(variables), odd.getElseSuccessor(), offset);
@@ -487,10 +492,15 @@ namespace storm {
                             
                             DdNodePtr targetT;
                             DdNodePtr targetE;
-                            if (Cudd_NodeReadIndex(targetPartitionNode) == Cudd_NodeReadIndex(variables) + 1) {
+                            if (Cudd_NodeReadIndex(targetPartitionNode) == Cudd_NodeReadIndex(variables)) {
                                 // Node was not skipped in target partition.
                                 targetT = Cudd_T(targetPartitionNode);
                                 targetE = Cudd_E(targetPartitionNode);
+                                
+                                if (Cudd_IsComplement(targetPartitionNode)) {
+                                    targetT = Cudd_Not(targetT);
+                                    targetE = Cudd_Not(targetE);
+                                }
                             } else {
                                 // Node was skipped in target partition.
                                 targetT = targetE = targetPartitionNode;
@@ -529,23 +539,21 @@ namespace storm {
             template<typename ValueType>
             class InternalSparseQuotientExtractor<storm::dd::DdType::Sylvan, ValueType> : public InternalSparseQuotientExtractorBase<storm::dd::DdType::Sylvan, ValueType> {
             public:
-                InternalSparseQuotientExtractor(storm::models::symbolic::Model<storm::dd::DdType::Sylvan, ValueType> const& model, Partition<storm::dd::DdType::Sylvan, ValueType> const& partition, storm::dd::Bdd<storm::dd::DdType::Sylvan> const& representatives) : InternalSparseQuotientExtractorBase<storm::dd::DdType::Sylvan, ValueType>(model, partition, representatives) {
-                    
-                    STORM_LOG_ASSERT(partition.storedAsBdd(), "Expected partition stored as BDD.");
+                InternalSparseQuotientExtractor(storm::models::symbolic::Model<storm::dd::DdType::Sylvan, ValueType> const& model, storm::dd::Bdd<storm::dd::DdType::Sylvan> const& partitionBdd, storm::dd::Bdd<storm::dd::DdType::Sylvan> const& representatives, uint64_t numberOfBlocks) : InternalSparseQuotientExtractorBase<storm::dd::DdType::Sylvan, ValueType>(model, partitionBdd, representatives, numberOfBlocks) {
                     this->createBlockToOffsetMapping();
                 }
                 
                 storm::storage::SparseMatrix<ValueType> extractTransitionMatrix(storm::dd::Add<storm::dd::DdType::Sylvan, ValueType> const& transitionMatrix) {
                     // Create the number of rows necessary for the matrix.
                     this->createMatrixEntryStorage();
-                    extractTransitionMatrixRec(transitionMatrix.getInternalAdd().getSylvanMtbdd().GetMTBDD(), this->isNondeterministic ? this->nondeterminismOdd : this->odd, 0, this->partition.asBdd().getInternalBdd().getSylvanBdd().GetBDD(), this->representatives.getInternalBdd().getSylvanBdd().GetBDD(), this->allSourceVariablesCube.getInternalBdd().getSylvanBdd().GetBDD(), this->nondeterminismVariablesCube.getInternalBdd().getSylvanBdd().GetBDD(), this->isNondeterministic ? &this->odd : nullptr, 0);
+                    extractTransitionMatrixRec(transitionMatrix.getInternalAdd().getSylvanMtbdd().GetMTBDD(), this->isNondeterministic ? this->nondeterminismOdd : this->odd, 0, this->partitionBdd.getInternalBdd().getSylvanBdd().GetBDD(), this->representatives.getInternalBdd().getSylvanBdd().GetBDD(), this->allSourceVariablesCube.getInternalBdd().getSylvanBdd().GetBDD(), this->nondeterminismVariablesCube.getInternalBdd().getSylvanBdd().GetBDD(), this->isNondeterministic ? &this->odd : nullptr, 0);
                     return this->createMatrixFromEntries();
                 }
                 
             private:
                 void createBlockToOffsetMapping() {
-                    this->createBlockToOffsetMappingRec(this->partition.asBdd().getInternalBdd().getSylvanBdd().GetBDD(), this->representatives.getInternalBdd().getSylvanBdd().GetBDD(), this->rowVariablesCube.getInternalBdd().getSylvanBdd().GetBDD(), this->odd, 0);
-                    STORM_LOG_ASSERT(blockToOffset.size() == this->partition.getNumberOfBlocks(), "Mismatching block-to-offset mapping: " << blockToOffset.size() << " vs. " << this->partition.getNumberOfBlocks() << ".");
+                    this->createBlockToOffsetMappingRec(this->partitionBdd.getInternalBdd().getSylvanBdd().GetBDD(), this->representatives.getInternalBdd().getSylvanBdd().GetBDD(), this->rowVariablesCube.getInternalBdd().getSylvanBdd().GetBDD(), this->odd, 0);
+                    STORM_LOG_ASSERT(blockToOffset.size() == this->numberOfBlocks, "Mismatching block-to-offset mapping: " << blockToOffset.size() << " vs. " << this->numberOfBlocks << ".");
                 }
                 
                 void createBlockToOffsetMappingRec(BDD partitionNode, BDD representativesNode, BDD variables, storm::dd::Odd const& odd, uint64_t offset) {
@@ -562,7 +570,7 @@ namespace storm {
                         STORM_LOG_ASSERT(!odd.isTerminalNode(), "Expected non-terminal node.");
                         BDD partitionT;
                         BDD partitionE;
-                        if (sylvan_var(partitionNode) == sylvan_var(variables) + 1) {
+                        if (sylvan_var(partitionNode) == sylvan_var(variables)) {
                             partitionT = sylvan_high(partitionNode);
                             partitionE = sylvan_low(partitionNode);
                         } else {
@@ -655,7 +663,7 @@ namespace storm {
                             
                             BDD targetT;
                             BDD targetE;
-                            if (sylvan_var(targetPartitionNode) == sylvan_var(variables) + 1) {
+                            if (sylvan_var(targetPartitionNode) == sylvan_var(variables)) {
                                 // Node was not skipped in target partition.
                                 targetT = sylvan_high(targetPartitionNode);
                                 targetE = sylvan_low(targetPartitionNode);
@@ -720,10 +728,9 @@ namespace storm {
 
                 auto start = std::chrono::high_resolution_clock::now();
                 auto representatives = InternalRepresentativeComputer<DdType>(partitionAsBdd, model.getRowVariables()).getRepresentatives();
-                representatives.template toAdd<ValueType>().exportToDot("repr.dot");
                 STORM_LOG_ASSERT(representatives.getNonZeroCount() == partition.getNumberOfBlocks(), "Representatives size does not match that of the partition: " << representatives.getNonZeroCount() << " vs. " << partition.getNumberOfBlocks() << ".");
                 STORM_LOG_ASSERT((representatives && partitionAsBdd).existsAbstract(model.getRowVariables()) == partitionAsBdd.existsAbstract(model.getRowVariables()), "Representatives do not cover all blocks.");
-                InternalSparseQuotientExtractor<DdType, ValueType> sparseExtractor(model, partition, representatives);
+                InternalSparseQuotientExtractor<DdType, ValueType> sparseExtractor(model, partitionAsBdd, representatives, partition.getNumberOfBlocks());
                 storm::dd::Odd const& odd = sparseExtractor.getOdd();
                 STORM_LOG_ASSERT(odd.getTotalOffset() == representatives.getNonZeroCount(), "Mismatching ODD.");
                 storm::storage::SparseMatrix<ValueType> quotientTransitionMatrix = sparseExtractor.extractTransitionMatrix(model.getTransitionMatrix());
