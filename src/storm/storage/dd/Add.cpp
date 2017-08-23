@@ -831,8 +831,8 @@ namespace storm {
         }
 
         template<DdType LibraryType, typename ValueType>
-        void Add<LibraryType, ValueType>::exportToDot(std::string const& filename) const {
-            internalAdd.exportToDot(filename, this->getDdManager().getDdVariableNames());
+        void Add<LibraryType, ValueType>::exportToDot(std::string const& filename, bool showVariablesIfPossible) const {
+            internalAdd.exportToDot(filename, this->getDdManager().getDdVariableNames(), showVariablesIfPossible);
         }
         
         template<DdType LibraryType, typename ValueType>

@@ -179,7 +179,7 @@ namespace storm {
             return static_cast<uint_fast64_t>(ddManager->getCuddManager().ReadPerm(this->getIndex()));
         }
         
-        void InternalBdd<DdType::CUDD>::exportToDot(std::string const& filename, std::vector<std::string> const& ddVariableNamesAsStrings) const {
+        void InternalBdd<DdType::CUDD>::exportToDot(std::string const& filename, std::vector<std::string> const& ddVariableNamesAsStrings, bool showVariablesIfPossible) const {
             // Build the name input of the DD.
             std::vector<char*> ddNames;
             std::string ddName("f");
@@ -196,7 +196,11 @@ namespace storm {
             // Open the file, dump the DD and close it again.
             std::vector<cudd::BDD> cuddBddVector = { this->getCuddBdd() };
             FILE* filePointer = fopen(filename.c_str() , "w");
-            ddManager->getCuddManager().DumpDot(cuddBddVector, &ddVariableNames[0], &ddNames[0], filePointer);
+            if (showVariablesIfPossible) {
+                ddManager->getCuddManager().DumpDot(cuddBddVector, ddVariableNames.data(), &ddNames[0], filePointer);
+            } else {
+                ddManager->getCuddManager().DumpDot(cuddBddVector, nullptr, &ddNames[0], filePointer);
+            }
             fclose(filePointer);
             
             // Finally, delete the names.

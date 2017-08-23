@@ -337,7 +337,7 @@ namespace storm {
             
             virtual uint_fast64_t getLevel() const override;
             
-            virtual void exportToDot(std::string const& filename) const override;
+            virtual void exportToDot(std::string const& filename, bool showVariablesIfPossible = true) const override;
             
             /*!
              * Retrieves the cube of all given meta variables.

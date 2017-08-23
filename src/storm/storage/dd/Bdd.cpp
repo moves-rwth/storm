@@ -380,8 +380,8 @@ namespace storm {
         }
         
         template<DdType LibraryType>
-        void Bdd<LibraryType>::exportToDot(std::string const& filename) const {
-            internalBdd.exportToDot(filename, this->getDdManager().getDdVariableNames());
+        void Bdd<LibraryType>::exportToDot(std::string const& filename, bool showVariablesIfPossible) const {
+            internalBdd.exportToDot(filename, this->getDdManager().getDdVariableNames(), showVariablesIfPossible);
         }
         
         template<DdType LibraryType>

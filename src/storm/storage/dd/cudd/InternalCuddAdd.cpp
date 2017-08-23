@@ -322,7 +322,7 @@ namespace storm {
         }
         
         template<typename ValueType>
-        void InternalAdd<DdType::CUDD, ValueType>::exportToDot(std::string const& filename, std::vector<std::string> const& ddVariableNamesAsStrings) const {
+        void InternalAdd<DdType::CUDD, ValueType>::exportToDot(std::string const& filename, std::vector<std::string> const& ddVariableNamesAsStrings, bool showVariablesIfPossible) const {
             // Build the name input of the DD.
             std::vector<char*> ddNames;
             std::string ddName("f");
@@ -339,7 +339,11 @@ namespace storm {
             // Open the file, dump the DD and close it again.
             FILE* filePointer = fopen(filename.c_str() , "w");
             std::vector<cudd::ADD> cuddAddVector = { this->getCuddAdd() };
-            ddManager->getCuddManager().DumpDot(cuddAddVector, &ddVariableNames[0], &ddNames[0], filePointer);
+            if (showVariablesIfPossible) {
+                ddManager->getCuddManager().DumpDot(cuddAddVector, ddVariableNames.data(), &ddNames[0], filePointer);
+            } else {
+                ddManager->getCuddManager().DumpDot(cuddAddVector, nullptr, &ddNames[0], filePointer);
+            }
             fclose(filePointer);
             
             // Finally, delete the names.

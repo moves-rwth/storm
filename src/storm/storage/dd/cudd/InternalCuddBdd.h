@@ -327,7 +327,7 @@ namespace storm {
              * @param filename The name of the file to which the BDD is to be exported.
              * @param ddVariableNamesAsStrings The names of the variables to display in the dot file.
              */
-            void exportToDot(std::string const& filename, std::vector<std::string> const& ddVariableNamesAsStrings) const;
+            void exportToDot(std::string const& filename, std::vector<std::string> const& ddVariableNamesAsStrings, bool showVariablesIfPossible = true) const;
                         
             /*!
              * Converts a BDD to an equivalent ADD.

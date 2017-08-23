@@ -81,7 +81,7 @@ namespace storm {
                     result |= refineWrtStateRewards(rewardModel.getStateRewardVector());
                 }
                 if (rewardModel.hasStateActionRewards()) {
-                    result |= refineWrtStateRewards(rewardModel.getStateActionRewardVector());
+                    result |= refineWrtStateActionRewards(rewardModel.getStateActionRewardVector());
                 }
                 return result;
             }

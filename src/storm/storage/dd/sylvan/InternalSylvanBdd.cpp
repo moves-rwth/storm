@@ -232,7 +232,7 @@ namespace storm {
             return this->getIndex();
         }
         
-        void InternalBdd<DdType::Sylvan>::exportToDot(std::string const& filename, std::vector<std::string> const&) const {
+        void InternalBdd<DdType::Sylvan>::exportToDot(std::string const& filename, std::vector<std::string> const&, bool) const {
             FILE* filePointer = fopen(filename.c_str() , "w");
             this->sylvanBdd.PrintDot(filePointer);
             fclose(filePointer);

@@ -497,7 +497,7 @@ namespace storm {
              * @param filename The name of the file to which the DD is to be exported.
              * @param ddVariableNamesAsString The names of the DD variables to display in the dot file.
              */
-            void exportToDot(std::string const& filename, std::vector<std::string> const& ddVariableNamesAsStrings) const;
+            void exportToDot(std::string const& filename, std::vector<std::string> const& ddVariableNamesAsStrings, bool showVariablesIfPossible = true) const;
             
             /*!
              * Retrieves an iterator that points to the first meta variable assignment with a non-zero function value.

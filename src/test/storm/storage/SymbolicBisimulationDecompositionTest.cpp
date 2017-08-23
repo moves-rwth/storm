@@ -116,7 +116,10 @@ TEST(SymbolicModelBisimulationDecomposition, AsynchronousLeader_Cudd) {
     // Preprocess model to substitute all constants.
     smd = smd.preprocess();
 
-    std::shared_ptr<storm::models::symbolic::Model<storm::dd::DdType::CUDD, double>> model = storm::builder::DdPrismModelBuilder<storm::dd::DdType::CUDD, double>().build(smd.asPrismProgram());
+    storm::parser::FormulaParser formulaParser;
+    std::shared_ptr<storm::logic::Formula const> formula = formulaParser.parseSingleFormulaFromString("Rmax=? [F \"elected\"]");
+    
+    std::shared_ptr<storm::models::symbolic::Model<storm::dd::DdType::CUDD, double>> model = storm::builder::DdPrismModelBuilder<storm::dd::DdType::CUDD, double>().build(smd.asPrismProgram(), *formula);
     
     storm::dd::BisimulationDecomposition<storm::dd::DdType::CUDD, double> decomposition(*model, storm::storage::BisimulationType::Strong);
     decomposition.compute();
@@ -128,9 +131,6 @@ TEST(SymbolicModelBisimulationDecomposition, AsynchronousLeader_Cudd) {
     EXPECT_TRUE(quotient->isSymbolicModel());
     EXPECT_EQ(500ul, (quotient->as<storm::models::symbolic::Mdp<storm::dd::DdType::CUDD, double>>()->getNumberOfChoices()));
     
-    storm::parser::FormulaParser formulaParser;
-    std::shared_ptr<storm::logic::Formula const> formula = formulaParser.parseSingleFormulaFromString("Rmax=? [F \"elected\"]");
-    
     std::vector<std::shared_ptr<storm::logic::Formula const>> formulas;
     formulas.push_back(formula);
     
@@ -138,9 +138,9 @@ TEST(SymbolicModelBisimulationDecomposition, AsynchronousLeader_Cudd) {
     decomposition2.compute();
     quotient = decomposition2.getQuotient();
     
-    EXPECT_EQ(19ul, quotient->getNumberOfStates());
-    EXPECT_EQ(58ul, quotient->getNumberOfTransitions());
+    EXPECT_EQ(252ul, quotient->getNumberOfStates());
+    EXPECT_EQ(624ul, quotient->getNumberOfTransitions());
     EXPECT_EQ(storm::models::ModelType::Mdp, quotient->getType());
     EXPECT_TRUE(quotient->isSymbolicModel());
-    EXPECT_EQ(34ul, (quotient->as<storm::models::symbolic::Mdp<storm::dd::DdType::CUDD, double>>()->getNumberOfChoices()));
+    EXPECT_EQ(500ul, (quotient->as<storm::models::symbolic::Mdp<storm::dd::DdType::CUDD, double>>()->getNumberOfChoices()));
 }

@@ -783,7 +783,7 @@ namespace storm {
         }
         
         template<typename ValueType>
-        void InternalAdd<DdType::Sylvan, ValueType>::exportToDot(std::string const& filename, std::vector<std::string> const&) const {
+        void InternalAdd<DdType::Sylvan, ValueType>::exportToDot(std::string const& filename, std::vector<std::string> const&, bool) const {
             // Open the file, dump the DD and close it again.
             FILE* filePointer = fopen(filename.c_str() , "w");
             this->sylvanMtbdd.PrintDot(filePointer);

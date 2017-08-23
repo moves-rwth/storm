@@ -100,7 +100,7 @@ namespace storm {
             
             template<storm::dd::DdType DdType, typename ValueType>
             Partition<DdType, ValueType> Partition<DdType, ValueType>::createTrivialChoicePartition(storm::models::symbolic::NondeterministicModel<DdType, ValueType> const& model, std::pair<storm::expressions::Variable, storm::expressions::Variable> const& blockVariables) {
-                storm::dd::Bdd<DdType> choicePartitionBdd = !model.getIllegalSuccessorMask() && model.getManager().getEncoding(blockVariables.first, 0, false);
+                storm::dd::Bdd<DdType> choicePartitionBdd = !model.getIllegalMask().renameVariables(model.getRowVariables(), model.getColumnVariables()) && model.getManager().getEncoding(blockVariables.first, 0, false);
                 
                 // Store the partition as an ADD only in the case of CUDD.
                 if (DdType == storm::dd::DdType::CUDD) {

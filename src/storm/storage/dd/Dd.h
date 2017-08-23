@@ -102,7 +102,7 @@ namespace storm {
              *
              * @param filename The name of the file to which the DD is to be exported.
              */
-            virtual void exportToDot(std::string const& filename) const = 0;
+            virtual void exportToDot(std::string const& filename, bool showVariablesIfPossible = true) const = 0;
             
             /*!
              * Retrieves the manager that is responsible for this DD.
