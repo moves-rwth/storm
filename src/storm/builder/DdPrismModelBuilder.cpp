@@ -1057,10 +1057,21 @@ namespace storm {
         }
         
         template <storm::dd::DdType Type, typename ValueType>
-        storm::dd::Add<Type, ValueType> DdPrismModelBuilder<Type, ValueType>::createSystemFromModule(GenerationInformation& generationInfo, ModuleDecisionDiagram const& module) {
+        storm::dd::Add<Type, ValueType> DdPrismModelBuilder<Type, ValueType>::createSystemFromModule(GenerationInformation& generationInfo, ModuleDecisionDiagram& module) {
+            storm::dd::Add<Type, ValueType> result;
+            
+            // Make sure all actions contain all necessary meta variables.
+            module.independentAction.ensureContainsVariables(generationInfo.rowMetaVariables, generationInfo.columnMetaVariables);
+            for (auto& synchronizingAction : module.synchronizingActionToDecisionDiagramMap) {
+                synchronizingAction.second.ensureContainsVariables(generationInfo.rowMetaVariables, generationInfo.columnMetaVariables);
+            }
+            
+
+
+            
             // If the model is an MDP, we need to encode the nondeterminism using additional variables.
             if (generationInfo.program.getModelType() == storm::prism::Program::ModelType::MDP) {
-                storm::dd::Add<Type, ValueType> result = generationInfo.manager->template getAddZero<ValueType>();
+                result = generationInfo.manager->template getAddZero<ValueType>();
                 
                 // First, determine the highest number of nondeterminism variables that is used in any action and make
                 // all actions use the same amout of nondeterminism variables.
@@ -1080,6 +1091,7 @@ namespace storm {
                 for (uint_fast64_t i = module.independentAction.numberOfUsedNondeterminismVariables; i < numberOfUsedNondeterminismVariables; ++i) {
                     nondeterminismEncoding *= generationInfo.manager->getEncoding(generationInfo.nondeterminismMetaVariables[i], 0).template toAdd<ValueType>();
                 }
+
                 result = identityEncoding * module.independentAction.transitionsDd * nondeterminismEncoding;
                 
                 // Add variables to synchronized action DDs.
@@ -1112,8 +1124,6 @@ namespace storm {
                 for (auto const& synchronizingAction : synchronizingActionToDdMap) {
                     result += synchronizingAction.second;
                 }
-                
-                return result;
             } else if (generationInfo.program.getModelType() == storm::prism::Program::ModelType::DTMC || generationInfo.program.getModelType() == storm::prism::Program::ModelType::CTMC) {
                 // Simply add all actions, but make sure to include the missing global variable identities.
                 
@@ -1126,8 +1136,7 @@ namespace storm {
                     identityEncoding *= generationInfo.variableToIdentityMap.at(variable);
                 }
 
-                storm::dd::Add<Type, ValueType> result = identityEncoding * module.independentAction.transitionsDd;
-                
+                result = identityEncoding * module.independentAction.transitionsDd;
                 for (auto const& synchronizingAction : module.synchronizingActionToDecisionDiagramMap) {
                     // Compute missing global variable identities in synchronizing actions.
                     missingIdentities = std::set<storm::expressions::Variable>();
@@ -1140,10 +1149,10 @@ namespace storm {
                     
                     result += identityEncoding * synchronizingAction.second.transitionsDd;
                 }
-                return result;
             } else {
                 STORM_LOG_THROW(false, storm::exceptions::InvalidArgumentException, "Illegal model type.");
             }
+            return result;
         }
         
         template <storm::dd::DdType Type, typename ValueType>

@@ -896,7 +896,7 @@ namespace storm {
                     
                     quotientRewardModels.emplace(rewardModelName, storm::models::sparse::StandardRewardModel<ValueType>(std::move(quotientStateRewards), std::move(quotientStateActionRewards), boost::none));
                 }
-                start = std::chrono::high_resolution_clock::now();
+                end = std::chrono::high_resolution_clock::now();
                 STORM_LOG_TRACE("Reward models extracted in " << std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count() << "ms.");
 
                 std::shared_ptr<storm::models::sparse::Model<ValueType>> result;

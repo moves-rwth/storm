@@ -78,7 +78,7 @@ namespace storm {
         template<DdType LibraryType>
         std::set<storm::expressions::Variable> Dd<LibraryType>::subtractMetaVariables(storm::dd::Dd<LibraryType> const& first, storm::dd::Dd<LibraryType> const& second) {
             bool includesAllMetaVariables = std::includes(first.getContainedMetaVariables().begin(), first.getContainedMetaVariables().end(), second.getContainedMetaVariables().begin(), second.getContainedMetaVariables().end());
-            STORM_LOG_WARN_COND(includesAllMetaVariables, "Subtracting from meta variables that are not contained in the DD.");
+            STORM_LOG_THROW(includesAllMetaVariables, storm::exceptions::InvalidArgumentException, "Cannot subtract meta variables that are not contained in the DD.");
             std::set<storm::expressions::Variable> metaVariables;
             std::set_difference(first.getContainedMetaVariables().begin(), first.getContainedMetaVariables().end(), second.getContainedMetaVariables().begin(), second.getContainedMetaVariables().end(), std::inserter(metaVariables, metaVariables.begin()));
             return metaVariables;

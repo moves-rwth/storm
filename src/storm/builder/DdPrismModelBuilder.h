@@ -130,6 +130,12 @@ namespace storm {
                     // Intentionally left empty.
                 }
                 
+                void ensureContainsVariables(std::set<storm::expressions::Variable> const& rowMetaVariables, std::set<storm::expressions::Variable> const& columnMetaVariables) {
+                    guardDd.addMetaVariables(rowMetaVariables);
+                    transitionsDd.addMetaVariables(rowMetaVariables);
+                    transitionsDd.addMetaVariables(columnMetaVariables);
+                }
+                
                 ActionDecisionDiagram(ActionDecisionDiagram const& other) = default;
                 ActionDecisionDiagram& operator=(ActionDecisionDiagram const& other) = default;
                 
@@ -228,7 +234,7 @@ namespace storm {
 
             static storm::dd::Add<Type, ValueType> getSynchronizationDecisionDiagram(GenerationInformation& generationInfo, uint_fast64_t actionIndex = 0);
             
-            static storm::dd::Add<Type, ValueType> createSystemFromModule(GenerationInformation& generationInfo, ModuleDecisionDiagram const& module);
+            static storm::dd::Add<Type, ValueType> createSystemFromModule(GenerationInformation& generationInfo, ModuleDecisionDiagram& module);
             
             static std::unordered_map<std::string, storm::models::symbolic::StandardRewardModel<Type, ValueType>> createRewardModelDecisionDiagrams(std::vector<std::reference_wrapper<storm::prism::RewardModel const>> const& selectedRewardModels, SystemResult& system, GenerationInformation& generationInfo, ModuleDecisionDiagram const& globalModule, storm::dd::Add<Type, ValueType> const& reachableStatesAdd, storm::dd::Add<Type, ValueType> const& transitionMatrix);
 
