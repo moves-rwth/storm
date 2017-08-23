@@ -26,6 +26,9 @@
 #include "sylvan_table.h"
 #include "sylvan_int.h"
 
+// FIXME: remove
+#include "storm/storage/dd/DdManager.h"
+
 namespace storm {
     namespace dd {
         namespace bisimulation {
@@ -58,7 +61,7 @@ namespace storm {
             template<typename ValueType>
             class InternalSignatureRefiner<storm::dd::DdType::CUDD, ValueType> {
             public:
-                InternalSignatureRefiner(storm::dd::DdManager<storm::dd::DdType::CUDD> const& manager, storm::expressions::Variable const& blockVariable, storm::dd::Bdd<storm::dd::DdType::CUDD> const& nondeterminismVariables, storm::dd::Bdd<storm::dd::DdType::CUDD> const& nonBlockVariables) : manager(manager), internalDdManager(manager.getInternalDdManager()), blockVariable(blockVariable), nondeterminismVariables(nondeterminismVariables), nonBlockVariables(nonBlockVariables), nextFreeBlockIndex(0), numberOfRefinements(0), lastNumberOfVisitedNodes(10000), signatureCache(lastNumberOfVisitedNodes), reuseBlocksCache(lastNumberOfVisitedNodes) {
+                InternalSignatureRefiner(storm::dd::DdManager<storm::dd::DdType::CUDD> const& manager, storm::expressions::Variable const& blockVariable, storm::dd::Bdd<storm::dd::DdType::CUDD> const& nondeterminismVariables, storm::dd::Bdd<storm::dd::DdType::CUDD> const& nonBlockVariables) : manager(manager), internalDdManager(manager.getInternalDdManager()), ddman(internalDdManager.getCuddManager().getManager()), blockVariable(blockVariable), nondeterminismVariables(nondeterminismVariables), nonBlockVariables(nonBlockVariables), nextFreeBlockIndex(0), numberOfRefinements(0), lastNumberOfVisitedNodes(10000), signatureCache(lastNumberOfVisitedNodes), reuseBlocksCache(lastNumberOfVisitedNodes) {
 
                     // Initialize precomputed data.
                     auto const& ddMetaVariable = manager.getMetaVariable(blockVariable);
@@ -81,6 +84,7 @@ namespace storm {
                     // Clear the caches.
                     signatureCache.clear();
                     reuseBlocksCache.clear();
+                    std::cout << "clearing reuse, " << reuseBlocksCache.size() << std::endl;
                     nextFreeBlockIndex = oldPartition.getNextFreeBlockIndex();
 
                     // Perform the actual recursive refinement step.
@@ -98,22 +102,20 @@ namespace storm {
                         blockEncoding[blockDdVariableIndex] = blockIndex & 1 ? 1 : 0;
                         blockIndex >>= 1;
                     }
-                    ::DdManager* ddMan = internalDdManager.getCuddManager().getManager();
-                    DdNodePtr bddEncoding = Cudd_CubeArrayToBdd(ddMan, blockEncoding.data());
+                    DdNodePtr bddEncoding = Cudd_CubeArrayToBdd(ddman, blockEncoding.data());
                     Cudd_Ref(bddEncoding);
-                    DdNodePtr result = Cudd_BddToAdd(ddMan, bddEncoding);
+                    DdNodePtr result = Cudd_BddToAdd(ddman, bddEncoding);
                     Cudd_Ref(result);
-                    Cudd_RecursiveDeref(ddMan, bddEncoding);
+                    Cudd_RecursiveDeref(ddman, bddEncoding);
                     Cudd_Deref(result);
                     return result;
                 }
                 
                 DdNodePtr refine(DdNode* partitionNode, DdNode* signatureNode, DdNode* nondeterminismVariablesNode, DdNode* nonBlockVariablesNode) {
-                    ::DdManager* ddman = internalDdManager.getCuddManager().getManager();
-                    
                     // If we arrived at the constant zero node, then this was an illegal state encoding (we require
                     // all states to be non-deadlock).
                     if (partitionNode == Cudd_ReadZero(ddman)) {
+                        std::cout << "returning zero " << partitionNode << std::endl;
                         return partitionNode;
                     }
                     
@@ -121,6 +123,7 @@ namespace storm {
                     auto nodePair = std::make_pair(signatureNode, partitionNode);
                     auto it = signatureCache.find(nodePair);
                     if (it != signatureCache.end()) {
+                        std::cout << "cache hit " << it->second << std::endl;
                         // If so, we return the corresponding result.
                         return it->second;
                     }
@@ -129,13 +132,18 @@ namespace storm {
                     if (Cudd_IsConstant(nonBlockVariablesNode)) {
                         // If this is the first time (in this traversal) that we encounter this signature, we check
                         // whether we can assign the old block number to it.
+                        std::cout << "reuse size: " << reuseBlocksCache.size() << std::endl;
                         auto& reuseEntry = reuseBlocksCache[partitionNode];
+                        std::cout << "reused? " << reuseEntry.isReused() << std::endl;
                         if (!reuseEntry.isReused()) {
                             reuseEntry.setReused();
+                            std::cout << "setting " << partitionNode << " to being reused" << std::endl;
                             signatureCache[nodePair] = partitionNode;
+                            std::cout << "reuse cache hit " << partitionNode << std::endl;
                             return partitionNode;
                         } else {
                             DdNode* result = encodeBlock(nextFreeBlockIndex++);
+                            std::cout << "block encoding " << result << std::endl;
                             signatureCache[nodePair] = result;
                             return result;
                         }
@@ -190,7 +198,10 @@ namespace storm {
                         Cudd_Ref(thenResult);
                         DdNode* elseResult = refine(partitionElse, signatureElse, offset == 0 ? Cudd_T(nondeterminismVariablesNode) : nondeterminismVariablesNode, Cudd_T(nonBlockVariablesNode));
                         Cudd_Ref(elseResult);
-                        
+
+                        std::cout << "got then " << thenResult << std::endl;
+                        std::cout << "got else " << elseResult << std::endl;
+
                         DdNode* result;
                         if (thenResult == elseResult) {
                             Cudd_Deref(thenResult);
@@ -200,6 +211,7 @@ namespace storm {
                             // Get the node to connect the subresults.
                             bool complemented = Cudd_IsComplement(thenResult);
                             result = cuddUniqueInter(ddman, Cudd_NodeReadIndex(nonBlockVariablesNode) + offset, Cudd_Regular(thenResult), complemented ? Cudd_Not(elseResult) : elseResult);
+                            std::cout << "got " << result << " as a result node, idx " << (Cudd_NodeReadIndex(nonBlockVariablesNode) + offset) << " and children " << Cudd_NodeReadIndex(thenResult) << " [" << Cudd_IsConstant(thenResult) << "] (" << thenResult << ") and " << Cudd_NodeReadIndex(elseResult) << " [" << Cudd_IsConstant(elseResult) << "] (" << elseResult << ")" << std::endl;
                             if (complemented) {
                                 result = Cudd_Not(result);
                             }
@@ -210,12 +222,14 @@ namespace storm {
                         // Store the result in the cache.
                         signatureCache[nodePair] = result;
                         
+                        std::cout << "returning " << result << " with index " << Cudd_NodeReadIndex(result) << ", const? " << Cudd_IsConstant(result) << std::endl;
                         return result;
                     }
                 }
                 
                 storm::dd::DdManager<storm::dd::DdType::CUDD> const& manager;
                 storm::dd::InternalDdManager<storm::dd::DdType::CUDD> const& internalDdManager;
+                ::DdManager* ddman;
                 storm::expressions::Variable const& blockVariable;
                 
                 // The cubes representing all non-block and all nondeterminism variables, respectively.
@@ -480,7 +494,11 @@ namespace storm {
             
             template<storm::dd::DdType DdType, typename ValueType>
             Partition<DdType, ValueType> SignatureRefiner<DdType, ValueType>::refine(Partition<DdType, ValueType> const& oldPartition, Signature<DdType, ValueType> const& signature) {
-                return internalRefiner->refine(oldPartition, signature);
+                oldPartition.asAdd().getDdManager().debugCheck();
+                oldPartition.asAdd().exportToDot("lastpart.dot");
+                Partition<DdType, ValueType> result = internalRefiner->refine(oldPartition, signature);
+                oldPartition.asAdd().getDdManager().debugCheck();
+                return result;
             }
             
             template class SignatureRefiner<storm::dd::DdType::CUDD, double>;

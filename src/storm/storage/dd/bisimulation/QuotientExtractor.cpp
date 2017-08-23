@@ -846,6 +846,7 @@ namespace storm {
                 auto states = partition.getStates().swapVariables(model.getRowColumnMetaVariablePairs());
                 
                 storm::dd::Bdd<DdType> partitionAsBdd = partition.storedAsAdd() ? partition.asAdd().toBdd() : partition.asBdd();
+                partitionAsBdd.exportToDot("part.dot");
                 partitionAsBdd = partitionAsBdd.renameVariables(model.getColumnVariables(), model.getRowVariables());
 
                 auto start = std::chrono::high_resolution_clock::now();

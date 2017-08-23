@@ -32,7 +32,7 @@ namespace storm {
                     // If the choice partition changed, refine the state partition. Use qualitative mode we must properly abstract from choice counts.
                     STORM_LOG_TRACE("Refining state partition.");
                     Partition<DdType, ValueType> newStatePartition = this->internalRefine(this->stateSignatureComputer, this->stateSignatureRefiner, this->statePartition, this->choicePartition, SignatureMode::Qualitative);
-                    
+
                     if (newStatePartition == this->statePartition) {
                         this->status = Status::FixedPoint;
                         return false;
