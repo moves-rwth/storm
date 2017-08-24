@@ -51,8 +51,6 @@ namespace storm {
             template<storm::dd::DdType DdType, typename ValueType>
             bool MdpPartitionRefiner<DdType, ValueType>::refineWrtStateActionRewards(storm::dd::Add<DdType, ValueType> const& stateActionRewards) {
                 STORM_LOG_TRACE("Refining with respect to state-action rewards.");
-                stateActionRewards.exportToDot("stateactrew.dot", false);
-                this->choicePartition.asAdd().exportToDot("choicepart.dot");
                 Partition<DdType, ValueType> newChoicePartition = this->signatureRefiner.refine(this->choicePartition, Signature<DdType, ValueType>(stateActionRewards));
                 if (newChoicePartition == this->choicePartition) {
                     return false;
