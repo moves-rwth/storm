@@ -31,6 +31,13 @@ namespace storm {
                 bool isLinearEquationSystemTechniqueSet() const;
                 
                 /*!
+                 * Retrieves whether the linear equation system technique is set from its default value.
+                 *
+                 * @return True iff it was set from its default value.
+                 */
+                bool isLinearEquationSystemTechniqueSetFromDefaultValue() const;
+                
+                /*!
                  * Retrieves the method that is to be used for solving systems of linear equations.
                  *
                  * @return The method to use.

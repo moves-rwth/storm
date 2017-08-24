@@ -23,10 +23,6 @@
 #include "storm/builder/ExplicitModelBuilder.h"
 #include "storm/builder/jit/ExplicitJitJaniModelBuilder.h"
 
-#include "storm/settings/SettingsManager.h"
-#include "storm/settings/modules/IOSettings.h"
-#include "storm/settings/modules/JitBuilderSettings.h"
-
 #include "storm/utility/macros.h"
 #include "storm/exceptions/NotSupportedException.h"
 
@@ -34,12 +30,12 @@ namespace storm {
     namespace api {
         
         template<storm::dd::DdType LibraryType, typename ValueType>
-        std::shared_ptr<storm::models::symbolic::Model<LibraryType, ValueType>> buildSymbolicModel(storm::storage::SymbolicModelDescription const& model, std::vector<std::shared_ptr<storm::logic::Formula const>> const& formulas) {
+        std::shared_ptr<storm::models::symbolic::Model<LibraryType, ValueType>> buildSymbolicModel(storm::storage::SymbolicModelDescription const& model, std::vector<std::shared_ptr<storm::logic::Formula const>> const& formulas, bool buildFullModel = false) {
             if (model.isPrismProgram()) {
                 typename storm::builder::DdPrismModelBuilder<LibraryType, ValueType>::Options options;
                 options = typename storm::builder::DdPrismModelBuilder<LibraryType, ValueType>::Options(formulas);
                 
-                if (storm::settings::getModule<storm::settings::modules::IOSettings>().isBuildFullModelSet()) {
+                if (buildFullModel) {
                     options.buildAllLabels = true;
                     options.buildAllRewardModels = true;
                 }
@@ -51,7 +47,7 @@ namespace storm {
                 typename storm::builder::DdJaniModelBuilder<LibraryType, ValueType>::Options options;
                 options = typename storm::builder::DdJaniModelBuilder<LibraryType, ValueType>::Options(formulas);
                 
-                if (storm::settings::getModule<storm::settings::modules::IOSettings>().isBuildFullModelSet()) {
+                if (buildFullModel) {
                     options.buildAllLabels = true;
                     options.buildAllRewardModels = true;
                 }
@@ -62,39 +58,28 @@ namespace storm {
         }
         
         template<>
-        inline std::shared_ptr<storm::models::symbolic::Model<storm::dd::DdType::CUDD, storm::RationalNumber>> buildSymbolicModel(storm::storage::SymbolicModelDescription const& model, std::vector<std::shared_ptr<storm::logic::Formula const>> const& formulas) {
+        inline std::shared_ptr<storm::models::symbolic::Model<storm::dd::DdType::CUDD, storm::RationalNumber>> buildSymbolicModel(storm::storage::SymbolicModelDescription const& model, std::vector<std::shared_ptr<storm::logic::Formula const>> const& formulas, bool buildFullModel) {
             STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "CUDD does not support rational numbers.");
         }
 
         template<>
-        inline std::shared_ptr<storm::models::symbolic::Model<storm::dd::DdType::CUDD, storm::RationalFunction>> buildSymbolicModel(storm::storage::SymbolicModelDescription const& model, std::vector<std::shared_ptr<storm::logic::Formula const>> const& formulas) {
+        inline std::shared_ptr<storm::models::symbolic::Model<storm::dd::DdType::CUDD, storm::RationalFunction>> buildSymbolicModel(storm::storage::SymbolicModelDescription const& model, std::vector<std::shared_ptr<storm::logic::Formula const>> const& formulas, bool buildFullModel) {
             STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "CUDD does not support rational functions.");
         }
 
         template<typename ValueType>
-        std::shared_ptr<storm::models::sparse::Model<ValueType>> buildSparseModel(storm::storage::SymbolicModelDescription const& model, std::vector<std::shared_ptr<storm::logic::Formula const>> const& formulas, bool buildChoiceLabels = false, bool buildChoiceOrigins = false, bool buildStateValuations = false) {
-            storm::builder::BuilderOptions options(formulas);
-
-            if (storm::settings::getModule<storm::settings::modules::IOSettings>().isBuildFullModelSet()) {
-                options.setBuildAllLabels();
-                options.setBuildAllRewardModels();
-                options.clearTerminalStates();
-            }
-            options.setBuildChoiceLabels(buildChoiceLabels);
-            options.setBuildChoiceOrigins(buildChoiceOrigins);
-            options.setBuildStateValuations(buildStateValuations);
-            
-            if (storm::settings::getModule<storm::settings::modules::IOSettings>().isJitSet()) {
+        std::shared_ptr<storm::models::sparse::Model<ValueType>> buildSparseModel(storm::storage::SymbolicModelDescription const& model, storm::builder::BuilderOptions const& options, bool jit = false, bool doctor = false) {
+            if (jit) {
                 STORM_LOG_THROW(model.isJaniModel(), storm::exceptions::NotSupportedException, "Cannot use JIT-based model builder for non-JANI model.");
-                
+
                 storm::builder::jit::ExplicitJitJaniModelBuilder<ValueType> builder(model.asJaniModel(), options);
-                
-                if (storm::settings::getModule<storm::settings::modules::JitBuilderSettings>().isDoctorSet()) {
+
+                if (doctor) {
                     bool result = builder.doctor();
                     STORM_LOG_THROW(result, storm::exceptions::NotSupportedException, "The JIT-based model builder cannot be used on your system.");
                     STORM_LOG_INFO("The JIT-based model builder seems to be working.");
                 }
-                
+
                 return builder.build();
             } else {
                 std::shared_ptr<storm::generator::NextStateGenerator<ValueType, uint32_t>> generator;
@@ -108,6 +93,12 @@ namespace storm {
                 storm::builder::ExplicitModelBuilder<ValueType> builder(generator);
                 return builder.build();
             }
+        }
+
+        template<typename ValueType>
+        std::shared_ptr<storm::models::sparse::Model<ValueType>> buildSparseModel(storm::storage::SymbolicModelDescription const& model, std::vector<std::shared_ptr<storm::logic::Formula const>> const& formulas, bool jit = false, bool doctor = false) {
+            storm::builder::BuilderOptions options(formulas);
+            return buildSparseModel<ValueType>(model, options, jit, doctor);
         }
         
         template<typename ValueType, typename RewardModelType = storm::models::sparse::StandardRewardModel<ValueType>>
@@ -156,7 +147,6 @@ namespace storm {
         inline std::shared_ptr<storm::models::sparse::Model<double>> buildExplicitIMCAModel(std::string const& imcaFile) {
             return storm::parser::ImcaMarkovAutomatonParser<double>::parseImcaFile(imcaFile);
         }
-
 
     }
 }

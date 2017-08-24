@@ -101,6 +101,12 @@ namespace storm {
         public:
             virtual std::unique_ptr<storm::solver::SymbolicLinearEquationSolver<DdType, ValueType>> create(storm::dd::Add<DdType, ValueType> const& A, storm::dd::Bdd<DdType> const& allRows, std::set<storm::expressions::Variable> const& rowMetaVariables, std::set<storm::expressions::Variable> const& columnMetaVariables, std::vector<std::pair<storm::expressions::Variable, storm::expressions::Variable>> const& rowColumnMetaVariablePairs) const;
         };
+
+        template<storm::dd::DdType DdType>
+        class GeneralSymbolicLinearEquationSolverFactory<DdType, storm::RationalNumber> : public SymbolicLinearEquationSolverFactory<DdType, storm::RationalNumber> {
+        public:
+            virtual std::unique_ptr<storm::solver::SymbolicLinearEquationSolver<DdType, storm::RationalNumber>> create(storm::dd::Add<DdType, storm::RationalNumber> const& A, storm::dd::Bdd<DdType> const& allRows, std::set<storm::expressions::Variable> const& rowMetaVariables, std::set<storm::expressions::Variable> const& columnMetaVariables, std::vector<std::pair<storm::expressions::Variable, storm::expressions::Variable>> const& rowColumnMetaVariablePairs) const;
+        };
         
         template<storm::dd::DdType DdType>
         class GeneralSymbolicLinearEquationSolverFactory<DdType, storm::RationalFunction> : public SymbolicLinearEquationSolverFactory<DdType, storm::RationalFunction> {

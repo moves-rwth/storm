@@ -101,7 +101,7 @@ namespace storm {
              *
              * @param moduleSettings The settings of the module to add.
              */
-            void addModule(std::unique_ptr<modules::ModuleSettings>&& moduleSettings);
+            void addModule(std::unique_ptr<modules::ModuleSettings>&& moduleSettings, bool doRegister = true);
             
             /*!
              * Retrieves the settings of the module with the given name.
@@ -238,9 +238,9 @@ namespace storm {
          * Add new module to use for the settings. The new module is given as a template argument.
          */
         template<typename SettingsType>
-        void addModule() {
+        void addModule(bool doRegister = true) {
             static_assert(std::is_base_of<storm::settings::modules::ModuleSettings, SettingsType>::value, "Template argument must be derived from ModuleSettings");
-            mutableManager().addModule(std::unique_ptr<modules::ModuleSettings>(new SettingsType()));
+            mutableManager().addModule(std::unique_ptr<modules::ModuleSettings>(new SettingsType()), doRegister);
         }
         
         /*!

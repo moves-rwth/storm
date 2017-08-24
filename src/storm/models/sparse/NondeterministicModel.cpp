@@ -185,7 +185,12 @@ namespace storm {
                     outStream << "}" << std::endl;
                 }
             }
-            
+
+            template<typename ValueType, typename RewardModelType>
+            uint_least64_t NondeterministicModel<ValueType, RewardModelType>::getChoiceIndex(storm::storage::StateActionPair const& stateactPair) const {
+                return this->getNondeterministicChoiceIndices()[stateactPair.getState()]+stateactPair.getAction();
+            }
+
             template class NondeterministicModel<double>;
 
 #ifdef STORM_HAVE_CARL

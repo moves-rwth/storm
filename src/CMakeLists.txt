@@ -5,6 +5,7 @@ set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
 add_custom_target(binaries)
 
 add_subdirectory(storm)
+add_subdirectory(storm-cli-utilities)
 add_subdirectory(storm-pgcl)
 add_subdirectory(storm-pgcl-cli)
 add_subdirectory(storm-gspn)

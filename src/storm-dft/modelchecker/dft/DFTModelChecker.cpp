@@ -1,5 +1,6 @@
 #include "DFTModelChecker.h"
 
+#include "storm/settings/modules/IOSettings.h"
 #include "storm/builder/ParallelCompositionBuilder.h"
 #include "storm/utility/bitoperations.h"
 #include "storm/utility/DirectEncodingExporter.h"
@@ -357,6 +358,7 @@ namespace storm {
                 explorationTimer.stop();
 
                 // Export the model if required
+                // TODO move this outside of the model checker?
                 if (storm::settings::getModule<storm::settings::modules::IOSettings>().isExportExplicitSet()) {
                     std::ofstream stream;
                     storm::utility::openFile(storm::settings::getModule<storm::settings::modules::IOSettings>().getExportExplicitFilename(), stream);

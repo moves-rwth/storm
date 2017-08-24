@@ -27,11 +27,18 @@ namespace storm {
                 bool isMinMaxEquationSolvingMethodSet() const;
                 
                 /*!
-                 * Retrieves the selected min/max equation solving technique.
+                 * Retrieves the selected min/max equation solving method.
                  *
-                 * @return The selected min/max equation solving technique.
+                 * @return The selected min/max equation solving method.
                  */
                 storm::solver::MinMaxMethod getMinMaxEquationSolvingMethod() const;
+                
+                /*!
+                 * Retrieves whether the min/max equation solving method is set from its default value.
+                 *
+                 * @return True iff if it is set from its default value.
+                 */
+                bool isMinMaxEquationSolvingMethodSetFromDefaultValue() const;
                 
                 /*!
                  * Retrieves whether the maximal iteration count has been set.

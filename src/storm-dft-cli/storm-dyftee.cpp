@@ -1,12 +1,12 @@
 #include "storm/logic/Formula.h"
 #include "storm/utility/initialize.h"
 #include "storm/api/storm.h"
-#include "storm/cli/cli.h"
+#include "storm-cli-utilities/cli.h"
 #include "storm/exceptions/BaseException.h"
 
 #include "storm/logic/Formula.h"
 
-#include "storm/settings/modules/GeneralSettings.h"
+#include "storm/settings/modules/IOSettings.h"
 #include "storm/settings/modules/CoreSettings.h"
 #include "storm/settings/modules/DebugSettings.h"
 #include "storm/settings/modules/GmmxxEquationSolverSettings.h"

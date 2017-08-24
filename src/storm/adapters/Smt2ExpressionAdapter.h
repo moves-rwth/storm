@@ -38,8 +38,7 @@ namespace storm {
             std::string translateExpression(storm::expressions::Expression const& ) {
                 STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "functionality not (yet) implemented");
             }
-            
-#ifdef STORM_HAVE_CARL              
+
             /*!
              * Translates the given constraint "leftHandSide relation rightHandSide" to an equivalent expression for Smt2.
 			 
@@ -60,6 +59,7 @@ namespace storm {
                             ") " +
                         ")";
             }
+
             
             /*!
              * Translates the given constraint "leftHandSide relation 0" to an equivalent expression for Smt2.
@@ -67,31 +67,16 @@ namespace storm {
              * @param constraint
              * @return An equivalent expression for Smt2.
              */
-            std::string translateExpression(storm::ArithConstraint<storm::RawPolynomial> const& constraint) {
-                std::stringstream ss;
-                ss << "(" << constraint.rel() << " " << 
-                        constraint.lhs().toString(false, useReadableVarNames) << " " << 
-                            "0 " <<
-                        ")";
-                return ss.str();
-            }
-            
-            /*!
-             * Translates the given constraint "leftHandSide relation 0" to an equivalent expression for Smt2.
-			 
-             * @param constraint
-             * @return An equivalent expression for Smt2.
-             */
-            std::string translateExpression(storm::ArithConstraint<storm::Polynomial> const& constraint) {
+            std::string translateExpression(storm::RationalFunction const& leftHandSide, storm::CompareRelation const& relation) {
                                 
                 std::stringstream ss;
-                ss << "(" << constraint.rel() << " " << 
-                        constraint.lhs().toString(false, useReadableVarNames) << " " << 
+                ss << "(" << relation << " " <<
+                        leftHandSide.toString(false, useReadableVarNames) << " " <<
                             "0 " <<
                         ")";
                 return ss.str();
             }
-#endif
+
             /*!
              * Translates the given variable to an equivalent expression for Smt2.
              *
@@ -126,7 +111,7 @@ namespace storm {
             }
             
             
-#ifdef STORM_HAVE_CARL
+
             /*! Checks whether the variables in the given set are already declared and creates them if necessary
              *  @param variables the set of variables to check
              */
@@ -167,7 +152,6 @@ namespace storm {
                 }
                 return result;
             }
-#endif
             
         private:
             // The manager that can be used to build expressions.

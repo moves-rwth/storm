@@ -73,7 +73,7 @@ namespace storm {
             IterativeMinMaxLinearEquationSolverSettings<ValueType> settings;
         };
         
-                template<typename ValueType>
+        template<typename ValueType>
         class IterativeMinMaxLinearEquationSolverFactory : public StandardMinMaxLinearEquationSolverFactory<ValueType> {
         public:
             IterativeMinMaxLinearEquationSolverFactory(MinMaxMethodSelection const& method = MinMaxMethodSelection::FROMSETTINGS, bool trackScheduler = false);
