@@ -846,7 +846,6 @@ namespace storm {
                 auto states = partition.getStates().swapVariables(model.getRowColumnMetaVariablePairs());
                 
                 storm::dd::Bdd<DdType> partitionAsBdd = partition.storedAsAdd() ? partition.asAdd().toBdd() : partition.asBdd();
-                partitionAsBdd.exportToDot("part.dot");
                 partitionAsBdd = partitionAsBdd.renameVariables(model.getColumnVariables(), model.getRowVariables());
 
                 auto start = std::chrono::high_resolution_clock::now();
@@ -968,13 +967,18 @@ namespace storm {
                     STORM_LOG_TRACE("Quotient labels extracted in " << std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count() << "ms.");
 
                     start = std::chrono::high_resolution_clock::now();
-                    storm::dd::Add<DdType, ValueType> quotientTransitionMatrix = model.getTransitionMatrix().multiplyMatrix(partitionAsBdd.renameVariables(blockVariableSet, blockPrimeVariableSet).renameVariables(model.getRowVariables(), model.getColumnVariables()), model.getColumnVariables());
+                    std::set<storm::expressions::Variable> blockAndRowVariables;
+                    std::set_union(blockVariableSet.begin(), blockVariableSet.end(), model.getRowVariables().begin(), model.getRowVariables().end(), std::inserter(blockAndRowVariables, blockAndRowVariables.end()));
+                    std::set<storm::expressions::Variable> blockPrimeAndColumnVariables;
+                    std::set_union(blockPrimeVariableSet.begin(), blockPrimeVariableSet.end(), model.getColumnVariables().begin(), model.getColumnVariables().end(), std::inserter(blockPrimeAndColumnVariables, blockPrimeAndColumnVariables.end()));
+                    storm::dd::Add<DdType, ValueType> partitionAsAdd = partitionAsBdd.template toAdd<ValueType>();
+                    storm::dd::Add<DdType, ValueType> quotientTransitionMatrix = model.getTransitionMatrix().multiplyMatrix(partitionAsAdd.renameVariables(blockAndRowVariables, blockPrimeAndColumnVariables), model.getColumnVariables());
                     
                     // Pick a representative from each block.
                     auto representatives = InternalRepresentativeComputer<DdType>(partitionAsBdd, model.getRowVariables()).getRepresentatives();
                     partitionAsBdd &= representatives;
-                    storm::dd::Add<DdType, ValueType> partitionAsAdd = partitionAsBdd.template toAdd<ValueType>();
-                    
+                    partitionAsAdd *= partitionAsBdd.template toAdd<ValueType>();
+
                     quotientTransitionMatrix = quotientTransitionMatrix.multiplyMatrix(partitionAsAdd, model.getRowVariables());
                     end = std::chrono::high_resolution_clock::now();
                     

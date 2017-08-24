@@ -554,7 +554,7 @@ TASK_IMPL_2(MTBDD, sylvan_storm_rational_function_op_threshold, MTBDD, a, size_t
     
     if (mtbdd_isleaf(a)) {
         storm_rational_function_ptr ma = mtbdd_getstorm_rational_function_ptr(a);
-        return storm_rational_function_less_or_equal(ma, value) ? mtbdd_false : mtbdd_true;
+        return storm_rational_function_less(ma, value) ? mtbdd_false : mtbdd_true;
     }
     
     return mtbdd_invalid;
@@ -566,7 +566,7 @@ TASK_IMPL_2(MTBDD, sylvan_storm_rational_function_op_strict_threshold, MTBDD, a,
     if (mtbdd_isleaf(a)) {
         storm_rational_function_ptr ma = mtbdd_getstorm_rational_function_ptr(a);
         
-        return storm_rational_function_less(ma, value) ? mtbdd_false : mtbdd_true;
+        return storm_rational_function_less_or_equal(ma, value) ? mtbdd_false : mtbdd_true;
     }
     
     return mtbdd_invalid;
