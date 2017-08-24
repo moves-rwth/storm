@@ -215,7 +215,7 @@ namespace storm {
         
         template<DdType LibraryType>
         std::vector<storm::expressions::Variable> DdManager<LibraryType>::addMetaVariable(std::string const& name, int_fast64_t low, int_fast64_t high, uint64_t numberOfLayers, boost::optional<std::pair<MetaVariablePosition, storm::expressions::Variable>> const& position) {
-            return this->addMetaVariableHelper(MetaVariableType::Int, name, std::max(static_cast<uint64_t>(std::ceil(std::log2(high - low + 1))), 1ull), numberOfLayers, position, std::make_pair(low, high));
+            return this->addMetaVariableHelper(MetaVariableType::Int, name, std::max(static_cast<uint64_t>(std::ceil(std::log2(high - low + 1))), static_cast<uint64_t>(1)), numberOfLayers, position, std::make_pair(low, high));
         }
         
         template<DdType LibraryType>
