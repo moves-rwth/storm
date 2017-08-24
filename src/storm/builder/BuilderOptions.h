@@ -82,6 +82,7 @@ namespace storm {
              */
             void setTerminalStatesFromFormula(storm::logic::Formula const& formula);
 
+
             /*!
              * Which reward models are built
              * @return
@@ -107,6 +108,7 @@ namespace storm {
             bool isBuildAllLabelsSet() const;
             bool isExplorationChecksSet() const;
             bool isExplorationShowProgressSet() const;
+            bool isInferObservationsFromActionsSet() const;
             uint64_t getExplorationShowProgressDelay() const;
 
             /**
@@ -155,7 +157,11 @@ namespace storm {
              * @return this
              */
             BuilderOptions& setExplorationChecks(bool newValue = true);
-            
+
+
+            BuilderOptions& setInferObservationsFromActions(bool newValue = true);
+
+
         private:
             /// A flag that indicates whether all reward models are to be built. In this case, the reward model names are
             /// to be ignored.
@@ -191,6 +197,9 @@ namespace storm {
             
             /// A flag that stores whether the progress of exploration is to be printed.
             bool explorationShowProgress;
+
+            /// For POMDPs, should we allow inference of observation classes from different enabled actions.
+            bool inferObservationsFromActions;
             
             /// The delay for printing progress information.
             uint64_t explorationShowProgressDelay;

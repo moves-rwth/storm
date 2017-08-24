@@ -35,7 +35,7 @@ namespace storm {
             return boost::get<storm::expressions::Expression>(labelOrExpression);
         }
         
-        BuilderOptions::BuilderOptions(bool buildAllRewardModels, bool buildAllLabels) : buildAllRewardModels(buildAllRewardModels), buildAllLabels(buildAllLabels), buildChoiceLabels(false), buildStateValuations(false), buildChoiceOrigins(false), explorationChecks(false), explorationShowProgress(false), explorationShowProgressDelay(0) {
+        BuilderOptions::BuilderOptions(bool buildAllRewardModels, bool buildAllLabels) : buildAllRewardModels(buildAllRewardModels), buildAllLabels(buildAllLabels), buildChoiceLabels(false), buildStateValuations(false), buildChoiceOrigins(false), explorationChecks(false), explorationShowProgress(false), inferObservationsFromActions(false), explorationShowProgressDelay(0) {
             // Intentionally left empty.
         }
         
@@ -155,6 +155,10 @@ namespace storm {
         
         bool BuilderOptions::isBuildAllLabelsSet() const {
             return buildAllLabels;
+        }
+
+        bool BuilderOptions::isInferObservationsFromActionsSet() const {
+            return inferObservationsFromActions;
         }
         
         BuilderOptions& BuilderOptions::setBuildAllRewardModels(bool newValue) {

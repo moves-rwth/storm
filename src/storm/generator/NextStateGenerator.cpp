@@ -158,9 +158,7 @@ namespace storm {
         uint32_t NextStateGenerator<ValueType, StateType>::observabilityClass(CompressedState const &state) const {
             if (this->mask.size() == 0) {
                 this->mask = computeObservabilityMask(variableInformation);
-                std::cout << mask.size() << std::endl;
             }
-            std::cout << state.size() << std::endl;
 
             return unpackStateToObservabilityClass(state, observabilityMap, mask);
         }
