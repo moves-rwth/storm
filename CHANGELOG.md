@@ -12,6 +12,7 @@ Long run average computation via ValueIteration, LP based MDP model checking, pa
 - c++ api changes: Building model takes BuilderOptions instead of extended list of Booleans, does not depend on settings anymore.
 - storm-cli-utilities now contains cli related stuff, instead of storm-lib
 - storm-pars: support for welldefinedness constraints in mdps.
+- symbolic (MT/BDD) bisimulation 
 
 ### Version 1.1.0 (2017/8)
 

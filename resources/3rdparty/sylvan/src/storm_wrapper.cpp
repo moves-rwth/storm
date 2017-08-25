@@ -125,6 +125,8 @@ int storm_rational_number_is_zero(storm_rational_number_ptr a) {
     std::lock_guard<std::mutex> lock(rationalNumberMutex);
 #endif
     
+    std::cout << "got ptr for eq check " << a << std::endl;
+    
     return storm::utility::isZero(*(storm::RationalNumber const*)a) ? 1 : 0;
 }
 

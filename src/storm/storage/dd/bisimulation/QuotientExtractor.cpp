@@ -175,7 +175,7 @@ namespace storm {
                         bool skipped = false;
                         BDD elsePartitionNode;
                         BDD thenPartitionNode;
-                        if (sylvan_var(partitionNode) == sylvan_var(stateVariablesCube)) {
+                        if (storm::dd::InternalBdd<storm::dd::DdType::Sylvan>::matchesVariableIndex(partitionNode, sylvan_var(stateVariablesCube))) {
                             elsePartitionNode = sylvan_low(partitionNode);
                             thenPartitionNode = sylvan_high(partitionNode);
                         } else {
@@ -652,7 +652,7 @@ namespace storm {
                     } else {
                         MTBDD vectorT;
                         MTBDD vectorE;
-                        if (sylvan_var(vector) == sylvan_var(variables)) {
+                        if (storm::dd::InternalAdd<storm::dd::DdType::Sylvan, ValueType>::matchesVariableIndex(vector, sylvan_var(variables))) {
                             vectorT = sylvan_high(vector);
                             vectorE = sylvan_low(vector);
                         } else {
@@ -661,7 +661,7 @@ namespace storm {
                         
                         BDD representativesT;
                         BDD representativesE;
-                        if (sylvan_var(representativesNode) == sylvan_var(variables)) {
+                        if (storm::dd::InternalBdd<storm::dd::DdType::Sylvan>::matchesVariableIndex(representativesNode, sylvan_var(variables))) {
                             representativesT = sylvan_high(representativesNode);
                             representativesE = sylvan_low(representativesNode);
                         } else {
@@ -692,7 +692,7 @@ namespace storm {
                         STORM_LOG_ASSERT(!odd.isTerminalNode(), "Expected non-terminal node.");
                         BDD partitionT;
                         BDD partitionE;
-                        if (sylvan_var(partitionNode) == sylvan_var(variables)) {
+                        if (storm::dd::InternalBdd<storm::dd::DdType::Sylvan>::matchesVariableIndex(partitionNode, sylvan_var(variables))) {
                             partitionT = sylvan_high(partitionNode);
                             partitionE = sylvan_low(partitionNode);
                         } else {
@@ -701,7 +701,7 @@ namespace storm {
                         
                         BDD representativesT;
                         BDD representativesE;
-                        if (sylvan_var(representativesNode) == sylvan_var(variables)) {
+                        if (storm::dd::InternalBdd<storm::dd::DdType::Sylvan>::matchesVariableIndex(representativesNode, sylvan_var(variables))) {
                             representativesT = sylvan_high(representativesNode);
                             representativesE = sylvan_low(representativesNode);
                         } else {
@@ -714,6 +714,7 @@ namespace storm {
                 }
                 
                 void extractTransitionMatrixRec(MTBDD transitionMatrixNode, storm::dd::Odd const& sourceOdd, uint64_t sourceOffset, BDD targetPartitionNode, BDD representativesNode, BDD variables, BDD nondeterminismVariables, storm::dd::Odd const* stateOdd, uint64_t stateOffset) {
+
                     // For the empty DD, we do not need to add any entries. Note that the partition nodes cannot be zero
                     // as all states of the model have to be contained.
                     if (mtbdd_iszero(transitionMatrixNode) || representativesNode == sylvan_false) {
@@ -736,7 +737,7 @@ namespace storm {
                             MTBDD e;
                             
                             // Determine whether the variable was skipped in the matrix.
-                            if (sylvan_var(transitionMatrixNode) == sylvan_var(variables)) {
+                            if (storm::dd::InternalAdd<storm::dd::DdType::Sylvan, ValueType>::matchesVariableIndex(transitionMatrixNode, sylvan_var(variables))) {
                                 t = sylvan_high(transitionMatrixNode);
                                 e = sylvan_low(transitionMatrixNode);
                             } else {
@@ -753,7 +754,7 @@ namespace storm {
                             MTBDD e;
                             MTBDD et;
                             MTBDD ee;
-                            if (sylvan_var(transitionMatrixNode) == sylvan_var(variables)) {
+                            if (storm::dd::InternalAdd<storm::dd::DdType::Sylvan, ValueType>::matchesVariableIndex(transitionMatrixNode, sylvan_var(variables))) {
                                 // Source node was not skipped in transition matrix.
                                 t = sylvan_high(transitionMatrixNode);
                                 e = sylvan_low(transitionMatrixNode);
@@ -761,7 +762,7 @@ namespace storm {
                                 t = e = transitionMatrixNode;
                             }
                             
-                            if (sylvan_var(t) == sylvan_var(variables) + 1) {
+                            if (storm::dd::InternalAdd<storm::dd::DdType::Sylvan, ValueType>::matchesVariableIndex(t, sylvan_var(variables) + 1)) {
                                 // Target node was not skipped in transition matrix.
                                 tt = sylvan_high(t);
                                 te = sylvan_low(t);
@@ -770,7 +771,7 @@ namespace storm {
                                 tt = te = t;
                             }
                             if (t != e) {
-                                if (sylvan_var(e) == sylvan_var(variables) + 1) {
+                                if (storm::dd::InternalAdd<storm::dd::DdType::Sylvan, ValueType>::matchesVariableIndex(e, sylvan_var(variables) + 1)) {
                                     // Target node was not skipped in transition matrix.
                                     et = sylvan_high(e);
                                     ee = sylvan_low(e);
@@ -785,7 +786,7 @@ namespace storm {
                             
                             BDD targetT;
                             BDD targetE;
-                            if (sylvan_var(targetPartitionNode) == sylvan_var(variables)) {
+                            if (storm::dd::InternalBdd<storm::dd::DdType::Sylvan>::matchesVariableIndex(targetPartitionNode, sylvan_var(variables))) {
                                 // Node was not skipped in target partition.
                                 targetT = sylvan_high(targetPartitionNode);
                                 targetE = sylvan_low(targetPartitionNode);
@@ -796,7 +797,7 @@ namespace storm {
                             
                             BDD representativesT;
                             BDD representativesE;
-                            if (sylvan_var(representativesNode) == sylvan_var(variables)) {
+                            if (storm::dd::InternalBdd<storm::dd::DdType::Sylvan>::matchesVariableIndex(representativesNode, sylvan_var(variables))) {
                                 // Node was not skipped in representatives.
                                 representativesT = sylvan_high(representativesNode);
                                 representativesE = sylvan_low(representativesNode);

@@ -374,6 +374,16 @@ namespace storm {
              */
             void filterExplicitVector(Odd const& odd, std::vector<uint_fast64_t> const& ddVariableIndices, storm::storage::BitVector const& sourceValues, storm::storage::BitVector& targetValues) const;
 
+            /*!
+             * Retrieves whether the topmost variable in the BDD is the one with the given index.
+             *
+             * @param The top node of the BDD.
+             * @param variableIndex The variable index.
+             * @param offset An offset that is applied to the index of the top variable in the BDD.
+             * @return True iff the BDD's top variable has the given index.
+             */
+            static bool matchesVariableIndex(BDD const& node, uint64_t variableIndex, int64_t offset = 0);
+            
             friend struct std::hash<storm::dd::InternalBdd<storm::dd::DdType::Sylvan>>;
             
             /*!

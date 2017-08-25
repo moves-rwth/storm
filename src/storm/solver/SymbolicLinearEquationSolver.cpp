@@ -63,12 +63,10 @@ namespace storm {
         std::unique_ptr<storm::solver::SymbolicLinearEquationSolver<DdType, storm::RationalNumber>> GeneralSymbolicLinearEquationSolverFactory<DdType, storm::RationalNumber>::create(storm::dd::Add<DdType, storm::RationalNumber> const& A, storm::dd::Bdd<DdType> const& allRows, std::set<storm::expressions::Variable> const& rowMetaVariables, std::set<storm::expressions::Variable> const& columnMetaVariables, std::vector<std::pair<storm::expressions::Variable, storm::expressions::Variable>> const& rowColumnMetaVariablePairs) const {
 
             auto const& coreSettings = storm::settings::getModule<storm::settings::modules::CoreSettings>();
-            storm::solver::EquationSolverType equationSolver;
-            if (coreSettings.isEquationSolverSetFromDefaultValue()) {
+            storm::solver::EquationSolverType equationSolver = coreSettings.getEquationSolver();
+            if (coreSettings.isEquationSolverSetFromDefaultValue() && equationSolver != storm::solver::EquationSolverType::Elimination) {
                 STORM_LOG_WARN("Selecting the elimination solver to guarantee exact results. If you want to override this, please explicitly specify a different equation solver.");
                 equationSolver = storm::solver::EquationSolverType::Elimination;
-            } else {
-                equationSolver = coreSettings.getEquationSolver();
             }
             
             if (equationSolver != storm::solver::EquationSolverType::Elimination) {

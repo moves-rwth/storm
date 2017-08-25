@@ -371,7 +371,7 @@ namespace storm {
                                 offset = 0;
                             }
 
-                            if (sylvan_var(partitionNode) - offset == sylvan_var(nonBlockVariablesNode)) {
+                            if (storm::dd::InternalAdd<storm::dd::DdType::Sylvan, ValueType>::matchesVariableIndex(partitionNode, sylvan_var(nonBlockVariablesNode), -offset)) {
                                 partitionThen = sylvan_high(partitionNode);
                                 partitionElse = sylvan_low(partitionNode);
                                 skippedBoth = false;
@@ -379,7 +379,7 @@ namespace storm {
                                 partitionThen = partitionElse = partitionNode;
                             }
                             
-                            if (sylvan_var(signatureNode) == sylvan_var(nonBlockVariablesNode)) {
+                            if (storm::dd::InternalAdd<storm::dd::DdType::Sylvan, ValueType>::matchesVariableIndex(signatureNode, sylvan_var(nonBlockVariablesNode))) {
                                 signatureThen = sylvan_high(signatureNode);
                                 signatureElse = sylvan_low(signatureNode);
                                 skippedBoth = false;

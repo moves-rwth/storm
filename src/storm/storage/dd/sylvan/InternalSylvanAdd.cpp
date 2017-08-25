@@ -82,6 +82,11 @@ namespace storm {
 #endif
         
         template<typename ValueType>
+        bool InternalAdd<DdType::Sylvan, ValueType>::matchesVariableIndex(MTBDD const& node, uint64_t variableIndex, int64_t offset) {
+            return !mtbdd_isleaf(node) && static_cast<uint64_t>(sylvan_var(node) + offset) == variableIndex;
+        }
+        
+        template<typename ValueType>
         bool InternalAdd<DdType::Sylvan, ValueType>::operator==(InternalAdd<DdType::Sylvan, ValueType> const& other) const {
             return this->sylvanMtbdd == other.sylvanMtbdd;
         }
