@@ -1,5 +1,6 @@
 
 
+#include <storm-pomdp/analysis/UniqueObservationStates.h>
 #include "storm/utility/initialize.h"
 
 #include "storm/settings/modules/GeneralSettings.h"
@@ -97,17 +98,20 @@ int main(const int argc, const char** argv) {
         storm::settings::modules::CoreSettings::Engine engine = coreSettings.getEngine();
 
         storm::cli::SymbolicInput symbolicInput = storm::cli::parseAndPreprocessSymbolicInput();
+        // We should not export here if we are going to do some processing first.
         auto model = storm::cli::buildPreprocessExportModelWithValueTypeAndDdlib<storm::dd::DdType::Sylvan, storm::RationalNumber>(symbolicInput, engine);
         STORM_LOG_THROW(model && model->getType() == storm::models::ModelType::Pomdp, storm::exceptions::WrongFormatException, "Expected a POMDP.");
         // CHECK if prop maximizes, only apply in those situations
         std::shared_ptr<storm::models::sparse::Pomdp<storm::RationalNumber>> pomdp = model->template as<storm::models::sparse::Pomdp<storm::RationalNumber>>();
         storm::transformer::GlobalPOMDPSelfLoopEliminator<storm::RationalNumber> selfLoopEliminator(*pomdp);
         pomdp = selfLoopEliminator.transform();
+        storm::analysis::UniqueObservationStates<storm::RationalNumber> uniqueAnalysis(*pomdp);
+        std::cout << uniqueAnalysis.analyse() << std::endl;
 
-        storm::transformer::ApplyFiniteSchedulerToPomdp<storm::RationalNumber> toPMCTransformer(*pomdp);
 
 
         if (pomdpSettings.isExportToParametricSet()) {
+            storm::transformer::ApplyFiniteSchedulerToPomdp<storm::RationalNumber> toPMCTransformer(*pomdp);
             auto const &pmc = toPMCTransformer.transform();
             storm::analysis::ConstraintCollector<storm::RationalFunction> constraints(*pmc);
             pmc->printModelInformationToStream(std::cout);
