@@ -242,9 +242,14 @@ namespace storm {
                     uint64_t productChoice = ecElimResult.newToOldRowMapping[reducedChoice];
                     SolutionType choiceSolution = getZeroSolution();
                     Epoch successorEpoch = getSuccessorEpoch(epoch, productEpochSteps[productChoice].get());
-                    storm::storage::BitVector greaterZeroDimensions = storm::utility::vector::filter<int64_t>(successorEpoch, [] (int64_t const& e) -> bool { return e >= 0; });
+                    storm::storage::BitVector relevantDimensions(successorEpoch.size(), true);
+                    for (uint64_t dim = 0; dim < successorEpoch.size(); ++dim) {
+                        if (successorEpoch[dim] < 0) {
+                            relevantDimensions &= ~objectiveDimensions[subObjectives[dim].second];
+                        }
+                    }
                     for (auto const& successor : modelMemoryProduct->getTransitionMatrix().getRow(productChoice)) {
-                        storm::storage::BitVector successorMemoryState = convertMemoryState(getMemoryState(successor.getColumn())) & greaterZeroDimensions;
+                        storm::storage::BitVector successorMemoryState = convertMemoryState(getMemoryState(successor.getColumn())) & relevantDimensions;
                         uint64_t successorProductState = getProductState(getModelState(successor.getColumn()), convertMemoryState(successorMemoryState));
                         SolutionType const& successorSolution = getStateSolution(successorEpoch, successorProductState);
                         addScaledSolution(choiceSolution, successorSolution, successor.getValue());
@@ -271,7 +276,6 @@ namespace storm {
             template<typename ValueType>
             void MultiDimensionalRewardUnfolding<ValueType>::setCurrentEpochClass(Epoch const& epoch) {
                 auto productObjectiveRewards = computeObjectiveRewardsForProduct(epoch);
-                
                 
                 storm::storage::BitVector stepChoices(modelMemoryProduct->getNumberOfChoices(), false);
                 uint64_t choice = 0;
