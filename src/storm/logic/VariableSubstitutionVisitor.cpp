@@ -53,7 +53,7 @@ namespace storm {
                 if (f.hasUpperBound(i)) {
                     upperBounds.push_back(TimeBound(f.isUpperBoundStrict(i), f.getUpperBound(i).substitute(substitution)));
                 } else {
-                    lowerBounds.push_back(boost::none);
+                    upperBounds.push_back(boost::none);
                 }
                 tbReferences.push_back(f.getTimeBoundReference(i));
             }
