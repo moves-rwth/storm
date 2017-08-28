@@ -35,6 +35,13 @@ namespace storm {
                 uint_fast64_t getMaximalMemory() const;
                 
                 /*!
+                 * Retrieves whether dynamic reordering is enabled.
+                 *
+                 * @return True iff dynamic reordering is enabled.
+                 */
+                bool isReorderingEnabled() const;
+                
+                /*!
                  * Retrieves the reordering technique that CUDD is supposed to use.
                  *
                  * @return The reordering technique to use.
@@ -49,6 +56,7 @@ namespace storm {
                 static const std::string precisionOptionName;
                 static const std::string maximalMemoryOptionName;
                 static const std::string reorderOptionName;
+                static const std::string reorderTechniqueOptionName;
             };
             
         } // namespace modules

@@ -12,12 +12,12 @@ namespace storm {
     namespace settings {
         
         template<typename T>
-        Argument<T>::Argument(std::string const& name, std::string const& description, std::vector<std::shared_ptr<ArgumentValidator<T>>> const& validators): ArgumentBase(name, description), argumentValue(), argumentType(inferToEnumType<T>()), validators(validators), isOptional(false), defaultValue(), hasDefaultValue(false) {
+        Argument<T>::Argument(std::string const& name, std::string const& description, std::vector<std::shared_ptr<ArgumentValidator<T>>> const& validators): ArgumentBase(name, description), argumentValue(), argumentType(inferToEnumType<T>()), validators(validators), isOptional(false), defaultValue(), hasDefaultValue(false), wasSetFromDefaultValueFlag(false) {
             // Intentionally left empty.
         }
         
         template<typename T>
-        Argument<T>::Argument(std::string const& name, std::string const& description, std::vector<std::shared_ptr<ArgumentValidator<T>>> const& validators, bool isOptional, T defaultValue): ArgumentBase(name, description), argumentValue(), argumentType(inferToEnumType<T>()), validators(validators), isOptional(isOptional), defaultValue(), hasDefaultValue(true) {
+        Argument<T>::Argument(std::string const& name, std::string const& description, std::vector<std::shared_ptr<ArgumentValidator<T>>> const& validators, bool isOptional, T defaultValue): ArgumentBase(name, description), argumentValue(), argumentType(inferToEnumType<T>()), validators(validators), isOptional(isOptional), defaultValue(), hasDefaultValue(true), wasSetFromDefaultValueFlag(false) {
             this->setDefaultValue(defaultValue);
         }
         
@@ -71,6 +71,12 @@ namespace storm {
             STORM_LOG_THROW(this->hasDefaultValue, storm::exceptions::IllegalFunctionCallException, "Unable to set value from default value, because the argument " << name << " has none.");
             bool result = this->setFromTypeValue(this->defaultValue, false);
             STORM_LOG_THROW(result, storm::exceptions::IllegalArgumentValueException, "Unable to assign default value to argument " << name << ", because it was rejected.");
+            this->wasSetFromDefaultValueFlag = true;
+        }
+        
+        template<typename T>
+        bool Argument<T>::wasSetFromDefaultValue() const {
+            return wasSetFromDefaultValueFlag;
         }
         
         template<typename T>

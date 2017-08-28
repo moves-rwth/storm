@@ -394,9 +394,7 @@ namespace storm {
             MDPSparseModelCheckingHelperReturnType<ValueType> SparseMdpPrctlHelper<ValueType>::computeReachabilityRewardsHelper(storm::solver::SolveGoal const& goal, storm::storage::SparseMatrix<ValueType> const& transitionMatrix, storm::storage::SparseMatrix<ValueType> const& backwardTransitions, std::function<std::vector<ValueType>(uint_fast64_t, storm::storage::SparseMatrix<ValueType> const&, storm::storage::BitVector const&)> const& totalStateRewardVectorGetter, storm::storage::BitVector const& targetStates, bool qualitative, bool produceScheduler, storm::solver::MinMaxLinearEquationSolverFactory<ValueType> const& minMaxLinearEquationSolverFactory, ModelCheckerHint const& hint) {
                 
                 std::vector<ValueType> result(transitionMatrix.getRowGroupCount(), storm::utility::zero<ValueType>());
-
                 std::vector<uint_fast64_t> const& nondeterministicChoiceIndices = transitionMatrix.getRowGroupIndices();
-                
                 
                 // Determine which states have a reward that is infinity or less than infinity.
                 storm::storage::BitVector maybeStates, infinityStates;
@@ -503,7 +501,6 @@ namespace storm {
                 }
                 STORM_LOG_ASSERT((!produceScheduler && !scheduler) || (!scheduler->isPartialScheduler() && scheduler->isDeterministicScheduler() && scheduler->isMemorylessScheduler()), "Unexpected format of obtained scheduler.");
 
-                
                 return MDPSparseModelCheckingHelperReturnType<ValueType>(std::move(result), std::move(scheduler));
             }
             

@@ -82,6 +82,13 @@ namespace storm {
                 bool isEquationSolverSet() const;
 
                 /*!
+                 * Retrieves whether the equation solver has been set from its default value.
+                 *
+                 * @return True iff it has been set from its default value.
+                 */
+                bool isEquationSolverSetFromDefaultValue() const;
+                
+                /*!
                  * Retrieves the selected LP solver.
                  *
                  * @return The selected LP solver.

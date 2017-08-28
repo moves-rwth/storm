@@ -154,7 +154,19 @@ namespace storm {
         template<typename ValueType>
         void MinMaxLinearEquationSolverFactory<ValueType>::setMinMaxMethod(MinMaxMethodSelection const& newMethod) {
             if (newMethod == MinMaxMethodSelection::FROMSETTINGS) {
-                setMinMaxMethod(storm::settings::getModule<storm::settings::modules::MinMaxEquationSolverSettings>().getMinMaxEquationSolvingMethod());
+                bool wasSet = false;
+                auto const& minMaxSettings = storm::settings::getModule<storm::settings::modules::MinMaxEquationSolverSettings>();
+                if (std::is_same<ValueType, storm::RationalNumber>::value) {
+                    if (minMaxSettings.isMinMaxEquationSolvingMethodSetFromDefaultValue() && minMaxSettings.getMinMaxEquationSolvingMethod() != MinMaxMethod::PolicyIteration) {
+                        STORM_LOG_WARN("Selecting policy iteration as the solution method to guarantee exact results. If you want to override this, please explicitly specify a different method.");
+                        this->setMinMaxMethod(MinMaxMethod::PolicyIteration);
+                        wasSet = true;
+                    }
+                }
+                
+                if (!wasSet) {
+                    setMinMaxMethod(minMaxSettings.getMinMaxEquationSolvingMethod());
+                }
             } else {
                 setMinMaxMethod(convert(newMethod));
             }
@@ -162,6 +174,7 @@ namespace storm {
         
         template<typename ValueType>
         void MinMaxLinearEquationSolverFactory<ValueType>::setMinMaxMethod(MinMaxMethod const& newMethod) {
+            STORM_LOG_WARN_COND(!(std::is_same<ValueType, storm::RationalNumber>::value) || newMethod == MinMaxMethod::PolicyIteration, "The selected solution method does not guarantee exact result. Consider using policy iteration.");
             method = newMethod;
         }
         

@@ -59,6 +59,31 @@ namespace storm {
             }
         }
         
+        template<storm::dd::DdType DdType>
+        std::unique_ptr<storm::solver::SymbolicLinearEquationSolver<DdType, storm::RationalNumber>> GeneralSymbolicLinearEquationSolverFactory<DdType, storm::RationalNumber>::create(storm::dd::Add<DdType, storm::RationalNumber> const& A, storm::dd::Bdd<DdType> const& allRows, std::set<storm::expressions::Variable> const& rowMetaVariables, std::set<storm::expressions::Variable> const& columnMetaVariables, std::vector<std::pair<storm::expressions::Variable, storm::expressions::Variable>> const& rowColumnMetaVariablePairs) const {
+
+            auto const& coreSettings = storm::settings::getModule<storm::settings::modules::CoreSettings>();
+            storm::solver::EquationSolverType equationSolver = coreSettings.getEquationSolver();
+            if (coreSettings.isEquationSolverSetFromDefaultValue() && equationSolver != storm::solver::EquationSolverType::Elimination) {
+                STORM_LOG_WARN("Selecting the elimination solver to guarantee exact results. If you want to override this, please explicitly specify a different equation solver.");
+                equationSolver = storm::solver::EquationSolverType::Elimination;
+            }
+            
+            if (equationSolver != storm::solver::EquationSolverType::Elimination) {
+                STORM_LOG_WARN("The chosen equation solver does not guarantee precise results despite using exact arithmetic. Consider using the elimination solver instead.");
+            }
+
+            switch (equationSolver) {
+                case storm::solver::EquationSolverType::Elimination: return std::make_unique<storm::solver::SymbolicEliminationLinearEquationSolver<DdType, storm::RationalNumber>>(A, allRows, rowMetaVariables, columnMetaVariables, rowColumnMetaVariablePairs);
+                    break;
+                case storm::solver::EquationSolverType::Native:
+                    return std::make_unique<storm::solver::SymbolicNativeLinearEquationSolver<DdType, storm::RationalNumber>>(A, allRows, rowMetaVariables, columnMetaVariables, rowColumnMetaVariablePairs);
+                    break;
+                default:
+                    STORM_LOG_WARN("The selected equation solver is not available in the dd engine. Falling back to elimination solver.");
+                    return std::make_unique<storm::solver::SymbolicEliminationLinearEquationSolver<DdType, storm::RationalNumber>>(A, allRows, rowMetaVariables, columnMetaVariables, rowColumnMetaVariablePairs);
+            }
+        }
         
         template<storm::dd::DdType DdType>
         std::unique_ptr<storm::solver::SymbolicLinearEquationSolver<DdType, storm::RationalFunction>> GeneralSymbolicLinearEquationSolverFactory<DdType, storm::RationalFunction>::create(storm::dd::Add<DdType, storm::RationalFunction> const& A, storm::dd::Bdd<DdType> const& allRows, std::set<storm::expressions::Variable> const& rowMetaVariables, std::set<storm::expressions::Variable> const& columnMetaVariables, std::vector<std::pair<storm::expressions::Variable, storm::expressions::Variable>> const& rowColumnMetaVariablePairs) const {

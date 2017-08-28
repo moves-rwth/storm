@@ -113,7 +113,7 @@ namespace storm {
             // edges and transient assignments that are added to the locations.
             std::map<uint_fast64_t, std::vector<storm::jani::Assignment>> transientEdgeAssignments;
             for (auto const& rewardModel : program.getRewardModels()) {
-                auto newExpressionVariable = manager->declareRationalVariable(rewardModel.getName().empty() ? "default" : rewardModel.getName());
+                auto newExpressionVariable = manager->declareRationalVariable(rewardModel.getName().empty() ? "default_reward_model" : rewardModel.getName());
                 storm::jani::RealVariable const& newTransientVariable = janiModel.addVariable(storm::jani::RealVariable(rewardModel.getName().empty() ? "default" : rewardModel.getName(), newExpressionVariable, manager->rational(0.0), true));
                 
                 if (rewardModel.hasStateRewards()) {

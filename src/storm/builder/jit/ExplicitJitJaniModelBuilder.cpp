@@ -99,6 +99,7 @@ namespace storm {
                 } else {
                     carlIncludeDirectory = STORM_CARL_INCLUDE_DIR;
                 }
+                sparseppIncludeDirectory = STORM_BUILD_DIR "/include/resources/3rdparty/sparsepp/";
                 
                 // Register all transient variables as transient.
                 for (auto const& variable : this->model.getGlobalVariables().getTransientVariables()) {
@@ -1675,7 +1676,7 @@ namespace storm {
 #include "storm/adapters/RationalFunctionAdapter.h"
 {% endif %}
                 
-#include "resources/3rdparty/sparsepp/sparsepp.h"
+#include <sparsepp/spp.h>
                 
 #include "storm/builder/jit/StateSet.h"
 #include "storm/builder/jit/JitModelBuilderInterface.h"
@@ -2462,7 +2463,7 @@ namespace storm {
                 dynamicLibraryPath += DYLIB_EXTENSION;
                 std::string dynamicLibraryFilename = boost::filesystem::absolute(dynamicLibraryPath).string();
                 
-                std::string command = compiler + " " + sourceFilename + " " + compilerFlags + " -I" + stormIncludeDirectory + " -I" + boostIncludeDirectory + " -I" + carlIncludeDirectory + " -o " + dynamicLibraryFilename;
+                std::string command = compiler + " " + sourceFilename + " " + compilerFlags + " -I" + stormIncludeDirectory + " -I" + sparseppIncludeDirectory + " -I" + boostIncludeDirectory + " -I" + carlIncludeDirectory + " -o " + dynamicLibraryFilename;
                 boost::optional<std::string> error = execute(command);
                 
                 if (error) {

@@ -216,7 +216,6 @@ namespace storm {
             for (auto& choice : allLabeledChoices) {
                 allChoices.push_back(std::move(choice));
             }
-            
             std::size_t totalNumberOfChoices = allChoices.size();
             
             // If there is not a single choice, we return immediately, because the state has no behavior (other than
@@ -283,9 +282,9 @@ namespace storm {
             for (auto& choice : allChoices) {
                 result.addChoice(std::move(choice));
             }
-            
+
             this->postprocess(result);
-                        
+            
             return result;
         }
         
@@ -394,7 +393,7 @@ namespace storm {
                     if (!this->evaluator->asBool(command.getGuardExpression())) {
                         continue;
                     }
-                                        
+                    
                     result.push_back(Choice<ValueType>(command.getActionIndex(), command.isMarkovian()));
                     Choice<ValueType>& choice = result.back();
                     

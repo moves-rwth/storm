@@ -306,15 +306,8 @@ namespace storm {
 
             if (parSettings.onlyObtainConstraints()) {
                 STORM_LOG_THROW(parSettings.exportResultToFile(), storm::exceptions::InvalidSettingsException, "When computing constraints, export path has to be specified.");
-                if (model->isOfType(storm::models::ModelType::Dtmc)) {
-                    auto dtmc = model->template as<storm::models::sparse::Dtmc<ValueType>>();
-                    storm::api::exportParametricResultToFile<ValueType>(boost::none, storm::analysis::ConstraintCollector<ValueType>(*dtmc),parSettings.exportResultPath());
-                    return;
-                } else {
-                    STORM_LOG_THROW(parSettings.exportResultToFile(), storm::exceptions::NotImplementedException, "Constraints for MDPs and CTMCs not implemented.");
-
-                }
-
+                storm::api::exportParametricResultToFile<ValueType>(boost::none, storm::analysis::ConstraintCollector<ValueType>(*(model->as<storm::models::sparse::Model<ValueType>>())), parSettings.exportResultPath());
+                return;
             }
 
             if (model) {

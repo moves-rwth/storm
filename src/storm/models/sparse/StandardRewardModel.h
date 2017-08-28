@@ -23,9 +23,9 @@ namespace storm {
                  * @param optionalStateActionRewardVector The reward values associated with state-action pairs.
                  * @param optionalTransitionRewardMatrix The reward values associated with the transitions of the model.
                  */
-                StandardRewardModel(boost::optional<std::vector<ValueType>> const& optionalStateRewardVector = boost::optional<std::vector<ValueType>>(),
-                                    boost::optional<std::vector<ValueType>> const& optionalStateActionRewardVector = boost::optional<std::vector<ValueType>>(),
-                                    boost::optional<storm::storage::SparseMatrix<ValueType>> const& optionalTransitionRewardMatrix = boost::optional<storm::storage::SparseMatrix<ValueType>>());
+                StandardRewardModel(boost::optional<std::vector<ValueType>> const& optionalStateRewardVector = boost::none,
+                                    boost::optional<std::vector<ValueType>> const& optionalStateActionRewardVector = boost::none,
+                                    boost::optional<storm::storage::SparseMatrix<ValueType>> const& optionalTransitionRewardMatrix = boost::none);
                 
                 /*!
                  * Constructs a reward model by moving the given data.
@@ -34,9 +34,9 @@ namespace storm {
                  * @param optionalStateActionRewardVector The reward values associated with state-action pairs.
                  * @param optionalTransitionRewardMatrix The reward values associated with the transitions of the model.
                  */
-                StandardRewardModel(boost::optional<std::vector<ValueType>>&& optionalStateRewardVector = boost::optional<std::vector<ValueType>>(),
-                            boost::optional<std::vector<ValueType>>&& optionalStateActionRewardVector = boost::optional<std::vector<ValueType>>(),
-                            boost::optional<storm::storage::SparseMatrix<ValueType>>&& optionalTransitionRewardMatrix = boost::optional<storm::storage::SparseMatrix<ValueType>>());
+                StandardRewardModel(boost::optional<std::vector<ValueType>>&& optionalStateRewardVector = boost::none,
+                                    boost::optional<std::vector<ValueType>>&& optionalStateActionRewardVector = boost::none,
+                                    boost::optional<storm::storage::SparseMatrix<ValueType>>&& optionalTransitionRewardMatrix = boost::none);
                 
                 StandardRewardModel(StandardRewardModel<ValueType> const& dtmc) = default;
                 StandardRewardModel& operator=(StandardRewardModel<ValueType> const& dtmc) = default;
@@ -191,9 +191,13 @@ namespace storm {
                  * but not all reward-based properties.
                  *
                  * @param transitionMatrix The transition matrix that is used to weight the rewards in the reward matrix.
+                 * @param reduceToStateRewards If set, the state-action rewards and the state rewards are summed so the
+                 * model only has a state reward vector left.
+                 * @param weights If given and if the reduction to state rewards only is enabled, this vector is used to
+                 * weight the state-action and transition rewards
                  */
                 template<typename MatrixValueType>
-                void reduceToStateBasedRewards(storm::storage::SparseMatrix<MatrixValueType> const& transitionMatrix, bool reduceToStateRewards = false);
+                void reduceToStateBasedRewards(storm::storage::SparseMatrix<MatrixValueType> const& transitionMatrix, bool reduceToStateRewards = false, std::vector<MatrixValueType> const* weights = nullptr);
                 
                 /*!
                  * Creates a vector representing the complete reward vector based on the state-, state-action- and
@@ -211,12 +215,10 @@ namespace storm {
                  *
                  * @param transitionMatrix The matrix that is used to weight the values of the transition reward matrix.
                  * @param weights A vector used for scaling the entries of transition and/or state-action rewards (if present).
-                 * @param scaleTransAndActions If true both transition rewards and state-action rewards are scaled by the
-                 * weights. Otherwise, only the state-action rewards are scaled.
                  * @return The full state-action reward vector.
                  */
                 template<typename MatrixValueType>
-                std::vector<ValueType> getTotalRewardVector(storm::storage::SparseMatrix<MatrixValueType> const& transitionMatrix, std::vector<MatrixValueType> const& weights, bool scaleTransAndActions) const;
+                std::vector<ValueType> getTotalRewardVector(storm::storage::SparseMatrix<MatrixValueType> const& transitionMatrix, std::vector<MatrixValueType> const& weights) const;
                 
                 /*!
                  * Creates a vector representing the complete reward vector based on the state-, state-action- and

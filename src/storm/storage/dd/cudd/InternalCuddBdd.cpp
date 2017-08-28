@@ -179,7 +179,7 @@ namespace storm {
             return static_cast<uint_fast64_t>(ddManager->getCuddManager().ReadPerm(this->getIndex()));
         }
         
-        void InternalBdd<DdType::CUDD>::exportToDot(std::string const& filename, std::vector<std::string> const& ddVariableNamesAsStrings) const {
+        void InternalBdd<DdType::CUDD>::exportToDot(std::string const& filename, std::vector<std::string> const& ddVariableNamesAsStrings, bool showVariablesIfPossible) const {
             // Build the name input of the DD.
             std::vector<char*> ddNames;
             std::string ddName("f");
@@ -196,7 +196,11 @@ namespace storm {
             // Open the file, dump the DD and close it again.
             std::vector<cudd::BDD> cuddBddVector = { this->getCuddBdd() };
             FILE* filePointer = fopen(filename.c_str() , "w");
-            ddManager->getCuddManager().DumpDot(cuddBddVector, &ddVariableNames[0], &ddNames[0], filePointer);
+            if (showVariablesIfPossible) {
+                ddManager->getCuddManager().DumpDot(cuddBddVector, ddVariableNames.data(), &ddNames[0], filePointer);
+            } else {
+                ddManager->getCuddManager().DumpDot(cuddBddVector, nullptr, &ddNames[0], filePointer);
+            }
             fclose(filePointer);
             
             // Finally, delete the names.
@@ -313,10 +317,10 @@ namespace storm {
         
         Odd InternalBdd<DdType::CUDD>::createOdd(std::vector<uint_fast64_t> const& ddVariableIndices) const {
             // Prepare a unique table for each level that keeps the constructed ODD nodes unique.
-            std::vector<std::unordered_map<std::pair<DdNode const*, bool>, std::shared_ptr<Odd>, HashFunctor>> uniqueTableForLevels(ddVariableIndices.size() + 1);
+            std::vector<std::unordered_map<DdNode const*, std::shared_ptr<Odd>>> uniqueTableForLevels(ddVariableIndices.size() + 1);
             
             // Now construct the ODD structure from the BDD.
-            std::shared_ptr<Odd> rootOdd = createOddRec(Cudd_Regular(this->getCuddDdNode()), ddManager->getCuddManager(), 0, Cudd_IsComplement(this->getCuddDdNode()), ddVariableIndices.size(), ddVariableIndices, uniqueTableForLevels);
+            std::shared_ptr<Odd> rootOdd = createOddRec(this->getCuddDdNode(), ddManager->getCuddManager(), 0, ddVariableIndices.size(), ddVariableIndices, uniqueTableForLevels);
             
             // Return a copy of the root node to remove the shared_ptr encapsulation.
             return Odd(*rootOdd);
@@ -329,57 +333,44 @@ namespace storm {
             return result;
         }
         
-        std::shared_ptr<Odd> InternalBdd<DdType::CUDD>::createOddRec(DdNode const* dd, cudd::Cudd const& manager, uint_fast64_t currentLevel, bool complement, uint_fast64_t maxLevel, std::vector<uint_fast64_t> const& ddVariableIndices, std::vector<std::unordered_map<std::pair<DdNode const*, bool>, std::shared_ptr<Odd>, HashFunctor>>& uniqueTableForLevels) {
+        std::shared_ptr<Odd> InternalBdd<DdType::CUDD>::createOddRec(DdNode const* dd, cudd::Cudd const& manager, uint_fast64_t currentLevel, uint_fast64_t maxLevel, std::vector<uint_fast64_t> const& ddVariableIndices, std::vector<std::unordered_map<DdNode const*, std::shared_ptr<Odd>>>& uniqueTableForLevels) {
             // Check whether the ODD for this node has already been computed (for this level) and if so, return this instead.
-            auto const& iterator = uniqueTableForLevels[currentLevel].find(std::make_pair(dd, complement));
-            if (iterator != uniqueTableForLevels[currentLevel].end()) {
-                return iterator->second;
+            auto it = uniqueTableForLevels[currentLevel].find(dd);
+            if (it != uniqueTableForLevels[currentLevel].end()) {
+                return it->second;
             } else {
                 // Otherwise, we need to recursively compute the ODD.
                 
                 // If we are already at the maximal level that is to be considered, we can simply create an Odd without
                 // successors
                 if (currentLevel == maxLevel) {
-                    uint_fast64_t elseOffset = 0;
-                    uint_fast64_t thenOffset = 0;
-                    
-                    // If the DD is not the zero leaf, then the then-offset is 1.
-                    if (dd != Cudd_ReadZero(manager.getManager())) {
-                        thenOffset = 1;
-                    }
-                    
-                    // If we need to complement the 'terminal' node, we need to negate its offset.
-                    if (complement) {
-                        thenOffset = 1 - thenOffset;
-                    }
-                    
-                    auto oddNode = std::make_shared<Odd>(nullptr, elseOffset, nullptr, thenOffset);
-                    uniqueTableForLevels[currentLevel].emplace(std::make_pair(dd, complement), oddNode);
+                    auto oddNode = std::make_shared<Odd>(nullptr, 0, nullptr, dd != Cudd_ReadLogicZero(manager.getManager()) ? 1 : 0);
+                    uniqueTableForLevels[currentLevel].emplace(dd, oddNode);
                     return oddNode;
                 } else if (ddVariableIndices[currentLevel] < Cudd_NodeReadIndex(dd)) {
                     // If we skipped the level in the DD, we compute the ODD just for the else-successor and use the same
                     // node for the then-successor as well.
-                    std::shared_ptr<Odd> elseNode = createOddRec(dd, manager, currentLevel + 1, complement, maxLevel, ddVariableIndices, uniqueTableForLevels);
+                    std::shared_ptr<Odd> elseNode = createOddRec(dd, manager, currentLevel + 1, maxLevel, ddVariableIndices, uniqueTableForLevels);
                     std::shared_ptr<Odd> thenNode = elseNode;
-                    uint_fast64_t totalOffset = elseNode->getElseOffset() + elseNode->getThenOffset();
                     
-                    auto oddNode = std::make_shared<Odd>(elseNode, totalOffset, thenNode, totalOffset);
-                    uniqueTableForLevels[currentLevel].emplace(std::make_pair(dd, complement), oddNode);
+                    auto oddNode = std::make_shared<Odd>(elseNode, elseNode->getTotalOffset(), thenNode, elseNode->getTotalOffset());
+                    uniqueTableForLevels[currentLevel].emplace(dd, oddNode);
                     return oddNode;
                 } else {
                     // Otherwise, we compute the ODDs for both the then- and else successors.
                     DdNode const* thenDdNode = Cudd_T_const(dd);
                     DdNode const* elseDdNode = Cudd_E_const(dd);
                     
-                    // Determine whether we have to evaluate the successors as if they were complemented.
-                    bool elseComplemented = Cudd_IsComplement(elseDdNode) ^ complement;
-                    bool thenComplemented = Cudd_IsComplement(thenDdNode) ^ complement;
+                    if (Cudd_IsComplement(dd)) {
+                        thenDdNode = Cudd_Not(thenDdNode);
+                        elseDdNode = Cudd_Not(elseDdNode);
+                    }
                     
-                    std::shared_ptr<Odd> elseNode = createOddRec(Cudd_Regular(elseDdNode), manager, currentLevel + 1, elseComplemented, maxLevel, ddVariableIndices, uniqueTableForLevels);
-                    std::shared_ptr<Odd> thenNode = createOddRec(Cudd_Regular(thenDdNode), manager, currentLevel + 1, thenComplemented, maxLevel, ddVariableIndices, uniqueTableForLevels);
+                    std::shared_ptr<Odd> elseNode = createOddRec(elseDdNode, manager, currentLevel + 1, maxLevel, ddVariableIndices, uniqueTableForLevels);
+                    std::shared_ptr<Odd> thenNode = createOddRec(thenDdNode, manager, currentLevel + 1, maxLevel, ddVariableIndices, uniqueTableForLevels);
                     
-                    auto oddNode = std::make_shared<Odd>(elseNode, elseNode->getElseOffset() + elseNode->getThenOffset(), thenNode, thenNode->getElseOffset() + thenNode->getThenOffset());
-                    uniqueTableForLevels[currentLevel].emplace(std::make_pair(dd, complement), oddNode);
+                    auto oddNode = std::make_shared<Odd>(elseNode, elseNode->getTotalOffset(), thenNode, thenNode->getTotalOffset());
+                    uniqueTableForLevels[currentLevel].emplace(dd, oddNode);
                     return oddNode;
                 }
             }

@@ -499,7 +499,7 @@ namespace storm {
             allSuccessorLocationVariables.insert(newMetaVariable.second);
             successorVariables.insert(newMetaVariable.second);
             extendedPredicateDdVariables.emplace_back(newMetaVariable);
-            allLocationIdentities &= ddManager->template getIdentity<uint64_t>(newMetaVariable.first).equals(ddManager->template getIdentity<uint64_t>(newMetaVariable.second)) && ddManager->getRange(newMetaVariable.first) && ddManager->getRange(newMetaVariable.second);
+            allLocationIdentities &= ddManager->getIdentity(newMetaVariable.first, newMetaVariable.second);
             return std::make_pair(locationVariablePairs.back(), locationVariablePairs.size() - 1);
         }
         

@@ -331,7 +331,17 @@ namespace storm {
              * @return An ADD representing the result of the matrix-matrix multiplication.
              */
             InternalAdd<DdType::Sylvan, ValueType> multiplyMatrix(InternalAdd<DdType::Sylvan, ValueType> const& otherMatrix, std::vector<InternalBdd<DdType::Sylvan>> const& summationDdVariables) const;
-            
+
+            /*!
+             * Multiplies the current ADD (representing a matrix) with the given matrix by summing over the given meta
+             * variables.
+             *
+             * @param otherMatrix The matrix with which to multiply.
+             * @param summationDdVariables The DD variables (represented as ADDs) over which to sum.
+             * @return An ADD representing the result of the matrix-matrix multiplication.
+             */
+            InternalAdd<DdType::Sylvan, ValueType> multiplyMatrix(InternalBdd<DdType::Sylvan> const& otherMatrix, std::vector<InternalBdd<DdType::Sylvan>> const& summationDdVariables) const;
+
             /*!
              * Computes a BDD that represents the function in which all assignments with a function value strictly
              * larger than the given value are mapped to one and all others to zero.
@@ -487,7 +497,7 @@ namespace storm {
              * @param filename The name of the file to which the DD is to be exported.
              * @param ddVariableNamesAsString The names of the DD variables to display in the dot file.
              */
-            void exportToDot(std::string const& filename, std::vector<std::string> const& ddVariableNamesAsStrings) const;
+            void exportToDot(std::string const& filename, std::vector<std::string> const& ddVariableNamesAsStrings, bool showVariablesIfPossible = true) const;
             
             /*!
              * Retrieves an iterator that points to the first meta variable assignment with a non-zero function value.
@@ -585,6 +595,32 @@ namespace storm {
              * @return The corresponding ODD.
              */
             Odd createOdd(std::vector<uint_fast64_t> const& ddVariableIndices) const;
+            
+            InternalDdManager<DdType::Sylvan> const& getInternalDdManager() const;
+
+            /*!
+             * Retrieves the underlying sylvan MTBDD.
+             *
+             * @return The sylvan MTBDD.
+             */
+            sylvan::Mtbdd getSylvanMtbdd() const;
+
+            /*!
+             * Retrieves the value of the given node (that must be a leaf).
+             *
+             * @return The value of the leaf.
+             */
+            static ValueType getValue(MTBDD const& node);
+
+            /*!
+             * Retrieves whether the topmost variable in the MTBDD is the one with the given index.
+             *
+             * @param The top node of the MTBDD.
+             * @param variableIndex The variable index.
+             * @param offset An offset that is applied to the index of the top variable in the MTBDD.
+             * @return True iff the MTBDD's top variable has the given index.
+             */
+            static bool matchesVariableIndex(MTBDD const& node, uint64_t variableIndex, int64_t offset = 0);
             
         private:
             /*!
@@ -713,20 +749,6 @@ namespace storm {
 			*/
 			static MTBDD getLeaf(storm::RationalFunction const& value);
 #endif
-            
-            /*!
-             * Retrieves the value of the given node (that must be a leaf).
-             *
-             * @return The value of the leaf.
-             */
-            static ValueType getValue(MTBDD const& node);
-            
-            /*!
-             * Retrieves the underlying sylvan MTBDD.
-             *
-             * @return The sylvan MTBDD.
-             */
-            sylvan::Mtbdd getSylvanMtbdd() const;
             
             // The manager responsible for this MTBDD.
             InternalDdManager<DdType::Sylvan> const* ddManager;

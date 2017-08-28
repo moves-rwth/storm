@@ -209,7 +209,14 @@ namespace storm {
                 summationAdds.push_back(ddVariable.toAdd<ValueType>().getCuddAdd());
             }
             
+//            return InternalAdd<DdType::CUDD, ValueType>(ddManager, this->getCuddAdd().TimesPlus(otherMatrix.getCuddAdd(), summationAdds));
+//            return InternalAdd<DdType::CUDD, ValueType>(ddManager, this->getCuddAdd().Triangle(otherMatrix.getCuddAdd(), summationAdds));
             return InternalAdd<DdType::CUDD, ValueType>(ddManager, this->getCuddAdd().MatrixMultiply(otherMatrix.getCuddAdd(), summationAdds));
+        }
+        
+        template<typename ValueType>
+        InternalAdd<DdType::CUDD, ValueType> InternalAdd<DdType::CUDD, ValueType>::multiplyMatrix(InternalBdd<DdType::CUDD> const& otherMatrix, std::vector<InternalBdd<DdType::CUDD>> const& summationDdVariables) const {
+            return this->multiplyMatrix(otherMatrix.template toAdd<ValueType>(), summationDdVariables);
         }
         
         template<typename ValueType>
@@ -315,7 +322,7 @@ namespace storm {
         }
         
         template<typename ValueType>
-        void InternalAdd<DdType::CUDD, ValueType>::exportToDot(std::string const& filename, std::vector<std::string> const& ddVariableNamesAsStrings) const {
+        void InternalAdd<DdType::CUDD, ValueType>::exportToDot(std::string const& filename, std::vector<std::string> const& ddVariableNamesAsStrings, bool showVariablesIfPossible) const {
             // Build the name input of the DD.
             std::vector<char*> ddNames;
             std::string ddName("f");
@@ -332,7 +339,11 @@ namespace storm {
             // Open the file, dump the DD and close it again.
             FILE* filePointer = fopen(filename.c_str() , "w");
             std::vector<cudd::ADD> cuddAddVector = { this->getCuddAdd() };
-            ddManager->getCuddManager().DumpDot(cuddAddVector, &ddVariableNames[0], &ddNames[0], filePointer);
+            if (showVariablesIfPossible) {
+                ddManager->getCuddManager().DumpDot(cuddAddVector, ddVariableNames.data(), &ddNames[0], filePointer);
+            } else {
+                ddManager->getCuddManager().DumpDot(cuddAddVector, nullptr, &ddNames[0], filePointer);
+            }
             fclose(filePointer);
             
             // Finally, delete the names.
@@ -425,6 +436,11 @@ namespace storm {
             }
         }
 
+        template<typename ValueType>
+        InternalDdManager<DdType::CUDD> const& InternalAdd<DdType::CUDD, ValueType>::getInternalDdManager() const {
+            return *ddManager;
+        }
+        
         template<typename ValueType>
         void InternalAdd<DdType::CUDD, ValueType>::composeWithExplicitVector(storm::dd::Odd const& odd, std::vector<uint_fast64_t> const& ddVariableIndices, std::vector<ValueType>& targetVector, std::function<ValueType (ValueType const&, ValueType const&)> const& function) const {
             composeWithExplicitVectorRec(this->getCuddDdNode(), nullptr, 0, ddVariableIndices.size(), 0, odd, ddVariableIndices, targetVector, function);

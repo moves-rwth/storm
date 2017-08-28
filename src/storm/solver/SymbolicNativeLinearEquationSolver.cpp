@@ -69,7 +69,7 @@ namespace storm {
             storm::dd::Add<DdType, ValueType> lu = diagonal.ite(manager.template getAddZero<ValueType>(), this->A);
             storm::dd::Add<DdType, ValueType> diagonalAdd = diagonal.template toAdd<ValueType>();
             storm::dd::Add<DdType, ValueType> diag = diagonalAdd.multiplyMatrix(this->A, this->columnMetaVariables);
-            
+
             storm::dd::Add<DdType, ValueType> scaledLu = lu / diag;
             storm::dd::Add<DdType, ValueType> scaledB = b / diag;
             

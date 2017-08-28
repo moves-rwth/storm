@@ -18,6 +18,8 @@
 
 #if defined(STORM_HAVE_GMP) && !defined(STORM_USE_CLN_EA)
 #define RATIONAL_NUMBER_THREAD_SAFE
+#else
+#warning "Rational numbers do not appear to be thread-safe. Use in sylvan will be protected by mutexes, performance might degrade."
 #endif
 
 // A mutex that is used to lock all operations accessing rational numbers as they are not necessarily thread-safe.
@@ -122,6 +124,8 @@ int storm_rational_number_is_zero(storm_rational_number_ptr a) {
 #ifndef RATIONAL_NUMBER_THREAD_SAFE
     std::lock_guard<std::mutex> lock(rationalNumberMutex);
 #endif
+    
+    std::cout << "got ptr for eq check " << a << std::endl;
     
     return storm::utility::isZero(*(storm::RationalNumber const*)a) ? 1 : 0;
 }

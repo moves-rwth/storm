@@ -2,12 +2,60 @@
 All notable changes to Sylvan will be documented in this file.
 
 ## [Unreleased]
+### Changed
+- We now implement twisted tabulation as the hash function for the nodes table. The old hash function is still available and the default behavior can be changed in `sylvan_table.h`.
+
+## [1.4.0] - 2017-07-12
+### Added
+- Function `mtbdd_cmpl` that computes the complement for MTBDDs. (0 becomes 1, non-0 becomes 0)
+
+### Changed
+- Changed file formats used by the examples to match the changes in LTSmin.
+- Function `mtbdd_satcount` now does not count assignments leading to 0. Perhaps in the future we make this configurable. (Like in CuDD.)
+- Slightly improved C++ support by wrapping header files in the namespace sylvan.
+
+### Fixed
+- There was a bug where Lace tasks are overwritten during SYNC, which causes problems during garbage collection. Lace reusing the bucket during SYNC is by design and is difficult to change. We fix the issue by checking during garbage collection if the stored task is still the same function, which in the worst case marks more nodes than needed.
+- Band-aid patch for hashing; very similar nodes were hashing to similar positions and strides, causing early garbage collections and full tables. The patch works for now, but we need a more robust solution.
+
+### Removed
+- Removed support for HWLOC (pinning on NUMA machines). Planning to bring this back as an option, but in its current form it prevents multiple Sylvan programs from running simultaneously on the same machine.
+
+## [1.3.3] - 2017-06-03
+### Changed
+- Changed file format for .bdd files in the MC example.
+
+### Fixed
+- A major bug in `lddmc_match_sat_par` has been fixed.
+- A bug in the saturation algorithm in the model checking example has been fixed.
+- A major bug in the hash table rehashing implementation has been fixed.
+
+## [1.3.2] - 2017-05-23
+### Added
+- Now implements `lddmc_protect` and `lddmc_unprotect` for external pointer references.
+- Now implements `lddmc_refs_pushptr` and `lddmc_refs_popptr` for internal pointer references
+
+### Changed
+- New version of Lace has slightly different API for manually created threads.
+
+## [1.3.1] - 2017-05-22
+### Fixed
+- A bug in `mtbdd_refs_ptrs_up` caused a segfault. This has been fixed.
+
+## [1.3.0] - 2017-05-16
 ### Added
 - The embedded work-stealing framework now explicitly checks for stack overflows and aborts with an appropriate error message written to stderr.
 - New functions `sylvan_project` and `sylvan_and_project` for BDDs, a dual of existential quantification, where instead of the variables to remove, the given set of variables are the variables to keep.
+- New functions `mtbdd_refs_pushptr` and `mtbdd_refs_popptr` allow thread-specific referencing of pointers.
 
 ### Changed
 - Rewritten initialization of Sylvan. Before the call to `sylvan_init_package`, table sizes must be initialized either using `sylvan_set_sizes` or with the new function `sylvan_set_limits`. This new function allows the user to set a maximum number of bytes allocated for the nodes table and for the operation cache.
+- Rewritten MTBDD referencing system.
+- Rewritten MTBDD map and set functions (no API change except renaming `mtbdd_map_addall` to `mtbdd_map_update` with backward compatibility)
+- The lock-free unique table now uses double hashing instead of rehashing. This can improve the performance for custom leaves and improves the hash spread.
+
+### Fixed
+- A bug in `llmsset_lookup` affecting custom leaves has been fixed.
 
 ## [1.2.0] - 2017-02-03
 ### Added

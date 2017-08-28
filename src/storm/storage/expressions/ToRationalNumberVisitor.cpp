@@ -119,6 +119,8 @@ namespace storm {
                     return result;
                     break;
             }
+            // Dummy return.
+            return result;
         }
         
         template<typename RationalNumberType>

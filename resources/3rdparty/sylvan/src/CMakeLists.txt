@@ -37,6 +37,8 @@ set(HEADERS
     sylvan_table.h
     sylvan_tls.h
     storm_wrapper.h
+    sylvan_bdd_storm.h
+    sylvan_mtbdd_storm.h
     sylvan_storm_rational_function.h
     sylvan_storm_rational_number.h
 )
@@ -47,10 +49,9 @@ option(BUILD_STATIC_LIBS "Enable/disable creation of static libraries" ON)
 add_library(sylvan ${SOURCES})
 
 find_package(GMP REQUIRED)
-find_package(Hwloc REQUIRED)
 
-include_directories(sylvan ${HWLOC_INCLUDE_DIR} ${GMP_INCLUDE_DIR})
-target_link_libraries(sylvan m pthread ${GMP_LIBRARIES} ${HWLOC_LIBRARIES})
+include_directories(sylvan ${GMP_INCLUDE_DIR})
+target_link_libraries(sylvan m pthread ${GMP_LIBRARIES})
 
 if(UNIX AND NOT APPLE)
     target_link_libraries(sylvan rt)
@@ -60,11 +61,9 @@ option(SYLVAN_STATS "Collect statistics" OFF)
 if(SYLVAN_STATS)
     set_target_properties(sylvan PROPERTIES COMPILE_DEFINITIONS "SYLVAN_STATS")
 endif()
-set_target_properties(sylvan PROPERTIES COMPILE_DEFINITIONS "STORM_SILENCE_WARNINGS")
 
 install(TARGETS sylvan DESTINATION "${CMAKE_INSTALL_LIBDIR}")
 install(FILES ${HEADERS} DESTINATION "${CMAKE_INSTALL_INCLUDEDIR}")
-
 
 # MODIFICATIONS NEEDED MADE FOR STORM
 

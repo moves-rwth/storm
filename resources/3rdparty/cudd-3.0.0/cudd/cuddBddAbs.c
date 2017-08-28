@@ -563,6 +563,10 @@ cuddBddExistAbstractRepresentativeRecur(
     }
     /* From now on, cube and f are non-constant. */
     
+    /* Check the cache. */
+    if (F->ref != 1 && (res = cuddCacheLookup2(manager, Cudd_bddExistAbstractRepresentative, f, cube)) != NULL) {
+        return(res);
+    }
     
     /* Abstract a variable that does not appear in f. */
     if (manager->perm[F->index] > manager->perm[cube->index]) {
@@ -584,11 +588,6 @@ cuddBddExistAbstractRepresentativeRecur(
         cuddDeref(res);
 
        	return(res1);
-    }
-    
-    /* Check the cache. */
-    if (F->ref != 1 && (res = cuddCacheLookup2(manager, Cudd_bddExistAbstractRepresentative, f, cube)) != NULL) {
-        return(res);
     }
     
     /* Compute the cofactors of f. */

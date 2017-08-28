@@ -16,7 +16,14 @@ endif()
 
 set(CUDD_LIB_DIR ${STORM_3RDPARTY_BINARY_DIR}/cudd-3.0.0/lib)
 
-set(STORM_CUDD_FLAGS "CFLAGS=-O3 -w -DPIC -DHAVE_IEEE_754 -fno-common -ffast-math -fno-finite-math-only")
+# create CUDD compilation flags
+if (NOT STORM_DEBUG_CUDD)
+	set(STORM_CUDD_FLAGS "-O3")
+else()
+	message(WARNING "Building CUDD in DEBUG mode.")
+	set(STORM_CUDD_FLAGS "-O0 -g")
+endif()
+set(STORM_CUDD_FLAGS "CFLAGS=${STORM_CUDD_FLAGS} -w -DPIC -DHAVE_IEEE_754 -fno-common -ffast-math -fno-finite-math-only")
 if (NOT STORM_PORTABLE)
 	set(STORM_CUDD_FLAGS "${STORM_CUDD_FLAGS} -march=native")
 endif()

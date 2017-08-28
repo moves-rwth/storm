@@ -9,7 +9,9 @@
 #include "storm/storage/expressions/Expression.h"
 #include "storm/storage/expressions/Variable.h"
 #include "storm/storage/dd/DdType.h"
-#include "storm/models/ModelBase.h"
+#include "storm/storage/dd/Add.h"
+#include "storm/storage/dd/Bdd.h"
+#include "storm/models/Model.h"
 #include "storm/utility/OsDetection.h"
 
 #include "storm-config.h"
@@ -20,12 +22,6 @@ namespace storm {
         
         template<storm::dd::DdType Type>
         class Dd;
-        
-        template<storm::dd::DdType Type, typename ValueType>
-        class Add;
-        
-        template<storm::dd::DdType Type>
-        class Bdd;
         
         template<storm::dd::DdType Type>
         class DdManager;
@@ -47,7 +43,7 @@ namespace storm {
              * Base class for all symbolic models.
              */
             template<storm::dd::DdType Type, typename CValueType = double>
-            class Model : public storm::models::ModelBase {
+            class Model : public storm::models::Model<CValueType> {
             public:
                 typedef CValueType ValueType;
                 
@@ -75,8 +71,6 @@ namespace storm {
                  * @param rowExpressionAdapter An object that can be used to translate expressions in terms of the row
                  * meta variables.
                  * @param columVariables The set of column meta variables used in the DDs.
-                 * @param columnExpressionAdapter An object that can be used to translate expressions in terms of the
-                 * column meta variables.
                  * @param rowColumnMetaVariablePairs All pairs of row/column meta variables.
                  * @param labelToExpressionMap A mapping from label names to their defining expressions.
                  * @param rewardModels The reward models associated with the model.
@@ -90,9 +84,35 @@ namespace storm {
                       std::set<storm::expressions::Variable> const& rowVariables,
                       std::shared_ptr<storm::adapters::AddExpressionAdapter<Type, ValueType>> rowExpressionAdapter,
                       std::set<storm::expressions::Variable> const& columnVariables,
-                      std::shared_ptr<storm::adapters::AddExpressionAdapter<Type, ValueType>> columnExpressionAdapter,
                       std::vector<std::pair<storm::expressions::Variable, storm::expressions::Variable>> const& rowColumnMetaVariablePairs,
                       std::map<std::string, storm::expressions::Expression> labelToExpressionMap = std::map<std::string, storm::expressions::Expression>(),
+                      std::unordered_map<std::string, RewardModelType> const& rewardModels = std::unordered_map<std::string, RewardModelType>());
+                
+                /*!
+                 * Constructs a model from the given data.
+                 *
+                 * @param modelType The type of the model.
+                 * @param manager The manager responsible for the decision diagrams.
+                 * @param reachableStates A DD representing the reachable states.
+                 * @param initialStates A DD representing the initial states of the model.
+                 * @param deadlockStates A DD representing the deadlock states of the model.
+                 * @param transitionMatrix The matrix representing the transitions in the model.
+                 * @param rowVariables The set of row meta variables used in the DDs.
+                 * @param columVariables The set of column meta variables used in the DDs.
+                 * @param rowColumnMetaVariablePairs All pairs of row/column meta variables.
+                 * @param labelToBddMap A mapping from label names to their defining BDDs.
+                 * @param rewardModels The reward models associated with the model.
+                 */
+                Model(storm::models::ModelType const& modelType,
+                      std::shared_ptr<storm::dd::DdManager<Type>> manager,
+                      storm::dd::Bdd<Type> reachableStates,
+                      storm::dd::Bdd<Type> initialStates,
+                      storm::dd::Bdd<Type> deadlockStates,
+                      storm::dd::Add<Type, ValueType> transitionMatrix,
+                      std::set<storm::expressions::Variable> const& rowVariables,
+                      std::set<storm::expressions::Variable> const& columnVariables,
+                      std::vector<std::pair<storm::expressions::Variable, storm::expressions::Variable>> const& rowColumnMetaVariablePairs,
+                      std::map<std::string, storm::dd::Bdd<Type>> labelToBddMap = std::map<std::string, storm::dd::Bdd<Type>>(),
                       std::unordered_map<std::string, RewardModelType> const& rewardModels = std::unordered_map<std::string, RewardModelType>());
                 
                 virtual uint_fast64_t getNumberOfStates() const override;
@@ -104,14 +124,7 @@ namespace storm {
                  *
                  * @return The manager responsible for the DDs that represent this model.
                  */
-                storm::dd::DdManager<Type> const& getManager() const;
-
-                /*!
-                 * Retrieves the manager responsible for the DDs that represent this model.
-                 *
-                 * @return The manager responsible for the DDs that represent this model.
-                 */
-                storm::dd::DdManager<Type>& getManager();
+                storm::dd::DdManager<Type>& getManager() const;
 
                 /*!
                  * Retrieves the manager responsible for the DDs that represent this model.
@@ -143,9 +156,17 @@ namespace storm {
                  * Returns the sets of states labeled with the given label.
                  *
                  * @param label The label for which to get the labeled states.
-                 * @return The set of states labeled with the requested label in the form of a bit vector.
+                 * @return The set of states labeled with the requested label.
                  */
                 virtual storm::dd::Bdd<Type> getStates(std::string const& label) const;
+                
+                /*!
+                 * Returns the expression for the given label.
+                 *
+                 * @param label The label for which to get the expression.
+                 * @return The expression characterizing the requested label.
+                 */
+                virtual storm::expressions::Expression getExpression(std::string const& label) const;
                 
                 /*!
                  * Returns the set of states labeled satisfying the given expression (that must be of boolean type).
@@ -181,9 +202,10 @@ namespace storm {
                  * Retrieves the matrix qualitatively (i.e. without probabilities) representing the transitions of the
                  * model.
                  *
+                 * @param keepNondeterminism If false, the matrix will abstract from the nondeterminism variables.
                  * @return A matrix representing the qualitative transitions of the model.
                  */
-                storm::dd::Bdd<Type> getQualitativeTransitionMatrix() const;
+                virtual storm::dd::Bdd<Type> getQualitativeTransitionMatrix(bool keepNondeterminism = true) const;
                 
                 /*!
                  * Retrieves the meta variables used to encode the rows of the transition matrix and the vector indices.
@@ -199,6 +221,27 @@ namespace storm {
                  */
                 std::set<storm::expressions::Variable> const& getColumnVariables() const;
                 
+                /*!
+                 * Retrieves all meta variables used to encode rows and nondetermism.
+                 *
+                 * @return All meta variables used to encode rows and nondetermism.
+                 */
+                std::set<storm::expressions::Variable> getRowAndNondeterminismVariables() const;
+
+                /*!
+                 * Retrieves all meta variables used to encode columns and nondetermism.
+                 *
+                 * @return All meta variables used to encode columns and nondetermism.
+                 */
+                std::set<storm::expressions::Variable> getColumnAndNondeterminismVariables() const;
+
+                /*!
+                 * Retrieves all meta variables used to encode the nondeterminism.
+                 *
+                 * @return All meta variables used to encode the nondeterminism.
+                 */
+                virtual std::set<storm::expressions::Variable> const& getNondeterminismVariables() const;
+
                 /*!
                  * Retrieves the pairs of row and column meta variables.
                  *
@@ -235,6 +278,13 @@ namespace storm {
                 RewardModelType const& getUniqueRewardModel() const;
 
                 /*!
+                 * Retrieves the name of the unique reward model, if there exists exactly one. Otherwise, an exception is thrown.
+                 *
+                 * @return The name of the unique reward model.
+                 */
+                std::string const& getUniqueRewardModelName() const;
+
+                /*!
                  * Retrieves the unique reward model, if there exists exactly one. Otherwise, an exception is thrown.
                  *
                  * @return The requested reward model.
@@ -255,6 +305,7 @@ namespace storm {
                  */
                 bool hasRewardModel() const;
 
+                std::unordered_map<std::string, RewardModelType>& getRewardModels();
                 std::unordered_map<std::string, RewardModelType> const& getRewardModels() const;
                 
                 /*!
@@ -275,7 +326,6 @@ namespace storm {
                 std::set<storm::RationalFunctionVariable> const& getParameters() const;
                 
             protected:
-                
                 /*!
                  * Sets the transition matrix of the model.
                  *
@@ -325,13 +375,7 @@ namespace storm {
                 
                 // A vector representing the reachable states of the model.
                 storm::dd::Bdd<Type> reachableStates;
-                
-                // A vector representing the initial states of the model.
-                storm::dd::Bdd<Type> initialStates;
-                
-                // A vector representing the deadlock states of the model.
-                storm::dd::Bdd<Type> deadlockStates;
-                
+                                
                 // A matrix representing transition relation.
                 storm::dd::Add<Type, ValueType> transitionMatrix;
                 
@@ -344,9 +388,6 @@ namespace storm {
                 // The meta variables used to encode the columns of the transition matrix.
                 std::set<storm::expressions::Variable> columnVariables;
                 
-                // An adapter that can translate expressions to DDs over the column meta variables.
-                std::shared_ptr<storm::adapters::AddExpressionAdapter<Type, ValueType>> columnExpressionAdapter;
-                
                 // A vector holding all pairs of row and column meta variable pairs. This is used to swap the variables
                 // in the DDs from row to column variables and vice versa.
                 std::vector<std::pair<storm::expressions::Variable, storm::expressions::Variable>> rowColumnMetaVariablePairs;
@@ -354,11 +395,17 @@ namespace storm {
                 // A mapping from labels to expressions defining them.
                 std::map<std::string, storm::expressions::Expression> labelToExpressionMap;
                 
+                // A mapping from labels to BDDs characterizing the labeled states.
+                std::map<std::string, storm::dd::Bdd<Type>> labelToBddMap;
+                
                 // The reward models associated with the model.
                 std::unordered_map<std::string, RewardModelType> rewardModels;
                 
                 // The parameters. Only meaningful for models over rational functions.
                 std::set<storm::RationalFunctionVariable> parameters;
+                
+                // An empty variable set that can be used when references to non-existing sets need to be returned.
+                std::set<storm::expressions::Variable> emptyVariableSet;
             };
             
         } // namespace symbolic

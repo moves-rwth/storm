@@ -14,17 +14,17 @@
 namespace storm {
     namespace models {
         namespace sparse {
-            
+
             template <typename ValueType, typename RewardModelType>
             Model<ValueType, RewardModelType>::Model(ModelType modelType, storm::storage::sparse::ModelComponents<ValueType, RewardModelType> const& components)
-                    : ModelBase(modelType), transitionMatrix(components.transitionMatrix), stateLabeling(components.stateLabeling), rewardModels(components.rewardModels),
+            : storm::models::Model<ValueType>(modelType), transitionMatrix(components.transitionMatrix), stateLabeling(components.stateLabeling), rewardModels(components.rewardModels),
                       choiceLabeling(components.choiceLabeling), stateValuations(components.stateValuations), choiceOrigins(components.choiceOrigins) {
                 assertValidityOfComponents(components);
             }
             
             template <typename ValueType, typename RewardModelType>
             Model<ValueType, RewardModelType>::Model(ModelType modelType, storm::storage::sparse::ModelComponents<ValueType, RewardModelType>&& components)
-                    : ModelBase(modelType), transitionMatrix(std::move(components.transitionMatrix)), stateLabeling(std::move(components.stateLabeling)), rewardModels(std::move(components.rewardModels)),
+            : storm::models::Model<ValueType>(modelType), transitionMatrix(std::move(components.transitionMatrix)), stateLabeling(std::move(components.stateLabeling)), rewardModels(std::move(components.rewardModels)),
                       choiceLabeling(std::move(components.choiceLabeling)), stateValuations(std::move(components.stateValuations)), choiceOrigins(std::move(components.choiceOrigins)) {
                 assertValidityOfComponents(components);
             }

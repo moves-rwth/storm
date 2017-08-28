@@ -1,4 +1,6 @@
 
+#include "storm/models/sparse/MarkovAutomaton.h"
+#include "storm/models/sparse/Ctmc.h"
 #include "GraphConditions.h"
 #include "storm/utility/constants.h"
 #include "storm/exceptions/NotImplementedException.h"
@@ -9,8 +11,8 @@ namespace storm {
 
 
         template <typename ValueType>
-        ConstraintCollector<ValueType>::ConstraintCollector(storm::models::sparse::Dtmc<ValueType> const& dtmc) {
-            process(dtmc);
+        ConstraintCollector<ValueType>::ConstraintCollector(storm::models::sparse::Model<ValueType> const& model) {
+            process(model);
         }
 
         template <typename ValueType>
@@ -50,10 +52,12 @@ namespace storm {
         }
 
         template <typename ValueType>
-        void ConstraintCollector<ValueType>::process(storm::models::sparse::Dtmc<ValueType> const& dtmc) {
-            for(uint_fast64_t state = 0; state < dtmc.getNumberOfStates(); ++state) {
+        void ConstraintCollector<ValueType>::process(storm::models::sparse::Model<ValueType> const& model) {
+            for(uint_fast64_t action = 0; action < model.getTransitionMatrix().getRowCount(); ++action) {
                 ValueType sum = storm::utility::zero<ValueType>();
-                for (auto const& transition : dtmc.getRows(state)) {
+
+                for (auto transitionIt = model.getTransitionMatrix().begin(action); transitionIt != model.getTransitionMatrix().end(action); ++transitionIt) {
+                    auto const& transition = *transitionIt;
                     sum += transition.getValue();
                     if (!storm::utility::isConstant(transition.getValue())) {
                         auto const& transitionVars = transition.getValue().gatherVariables();
@@ -90,9 +94,17 @@ namespace storm {
                     // Assert: sum == 1
                     wellformedConstraintSet.emplace((sum.nominator() - sum.denominator()).polynomialWithCoefficient(), storm::CompareRelation::EQ);
                 }
-
             }
-            for(auto const& rewModelEntry : dtmc.getRewardModels()) {
+
+            if (model.getType() == storm::models::ModelType::Ctmc) {
+                auto const& exitRateVector = static_cast<storm::models::sparse::Ctmc<ValueType> const&>(model).getExitRateVector();
+                wellformedRequiresNonNegativeEntries(exitRateVector);
+            } else if (model.getType() == storm::models::ModelType::MarkovAutomaton) {
+                auto const& exitRateVector = static_cast<storm::models::sparse::MarkovAutomaton<ValueType> const&>(model).getExitRates();
+                wellformedRequiresNonNegativeEntries(exitRateVector);
+            }
+
+            for(auto const& rewModelEntry : model.getRewardModels()) {
                 if (rewModelEntry.second.hasStateRewards()) {
                     wellformedRequiresNonNegativeEntries(rewModelEntry.second.getStateRewardVector());
                 }
@@ -117,13 +129,13 @@ namespace storm {
                         }
                     }
                 }
-
             }
+
         }
 
         template <typename ValueType>
-        void ConstraintCollector<ValueType>::operator()(storm::models::sparse::Dtmc<ValueType> const& dtmc) {
-            process(dtmc);
+        void ConstraintCollector<ValueType>::operator()(storm::models::sparse::Model<ValueType> const& model) {
+            process(model);
         }
 
         template class ConstraintCollector<storm::RationalFunction>;

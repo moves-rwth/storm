@@ -1,6 +1,6 @@
 /*
  * Copyright 2011-2016 Formal Methods and Tools, University of Twente
- * Copyright 2016 Tom van Dijk, Johannes Kepler University Linz
+ * Copyright 2016-2017 Tom van Dijk, Johannes Kepler University Linz
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,11 +24,10 @@
 extern "C" {
 #endif /* __cplusplus */
 
-
 typedef uint64_t MDD;       // Note: low 40 bits only
 
-#define lddmc_false         ((MDD)0)
-#define lddmc_true          ((MDD)1)
+static const MDD lddmc_false = 0;
+static const MDD lddmc_true = 1;
 
 /* Initialize LDD functionality */
 void sylvan_init_ldd(void);
@@ -53,19 +52,49 @@ MDD lddmc_make_copynode(MDD ifeq, MDD ifneq);
 int lddmc_iscopy(MDD mdd);
 MDD lddmc_followcopy(MDD mdd);
 
-/* Add or remove external reference to MDD */
-MDD lddmc_ref(MDD a);
-void lddmc_deref(MDD a);
+/**
+ * Infrastructure for external references using a hash table.
+ * Two hash tables store external references: a pointers table and a values table.
+ * The pointers table stores pointers to MDD variables, manipulated with protect and unprotect.
+ * The values table stores MDD, manipulated with ref and deref.
+ * We strongly recommend using the pointers table whenever possible.
+ */
 
-/* For use in custom mark functions */
-VOID_TASK_DECL_1(lddmc_gc_mark_rec, MDD)
-#define lddmc_gc_mark_rec(mdd) CALL(lddmc_gc_mark_rec, mdd)
+/**
+ * Store the pointer <ptr> in the pointers table.
+ */
+void lddmc_protect(MDD* ptr);
 
-/* Return the number of external references */
+/**
+ * Delete the pointer <ptr> from the pointers table.
+ */
+void lddmc_unprotect(MDD* ptr);
+
+/**
+ * Compute the number of pointers in the pointers table.
+ */
+size_t lddmc_count_protected(void);
+
+/**
+ * Store the MDD <dd> in the values table.
+ */
+MDD lddmc_ref(MDD dd);
+
+/**
+ * Delete the MDD <dd> from the values table.
+ */
+void lddmc_deref(MDD dd);
+
+/**
+ * Compute the number of values in the values table.
+ */
 size_t lddmc_count_refs(void);
 
-/* Mark MDD for "notify on dead" */
-#define lddmc_notify_ondead(mdd) llmsset_notify_ondead(nodes, mdd)
+/**
+ * Call mtbdd_gc_mark_rec for every mtbdd you want to keep in your custom mark functions.
+ */
+VOID_TASK_DECL_1(lddmc_gc_mark_rec, MDD)
+#define lddmc_gc_mark_rec(mdd) CALL(lddmc_gc_mark_rec, mdd)
 
 /* Sanity check - returns depth of MDD including 'true' terminal or 0 for empty set */
 #ifndef NDEBUG
@@ -233,54 +262,49 @@ void lddmc_serialize_totext(FILE *out);
 void lddmc_serialize_tofile(FILE *out);
 void lddmc_serialize_fromfile(FILE *in);
 
-/* Infrastructure for internal markings */
-typedef struct lddmc_refs_internal
-{
-    size_t r_size, r_count;
-    size_t s_size, s_count;
-    MDD *results;
-    Task **spawns;
-} *lddmc_refs_internal_t;
+/**
+ * Infrastructure for internal references.
+ * Every thread has its own reference stacks. There are three stacks: pointer, values, tasks stack.
+ * The pointers stack stores pointers to LDD variables, manipulated with pushptr and popptr.
+ * The values stack stores LDD, manipulated with push and pop.
+ * The tasks stack stores Lace tasks (that return LDD), manipulated with spawn and sync.
+ *
+ * It is recommended to use the pointers stack for local variables and the tasks stack for tasks.
+ */
 
-extern DECLARE_THREAD_LOCAL(lddmc_refs_key, lddmc_refs_internal_t);
+/**
+ * Push a LDD variable to the pointer reference stack.
+ * During garbage collection the variable will be inspected and the contents will be marked.
+ */
+void lddmc_refs_pushptr(const MDD *ptr);
 
-static inline MDD
-lddmc_refs_push(MDD ldd)
-{
-    LOCALIZE_THREAD_LOCAL(lddmc_refs_key, lddmc_refs_internal_t);
-    if (lddmc_refs_key->r_count >= lddmc_refs_key->r_size) {
-        lddmc_refs_key->r_size *= 2;
-        lddmc_refs_key->results = (MDD*)realloc(lddmc_refs_key->results, sizeof(MDD) * lddmc_refs_key->r_size);
-    }
-    lddmc_refs_key->results[lddmc_refs_key->r_count++] = ldd;
-    return ldd;
-}
+/**
+ * Pop the last <amount> LDD variables from the pointer reference stack.
+ */
+void lddmc_refs_popptr(size_t amount);
 
-static inline void
-lddmc_refs_pop(int amount)
-{
-    LOCALIZE_THREAD_LOCAL(lddmc_refs_key, lddmc_refs_internal_t);
-    lddmc_refs_key->r_count-=amount;
-}
+/**
+ * Push an LDD to the values reference stack.
+ * During garbage collection the references LDD will be marked.
+ */
+MDD lddmc_refs_push(MDD dd);
 
-static inline void
-lddmc_refs_spawn(Task *t)
-{
-    LOCALIZE_THREAD_LOCAL(lddmc_refs_key, lddmc_refs_internal_t);
-    if (lddmc_refs_key->s_count >= lddmc_refs_key->s_size) {
-        lddmc_refs_key->s_size *= 2;
-        lddmc_refs_key->spawns = (Task**)realloc(lddmc_refs_key->spawns, sizeof(Task*) * lddmc_refs_key->s_size);
-    }
-    lddmc_refs_key->spawns[lddmc_refs_key->s_count++] = t;
-}
+/**
+ * Pop the last <amount> LDD from the values reference stack.
+ */
+void lddmc_refs_pop(long amount);
 
-static inline MDD
-lddmc_refs_sync(MDD result)
-{
-    LOCALIZE_THREAD_LOCAL(lddmc_refs_key, lddmc_refs_internal_t);
-    lddmc_refs_key->s_count--;
-    return result;
-}
+/**
+ * Push a Task that returns an LDD to the tasks reference stack.
+ * Usage: lddmc_refs_spawn(SPAWN(function, ...));
+ */
+void lddmc_refs_spawn(Task *t);
+
+/**
+ * Pop a Task from the task reference stack.
+ * Usage: MDD result = lddmc_refs_sync(SYNC(function));
+ */
+MDD lddmc_refs_sync(MDD dd);
 
 #ifdef __cplusplus
 }

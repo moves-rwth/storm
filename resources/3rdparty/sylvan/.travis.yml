@@ -58,12 +58,12 @@ install:
 script:
 - ${CC} --version
 - ${CXX} --version
-- cmake . -DCMAKE_BUILD_TYPE=${BUILD_TYPE} -DSYLVAN_STATS=${SYLVAN_STATS} -DWITH_COVERAGE=${COVERAGE} -DSYLVAN_BUILD_DOCS=${SYLVAN_BUILD_DOCS}
+- cmake . -DCMAKE_BUILD_TYPE=${BUILD_TYPE} -DSYLVAN_STATS=${SYLVAN_STATS} -DWITH_COVERAGE=${COVERAGE} -DSYLVAN_BUILD_DOCS=${SYLVAN_BUILD_DOCS} -DSYLVAN_BUILD_EXAMPLES=ON
 - make -j 2
 - make test
 - examples/simple
-- examples/mc models/schedule_world.2.8-rgs.bdd -w 2 | tee /dev/fd/2 | grep -q "1,570,340"
-- examples/lddmc models/blocks.2.ldd -w 2 | tee /dev/fd/2 | grep -q "7057 states"
+- examples/mc models/schedule_world.2.bdd -w 2 | tee /dev/fd/2 | grep -q "1,570,340"
+- examples/lddmc models/blocks.2.ldd -w 2 | tee /dev/fd/2 | grep -q "7,057 states"
 
 notifications:
   email: false

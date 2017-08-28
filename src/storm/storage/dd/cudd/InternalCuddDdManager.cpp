@@ -3,15 +3,19 @@
 #include "storm/settings/SettingsManager.h"
 #include "storm/settings/modules/CuddSettings.h"
 
+#include "storm/exceptions/NotSupportedException.h"
+
 namespace storm {
     namespace dd {
         
         InternalDdManager<DdType::CUDD>::InternalDdManager() : cuddManager(), reorderingTechnique(CUDD_REORDER_NONE), numberOfDdVariables(0) {
             this->cuddManager.SetMaxMemory(static_cast<unsigned long>(storm::settings::getModule<storm::settings::modules::CuddSettings>().getMaximalMemory() * 1024ul * 1024ul));
-            this->cuddManager.SetEpsilon(storm::settings::getModule<storm::settings::modules::CuddSettings>().getConstantPrecision());
+            
+            auto const& settings = storm::settings::getModule<storm::settings::modules::CuddSettings>();
+            this->cuddManager.SetEpsilon(settings.getConstantPrecision());
             
             // Now set the selected reordering technique.
-            storm::settings::modules::CuddSettings::ReorderingTechnique reorderingTechniqueAsSetting = storm::settings::getModule<storm::settings::modules::CuddSettings>().getReorderingTechnique();
+            storm::settings::modules::CuddSettings::ReorderingTechnique reorderingTechniqueAsSetting = settings.getReorderingTechnique();
             switch (reorderingTechniqueAsSetting) {
                 case storm::settings::modules::CuddSettings::ReorderingTechnique::None: this->reorderingTechnique = CUDD_REORDER_NONE; break;
                 case storm::settings::modules::CuddSettings::ReorderingTechnique::Random: this->reorderingTechnique = CUDD_REORDER_RANDOM; break;
@@ -32,6 +36,8 @@ namespace storm {
                 case storm::settings::modules::CuddSettings::ReorderingTechnique::Genetic: this->reorderingTechnique = CUDD_REORDER_GENETIC; break;
                 case storm::settings::modules::CuddSettings::ReorderingTechnique::Exact: this->reorderingTechnique = CUDD_REORDER_EXACT; break;
             }
+            
+            this->allowDynamicReordering(settings.isReorderingEnabled());
         }
         
         InternalDdManager<DdType::CUDD>::~InternalDdManager() {
@@ -51,11 +57,46 @@ namespace storm {
             return InternalBdd<DdType::CUDD>(this, cuddManager.bddZero());
         }
         
+        InternalBdd<DdType::CUDD> InternalDdManager<DdType::CUDD>::getBddEncodingLessOrEqualThan(uint64_t bound, InternalBdd<DdType::CUDD> const& cube, uint64_t numberOfDdVariables) const {
+            return InternalBdd<DdType::CUDD>(this, cudd::BDD(cuddManager, this->getBddEncodingLessOrEqualThanRec(0, (1ull << numberOfDdVariables) - 1, bound, cube.getCuddDdNode(), numberOfDdVariables)));
+        }
+        
+        DdNodePtr InternalDdManager<DdType::CUDD>::getBddEncodingLessOrEqualThanRec(uint64_t minimalValue, uint64_t maximalValue, uint64_t bound, DdNodePtr cube, uint64_t remainingDdVariables) const {
+            if (maximalValue <= bound) {
+                return Cudd_ReadOne(cuddManager.getManager());
+            } else if (minimalValue > bound) {
+                return Cudd_ReadLogicZero(cuddManager.getManager());
+            }
+            
+            STORM_LOG_ASSERT(remainingDdVariables > 0, "Expected more remaining DD variables.");
+            STORM_LOG_ASSERT(!Cudd_IsConstant(cube), "Expected non-constant cube.");
+            uint64_t newRemainingDdVariables = remainingDdVariables - 1;
+            DdNodePtr elseResult = getBddEncodingLessOrEqualThanRec(minimalValue, maximalValue & ~(1ull << newRemainingDdVariables), bound, Cudd_T(cube), newRemainingDdVariables);
+            Cudd_Ref(elseResult);
+            DdNodePtr thenResult = getBddEncodingLessOrEqualThanRec(minimalValue | (1ull << newRemainingDdVariables), maximalValue, bound, Cudd_T(cube), newRemainingDdVariables);
+            Cudd_Ref(thenResult);
+            STORM_LOG_ASSERT(thenResult != elseResult, "Expected different results.");
+            
+            bool complemented = Cudd_IsComplement(thenResult);
+            DdNodePtr result = cuddUniqueInter(cuddManager.getManager(), Cudd_NodeReadIndex(cube), Cudd_Regular(thenResult), complemented ? Cudd_Not(elseResult) : elseResult);
+            if (complemented) {
+                result = Cudd_Not(result);
+            }
+            Cudd_Deref(thenResult);
+            Cudd_Deref(elseResult);
+            return result;
+        }
+        
         template<typename ValueType>
         InternalAdd<DdType::CUDD, ValueType> InternalDdManager<DdType::CUDD>::getAddZero() const {
             return InternalAdd<DdType::CUDD, ValueType>(this, cuddManager.addZero());
         }
-        
+
+        template<typename ValueType>
+        InternalAdd<DdType::CUDD, ValueType> InternalDdManager<DdType::CUDD>::getAddUndefined() const {
+            STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Undefined values are not supported by CUDD.");
+        }
+
         template<typename ValueType>
         InternalAdd<DdType::CUDD, ValueType> InternalDdManager<DdType::CUDD>::getConstant(ValueType const& value) const {
             return InternalAdd<DdType::CUDD, ValueType>(this, cuddManager.constant(value));
@@ -74,7 +115,9 @@ namespace storm {
                 }
             }
             
-            // Connect the two variables so they are not 'torn apart' during dynamic reordering.
+            // Connect the variables so they are not 'torn apart' by dynamic reordering.
+            // Note that MTR_FIXED preserves the order of the layers. While this is not always necessary to preserve,
+            // (for example) the hybrid engine relies on this connection, so we choose MTR_FIXED instead of MTR_DEFAULT.
             cuddManager.MakeTreeNode(result.front().getIndex(), numberOfLayers, MTR_FIXED);
             
             // Keep track of the number of variables.
@@ -102,6 +145,11 @@ namespace storm {
         
         void InternalDdManager<DdType::CUDD>::triggerReordering() {
             this->getCuddManager().ReduceHeap(this->reorderingTechnique, 0);
+        }
+        
+        void InternalDdManager<DdType::CUDD>::debugCheck() const {
+            this->getCuddManager().CheckKeys();
+            this->getCuddManager().DebugCheck();
         }
         
         cudd::Cudd& InternalDdManager<DdType::CUDD>::getCuddManager() {

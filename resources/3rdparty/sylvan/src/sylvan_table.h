@@ -1,6 +1,6 @@
 /*
  * Copyright 2011-2016 Formal Methods and Tools, University of Twente
- * Copyright 2016 Tom van Dijk, Johannes Kepler University Linz
+ * Copyright 2016-2017 Tom van Dijk, Johannes Kepler University Linz
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,23 +15,14 @@
  * limitations under the License.
  */
 
-#include <sylvan_config.h>
+/* Do not include this file directly. Instead, include sylvan_int.h */
 
-#include <stdint.h>
-#include <unistd.h>
-
-#include <lace.h>
-
-#ifndef LLMSSET_H
-#define LLMSSET_H
+#ifndef SYLVAN_TABLE_H
+#define SYLVAN_TABLE_H
 
 #ifdef __cplusplus
 extern "C" {
 #endif /* __cplusplus */
-
-#ifndef LLMSSET_MASK
-#define LLMSSET_MASK 0 // set to 1 to use bit mask instead of modulo
-#endif
 
 /**
  * Lockless hash table (set) to store 16-byte keys.
@@ -210,9 +201,19 @@ VOID_TASK_DECL_1(llmsset_destroy_unmarked, llmsset_t);
 void llmsset_set_custom(const llmsset_t dbs, llmsset_hash_cb hash_cb, llmsset_equals_cb equals_cb, llmsset_create_cb create_cb, llmsset_destroy_cb destroy_cb);
 
 /**
- * Default hashing function
+ * Default hashing functions.
  */
-uint64_t llmsset_hash(const uint64_t a, const uint64_t b, const uint64_t seed);
+#define llmsset_hash llmsset_tabhash
+
+/**
+ * FNV-1a hash
+ */
+uint64_t llmsset_fnvhash(uint64_t a, uint64_t b, uint64_t seed);
+
+/**
+ * Twisted tabulation hash
+ */
+uint64_t llmsset_tabhash(uint64_t a, uint64_t b, uint64_t seed);
 
 #ifdef __cplusplus
 }
