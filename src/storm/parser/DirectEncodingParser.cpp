@@ -158,7 +158,7 @@ namespace storm {
                             if (boost::starts_with(line, "{")) {
                                 size_t posEndObservation = line.find("}");
                                 std::string observation = line.substr(1, posEndObservation-1);
-                                STORM_LOG_TRACE("State observation " << observations);
+                                STORM_LOG_TRACE("State observation " << observation);
                                 modelComponents->observabilityClasses.get()[state] = std::stoi(observation);
                                 line = line.substr(posEndObservation+1);
                             } else {
