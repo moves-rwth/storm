@@ -165,7 +165,7 @@ namespace storm {
                 }
                 candidateStates = storm::utility::graph::getReachableStates(transitionMatrix, choiceTargets, candidateStates, storm::storage::BitVector(candidateStates.size(), false));
                 
-                // At this point we know that every candidate state can reach a choice at least once without leaving the set of candidate states.
+                // At this point we know that every candidate state can reach a state with a choice without leaving the set of candidate states.
                 // We now compute the states that can reach a choice at least twice, three times, four times, ... until a fixpoint is reached.
                 while (!candidateStates.empty()) {
                     // Update the states with a choice that stays within the set of candidates
@@ -193,11 +193,12 @@ namespace storm {
                     // Update the candidates
                     storm::storage::BitVector newCandidates = storm::utility::graph::performProb1E(transitionMatrix, transitionMatrix.getRowGroupIndices(), backwardTransitions, candidateStates, statesWithChoice);
                     
-                    // Check if conferged
+                    // Check if converged
                     if (newCandidates == candidateStates) {
                         assert(!candidateStates.empty());
                         return true;
                     }
+                    candidateStates = std::move(newCandidates);
                 }
                 return false;
             }
