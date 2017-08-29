@@ -240,16 +240,18 @@ namespace storm {
                 auto stepSolIt = epochModel.stepSolutions.begin();
                 for (auto const& reducedChoice : epochModel.stepChoices) {
                     uint64_t productChoice = ecElimResult.newToOldRowMapping[reducedChoice];
+                    uint64_t productState = productChoiceToStateMapping[productChoice];
+                    auto relevantDimensions = convertMemoryState(getMemoryState(productState));
                     SolutionType choiceSolution = getZeroSolution();
                     Epoch successorEpoch = getSuccessorEpoch(epoch, productEpochSteps[productChoice].get());
-                    storm::storage::BitVector relevantDimensions(successorEpoch.size(), true);
-                    for (uint64_t dim = 0; dim < successorEpoch.size(); ++dim) {
+                    storm::storage::BitVector successorRelevantDimensions(successorEpoch.size(), true);
+                    for (auto const& dim : relevantDimensions) {
                         if (successorEpoch[dim] < 0) {
-                            relevantDimensions &= ~objectiveDimensions[subObjectives[dim].second];
+                            successorRelevantDimensions &= ~objectiveDimensions[subObjectives[dim].second];
                         }
                     }
                     for (auto const& successor : modelMemoryProduct->getTransitionMatrix().getRow(productChoice)) {
-                        storm::storage::BitVector successorMemoryState = convertMemoryState(getMemoryState(successor.getColumn())) & relevantDimensions;
+                        storm::storage::BitVector successorMemoryState = convertMemoryState(getMemoryState(successor.getColumn())) & successorRelevantDimensions;
                         uint64_t successorProductState = getProductState(getModelState(successor.getColumn()), convertMemoryState(successorMemoryState));
                         SolutionType const& successorSolution = getStateSolution(successorEpoch, successorProductState);
                         addScaledSolution(choiceSolution, successorSolution, successor.getValue());
@@ -454,52 +456,6 @@ namespace storm {
                             objMemoryBuilder.setLabel(memState, memoryLabels[dimensionIndexMap[subObjIndex]].get());
                         }
                     }
-                    
-        
-                            
-                    /* Old (wrong.. ) implementation
-                    storm::storage::MemoryStructure objMemory = storm::storage::MemoryStructureBuilder<ValueType>::buildTrivialMemoryStructure(model);
-
-                    for (auto const& dim : objectiveDimensions[objIndex]) {
-                        auto const& subObj = subObjectives[dim];
-                        if (subObj.first->isBoundedUntilFormula()) {
-                            // Create a memory structure that stores whether a PsiState has already been reached
-                            storm::storage::MemoryStructureBuilder<ValueType> subObjMemBuilder(2, model);
-                            subObjMemBuilder.setLabel(0, memoryLabels[dim].get());
-                            storm::storage::BitVector leftSubformulaResult = mc.check(subObj.first->asBoundedUntilFormula().getLeftSubformula())->asExplicitQualitativeCheckResult().getTruthValuesVector();
-                            storm::storage::BitVector rightSubformulaResult = mc.check(subObj.first->asBoundedUntilFormula().getRightSubformula())->asExplicitQualitativeCheckResult().getTruthValuesVector();
-                            
-                            subObjMemBuilder.setTransition(0, 0, leftSubformulaResult & ~rightSubformulaResult);
-                            subObjMemBuilder.setTransition(0, 1, rightSubformulaResult);
-                            subObjMemBuilder.setTransition(1, 1, storm::storage::BitVector(model.getNumberOfStates(), true));
-                            for (auto const& initState : model.getInitialStates()) {
-                                subObjMemBuilder.setInitialMemoryState(initState, rightSubformulaResult.get(initState) ? 1 : 0);
-                            }
-                            storm::storage::MemoryStructure subObjMem = subObjMemBuilder.build();
-                            
-                            objMemory = objMemory.product(subObjMem);
-                        }
-                    }
-                    
-                    // find the memory state that represents that all subObjectives are decided (i.e., Psi_i has been reached for all i)
-                    storm::storage::BitVector decidedState(objMemory.getNumberOfStates(), true);
-                    for (auto const& dim : objectiveDimensions[objIndex]) {
-                        decidedState = decidedState & ~objMemory.getStateLabeling().getStates(memoryLabels[dim].get());
-                    }
-                    assert(decidedState.getNumberOfSetBits() == 1);
-                    
-                    // When the set of PhiStates is left for at least one until formula, we switch to the decidedState
-                    storm::storage::MemoryStructureBuilder<ValueType> objMemBuilder(objMemory, model);
-                    for (auto const& dim : objectiveDimensions[objIndex]) {
-                        auto const& subObj = subObjectives[dim];
-                        storm::storage::BitVector constraintModelStates =
-                                mc.check(subObj.first->asBoundedUntilFormula().getLeftSubformula())->asExplicitQualitativeCheckResult().getTruthValuesVector() |
-                                mc.check(subObj.first->asBoundedUntilFormula().getRightSubformula())->asExplicitQualitativeCheckResult().getTruthValuesVector();
-                        for (auto const& maybeState : objMemory.getStateLabeling().getStates(memoryLabels[dim].get())) {
-                            objMemBuilder.setTransition(maybeState, *decidedState.begin(), ~constraintModelStates);
-                        }
-                    }
-                     */
                     auto objMemory = objMemoryBuilder.build();
                     memory = memory.product(objMemory);
                 }
