@@ -1088,6 +1088,7 @@ namespace storm {
                 std::stringstream tmp;
                 indent(tmp, indentLevel + 1) << "{% for reward in destination_rewards %}choice.addReward({$reward.index}, probability * transientOut.{$reward.variable});" << std::endl;
                 indent(tmp, indentLevel + 1) << "{% endfor %}" << std::endl;
+                vectorSource << cpptempl::parse(tmp.str(), modelData);
                 indent(vectorSource, indentLevel) << "}" << std::endl << std::endl;
                 
                 indent(vectorSource, indentLevel) << "void performSynchronizedDestinations_" << synchronizationVectorIndex << "(StateType const& in, StateBehaviour<IndexType, ValueType>& behaviour, StateSet<StateType>& statesToExplore, ";
@@ -2309,8 +2310,8 @@ namespace storm {
 
                                         {% if dontFixDeadlocks %}
                                         if (behaviour.empty() && behaviour.isExpanded() ) {
-                                            std::cout << currentState << std::endl;
-                                            throw storm::exceptions::WrongFormatException("Error while creating sparse matrix from JANI model: found deadlock state  and fixing deadlocks was explicitly disabled.");
+                                            std::cout << "found deadlock state: " << currentState << std::endl;
+                                            throw storm::exceptions::WrongFormatException("Error while creating sparse matrix from JANI model: found deadlock state and fixing deadlocks was explicitly disabled.");
                                         }
                                         {% endif %}
 
