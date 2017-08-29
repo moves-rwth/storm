@@ -888,7 +888,7 @@ namespace storm {
                 if (occurringNonZeroNumbers.empty()) {
                     factor = storm::utility::one<ValueType>();
                 } else if (occurringNonZeroNumbers.size() == 1) {
-                    factor = storm::utility::one<ValueType>() / (*occurringNonZeroNumbers.begin());
+                    factor = *occurringNonZeroNumbers.begin();
                 } else {
                     // Obtain the least common multiple of the denominators of the occurring numbers.
                     // We can then multiply the numbers with the lcm to obtain integers.
@@ -912,8 +912,9 @@ namespace storm {
                 std::vector<TargetValueType> result;
                 result.reserve(vec.size());
                 for (auto const& v : vec) {
-                    result.push_back(storm::utility::convertNumber<TargetValueType, ValueType>(v / factor));
-                    STORM_LOG_ASSERT(storm::utility::isInteger(result.back()), "Resulting number '" << result.back() << "' is not integral.");
+                    ValueType vScaled = v / factor;
+                    STORM_LOG_ASSERT(storm::utility::isInteger(vScaled), "Resulting number '(" << v << ")/(" << factor << ") = " << vScaled << "' is not integral.");
+                    result.push_back(storm::utility::convertNumber<TargetValueType, ValueType>(vScaled));
                 }
                 return std::make_pair(std::move(result), std::move(factor));
                 
