@@ -1,11 +1,10 @@
-#ifndef STORM_MODELCHECKER_MULTIOBJECTIVE_PCAA_SPARSEPCAAWEIGHTVECTORCHECKER_H_
-#define STORM_MODELCHECKER_MULTIOBJECTIVE_PCAA_SPARSEPCAAWEIGHTVECTORCHECKER_H_
-
+#pragma once
 
 #include "storm/storage/BitVector.h"
 #include "storm/storage/SparseMatrix.h"
 #include "storm/storage/Scheduler.h"
 #include "storm/modelchecker/multiobjective/Objective.h"
+#include "storm/modelchecker/multiobjective/pcaa/PcaaWeightVectorChecker.h"
 #include "storm/utility/vector.h"
 
 namespace storm {
@@ -19,7 +18,7 @@ namespace storm {
              * - computes for each objective the value induced by this scheduler
              */
             template <class SparseModelType>
-            class SparsePcaaWeightVectorChecker {
+            class SparsePcaaWeightVectorChecker : public PcaaWeightVectorChecker<SparseModelType> {
             public:
                 typedef typename SparseModelType::ValueType ValueType;
                 
@@ -45,7 +44,7 @@ namespace storm {
                  * - extracts the scheduler that induces this optimum
                  * - computes for each objective the value induced by this scheduler
                  */
-                void check(std::vector<ValueType> const& weightVector);
+                virtual void check(std::vector<ValueType> const& weightVector) override;
                 
                 /*!
                  * Retrieves the results of the individual objectives at the initial state of the given model.
@@ -53,31 +52,15 @@ namespace storm {
                  * Also note that there is no guarantee that the under/over approximation is in fact correct
                  * as long as the underlying solution methods are unsound (e.g., standard value iteration).
                  */
-                std::vector<ValueType> getUnderApproximationOfInitialStateResults() const;
-                std::vector<ValueType> getOverApproximationOfInitialStateResults() const;
-                
-                
-                /*!
-                 * Sets the precision of this weight vector checker. After calling check() the following will hold:
-                 * Let h_lower and h_upper be two hyperplanes such that
-                 * * the normal vector is the provided weight-vector where the entry for minimizing objectives is negated
-                 * * getUnderApproximationOfInitialStateResults() lies on h_lower and
-                 * * getOverApproximationOfInitialStateResults() lies on h_upper.
-                 * Then the distance between the two hyperplanes is at most weightedPrecision
-                 */
-                void setWeightedPrecision(ValueType const& weightedPrecision);
-                
-                /*!
-                 * Returns the precision of this weight vector checker.
-                 */
-                ValueType const& getWeightedPrecision() const;
+                virtual std::vector<ValueType> getUnderApproximationOfInitialStateResults() const override;
+                virtual std::vector<ValueType> getOverApproximationOfInitialStateResults() const override;
                 
                 /*!
                  * Retrieves a scheduler that induces the current values
                  * Note that check(..) has to be called before retrieving the scheduler. Otherwise, an exception is thrown.
                  * Also note that (currently) the scheduler only supports unbounded objectives.
                  */
-                storm::storage::Scheduler<ValueType> computeScheduler() const;
+                virtual storm::storage::Scheduler<ValueType> computeScheduler() const override;
                 
                 
             protected:
@@ -118,10 +101,6 @@ namespace storm {
                                                              std::vector<ValueType>& originalSolution,
                                                              std::vector<uint_fast64_t>& originalOptimalChoices) const;
                 
-                // The (preprocessed) model
-                SparseModelType const& model;
-                // The (preprocessed) objectives
-                std::vector<Objective<ValueType>> const& objectives;
                 
                 // Overapproximation of the set of choices that are part of an end component.
                 storm::storage::BitVector possibleECActions;
@@ -135,8 +114,6 @@ namespace storm {
                 storm::storage::BitVector objectivesWithNoUpperTimeBound;
                 // stores the (discretized) state action rewards for each objective.
                 std::vector<std::vector<ValueType>> discreteActionRewards;
-                // stores the precision of this weight vector checker.
-                ValueType weightedPrecision;
                 // Memory for the solution of the most recent call of check(..)
                 // becomes true after the first call of check(..)
                 bool checkHasBeenCalled;
@@ -157,4 +134,3 @@ namespace storm {
     }
 }
 
-#endif /* STORM_MODELCHECKER_MULTIOBJECTIVE_PCAA_SPARSEPCAAWEIGHTVECTORCHECKER_H_ */

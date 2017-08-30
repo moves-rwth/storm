@@ -3,7 +3,7 @@
 
 #include "storm/modelchecker/results/CheckResult.h"
 #include "storm/modelchecker/multiobjective/SparseMultiObjectivePreprocessorReturnType.h"
-#include "storm/modelchecker/multiobjective/pcaa/SparsePcaaWeightVectorChecker.h"
+#include "storm/modelchecker/multiobjective/pcaa/PcaaWeightVectorChecker.h"
 #include "storm/storage/geometry/Polytope.h"
 
 namespace storm {
@@ -38,14 +38,6 @@ namespace storm {
                 void exportPlotOfCurrentApproximation(std::string const& destinationDir) const;
                 
             protected:
-                
-                /*
-                 * Initializes the weight vector checker with the provided data from preprocessing
-                 */
-                void initializeWeightVectorChecker(SparseModelType const& model,
-                                                   std::vector<Objective<typename SparseModelType::ValueType>> const& objectives,
-                                                   storm::storage::BitVector const& possibleECActions,
-                                                   storm::storage::BitVector const& possibleBottomStates);
                 
                 /*
                  * Represents the information obtained in a single iteration of the algorithm
@@ -108,7 +100,7 @@ namespace storm {
                 std::vector<Objective<typename SparseModelType::ValueType>> objectives;
                 
                 // The corresponding weight vector checker
-                std::unique_ptr<SparsePcaaWeightVectorChecker<SparseModelType>> weightVectorChecker;
+                std::unique_ptr<PcaaWeightVectorChecker<SparseModelType>> weightVectorChecker;
 
                 //The results in each iteration of the algorithm
                 std::vector<RefinementStep> refinementSteps;

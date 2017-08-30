@@ -5,8 +5,6 @@
 #include "storm/models/sparse/MarkovAutomaton.h"
 #include "storm/models/sparse/StandardRewardModel.h"
 #include "storm/modelchecker/multiobjective/Objective.h"
-#include "storm/modelchecker/multiobjective/pcaa/SparseMdpPcaaWeightVectorChecker.h"
-#include "storm/modelchecker/multiobjective/pcaa/SparseMaPcaaWeightVectorChecker.h"
 #include "storm/settings/SettingsManager.h"
 #include "storm/settings/modules/MultiObjectiveSettings.h"
 #include "storm/storage/geometry/Hyperrectangle.h"
@@ -26,32 +24,12 @@ namespace storm {
                 originalModel(preprocessorResult.originalModel), originalFormula(preprocessorResult.originalFormula),
                 preprocessedModel(std::move(*preprocessorResult.preprocessedModel)), objectives(std::move(preprocessorResult.objectives)) {
                 
-                initializeWeightVectorChecker(preprocessedModel, objectives, preprocessorResult.possibleECChoices, preprocessorResult.possibleBottomStates);
+                this->weightVectorChecker = WeightVectorCheckerFactory<SparseModelType>::create(preprocessedModel, objectives, preprocessorResult.possibleECChoices, preprocessorResult.possibleBottomStates);
+
                 this->diracWeightVectorsToBeChecked = storm::storage::BitVector(this->objectives.size(), true);
                 this->overApproximation = storm::storage::geometry::Polytope<GeometryValueType>::createUniversalPolytope();
                 this->underApproximation = storm::storage::geometry::Polytope<GeometryValueType>::createEmptyPolytope();
             }
-            
-            template<>
-            void SparsePcaaQuery<storm::models::sparse::Mdp<double>, storm::RationalNumber>::initializeWeightVectorChecker(storm::models::sparse::Mdp<double> const& model, std::vector<Objective<double>> const& objectives, storm::storage::BitVector const& possibleECActions, storm::storage::BitVector const& possibleBottomStates) {
-                this->weightVectorChecker = std::unique_ptr<SparsePcaaWeightVectorChecker<storm::models::sparse::Mdp<double>>>(new SparseMdpPcaaWeightVectorChecker<storm::models::sparse::Mdp<double>>(model, objectives, possibleECActions, possibleBottomStates));
-            }
-            
-            template<>
-            void SparsePcaaQuery<storm::models::sparse::Mdp<storm::RationalNumber>, storm::RationalNumber>::initializeWeightVectorChecker(storm::models::sparse::Mdp<storm::RationalNumber> const& model, std::vector<Objective<storm::RationalNumber>> const& objectives, storm::storage::BitVector const& possibleECActions, storm::storage::BitVector const& possibleBottomStates) {
-                this->weightVectorChecker = std::unique_ptr<SparsePcaaWeightVectorChecker<storm::models::sparse::Mdp<storm::RationalNumber>>>(new SparseMdpPcaaWeightVectorChecker<storm::models::sparse::Mdp<storm::RationalNumber>>(model, objectives, possibleECActions, possibleBottomStates));
-            }
-            
-            template<>
-            void SparsePcaaQuery<storm::models::sparse::MarkovAutomaton<double>, storm::RationalNumber>::initializeWeightVectorChecker(storm::models::sparse::MarkovAutomaton<double> const& model, std::vector<Objective<double>> const& objectives, storm::storage::BitVector const& possibleECActions, storm::storage::BitVector const& possibleBottomStates) {
-                this->weightVectorChecker = std::unique_ptr<SparsePcaaWeightVectorChecker<storm::models::sparse::MarkovAutomaton<double>>>(new SparseMaPcaaWeightVectorChecker<storm::models::sparse::MarkovAutomaton<double>>(model, objectives, possibleECActions, possibleBottomStates));
-            }
-            
-            template<>
-            void SparsePcaaQuery<storm::models::sparse::MarkovAutomaton<storm::RationalNumber>, storm::RationalNumber>::initializeWeightVectorChecker(storm::models::sparse::MarkovAutomaton<storm::RationalNumber> const& model, std::vector<Objective<storm::RationalNumber>> const& objectives, storm::storage::BitVector const& possibleECActions, storm::storage::BitVector const& possibleBottomStates) {
-                this->weightVectorChecker = std::unique_ptr<SparsePcaaWeightVectorChecker<storm::models::sparse::MarkovAutomaton<storm::RationalNumber>>>(new SparseMaPcaaWeightVectorChecker<storm::models::sparse::MarkovAutomaton<storm::RationalNumber>>(model, objectives, possibleECActions, possibleBottomStates));
-            }
-            
             
             template <class SparseModelType, typename GeometryValueType>
             typename SparsePcaaQuery<SparseModelType, GeometryValueType>::WeightVector SparsePcaaQuery<SparseModelType, GeometryValueType>::findSeparatingVector(Point const& pointToBeSeparated) {
