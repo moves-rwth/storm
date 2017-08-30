@@ -15,24 +15,29 @@ namespace storm {
     namespace solver {
         
         template<typename ValueType>
-        StandardMinMaxLinearEquationSolver<ValueType>::StandardMinMaxLinearEquationSolver(storm::storage::SparseMatrix<ValueType> const& A, std::unique_ptr<LinearEquationSolverFactory<ValueType>>&& linearEquationSolverFactory) : linearEquationSolverFactory(std::move(linearEquationSolverFactory)), localA(nullptr), A(A) {
+        StandardMinMaxLinearEquationSolver<ValueType>::StandardMinMaxLinearEquationSolver() : A(nullptr) {
             // Intentionally left empty.
         }
         
         template<typename ValueType>
-        StandardMinMaxLinearEquationSolver<ValueType>::StandardMinMaxLinearEquationSolver(storm::storage::SparseMatrix<ValueType>&& A, std::unique_ptr<LinearEquationSolverFactory<ValueType>>&& linearEquationSolverFactory) : linearEquationSolverFactory(std::move(linearEquationSolverFactory)), localA(std::make_unique<storm::storage::SparseMatrix<ValueType>>(std::move(A))), A(*localA) {
+        StandardMinMaxLinearEquationSolver<ValueType>::StandardMinMaxLinearEquationSolver(storm::storage::SparseMatrix<ValueType> const& A, std::unique_ptr<LinearEquationSolverFactory<ValueType>>&& linearEquationSolverFactory) : linearEquationSolverFactory(std::move(linearEquationSolverFactory)), localA(nullptr), A(&A) {
+            // Intentionally left empty.
+        }
+        
+        template<typename ValueType>
+        StandardMinMaxLinearEquationSolver<ValueType>::StandardMinMaxLinearEquationSolver(storm::storage::SparseMatrix<ValueType>&& A, std::unique_ptr<LinearEquationSolverFactory<ValueType>>&& linearEquationSolverFactory) : linearEquationSolverFactory(std::move(linearEquationSolverFactory)), localA(std::make_unique<storm::storage::SparseMatrix<ValueType>>(std::move(A))), A(localA.get()) {
             // Intentionally left empty.
         }
         
         template<typename ValueType>
         void StandardMinMaxLinearEquationSolver<ValueType>::repeatedMultiply(OptimizationDirection dir, std::vector<ValueType>& x, std::vector<ValueType> const* b, uint_fast64_t n) const {
             if (!linEqSolverA) {
-                linEqSolverA = linearEquationSolverFactory->create(A);
+                linEqSolverA = linearEquationSolverFactory->create(*A);
                 linEqSolverA->setCachingEnabled(true);
             }
             
             if (!auxiliaryRowVector) {
-                auxiliaryRowVector = std::make_unique<std::vector<ValueType>>(A.getRowCount());
+                auxiliaryRowVector = std::make_unique<std::vector<ValueType>>(A->getRowCount());
             }
             std::vector<ValueType>& multiplyResult = *auxiliaryRowVector;
             
@@ -41,7 +46,7 @@ namespace storm {
                 
                 // Reduce the vector x' by applying min/max for all non-deterministic choices as given by the topmost
                 // element of the min/max operator stack.
-                storm::utility::vector::reduceVectorMinOrMax(dir, multiplyResult, x, this->A.getRowGroupIndices());
+                storm::utility::vector::reduceVectorMinOrMax(dir, multiplyResult, x, this->A->getRowGroupIndices());
             }
             
             if (!this->isCachingEnabled()) {

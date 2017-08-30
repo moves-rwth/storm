@@ -28,8 +28,8 @@ namespace storm {
             
             // Create a variable for each row group
             std::vector<storm::expressions::Variable> variables;
-            variables.reserve(this->A.getRowGroupCount());
-            for (uint64_t rowGroup = 0; rowGroup < this->A.getRowGroupCount(); ++rowGroup) {
+            variables.reserve(this->A->getRowGroupCount());
+            for (uint64_t rowGroup = 0; rowGroup < this->A->getRowGroupCount(); ++rowGroup) {
                 if (this->lowerBound) {
                     if (this->upperBound) {
                         variables.push_back(solver->addBoundedContinuousVariable("x" + std::to_string(rowGroup), this->lowerBound.get(), this->upperBound.get(), storm::utility::one<ValueType>()));
@@ -47,10 +47,10 @@ namespace storm {
             solver->update();
             
             // Add a constraint for each row
-            for (uint64_t rowGroup = 0; rowGroup < this->A.getRowGroupCount(); ++rowGroup) {
-                for (uint64_t row = this->A.getRowGroupIndices()[rowGroup]; row < this->A.getRowGroupIndices()[rowGroup + 1]; ++row) {
+            for (uint64_t rowGroup = 0; rowGroup < this->A->getRowGroupCount(); ++rowGroup) {
+                for (uint64_t row = this->A->getRowGroupIndices()[rowGroup]; row < this->A->getRowGroupIndices()[rowGroup + 1]; ++row) {
                     storm::expressions::Expression rowConstraint = solver->getConstant(b[row]);
-                    for (auto const& entry : this->A.getRow(row)) {
+                    for (auto const& entry : this->A->getRow(row)) {
                         rowConstraint = rowConstraint + (solver->getConstant(entry.getValue()) * variables[entry.getColumn()].getExpression());
                     }
                     if (minimize(dir)) {
@@ -78,14 +78,14 @@ namespace storm {
             
             // If requested, we store the scheduler for retrieval.
             if (this->isTrackSchedulerSet()) {
-                this->schedulerChoices = std::vector<uint_fast64_t>(this->A.getRowGroupCount());
-                for (uint64_t rowGroup = 0; rowGroup < this->A.getRowGroupCount(); ++rowGroup) {
-                    uint64_t row = this->A.getRowGroupIndices()[rowGroup];
+                this->schedulerChoices = std::vector<uint_fast64_t>(this->A->getRowGroupCount());
+                for (uint64_t rowGroup = 0; rowGroup < this->A->getRowGroupCount(); ++rowGroup) {
+                    uint64_t row = this->A->getRowGroupIndices()[rowGroup];
                     uint64_t optimalChoiceIndex = 0;
                     uint64_t currChoice = 0;
-                    ValueType optimalGroupValue = this->A.multiplyRowWithVector(row, x) + b[row];
-                    for (++row, ++currChoice; row < this->A.getRowGroupIndices()[rowGroup + 1]; ++row, ++currChoice) {
-                        ValueType rowValue = this->A.multiplyRowWithVector(row, x) + b[row];
+                    ValueType optimalGroupValue = this->A->multiplyRowWithVector(row, x) + b[row];
+                    for (++row, ++currChoice; row < this->A->getRowGroupIndices()[rowGroup + 1]; ++row, ++currChoice) {
+                        ValueType rowValue = this->A->multiplyRowWithVector(row, x) + b[row];
                         if ((minimize(dir) && rowValue < optimalGroupValue) || (maximize(dir) && rowValue > optimalGroupValue)) {
                             optimalGroupValue = rowValue;
                             optimalChoiceIndex = currChoice;

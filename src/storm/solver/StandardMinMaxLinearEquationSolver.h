@@ -9,6 +9,8 @@ namespace storm {
         template<typename ValueType>
         class StandardMinMaxLinearEquationSolver : public MinMaxLinearEquationSolver<ValueType> {
         public:
+            StandardMinMaxLinearEquationSolver();
+            
             StandardMinMaxLinearEquationSolver(storm::storage::SparseMatrix<ValueType> const& A, std::unique_ptr<LinearEquationSolverFactory<ValueType>>&& linearEquationSolverFactory);
             StandardMinMaxLinearEquationSolver(storm::storage::SparseMatrix<ValueType>&& A, std::unique_ptr<LinearEquationSolverFactory<ValueType>>&& linearEquationSolverFactory);
             
@@ -33,7 +35,7 @@ namespace storm {
             
             // A reference to the original sparse matrix given to this solver. If the solver takes posession of the matrix
             // the reference refers to localA.
-            storm::storage::SparseMatrix<ValueType> const& A;
+            storm::storage::SparseMatrix<ValueType> const* A;
             
         };
      
