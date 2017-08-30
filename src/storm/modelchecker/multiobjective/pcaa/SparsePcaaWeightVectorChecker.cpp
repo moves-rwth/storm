@@ -8,7 +8,6 @@
 #include "storm/models/sparse/StandardRewardModel.h"
 #include "storm/modelchecker/prctl/helper/SparseDtmcPrctlHelper.h"
 #include "storm/solver/MinMaxLinearEquationSolver.h"
-#include "storm/transformer/EndComponentEliminator.h"
 #include "storm/utility/graph.h"
 #include "storm/utility/macros.h"
 #include "storm/utility/vector.h"
@@ -154,26 +153,14 @@ namespace storm {
                     return;
                 }
                 
-                // Only consider the states from which a transition with non-zero reward is reachable. (The remaining states always have reward zero).
-                storm::storage::BitVector zeroRewardActions = storm::utility::vector::filterZero(weightedRewardVector);
-                storm::storage::BitVector nonZeroRewardActions = ~zeroRewardActions;
-                storm::storage::BitVector nonZeroRewardStates(this->model.getNumberOfStates(), false);
-                for(uint_fast64_t state = 0; state < this->model.getNumberOfStates(); ++state){
-                    if(nonZeroRewardActions.getNextSetIndex(this->model.getTransitionMatrix().getRowGroupIndices()[state]) < this->model.getTransitionMatrix().getRowGroupIndices()[state+1]) {
-                        nonZeroRewardStates.set(state);
-                    }
-                }
-                storm::storage::BitVector subsystemStates = storm::utility::graph::performProbGreater0E(this->model.getTransitionMatrix().transpose(true), storm::storage::BitVector(this->model.getNumberOfStates(), true), nonZeroRewardStates);
+                updateEcElimResult(weightedRewardVector);
                 
-                // Remove neutral end components, i.e., ECs in which no reward is earned.
-                auto ecEliminatorResult = storm::transformer::EndComponentEliminator<ValueType>::transform(this->model.getTransitionMatrix(), subsystemStates, possibleECActions & zeroRewardActions, possibleBottomStates);
-                
-                std::vector<ValueType> subRewardVector(ecEliminatorResult.newToOldRowMapping.size());
-                storm::utility::vector::selectVectorValues(subRewardVector, ecEliminatorResult.newToOldRowMapping, weightedRewardVector);
-                std::vector<ValueType> subResult(ecEliminatorResult.matrix.getRowGroupCount());
+                std::vector<ValueType> subRewardVector(cachedEcElimResult->newToOldRowMapping.size());
+                storm::utility::vector::selectVectorValues(subRewardVector, cachedEcElimResult->newToOldRowMapping, weightedRewardVector);
+                std::vector<ValueType> subResult(cachedEcElimResult->matrix.getRowGroupCount());
                 
                 storm::solver::GeneralMinMaxLinearEquationSolverFactory<ValueType> solverFactory;
-                std::unique_ptr<storm::solver::MinMaxLinearEquationSolver<ValueType>> solver = solverFactory.create(ecEliminatorResult.matrix);
+                std::unique_ptr<storm::solver::MinMaxLinearEquationSolver<ValueType>> solver = solverFactory.create(cachedEcElimResult->matrix);
                 solver->setOptimizationDirection(storm::solver::OptimizationDirection::Maximize);
                 solver->setTrackScheduler(true);
                 if (lowerResultBound) {
@@ -186,7 +173,7 @@ namespace storm {
 
                 this->weightedResult = std::vector<ValueType>(this->model.getNumberOfStates());
                 
-                transformReducedSolutionToOriginalModel(ecEliminatorResult.matrix, subResult, solver->getSchedulerChoices(), ecEliminatorResult.newToOldRowMapping, ecEliminatorResult.oldToNewStateMapping, this->weightedResult, this->optimalChoices);
+                transformReducedSolutionToOriginalModel(cachedEcElimResult->matrix, subResult, solver->getSchedulerChoices(), cachedEcElimResult->newToOldRowMapping, cachedEcElimResult->oldToNewStateMapping, this->weightedResult, this->optimalChoices);
             }
             
             template <class SparseModelType>
@@ -273,6 +260,29 @@ namespace storm {
                    }
                }
             }
+            
+            template <class SparseModelType>
+            void SparsePcaaWeightVectorChecker<SparseModelType>::updateEcElimResult(std::vector<ValueType> const& weightedRewardVector) {
+                // Check whether we need to update the currently cached ecElimResult
+                storm::storage::BitVector newZeroRewardChoices = storm::utility::vector::filterZero(weightedRewardVector);
+                if (!cachedZeroRewardChoices || cachedZeroRewardChoices.get() != newZeroRewardChoices) {
+                    cachedZeroRewardChoices = std::move(newZeroRewardChoices);
+                    
+                    // It is sufficient to consider the states from which a transition with non-zero reward is reachable. (The remaining states always have reward zero).
+                    storm::storage::BitVector nonZeroRewardStates(this->model.getNumberOfStates(), false);
+                    for (uint_fast64_t state = 0; state < this->model.getNumberOfStates(); ++state){
+                        if (cachedZeroRewardChoices->getNextUnsetIndex(this->model.getTransitionMatrix().getRowGroupIndices()[state]) < this->model.getTransitionMatrix().getRowGroupIndices()[state+1]) {
+                            nonZeroRewardStates.set(state);
+                        }
+                    }
+                    storm::storage::BitVector subsystemStates = storm::utility::graph::performProbGreater0E(this->model.getTransitionMatrix().transpose(true), storm::storage::BitVector(this->model.getNumberOfStates(), true), nonZeroRewardStates);
+                
+                    // Remove neutral end components, i.e., ECs in which no reward is earned.
+                    cachedEcElimResult = storm::transformer::EndComponentEliminator<ValueType>::transform(this->model.getTransitionMatrix(), subsystemStates, possibleECActions & cachedZeroRewardChoices.get(), possibleBottomStates);
+                }
+                STORM_LOG_ASSERT(cachedEcElimResult, "Updating the ecElimResult was not successfull.");
+            }
+
             
             template <class SparseModelType>
             void SparsePcaaWeightVectorChecker<SparseModelType>::transformReducedSolutionToOriginalModel(storm::storage::SparseMatrix<ValueType> const& reducedMatrix,

@@ -3,6 +3,7 @@
 #include "storm/storage/BitVector.h"
 #include "storm/storage/SparseMatrix.h"
 #include "storm/storage/Scheduler.h"
+#include "storm/transformer/EndComponentEliminator.h"
 #include "storm/modelchecker/multiobjective/Objective.h"
 #include "storm/modelchecker/multiobjective/pcaa/PcaaWeightVectorChecker.h"
 #include "storm/utility/vector.h"
@@ -90,6 +91,8 @@ namespace storm {
                  */
                 virtual void boundedPhase(std::vector<ValueType> const& weightVector, std::vector<ValueType>& weightedRewardVector) = 0;
                 
+                void updateEcElimResult(std::vector<ValueType> const& weightedRewardVector);
+                
                 /*!
                  * Transforms the results of a min-max-solver that considers a reduced model (without end components) to a result for the original (unreduced) model
                  */
@@ -127,6 +130,10 @@ namespace storm {
                 std::vector<ValueType> offsetsToOverApproximation;
                 // The scheduler choices that optimize the weighted rewards of undounded objectives.
                 std::vector<uint_fast64_t> optimalChoices;
+                // Caches the result of the ec elimination (avoiding recomputations for each weightvector)
+                boost::optional<typename storm::transformer::EndComponentEliminator<ValueType>::EndComponentEliminatorReturnType> cachedEcElimResult;
+                // Stores which choices are considered to have zero reward in the current cachedEcElimiResult.
+                boost::optional<storm::storage::BitVector> cachedZeroRewardChoices;
                 
             };
             
