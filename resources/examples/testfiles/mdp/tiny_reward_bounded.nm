@@ -1,7 +1,7 @@
 mdp
 
 module main
-	x : [0..4] init 0;
+	x : [0..5] init 0;
 	
 	[a] x=0 -> (x'=1);
 	[b] x=0 -> (x'=2);

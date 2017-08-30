@@ -121,9 +121,9 @@ TEST(SparseMdpMultiDimensionalRewardUnfoldingTest, tiny_ec) {
     formulasAsString += "; \n multi(Pmin=? [ F{\"a\"}<1 x=1 ]) "; // 0.0
     formulasAsString += "; \n multi(Pmax=? [multi( F{\"a\"}<=4 x=4, F{\"b\"}<=12 x=5 )]) "; // 0.02
     formulasAsString += "; \n multi(Pmin=? [multi( F{\"a\"}<=4 x=4, F{\"b\"}<=12 x=5 )]) "; // 0.0
-    formulasAsString += "; \n multi(Pmax=? [multi( F{\"a\"}<=4 x=4, F{\"b\"}<13 x=5, F{\"c\"}<0.4 x=3 )]) "; // 0.02
-    formulasAsString += "; \n multi(Pmax=? [multi( F{\"a\"}<=0 x=3, F{\"b\"}<=17 x=4, F{\"c\"}<0.8 x=5 )]) "; // 0.02
-    formulasAsString += "; \n multi(Pmax=? [multi( F{\"a\"}<=0 x=0, F{\"c\"}<0.5 x=5 )], Pmax=? [multi( F{\"b\"}<=0 x=3, F{\"c\"}<=0.8 x=5 )]) "; // (0.1, 0) , (0, 0.19)
+    formulasAsString += "; \n multi(Pmax=? [multi( F{\"a\"}<=4 x=4, F{\"b\"}<13 x=5, F{\"c\"}<2/5 x=3 )]) "; // 0.02
+    formulasAsString += "; \n multi(Pmax=? [multi( F{\"a\"}<=0 x=3, F{\"b\"}<=17 x=4, F{\"c\"}<4/5 x=5 )]) "; // 0.02
+    formulasAsString += "; \n multi(Pmax=? [multi( F{\"a\"}<=0 x=3, F{\"c\"}<1/2 x=5 )], Pmax=? [multi( F{\"b\"}<=0 x=3, F{\"c\"}<=4/5 x=5 )]) "; // (0.1, 0) , (0, 0.19)
 
     // programm, model,  formula
     storm::prism::Program program = storm::api::parseProgram(programFile);
@@ -174,6 +174,7 @@ TEST(SparseMdpMultiDimensionalRewardUnfoldingTest, tiny_ec) {
     std::vector<storm::RationalNumber> p = {storm::utility::convertNumber<storm::RationalNumber, std::string>("1/10"), storm::utility::convertNumber<storm::RationalNumber, std::string>("0")};
     std::vector<storm::RationalNumber> q = {storm::utility::convertNumber<storm::RationalNumber, std::string>("0"), storm::utility::convertNumber<storm::RationalNumber, std::string>("19/100")};
     auto expectedAchievableValues = storm::storage::geometry::Polytope<storm::RationalNumber>::createDownwardClosure(std::vector<std::vector<storm::RationalNumber>>({p, q}));
+    
     EXPECT_TRUE(expectedAchievableValues->contains(result->asExplicitParetoCurveCheckResult<storm::RationalNumber>().getUnderApproximation()));
     EXPECT_TRUE(result->asExplicitParetoCurveCheckResult<storm::RationalNumber>().getOverApproximation()->contains(expectedAchievableValues));
 
