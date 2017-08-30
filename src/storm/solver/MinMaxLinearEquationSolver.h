@@ -23,6 +23,14 @@ namespace storm {
     
     namespace solver {
         
+        enum class MinMaxLinearEquationSolverRequirement {
+            ValidSchedulerHint,
+            ValidValueHint,
+            NoEndComponents,
+            GlobalUpperBound,
+            GlobalLowerBound
+        };
+        
         /*!
          * A class representing the interface that all min-max linear equation solvers shall implement.
          */
@@ -30,10 +38,13 @@ namespace storm {
         class MinMaxLinearEquationSolver : public AbstractEquationSolver<ValueType> {
         protected:
             MinMaxLinearEquationSolver(OptimizationDirectionSetting direction = OptimizationDirectionSetting::Unset);
-        
+            
         public:
             virtual ~MinMaxLinearEquationSolver();
-
+            
+            virtual void setMatrix(storm::storage::SparseMatrix<ValueType> const& matrix) = 0;
+            virtual void setMatrix(storm::storage::SparseMatrix<ValueType>&& matrix) = 0;
+            
             /*!
              * Solves the equation system x = min/max(A*x + b) given by the parameters. Note that the matrix A has
              * to be given upon construction time of the solver object.
@@ -78,33 +89,33 @@ namespace storm {
              * optimization direction is used. Note: this method can only be called after setting the optimization direction.
              */
             virtual void repeatedMultiply(std::vector<ValueType>& x, std::vector<ValueType>* b , uint_fast64_t n) const;
-
+            
             /*!
              * Sets an optimization direction to use for calls to methods that do not explicitly provide one.
              */
             void setOptimizationDirection(OptimizationDirection direction);
-
+            
             /*!
              * Unsets the optimization direction to use for calls to methods that do not explicitly provide one.
              */
             void unsetOptimizationDirection();
-
+            
             /*!
              * Sets whether schedulers are generated when solving equation systems. If the argument is false, the currently
              * stored scheduler (if any) is deleted.
              */
             void setTrackScheduler(bool trackScheduler = true);
-
+            
             /*!
              * Retrieves whether this solver is set to generate schedulers.
              */
             bool isTrackSchedulerSet() const;
-
+            
             /*!
              * Retrieves whether the solver generated a scheduler.
              */
             bool hasScheduler() const;
-
+            
             /*!
              * Retrieves the generated scheduler. Note: it is only legal to call this function if a scheduler was generated.
              */
@@ -114,7 +125,7 @@ namespace storm {
              * Retrieves the generated (deterministic) choices of the optimal scheduler. Note: it is only legal to call this function if a scheduler was generated.
              */
             std::vector<uint_fast64_t> const& getSchedulerChoices() const;
-
+            
             /*!
              * Sets whether some of the generated data during solver calls should be cached.
              * This possibly decreases the runtime of subsequent calls but also increases memory consumption.
@@ -125,12 +136,12 @@ namespace storm {
              * Retrieves whether some of the generated data during solver calls should be cached.
              */
             bool isCachingEnabled() const;
-
+            
             /*
              * Clears the currently cached data that has been stored during previous calls of the solver.
              */
             virtual void clearCache() const;
-
+            
             /*!
              * Sets a lower bound for the solution that can potentially used by the solver.
              */
@@ -154,15 +165,31 @@ namespace storm {
             /*!
              * Returns true iff a scheduler hint was defined
              */
-             bool hasSchedulerHint() const;
-
+            bool hasSchedulerHint() const;
+            
+            /*!
+             * Retrieves the requirements of this solver for solving equations with the current settings.
+             */
+            virtual std::vector<MinMaxLinearEquationSolverRequirement> getRequirements() const;
+            
+            /*!
+             * Notifies the solver that the requirements for solving equations have been checked. If this has not been
+             * done before solving equations, the solver might issue a warning, perform the checks itself or even fail.
+             */
+            void setRequirementsChecked(bool value = true);
+            
+            /*!
+             * Retrieves whether the solver is aware that the requirements were checked.
+             */
+            bool getRequirementsChecked() const;
+            
         protected:
             /// The optimization direction to use for calls to functions that do not provide it explicitly. Can also be unset.
             OptimizationDirectionSetting direction;
-
+            
             /// Whether we generate a scheduler during solving.
             bool trackScheduler;
-
+            
             /// The scheduler choices that induce the optimal values (if they could be successfully generated).
             mutable boost::optional<std::vector<uint_fast64_t>> schedulerChoices;
             
@@ -179,16 +206,18 @@ namespace storm {
             /// Whether some of the generated data during solver calls should be cached.
             bool cachingEnabled;
             
+            /// A flag storing whether the requirements of the solver were checked.
+            bool requirementsChecked;
         };
-
+        
         template<typename ValueType>
         class MinMaxLinearEquationSolverFactory {
         public:
             MinMaxLinearEquationSolverFactory(MinMaxMethodSelection const& method = MinMaxMethodSelection::FROMSETTINGS, bool trackScheduler = false);
-
-            virtual std::unique_ptr<MinMaxLinearEquationSolver<ValueType>> create(storm::storage::SparseMatrix<ValueType> const& matrix) const = 0;
+            
+            virtual std::unique_ptr<MinMaxLinearEquationSolver<ValueType>> create(storm::storage::SparseMatrix<ValueType> const& matrix) const;
             virtual std::unique_ptr<MinMaxLinearEquationSolver<ValueType>> create(storm::storage::SparseMatrix<ValueType>&& matrix) const;
-
+            
             void setTrackScheduler(bool value);
             bool isTrackSchedulerSet() const;
             
@@ -196,23 +225,24 @@ namespace storm {
             virtual void setMinMaxMethod(MinMaxMethod const& newMethod);
             
             MinMaxMethod const& getMinMaxMethod() const;
-
+            
+            std::vector<MinMaxLinearEquationSolverRequirement> getRequirements() const;
+            
+        protected:
+            virtual std::unique_ptr<MinMaxLinearEquationSolver<ValueType>> internalCreate() const = 0;
+            
         private:
             bool trackScheduler;
             MinMaxMethod method;
         };
-
+        
         template<typename ValueType>
         class GeneralMinMaxLinearEquationSolverFactory : public MinMaxLinearEquationSolverFactory<ValueType> {
         public:
             GeneralMinMaxLinearEquationSolverFactory(MinMaxMethodSelection const& method = MinMaxMethodSelection::FROMSETTINGS, bool trackScheduler = false);
-
-            virtual std::unique_ptr<MinMaxLinearEquationSolver<ValueType>> create(storm::storage::SparseMatrix<ValueType> const& matrix) const override;
-            virtual std::unique_ptr<MinMaxLinearEquationSolver<ValueType>> create(storm::storage::SparseMatrix<ValueType>&& matrix) const override;
-
-        private:
-            template<typename MatrixType>
-            std::unique_ptr<MinMaxLinearEquationSolver<ValueType>> selectSolver(MatrixType&& matrix) const;
+            
+        protected:
+            virtual std::unique_ptr<MinMaxLinearEquationSolver<ValueType>> internalCreate() const override;
         };
         
     } // namespace solver

@@ -15,7 +15,7 @@ namespace storm {
     namespace solver {
         
         template<typename ValueType>
-        StandardMinMaxLinearEquationSolver<ValueType>::StandardMinMaxLinearEquationSolver() : A(nullptr) {
+        StandardMinMaxLinearEquationSolver<ValueType>::StandardMinMaxLinearEquationSolver(std::unique_ptr<LinearEquationSolverFactory<ValueType>>&& linearEquationSolverFactory) : linearEquationSolverFactory(std::move(linearEquationSolverFactory)), A(nullptr) {
             // Intentionally left empty.
         }
         
@@ -27,6 +27,18 @@ namespace storm {
         template<typename ValueType>
         StandardMinMaxLinearEquationSolver<ValueType>::StandardMinMaxLinearEquationSolver(storm::storage::SparseMatrix<ValueType>&& A, std::unique_ptr<LinearEquationSolverFactory<ValueType>>&& linearEquationSolverFactory) : linearEquationSolverFactory(std::move(linearEquationSolverFactory)), localA(std::make_unique<storm::storage::SparseMatrix<ValueType>>(std::move(A))), A(localA.get()) {
             // Intentionally left empty.
+        }
+        
+        template<typename ValueType>
+        void StandardMinMaxLinearEquationSolver<ValueType>::setMatrix(storm::storage::SparseMatrix<ValueType> const& matrix) {
+            this->localA = nullptr;
+            this->A = &matrix;
+        }
+        
+        template<typename ValueType>
+        void StandardMinMaxLinearEquationSolver<ValueType>::setMatrix(storm::storage::SparseMatrix<ValueType>&& matrix) {
+            this->localA = std::make_unique<storm::storage::SparseMatrix<ValueType>>(std::move(matrix));
+            this->A = this->localA.get();
         }
         
         template<typename ValueType>
@@ -80,46 +92,25 @@ namespace storm {
                 case EquationSolverType::Elimination: linearEquationSolverFactory = std::make_unique<EliminationLinearEquationSolverFactory<ValueType>>(); break;
             }
         }
-        
-#ifdef STORM_HAVE_CARL
+
         template<>
         StandardMinMaxLinearEquationSolverFactory<storm::RationalNumber>::StandardMinMaxLinearEquationSolverFactory(EquationSolverType const& solverType, MinMaxMethodSelection const& method, bool trackScheduler) : MinMaxLinearEquationSolverFactory<storm::RationalNumber>(method, trackScheduler) {
             switch (solverType) {
-                case  EquationSolverType::Eigen: linearEquationSolverFactory = std::make_unique<EigenLinearEquationSolverFactory<storm::RationalNumber>>(); break;
-                case  EquationSolverType::Elimination: linearEquationSolverFactory = std::make_unique<EliminationLinearEquationSolverFactory<storm::RationalNumber>>(); break;
+                case EquationSolverType::Eigen: linearEquationSolverFactory = std::make_unique<EigenLinearEquationSolverFactory<storm::RationalNumber>>(); break;
+                case EquationSolverType::Elimination: linearEquationSolverFactory = std::make_unique<EliminationLinearEquationSolverFactory<storm::RationalNumber>>(); break;
                 default:
-                    STORM_LOG_THROW(false, storm::exceptions::InvalidSettingsException, "Cannot create the requested solver for this data type.");
+                    STORM_LOG_THROW(false, storm::exceptions::InvalidSettingsException, "Unsupported equation solver for this data type.");
             }
         }
-#endif
-        
+
         template<typename ValueType>
-        std::unique_ptr<MinMaxLinearEquationSolver<ValueType>> StandardMinMaxLinearEquationSolverFactory<ValueType>::create(storm::storage::SparseMatrix<ValueType> const& matrix) const {
-            STORM_LOG_ASSERT(linearEquationSolverFactory, "Linear equation solver factory not initialized.");
-            
+        std::unique_ptr<MinMaxLinearEquationSolver<ValueType>> StandardMinMaxLinearEquationSolverFactory<ValueType>::internalCreate() const {
             std::unique_ptr<MinMaxLinearEquationSolver<ValueType>> result;
             auto method = this->getMinMaxMethod();
             if (method == MinMaxMethod::ValueIteration || method == MinMaxMethod::PolicyIteration || method == MinMaxMethod::Acyclic) {
                 IterativeMinMaxLinearEquationSolverSettings<ValueType> iterativeSolverSettings;
                 iterativeSolverSettings.setSolutionMethod(method);
-                result = std::make_unique<IterativeMinMaxLinearEquationSolver<ValueType>>(matrix, linearEquationSolverFactory->clone(), iterativeSolverSettings);
-            } else {
-                STORM_LOG_THROW(false, storm::exceptions::InvalidSettingsException, "Unsupported technique.");
-            }
-            result->setTrackScheduler(this->isTrackSchedulerSet());
-            return result;
-        }
-        
-        template<typename ValueType>
-        std::unique_ptr<MinMaxLinearEquationSolver<ValueType>> StandardMinMaxLinearEquationSolverFactory<ValueType>::create(storm::storage::SparseMatrix<ValueType>&& matrix) const {
-           STORM_LOG_ASSERT(linearEquationSolverFactory, "Linear equation solver factory not initialized.");
-            
-            std::unique_ptr<MinMaxLinearEquationSolver<ValueType>> result;
-            auto method = this->getMinMaxMethod();
-            if (method == MinMaxMethod::ValueIteration || method == MinMaxMethod::PolicyIteration || method == MinMaxMethod::Acyclic) {
-                IterativeMinMaxLinearEquationSolverSettings<ValueType> iterativeSolverSettings;
-                iterativeSolverSettings.setSolutionMethod(method);
-                result = std::make_unique<IterativeMinMaxLinearEquationSolver<ValueType>>(std::move(matrix), linearEquationSolverFactory->clone(), iterativeSolverSettings);
+                result = std::make_unique<IterativeMinMaxLinearEquationSolver<ValueType>>(this->linearEquationSolverFactory->clone(), iterativeSolverSettings);
             } else {
                 STORM_LOG_THROW(false, storm::exceptions::InvalidSettingsException, "Unsupported technique.");
             }

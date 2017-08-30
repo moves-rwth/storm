@@ -23,15 +23,31 @@ namespace storm {
     namespace solver {
         
         template<typename ValueType>
-        TopologicalMinMaxLinearEquationSolver<ValueType>::TopologicalMinMaxLinearEquationSolver(storm::storage::SparseMatrix<ValueType> const& A, double precision, uint_fast64_t maximalNumberOfIterations, bool relative) : A(A), precision(precision), maximalNumberOfIterations(maximalNumberOfIterations), relative(relative)
-        {
-			// Get the settings object to customize solving.
-			this->enableCuda = storm::settings::getModule<storm::settings::modules::CoreSettings>().isCudaSet();
+        TopologicalMinMaxLinearEquationSolver<ValueType>::TopologicalMinMaxLinearEquationSolver(double precision, uint_fast64_t maximalNumberOfIterations, bool relative) : precision(precision), maximalNumberOfIterations(maximalNumberOfIterations), relative(relative) {
+            // Get the settings object to customize solving.
+            this->enableCuda = storm::settings::getModule<storm::settings::modules::CoreSettings>().isCudaSet();
 #ifdef STORM_HAVE_CUDA
-			STORM_LOG_INFO_COND(this->enableCuda, "Option CUDA was not set, but the topological value iteration solver will use it anyways.");
+            STORM_LOG_INFO_COND(this->enableCuda, "Option CUDA was not set, but the topological value iteration solver will use it anyways.");
 #endif
         }
-                
+
+        template<typename ValueType>
+        TopologicalMinMaxLinearEquationSolver<ValueType>::TopologicalMinMaxLinearEquationSolver(storm::storage::SparseMatrix<ValueType> const& A, double precision, uint_fast64_t maximalNumberOfIterations, bool relative) : TopologicalMinMaxLinearEquationSolver(precision, maximalNumberOfIterations, relative) {
+            this->setMatrix(A);
+        }
+        
+        template<typename ValueType>
+        void TopologicalMinMaxLinearEquationSolver<ValueType>::setMatrix(storm::storage::SparseMatrix<ValueType> const& matrix) {
+            this->localA = nullptr;
+            this->A = &matrix;
+        }
+        
+        template<typename ValueType>
+        void TopologicalMinMaxLinearEquationSolver<ValueType>::setMatrix(storm::storage::SparseMatrix<ValueType>&& matrix) {
+            this->localA = std::make_unique<storm::storage::SparseMatrix<ValueType>>(std::move(matrix));
+            this->A = this->localA.get();
+        }
+        
         template<typename ValueType>
 		bool TopologicalMinMaxLinearEquationSolver<ValueType>::solveEquations(OptimizationDirection dir, std::vector<ValueType>& x, std::vector<ValueType> const& b) const {
 			
@@ -42,7 +58,7 @@ namespace storm {
 #endif
             if (__FORCE_FLOAT_CALCULATION && std::is_same<ValueType, double>::value) {
                 // FIXME: This actually allocates quite some storage, because of this conversion, is it really necessary?
-				storm::storage::SparseMatrix<float> newA = this->A.template toValueType<float>();
+				storm::storage::SparseMatrix<float> newA = this->A->template toValueType<float>();
                 
                 TopologicalMinMaxLinearEquationSolver<float> newSolver(newA, this->precision, this->maximalNumberOfIterations, this->relative);
 
@@ -67,12 +83,12 @@ namespace storm {
 			}
 
 			// Now, we need to determine the SCCs of the MDP and perform a topological sort.
-			std::vector<uint_fast64_t> const& nondeterministicChoiceIndices = this->A.getRowGroupIndices();
+			std::vector<uint_fast64_t> const& nondeterministicChoiceIndices = this->A->getRowGroupIndices();
 			
 			// Check if the decomposition is necessary
 #ifdef STORM_HAVE_CUDA
 #define __USE_CUDAFORSTORM_OPT true
-			size_t const gpuSizeOfCompleteSystem = basicValueIteration_mvReduce_uint64_double_calculateMemorySize(static_cast<size_t>(A.getRowCount()), nondeterministicChoiceIndices.size(), static_cast<size_t>(A.getEntryCount()));
+			size_t const gpuSizeOfCompleteSystem = basicValueIteration_mvReduce_uint64_double_calculateMemorySize(static_cast<size_t>(A->getRowCount()), nondeterministicChoiceIndices.size(), static_cast<size_t>(A->getEntryCount()));
 			size_t const cudaFreeMemory = static_cast<size_t>(getFreeCudaMemory() * 0.95);
 #else
 #define __USE_CUDAFORSTORM_OPT false
@@ -90,9 +106,9 @@ namespace storm {
 				bool result = false;
 				size_t globalIterations = 0;
 				if (dir == OptimizationDirection::Minimize) {
-					result = __basicValueIteration_mvReduce_minimize<uint_fast64_t, ValueType>(this->maximalNumberOfIterations, this->precision, this->relative, A.rowIndications, A.columnsAndValues, x, b, nondeterministicChoiceIndices, globalIterations);
+					result = __basicValueIteration_mvReduce_minimize<uint_fast64_t, ValueType>(this->maximalNumberOfIterations, this->precision, this->relative, A->rowIndications, A->columnsAndValues, x, b, nondeterministicChoiceIndices, globalIterations);
 				} else {
-					result = __basicValueIteration_mvReduce_maximize<uint_fast64_t, ValueType>(this->maximalNumberOfIterations, this->precision, this->relative, A.rowIndications, A.columnsAndValues, x, b, nondeterministicChoiceIndices, globalIterations);
+					result = __basicValueIteration_mvReduce_maximize<uint_fast64_t, ValueType>(this->maximalNumberOfIterations, this->precision, this->relative, A->rowIndications, A->columnsAndValues, x, b, nondeterministicChoiceIndices, globalIterations);
 				}
 				STORM_LOG_INFO("Executed " << globalIterations << " of max. " << maximalNumberOfIterations << " Iterations on GPU.");
 
@@ -116,16 +132,16 @@ namespace storm {
 				throw storm::exceptions::InvalidStateException() << "The useGpu Flag of a SCC was set, but this version of storm does not support CUDA acceleration. Internal Error!";
 #endif
 			} else {
-				storm::storage::BitVector fullSystem(this->A.getRowGroupCount(), true);
-				storm::storage::StronglyConnectedComponentDecomposition<ValueType> sccDecomposition(this->A, fullSystem, false, false);
+				storm::storage::BitVector fullSystem(this->A->getRowGroupCount(), true);
+				storm::storage::StronglyConnectedComponentDecomposition<ValueType> sccDecomposition(*this->A, fullSystem, false, false);
 
                 STORM_LOG_THROW(sccDecomposition.size() > 0, storm::exceptions::IllegalArgumentException, "Can not solve given equation system as the SCC decomposition returned no SCCs.");
 
-                storm::storage::SparseMatrix<ValueType> stronglyConnectedComponentsDependencyGraph = sccDecomposition.extractPartitionDependencyGraph(this->A);
+                storm::storage::SparseMatrix<ValueType> stronglyConnectedComponentsDependencyGraph = sccDecomposition.extractPartitionDependencyGraph(*this->A);
 				std::vector<uint_fast64_t> topologicalSort = storm::utility::graph::getTopologicalSort(stronglyConnectedComponentsDependencyGraph);
 
 				// Calculate the optimal distribution of sccs
-				std::vector<std::pair<bool, storm::storage::StateBlock>> optimalSccs = this->getOptimalGroupingFromTopologicalSccDecomposition(sccDecomposition, topologicalSort, this->A);
+				std::vector<std::pair<bool, storm::storage::StateBlock>> optimalSccs = this->getOptimalGroupingFromTopologicalSccDecomposition(sccDecomposition, topologicalSort, *this->A);
 				STORM_LOG_INFO("Optimized SCC Decomposition, originally " << topologicalSort.size() << " SCCs, optimized to " << optimalSccs.size() << " SCCs.");
 
 				std::vector<ValueType>* currentX = nullptr;
@@ -142,8 +158,8 @@ namespace storm {
 					storm::storage::StateBlock const& scc = sccIndexIt->second;
 
 					// Generate a sub matrix
-					storm::storage::BitVector subMatrixIndices(this->A.getColumnCount(), scc.cbegin(), scc.cend());
-					storm::storage::SparseMatrix<ValueType> sccSubmatrix = this->A.getSubmatrix(true, subMatrixIndices, subMatrixIndices);
+					storm::storage::BitVector subMatrixIndices(this->A->getColumnCount(), scc.cbegin(), scc.cend());
+					storm::storage::SparseMatrix<ValueType> sccSubmatrix = this->A->getSubmatrix(true, subMatrixIndices, subMatrixIndices);
 					std::vector<ValueType> sccSubB(sccSubmatrix.getRowCount());
 					storm::utility::vector::selectVectorValues<ValueType>(sccSubB, subMatrixIndices, nondeterministicChoiceIndices, b);
 					std::vector<ValueType> sccSubX(sccSubmatrix.getColumnCount());
@@ -167,7 +183,7 @@ namespace storm {
 						sccSubNondeterministicChoiceIndices.at(outerIndex + 1) = sccSubNondeterministicChoiceIndices.at(outerIndex) + (nondeterministicChoiceIndices[state + 1] - nondeterministicChoiceIndices[state]);
 
 						for (auto rowGroupIt = nondeterministicChoiceIndices[state]; rowGroupIt != nondeterministicChoiceIndices[state + 1]; ++rowGroupIt) {
-							typename storm::storage::SparseMatrix<ValueType>::const_rows row = this->A.getRow(rowGroupIt);
+							typename storm::storage::SparseMatrix<ValueType>::const_rows row = this->A->getRow(rowGroupIt);
 							for (auto rowIt = row.begin(); rowIt != row.end(); ++rowIt) {
 								if (!subMatrixIndices.get(rowIt->getColumn())) {
 									// This is an outgoing transition of a state in the SCC to a state not included in the SCC
@@ -439,11 +455,11 @@ namespace storm {
         
         template<typename ValueType>
         void TopologicalMinMaxLinearEquationSolver<ValueType>::repeatedMultiply(OptimizationDirection dir, std::vector<ValueType>& x, std::vector<ValueType> const* b, uint_fast64_t n) const {
-            std::unique_ptr<std::vector<ValueType>> multiplyResult = std::make_unique<std::vector<ValueType>>(this->A.getRowCount());
+            std::unique_ptr<std::vector<ValueType>> multiplyResult = std::make_unique<std::vector<ValueType>>(this->A->getRowCount());
             
             // Now perform matrix-vector multiplication as long as we meet the bound of the formula.
             for (uint_fast64_t i = 0; i < n; ++i) {
-                this->A.multiplyWithVector(x, *multiplyResult);
+                this->A->multiplyWithVector(x, *multiplyResult);
                 
                 // Add b if it is non-null.
                 if (b != nullptr) {
@@ -452,7 +468,7 @@ namespace storm {
                 
                 // Reduce the vector x' by applying min/max for all non-deterministic choices as given by the topmost
                 // element of the min/max operator stack.
-                storm::utility::vector::reduceVectorMinOrMax(dir, *multiplyResult, x, this->A.getRowGroupIndices());
+                storm::utility::vector::reduceVectorMinOrMax(dir, *multiplyResult, x, this->A->getRowGroupIndices());
             }
         }
 
@@ -462,15 +478,10 @@ namespace storm {
         }
         
         template<typename ValueType>
-        std::unique_ptr<MinMaxLinearEquationSolver<ValueType>> TopologicalMinMaxLinearEquationSolverFactory<ValueType>::create(storm::storage::SparseMatrix<ValueType> const& matrix) const {
-            return std::make_unique<TopologicalMinMaxLinearEquationSolver<ValueType>>(matrix);
+        std::unique_ptr<MinMaxLinearEquationSolver<ValueType>> TopologicalMinMaxLinearEquationSolverFactory<ValueType>::internalCreate() const {
+            return std::make_unique<TopologicalMinMaxLinearEquationSolver<ValueType>>();
         }
 
-        template<typename ValueType>
-        std::unique_ptr<MinMaxLinearEquationSolver<ValueType>> TopologicalMinMaxLinearEquationSolverFactory<ValueType>::create(storm::storage::SparseMatrix<ValueType>&& matrix) const {
-            return std::make_unique<TopologicalMinMaxLinearEquationSolver<ValueType>>(std::move(matrix));
-        }
-        
         // Explicitly instantiate the solver.
 		template class TopologicalMinMaxLinearEquationSolver<double>;
         

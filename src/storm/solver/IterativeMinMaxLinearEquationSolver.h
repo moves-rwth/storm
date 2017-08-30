@@ -36,7 +36,7 @@ namespace storm {
         template<typename ValueType>
         class IterativeMinMaxLinearEquationSolver : public StandardMinMaxLinearEquationSolver<ValueType> {
         public:
-            IterativeMinMaxLinearEquationSolver() = default;
+            IterativeMinMaxLinearEquationSolver(std::unique_ptr<LinearEquationSolverFactory<ValueType>>&& linearEquationSolverFactory, IterativeMinMaxLinearEquationSolverSettings<ValueType> const& settings = IterativeMinMaxLinearEquationSolverSettings<ValueType>());
             IterativeMinMaxLinearEquationSolver(storm::storage::SparseMatrix<ValueType> const& A, std::unique_ptr<LinearEquationSolverFactory<ValueType>>&& linearEquationSolverFactory, IterativeMinMaxLinearEquationSolverSettings<ValueType> const& settings = IterativeMinMaxLinearEquationSolverSettings<ValueType>());
             IterativeMinMaxLinearEquationSolver(storm::storage::SparseMatrix<ValueType>&& A, std::unique_ptr<LinearEquationSolverFactory<ValueType>>&& linearEquationSolverFactory, IterativeMinMaxLinearEquationSolverSettings<ValueType> const& settings = IterativeMinMaxLinearEquationSolverSettings<ValueType>());
             
@@ -81,18 +81,17 @@ namespace storm {
             IterativeMinMaxLinearEquationSolverFactory(std::unique_ptr<LinearEquationSolverFactory<ValueType>>&& linearEquationSolverFactory, MinMaxMethodSelection const& method = MinMaxMethodSelection::FROMSETTINGS, bool trackScheduler = false);
             IterativeMinMaxLinearEquationSolverFactory(EquationSolverType const& solverType, MinMaxMethodSelection const& method = MinMaxMethodSelection::FROMSETTINGS, bool trackScheduler = false);
             
-            virtual std::unique_ptr<MinMaxLinearEquationSolver<ValueType>> create(storm::storage::SparseMatrix<ValueType> const& matrix) const override;
-            virtual std::unique_ptr<MinMaxLinearEquationSolver<ValueType>> create(storm::storage::SparseMatrix<ValueType>&& matrix) const override;
-            
             IterativeMinMaxLinearEquationSolverSettings<ValueType>& getSettings();
             IterativeMinMaxLinearEquationSolverSettings<ValueType> const& getSettings() const;
             
             virtual void setMinMaxMethod(MinMaxMethodSelection const& newMethod) override;
             virtual void setMinMaxMethod(MinMaxMethod const& newMethod) override;
+
+        protected:
+            virtual std::unique_ptr<MinMaxLinearEquationSolver<ValueType>> internalCreate() const override;
             
         private:
             IterativeMinMaxLinearEquationSolverSettings<ValueType> settings;
-            
         };
     }
 }

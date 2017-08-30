@@ -10,7 +10,7 @@ namespace storm {
         template<typename ValueType>
         class LpMinMaxLinearEquationSolver : public StandardMinMaxLinearEquationSolver<ValueType> {
         public:
-            LpMinMaxLinearEquationSolver() = default;
+            LpMinMaxLinearEquationSolver(std::unique_ptr<LinearEquationSolverFactory<ValueType>>&& linearEquationSolverFactory, std::unique_ptr<storm::utility::solver::LpSolverFactory<ValueType>>&& lpSolverFactory);
             LpMinMaxLinearEquationSolver(storm::storage::SparseMatrix<ValueType> const& A, std::unique_ptr<LinearEquationSolverFactory<ValueType>>&& linearEquationSolverFactory, std::unique_ptr<storm::utility::solver::LpSolverFactory<ValueType>>&& lpSolverFactory);
             LpMinMaxLinearEquationSolver(storm::storage::SparseMatrix<ValueType>&& A, std::unique_ptr<LinearEquationSolverFactory<ValueType>>&& linearEquationSolverFactory, std::unique_ptr<storm::utility::solver::LpSolverFactory<ValueType>>&& lpSolverFactory);
             
@@ -29,12 +29,13 @@ namespace storm {
             LpMinMaxLinearEquationSolverFactory(std::unique_ptr<storm::utility::solver::LpSolverFactory<ValueType>>&& lpSolverFactory, bool trackScheduler = false);
             LpMinMaxLinearEquationSolverFactory(std::unique_ptr<LinearEquationSolverFactory<ValueType>>&& linearEquationSolverFactory, std::unique_ptr<storm::utility::solver::LpSolverFactory<ValueType>>&& lpSolverFactory, bool trackScheduler = false);
             
-            virtual std::unique_ptr<MinMaxLinearEquationSolver<ValueType>> create(storm::storage::SparseMatrix<ValueType> const& matrix) const override;
-            virtual std::unique_ptr<MinMaxLinearEquationSolver<ValueType>> create(storm::storage::SparseMatrix<ValueType>&& matrix) const override;
-            
             virtual void setMinMaxMethod(MinMaxMethodSelection const& newMethod) override;
             virtual void setMinMaxMethod(MinMaxMethod const& newMethod) override;
-            
+
+        protected:
+            virtual std::unique_ptr<MinMaxLinearEquationSolver<ValueType>> internalCreate() const override;
+            std::unique_ptr<LinearEquationSolverFactory<ValueType>> createLpEquationSolverFactory() const;
+
         private:
             std::unique_ptr<storm::utility::solver::LpSolverFactory<ValueType>> lpSolverFactory;
         };

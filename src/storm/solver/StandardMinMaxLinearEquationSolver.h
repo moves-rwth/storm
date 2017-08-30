@@ -9,10 +9,12 @@ namespace storm {
         template<typename ValueType>
         class StandardMinMaxLinearEquationSolver : public MinMaxLinearEquationSolver<ValueType> {
         public:
-            StandardMinMaxLinearEquationSolver();
-            
+            StandardMinMaxLinearEquationSolver(std::unique_ptr<LinearEquationSolverFactory<ValueType>>&& linearEquationSolverFactory);
             StandardMinMaxLinearEquationSolver(storm::storage::SparseMatrix<ValueType> const& A, std::unique_ptr<LinearEquationSolverFactory<ValueType>>&& linearEquationSolverFactory);
             StandardMinMaxLinearEquationSolver(storm::storage::SparseMatrix<ValueType>&& A, std::unique_ptr<LinearEquationSolverFactory<ValueType>>&& linearEquationSolverFactory);
+            
+            virtual void setMatrix(storm::storage::SparseMatrix<ValueType> const& matrix) override;
+            virtual void setMatrix(storm::storage::SparseMatrix<ValueType>&& matrix) override;
             
             virtual ~StandardMinMaxLinearEquationSolver() = default;
             
@@ -46,11 +48,13 @@ namespace storm {
             StandardMinMaxLinearEquationSolverFactory(std::unique_ptr<LinearEquationSolverFactory<ValueType>>&& linearEquationSolverFactory, MinMaxMethodSelection const& method = MinMaxMethodSelection::FROMSETTINGS, bool trackScheduler = false);
             StandardMinMaxLinearEquationSolverFactory(EquationSolverType const& solverType, MinMaxMethodSelection const& method = MinMaxMethodSelection::FROMSETTINGS, bool trackScheduler = false);
             
-            virtual std::unique_ptr<MinMaxLinearEquationSolver<ValueType>> create(storm::storage::SparseMatrix<ValueType> const& matrix) const override;
-            virtual std::unique_ptr<MinMaxLinearEquationSolver<ValueType>> create(storm::storage::SparseMatrix<ValueType>&& matrix) const override;
-            
         protected:
+            virtual std::unique_ptr<MinMaxLinearEquationSolver<ValueType>> internalCreate() const override;
+            
             std::unique_ptr<LinearEquationSolverFactory<ValueType>> linearEquationSolverFactory;
+            
+        private:
+            void createLinearEquationSolverFactory() const;
         };
         
         template<typename ValueType>

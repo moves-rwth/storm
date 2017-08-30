@@ -10,6 +10,11 @@ namespace storm {
     namespace solver {
         
         template<typename ValueType>
+        LpMinMaxLinearEquationSolver<ValueType>::LpMinMaxLinearEquationSolver(std::unique_ptr<LinearEquationSolverFactory<ValueType>>&& linearEquationSolverFactory, std::unique_ptr<storm::utility::solver::LpSolverFactory<ValueType>>&& lpSolverFactory) : StandardMinMaxLinearEquationSolver<ValueType>(std::move(linearEquationSolverFactory)), lpSolverFactory(std::move(lpSolverFactory)) {
+            // Intentionally left empty.
+        }
+        
+        template<typename ValueType>
         LpMinMaxLinearEquationSolver<ValueType>::LpMinMaxLinearEquationSolver(storm::storage::SparseMatrix<ValueType> const& A, std::unique_ptr<LinearEquationSolverFactory<ValueType>>&& linearEquationSolverFactory, std::unique_ptr<storm::utility::solver::LpSolverFactory<ValueType>>&& lpSolverFactory) : StandardMinMaxLinearEquationSolver<ValueType>(A, std::move(linearEquationSolverFactory)), lpSolverFactory(std::move(lpSolverFactory)) {
             // Intentionally left empty.
         }
@@ -119,21 +124,11 @@ namespace storm {
         }
         
         template<typename ValueType>
-        std::unique_ptr<MinMaxLinearEquationSolver<ValueType>> LpMinMaxLinearEquationSolverFactory<ValueType>::create(storm::storage::SparseMatrix<ValueType> const& matrix) const {
-            STORM_LOG_ASSERT(this->linearEquationSolverFactory, "Linear equation solver factory not initialized.");
+        std::unique_ptr<MinMaxLinearEquationSolver<ValueType>> LpMinMaxLinearEquationSolverFactory<ValueType>::internalCreate() const {
             STORM_LOG_ASSERT(this->lpSolverFactory, "Lp solver factory not initialized.");
-            
-            std::unique_ptr<MinMaxLinearEquationSolver<ValueType>> result = std::make_unique<LpMinMaxLinearEquationSolver<ValueType>>(std::move(matrix), this->linearEquationSolverFactory->clone(), this->lpSolverFactory->clone());
-            result->setTrackScheduler(this->isTrackSchedulerSet());
-            return result;
-        }
-        
-        template<typename ValueType>
-        std::unique_ptr<MinMaxLinearEquationSolver<ValueType>> LpMinMaxLinearEquationSolverFactory<ValueType>::create(storm::storage::SparseMatrix<ValueType>&& matrix) const {
             STORM_LOG_ASSERT(this->linearEquationSolverFactory, "Linear equation solver factory not initialized.");
-            STORM_LOG_ASSERT(this->lpSolverFactory, "Lp solver factory not initialized.");
             
-            std::unique_ptr<MinMaxLinearEquationSolver<ValueType>> result = std::make_unique<LpMinMaxLinearEquationSolver<ValueType>>(std::move(matrix), this->linearEquationSolverFactory->clone(), this->lpSolverFactory->clone());
+            std::unique_ptr<MinMaxLinearEquationSolver<ValueType>> result = std::make_unique<LpMinMaxLinearEquationSolver<ValueType>>(this->linearEquationSolverFactory->clone(), this->lpSolverFactory->clone());
             result->setTrackScheduler(this->isTrackSchedulerSet());
             return result;
         }
