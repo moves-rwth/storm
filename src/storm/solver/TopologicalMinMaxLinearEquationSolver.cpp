@@ -49,7 +49,7 @@ namespace storm {
         }
         
         template<typename ValueType>
-		bool TopologicalMinMaxLinearEquationSolver<ValueType>::solveEquations(OptimizationDirection dir, std::vector<ValueType>& x, std::vector<ValueType> const& b) const {
+		bool TopologicalMinMaxLinearEquationSolver<ValueType>::internalSolveEquations(OptimizationDirection dir, std::vector<ValueType>& x, std::vector<ValueType> const& b) const {
 			
 #ifdef GPU_USE_FLOAT
 #define __FORCE_FLOAT_CALCULATION true
@@ -478,7 +478,7 @@ namespace storm {
         }
         
         template<typename ValueType>
-        std::unique_ptr<MinMaxLinearEquationSolver<ValueType>> TopologicalMinMaxLinearEquationSolverFactory<ValueType>::internalCreate() const {
+        std::unique_ptr<MinMaxLinearEquationSolver<ValueType>> TopologicalMinMaxLinearEquationSolverFactory<ValueType>::create() const {
             return std::make_unique<TopologicalMinMaxLinearEquationSolver<ValueType>>();
         }
 

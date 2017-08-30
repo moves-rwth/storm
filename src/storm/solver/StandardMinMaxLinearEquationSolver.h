@@ -48,9 +48,12 @@ namespace storm {
             StandardMinMaxLinearEquationSolverFactory(std::unique_ptr<LinearEquationSolverFactory<ValueType>>&& linearEquationSolverFactory, MinMaxMethodSelection const& method = MinMaxMethodSelection::FROMSETTINGS, bool trackScheduler = false);
             StandardMinMaxLinearEquationSolverFactory(EquationSolverType const& solverType, MinMaxMethodSelection const& method = MinMaxMethodSelection::FROMSETTINGS, bool trackScheduler = false);
             
-        protected:
-            virtual std::unique_ptr<MinMaxLinearEquationSolver<ValueType>> internalCreate() const override;
+            // Make the other create methods visible.
+            using MinMaxLinearEquationSolverFactory<ValueType>::create;
             
+            virtual std::unique_ptr<MinMaxLinearEquationSolver<ValueType>> create() const override;
+
+        protected:
             std::unique_ptr<LinearEquationSolverFactory<ValueType>> linearEquationSolverFactory;
             
         private:

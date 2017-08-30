@@ -104,7 +104,7 @@ namespace storm {
         }
 
         template<typename ValueType>
-        std::unique_ptr<MinMaxLinearEquationSolver<ValueType>> StandardMinMaxLinearEquationSolverFactory<ValueType>::internalCreate() const {
+        std::unique_ptr<MinMaxLinearEquationSolver<ValueType>> StandardMinMaxLinearEquationSolverFactory<ValueType>::create() const {
             std::unique_ptr<MinMaxLinearEquationSolver<ValueType>> result;
             auto method = this->getMinMaxMethod();
             if (method == MinMaxMethod::ValueIteration || method == MinMaxMethod::PolicyIteration || method == MinMaxMethod::Acyclic) {

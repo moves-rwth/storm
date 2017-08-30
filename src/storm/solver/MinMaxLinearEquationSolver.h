@@ -55,7 +55,7 @@ namespace storm {
              * solver, but may be ignored.
              * @param b The vector to add after matrix-vector multiplication.
              */
-            virtual bool solveEquations(OptimizationDirection d, std::vector<ValueType>& x, std::vector<ValueType> const& b) const = 0;
+            bool solveEquations(OptimizationDirection d, std::vector<ValueType>& x, std::vector<ValueType> const& b) const;
             
             /*!
              * Behaves the same as the other variant of <code>solveEquations</code>, with the distinction that
@@ -184,6 +184,8 @@ namespace storm {
             bool getRequirementsChecked() const;
             
         protected:
+            virtual bool internalSolveEquations(OptimizationDirection d, std::vector<ValueType>& x, std::vector<ValueType> const& b) const = 0;
+            
             /// The optimization direction to use for calls to functions that do not provide it explicitly. Can also be unset.
             OptimizationDirectionSetting direction;
             
@@ -217,7 +219,8 @@ namespace storm {
             
             virtual std::unique_ptr<MinMaxLinearEquationSolver<ValueType>> create(storm::storage::SparseMatrix<ValueType> const& matrix) const;
             virtual std::unique_ptr<MinMaxLinearEquationSolver<ValueType>> create(storm::storage::SparseMatrix<ValueType>&& matrix) const;
-            
+            virtual std::unique_ptr<MinMaxLinearEquationSolver<ValueType>> create() const = 0;
+
             void setTrackScheduler(bool value);
             bool isTrackSchedulerSet() const;
             
@@ -227,9 +230,6 @@ namespace storm {
             MinMaxMethod const& getMinMaxMethod() const;
             
             std::vector<MinMaxLinearEquationSolverRequirement> getRequirements() const;
-            
-        protected:
-            virtual std::unique_ptr<MinMaxLinearEquationSolver<ValueType>> internalCreate() const = 0;
             
         private:
             bool trackScheduler;
@@ -241,8 +241,10 @@ namespace storm {
         public:
             GeneralMinMaxLinearEquationSolverFactory(MinMaxMethodSelection const& method = MinMaxMethodSelection::FROMSETTINGS, bool trackScheduler = false);
             
-        protected:
-            virtual std::unique_ptr<MinMaxLinearEquationSolver<ValueType>> internalCreate() const override;
+            // Make the other create methods visible.
+            using MinMaxLinearEquationSolverFactory<ValueType>::create;
+            
+            virtual std::unique_ptr<MinMaxLinearEquationSolver<ValueType>> create() const override;
         };
         
     } // namespace solver

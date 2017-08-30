@@ -37,7 +37,7 @@ namespace storm {
             virtual void setMatrix(storm::storage::SparseMatrix<ValueType> const& matrix) override;
             virtual void setMatrix(storm::storage::SparseMatrix<ValueType>&& matrix) override;
             
-            virtual bool solveEquations(OptimizationDirection dir, std::vector<ValueType>& x, std::vector<ValueType> const& b) const override;
+            virtual bool internalSolveEquations(OptimizationDirection dir, std::vector<ValueType>& x, std::vector<ValueType> const& b) const override;
             
             virtual void repeatedMultiply(OptimizationDirection dir, std::vector<ValueType>& x, std::vector<ValueType> const* b, uint_fast64_t n) const override;
 
@@ -151,7 +151,7 @@ namespace storm {
             TopologicalMinMaxLinearEquationSolverFactory(bool trackScheduler = false);
             
         protected:
-            virtual std::unique_ptr<MinMaxLinearEquationSolver<ValueType>> internalCreate() const override;
+            virtual std::unique_ptr<MinMaxLinearEquationSolver<ValueType>> create() const override;
         };
 
     } // namespace solver

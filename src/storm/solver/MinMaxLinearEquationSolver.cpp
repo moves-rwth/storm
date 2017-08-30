@@ -29,6 +29,11 @@ namespace storm {
         }
 
         template<typename ValueType>
+        bool MinMaxLinearEquationSolver<ValueType>::solveEquations(OptimizationDirection d, std::vector<ValueType>& x, std::vector<ValueType> const& b) const {
+            return internalSolveEquations(d, x, b);
+        }
+        
+        template<typename ValueType>
         void MinMaxLinearEquationSolver<ValueType>::solveEquations(std::vector<ValueType>& x, std::vector<ValueType> const& b) const {
             STORM_LOG_THROW(isSet(this->direction), storm::exceptions::IllegalFunctionCallException, "Optimization direction not set.");
             solveEquations(convert(this->direction), x, b);
@@ -196,20 +201,20 @@ namespace storm {
         template<typename ValueType>
         std::vector<MinMaxLinearEquationSolverRequirement> MinMaxLinearEquationSolverFactory<ValueType>::getRequirements() const {
             // Create dummy solver and ask it for requirements.
-            std::unique_ptr<MinMaxLinearEquationSolver<ValueType>> solver = this->internalCreate();
+            std::unique_ptr<MinMaxLinearEquationSolver<ValueType>> solver = this->create();
             return solver->getRequirements();
         }
         
         template<typename ValueType>
         std::unique_ptr<MinMaxLinearEquationSolver<ValueType>> MinMaxLinearEquationSolverFactory<ValueType>::create(storm::storage::SparseMatrix<ValueType> const& matrix) const {
-            std::unique_ptr<MinMaxLinearEquationSolver<ValueType>> solver = this->internalCreate();
+            std::unique_ptr<MinMaxLinearEquationSolver<ValueType>> solver = this->create();
             solver->setMatrix(matrix);
             return solver;
         }
         
         template<typename ValueType>
         std::unique_ptr<MinMaxLinearEquationSolver<ValueType>> MinMaxLinearEquationSolverFactory<ValueType>::create(storm::storage::SparseMatrix<ValueType>&& matrix) const {
-            std::unique_ptr<MinMaxLinearEquationSolver<ValueType>> solver = this->internalCreate();
+            std::unique_ptr<MinMaxLinearEquationSolver<ValueType>> solver = this->create();
             solver->setMatrix(std::move(matrix));
             return solver;
         }
@@ -220,7 +225,7 @@ namespace storm {
         }
         
         template<typename ValueType>
-        std::unique_ptr<MinMaxLinearEquationSolver<ValueType>> GeneralMinMaxLinearEquationSolverFactory<ValueType>::internalCreate() const {
+        std::unique_ptr<MinMaxLinearEquationSolver<ValueType>> GeneralMinMaxLinearEquationSolverFactory<ValueType>::create() const {
             std::unique_ptr<MinMaxLinearEquationSolver<ValueType>> result;
             auto method = this->getMinMaxMethod();
             if (method == MinMaxMethod::ValueIteration || method == MinMaxMethod::PolicyIteration || method == MinMaxMethod::Acyclic) {
@@ -239,7 +244,7 @@ namespace storm {
         }
 
         template<>
-        std::unique_ptr<MinMaxLinearEquationSolver<storm::RationalNumber>> GeneralMinMaxLinearEquationSolverFactory<storm::RationalNumber>::internalCreate() const {
+        std::unique_ptr<MinMaxLinearEquationSolver<storm::RationalNumber>> GeneralMinMaxLinearEquationSolverFactory<storm::RationalNumber>::create() const {
             std::unique_ptr<MinMaxLinearEquationSolver<storm::RationalNumber>> result;
             auto method = this->getMinMaxMethod();
             if (method == MinMaxMethod::ValueIteration || method == MinMaxMethod::PolicyIteration || method == MinMaxMethod::Acyclic) {

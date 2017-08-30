@@ -25,7 +25,7 @@ namespace storm {
         }
         
         template<typename ValueType>
-        bool LpMinMaxLinearEquationSolver<ValueType>::solveEquations(OptimizationDirection dir, std::vector<ValueType>& x, std::vector<ValueType> const& b) const {
+        bool LpMinMaxLinearEquationSolver<ValueType>::internalSolveEquations(OptimizationDirection dir, std::vector<ValueType>& x, std::vector<ValueType> const& b) const {
             
             // Set up the LP solver
             std::unique_ptr<storm::solver::LpSolver<ValueType>> solver = lpSolverFactory->create("");
@@ -124,7 +124,7 @@ namespace storm {
         }
         
         template<typename ValueType>
-        std::unique_ptr<MinMaxLinearEquationSolver<ValueType>> LpMinMaxLinearEquationSolverFactory<ValueType>::internalCreate() const {
+        std::unique_ptr<MinMaxLinearEquationSolver<ValueType>> LpMinMaxLinearEquationSolverFactory<ValueType>::create() const {
             STORM_LOG_ASSERT(this->lpSolverFactory, "Lp solver factory not initialized.");
             STORM_LOG_ASSERT(this->linearEquationSolverFactory, "Linear equation solver factory not initialized.");
             
