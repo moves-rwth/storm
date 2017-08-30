@@ -23,6 +23,12 @@ namespace storm {
     
     namespace solver {
         
+        enum class MinMaxLinearEquationSolverSystemType {
+            UntilProbabilities,
+            ReachabilityRewards,
+            StochasticShortestPath
+        };
+        
         enum class MinMaxLinearEquationSolverRequirement {
             ValidSchedulerHint,
             ValidValueHint,
@@ -170,7 +176,7 @@ namespace storm {
             /*!
              * Retrieves the requirements of this solver for solving equations with the current settings.
              */
-            virtual std::vector<MinMaxLinearEquationSolverRequirement> getRequirements() const;
+            virtual std::vector<MinMaxLinearEquationSolverRequirement> getRequirements(MinMaxLinearEquationSolverSystemType const& equationSystemType) const;
             
             /*!
              * Notifies the solver that the requirements for solving equations have been checked. If this has not been
@@ -229,7 +235,7 @@ namespace storm {
             
             MinMaxMethod const& getMinMaxMethod() const;
             
-            std::vector<MinMaxLinearEquationSolverRequirement> getRequirements() const;
+            std::vector<MinMaxLinearEquationSolverRequirement> getRequirements(MinMaxLinearEquationSolverSystemType const& equationSystemType) const;
             void setRequirementsChecked(bool value = true);
             bool isRequirementsCheckedSet() const;
 

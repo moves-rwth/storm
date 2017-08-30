@@ -89,7 +89,7 @@ namespace storm {
                 }
 
                 // Check for requirements of the solver.
-                std::vector<storm::solver::MinMaxLinearEquationSolverRequirement> requirements = minMaxLinearEquationSolverFactory.getRequirements();
+                std::vector<storm::solver::MinMaxLinearEquationSolverRequirement> requirements = minMaxLinearEquationSolverFactory.getRequirements(storm::solver::MinMaxLinearEquationSolverSystemType::UntilProbabilities);
                 STORM_LOG_THROW(requirements.empty(), storm::exceptions::UncheckedRequirementException, "Cannot establish requirements for solver.");
 
                 std::unique_ptr<storm::solver::MinMaxLinearEquationSolver<ValueType>> solver = minMaxLinearEquationSolverFactory.create(aProbabilistic);
@@ -376,7 +376,7 @@ namespace storm {
                 std::vector<ValueType> x(numberOfSspStates);
                 
                 // Check for requirements of the solver.
-                std::vector<storm::solver::MinMaxLinearEquationSolverRequirement> requirements = minMaxLinearEquationSolverFactory.getRequirements();
+                std::vector<storm::solver::MinMaxLinearEquationSolverRequirement> requirements = minMaxLinearEquationSolverFactory.getRequirements(storm::solver::MinMaxLinearEquationSolverSystemType::StochasticShortestPath);
                 STORM_LOG_THROW(requirements.empty(), storm::exceptions::UncheckedRequirementException, "Cannot establish requirements for solver.");
 
                 std::unique_ptr<storm::solver::MinMaxLinearEquationSolver<ValueType>> solver = minMaxLinearEquationSolverFactory.create(sspMatrix);
@@ -584,7 +584,7 @@ namespace storm {
                 std::vector<ValueType> b = probabilisticChoiceRewards;
                 
                 // Check for requirements of the solver.
-                std::vector<storm::solver::MinMaxLinearEquationSolverRequirement> requirements = minMaxLinearEquationSolverFactory.getRequirements();
+                std::vector<storm::solver::MinMaxLinearEquationSolverRequirement> requirements = minMaxLinearEquationSolverFactory.getRequirements(storm::solver::MinMaxLinearEquationSolverSystemType::ReachabilityRewards);
                 STORM_LOG_THROW(requirements.empty(), storm::exceptions::UncheckedRequirementException, "Cannot establish requirements for solver.");
 
                 auto solver = minMaxLinearEquationSolverFactory.create(std::move(aProbabilistic));

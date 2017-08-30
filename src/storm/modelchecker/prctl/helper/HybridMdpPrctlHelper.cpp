@@ -79,7 +79,7 @@ namespace storm {
                         std::pair<storm::storage::SparseMatrix<ValueType>, std::vector<ValueType>> explicitRepresentation = submatrix.toMatrixVector(subvector, std::move(rowGroupSizes), model.getNondeterminismVariables(), odd, odd);
                         
                         // Check for requirements of the solver.
-                        std::vector<storm::solver::MinMaxLinearEquationSolverRequirement> requirements = linearEquationSolverFactory.getRequirements();
+                        std::vector<storm::solver::MinMaxLinearEquationSolverRequirement> requirements = linearEquationSolverFactory.getRequirements(storm::solver::MinMaxLinearEquationSolverSystemType::UntilProbabilities);
                         STORM_LOG_THROW(requirements.empty(), storm::exceptions::UncheckedRequirementException, "Cannot establish requirements for solver.");
                         
                         std::unique_ptr<storm::solver::MinMaxLinearEquationSolver<ValueType>> solver = linearEquationSolverFactory.create(std::move(explicitRepresentation.first));
@@ -147,10 +147,6 @@ namespace storm {
                     // Translate the symbolic matrix/vector to their explicit representations.
                     std::pair<storm::storage::SparseMatrix<ValueType>, std::vector<ValueType>> explicitRepresentation = submatrix.toMatrixVector(subvector, std::move(rowGroupSizes), model.getNondeterminismVariables(), odd, odd);
                     
-                    // Check for requirements of the solver.
-                    std::vector<storm::solver::MinMaxLinearEquationSolverRequirement> requirements = linearEquationSolverFactory.getRequirements();
-                    STORM_LOG_THROW(requirements.empty(), storm::exceptions::UncheckedRequirementException, "Cannot establish requirements for solver.");
-
                     std::unique_ptr<storm::solver::MinMaxLinearEquationSolver<ValueType>> solver = linearEquationSolverFactory.create(std::move(explicitRepresentation.first));
                     solver->repeatedMultiply(dir, x, &explicitRepresentation.second, stepBound);
                     
@@ -278,7 +274,7 @@ namespace storm {
                         std::pair<storm::storage::SparseMatrix<ValueType>, std::vector<ValueType>> explicitRepresentation = submatrix.toMatrixVector(subvector, std::move(rowGroupSizes), model.getNondeterminismVariables(), odd, odd);
                         
                         // Check for requirements of the solver.
-                        std::vector<storm::solver::MinMaxLinearEquationSolverRequirement> requirements = linearEquationSolverFactory.getRequirements();
+                        std::vector<storm::solver::MinMaxLinearEquationSolverRequirement> requirements = linearEquationSolverFactory.getRequirements(storm::solver::MinMaxLinearEquationSolverSystemType::ReachabilityRewards);
                         STORM_LOG_THROW(requirements.empty(), storm::exceptions::UncheckedRequirementException, "Cannot establish requirements for solver.");
 
                         // Now solve the resulting equation system.
