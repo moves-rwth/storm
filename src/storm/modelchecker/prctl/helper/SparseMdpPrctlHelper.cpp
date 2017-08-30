@@ -29,6 +29,7 @@
 #include "storm/exceptions/InvalidSettingsException.h"
 #include "storm/exceptions/IllegalFunctionCallException.h"
 #include "storm/exceptions/IllegalArgumentException.h"
+#include "storm/exceptions/UncheckedRequirementException.h"
 
 namespace storm {
     namespace modelchecker {
@@ -253,8 +254,13 @@ namespace storm {
             template<typename ValueType>
             std::pair<std::vector<ValueType>, boost::optional<std::vector<uint_fast64_t>>> SparseMdpPrctlHelper<ValueType>::computeValuesOnlyMaybeStates(storm::solver::SolveGoal const& goal, storm::storage::SparseMatrix<ValueType> const& submatrix, std::vector<ValueType> const& b, bool produceScheduler, storm::solver::MinMaxLinearEquationSolverFactory<ValueType> const& minMaxLinearEquationSolverFactory, boost::optional<std::vector<ValueType>>&& hintValues, boost::optional<std::vector<uint_fast64_t>>&& hintChoices, boost::optional<ValueType> const& lowerResultBound, boost::optional<ValueType> const& upperResultBound) {
                 
+                // Check for requirements of the solver.
+                std::vector<storm::solver::MinMaxLinearEquationSolverRequirement> requirements = minMaxLinearEquationSolverFactory.getRequirements();
+                STORM_LOG_THROW(requirements.empty(), storm::exceptions::UncheckedRequirementException, "Cannot establish requirements for solver.");
+                
                 // Set up the solver
                 std::unique_ptr<storm::solver::MinMaxLinearEquationSolver<ValueType>> solver = storm::solver::configureMinMaxLinearEquationSolver(goal, minMaxLinearEquationSolverFactory, submatrix);
+                solver->setRequirementsChecked();
                 if (lowerResultBound) {
                     solver->setLowerBound(lowerResultBound.get());
                 }
@@ -651,8 +657,13 @@ namespace storm {
                 // Finalize the matrix and solve the corresponding system of equations.
                 storm::storage::SparseMatrix<ValueType> sspMatrix = sspMatrixBuilder.build(currentChoice, numberOfSspStates, numberOfSspStates);
                 
+                // Check for requirements of the solver.
+                std::vector<storm::solver::MinMaxLinearEquationSolverRequirement> requirements = minMaxLinearEquationSolverFactory.getRequirements();
+                STORM_LOG_THROW(requirements.empty(), storm::exceptions::UncheckedRequirementException, "Cannot establish requirements for solver.");
+                
                 std::vector<ValueType> sspResult(numberOfSspStates);
                 std::unique_ptr<storm::solver::MinMaxLinearEquationSolver<ValueType>> solver = minMaxLinearEquationSolverFactory.create(std::move(sspMatrix));
+                solver->setRequirementsChecked();
                 solver->solveEquations(dir, sspResult, b);
                 
                 // Prepare result vector.
@@ -764,6 +775,7 @@ namespace storm {
                 ValueType precision = storm::utility::convertNumber<ValueType>(storm::settings::getModule<storm::settings::modules::MinMaxEquationSolverSettings>().getPrecision());
                 std::vector<ValueType> x(mecTransitions.getRowGroupCount(), storm::utility::zero<ValueType>());
                 std::vector<ValueType> xPrime = x;
+                
                 auto solver = minMaxLinearEquationSolverFactory.create(std::move(mecTransitions));
                 solver->setCachingEnabled(true);
                 ValueType maxDiff, minDiff;

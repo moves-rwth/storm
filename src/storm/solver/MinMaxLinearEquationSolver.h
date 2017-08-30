@@ -181,7 +181,7 @@ namespace storm {
             /*!
              * Retrieves whether the solver is aware that the requirements were checked.
              */
-            bool getRequirementsChecked() const;
+            bool isRequirementsCheckedSet() const;
             
         protected:
             virtual bool internalSolveEquations(OptimizationDirection d, std::vector<ValueType>& x, std::vector<ValueType> const& b) const = 0;
@@ -217,8 +217,8 @@ namespace storm {
         public:
             MinMaxLinearEquationSolverFactory(MinMaxMethodSelection const& method = MinMaxMethodSelection::FROMSETTINGS, bool trackScheduler = false);
             
-            virtual std::unique_ptr<MinMaxLinearEquationSolver<ValueType>> create(storm::storage::SparseMatrix<ValueType> const& matrix) const;
-            virtual std::unique_ptr<MinMaxLinearEquationSolver<ValueType>> create(storm::storage::SparseMatrix<ValueType>&& matrix) const;
+            std::unique_ptr<MinMaxLinearEquationSolver<ValueType>> create(storm::storage::SparseMatrix<ValueType> const& matrix) const;
+            std::unique_ptr<MinMaxLinearEquationSolver<ValueType>> create(storm::storage::SparseMatrix<ValueType>&& matrix) const;
             virtual std::unique_ptr<MinMaxLinearEquationSolver<ValueType>> create() const = 0;
 
             void setTrackScheduler(bool value);
@@ -230,10 +230,13 @@ namespace storm {
             MinMaxMethod const& getMinMaxMethod() const;
             
             std::vector<MinMaxLinearEquationSolverRequirement> getRequirements() const;
-            
+            void setRequirementsChecked(bool value = true);
+            bool isRequirementsCheckedSet() const;
+
         private:
             bool trackScheduler;
             MinMaxMethod method;
+            bool requirementsChecked;
         };
         
         template<typename ValueType>

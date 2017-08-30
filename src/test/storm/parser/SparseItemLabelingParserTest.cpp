@@ -81,18 +81,18 @@ TEST(SparseItemLabelingParserTest, BasicNondeterministicParsing) {
 
 	// Checking whether the parsed labeling is correct
     ASSERT_TRUE(labeling.containsLabel("alpha"));
-    EXPECT_EQ(2, labeling.getChoices("alpha").getNumberOfSetBits());
+    EXPECT_EQ(2ull, labeling.getChoices("alpha").getNumberOfSetBits());
     EXPECT_TRUE(labeling.getChoiceHasLabel("alpha", 0));
     EXPECT_TRUE(labeling.getChoiceHasLabel("alpha", 1));
     
     ASSERT_TRUE(labeling.containsLabel("beta"));
-    EXPECT_EQ(3, labeling.getChoices("beta").getNumberOfSetBits());
+    EXPECT_EQ(3ull, labeling.getChoices("beta").getNumberOfSetBits());
     EXPECT_TRUE(labeling.getChoiceHasLabel("beta", 1));
     EXPECT_TRUE(labeling.getChoiceHasLabel("beta", 3));
     EXPECT_TRUE(labeling.getChoiceHasLabel("beta", 8));
     
     ASSERT_TRUE(labeling.containsLabel("gamma"));
-    EXPECT_EQ(1, labeling.getChoices("gamma").getNumberOfSetBits());
+    EXPECT_EQ(1ull, labeling.getChoices("gamma").getNumberOfSetBits());
     EXPECT_TRUE(labeling.getChoiceHasLabel("gamma", 2));
     
     ASSERT_TRUE(labeling.containsLabel("delta"));

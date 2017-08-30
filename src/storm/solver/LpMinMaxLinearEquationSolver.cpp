@@ -130,6 +130,7 @@ namespace storm {
             
             std::unique_ptr<MinMaxLinearEquationSolver<ValueType>> result = std::make_unique<LpMinMaxLinearEquationSolver<ValueType>>(this->linearEquationSolverFactory->clone(), this->lpSolverFactory->clone());
             result->setTrackScheduler(this->isTrackSchedulerSet());
+            result->setRequirementsChecked(this->isRequirementsCheckedSet());
             return result;
         }
         

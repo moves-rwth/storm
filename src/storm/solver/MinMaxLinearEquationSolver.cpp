@@ -30,6 +30,7 @@ namespace storm {
 
         template<typename ValueType>
         bool MinMaxLinearEquationSolver<ValueType>::solveEquations(OptimizationDirection d, std::vector<ValueType>& x, std::vector<ValueType> const& b) const {
+            STORM_LOG_WARN_COND_DEBUG(this->isRequirementsCheckedSet(), "The requirements of the solver have not been marked as checked. Please provide the appropriate check or mark the requirements as checked (if applicable).");
             return internalSolveEquations(d, x, b);
         }
         
@@ -147,8 +148,8 @@ namespace storm {
         }
         
         template<typename ValueType>
-        bool MinMaxLinearEquationSolver<ValueType>::getRequirementsChecked() const {
-            return this->requirementsChecked;
+        bool MinMaxLinearEquationSolver<ValueType>::isRequirementsCheckedSet() const {
+            return requirementsChecked;
         }
         
         template<typename ValueType>
@@ -166,6 +167,16 @@ namespace storm {
             return trackScheduler;
         }
         
+        template<typename ValueType>
+        void MinMaxLinearEquationSolverFactory<ValueType>::setRequirementsChecked(bool value) {
+            this->requirementsChecked = value;
+        }
+        
+        template<typename ValueType>
+        bool MinMaxLinearEquationSolverFactory<ValueType>::isRequirementsCheckedSet() const {
+            return this->requirementsChecked;
+        }
+
         template<typename ValueType>
         void MinMaxLinearEquationSolverFactory<ValueType>::setMinMaxMethod(MinMaxMethodSelection const& newMethod) {
             if (newMethod == MinMaxMethodSelection::FROMSETTINGS) {
@@ -240,6 +251,7 @@ namespace storm {
                 STORM_LOG_THROW(false, storm::exceptions::InvalidSettingsException, "Unsupported technique.");
             }
             result->setTrackScheduler(this->isTrackSchedulerSet());
+            result->setRequirementsChecked(this->isRequirementsCheckedSet());
             return result;
         }
 
@@ -257,6 +269,7 @@ namespace storm {
                 STORM_LOG_THROW(false, storm::exceptions::InvalidSettingsException, "Unsupported technique.");
             }
             result->setTrackScheduler(this->isTrackSchedulerSet());
+            result->setRequirementsChecked(this->isRequirementsCheckedSet());
             return result;
         }
 
