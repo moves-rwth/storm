@@ -16,23 +16,19 @@
 #include "storm/api/storm.h"
 
 
-/* Rationals for MAs not supported at this point
 TEST(SparseMaPcaaMultiObjectiveModelCheckerTest, serverRationalNumbers) {
     
     std::string programFile = STORM_TEST_RESOURCES_DIR "/ma/server.ma";
     std::string formulasAsString = "multi(Tmax=? [ F \"error\" ], Pmax=? [ F \"processB\" ]) "; // pareto
-  //  formulasAsString += "; \n multi(..)";
     
     // programm, model,  formula
     storm::prism::Program program = storm::api::parseProgram(programFile);
     program.checkValidity();
-    std::vector<std::shared_ptr<storm::logic::Formula const>> formulas = storm::api::extractFormulasFromProperties(parseFormulasForProgram(formulasAsString, program));
+    std::vector<std::shared_ptr<storm::logic::Formula const>> formulas = storm::api::extractFormulasFromProperties(storm::api::parsePropertiesForPrismProgram(formulasAsString, program));
     storm::generator::NextStateGeneratorOptions options(formulas);
     std::shared_ptr<storm::models::sparse::MarkovAutomaton<storm::RationalNumber>> ma = storm::builder::ExplicitModelBuilder<storm::RationalNumber>(program, options).build()->as<storm::models::sparse::MarkovAutomaton<storm::RationalNumber>>();
     
-    storm::modelchecker::SparseMarkovAutomatonCslModelChecker<storm::models::sparse::MarkovAutomaton<storm::RationalNumber>> checker(*ma);
-    
-    std::unique_ptr<storm::modelchecker::CheckResult> result = checker.check(storm::modelchecker::CheckTask<storm::logic::Formula>(*formulas[0], true));
+    std::unique_ptr<storm::modelchecker::CheckResult> result = storm::modelchecker::multiobjective::performMultiObjectiveModelChecking(*ma, formulas[0]->asMultiObjectiveFormula(), storm::modelchecker::multiobjective::MultiObjectiveMethodSelection::Pcaa);
     ASSERT_TRUE(result->isExplicitParetoCurveCheckResult());
     
     storm::RationalNumber p1 = storm::utility::convertNumber<storm::RationalNumber>(11.0); p1 /= storm::utility::convertNumber<storm::RationalNumber>(6.0);
@@ -45,7 +41,7 @@ TEST(SparseMaPcaaMultiObjectiveModelCheckerTest, serverRationalNumbers) {
     EXPECT_TRUE(expectedAchievableValues->contains(result->asExplicitParetoCurveCheckResult<storm::RationalNumber>().getUnderApproximation()));
     EXPECT_TRUE(result->asExplicitParetoCurveCheckResult<storm::RationalNumber>().getOverApproximation()->contains(expectedAchievableValues));
     
-}*/
+}
 
 
 TEST(SparseMaPcaaMultiObjectiveModelCheckerTest, server) {

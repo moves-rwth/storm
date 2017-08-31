@@ -43,7 +43,6 @@ namespace storm {
             std::vector<storm::logic::TimeBoundReference> tbReferences;
 
             for (unsigned i = 0; i < f.getDimension(); ++i) {
-                std::cout << f.hasLowerBound(i) << std::endl;
                 if (f.hasLowerBound(i)) {
                     lowerBounds.push_back(TimeBound(f.isLowerBoundStrict(i), f.getLowerBound(i).substitute(substitution)));
                 } else {
@@ -53,7 +52,7 @@ namespace storm {
                 if (f.hasUpperBound(i)) {
                     upperBounds.push_back(TimeBound(f.isUpperBoundStrict(i), f.getUpperBound(i).substitute(substitution)));
                 } else {
-                    lowerBounds.push_back(boost::none);
+                    upperBounds.push_back(boost::none);
                 }
                 tbReferences.push_back(f.getTimeBoundReference(i));
             }
