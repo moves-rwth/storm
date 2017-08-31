@@ -49,16 +49,6 @@ namespace storm {
                 return std::make_unique<SparseMaPcaaWeightVectorChecker<ModelType>>(model, objectives, possibleECActions, possibleBottomStates);
             }
             
-            template <class ModelType>
-            bool WeightVectorCheckerFactory<ModelType>::onlyCumulativeOrTotalRewardObjectives(std::vector<Objective<typename ModelType::ValueType>> const& objectives) {
-                for (auto const& obj : objectives) {
-                    if (!(obj.formula->isRewardOperatorFormula() && (obj.formula->getSubformula().isTotalRewardFormula() || obj.formula->getSubformula().isCumulativeRewardFormula()))) {
-                        return false;
-                    }
-                }
-                return true;
-            }
-
             template class PcaaWeightVectorChecker<storm::models::sparse::Mdp<double>>;
             template class PcaaWeightVectorChecker<storm::models::sparse::Mdp<storm::RationalNumber>>;
             template class PcaaWeightVectorChecker<storm::models::sparse::MarkovAutomaton<double>>;

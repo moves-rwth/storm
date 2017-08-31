@@ -5,7 +5,7 @@
 #include "storm/storage/Scheduler.h"
 #include "storm/models/sparse/Mdp.h"
 #include "storm/models/sparse/MarkovAutomaton.h"
-#include "storm/modelchecker/multiobjective/SparseMultiObjectivePreprocessorReturnType.h"
+#include "storm/modelchecker/multiobjective/SparseMultiObjectivePreprocessorResult.h"
 #include "storm/modelchecker/multiobjective/Objective.h"
 
 
@@ -94,9 +94,6 @@ namespace storm {
                                                    std::vector<Objective<typename ModelType::ValueType>> const& objectives,
                                                    storm::storage::BitVector const& possibleECActions,
                                                    storm::storage::BitVector const& possibleBottomStates);
-            private:
-
-                static bool onlyCumulativeOrTotalRewardObjectives(std::vector<Objective<typename ModelType::ValueType>> const& objectives);
             };
 
         }

@@ -63,6 +63,13 @@ namespace storm {
                     task->perform(*preprocessedModel);
                 }
                 
+                // Remove reward models that are not needed anymore
+                std::set<std::string> relevantRewardModels;
+                for (auto const& obj : data.objectives) {
+                    obj->formula->gatherReferencedRewardModels(relevantRewardModels);
+                }
+                preprocessedModel->restrictRewardModels(relevantRewardModels);
+                
                 // Build the actual result
                 return buildResult(originalModel, originalFormula, data, preprocessedModel, backwardTransitions);
             }
@@ -378,35 +385,38 @@ namespace storm {
                 
                 result.queryType = getQueryType(result.objectives);
                 
-                auto minMaxNonZeroRewardStates = getStatesWithNonZeroRewardMinMax(result, backwardTransitions);
-                auto finiteRewardStates = ensureRewardFiniteness(result, data.finiteRewardCheckObjectives, minMaxNonZeroRewardStates.first, backwardTransitions);
+                setReward0States(result, backwardTransitions);
+                checkRewardFiniteness(result, data.finiteRewardCheckObjectives, backwardTransitions);
+                
+                /////
                 
                 std::set<std::string> relevantRewardModels;
                 for (auto const& obj : result.objectives) {
                     obj.formula->gatherReferencedRewardModels(relevantRewardModels);
                 }
                 
-                // Build a subsystem that discards states that yield infinite reward for all schedulers.
-                // We can also merge the states that will have reward zero anyway.
-                storm::storage::BitVector zeroRewardStates = ~minMaxNonZeroRewardStates.second;
-                storm::storage::BitVector maybeStates = finiteRewardStates & ~zeroRewardStates;
-                storm::transformer::GoalStateMerger<SparseModelType> merger(*result.preprocessedModel);
-                typename storm::transformer::GoalStateMerger<SparseModelType>::ReturnType mergerResult = merger.mergeTargetAndSinkStates(maybeStates, zeroRewardStates, storm::storage::BitVector(maybeStates.size(), false), std::vector<std::string>(relevantRewardModels.begin(), relevantRewardModels.end()));
+                STORM_LOG_THROW(result.rewardFinitenessType != ReturnType::RewardFinitenessType::Infinite, storm::exceptions::InvalidPropertyException, "Infinite rewards unsupported.");
                 
-                result.preprocessedModel = mergerResult.model;
-                result.possibleBottomStates = (~minMaxNonZeroRewardStates.first) % maybeStates;
-                if (mergerResult.targetState) {
-                    storm::storage::BitVector targetStateAsVector(result.preprocessedModel->getNumberOfStates(), false);
-                    targetStateAsVector.set(*mergerResult.targetState, true);
-                    // The overapproximation for the possible ec choices consists of the states that can reach the target states with prob. 0 and the target state itself.
-                    result.possibleECChoices = result.preprocessedModel->getTransitionMatrix().getRowFilter(storm::utility::graph::performProb0E(*result.preprocessedModel, result.preprocessedModel->getBackwardTransitions(), storm::storage::BitVector(targetStateAsVector.size(), true), targetStateAsVector));
-                    result.possibleECChoices.set(result.preprocessedModel->getTransitionMatrix().getRowGroupIndices()[*mergerResult.targetState], true);
-                    // There is an additional state in the result
-                    result.possibleBottomStates.resize(result.possibleBottomStates.size() + 1, true);
-                } else {
-                    result.possibleECChoices = storm::storage::BitVector(result.preprocessedModel->getNumberOfChoices(), true);
+                if (result.containsOnlyRewardObjectives()) {
+                    // Build a subsystem that discards states that yield infinite reward for all schedulers.
+                    // We can also merge the states that will have reward zero anyway.
+                    storm::storage::BitVector maybeStates = result.rewardLessInfinityEStates.get() & ~result.reward0AStates;
+                    storm::transformer::GoalStateMerger<SparseModelType> merger(*result.preprocessedModel);
+                    typename storm::transformer::GoalStateMerger<SparseModelType>::ReturnType mergerResult = merger.mergeTargetAndSinkStates(maybeStates, result.reward0AStates, storm::storage::BitVector(maybeStates.size(), false), std::vector<std::string>(relevantRewardModels.begin(), relevantRewardModels.end()));
+                    
+                    result.preprocessedModel = mergerResult.model;
+                    result.reward0EStates = result.reward0EStates % maybeStates;
+                    if (mergerResult.targetState) {
+                        storm::storage::BitVector targetStateAsVector(result.preprocessedModel->getNumberOfStates(), false);
+                        targetStateAsVector.set(*mergerResult.targetState, true);
+                        // The overapproximation for the possible ec choices consists of the states that can reach the target states with prob. 0 and the target state itself.
+                        //result.ecChoicesHint = result.preprocessedModel->getTransitionMatrix().getRowFilter(storm::utility::graph::performProb0E(*result.preprocessedModel, result.preprocessedModel->getBackwardTransitions(), storm::storage::BitVector(targetStateAsVector.size(), true), targetStateAsVector));
+                        //result.ecChoicesHint->set(result.preprocessedModel->getTransitionMatrix().getRowGroupIndices()[*mergerResult.targetState], true);
+                        // There is an additional state in the result
+                        result.reward0EStates.resize(result.reward0EStates.size() + 1, true);
+                    }
+                    assert(result.reward0EStates.size() == result.preprocessedModel->getNumberOfStates());
                 }
-                assert(result.possibleBottomStates.size() == result.preprocessedModel->getNumberOfStates());
                 
                 return result;
             }
@@ -432,7 +442,7 @@ namespace storm {
             }
             
             template<typename SparseModelType>
-            std::pair<storm::storage::BitVector, storm::storage::BitVector> SparseMultiObjectivePreprocessor<SparseModelType>::getStatesWithNonZeroRewardMinMax(ReturnType& result, storm::storage::SparseMatrix<ValueType> const& backwardTransitions) {
+            void SparseMultiObjectivePreprocessor<SparseModelType>::setReward0States(ReturnType& result, storm::storage::SparseMatrix<ValueType> const& backwardTransitions) {
                 
                 uint_fast64_t stateCount = result.preprocessedModel->getNumberOfStates();
                 auto const& transitions = result.preprocessedModel->getTransitionMatrix();
@@ -445,10 +455,6 @@ namespace storm {
                     if (obj.formula->isRewardOperatorFormula()) {
                         auto const& rewModel = result.preprocessedModel->getRewardModel(obj.formula->asRewardOperatorFormula().getRewardModelName());
                         zeroRewardChoices &= rewModel.getChoicesWithZeroReward(transitions);
-                    } else {
-                        zeroRewardChoices.clear();
-                        STORM_LOG_WARN("Formula type not handled properly");
-                        //STORM_LOG_ASSERT(false, "Unknown formula type.");
                     }
                 }
                 
@@ -474,51 +480,55 @@ namespace storm {
                     }
                 }
                 
-                // get the states from which the minimal/maximal expected reward is always non-zero
-                storm::storage::BitVector minStates = storm::utility::graph::performProbGreater0A(transitions, groupIndices, backwardTransitions, allStates, statesWithRewardForAllChoices, false, 0, zeroRewardChoices);
-                storm::storage::BitVector maxStates = storm::utility::graph::performProbGreater0E(backwardTransitions, allStates, statesWithRewardForOneChoice);
-                STORM_LOG_ASSERT(minStates.isSubsetOf(maxStates), "The computed set of states with minimal non-zero expected rewards is not a subset of the states with maximal non-zero rewards.");
-                return std::make_pair(std::move(minStates), std::move(maxStates));
+                // get the states for which there is a scheduler yielding reward zero
+                result.reward0EStates = storm::utility::graph::performProbGreater0A(transitions, groupIndices, backwardTransitions, allStates, statesWithRewardForAllChoices, false, 0, zeroRewardChoices);
+                result.reward0EStates.complement();
+                result.reward0AStates = storm::utility::graph::performProb0A(backwardTransitions, allStates, statesWithRewardForOneChoice);
+                assert(result.reward0EStates.isSubsetOf(result.reward0AStates));
             }
          
             template<typename SparseModelType>
-            storm::storage::BitVector SparseMultiObjectivePreprocessor<SparseModelType>::ensureRewardFiniteness(ReturnType& result, storm::storage::BitVector const& finiteRewardCheckObjectives, storm::storage::BitVector const& nonZeroRewardMin, storm::storage::SparseMatrix<ValueType> const& backwardTransitions) {
+            void SparseMultiObjectivePreprocessor<SparseModelType>::checkRewardFiniteness(ReturnType& result, storm::storage::BitVector const& finiteRewardCheckObjectives, storm::storage::SparseMatrix<ValueType> const& backwardTransitions) {
+                
+                result.rewardFinitenessType = ReturnType::RewardFinitenessType::AllFinite;
                 
                 auto const& transitions = result.preprocessedModel->getTransitionMatrix();
                 std::vector<uint_fast64_t> const& groupIndices = transitions.getRowGroupIndices();
                 
                 storm::storage::BitVector maxRewardsToCheck(result.preprocessedModel->getNumberOfChoices(), true);
-                bool hasMinRewardToCheck = false;
+                storm::storage::BitVector minRewardsToCheck(result.preprocessedModel->getNumberOfChoices(), true);
                 for (auto const& objIndex : finiteRewardCheckObjectives) {
                     STORM_LOG_ASSERT(result.objectives[objIndex].formula->isRewardOperatorFormula(), "Objective needs to be checked for finite reward but has no reward operator.");
                     auto const& rewModel = result.preprocessedModel->getRewardModel(result.objectives[objIndex].formula->asRewardOperatorFormula().getRewardModelName());
                     if (storm::solver::minimize(result.objectives[objIndex].formula->getOptimalityType())) {
-                        hasMinRewardToCheck = true;
+                        minRewardsToCheck &= rewModel.getChoicesWithZeroReward(transitions);
                     } else {
                         maxRewardsToCheck &= rewModel.getChoicesWithZeroReward(transitions);
                     }
                 }
                 maxRewardsToCheck.complement();
+                minRewardsToCheck.complement();
                 
-                // Assert reward finitiness for maximizing objectives under all schedulers
+                // Check reward finiteness under all schedulers
                 storm::storage::BitVector allStates(result.preprocessedModel->getNumberOfStates(), true);
-                if (storm::utility::graph::checkIfECWithChoiceExists(transitions, backwardTransitions, allStates, maxRewardsToCheck)) {
-                    STORM_LOG_THROW(false, storm::exceptions::InvalidPropertyException, "At least one of the maximizing objectives induces infinite expected reward (or time). This is not supported");
-                }
-                    
-                // Assert that there is one scheduler under which all rewards are finite.
-                // This only has to be done if there are minimizing expected rewards that potentially can be infinite
-                storm::storage::BitVector finiteRewardStates;
-                if (hasMinRewardToCheck) {
-                    finiteRewardStates = storm::utility::graph::performProb1E(transitions, groupIndices, backwardTransitions, allStates, ~nonZeroRewardMin);
-                    if ((finiteRewardStates & result.preprocessedModel->getInitialStates()).empty()) {
-                        // There is no scheduler that induces finite reward for the initial state
-                        STORM_LOG_THROW(false, storm::exceptions::InvalidPropertyException, "For every scheduler, at least one objective gets infinite reward.");
+                if (storm::utility::graph::checkIfECWithChoiceExists(transitions, backwardTransitions, allStates, maxRewardsToCheck | minRewardsToCheck)) {
+                    // Check whether there is a scheduler yielding infinite reward for a maximizing objective
+                    if (storm::utility::graph::checkIfECWithChoiceExists(transitions, backwardTransitions, allStates, maxRewardsToCheck)) {
+                        result.rewardFinitenessType = ReturnType::RewardFinitenessType::Infinite;
+                    } else {
+                        // Check whether there is a scheduler under which all rewards are finite.
+                        result.rewardLessInfinityEStates = storm::utility::graph::performProb1E(transitions, groupIndices, backwardTransitions, allStates, result.reward0EStates);
+                        if ((result.rewardLessInfinityEStates.get() & result.preprocessedModel->getInitialStates()).empty()) {
+                            // There is no scheduler that induces finite reward for the initial state
+                            result.rewardFinitenessType = ReturnType::RewardFinitenessType::Infinite;
+                        } else {
+                            result.rewardFinitenessType = ReturnType::RewardFinitenessType::ExistsParetoFinite;
+                        }
                     }
                 } else {
-                    finiteRewardStates = allStates;
+                    result.rewardLessInfinityEStates = allStates;
                 }
-                return finiteRewardStates;
+                
             }
         
             template class SparseMultiObjectivePreprocessor<storm::models::sparse::Mdp<double>>;

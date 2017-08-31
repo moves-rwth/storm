@@ -18,11 +18,13 @@ namespace storm {
             
             
             template <class SparseModelType>
-            SparseCbQuery<SparseModelType>::SparseCbQuery(SparseMultiObjectivePreprocessorReturnType<SparseModelType>& preprocessorResult) :
+            SparseCbQuery<SparseModelType>::SparseCbQuery(SparseMultiObjectivePreprocessorResult<SparseModelType>& preprocessorResult) :
                 originalModel(preprocessorResult.originalModel), originalFormula(preprocessorResult.originalFormula),
                 preprocessedModel(std::move(*preprocessorResult.preprocessedModel)), objectives(std::move(preprocessorResult.objectives)),
-                possibleBottomStates(std::move(preprocessorResult.possibleBottomStates)) {
+                possibleBottomStates(std::move(preprocessorResult.reward0EStates)) {
                 expressionManager = std::make_shared<storm::expressions::ExpressionManager>();
+                STORM_LOG_WARN("TODO");
+                std::cout << "TODO" << std::endl;
             }
             
             

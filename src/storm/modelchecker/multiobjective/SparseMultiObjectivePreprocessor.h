@@ -5,7 +5,7 @@
 
 #include "storm/logic/Formulas.h"
 #include "storm/storage/BitVector.h"
-#include "storm/modelchecker/multiobjective/SparseMultiObjectivePreprocessorReturnType.h"
+#include "storm/modelchecker/multiobjective/SparseMultiObjectivePreprocessorResult.h"
 #include "storm/modelchecker/multiobjective/SparseMultiObjectivePreprocessorTask.h"
 #include "storm/storage/memorystructure/MemoryStructure.h"
 
@@ -21,7 +21,7 @@ namespace storm {
             public:
                 typedef typename SparseModelType::ValueType ValueType;
                 typedef typename SparseModelType::RewardModelType RewardModelType;
-                typedef SparseMultiObjectivePreprocessorReturnType<SparseModelType> ReturnType;
+                typedef SparseMultiObjectivePreprocessorResult<SparseModelType> ReturnType;
                 
                 /*!
                  * Preprocesses the given model w.r.t. the given formulas
@@ -79,16 +79,16 @@ namespace storm {
                 
                 
                 /*!
-                 * Computes the set of states that have a non-zero reward w.r.t. all objectives, assuming that the objectives are all minimizing and maximizing, respectively.
+                 * Computes the set of states that have zero expected reward w.r.t. all expected reward objectives
                  */
-                static std::pair<storm::storage::BitVector, storm::storage::BitVector> getStatesWithNonZeroRewardMinMax(ReturnType& result, storm::storage::SparseMatrix<ValueType> const& backwardTransitions);
+                static void setReward0States(ReturnType& result, storm::storage::SparseMatrix<ValueType> const& backwardTransitions);
 
                 
                 /*!
-                 * Checks whether the occurring expected rewards are finite. If not, the input is rejected.
+                 * Checks whether the occurring expected rewards are finite and sets the RewardFinitenessType accordingly
                  * Returns the set of states for which a scheduler exists that induces finite reward for all objectives
                  */
-                static storm::storage::BitVector ensureRewardFiniteness(ReturnType& result, storm::storage::BitVector const& finiteRewardCheckObjectives, storm::storage::BitVector const& nonZeroRewardMin, storm::storage::SparseMatrix<ValueType> const& backwardTransitions);
+                static void checkRewardFiniteness(ReturnType& result, storm::storage::BitVector const& finiteRewardCheckObjectives, storm::storage::SparseMatrix<ValueType> const& backwardTransitions);
                 
             };
         }

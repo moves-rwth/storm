@@ -20,11 +20,14 @@ namespace storm {
             
             
             template <class SparseModelType, typename GeometryValueType>
-            SparsePcaaQuery<SparseModelType, GeometryValueType>::SparsePcaaQuery(SparseMultiObjectivePreprocessorReturnType<SparseModelType>& preprocessorResult) :
+            SparsePcaaQuery<SparseModelType, GeometryValueType>::SparsePcaaQuery(SparseMultiObjectivePreprocessorResult<SparseModelType>& preprocessorResult) :
                 originalModel(preprocessorResult.originalModel), originalFormula(preprocessorResult.originalFormula),
                 preprocessedModel(std::move(*preprocessorResult.preprocessedModel)), objectives(std::move(preprocessorResult.objectives)) {
                 
-                this->weightVectorChecker = WeightVectorCheckerFactory<SparseModelType>::create(preprocessedModel, objectives, preprocessorResult.possibleECChoices, preprocessorResult.possibleBottomStates);
+                STORM_LOG_WARN("TODO");
+                               std::cout << "TODO" << std::endl;
+
+                this->weightVectorChecker = WeightVectorCheckerFactory<SparseModelType>::create(preprocessedModel, objectives, storm::storage::BitVector(preprocessedModel.getNumberOfChoices(), true), preprocessorResult.reward0EStates);
 
                 this->diracWeightVectorsToBeChecked = storm::storage::BitVector(this->objectives.size(), true);
                 this->overApproximation = storm::storage::geometry::Polytope<GeometryValueType>::createUniversalPolytope();
