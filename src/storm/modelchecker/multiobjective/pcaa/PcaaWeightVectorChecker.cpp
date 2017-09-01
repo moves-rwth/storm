@@ -2,6 +2,7 @@
 
 #include "storm/modelchecker/multiobjective/pcaa/SparseMaPcaaWeightVectorChecker.h"
 #include "storm/modelchecker/multiobjective/pcaa/SparseMdpPcaaWeightVectorChecker.h"
+#include "storm/modelchecker/multiobjective/pcaa/SparseMdpRewardBoundedPcaaWeightVectorChecker.h"
 
 #include "storm/utility/macros.h"
 #include "storm/exceptions/NotSupportedException.h"
@@ -33,7 +34,11 @@ namespace storm {
             template <typename ModelType>
             template<typename VT, typename std::enable_if<std::is_same<ModelType, storm::models::sparse::Mdp<VT>>::value, int>::type>
             std::unique_ptr<PcaaWeightVectorChecker<ModelType>>  WeightVectorCheckerFactory<ModelType>::create(SparseMultiObjectivePreprocessorResult<ModelType> const& preprocessorResult) {
-                return std::make_unique<SparseMdpPcaaWeightVectorChecker<ModelType>>(preprocessorResult);
+                if (preprocessorResult.containsOnlyRewardObjectives()) {
+                    return std::make_unique<SparseMdpPcaaWeightVectorChecker<ModelType>>(preprocessorResult);
+                } else {
+                    return std::make_unique<SparseMdpRewardBoundedPcaaWeightVectorChecker<ModelType>>(preprocessorResult);
+                }
             }
             
             template <typename ModelType>
