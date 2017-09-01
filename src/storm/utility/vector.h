@@ -563,9 +563,7 @@ namespace storm {
                 ++it;
                 
                 for (; it != ite; ++it) {
-                    if (values[*it] > current) {
-                        current = values[*it];
-                    }
+                    current = std::max(values[*it], current);
                 }
                 return current;
             }
@@ -588,9 +586,7 @@ namespace storm {
                 ++it;
                 
                 for (; it != ite; ++it) {
-                    if (values[*it] < current) {
-                        current = values[*it];
-                    }
+                    current = std::min(values[*it], current);
                 }
                 return current;
             }
