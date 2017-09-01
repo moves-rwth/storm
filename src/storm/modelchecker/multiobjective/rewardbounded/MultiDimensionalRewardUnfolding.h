@@ -62,22 +62,49 @@ namespace storm {
                 
                 
             private:
+            
+                class MemoryProduct {
+                public:
+                    MemoryProduct() = default;
+                    MemoryProduct(storm::storage::SparseModelMemoryProduct<ValueType>& productBuilder, std::vector<std::vector<uint64_t>> const& originalModelSteps, std::vector<boost::optional<std::string>> const& memoryLabels);
+                    
+                    storm::models::sparse::Mdp<ValueType> const& getProduct() const;
+                    std::vector<boost::optional<Epoch>> const& getSteps() const;
+                    
+                    uint64_t getProductState(uint64_t const& modelState, uint64_t const& memoryState) const;
+                    uint64_t getModelState(uint64_t const& productState) const;
+                    uint64_t getMemoryState(uint64_t const& productState) const;
+                    
+                    uint64_t convertMemoryState(storm::storage::BitVector const& memoryState) const;
+                    storm::storage::BitVector const& convertMemoryState(uint64_t const& memoryState) const;
+                    
+                    uint64_t getProductStateFromChoice(uint64_t const& productChoice) const;
+                
+                private:
+                    std::shared_ptr<storm::models::sparse::Mdp<ValueType>> product;
+                    std::vector<boost::optional<Epoch>> steps;
+                    
+                    std::vector<uint64_t> modelMemoryToProductStateMap;
+                    std::vector<uint64_t> productToModelStateMap;
+                    std::vector<uint64_t> productToMemoryStateMap;
+                    std::vector<uint64_t> choiceToStateMap;
+                    std::vector<storm::storage::BitVector> memoryStateMap;
+                    
+                };
+                
                 void setCurrentEpochClass(Epoch const& epoch);
             
                 void initialize();
+                
+                void initializeObjectives(std::vector<std::vector<uint64_t>>& epochSteps);
+                void initializePossibleEpochSteps(std::vector<std::vector<uint64_t>> const& epochSteps);
+                void initializeMemoryProduct(std::vector<std::vector<uint64_t>> const& epochSteps);
+                storm::storage::MemoryStructure computeMemoryStructure() const;
+                std::vector<std::vector<ValueType>> computeObjectiveRewardsForProduct(Epoch const& epoch) const;
+                
+                
                 EpochClass getClassOfEpoch(Epoch const& epoch) const;
                 Epoch getSuccessorEpoch(Epoch const& epoch, Epoch const& step) const;
-                
-                std::vector<std::vector<ValueType>> computeObjectiveRewardsForProduct(Epoch const& epoch) const;
-                storm::storage::MemoryStructure computeMemoryStructure() const;
-                std::vector<storm::storage::BitVector> computeMemoryStateMap(storm::storage::MemoryStructure const& memory) const;
-
-                storm::storage::BitVector const& convertMemoryState(uint64_t const& memoryState) const;
-                uint64_t convertMemoryState(storm::storage::BitVector const& memoryState) const;
-                
-                uint64_t getProductState(uint64_t const& modelState, uint64_t const& memoryState) const;
-                uint64_t getModelState(uint64_t const& productState) const;
-                uint64_t getMemoryState(uint64_t const& productState) const;
                 
                 SolutionType getZeroSolution() const;
                 void addScaledSolution(SolutionType& solution, SolutionType const& solutionToAdd, ValueType const& scalingFactor) const;
@@ -90,14 +117,8 @@ namespace storm {
                 storm::storage::BitVector possibleECActions;
                 storm::storage::BitVector allowedBottomStates;
                 
-                std::shared_ptr<storm::models::sparse::Mdp<ValueType>> modelMemoryProduct;
-                std::shared_ptr<storm::storage::SparseModelMemoryProduct<ValueType>> productBuilder;
-                std::vector<storm::storage::BitVector> memoryStateMap;
-                std::vector<boost::optional<Epoch>> productEpochSteps;
-                storm::storage::BitVector productAllowedBottomStates;
-                std::vector<uint64_t> modelStates;
-                std::vector<uint64_t> memoryStates;
-                std::vector<uint64_t> productChoiceToStateMapping;
+                MemoryProduct memoryProduct;
+                
                 typename storm::transformer::EndComponentEliminator<ValueType>::EndComponentEliminatorReturnType ecElimResult;
                 std::set<Epoch> possibleEpochSteps;
                 

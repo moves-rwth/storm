@@ -27,9 +27,18 @@ namespace storm {
     
             template<typename ValueType>
             void MultiDimensionalRewardUnfolding<ValueType>::initialize() {
+            
+                std::vector<std::vector<uint64_t>> epochSteps;
+                initializeObjectives(epochSteps);
+                initializePossibleEpochSteps(epochSteps);
+                initializeMemoryProduct(epochSteps);
+                
+            }
+            
+            template<typename ValueType>
+            void MultiDimensionalRewardUnfolding<ValueType>::initializeObjectives(std::vector<std::vector<uint64_t>>& epochSteps) {
 
                 // collect the time-bounded subobjectives
-                std::vector<std::vector<uint64_t>> epochSteps;
                 for (uint64_t objIndex = 0; objIndex < this->objectives.size(); ++objIndex) {
                     auto const& formula = *this->objectives[objIndex].formula;
                     if (formula.isProbabilityOperatorFormula()) {
@@ -85,8 +94,10 @@ namespace storm {
                     }
                     objectiveDimensions.push_back(std::move(dimensions));
                 }
-                
-                
+            }
+            
+            template<typename ValueType>
+            void MultiDimensionalRewardUnfolding<ValueType>::initializePossibleEpochSteps(std::vector<std::vector<uint64_t>> const& epochSteps) {
                 // collect which epoch steps are possible
                 possibleEpochSteps.clear();
                 for (uint64_t choiceIndex = 0; choiceIndex < epochSteps.front().size(); ++choiceIndex) {
@@ -97,65 +108,20 @@ namespace storm {
                     }
                     possibleEpochSteps.insert(step);
                 }
+            }
+            
+            template<typename ValueType>
+            void MultiDimensionalRewardUnfolding<ValueType>::initializeMemoryProduct(std::vector<std::vector<uint64_t>> const& epochSteps) {
                 
                 // build the model x memory product
                 auto memoryStructure = computeMemoryStructure();
-                memoryStateMap = computeMemoryStateMap(memoryStructure);
-                productBuilder = std::make_shared<storm::storage::SparseModelMemoryProduct<ValueType>>(memoryStructure.product(model));
+                storm::storage::SparseModelMemoryProduct<ValueType> productBuilder(memoryStructure.product(model));
                 // todo: we only need to build the reachable states + the full model for each memory state encoding that all subObjectives of an objective are irrelevant
-                productBuilder->setBuildFullProduct();
-                modelMemoryProduct = productBuilder->build()->template as<storm::models::sparse::Mdp<ValueType>>();
+                productBuilder.setBuildFullProduct();
+                memoryProduct = MemoryProduct(productBuilder, epochSteps, memoryLabels);
                 
-                productEpochSteps.resize(modelMemoryProduct->getNumberOfChoices());
-                for (uint64_t modelState = 0; modelState < model.getNumberOfStates(); ++modelState) {
-                    uint64_t numChoices = model.getTransitionMatrix().getRowGroupSize(modelState);
-                    uint64_t firstChoice = model.getTransitionMatrix().getRowGroupIndices()[modelState];
-                    for (uint64_t choiceOffset = 0; choiceOffset < numChoices; ++choiceOffset) {
-                        Epoch step;
-                        bool isZeroStep = true;
-                        for (uint64_t dim = 0; dim < epochSteps.size(); ++dim) {
-                            step.push_back(epochSteps[dim][firstChoice + choiceOffset]);
-                            isZeroStep = isZeroStep && step.back() == 0;
-                        }
-                        if (!isZeroStep) {
-                            for (uint64_t memState = 0; memState < memoryStateMap.size(); ++memState) {
-                                uint64_t productState = getProductState(modelState, memState);
-                                uint64_t productChoice = modelMemoryProduct->getTransitionMatrix().getRowGroupIndices()[productState] + choiceOffset;
-                                assert(productChoice < modelMemoryProduct->getTransitionMatrix().getRowGroupIndices()[productState + 1]);
-                                productEpochSteps[productChoice] = step;
-                            }
-                        }
-                    }
-                }
-                
-                modelStates.resize(modelMemoryProduct->getNumberOfStates());
-                memoryStates.resize(modelMemoryProduct->getNumberOfStates());
-                for (uint64_t modelState = 0; modelState < model.getNumberOfStates(); ++modelState) {
-                    for (uint64_t memoryState = 0; memoryState < memoryStructure.getNumberOfStates(); ++memoryState) {
-                        uint64_t productState = getProductState(modelState, memoryState);
-                        modelStates[productState] = modelState;
-                        memoryStates[productState] = memoryState;
-                    }
-                }
-                
-                productChoiceToStateMapping.clear();
-                productChoiceToStateMapping.reserve(modelMemoryProduct->getNumberOfChoices());
-                for (uint64_t productState = 0; productState < modelMemoryProduct->getNumberOfStates(); ++productState) {
-                    uint64_t groupSize = modelMemoryProduct->getTransitionMatrix().getRowGroupSize(productState);
-                    for (uint64_t i = 0; i < groupSize; ++i) {
-                        productChoiceToStateMapping.push_back(productState);
-                    }
-                }
-                
-                
-                productAllowedBottomStates = storm::storage::BitVector(modelMemoryProduct->getNumberOfStates(), true);
-                for (auto const& modelState : allowedBottomStates) {
-                    for (uint64_t memoryState = 0; memoryState < memoryStateMap.size(); ++memoryState) {
-                        productAllowedBottomStates.set(getProductState(modelState, memoryState), true);
-                    }
-                }
             }
-            
+
             template<typename ValueType>
             typename MultiDimensionalRewardUnfolding<ValueType>::Epoch MultiDimensionalRewardUnfolding<ValueType>::getStartEpoch() {
                 Epoch startEpoch;
@@ -222,12 +188,11 @@ namespace storm {
                 }
                 
                 // Find out which objective rewards are earned in this particular epoch
-                
                 epochModel.objectiveRewardFilter = std::vector<storm::storage::BitVector>(objectives.size(), storm::storage::BitVector(epochModel.objectiveRewards.front().size(), true));
                 for (auto const& reducedChoice : epochModel.stepChoices) {
                     uint64_t productChoice = ecElimResult.newToOldRowMapping[reducedChoice];
-                    storm::storage::BitVector memoryState = convertMemoryState(getMemoryState(productChoiceToStateMapping[productChoice]));
-                    Epoch successorEpoch = getSuccessorEpoch(epoch, productEpochSteps[productChoice].get());
+                    storm::storage::BitVector memoryState = memoryProduct.convertMemoryState(memoryProduct.getMemoryState(memoryProduct.getProductStateFromChoice(productChoice)));
+                    Epoch successorEpoch = getSuccessorEpoch(epoch, memoryProduct.getSteps()[productChoice].get());
                     for (uint64_t dim = 0; dim < successorEpoch.size(); ++dim) {
                         if (successorEpoch[dim] < 0 && memoryState.get(dim)) {
                             epochModel.objectiveRewardFilter[subObjectives[dim].second].set(reducedChoice, false);
@@ -240,19 +205,19 @@ namespace storm {
                 auto stepSolIt = epochModel.stepSolutions.begin();
                 for (auto const& reducedChoice : epochModel.stepChoices) {
                     uint64_t productChoice = ecElimResult.newToOldRowMapping[reducedChoice];
-                    uint64_t productState = productChoiceToStateMapping[productChoice];
-                    auto relevantDimensions = convertMemoryState(getMemoryState(productState));
+                    uint64_t productState = memoryProduct.getProductStateFromChoice(productChoice);
+                    auto relevantDimensions = memoryProduct.convertMemoryState(memoryProduct.getMemoryState(productState));
                     SolutionType choiceSolution = getZeroSolution();
-                    Epoch successorEpoch = getSuccessorEpoch(epoch, productEpochSteps[productChoice].get());
+                    Epoch successorEpoch = getSuccessorEpoch(epoch, memoryProduct.getSteps()[productChoice].get());
                     storm::storage::BitVector successorRelevantDimensions(successorEpoch.size(), true);
                     for (auto const& dim : relevantDimensions) {
                         if (successorEpoch[dim] < 0) {
                             successorRelevantDimensions &= ~objectiveDimensions[subObjectives[dim].second];
                         }
                     }
-                    for (auto const& successor : modelMemoryProduct->getTransitionMatrix().getRow(productChoice)) {
-                        storm::storage::BitVector successorMemoryState = convertMemoryState(getMemoryState(successor.getColumn())) & successorRelevantDimensions;
-                        uint64_t successorProductState = getProductState(getModelState(successor.getColumn()), convertMemoryState(successorMemoryState));
+                    for (auto const& successor : memoryProduct.getProduct().getTransitionMatrix().getRow(productChoice)) {
+                        storm::storage::BitVector successorMemoryState = memoryProduct.convertMemoryState(memoryProduct.getMemoryState(successor.getColumn())) & successorRelevantDimensions;
+                        uint64_t successorProductState = memoryProduct.getProductState(memoryProduct.getModelState(successor.getColumn()), memoryProduct.convertMemoryState(successorMemoryState));
                         SolutionType const& successorSolution = getStateSolution(successorEpoch, successorProductState);
                         addScaledSolution(choiceSolution, successorSolution, successor.getValue());
                     }
@@ -271,6 +236,17 @@ namespace storm {
                 
                 currentEpoch = epoch;
                 
+                /*
+                std::cout << "Epoch model for epoch " << storm::utility::vector::toString(epoch) << std::endl;
+                std::cout << "Matrix: " << std::endl << epochModel.epochMatrix << std::endl;
+                std::cout << "ObjectiveRewards: " << storm::utility::vector::toString(epochModel.objectiveRewards[0]) << std::endl;
+                std::cout << "steps: " << epochModel.stepChoices << std::endl;
+                std::cout << "step solutions: ";
+                for (int i = 0; i < epochModel.stepSolutions.size(); ++i) {
+                    std::cout << "   " << epochModel.stepSolutions[i].weightedValue;
+                }
+                std::cout << std::endl;
+                */
                 return epochModel;
                 
             }
@@ -279,9 +255,9 @@ namespace storm {
             void MultiDimensionalRewardUnfolding<ValueType>::setCurrentEpochClass(Epoch const& epoch) {
                 auto productObjectiveRewards = computeObjectiveRewardsForProduct(epoch);
                 
-                storm::storage::BitVector stepChoices(modelMemoryProduct->getNumberOfChoices(), false);
+                storm::storage::BitVector stepChoices(memoryProduct.getProduct().getNumberOfChoices(), false);
                 uint64_t choice = 0;
-                for (auto const& step : productEpochSteps) {
+                for (auto const& step : memoryProduct.getSteps()) {
                     if (step) {
                         auto eIt = epoch.begin();
                         for (auto const& s : step.get()) {
@@ -294,15 +270,17 @@ namespace storm {
                     }
                     ++choice;
                 }
-                epochModel.epochMatrix = modelMemoryProduct->getTransitionMatrix().filterEntries(~stepChoices);
+                epochModel.epochMatrix = memoryProduct.getProduct().getTransitionMatrix().filterEntries(~stepChoices);
                 
-                storm::storage::BitVector zeroObjRewardChoices(modelMemoryProduct->getNumberOfChoices(), true);
+                storm::storage::BitVector zeroObjRewardChoices(memoryProduct.getProduct().getNumberOfChoices(), true);
                 for (auto const& objRewards : productObjectiveRewards) {
                     zeroObjRewardChoices &= storm::utility::vector::filterZero(objRewards);
                 }
                 
-                ecElimResult = storm::transformer::EndComponentEliminator<ValueType>::transform(epochModel.epochMatrix, storm::storage::BitVector(modelMemoryProduct->getNumberOfStates(), true), zeroObjRewardChoices & ~stepChoices, productAllowedBottomStates);
+                // todo
+                storm::storage::BitVector value0EStates(memoryProduct.getProduct().getNumberOfStates(), true);
                 
+                ecElimResult = storm::transformer::EndComponentEliminator<ValueType>::transform(epochModel.epochMatrix, storm::storage::BitVector(memoryProduct.getProduct().getNumberOfStates(), true), zeroObjRewardChoices & ~stepChoices, value0EStates);
                 epochModel.epochMatrix = std::move(ecElimResult.matrix);
                 
                 epochModel.stepChoices = storm::storage::BitVector(epochModel.epochMatrix.getRowCount(), false);
@@ -341,7 +319,7 @@ namespace storm {
             
             template<typename ValueType>
             void MultiDimensionalRewardUnfolding<ValueType>::setSolutionForCurrentEpoch(std::vector<SolutionType> const& reducedModelStateSolutions) {
-                for (uint64_t productState = 0; productState < modelMemoryProduct->getNumberOfStates(); ++productState) {
+                for (uint64_t productState = 0; productState < memoryProduct.getProduct().getNumberOfStates(); ++productState) {
                     uint64_t reducedModelState = ecElimResult.oldToNewStateMapping[productState];
                     if (reducedModelState < reducedModelStateSolutions.size()) {
                         setSolutionForCurrentEpoch(productState, reducedModelStateSolutions[reducedModelState]);
@@ -368,7 +346,7 @@ namespace storm {
             
             template<typename ValueType>
             typename MultiDimensionalRewardUnfolding<ValueType>::SolutionType const& MultiDimensionalRewardUnfolding<ValueType>::getInitialStateResult(Epoch const& epoch) const {
-                return getStateSolution(epoch, *modelMemoryProduct->getInitialStates().begin());
+                return getStateSolution(epoch, *memoryProduct.getProduct().getInitialStates().begin());
             }
 
             
@@ -463,48 +441,113 @@ namespace storm {
             }
             
             template<typename ValueType>
-            std::vector<storm::storage::BitVector> MultiDimensionalRewardUnfolding<ValueType>::computeMemoryStateMap(storm::storage::MemoryStructure const& memory) const {
-                std::vector<storm::storage::BitVector> result;
-                for (uint64_t memState = 0; memState < memory.getNumberOfStates(); ++memState) {
-                    storm::storage::BitVector relevantSubObjectives(subObjectives.size(), false);
-                    std::set<std::string> stateLabels = memory.getStateLabeling().getLabelsOfState(memState);
-                    for (uint64_t dim = 0; dim < subObjectives.size(); ++dim) {
+            MultiDimensionalRewardUnfolding<ValueType>::MemoryProduct::MemoryProduct(storm::storage::SparseModelMemoryProduct<ValueType>& productBuilder, std::vector<std::vector<uint64_t>> const& originalModelSteps, std::vector<boost::optional<std::string>> const& memoryLabels) {
+                
+                product = productBuilder.build()->template as<storm::models::sparse::Mdp<ValueType>>();
+                
+                uint64_t numModelStates = productBuilder.getOriginalModel().getNumberOfStates();
+                uint64_t numMemoryStates = productBuilder.getMemory().getNumberOfStates();
+                uint64_t numProductStates = getProduct().getNumberOfStates();
+                
+                // Compute a mappings from product states to model/memory states and back
+                modelMemoryToProductStateMap.resize(numMemoryStates * numModelStates, std::numeric_limits<uint64_t>::max());
+                productToModelStateMap.resize(numProductStates, std::numeric_limits<uint64_t>::max());
+                productToMemoryStateMap.resize(numProductStates, std::numeric_limits<uint64_t>::max());
+                for (uint64_t modelState = 0; modelState < numModelStates; ++modelState) {
+                    for (uint64_t memoryState = 0; memoryState < numMemoryStates; ++memoryState) {
+                        uint64_t productState = productBuilder.getResultState(modelState, memoryState);
+                        modelMemoryToProductStateMap[modelState * numMemoryStates + memoryState] = productState;
+                        productToModelStateMap[productState] = modelState;
+                        productToMemoryStateMap[productState] = memoryState;
+                    }
+                }
+                
+                // Map choice indices of the product to the state where it origins
+                choiceToStateMap.reserve(getProduct().getNumberOfChoices());
+                for (uint64_t productState = 0; productState < numProductStates; ++productState) {
+                    uint64_t groupSize = getProduct().getTransitionMatrix().getRowGroupSize(productState);
+                    for (uint64_t i = 0; i < groupSize; ++i) {
+                        choiceToStateMap.push_back(productState);
+                    }
+                }
+                
+                // Compute a mapping between the different representations of memory states
+                for (uint64_t memState = 0; memState < numMemoryStates; ++memState) {
+                    storm::storage::BitVector relevantSubObjectives(memoryLabels.size(), false);
+                    std::set<std::string> stateLabels = productBuilder.getMemory().getStateLabeling().getLabelsOfState(memState);
+                    for (uint64_t dim = 0; dim < memoryLabels.size(); ++dim) {
                         if (memoryLabels[dim] && stateLabels.find(memoryLabels[dim].get()) != stateLabels.end()) {
                             relevantSubObjectives.set(dim, true);
                         }
                     }
-                    result.push_back(std::move(relevantSubObjectives));
+                    memoryStateMap.push_back(std::move(relevantSubObjectives));
                 }
-    
-                return result;
+                
+                // Compute the epoch steps for the product
+                steps.resize(getProduct().getNumberOfChoices());
+                for (uint64_t modelState = 0; modelState < numModelStates; ++modelState) {
+                    uint64_t numChoices = productBuilder.getOriginalModel().getTransitionMatrix().getRowGroupSize(modelState);
+                    uint64_t firstChoice = productBuilder.getOriginalModel().getTransitionMatrix().getRowGroupIndices()[modelState];
+                    for (uint64_t choiceOffset = 0; choiceOffset < numChoices; ++choiceOffset) {
+                        Epoch step;
+                        bool isZeroStep = true;
+                        for (uint64_t dim = 0; dim < originalModelSteps.size(); ++dim) {
+                            step.push_back(originalModelSteps[dim][firstChoice + choiceOffset]);
+                            isZeroStep = isZeroStep && step.back() == 0;
+                        }
+                        if (!isZeroStep) {
+                            for (uint64_t memState = 0; memState < numMemoryStates; ++memState) {
+                                uint64_t productState = getProductState(modelState, memState);
+                                uint64_t productChoice = getProduct().getTransitionMatrix().getRowGroupIndices()[productState] + choiceOffset;
+                                assert(productChoice < getProduct().getTransitionMatrix().getRowGroupIndices()[productState + 1]);
+                                steps[productChoice] = step;
+                            }
+                        }
+                    }
+                }
             }
             
             template<typename ValueType>
-            storm::storage::BitVector const& MultiDimensionalRewardUnfolding<ValueType>::convertMemoryState(uint64_t const& memoryState) const {
+            storm::models::sparse::Mdp<ValueType> const& MultiDimensionalRewardUnfolding<ValueType>::MemoryProduct::getProduct() const {
+                return *product;
+            }
+            
+            template<typename ValueType>
+            std::vector<boost::optional<typename MultiDimensionalRewardUnfolding<ValueType>::Epoch>> const& MultiDimensionalRewardUnfolding<ValueType>::MemoryProduct::getSteps() const {
+                return steps;
+            }
+            
+            template<typename ValueType>
+            uint64_t MultiDimensionalRewardUnfolding<ValueType>::MemoryProduct::getProductState(uint64_t const& modelState, uint64_t const& memoryState) const {
+                STORM_LOG_ASSERT(!memoryStateMap.empty(), "Tried to retrieve a product state but the memoryStateMap is not yet initialized.");
+                STORM_LOG_ASSERT(modelMemoryToProductStateMap[modelState * memoryStateMap.size() + memoryState] < getProduct().getNumberOfStates(), "Tried to obtain a state in the model-memory-product that does not exist");
+                return modelMemoryToProductStateMap[modelState * memoryStateMap.size() + memoryState];
+            }
+
+            template<typename ValueType>
+            uint64_t MultiDimensionalRewardUnfolding<ValueType>::MemoryProduct::getModelState(uint64_t const& productState) const {
+                return productToModelStateMap[productState];
+            }
+            
+            template<typename ValueType>
+            uint64_t MultiDimensionalRewardUnfolding<ValueType>::MemoryProduct::getMemoryState(uint64_t const& productState) const {
+                return productToMemoryStateMap[productState];
+            }
+
+            template<typename ValueType>
+            storm::storage::BitVector const& MultiDimensionalRewardUnfolding<ValueType>::MemoryProduct::convertMemoryState(uint64_t const& memoryState) const {
                 return memoryStateMap[memoryState];
             }
             
             template<typename ValueType>
-            uint64_t MultiDimensionalRewardUnfolding<ValueType>::convertMemoryState(storm::storage::BitVector const& memoryState) const {
+            uint64_t MultiDimensionalRewardUnfolding<ValueType>::MemoryProduct::convertMemoryState(storm::storage::BitVector const& memoryState) const {
                 auto memStateIt = std::find(memoryStateMap.begin(), memoryStateMap.end(), memoryState);
                 return memStateIt - memoryStateMap.begin();
             }
             
             template<typename ValueType>
-            uint64_t MultiDimensionalRewardUnfolding<ValueType>::getProductState(uint64_t const& modelState, uint64_t const& memoryState) const {
-                uint64_t productState = productBuilder->getResultState(modelState, memoryState);
-                STORM_LOG_ASSERT(productState < modelMemoryProduct->getNumberOfStates(), "There is no state in the model-memory-product that corresponds to model state " << modelState << " and memory state " << memoryState << ".");
-                return productState;
-            }
-
-            template<typename ValueType>
-            uint64_t MultiDimensionalRewardUnfolding<ValueType>::getModelState(uint64_t const& productState) const {
-                return modelStates[productState];
-            }
-            
-            template<typename ValueType>
-            uint64_t MultiDimensionalRewardUnfolding<ValueType>::getMemoryState(uint64_t const& productState) const {
-                return memoryStates[productState];
+            uint64_t MultiDimensionalRewardUnfolding<ValueType>::MemoryProduct::getProductStateFromChoice(uint64_t const& productChoice) const {
+                return choiceToStateMap[productChoice];
             }
             
             template<typename ValueType>
@@ -515,7 +558,7 @@ namespace storm {
                 for (uint64_t objIndex = 0; objIndex < objectives.size(); ++objIndex) {
                     auto const& formula = *this->objectives[objIndex].formula;
                     if (formula.isProbabilityOperatorFormula()) {
-                        storm::modelchecker::SparsePropositionalModelChecker<storm::models::sparse::Mdp<ValueType>> mc(*modelMemoryProduct);
+                        storm::modelchecker::SparsePropositionalModelChecker<storm::models::sparse::Mdp<ValueType>> mc(memoryProduct.getProduct());
                         std::vector<uint64_t> dimensionIndexMap;
                         for (auto const& globalDimensionIndex : objectiveDimensions[objIndex]) {
                             dimensionIndexMap.push_back(globalDimensionIndex);
@@ -532,7 +575,7 @@ namespace storm {
                         }
                         sinkStatesFormula = std::make_shared<storm::logic::UnaryBooleanStateFormula>(storm::logic::UnaryBooleanStateFormula::OperatorType::Not, sinkStatesFormula);
                         
-                        std::vector<ValueType> objRew(modelMemoryProduct->getTransitionMatrix().getRowCount(), storm::utility::zero<ValueType>());
+                        std::vector<ValueType> objRew(memoryProduct.getProduct().getTransitionMatrix().getRowCount(), storm::utility::zero<ValueType>());
                         storm::storage::BitVector relevantObjectives(objectiveDimensions[objIndex].getNumberOfSetBits());
                         
                         while (!relevantObjectives.full()) {
@@ -566,10 +609,10 @@ namespace storm {
                                 }
                                 
                                 storm::storage::BitVector relevantStates = mc.check(*relevantStatesFormula)->asExplicitQualitativeCheckResult().getTruthValuesVector();
-                                storm::storage::BitVector relevantChoices = modelMemoryProduct->getTransitionMatrix().getRowFilter(relevantStates);
+                                storm::storage::BitVector relevantChoices = memoryProduct.getProduct().getTransitionMatrix().getRowFilter(relevantStates);
                                 storm::storage::BitVector goalStates = mc.check(*goalStatesFormula)->asExplicitQualitativeCheckResult().getTruthValuesVector();
                                 for (auto const& choice : relevantChoices) {
-                                    objRew[choice] += modelMemoryProduct->getTransitionMatrix().getConstrainedRowSum(choice, goalStates);
+                                    objRew[choice] += memoryProduct.getProduct().getTransitionMatrix().getConstrainedRowSum(choice, goalStates);
                                 }
                             }
                         }
@@ -577,7 +620,7 @@ namespace storm {
                         objectiveRewards.push_back(std::move(objRew));
                         
                     } else if (formula.isRewardOperatorFormula()) {
-                        auto const& rewModel = modelMemoryProduct->getRewardModel(formula.asRewardOperatorFormula().getRewardModelName());
+                        auto const& rewModel = memoryProduct.getProduct().getRewardModel(formula.asRewardOperatorFormula().getRewardModelName());
                         STORM_LOG_THROW(!rewModel.hasTransitionRewards(), storm::exceptions::NotSupportedException, "Reward model has transition rewards which is not expected.");
                         bool rewardCollectedInEpoch = true;
                         if (formula.getSubformula().isCumulativeRewardFormula()) {
@@ -587,9 +630,9 @@ namespace storm {
                             STORM_LOG_THROW(formula.getSubformula().isTotalRewardFormula(), storm::exceptions::UnexpectedException, "Unexpected type of formula " << formula);
                         }
                         if (rewardCollectedInEpoch) {
-                            objectiveRewards.push_back(rewModel.getTotalRewardVector(modelMemoryProduct->getTransitionMatrix()));
+                            objectiveRewards.push_back(rewModel.getTotalRewardVector(memoryProduct.getProduct().getTransitionMatrix()));
                         } else {
-                            objectiveRewards.emplace_back(modelMemoryProduct->getTransitionMatrix().getRowCount(), storm::utility::zero<ValueType>());
+                            objectiveRewards.emplace_back(memoryProduct.getProduct().getTransitionMatrix().getRowCount(), storm::utility::zero<ValueType>());
                         }
                     } else {
                         STORM_LOG_THROW(false, storm::exceptions::UnexpectedException, "Unexpected type of formula " << formula);
