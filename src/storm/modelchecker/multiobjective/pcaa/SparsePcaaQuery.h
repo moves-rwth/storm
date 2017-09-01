@@ -96,7 +96,6 @@ namespace storm {
                 SparseModelType const& originalModel;
                 storm::logic::MultiObjectiveFormula const& originalFormula;
                 
-                SparseModelType preprocessedModel;
                 std::vector<Objective<typename SparseModelType::ValueType>> objectives;
                 
                 // The corresponding weight vector checker

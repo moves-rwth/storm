@@ -12,7 +12,6 @@
 #include "storm/storage/memorystructure/MemoryStructureBuilder.h"
 #include "storm/storage/memorystructure/SparseModelMemoryProduct.h"
 #include "storm/storage/expressions/ExpressionManager.h"
-#include "storm/transformer/GoalStateMerger.h"
 #include "storm/utility/macros.h"
 #include "storm/utility/vector.h"
 #include "storm/utility/graph.h"
@@ -387,36 +386,6 @@ namespace storm {
                 
                 setReward0States(result, backwardTransitions);
                 checkRewardFiniteness(result, data.finiteRewardCheckObjectives, backwardTransitions);
-                
-                /////
-                
-                std::set<std::string> relevantRewardModels;
-                for (auto const& obj : result.objectives) {
-                    obj.formula->gatherReferencedRewardModels(relevantRewardModels);
-                }
-                
-                STORM_LOG_THROW(result.rewardFinitenessType != ReturnType::RewardFinitenessType::Infinite, storm::exceptions::InvalidPropertyException, "Infinite rewards unsupported.");
-                
-                if (result.containsOnlyRewardObjectives()) {
-                    // Build a subsystem that discards states that yield infinite reward for all schedulers.
-                    // We can also merge the states that will have reward zero anyway.
-                    storm::storage::BitVector maybeStates = result.rewardLessInfinityEStates.get() & ~result.reward0AStates;
-                    storm::transformer::GoalStateMerger<SparseModelType> merger(*result.preprocessedModel);
-                    typename storm::transformer::GoalStateMerger<SparseModelType>::ReturnType mergerResult = merger.mergeTargetAndSinkStates(maybeStates, result.reward0AStates, storm::storage::BitVector(maybeStates.size(), false), std::vector<std::string>(relevantRewardModels.begin(), relevantRewardModels.end()));
-                    
-                    result.preprocessedModel = mergerResult.model;
-                    result.reward0EStates = result.reward0EStates % maybeStates;
-                    if (mergerResult.targetState) {
-                        storm::storage::BitVector targetStateAsVector(result.preprocessedModel->getNumberOfStates(), false);
-                        targetStateAsVector.set(*mergerResult.targetState, true);
-                        // The overapproximation for the possible ec choices consists of the states that can reach the target states with prob. 0 and the target state itself.
-                        //result.ecChoicesHint = result.preprocessedModel->getTransitionMatrix().getRowFilter(storm::utility::graph::performProb0E(*result.preprocessedModel, result.preprocessedModel->getBackwardTransitions(), storm::storage::BitVector(targetStateAsVector.size(), true), targetStateAsVector));
-                        //result.ecChoicesHint->set(result.preprocessedModel->getTransitionMatrix().getRowGroupIndices()[*mergerResult.targetState], true);
-                        // There is an additional state in the result
-                        result.reward0EStates.resize(result.reward0EStates.size() + 1, true);
-                    }
-                    assert(result.reward0EStates.size() == result.preprocessedModel->getNumberOfStates());
-                }
                 
                 return result;
             }

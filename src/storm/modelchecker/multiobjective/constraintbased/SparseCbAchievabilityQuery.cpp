@@ -25,7 +25,7 @@ namespace storm {
             
             
             template <class SparseModelType>
-            SparseCbAchievabilityQuery<SparseModelType>::SparseCbAchievabilityQuery(SparseMultiObjectivePreprocessorResult<SparseModelType>& preprocessorResult) : SparseCbQuery<SparseModelType>(preprocessorResult) {
+            SparseCbAchievabilityQuery<SparseModelType>::SparseCbAchievabilityQuery(SparseMultiObjectivePreprocessorResult<SparseModelType> const& preprocessorResult) : SparseCbQuery<SparseModelType>(preprocessorResult) {
                 STORM_LOG_ASSERT(preprocessorResult.queryType == SparseMultiObjectivePreprocessorResult<SparseModelType>::QueryType::Achievability, "Invalid query Type");
                 solver = storm::utility::solver::SmtSolverFactory().create(*this->expressionManager);
             }
@@ -42,7 +42,7 @@ namespace storm {
             template <class SparseModelType>
             bool SparseCbAchievabilityQuery<SparseModelType>::checkAchievability() {
                 STORM_LOG_INFO("Building constraint system to check achievability.");
-                //this->preprocessedModel.writeDotToStream(std::cout);
+                //this->preprocessedModel->writeDotToStream(std::cout);
                 storm::utility::Stopwatch swInitialization(true);
                 initializeConstraintSystem();
                 STORM_LOG_INFO("Constraint system consists of " << expectedChoiceVariables.size() << " + " << bottomStateVariables.size() << " variables");
@@ -78,9 +78,9 @@ namespace storm {
             
             template <class SparseModelType>
             void SparseCbAchievabilityQuery<SparseModelType>::initializeConstraintSystem() {
-                uint_fast64_t numStates = this->preprocessedModel.getNumberOfStates();
-                uint_fast64_t numChoices = this->preprocessedModel.getNumberOfChoices();
-                uint_fast64_t numBottomStates = this->possibleBottomStates.getNumberOfSetBits();
+                uint_fast64_t numStates = this->preprocessedModel->getNumberOfStates();
+                uint_fast64_t numChoices = this->preprocessedModel->getNumberOfChoices();
+                uint_fast64_t numBottomStates = this->reward0EStates.getNumberOfSetBits();
                 
                 storm::expressions::Expression zero = this->expressionManager->rational(storm::utility::zero<ValueType>());
                 storm::expressions::Expression one = this->expressionManager->rational(storm::utility::one<ValueType>());
@@ -107,20 +107,20 @@ namespace storm {
                 solver->add(bottomStateSum == one);
                 
                 // assert that the "incoming" value of each state equals the "outgoing" value
-                storm::storage::SparseMatrix<ValueType> backwardsTransitions = this->preprocessedModel.getTransitionMatrix().transpose();
+                storm::storage::SparseMatrix<ValueType> backwardsTransitions = this->preprocessedModel->getTransitionMatrix().transpose();
                 auto bottomStateVariableIt = bottomStateVariables.begin();
                 for (uint_fast64_t state = 0; state < numStates; ++state) {
                     // get the "incomming" value
-                    storm::expressions::Expression value = this->preprocessedModel.getInitialStates().get(state) ? one : zero;
+                    storm::expressions::Expression value = this->preprocessedModel->getInitialStates().get(state) ? one : zero;
                     for (auto const& backwardsEntry : backwardsTransitions.getRow(state)) {
                         value = value + (this->expressionManager->rational(backwardsEntry.getValue()) * expectedChoiceVariables[backwardsEntry.getColumn()].getExpression());
                     }
                     
                     // subtract the "outgoing" value
-                    for (uint_fast64_t choice = this->preprocessedModel.getTransitionMatrix().getRowGroupIndices()[state]; choice < this->preprocessedModel.getTransitionMatrix().getRowGroupIndices()[state + 1]; ++choice) {
+                    for (uint_fast64_t choice = this->preprocessedModel->getTransitionMatrix().getRowGroupIndices()[state]; choice < this->preprocessedModel->getTransitionMatrix().getRowGroupIndices()[state + 1]; ++choice) {
                         value = value - expectedChoiceVariables[choice];
                     }
-                    if (this->possibleBottomStates.get(state)) {
+                    if (this->reward0EStates.get(state)) {
                         value = value - (*bottomStateVariableIt);
                         ++bottomStateVariableIt;
                     }
@@ -167,18 +167,18 @@ namespace storm {
             
             template <>
             std::vector<double> SparseCbAchievabilityQuery<storm::models::sparse::Mdp<double>>::getActionBasedExpectedRewards(std::string const& rewardModelName) const {
-                return this->preprocessedModel.getRewardModel(rewardModelName).getTotalRewardVector(this->preprocessedModel.getTransitionMatrix());
+                return this->preprocessedModel->getRewardModel(rewardModelName).getTotalRewardVector(this->preprocessedModel->getTransitionMatrix());
             }
             
             template <>
             std::vector<double> SparseCbAchievabilityQuery<storm::models::sparse::MarkovAutomaton<double>>::getActionBasedExpectedRewards(std::string const& rewardModelName) const {
-                auto const& rewModel = this->preprocessedModel.getRewardModel(rewardModelName);
+                auto const& rewModel = this->preprocessedModel->getRewardModel(rewardModelName);
                 STORM_LOG_ASSERT(!rewModel.hasTransitionRewards(), "Preprocessed Reward model has transition rewards which is not expected.");
-                std::vector<double> result = rewModel.hasStateActionRewards() ? rewModel.getStateActionRewardVector() : std::vector<double>(this->preprocessedModel.getNumberOfChoices(), storm::utility::zero<ValueType>());
+                std::vector<double> result = rewModel.hasStateActionRewards() ? rewModel.getStateActionRewardVector() : std::vector<double>(this->preprocessedModel->getNumberOfChoices(), storm::utility::zero<ValueType>());
                 if(rewModel.hasStateRewards()) {
                     // Note that state rewards are earned over time and thus play no role for probabilistic states
-                    for(auto markovianState : this->preprocessedModel.getMarkovianStates()) {
-                        result[this->preprocessedModel.getTransitionMatrix().getRowGroupIndices()[markovianState]] += rewModel.getStateReward(markovianState) / this->preprocessedModel.getExitRate(markovianState);
+                    for(auto markovianState : this->preprocessedModel->getMarkovianStates()) {
+                        result[this->preprocessedModel->getTransitionMatrix().getRowGroupIndices()[markovianState]] += rewModel.getStateReward(markovianState) / this->preprocessedModel->getExitRate(markovianState);
                     }
                 }
                 return result;
@@ -186,13 +186,13 @@ namespace storm {
             
             template <>
             std::vector<storm::RationalNumber> SparseCbAchievabilityQuery<storm::models::sparse::MarkovAutomaton<storm::RationalNumber>>::getActionBasedExpectedRewards(std::string const& rewardModelName) const {
-                auto const& rewModel = this->preprocessedModel.getRewardModel(rewardModelName);
+                auto const& rewModel = this->preprocessedModel->getRewardModel(rewardModelName);
                 STORM_LOG_ASSERT(!rewModel.hasTransitionRewards(), "Preprocessed Reward model has transition rewards which is not expected.");
-                std::vector<storm::RationalNumber> result = rewModel.hasStateActionRewards() ? rewModel.getStateActionRewardVector() : std::vector<storm::RationalNumber>(this->preprocessedModel.getNumberOfChoices(), storm::utility::zero<ValueType>());
+                std::vector<storm::RationalNumber> result = rewModel.hasStateActionRewards() ? rewModel.getStateActionRewardVector() : std::vector<storm::RationalNumber>(this->preprocessedModel->getNumberOfChoices(), storm::utility::zero<ValueType>());
                 if(rewModel.hasStateRewards()) {
                     // Note that state rewards are earned over time and thus play no role for probabilistic states
-                    for(auto markovianState : this->preprocessedModel.getMarkovianStates()) {
-                        result[this->preprocessedModel.getTransitionMatrix().getRowGroupIndices()[markovianState]] += rewModel.getStateReward(markovianState) / this->preprocessedModel.getExitRate(markovianState);
+                    for(auto markovianState : this->preprocessedModel->getMarkovianStates()) {
+                        result[this->preprocessedModel->getTransitionMatrix().getRowGroupIndices()[markovianState]] += rewModel.getStateReward(markovianState) / this->preprocessedModel->getExitRate(markovianState);
                     }
                 }
                 return result;
@@ -200,7 +200,7 @@ namespace storm {
 
             template <>
             std::vector<storm::RationalNumber> SparseCbAchievabilityQuery<storm::models::sparse::Mdp<storm::RationalNumber>>::getActionBasedExpectedRewards(std::string const& rewardModelName) const {
-                return this->preprocessedModel.getRewardModel(rewardModelName).getTotalRewardVector(this->preprocessedModel.getTransitionMatrix());
+                return this->preprocessedModel->getRewardModel(rewardModelName).getTotalRewardVector(this->preprocessedModel->getTransitionMatrix());
             }
             
 

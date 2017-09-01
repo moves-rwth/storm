@@ -11,7 +11,7 @@ namespace storm {
         namespace multiobjective {
             
             template <typename ModelType>
-            PcaaWeightVectorChecker<ModelType>::PcaaWeightVectorChecker(ModelType const& model, std::vector<Objective<ValueType>> const& objectives) : model(model), objectives(objectives) {
+            PcaaWeightVectorChecker<ModelType>::PcaaWeightVectorChecker(std::vector<Objective<ValueType>> const& objectives) : objectives(objectives) {
                 // Intentionally left empty
             }
             
@@ -32,21 +32,14 @@ namespace storm {
 
             template <typename ModelType>
             template<typename VT, typename std::enable_if<std::is_same<ModelType, storm::models::sparse::Mdp<VT>>::value, int>::type>
-            std::unique_ptr<PcaaWeightVectorChecker<ModelType>>  WeightVectorCheckerFactory<ModelType>::create(ModelType const& model,
-                                                   std::vector<Objective<typename ModelType::ValueType>> const& objectives,
-                                                   storm::storage::BitVector const& possibleECActions,
-                                                   storm::storage::BitVector const& possibleBottomStates) {
-                return std::make_unique<SparseMdpPcaaWeightVectorChecker<ModelType>>(model, objectives, possibleECActions, possibleBottomStates);
+            std::unique_ptr<PcaaWeightVectorChecker<ModelType>>  WeightVectorCheckerFactory<ModelType>::create(SparseMultiObjectivePreprocessorResult<ModelType> const& preprocessorResult) {
+                return std::make_unique<SparseMdpPcaaWeightVectorChecker<ModelType>>(preprocessorResult);
             }
             
             template <typename ModelType>
             template<typename VT, typename std::enable_if<std::is_same<ModelType, storm::models::sparse::MarkovAutomaton<VT>>::value, int>::type>
-            std::unique_ptr<PcaaWeightVectorChecker<ModelType>>  WeightVectorCheckerFactory<ModelType>::create(ModelType const& model,
-                                                   std::vector<Objective<typename ModelType::ValueType>> const& objectives,
-                                                   storm::storage::BitVector const& possibleECActions,
-                                                   storm::storage::BitVector const& possibleBottomStates) {
-            
-                return std::make_unique<SparseMaPcaaWeightVectorChecker<ModelType>>(model, objectives, possibleECActions, possibleBottomStates);
+            std::unique_ptr<PcaaWeightVectorChecker<ModelType>>  WeightVectorCheckerFactory<ModelType>::create(SparseMultiObjectivePreprocessorResult<ModelType> const& preprocessorResult) {
+                return std::make_unique<SparseMaPcaaWeightVectorChecker<ModelType>>(preprocessorResult);
             }
             
             template class PcaaWeightVectorChecker<storm::models::sparse::Mdp<double>>;
@@ -59,10 +52,10 @@ namespace storm {
             template class WeightVectorCheckerFactory<storm::models::sparse::MarkovAutomaton<double>>;
             template class WeightVectorCheckerFactory<storm::models::sparse::MarkovAutomaton<storm::RationalNumber>>;
             
-            template std::unique_ptr<PcaaWeightVectorChecker<storm::models::sparse::Mdp<double>>>  WeightVectorCheckerFactory<storm::models::sparse::Mdp<double>>::create(storm::models::sparse::Mdp<double> const& model, std::vector<Objective<double>> const& objectives, storm::storage::BitVector const& possibleECActions, storm::storage::BitVector const& possibleBottomStates);
-            template std::unique_ptr<PcaaWeightVectorChecker<storm::models::sparse::Mdp<storm::RationalNumber>>>  WeightVectorCheckerFactory<storm::models::sparse::Mdp<storm::RationalNumber>>::create(storm::models::sparse::Mdp<storm::RationalNumber> const& model, std::vector<Objective<storm::RationalNumber>> const& objectives, storm::storage::BitVector const& possibleECActions, storm::storage::BitVector const& possibleBottomStates);
-            template std::unique_ptr<PcaaWeightVectorChecker<storm::models::sparse::MarkovAutomaton<double>>>  WeightVectorCheckerFactory<storm::models::sparse::MarkovAutomaton<double>>::create(storm::models::sparse::MarkovAutomaton<double> const& model, std::vector<Objective<double>> const& objectives, storm::storage::BitVector const& possibleECActions, storm::storage::BitVector const& possibleBottomStates);
-            template std::unique_ptr<PcaaWeightVectorChecker<storm::models::sparse::MarkovAutomaton<storm::RationalNumber>>>  WeightVectorCheckerFactory<storm::models::sparse::MarkovAutomaton<storm::RationalNumber>>::create(storm::models::sparse::MarkovAutomaton<storm::RationalNumber> const& model, std::vector<Objective<storm::RationalNumber>> const& objectives, storm::storage::BitVector const& possibleECActions, storm::storage::BitVector const& possibleBottomStates);
+            template std::unique_ptr<PcaaWeightVectorChecker<storm::models::sparse::Mdp<double>>>  WeightVectorCheckerFactory<storm::models::sparse::Mdp<double>>::create(SparseMultiObjectivePreprocessorResult<storm::models::sparse::Mdp<double>> const& preprocessorResult);
+            template std::unique_ptr<PcaaWeightVectorChecker<storm::models::sparse::Mdp<storm::RationalNumber>>>  WeightVectorCheckerFactory<storm::models::sparse::Mdp<storm::RationalNumber>>::create(SparseMultiObjectivePreprocessorResult<storm::models::sparse::Mdp<storm::RationalNumber>> const& preprocessorResult);
+            template std::unique_ptr<PcaaWeightVectorChecker<storm::models::sparse::MarkovAutomaton<double>>>  WeightVectorCheckerFactory<storm::models::sparse::MarkovAutomaton<double>>::create(SparseMultiObjectivePreprocessorResult<storm::models::sparse::MarkovAutomaton<double>> const& preprocessorResult);
+            template std::unique_ptr<PcaaWeightVectorChecker<storm::models::sparse::MarkovAutomaton<storm::RationalNumber>>>  WeightVectorCheckerFactory<storm::models::sparse::MarkovAutomaton<storm::RationalNumber>>::create(SparseMultiObjectivePreprocessorResult<storm::models::sparse::MarkovAutomaton<storm::RationalNumber>> const& preprocessorResult);
             
 
         }

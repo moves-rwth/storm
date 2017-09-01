@@ -31,7 +31,7 @@ namespace storm {
                  *
                  */
                 
-                PcaaWeightVectorChecker(ModelType const& model, std::vector<Objective<ValueType>> const& objectives);
+                PcaaWeightVectorChecker(std::vector<Objective<ValueType>> const& objectives);
                 
                 virtual ~PcaaWeightVectorChecker() = default;
                 
@@ -70,10 +70,8 @@ namespace storm {
                 
             protected:
                 
-                // The (preprocessed) model
-                ModelType const& model;
                 // The (preprocessed) objectives
-                std::vector<Objective<ValueType>> const& objectives;
+                std::vector<Objective<ValueType>> objectives;
                 // The precision of this weight vector checker.
                 ValueType weightedPrecision;
                 
@@ -84,16 +82,10 @@ namespace storm {
             public:
 
                 template<typename VT = typename ModelType::ValueType, typename std::enable_if<std::is_same<ModelType, storm::models::sparse::Mdp<VT>>::value, int>::type = 0>
-                static std::unique_ptr<PcaaWeightVectorChecker<ModelType>> create(ModelType const& model,
-                                                   std::vector<Objective<typename ModelType::ValueType>> const& objectives,
-                                                   storm::storage::BitVector const& possibleECActions,
-                                                   storm::storage::BitVector const& possibleBottomStates);
+                static std::unique_ptr<PcaaWeightVectorChecker<ModelType>> create(SparseMultiObjectivePreprocessorResult<ModelType> const& preprocessorResult);
                 
                 template<typename VT = typename ModelType::ValueType, typename std::enable_if<std::is_same<ModelType, storm::models::sparse::MarkovAutomaton<VT>>::value, int>::type = 0>
-                static std::unique_ptr<PcaaWeightVectorChecker<ModelType>> create(ModelType const& model,
-                                                   std::vector<Objective<typename ModelType::ValueType>> const& objectives,
-                                                   storm::storage::BitVector const& possibleECActions,
-                                                   storm::storage::BitVector const& possibleBottomStates);
+                static std::unique_ptr<PcaaWeightVectorChecker<ModelType>> create(SparseMultiObjectivePreprocessorResult<ModelType> const& preprocessorResult);
             };
 
         }

@@ -20,29 +20,40 @@ namespace storm {
             
             
             template <class SparseMaModelType>
-            SparseMaPcaaWeightVectorChecker<SparseMaModelType>::SparseMaPcaaWeightVectorChecker(SparseMaModelType const& model,
-                                                                                                std::vector<Objective<ValueType>> const& objectives,
-                                                                                                storm::storage::BitVector const& possibleECActions,
-                                                                                                storm::storage::BitVector const& possibleBottomStates) :
-            SparsePcaaWeightVectorChecker<SparseMaModelType>(model, objectives, possibleECActions, possibleBottomStates) {
+            SparseMaPcaaWeightVectorChecker<SparseMaModelType>::SparseMaPcaaWeightVectorChecker(SparseMultiObjectivePreprocessorResult<SparseMaModelType> const& preprocessorResult) :
+            SparsePcaaWeightVectorChecker<SparseMaModelType>(preprocessorResult) {
+                this->initialize(preprocessorResult);
+            }
+            
+            template <class SparseMaModelType>
+            void SparseMaPcaaWeightVectorChecker<SparseMaModelType>::initializeModelTypeSpecificData(SparseMaModelType const& model) {
+                
+                markovianStates = model.getMarkovianStates();
+                exitRates = model.getExitRates();
+                
                 // Set the (discretized) state action rewards.
-                this->discreteActionRewards.resize(objectives.size());
-                for (auto objIndex : this->objectivesWithNoUpperTimeBound) {
-                    auto const& formula = *objectives[objIndex].formula;
+                this->actionRewards.resize(this->objectives.size());
+                for (uint64_t objIndex = 0; objIndex < this->objectives.size(); ++objIndex) {
+                    auto const& formula = *this->objectives[objIndex].formula;
                     STORM_LOG_THROW(formula.isRewardOperatorFormula() && formula.asRewardOperatorFormula().hasRewardModelName(), storm::exceptions::UnexpectedException, "Unexpected type of operator formula: " << formula);
-                    STORM_LOG_THROW(formula.getSubformula().isTotalRewardFormula() || (formula.getSubformula().isCumulativeRewardFormula() && formula.getSubformula().asCumulativeRewardFormula().isTimeBounded()), storm::exceptions::UnexpectedException, "Unexpected type of sub-formula: " << formula.getSubformula());
-                    STORM_LOG_WARN_COND(!formula.getSubformula().isCumulativeRewardFormula() || (objectives[objIndex].originalFormula->isProbabilityOperatorFormula() && objectives[objIndex].originalFormula->asProbabilityOperatorFormula().getSubformula().isBoundedUntilFormula()), "Objective " << objectives[objIndex].originalFormula << " was simplified to a cumulative reward formula. Correctness of the algorithm is unknown for this type of property.");
-                    typename SparseMaModelType::RewardModelType const& rewModel = this->model.getRewardModel(formula.asRewardOperatorFormula().getRewardModelName());
+                    typename SparseMaModelType::RewardModelType const& rewModel = model.getRewardModel(formula.asRewardOperatorFormula().getRewardModelName());
                     STORM_LOG_ASSERT(!rewModel.hasTransitionRewards(), "Preprocessed Reward model has transition rewards which is not expected.");
-                    this->discreteActionRewards[objIndex] = rewModel.hasStateActionRewards() ? rewModel.getStateActionRewardVector() : std::vector<ValueType>(this->model.getTransitionMatrix().getRowCount(), storm::utility::zero<ValueType>());
-                    if (rewModel.hasStateRewards()) {
-                        // Note that state rewards are earned over time and thus play no role for probabilistic states
-                        for (auto markovianState : this->model.getMarkovianStates()) {
-                            this->discreteActionRewards[objIndex][this->model.getTransitionMatrix().getRowGroupIndices()[markovianState]] += rewModel.getStateReward(markovianState) / this->model.getExitRate(markovianState);
+                    this->actionRewards[objIndex] = rewModel.hasStateActionRewards() ? rewModel.getStateActionRewardVector() : std::vector<ValueType>(model.getTransitionMatrix().getRowCount(), storm::utility::zero<ValueType>());
+                    if (formula.getSubformula().isTotalRewardFormula()) {
+                        if (rewModel.hasStateRewards()) {
+                            // Note that state rewards are earned over time and thus play no role for probabilistic states
+                            for (auto markovianState : markovianStates) {
+                                this->actionRewards[objIndex][model.getTransitionMatrix().getRowGroupIndices()[markovianState]] += rewModel.getStateReward(markovianState) / exitRates[markovianState];
+                            }
                         }
+                    } else {
+                        STORM_LOG_THROW(formula.getSubformula().isCumulativeRewardFormula() && formula.getSubformula().asCumulativeRewardFormula().isTimeBounded(), storm::exceptions::UnexpectedException, "Unexpected type of sub-formula: " << formula.getSubformula());
+                        STORM_LOG_THROW(!rewModel.hasStateRewards(), storm::exceptions::InvalidPropertyException, "Found state rewards for time bounded objective " << this->objectives[objIndex].originalFormula << ". This is not supported.");
+                        STORM_LOG_WARN_COND(this->objectives[objIndex].originalFormula->isProbabilityOperatorFormula() && this->objectives[objIndex].originalFormula->asProbabilityOperatorFormula().getSubformula().isBoundedUntilFormula(), "Objective " << this->objectives[objIndex].originalFormula << " was simplified to a cumulative reward formula. Correctness of the algorithm is unknown for this type of property.");
                     }
                 }
             }
+
             
             template <class SparseMaModelType>
             void SparseMaPcaaWeightVectorChecker<SparseMaModelType>::boundedPhase(std::vector<ValueType> const& weightVector, std::vector<ValueType>& weightedRewardVector) {
@@ -106,33 +117,27 @@ namespace storm {
             typename SparseMaPcaaWeightVectorChecker<SparseMaModelType>::SubModel SparseMaPcaaWeightVectorChecker<SparseMaModelType>::createSubModel(bool createMS, std::vector<ValueType> const& weightedRewardVector) const {
                 SubModel result;
                 
-                storm::storage::BitVector probabilisticStates = ~this->model.getMarkovianStates();
-                result.states = createMS ? this->model.getMarkovianStates() : probabilisticStates;
-                result.choices = this->model.getTransitionMatrix().getRowFilter(result.states);
+                storm::storage::BitVector probabilisticStates = ~markovianStates;
+                result.states = createMS ? markovianStates : probabilisticStates;
+                result.choices = this->transitionMatrix.getRowFilter(result.states);
                 STORM_LOG_ASSERT(!createMS || result.states.getNumberOfSetBits() == result.choices.getNumberOfSetBits(), "row groups for Markovian states should consist of exactly one row");
                 
                 //We need to add diagonal entries for selfloops on Markovian states.
-                result.toMS = this->model.getTransitionMatrix().getSubmatrix(true, result.states, this->model.getMarkovianStates(), createMS);
-                result.toPS = this->model.getTransitionMatrix().getSubmatrix(true, result.states, probabilisticStates, false);
+                result.toMS = this->transitionMatrix.getSubmatrix(true, result.states, markovianStates, createMS);
+                result.toPS = this->transitionMatrix.getSubmatrix(true, result.states, probabilisticStates, false);
                 STORM_LOG_ASSERT(result.getNumberOfStates() == result.states.getNumberOfSetBits() && result.getNumberOfStates() == result.toMS.getRowGroupCount() && result.getNumberOfStates() == result.toPS.getRowGroupCount(), "Invalid state count for subsystem");
                 STORM_LOG_ASSERT(result.getNumberOfChoices() == result.choices.getNumberOfSetBits() && result.getNumberOfChoices() == result.toMS.getRowCount() && result.getNumberOfChoices() == result.toPS.getRowCount(), "Invalid choice count for subsystem");
                 
                 result.weightedRewardVector.resize(result.getNumberOfChoices());
                 storm::utility::vector::selectVectorValues(result.weightedRewardVector, result.choices, weightedRewardVector);
-                result.objectiveRewardVectors.resize(this->objectives.size());
                 for (uint_fast64_t objIndex = 0; objIndex < this->objectives.size(); ++objIndex) {
-                    std::vector<ValueType>& objVector = result.objectiveRewardVectors[objIndex];
-                    objVector = std::vector<ValueType>(result.weightedRewardVector.size(), storm::utility::zero<ValueType>());
-                    if (this->objectivesWithNoUpperTimeBound.get(objIndex)) {
-                        storm::utility::vector::selectVectorValues(objVector, result.choices, this->discreteActionRewards[objIndex]);
-                    } else {
-                       typename SparseMaModelType::RewardModelType const& rewModel = this->model.getRewardModel(this->objectives[objIndex].formula->asRewardOperatorFormula().getRewardModelName());
-                        STORM_LOG_ASSERT(!rewModel.hasTransitionRewards(), "Preprocessed Reward model has transition rewards which is not expected.");
-                        STORM_LOG_ASSERT(!rewModel.hasStateRewards(), "State rewards for bounded objectives for MAs are not expected (bounded rewards are not supported).");
-                        if (rewModel.hasStateActionRewards()) {
-                            storm::utility::vector::selectVectorValues(objVector, result.choices, rewModel.getStateActionRewardVector());
-                        }
+                    std::vector<ValueType> const& objRewards = this->actionRewards[objIndex];
+                    std::vector<ValueType> subModelObjRewards;
+                    subModelObjRewards.reserve(result.getNumberOfChoices());
+                    for (auto const& choice : result.choices) {
+                        subModelObjRewards.push_back(objRewards[choice]);
                     }
+                    result.objectiveRewardVectors.push_back(std::move(subModelObjRewards));
                 }
                 
                 result.weightedSolutionVector.resize(result.getNumberOfStates());
@@ -161,7 +166,7 @@ namespace storm {
                 // ) <= this->maximumLowerUpperDistance
                 
                 // Initialize some data for fast and easy access
-                VT const maxRate = this->model.getMaximalExitRate();
+                VT const maxRate = storm::utility::vector::max_if(exitRates, markovianStates);
                 std::vector<VT> timeBounds;
                 std::vector<VT> eToPowerOfMinusMaxRateTimesBound;
                 VT smallestNonZeroBound = storm::utility::zero<VT>();
@@ -229,7 +234,7 @@ namespace storm {
             template <typename VT, typename std::enable_if<storm::NumberTraits<VT>::SupportsExponential, int>::type>
             void SparseMaPcaaWeightVectorChecker<SparseMaModelType>::digitize(SubModel& MS, VT const& digitizationConstant) const {
                 std::vector<VT> rateVector(MS.getNumberOfChoices());
-                storm::utility::vector::selectVectorValues(rateVector, MS.states, this->model.getExitRates());
+                storm::utility::vector::selectVectorValues(rateVector, MS.states, exitRates);
                 for (uint_fast64_t row = 0; row < rateVector.size(); ++row) {
                     VT const eToMinusRateTimesDelta = std::exp(-rateVector[row] * digitizationConstant);
                     for (auto& entry : MS.toMS.getRow(row)) {
@@ -258,7 +263,7 @@ namespace storm {
             template <typename VT, typename std::enable_if<storm::NumberTraits<VT>::SupportsExponential, int>::type>
             void SparseMaPcaaWeightVectorChecker<SparseMaModelType>::digitizeTimeBounds(TimeBoundMap& upperTimeBounds, VT const& digitizationConstant) {
                 
-                VT const maxRate = this->model.getMaximalExitRate();
+                VT const maxRate = storm::utility::vector::max_if(exitRates, markovianStates);
                 for (uint_fast64_t objIndex = 0; objIndex < this->objectives.size(); ++objIndex) {
                     auto const& obj = this->objectives[objIndex];
                     VT errorTowardsZero = storm::utility::zero<VT>();

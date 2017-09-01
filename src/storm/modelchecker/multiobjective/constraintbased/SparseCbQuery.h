@@ -27,17 +27,15 @@ namespace storm {
                 
             protected:
                 
-                SparseCbQuery(SparseMultiObjectivePreprocessorResult<SparseModelType>& preprocessorResult);
+                SparseCbQuery(SparseMultiObjectivePreprocessorResult<SparseModelType> const& preprocessorResult);
                 
                 SparseModelType const& originalModel;
                 storm::logic::MultiObjectiveFormula const& originalFormula;
-                
-                SparseModelType preprocessedModel;
                 std::vector<Objective<typename SparseModelType::ValueType>> objectives;
-                
+                std::shared_ptr<SparseModelType> preprocessedModel;
+                storm::storage::BitVector reward0EStates;
                 std::shared_ptr<storm::expressions::ExpressionManager> expressionManager;
                 
-                storm::storage::BitVector possibleBottomStates;
                 
             };
             

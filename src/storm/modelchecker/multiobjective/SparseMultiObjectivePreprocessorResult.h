@@ -49,7 +49,7 @@ namespace storm {
                     // Intentionally left empty
                 }
                 
-                bool containsOnlyRewardObjectives() {
+                bool containsOnlyRewardObjectives() const {
                     for (auto const& obj : objectives) {
                         if (!(obj.formula->isRewardOperatorFormula() && (obj.formula->getSubformula().isTotalRewardFormula() || obj.formula->getSubformula().isCumulativeRewardFormula()))) {
                             return false;

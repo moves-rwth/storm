@@ -24,12 +24,12 @@ namespace storm {
             public:
                 typedef typename SparseMaModelType::ValueType ValueType;
                 
-                SparseMaPcaaWeightVectorChecker(SparseMaModelType const& model,
-                                                        std::vector<Objective<ValueType>> const& objectives,
-                                                        storm::storage::BitVector const& possibleECActions,
-                                                        storm::storage::BitVector const& possibleBottomStates);
+                SparseMaPcaaWeightVectorChecker(SparseMultiObjectivePreprocessorResult<SparseMaModelType> const& preprocessorResult);
                 
                 virtual ~SparseMaPcaaWeightVectorChecker() = default;
+
+            protected:
+                virtual void initializeModelTypeSpecificData(SparseMaModelType const& model) override;
 
             private:
                 
@@ -150,6 +150,11 @@ namespace storm {
                  * The resulting values represent the rewards at Markovian states that are obtained after one (digitized) time unit has passed.
                  */
                 void performMSStep(SubModel& MS, SubModel const& PS, storm::storage::BitVector const& consideredObjectives, std::vector<ValueType> const& weightVector) const;
+                
+                
+                // Data regarding the given Markov automaton
+                storm::storage::BitVector markovianStates;
+                std::vector<ValueType> exitRates;
                 
             };
             

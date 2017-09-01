@@ -32,44 +32,23 @@ namespace storm {
                  *
                  */
                 
-                SparseMdpPcaaWeightVectorChecker(SparseMdpModelType const& model,
-                                                        std::vector<Objective<ValueType>> const& objectives,
-                                                        storm::storage::BitVector const& possibleECActions,
-                                                        storm::storage::BitVector const& possibleBottomStates);
+                SparseMdpPcaaWeightVectorChecker(SparseMultiObjectivePreprocessorResult<SparseMdpModelType> const& preprocessorResult);
 
                 virtual ~SparseMdpPcaaWeightVectorChecker() = default;
+
+            protected:
+                virtual void initializeModelTypeSpecificData(SparseMdpModelType const& model) override;
 
             private:
                 
                 /*!
-                 * Computes the maximizing scheduler for the weighted sum of the objectives, including also step or reward bounded objectives.
+                 * Computes the maximizing scheduler for the weighted sum of the objectives, including also step bounded objectives.
                  * Moreover, the values of the individual objectives are computed w.r.t. this scheduler.
                  *
                  * @param weightVector the weight vector of the current check
                  * @param weightedRewardVector the weighted rewards considering the unbounded objectives. Will be invalidated after calling this.
                  */
                 virtual void boundedPhase(std::vector<ValueType> const& weightVector, std::vector<ValueType>& weightedRewardVector) override;
-                
-                /*!
-                 * Computes the bounded phase for the case that only step bounded objectives are considered.
-                 *
-                 * @param weightVector the weight vector of the current check
-                 * @param weightedRewardVector the weighted rewards considering the unbounded objectives. Will be invalidated after calling this.
-                 */
-                void boundedPhaseOnlyStepBounds(std::vector<ValueType> const& weightVector, std::vector<ValueType>& weightedRewardVector);
-                
-                /*!
-                 * Computes the bounded phase for the case that also reward bounded objectives occurr.
-                 *
-                 * @param weightVector the weight vector of the current check
-                 * @param weightedRewardVector the weighted rewards considering the unbounded objectives. Will be invalidated after calling this.
-                 */
-                void boundedPhaseWithRewardBounds(std::vector<ValueType> const& weightVector, std::vector<ValueType>& weightedRewardVector);
-                
-                void computeEpochSolution(typename MultiDimensionalRewardUnfolding<ValueType>::Epoch const& epoch, std::vector<ValueType> const& weightVector);
-                
-                std::unique_ptr<MultiDimensionalRewardUnfolding<ValueType>> rewardUnfolding;
-
                 
             };
             

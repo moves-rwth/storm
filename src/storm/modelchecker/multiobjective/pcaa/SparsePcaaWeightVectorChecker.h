@@ -6,6 +6,7 @@
 #include "storm/transformer/EndComponentEliminator.h"
 #include "storm/modelchecker/multiobjective/Objective.h"
 #include "storm/modelchecker/multiobjective/pcaa/PcaaWeightVectorChecker.h"
+#include "storm/modelchecker/multiobjective/SparseMultiObjectivePreprocessorResult.h"
 #include "storm/utility/vector.h"
 
 namespace storm {
@@ -33,10 +34,7 @@ namespace storm {
                  *
                  */
                 
-                SparsePcaaWeightVectorChecker(SparseModelType const& model,
-                                                        std::vector<Objective<ValueType>> const& objectives,
-                                                        storm::storage::BitVector const& possibleECActions,
-                                                        storm::storage::BitVector const& possibleBottomStates);
+                SparsePcaaWeightVectorChecker(SparseMultiObjectivePreprocessorResult<SparseModelType> const& preprocessorResult);
                 
                 virtual ~SparsePcaaWeightVectorChecker() = default;
                 
@@ -66,6 +64,9 @@ namespace storm {
                 
             protected:
                 
+                void initialize(SparseMultiObjectivePreprocessorResult<SparseModelType> const& preprocessorResult);
+                virtual void initializeModelTypeSpecificData(SparseModelType const& model) = 0;
+                
                 /*!
                  * Determines the scheduler that optimizes the weighted reward vector of the unbounded objectives
                  *
@@ -91,7 +92,7 @@ namespace storm {
                  */
                 virtual void boundedPhase(std::vector<ValueType> const& weightVector, std::vector<ValueType>& weightedRewardVector) = 0;
                 
-                void updateEcElimResult(std::vector<ValueType> const& weightedRewardVector);
+                void updateEcQuotient(std::vector<ValueType> const& weightedRewardVector);
                 
                 /*!
                  * Transforms the results of a min-max-solver that considers a reduced model (without end components) to a result for the original (unreduced) model
@@ -105,18 +106,23 @@ namespace storm {
                                                              std::vector<uint_fast64_t>& originalOptimalChoices) const;
                 
                 
+                // Data regarding the given model
+                // The transition matrix of the considered model
+                storm::storage::SparseMatrix<ValueType> transitionMatrix;
+                // The initial state of the considered model
+                uint64_t initialState;
                 // Overapproximation of the set of choices that are part of an end component.
-                storm::storage::BitVector possibleECActions;
+                storm::storage::BitVector ecChoicesHint;
                 // The actions that have reward assigned for at least one objective without upper timeBound
                 storm::storage::BitVector actionsWithoutRewardInUnboundedPhase;
-                // The states for which it is allowed to visit them infinitely often
-                // Put differently, if one of the states is part of a neutral EC, it is possible to
-                // stay in this EC forever (withoud inducing infinite reward for some objective).
-                storm::storage::BitVector possibleBottomStates;
+                // The states for which there is a scheduler yielding reward 0 for each objective
+                storm::storage::BitVector reward0EStates;
+                // stores the state action rewards for each objective.
+                std::vector<std::vector<ValueType>> actionRewards;
+                
                 // stores the indices of the objectives for which there is no upper time bound
                 storm::storage::BitVector objectivesWithNoUpperTimeBound;
-                // stores the (discretized) state action rewards for each objective.
-                std::vector<std::vector<ValueType>> discreteActionRewards;
+                
                 // Memory for the solution of the most recent call of check(..)
                 // becomes true after the first call of check(..)
                 bool checkHasBeenCalled;
@@ -130,10 +136,19 @@ namespace storm {
                 std::vector<ValueType> offsetsToOverApproximation;
                 // The scheduler choices that optimize the weighted rewards of undounded objectives.
                 std::vector<uint_fast64_t> optimalChoices;
-                // Caches the result of the ec elimination (avoiding recomputations for each weightvector)
-                boost::optional<typename storm::transformer::EndComponentEliminator<ValueType>::EndComponentEliminatorReturnType> cachedEcElimResult;
-                // Stores which choices are considered to have zero reward in the current cachedEcElimiResult.
-                boost::optional<storm::storage::BitVector> cachedZeroRewardChoices;
+                
+                struct EcQuotient {
+                    storm::storage::SparseMatrix<ValueType> matrix;
+                    std::vector<uint_fast64_t> ecqToOriginalChoiceMapping;
+                    std::vector<uint_fast64_t> originalToEcqStateMapping;
+                    storm::storage::BitVector origReward0Choices;
+                    
+                    std::vector<ValueType> auxStateValues;
+                    std::vector<ValueType> auxChoiceValues;
+                    
+                };
+                
+                boost::optional<EcQuotient> ecQuotient;
                 
             };
             
