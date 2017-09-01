@@ -484,7 +484,7 @@ namespace storm {
                 result.reward0EStates = storm::utility::graph::performProbGreater0A(transitions, groupIndices, backwardTransitions, allStates, statesWithRewardForAllChoices, false, 0, zeroRewardChoices);
                 result.reward0EStates.complement();
                 result.reward0AStates = storm::utility::graph::performProb0A(backwardTransitions, allStates, statesWithRewardForOneChoice);
-                assert(result.reward0EStates.isSubsetOf(result.reward0AStates));
+                assert(result.reward0AStates.isSubsetOf(result.reward0EStates));
             }
          
             template<typename SparseModelType>
