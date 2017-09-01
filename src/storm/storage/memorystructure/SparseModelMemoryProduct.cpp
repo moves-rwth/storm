@@ -495,6 +495,16 @@ namespace storm {
             return storm::utility::builder::buildModelFromComponents(resultType, std::move(components));
         }
         
+        template <typename ValueType, typename RewardModelType>
+        storm::models::sparse::Model<ValueType, RewardModelType> const& SparseModelMemoryProduct<ValueType, RewardModelType>::getOriginalModel() const {
+            return model;
+        }
+        
+        template <typename ValueType, typename RewardModelType>
+        storm::storage::MemoryStructure const& SparseModelMemoryProduct<ValueType, RewardModelType>::getMemory() const {
+            return memory;
+        }
+        
         template class SparseModelMemoryProduct<double>;
         template class SparseModelMemoryProduct<double, storm::models::sparse::StandardRewardModel<storm::Interval>>;
         template class SparseModelMemoryProduct<storm::RationalNumber>;

@@ -41,6 +41,8 @@ namespace storm {
             // An invalid index is returned, if the specifyied state does not exist (i.e., if it is not part of product).
             uint64_t const& getResultState(uint64_t const& modelState, uint64_t const& memoryState) const;
             
+            storm::models::sparse::Model<ValueType, RewardModelType> const& getOriginalModel() const;
+            storm::storage::MemoryStructure const& getMemory() const;
         private:
             
             // Computes for each pair of memory state and model transition index the successor memory state
