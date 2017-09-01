@@ -277,10 +277,10 @@ namespace storm {
                     zeroObjRewardChoices &= storm::utility::vector::filterZero(objRewards);
                 }
                 
-                // todo
-                storm::storage::BitVector value0EStates(memoryProduct.getProduct().getNumberOfStates(), true);
-                
-                ecElimResult = storm::transformer::EndComponentEliminator<ValueType>::transform(epochModel.epochMatrix, storm::storage::BitVector(memoryProduct.getProduct().getNumberOfStates(), true), zeroObjRewardChoices & ~stepChoices, value0EStates);
+                storm::storage::BitVector allProductStates(memoryProduct.getProduct().getNumberOfStates(), true);
+                // We assume that there is no end component in which reward is earned
+                STORM_LOG_ASSERT(!storm::utility::graph::checkIfECWithChoiceExists(epochModel.epochMatrix, epochModel.epochMatrix.transpose(true), allProductStates, ~zeroObjRewardChoices & ~stepChoices), "There is a scheduler that yields infinite reward for one objective. This case should be excluded");
+                ecElimResult = storm::transformer::EndComponentEliminator<ValueType>::transform(epochModel.epochMatrix, allProductStates, zeroObjRewardChoices & ~stepChoices, allProductStates);
                 epochModel.epochMatrix = std::move(ecElimResult.matrix);
                 
                 epochModel.stepChoices = storm::storage::BitVector(epochModel.epochMatrix.getRowCount(), false);
