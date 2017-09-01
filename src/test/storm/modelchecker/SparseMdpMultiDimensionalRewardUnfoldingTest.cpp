@@ -211,7 +211,7 @@ TEST(SparseMdpMultiDimensionalRewardUnfoldingTest, csma) {
     std::string programFile = STORM_TEST_RESOURCES_DIR "/mdp/csma2_2.nm";
     std::string constantsDef = "";
     std::string formulasAsString = "multi(Pmax=? [ F{\"time\"}<=70 \"all_delivered\" ])";
-    formulasAsString += "; \n multi(Pmax=? [ F{\"time\"}<=70 \"all_delivered\" ], P>=0 [ !\"collision_max_backoff\" U \"all_delivered\"] )";
+    formulasAsString += "; \n multi(Pmax=? [ F{\"time\"}<=70 \"all_delivered\" ], Pmax=? [ !\"collision_max_backoff\" U \"all_delivered\"] )";
 
     // programm, model,  formula
     storm::prism::Program program = storm::api::parseProgram(programFile);
@@ -229,7 +229,7 @@ TEST(SparseMdpMultiDimensionalRewardUnfoldingTest, csma) {
 
     result = storm::modelchecker::multiobjective::performMultiObjectiveModelChecking(*mdp, formulas[1]->asMultiObjectiveFormula());
     ASSERT_TRUE(result->isExplicitParetoCurveCheckResult());
-    std::vector<storm::RationalNumber> p = {storm::utility::convertNumber<storm::RationalNumber, std::string>("29487882838281/35184372088832"), storm::utility::convertNumber<storm::RationalNumber, std::string>("6979344855/8589934592")};
+    std::vector<storm::RationalNumber> p = {storm::utility::convertNumber<storm::RationalNumber, std::string>("29487882838281/35184372088832"), storm::utility::convertNumber<storm::RationalNumber, std::string>("7/8")};
     auto expectedAchievableValues = storm::storage::geometry::Polytope<storm::RationalNumber>::createDownwardClosure(std::vector<std::vector<storm::RationalNumber>>({p}));
     EXPECT_TRUE(expectedAchievableValues->contains(result->asExplicitParetoCurveCheckResult<storm::RationalNumber>().getUnderApproximation()));
     EXPECT_TRUE(result->asExplicitParetoCurveCheckResult<storm::RationalNumber>().getOverApproximation()->contains(expectedAchievableValues));
