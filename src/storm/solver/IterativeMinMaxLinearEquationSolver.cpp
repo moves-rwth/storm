@@ -216,6 +216,19 @@ namespace storm {
         bool IterativeMinMaxLinearEquationSolver<ValueType>::getRelative() const {
             return this->getSettings().getRelativeTerminationCriterion();
         }
+        
+        template<typename ValueType>
+        std::vector<MinMaxLinearEquationSolverRequirement> IterativeMinMaxLinearEquationSolver<ValueType>::getRequirements(MinMaxLinearEquationSolverSystemType const& equationSystemType, boost::optional<storm::solver::OptimizationDirection> const& direction) const {
+            std::vector<MinMaxLinearEquationSolverRequirement> requirements;
+            if (equationSystemType == MinMaxLinearEquationSolverSystemType::UntilProbabilities) {
+                if (this->getSettings().getSolutionMethod() == IterativeMinMaxLinearEquationSolverSettings<ValueType>::SolutionMethod::PolicyIteration) {
+                    if (!direction || direction.get() == OptimizationDirection::Maximize) {
+                        requirements.push_back(MinMaxLinearEquationSolverRequirement::ValidSchedulerHint);
+                    }
+                }
+            }
+            return requirements;
+        }
 
         template<typename ValueType>
         bool IterativeMinMaxLinearEquationSolver<ValueType>::solveEquationsValueIteration(OptimizationDirection dir, std::vector<ValueType>& x, std::vector<ValueType> const& b) const {

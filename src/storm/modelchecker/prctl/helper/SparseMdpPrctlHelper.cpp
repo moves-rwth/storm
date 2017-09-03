@@ -157,9 +157,33 @@ namespace storm {
                         // obtain hint information if possible
                         bool skipEcWithinMaybeStatesCheck = goal.minimize() || (hint.isExplicitModelCheckerHint() && hint.asExplicitModelCheckerHint<ValueType>().getNoEndComponentsInMaybeStates());
                         std::pair<boost::optional<std::vector<ValueType>>, boost::optional<std::vector<uint_fast64_t>>> hintInformation = extractHintInformationForMaybeStates(transitionMatrix, backwardTransitions, maybeStates, boost::none, hint, skipEcWithinMaybeStatesCheck);
-                        
-                        // Now compute the results for the maybeStates
-                        std::pair<std::vector<ValueType>, boost::optional<std::vector<uint_fast64_t>>> resultForMaybeStates = computeValuesOnlyMaybeStates(goal, submatrix, b, produceScheduler, minMaxLinearEquationSolverFactory, std::move(hintInformation.first), std::move(hintInformation.second), storm::utility::zero<ValueType>(), storm::utility::one<ValueType>(), storm::solver::MinMaxLinearEquationSolverSystemType::UntilProbabilities);
+
+                        // Check for requirements of the solver.
+                        std::vector<storm::solver::MinMaxLinearEquationSolverRequirement> requirements = minMaxLinearEquationSolverFactory.getRequirements(storm::solver::MinMaxLinearEquationSolverSystemType::UntilProbabilities);
+                        if (!requirements.empty()) {
+                            std::unique_ptr<storm::storage::Scheduler<ValueType>> validScheduler;
+                            for (auto const& requirement : requirements) {
+                                if (requirement == storm::solver::MinMaxLinearEquationSolverRequirement::ValidSchedulerHint) {
+                                    // If the solver requires a valid scheduler (a scheduler that produces non-zero
+                                    // probabilities for all maybe states), we need to compute such a scheduler now.
+                                    validScheduler = std::make_unique<storm::storage::Scheduler<ValueType>>(maybeStates.size());
+                                    storm::utility::graph::computeSchedulerProbGreater0E(transitionMatrix, backwardTransitions, phiStates, statesWithProbability1, *validScheduler, boost::none);
+                                    
+                                    STORM_LOG_WARN_COND(hintInformation.second, "A scheduler hint was provided, but the solver requires a valid scheduler hint. The hint will be ignored.");
+
+                                    hintInformation.second = std::vector<uint_fast64_t>(maybeStates.getNumberOfSetBits());
+                                    auto maybeIt = maybeStates.begin();
+                                    for (auto& choice : hintInformation.second.get()) {
+                                        choice = validScheduler->getChoice(*maybeIt).getDeterministicChoice();
+                                    }
+                                } else {
+                                    STORM_LOG_THROW(requirements.empty(), storm::exceptions::UncheckedRequirementException, "Cannot establish requirements for solver.");
+                                }
+                            }
+                        }
+
+                        // Now compute the results for the maybe states.
+                        std::pair<std::vector<ValueType>, boost::optional<std::vector<uint_fast64_t>>> resultForMaybeStates = computeValuesOnlyMaybeStates(goal, submatrix, b, produceScheduler, minMaxLinearEquationSolverFactory, std::move(hintInformation.first), std::move(hintInformation.second), storm::utility::zero<ValueType>(), storm::utility::one<ValueType>());
                         
                         // Set values of resulting vector according to result.
                         storm::utility::vector::setVectorValues<ValueType>(result, maybeStates, resultForMaybeStates.first);
@@ -252,13 +276,9 @@ namespace storm {
             }
             
             template<typename ValueType>
-            std::pair<std::vector<ValueType>, boost::optional<std::vector<uint_fast64_t>>> SparseMdpPrctlHelper<ValueType>::computeValuesOnlyMaybeStates(storm::solver::SolveGoal const& goal, storm::storage::SparseMatrix<ValueType> const& submatrix, std::vector<ValueType> const& b, bool produceScheduler, storm::solver::MinMaxLinearEquationSolverFactory<ValueType> const& minMaxLinearEquationSolverFactory, boost::optional<std::vector<ValueType>>&& hintValues, boost::optional<std::vector<uint_fast64_t>>&& hintChoices, boost::optional<ValueType> const& lowerResultBound, boost::optional<ValueType> const& upperResultBound, storm::solver::MinMaxLinearEquationSolverSystemType const& equationSystemType) {
+            std::pair<std::vector<ValueType>, boost::optional<std::vector<uint_fast64_t>>> SparseMdpPrctlHelper<ValueType>::computeValuesOnlyMaybeStates(storm::solver::SolveGoal const& goal, storm::storage::SparseMatrix<ValueType> const& submatrix, std::vector<ValueType> const& b, bool produceScheduler, storm::solver::MinMaxLinearEquationSolverFactory<ValueType> const& minMaxLinearEquationSolverFactory, boost::optional<std::vector<ValueType>>&& hintValues, boost::optional<std::vector<uint_fast64_t>>&& hintChoices, boost::optional<ValueType> const& lowerResultBound, boost::optional<ValueType> const& upperResultBound) {
                 
-                // Check for requirements of the solver.
-                std::vector<storm::solver::MinMaxLinearEquationSolverRequirement> requirements = minMaxLinearEquationSolverFactory.getRequirements(equationSystemType);
-                STORM_LOG_THROW(requirements.empty(), storm::exceptions::UncheckedRequirementException, "Cannot establish requirements for solver.");
-                
-                // Set up the solver
+                // Set up the solver.
                 std::unique_ptr<storm::solver::MinMaxLinearEquationSolver<ValueType>> solver = storm::solver::configureMinMaxLinearEquationSolver(goal, minMaxLinearEquationSolverFactory, submatrix);
                 solver->setRequirementsChecked();
                 if (lowerResultBound) {
@@ -278,7 +298,7 @@ namespace storm {
                 // Solve the corresponding system of equations.
                 solver->solveEquations(x, b);
                 
-                // If requested, a scheduler was produced
+                // If requested, return the requested scheduler.
                 if (produceScheduler) {
                    return std::pair<std::vector<ValueType>, boost::optional<std::vector<uint_fast64_t>>>(std::move(x), std::move(solver->getSchedulerChoices()));
                 } else {
@@ -460,7 +480,7 @@ namespace storm {
                         std::pair<boost::optional<std::vector<ValueType>>, boost::optional<std::vector<uint_fast64_t>>> hintInformation = extractHintInformationForMaybeStates(transitionMatrix, backwardTransitions, maybeStates, selectedChoices, hint, skipEcWithinMaybeStatesCheck);
                         
                         // Now compute the results for the maybeStates
-                        std::pair<std::vector<ValueType>, boost::optional<std::vector<uint_fast64_t>>> resultForMaybeStates = computeValuesOnlyMaybeStates(goal, submatrix, b, produceScheduler, minMaxLinearEquationSolverFactory, std::move(hintInformation.first), std::move(hintInformation.second), storm::utility::zero<ValueType>(), boost::none, storm::solver::MinMaxLinearEquationSolverSystemType::ReachabilityRewards);
+                        std::pair<std::vector<ValueType>, boost::optional<std::vector<uint_fast64_t>>> resultForMaybeStates = computeValuesOnlyMaybeStates(goal, submatrix, b, produceScheduler, minMaxLinearEquationSolverFactory, std::move(hintInformation.first), std::move(hintInformation.second), storm::utility::zero<ValueType>(), boost::none);
 
                         // Set values of resulting vector according to result.
                         storm::utility::vector::setVectorValues<ValueType>(result, maybeStates, resultForMaybeStates.first);

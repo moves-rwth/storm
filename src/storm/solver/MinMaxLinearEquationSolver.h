@@ -29,10 +29,17 @@ namespace storm {
             StochasticShortestPath
         };
         
+        // Possible requirements of solvers. Note that the order must not be changed as it shall be guaranteed that the
+        // solver announces requirements in the order in which they appear in this list.
         enum class MinMaxLinearEquationSolverRequirement {
+            // Graph requirements.
+            NoEndComponents,
+            
+            // Hint requirements.
             ValidSchedulerHint,
             ValidValueHint,
-            NoEndComponents,
+            
+            // Global bounds requirements.
             GlobalUpperBound,
             GlobalLowerBound
         };
@@ -174,9 +181,10 @@ namespace storm {
             bool hasSchedulerHint() const;
             
             /*!
-             * Retrieves the requirements of this solver for solving equations with the current settings.
+             * Retrieves the requirements of this solver for solving equations with the current settings. The requirements
+             * are guaranteed to be ordered according to their appearance in the SolverRequirement type.
              */
-            virtual std::vector<MinMaxLinearEquationSolverRequirement> getRequirements(MinMaxLinearEquationSolverSystemType const& equationSystemType) const;
+            virtual std::vector<MinMaxLinearEquationSolverRequirement> getRequirements(MinMaxLinearEquationSolverSystemType const& equationSystemType, boost::optional<storm::solver::OptimizationDirection> const& direction = boost::none) const;
             
             /*!
              * Notifies the solver that the requirements for solving equations have been checked. If this has not been
@@ -235,7 +243,11 @@ namespace storm {
             
             MinMaxMethod const& getMinMaxMethod() const;
             
-            std::vector<MinMaxLinearEquationSolverRequirement> getRequirements(MinMaxLinearEquationSolverSystemType const& equationSystemType) const;
+            /*!
+             * Retrieves the requirements of the solver that would be created when calling create() right now. The
+             * requirements are guaranteed to be ordered according to their appearance in the SolverRequirement type.
+             */
+            std::vector<MinMaxLinearEquationSolverRequirement> getRequirements(MinMaxLinearEquationSolverSystemType const& equationSystemType, boost::optional<storm::solver::OptimizationDirection> const& direction = boost::none) const;
             void setRequirementsChecked(bool value = true);
             bool isRequirementsCheckedSet() const;
 
