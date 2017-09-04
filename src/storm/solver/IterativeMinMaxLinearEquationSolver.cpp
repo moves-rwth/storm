@@ -225,10 +225,8 @@ namespace storm {
                     }
                 }
             } else if (equationSystemType == MinMaxLinearEquationSolverSystemType::ReachabilityRewards) {
-                if (this->getSettings().getSolutionMethod() == IterativeMinMaxLinearEquationSolverSettings<ValueType>::SolutionMethod::PolicyIteration) {
-                    if (!direction || direction.get() == OptimizationDirection::Minimize) {
-                        requirements.set(MinMaxLinearEquationSolverRequirements::Element::ValidInitialScheduler);
-                    }
+                if (!direction || direction.get() == OptimizationDirection::Minimize) {
+                    requirements.set(MinMaxLinearEquationSolverRequirements::Element::ValidInitialScheduler);
                 }
             }
             

@@ -87,12 +87,12 @@ namespace storm {
             
             template<typename ValueType>
             std::vector<uint_fast64_t> computeValidSchedulerHint(storm::solver::MinMaxLinearEquationSolverSystemType const& type, storm::storage::SparseMatrix<ValueType> const& transitionMatrix, storm::storage::SparseMatrix<ValueType> const& backwardTransitions, storm::storage::BitVector const& maybeStates, storm::storage::BitVector const& filterStates, storm::storage::BitVector const& targetStates) {
-                std::unique_ptr<storm::storage::Scheduler<ValueType>> validScheduler = std::make_unique<storm::storage::Scheduler<ValueType>>(maybeStates.size());
+                storm::storage::Scheduler<ValueType> validScheduler(maybeStates.size());
 
                 if (type == storm::solver::MinMaxLinearEquationSolverSystemType::UntilProbabilities) {
-                    storm::utility::graph::computeSchedulerProbGreater0E(transitionMatrix, backwardTransitions, filterStates, targetStates, *validScheduler, boost::none);
+                    storm::utility::graph::computeSchedulerProbGreater0E(transitionMatrix, backwardTransitions, filterStates, targetStates, validScheduler, boost::none);
                 } else if (type == storm::solver::MinMaxLinearEquationSolverSystemType::ReachabilityRewards) {
-                    storm::utility::graph::computeSchedulerProb1E(maybeStates | targetStates, transitionMatrix, backwardTransitions, filterStates, targetStates, *validScheduler);
+                    storm::utility::graph::computeSchedulerProb1E(maybeStates | targetStates, transitionMatrix, backwardTransitions, filterStates, targetStates, validScheduler);
                 } else {
                     STORM_LOG_ASSERT(false, "Unexpected equation system type.");
                 }
@@ -101,7 +101,7 @@ namespace storm {
                 std::vector<uint_fast64_t> schedulerHint(maybeStates.getNumberOfSetBits());
                 auto maybeIt = maybeStates.begin();
                 for (auto& choice : schedulerHint) {
-                    choice = validScheduler->getChoice(*maybeIt).getDeterministicChoice();
+                    choice = validScheduler.getChoice(*maybeIt).getDeterministicChoice();
                     ++maybeIt;
                 }
                 return schedulerHint;

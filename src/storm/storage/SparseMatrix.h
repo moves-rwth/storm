@@ -688,7 +688,7 @@ namespace storm {
             /*!
              * Selects exactly one row from each row group of this matrix and returns the resulting matrix.
              *
-s             * @param insertDiagonalEntries If set to true, the resulting matrix will have zero entries in column i for
+             * @param insertDiagonalEntries If set to true, the resulting matrix will have zero entries in column i for
              * each row in row group i. This can then be used for inserting other values later.
              * @return A submatrix of the current matrix by selecting one row out of each row group.
              */
@@ -714,7 +714,6 @@ s             * @param insertDiagonalEntries If set to true, the resulting matri
              * @return A sparse matrix that represents the transpose of this matrix.
              */
             storm::storage::SparseMatrix<value_type> transpose(bool joinGroups = false, bool keepZeros = false) const;
-            
             
             /*!
              * Transposes the matrix w.r.t. the selected rows.

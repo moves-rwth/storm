@@ -25,6 +25,36 @@ namespace storm {
     namespace modelchecker {
         namespace helper {
             
+            template <typename ValueType>
+            std::vector<uint64_t> computeValidInitialScheduler(uint64_t numberOfMaybeStates, storm::storage::SparseMatrix<ValueType> const& transitionMatrix, std::vector<ValueType> const& b) {
+                std::vector<uint64_t> result(numberOfMaybeStates);
+                storm::storage::BitVector targetStates(numberOfMaybeStates);
+                
+                for (uint64_t state = 0; state < numberOfMaybeStates; ++state) {
+                    // Record all states with non-zero probability of moving directly to the target states.
+                    for (uint64_t row = transitionMatrix.getRowGroupIndices()[state]; row < transitionMatrix.getRowGroupIndices()[state + 1]; ++row) {
+                        if (!storm::utility::isZero(b[row])) {
+                            targetStates.set(state);
+                            result[state] = row - transitionMatrix.getRowGroupIndices()[state];
+                        }
+                    }
+                }
+                
+                if (!targetStates.full()) {
+                    storm::storage::Scheduler<ValueType> validScheduler(numberOfMaybeStates);
+                    storm::storage::SparseMatrix<ValueType> backwardTransitions = transitionMatrix.transpose(true);
+                    storm::utility::graph::computeSchedulerProbGreater0E(transitionMatrix, backwardTransitions, storm::storage::BitVector(numberOfMaybeStates, true), targetStates, validScheduler, boost::none);
+                    
+                    for (uint64_t state = 0; state < numberOfMaybeStates; ++state) {
+                        if (!targetStates.get(state)) {
+                            result[state] = validScheduler.getChoice(state).getDeterministicChoice();
+                        }
+                    }
+                }
+                
+                return result;
+            }
+            
             template<storm::dd::DdType DdType, typename ValueType>
             std::unique_ptr<CheckResult> HybridMdpPrctlHelper<DdType, ValueType>::computeUntilProbabilities(OptimizationDirection dir, storm::models::symbolic::NondeterministicModel<DdType, ValueType> const& model, storm::dd::Add<DdType, ValueType> const& transitionMatrix, storm::dd::Bdd<DdType> const& phiStates, storm::dd::Bdd<DdType> const& psiStates, bool qualitative, storm::solver::MinMaxLinearEquationSolverFactory<ValueType> const& linearEquationSolverFactory) {
                 // We need to identify the states which have to be taken out of the matrix, i.e. all states that have
@@ -75,14 +105,26 @@ namespace storm {
                         // Translate the symbolic matrix/vector to their explicit representations and solve the equation system.
                         std::pair<storm::storage::SparseMatrix<ValueType>, std::vector<ValueType>> explicitRepresentation = submatrix.toMatrixVector(subvector, std::move(rowGroupSizes), model.getNondeterminismVariables(), odd, odd);
                         
-                        // Check for requirements of the solver.
-                        storm::solver::MinMaxLinearEquationSolverRequirements requirements = linearEquationSolverFactory.getRequirements(storm::solver::MinMaxLinearEquationSolverSystemType::UntilProbabilities);
-                        STORM_LOG_THROW(requirements.empty(), storm::exceptions::UncheckedRequirementException, "Cannot establish requirements for solver.");
-
                         // Create the solution vector.
                         std::vector<ValueType> x(maybeStates.getNonZeroCount(), storm::utility::zero<ValueType>());
+
+                        // Check for requirements of the solver.
+                        storm::solver::MinMaxLinearEquationSolverRequirements requirements = linearEquationSolverFactory.getRequirements(storm::solver::MinMaxLinearEquationSolverSystemType::UntilProbabilities, dir);
+                        boost::optional<std::vector<uint64_t>> initialScheduler;
+                        if (!requirements.empty()) {
+                            if (requirements.requires(storm::solver::MinMaxLinearEquationSolverRequirements::Element::ValidInitialScheduler)) {
+                                STORM_LOG_DEBUG("Computing valid scheduler hint, because the solver requires it.");
+                                initialScheduler = computeValidInitialScheduler<ValueType>(x.size(), explicitRepresentation.first, explicitRepresentation.second);
+
+                                requirements.set(storm::solver::MinMaxLinearEquationSolverRequirements::Element::ValidInitialScheduler, false);
+                            }
+                            STORM_LOG_THROW(requirements.empty(), storm::exceptions::UncheckedRequirementException, "Cannot establish requirements for solver.");
+                        }
                         
                         std::unique_ptr<storm::solver::MinMaxLinearEquationSolver<ValueType>> solver = linearEquationSolverFactory.create(std::move(explicitRepresentation.first));
+                        if (initialScheduler) {
+                            solver->setInitialScheduler(std::move(initialScheduler.get()));
+                        }
                         solver->setRequirementsChecked();
                         solver->solveEquations(dir, x, explicitRepresentation.second);
                         
@@ -247,7 +289,7 @@ namespace storm {
                         // non-maybe states in the matrix.
                         storm::dd::Add<DdType, ValueType> submatrix = transitionMatrix * maybeStatesAdd;
                         
-                        // Then compute the state reward vector to use in the computation.
+                        // Then compute the reward vector to use in the computation.
                         storm::dd::Add<DdType, ValueType> subvector = rewardModel.getTotalRewardVector(maybeStatesAdd, submatrix, model.getColumnVariables());
                         if (!rewardModel.hasStateActionRewards() && !rewardModel.hasTransitionRewards()) {
                             // If the reward model neither has state-action nor transition rewards, we need to multiply
