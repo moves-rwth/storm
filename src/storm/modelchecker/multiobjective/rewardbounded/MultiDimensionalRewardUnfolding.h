@@ -71,6 +71,7 @@ namespace storm {
                     storm::models::sparse::Mdp<ValueType> const& getProduct() const;
                     std::vector<boost::optional<Epoch>> const& getSteps() const;
                     
+                    bool productStateExists(uint64_t const& modelState, uint64_t const& memoryState) const;
                     uint64_t getProductState(uint64_t const& modelState, uint64_t const& memoryState) const;
                     uint64_t getModelState(uint64_t const& productState) const;
                     uint64_t getMemoryState(uint64_t const& productState) const;

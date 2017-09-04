@@ -115,9 +115,42 @@ namespace storm {
                 
                 // build the model x memory product
                 auto memoryStructure = computeMemoryStructure();
+                
                 storm::storage::SparseModelMemoryProduct<ValueType> productBuilder(memoryStructure.product(model));
-                // todo: we only need to build the reachable states + the full model for each memory state encoding that all subObjectives of an objective are irrelevant
-                productBuilder.setBuildFullProduct();
+                
+                storm::storage::BitVector memoryState(subObjectives.size(), false);
+                uint64_t memoryStateAsInt = memoryStructure.getNumberOfStates();
+                do {
+                    --memoryStateAsInt;
+                    storm::storage::BitVector stepChoices(model.getNumberOfChoices(), false);
+                    for (uint64_t objIndex = 0; objIndex < objectives.size(); ++objIndex) {
+                        auto const& subObjectives = objectiveDimensions[objIndex];
+                        if (subObjectives.isDisjointFrom(memoryState)) {
+                            for (auto const& subObj : subObjectives) {
+                                stepChoices |= storm::utility::vector::filterGreaterZero(epochSteps[subObj]);
+                            }
+                        }
+                    }
+                    
+                    storm::storage::BitVector stepChoiceSuccessors(model.getNumberOfStates(), false);
+                    for (auto const& choice : stepChoices) {
+                        for (auto const& successor : model.getTransitionMatrix().getRow(choice)) {
+                            stepChoiceSuccessors.set(successor.getColumn(), true);
+                        }
+                    }
+                    
+                    for (auto const& modelState : stepChoiceSuccessors) {
+                        productBuilder.addReachableState(modelState, memoryStateAsInt);
+                    }
+                    
+                    memoryState.increment();
+                } while (!memoryState.empty());
+                assert(memoryStateAsInt == 0);
+                
+                
+                
+                
+                
                 memoryProduct = MemoryProduct(productBuilder, epochSteps, memoryLabels);
                 
             }
@@ -280,6 +313,7 @@ namespace storm {
                 storm::storage::BitVector allProductStates(memoryProduct.getProduct().getNumberOfStates(), true);
                 // We assume that there is no end component in which reward is earned
                 STORM_LOG_ASSERT(!storm::utility::graph::checkIfECWithChoiceExists(epochModel.epochMatrix, epochModel.epochMatrix.transpose(true), allProductStates, ~zeroObjRewardChoices & ~stepChoices), "There is a scheduler that yields infinite reward for one objective. This case should be excluded");
+                // TODO: unselect unreachable states
                 ecElimResult = storm::transformer::EndComponentEliminator<ValueType>::transform(epochModel.epochMatrix, allProductStates, zeroObjRewardChoices & ~stepChoices, allProductStates);
                 epochModel.epochMatrix = std::move(ecElimResult.matrix);
                 
@@ -456,9 +490,11 @@ namespace storm {
                 for (uint64_t modelState = 0; modelState < numModelStates; ++modelState) {
                     for (uint64_t memoryState = 0; memoryState < numMemoryStates; ++memoryState) {
                         uint64_t productState = productBuilder.getResultState(modelState, memoryState);
-                        modelMemoryToProductStateMap[modelState * numMemoryStates + memoryState] = productState;
-                        productToModelStateMap[productState] = modelState;
-                        productToMemoryStateMap[productState] = memoryState;
+                        if (productState < numProductStates) {
+                            modelMemoryToProductStateMap[modelState * numMemoryStates + memoryState] = productState;
+                            productToModelStateMap[productState] = modelState;
+                            productToMemoryStateMap[productState] = memoryState;
+                        }
                     }
                 }
                 
@@ -497,10 +533,12 @@ namespace storm {
                         }
                         if (!isZeroStep) {
                             for (uint64_t memState = 0; memState < numMemoryStates; ++memState) {
-                                uint64_t productState = getProductState(modelState, memState);
-                                uint64_t productChoice = getProduct().getTransitionMatrix().getRowGroupIndices()[productState] + choiceOffset;
-                                assert(productChoice < getProduct().getTransitionMatrix().getRowGroupIndices()[productState + 1]);
-                                steps[productChoice] = step;
+                                if (productStateExists(modelState, memState)) {
+                                    uint64_t productState = getProductState(modelState, memState);
+                                    uint64_t productChoice = getProduct().getTransitionMatrix().getRowGroupIndices()[productState] + choiceOffset;
+                                    assert(productChoice < getProduct().getTransitionMatrix().getRowGroupIndices()[productState + 1]);
+                                    steps[productChoice] = step;
+                                }
                             }
                         }
                     }
@@ -518,9 +556,14 @@ namespace storm {
             }
             
             template<typename ValueType>
+            bool MultiDimensionalRewardUnfolding<ValueType>::MemoryProduct::productStateExists(uint64_t const& modelState, uint64_t const& memoryState) const {
+                STORM_LOG_ASSERT(!memoryStateMap.empty(), "Tried to retrieve whether a product state exists but the memoryStateMap is not yet initialized.");
+                return modelMemoryToProductStateMap[modelState * memoryStateMap.size() + memoryState] < getProduct().getNumberOfStates();
+            }
+            
+            template<typename ValueType>
             uint64_t MultiDimensionalRewardUnfolding<ValueType>::MemoryProduct::getProductState(uint64_t const& modelState, uint64_t const& memoryState) const {
-                STORM_LOG_ASSERT(!memoryStateMap.empty(), "Tried to retrieve a product state but the memoryStateMap is not yet initialized.");
-                STORM_LOG_ASSERT(modelMemoryToProductStateMap[modelState * memoryStateMap.size() + memoryState] < getProduct().getNumberOfStates(), "Tried to obtain a state in the model-memory-product that does not exist");
+                STORM_LOG_ASSERT(productStateExists(modelState, memoryState), "Tried to obtain a state in the model-memory-product that does not exist");
                 return modelMemoryToProductStateMap[modelState * memoryStateMap.size() + memoryState];
             }
 
