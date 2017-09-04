@@ -101,7 +101,7 @@ namespace storm {
                 // This list does not include the precision, because this option is shared with other modules.
                 bool optionsSet = isLinearEquationSystemMethodSet() || isPreconditioningMethodSet() || isMaximalIterationCountSet();
                 
-                STORM_LOG_WARN_COND(storm::settings::getModule<storm::settings::modules::CoreSettings>().getEquationSolver() == storm::solver::EquationSolverType::Gmmxx || !optionsSet, "eigen is not selected as the preferred equation solver, so setting options for eigen might have no effect.");
+                STORM_LOG_WARN_COND(storm::settings::getModule<storm::settings::modules::CoreSettings>().getEquationSolver() == storm::solver::EquationSolverType::Eigen || !optionsSet, "Eigen is not selected as the preferred equation solver, so setting options for eigen might have no effect.");
                 
                 return true;
             }

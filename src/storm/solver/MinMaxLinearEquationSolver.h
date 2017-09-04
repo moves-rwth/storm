@@ -29,19 +29,72 @@ namespace storm {
             StochasticShortestPath
         };
         
-        // Possible requirements of solvers. Note that the order must not be changed as it shall be guaranteed that the
-        // solver announces requirements in the order in which they appear in this list.
-        enum class MinMaxLinearEquationSolverRequirement {
-            // Graph requirements.
-            NoEndComponents,
+        class MinMaxLinearEquationSolverRequirements {
+        public:
+            enum class Element {
+                NoEndComponents, NoZeroRewardEndComponents, ValidInitialScheduler, GlobalLowerBound, GlobalUpperBound
+            };
             
-            // Hint requirements.
-            ValidSchedulerHint,
-            ValidValueHint,
+            MinMaxLinearEquationSolverRequirements() : noEndComponents(false), noZeroRewardEndComponents(false), validInitialScheduler(false), globalLowerBound(false), globalUpperBound(false) {
+                // Intentionally left empty.
+            }
             
-            // Global bounds requirements.
-            GlobalUpperBound,
-            GlobalLowerBound
+            MinMaxLinearEquationSolverRequirements& setNoEndComponents(bool value = true) {
+                noEndComponents = value;
+                return *this;
+            }
+
+            MinMaxLinearEquationSolverRequirements& setNoZeroRewardEndComponents(bool value = true) {
+                noZeroRewardEndComponents = value;
+                return *this;
+            }
+
+            MinMaxLinearEquationSolverRequirements& setValidInitialScheduler(bool value = true) {
+                validInitialScheduler = value;
+                return *this;
+            }
+
+            MinMaxLinearEquationSolverRequirements& setGlobalLowerBound(bool value = true) {
+                globalLowerBound = value;
+                return *this;
+            }
+
+            MinMaxLinearEquationSolverRequirements& setGlobalUpperBound(bool value = true) {
+                globalUpperBound = value;
+                return *this;
+            }
+            
+            MinMaxLinearEquationSolverRequirements& set(Element const& element, bool value = true) {
+                switch (element) {
+                    case Element::NoEndComponents: noEndComponents = value; break;
+                    case Element::NoZeroRewardEndComponents: noZeroRewardEndComponents = value; break;
+                    case Element::ValidInitialScheduler: validInitialScheduler = value; break;
+                    case Element::GlobalLowerBound: globalLowerBound = value; break;
+                    case Element::GlobalUpperBound: globalUpperBound = value; break;
+                }
+                return *this;
+            }
+            
+            bool requires(Element const& element) {
+                switch (element) {
+                    case Element::NoEndComponents: return noEndComponents; break;
+                    case Element::NoZeroRewardEndComponents: return noZeroRewardEndComponents; break;
+                    case Element::ValidInitialScheduler: return validInitialScheduler; break;
+                    case Element::GlobalLowerBound: return globalLowerBound; break;
+                    case Element::GlobalUpperBound: return globalUpperBound; break;
+                }
+            }
+            
+            bool empty() const {
+                return !noEndComponents && !noZeroRewardEndComponents && !validInitialScheduler && !globalLowerBound && !globalUpperBound;
+            }
+            
+        private:
+            bool noEndComponents;
+            bool noZeroRewardEndComponents;
+            bool validInitialScheduler;
+            bool globalLowerBound;
+            bool globalUpperBound;
         };
         
         /*!
@@ -171,20 +224,25 @@ namespace storm {
             void setBounds(ValueType const& lower, ValueType const& upper);
             
             /*!
-             * Sets a scheduler that might be considered by the solver as an initial guess
+             * Sets a valid initial scheduler that is required by some solvers (see requirements of solvers).
              */
-            void setSchedulerHint(std::vector<uint_fast64_t>&& choices);
+            void setInitialScheduler(std::vector<uint_fast64_t>&& choices);
             
             /*!
-             * Returns true iff a scheduler hint was defined
+             * Returns true iff an initial scheduler is set.
              */
-            bool hasSchedulerHint() const;
+            bool hasInitialScheduler() const;
+            
+            /*!
+             * Retrieves the initial scheduler if one was set.
+             */
+            std::vector<uint_fast64_t> const& getInitialScheduler() const;
             
             /*!
              * Retrieves the requirements of this solver for solving equations with the current settings. The requirements
              * are guaranteed to be ordered according to their appearance in the SolverRequirement type.
              */
-            virtual std::vector<MinMaxLinearEquationSolverRequirement> getRequirements(MinMaxLinearEquationSolverSystemType const& equationSystemType, boost::optional<storm::solver::OptimizationDirection> const& direction = boost::none) const;
+            virtual MinMaxLinearEquationSolverRequirements getRequirements(MinMaxLinearEquationSolverSystemType const& equationSystemType, boost::optional<storm::solver::OptimizationDirection> const& direction = boost::none) const;
             
             /*!
              * Notifies the solver that the requirements for solving equations have been checked. If this has not been
@@ -215,8 +273,8 @@ namespace storm {
             // An upper bound if one was set.
             boost::optional<ValueType> upperBound;
             
-            // Scheduler choices that might be considered by the solver as an initial guess
-            boost::optional<std::vector<uint_fast64_t>> choicesHint;
+            // A scheduler that can be used by solvers that require a valid initial scheduler.
+            boost::optional<std::vector<uint_fast64_t>> initialScheduler;
             
         private:
             /// Whether some of the generated data during solver calls should be cached.
@@ -247,7 +305,7 @@ namespace storm {
              * Retrieves the requirements of the solver that would be created when calling create() right now. The
              * requirements are guaranteed to be ordered according to their appearance in the SolverRequirement type.
              */
-            std::vector<MinMaxLinearEquationSolverRequirement> getRequirements(MinMaxLinearEquationSolverSystemType const& equationSystemType, boost::optional<storm::solver::OptimizationDirection> const& direction = boost::none) const;
+            MinMaxLinearEquationSolverRequirements getRequirements(MinMaxLinearEquationSolverSystemType const& equationSystemType, boost::optional<storm::solver::OptimizationDirection> const& direction = boost::none) const;
             void setRequirementsChecked(bool value = true);
             bool isRequirementsCheckedSet() const;
 

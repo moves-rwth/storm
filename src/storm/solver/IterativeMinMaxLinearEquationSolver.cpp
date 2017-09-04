@@ -108,7 +108,7 @@ namespace storm {
         template<typename ValueType>
         bool IterativeMinMaxLinearEquationSolver<ValueType>::solveEquationsPolicyIteration(OptimizationDirection dir, std::vector<ValueType>& x, std::vector<ValueType> const& b) const {
             // Create the initial scheduler.
-            std::vector<storm::storage::sparse::state_type> scheduler = this->hasSchedulerHint() ? this->choicesHint.get() : std::vector<storm::storage::sparse::state_type>(this->A->getRowGroupCount());
+            std::vector<storm::storage::sparse::state_type> scheduler = this->hasInitialScheduler() ? this->getInitialScheduler() : std::vector<storm::storage::sparse::state_type>(this->A->getRowGroupCount());
             
             // Get a vector for storing the right-hand side of the inner equation system.
             if(!auxiliaryRowGroupVector) {
@@ -135,9 +135,6 @@ namespace storm {
             uint64_t iterations = 0;
             do {
                 // Solve the equation system for the 'DTMC'.
-                // FIXME: we need to remove the 0- and 1- states to make the solution unique.
-                // HOWEVER: if we start with a valid scheduler, then we will never get an illegal one, because staying
-                // within illegal MECs will never strictly improve the value. Is this true?
                 solver->solveEquations(x, subB);
                 
                 // Go through the multiplication result and see whether we can improve any of the choices.
@@ -218,15 +215,23 @@ namespace storm {
         }
         
         template<typename ValueType>
-        std::vector<MinMaxLinearEquationSolverRequirement> IterativeMinMaxLinearEquationSolver<ValueType>::getRequirements(MinMaxLinearEquationSolverSystemType const& equationSystemType, boost::optional<storm::solver::OptimizationDirection> const& direction) const {
-            std::vector<MinMaxLinearEquationSolverRequirement> requirements;
+        MinMaxLinearEquationSolverRequirements IterativeMinMaxLinearEquationSolver<ValueType>::getRequirements(MinMaxLinearEquationSolverSystemType const& equationSystemType, boost::optional<storm::solver::OptimizationDirection> const& direction) const {
+            MinMaxLinearEquationSolverRequirements requirements;
+            
             if (equationSystemType == MinMaxLinearEquationSolverSystemType::UntilProbabilities) {
                 if (this->getSettings().getSolutionMethod() == IterativeMinMaxLinearEquationSolverSettings<ValueType>::SolutionMethod::PolicyIteration) {
                     if (!direction || direction.get() == OptimizationDirection::Maximize) {
-                        requirements.push_back(MinMaxLinearEquationSolverRequirement::ValidSchedulerHint);
+                        requirements.set(MinMaxLinearEquationSolverRequirements::Element::ValidInitialScheduler);
+                    }
+                }
+            } else if (equationSystemType == MinMaxLinearEquationSolverSystemType::ReachabilityRewards) {
+                if (this->getSettings().getSolutionMethod() == IterativeMinMaxLinearEquationSolverSettings<ValueType>::SolutionMethod::PolicyIteration) {
+                    if (!direction || direction.get() == OptimizationDirection::Minimize) {
+                        requirements.set(MinMaxLinearEquationSolverRequirements::Element::ValidInitialScheduler);
                     }
                 }
             }
+            
             return requirements;
         }
 
@@ -246,11 +251,11 @@ namespace storm {
                 auxiliaryRowGroupVector = std::make_unique<std::vector<ValueType>>(this->A->getRowGroupCount());
             }
             
-            if (this->hasSchedulerHint()) {
-                // Resolve the nondeterminism according to the scheduler hint
-                storm::storage::SparseMatrix<ValueType> submatrix = this->A->selectRowsFromRowGroups(this->choicesHint.get(), true);
+            if (this->hasInitialScheduler()) {
+                // Resolve the nondeterminism according to the initial scheduler.
+                storm::storage::SparseMatrix<ValueType> submatrix = this->A->selectRowsFromRowGroups(this->getInitialScheduler(), true);
                 submatrix.convertToEquationSystem();
-                storm::utility::vector::selectVectorValues<ValueType>(*auxiliaryRowGroupVector, this->choicesHint.get(), this->A->getRowGroupIndices(), b);
+                storm::utility::vector::selectVectorValues<ValueType>(*auxiliaryRowGroupVector, this->getInitialScheduler(), this->A->getRowGroupIndices(), b);
 
                 // Solve the resulting equation system.
                 // Note that the linEqSolver might consider a slightly different interpretation of "equalModuloPrecision". Hence, we iteratively increase its precision.

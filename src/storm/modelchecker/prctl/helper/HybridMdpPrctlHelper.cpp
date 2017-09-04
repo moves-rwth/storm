@@ -72,15 +72,15 @@ namespace storm {
                         // Finally cut away all columns targeting non-maybe states.
                         submatrix *= maybeStatesAdd.swapVariables(model.getRowColumnMetaVariablePairs());
                         
-                        // Create the solution vector.
-                        std::vector<ValueType> x(maybeStates.getNonZeroCount(), storm::utility::zero<ValueType>());
-                        
                         // Translate the symbolic matrix/vector to their explicit representations and solve the equation system.
                         std::pair<storm::storage::SparseMatrix<ValueType>, std::vector<ValueType>> explicitRepresentation = submatrix.toMatrixVector(subvector, std::move(rowGroupSizes), model.getNondeterminismVariables(), odd, odd);
                         
                         // Check for requirements of the solver.
-                        std::vector<storm::solver::MinMaxLinearEquationSolverRequirement> requirements = linearEquationSolverFactory.getRequirements(storm::solver::MinMaxLinearEquationSolverSystemType::UntilProbabilities);
+                        storm::solver::MinMaxLinearEquationSolverRequirements requirements = linearEquationSolverFactory.getRequirements(storm::solver::MinMaxLinearEquationSolverSystemType::UntilProbabilities);
                         STORM_LOG_THROW(requirements.empty(), storm::exceptions::UncheckedRequirementException, "Cannot establish requirements for solver.");
+
+                        // Create the solution vector.
+                        std::vector<ValueType> x(maybeStates.getNonZeroCount(), storm::utility::zero<ValueType>());
                         
                         std::unique_ptr<storm::solver::MinMaxLinearEquationSolver<ValueType>> solver = linearEquationSolverFactory.create(std::move(explicitRepresentation.first));
                         solver->setRequirementsChecked();
@@ -274,7 +274,7 @@ namespace storm {
                         std::pair<storm::storage::SparseMatrix<ValueType>, std::vector<ValueType>> explicitRepresentation = submatrix.toMatrixVector(subvector, std::move(rowGroupSizes), model.getNondeterminismVariables(), odd, odd);
                         
                         // Check for requirements of the solver.
-                        std::vector<storm::solver::MinMaxLinearEquationSolverRequirement> requirements = linearEquationSolverFactory.getRequirements(storm::solver::MinMaxLinearEquationSolverSystemType::ReachabilityRewards);
+                        storm::solver::MinMaxLinearEquationSolverRequirements requirements = linearEquationSolverFactory.getRequirements(storm::solver::MinMaxLinearEquationSolverSystemType::ReachabilityRewards);
                         STORM_LOG_THROW(requirements.empty(), storm::exceptions::UncheckedRequirementException, "Cannot establish requirements for solver.");
 
                         // Now solve the resulting equation system.
