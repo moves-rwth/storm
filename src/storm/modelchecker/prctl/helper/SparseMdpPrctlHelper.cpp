@@ -519,7 +519,6 @@ namespace storm {
                 } else {
                     storm::storage::BitVector trueStates(transitionMatrix.getRowGroupCount(), true);
                     if (goal.minimize()) {
-                        STORM_LOG_WARN("Results of reward computation may be too low, because of zero-reward loops.");
                         infinityStates = storm::utility::graph::performProb1E(transitionMatrix, nondeterministicChoiceIndices, backwardTransitions, trueStates, targetStates);
                     } else {
                         infinityStates = storm::utility::graph::performProb1A(transitionMatrix, nondeterministicChoiceIndices, backwardTransitions, trueStates, targetStates);
@@ -566,7 +565,7 @@ namespace storm {
                         }
                         
                         // Obtain proper hint information either from the provided hint or from requirements of the solver.
-                        SparseMdpHintType<ValueType> hintInformation = computeHints(storm::solver::MinMaxLinearEquationSolverSystemType::ReachabilityRewards, hint, goal.direction(), transitionMatrix, backwardTransitions, maybeStates, storm::storage::BitVector(transitionMatrix.getRowGroupCount(), true), targetStates, minMaxLinearEquationSolverFactory, selectedChoices);
+                        SparseMdpHintType<ValueType> hintInformation = computeHints(storm::solver::MinMaxLinearEquationSolverSystemType::ReachabilityRewards, hint, goal.direction(), transitionMatrix, backwardTransitions, maybeStates, ~targetStates, targetStates, minMaxLinearEquationSolverFactory, selectedChoices);
                         
                         // Now compute the results for the maybe states.
                         MaybeStateResult<ValueType> resultForMaybeStates = computeValuesForMaybeStates(goal, submatrix, b, produceScheduler, minMaxLinearEquationSolverFactory, hintInformation);

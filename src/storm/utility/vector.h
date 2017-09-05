@@ -623,24 +623,36 @@ namespace storm {
                                       }
 
                                       for (; targetIt != targetIte; ++targetIt, ++rowGroupingIt) {
-                                          *targetIt = *sourceIt;
-                                          ++sourceIt;
-                                          localChoice = 1;
-                                          if (choices != nullptr) {
-                                              *choiceIt = 0;
-                                          }
-                                          
-                                          for (sourceIte = source.begin() + *(rowGroupingIt + 1); sourceIt != sourceIte; ++sourceIt, ++localChoice) {
-                                              if (filter(*sourceIt, *targetIt)) {
-                                                  *targetIt = *sourceIt;
-                                                  if (choices != nullptr) {
-                                                      *choiceIt = localChoice;
+                                          // Only do work if the row group is not empty.
+                                          if (*rowGroupingIt != *(rowGroupingIt + 1)) {
+                                              *targetIt = *sourceIt;
+                                              ++sourceIt;
+                                              localChoice = 1;
+                                              if (choices != nullptr) {
+                                                  *choiceIt = 0;
+                                              }
+                                              
+                                              for (sourceIte = source.begin() + *(rowGroupingIt + 1); sourceIt != sourceIte; ++sourceIt, ++localChoice) {
+                                                  if (filter(*sourceIt, *targetIt)) {
+                                                      *targetIt = *sourceIt;
+                                                      if (choices != nullptr) {
+                                                          *choiceIt = localChoice;
+                                                      }
                                                   }
                                               }
-                                          }
-                                          
-                                          if (choices != nullptr) {
-                                              ++choiceIt;
+                                              
+                                              if (choices != nullptr) {
+                                                  ++choiceIt;
+                                              }
+                                          } else {
+                                              // Compensate for the 'wrong' move forward in the loop header.
+                                              --targetIt;
+
+                                              // Record dummy choice.
+                                              if (choices != nullptr) {
+                                                  *choiceIt = 0;
+                                                  ++choiceIt;
+                                              }
                                           }
                                       }
                                   });
@@ -657,27 +669,39 @@ namespace storm {
                 }
                 
                 for (; targetIt != targetIte; ++targetIt, ++rowGroupingIt) {
-                    *targetIt = *sourceIt;
-                    ++sourceIt;
-                    localChoice = 1;
-                    if (choices != nullptr) {
-                        *choiceIt = 0;
-                    }
-                    for (sourceIte = source.begin() + *(rowGroupingIt + 1); sourceIt != sourceIte; ++sourceIt, ++localChoice) {
-                        if (filter(*sourceIt, *targetIt)) {
-                            *targetIt = *sourceIt;
-                            if (choices != nullptr) {
-                                *choiceIt = localChoice;
+                    // Only do work if the row group is not empty.
+                    if (*rowGroupingIt != *(rowGroupingIt + 1)) {
+                        *targetIt = *sourceIt;
+                        ++sourceIt;
+                        localChoice = 1;
+                        if (choices != nullptr) {
+                            *choiceIt = 0;
+                        }
+                        for (sourceIte = source.begin() + *(rowGroupingIt + 1); sourceIt != sourceIte; ++sourceIt, ++localChoice) {
+                            if (filter(*sourceIt, *targetIt)) {
+                                *targetIt = *sourceIt;
+                                if (choices != nullptr) {
+                                    *choiceIt = localChoice;
+                                }
                             }
                         }
-                    }
-                    if (choices != nullptr) {
-                        ++choiceIt;
+                        if (choices != nullptr) {
+                            ++choiceIt;
+                        }
+                    } else {
+                        // Compensate for the 'wrong' move forward in the loop header.
+                        --targetIt;
+                        
+                        // Record dummy choice.
+                        if (choices != nullptr) {
+                            *choiceIt = 0;
+                            ++choiceIt;
+                        }
                     }
                 }
 #endif
             }
-                        
+            
             /*!
              * Reduces the given source vector by selecting the smallest element out of each row group.
              *
