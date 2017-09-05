@@ -285,22 +285,27 @@ namespace storm {
             
             template <typename ValueType>
             void eliminateTargetStatesFromExplicitRepresentation(std::pair<storm::storage::SparseMatrix<ValueType>, std::vector<ValueType>>& explicitRepresentation, std::vector<uint64_t>& scheduler, storm::storage::BitVector const& properMaybeStates) {
-                // Treat the matrix first.
-                explicitRepresentation.first = explicitRepresentation.first.getSubmatrix(true, properMaybeStates, properMaybeStates);
-                
-                // Now eliminate the superfluous entries from the rhs vector and the scheduler.
+                // Eliminate the superfluous entries from the rhs vector and the scheduler.
                 uint64_t position = 0;
                 for (auto state : properMaybeStates) {
-                    explicitRepresentation.second[position] = explicitRepresentation.second[state];
+                    for (uint64_t row = explicitRepresentation.first.getRowGroupIndices()[state]; row < explicitRepresentation.first.getRowGroupIndices()[state + 1]; ++row) {
+                        explicitRepresentation.second[position] = explicitRepresentation.second[row];
+                        position++;
+                    }
+                }
+                explicitRepresentation.second.resize(position);
+                explicitRepresentation.second.shrink_to_fit();
+                
+                position = 0;
+                for (auto state : properMaybeStates) {
                     scheduler[position] = scheduler[state];
                     position++;
                 }
-
-                uint64_t numberOfProperMaybeStates = properMaybeStates.getNumberOfSetBits();
-                explicitRepresentation.second.resize(numberOfProperMaybeStates);
-                explicitRepresentation.second.shrink_to_fit();
-                scheduler.resize(numberOfProperMaybeStates);
+                scheduler.resize(properMaybeStates.getNumberOfSetBits());
                 scheduler.shrink_to_fit();
+
+                // Treat the matrix.
+                explicitRepresentation.first = explicitRepresentation.first.getSubmatrix(true, properMaybeStates, properMaybeStates);
             }
             
             template <typename ValueType>
@@ -312,6 +317,8 @@ namespace storm {
                     expandedResult[state] = x[position];
                     position++;
                 }
+                
+                return expandedResult;
             }
             
             template<storm::dd::DdType DdType, typename ValueType>
@@ -324,7 +331,6 @@ namespace storm {
                 storm::dd::Bdd<DdType> infinityStates;
                 storm::dd::Bdd<DdType> transitionMatrixBdd = transitionMatrix.notZero();
                 if (dir == OptimizationDirection::Minimize) {
-                    STORM_LOG_WARN("Results of reward computation may be too low, because of zero-reward loops.");
                     infinityStates = storm::utility::graph::performProb1E(model, transitionMatrixBdd, model.getReachableStates(), targetStates, storm::utility::graph::performProbGreater0E(model, transitionMatrixBdd, model.getReachableStates(), targetStates));
                 } else {
                     infinityStates = storm::utility::graph::performProb1A(model, transitionMatrixBdd, targetStates, storm::utility::graph::performProbGreater0A(model, transitionMatrixBdd, model.getReachableStates(), targetStates));
@@ -345,7 +351,7 @@ namespace storm {
                     // If there are maybe states, we need to solve an equation system.
                     if (!maybeStates.isZero()) {
                         // Check for requirements of the solver this early so we can adapt the maybe states accordingly.
-                        storm::solver::MinMaxLinearEquationSolverRequirements requirements = linearEquationSolverFactory.getRequirements(storm::solver::MinMaxLinearEquationSolverSystemType::ReachabilityRewards);
+                        storm::solver::MinMaxLinearEquationSolverRequirements requirements = linearEquationSolverFactory.getRequirements(storm::solver::MinMaxLinearEquationSolverSystemType::ReachabilityRewards, dir);
                         bool requireInitialScheduler = false;
                         if (!requirements.empty()) {
                             if (requirements.requires(storm::solver::MinMaxLinearEquationSolverRequirements::Element::ValidInitialScheduler)) {
@@ -403,6 +409,9 @@ namespace storm {
                             // of the scheduler, we have to get rid of them now.
                             eliminateTargetStatesFromExplicitRepresentation(explicitRepresentation, initialScheduler.get(), properMaybeStates.get());
                         }
+
+                        // Create the solution vector.
+                        std::vector<ValueType> x(explicitRepresentation.first.getRowGroupCount(), storm::utility::zero<ValueType>());
                         
                         // Now solve the resulting equation system.
                         std::unique_ptr<storm::solver::MinMaxLinearEquationSolver<ValueType>> solver = linearEquationSolverFactory.create(std::move(explicitRepresentation.first));
@@ -412,9 +421,6 @@ namespace storm {
                             solver->setInitialScheduler(std::move(initialScheduler.get()));
                         }
                         
-                        // Create the solution vector.
-                        std::vector<ValueType> x(explicitRepresentation.first.getRowGroupCount(), storm::utility::zero<ValueType>());
-
                         solver->setRequirementsChecked();
                         solver->solveEquations(dir, x, explicitRepresentation.second);
                         
