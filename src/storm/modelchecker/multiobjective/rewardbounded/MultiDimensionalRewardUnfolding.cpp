@@ -484,8 +484,8 @@ namespace storm {
                 productToMemoryStateMap.resize(numProductStates, std::numeric_limits<uint64_t>::max());
                 for (uint64_t modelState = 0; modelState < numModelStates; ++modelState) {
                     for (uint64_t memoryState = 0; memoryState < numMemoryStates; ++memoryState) {
-                        uint64_t productState = productBuilder.getResultState(modelState, memoryState);
-                        if (productState < numProductStates) {
+                        if (productBuilder.isStateReachable(modelState, memoryState)) {
+                            uint64_t productState = productBuilder.getResultState(modelState, memoryState);
                             modelMemoryToProductStateMap[modelState * numMemoryStates + memoryState] = productState;
                             productToModelStateMap[productState] = modelState;
                             productToMemoryStateMap[productState] = memoryState;
