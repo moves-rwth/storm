@@ -36,7 +36,7 @@ namespace storm {
                     std::vector<SolutionType> stepSolutions;
                     std::vector<std::vector<ValueType>> objectiveRewards;
                     std::vector<storm::storage::BitVector> objectiveRewardFilter;
-                    
+                    storm::storage::BitVector relevantStates;
                 };
                 
                 /*
@@ -111,6 +111,7 @@ namespace storm {
                 };
                 
                 void setCurrentEpochClass(Epoch const& epoch);
+                storm::storage::BitVector computeRelevantProductStatesForEpochClass(Epoch const& epoch);
             
                 void initialize();
                 

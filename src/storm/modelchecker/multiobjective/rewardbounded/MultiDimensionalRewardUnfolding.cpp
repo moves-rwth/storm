@@ -280,10 +280,15 @@ namespace storm {
                 }
                 
                 storm::storage::BitVector allProductStates(memoryProduct.getProduct().getNumberOfStates(), true);
-                // We assume that there is no end component in which reward is earned
+                
+                // Get the relevant states for this epoch. These are all states
+                storm::storage::BitVector productRelevantStates = computeRelevantProductStatesForEpochClass(epoch);
+                // The epoch model only needs to consider the states that are reachable from a relevant state
+                storm::storage::BitVector consideredStates = storm::utility::graph::getReachableStates(epochModel.epochMatrix, productRelevantStates, allProductStates, ~allProductStates);
+                
+                // We assume that there is no end component in which objective reward is earned
                 STORM_LOG_ASSERT(!storm::utility::graph::checkIfECWithChoiceExists(epochModel.epochMatrix, epochModel.epochMatrix.transpose(true), allProductStates, ~zeroObjRewardChoices & ~stepChoices), "There is a scheduler that yields infinite reward for one objective. This case should be excluded");
-                // TODO: unselect unreachable states
-                ecElimResult = storm::transformer::EndComponentEliminator<ValueType>::transform(epochModel.epochMatrix, allProductStates, zeroObjRewardChoices & ~stepChoices, allProductStates);
+                ecElimResult = storm::transformer::EndComponentEliminator<ValueType>::transform(epochModel.epochMatrix, consideredStates, zeroObjRewardChoices & ~stepChoices, consideredStates);
                 epochModel.epochMatrix = std::move(ecElimResult.matrix);
                 
                 epochModel.stepChoices = storm::storage::BitVector(epochModel.epochMatrix.getRowCount(), false);
@@ -292,7 +297,7 @@ namespace storm {
                         epochModel.stepChoices.set(choice, true);
                     }
                 }
-                STORM_LOG_ASSERT(epochModel.stepChoices.getNumberOfSetBits() == stepChoices.getNumberOfSetBits(), "The number of choices leading outside of the epoch does not match for the reduced and unreduced epochMatrix");
+                //STORM_LOG_ASSERT(epochModel.stepChoices.getNumberOfSetBits() == stepChoices.getNumberOfSetBits(), "The number of choices leading outside of the epoch does not match for the reduced and unreduced epochMatrix");
                 
                 epochModel.objectiveRewards.clear();
                 for (auto const& productObjRew : productObjectiveRewards) {
@@ -303,7 +308,58 @@ namespace storm {
                     }
                     epochModel.objectiveRewards.push_back(std::move(reducedModelObjRewards));
                 }
+                
+                epochModel.relevantStates = storm::storage::BitVector(epochModel.epochMatrix.getRowGroupCount(), false);
+                for (auto const& productState : productRelevantStates) {
+                    epochModel.relevantStates.set(ecElimResult.oldToNewStateMapping[productState], true);
+                }
+                
                 swSetEpochClass.stop();
+            }
+            
+            template<typename ValueType>
+            storm::storage::BitVector MultiDimensionalRewardUnfolding<ValueType>::computeRelevantProductStatesForEpochClass(Epoch const& epoch) {
+                storm::storage::BitVector result(memoryProduct.getProduct().getNumberOfStates(), false);
+                result.set(*memoryProduct.getProduct().getInitialStates().begin(), true);
+                
+                for (uint64_t choice = 0; choice < memoryProduct.getProduct().getNumberOfChoices(); ++choice) {
+                    auto const& choiceStep = memoryProduct.getSteps()[choice];
+                    if (choiceStep) {
+                        storm::storage::BitVector objectiveSet(objectives.size(), false);
+                        for (uint64_t dim = 0; dim < epoch.size(); ++dim) {
+                            if (epoch[dim] < 0 && choiceStep.get()[dim] > 0) {
+                                objectiveSet.set(subObjectives[dim].second);
+                            }
+                        }
+                        
+                        if (objectiveSet.empty()) {
+                            for (auto const& choiceSuccessor : memoryProduct.getProduct().getTransitionMatrix().getRow(choice)) {
+                                result.set(choiceSuccessor.getColumn(), true);
+                            }
+                        } else {
+                            storm::storage::BitVector objectiveSubSet(objectiveSet.getNumberOfSetBits(), false);
+                            do {
+                                for (auto const& choiceSuccessor : memoryProduct.getProduct().getTransitionMatrix().getRow(choice)) {
+                                    uint64_t modelState = memoryProduct.getModelState(choiceSuccessor.getColumn());
+                                    uint64_t memoryState = memoryProduct.getMemoryState(choiceSuccessor.getColumn());
+                                    storm::storage::BitVector memoryStatePrimeBv = memoryProduct.convertMemoryState(memoryState);
+                                    uint64_t i = 0;
+                                    for (auto const& objIndex : objectiveSet) {
+                                        if (objectiveSubSet.get(i)) {
+                                            memoryStatePrimeBv &= ~objectiveDimensions[objIndex];
+                                        }
+                                        ++i;
+                                    }
+                                    result.set(memoryProduct.getProductState(modelState, memoryProduct.convertMemoryState(memoryStatePrimeBv)), true);
+                                }
+                                
+                                objectiveSubSet.increment();
+                            } while (!objectiveSubSet.empty());
+                        }
+                    }
+                }
+                
+                return result;
             }
             
             template<typename ValueType>
@@ -470,9 +526,7 @@ namespace storm {
                 storm::storage::SparseModelMemoryProduct<ValueType> productBuilder(memory.product(model));
                 
                 setReachableStates(productBuilder, originalModelSteps, objectiveDimensions);
-                sw1.stop();
                 product = productBuilder.build()->template as<storm::models::sparse::Mdp<ValueType>>();
-                sw2.stop();
                 
                 uint64_t numModelStates = productBuilder.getOriginalModel().getNumberOfStates();
                 uint64_t numMemoryStates = productBuilder.getMemory().getNumberOfStates();
