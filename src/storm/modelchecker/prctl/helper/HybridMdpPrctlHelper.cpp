@@ -355,7 +355,7 @@ namespace storm {
                         bool requireInitialScheduler = false;
                         if (!requirements.empty()) {
                             if (requirements.requires(storm::solver::MinMaxLinearEquationSolverRequirements::Element::ValidInitialScheduler)) {
-                                STORM_LOG_DEBUG("Computing valid scheduler hint, because the solver requires it.");
+                                STORM_LOG_DEBUG("Computing valid scheduler, because the solver requires it.");
                                 requireInitialScheduler = true;
                                 requirements.set(storm::solver::MinMaxLinearEquationSolverRequirements::Element::ValidInitialScheduler, false);
                             }

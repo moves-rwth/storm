@@ -12,6 +12,7 @@
 #include "storm/storage/sparse/StateType.h"
 #include "storm/storage/Scheduler.h"
 #include "storm/solver/OptimizationDirection.h"
+#include "storm/solver/MinMaxLinearEquationSolverSystemType.h"
 #include "storm/solver/MinMaxLinearEquationSolverRequirements.h"
 
 #include "storm/exceptions/InvalidSettingsException.h"
@@ -23,12 +24,6 @@ namespace storm {
     }
     
     namespace solver {
-        
-        enum class MinMaxLinearEquationSolverSystemType {
-            UntilProbabilities,
-            ReachabilityRewards,
-            StochasticShortestPath
-        };
         
         /*!
          * A class representing the interface that all min-max linear equation solvers shall implement.

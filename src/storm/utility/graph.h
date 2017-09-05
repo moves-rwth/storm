@@ -448,6 +448,12 @@ namespace storm {
             storm::dd::Bdd<Type> performProbGreater0E(storm::models::symbolic::NondeterministicModel<Type, ValueType> const& model, storm::dd::Bdd<Type> const& transitionMatrix, storm::dd::Bdd<Type> const& phiStates, storm::dd::Bdd<Type> const& psiStates);
             
             /*!
+             * Computes a scheduler realizing a probability greater zero of satisfying phi until psi for all such states.
+             */
+            template <storm::dd::DdType Type, typename ValueType>
+            storm::dd::Bdd<Type> computeSchedulerProbGreater0E(storm::models::symbolic::NondeterministicModel<Type, ValueType> const& model, storm::dd::Bdd<Type> const& transitionMatrix, storm::dd::Bdd<Type> const& phiStates, storm::dd::Bdd<Type> const& psiStates);
+            
+            /*!
              * Computes the set of states for which there does not exist a scheduler that achieves a probability greater
              * than zero of satisfying phi until psi.
              *

@@ -4,9 +4,14 @@
 #include <memory>
 #include <set>
 #include <vector>
-#include <boost/variant.hpp>
+#include <boost/optional.hpp>
+
+#include "storm/solver/OptimizationDirection.h"
 
 #include "storm/solver/SymbolicLinearEquationSolver.h"
+
+#include "storm/solver/MinMaxLinearEquationSolverSystemType.h"
+#include "storm/solver/MinMaxLinearEquationSolverRequirements.h"
 
 #include "storm/storage/expressions/Variable.h"
 #include "storm/storage/dd/DdType.h"
@@ -54,6 +59,8 @@ namespace storm {
         template<storm::dd::DdType DdType, typename ValueType>
         class SymbolicMinMaxLinearEquationSolver {
         public:
+            SymbolicMinMaxLinearEquationSolver(SymbolicMinMaxLinearEquationSolverSettings<ValueType> const& settings = SymbolicMinMaxLinearEquationSolverSettings<ValueType>());
+            
             /*!
              * Constructs a symbolic min/max linear equation solver with the given meta variable sets and pairs.
              *
@@ -75,36 +82,65 @@ namespace storm {
              * The solution of the set of linear equations will be written to the vector x. Note that the matrix A has
              * to be given upon construction time of the solver object.
              *
-             * @param minimize If set, all the value of a group of rows is the taken as the minimum over all rows and as
-             * the maximum otherwise.
+             * @param dir Determines the direction of the optimization.
              * @param x The initual guess for the solution vector. Its length must be equal to the number of row
              * groups of A.
              * @param b The right-hand side of the equation system. Its length must be equal to the number of row groups
              * of A.
              * @return The solution of the equation system.
              */
-            virtual storm::dd::Add<DdType, ValueType> solveEquations(bool minimize, storm::dd::Add<DdType, ValueType> const& x, storm::dd::Add<DdType, ValueType> const& b) const;
+            virtual storm::dd::Add<DdType, ValueType> solveEquations(storm::solver::OptimizationDirection const& dir, storm::dd::Add<DdType, ValueType> const& x, storm::dd::Add<DdType, ValueType> const& b) const;
             
             /*!
              * Performs repeated matrix-vector multiplication, using x[0] = x and x[i + 1] = A*x[i] + b. After
              * performing the necessary multiplications, the result is written to the input vector x. Note that the
              * matrix A has to be given upon construction time of the solver object.
              *
-             * @param minimize If set, all the value of a group of rows is the taken as the minimum over all rows and as
-             * the maximum otherwise.
+             * @param dir Determines the direction of the optimization.
              * @param x The initial vector with which to perform matrix-vector multiplication. Its length must be equal
              * to the number of row groups of A.
              * @param b If non-null, this vector is added after each multiplication. If given, its length must be equal
              * to the number of row groups of A.
              * @return The solution of the equation system.
              */
-            virtual storm::dd::Add<DdType, ValueType> multiply(bool minimize, storm::dd::Add<DdType, ValueType> const& x, storm::dd::Add<DdType, ValueType> const* b = nullptr, uint_fast64_t n = 1) const;
+            virtual storm::dd::Add<DdType, ValueType> multiply(storm::solver::OptimizationDirection const& dir, storm::dd::Add<DdType, ValueType> const& x, storm::dd::Add<DdType, ValueType> const* b = nullptr, uint_fast64_t n = 1) const;
 
             SymbolicMinMaxLinearEquationSolverSettings<ValueType> const& getSettings() const;
             
+            /*!
+             * Sets an initial scheduler that is required by some solvers (see requirements).
+             */
+            void setInitialScheduler(storm::dd::Bdd<DdType> const& scheduler);
+            
+            /*!
+             * Retrieves the initial scheduler (if there is any).
+             */
+            storm::dd::Bdd<DdType> const& getInitialScheduler() const;
+            
+            /*!
+             * Retrieves whether an initial scheduler was set.
+             */
+            bool hasInitialScheduler() const;
+            
+            /*!
+             * Retrieves the requirements of the solver.
+             */
+            virtual MinMaxLinearEquationSolverRequirements getRequirements(MinMaxLinearEquationSolverSystemType const& equationSystemType, boost::optional<storm::solver::OptimizationDirection> const& direction = boost::none) const;
+            
+            /*!
+             * Notifies the solver that the requirements for solving equations have been checked. If this has not been
+             * done before solving equations, the solver might issue a warning, perform the checks itself or even fail.
+             */
+            void setRequirementsChecked(bool value = true);
+            
+            /*!
+             * Retrieves whether the solver is aware that the requirements were checked.
+             */
+            bool isRequirementsCheckedSet() const;
+            
         private:
-            storm::dd::Add<DdType, ValueType> solveEquationsValueIteration(bool minimize, storm::dd::Add<DdType, ValueType> const& x, storm::dd::Add<DdType, ValueType> const& b) const;
-            storm::dd::Add<DdType, ValueType> solveEquationsPolicyIteration(bool minimize, storm::dd::Add<DdType, ValueType> const& x, storm::dd::Add<DdType, ValueType> const& b) const;
+            storm::dd::Add<DdType, ValueType> solveEquationsValueIteration(storm::solver::OptimizationDirection const& dir, storm::dd::Add<DdType, ValueType> const& x, storm::dd::Add<DdType, ValueType> const& b) const;
+            storm::dd::Add<DdType, ValueType> solveEquationsPolicyIteration(storm::solver::OptimizationDirection const& dir, storm::dd::Add<DdType, ValueType> const& x, storm::dd::Add<DdType, ValueType> const& b) const;
 
         protected:
             // The matrix defining the coefficients of the linear equation system.
@@ -133,23 +169,40 @@ namespace storm {
             
             // The settings to use.
             SymbolicMinMaxLinearEquationSolverSettings<ValueType> settings;
+            
+            // A flag indicating whether the requirements were checked.
+            bool requirementsChecked;
+            
+            // A scheduler that specifies with which schedulers to start.
+            boost::optional<storm::dd::Bdd<DdType>> initialScheduler;
         };
         
         template<storm::dd::DdType DdType, typename ValueType>
         class SymbolicMinMaxLinearEquationSolverFactory {
         public:
             virtual std::unique_ptr<storm::solver::SymbolicMinMaxLinearEquationSolver<DdType, ValueType>> create(storm::dd::Add<DdType, ValueType> const& A, storm::dd::Bdd<DdType> const& allRows, storm::dd::Bdd<DdType> const& illegalMask, std::set<storm::expressions::Variable> const& rowMetaVariables, std::set<storm::expressions::Variable> const& columnMetaVariables, std::set<storm::expressions::Variable> const& choiceVariables, std::vector<std::pair<storm::expressions::Variable, storm::expressions::Variable>> const& rowColumnMetaVariablePairs) const = 0;
+            
+            /*!
+             * Retrieves the requirements of the solver that would be created when calling create() right now. The
+             * requirements are guaranteed to be ordered according to their appearance in the SolverRequirement type.
+             */
+            MinMaxLinearEquationSolverRequirements getRequirements(MinMaxLinearEquationSolverSystemType const& equationSystemType, boost::optional<storm::solver::OptimizationDirection> const& direction = boost::none) const;
+            
+        private:
+            virtual std::unique_ptr<storm::solver::SymbolicMinMaxLinearEquationSolver<DdType, ValueType>> create() const = 0;
         };
         
         template<storm::dd::DdType DdType, typename ValueType>
         class SymbolicGeneralMinMaxLinearEquationSolverFactory : public SymbolicMinMaxLinearEquationSolverFactory<DdType, ValueType> {
         public:
-            virtual std::unique_ptr<storm::solver::SymbolicMinMaxLinearEquationSolver<DdType, ValueType>> create(storm::dd::Add<DdType, ValueType> const& A, storm::dd::Bdd<DdType> const& allRows, storm::dd::Bdd<DdType> const& illegalMask, std::set<storm::expressions::Variable> const& rowMetaVariables, std::set<storm::expressions::Variable> const& columnMetaVariables, std::set<storm::expressions::Variable> const& choiceVariables, std::vector<std::pair<storm::expressions::Variable, storm::expressions::Variable>> const& rowColumnMetaVariablePairs) const;
+            virtual std::unique_ptr<storm::solver::SymbolicMinMaxLinearEquationSolver<DdType, ValueType>> create(storm::dd::Add<DdType, ValueType> const& A, storm::dd::Bdd<DdType> const& allRows, storm::dd::Bdd<DdType> const& illegalMask, std::set<storm::expressions::Variable> const& rowMetaVariables, std::set<storm::expressions::Variable> const& columnMetaVariables, std::set<storm::expressions::Variable> const& choiceVariables, std::vector<std::pair<storm::expressions::Variable, storm::expressions::Variable>> const& rowColumnMetaVariablePairs) const override;
             
             SymbolicMinMaxLinearEquationSolverSettings<ValueType>& getSettings();
             SymbolicMinMaxLinearEquationSolverSettings<ValueType> const& getSettings() const;
             
         private:
+            virtual std::unique_ptr<storm::solver::SymbolicMinMaxLinearEquationSolver<DdType, ValueType>> create() const override;
+            
             SymbolicMinMaxLinearEquationSolverSettings<ValueType> settings;
         };
         

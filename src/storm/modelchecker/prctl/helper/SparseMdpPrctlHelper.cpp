@@ -205,7 +205,7 @@ namespace storm {
                 storm::solver::MinMaxLinearEquationSolverRequirements requirements = minMaxLinearEquationSolverFactory.getRequirements(type, dir);
                 if (!(hint.isExplicitModelCheckerHint() && hint.asExplicitModelCheckerHint<ValueType>().getNoEndComponentsInMaybeStates()) && !requirements.empty()) {
                     if (requirements.requires(storm::solver::MinMaxLinearEquationSolverRequirements::Element::ValidInitialScheduler)) {
-                        STORM_LOG_DEBUG("Computing valid scheduler hint, because the solver requires it.");
+                        STORM_LOG_DEBUG("Computing valid scheduler, because the solver requires it.");
                         result.schedulerHint = computeValidSchedulerHint(type, transitionMatrix, backwardTransitions, maybeStates, phiStates, targetStates);
                         requirements.set(storm::solver::MinMaxLinearEquationSolverRequirements::Element::ValidInitialScheduler, false);
                     }
