@@ -79,7 +79,7 @@ namespace storm {
                 class MemoryProduct {
                 public:
                     MemoryProduct() = default;
-                    MemoryProduct(storm::storage::SparseModelMemoryProduct<ValueType>& productBuilder, std::vector<std::vector<uint64_t>> const& originalModelSteps, std::vector<boost::optional<std::string>> const& memoryLabels);
+                    MemoryProduct(storm::models::sparse::Mdp<ValueType> const& model, storm::storage::MemoryStructure const& memory, std::vector<storm::storage::BitVector>&& memoryStateMap, std::vector<std::vector<uint64_t>> const& originalModelSteps, std::vector<storm::storage::BitVector> const& objectiveDimensions);
                     
                     storm::models::sparse::Mdp<ValueType> const& getProduct() const;
                     std::vector<boost::optional<Epoch>> const& getSteps() const;
@@ -95,6 +95,10 @@ namespace storm {
                     uint64_t getProductStateFromChoice(uint64_t const& productChoice) const;
                 
                 private:
+                    
+                    void setReachableStates(storm::storage::SparseModelMemoryProduct<ValueType>& productBuilder, std::vector<std::vector<uint64_t>> const& originalModelSteps, std::vector<storm::storage::BitVector> const& objectiveDimensions) const;
+
+                    
                     std::shared_ptr<storm::models::sparse::Mdp<ValueType>> product;
                     std::vector<boost::optional<Epoch>> steps;
                     
@@ -115,6 +119,7 @@ namespace storm {
                 
                 void initializeMemoryProduct(std::vector<std::vector<uint64_t>> const& epochSteps);
                 storm::storage::MemoryStructure computeMemoryStructure() const;
+                std::vector<storm::storage::BitVector> computeMemoryStateMap(storm::storage::MemoryStructure const& memory) const;
                 std::vector<std::vector<ValueType>> computeObjectiveRewardsForProduct(Epoch const& epoch) const;
                 
                 

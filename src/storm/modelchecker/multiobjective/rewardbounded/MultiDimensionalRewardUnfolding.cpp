@@ -113,48 +113,16 @@ namespace storm {
             template<typename ValueType>
             void MultiDimensionalRewardUnfolding<ValueType>::initializeMemoryProduct(std::vector<std::vector<uint64_t>> const& epochSteps) {
                 
-                // build the model x memory product
+                // build the memory structure
                 auto memoryStructure = computeMemoryStructure();
                 
-                storm::storage::SparseModelMemoryProduct<ValueType> productBuilder(memoryStructure.product(model));
-                
-                storm::storage::BitVector memoryState(subObjectives.size(), false);
-                uint64_t memoryStateAsInt = memoryStructure.getNumberOfStates();
-                do {
-                    --memoryStateAsInt;
-                    storm::storage::BitVector stepChoices(model.getNumberOfChoices(), false);
-                    for (uint64_t objIndex = 0; objIndex < objectives.size(); ++objIndex) {
-                        auto const& subObjectives = objectiveDimensions[objIndex];
-                        if (subObjectives.isDisjointFrom(memoryState)) {
-                            for (auto const& subObj : subObjectives) {
-                                stepChoices |= storm::utility::vector::filterGreaterZero(epochSteps[subObj]);
-                            }
-                        }
-                    }
-                    
-                    storm::storage::BitVector stepChoiceSuccessors(model.getNumberOfStates(), false);
-                    for (auto const& choice : stepChoices) {
-                        for (auto const& successor : model.getTransitionMatrix().getRow(choice)) {
-                            stepChoiceSuccessors.set(successor.getColumn(), true);
-                        }
-                    }
-                    
-                    for (auto const& modelState : stepChoiceSuccessors) {
-                        productBuilder.addReachableState(modelState, memoryStateAsInt);
-                    }
-                    
-                    memoryState.increment();
-                } while (!memoryState.empty());
-                assert(memoryStateAsInt == 0);
-                
-                
-                
-                
-                
-                memoryProduct = MemoryProduct(productBuilder, epochSteps, memoryLabels);
+                // build a mapping between the different representations of memory states
+                auto memoryStateMap = computeMemoryStateMap(memoryStructure);
+
+                memoryProduct = MemoryProduct(model, memoryStructure, std::move(memoryStateMap), epochSteps, objectiveDimensions);
                 
             }
-
+            
             template<typename ValueType>
             typename MultiDimensionalRewardUnfolding<ValueType>::Epoch MultiDimensionalRewardUnfolding<ValueType>::getStartEpoch() {
                 Epoch startEpoch;
@@ -480,7 +448,29 @@ namespace storm {
             }
             
             template<typename ValueType>
-            MultiDimensionalRewardUnfolding<ValueType>::MemoryProduct::MemoryProduct(storm::storage::SparseModelMemoryProduct<ValueType>& productBuilder, std::vector<std::vector<uint64_t>> const& originalModelSteps, std::vector<boost::optional<std::string>> const& memoryLabels) {
+            std::vector<storm::storage::BitVector> MultiDimensionalRewardUnfolding<ValueType>::computeMemoryStateMap(storm::storage::MemoryStructure const& memory) const {
+                // Compute a mapping between the different representations of memory states
+                std::vector<storm::storage::BitVector> result;
+                result.reserve(memory.getNumberOfStates());
+                for (uint64_t memState = 0; memState < memory.getNumberOfStates(); ++memState) {
+                    storm::storage::BitVector relevantSubObjectives(memoryLabels.size(), false);
+                    std::set<std::string> stateLabels = memory.getStateLabeling().getLabelsOfState(memState);
+                    for (uint64_t dim = 0; dim < memoryLabels.size(); ++dim) {
+                        if (memoryLabels[dim] && stateLabels.find(memoryLabels[dim].get()) != stateLabels.end()) {
+                            relevantSubObjectives.set(dim, true);
+                        }
+                    }
+                    result.push_back(std::move(relevantSubObjectives));
+                }
+                return result;
+            }
+
+            template<typename ValueType>
+            MultiDimensionalRewardUnfolding<ValueType>::MemoryProduct::MemoryProduct(storm::models::sparse::Mdp<ValueType> const& model, storm::storage::MemoryStructure const& memory, std::vector<storm::storage::BitVector>&& memoryStateMap, std::vector<std::vector<uint64_t>> const& originalModelSteps, std::vector<storm::storage::BitVector> const& objectiveDimensions) : memoryStateMap(std::move(memoryStateMap)) {
+                
+                storm::storage::SparseModelMemoryProduct<ValueType> productBuilder(memory.product(model));
+                
+                setReachableStates(productBuilder, originalModelSteps, objectiveDimensions);
                 
                 product = productBuilder.build()->template as<storm::models::sparse::Mdp<ValueType>>();
                 
@@ -512,18 +502,6 @@ namespace storm {
                     }
                 }
                 
-                // Compute a mapping between the different representations of memory states
-                for (uint64_t memState = 0; memState < numMemoryStates; ++memState) {
-                    storm::storage::BitVector relevantSubObjectives(memoryLabels.size(), false);
-                    std::set<std::string> stateLabels = productBuilder.getMemory().getStateLabeling().getLabelsOfState(memState);
-                    for (uint64_t dim = 0; dim < memoryLabels.size(); ++dim) {
-                        if (memoryLabels[dim] && stateLabels.find(memoryLabels[dim].get()) != stateLabels.end()) {
-                            relevantSubObjectives.set(dim, true);
-                        }
-                    }
-                    memoryStateMap.push_back(std::move(relevantSubObjectives));
-                }
-                
                 // Compute the epoch steps for the product
                 steps.resize(getProduct().getNumberOfChoices());
                 for (uint64_t modelState = 0; modelState < numModelStates; ++modelState) {
@@ -550,6 +528,32 @@ namespace storm {
                 }
             }
             
+            template<typename ValueType>
+            void MultiDimensionalRewardUnfolding<ValueType>::MemoryProduct::setReachableStates(storm::storage::SparseModelMemoryProduct<ValueType>& productBuilder, std::vector<std::vector<uint64_t>> const& originalModelSteps, std::vector<storm::storage::BitVector> const& objectiveDimensions) const {
+                for (uint64_t memState = 0; memState < memoryStateMap.size(); ++memState) {
+                    auto const& memStateBv = memoryStateMap[memState];
+                    storm::storage::BitVector stepChoices(productBuilder.getOriginalModel().getTransitionMatrix().getRowCount(), false);
+                    for (auto const& subObjectives : objectiveDimensions) {
+                        if (subObjectives.isDisjointFrom(memStateBv)) {
+                            for (auto const& subObj : subObjectives) {
+                                stepChoices |= storm::utility::vector::filterGreaterZero(originalModelSteps[subObj]);
+                            }
+                        }
+                    }
+                    
+                    storm::storage::BitVector stepChoiceSuccessors(productBuilder.getOriginalModel().getNumberOfStates(), false);
+                    for (auto const& choice : stepChoices) {
+                        for (auto const& successor : productBuilder.getOriginalModel().getTransitionMatrix().getRow(choice)) {
+                            stepChoiceSuccessors.set(successor.getColumn(), true);
+                        }
+                    }
+                    
+                    for (auto const& modelState : stepChoiceSuccessors) {
+                        productBuilder.addReachableState(modelState, memState);
+                    }
+                }
+            }
+
             template<typename ValueType>
             storm::models::sparse::Mdp<ValueType> const& MultiDimensionalRewardUnfolding<ValueType>::MemoryProduct::getProduct() const {
                 return *product;
@@ -689,7 +693,7 @@ namespace storm {
                 
                 return objectiveRewards;
             }
-
+            
             template<typename ValueType>
             typename MultiDimensionalRewardUnfolding<ValueType>::EpochClass MultiDimensionalRewardUnfolding<ValueType>::getClassOfEpoch(Epoch const& epoch) const {
                 // Get a BitVector that is 1 wherever the epoch is non-negative
