@@ -16,17 +16,15 @@
 #include "storm/exceptions/NotSupportedException.h"
 #include "storm/exceptions/UnexpectedException.h"
 
-
 namespace storm {
     namespace modelchecker {
         namespace multiobjective {
             
             template <class SparseMdpModelType>
-            SparseMdpRewardBoundedPcaaWeightVectorChecker<SparseMdpModelType>::SparseMdpRewardBoundedPcaaWeightVectorChecker(SparseMultiObjectivePreprocessorResult<SparseMdpModelType> const& preprocessorResult) : PcaaWeightVectorChecker<SparseMdpModelType>(preprocessorResult.objectives), rewardUnfolding(*preprocessorResult.preprocessedModel, this->objectives, storm::storage::BitVector(preprocessorResult.preprocessedModel->getNumberOfChoices(), true), preprocessorResult.reward0EStates) {
+            SparseMdpRewardBoundedPcaaWeightVectorChecker<SparseMdpModelType>::SparseMdpRewardBoundedPcaaWeightVectorChecker(SparseMultiObjectivePreprocessorResult<SparseMdpModelType> const& preprocessorResult) : PcaaWeightVectorChecker<SparseMdpModelType>(preprocessorResult.objectives), swAll(true), rewardUnfolding(*preprocessorResult.preprocessedModel, this->objectives, storm::storage::BitVector(preprocessorResult.preprocessedModel->getNumberOfChoices(), true), preprocessorResult.reward0EStates) {
                 
                 STORM_LOG_THROW(preprocessorResult.rewardFinitenessType == SparseMultiObjectivePreprocessorResult<SparseMdpModelType>::RewardFinitenessType::AllFinite, storm::exceptions::NotSupportedException, "There is a scheduler that yields infinite reward for one  objective. This is not supported.");
                 STORM_LOG_THROW(preprocessorResult.preprocessedModel->getInitialStates().getNumberOfSetBits() == 1, storm::exceptions::NotSupportedException, "The model has multiple initial states.");
-            
             }
             
             template <class SparseMdpModelType>
@@ -47,6 +45,7 @@ namespace storm {
             template <class SparseMdpModelType>
             void SparseMdpRewardBoundedPcaaWeightVectorChecker<SparseMdpModelType>::computeEpochSolution(typename MultiDimensionalRewardUnfolding<ValueType>::Epoch const& epoch, std::vector<ValueType> const& weightVector) {
                 auto const& epochModel = rewardUnfolding.setCurrentEpoch(epoch);
+                swEqBuilding.start();
                 std::vector<typename MultiDimensionalRewardUnfolding<ValueType>::SolutionType> result(epochModel.epochMatrix.getRowGroupCount());
                 
                 
@@ -74,7 +73,11 @@ namespace storm {
                 minMaxSolver->setTrackScheduler(true);
                 //minMaxSolver->setCachingEnabled(true);
                 std::vector<ValueType> x(result.size(), storm::utility::zero<ValueType>());
+                swEqBuilding.stop();
+                swMinMaxSolving.start();
                 minMaxSolver->solveEquations(x, b);
+                swMinMaxSolving.stop();
+                swEqBuilding.start();
                 for (uint64_t state = 0; state < x.size(); ++state) {
                     result[state].weightedValue = x[state];
                 }
@@ -101,12 +104,16 @@ namespace storm {
                             b[state] += epochModel.stepSolutions[epochModel.stepChoices.getNumberOfSetBitsBeforeIndex(choice)].objectiveValues[objIndex];
                         }
                     }
+                    swEqBuilding.stop();
+                    swLinEqSolving.start();
                     linEqSolver->solveEquations(x, b);
+                    swLinEqSolving.stop();
+                    swEqBuilding.start();
                     for (uint64_t state = 0; state < choices.size(); ++state) {
                         result[state].objectiveValues.push_back(x[state]);
                     }
                 }
-                
+                swEqBuilding.stop();
                 rewardUnfolding.setSolutionForCurrentEpoch(result);
             }
 

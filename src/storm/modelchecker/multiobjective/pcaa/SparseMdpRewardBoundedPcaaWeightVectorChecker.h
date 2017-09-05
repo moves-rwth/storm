@@ -5,6 +5,8 @@
 #include "storm/modelchecker/multiobjective/pcaa/PcaaWeightVectorChecker.h"
 #include "storm/modelchecker/multiobjective/rewardbounded/MultiDimensionalRewardUnfolding.h"
 
+#include "storm/utility/Stopwatch.h"
+
 namespace storm {
     namespace modelchecker {
         namespace multiobjective {
@@ -23,7 +25,17 @@ namespace storm {
             
                 SparseMdpRewardBoundedPcaaWeightVectorChecker(SparseMultiObjectivePreprocessorResult<SparseMdpModelType> const& preprocessorResult);
 
-                virtual ~SparseMdpRewardBoundedPcaaWeightVectorChecker() = default;
+                virtual ~SparseMdpRewardBoundedPcaaWeightVectorChecker() {
+                    swAll.stop();
+                    std::cout << "WVC statistics: " << std::endl;
+                    std::cout << "           overall: " <<  swAll << " seconds." << std::endl;
+                    std::cout << "---------------------------------------------" << std::endl;
+                    std::cout << "     eqSysBuilding: "  << swEqBuilding << " seconds." << std::endl;
+                    std::cout << "     MinMaxSolving: "  << swMinMaxSolving << " seconds." << std::endl;
+                    std::cout << "      LinEqSolving: "  << swLinEqSolving << " seconds." << std::endl;
+
+                }
+                
 
                 /*!
                  * - computes the optimal expected reward w.r.t. the weighted sum of the rewards of the individual objectives
@@ -45,6 +57,7 @@ namespace storm {
                 
                 void computeEpochSolution(typename MultiDimensionalRewardUnfolding<ValueType>::Epoch const& epoch, std::vector<ValueType> const& weightVector);
                 
+                storm::utility::Stopwatch swAll, swEqBuilding, swLinEqSolving, swMinMaxSolving;
                 
                 MultiDimensionalRewardUnfolding<ValueType> rewardUnfolding;
                 

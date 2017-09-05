@@ -11,6 +11,7 @@
 #include "storm/storage/memorystructure/SparseModelMemoryProduct.h"
 #include "storm/transformer/EndComponentEliminator.h"
 
+#include "storm/utility/Stopwatch.h"
 
 namespace storm {
     namespace modelchecker {
@@ -51,6 +52,18 @@ namespace storm {
                                                         storm::storage::BitVector const& possibleECActions,
                                                         storm::storage::BitVector const& allowedBottomStates);
                 
+                ~MultiDimensionalRewardUnfolding() {
+                    std::cout << "Unfolding statistics: " << std::endl;
+                    std::cout << "              init: "  << swInit << " seconds." << std::endl;
+                    std::cout << "          setEpoch: " <<  swSetEpoch << " seconds." << std::endl;
+                    std::cout << "     setEpochClass: " << swSetEpochClass << " seconds." << std::endl;
+                    std::cout << "     findSolutions: " << swFindSol << " seconds." << std::endl;
+                    std::cout << "   insertSolutions: " << swInsertSol << " seconds." << std::endl;
+                    std::cout << "---------------------------------------------" << std::endl;
+                    std::cout << "---------------------------------------------" << std::endl;
+                    std::cout << std::endl;
+                    
+                }
                 
                 Epoch getStartEpoch();
                 std::vector<Epoch> getEpochComputationOrder(Epoch const& startEpoch);
@@ -58,7 +71,7 @@ namespace storm {
                 EpochModel const& setCurrentEpoch(Epoch const& epoch);
                 
                 void setSolutionForCurrentEpoch(std::vector<SolutionType> const& reducedModelStateSolutions);
-                SolutionType const& getInitialStateResult(Epoch const& epoch) const;
+                SolutionType const& getInitialStateResult(Epoch const& epoch);
                 
                 
             private:
@@ -99,6 +112,7 @@ namespace storm {
                 
                 void initializeObjectives(std::vector<std::vector<uint64_t>>& epochSteps);
                 void initializePossibleEpochSteps(std::vector<std::vector<uint64_t>> const& epochSteps);
+                
                 void initializeMemoryProduct(std::vector<std::vector<uint64_t>> const& epochSteps);
                 storm::storage::MemoryStructure computeMemoryStructure() const;
                 std::vector<std::vector<ValueType>> computeObjectiveRewardsForProduct(Epoch const& epoch) const;
@@ -111,7 +125,7 @@ namespace storm {
                 void addScaledSolution(SolutionType& solution, SolutionType const& solutionToAdd, ValueType const& scalingFactor) const;
                 
                 void setSolutionForCurrentEpoch(uint64_t const& productState, SolutionType const& solution);
-                SolutionType const& getStateSolution(Epoch const& epoch, uint64_t const& productState) const;
+                SolutionType const& getStateSolution(Epoch const& epoch, uint64_t const& productState);
                 
                 storm::models::sparse::Mdp<ValueType> const& model;
                 std::vector<storm::modelchecker::multiobjective::Objective<ValueType>> const& objectives;
@@ -133,6 +147,9 @@ namespace storm {
                 std::vector<ValueType> scalingFactors;
                 
                 std::map<std::vector<int64_t>, SolutionType> solutions;
+                
+                
+                storm::utility::Stopwatch swInit, swFindSol, swInsertSol, swSetEpoch, swSetEpochClass;
             };
         }
     }

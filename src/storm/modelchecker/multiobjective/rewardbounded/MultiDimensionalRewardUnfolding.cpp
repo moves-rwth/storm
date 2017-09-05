@@ -27,12 +27,12 @@ namespace storm {
     
             template<typename ValueType>
             void MultiDimensionalRewardUnfolding<ValueType>::initialize() {
-            
+                swInit.start();
                 std::vector<std::vector<uint64_t>> epochSteps;
                 initializeObjectives(epochSteps);
                 initializePossibleEpochSteps(epochSteps);
                 initializeMemoryProduct(epochSteps);
-                
+                swInit.stop();
             }
             
             template<typename ValueType>
@@ -214,12 +214,12 @@ namespace storm {
             
             template<typename ValueType>
             typename MultiDimensionalRewardUnfolding<ValueType>::EpochModel const& MultiDimensionalRewardUnfolding<ValueType>::setCurrentEpoch(Epoch const& epoch) {
-
                 // Check if we need to update the current epoch class
                 if (!currentEpoch || getClassOfEpoch(epoch) != getClassOfEpoch(currentEpoch.get())) {
                     setCurrentEpochClass(epoch);
                 }
                 
+                swSetEpoch.start();
                 // Find out which objective rewards are earned in this particular epoch
                 epochModel.objectiveRewardFilter = std::vector<storm::storage::BitVector>(objectives.size(), storm::storage::BitVector(epochModel.objectiveRewards.front().size(), true));
                 for (auto const& reducedChoice : epochModel.stepChoices) {
@@ -268,7 +268,7 @@ namespace storm {
                 assert(epochModel.stepChoices.getNumberOfSetBits() == epochModel.stepSolutions.size());
                 
                 currentEpoch = epoch;
-                
+                swSetEpoch.stop();
                 /*
                 std::cout << "Epoch model for epoch " << storm::utility::vector::toString(epoch) << std::endl;
                 std::cout << "Matrix: " << std::endl << epochModel.epochMatrix << std::endl;
@@ -286,6 +286,7 @@ namespace storm {
             
             template<typename ValueType>
             void MultiDimensionalRewardUnfolding<ValueType>::setCurrentEpochClass(Epoch const& epoch) {
+                swSetEpochClass.start();
                 auto productObjectiveRewards = computeObjectiveRewardsForProduct(epoch);
                 
                 storm::storage::BitVector stepChoices(memoryProduct.getProduct().getNumberOfChoices(), false);
@@ -334,7 +335,7 @@ namespace storm {
                     }
                     epochModel.objectiveRewards.push_back(std::move(reducedModelObjRewards));
                 }
-                
+                swSetEpochClass.stop();
             }
             
             template<typename ValueType>
@@ -353,12 +354,14 @@ namespace storm {
             
             template<typename ValueType>
             void MultiDimensionalRewardUnfolding<ValueType>::setSolutionForCurrentEpoch(std::vector<SolutionType> const& reducedModelStateSolutions) {
+                swInsertSol.start();
                 for (uint64_t productState = 0; productState < memoryProduct.getProduct().getNumberOfStates(); ++productState) {
                     uint64_t reducedModelState = ecElimResult.oldToNewStateMapping[productState];
                     if (reducedModelState < reducedModelStateSolutions.size()) {
                         setSolutionForCurrentEpoch(productState, reducedModelStateSolutions[reducedModelState]);
                     }
                 }
+                swInsertSol.stop();
             }
             
             template<typename ValueType>
@@ -370,16 +373,18 @@ namespace storm {
             }
             
             template<typename ValueType>
-            typename MultiDimensionalRewardUnfolding<ValueType>::SolutionType const& MultiDimensionalRewardUnfolding<ValueType>::getStateSolution(Epoch const& epoch, uint64_t const& productState) const {
+            typename MultiDimensionalRewardUnfolding<ValueType>::SolutionType const& MultiDimensionalRewardUnfolding<ValueType>::getStateSolution(Epoch const& epoch, uint64_t const& productState) {
+                swFindSol.start();
                 std::vector<int64_t> solutionKey = epoch;
                 solutionKey.push_back(productState);
                 auto solutionIt = solutions.find(solutionKey);
                 STORM_LOG_ASSERT(solutionIt != solutions.end(), "Requested unexisting solution for epoch " << storm::utility::vector::toString(epoch) << ".");
+                swFindSol.stop();
                 return solutionIt->second;
             }
             
             template<typename ValueType>
-            typename MultiDimensionalRewardUnfolding<ValueType>::SolutionType const& MultiDimensionalRewardUnfolding<ValueType>::getInitialStateResult(Epoch const& epoch) const {
+            typename MultiDimensionalRewardUnfolding<ValueType>::SolutionType const& MultiDimensionalRewardUnfolding<ValueType>::getInitialStateResult(Epoch const& epoch) {
                 return getStateSolution(epoch, *memoryProduct.getProduct().getInitialStates().begin());
             }
 
