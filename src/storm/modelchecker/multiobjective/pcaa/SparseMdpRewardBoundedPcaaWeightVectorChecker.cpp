@@ -46,7 +46,7 @@ namespace storm {
             void SparseMdpRewardBoundedPcaaWeightVectorChecker<SparseMdpModelType>::computeEpochSolution(typename MultiDimensionalRewardUnfolding<ValueType>::Epoch const& epoch, std::vector<ValueType> const& weightVector) {
                 auto const& epochModel = rewardUnfolding.setCurrentEpoch(epoch);
                 swEqBuilding.start();
-                std::vector<typename MultiDimensionalRewardUnfolding<ValueType>::SolutionType> result(epochModel.epochMatrix.getRowGroupCount());
+                std::vector<typename MultiDimensionalRewardUnfolding<ValueType>::SolutionType> result(epochModel.relevantStates.getNumberOfSetBits());
                 
                 
                 // Formulate a min-max equation system max(A*x+b)=x for the weighted sum of the objectives
@@ -72,14 +72,16 @@ namespace storm {
                 minMaxSolver->setOptimizationDirection(storm::solver::OptimizationDirection::Maximize);
                 minMaxSolver->setTrackScheduler(true);
                 //minMaxSolver->setCachingEnabled(true);
-                std::vector<ValueType> x(result.size(), storm::utility::zero<ValueType>());
+                std::vector<ValueType> x(epochModel.epochMatrix.getRowGroupCount(), storm::utility::zero<ValueType>());
                 swEqBuilding.stop();
                 swMinMaxSolving.start();
                 minMaxSolver->solveEquations(x, b);
                 swMinMaxSolving.stop();
                 swEqBuilding.start();
-                for (uint64_t state = 0; state < x.size(); ++state) {
-                    result[state].weightedValue = x[state];
+                auto resultIt = result.begin();
+                for (auto const& state : epochModel.relevantStates) {
+                    resultIt->weightedValue = x[state];
+                    ++resultIt;
                 }
                 
                 // Formulate for each objective the linear equation system induced by the performed choices
@@ -109,8 +111,10 @@ namespace storm {
                     linEqSolver->solveEquations(x, b);
                     swLinEqSolving.stop();
                     swEqBuilding.start();
-                    for (uint64_t state = 0; state < choices.size(); ++state) {
-                        result[state].objectiveValues.push_back(x[state]);
+                    auto resultIt = result.begin();
+                    for (auto const& state : epochModel.relevantStates) {
+                        resultIt->objectiveValues.push_back(x[state]);
+                        ++resultIt;
                     }
                 }
                 swEqBuilding.stop();

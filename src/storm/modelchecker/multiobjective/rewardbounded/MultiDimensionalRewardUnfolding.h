@@ -70,7 +70,7 @@ namespace storm {
                 
                 EpochModel const& setCurrentEpoch(Epoch const& epoch);
                 
-                void setSolutionForCurrentEpoch(std::vector<SolutionType> const& reducedModelStateSolutions);
+                void setSolutionForCurrentEpoch(std::vector<SolutionType> const& relevantStateSolutions);
                 SolutionType const& getInitialStateResult(Epoch const& epoch);
                 
                 

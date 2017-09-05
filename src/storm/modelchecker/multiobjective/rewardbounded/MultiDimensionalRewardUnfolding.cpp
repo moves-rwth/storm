@@ -377,12 +377,12 @@ namespace storm {
             }
             
             template<typename ValueType>
-            void MultiDimensionalRewardUnfolding<ValueType>::setSolutionForCurrentEpoch(std::vector<SolutionType> const& reducedModelStateSolutions) {
+            void MultiDimensionalRewardUnfolding<ValueType>::setSolutionForCurrentEpoch(std::vector<SolutionType> const& relevantStateSolutions) {
                 swInsertSol.start();
                 for (uint64_t productState = 0; productState < memoryProduct.getProduct().getNumberOfStates(); ++productState) {
                     uint64_t reducedModelState = ecElimResult.oldToNewStateMapping[productState];
-                    if (reducedModelState < reducedModelStateSolutions.size()) {
-                        setSolutionForCurrentEpoch(productState, reducedModelStateSolutions[reducedModelState]);
+                    if (reducedModelState < epochModel.epochMatrix.getRowGroupCount() && epochModel.relevantStates.get(reducedModelState)) {
+                        setSolutionForCurrentEpoch(productState, relevantStateSolutions[epochModel.relevantStates.getNumberOfSetBitsBeforeIndex(reducedModelState)]);
                     }
                 }
                 swInsertSol.stop();
