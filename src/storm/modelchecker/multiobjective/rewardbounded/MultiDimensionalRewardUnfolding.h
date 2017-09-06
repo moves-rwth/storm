@@ -36,7 +36,7 @@ namespace storm {
                     std::vector<SolutionType> stepSolutions;
                     std::vector<std::vector<ValueType>> objectiveRewards;
                     std::vector<storm::storage::BitVector> objectiveRewardFilter;
-                    storm::storage::BitVector relevantStates;
+                    storm::storage::BitVector inStates;
                 };
                 
                 /*
@@ -59,8 +59,9 @@ namespace storm {
                     std::cout << "     setEpochClass: " << swSetEpochClass << " seconds." << std::endl;
                     std::cout << "     findSolutions: " << swFindSol << " seconds." << std::endl;
                     std::cout << "   insertSolutions: " << swInsertSol << " seconds." << std::endl;
+                    std::cout << "      auxStopWatch: " << swAux << " seconds." << std::endl;
                     std::cout << "---------------------------------------------" << std::endl;
-                    std::cout << "      Product size: " << memoryProduct.getProduct().getNumberOfStates();
+                    std::cout << "      Product size: " << memoryProduct.getProduct().getNumberOfStates() << std::endl;
                     std::cout << " Epoch model sizes: ";
                     for (auto const& i : epochModelSizes) {
                         std::cout << i << " ";
@@ -76,7 +77,7 @@ namespace storm {
                 
                 EpochModel const& setCurrentEpoch(Epoch const& epoch);
                 
-                void setSolutionForCurrentEpoch(std::vector<SolutionType> const& relevantStateSolutions);
+                void setSolutionForCurrentEpoch(std::vector<SolutionType> const& inStateSolutions);
                 SolutionType const& getInitialStateResult(Epoch const& epoch);
                 
                 
@@ -117,7 +118,7 @@ namespace storm {
                 };
                 
                 void setCurrentEpochClass(Epoch const& epoch);
-                storm::storage::BitVector computeRelevantProductStatesForEpochClass(Epoch const& epoch);
+                storm::storage::BitVector computeProductInStatesForEpochClass(Epoch const& epoch);
             
                 void initialize();
                 
@@ -161,7 +162,7 @@ namespace storm {
                 std::map<std::vector<int64_t>, SolutionType> solutions;
                 
                 
-                storm::utility::Stopwatch swInit, swFindSol, swInsertSol, swSetEpoch, swSetEpochClass;
+                storm::utility::Stopwatch swInit, swFindSol, swInsertSol, swSetEpoch, swSetEpochClass, swAux;
                 std::vector<uint64_t> epochModelSizes;
             };
         }

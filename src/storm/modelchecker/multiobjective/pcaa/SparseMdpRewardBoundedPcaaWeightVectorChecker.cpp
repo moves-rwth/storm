@@ -46,7 +46,7 @@ namespace storm {
             void SparseMdpRewardBoundedPcaaWeightVectorChecker<SparseMdpModelType>::computeEpochSolution(typename MultiDimensionalRewardUnfolding<ValueType>::Epoch const& epoch, std::vector<ValueType> const& weightVector) {
                 auto const& epochModel = rewardUnfolding.setCurrentEpoch(epoch);
                 swEqBuilding.start();
-                std::vector<typename MultiDimensionalRewardUnfolding<ValueType>::SolutionType> result(epochModel.relevantStates.getNumberOfSetBits());
+                std::vector<typename MultiDimensionalRewardUnfolding<ValueType>::SolutionType> result(epochModel.inStates.getNumberOfSetBits());
                 
                 
                 // Formulate a min-max equation system max(A*x+b)=x for the weighted sum of the objectives
@@ -79,7 +79,7 @@ namespace storm {
                 swMinMaxSolving.stop();
                 swEqBuilding.start();
                 auto resultIt = result.begin();
-                for (auto const& state : epochModel.relevantStates) {
+                for (auto const& state : epochModel.inStates) {
                     resultIt->weightedValue = x[state];
                     ++resultIt;
                 }
@@ -112,7 +112,7 @@ namespace storm {
                     swLinEqSolving.stop();
                     swEqBuilding.start();
                     auto resultIt = result.begin();
-                    for (auto const& state : epochModel.relevantStates) {
+                    for (auto const& state : epochModel.inStates) {
                         resultIt->objectiveValues.push_back(x[state]);
                         ++resultIt;
                     }

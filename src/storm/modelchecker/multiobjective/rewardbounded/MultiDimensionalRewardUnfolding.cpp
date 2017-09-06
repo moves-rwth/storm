@@ -201,6 +201,7 @@ namespace storm {
                     }
                 }
                 
+                swAux.start();
                 // compute the solution for the stepChoices
                 epochModel.stepSolutions.resize(epochModel.stepChoices.getNumberOfSetBits());
                 auto stepSolIt = epochModel.stepSolutions.begin();
@@ -208,23 +209,30 @@ namespace storm {
                     uint64_t productChoice = ecElimResult.newToOldRowMapping[reducedChoice];
                     uint64_t productState = memoryProduct.getProductStateFromChoice(productChoice);
                     auto relevantDimensions = memoryProduct.convertMemoryState(memoryProduct.getMemoryState(productState));
-                    SolutionType choiceSolution = getZeroSolution();
                     Epoch successorEpoch = getSuccessorEpoch(epoch, memoryProduct.getSteps()[productChoice].get());
-                    storm::storage::BitVector successorRelevantDimensions(successorEpoch.size(), true);
-                    for (auto const& dim : relevantDimensions) {
-                        if (successorEpoch[dim] < 0) {
-                            successorRelevantDimensions &= ~objectiveDimensions[subObjectives[dim].second];
+                    SolutionType choiceSolution = getZeroSolution();
+                    if (getClassOfEpoch(epoch) == getClassOfEpoch(successorEpoch)) {
+                        for (auto const& successor : memoryProduct.getProduct().getTransitionMatrix().getRow(productChoice)) {
+                            addScaledSolution(choiceSolution, getStateSolution(successorEpoch, successor.getColumn()), successor.getValue());
                         }
-                    }
-                    for (auto const& successor : memoryProduct.getProduct().getTransitionMatrix().getRow(productChoice)) {
-                        storm::storage::BitVector successorMemoryState = memoryProduct.convertMemoryState(memoryProduct.getMemoryState(successor.getColumn())) & successorRelevantDimensions;
-                        uint64_t successorProductState = memoryProduct.getProductState(memoryProduct.getModelState(successor.getColumn()), memoryProduct.convertMemoryState(successorMemoryState));
-                        SolutionType const& successorSolution = getStateSolution(successorEpoch, successorProductState);
-                        addScaledSolution(choiceSolution, successorSolution, successor.getValue());
+                    } else {
+                        storm::storage::BitVector successorRelevantDimensions(successorEpoch.size(), true);
+                        for (auto const& dim : relevantDimensions) {
+                            if (successorEpoch[dim] < 0) {
+                                successorRelevantDimensions &= ~objectiveDimensions[subObjectives[dim].second];
+                            }
+                        }
+                        for (auto const& successor : memoryProduct.getProduct().getTransitionMatrix().getRow(productChoice)) {
+                            storm::storage::BitVector successorMemoryState = memoryProduct.convertMemoryState(memoryProduct.getMemoryState(successor.getColumn())) & successorRelevantDimensions;
+                            uint64_t successorProductState = memoryProduct.getProductState(memoryProduct.getModelState(successor.getColumn()), memoryProduct.convertMemoryState(successorMemoryState));
+                            SolutionType const& successorSolution = getStateSolution(successorEpoch, successorProductState);
+                            addScaledSolution(choiceSolution, successorSolution, successor.getValue());
+                        }
                     }
                     *stepSolIt = std::move(choiceSolution);
                     ++stepSolIt;
                 }
+                swAux.stop();
                 
                 assert(epochModel.objectiveRewards.size() == objectives.size());
                 assert(epochModel.objectiveRewardFilter.size() == objectives.size());
@@ -254,6 +262,7 @@ namespace storm {
             
             template<typename ValueType>
             void MultiDimensionalRewardUnfolding<ValueType>::setCurrentEpochClass(Epoch const& epoch) {
+                // std::cout << "Setting epoch class for epoch " << storm::utility::vector::toString(epoch) << std::endl;
                 swSetEpochClass.start();
                 auto productObjectiveRewards = computeObjectiveRewardsForProduct(epoch);
                 
@@ -282,9 +291,11 @@ namespace storm {
                 storm::storage::BitVector allProductStates(memoryProduct.getProduct().getNumberOfStates(), true);
                 
                 // Get the relevant states for this epoch. These are all states
-                storm::storage::BitVector productRelevantStates = computeRelevantProductStatesForEpochClass(epoch);
+                storm::storage::BitVector productInStates = computeProductInStatesForEpochClass(epoch);
                 // The epoch model only needs to consider the states that are reachable from a relevant state
-                storm::storage::BitVector consideredStates = storm::utility::graph::getReachableStates(epochModel.epochMatrix, productRelevantStates, allProductStates, ~allProductStates);
+                storm::storage::BitVector consideredStates = storm::utility::graph::getReachableStates(epochModel.epochMatrix, productInStates, allProductStates, ~allProductStates);
+                // std::cout << "numInStates = " << productInStates.getNumberOfSetBits() << std::endl;
+                // std::cout << "numConsideredStates = " << consideredStates.getNumberOfSetBits() << std::endl;
                 
                 // We assume that there is no end component in which objective reward is earned
                 STORM_LOG_ASSERT(!storm::utility::graph::checkIfECWithChoiceExists(epochModel.epochMatrix, epochModel.epochMatrix.transpose(true), allProductStates, ~zeroObjRewardChoices & ~stepChoices), "There is a scheduler that yields infinite reward for one objective. This case should be excluded");
@@ -309,9 +320,9 @@ namespace storm {
                     epochModel.objectiveRewards.push_back(std::move(reducedModelObjRewards));
                 }
                 
-                epochModel.relevantStates = storm::storage::BitVector(epochModel.epochMatrix.getRowGroupCount(), false);
-                for (auto const& productState : productRelevantStates) {
-                    epochModel.relevantStates.set(ecElimResult.oldToNewStateMapping[productState], true);
+                epochModel.inStates = storm::storage::BitVector(epochModel.epochMatrix.getRowGroupCount(), false);
+                for (auto const& productState : productInStates) {
+                    epochModel.inStates.set(ecElimResult.oldToNewStateMapping[productState], true);
                 }
                 
                 swSetEpochClass.stop();
@@ -319,47 +330,72 @@ namespace storm {
             }
             
             template<typename ValueType>
-            storm::storage::BitVector MultiDimensionalRewardUnfolding<ValueType>::computeRelevantProductStatesForEpochClass(Epoch const& epoch) {
-                storm::storage::BitVector result(memoryProduct.getProduct().getNumberOfStates(), false);
-                result.set(*memoryProduct.getProduct().getInitialStates().begin(), true);
+            storm::storage::BitVector MultiDimensionalRewardUnfolding<ValueType>::computeProductInStatesForEpochClass(Epoch const& epoch) {
+                storm::storage::SparseMatrix<ValueType> const& productMatrix = memoryProduct.getProduct().getTransitionMatrix();
                 
-                for (uint64_t choice = 0; choice < memoryProduct.getProduct().getNumberOfChoices(); ++choice) {
-                    auto const& choiceStep = memoryProduct.getSteps()[choice];
-                    if (choiceStep) {
-                        storm::storage::BitVector objectiveSet(objectives.size(), false);
-                        for (uint64_t dim = 0; dim < epoch.size(); ++dim) {
-                            if (epoch[dim] < 0 && choiceStep.get()[dim] > 0) {
-                                objectiveSet.set(subObjectives[dim].second);
+                storm::storage::BitVector result(productMatrix.getRowGroupCount(), false);
+                result.set(*memoryProduct.getProduct().getInitialStates().begin(), true);
+                // Perform DFS
+                storm::storage::BitVector reachableStates = result;
+                std::vector<uint_fast64_t> stack(reachableStates.begin(), reachableStates.end());
+                
+                while (!stack.empty()) {
+                    uint64_t state = stack.back();
+                    stack.pop_back();
+                
+                    for (uint64_t choice = productMatrix.getRowGroupIndices()[state]; choice < productMatrix.getRowGroupIndices()[state + 1]; ++choice) {
+                        auto const& choiceStep = memoryProduct.getSteps()[choice];
+                        if (choiceStep) {
+                            storm::storage::BitVector objectiveSet(objectives.size(), false);
+                            for (uint64_t dim = 0; dim < epoch.size(); ++dim) {
+                                if (epoch[dim] < 0 && choiceStep.get()[dim] > 0) {
+                                    objectiveSet.set(subObjectives[dim].second);
+                                }
                             }
-                        }
-                        
-                        if (objectiveSet.empty()) {
-                            for (auto const& choiceSuccessor : memoryProduct.getProduct().getTransitionMatrix().getRow(choice)) {
-                                result.set(choiceSuccessor.getColumn(), true);
+                            
+                            if (objectiveSet.empty()) {
+                                for (auto const& choiceSuccessor : productMatrix.getRow(choice)) {
+                                    result.set(choiceSuccessor.getColumn(), true);
+                                    if (!reachableStates.get(choiceSuccessor.getColumn())) {
+                                        reachableStates.set(choiceSuccessor.getColumn());
+                                        stack.push_back(choiceSuccessor.getColumn());
+                                    }
+                                }
+                            } else {
+                                storm::storage::BitVector objectiveSubSet(objectiveSet.getNumberOfSetBits(), false);
+                                do {
+                                    for (auto const& choiceSuccessor : productMatrix.getRow(choice)) {
+                                        uint64_t modelState = memoryProduct.getModelState(choiceSuccessor.getColumn());
+                                        uint64_t memoryState = memoryProduct.getMemoryState(choiceSuccessor.getColumn());
+                                        storm::storage::BitVector memoryStatePrimeBv = memoryProduct.convertMemoryState(memoryState);
+                                        uint64_t i = 0;
+                                        for (auto const& objIndex : objectiveSet) {
+                                            if (objectiveSubSet.get(i)) {
+                                                memoryStatePrimeBv &= ~objectiveDimensions[objIndex];
+                                            }
+                                            ++i;
+                                        }
+                                        uint64_t successorState = memoryProduct.getProductState(modelState, memoryProduct.convertMemoryState(memoryStatePrimeBv));
+                                        result.set(successorState, true);
+                                        if (!reachableStates.get(successorState)) {
+                                            reachableStates.set(successorState);
+                                            stack.push_back(successorState);
+                                        }
+                                    }
+                                    
+                                    objectiveSubSet.increment();
+                                } while (!objectiveSubSet.empty());
                             }
                         } else {
-                            storm::storage::BitVector objectiveSubSet(objectiveSet.getNumberOfSetBits(), false);
-                            do {
-                                for (auto const& choiceSuccessor : memoryProduct.getProduct().getTransitionMatrix().getRow(choice)) {
-                                    uint64_t modelState = memoryProduct.getModelState(choiceSuccessor.getColumn());
-                                    uint64_t memoryState = memoryProduct.getMemoryState(choiceSuccessor.getColumn());
-                                    storm::storage::BitVector memoryStatePrimeBv = memoryProduct.convertMemoryState(memoryState);
-                                    uint64_t i = 0;
-                                    for (auto const& objIndex : objectiveSet) {
-                                        if (objectiveSubSet.get(i)) {
-                                            memoryStatePrimeBv &= ~objectiveDimensions[objIndex];
-                                        }
-                                        ++i;
-                                    }
-                                    result.set(memoryProduct.getProductState(modelState, memoryProduct.convertMemoryState(memoryStatePrimeBv)), true);
+                            for (auto const& choiceSuccessor : productMatrix.getRow(choice)) {
+                                if (!reachableStates.get(choiceSuccessor.getColumn())) {
+                                    reachableStates.set(choiceSuccessor.getColumn());
+                                    stack.push_back(choiceSuccessor.getColumn());
                                 }
-                                
-                                objectiveSubSet.increment();
-                            } while (!objectiveSubSet.empty());
+                            }
                         }
                     }
                 }
-                
                 return result;
             }
             
@@ -378,12 +414,12 @@ namespace storm {
             }
             
             template<typename ValueType>
-            void MultiDimensionalRewardUnfolding<ValueType>::setSolutionForCurrentEpoch(std::vector<SolutionType> const& relevantStateSolutions) {
+            void MultiDimensionalRewardUnfolding<ValueType>::setSolutionForCurrentEpoch(std::vector<SolutionType> const& inStateSolutions) {
                 swInsertSol.start();
                 for (uint64_t productState = 0; productState < memoryProduct.getProduct().getNumberOfStates(); ++productState) {
                     uint64_t reducedModelState = ecElimResult.oldToNewStateMapping[productState];
-                    if (reducedModelState < epochModel.epochMatrix.getRowGroupCount() && epochModel.relevantStates.get(reducedModelState)) {
-                        setSolutionForCurrentEpoch(productState, relevantStateSolutions[epochModel.relevantStates.getNumberOfSetBitsBeforeIndex(reducedModelState)]);
+                    if (reducedModelState < epochModel.epochMatrix.getRowGroupCount() && epochModel.inStates.get(reducedModelState)) {
+                        setSolutionForCurrentEpoch(productState, inStateSolutions[epochModel.inStates.getNumberOfSetBitsBeforeIndex(reducedModelState)]);
                     }
                 }
                 swInsertSol.stop();
