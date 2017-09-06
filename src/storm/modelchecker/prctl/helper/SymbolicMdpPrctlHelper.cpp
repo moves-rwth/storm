@@ -29,6 +29,8 @@ namespace storm {
                 
                 if (type == storm::solver::MinMaxLinearEquationSolverSystemType::UntilProbabilities) {
                     result = storm::utility::graph::computeSchedulerProbGreater0E(model, transitionMatrix.notZero(), maybeStates, targetStates);
+                } else if (type == storm::solver::MinMaxLinearEquationSolverSystemType::ReachabilityRewards) {
+                    result = storm::utility::graph::computeSchedulerProb1E(model, transitionMatrix.notZero(), maybeStates, targetStates, maybeStates || targetStates);
                 }
                 
                 return result;
@@ -240,7 +242,18 @@ namespace storm {
                         
                         // Check requirements of solver.
                         storm::solver::MinMaxLinearEquationSolverRequirements requirements = solver->getRequirements(storm::solver::MinMaxLinearEquationSolverSystemType::ReachabilityRewards, dir);
-                        STORM_LOG_THROW(requirements.empty(), storm::exceptions::UncheckedRequirementException, "Could not establish requirements of solver.");
+                        boost::optional<storm::dd::Bdd<DdType>> initialScheduler;
+                        if (!requirements.empty()) {
+                            if (requirements.requires(storm::solver::MinMaxLinearEquationSolverRequirements::Element::ValidInitialScheduler)) {
+                                STORM_LOG_DEBUG("Computing valid scheduler, because the solver requires it.");
+                                initialScheduler = computeValidSchedulerHint(storm::solver::MinMaxLinearEquationSolverSystemType::ReachabilityRewards, model, transitionMatrix, maybeStates, targetStates);
+                                requirements.set(storm::solver::MinMaxLinearEquationSolverRequirements::Element::ValidInitialScheduler, false);
+                            }
+                            STORM_LOG_THROW(requirements.empty(), storm::exceptions::UncheckedRequirementException, "Could not establish requirements of solver.");
+                        }
+                        if (initialScheduler) {
+                            solver->setInitialScheduler(initialScheduler.get());
+                        }
                         solver->setRequirementsChecked();
 
                         storm::dd::Add<DdType, ValueType> result = solver->solveEquations(dir, model.getManager().template getAddZero<ValueType>(), subvector);

@@ -139,6 +139,9 @@ namespace storm {
             bool isRequirementsCheckedSet() const;
             
         private:
+            storm::dd::Add<DdType, ValueType> solveEquationsWithScheduler(storm::dd::Bdd<DdType> const& scheduler, storm::dd::Add<DdType, ValueType> const& x, storm::dd::Add<DdType, ValueType> const& b) const;
+            storm::dd::Add<DdType, ValueType> solveEquationsWithScheduler(SymbolicLinearEquationSolver<DdType, ValueType>& solver, storm::dd::Bdd<DdType> const& scheduler, storm::dd::Add<DdType, ValueType> const& x, storm::dd::Add<DdType, ValueType> const& b, storm::dd::Add<DdType, ValueType> const& diagonal) const;
+            
             storm::dd::Add<DdType, ValueType> solveEquationsValueIteration(storm::solver::OptimizationDirection const& dir, storm::dd::Add<DdType, ValueType> const& x, storm::dd::Add<DdType, ValueType> const& b) const;
             storm::dd::Add<DdType, ValueType> solveEquationsPolicyIteration(storm::solver::OptimizationDirection const& dir, storm::dd::Add<DdType, ValueType> const& x, storm::dd::Add<DdType, ValueType> const& b) const;
 

@@ -896,7 +896,7 @@ namespace storm {
                 
                 uint_fast64_t iterations = 0;
                 while (!frontier.isZero()) {
-                    storm::dd::Bdd<Type> statesAndChoicesWithProbabilityGreater0E = statesWithProbabilityGreater0E.inverseRelationalProduct(transitionMatrix, model.getRowVariables(), model.getColumnVariables());
+                    storm::dd::Bdd<Type> statesAndChoicesWithProbabilityGreater0E = statesWithProbabilityGreater0E.inverseRelationalProductWithExtendedRelation(transitionMatrix, model.getRowVariables(), model.getColumnVariables());
                     frontier = phiStates && statesAndChoicesWithProbabilityGreater0E.existsAbstract(model.getNondeterminismVariables()) && !statesWithProbabilityGreater0E;
                     scheduler = scheduler || (frontier && statesAndChoicesWithProbabilityGreater0E).existsAbstractRepresentative(model.getNondeterminismVariables());
                     statesWithProbabilityGreater0E |= frontier;
@@ -1019,6 +1019,41 @@ namespace storm {
                 return statesWithProbability1E;
             }
             
+            template <storm::dd::DdType Type, typename ValueType>
+            storm::dd::Bdd<Type> computeSchedulerProb1E(storm::models::symbolic::NondeterministicModel<Type, ValueType> const& model, storm::dd::Bdd<Type> const& transitionMatrix, storm::dd::Bdd<Type> const& phiStates, storm::dd::Bdd<Type> const& psiStates, storm::dd::Bdd<Type> const& statesWithProbability1E) {
+                // Initialize environment for backward search.
+                storm::dd::DdManager<Type> const& manager = model.getManager();
+                storm::dd::Bdd<Type> scheduler = manager.getBddZero();
+
+                storm::dd::Bdd<Type> innerStates = manager.getBddZero();
+                
+                uint64_t iterations = 0;
+                bool innerLoopDone = false;
+                while (!innerLoopDone) {
+                    storm::dd::Bdd<Type> temporary = statesWithProbability1E.swapVariables(model.getRowColumnMetaVariablePairs());
+                    temporary = transitionMatrix.implies(temporary).universalAbstract(model.getColumnVariables());
+                    
+                    storm::dd::Bdd<Type> temporary2 = innerStates.inverseRelationalProductWithExtendedRelation(transitionMatrix, model.getRowVariables(), model.getColumnVariables());
+                    temporary &= temporary2;
+                    temporary &= phiStates;
+
+                    // Extend the scheduler for those states that have not been seen as inner states before.
+                    scheduler |= (temporary && !innerStates).existsAbstractRepresentative(model.getNondeterminismVariables());
+                    
+                    temporary = temporary.existsAbstract(model.getNondeterminismVariables());
+                    temporary |= psiStates;
+                    
+                    if (innerStates == temporary) {
+                        innerLoopDone = true;
+                    } else {
+                        innerStates = temporary;
+                    }
+                    ++iterations;
+                }
+            
+                return scheduler;
+            }
+        
             template <storm::dd::DdType Type, typename ValueType>
             std::pair<storm::dd::Bdd<Type>, storm::dd::Bdd<Type>> performProb01Max(storm::models::symbolic::NondeterministicModel<Type, ValueType> const& model, storm::dd::Bdd<Type> const& phiStates, storm::dd::Bdd<Type> const& psiStates) {
                 std::pair<storm::dd::Bdd<Type>, storm::dd::Bdd<Type>> result;
@@ -1512,6 +1547,8 @@ namespace storm {
             
             template storm::dd::Bdd<storm::dd::DdType::CUDD> performProb1E(storm::models::symbolic::NondeterministicModel<storm::dd::DdType::CUDD, double> const& model, storm::dd::Bdd<storm::dd::DdType::CUDD> const& transitionMatrix, storm::dd::Bdd<storm::dd::DdType::CUDD> const& phiStates, storm::dd::Bdd<storm::dd::DdType::CUDD> const& psiStates, storm::dd::Bdd<storm::dd::DdType::CUDD> const& statesWithProbabilityGreater0E);
             
+            template storm::dd::Bdd<storm::dd::DdType::CUDD> computeSchedulerProb1E(storm::models::symbolic::NondeterministicModel<storm::dd::DdType::CUDD, double> const& model, storm::dd::Bdd<storm::dd::DdType::CUDD> const& transitionMatrix, storm::dd::Bdd<storm::dd::DdType::CUDD> const& phiStates, storm::dd::Bdd<storm::dd::DdType::CUDD> const& psiStates, storm::dd::Bdd<storm::dd::DdType::CUDD> const& statesWithProbability1E);
+            
             template std::pair<storm::dd::Bdd<storm::dd::DdType::CUDD>, storm::dd::Bdd<storm::dd::DdType::CUDD>> performProb01Max(storm::models::symbolic::NondeterministicModel<storm::dd::DdType::CUDD, double> const& model, storm::dd::Bdd<storm::dd::DdType::CUDD> const& phiStates, storm::dd::Bdd<storm::dd::DdType::CUDD> const& psiStates);
             
             template std::pair<storm::dd::Bdd<storm::dd::DdType::CUDD>, storm::dd::Bdd<storm::dd::DdType::CUDD>> performProb01Min(storm::models::symbolic::NondeterministicModel<storm::dd::DdType::CUDD, double> const& model, storm::dd::Bdd<storm::dd::DdType::CUDD> const& phiStates, storm::dd::Bdd<storm::dd::DdType::CUDD> const& psiStates);
@@ -1545,6 +1582,8 @@ namespace storm {
             template storm::dd::Bdd<storm::dd::DdType::Sylvan> performProb1A(storm::models::symbolic::NondeterministicModel<storm::dd::DdType::Sylvan, double> const& model, storm::dd::Bdd<storm::dd::DdType::Sylvan> const& transitionMatrix, storm::dd::Bdd<storm::dd::DdType::Sylvan> const& psiStates, storm::dd::Bdd<storm::dd::DdType::Sylvan> const& statesWithProbabilityGreater0A);
             
             template storm::dd::Bdd<storm::dd::DdType::Sylvan> performProb1E(storm::models::symbolic::NondeterministicModel<storm::dd::DdType::Sylvan, double> const& model, storm::dd::Bdd<storm::dd::DdType::Sylvan> const& transitionMatrix, storm::dd::Bdd<storm::dd::DdType::Sylvan> const& phiStates, storm::dd::Bdd<storm::dd::DdType::Sylvan> const& psiStates, storm::dd::Bdd<storm::dd::DdType::Sylvan> const& statesWithProbabilityGreater0E);
+            
+            template storm::dd::Bdd<storm::dd::DdType::Sylvan> computeSchedulerProb1E(storm::models::symbolic::NondeterministicModel<storm::dd::DdType::Sylvan, double> const& model, storm::dd::Bdd<storm::dd::DdType::Sylvan> const& transitionMatrix, storm::dd::Bdd<storm::dd::DdType::Sylvan> const& phiStates, storm::dd::Bdd<storm::dd::DdType::Sylvan> const& psiStates, storm::dd::Bdd<storm::dd::DdType::Sylvan> const& statesWithProbability1E);
             
             template std::pair<storm::dd::Bdd<storm::dd::DdType::Sylvan>, storm::dd::Bdd<storm::dd::DdType::Sylvan>> performProb01Max(storm::models::symbolic::NondeterministicModel<storm::dd::DdType::Sylvan, double> const& model, storm::dd::Bdd<storm::dd::DdType::Sylvan> const& phiStates, storm::dd::Bdd<storm::dd::DdType::Sylvan> const& psiStates);
             
@@ -1580,6 +1619,8 @@ namespace storm {
             
             template storm::dd::Bdd<storm::dd::DdType::Sylvan> performProb1E(storm::models::symbolic::NondeterministicModel<storm::dd::DdType::Sylvan, storm::RationalNumber> const& model, storm::dd::Bdd<storm::dd::DdType::Sylvan> const& transitionMatrix, storm::dd::Bdd<storm::dd::DdType::Sylvan> const& phiStates, storm::dd::Bdd<storm::dd::DdType::Sylvan> const& psiStates, storm::dd::Bdd<storm::dd::DdType::Sylvan> const& statesWithProbabilityGreater0E);
             
+            template storm::dd::Bdd<storm::dd::DdType::Sylvan> computeSchedulerProb1E(storm::models::symbolic::NondeterministicModel<storm::dd::DdType::Sylvan, storm::RationalNumber> const& model, storm::dd::Bdd<storm::dd::DdType::Sylvan> const& transitionMatrix, storm::dd::Bdd<storm::dd::DdType::Sylvan> const& phiStates, storm::dd::Bdd<storm::dd::DdType::Sylvan> const& psiStates, storm::dd::Bdd<storm::dd::DdType::Sylvan> const& statesWithProbability1E);
+            
             template std::pair<storm::dd::Bdd<storm::dd::DdType::Sylvan>, storm::dd::Bdd<storm::dd::DdType::Sylvan>> performProb01Max(storm::models::symbolic::NondeterministicModel<storm::dd::DdType::Sylvan, storm::RationalNumber> const& model, storm::dd::Bdd<storm::dd::DdType::Sylvan> const& phiStates, storm::dd::Bdd<storm::dd::DdType::Sylvan> const& psiStates);
             
             template std::pair<storm::dd::Bdd<storm::dd::DdType::Sylvan>, storm::dd::Bdd<storm::dd::DdType::Sylvan>> performProb01Min(storm::models::symbolic::NondeterministicModel<storm::dd::DdType::Sylvan, storm::RationalNumber> const& model, storm::dd::Bdd<storm::dd::DdType::Sylvan> const& phiStates, storm::dd::Bdd<storm::dd::DdType::Sylvan> const& psiStates);
@@ -1609,6 +1650,8 @@ namespace storm {
             template storm::dd::Bdd<storm::dd::DdType::Sylvan> performProb1A(storm::models::symbolic::NondeterministicModel<storm::dd::DdType::Sylvan, storm::RationalFunction> const& model, storm::dd::Bdd<storm::dd::DdType::Sylvan> const& transitionMatrix, storm::dd::Bdd<storm::dd::DdType::Sylvan> const& psiStates, storm::dd::Bdd<storm::dd::DdType::Sylvan> const& statesWithProbabilityGreater0A);
             
             template storm::dd::Bdd<storm::dd::DdType::Sylvan> performProb1E(storm::models::symbolic::NondeterministicModel<storm::dd::DdType::Sylvan, storm::RationalFunction> const& model, storm::dd::Bdd<storm::dd::DdType::Sylvan> const& transitionMatrix, storm::dd::Bdd<storm::dd::DdType::Sylvan> const& phiStates, storm::dd::Bdd<storm::dd::DdType::Sylvan> const& psiStates, storm::dd::Bdd<storm::dd::DdType::Sylvan> const& statesWithProbabilityGreater0E);
+            
+            template storm::dd::Bdd<storm::dd::DdType::Sylvan> computeSchedulerProb1E(storm::models::symbolic::NondeterministicModel<storm::dd::DdType::Sylvan, storm::RationalFunction> const& model, storm::dd::Bdd<storm::dd::DdType::Sylvan> const& transitionMatrix, storm::dd::Bdd<storm::dd::DdType::Sylvan> const& phiStates, storm::dd::Bdd<storm::dd::DdType::Sylvan> const& psiStates, storm::dd::Bdd<storm::dd::DdType::Sylvan> const& statesWithProbability1E);
             
             template std::pair<storm::dd::Bdd<storm::dd::DdType::Sylvan>, storm::dd::Bdd<storm::dd::DdType::Sylvan>> performProb01Max(storm::models::symbolic::NondeterministicModel<storm::dd::DdType::Sylvan, storm::RationalFunction> const& model, storm::dd::Bdd<storm::dd::DdType::Sylvan> const& phiStates, storm::dd::Bdd<storm::dd::DdType::Sylvan> const& psiStates);
             
