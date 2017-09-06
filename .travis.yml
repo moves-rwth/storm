@@ -244,6 +244,57 @@ jobs:
         - find build -iname '*err*.log' -type f -print -exec cat {} \;
 
     ###
+    # Stage: Build (5th run)
+    ###
+
+    # osx
+    - stage: Build (5th run)
+      os: osx
+      compiler: clang
+      env: CONFIG=DefaultDebug COMPILER=clang-4.0 STL=libc++
+      install:
+        - travis/install_osx.sh
+      script:
+        - travis/build.sh BuildLast
+      after_failure:
+        - find build -iname '*err*.log' -type f -print -exec cat {} \;
+    - stage: Build (5th run)
+      os: osx
+      compiler: clang
+      env: CONFIG=DefaultRelease COMPILER=clang-4.0 STL=libc++
+      install:
+        - travis/install_osx.sh
+      script:
+        - travis/build.sh BuildLast
+      after_failure:
+        - find build -iname '*err*.log' -type f -print -exec cat {} \;
+    # ubuntu-16.10
+    - stage: Build (5th run)
+      os: linux
+      compiler: gcc
+      env: CONFIG=DefaultDebug LINUX=ubuntu-16.10 COMPILER=gcc-6
+      install:
+        - travis/install_linux.sh
+      script:
+        - travis/build.sh BuildLast
+      before_cache:
+        - docker cp storm:/storm/. .
+      after_failure:
+        - find build -iname '*err*.log' -type f -print -exec cat {} \;
+    - stage: Build (5th run)
+      os: linux
+      compiler: gcc
+      env: CONFIG=DefaultRelease LINUX=ubuntu-16.10 COMPILER=gcc-6
+      install:
+        - travis/install_linux.sh
+      script:
+        - travis/build.sh BuildLast
+      before_cache:
+        - docker cp storm:/storm/. .
+      after_failure:
+        - find build -iname '*err*.log' -type f -print -exec cat {} \;
+
+    ###
     # Stage: Test all
     ###
 
