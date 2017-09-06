@@ -9,6 +9,9 @@
 #include "storm/models/symbolic/Mdp.h"
 #include "storm/models/symbolic/StandardRewardModel.h"
 
+#include "storm/settings/SettingsManager.h"
+#include "storm/settings/modules/IOSettings.h"
+
 #include "storm/utility/macros.h"
 #include "storm/exceptions/InvalidOperationException.h"
 #include "storm/exceptions/NotSupportedException.h"
@@ -29,16 +32,25 @@ namespace storm {
         
         template <storm::dd::DdType DdType, typename ValueType>
         BisimulationDecomposition<DdType, ValueType>::BisimulationDecomposition(storm::models::symbolic::Model<DdType, ValueType> const& model, storm::storage::BisimulationType const& bisimulationType) : model(model), preservationInformation(model, bisimulationType), refiner(createRefiner(model, Partition<DdType, ValueType>::create(model, bisimulationType, preservationInformation))) {
+            auto const& ioSettings = storm::settings::getModule<storm::settings::modules::IOSettings>();
+            showProgress = ioSettings.isExplorationShowProgressSet();
+            showProgressDelay = ioSettings.getExplorationShowProgressDelay();
             this->refineWrtRewardModels();
         }
         
         template <storm::dd::DdType DdType, typename ValueType>
         BisimulationDecomposition<DdType, ValueType>::BisimulationDecomposition(storm::models::symbolic::Model<DdType, ValueType> const& model, std::vector<std::shared_ptr<storm::logic::Formula const>> const& formulas, storm::storage::BisimulationType const& bisimulationType) : model(model), preservationInformation(model, formulas, bisimulationType), refiner(createRefiner(model, Partition<DdType, ValueType>::create(model, bisimulationType, preservationInformation))) {
+            auto const& ioSettings = storm::settings::getModule<storm::settings::modules::IOSettings>();
+            showProgress = ioSettings.isExplorationShowProgressSet();
+            showProgressDelay = ioSettings.getExplorationShowProgressDelay();
             this->refineWrtRewardModels();
         }
         
         template <storm::dd::DdType DdType, typename ValueType>
         BisimulationDecomposition<DdType, ValueType>::BisimulationDecomposition(storm::models::symbolic::Model<DdType, ValueType> const& model, Partition<DdType, ValueType> const& initialPartition, bisimulation::PreservationInformation<DdType, ValueType> const& preservationInformation) : model(model), preservationInformation(preservationInformation), refiner(createRefiner(model, initialPartition)) {
+            auto const& ioSettings = storm::settings::getModule<storm::settings::modules::IOSettings>();
+            showProgress = ioSettings.isExplorationShowProgressSet();
+            showProgressDelay = ioSettings.getExplorationShowProgressDelay();
             this->refineWrtRewardModels();
         }
         
@@ -55,12 +67,24 @@ namespace storm {
 #endif
 
             auto start = std::chrono::high_resolution_clock::now();
+            auto timeOfLastMessage = start;
             uint64_t iterations = 0;
             bool refined = true;
             while (refined) {
                 refined = refiner->refine(mode);
+
                 ++iterations;
                 STORM_LOG_TRACE("After iteration " << iterations << " partition has " << refiner->getStatePartition().getNumberOfBlocks() << " blocks.");
+                
+                if (showProgress) {
+                    auto now = std::chrono::high_resolution_clock::now();
+                    auto durationSinceLastMessage = std::chrono::duration_cast<std::chrono::seconds>(now - timeOfLastMessage).count();
+                    if (static_cast<uint64_t>(durationSinceLastMessage) >= showProgressDelay) {
+                        auto durationSinceStart = std::chrono::duration_cast<std::chrono::seconds>(now - start).count();
+                        std::cout << "State partition after " << iterations << " iterations (" << durationSinceStart << "ms) has " << refiner->getStatePartition().getNumberOfBlocks() << " blocks." << std::endl;
+                        timeOfLastMessage = std::chrono::high_resolution_clock::now();
+                    }
+                }
             }
             auto end = std::chrono::high_resolution_clock::now();
             

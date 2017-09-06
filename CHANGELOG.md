@@ -13,6 +13,7 @@ Long run average computation via ValueIteration, LP based MDP model checking, pa
 - storm-cli-utilities now contains cli related stuff, instead of storm-lib
 - storm-pars: support for welldefinedness constraints in mdps.
 - symbolic (MT/BDD) bisimulation 
+- Fixed issue related to variable names that can not be used in Exprtk.
 
 ### Version 1.1.0 (2017/8)
 

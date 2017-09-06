@@ -167,7 +167,7 @@ namespace storm {
         }
         
         boost::any ToExprtkStringVisitor::visit(VariableExpression const& expression, boost::any const&) {
-            stream << expression.getVariableName();
+            stream << "v" + std::to_string(expression.getVariable().getIndex());
             return boost::any();
         }
         

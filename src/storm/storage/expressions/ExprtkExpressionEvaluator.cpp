@@ -1,3 +1,5 @@
+#include <string>
+
 #include "storm/storage/expressions/ExprtkExpressionEvaluator.h"
 #include "storm/storage/expressions/ExpressionManager.h"
 
@@ -13,11 +15,11 @@ namespace storm {
 
             for (auto const& variableTypePair : manager) {
                 if (variableTypePair.second.isBooleanType()) {
-                    symbolTable->add_variable(variableTypePair.first.getName(), this->booleanValues[variableTypePair.first.getOffset()]);
+                    symbolTable->add_variable("v" + std::to_string(variableTypePair.first.getIndex()), this->booleanValues[variableTypePair.first.getOffset()]);
                 } else if (variableTypePair.second.isIntegerType()) {
-                    symbolTable->add_variable(variableTypePair.first.getName(), this->integerValues[variableTypePair.first.getOffset()]);
+                    symbolTable->add_variable("v" + std::to_string(variableTypePair.first.getIndex()), this->integerValues[variableTypePair.first.getOffset()]);
                 } else if (variableTypePair.second.isRationalType()) {
-                    symbolTable->add_variable(variableTypePair.first.getName(), this->rationalValues[variableTypePair.first.getOffset()]);
+                    symbolTable->add_variable("v" + std::to_string(variableTypePair.first.getIndex()), this->rationalValues[variableTypePair.first.getOffset()]);
                 }
             }
         }

@@ -60,6 +60,12 @@ namespace storm {
             
             // The refiner to use.
             std::unique_ptr<bisimulation::PartitionRefiner<DdType, ValueType>> refiner;
+            
+            // A flag indicating whether progress is reported.
+            bool showProgress;
+            
+            // The delay between progress reports.
+            uint64_t showProgressDelay;
         };
         
     }
