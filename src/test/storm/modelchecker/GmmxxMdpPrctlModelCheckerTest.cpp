@@ -242,9 +242,7 @@ TEST(GmmxxMdpPrctlModelCheckerTest, SchedulerGeneration) {
     EXPECT_EQ(0ull, scheduler2.getChoice(3).getDeterministicChoice());
 }
 
-// Test is currently disabled as the computation of this property requires eliminating the zero-reward MECs, which is
-// currently not implemented and also not supported by PRISM.
-TEST(DISABLED_GmmxxMdpPrctlModelCheckerTest, TinyRewards) {
+TEST(GmmxxMdpPrctlModelCheckerTest, TinyRewards) {
     storm::prism::Program program = storm::parser::PrismParser::parse(STORM_TEST_RESOURCES_DIR "/mdp/tiny_rewards.nm");
 
     // A parser that we use for conveniently constructing the formulas.

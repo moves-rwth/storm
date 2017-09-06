@@ -103,8 +103,8 @@ TEST(SymbolicMdpPrctlModelCheckerTest, Dice_Cudd) {
     result->filter(storm::modelchecker::SymbolicQualitativeCheckResult<storm::dd::DdType::CUDD>(model->getReachableStates(), model->getInitialStates()));
     storm::modelchecker::SymbolicQuantitativeCheckResult<storm::dd::DdType::CUDD>& quantitativeResult7 = result->asSymbolicQuantitativeCheckResult<storm::dd::DdType::CUDD, double>();
     
-    EXPECT_NEAR(7.3333294987678528, quantitativeResult7.getMin(), storm::settings::getModule<storm::settings::modules::NativeEquationSolverSettings>().getPrecision());
-    EXPECT_NEAR(7.3333294987678528, quantitativeResult7.getMax(), storm::settings::getModule<storm::settings::modules::NativeEquationSolverSettings>().getPrecision());
+    EXPECT_NEAR(7.3333317041397095, quantitativeResult7.getMin(), storm::settings::getModule<storm::settings::modules::NativeEquationSolverSettings>().getPrecision());
+    EXPECT_NEAR(7.3333317041397095, quantitativeResult7.getMax(), storm::settings::getModule<storm::settings::modules::NativeEquationSolverSettings>().getPrecision());
     
     formula = formulaParser.parseSingleFormulaFromString("Rmax=? [F \"done\"]");
     
@@ -201,8 +201,8 @@ TEST(SymbolicMdpPrctlModelCheckerTest, Dice_Sylvan) {
     result->filter(storm::modelchecker::SymbolicQualitativeCheckResult<storm::dd::DdType::Sylvan>(model->getReachableStates(), model->getInitialStates()));
     storm::modelchecker::SymbolicQuantitativeCheckResult<storm::dd::DdType::Sylvan>& quantitativeResult7 = result->asSymbolicQuantitativeCheckResult<storm::dd::DdType::Sylvan, double>();
     
-    EXPECT_NEAR(7.3333294987678528, quantitativeResult7.getMin(), storm::settings::getModule<storm::settings::modules::NativeEquationSolverSettings>().getPrecision());
-    EXPECT_NEAR(7.3333294987678528, quantitativeResult7.getMax(), storm::settings::getModule<storm::settings::modules::NativeEquationSolverSettings>().getPrecision());
+    EXPECT_NEAR(7.3333317041397095, quantitativeResult7.getMin(), storm::settings::getModule<storm::settings::modules::NativeEquationSolverSettings>().getPrecision());
+    EXPECT_NEAR(7.3333317041397095, quantitativeResult7.getMax(), storm::settings::getModule<storm::settings::modules::NativeEquationSolverSettings>().getPrecision());
     
     formula = formulaParser.parseSingleFormulaFromString("Rmax=? [F \"done\"]");
     
@@ -281,8 +281,8 @@ TEST(SymbolicMdpPrctlModelCheckerTest, AsynchronousLeader_Cudd) {
     result->filter(storm::modelchecker::SymbolicQualitativeCheckResult<storm::dd::DdType::CUDD>(model->getReachableStates(), model->getInitialStates()));
     storm::modelchecker::SymbolicQuantitativeCheckResult<storm::dd::DdType::CUDD>& quantitativeResult5 = result->asSymbolicQuantitativeCheckResult<storm::dd::DdType::CUDD, double>();
     
-    EXPECT_NEAR(4.2856890848060498, quantitativeResult5.getMin(), storm::settings::getModule<storm::settings::modules::NativeEquationSolverSettings>().getPrecision());
-    EXPECT_NEAR(4.2856890848060498, quantitativeResult5.getMax(), storm::settings::getModule<storm::settings::modules::NativeEquationSolverSettings>().getPrecision());
+    EXPECT_NEAR(4.2856904569131631, quantitativeResult5.getMin(), storm::settings::getModule<storm::settings::modules::NativeEquationSolverSettings>().getPrecision());
+    EXPECT_NEAR(4.2856904569131631, quantitativeResult5.getMax(), storm::settings::getModule<storm::settings::modules::NativeEquationSolverSettings>().getPrecision());
     
     formula = formulaParser.parseSingleFormulaFromString("Rmax=? [F \"elected\"]");
     
