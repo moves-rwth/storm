@@ -60,6 +60,12 @@ namespace storm {
                     std::cout << "     findSolutions: " << swFindSol << " seconds." << std::endl;
                     std::cout << "   insertSolutions: " << swInsertSol << " seconds." << std::endl;
                     std::cout << "---------------------------------------------" << std::endl;
+                    std::cout << "      Product size: " << memoryProduct.getProduct().getNumberOfStates();
+                    std::cout << " Epoch model sizes: ";
+                    for (auto const& i : epochModelSizes) {
+                        std::cout << i << " ";
+                    }
+                    std::cout << std::endl;
                     std::cout << "---------------------------------------------" << std::endl;
                     std::cout << std::endl;
                     
@@ -156,6 +162,7 @@ namespace storm {
                 
                 
                 storm::utility::Stopwatch swInit, swFindSol, swInsertSol, swSetEpoch, swSetEpochClass;
+                std::vector<uint64_t> epochModelSizes;
             };
         }
     }

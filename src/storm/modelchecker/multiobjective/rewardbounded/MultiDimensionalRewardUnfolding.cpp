@@ -315,6 +315,7 @@ namespace storm {
                 }
                 
                 swSetEpochClass.stop();
+                epochModelSizes.push_back(epochModel.epochMatrix.getRowGroupCount());
             }
             
             template<typename ValueType>
