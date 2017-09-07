@@ -22,7 +22,7 @@ namespace storm {
             class MultiDimensionalRewardUnfolding {
             public:
                 
-                typedef std::vector<int64_t> Epoch; // The number of reward steps that are "left" for each dimension
+                typedef uint64_t Epoch; // The number of reward steps that are "left" for each dimension
                 
                 typedef typename std::conditional<SingleObjectiveMode, ValueType, std::vector<ValueType>>::type SolutionType;
 
@@ -87,10 +87,10 @@ namespace storm {
                 class MemoryProduct {
                 public:
                     MemoryProduct() = default;
-                    MemoryProduct(storm::models::sparse::Mdp<ValueType> const& model, storm::storage::MemoryStructure const& memory, std::vector<storm::storage::BitVector>&& memoryStateMap, std::vector<std::vector<uint64_t>> const& originalModelSteps, std::vector<storm::storage::BitVector> const& objectiveDimensions);
+                    MemoryProduct(storm::models::sparse::Mdp<ValueType> const& model, storm::storage::MemoryStructure const& memory, std::vector<storm::storage::BitVector>&& memoryStateMap, std::vector<Epoch> const& originalModelSteps, std::vector<storm::storage::BitVector> const& objectiveDimensions);
                     
                     storm::models::sparse::Mdp<ValueType> const& getProduct() const;
-                    std::vector<boost::optional<Epoch>> const& getSteps() const;
+                    std::vector<Epoch> const& getSteps() const;
                     
                     bool productStateExists(uint64_t const& modelState, uint64_t const& memoryState) const;
                     uint64_t getProductState(uint64_t const& modelState, uint64_t const& memoryState) const;
@@ -104,11 +104,11 @@ namespace storm {
                 
                 private:
                     
-                    void setReachableStates(storm::storage::SparseModelMemoryProduct<ValueType>& productBuilder, std::vector<std::vector<uint64_t>> const& originalModelSteps, std::vector<storm::storage::BitVector> const& objectiveDimensions) const;
+                    void setReachableStates(storm::storage::SparseModelMemoryProduct<ValueType>& productBuilder, std::vector<Epoch> const& originalModelSteps, std::vector<storm::storage::BitVector> const& objectiveDimensions) const;
 
                     
                     std::shared_ptr<storm::models::sparse::Mdp<ValueType>> product;
-                    std::vector<boost::optional<Epoch>> steps;
+                    std::vector<Epoch> steps;
                     
                     std::vector<uint64_t> modelMemoryToProductStateMap;
                     std::vector<uint64_t> productToModelStateMap;
@@ -123,17 +123,22 @@ namespace storm {
             
                 void initialize();
                 
-                void initializeObjectives(std::vector<std::vector<uint64_t>>& epochSteps);
-                void initializePossibleEpochSteps(std::vector<std::vector<uint64_t>> const& epochSteps);
+                void initializeObjectives(std::vector<Epoch>& epochSteps);
                 
-                void initializeMemoryProduct(std::vector<std::vector<uint64_t>> const& epochSteps);
+                void initializeMemoryProduct(std::vector<Epoch> const& epochSteps);
                 storm::storage::MemoryStructure computeMemoryStructure() const;
                 std::vector<storm::storage::BitVector> computeMemoryStateMap(storm::storage::MemoryStructure const& memory) const;
                 std::vector<std::vector<ValueType>> computeObjectiveRewardsForProduct(Epoch const& epoch) const;
                 
                 bool sameEpochClass(Epoch const& epoch1, Epoch const& epoch2) const;
                 Epoch getSuccessorEpoch(Epoch const& epoch, Epoch const& step) const;
-                
+                bool isZeroEpoch(Epoch const& epoch) const;
+                bool isValidDimensionValue(uint64_t const& value) const;
+                void setBottomDimension(Epoch& epoch, uint64_t const& dimension) const;
+                void setDimensionOfEpoch(Epoch& epoch, uint64_t const& dimension, uint64_t const& value) const; // assumes that the value is small enough
+                bool isBottomDimension(Epoch const& epoch, uint64_t const& dimension) const;
+                uint64_t getDimensionOfEpoch(Epoch const& epoch, uint64_t const& dimension) const; // assumes that the dimension is not bottom
+                std::string epochToString(Epoch const& epoch) const;
 
                 template<bool SO = SingleObjectiveMode, typename std::enable_if<SO, int>::type = 0>
                 SolutionType getScaledSolution(SolutionType const& solution, ValueType const& scalingFactor) const;
@@ -144,6 +149,11 @@ namespace storm {
                 void addScaledSolution(SolutionType& solution, SolutionType const& solutionToAdd, ValueType const& scalingFactor) const;
                 template<bool SO = SingleObjectiveMode, typename std::enable_if<!SO, int>::type = 0>
                 void addScaledSolution(SolutionType& solution, SolutionType const& solutionToAdd, ValueType const& scalingFactor) const;
+                
+                template<bool SO = SingleObjectiveMode, typename std::enable_if<SO, int>::type = 0>
+                std::string solutionToString(SolutionType const& solution) const;
+                template<bool SO = SingleObjectiveMode, typename std::enable_if<!SO, int>::type = 0>
+                std::string solutionToString(SolutionType const& solution) const;
                 
                 void setSolutionForCurrentEpoch(uint64_t const& productState, SolutionType const& solution);
                 SolutionType const& getStateSolution(Epoch const& epoch, uint64_t const& productState);
@@ -162,12 +172,17 @@ namespace storm {
                 boost::optional<Epoch> currentEpoch;
                 
 
+                uint64_t dimensionCount;
+                uint64_t bitsPerDimension;
+                uint64_t dimensionBitMask;
+                
                 std::vector<storm::storage::BitVector> objectiveDimensions;
                 std::vector<std::pair<std::shared_ptr<storm::logic::Formula const>, uint64_t>> subObjectives;
                 std::vector<boost::optional<std::string>> memoryLabels;
                 std::vector<ValueType> scalingFactors;
                 
-                std::map<std::vector<int64_t>, SolutionType> solutions;
+                
+                std::map<std::vector<uint64_t>, SolutionType> solutions;
                 
                 
                 storm::utility::Stopwatch swInit, swFindSol, swInsertSol, swSetEpoch, swSetEpochClass, swAux1, swAux2, swAux3, swAux4;
