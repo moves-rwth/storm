@@ -184,7 +184,7 @@ namespace storm {
             template<typename ValueType, bool SingleObjectiveMode>
             typename MultiDimensionalRewardUnfolding<ValueType, SingleObjectiveMode>::EpochModel& MultiDimensionalRewardUnfolding<ValueType, SingleObjectiveMode>::setCurrentEpoch(Epoch const& epoch) {
                 // Check if we need to update the current epoch class
-                if (!currentEpoch || getClassOfEpoch(epoch) != getClassOfEpoch(currentEpoch.get())) {
+                if (!currentEpoch || !sameEpochClass(epoch, currentEpoch.get())) {
                     setCurrentEpochClass(epoch);
                 }
                 
@@ -211,7 +211,7 @@ namespace storm {
                     swAux2.start();
                     SolutionType choiceSolution;
                     bool firstSuccessor = true;
-                    if (getClassOfEpoch(epoch) == getClassOfEpoch(successorEpoch)) {
+                    if (sameEpochClass(epoch, successorEpoch)) {
                         swAux3.start();
                         for (auto const& successor : memoryProduct.getProduct().getTransitionMatrix().getRow(productChoice)) {
                             if (firstSuccessor) {
@@ -836,17 +836,14 @@ namespace storm {
             }
             
             template<typename ValueType, bool SingleObjectiveMode>
-            typename MultiDimensionalRewardUnfolding<ValueType, SingleObjectiveMode>::EpochClass MultiDimensionalRewardUnfolding<ValueType, SingleObjectiveMode>::getClassOfEpoch(Epoch const& epoch) const {
-                // Get a BitVector that is 1 wherever the epoch is non-negative
-                storm::storage::BitVector classAsBitVector(epoch.size(), false);
-                uint64_t i = 0;
-                for (auto const& e : epoch) {
-                    if (e >= 0) {
-                        classAsBitVector.set(i, true);
+            bool MultiDimensionalRewardUnfolding<ValueType, SingleObjectiveMode>::sameEpochClass(Epoch const& epoch1, Epoch const& epoch2) const {
+                assert(epoch1.size() == epoch2.size());
+                for (auto e1It = epoch1.begin(), e2It = epoch2.begin(); e1It != epoch1.end(); ++e1It, ++e2It) {
+                    if ((*e1It) < 0 != (*e2It < 0)) {
+                        return false;
                     }
-                    ++i;
                 }
-                return classAsBitVector.getAsInt(0, epoch.size());
+                return true;
             }
             
             template<typename ValueType, bool SingleObjectiveMode>

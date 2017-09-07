@@ -23,7 +23,6 @@ namespace storm {
             public:
                 
                 typedef std::vector<int64_t> Epoch; // The number of reward steps that are "left" for each dimension
-                typedef uint64_t EpochClass; // Collection of epochs that consider the same epoch model
                 
                 typedef typename std::conditional<SingleObjectiveMode, ValueType, std::vector<ValueType>>::type SolutionType;
 
@@ -132,8 +131,7 @@ namespace storm {
                 std::vector<storm::storage::BitVector> computeMemoryStateMap(storm::storage::MemoryStructure const& memory) const;
                 std::vector<std::vector<ValueType>> computeObjectiveRewardsForProduct(Epoch const& epoch) const;
                 
-                
-                EpochClass getClassOfEpoch(Epoch const& epoch) const;
+                bool sameEpochClass(Epoch const& epoch1, Epoch const& epoch2) const;
                 Epoch getSuccessorEpoch(Epoch const& epoch, Epoch const& step) const;
                 
 
