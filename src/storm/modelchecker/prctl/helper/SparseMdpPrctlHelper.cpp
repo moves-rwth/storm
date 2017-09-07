@@ -975,18 +975,29 @@ namespace storm {
                     }
                 }
                 
+                storm::storage::BitVector allStates(fixedTargetStates.size(), true);
+                
+                // Extend the target states by computing all states that have probability 1 to go to a target state
+                // under *all* schedulers.
+                fixedTargetStates = storm::utility::graph::performProb1A(transitionMatrix, transitionMatrix.getRowGroupIndices(), backwardTransitions, allStates, fixedTargetStates);
+                
                 // We solve the max-case and later adjust the result if the optimization direction was to minimize.
                 storm::storage::BitVector initialStatesBitVector(transitionMatrix.getRowGroupCount());
                 initialStatesBitVector.set(initialState);
                 
-                storm::storage::BitVector allStates(initialStatesBitVector.size(), true);
-                std::vector<ValueType> conditionProbabilities = std::move(computeUntilProbabilities(OptimizationDirection::Maximize, transitionMatrix, backwardTransitions, allStates, conditionStates, false, false, minMaxLinearEquationSolverFactory).values);
+                // Extend the condition states by computing all states that have probability 1 to go to a condition state
+                // under *all* schedulers.
+                storm::storage::BitVector extendedConditionStates = storm::utility::graph::performProb1A(transitionMatrix, transitionMatrix.getRowGroupIndices(), backwardTransitions, allStates, conditionStates);
+
+                STORM_LOG_DEBUG("Computing probabilities to satisfy condition.");
+                std::vector<ValueType> conditionProbabilities = std::move(computeUntilProbabilities(OptimizationDirection::Maximize, transitionMatrix, backwardTransitions, allStates, extendedConditionStates, false, false, minMaxLinearEquationSolverFactory).values);
                 
                 // If the conditional probability is undefined for the initial state, we return directly.
                 if (storm::utility::isZero(conditionProbabilities[initialState])) {
                     return std::unique_ptr<CheckResult>(new ExplicitQuantitativeCheckResult<ValueType>(initialState, storm::utility::infinity<ValueType>()));
                 }
                 
+                STORM_LOG_DEBUG("Computing probabilities to reach target.");
                 std::vector<ValueType> targetProbabilities = std::move(computeUntilProbabilities(OptimizationDirection::Maximize, transitionMatrix, backwardTransitions, allStates, fixedTargetStates, false, false, minMaxLinearEquationSolverFactory).values);
 
                 storm::storage::BitVector statesWithProbabilityGreater0E(transitionMatrix.getRowGroupCount(), true);
@@ -999,10 +1010,15 @@ namespace storm {
                 }
 
                 // Determine those states that need to be equipped with a restart mechanism.
-                storm::storage::BitVector problematicStates = storm::utility::graph::performProb0E(transitionMatrix, transitionMatrix.getRowGroupIndices(), backwardTransitions, allStates, conditionStates | fixedTargetStates);
+                STORM_LOG_DEBUG("Computing problematic states.");
+                storm::storage::BitVector pureResetStates = storm::utility::graph::performProb0A(backwardTransitions, allStates, fixedTargetStates);
+                
+                // FIXME: target | condition as target states here?
+                storm::storage::BitVector problematicStates = storm::utility::graph::performProb0E(transitionMatrix, transitionMatrix.getRowGroupIndices(), backwardTransitions, allStates, fixedTargetStates);
 
                 // Otherwise, we build the transformed MDP.
-                storm::storage::BitVector relevantStates = storm::utility::graph::getReachableStates(transitionMatrix, initialStatesBitVector, allStates, conditionStates | fixedTargetStates);
+                storm::storage::BitVector relevantStates = storm::utility::graph::getReachableStates(transitionMatrix, initialStatesBitVector, allStates, extendedConditionStates | fixedTargetStates | pureResetStates);
+                STORM_LOG_TRACE("Found " << relevantStates.getNumberOfSetBits() << " relevant states for conditional probability computation.");
                 std::vector<uint_fast64_t> numberOfStatesBeforeRelevantStates = relevantStates.getNumberOfSetBitsBeforeIndices();
                 storm::storage::sparse::state_type newGoalState = relevantStates.getNumberOfSetBits();
                 storm::storage::sparse::state_type newStopState = newGoalState + 1;
@@ -1014,16 +1030,23 @@ namespace storm {
                 for (auto state : relevantStates) {
                     builder.newRowGroup(currentRow);
                     if (fixedTargetStates.get(state)) {
-                        builder.addNextValue(currentRow, newGoalState, conditionProbabilities[state]);
                         if (!storm::utility::isZero(conditionProbabilities[state])) {
+                            builder.addNextValue(currentRow, newGoalState, conditionProbabilities[state]);
+                        }
+                        if (!storm::utility::isOne(conditionProbabilities[state])) {
                             builder.addNextValue(currentRow, newFailState, storm::utility::one<ValueType>() - conditionProbabilities[state]);
                         }
                         ++currentRow;
-                    } else if (conditionStates.get(state)) {
-                        builder.addNextValue(currentRow, newGoalState, targetProbabilities[state]);
+                    } else if (extendedConditionStates.get(state)) {
                         if (!storm::utility::isZero(targetProbabilities[state])) {
+                            builder.addNextValue(currentRow, newGoalState, targetProbabilities[state]);
+                        }
+                        if (!storm::utility::isOne(targetProbabilities[state])) {
                             builder.addNextValue(currentRow, newStopState, storm::utility::one<ValueType>() - targetProbabilities[state]);
                         }
+                        ++currentRow;
+                    } else if (pureResetStates.get(state)) {
+                        builder.addNextValue(currentRow, numberOfStatesBeforeRelevantStates[initialState], storm::utility::one<ValueType>());
                         ++currentRow;
                     } else {
                         for (uint_fast64_t row = transitionMatrix.getRowGroupIndices()[state]; row < transitionMatrix.getRowGroupIndices()[state + 1]; ++row) {
@@ -1051,9 +1074,11 @@ namespace storm {
                 ++currentRow;
                 
                 // Finally, build the matrix and dispatch the query as a reachability query.
+                STORM_LOG_DEBUG("Computing conditional probabilties.");
                 storm::storage::BitVector newGoalStates(newFailState + 1);
                 newGoalStates.set(newGoalState);
                 storm::storage::SparseMatrix<ValueType> newTransitionMatrix = builder.build();
+                STORM_LOG_DEBUG("Transformed model has " << newTransitionMatrix.getRowGroupCount() << " states and " << newTransitionMatrix.getNonzeroEntryCount() << " transitions.");
                 storm::storage::SparseMatrix<ValueType> newBackwardTransitions = newTransitionMatrix.transpose(true);
                 std::vector<ValueType> goalProbabilities = std::move(computeUntilProbabilities(OptimizationDirection::Maximize, newTransitionMatrix, newBackwardTransitions, storm::storage::BitVector(newFailState + 1, true), newGoalStates, false, false, minMaxLinearEquationSolverFactory).values);
                 
