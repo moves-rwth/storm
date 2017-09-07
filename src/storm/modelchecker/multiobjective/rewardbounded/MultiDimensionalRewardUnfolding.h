@@ -59,7 +59,10 @@ namespace storm {
                     std::cout << "     setEpochClass: " << swSetEpochClass << " seconds." << std::endl;
                     std::cout << "     findSolutions: " << swFindSol << " seconds." << std::endl;
                     std::cout << "   insertSolutions: " << swInsertSol << " seconds." << std::endl;
-                    std::cout << "      auxStopWatch: " << swAux << " seconds." << std::endl;
+                    std::cout << "     aux1StopWatch: " << swAux1 << " seconds." << std::endl;
+                    std::cout << "     aux2StopWatch: " << swAux2 << " seconds." << std::endl;
+                    std::cout << "     aux3StopWatch: " << swAux3 << " seconds." << std::endl;
+                    std::cout << "     aux4StopWatch: " << swAux4 << " seconds." << std::endl;
                     std::cout << "---------------------------------------------" << std::endl;
                     std::cout << "      Product size: " << memoryProduct.getProduct().getNumberOfStates() << std::endl;
                     std::cout << " Epoch model sizes: ";
@@ -162,7 +165,7 @@ namespace storm {
                 std::map<std::vector<int64_t>, SolutionType> solutions;
                 
                 
-                storm::utility::Stopwatch swInit, swFindSol, swInsertSol, swSetEpoch, swSetEpochClass, swAux;
+                storm::utility::Stopwatch swInit, swFindSol, swInsertSol, swSetEpoch, swSetEpochClass, swAux1, swAux2, swAux3, swAux4;
                 std::vector<uint64_t> epochModelSizes;
             };
         }

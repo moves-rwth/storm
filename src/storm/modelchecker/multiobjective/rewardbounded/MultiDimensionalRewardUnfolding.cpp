@@ -188,36 +188,37 @@ namespace storm {
                 }
                 
                 swSetEpoch.start();
-                // Find out which objective rewards are earned in this particular epoch
                 epochModel.objectiveRewardFilter = std::vector<storm::storage::BitVector>(objectives.size(), storm::storage::BitVector(epochModel.objectiveRewards.front().size(), true));
-                for (auto const& reducedChoice : epochModel.stepChoices) {
-                    uint64_t productChoice = ecElimResult.newToOldRowMapping[reducedChoice];
-                    storm::storage::BitVector memoryState = memoryProduct.convertMemoryState(memoryProduct.getMemoryState(memoryProduct.getProductStateFromChoice(productChoice)));
-                    Epoch successorEpoch = getSuccessorEpoch(epoch, memoryProduct.getSteps()[productChoice].get());
-                    for (uint64_t dim = 0; dim < successorEpoch.size(); ++dim) {
-                        if (successorEpoch[dim] < 0 && memoryState.get(dim)) {
-                            epochModel.objectiveRewardFilter[subObjectives[dim].second].set(reducedChoice, false);
-                        }
-                    }
-                }
-                
-                swAux.start();
-                // compute the solution for the stepChoices
                 epochModel.stepSolutions.resize(epochModel.stepChoices.getNumberOfSetBits());
                 auto stepSolIt = epochModel.stepSolutions.begin();
                 for (auto const& reducedChoice : epochModel.stepChoices) {
                     uint64_t productChoice = ecElimResult.newToOldRowMapping[reducedChoice];
                     uint64_t productState = memoryProduct.getProductStateFromChoice(productChoice);
-                    auto relevantDimensions = memoryProduct.convertMemoryState(memoryProduct.getMemoryState(productState));
+                    auto memoryState = memoryProduct.convertMemoryState(memoryProduct.getMemoryState(productState));
                     Epoch successorEpoch = getSuccessorEpoch(epoch, memoryProduct.getSteps()[productChoice].get());
+                    
+                    // Find out whether objective reward is earned for the current choice
+                    swAux1.start();
+                    for (uint64_t dim = 0; dim < successorEpoch.size(); ++dim) {
+                        if (successorEpoch[dim] < 0 && memoryState.get(dim)) {
+                            epochModel.objectiveRewardFilter[subObjectives[dim].second].set(reducedChoice, false);
+                        }
+                    }
+                    swAux1.stop();
+                    
+                    // compute the solution for the stepChoices
+                    swAux2.start();
                     SolutionType choiceSolution = getZeroSolution();
                     if (getClassOfEpoch(epoch) == getClassOfEpoch(successorEpoch)) {
+                        swAux3.start();
                         for (auto const& successor : memoryProduct.getProduct().getTransitionMatrix().getRow(productChoice)) {
                             addScaledSolution(choiceSolution, getStateSolution(successorEpoch, successor.getColumn()), successor.getValue());
                         }
+                        swAux3.stop();
                     } else {
+                        swAux4.start();
                         storm::storage::BitVector successorRelevantDimensions(successorEpoch.size(), true);
-                        for (auto const& dim : relevantDimensions) {
+                        for (auto const& dim : memoryState) {
                             if (successorEpoch[dim] < 0) {
                                 successorRelevantDimensions &= ~objectiveDimensions[subObjectives[dim].second];
                             }
@@ -228,11 +229,12 @@ namespace storm {
                             SolutionType const& successorSolution = getStateSolution(successorEpoch, successorProductState);
                             addScaledSolution(choiceSolution, successorSolution, successor.getValue());
                         }
+                        swAux4.stop();
                     }
+                    swAux2.stop();
                     *stepSolIt = std::move(choiceSolution);
                     ++stepSolIt;
                 }
-                swAux.stop();
                 
                 assert(epochModel.objectiveRewards.size() == objectives.size());
                 assert(epochModel.objectiveRewardFilter.size() == objectives.size());
