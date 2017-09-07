@@ -37,8 +37,10 @@ namespace storm {
                 
                 auto solution = rewardUnfolding.getInitialStateResult(initEpoch);
                 // Todo: we currently assume precise results...
-                underApproxResult = solution.objectiveValues;
-                overApproxResult = solution.objectiveValues;
+                auto solutionIt = solution.begin();
+                ++solutionIt;
+                underApproxResult = std::vector<ValueType>(solutionIt, solution.end());
+                overApproxResult = underApproxResult;
                 
             }
             
@@ -62,7 +64,7 @@ namespace storm {
                 }
                 auto stepSolutionIt = epochModel.stepSolutions.begin();
                 for (auto const& choice : epochModel.stepChoices) {
-                    b[choice] += stepSolutionIt->weightedValue;
+                    b[choice] += stepSolutionIt->front();
                     ++stepSolutionIt;
                 }
                 
@@ -79,8 +81,10 @@ namespace storm {
                 swMinMaxSolving.stop();
                 swEqBuilding.start();
                 auto resultIt = result.begin();
+                uint64_t solSize = this->objectives.size() + 1;
                 for (auto const& state : epochModel.inStates) {
-                    resultIt->weightedValue = x[state];
+                    resultIt->reserve(solSize);
+                    resultIt->push_back(x[state]);
                     ++resultIt;
                 }
                 
@@ -103,7 +107,7 @@ namespace storm {
                             b[state] = storm::utility::zero<ValueType>();
                         }
                         if (epochModel.stepChoices.get(choice)) {
-                            b[state] += epochModel.stepSolutions[epochModel.stepChoices.getNumberOfSetBitsBeforeIndex(choice)].objectiveValues[objIndex];
+                            b[state] += epochModel.stepSolutions[epochModel.stepChoices.getNumberOfSetBitsBeforeIndex(choice)][objIndex + 1];
                         }
                     }
                     swEqBuilding.stop();
@@ -113,7 +117,7 @@ namespace storm {
                     swEqBuilding.start();
                     auto resultIt = result.begin();
                     for (auto const& state : epochModel.inStates) {
-                        resultIt->objectiveValues.push_back(x[state]);
+                        resultIt->push_back(x[state]);
                         ++resultIt;
                     }
                 }

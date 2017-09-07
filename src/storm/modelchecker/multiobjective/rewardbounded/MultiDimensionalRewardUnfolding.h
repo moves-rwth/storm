@@ -25,12 +25,7 @@ namespace storm {
                 typedef std::vector<int64_t> Epoch; // The number of reward steps that are "left" for each dimension
                 typedef uint64_t EpochClass; // Collection of epochs that consider the same epoch model
                 
-//                typedef typename std::conditional<singleObjectiveMode, ValueType, std::vector<ValueType>>::type; SolutionType
-
-                struct SolutionType {
-                    ValueType weightedValue;
-                    std::vector<ValueType> objectiveValues;
-                };
+                typedef typename std::conditional<SingleObjectiveMode, ValueType, std::vector<ValueType>>::type SolutionType;
 
                 struct EpochModel {
                     storm::storage::SparseMatrix<ValueType> epochMatrix;

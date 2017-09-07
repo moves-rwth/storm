@@ -28,6 +28,7 @@ namespace storm {
             template<typename ValueType, bool SingleObjectiveMode>
             void MultiDimensionalRewardUnfolding<ValueType, SingleObjectiveMode>::initialize() {
                 swInit.start();
+                STORM_LOG_ASSERT(!SingleObjectiveMode || (this->objectives.size() == 1), "Enabled single objective mode but there are multiple objectives.");
                 std::vector<std::vector<uint64_t>> epochSteps;
                 initializeObjectives(epochSteps);
                 initializePossibleEpochSteps(epochSteps);
@@ -415,17 +416,16 @@ namespace storm {
             template<typename ValueType, bool SingleObjectiveMode>
             template<bool SO, typename std::enable_if<SO, int>::type>
             typename MultiDimensionalRewardUnfolding<ValueType, SingleObjectiveMode>::SolutionType MultiDimensionalRewardUnfolding<ValueType, SingleObjectiveMode>::getScaledSolution(SolutionType const& solution, ValueType const& scalingFactor) const {
-                //return solution * scalingFactor;
+                return solution * scalingFactor;
             }
             
             template<typename ValueType, bool SingleObjectiveMode>
             template<bool SO, typename std::enable_if<!SO, int>::type>
             typename MultiDimensionalRewardUnfolding<ValueType, SingleObjectiveMode>::SolutionType MultiDimensionalRewardUnfolding<ValueType, SingleObjectiveMode>::getScaledSolution(SolutionType const& solution, ValueType const& scalingFactor) const {
                 SolutionType res;
-                res.weightedValue = solution.weightedValue * scalingFactor;
-                res.objectiveValues.reserve(solution.objectiveValues.size());
-                for (auto const& sol : solution.objectiveValues) {
-                    res.objectiveValues.push_back(sol * scalingFactor);
+                res.reserve(solution.size());
+                for (auto const& sol : solution) {
+                    res.push_back(sol * scalingFactor);
                 }
                 return res;
             }
@@ -433,14 +433,13 @@ namespace storm {
             template<typename ValueType, bool SingleObjectiveMode>
             template<bool SO, typename std::enable_if<SO, int>::type>
             void MultiDimensionalRewardUnfolding<ValueType, SingleObjectiveMode>::addScaledSolution(SolutionType& solution, SolutionType const& solutionToAdd, ValueType const& scalingFactor) const {
-                // solution += solutionToAdd * scalingFactor;
+                solution += solutionToAdd * scalingFactor;
             }
             
             template<typename ValueType, bool SingleObjectiveMode>
             template<bool SO, typename std::enable_if<!SO, int>::type>
             void MultiDimensionalRewardUnfolding<ValueType, SingleObjectiveMode>::addScaledSolution(SolutionType& solution, SolutionType const& solutionToAdd, ValueType const& scalingFactor) const {
-                solution.weightedValue += solutionToAdd.weightedValue * scalingFactor;
-                storm::utility::vector::addScaledVector(solution.objectiveValues,  solutionToAdd.objectiveValues, scalingFactor);
+                storm::utility::vector::addScaledVector(solution,  solutionToAdd, scalingFactor);
             }
             
             template<typename ValueType, bool SingleObjectiveMode>
