@@ -18,15 +18,15 @@ namespace storm {
     namespace modelchecker {
         namespace multiobjective {
             
-            template<typename ValueType>
-            MultiDimensionalRewardUnfolding<ValueType>::MultiDimensionalRewardUnfolding(storm::models::sparse::Mdp<ValueType> const& model, std::vector<storm::modelchecker::multiobjective::Objective<ValueType>> const& objectives, storm::storage::BitVector const& possibleECActions, storm::storage::BitVector const& allowedBottomStates) : model(model), objectives(objectives), possibleECActions(possibleECActions), allowedBottomStates(allowedBottomStates) {
+            template<typename ValueType, bool SingleObjectiveMode>
+            MultiDimensionalRewardUnfolding<ValueType, SingleObjectiveMode>::MultiDimensionalRewardUnfolding(storm::models::sparse::Mdp<ValueType> const& model, std::vector<storm::modelchecker::multiobjective::Objective<ValueType>> const& objectives, storm::storage::BitVector const& possibleECActions, storm::storage::BitVector const& allowedBottomStates) : model(model), objectives(objectives), possibleECActions(possibleECActions), allowedBottomStates(allowedBottomStates) {
             
                 initialize();
             }
     
     
-            template<typename ValueType>
-            void MultiDimensionalRewardUnfolding<ValueType>::initialize() {
+            template<typename ValueType, bool SingleObjectiveMode>
+            void MultiDimensionalRewardUnfolding<ValueType, SingleObjectiveMode>::initialize() {
                 swInit.start();
                 std::vector<std::vector<uint64_t>> epochSteps;
                 initializeObjectives(epochSteps);
@@ -35,8 +35,8 @@ namespace storm {
                 swInit.stop();
             }
             
-            template<typename ValueType>
-            void MultiDimensionalRewardUnfolding<ValueType>::initializeObjectives(std::vector<std::vector<uint64_t>>& epochSteps) {
+            template<typename ValueType, bool SingleObjectiveMode>
+            void MultiDimensionalRewardUnfolding<ValueType, SingleObjectiveMode>::initializeObjectives(std::vector<std::vector<uint64_t>>& epochSteps) {
 
                 // collect the time-bounded subobjectives
                 for (uint64_t objIndex = 0; objIndex < this->objectives.size(); ++objIndex) {
@@ -96,8 +96,8 @@ namespace storm {
                 }
             }
             
-            template<typename ValueType>
-            void MultiDimensionalRewardUnfolding<ValueType>::initializePossibleEpochSteps(std::vector<std::vector<uint64_t>> const& epochSteps) {
+            template<typename ValueType, bool SingleObjectiveMode>
+            void MultiDimensionalRewardUnfolding<ValueType, SingleObjectiveMode>::initializePossibleEpochSteps(std::vector<std::vector<uint64_t>> const& epochSteps) {
                 // collect which epoch steps are possible
                 possibleEpochSteps.clear();
                 for (uint64_t choiceIndex = 0; choiceIndex < epochSteps.front().size(); ++choiceIndex) {
@@ -110,8 +110,8 @@ namespace storm {
                 }
             }
             
-            template<typename ValueType>
-            void MultiDimensionalRewardUnfolding<ValueType>::initializeMemoryProduct(std::vector<std::vector<uint64_t>> const& epochSteps) {
+            template<typename ValueType, bool SingleObjectiveMode>
+            void MultiDimensionalRewardUnfolding<ValueType, SingleObjectiveMode>::initializeMemoryProduct(std::vector<std::vector<uint64_t>> const& epochSteps) {
                 
                 // build the memory structure
                 auto memoryStructure = computeMemoryStructure();
@@ -123,8 +123,8 @@ namespace storm {
                 
             }
             
-            template<typename ValueType>
-            typename MultiDimensionalRewardUnfolding<ValueType>::Epoch MultiDimensionalRewardUnfolding<ValueType>::getStartEpoch() {
+            template<typename ValueType, bool SingleObjectiveMode>
+            typename MultiDimensionalRewardUnfolding<ValueType, SingleObjectiveMode>::Epoch MultiDimensionalRewardUnfolding<ValueType, SingleObjectiveMode>::getStartEpoch() {
                 Epoch startEpoch;
                 for (uint64_t dim = 0; dim < this->subObjectives.size(); ++dim) {
                     storm::expressions::Expression bound;
@@ -153,8 +153,8 @@ namespace storm {
                 return startEpoch;
             }
     
-            template<typename ValueType>
-            std::vector<typename MultiDimensionalRewardUnfolding<ValueType>::Epoch> MultiDimensionalRewardUnfolding<ValueType>::getEpochComputationOrder(Epoch const& startEpoch) {
+            template<typename ValueType, bool SingleObjectiveMode>
+            std::vector<typename MultiDimensionalRewardUnfolding<ValueType, SingleObjectiveMode>::Epoch> MultiDimensionalRewardUnfolding<ValueType, SingleObjectiveMode>::getEpochComputationOrder(Epoch const& startEpoch) {
                 
                 // perform DFS to get the 'reachable' epochs in the correct order.
                 std::vector<Epoch> result, dfsStack;
@@ -180,8 +180,8 @@ namespace storm {
                 return result;
             }
             
-            template<typename ValueType>
-            typename MultiDimensionalRewardUnfolding<ValueType>::EpochModel const& MultiDimensionalRewardUnfolding<ValueType>::setCurrentEpoch(Epoch const& epoch) {
+            template<typename ValueType, bool SingleObjectiveMode>
+            typename MultiDimensionalRewardUnfolding<ValueType, SingleObjectiveMode>::EpochModel const& MultiDimensionalRewardUnfolding<ValueType, SingleObjectiveMode>::setCurrentEpoch(Epoch const& epoch) {
                 // Check if we need to update the current epoch class
                 if (!currentEpoch || getClassOfEpoch(epoch) != getClassOfEpoch(currentEpoch.get())) {
                     setCurrentEpochClass(epoch);
@@ -208,11 +208,17 @@ namespace storm {
                     
                     // compute the solution for the stepChoices
                     swAux2.start();
-                    SolutionType choiceSolution = getZeroSolution();
+                    SolutionType choiceSolution;
+                    bool firstSuccessor = true;
                     if (getClassOfEpoch(epoch) == getClassOfEpoch(successorEpoch)) {
                         swAux3.start();
                         for (auto const& successor : memoryProduct.getProduct().getTransitionMatrix().getRow(productChoice)) {
-                            addScaledSolution(choiceSolution, getStateSolution(successorEpoch, successor.getColumn()), successor.getValue());
+                            if (firstSuccessor) {
+                                choiceSolution = getScaledSolution(getStateSolution(successorEpoch, successor.getColumn()), successor.getValue());
+                                firstSuccessor = false;
+                            } else {
+                                addScaledSolution(choiceSolution, getStateSolution(successorEpoch, successor.getColumn()), successor.getValue());
+                            }
                         }
                         swAux3.stop();
                     } else {
@@ -227,7 +233,12 @@ namespace storm {
                             storm::storage::BitVector successorMemoryState = memoryProduct.convertMemoryState(memoryProduct.getMemoryState(successor.getColumn())) & successorRelevantDimensions;
                             uint64_t successorProductState = memoryProduct.getProductState(memoryProduct.getModelState(successor.getColumn()), memoryProduct.convertMemoryState(successorMemoryState));
                             SolutionType const& successorSolution = getStateSolution(successorEpoch, successorProductState);
-                            addScaledSolution(choiceSolution, successorSolution, successor.getValue());
+                            if (firstSuccessor) {
+                                choiceSolution = getScaledSolution(successorSolution, successor.getValue());
+                                firstSuccessor = false;
+                            } else {
+                                addScaledSolution(choiceSolution, successorSolution, successor.getValue());
+                            }
                         }
                         swAux4.stop();
                     }
@@ -262,8 +273,8 @@ namespace storm {
                 
             }
             
-            template<typename ValueType>
-            void MultiDimensionalRewardUnfolding<ValueType>::setCurrentEpochClass(Epoch const& epoch) {
+            template<typename ValueType, bool SingleObjectiveMode>
+            void MultiDimensionalRewardUnfolding<ValueType, SingleObjectiveMode>::setCurrentEpochClass(Epoch const& epoch) {
                 // std::cout << "Setting epoch class for epoch " << storm::utility::vector::toString(epoch) << std::endl;
                 swSetEpochClass.start();
                 auto productObjectiveRewards = computeObjectiveRewardsForProduct(epoch);
@@ -331,8 +342,8 @@ namespace storm {
                 epochModelSizes.push_back(epochModel.epochMatrix.getRowGroupCount());
             }
             
-            template<typename ValueType>
-            storm::storage::BitVector MultiDimensionalRewardUnfolding<ValueType>::computeProductInStatesForEpochClass(Epoch const& epoch) {
+            template<typename ValueType, bool SingleObjectiveMode>
+            storm::storage::BitVector MultiDimensionalRewardUnfolding<ValueType, SingleObjectiveMode>::computeProductInStatesForEpochClass(Epoch const& epoch) {
                 storm::storage::SparseMatrix<ValueType> const& productMatrix = memoryProduct.getProduct().getTransitionMatrix();
                 
                 storm::storage::BitVector result(productMatrix.getRowGroupCount(), false);
@@ -401,22 +412,39 @@ namespace storm {
                 return result;
             }
             
-            template<typename ValueType>
-            typename MultiDimensionalRewardUnfolding<ValueType>::SolutionType MultiDimensionalRewardUnfolding<ValueType>::getZeroSolution() const {
+            template<typename ValueType, bool SingleObjectiveMode>
+            template<bool SO, typename std::enable_if<SO, int>::type>
+            typename MultiDimensionalRewardUnfolding<ValueType, SingleObjectiveMode>::SolutionType MultiDimensionalRewardUnfolding<ValueType, SingleObjectiveMode>::getScaledSolution(SolutionType const& solution, ValueType const& scalingFactor) const {
+                //return solution * scalingFactor;
+            }
+            
+            template<typename ValueType, bool SingleObjectiveMode>
+            template<bool SO, typename std::enable_if<!SO, int>::type>
+            typename MultiDimensionalRewardUnfolding<ValueType, SingleObjectiveMode>::SolutionType MultiDimensionalRewardUnfolding<ValueType, SingleObjectiveMode>::getScaledSolution(SolutionType const& solution, ValueType const& scalingFactor) const {
                 SolutionType res;
-                res.weightedValue = storm::utility::zero<ValueType>();
-                res.objectiveValues = std::vector<ValueType>(objectives.size(), storm::utility::zero<ValueType>());
+                res.weightedValue = solution.weightedValue * scalingFactor;
+                res.objectiveValues.reserve(solution.objectiveValues.size());
+                for (auto const& sol : solution.objectiveValues) {
+                    res.objectiveValues.push_back(sol * scalingFactor);
+                }
                 return res;
             }
             
-            template<typename ValueType>
-            void MultiDimensionalRewardUnfolding<ValueType>::addScaledSolution(SolutionType& solution, SolutionType const& solutionToAdd, ValueType const& scalingFactor) const {
+            template<typename ValueType, bool SingleObjectiveMode>
+            template<bool SO, typename std::enable_if<SO, int>::type>
+            void MultiDimensionalRewardUnfolding<ValueType, SingleObjectiveMode>::addScaledSolution(SolutionType& solution, SolutionType const& solutionToAdd, ValueType const& scalingFactor) const {
+                // solution += solutionToAdd * scalingFactor;
+            }
+            
+            template<typename ValueType, bool SingleObjectiveMode>
+            template<bool SO, typename std::enable_if<!SO, int>::type>
+            void MultiDimensionalRewardUnfolding<ValueType, SingleObjectiveMode>::addScaledSolution(SolutionType& solution, SolutionType const& solutionToAdd, ValueType const& scalingFactor) const {
                 solution.weightedValue += solutionToAdd.weightedValue * scalingFactor;
                 storm::utility::vector::addScaledVector(solution.objectiveValues,  solutionToAdd.objectiveValues, scalingFactor);
             }
             
-            template<typename ValueType>
-            void MultiDimensionalRewardUnfolding<ValueType>::setSolutionForCurrentEpoch(std::vector<SolutionType> const& inStateSolutions) {
+            template<typename ValueType, bool SingleObjectiveMode>
+            void MultiDimensionalRewardUnfolding<ValueType, SingleObjectiveMode>::setSolutionForCurrentEpoch(std::vector<SolutionType> const& inStateSolutions) {
                 swInsertSol.start();
                 for (uint64_t productState = 0; productState < memoryProduct.getProduct().getNumberOfStates(); ++productState) {
                     uint64_t reducedModelState = ecElimResult.oldToNewStateMapping[productState];
@@ -427,16 +455,16 @@ namespace storm {
                 swInsertSol.stop();
             }
             
-            template<typename ValueType>
-            void MultiDimensionalRewardUnfolding<ValueType>::setSolutionForCurrentEpoch(uint64_t const& productState, SolutionType const& solution) {
+            template<typename ValueType, bool SingleObjectiveMode>
+            void MultiDimensionalRewardUnfolding<ValueType, SingleObjectiveMode>::setSolutionForCurrentEpoch(uint64_t const& productState, SolutionType const& solution) {
                 STORM_LOG_ASSERT(currentEpoch, "Tried to set a solution for the current epoch, but no epoch was specified before.");
                 std::vector<int64_t> solutionKey = currentEpoch.get();
                 solutionKey.push_back(productState);
                 solutions[solutionKey] = solution;
             }
             
-            template<typename ValueType>
-            typename MultiDimensionalRewardUnfolding<ValueType>::SolutionType const& MultiDimensionalRewardUnfolding<ValueType>::getStateSolution(Epoch const& epoch, uint64_t const& productState) {
+            template<typename ValueType, bool SingleObjectiveMode>
+            typename MultiDimensionalRewardUnfolding<ValueType, SingleObjectiveMode>::SolutionType const& MultiDimensionalRewardUnfolding<ValueType, SingleObjectiveMode>::getStateSolution(Epoch const& epoch, uint64_t const& productState) {
                 swFindSol.start();
                 std::vector<int64_t> solutionKey = epoch;
                 solutionKey.push_back(productState);
@@ -446,14 +474,14 @@ namespace storm {
                 return solutionIt->second;
             }
             
-            template<typename ValueType>
-            typename MultiDimensionalRewardUnfolding<ValueType>::SolutionType const& MultiDimensionalRewardUnfolding<ValueType>::getInitialStateResult(Epoch const& epoch) {
+            template<typename ValueType, bool SingleObjectiveMode>
+            typename MultiDimensionalRewardUnfolding<ValueType, SingleObjectiveMode>::SolutionType const& MultiDimensionalRewardUnfolding<ValueType, SingleObjectiveMode>::getInitialStateResult(Epoch const& epoch) {
                 return getStateSolution(epoch, *memoryProduct.getProduct().getInitialStates().begin());
             }
 
             
-            template<typename ValueType>
-            storm::storage::MemoryStructure MultiDimensionalRewardUnfolding<ValueType>::computeMemoryStructure() const {
+            template<typename ValueType, bool SingleObjectiveMode>
+            storm::storage::MemoryStructure MultiDimensionalRewardUnfolding<ValueType, SingleObjectiveMode>::computeMemoryStructure() const {
                 
                 storm::modelchecker::SparsePropositionalModelChecker<storm::models::sparse::Mdp<ValueType>> mc(model);
                 
@@ -542,8 +570,8 @@ namespace storm {
                 return memory;
             }
             
-            template<typename ValueType>
-            std::vector<storm::storage::BitVector> MultiDimensionalRewardUnfolding<ValueType>::computeMemoryStateMap(storm::storage::MemoryStructure const& memory) const {
+            template<typename ValueType, bool SingleObjectiveMode>
+            std::vector<storm::storage::BitVector> MultiDimensionalRewardUnfolding<ValueType, SingleObjectiveMode>::computeMemoryStateMap(storm::storage::MemoryStructure const& memory) const {
                 // Compute a mapping between the different representations of memory states
                 std::vector<storm::storage::BitVector> result;
                 result.reserve(memory.getNumberOfStates());
@@ -560,8 +588,8 @@ namespace storm {
                 return result;
             }
 
-            template<typename ValueType>
-            MultiDimensionalRewardUnfolding<ValueType>::MemoryProduct::MemoryProduct(storm::models::sparse::Mdp<ValueType> const& model, storm::storage::MemoryStructure const& memory, std::vector<storm::storage::BitVector>&& memoryStateMap, std::vector<std::vector<uint64_t>> const& originalModelSteps, std::vector<storm::storage::BitVector> const& objectiveDimensions) : memoryStateMap(std::move(memoryStateMap)) {
+            template<typename ValueType, bool SingleObjectiveMode>
+            MultiDimensionalRewardUnfolding<ValueType, SingleObjectiveMode>::MemoryProduct::MemoryProduct(storm::models::sparse::Mdp<ValueType> const& model, storm::storage::MemoryStructure const& memory, std::vector<storm::storage::BitVector>&& memoryStateMap, std::vector<std::vector<uint64_t>> const& originalModelSteps, std::vector<storm::storage::BitVector> const& objectiveDimensions) : memoryStateMap(std::move(memoryStateMap)) {
                 storm::storage::SparseModelMemoryProduct<ValueType> productBuilder(memory.product(model));
                 
                 setReachableStates(productBuilder, originalModelSteps, objectiveDimensions);
@@ -621,8 +649,8 @@ namespace storm {
                 }
             }
             
-            template<typename ValueType>
-            void MultiDimensionalRewardUnfolding<ValueType>::MemoryProduct::setReachableStates(storm::storage::SparseModelMemoryProduct<ValueType>& productBuilder, std::vector<std::vector<uint64_t>> const& originalModelSteps, std::vector<storm::storage::BitVector> const& objectiveDimensions) const {
+            template<typename ValueType, bool SingleObjectiveMode>
+            void MultiDimensionalRewardUnfolding<ValueType, SingleObjectiveMode>::MemoryProduct::setReachableStates(storm::storage::SparseModelMemoryProduct<ValueType>& productBuilder, std::vector<std::vector<uint64_t>> const& originalModelSteps, std::vector<storm::storage::BitVector> const& objectiveDimensions) const {
                 std::vector<storm::storage::BitVector> additionalReachableStates(memoryStateMap.size(), storm::storage::BitVector(productBuilder.getOriginalModel().getNumberOfStates(), false));
                 for (uint64_t memState = 0; memState < memoryStateMap.size(); ++memState) {
                     auto const& memStateBv = memoryStateMap[memState];
@@ -668,56 +696,56 @@ namespace storm {
                 }
             }
 
-            template<typename ValueType>
-            storm::models::sparse::Mdp<ValueType> const& MultiDimensionalRewardUnfolding<ValueType>::MemoryProduct::getProduct() const {
+            template<typename ValueType, bool SingleObjectiveMode>
+            storm::models::sparse::Mdp<ValueType> const& MultiDimensionalRewardUnfolding<ValueType, SingleObjectiveMode>::MemoryProduct::getProduct() const {
                 return *product;
             }
             
-            template<typename ValueType>
-            std::vector<boost::optional<typename MultiDimensionalRewardUnfolding<ValueType>::Epoch>> const& MultiDimensionalRewardUnfolding<ValueType>::MemoryProduct::getSteps() const {
+            template<typename ValueType, bool SingleObjectiveMode>
+            std::vector<boost::optional<typename MultiDimensionalRewardUnfolding<ValueType, SingleObjectiveMode>::Epoch>> const& MultiDimensionalRewardUnfolding<ValueType, SingleObjectiveMode>::MemoryProduct::getSteps() const {
                 return steps;
             }
             
-            template<typename ValueType>
-            bool MultiDimensionalRewardUnfolding<ValueType>::MemoryProduct::productStateExists(uint64_t const& modelState, uint64_t const& memoryState) const {
+            template<typename ValueType, bool SingleObjectiveMode>
+            bool MultiDimensionalRewardUnfolding<ValueType, SingleObjectiveMode>::MemoryProduct::productStateExists(uint64_t const& modelState, uint64_t const& memoryState) const {
                 STORM_LOG_ASSERT(!memoryStateMap.empty(), "Tried to retrieve whether a product state exists but the memoryStateMap is not yet initialized.");
                 return modelMemoryToProductStateMap[modelState * memoryStateMap.size() + memoryState] < getProduct().getNumberOfStates();
             }
             
-            template<typename ValueType>
-            uint64_t MultiDimensionalRewardUnfolding<ValueType>::MemoryProduct::getProductState(uint64_t const& modelState, uint64_t const& memoryState) const {
+            template<typename ValueType, bool SingleObjectiveMode>
+            uint64_t MultiDimensionalRewardUnfolding<ValueType, SingleObjectiveMode>::MemoryProduct::getProductState(uint64_t const& modelState, uint64_t const& memoryState) const {
                 STORM_LOG_ASSERT(productStateExists(modelState, memoryState), "Tried to obtain a state in the model-memory-product that does not exist");
                 return modelMemoryToProductStateMap[modelState * memoryStateMap.size() + memoryState];
             }
 
-            template<typename ValueType>
-            uint64_t MultiDimensionalRewardUnfolding<ValueType>::MemoryProduct::getModelState(uint64_t const& productState) const {
+            template<typename ValueType, bool SingleObjectiveMode>
+            uint64_t MultiDimensionalRewardUnfolding<ValueType, SingleObjectiveMode>::MemoryProduct::getModelState(uint64_t const& productState) const {
                 return productToModelStateMap[productState];
             }
             
-            template<typename ValueType>
-            uint64_t MultiDimensionalRewardUnfolding<ValueType>::MemoryProduct::getMemoryState(uint64_t const& productState) const {
+            template<typename ValueType, bool SingleObjectiveMode>
+            uint64_t MultiDimensionalRewardUnfolding<ValueType, SingleObjectiveMode>::MemoryProduct::getMemoryState(uint64_t const& productState) const {
                 return productToMemoryStateMap[productState];
             }
 
-            template<typename ValueType>
-            storm::storage::BitVector const& MultiDimensionalRewardUnfolding<ValueType>::MemoryProduct::convertMemoryState(uint64_t const& memoryState) const {
+            template<typename ValueType, bool SingleObjectiveMode>
+            storm::storage::BitVector const& MultiDimensionalRewardUnfolding<ValueType, SingleObjectiveMode>::MemoryProduct::convertMemoryState(uint64_t const& memoryState) const {
                 return memoryStateMap[memoryState];
             }
             
-            template<typename ValueType>
-            uint64_t MultiDimensionalRewardUnfolding<ValueType>::MemoryProduct::convertMemoryState(storm::storage::BitVector const& memoryState) const {
+            template<typename ValueType, bool SingleObjectiveMode>
+            uint64_t MultiDimensionalRewardUnfolding<ValueType, SingleObjectiveMode>::MemoryProduct::convertMemoryState(storm::storage::BitVector const& memoryState) const {
                 auto memStateIt = std::find(memoryStateMap.begin(), memoryStateMap.end(), memoryState);
                 return memStateIt - memoryStateMap.begin();
             }
             
-            template<typename ValueType>
-            uint64_t MultiDimensionalRewardUnfolding<ValueType>::MemoryProduct::getProductStateFromChoice(uint64_t const& productChoice) const {
+            template<typename ValueType, bool SingleObjectiveMode>
+            uint64_t MultiDimensionalRewardUnfolding<ValueType, SingleObjectiveMode>::MemoryProduct::getProductStateFromChoice(uint64_t const& productChoice) const {
                 return choiceToStateMap[productChoice];
             }
             
-            template<typename ValueType>
-            std::vector<std::vector<ValueType>> MultiDimensionalRewardUnfolding<ValueType>::computeObjectiveRewardsForProduct(Epoch const& epoch) const {
+            template<typename ValueType, bool SingleObjectiveMode>
+            std::vector<std::vector<ValueType>> MultiDimensionalRewardUnfolding<ValueType, SingleObjectiveMode>::computeObjectiveRewardsForProduct(Epoch const& epoch) const {
                 std::vector<std::vector<ValueType>> objectiveRewards;
                 objectiveRewards.reserve(objectives.size());
                 
@@ -808,8 +836,8 @@ namespace storm {
                 return objectiveRewards;
             }
             
-            template<typename ValueType>
-            typename MultiDimensionalRewardUnfolding<ValueType>::EpochClass MultiDimensionalRewardUnfolding<ValueType>::getClassOfEpoch(Epoch const& epoch) const {
+            template<typename ValueType, bool SingleObjectiveMode>
+            typename MultiDimensionalRewardUnfolding<ValueType, SingleObjectiveMode>::EpochClass MultiDimensionalRewardUnfolding<ValueType, SingleObjectiveMode>::getClassOfEpoch(Epoch const& epoch) const {
                 // Get a BitVector that is 1 wherever the epoch is non-negative
                 storm::storage::BitVector classAsBitVector(epoch.size(), false);
                 uint64_t i = 0;
@@ -822,8 +850,8 @@ namespace storm {
                 return classAsBitVector.getAsInt(0, epoch.size());
             }
             
-            template<typename ValueType>
-            typename MultiDimensionalRewardUnfolding<ValueType>::Epoch MultiDimensionalRewardUnfolding<ValueType>::getSuccessorEpoch(Epoch const& epoch, Epoch const& step) const {
+            template<typename ValueType, bool SingleObjectiveMode>
+            typename MultiDimensionalRewardUnfolding<ValueType, SingleObjectiveMode>::Epoch MultiDimensionalRewardUnfolding<ValueType, SingleObjectiveMode>::getSuccessorEpoch(Epoch const& epoch, Epoch const& step) const {
                 assert(epoch.size() == step.size());
                 Epoch result;
                 result.reserve(epoch.size());
@@ -836,8 +864,10 @@ namespace storm {
             }
 
             
-            template class MultiDimensionalRewardUnfolding<double>;
-            template class MultiDimensionalRewardUnfolding<storm::RationalNumber>;
+            template class MultiDimensionalRewardUnfolding<double, true>;
+            template class MultiDimensionalRewardUnfolding<double, false>;
+            template class MultiDimensionalRewardUnfolding<storm::RationalNumber, true>;
+            template class MultiDimensionalRewardUnfolding<storm::RationalNumber, false>;
             
         }
     }

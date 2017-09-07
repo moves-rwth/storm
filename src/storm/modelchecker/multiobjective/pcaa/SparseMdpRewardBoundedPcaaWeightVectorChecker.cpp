@@ -43,10 +43,10 @@ namespace storm {
             }
             
             template <class SparseMdpModelType>
-            void SparseMdpRewardBoundedPcaaWeightVectorChecker<SparseMdpModelType>::computeEpochSolution(typename MultiDimensionalRewardUnfolding<ValueType>::Epoch const& epoch, std::vector<ValueType> const& weightVector) {
+            void SparseMdpRewardBoundedPcaaWeightVectorChecker<SparseMdpModelType>::computeEpochSolution(typename MultiDimensionalRewardUnfolding<ValueType, false>::Epoch const& epoch, std::vector<ValueType> const& weightVector) {
                 auto const& epochModel = rewardUnfolding.setCurrentEpoch(epoch);
                 swEqBuilding.start();
-                std::vector<typename MultiDimensionalRewardUnfolding<ValueType>::SolutionType> result(epochModel.inStates.getNumberOfSetBits());
+                std::vector<typename MultiDimensionalRewardUnfolding<ValueType, false>::SolutionType> result(epochModel.inStates.getNumberOfSetBits());
                 
                 
                 // Formulate a min-max equation system max(A*x+b)=x for the weighted sum of the objectives

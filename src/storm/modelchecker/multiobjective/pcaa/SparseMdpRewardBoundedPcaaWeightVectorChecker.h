@@ -55,11 +55,11 @@ namespace storm {
                 
             private:
                 
-                void computeEpochSolution(typename MultiDimensionalRewardUnfolding<ValueType>::Epoch const& epoch, std::vector<ValueType> const& weightVector);
+                void computeEpochSolution(typename MultiDimensionalRewardUnfolding<ValueType, false>::Epoch const& epoch, std::vector<ValueType> const& weightVector);
                 
                 storm::utility::Stopwatch swAll, swEqBuilding, swLinEqSolving, swMinMaxSolving;
                 
-                MultiDimensionalRewardUnfolding<ValueType> rewardUnfolding;
+                MultiDimensionalRewardUnfolding<ValueType, false> rewardUnfolding;
                 
                 boost::optional<std::vector<ValueType>> underApproxResult;
                 boost::optional<std::vector<ValueType>> overApproxResult;

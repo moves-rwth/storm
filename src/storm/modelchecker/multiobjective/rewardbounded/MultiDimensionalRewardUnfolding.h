@@ -18,13 +18,15 @@ namespace storm {
         namespace multiobjective {
             
             
-            template<typename ValueType>
+            template<typename ValueType, bool SingleObjectiveMode>
             class MultiDimensionalRewardUnfolding {
             public:
                 
                 typedef std::vector<int64_t> Epoch; // The number of reward steps that are "left" for each dimension
                 typedef uint64_t EpochClass; // Collection of epochs that consider the same epoch model
                 
+//                typedef typename std::conditional<singleObjectiveMode, ValueType, std::vector<ValueType>>::type; SolutionType
+
                 struct SolutionType {
                     ValueType weightedValue;
                     std::vector<ValueType> objectiveValues;
@@ -137,7 +139,15 @@ namespace storm {
                 EpochClass getClassOfEpoch(Epoch const& epoch) const;
                 Epoch getSuccessorEpoch(Epoch const& epoch, Epoch const& step) const;
                 
-                SolutionType getZeroSolution() const;
+
+                template<bool SO = SingleObjectiveMode, typename std::enable_if<SO, int>::type = 0>
+                SolutionType getScaledSolution(SolutionType const& solution, ValueType const& scalingFactor) const;
+                template<bool SO = SingleObjectiveMode, typename std::enable_if<!SO, int>::type = 0>
+                SolutionType getScaledSolution(SolutionType const& solution, ValueType const& scalingFactor) const;
+                
+                template<bool SO = SingleObjectiveMode, typename std::enable_if<SO, int>::type = 0>
+                void addScaledSolution(SolutionType& solution, SolutionType const& solutionToAdd, ValueType const& scalingFactor) const;
+                template<bool SO = SingleObjectiveMode, typename std::enable_if<!SO, int>::type = 0>
                 void addScaledSolution(SolutionType& solution, SolutionType const& solutionToAdd, ValueType const& scalingFactor) const;
                 
                 void setSolutionForCurrentEpoch(uint64_t const& productState, SolutionType const& solution);
