@@ -179,12 +179,12 @@ namespace storm {
                     STORM_LOG_THROW(transitionMatrix.getRowGroupCount() == this->getStateActionRewardVector().size(), storm::exceptions::InvalidOperationException, "The reduction to state rewards is only possible if the size of the action reward vector equals the number of states.");
                     if (weights) {
                         if (this->hasStateRewards()) {
-                            storm::utility::vector::applyPointwise<ValueType, MatrixValueType, ValueType>(this->getStateActionRewardVector(), *weights, this->getStateRewardVector(),
+                            storm::utility::vector::applyPointwiseTernary<ValueType, MatrixValueType, ValueType>(this->getStateActionRewardVector(), *weights, this->getStateRewardVector(),
                                                                    [] (ValueType const& sar, MatrixValueType const& w, ValueType const& sr) -> ValueType {
                                                                        return sr + w * sar; });
                         } else {
                             this->optionalStateRewardVector = std::move(this->optionalStateActionRewardVector);
-                            storm::utility::vector::applyPointwise<ValueType, MatrixValueType, ValueType>(this->optionalStateRewardVector.get(), *weights, this->optionalStateRewardVector.get(), [] (ValueType const& r, MatrixValueType const& w) { return w * r; } );
+                            storm::utility::vector::applyPointwise<ValueType, MatrixValueType, ValueType, std::multiplies<>>(this->optionalStateRewardVector.get(), *weights, this->optionalStateRewardVector.get());
                         }
                     } else {
                         if (this->hasStateRewards()) {
@@ -216,11 +216,11 @@ namespace storm {
                 std::vector<ValueType> result;
                 if (this->hasTransitionRewards()) {
                     result = transitionMatrix.getPointwiseProductRowSumVector(this->getTransitionRewardMatrix());
-                    storm::utility::vector::applyPointwise<MatrixValueType, ValueType, ValueType>(weights, this->getStateActionRewardVector(), result, [] (MatrixValueType const& weight, ValueType const& rewardElement, ValueType const& resultElement) { return weight * (resultElement + rewardElement); } );
+                    storm::utility::vector::applyPointwiseTernary<MatrixValueType, ValueType, ValueType>(weights, this->getStateActionRewardVector(), result, [] (MatrixValueType const& weight, ValueType const& rewardElement, ValueType const& resultElement) { return weight * (resultElement + rewardElement); } );
                 } else {
                     result = std::vector<ValueType>(transitionMatrix.getRowCount());
                     if (this->hasStateActionRewards()) {
-                        storm::utility::vector::applyPointwise<MatrixValueType, ValueType, ValueType>(weights, this->getStateActionRewardVector(), result, [] (MatrixValueType const& weight, ValueType const& rewardElement, ValueType const& resultElement) { return weight * rewardElement; } );
+                        storm::utility::vector::applyPointwise<MatrixValueType, ValueType, ValueType>(weights, this->getStateActionRewardVector(), result, [] (MatrixValueType const& weight, ValueType const& rewardElement) { return weight * rewardElement; } );
                     }
                 }
                 if (this->hasStateRewards()) {

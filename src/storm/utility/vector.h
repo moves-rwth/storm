@@ -307,8 +307,8 @@ namespace storm {
              * @param secondOperand The second operand.
              * @param target The target vector.
              */
-            template<class InValueType1, class InValueType2, class OutValueType>
-            void applyPointwise(std::vector<InValueType1> const& firstOperand, std::vector<InValueType2> const& secondOperand, std::vector<OutValueType>& target, std::function<OutValueType (InValueType1 const&, InValueType2 const&, OutValueType const&)> const& function) {
+            template<class InValueType1, class InValueType2, class OutValueType, class Operation>
+            void applyPointwiseTernary(std::vector<InValueType1> const& firstOperand, std::vector<InValueType2> const& secondOperand, std::vector<OutValueType>& target, Operation f = Operation()) {
 #ifdef STORM_HAVE_INTELTBB
                 tbb::parallel_for(tbb::blocked_range<uint_fast64_t>(0, target.size()),
                                   [&](tbb::blocked_range<uint_fast64_t> const& range) {
@@ -317,7 +317,7 @@ namespace storm {
                                       auto secondIt = secondOperand.begin() + range.begin();
                                       auto targetIt = target.begin() + range.begin();
                                       while (firstIt != firstIte) {
-                                          *targetIt = function(*firstIt, *secondIt, *targetIt);
+                                          *targetIt = f(*firstIt, *secondIt, *targetIt);
                                           ++targetIt;
                                           ++firstIt;
                                           ++secondIt;
@@ -329,7 +329,7 @@ namespace storm {
                 auto secondIt = secondOperand.begin();
                 auto targetIt = target.begin();
                 while (firstIt != firstIte) {
-                    *targetIt = function(*firstIt, *secondIt, *targetIt);
+                    *targetIt = f(*firstIt, *secondIt, *targetIt);
                     ++targetIt;
                     ++firstIt;
                     ++secondIt;
@@ -345,15 +345,15 @@ namespace storm {
              * @param secondOperand The second operand.
              * @param target The target vector.
              */
-            template<class InValueType1, class InValueType2, class OutValueType>
-            void applyPointwise(std::vector<InValueType1> const& firstOperand, std::vector<InValueType2> const& secondOperand, std::vector<OutValueType>& target, std::function<OutValueType (InValueType1 const&, InValueType2 const&)> const& function) {
+            template<class InValueType1, class InValueType2, class OutValueType, class Operation>
+            void applyPointwise(std::vector<InValueType1> const& firstOperand, std::vector<InValueType2> const& secondOperand, std::vector<OutValueType>& target, Operation f = Operation()) {
 #ifdef STORM_HAVE_INTELTBB
                 tbb::parallel_for(tbb::blocked_range<uint_fast64_t>(0, target.size()),
                                   [&](tbb::blocked_range<uint_fast64_t> const& range) {
-                                      std::transform(firstOperand.begin() + range.begin(), firstOperand.begin() + range.end(), secondOperand.begin() + range.begin(), target.begin() + range.begin(), function);
+                                      std::transform(firstOperand.begin() + range.begin(), firstOperand.begin() + range.end(), secondOperand.begin() + range.begin(), target.begin() + range.begin(), f);
                                   });
 #else
-                std::transform(firstOperand.begin(), firstOperand.end(), secondOperand.begin(), target.begin(), function);
+                std::transform(firstOperand.begin(), firstOperand.end(), secondOperand.begin(), target.begin(), f);
 #endif
             }
             
@@ -364,15 +364,15 @@ namespace storm {
              * @param target The target vector.
              * @param function The function to apply.
              */
-            template<class InValueType, class OutValueType>
-            void applyPointwise(std::vector<InValueType> const& operand, std::vector<OutValueType>& target, std::function<OutValueType (InValueType const&)> const& function) {
+            template<class InValueType, class OutValueType, class Operation>
+            void applyPointwise(std::vector<InValueType> const& operand, std::vector<OutValueType>& target, Operation f = Operation()) {
 #ifdef STORM_HAVE_INTELTBB
                 tbb::parallel_for(tbb::blocked_range<uint_fast64_t>(0, target.size()),
                                   [&](tbb::blocked_range<uint_fast64_t> const& range) {
-                                      std::transform(operand.begin() + range.begin(), operand.begin() + range.end(), target.begin() + range.begin(), function);
+                                      std::transform(operand.begin() + range.begin(), operand.begin() + range.end(), target.begin() + range.begin(), f);
                                   });
 #else
-                std::transform(operand.begin(), operand.end(), target.begin(), function);
+                std::transform(operand.begin(), operand.end(), target.begin(), f);
 #endif
             }
             
@@ -385,7 +385,7 @@ namespace storm {
              */
             template<class InValueType1, class InValueType2, class OutValueType>
             void addVectors(std::vector<InValueType1> const& firstOperand, std::vector<InValueType2> const& secondOperand, std::vector<OutValueType>& target) {
-                applyPointwise<InValueType1, InValueType2, OutValueType>(firstOperand, secondOperand, target, std::plus<>());
+                applyPointwise<InValueType1, InValueType2, OutValueType, std::plus<>>(firstOperand, secondOperand, target);
             }
             
             /*!
@@ -397,7 +397,7 @@ namespace storm {
              */
             template<class InValueType1, class InValueType2, class OutValueType>
             void subtractVectors(std::vector<InValueType1> const& firstOperand, std::vector<InValueType2> const& secondOperand, std::vector<OutValueType>& target) {
-                applyPointwise<InValueType1, InValueType2, OutValueType>(firstOperand, secondOperand, target, std::minus<>());
+                applyPointwise<InValueType1, InValueType2, OutValueType, std::minus<>>(firstOperand, secondOperand, target);
             }
             
             /*!
@@ -409,7 +409,7 @@ namespace storm {
              */
             template<class InValueType1, class InValueType2, class OutValueType>
             void multiplyVectorsPointwise(std::vector<InValueType1> const& firstOperand, std::vector<InValueType2> const& secondOperand, std::vector<OutValueType>& target) {
-                applyPointwise<InValueType1, InValueType2, OutValueType>(firstOperand, secondOperand, target, std::multiplies<>());
+                applyPointwise<InValueType1, InValueType2, OutValueType, std::multiplies<>>(firstOperand, secondOperand, target);
             }
             
             /*!
@@ -421,7 +421,7 @@ namespace storm {
              */
             template<class InValueType1, class InValueType2, class OutValueType>
             void divideVectorsPointwise(std::vector<InValueType1> const& firstOperand, std::vector<InValueType2> const& secondOperand, std::vector<OutValueType>& target) {
-                applyPointwise<InValueType1, InValueType2, OutValueType>(firstOperand, secondOperand, target, std::divides<>());
+                applyPointwise<InValueType1, InValueType2, OutValueType, std::divides<>>(firstOperand, secondOperand, target);
             }
             
             /*!
@@ -603,8 +603,9 @@ namespace storm {
              * return true iff v1 is supposed to be taken instead of v2.
              * @param choices If non-null, this vector is used to store the choices made during the selection.
              */
-            template<class T>
-            void reduceVector(std::vector<T> const& source, std::vector<T>& target, std::vector<uint_fast64_t> const& rowGrouping, std::function<bool (T const&, T const&)> filter, std::vector<uint_fast64_t>* choices) {
+            template<class T, class Filter>
+            void reduceVector(std::vector<T> const& source, std::vector<T>& target, std::vector<uint_fast64_t> const& rowGrouping, std::vector<uint_fast64_t>* choices) {
+                Filter f;
 #ifdef STORM_HAVE_INTELTBB
                 tbb::parallel_for(tbb::blocked_range<uint_fast64_t>(0, target.size()),
                                   [&](tbb::blocked_range<uint_fast64_t> const& range) {
@@ -621,7 +622,7 @@ namespace storm {
                                       if (choices != nullptr) {
                                           choiceIt = choices->begin();
                                       }
-
+                                      
                                       for (; targetIt != targetIte; ++targetIt, ++rowGroupingIt) {
                                           // Only do work if the row group is not empty.
                                           if (*rowGroupingIt != *(rowGroupingIt + 1)) {
@@ -633,7 +634,7 @@ namespace storm {
                                               }
                                               
                                               for (sourceIte = source.begin() + *(rowGroupingIt + 1); sourceIt != sourceIte; ++sourceIt, ++localChoice) {
-                                                  if (filter(*sourceIt, *targetIt)) {
+                                                  if (f(*sourceIt, *targetIt)) {
                                                       *targetIt = *sourceIt;
                                                       if (choices != nullptr) {
                                                           *choiceIt = localChoice;
@@ -647,7 +648,7 @@ namespace storm {
                                           } else {
                                               // Compensate for the 'wrong' move forward in the loop header.
                                               --targetIt;
-
+                                              
                                               // Record dummy choice.
                                               if (choices != nullptr) {
                                                   *choiceIt = 0;
@@ -678,7 +679,7 @@ namespace storm {
                             *choiceIt = 0;
                         }
                         for (sourceIte = source.begin() + *(rowGroupingIt + 1); sourceIt != sourceIte; ++sourceIt, ++localChoice) {
-                            if (filter(*sourceIt, *targetIt)) {
+                            if (f(*sourceIt, *targetIt)) {
                                 *targetIt = *sourceIt;
                                 if (choices != nullptr) {
                                     *choiceIt = localChoice;
@@ -702,6 +703,8 @@ namespace storm {
 #endif
             }
             
+            
+            
             /*!
              * Reduces the given source vector by selecting the smallest element out of each row group.
              *
@@ -712,7 +715,7 @@ namespace storm {
              */
             template<class T>
             void reduceVectorMin(std::vector<T> const& source, std::vector<T>& target, std::vector<uint_fast64_t> const& rowGrouping, std::vector<uint_fast64_t>* choices = nullptr) {
-                reduceVector<T>(source, target, rowGrouping, std::less<T>(), choices);
+                reduceVector<T, std::less<T>>(source, target, rowGrouping, choices);
             }
             
             /*!
@@ -725,7 +728,7 @@ namespace storm {
              */
             template<class T>
             void reduceVectorMax(std::vector<T> const& source, std::vector<T>& target, std::vector<uint_fast64_t> const& rowGrouping, std::vector<uint_fast64_t>* choices = nullptr) {
-                reduceVector<T>(source, target, rowGrouping, std::greater<T>(), choices);
+                reduceVector<T, std::greater<T>>(source, target, rowGrouping, choices);
             }
             
             /*!
@@ -745,7 +748,6 @@ namespace storm {
                     reduceVectorMax(source, target, rowGrouping, choices);    
                 }
             }
-            
             
             /*!
              * Compares the given elements and determines whether they are equal modulo the given precision. The provided flag

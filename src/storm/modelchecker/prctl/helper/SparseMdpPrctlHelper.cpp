@@ -960,6 +960,8 @@ namespace storm {
             template<typename ValueType>
             std::unique_ptr<CheckResult> SparseMdpPrctlHelper<ValueType>::computeConditionalProbabilities(OptimizationDirection dir, storm::storage::sparse::state_type initialState, storm::storage::SparseMatrix<ValueType> const& transitionMatrix, storm::storage::SparseMatrix<ValueType> const& backwardTransitions, storm::storage::BitVector const& targetStates, storm::storage::BitVector const& conditionStates, storm::solver::MinMaxLinearEquationSolverFactory<ValueType> const& minMaxLinearEquationSolverFactory) {
                 
+                std::chrono::high_resolution_clock::time_point start = std::chrono::high_resolution_clock::now();
+                
                 // For the max-case, we can simply take the given target states. For the min-case, however, we need to
                 // find the MECs of non-target states and make them the new target states.
                 storm::storage::BitVector fixedTargetStates;
@@ -990,7 +992,10 @@ namespace storm {
                 storm::storage::BitVector extendedConditionStates = storm::utility::graph::performProb1A(transitionMatrix, transitionMatrix.getRowGroupIndices(), backwardTransitions, allStates, conditionStates);
 
                 STORM_LOG_DEBUG("Computing probabilities to satisfy condition.");
+                std::chrono::high_resolution_clock::time_point conditionStart = std::chrono::high_resolution_clock::now();
                 std::vector<ValueType> conditionProbabilities = std::move(computeUntilProbabilities(OptimizationDirection::Maximize, transitionMatrix, backwardTransitions, allStates, extendedConditionStates, false, false, minMaxLinearEquationSolverFactory).values);
+                std::chrono::high_resolution_clock::time_point conditionEnd = std::chrono::high_resolution_clock::now();
+                STORM_LOG_DEBUG("Computed probabilities to satisfy for condition in " << std::chrono::duration_cast<std::chrono::milliseconds>(conditionEnd - conditionStart).count() << "ms.");
                 
                 // If the conditional probability is undefined for the initial state, we return directly.
                 if (storm::utility::isZero(conditionProbabilities[initialState])) {
@@ -998,7 +1003,10 @@ namespace storm {
                 }
                 
                 STORM_LOG_DEBUG("Computing probabilities to reach target.");
+                std::chrono::high_resolution_clock::time_point targetStart = std::chrono::high_resolution_clock::now();
                 std::vector<ValueType> targetProbabilities = std::move(computeUntilProbabilities(OptimizationDirection::Maximize, transitionMatrix, backwardTransitions, allStates, fixedTargetStates, false, false, minMaxLinearEquationSolverFactory).values);
+                std::chrono::high_resolution_clock::time_point targetEnd = std::chrono::high_resolution_clock::now();
+                STORM_LOG_DEBUG("Computed probabilities to reach target in " << std::chrono::duration_cast<std::chrono::milliseconds>(targetEnd - targetStart).count() << "ms.");
 
                 storm::storage::BitVector statesWithProbabilityGreater0E(transitionMatrix.getRowGroupCount(), true);
                 storm::storage::sparse::state_type state = 0;
@@ -1011,10 +1019,8 @@ namespace storm {
 
                 // Determine those states that need to be equipped with a restart mechanism.
                 STORM_LOG_DEBUG("Computing problematic states.");
-                storm::storage::BitVector pureResetStates = storm::utility::graph::performProb0A(backwardTransitions, allStates, fixedTargetStates);
-                
-                // FIXME: target | condition as target states here?
-                storm::storage::BitVector problematicStates = storm::utility::graph::performProb0E(transitionMatrix, transitionMatrix.getRowGroupIndices(), backwardTransitions, allStates, fixedTargetStates);
+                storm::storage::BitVector pureResetStates = storm::utility::graph::performProb0A(backwardTransitions, allStates, extendedConditionStates);
+                storm::storage::BitVector problematicStates = storm::utility::graph::performProb0E(transitionMatrix, transitionMatrix.getRowGroupIndices(), backwardTransitions, allStates, extendedConditionStates | fixedTargetStates);
 
                 // Otherwise, we build the transformed MDP.
                 storm::storage::BitVector relevantStates = storm::utility::graph::getReachableStates(transitionMatrix, initialStatesBitVector, allStates, extendedConditionStates | fixedTargetStates | pureResetStates);
@@ -1073,6 +1079,9 @@ namespace storm {
                 builder.addNextValue(currentRow, numberOfStatesBeforeRelevantStates[initialState], storm::utility::one<ValueType>());
                 ++currentRow;
                 
+                std::chrono::high_resolution_clock::time_point end = std::chrono::high_resolution_clock::now();
+                STORM_LOG_DEBUG("Computed transformed model in " << std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count() << "ms.");
+                
                 // Finally, build the matrix and dispatch the query as a reachability query.
                 STORM_LOG_DEBUG("Computing conditional probabilties.");
                 storm::storage::BitVector newGoalStates(newFailState + 1);
@@ -1080,7 +1089,10 @@ namespace storm {
                 storm::storage::SparseMatrix<ValueType> newTransitionMatrix = builder.build();
                 STORM_LOG_DEBUG("Transformed model has " << newTransitionMatrix.getRowGroupCount() << " states and " << newTransitionMatrix.getNonzeroEntryCount() << " transitions.");
                 storm::storage::SparseMatrix<ValueType> newBackwardTransitions = newTransitionMatrix.transpose(true);
+                std::chrono::high_resolution_clock::time_point conditionalStart = std::chrono::high_resolution_clock::now();
                 std::vector<ValueType> goalProbabilities = std::move(computeUntilProbabilities(OptimizationDirection::Maximize, newTransitionMatrix, newBackwardTransitions, storm::storage::BitVector(newFailState + 1, true), newGoalStates, false, false, minMaxLinearEquationSolverFactory).values);
+                std::chrono::high_resolution_clock::time_point conditionalEnd = std::chrono::high_resolution_clock::now();
+                STORM_LOG_DEBUG("Computed conditional probabilities in transformed model in " << std::chrono::duration_cast<std::chrono::milliseconds>(conditionalEnd - conditionalStart).count() << "ms.");
                 
                 return std::unique_ptr<CheckResult>(new ExplicitQuantitativeCheckResult<ValueType>(initialState, dir == OptimizationDirection::Maximize ? goalProbabilities[numberOfStatesBeforeRelevantStates[initialState]] : storm::utility::one<ValueType>() - goalProbabilities[numberOfStatesBeforeRelevantStates[initialState]]));
             }
