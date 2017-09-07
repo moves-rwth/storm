@@ -33,7 +33,9 @@ namespace storm {
                     std::vector<SolutionType> stepSolutions;
                     std::vector<std::vector<ValueType>> objectiveRewards;
                     std::vector<storm::storage::BitVector> objectiveRewardFilter;
-                    storm::storage::BitVector inStates;
+                    storm::storage::BitVector epochInStates;
+                    
+                    std::vector<SolutionType> inStateSolutions;
                 };
                 
                 /*
@@ -75,9 +77,9 @@ namespace storm {
                 Epoch getStartEpoch();
                 std::vector<Epoch> getEpochComputationOrder(Epoch const& startEpoch);
                 
-                EpochModel const& setCurrentEpoch(Epoch const& epoch);
+                EpochModel& setCurrentEpoch(Epoch const& epoch);
                 
-                void setSolutionForCurrentEpoch(std::vector<SolutionType> const& inStateSolutions);
+                void setSolutionForCurrentEpoch();
                 SolutionType const& getInitialStateResult(Epoch const& epoch);
                 
                 

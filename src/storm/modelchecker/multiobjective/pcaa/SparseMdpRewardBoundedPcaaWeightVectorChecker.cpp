@@ -46,10 +46,11 @@ namespace storm {
             
             template <class SparseMdpModelType>
             void SparseMdpRewardBoundedPcaaWeightVectorChecker<SparseMdpModelType>::computeEpochSolution(typename MultiDimensionalRewardUnfolding<ValueType, false>::Epoch const& epoch, std::vector<ValueType> const& weightVector) {
-                auto const& epochModel = rewardUnfolding.setCurrentEpoch(epoch);
+                auto& epochModel = rewardUnfolding.setCurrentEpoch(epoch);
                 swEqBuilding.start();
-                std::vector<typename MultiDimensionalRewardUnfolding<ValueType, false>::SolutionType> result(epochModel.inStates.getNumberOfSetBits());
-                
+                uint64_t stateSolutionSize = this->objectives.size() + 1;
+                auto& result = epochModel.inStateSolutions;
+                result.resize(epochModel.epochInStates.getNumberOfSetBits(), typename MultiDimensionalRewardUnfolding<ValueType, false>::SolutionType(stateSolutionSize));
                 
                 // Formulate a min-max equation system max(A*x+b)=x for the weighted sum of the objectives
                 std::vector<ValueType> b(epochModel.epochMatrix.getRowCount(), storm::utility::zero<ValueType>());
@@ -81,10 +82,8 @@ namespace storm {
                 swMinMaxSolving.stop();
                 swEqBuilding.start();
                 auto resultIt = result.begin();
-                uint64_t solSize = this->objectives.size() + 1;
-                for (auto const& state : epochModel.inStates) {
-                    resultIt->reserve(solSize);
-                    resultIt->push_back(x[state]);
+                for (auto const& state : epochModel.epochInStates) {
+                    resultIt->front() = x[state];
                     ++resultIt;
                 }
                 
@@ -115,14 +114,15 @@ namespace storm {
                     linEqSolver->solveEquations(x, b);
                     swLinEqSolving.stop();
                     swEqBuilding.start();
-                    auto resultIt = result.begin();
-                    for (auto const& state : epochModel.inStates) {
-                        resultIt->push_back(x[state]);
+                    resultIt = result.begin();
+                    for (auto const& state : epochModel.epochInStates) {
+                        (*resultIt)[objIndex + 1] = x[state];
                         ++resultIt;
                     }
                 }
                 swEqBuilding.stop();
-                rewardUnfolding.setSolutionForCurrentEpoch(result);
+                
+                rewardUnfolding.setSolutionForCurrentEpoch();
             }
 
             template <class SparseMdpModelType>

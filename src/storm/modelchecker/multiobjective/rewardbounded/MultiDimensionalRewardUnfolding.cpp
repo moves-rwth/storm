@@ -182,7 +182,7 @@ namespace storm {
             }
             
             template<typename ValueType, bool SingleObjectiveMode>
-            typename MultiDimensionalRewardUnfolding<ValueType, SingleObjectiveMode>::EpochModel const& MultiDimensionalRewardUnfolding<ValueType, SingleObjectiveMode>::setCurrentEpoch(Epoch const& epoch) {
+            typename MultiDimensionalRewardUnfolding<ValueType, SingleObjectiveMode>::EpochModel& MultiDimensionalRewardUnfolding<ValueType, SingleObjectiveMode>::setCurrentEpoch(Epoch const& epoch) {
                 // Check if we need to update the current epoch class
                 if (!currentEpoch || getClassOfEpoch(epoch) != getClassOfEpoch(currentEpoch.get())) {
                     setCurrentEpochClass(epoch);
@@ -334,9 +334,9 @@ namespace storm {
                     epochModel.objectiveRewards.push_back(std::move(reducedModelObjRewards));
                 }
                 
-                epochModel.inStates = storm::storage::BitVector(epochModel.epochMatrix.getRowGroupCount(), false);
+                epochModel.epochInStates = storm::storage::BitVector(epochModel.epochMatrix.getRowGroupCount(), false);
                 for (auto const& productState : productInStates) {
-                    epochModel.inStates.set(ecElimResult.oldToNewStateMapping[productState], true);
+                    epochModel.epochInStates.set(ecElimResult.oldToNewStateMapping[productState], true);
                 }
                 
                 swSetEpochClass.stop();
@@ -443,12 +443,12 @@ namespace storm {
             }
             
             template<typename ValueType, bool SingleObjectiveMode>
-            void MultiDimensionalRewardUnfolding<ValueType, SingleObjectiveMode>::setSolutionForCurrentEpoch(std::vector<SolutionType> const& inStateSolutions) {
+            void MultiDimensionalRewardUnfolding<ValueType, SingleObjectiveMode>::setSolutionForCurrentEpoch() {
                 swInsertSol.start();
                 for (uint64_t productState = 0; productState < memoryProduct.getProduct().getNumberOfStates(); ++productState) {
                     uint64_t reducedModelState = ecElimResult.oldToNewStateMapping[productState];
-                    if (reducedModelState < epochModel.epochMatrix.getRowGroupCount() && epochModel.inStates.get(reducedModelState)) {
-                        setSolutionForCurrentEpoch(productState, inStateSolutions[epochModel.inStates.getNumberOfSetBitsBeforeIndex(reducedModelState)]);
+                    if (reducedModelState < epochModel.epochMatrix.getRowGroupCount() && epochModel.epochInStates.get(reducedModelState)) {
+                        setSolutionForCurrentEpoch(productState, epochModel.inStateSolutions[epochModel.epochInStates.getNumberOfSetBitsBeforeIndex(reducedModelState)]);
                     }
                 }
                 swInsertSol.stop();
