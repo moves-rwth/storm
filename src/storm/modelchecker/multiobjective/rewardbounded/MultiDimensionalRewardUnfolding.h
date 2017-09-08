@@ -182,7 +182,7 @@ namespace storm {
                 std::vector<ValueType> scalingFactors;
                 
                 
-                std::map<std::vector<uint64_t>, SolutionType> solutions;
+                std::map<std::pair<Epoch, uint64_t>, SolutionType> solutions;
                 
                 
                 storm::utility::Stopwatch swInit, swFindSol, swInsertSol, swSetEpoch, swSetEpochClass, swAux1, swAux2, swAux3, swAux4;

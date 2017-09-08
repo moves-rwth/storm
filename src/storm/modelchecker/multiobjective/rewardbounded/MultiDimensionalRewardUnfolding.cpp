@@ -501,16 +501,14 @@ namespace storm {
             void MultiDimensionalRewardUnfolding<ValueType, SingleObjectiveMode>::setSolutionForCurrentEpoch(uint64_t const& productState, SolutionType const& solution) {
                 STORM_LOG_ASSERT(currentEpoch, "Tried to set a solution for the current epoch, but no epoch was specified before.");
                 //std::cout << "Storing solution for epoch " << epochToString(currentEpoch.get()) << " and state " << productState  << std::endl;
-                std::vector<uint64_t> solutionKey = { currentEpoch.get() , productState};
-                solutions[solutionKey] = solution;
+                solutions[std::make_pair(currentEpoch.get(), productState)] = solution;
             }
             
             template<typename ValueType, bool SingleObjectiveMode>
             typename MultiDimensionalRewardUnfolding<ValueType, SingleObjectiveMode>::SolutionType const& MultiDimensionalRewardUnfolding<ValueType, SingleObjectiveMode>::getStateSolution(Epoch const& epoch, uint64_t const& productState) {
                 swFindSol.start();
                 //std::cout << "Getting solution for epoch " << epochToString(epoch) << " and state " << productState  << std::endl;
-                std::vector<uint64_t> solutionKey = { epoch , productState};
-                auto solutionIt = solutions.find(solutionKey);
+                auto solutionIt = solutions.find(std::make_pair(epoch, productState));
                 STORM_LOG_ASSERT(solutionIt != solutions.end(), "Requested unexisting solution for epoch " << epochToString(epoch) << ".");
                 swFindSol.stop();
                 return solutionIt->second;
