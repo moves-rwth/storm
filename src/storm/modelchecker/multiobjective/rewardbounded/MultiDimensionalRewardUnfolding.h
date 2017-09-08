@@ -138,6 +138,9 @@ namespace storm {
                 bool isBottomDimension(Epoch const& epoch, uint64_t const& dimension) const;
                 uint64_t getDimensionOfEpoch(Epoch const& epoch, uint64_t const& dimension) const; // assumes that the dimension is not bottom
                 std::string epochToString(Epoch const& epoch) const;
+            public:
+                bool epochClassZigZagOrder(Epoch const& epoch1, Epoch const& epoch2) const;
+            private:
 
                 template<bool SO = SingleObjectiveMode, typename std::enable_if<SO, int>::type = 0>
                 SolutionType getScaledSolution(SolutionType const& solution, ValueType const& scalingFactor) const;

@@ -1,6 +1,8 @@
 #include "storm/modelchecker/multiobjective/rewardbounded/MultiDimensionalRewardUnfolding.h"
 
 #include <string>
+#include <set>
+#include <functional>
 
 #include "storm/utility/macros.h"
 #include "storm/logic/Formulas.h"
@@ -178,6 +180,43 @@ namespace storm {
     
             template<typename ValueType, bool SingleObjectiveMode>
             std::vector<typename MultiDimensionalRewardUnfolding<ValueType, SingleObjectiveMode>::Epoch> MultiDimensionalRewardUnfolding<ValueType, SingleObjectiveMode>::getEpochComputationOrder(Epoch const& startEpoch) {
+                // Perform a DFS to find all the reachable epochs
+                std::vector<Epoch> dfsStack;
+                std::set<Epoch, std::function<bool(Epoch const&, Epoch const&)>> collectedEpochs(std::bind(&MultiDimensionalRewardUnfolding<ValueType, SingleObjectiveMode>::epochClassZigZagOrder, this, std::placeholders::_1, std::placeholders::_2));
+                
+                collectedEpochs.insert(startEpoch);
+                dfsStack.push_back(startEpoch);
+                while (!dfsStack.empty()) {
+                    Epoch currentEpoch = dfsStack.back();
+                    dfsStack.pop_back();
+                    for (auto const& step : possibleEpochSteps) {
+                        Epoch successorEpoch = getSuccessorEpoch(currentEpoch, step);
+                        /*
+                        for (auto const& e : collectedEpochs) {
+                            std::cout << "Comparing " << epochToString(e) << " and " << epochToString(successorEpoch) << std::endl;
+                            if (epochClassZigZagOrder(e, successorEpoch)) {
+                                std::cout << "    " << epochToString(e) << " < " << epochToString(successorEpoch) << std::endl;
+                            }
+                            if (epochClassZigZagOrder(successorEpoch, e)) {
+                                std::cout << "    " << epochToString(e) << " > " << epochToString(successorEpoch) << std::endl;
+                            }
+                        }
+                         */
+                        if (collectedEpochs.insert(successorEpoch).second) {
+                            dfsStack.push_back(std::move(successorEpoch));
+                        }
+                    }
+                }
+                /*
+                std::cout << "Resulting order: ";
+                for (auto const& e : collectedEpochs) {
+                    std::cout << epochToString(e) << ", ";
+                }
+                std::cout << std::endl;
+                */
+                return std::vector<Epoch>(collectedEpochs.begin(), collectedEpochs.end());
+                
+                /*
                 
                 // perform DFS to get the 'reachable' epochs in the correct order.
                 std::vector<Epoch> result, dfsStack;
@@ -201,6 +240,7 @@ namespace storm {
                 }
                 
                 return result;
+                 */
             }
             
             template<typename ValueType, bool SingleObjectiveMode>
@@ -988,13 +1028,103 @@ namespace storm {
             
             template<typename ValueType, bool SingleObjectiveMode>
             std::string MultiDimensionalRewardUnfolding<ValueType, SingleObjectiveMode>::epochToString(Epoch const& epoch) const {
-                std::string res = "<" + std::to_string(getDimensionOfEpoch(epoch, 0));
+                std::string res = "<" + (isBottomDimension(epoch, 0) ? "_" : std::to_string(getDimensionOfEpoch(epoch, 0)));
                 for (uint64_t d = 1; d < dimensionCount; ++d) {
                     res += ", ";
-                    res += std::to_string(getDimensionOfEpoch(epoch, d));
+                    res += (isBottomDimension(epoch, d) ? "_" : std::to_string(getDimensionOfEpoch(epoch, d)));
                 }
                 res += ">";
                 return res;
+            }
+            
+            template<typename ValueType, bool SingleObjectiveMode>
+            bool MultiDimensionalRewardUnfolding<ValueType, SingleObjectiveMode>::epochClassZigZagOrder(Epoch const& epoch1, Epoch const& epoch2) const {
+                
+                // Return true iff epoch 1 has to be computed before epoch 2
+                
+                // Check whether the number of bottom dimensions is not equal
+                uint64_t e1Count = 0;
+                uint64_t e2Count = 0;
+                for (uint64_t dim = 0; dim < dimensionCount; ++dim) {
+                    if (isBottomDimension(epoch1, dim)) {
+                        ++e1Count;
+                    }
+                    if (isBottomDimension(epoch2, dim)) {
+                        ++e2Count;
+                    }
+                }
+                if (e1Count > e2Count) {
+                    return true;
+                } else if (e1Count < e2Count) {
+                    return false;
+                }
+                
+                // Check the epoch classes
+                uint64_t e1Class = 0;
+                uint64_t e2Class = 0;
+                uint64_t mask = dimensionBitMask;
+                for (uint64_t dim = 0; dim < dimensionCount; ++dim) {
+                    if (isBottomDimension(epoch1, dim)) {
+                        e1Class |= mask;
+                    }
+                    if (isBottomDimension(epoch2, dim)) {
+                        e2Class |= mask;
+                    }
+                    mask = mask << bitsPerDimension;
+                }
+                if (e1Class < e2Class) {
+                    return true;
+                } else if (e1Class > e2Class) {
+                    return false;
+                }
+                assert(sameEpochClass(epoch1, epoch2));
+                
+                // check whether the sum of dimensions is the same
+                uint64_t e1Sum = 0;
+                uint64_t e2Sum = 0;
+                for (uint64_t dim = 0; dim < dimensionCount; ++dim) {
+                    if (!isBottomDimension(epoch1, dim)) {
+                        assert(!isBottomDimension(epoch2, dim));
+                        e1Sum += getDimensionOfEpoch(epoch1, dim);
+                        e2Sum += getDimensionOfEpoch(epoch2, dim);
+                    }
+                }
+                if (e1Sum < e2Sum) {
+                    return true;
+                } else if (e1Sum > e2Sum) {
+                    return false;
+                }
+                
+                // find the first dimension where the epochs do not match.
+                // if the sum is even, we search from left to right, otherwise from right to left
+                bool sumEven = (e1Sum % 2) == 0;
+                if (sumEven) {
+                    for (uint64_t dim = 0; dim < dimensionCount; ++dim) {
+                        uint64_t e1Value = getDimensionOfEpoch(epoch1, dim);
+                        uint64_t e2Value = getDimensionOfEpoch(epoch2, dim);
+                        if (e1Value < e2Value) {
+                            return true;
+                        } else if (e1Value > e2Value) {
+                            return false;
+                        }
+                    }
+                } else {
+                    uint64_t dim = dimensionCount;
+                    while (dim > 0) {
+                        --dim;
+                        uint64_t e1Value = getDimensionOfEpoch(epoch1, dim);
+                        uint64_t e2Value = getDimensionOfEpoch(epoch2, dim);
+                        if (e1Value < e2Value) {
+                            return true;
+                        } else if (e1Value > e2Value) {
+                            return false;
+                        }
+                    }
+                }
+                
+                // reaching this point means that the epochs are equal
+                assert(epoch1 == epoch2);
+                return false;
             }
             
             template class MultiDimensionalRewardUnfolding<double, true>;
