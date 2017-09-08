@@ -216,7 +216,14 @@ namespace storm {
                 }
                 
                 swSetEpoch.start();
-                epochModel.objectiveRewardFilter = std::vector<storm::storage::BitVector>(objectives.size(), storm::storage::BitVector(epochModel.objectiveRewards.front().size(), true));
+                swAux1.start();
+                epochModel.objectiveRewardFilter.clear();
+                for (auto const& objRewards : epochModel.objectiveRewards) {
+                    epochModel.objectiveRewardFilter.push_back(storm::utility::vector::filterZero(objRewards));
+                    epochModel.objectiveRewardFilter.back().complement();
+                }
+                swAux1.stop();
+                
                 epochModel.stepSolutions.resize(epochModel.stepChoices.getNumberOfSetBits());
                 auto stepSolIt = epochModel.stepSolutions.begin();
                 for (auto const& reducedChoice : epochModel.stepChoices) {
@@ -228,9 +235,14 @@ namespace storm {
                     // Find out whether objective reward is earned for the current choice
                     // Objective reward is not earned if there is a subObjective that is still relevant but the corresponding reward bound is passed after taking the choice
                     swAux1.start();
-                    for (uint64_t dim = 0; dim < dimensionCount; ++dim) {
-                        if (isBottomDimension(successorEpoch, dim) && memoryState.get(dim)) {
-                            epochModel.objectiveRewardFilter[subObjectives[dim].second].set(reducedChoice, false);
+                    for (uint64_t objIndex = 0; objIndex < this->objectives.size(); ++objIndex) {
+                        if (epochModel.objectiveRewardFilter[objIndex].get(reducedChoice)) {
+                            for (auto const& dim : objectiveDimensions[objIndex]) {
+                                if (isBottomDimension(successorEpoch, dim) && memoryState.get(dim)) {
+                                    epochModel.objectiveRewardFilter[objIndex].set(reducedChoice, false);
+                                    break;
+                                }
+                            }
                         }
                     }
                     swAux1.stop();
