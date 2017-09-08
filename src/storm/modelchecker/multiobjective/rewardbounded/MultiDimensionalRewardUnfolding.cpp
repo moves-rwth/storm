@@ -210,6 +210,9 @@ namespace storm {
                 // Check if we need to update the current epoch class
                 if (!currentEpoch || !sameEpochClass(epoch, currentEpoch.get())) {
                     setCurrentEpochClass(epoch);
+                    epochModel.epochMatrixChanged = true;
+                } else {
+                    epochModel.epochMatrixChanged = false;
                 }
                 
                 swSetEpoch.start();

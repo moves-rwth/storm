@@ -4,6 +4,8 @@
 
 #include "storm/modelchecker/multiobjective/pcaa/PcaaWeightVectorChecker.h"
 #include "storm/modelchecker/multiobjective/rewardbounded/MultiDimensionalRewardUnfolding.h"
+#include "storm/solver/MinMaxLinearEquationSolver.h"
+#include "storm/solver/LinearEquationSolver.h"
 
 #include "storm/utility/Stopwatch.h"
 
@@ -30,9 +32,14 @@ namespace storm {
                     std::cout << "WVC statistics: " << std::endl;
                     std::cout << "           overall: " <<  swAll << " seconds." << std::endl;
                     std::cout << "---------------------------------------------" << std::endl;
+                    std::cout << " Sched changed " << numSchedChanges << "/" << numCheckedEpochs << " times." << std::endl;
+                    std::cout << "        dataUpdate: "  << swDataUpdate << " seconds." << std::endl;
                     std::cout << "     eqSysBuilding: "  << swEqBuilding << " seconds." << std::endl;
                     std::cout << "     MinMaxSolving: "  << swMinMaxSolving << " seconds." << std::endl;
                     std::cout << "      LinEqSolving: "  << swLinEqSolving << " seconds." << std::endl;
+                    std::cout << "     Aux1StopWatch: "  << swAux1 << " seconds." << std::endl;
+                    std::cout << "     Aux2StopWatch: "  << swAux2 << " seconds." << std::endl;
+                    std::cout << "     Aux3StopWatch: "  << swAux3 << " seconds." << std::endl;
 
                 }
                 
@@ -55,9 +62,25 @@ namespace storm {
                 
             private:
                 
-                void computeEpochSolution(typename MultiDimensionalRewardUnfolding<ValueType, false>::Epoch const& epoch, std::vector<ValueType> const& weightVector);
+                struct EpochCheckingData {
                 
-                storm::utility::Stopwatch swAll, swEqBuilding, swLinEqSolving, swMinMaxSolving;
+                    std::vector<ValueType> bMinMax;
+                    std::vector<ValueType> xMinMax;
+                    std::unique_ptr<storm::solver::MinMaxLinearEquationSolver<ValueType>> minMaxSolver;
+                    
+                    std::vector<uint64_t> schedulerChoices;
+                    
+                    std::vector<ValueType> bLinEq;
+                    std::vector<std::vector<ValueType>> xLinEq;
+                    std::unique_ptr<storm::solver::LinearEquationSolver<ValueType>> linEqSolver;
+                };
+                
+                void computeEpochSolution(typename MultiDimensionalRewardUnfolding<ValueType, false>::Epoch const& epoch, std::vector<ValueType> const& weightVector, EpochCheckingData& cachedData);
+                
+                void updateCachedData(typename MultiDimensionalRewardUnfolding<ValueType, false>::EpochModel const& epochModel, EpochCheckingData& cachedData);
+                
+                storm::utility::Stopwatch swAll, swDataUpdate, swEqBuilding, swLinEqSolving, swMinMaxSolving, swAux1, swAux2, swAux3;
+                uint64_t numSchedChanges, numCheckedEpochs;
                 
                 MultiDimensionalRewardUnfolding<ValueType, false> rewardUnfolding;
                 

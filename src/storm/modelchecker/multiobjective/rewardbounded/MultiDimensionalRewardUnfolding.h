@@ -27,6 +27,7 @@ namespace storm {
                 typedef typename std::conditional<SingleObjectiveMode, ValueType, std::vector<ValueType>>::type SolutionType;
 
                 struct EpochModel {
+                    bool epochMatrixChanged;
                     storm::storage::SparseMatrix<ValueType> epochMatrix;
                     storm::storage::BitVector stepChoices;
                     std::vector<SolutionType> stepSolutions;
