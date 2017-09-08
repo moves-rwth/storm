@@ -7,8 +7,13 @@
 #include "storm/solver/EigenLinearEquationSolver.h"
 #include "storm/solver/EliminationLinearEquationSolver.h"
 
+#include "storm/utility/vector.h"
+
 #include "storm/settings/SettingsManager.h"
 #include "storm/settings/modules/CoreSettings.h"
+
+#include "storm/utility/macros.h"
+#include "storm/exceptions/NotSupportedException.h"
 
 namespace storm {
     namespace solver {
@@ -20,8 +25,7 @@ namespace storm {
         
         template<typename ValueType>
         void LinearEquationSolver<ValueType>::repeatedMultiply(std::vector<ValueType>& x, std::vector<ValueType> const* b, uint_fast64_t n) const {
-            
-            if(!cachedRowVector) {
+            if (!cachedRowVector) {
                 cachedRowVector = std::make_unique<std::vector<ValueType>>(getMatrixRowCount());
             }
             
@@ -33,7 +37,6 @@ namespace storm {
             // each iteration.
             std::vector<ValueType>* currentX = &x;
             std::vector<ValueType>* nextX = cachedRowVector.get();
-            
             
             // Now perform matrix-vector multiplication as long as we meet the bound.
             for (uint_fast64_t i = 0; i < n; ++i) {
@@ -50,10 +53,38 @@ namespace storm {
             // restore the old caching setting
             setCachingEnabled(cachingWasEnabled);
             
-            if(!isCachingEnabled()) {
+            if (!isCachingEnabled()) {
                 clearCache();
             }
         }
+        
+        template<typename ValueType>
+        void LinearEquationSolver<ValueType>::multiplyAndReduce(OptimizationDirection const& dir, std::vector<uint64_t> const& rowGroupIndices, std::vector<ValueType>& x, std::vector<ValueType> const* b, std::vector<ValueType>& result, std::vector<uint_fast64_t>* choices) const {
+            if (!cachedRowVector) {
+                cachedRowVector = std::make_unique<std::vector<ValueType>>(getMatrixRowCount());
+            }
+            
+            // We enable caching for this. But remember how the old setting was
+            bool cachingWasEnabled = isCachingEnabled();
+            setCachingEnabled(true);
+
+            this->multiply(x, b, *cachedRowVector);
+            storm::utility::vector::reduceVectorMinOrMax(dir, *cachedRowVector, result, rowGroupIndices, choices);
+            
+            // restore the old caching setting
+            setCachingEnabled(cachingWasEnabled);
+            
+            if (!isCachingEnabled()) {
+                clearCache();
+            }
+        }
+        
+#ifdef STORM_HAVE_CARL
+        template<>
+        void LinearEquationSolver<storm::RationalFunction>::multiplyAndReduce(OptimizationDirection const& dir, std::vector<uint64_t> const& rowGroupIndices, std::vector<storm::RationalFunction>& x, std::vector<storm::RationalFunction> const* b, std::vector<storm::RationalFunction>& result, std::vector<uint_fast64_t>* choices ) const {
+            STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Reducing rational function vector is not supported.");
+        }
+#endif
         
         template<typename ValueType>
         void LinearEquationSolver<ValueType>::setCachingEnabled(bool value) const {

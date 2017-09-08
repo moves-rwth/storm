@@ -5,6 +5,7 @@
 #include <memory>
 
 #include "storm/solver/AbstractEquationSolver.h"
+#include "storm/solver/OptimizationDirection.h"
 
 #include "storm/storage/SparseMatrix.h"
 
@@ -54,6 +55,22 @@ namespace storm {
              * to the number of rows of A.
              */
             virtual void multiply(std::vector<ValueType>& x, std::vector<ValueType> const* b, std::vector<ValueType>& result) const = 0;
+            
+            /*!
+             * Performs on matrix-vector multiplication x' = A*x + b and then minimizes/maximizes over the row groups
+             * so that the resulting vector has the size of number of row groups of A.
+             *
+             * @param dir The direction for the reduction step.
+             * @param rowGroupIndices A vector storing the row groups over which to reduce.
+             * @param x The input vector with which to multiply the matrix. Its length must be equal
+             * to the number of columns of A.
+             * @param b If non-null, this vector is added after the multiplication. If given, its length must be equal
+             * to the number of rows of A.
+             * @param result The target vector into which to write the multiplication result. Its length must be equal
+             * to the number of rows of A.
+             * @param choices If given, the choices made in the reduction process are written to this vector.
+             */
+            virtual void multiplyAndReduce(OptimizationDirection const& dir, std::vector<uint64_t> const& rowGroupIndices, std::vector<ValueType>& x, std::vector<ValueType> const* b, std::vector<ValueType>& result, std::vector<uint_fast64_t>* choices = nullptr) const;
             
             /*!
              * Performs repeated matrix-vector multiplication, using x[0] = x and x[i + 1] = A*x[i] + b. After

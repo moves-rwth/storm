@@ -215,16 +215,16 @@ namespace storm {
         }
         
         template<typename ValueType>
-        MinMaxLinearEquationSolverRequirements IterativeMinMaxLinearEquationSolver<ValueType>::getRequirements(MinMaxLinearEquationSolverSystemType const& equationSystemType, boost::optional<storm::solver::OptimizationDirection> const& direction) const {
+        MinMaxLinearEquationSolverRequirements IterativeMinMaxLinearEquationSolver<ValueType>::getRequirements(EquationSystemType const& equationSystemType, boost::optional<storm::solver::OptimizationDirection> const& direction) const {
             MinMaxLinearEquationSolverRequirements requirements;
             
-            if (equationSystemType == MinMaxLinearEquationSolverSystemType::UntilProbabilities) {
+            if (equationSystemType == EquationSystemType::UntilProbabilities) {
                 if (this->getSettings().getSolutionMethod() == IterativeMinMaxLinearEquationSolverSettings<ValueType>::SolutionMethod::PolicyIteration) {
                     if (!direction || direction.get() == OptimizationDirection::Maximize) {
                         requirements.set(MinMaxLinearEquationSolverRequirements::Element::ValidInitialScheduler);
                     }
                 }
-            } else if (equationSystemType == MinMaxLinearEquationSolverSystemType::ReachabilityRewards) {
+            } else if (equationSystemType == EquationSystemType::ReachabilityRewards) {
                 if (!direction || direction.get() == OptimizationDirection::Minimize) {
                     requirements.set(MinMaxLinearEquationSolverRequirements::Element::ValidInitialScheduler);
                 }
@@ -235,15 +235,10 @@ namespace storm {
 
         template<typename ValueType>
         bool IterativeMinMaxLinearEquationSolver<ValueType>::solveEquationsValueIteration(OptimizationDirection dir, std::vector<ValueType>& x, std::vector<ValueType> const& b) const {
-            if(!this->linEqSolverA) {
+            if (!this->linEqSolverA) {
                 this->linEqSolverA = this->linearEquationSolverFactory->create(*this->A);
                 this->linEqSolverA->setCachingEnabled(true);
             }
-            
-            if (!this->auxiliaryRowVector) {
-                this->auxiliaryRowVector = std::make_unique<std::vector<ValueType>>(this->A->getRowCount());
-            }
-            std::vector<ValueType>& multiplyResult = *this->auxiliaryRowVector;
             
             if (!auxiliaryRowGroupVector) {
                 auxiliaryRowGroupVector = std::make_unique<std::vector<ValueType>>(this->A->getRowGroupCount());
@@ -258,8 +253,12 @@ namespace storm {
                 // Solve the resulting equation system.
                 auto submatrixSolver = this->linearEquationSolverFactory->create(std::move(submatrix));
                 submatrixSolver->setCachingEnabled(true);
-                if (this->lowerBound) { submatrixSolver->setLowerBound(this->lowerBound.get()); }
-                if (this->upperBound) { submatrixSolver->setUpperBound(this->upperBound.get()); }
+                if (this->lowerBound) {
+                    submatrixSolver->setLowerBound(this->lowerBound.get());
+                }
+                if (this->upperBound) {
+                    submatrixSolver->setUpperBound(this->upperBound.get());
+                }
                 submatrixSolver->solveEquations(x, *auxiliaryRowGroupVector);
             }
             
@@ -272,11 +271,8 @@ namespace storm {
             
             Status status = Status::InProgress;
             while (status == Status::InProgress) {
-                // Compute x' = A*x + b.
-                this->linEqSolverA->multiply(*currentX, &b, multiplyResult);
-                
-                // Reduce the vector x' by applying min/max for all non-deterministic choices.
-                storm::utility::vector::reduceVectorMinOrMax(dir, multiplyResult, *newX, this->A->getRowGroupIndices());
+                // Compute x' = min/max(A*x + b).
+                this->linEqSolverA->multiplyAndReduce(dir, this->A->getRowGroupIndices(), *currentX, &b, *newX);
                 
                 // Determine whether the method converged.
                 if (storm::utility::vector::equalModuloPrecision<ValueType>(*currentX, *newX, this->getSettings().getPrecision(), this->getSettings().getRelativeTerminationCriterion())) {
@@ -299,14 +295,7 @@ namespace storm {
             
             // If requested, we store the scheduler for retrieval.
             if (this->isTrackSchedulerSet()) {
-                // Due to a custom termination condition, it may be the case that no iterations are performed. In this
-                // case we need to compute x'= A*x+b once.
-                if (iterations==0) {
-                    this->linEqSolverA->multiply(x, &b, multiplyResult);
-                }
-                this->schedulerChoices = std::vector<uint_fast64_t>(this->A->getRowGroupCount());
-                // Reduce the multiplyResult and keep track of the choices made
-                storm::utility::vector::reduceVectorMinOrMax(dir, multiplyResult, x, this->A->getRowGroupIndices(), &this->schedulerChoices.get());
+                this->linEqSolverA->multiplyAndReduce(dir, this->A->getRowGroupIndices(), x, &b, *currentX, &this->schedulerChoices.get());
             }
 
             if (!this->isCachingEnabled()) {

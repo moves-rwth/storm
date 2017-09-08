@@ -86,12 +86,12 @@ namespace storm {
             }
             
             template<typename ValueType>
-            std::vector<uint_fast64_t> computeValidSchedulerHint(storm::solver::MinMaxLinearEquationSolverSystemType const& type, storm::storage::SparseMatrix<ValueType> const& transitionMatrix, storm::storage::SparseMatrix<ValueType> const& backwardTransitions, storm::storage::BitVector const& maybeStates, storm::storage::BitVector const& filterStates, storm::storage::BitVector const& targetStates) {
+            std::vector<uint_fast64_t> computeValidSchedulerHint(storm::solver::EquationSystemType const& type, storm::storage::SparseMatrix<ValueType> const& transitionMatrix, storm::storage::SparseMatrix<ValueType> const& backwardTransitions, storm::storage::BitVector const& maybeStates, storm::storage::BitVector const& filterStates, storm::storage::BitVector const& targetStates) {
                 storm::storage::Scheduler<ValueType> validScheduler(maybeStates.size());
 
-                if (type == storm::solver::MinMaxLinearEquationSolverSystemType::UntilProbabilities) {
+                if (type == storm::solver::EquationSystemType::UntilProbabilities) {
                     storm::utility::graph::computeSchedulerProbGreater0E(transitionMatrix, backwardTransitions, filterStates, targetStates, validScheduler, boost::none);
-                } else if (type == storm::solver::MinMaxLinearEquationSolverSystemType::ReachabilityRewards) {
+                } else if (type == storm::solver::EquationSystemType::ReachabilityRewards) {
                     storm::utility::graph::computeSchedulerProb1E(maybeStates | targetStates, transitionMatrix, backwardTransitions, filterStates, targetStates, validScheduler);
                 } else {
                     STORM_LOG_ASSERT(false, "Unexpected equation system type.");
@@ -198,7 +198,7 @@ namespace storm {
             }
             
             template<typename ValueType>
-            SparseMdpHintType<ValueType> computeHints(storm::solver::MinMaxLinearEquationSolverSystemType const& type, ModelCheckerHint const& hint, storm::OptimizationDirection const& dir, storm::storage::SparseMatrix<ValueType> const& transitionMatrix, storm::storage::SparseMatrix<ValueType> const& backwardTransitions, storm::storage::BitVector const& maybeStates, storm::storage::BitVector const& phiStates, storm::storage::BitVector const& targetStates, storm::solver::MinMaxLinearEquationSolverFactory<ValueType> const& minMaxLinearEquationSolverFactory, boost::optional<storm::storage::BitVector> const& selectedChoices = boost::none) {
+            SparseMdpHintType<ValueType> computeHints(storm::solver::EquationSystemType const& type, ModelCheckerHint const& hint, storm::OptimizationDirection const& dir, storm::storage::SparseMatrix<ValueType> const& transitionMatrix, storm::storage::SparseMatrix<ValueType> const& backwardTransitions, storm::storage::BitVector const& maybeStates, storm::storage::BitVector const& phiStates, storm::storage::BitVector const& targetStates, storm::solver::MinMaxLinearEquationSolverFactory<ValueType> const& minMaxLinearEquationSolverFactory, boost::optional<storm::storage::BitVector> const& selectedChoices = boost::none) {
                 SparseMdpHintType<ValueType> result;
 
                 // Check for requirements of the solver.
@@ -216,9 +216,9 @@ namespace storm {
                 extractHintInformationForMaybeStates(result, transitionMatrix, backwardTransitions, maybeStates, selectedChoices, hint, skipEcWithinMaybeStatesCheck);
 
                 result.lowerResultBound = storm::utility::zero<ValueType>();
-                if (type == storm::solver::MinMaxLinearEquationSolverSystemType::UntilProbabilities) {
+                if (type == storm::solver::EquationSystemType::UntilProbabilities) {
                     result.upperResultBound = storm::utility::one<ValueType>();
-                } else if (type == storm::solver::MinMaxLinearEquationSolverSystemType::ReachabilityRewards) {
+                } else if (type == storm::solver::EquationSystemType::ReachabilityRewards) {
                     // Intentionally left empty.
                 } else {
                     STORM_LOG_ASSERT(false, "Unexpected equation system type.");
@@ -352,7 +352,7 @@ namespace storm {
                         std::vector<ValueType> b = transitionMatrix.getConstrainedRowGroupSumVector(maybeStates, statesWithProbability1);
                         
                         // Obtain proper hint information either from the provided hint or from requirements of the solver.
-                        SparseMdpHintType<ValueType> hintInformation = computeHints(storm::solver::MinMaxLinearEquationSolverSystemType::UntilProbabilities, hint, goal.direction(), transitionMatrix, backwardTransitions, maybeStates, phiStates, statesWithProbability1, minMaxLinearEquationSolverFactory);
+                        SparseMdpHintType<ValueType> hintInformation = computeHints(storm::solver::EquationSystemType::UntilProbabilities, hint, goal.direction(), transitionMatrix, backwardTransitions, maybeStates, phiStates, statesWithProbability1, minMaxLinearEquationSolverFactory);
                         
                         // Now compute the results for the maybe states.
                         MaybeStateResult<ValueType> resultForMaybeStates = computeValuesForMaybeStates(goal, submatrix, b, produceScheduler, minMaxLinearEquationSolverFactory, hintInformation);
@@ -565,7 +565,7 @@ namespace storm {
                         }
                         
                         // Obtain proper hint information either from the provided hint or from requirements of the solver.
-                        SparseMdpHintType<ValueType> hintInformation = computeHints(storm::solver::MinMaxLinearEquationSolverSystemType::ReachabilityRewards, hint, goal.direction(), transitionMatrix, backwardTransitions, maybeStates, ~targetStates, targetStates, minMaxLinearEquationSolverFactory, selectedChoices);
+                        SparseMdpHintType<ValueType> hintInformation = computeHints(storm::solver::EquationSystemType::ReachabilityRewards, hint, goal.direction(), transitionMatrix, backwardTransitions, maybeStates, ~targetStates, targetStates, minMaxLinearEquationSolverFactory, selectedChoices);
                         
                         // Now compute the results for the maybe states.
                         MaybeStateResult<ValueType> resultForMaybeStates = computeValuesForMaybeStates(goal, submatrix, b, produceScheduler, minMaxLinearEquationSolverFactory, hintInformation);
@@ -766,7 +766,7 @@ namespace storm {
                 storm::storage::SparseMatrix<ValueType> sspMatrix = sspMatrixBuilder.build(currentChoice, numberOfSspStates, numberOfSspStates);
                 
                 // Check for requirements of the solver.
-                storm::solver::MinMaxLinearEquationSolverRequirements requirements = minMaxLinearEquationSolverFactory.getRequirements(storm::solver::MinMaxLinearEquationSolverSystemType::StochasticShortestPath);
+                storm::solver::MinMaxLinearEquationSolverRequirements requirements = minMaxLinearEquationSolverFactory.getRequirements(storm::solver::EquationSystemType::StochasticShortestPath);
                 STORM_LOG_THROW(requirements.empty(), storm::exceptions::UncheckedRequirementException, "Cannot establish requirements for solver.");
                 
                 std::vector<ValueType> sspResult(numberOfSspStates);

@@ -110,7 +110,7 @@ namespace storm {
                         std::vector<ValueType> x(explicitRepresentation.first.getRowGroupCount(), storm::utility::zero<ValueType>());
 
                         // Check for requirements of the solver.
-                        storm::solver::MinMaxLinearEquationSolverRequirements requirements = linearEquationSolverFactory.getRequirements(storm::solver::MinMaxLinearEquationSolverSystemType::UntilProbabilities, dir);
+                        storm::solver::MinMaxLinearEquationSolverRequirements requirements = linearEquationSolverFactory.getRequirements(storm::solver::EquationSystemType::UntilProbabilities, dir);
                         boost::optional<std::vector<uint64_t>> initialScheduler;
                         if (!requirements.empty()) {
                             if (requirements.requires(storm::solver::MinMaxLinearEquationSolverRequirements::Element::ValidInitialScheduler)) {
@@ -351,7 +351,7 @@ namespace storm {
                     // If there are maybe states, we need to solve an equation system.
                     if (!maybeStates.isZero()) {
                         // Check for requirements of the solver this early so we can adapt the maybe states accordingly.
-                        storm::solver::MinMaxLinearEquationSolverRequirements requirements = linearEquationSolverFactory.getRequirements(storm::solver::MinMaxLinearEquationSolverSystemType::ReachabilityRewards, dir);
+                        storm::solver::MinMaxLinearEquationSolverRequirements requirements = linearEquationSolverFactory.getRequirements(storm::solver::EquationSystemType::ReachabilityRewards, dir);
                         bool requireInitialScheduler = false;
                         if (!requirements.empty()) {
                             if (requirements.requires(storm::solver::MinMaxLinearEquationSolverRequirements::Element::ValidInitialScheduler)) {

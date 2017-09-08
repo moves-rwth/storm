@@ -3,7 +3,7 @@
 namespace storm {
     namespace solver {
         
-        enum class MinMaxLinearEquationSolverSystemType {
+        enum class EquationSystemType {
             UntilProbabilities,
             ReachabilityRewards,
             StochasticShortestPath

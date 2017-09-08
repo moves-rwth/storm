@@ -143,7 +143,7 @@ namespace storm {
         }
         
         template<typename ValueType>
-        MinMaxLinearEquationSolverRequirements MinMaxLinearEquationSolver<ValueType>::getRequirements(MinMaxLinearEquationSolverSystemType const& equationSystemType, boost::optional<storm::solver::OptimizationDirection> const& direction) const {
+        MinMaxLinearEquationSolverRequirements MinMaxLinearEquationSolver<ValueType>::getRequirements(EquationSystemType const& equationSystemType, boost::optional<storm::solver::OptimizationDirection> const& direction) const {
             return MinMaxLinearEquationSolverRequirements();
         }
         
@@ -215,7 +215,7 @@ namespace storm {
         }
         
         template<typename ValueType>
-        MinMaxLinearEquationSolverRequirements MinMaxLinearEquationSolverFactory<ValueType>::getRequirements(MinMaxLinearEquationSolverSystemType const& equationSystemType, boost::optional<storm::solver::OptimizationDirection> const& direction) const {
+        MinMaxLinearEquationSolverRequirements MinMaxLinearEquationSolverFactory<ValueType>::getRequirements(EquationSystemType const& equationSystemType, boost::optional<storm::solver::OptimizationDirection> const& direction) const {
             // Create dummy solver and ask it for requirements.
             std::unique_ptr<MinMaxLinearEquationSolver<ValueType>> solver = this->create();
             return solver->getRequirements(equationSystemType, direction);

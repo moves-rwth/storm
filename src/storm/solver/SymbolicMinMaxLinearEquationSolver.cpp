@@ -257,16 +257,16 @@ namespace storm {
         }
         
         template<storm::dd::DdType DdType, typename ValueType>
-        MinMaxLinearEquationSolverRequirements SymbolicMinMaxLinearEquationSolver<DdType, ValueType>::getRequirements(MinMaxLinearEquationSolverSystemType const& equationSystemType, boost::optional<storm::solver::OptimizationDirection> const& direction) const {
+        MinMaxLinearEquationSolverRequirements SymbolicMinMaxLinearEquationSolver<DdType, ValueType>::getRequirements(EquationSystemType const& equationSystemType, boost::optional<storm::solver::OptimizationDirection> const& direction) const {
             MinMaxLinearEquationSolverRequirements requirements;
             
-            if (equationSystemType == MinMaxLinearEquationSolverSystemType::UntilProbabilities) {
+            if (equationSystemType == EquationSystemType::UntilProbabilities) {
                 if (this->getSettings().getSolutionMethod() == SymbolicMinMaxLinearEquationSolverSettings<ValueType>::SolutionMethod::PolicyIteration) {
                     if (!direction || direction.get() == OptimizationDirection::Maximize) {
                         requirements.set(MinMaxLinearEquationSolverRequirements::Element::ValidInitialScheduler);
                     }
                 }
-            } else if (equationSystemType == MinMaxLinearEquationSolverSystemType::ReachabilityRewards) {
+            } else if (equationSystemType == EquationSystemType::ReachabilityRewards) {
                 if (!direction || direction.get() == OptimizationDirection::Minimize) {
                     requirements.set(MinMaxLinearEquationSolverRequirements::Element::ValidInitialScheduler);
                 }
@@ -291,7 +291,7 @@ namespace storm {
         }
 
         template<storm::dd::DdType DdType, typename ValueType>
-        MinMaxLinearEquationSolverRequirements SymbolicMinMaxLinearEquationSolverFactory<DdType, ValueType>::getRequirements(MinMaxLinearEquationSolverSystemType const& equationSystemType, boost::optional<storm::solver::OptimizationDirection> const& direction) const {
+        MinMaxLinearEquationSolverRequirements SymbolicMinMaxLinearEquationSolverFactory<DdType, ValueType>::getRequirements(EquationSystemType const& equationSystemType, boost::optional<storm::solver::OptimizationDirection> const& direction) const {
             std::unique_ptr<storm::solver::SymbolicMinMaxLinearEquationSolver<DdType, ValueType>> solver = this->create();
             return solver->getRequirements(equationSystemType, direction);
         }
