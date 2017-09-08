@@ -56,9 +56,9 @@ namespace storm {
                 ++numCheckedEpochs;
                 swEqBuilding.start();
                 
-                //TODO  result can now be set from the cacheData
-                auto& result = epochModel.inStateSolutions;
-                result.resize(epochModel.epochInStates.getNumberOfSetBits(), typename MultiDimensionalRewardUnfolding<ValueType, false>::SolutionType(this->objectives.size() + 1));
+                auto& result = cachedData.solutions;
+                result.resize(epochModel.epochInStates.getNumberOfSetBits(), typename MultiDimensionalRewardUnfolding<ValueType, false>::SolutionType());
+                uint64_t solutionSize = this->objectives.size() + 1;
                 
                 // Formulate a min-max equation system max(A*x+b)=x for the weighted sum of the objectives
                 swAux1.start();
@@ -89,7 +89,9 @@ namespace storm {
                 swEqBuilding.start();
                 auto resultIt = result.begin();
                 for (auto const& state : epochModel.epochInStates) {
-                    resultIt->front() = cachedData.xMinMax[state];
+                    resultIt->clear();
+                    resultIt->reserve(solutionSize);
+                    resultIt->push_back(cachedData.xMinMax[state]);
                     ++resultIt;
                 }
                 
@@ -144,13 +146,13 @@ namespace storm {
                     swEqBuilding.start();
                     resultIt = result.begin();
                     for (auto const& state : epochModel.epochInStates) {
-                        (*resultIt)[objIndex + 1] = x[state];
+                        resultIt->push_back(x[state]);
                         ++resultIt;
                     }
                 }
                 swEqBuilding.stop();
                 swAux3.stop();
-                rewardUnfolding.setSolutionForCurrentEpoch();
+                rewardUnfolding.setSolutionForCurrentEpoch(result);
             }
 
             template <class SparseMdpModelType>

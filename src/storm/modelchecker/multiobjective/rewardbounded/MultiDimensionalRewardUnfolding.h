@@ -34,8 +34,6 @@ namespace storm {
                     std::vector<std::vector<ValueType>> objectiveRewards;
                     std::vector<storm::storage::BitVector> objectiveRewardFilter;
                     storm::storage::BitVector epochInStates;
-                    
-                    std::vector<SolutionType> inStateSolutions;
                 };
                 
                 /*
@@ -79,7 +77,7 @@ namespace storm {
                 
                 EpochModel& setCurrentEpoch(Epoch const& epoch);
                 
-                void setSolutionForCurrentEpoch();
+                void setSolutionForCurrentEpoch(std::vector<SolutionType>& inStateSolutions);
                 SolutionType const& getInitialStateResult(Epoch const& epoch);
                 
                 
@@ -157,6 +155,7 @@ namespace storm {
                 std::string solutionToString(SolutionType const& solution) const;
                 
                 void setSolutionForCurrentEpoch(uint64_t const& productState, SolutionType const& solution);
+                void setSolutionForCurrentEpoch(uint64_t const& productState, SolutionType&& solution);
                 SolutionType const& getStateSolution(Epoch const& epoch, uint64_t const& productState);
                 
                 storm::models::sparse::Mdp<ValueType> const& model;
@@ -166,7 +165,9 @@ namespace storm {
                 
                 MemoryProduct memoryProduct;
                 
-                typename storm::transformer::EndComponentEliminator<ValueType>::EndComponentEliminatorReturnType ecElimResult;
+                std::vector<uint64_t> epochModelToProductChoiceMap;
+                std::vector<uint64_t> productToEpochModelStateMap;
+                std::vector<std::vector<uint64_t>> epochModelInStateToProductStatesMap;
                 std::set<Epoch> possibleEpochSteps;
                 
                 EpochModel epochModel;

@@ -73,6 +73,8 @@ namespace storm {
                     std::vector<ValueType> bLinEq;
                     std::vector<std::vector<ValueType>> xLinEq;
                     std::unique_ptr<storm::solver::LinearEquationSolver<ValueType>> linEqSolver;
+                    
+                    std::vector<typename MultiDimensionalRewardUnfolding<ValueType, false>::SolutionType> solutions;
                 };
                 
                 void computeEpochSolution(typename MultiDimensionalRewardUnfolding<ValueType, false>::Epoch const& epoch, std::vector<ValueType> const& weightVector, EpochCheckingData& cachedData);
