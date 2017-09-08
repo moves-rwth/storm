@@ -256,7 +256,6 @@ namespace storm {
                 storm::utility::vector::selectVectorValues<ValueType>(*auxiliaryRowGroupVector, this->getInitialScheduler(), this->A->getRowGroupIndices(), b);
 
                 // Solve the resulting equation system.
-                // Note that the linEqSolver might consider a slightly different interpretation of "equalModuloPrecision". Hence, we iteratively increase its precision.
                 auto submatrixSolver = this->linearEquationSolverFactory->create(std::move(submatrix));
                 submatrixSolver->setCachingEnabled(true);
                 if (this->lowerBound) { submatrixSolver->setLowerBound(this->lowerBound.get()); }

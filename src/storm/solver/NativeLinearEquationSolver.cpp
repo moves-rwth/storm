@@ -207,22 +207,15 @@ namespace storm {
         template<typename ValueType>
         void NativeLinearEquationSolver<ValueType>::multiply(std::vector<ValueType>& x, std::vector<ValueType> const* b, std::vector<ValueType>& result) const {
             if (&x != &result) {
-                A->multiplyWithVector(x, result);
-                if (b != nullptr) {
-                    storm::utility::vector::addVectors(result, *b, result);
-                }
+                A->multiplyWithVector(x, result, b);
             } else {
                 // If the two vectors are aliases, we need to create a temporary.
-                if(!this->cachedRowVector) {
+                if (!this->cachedRowVector) {
                     this->cachedRowVector = std::make_unique<std::vector<ValueType>>(getMatrixRowCount());
                 }
                 
-                A->multiplyWithVector(x, *this->cachedRowVector);
-                if (b != nullptr) {
-                    storm::utility::vector::addVectors(*this->cachedRowVector, *b, result);
-                } else {
-                    result.swap(*this->cachedRowVector);
-                }
+                A->multiplyWithVector(x, *this->cachedRowVector, b);
+                result.swap(*this->cachedRowVector);
                 
                 if (!this->isCachingEnabled()) {
                     clearCache();

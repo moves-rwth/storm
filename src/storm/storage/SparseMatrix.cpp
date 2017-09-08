@@ -76,7 +76,7 @@ namespace storm {
         
         template<typename IndexType, typename ValueType>
         bool MatrixEntry<IndexType, ValueType>::operator!=(MatrixEntry<IndexType, ValueType> const& other) const {
-            return !(*this == other); 
+            return !(*this == other);
         }
         
         template<typename IndexTypePrime, typename ValueTypePrime>
@@ -210,7 +210,7 @@ namespace storm {
             bool hasEntries = currentEntryCount != 0;
             
             uint_fast64_t rowCount = hasEntries ? lastRow + 1 : 0;
-
+            
             // If the last row group was empty, we need to add one more to the row count, because otherwise this empty row is not counted.
             if (hasCustomRowGrouping) {
                 if (lastRow < rowGroupIndices->back()) {
@@ -304,7 +304,7 @@ namespace storm {
         template<typename ValueType>
         void SparseMatrixBuilder<ValueType>::replaceColumns(std::vector<index_type> const& replacements, index_type offset) {
             index_type maxColumn = 0;
-
+            
             for (index_type row = 0; row < rowIndications.size(); ++row) {
                 bool changed = false;
                 auto startRow = std::next(columnsAndValues.begin(), rowIndications[row]);
@@ -330,11 +330,11 @@ namespace storm {
                                                     }), "Columns not sorted.");
                 }
             }
-
+            
             highestColumn = maxColumn;
             lastColumn = columnsAndValues.empty() ? 0 : columnsAndValues[columnsAndValues.size() - 1].getColumn();
         }
-
+        
         template<typename ValueType>
         SparseMatrix<ValueType>::rows::rows(iterator begin, index_type entryCount) : beginIterator(begin), entryCount(entryCount) {
             // Intentionally left empty.
@@ -424,7 +424,6 @@ namespace storm {
                 rowGroupIndices = other.rowGroupIndices;
                 trivialRowGrouping = other.trivialRowGrouping;
             }
-            
             return *this;
         }
         
@@ -442,7 +441,6 @@ namespace storm {
                 rowGroupIndices = std::move(other.rowGroupIndices);
                 trivialRowGrouping = other.trivialRowGrouping;
             }
-            
             return *this;
         }
         
@@ -583,7 +581,7 @@ namespace storm {
             }
             return rowGroupIndices.get();
         }
-
+        
         template<typename ValueType>
         storm::storage::BitVector SparseMatrix<ValueType>::getRowFilter(storm::storage::BitVector const& groupConstraint) const {
             storm::storage::BitVector res(this->getRowCount(), false);
@@ -1125,7 +1123,7 @@ namespace storm {
             
             return transposedMatrix;
         }
-            
+        
         template <typename ValueType>
         SparseMatrix<ValueType> SparseMatrix<ValueType>::transposeSelectedRowsFromRowGroups(std::vector<uint_fast64_t> const& rowGroupChoices, bool keepZeros) const {
             index_type rowCount = this->getColumnCount();
@@ -1291,22 +1289,22 @@ namespace storm {
             
             return result;
         }
-
+        
         template<typename ValueType>
-        void SparseMatrix<ValueType>::multiplyWithVector(std::vector<ValueType> const& vector, std::vector<ValueType>& result) const {
+        void SparseMatrix<ValueType>::multiplyWithVector(std::vector<ValueType> const& vector, std::vector<ValueType>& result, std::vector<value_type> const* summand) const {
 #ifdef STORM_HAVE_INTELTBB
             if (this->getNonzeroEntryCount() > 10000) {
-                return this->multiplyWithVectorParallel(vector, result);
+                return this->multiplyWithVectorParallel(vector, result, summand);
             } else {
-                return this->multiplyWithVectorSequential(vector, result);
+                return this->multiplyWithVectorSequential(vector, result, summand);
             }
 #else
-            return multiplyWithVectorSequential(vector, result);
+            return multiplyWithVectorSequential(vector, result, summand);
 #endif
         }
-
+        
         template<typename ValueType>
-        void SparseMatrix<ValueType>::multiplyWithVectorSequential(std::vector<ValueType> const& vector, std::vector<ValueType>& result) const {
+        void SparseMatrix<ValueType>::multiplyWithVectorSequential(std::vector<ValueType> const& vector, std::vector<ValueType>& result, std::vector<value_type> const* summand) const {
             if (&vector == &result) {
                 STORM_LOG_WARN("Matrix-vector-multiplication invoked but the target vector uses the same memory as the input vector. This requires to allocate auxiliary memory.");
                 std::vector<ValueType> tmpVector(this->getRowCount());
@@ -1318,20 +1316,29 @@ namespace storm {
                 std::vector<index_type>::const_iterator rowIterator = rowIndications.begin();
                 typename std::vector<ValueType>::iterator resultIterator = result.begin();
                 typename std::vector<ValueType>::iterator resultIteratorEnd = result.end();
-
+                typename std::vector<ValueType>::const_iterator summandIterator;
+                if (summand) {
+                    summandIterator = summand->begin();
+                }
+                
                 for (; resultIterator != resultIteratorEnd; ++rowIterator, ++resultIterator) {
-                    *resultIterator = storm::utility::zero<ValueType>();
-
+                    if (summand) {
+                        *resultIterator = *summandIterator;
+                        ++summandIterator;
+                    } else {
+                        *resultIterator = storm::utility::zero<ValueType>();
+                    }
+                    
                     for (ite = this->begin() + *(rowIterator + 1); it != ite; ++it) {
                         *resultIterator += it->getValue() * vector[it->getColumn()];
                     }
                 }
             }
         }
-
+        
 #ifdef STORM_HAVE_INTELTBB
         template<typename ValueType>
-        void SparseMatrix<ValueType>::multiplyWithVectorParallel(std::vector<ValueType> const& vector, std::vector<ValueType>& result) const {
+        void SparseMatrix<ValueType>::multiplyWithVectorParallel(std::vector<ValueType> const& vector, std::vector<ValueType>& result, std::vector<value_type> const* summand) const {
             if (&vector == &result) {
                 STORM_LOG_WARN("Matrix-vector-multiplication invoked but the target vector uses the same memory as the input vector. This requires to allocate auxiliary memory.");
                 std::vector<ValueType> tmpVector(this->getRowCount());
@@ -1348,10 +1355,19 @@ namespace storm {
                                       std::vector<index_type>::const_iterator rowIteratorEnd = this->rowIndications.begin() + endRow;
                                       typename std::vector<ValueType>::iterator resultIterator = result.begin() + startRow;
                                       typename std::vector<ValueType>::iterator resultIteratorEnd = result.begin() + endRow;
-
+                                      typename std::vector<ValueType>::const_iterator summandIterator;
+                                      if (summand) {
+                                          summandIterator = summand->begin() + startRow;
+                                      }
+                                      
                                       for (; resultIterator != resultIteratorEnd; ++rowIterator, ++resultIterator) {
-                                          *resultIterator = storm::utility::zero<ValueType>();
-
+                                          if (summand) {
+                                              *resultIterator = *summandIterator;
+                                              ++summandIterator;
+                                          } else {
+                                              *resultIterator = storm::utility::zero<ValueType>();
+                                          }
+                                          
                                           for (ite = this->begin() + *(rowIterator + 1); it != ite; ++it) {
                                               *resultIterator += it->getValue() * vector[it->getColumn()];
                                           }
@@ -1433,7 +1449,7 @@ namespace storm {
                 ++row;
             }
         }
-       
+        
         template<typename ValueType>
         void SparseMatrix<ValueType>::divideRowsInPlace(std::vector<ValueType> const& divisors) {
             STORM_LOG_ASSERT(divisors.size() == this->getRowCount(), "Can not divide rows: Number of rows and number of divisors do not match.");
@@ -1751,7 +1767,7 @@ namespace storm {
         template std::ostream& operator<<(std::ostream& out, SparseMatrix<double> const& matrix);
         template std::vector<double> SparseMatrix<double>::getPointwiseProductRowSumVector(storm::storage::SparseMatrix<double> const& otherMatrix) const;
         template bool SparseMatrix<double>::isSubmatrixOf(SparseMatrix<double> const& matrix) const;
-
+        
         template class MatrixEntry<uint32_t, double>;
         template std::ostream& operator<<(std::ostream& out, MatrixEntry<uint32_t, double> const& entry);
         
@@ -1792,7 +1808,7 @@ namespace storm {
         template std::vector<storm::ClnRationalNumber> SparseMatrix<ClnRationalNumber>::getPointwiseProductRowSumVector(storm::storage::SparseMatrix<storm::ClnRationalNumber> const& otherMatrix) const;
         template bool SparseMatrix<storm::ClnRationalNumber>::isSubmatrixOf(SparseMatrix<storm::ClnRationalNumber> const& matrix) const;
 #endif
-      
+        
 #if defined(STORM_HAVE_GMP)
         template class MatrixEntry<typename SparseMatrix<GmpRationalNumber>::index_type, GmpRationalNumber>;
         template std::ostream& operator<<(std::ostream& out, MatrixEntry<uint_fast64_t, GmpRationalNumber> const& entry);
@@ -1802,7 +1818,7 @@ namespace storm {
         template std::vector<storm::GmpRationalNumber> SparseMatrix<GmpRationalNumber>::getPointwiseProductRowSumVector(storm::storage::SparseMatrix<storm::GmpRationalNumber> const& otherMatrix) const;
         template bool SparseMatrix<storm::GmpRationalNumber>::isSubmatrixOf(SparseMatrix<storm::GmpRationalNumber> const& matrix) const;
 #endif
-
+        
         // Rational Function
         template class MatrixEntry<typename SparseMatrix<RationalFunction>::index_type, RationalFunction>;
         template std::ostream& operator<<(std::ostream& out, MatrixEntry<uint_fast64_t, RationalFunction> const& entry);
@@ -1814,7 +1830,7 @@ namespace storm {
         template std::vector<storm::RationalFunction> SparseMatrix<float>::getPointwiseProductRowSumVector(storm::storage::SparseMatrix<storm::RationalFunction> const& otherMatrix) const;
         template std::vector<storm::RationalFunction> SparseMatrix<int>::getPointwiseProductRowSumVector(storm::storage::SparseMatrix<storm::RationalFunction> const& otherMatrix) const;
         template bool SparseMatrix<storm::RationalFunction>::isSubmatrixOf(SparseMatrix<storm::RationalFunction> const& matrix) const;
-
+        
         // Intervals
         template std::vector<storm::Interval> SparseMatrix<double>::getPointwiseProductRowSumVector(storm::storage::SparseMatrix<storm::Interval> const& otherMatrix) const;
         template class MatrixEntry<typename SparseMatrix<Interval>::index_type, Interval>;

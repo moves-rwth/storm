@@ -773,9 +773,10 @@ namespace storm {
              *
              * @param vector The vector with which to multiply the matrix.
              * @param result The vector that is supposed to hold the result of the multiplication after the operation.
+             * @param summand If given, this summand will be added to the result of the multiplication.
              * @return The product of the matrix and the given vector as the content of the given result vector.
              */
-            void multiplyWithVector(std::vector<value_type> const& vector, std::vector<value_type>& result) const;
+            void multiplyWithVector(std::vector<value_type> const& vector, std::vector<value_type>& result, std::vector<value_type> const* summand = nullptr) const;
             
             /*!
              * Multiplies a single row of the matrix with the given vector and returns the result
@@ -826,9 +827,10 @@ namespace storm {
              *
              * @param vector The vector with which to multiply the matrix.
              * @param result The vector that is supposed to hold the result of the multiplication after the operation.
+             * @param summand If given, this summand will be added to the result of the multiplication.
              * @return The product of the matrix and the given vector as the content of the given result vector.
              */
-            void multiplyWithVectorSequential(std::vector<value_type> const& vector, std::vector<value_type>& result) const;
+            void multiplyWithVectorSequential(std::vector<value_type> const& vector, std::vector<value_type>& result, std::vector<value_type> const* summand = nullptr) const;
 
 #ifdef STORM_HAVE_INTELTBB
             /*!
@@ -837,9 +839,10 @@ namespace storm {
              *
              * @param vector The vector with which to multiply the matrix.
              * @param result The vector that is supposed to hold the result of the multiplication after the operation.
+             * @param summand If given, this summand will be added to the result.
              * @return The product of the matrix and the given vector as the content of the given result vector.
              */
-            void multiplyWithVectorParallel(std::vector<value_type> const& vector, std::vector<value_type>& result) const;
+            void multiplyWithVectorParallel(std::vector<value_type> const& vector, std::vector<value_type>& result, std::vector<value_type> const* summand = nullptr) const;
 #endif
             
             /*!
@@ -1077,7 +1080,6 @@ namespace storm {
             
             // A vector indicating the row groups of the matrix. This needs to be mutible in case we create it on-the-fly.
             mutable boost::optional<std::vector<index_type>> rowGroupIndices;
-            
         };
         
 #ifdef STORM_HAVE_CARL
