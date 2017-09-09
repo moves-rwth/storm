@@ -19,7 +19,7 @@ namespace storm {
     namespace solver {
         
         template<typename ValueType>
-        LinearEquationSolver<ValueType>::LinearEquationSolver() : cachingEnabled(false) {
+        LinearEquationSolver<ValueType>::LinearEquationSolver() : cachingEnabled(false), multiplicationStyle(MultiplicationStyle::Regular) {
             // Intentionally left empty.
         }
         
@@ -119,6 +119,16 @@ namespace storm {
         void LinearEquationSolver<ValueType>::setBounds(ValueType const& lower, ValueType const& upper) {
             setLowerBound(lower);
             setUpperBound(upper);
+        }
+        
+        template<typename ValueType>
+        void LinearEquationSolver<ValueType>::setMultiplicationStyle(MultiplicationStyle multiplicationStyle) {
+            this->multiplicationStyle = multiplicationStyle;
+        }
+
+        template<typename ValueType>
+        MultiplicationStyle LinearEquationSolver<ValueType>::getMultiplicationStyle() const {
+            return multiplicationStyle;
         }
         
         template<typename ValueType>

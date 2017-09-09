@@ -4,6 +4,7 @@
 #include "storm/settings/modules/ModuleSettings.h"
 
 #include "storm/solver/SolverSelectionOptions.h"
+#include "storm/solver/MultiplicationStyle.h"
 
 namespace storm {
     namespace settings {
@@ -89,6 +90,13 @@ namespace storm {
                  */
                 storm::solver::LraMethod getLraMethod() const;
                 
+                /*!
+                 * Retrieves the multiplication style to use in the min-max methods.
+                 *
+                 * @return The multiplication style
+                 */
+                storm::solver::MultiplicationStyle getValueIterationMultiplicationStyle() const;
+                
                 // The name of the module.
                 static const std::string moduleName;
                 
@@ -99,6 +107,7 @@ namespace storm {
                 static const std::string precisionOptionName;
                 static const std::string absoluteOptionName;
                 static const std::string lraMethodOptionName;
+                static const std::string valueIterationMultiplicationStyleOptionName;
             };
             
         }

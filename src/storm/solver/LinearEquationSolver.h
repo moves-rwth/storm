@@ -5,6 +5,7 @@
 #include <memory>
 
 #include "storm/solver/AbstractEquationSolver.h"
+#include "storm/solver/MultiplicationStyle.h"
 #include "storm/solver/OptimizationDirection.h"
 
 #include "storm/storage/SparseMatrix.h"
@@ -116,6 +117,16 @@ namespace storm {
              */
             void setBounds(ValueType const& lower, ValueType const& upper);
 
+            /*!
+             * Sets the multiplication style.
+             */
+            void setMultiplicationStyle(MultiplicationStyle multiplicationStyle);
+            
+            /*!
+             * Retrieves whether vector aliasing in multiplication is allowed.
+             */
+            MultiplicationStyle getMultiplicationStyle() const;
+            
         protected:
             // auxiliary storage. If set, this vector has getMatrixRowCount() entries.
             mutable std::unique_ptr<std::vector<ValueType>> cachedRowVector;
@@ -139,6 +150,9 @@ namespace storm {
             
             /// Whether some of the generated data during solver calls should be cached.
             mutable bool cachingEnabled;
+            
+            /// The multiplication style.
+            MultiplicationStyle multiplicationStyle;
         };
         
         template<typename ValueType>

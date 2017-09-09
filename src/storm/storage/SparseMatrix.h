@@ -10,6 +10,8 @@
 #include <boost/functional/hash.hpp>
 #include <boost/optional.hpp>
 
+#include "storm/solver/OptimizationDirection.h"
+
 #include "storm/utility/OsDetection.h"
 #include "storm/utility/macros.h"
 #include "storm/adapters/RationalFunctionAdapter.h"
@@ -766,17 +768,41 @@ namespace storm {
             template<typename OtherValueType, typename ResultValueType = OtherValueType>
             std::vector<ResultValueType> getPointwiseProductRowSumVector(storm::storage::SparseMatrix<OtherValueType> const& otherMatrix) const;
             
+            enum class MultiplicationDirection {
+                Forward, Backward, DontCare
+            };
+            
             /*!
-             * Multiplies the matrix with the given vector and writes the result to the given result vector. If a
-             * parallel implementation is available and it is considered worthwhile (heuristically, based on the metrics
-             * of the matrix), the multiplication is carried out in parallel.
+             * Multiplies the matrix with the given vector and writes the result to the given result vector.
              *
              * @param vector The vector with which to multiply the matrix.
              * @param result The vector that is supposed to hold the result of the multiplication after the operation.
              * @param summand If given, this summand will be added to the result of the multiplication.
+             * @param allowAliasing If set, the vector and result vector may be identical in which case the multiplication
+             * reuses the updated information in the multiplication (like gauss-seidel).
+             * @param multiplicationDirection The direction in which to perform the multiplication. If the vector and the
+             * result vector are aliased, the direction will make a difference as other values will be reused.
              * @return The product of the matrix and the given vector as the content of the given result vector.
              */
-            void multiplyWithVector(std::vector<value_type> const& vector, std::vector<value_type>& result, std::vector<value_type> const* summand = nullptr) const;
+            void multiplyWithVector(std::vector<value_type> const& vector, std::vector<value_type>& result, std::vector<value_type> const* summand = nullptr, bool allowAliasing = false, MultiplicationDirection const& multiplicationDirection = MultiplicationDirection::DontCare) const;
+            
+            /*!
+             * Multiplies the matrix with the given vector, reduces it according to the given direction and and writes
+             * the result to the given result vector.
+             *
+             * @param dir The optimization direction for the reduction.
+             * @param rowGroupIndices The row groups for the reduction
+             * @param vector The vector with which to multiply the matrix.
+             * @param summand If given, this summand will be added to the result of the multiplication.
+             * @param result The vector that is supposed to hold the result of the multiplication after the operation.
+             * @param choices If given, the choices made in the reduction process will be written to this vector.
+             * @param allowAliasing If set, the vector and result vector may be identical in which case the multiplication
+             * reuses the updated information in the multiplication (like gauss-seidel).
+             * @param multiplicationDirection The direction in which to perform the multiplication. If the vector and the
+             * result vector are aliased, the direction will make a difference as other values will be reused.
+             * @return The product of the matrix and the given vector as the content of the given result vector.
+             */
+            void multiplyAndReduce(storm::solver::OptimizationDirection const& dir, std::vector<uint64_t> const& rowGroupIndices, std::vector<ValueType> const& vector, std::vector<ValueType> const* summand, std::vector<ValueType>& result, std::vector<uint_fast64_t>* choices, bool allowAliasing = false, MultiplicationDirection const& multiplicationDirection = MultiplicationDirection::DontCare) const;
             
             /*!
              * Multiplies a single row of the matrix with the given vector and returns the result
@@ -820,30 +846,6 @@ namespace storm {
              * @param b The 'right-hand side' of the problem.
              */
             void performSuccessiveOverRelaxationStep(ValueType omega, std::vector<ValueType>& x, std::vector<ValueType> const& b) const;
-            
-            /*!
-             * Multiplies the matrix with the given vector in a sequential way and writes the result to the given result
-             * vector.
-             *
-             * @param vector The vector with which to multiply the matrix.
-             * @param result The vector that is supposed to hold the result of the multiplication after the operation.
-             * @param summand If given, this summand will be added to the result of the multiplication.
-             * @return The product of the matrix and the given vector as the content of the given result vector.
-             */
-            void multiplyWithVectorSequential(std::vector<value_type> const& vector, std::vector<value_type>& result, std::vector<value_type> const* summand = nullptr) const;
-
-#ifdef STORM_HAVE_INTELTBB
-            /*!
-             * Multiplies the matrix with the given vector in a parallel fashion using Intel's TBB and writes the result
-             * to the given result vector.
-             *
-             * @param vector The vector with which to multiply the matrix.
-             * @param result The vector that is supposed to hold the result of the multiplication after the operation.
-             * @param summand If given, this summand will be added to the result.
-             * @return The product of the matrix and the given vector as the content of the given result vector.
-             */
-            void multiplyWithVectorParallel(std::vector<value_type> const& vector, std::vector<value_type>& result, std::vector<value_type> const* summand = nullptr) const;
-#endif
             
             /*!
              * Computes the sum of the entries in a given row.
@@ -1052,6 +1054,18 @@ namespace storm {
              * given by the row group constraint are kept and all others are dropped.
              */
             SparseMatrix getSubmatrix(storm::storage::BitVector const& rowGroupConstraint, storm::storage::BitVector const& columnConstraint, std::vector<index_type> const& rowGroupIndices, bool insertDiagonalEntries = false) const;
+            
+            void multiplyWithVectorForward(std::vector<value_type> const& vector, std::vector<value_type>& result, std::vector<value_type> const* summand = nullptr) const;
+            void multiplyWithVectorBackward(std::vector<value_type> const& vector, std::vector<value_type>& result, std::vector<value_type> const* summand = nullptr) const;
+#ifdef STORM_HAVE_INTELTBB
+            void multiplyWithVectorParallel(std::vector<value_type> const& vector, std::vector<value_type>& result, std::vector<value_type> const* summand = nullptr) const;
+#endif
+            
+            void multiplyAndReduceForward(storm::solver::OptimizationDirection const& dir, std::vector<uint64_t> const& rowGroupIndices, std::vector<ValueType> const& vector, std::vector<ValueType> const* b, std::vector<ValueType>& result, std::vector<uint_fast64_t>* choices) const;
+            void multiplyAndReduceBackward(storm::solver::OptimizationDirection const& dir, std::vector<uint64_t> const& rowGroupIndices, std::vector<ValueType> const& vector, std::vector<ValueType> const* b, std::vector<ValueType>& result, std::vector<uint_fast64_t>* choices) const;
+#ifdef STORM_HAVE_INTELTBB
+            void multiplyAndReduceParallel(storm::solver::OptimizationDirection const& dir, std::vector<uint64_t> const& rowGroupIndices, std::vector<ValueType> const& vector, std::vector<ValueType> const* b, std::vector<ValueType>& result, std::vector<uint_fast64_t>* choices) const;
+#endif
             
             // The number of rows of the matrix.
             index_type rowCount;

@@ -1,5 +1,7 @@
 #pragma once
 
+#include "storm/solver/MultiplicationStyle.h"
+
 #include "storm/solver/LinearEquationSolver.h"
 #include "storm/solver/StandardMinMaxLinearEquationSolver.h"
 
@@ -20,17 +22,20 @@ namespace storm {
             void setMaximalNumberOfIterations(uint64_t maximalNumberOfIterations);
             void setRelativeTerminationCriterion(bool value);
             void setPrecision(ValueType precision);
+            void setValueIterationMultiplicationStyle(MultiplicationStyle value);
 
             SolutionMethod const& getSolutionMethod() const;
             uint64_t getMaximalNumberOfIterations() const;
             ValueType getPrecision() const;
             bool getRelativeTerminationCriterion() const;
-
+            MultiplicationStyle getValueIterationMultiplicationStyle() const;
+            
         private:
             SolutionMethod solutionMethod;
             uint64_t maximalNumberOfIterations;
             ValueType precision;
             bool relative;
+            MultiplicationStyle valueIterationMultiplicationStyle;
         };
         
         template<typename ValueType>

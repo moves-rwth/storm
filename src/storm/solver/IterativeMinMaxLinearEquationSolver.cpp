@@ -13,15 +13,15 @@ namespace storm {
         
         template<typename ValueType>
         IterativeMinMaxLinearEquationSolverSettings<ValueType>::IterativeMinMaxLinearEquationSolverSettings() {
-            // Get the settings object to customize linear solving.
-            storm::settings::modules::MinMaxEquationSolverSettings const& settings = storm::settings::getModule<storm::settings::modules::MinMaxEquationSolverSettings>();
+            // Get the settings object to customize solving.
+            storm::settings::modules::MinMaxEquationSolverSettings const& minMaxSettings = storm::settings::getModule<storm::settings::modules::MinMaxEquationSolverSettings>();
             
-            maximalNumberOfIterations = settings.getMaximalIterationCount();
-            precision = storm::utility::convertNumber<ValueType>(settings.getPrecision());
-            relative = settings.getConvergenceCriterion() == storm::settings::modules::MinMaxEquationSolverSettings::ConvergenceCriterion::Relative;
+            maximalNumberOfIterations = minMaxSettings.getMaximalIterationCount();
+            precision = storm::utility::convertNumber<ValueType>(minMaxSettings.getPrecision());
+            relative = minMaxSettings.getConvergenceCriterion() == storm::settings::modules::MinMaxEquationSolverSettings::ConvergenceCriterion::Relative;
+            valueIterationMultiplicationStyle = minMaxSettings.getValueIterationMultiplicationStyle();
             
-            setSolutionMethod(settings.getMinMaxEquationSolvingMethod());
-            
+            setSolutionMethod(minMaxSettings.getMinMaxEquationSolvingMethod());
         }
         
         template<typename ValueType>
@@ -56,6 +56,11 @@ namespace storm {
         }
         
         template<typename ValueType>
+        void IterativeMinMaxLinearEquationSolverSettings<ValueType>::setValueIterationMultiplicationStyle(MultiplicationStyle value) {
+            this->valueIterationMultiplicationStyle = value;
+        }
+        
+        template<typename ValueType>
         typename IterativeMinMaxLinearEquationSolverSettings<ValueType>::SolutionMethod const& IterativeMinMaxLinearEquationSolverSettings<ValueType>::getSolutionMethod() const {
             return solutionMethod;
         }
@@ -73,6 +78,11 @@ namespace storm {
         template<typename ValueType>
         bool IterativeMinMaxLinearEquationSolverSettings<ValueType>::getRelativeTerminationCriterion() const {
             return relative;
+        }
+        
+        template<typename ValueType>
+        MultiplicationStyle IterativeMinMaxLinearEquationSolverSettings<ValueType>::getValueIterationMultiplicationStyle() const {
+            return valueIterationMultiplicationStyle;
         }
     
         template<typename ValueType>
@@ -261,18 +271,28 @@ namespace storm {
                 }
                 submatrixSolver->solveEquations(x, *auxiliaryRowGroupVector);
             }
+
+            // Allow aliased multiplications.
+            MultiplicationStyle multiplicationStyle = settings.getValueIterationMultiplicationStyle();
+            MultiplicationStyle oldMultiplicationStyle = this->linEqSolverA->getMultiplicationStyle();
+            this->linEqSolverA->setMultiplicationStyle(multiplicationStyle);
             
             std::vector<ValueType>* newX = auxiliaryRowGroupVector.get();
-            
             std::vector<ValueType>* currentX = &x;
             
             // Proceed with the iterations as long as the method did not converge or reach the maximum number of iterations.
             uint64_t iterations = 0;
-            
+
             Status status = Status::InProgress;
             while (status == Status::InProgress) {
                 // Compute x' = min/max(A*x + b).
-                this->linEqSolverA->multiplyAndReduce(dir, this->A->getRowGroupIndices(), *currentX, &b, *newX);
+                if (multiplicationStyle == MultiplicationStyle::AllowGaussSeidel) {
+                    // Copy over the current vector so we can modify it in-place.
+                    *newX = *currentX;
+                    this->linEqSolverA->multiplyAndReduce(dir, this->A->getRowGroupIndices(), *newX, &b, *newX);
+                } else {
+                    this->linEqSolverA->multiplyAndReduce(dir, this->A->getRowGroupIndices(), *currentX, &b, *newX);
+                }
                 
                 // Determine whether the method converged.
                 if (storm::utility::vector::equalModuloPrecision<ValueType>(*currentX, *newX, this->getSettings().getPrecision(), this->getSettings().getRelativeTerminationCriterion())) {
@@ -295,8 +315,12 @@ namespace storm {
             
             // If requested, we store the scheduler for retrieval.
             if (this->isTrackSchedulerSet()) {
+                this->schedulerChoices = std::vector<uint_fast64_t>(this->A->getRowGroupCount());
                 this->linEqSolverA->multiplyAndReduce(dir, this->A->getRowGroupIndices(), x, &b, *currentX, &this->schedulerChoices.get());
             }
+
+            // Restore whether aliased multiplications were allowed before.
+            this->linEqSolverA->setMultiplicationStyle(oldMultiplicationStyle);
 
             if (!this->isCachingEnabled()) {
                 clearCache();

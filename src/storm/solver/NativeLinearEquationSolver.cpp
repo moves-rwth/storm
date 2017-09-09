@@ -206,7 +206,7 @@ namespace storm {
         
         template<typename ValueType>
         void NativeLinearEquationSolver<ValueType>::multiply(std::vector<ValueType>& x, std::vector<ValueType> const* b, std::vector<ValueType>& result) const {
-            if (&x != &result) {
+            if (&x != &result || this->getMultiplicationStyle() == MultiplicationStyle::AllowGaussSeidel) {
                 A->multiplyWithVector(x, result, b);
             } else {
                 // If the two vectors are aliases, we need to create a temporary.
@@ -225,49 +225,20 @@ namespace storm {
         
         template<typename ValueType>
         void NativeLinearEquationSolver<ValueType>::multiplyAndReduce(OptimizationDirection const& dir, std::vector<uint64_t> const& rowGroupIndices, std::vector<ValueType>& x, std::vector<ValueType> const* b, std::vector<ValueType>& result, std::vector<uint_fast64_t>* choices) const {
-            
-            // If the vector and the result are aliases, we need and temporary vector.
-            std::vector<ValueType>* target;
-            std::vector<ValueType> temporary;
-            if (&x == &result) {
-                STORM_LOG_WARN("Vectors are aliased. Using temporary, may be slow.");
-                temporary = std::vector<ValueType>(x.size());
-                target = &temporary;
+            if (&x != &result || this->getMultiplicationStyle() == MultiplicationStyle::AllowGaussSeidel) {
+                A->multiplyAndReduce(dir, rowGroupIndices, x, b, result, choices, true);
             } else {
-                target = &result;
-            }
-            
-            for (uint64_t rowGroup = 0; rowGroup < rowGroupIndices.size() - 1; ++rowGroup) {
-                uint64_t row = rowGroupIndices[rowGroup];
-
-                (*target)[rowGroup] = b ? (*b)[row] : storm::utility::zero<ValueType>();
-                for (auto const& entry : this->A->getRow(row)) {
-                    (*target)[rowGroup] += entry.getValue() * x[entry.getColumn()];
+                // If the two vectors are aliases, we need to create a temporary.
+                if (!this->cachedRowVector) {
+                    this->cachedRowVector = std::make_unique<std::vector<ValueType>>(getMatrixRowCount());
                 }
-                ++row;
+            
+                this->A->multiplyAndReduce(dir, rowGroupIndices, x, b, *this->cachedRowVector, choices, false);
+                result.swap(*this->cachedRowVector);
                 
-                for (; row < rowGroupIndices[rowGroup + 1]; ++row) {
-                    ValueType newValue = b ? (*b)[row] : storm::utility::zero<ValueType>();
-                    for (auto const& entry : this->A->getRow(row)) {
-                        newValue += entry.getValue() * x[entry.getColumn()];
-                    }
-                    
-                    if (dir == OptimizationDirection::Minimize && newValue < result[rowGroup]) {
-                        (*target)[rowGroup] = newValue;
-                        if (choices) {
-                            (*choices)[rowGroup] = row - rowGroupIndices[rowGroup];
-                        }
-                    } else if (dir == OptimizationDirection::Maximize && newValue > result[rowGroup]) {
-                        (*target)[rowGroup] = newValue;
-                        if (choices) {
-                            (*choices)[rowGroup] = row - rowGroupIndices[rowGroup];
-                        }
-                    }
+                if (!this->isCachingEnabled()) {
+                    clearCache();
                 }
-            }
-            
-            if (!temporary.empty()) {
-                std::swap(temporary, result);
             }
         }
         

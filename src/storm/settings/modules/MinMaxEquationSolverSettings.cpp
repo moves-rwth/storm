@@ -18,6 +18,7 @@ namespace storm {
             const std::string MinMaxEquationSolverSettings::precisionOptionName = "precision";
             const std::string MinMaxEquationSolverSettings::absoluteOptionName = "absolute";
             const std::string MinMaxEquationSolverSettings::lraMethodOptionName = "lramethod";
+            const std::string MinMaxEquationSolverSettings::valueIterationMultiplicationStyleOptionName = "vimult";
 
             MinMaxEquationSolverSettings::MinMaxEquationSolverSettings() : ModuleSettings(moduleName) {
                 std::vector<std::string> minMaxSolvingTechniques = {"vi", "value-iteration", "pi", "policy-iteration", "linear-programming", "lp", "acyclic"};
@@ -34,6 +35,9 @@ namespace storm {
                 this->addOption(storm::settings::OptionBuilder(moduleName, lraMethodOptionName, false, "Sets which method is preferred for computing long run averages.")
                                 .addArgument(storm::settings::ArgumentBuilder::createStringArgument("name", "The name of a long run average computation method.").addValidatorString(ArgumentValidatorFactory::createMultipleChoiceValidator(lraMethods)).setDefaultValueString("vi").build()).build());
 
+                std::vector<std::string> multiplicationStyles = {"gaussseidel", "regular", "gs", "r"};
+                this->addOption(storm::settings::OptionBuilder(moduleName, valueIterationMultiplicationStyleOptionName, false, "Sets which method multiplication style to prefer for value iteration.")
+                                .addArgument(storm::settings::ArgumentBuilder::createStringArgument("name", "The name of a multiplication style.").addValidatorString(ArgumentValidatorFactory::createMultipleChoiceValidator(multiplicationStyles)).setDefaultValueString("gaussseidel").build()).build());
             }
             
             storm::solver::MinMaxMethod MinMaxEquationSolverSettings::getMinMaxEquationSolvingMethod() const {
@@ -92,6 +96,15 @@ namespace storm {
                 STORM_LOG_THROW(false, storm::exceptions::IllegalArgumentValueException, "Unknown lra solving technique '" << lraMethodString << "'.");
             }
 
+            storm::solver::MultiplicationStyle MinMaxEquationSolverSettings::getValueIterationMultiplicationStyle() const {
+                std::string multiplicationStyleString = this->getOption(valueIterationMultiplicationStyleOptionName).getArgumentByName("name").getValueAsString();
+                if (multiplicationStyleString == "gaussseidel" || multiplicationStyleString == "gs") {
+                    return storm::solver::MultiplicationStyle::AllowGaussSeidel;
+                } else if (multiplicationStyleString == "regular" || multiplicationStyleString == "r") {
+                    return storm::solver::MultiplicationStyle::Regular;
+                }
+                STORM_LOG_THROW(false, storm::exceptions::IllegalArgumentValueException, "Unknown multiplication style '" << multiplicationStyleString << "'.");
+            }
             
         }
     }
