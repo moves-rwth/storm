@@ -48,17 +48,13 @@ namespace storm {
                 linEqSolverA->setCachingEnabled(true);
             }
             
-            if (!auxiliaryRowVector) {
-                auxiliaryRowVector = std::make_unique<std::vector<ValueType>>(A->getRowCount());
+            if (!auxiliaryRowGroupVector) {
+                auxiliaryRowGroupVector = std::make_unique<std::vector<ValueType>>(this->A->getRowGroupCount());
             }
-            std::vector<ValueType>& multiplyResult = *auxiliaryRowVector;
             
             for (uint64_t i = 0; i < n; ++i) {
-                linEqSolverA->multiply(x, b, multiplyResult);
-                
-                // Reduce the vector x' by applying min/max for all non-deterministic choices as given by the topmost
-                // element of the min/max operator stack.
-                storm::utility::vector::reduceVectorMinOrMax(dir, multiplyResult, x, this->A->getRowGroupIndices());
+                linEqSolverA->multiplyAndReduce(dir, this->A->getRowGroupIndices(), x, b, *auxiliaryRowGroupVector);
+                std::swap(x, *auxiliaryRowGroupVector);
             }
             
             if (!this->isCachingEnabled()) {

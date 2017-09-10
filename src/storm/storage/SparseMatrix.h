@@ -19,6 +19,7 @@
 // Forward declaration for adapter classes.
 namespace storm {
 	namespace adapters {
+        template <typename ValueType>
 		class GmmxxAdapter;
 		class EigenAdapter;
 		class StormAdapter;
@@ -315,7 +316,7 @@ namespace storm {
         class SparseMatrix {
         public:
             // Declare adapter classes as friends to use internal data.
-            friend class storm::adapters::GmmxxAdapter;
+            friend class storm::adapters::GmmxxAdapter<ValueType>;
             friend class storm::adapters::EigenAdapter;
             friend class storm::adapters::StormAdapter;
 			friend class storm::solver::TopologicalValueIterationMinMaxLinearEquationSolver<ValueType>;

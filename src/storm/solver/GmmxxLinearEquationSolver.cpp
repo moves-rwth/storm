@@ -110,13 +110,13 @@ namespace storm {
         
         template<typename ValueType>
         void GmmxxLinearEquationSolver<ValueType>::setMatrix(storm::storage::SparseMatrix<ValueType> const& A) {
-            gmmxxA = storm::adapters::GmmxxAdapter::toGmmxxSparseMatrix<ValueType>(A);
+            gmmxxA = storm::adapters::GmmxxAdapter<ValueType>::toGmmxxSparseMatrix(A);
             clearCache();
         }
         
         template<typename ValueType>
         void GmmxxLinearEquationSolver<ValueType>::setMatrix(storm::storage::SparseMatrix<ValueType>&& A) {
-            gmmxxA = storm::adapters::GmmxxAdapter::toGmmxxSparseMatrix<ValueType>(A);
+            gmmxxA = storm::adapters::GmmxxAdapter<ValueType>::toGmmxxSparseMatrix(A);
             clearCache();
         }
         
@@ -187,15 +187,31 @@ namespace storm {
         
         template<typename ValueType>
         void GmmxxLinearEquationSolver<ValueType>::multiply(std::vector<ValueType>& x, std::vector<ValueType> const* b, std::vector<ValueType>& result) const {
-            if (b) {
-                gmm::mult_add(*gmmxxA, x, *b, result);
-            } else {
-                gmm::mult(*gmmxxA, x, result);
-            }
+            storm::adapters::GmmxxMultiplier<ValueType>::multAdd(*gmmxxA, x, b, result);
             
-            if(!this->isCachingEnabled()) {
+            if (!this->isCachingEnabled()) {
                 clearCache();
             }
+        }
+        
+        template<typename ValueType>
+        void GmmxxLinearEquationSolver<ValueType>::multiplyAndReduce(OptimizationDirection const& dir, std::vector<uint64_t> const& rowGroupIndices, std::vector<ValueType>& x, std::vector<ValueType> const* b, std::vector<ValueType>& result, std::vector<uint_fast64_t>* choices) const {
+            storm::adapters::GmmxxMultiplier<ValueType>::multAddReduce(dir, rowGroupIndices, *gmmxxA, x, b, result, choices);
+        }
+        
+        template<typename ValueType>
+        bool GmmxxLinearEquationSolver<ValueType>::supportsGaussSeidelMultiplication() const {
+            return true;
+        }
+        
+        template<typename ValueType>
+        void GmmxxLinearEquationSolver<ValueType>::multiplyGaussSeidel(std::vector<ValueType>& x, std::vector<ValueType> const* b) const {
+            storm::adapters::GmmxxMultiplier<ValueType>::multAddGaussSeidelBackward(*gmmxxA, x, b);
+        }
+
+        template<typename ValueType>
+        void GmmxxLinearEquationSolver<ValueType>::multiplyAndReduceGaussSeidel(OptimizationDirection const& dir, std::vector<uint64_t> const& rowGroupIndices, std::vector<ValueType>& x, std::vector<ValueType> const* b, std::vector<uint64_t>* choices) const {
+            storm::adapters::GmmxxMultiplier<ValueType>::multAddReduceGaussSeidel(dir, rowGroupIndices, *gmmxxA, x, b, choices);
         }
         
         template<typename ValueType>

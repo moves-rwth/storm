@@ -1497,7 +1497,7 @@ namespace storm {
                     if ((dir == OptimizationDirection::Minimize && newValue < currentValue) || (dir == OptimizationDirection::Maximize && newValue > currentValue)) {
                         currentValue = newValue;
                         if (choices) {
-                            *choiceIt = *rowIt - *rowGroupIt;
+                            *choiceIt = std::distance(rowIndications.begin(), rowIt) - *rowGroupIt;
                         }
                     }
                     if (summand) {
@@ -1538,7 +1538,7 @@ namespace storm {
                     currentValue += elementIt->getValue() * vector[elementIt->getColumn()];
                 }
                 if (choices) {
-                    *choiceIt = 0;
+                    *choiceIt = std::distance(rowIndications.begin(), rowIt) - *rowGroupIt;
                 }
                 
                 --rowIt;
@@ -1546,7 +1546,7 @@ namespace storm {
                     --summandIt;
                 }
                 
-                for (; std::distance(rowIndications.begin(), rowIt) >= static_cast<int_fast64_t>(*rowGroupIt); --rowIt) {
+                for (uint64_t i = *rowGroupIt + 1, end = *(rowGroupIt + 1); i < end; --rowIt, ++i) {
                     ValueType newValue = summand ? *summandIt : storm::utility::zero<ValueType>();
                     for (auto elementIte = this->begin() + *rowIt - 1; elementIt != elementIte; --elementIt) {
                         newValue += elementIt->getValue() * vector[elementIt->getColumn()];
@@ -1555,7 +1555,7 @@ namespace storm {
                     if ((dir == OptimizationDirection::Minimize && newValue < currentValue) || (dir == OptimizationDirection::Maximize && newValue > currentValue)) {
                         currentValue = newValue;
                         if (choices) {
-                            *choiceIt = *rowIt - *rowGroupIt;
+                            *choiceIt = std::distance(rowIndications.begin(), rowIt) - *rowGroupIt;
                         }
                     }
                     if (summand) {
@@ -1617,7 +1617,7 @@ namespace storm {
                                           if ((dir == OptimizationDirection::Minimize && newValue < currentValue) || (dir == OptimizationDirection::Maximize && newValue > currentValue)) {
                                               currentValue = newValue;
                                               if (choices) {
-                                                  *choiceIt = *rowIt - *rowGroupIt;
+                                                  *choiceIt = std::distance(rowIndications.begin(), rowIt) - *rowGroupIt;
                                               }
                                           }
                                       }

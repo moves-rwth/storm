@@ -86,7 +86,7 @@ TEST(GmmxxMdpPrctlModelCheckerTest, Dice) {
     result = checker.check(*formula);
     storm::modelchecker::ExplicitQuantitativeCheckResult<double>& quantitativeResult8 = result->asExplicitQuantitativeCheckResult<double>();
 
-    EXPECT_NEAR(7.333329499, quantitativeResult8[0], storm::settings::getModule<storm::settings::modules::NativeEquationSolverSettings>().getPrecision());
+    EXPECT_NEAR(7.3333328887820244, quantitativeResult8[0], storm::settings::getModule<storm::settings::modules::NativeEquationSolverSettings>().getPrecision());
 
     abstractModel = storm::parser::AutoParser<>::parseModel(STORM_TEST_RESOURCES_DIR "/tra/two_dice.tra", STORM_TEST_RESOURCES_DIR "/lab/two_dice.lab", STORM_TEST_RESOURCES_DIR "/rew/two_dice.flip.state.rew", "");
 
@@ -108,7 +108,7 @@ TEST(GmmxxMdpPrctlModelCheckerTest, Dice) {
     result = stateRewardModelChecker.check(*formula);
     storm::modelchecker::ExplicitQuantitativeCheckResult<double>& quantitativeResult10 = result->asExplicitQuantitativeCheckResult<double>();
 
-    EXPECT_NEAR(7.333329499, quantitativeResult10[0], storm::settings::getModule<storm::settings::modules::NativeEquationSolverSettings>().getPrecision());
+    EXPECT_NEAR(7.3333328887820244, quantitativeResult10[0], storm::settings::getModule<storm::settings::modules::NativeEquationSolverSettings>().getPrecision());
 
     abstractModel = storm::parser::AutoParser<>::parseModel(STORM_TEST_RESOURCES_DIR "/tra/two_dice.tra", STORM_TEST_RESOURCES_DIR "/lab/two_dice.lab", STORM_TEST_RESOURCES_DIR "/rew/two_dice.flip.state.rew", STORM_TEST_RESOURCES_DIR "/rew/two_dice.flip.trans.rew");
 
@@ -130,7 +130,7 @@ TEST(GmmxxMdpPrctlModelCheckerTest, Dice) {
     result = stateAndTransitionRewardModelChecker.check(*formula);
     storm::modelchecker::ExplicitQuantitativeCheckResult<double>& quantitativeResult12 = result->asExplicitQuantitativeCheckResult<double>();
 
-    EXPECT_NEAR(14.666658998, quantitativeResult12[0], storm::settings::getModule<storm::settings::modules::NativeEquationSolverSettings>().getPrecision());
+    EXPECT_NEAR(14.666665777564049, quantitativeResult12[0], storm::settings::getModule<storm::settings::modules::NativeEquationSolverSettings>().getPrecision());
 }
 
 TEST(GmmxxMdpPrctlModelCheckerTest, AsynchronousLeader) {
@@ -188,7 +188,7 @@ TEST(GmmxxMdpPrctlModelCheckerTest, AsynchronousLeader) {
     result = checker.check(*formula);
     storm::modelchecker::ExplicitQuantitativeCheckResult<double>& quantitativeResult6 = result->asExplicitQuantitativeCheckResult<double>();
 
-    EXPECT_NEAR(4.285689611, quantitativeResult6[0], storm::settings::getModule<storm::settings::modules::NativeEquationSolverSettings>().getPrecision());
+    EXPECT_NEAR(4.2857120959008661, quantitativeResult6[0], storm::settings::getModule<storm::settings::modules::NativeEquationSolverSettings>().getPrecision());
 }
 
 TEST(GmmxxMdpPrctlModelCheckerTest, SchedulerGeneration) {
