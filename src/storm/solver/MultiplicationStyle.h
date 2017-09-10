@@ -5,7 +5,7 @@
 namespace storm {
     namespace solver {
         
-        enum class MultiplicationStyle { AllowGaussSeidel, Regular };
+        enum class MultiplicationStyle { GaussSeidel, Regular };
      
         std::ostream& operator<<(std::ostream& out, MultiplicationStyle const& style);
         

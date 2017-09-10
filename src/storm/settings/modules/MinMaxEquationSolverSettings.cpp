@@ -99,7 +99,7 @@ namespace storm {
             storm::solver::MultiplicationStyle MinMaxEquationSolverSettings::getValueIterationMultiplicationStyle() const {
                 std::string multiplicationStyleString = this->getOption(valueIterationMultiplicationStyleOptionName).getArgumentByName("name").getValueAsString();
                 if (multiplicationStyleString == "gaussseidel" || multiplicationStyleString == "gs") {
-                    return storm::solver::MultiplicationStyle::AllowGaussSeidel;
+                    return storm::solver::MultiplicationStyle::GaussSeidel;
                 } else if (multiplicationStyleString == "regular" || multiplicationStyleString == "r") {
                     return storm::solver::MultiplicationStyle::Regular;
                 }

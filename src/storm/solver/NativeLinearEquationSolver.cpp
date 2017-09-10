@@ -206,7 +206,7 @@ namespace storm {
         
         template<typename ValueType>
         void NativeLinearEquationSolver<ValueType>::multiply(std::vector<ValueType>& x, std::vector<ValueType> const* b, std::vector<ValueType>& result) const {
-            if (&x != &result || this->getMultiplicationStyle() == MultiplicationStyle::AllowGaussSeidel) {
+            if (&x != &result) {
                 A->multiplyWithVector(x, result, b);
             } else {
                 // If the two vectors are aliases, we need to create a temporary.
@@ -225,21 +225,37 @@ namespace storm {
         
         template<typename ValueType>
         void NativeLinearEquationSolver<ValueType>::multiplyAndReduce(OptimizationDirection const& dir, std::vector<uint64_t> const& rowGroupIndices, std::vector<ValueType>& x, std::vector<ValueType> const* b, std::vector<ValueType>& result, std::vector<uint_fast64_t>* choices) const {
-            if (&x != &result || this->getMultiplicationStyle() == MultiplicationStyle::AllowGaussSeidel) {
-                A->multiplyAndReduce(dir, rowGroupIndices, x, b, result, choices, true);
+            if (&x != &result) {
+                A->multiplyAndReduce(dir, rowGroupIndices, x, b, result, choices);
             } else {
                 // If the two vectors are aliases, we need to create a temporary.
                 if (!this->cachedRowVector) {
                     this->cachedRowVector = std::make_unique<std::vector<ValueType>>(getMatrixRowCount());
                 }
             
-                this->A->multiplyAndReduce(dir, rowGroupIndices, x, b, *this->cachedRowVector, choices, false);
+                this->A->multiplyAndReduce(dir, rowGroupIndices, x, b, *this->cachedRowVector, choices);
                 result.swap(*this->cachedRowVector);
                 
                 if (!this->isCachingEnabled()) {
                     clearCache();
                 }
             }
+        }
+        
+        template<typename ValueType>
+        bool NativeLinearEquationSolver<ValueType>::supportsGaussSeidelMultiplication() const {
+            return true;
+        }
+        
+        template<typename ValueType>
+        void NativeLinearEquationSolver<ValueType>::multiplyGaussSeidel(std::vector<ValueType>& x, std::vector<ValueType> const* b) const {
+            STORM_LOG_ASSERT(this->A->getRowCount() == this->A->getColumnCount(), "This function is only applicable for square matrices.");
+            A->multiplyWithVector(x, x, b, true, storm::storage::SparseMatrix<ValueType>::MultiplicationDirection::Backward);
+        }
+        
+        template<typename ValueType>
+        void NativeLinearEquationSolver<ValueType>::multiplyAndReduceGaussSeidel(OptimizationDirection const& dir, std::vector<uint64_t> const& rowGroupIndices, std::vector<ValueType>& x, std::vector<ValueType> const* b, std::vector<uint_fast64_t>* choices) const {
+            A->multiplyAndReduce(dir, rowGroupIndices, x, b, x, choices, true, storm::storage::SparseMatrix<ValueType>::MultiplicationDirection::Backward);
         }
         
         template<typename ValueType>

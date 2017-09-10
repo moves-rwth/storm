@@ -19,7 +19,7 @@ namespace storm {
     namespace solver {
         
         template<typename ValueType>
-        LinearEquationSolver<ValueType>::LinearEquationSolver() : cachingEnabled(false), multiplicationStyle(MultiplicationStyle::Regular) {
+        LinearEquationSolver<ValueType>::LinearEquationSolver() : cachingEnabled(false) {
             // Intentionally left empty.
         }
         
@@ -87,6 +87,21 @@ namespace storm {
 #endif
         
         template<typename ValueType>
+        bool LinearEquationSolver<ValueType>::supportsGaussSeidelMultiplication() const {
+            return false;
+        }
+        
+        template<typename ValueType>
+        void LinearEquationSolver<ValueType>::multiplyGaussSeidel(std::vector<ValueType>& x, std::vector<ValueType> const* b) const {
+            STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "This solver does not support the function 'multiplyGaussSeidel'.");
+        }
+        
+        template<typename ValueType>
+        void LinearEquationSolver<ValueType>::multiplyAndReduceGaussSeidel(OptimizationDirection const& dir, std::vector<uint64_t> const& rowGroupIndices, std::vector<ValueType>& x, std::vector<ValueType> const* b, std::vector<uint_fast64_t>* choices) const {
+            STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "This solver does not support the function 'multiplyAndReduceGaussSeidel'.");
+        }
+        
+        template<typename ValueType>
         void LinearEquationSolver<ValueType>::setCachingEnabled(bool value) const {
             if(cachingEnabled && !value) {
                 // caching will be turned off. Hence we clear the cache at this point
@@ -119,16 +134,6 @@ namespace storm {
         void LinearEquationSolver<ValueType>::setBounds(ValueType const& lower, ValueType const& upper) {
             setLowerBound(lower);
             setUpperBound(upper);
-        }
-        
-        template<typename ValueType>
-        void LinearEquationSolver<ValueType>::setMultiplicationStyle(MultiplicationStyle multiplicationStyle) {
-            this->multiplicationStyle = multiplicationStyle;
-        }
-
-        template<typename ValueType>
-        MultiplicationStyle LinearEquationSolver<ValueType>::getMultiplicationStyle() const {
-            return multiplicationStyle;
         }
         
         template<typename ValueType>

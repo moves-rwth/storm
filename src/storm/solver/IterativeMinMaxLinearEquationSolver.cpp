@@ -273,9 +273,7 @@ namespace storm {
             }
 
             // Allow aliased multiplications.
-            MultiplicationStyle multiplicationStyle = settings.getValueIterationMultiplicationStyle();
-            MultiplicationStyle oldMultiplicationStyle = this->linEqSolverA->getMultiplicationStyle();
-            this->linEqSolverA->setMultiplicationStyle(multiplicationStyle);
+            bool useGaussSeidelMultiplication = this->linEqSolverA->supportsGaussSeidelMultiplication() && settings.getValueIterationMultiplicationStyle() == storm::solver::MultiplicationStyle::GaussSeidel;
             
             std::vector<ValueType>* newX = auxiliaryRowGroupVector.get();
             std::vector<ValueType>* currentX = &x;
@@ -286,10 +284,10 @@ namespace storm {
             Status status = Status::InProgress;
             while (status == Status::InProgress) {
                 // Compute x' = min/max(A*x + b).
-                if (multiplicationStyle == MultiplicationStyle::AllowGaussSeidel) {
+                if (useGaussSeidelMultiplication) {
                     // Copy over the current vector so we can modify it in-place.
                     *newX = *currentX;
-                    this->linEqSolverA->multiplyAndReduce(dir, this->A->getRowGroupIndices(), *newX, &b, *newX);
+                    this->linEqSolverA->multiplyAndReduceGaussSeidel(dir, this->A->getRowGroupIndices(), *newX, &b);
                 } else {
                     this->linEqSolverA->multiplyAndReduce(dir, this->A->getRowGroupIndices(), *currentX, &b, *newX);
                 }
@@ -318,9 +316,6 @@ namespace storm {
                 this->schedulerChoices = std::vector<uint_fast64_t>(this->A->getRowGroupCount());
                 this->linEqSolverA->multiplyAndReduce(dir, this->A->getRowGroupIndices(), x, &b, *currentX, &this->schedulerChoices.get());
             }
-
-            // Restore whether aliased multiplications were allowed before.
-            this->linEqSolverA->setMultiplicationStyle(oldMultiplicationStyle);
 
             if (!this->isCachingEnabled()) {
                 clearCache();

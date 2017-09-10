@@ -74,6 +74,37 @@ namespace storm {
             virtual void multiplyAndReduce(OptimizationDirection const& dir, std::vector<uint64_t> const& rowGroupIndices, std::vector<ValueType>& x, std::vector<ValueType> const* b, std::vector<ValueType>& result, std::vector<uint_fast64_t>* choices = nullptr) const;
             
             /*!
+             * Retrieves whether this solver offers the gauss-seidel style multiplications.
+             */
+            virtual bool supportsGaussSeidelMultiplication() const;
+            
+            /*!
+             * Performs on matrix-vector multiplication x' = A*x + b. It does so in a gauss-seidel style, i.e. reusing
+             * the new x' components in the further multiplication.
+             *
+             * @param x The input vector with which to multiply the matrix. Its length must be equal
+             * to the number of columns of A.
+             * @param b If non-null, this vector is added after the multiplication. If given, its length must be equal
+             * to the number of rows of A.
+             */
+            virtual void multiplyGaussSeidel(std::vector<ValueType>& x, std::vector<ValueType> const* b) const;
+            
+            /*!
+             * Performs on matrix-vector multiplication x' = A*x + b and then minimizes/maximizes over the row groups
+             * so that the resulting vector has the size of number of row groups of A. It does so in a gauss-seidel
+             * style, i.e. reusing the new x' components in the further multiplication.
+             *
+             * @param dir The direction for the reduction step.
+             * @param rowGroupIndices A vector storing the row groups over which to reduce.
+             * @param x The input vector with which to multiply the matrix. Its length must be equal
+             * to the number of columns of A.
+             * @param b If non-null, this vector is added after the multiplication. If given, its length must be equal
+             * to the number of rows of A.
+             * @param choices If given, the choices made in the reduction process are written to this vector.
+             */
+            virtual void multiplyAndReduceGaussSeidel(OptimizationDirection const& dir, std::vector<uint64_t> const& rowGroupIndices, std::vector<ValueType>& x, std::vector<ValueType> const* b, std::vector<uint_fast64_t>* choices = nullptr) const;
+            
+            /*!
              * Performs repeated matrix-vector multiplication, using x[0] = x and x[i + 1] = A*x[i] + b. After
              * performing the necessary multiplications, the result is written to the input vector x. Note that the
              * matrix A has to be given upon construction time of the solver object.
@@ -117,16 +148,6 @@ namespace storm {
              */
             void setBounds(ValueType const& lower, ValueType const& upper);
 
-            /*!
-             * Sets the multiplication style.
-             */
-            void setMultiplicationStyle(MultiplicationStyle multiplicationStyle);
-            
-            /*!
-             * Retrieves whether vector aliasing in multiplication is allowed.
-             */
-            MultiplicationStyle getMultiplicationStyle() const;
-            
         protected:
             // auxiliary storage. If set, this vector has getMatrixRowCount() entries.
             mutable std::unique_ptr<std::vector<ValueType>> cachedRowVector;
@@ -150,9 +171,6 @@ namespace storm {
             
             /// Whether some of the generated data during solver calls should be cached.
             mutable bool cachingEnabled;
-            
-            /// The multiplication style.
-            MultiplicationStyle multiplicationStyle;
         };
         
         template<typename ValueType>
