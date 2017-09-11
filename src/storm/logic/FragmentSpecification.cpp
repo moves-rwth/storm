@@ -89,8 +89,9 @@ namespace storm {
             
             multiObjective.setMultiObjectiveFormulasAllowed(true);
             multiObjective.setMultiObjectiveFormulaAtTopLevelRequired(true);
-            multiObjective.setNestedMultiObjectiveFormulasAllowed(true);
-            multiObjective.setOperatorsAtTopLevelOfMultiObjectiveFormulasRequired(false);
+            multiObjective.setNestedMultiObjectiveFormulasAllowed(false);
+            multiObjective.setOperatorsAtTopLevelOfMultiObjectiveFormulasRequired(true);
+            multiObjective.setNestedOperatorsInsideMultiObjectiveFormulasAllowed(false);
             multiObjective.setProbabilityOperatorsAllowed(true);
             multiObjective.setUntilFormulasAllowed(true);
             multiObjective.setGloballyFormulasAllowed(true);
@@ -144,6 +145,7 @@ namespace storm {
             stepBoundedUntilFormulas = false;
             timeBoundedUntilFormulas = false;
             rewardBoundedUntilFormulas = false;
+            multiDimensionalBoundedUntilFormulas = false;
             varianceAsMeasureType = false;
             
             qualitativeOperatorResults = true;
@@ -434,6 +436,15 @@ namespace storm {
 
         FragmentSpecification& FragmentSpecification::setRewardBoundedUntilFormulasAllowed(bool newValue) {
             this->rewardBoundedUntilFormulas = newValue;
+            return *this;
+        }
+        
+        bool FragmentSpecification::areMultiDimensionalBoundedUntilFormulasAllowed() const {
+            return this->multiDimensionalBoundedUntilFormulas;
+        }
+
+        FragmentSpecification& FragmentSpecification::setMultiDimensionalBoundedUntilFormulasAllowed(bool newValue) {
+            this->multiDimensionalBoundedUntilFormulas = newValue;
             return *this;
         }
 

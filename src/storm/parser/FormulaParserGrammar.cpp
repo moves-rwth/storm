@@ -113,10 +113,10 @@ namespace storm {
             orStateFormula = andStateFormula[qi::_val = qi::_1] >> *(qi::lit("|") >> andStateFormula)[qi::_val = phoenix::bind(&FormulaParserGrammar::createBinaryBooleanStateFormula, phoenix::ref(*this), qi::_val, qi::_1, storm::logic::BinaryBooleanStateFormula::OperatorType::Or)];
             orStateFormula.name("or state formula");
             
-            multiObjectiveFormula = (qi::lit("multi") > qi::lit("(") >> ((pathFormula(storm::logic::FormulaContext::Probability) | stateFormula) % qi::lit(",")) >> qi::lit(")"))[qi::_val = phoenix::bind(&FormulaParserGrammar::createMultiObjectiveFormula, phoenix::ref(*this), qi::_1)];
-            multiObjectiveFormula.name("Multi-objective formula");
+            multiFormula = (qi::lit("multi") > qi::lit("(") >> ((pathFormula(storm::logic::FormulaContext::Probability) | stateFormula) % qi::lit(",")) >> qi::lit(")"))[qi::_val = phoenix::bind(&FormulaParserGrammar::createMultiFormula, phoenix::ref(*this), qi::_1)];
+            multiFormula.name("Multi formula");
             
-            stateFormula = (orStateFormula | multiObjectiveFormula);
+            stateFormula = (orStateFormula | multiFormula);
             stateFormula.name("state formula");
             
             identifier %= qi::as_string[qi::raw[qi::lexeme[((qi::alpha | qi::char_('_') | qi::char_('.')) >> *(qi::alnum | qi::char_('_')))]]];
@@ -166,7 +166,7 @@ namespace storm {
 //            debug(cumulativeRewardFormula);
 //            debug(totalRewardFormula);
 //            debug(instantaneousRewardFormula);
-//            debug(multiObjectiveFormula);
+//            debug(multiFormula);
             
             // Enable error reporting.
             qi::on_error<qi::fail>(start, handler(qi::_1, qi::_2, qi::_3, qi::_4));
@@ -193,7 +193,7 @@ namespace storm {
             qi::on_error<qi::fail>(cumulativeRewardFormula, handler(qi::_1, qi::_2, qi::_3, qi::_4));
             qi::on_error<qi::fail>(totalRewardFormula, handler(qi::_1, qi::_2, qi::_3, qi::_4));
             qi::on_error<qi::fail>(instantaneousRewardFormula, handler(qi::_1, qi::_2, qi::_3, qi::_4));
-            qi::on_error<qi::fail>(multiObjectiveFormula, handler(qi::_1, qi::_2, qi::_3, qi::_4));
+            qi::on_error<qi::fail>(multiFormula, handler(qi::_1, qi::_2, qi::_3, qi::_4));
         }
         
         void FormulaParserGrammar::addIdentifierExpression(std::string const& identifier, storm::expressions::Expression const& expression) {
@@ -343,8 +343,40 @@ namespace storm {
             }
         }
         
-        std::shared_ptr<storm::logic::Formula const> FormulaParserGrammar::createMultiObjectiveFormula(std::vector<std::shared_ptr<storm::logic::Formula const>> const& subformulas) {
-            return std::shared_ptr<storm::logic::Formula const>(new storm::logic::MultiObjectiveFormula(subformulas));
+        std::shared_ptr<storm::logic::Formula const> FormulaParserGrammar::createMultiFormula(std::vector<std::shared_ptr<storm::logic::Formula const>> const& subformulas) {
+            bool isMultiDimensionalBoundedUntilFormula = !subformulas.empty();
+            for (auto const& subformula : subformulas) {
+                if (!subformula->isBoundedUntilFormula()) {
+                    isMultiDimensionalBoundedUntilFormula = false;
+                    break;
+                }
+            }
+            
+            if (isMultiDimensionalBoundedUntilFormula) {
+                std::vector<std::shared_ptr<storm::logic::Formula const>> leftSubformulas, rightSubformulas;
+                std::vector<boost::optional<storm::logic::TimeBound>> lowerBounds, upperBounds;
+                std::vector<storm::logic::TimeBoundReference> timeBoundReferences;
+                for (auto const& subformula : subformulas) {
+                    auto const& f = subformula->asBoundedUntilFormula();
+                    STORM_LOG_THROW(!f.isMultiDimensional(), storm::exceptions::WrongFormatException, "Composition of multidimensional bounded until formula must consist of single dimension subformulas. Got '" << f << "' instead.");
+                    leftSubformulas.push_back(f.getLeftSubformula().asSharedPointer());
+                    rightSubformulas.push_back(f.getRightSubformula().asSharedPointer());
+                    if (f.hasLowerBound()) {
+                        lowerBounds.emplace_back(storm::logic::TimeBound(f.isLowerBoundStrict(), f.getLowerBound()));
+                    } else {
+                        lowerBounds.emplace_back();
+                    }
+                     if (f.hasUpperBound()) {
+                        upperBounds.emplace_back(storm::logic::TimeBound(f.isUpperBoundStrict(), f.getUpperBound()));
+                    } else {
+                        upperBounds.emplace_back();
+                    }
+                    timeBoundReferences.push_back(f.getTimeBoundReference());
+                }
+                return std::shared_ptr<storm::logic::Formula const>(new storm::logic::BoundedUntilFormula(leftSubformulas, rightSubformulas, lowerBounds, upperBounds, timeBoundReferences));
+            } else {
+                return std::shared_ptr<storm::logic::Formula const>(new storm::logic::MultiObjectiveFormula(subformulas));
+            }
         }
                                                
         storm::jani::Property FormulaParserGrammar::createProperty(boost::optional<std::string> const& propertyName, storm::modelchecker::FilterType const& filterType, std::shared_ptr<storm::logic::Formula const> const& formula, std::shared_ptr<storm::logic::Formula const> const& states) {
