@@ -609,6 +609,13 @@ namespace storm {
             void makeRowDirac(index_type row, index_type column);
             
             /*
+             * Sums the entries in all rows.
+             *
+             * @return The vector of sums of the entries in the respective rows.
+             */
+            std::vector<ValueType> getRowSumVector() const;
+            
+            /*
              * Sums the entries in the given row and columns.
              *
              * @param row The row whose entries to add.
@@ -838,7 +845,7 @@ namespace storm {
              * @param divisors The divisors with which each row is divided.
              */
             void divideRowsInPlace(std::vector<value_type> const& divisors);
-
+            
             /*!
              * Performs one step of the successive over-relaxation technique.
              *
@@ -852,7 +859,7 @@ namespace storm {
              * Performs one step of the Walker-Chae technique.
              *
              * @param x The current solution vector.
-             * @param columnSums The sums of the entries of the individual columns.
+             * @param columnSums The sums the individual columns.
              * @param b The 'right-hand side' of the problem.
              * @param ax A vector resulting from multiplying the current matrix with the vector x.
              * @param result The vector to which to write the result.

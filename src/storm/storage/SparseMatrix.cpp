@@ -782,6 +782,18 @@ namespace storm {
         }
         
         template<typename ValueType>
+        std::vector<ValueType> SparseMatrix<ValueType>::getRowSumVector() const {
+            std::vector<ValueType> result(this->getRowCount());
+            
+            index_type row = 0;
+            for (auto resultIt = result.begin(), resultIte = result.end(); resultIt != resultIte; ++resultIt, ++row) {
+                *resultIt = getRowSum(row);
+            }
+
+            return result;
+        }
+        
+        template<typename ValueType>
         ValueType SparseMatrix<ValueType>::getConstrainedRowSum(index_type row, storm::storage::BitVector const& constraint) const {
             ValueType result = storm::utility::zero<ValueType>();
             for (const_iterator it = this->begin(row), ite = this->end(row); it != ite; ++it) {
@@ -1465,25 +1477,31 @@ namespace storm {
             const_iterator it = this->begin();
             const_iterator ite;
             std::vector<index_type>::const_iterator rowIterator = rowIndications.begin();
-            typename std::vector<ValueType>::iterator resultIterator = result.begin();
-            typename std::vector<ValueType>::iterator resultIteratorEnd = result.end();
-            typename std::vector<ValueType>::const_iterator xIterator = x.begin();
-            typename std::vector<ValueType>::const_iterator columnSumsIterator = columnSums.begin();
-            
-            for (; resultIterator != resultIteratorEnd; ++rowIterator, ++resultIterator, ++xIterator, ++columnSumsIterator) {
-                *resultIterator = storm::utility::zero<ValueType>();
-                
+
+            // Clear all previous entries.
+            ValueType zero = storm::utility::zero<ValueType>();
+            for (auto& entry : result) {
+                entry = zero;
+            }
+
+            for (index_type row = 0; row < rowCount; ++row, ++rowIterator) {
                 for (ite = this->begin() + *(rowIterator + 1); it != ite; ++it) {
-                    *resultIterator += it->getValue() * (b[it->getColumn()] / ax[it->getColumn()]);
+                    result[it->getColumn()] += it->getValue() * (b[row] / ax[row]);
                 }
-                
-                *resultIterator *= (*xIterator / *columnSumsIterator);
+            }
+            
+            auto xIterator = x.begin();
+            auto sumsIterator = columnSums.begin();
+            for (auto& entry : result) {
+                entry *= *xIterator / *sumsIterator;
+                ++xIterator;
+                ++sumsIterator;
             }
         }
 
 #ifdef STORM_HAVE_CARL
         template<>
-        void SparseMatrix<Interval>::performWalkerChaeStep(std::vector<Interval> const& x, std::vector<Interval> const& columnSums, std::vector<Interval> const& b, std::vector<Interval> const& ax, std::vector<Interval>& result) const {
+        void SparseMatrix<Interval>::performWalkerChaeStep(std::vector<Interval> const& x, std::vector<Interval> const& rowSums, std::vector<Interval> const& b, std::vector<Interval> const& ax, std::vector<Interval>& result) const {
             STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "This operation is not supported.");
         }
 #endif

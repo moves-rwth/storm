@@ -68,8 +68,6 @@ namespace storm {
             virtual bool solveEquationsSOR(std::vector<ValueType>& x, std::vector<ValueType> const& b, ValueType const& omega) const;
             virtual bool solveEquationsJacobi(std::vector<ValueType>& x, std::vector<ValueType> const& b) const;
             virtual bool solveEquationsWalkerChae(std::vector<ValueType>& x, std::vector<ValueType> const& b) const;
-
-            void computeWalkerChaeMatrix() const;
             
             // If the solver takes posession of the matrix, we store the moved matrix in this member, so it gets deleted
             // when the solver is destructed.
@@ -85,8 +83,22 @@ namespace storm {
             // cached auxiliary data
             mutable std::unique_ptr<std::pair<storm::storage::SparseMatrix<ValueType>, std::vector<ValueType>>> jacobiDecomposition;
             
-            mutable std::unique_ptr<storm::storage::SparseMatrix<ValueType>> walkerChaeMatrix;
-            mutable std::unique_ptr<std::vector<ValueType>> walkerChaeB;
+            struct WalkerChaeData {
+                WalkerChaeData(storm::storage::SparseMatrix<ValueType> const& originalMatrix, std::vector<ValueType> const& originalB);
+                
+                void computeWalkerChaeMatrix(storm::storage::SparseMatrix<ValueType> const& originalMatrix);
+                void computeNewB(std::vector<ValueType> const& originalB);
+                void precomputeAuxiliaryData();
+                
+                storm::storage::SparseMatrix<ValueType> matrix;
+                std::vector<ValueType> b;
+                ValueType t;
+
+                // Auxiliary data.
+                std::vector<ValueType> columnSums;
+                std::vector<ValueType> newX;
+            };
+            mutable std::unique_ptr<WalkerChaeData> walkerChaeData;
         };
         
         template<typename ValueType>

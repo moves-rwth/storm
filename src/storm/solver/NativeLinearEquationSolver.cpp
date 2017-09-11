@@ -206,12 +206,19 @@ namespace storm {
             
             return converged;
         }
-    
+        
         template<typename ValueType>
-        void NativeLinearEquationSolver<ValueType>::computeWalkerChaeMatrix() const {
-            storm::storage::BitVector columnsWithNegativeEntries(this->A->getColumnCount());
+        NativeLinearEquationSolver<ValueType>::WalkerChaeData::WalkerChaeData(storm::storage::SparseMatrix<ValueType> const& originalMatrix, std::vector<ValueType> const& originalB) : t(storm::utility::convertNumber<ValueType>(1000.0)) {
+            computeWalkerChaeMatrix(originalMatrix);
+            computeNewB(originalB);
+            precomputeAuxiliaryData();
+        }
+        
+        template<typename ValueType>
+        void NativeLinearEquationSolver<ValueType>::WalkerChaeData::computeWalkerChaeMatrix(storm::storage::SparseMatrix<ValueType> const& originalMatrix) {
+            storm::storage::BitVector columnsWithNegativeEntries(originalMatrix.getColumnCount());
             ValueType zero = storm::utility::zero<ValueType>();
-            for (auto const& e : *this->A) {
+            for (auto const& e : originalMatrix) {
                 if (e.getValue() < zero) {
                     columnsWithNegativeEntries.set(e.getColumn());
                 }
@@ -222,10 +229,10 @@ namespace storm {
             storm::storage::SparseMatrixBuilder<ValueType> builder;
             
             uint64_t row = 0;
-            for (; row < this->A->getRowCount(); ++row) {
-                for (auto const& entry : this->A->getRow(row)) {
+            for (; row < originalMatrix.getRowCount(); ++row) {
+                for (auto const& entry : originalMatrix.getRow(row)) {
                     if (entry.getValue() < zero) {
-                        builder.addNextValue(row, this->A->getRowCount() + columnsWithNegativeEntriesBefore[entry.getColumn()], -entry.getValue());
+                        builder.addNextValue(row, originalMatrix.getRowCount() + columnsWithNegativeEntriesBefore[entry.getColumn()], -entry.getValue());
                     } else {
                         builder.addNextValue(row, entry.getColumn(), entry.getValue());
                     }
@@ -234,11 +241,27 @@ namespace storm {
             ValueType one = storm::utility::one<ValueType>();
             for (auto column : columnsWithNegativeEntries) {
                 builder.addNextValue(row, column, one);
-                builder.addNextValue(row, this->A->getRowCount() + columnsWithNegativeEntriesBefore[column], one);
+                builder.addNextValue(row, originalMatrix.getRowCount() + columnsWithNegativeEntriesBefore[column], one);
                 ++row;
             }
             
-            walkerChaeMatrix = std::make_unique<storm::storage::SparseMatrix<ValueType>>(builder.build());
+            matrix = builder.build();
+        }
+        
+        template<typename ValueType>
+        void NativeLinearEquationSolver<ValueType>::WalkerChaeData::computeNewB(std::vector<ValueType> const& originalB) {
+            b = std::vector<ValueType>(originalB);
+            b.resize(matrix.getRowCount());
+        }
+        
+        template<typename ValueType>
+        void NativeLinearEquationSolver<ValueType>::WalkerChaeData::precomputeAuxiliaryData() {
+            columnSums = std::vector<ValueType>(matrix.getColumnCount());
+            for (auto const& e : matrix) {
+                columnSums[e.getColumn()] += e.getValue();
+            }
+            
+            newX.resize(matrix.getRowCount());
         }
         
         template<typename ValueType>
@@ -246,69 +269,45 @@ namespace storm {
             STORM_LOG_INFO("Solving linear equation system (" << x.size() << " rows) with NativeLinearEquationSolver (WalkerChae)");
             
             // (1) Compute an equivalent equation system that has only non-negative coefficients.
-            if (!walkerChaeMatrix) {
-                std::cout << *this->A << std::endl;
-                computeWalkerChaeMatrix();
-                std::cout << *walkerChaeMatrix << std::endl;
+            if (!walkerChaeData) {
+                walkerChaeData = std::make_unique<WalkerChaeData>(*this->A, b);
             }
 
             // (2) Enlarge the vectors x and b to account for additional variables.
-            x.resize(walkerChaeMatrix->getRowCount());
-
-            if (walkerChaeMatrix->getRowCount() > this->A->getRowCount() && !walkerChaeB) {
-                walkerChaeB = std::make_unique<std::vector<ValueType>>(b);
-                walkerChaeB->resize(x.size());
-            }
-
-            // Choose a value for t in the algorithm.
-            ValueType t = storm::utility::convertNumber<ValueType>(1000);
-            
-            // Precompute some data.
-            std::vector<ValueType> columnSums(x.size());
-            for (auto const& e : *walkerChaeMatrix) {
-                STORM_LOG_ASSERT(e.getValue() >= storm::utility::zero<ValueType>(), "Expecting only non-negative entries in WalkerChae matrix.");
-                columnSums[e.getColumn()] += e.getValue();
-            }
+            x.resize(walkerChaeData->matrix.getRowCount());
             
             // Square the error bound, so we can use it to check for convergence. We take the squared error, because we
             // do not want to compute the root in the 2-norm computation.
             ValueType squaredErrorBound = storm::utility::pow(this->getSettings().getPrecision(), 2);
             
-            // Create a vector that always holds Ax.
-            std::vector<ValueType> currentAx(x.size());
-            walkerChaeMatrix->multiplyWithVector(x, currentAx);
-            
-            // Create an auxiliary vector that intermediately stores the result of the Walker-Chae step.
-            std::vector<ValueType> tmpX(x.size());
-
             // Set up references to the x-vectors used in the iteration loop.
             std::vector<ValueType>* currentX = &x;
-            std::vector<ValueType>* nextX = &tmpX;
+            std::vector<ValueType>* nextX = &walkerChaeData->newX;
 
-            // Prepare a function that adds t to its input.
-            auto addT = [t] (ValueType const& value) { return value + t; };
+            std::vector<ValueType> tmp = walkerChaeData->matrix.getRowSumVector();
+            storm::utility::vector::applyPointwise(tmp, walkerChaeData->b, walkerChaeData->b, [this] (ValueType const& first, ValueType const& second) { return walkerChaeData->t * first + second; } );
+            
+            // Add t to all entries of x.
+            storm::utility::vector::applyPointwise(x, x, [this] (ValueType const& value) { return value + walkerChaeData->t; });
+
+            // Create a vector that always holds Ax.
+            std::vector<ValueType> currentAx(x.size());
+            walkerChaeData->matrix.multiplyWithVector(*currentX, currentAx);
             
             // (3) Perform iterations until convergence.
             bool converged = false;
             uint64_t iterations = 0;
             while (!converged && iterations < this->getSettings().getMaximalNumberOfIterations()) {
                 // Perform one Walker-Chae step.
-                A->performWalkerChaeStep(*currentX, columnSums, *walkerChaeB, currentAx, *nextX);
-
+                walkerChaeData->matrix.performWalkerChaeStep(*currentX, walkerChaeData->columnSums, walkerChaeData->b, currentAx, *nextX);
+                
                 // Compute new Ax.
-                A->multiplyWithVector(*nextX, currentAx);
+                walkerChaeData->matrix.multiplyWithVector(*nextX, currentAx);
                 
                 // Check for convergence.
-                converged = storm::utility::vector::computeSquaredNorm2Difference(currentAx, *walkerChaeB);
+                converged = storm::utility::vector::computeSquaredNorm2Difference(currentAx, walkerChaeData->b) <= squaredErrorBound;
                 
-                // If the method did not yet converge, we need to update the value of Ax.
-                if (!converged) {
-                    // TODO: scale matrix diagonal entries with t and add them to *walkerChaeB.
-                    
-                    // Add t to all entries of x.
-                    storm::utility::vector::applyPointwise(x, x, addT);
-                }
-                
+                // Swap the x vectors for the next iteration.
                 std::swap(currentX, nextX);
                 
                 // Increase iteration count so we can abort if convergence is too slow.
@@ -317,14 +316,10 @@ namespace storm {
             
             // If the last iteration did not write to the original x we have to swap the contents, because the
             // output has to be written to the input parameter x.
-            if (currentX == &tmpX) {
+            if (currentX == &walkerChaeData->newX) {
                 std::swap(x, *currentX);
             }
-            
-            if (!this->isCachingEnabled()) {
-                clearCache();
-            }
-            
+
             if (converged) {
                 STORM_LOG_INFO("Iterative solver converged in " << iterations << " iterations.");
             } else {
@@ -335,7 +330,7 @@ namespace storm {
             x.resize(this->A->getRowCount());
             
             // Finalize solution vector.
-            storm::utility::vector::applyPointwise(x, x, [&t,iterations] (ValueType const& value) { return value - iterations * t; } );
+            storm::utility::vector::applyPointwise(x, x, [this] (ValueType const& value) { return value - walkerChaeData->t; } );
             
             if (!this->isCachingEnabled()) {
                 clearCache();
@@ -424,7 +419,7 @@ namespace storm {
         template<typename ValueType>
         void NativeLinearEquationSolver<ValueType>::clearCache() const {
             jacobiDecomposition.reset();
-            walkerChaeMatrix.reset();
+            walkerChaeData.reset();
             LinearEquationSolver<ValueType>::clearCache();
         }
         
