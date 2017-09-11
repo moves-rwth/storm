@@ -35,7 +35,7 @@ namespace storm {
         namespace helper {
 
             template<typename ValueType>
-            std::vector<ValueType> SparseMdpPrctlHelper<ValueType>::computeBoundedUntilProbabilities(OptimizationDirection dir, storm::storage::SparseMatrix<ValueType> const& transitionMatrix, storm::storage::SparseMatrix<ValueType> const& backwardTransitions, storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates, uint_fast64_t stepBound, storm::solver::MinMaxLinearEquationSolverFactory<ValueType> const& minMaxLinearEquationSolverFactory, ModelCheckerHint const& hint) {
+            std::vector<ValueType> SparseMdpPrctlHelper<ValueType>::computeStepBoundedUntilProbabilities(OptimizationDirection dir, storm::storage::SparseMatrix<ValueType> const& transitionMatrix, storm::storage::SparseMatrix<ValueType> const& backwardTransitions, storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates, uint_fast64_t stepBound, storm::solver::MinMaxLinearEquationSolverFactory<ValueType> const& minMaxLinearEquationSolverFactory, ModelCheckerHint const& hint) {
                 std::vector<ValueType> result(transitionMatrix.getRowGroupCount(), storm::utility::zero<ValueType>());
                 
                 // Determine the states that have 0 probability of reaching the target states.
@@ -69,6 +69,56 @@ namespace storm {
                 storm::utility::vector::setVectorValues(result, psiStates, storm::utility::one<ValueType>());
                 
                 return result;
+            }
+
+            template<typename ValueType>
+            std::map<storm::storage::sparse::state_type, ValueType> SparseMdpPrctlHelper<ValueType>::computeNonTrivialBoundedUntilProbabilities(OptimizationDirection dir, storm::modelchecker::multiobjective::MultiDimensionalRewardUnfolding<ValueType, true>& rewardUnfolding, storm::storage::BitVector const& initialStates, storm::solver::MinMaxLinearEquationSolverFactory<ValueType> const& minMaxLinearEquationSolverFactory) {
+                auto initEpoch = rewardUnfolding.getStartEpoch();
+                auto epochOrder = rewardUnfolding.getEpochComputationOrder(initEpoch);
+                
+                // initialize data that will be needed for each epoch
+                std::vector<ValueType> x, b, epochResult;
+                std::unique_ptr<storm::solver::MinMaxLinearEquationSolver<ValueType>> minMaxSolver;
+                for (auto const& epoch : epochOrder) {
+                    // Update some data for the case that the Matrix has changed
+                    auto& epochModel = rewardUnfolding.setCurrentEpoch(epoch);
+                    if (epochModel.epochMatrixChanged) {
+                        x.assign(epochModel.epochMatrix.getRowGroupCount(), storm::utility::zero<ValueType>());
+                        minMaxSolver = minMaxLinearEquationSolverFactory.create(epochModel.epochMatrix);
+                        minMaxSolver->setOptimizationDirection(dir);
+                        minMaxSolver->setCachingEnabled(true);
+                        minMaxSolver->setLowerBound(storm::utility::zero<ValueType>());
+                        minMaxSolver->setUpperBound(storm::utility::one<ValueType>());
+                    }
+                    
+                    // Prepare the right hand side of the equation system
+                    b.assign(epochModel.epochMatrix.getRowCount(), storm::utility::zero<ValueType>());
+                    std::vector<ValueType> const& objectiveValues = epochModel.objectiveRewards.front();
+                    for (auto const& choice : epochModel.objectiveRewardFilter.front()) {
+                        b[choice] = objectiveValues[choice];
+                    }
+                    auto stepSolutionIt = epochModel.stepSolutions.begin();
+                    for (auto const& choice : epochModel.stepChoices) {
+                        b[choice] += *stepSolutionIt;
+                        ++stepSolutionIt;
+                    }
+                    assert(stepSolutionIt == epochModel.stepSolutions.end());
+                    
+                    // Solve the minMax equation system
+                    minMaxSolver->solveEquations(x, b);
+                    
+                    // Plug in the result into the reward unfolding
+                    epochResult.resize(epochModel.epochInStates.getNumberOfSetBits());
+                    storm::utility::vector::selectVectorValues(epochResult, epochModel.epochInStates, x);
+                    rewardUnfolding.setSolutionForCurrentEpoch(epochResult);
+                }
+                
+                std::map<storm::storage::sparse::state_type, ValueType> result;
+                for (auto const& initState : initialStates) {
+                    result[initState] = rewardUnfolding.getInitialStateResult(initEpoch, initState);
+                }
+                
+                return  result;
             }
 
             template<typename ValueType>

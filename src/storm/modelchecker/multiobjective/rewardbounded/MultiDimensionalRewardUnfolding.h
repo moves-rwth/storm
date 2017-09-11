@@ -5,12 +5,12 @@
 #include "storm/storage/BitVector.h"
 #include "storm/storage/SparseMatrix.h"
 #include "storm/modelchecker/multiobjective/Objective.h"
+#include "storm/modelchecker/CheckTask.h"
 #include "storm/models/sparse/Mdp.h"
 #include "storm/utility/vector.h"
 #include "storm/storage/memorystructure/MemoryStructure.h"
 #include "storm/storage/memorystructure/SparseModelMemoryProduct.h"
 #include "storm/transformer/EndComponentEliminator.h"
-
 #include "storm/utility/Stopwatch.h"
 
 namespace storm {
@@ -40,14 +40,10 @@ namespace storm {
                  *
                  * @param model The (preprocessed) model
                  * @param objectives The (preprocessed) objectives
-                 * @param possibleECActions Overapproximation of the actions that are part of an EC
-                 * @param allowedBottomStates The states which are allowed to become a bottom state under a considered scheduler
                  *
                  */
-                MultiDimensionalRewardUnfolding(storm::models::sparse::Mdp<ValueType> const& model,
-                                                        std::vector<storm::modelchecker::multiobjective::Objective<ValueType>> const& objectives,
-                                                        storm::storage::BitVector const& possibleECActions,
-                                                        storm::storage::BitVector const& allowedBottomStates);
+                MultiDimensionalRewardUnfolding(storm::models::sparse::Mdp<ValueType> const& model, std::vector<storm::modelchecker::multiobjective::Objective<ValueType>> const& objectives);
+                MultiDimensionalRewardUnfolding(storm::models::sparse::Mdp<ValueType> const& model, std::shared_ptr<storm::logic::ProbabilityOperatorFormula const> objectiveFormula);
                 
                 ~MultiDimensionalRewardUnfolding() {
                     std::cout << "Unfolding statistics: " << std::endl;
@@ -78,7 +74,8 @@ namespace storm {
                 EpochModel& setCurrentEpoch(Epoch const& epoch);
                 
                 void setSolutionForCurrentEpoch(std::vector<SolutionType>& inStateSolutions);
-                SolutionType const& getInitialStateResult(Epoch const& epoch);
+                SolutionType const& getInitialStateResult(Epoch const& epoch); // Assumes that the initial state is unique
+                SolutionType const& getInitialStateResult(Epoch const& epoch, uint64_t initialStateIndex);
                 
                 
             private:
@@ -98,6 +95,8 @@ namespace storm {
                     
                     uint64_t convertMemoryState(storm::storage::BitVector const& memoryState) const;
                     storm::storage::BitVector const& convertMemoryState(uint64_t const& memoryState) const;
+                    
+                    uint64_t getNumberOfMemoryState() const;
                     
                     uint64_t getProductStateFromChoice(uint64_t const& productChoice) const;
                 
@@ -162,9 +161,7 @@ namespace storm {
                 SolutionType const& getStateSolution(Epoch const& epoch, uint64_t const& productState);
                 
                 storm::models::sparse::Mdp<ValueType> const& model;
-                std::vector<storm::modelchecker::multiobjective::Objective<ValueType>> const& objectives;
-                storm::storage::BitVector possibleECActions;
-                storm::storage::BitVector allowedBottomStates;
+                std::vector<storm::modelchecker::multiobjective::Objective<ValueType>> objectives;
                 
                 MemoryProduct memoryProduct;
                 

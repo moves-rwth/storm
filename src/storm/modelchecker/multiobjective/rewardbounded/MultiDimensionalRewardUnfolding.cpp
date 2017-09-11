@@ -17,14 +17,38 @@
 #include "storm/exceptions/UnexpectedException.h"
 #include "storm/exceptions/IllegalArgumentException.h"
 #include "storm/exceptions/NotSupportedException.h"
+#include "storm/exceptions/InvalidPropertyException.h"
 
 namespace storm {
     namespace modelchecker {
         namespace multiobjective {
             
             template<typename ValueType, bool SingleObjectiveMode>
-            MultiDimensionalRewardUnfolding<ValueType, SingleObjectiveMode>::MultiDimensionalRewardUnfolding(storm::models::sparse::Mdp<ValueType> const& model, std::vector<storm::modelchecker::multiobjective::Objective<ValueType>> const& objectives, storm::storage::BitVector const& possibleECActions, storm::storage::BitVector const& allowedBottomStates) : model(model), objectives(objectives), possibleECActions(possibleECActions), allowedBottomStates(allowedBottomStates) {
+            MultiDimensionalRewardUnfolding<ValueType, SingleObjectiveMode>::MultiDimensionalRewardUnfolding(storm::models::sparse::Mdp<ValueType> const& model, std::vector<storm::modelchecker::multiobjective::Objective<ValueType>> const& objectives) : model(model), objectives(objectives) {
+                initialize();
+            }
             
+            template<typename ValueType, bool SingleObjectiveMode>
+            MultiDimensionalRewardUnfolding<ValueType, SingleObjectiveMode>::MultiDimensionalRewardUnfolding(storm::models::sparse::Mdp<ValueType> const& model, std::shared_ptr<storm::logic::ProbabilityOperatorFormula const> objectiveFormula) : model(model) {
+                
+                STORM_LOG_THROW(objectiveFormula->hasOptimalityType(), storm::exceptions::InvalidPropertyException, "Formula needs to specify whether minimal or maximal values are to be computed on nondeterministic model.");
+                if (objectiveFormula->getSubformula().isMultiObjectiveFormula()) {
+                    for (auto const& subFormula : objectiveFormula->getSubformula().asMultiObjectiveFormula().getSubformulas()) {
+                        STORM_LOG_THROW(subFormula->isBoundedUntilFormula(), storm::exceptions::InvalidPropertyException, "Formula " << objectiveFormula << " is not supported. Invalid subformula " << *subFormula << ".");
+                    }
+                } else {
+                    STORM_LOG_THROW(objectiveFormula->getSubformula().isBoundedUntilFormula(), storm::exceptions::InvalidPropertyException, "Formula " << objectiveFormula << " is not supported. Invalid subformula " << objectiveFormula->getSubformula() << ".");
+                }
+                
+                // Build an objective from the formula.
+                storm::modelchecker::multiobjective::Objective<ValueType> objective;
+                objective.formula = objectiveFormula;
+                objective.originalFormula = objective.formula;
+                objective.considersComplementaryEvent = false;
+                objective.lowerResultBound = storm::utility::zero<ValueType>();
+                objective.upperResultBound = storm::utility::one<ValueType>();
+                objectives.push_back(std::move(objective));
+                
                 initialize();
             }
     
@@ -46,39 +70,29 @@ namespace storm {
                 for (uint64_t objIndex = 0; objIndex < this->objectives.size(); ++objIndex) {
                     auto const& formula = *this->objectives[objIndex].formula;
                     if (formula.isProbabilityOperatorFormula()) {
-                        std::vector<std::shared_ptr<storm::logic::Formula const>> subformulas;
-                        if (formula.getSubformula().isBoundedUntilFormula()) {
-                            subformulas.push_back(formula.getSubformula().asSharedPointer());
-                        } else if (formula.getSubformula().isMultiObjectiveFormula()) {
-                            subformulas = formula.getSubformula().asMultiObjectiveFormula().getSubformulas();
-                        } else {
-                            STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Unexpected type of subformula for formula " << formula);
-                        }
-                        for (auto const& subformula : subformulas) {
-                            auto const& boundedUntilFormula = subformula->asBoundedUntilFormula();
-                            for (uint64_t dim = 0; dim < boundedUntilFormula.getDimension(); ++dim) {
-                                subObjectives.push_back(std::make_pair(boundedUntilFormula.restrictToDimension(dim), objIndex));
-                                std::string memLabel = "dim" + std::to_string(subObjectives.size()) + "_maybe";
-                                while (model.getStateLabeling().containsLabel(memLabel)) {
-                                    memLabel = "_" + memLabel;
-                                }
-                                memoryLabels.push_back(memLabel);
-                                if (boundedUntilFormula.getTimeBoundReference(dim).isTimeBound() || boundedUntilFormula.getTimeBoundReference(dim).isStepBound()) {
-                                    dimensionWiseEpochSteps.push_back(std::vector<uint64_t>(model.getNumberOfChoices(), 1));
-                                    scalingFactors.push_back(storm::utility::one<ValueType>());
-                                } else {
-                                    STORM_LOG_ASSERT(boundedUntilFormula.getTimeBoundReference(dim).isRewardBound(), "Unexpected type of time bound.");
-                                    std::string const& rewardName = boundedUntilFormula.getTimeBoundReference(dim).getRewardName();
-                                    STORM_LOG_THROW(this->model.hasRewardModel(rewardName), storm::exceptions::IllegalArgumentException, "No reward model with name '" << rewardName << "' found.");
-                                    auto const& rewardModel = this->model.getRewardModel(rewardName);
-                                    STORM_LOG_THROW(!rewardModel.hasTransitionRewards(), storm::exceptions::NotSupportedException, "Transition rewards are currently not supported as reward bounds.");
-                                    std::vector<ValueType> actionRewards = rewardModel.getTotalRewardVector(this->model.getTransitionMatrix());
-                                    auto discretizedRewardsAndFactor = storm::utility::vector::toIntegralVector<ValueType, uint64_t>(actionRewards);
-                                    dimensionWiseEpochSteps.push_back(std::move(discretizedRewardsAndFactor.first));
-                                    scalingFactors.push_back(std::move(discretizedRewardsAndFactor.second));
-                                }
+                        STORM_LOG_THROW(formula.getSubformula().isBoundedUntilFormula(), storm::exceptions::NotSupportedException, "Unexpected type of subformula for formula " << formula);
+                        auto const& subformula = formula.getSubformula().asBoundedUntilFormula();
+                        for (uint64_t dim = 0; dim < subformula.getDimension(); ++dim) {
+                            subObjectives.push_back(std::make_pair(subformula.restrictToDimension(dim), objIndex));
+                            std::string memLabel = "dim" + std::to_string(subObjectives.size()) + "_maybe";
+                            while (model.getStateLabeling().containsLabel(memLabel)) {
+                                memLabel = "_" + memLabel;
                             }
-
+                            memoryLabels.push_back(memLabel);
+                            if (subformula.getTimeBoundReference(dim).isTimeBound() || subformula.getTimeBoundReference(dim).isStepBound()) {
+                                dimensionWiseEpochSteps.push_back(std::vector<uint64_t>(model.getNumberOfChoices(), 1));
+                                scalingFactors.push_back(storm::utility::one<ValueType>());
+                            } else {
+                                STORM_LOG_ASSERT(subformula.getTimeBoundReference(dim).isRewardBound(), "Unexpected type of time bound.");
+                                std::string const& rewardName = subformula.getTimeBoundReference(dim).getRewardName();
+                                STORM_LOG_THROW(this->model.hasRewardModel(rewardName), storm::exceptions::IllegalArgumentException, "No reward model with name '" << rewardName << "' found.");
+                                auto const& rewardModel = this->model.getRewardModel(rewardName);
+                                STORM_LOG_THROW(!rewardModel.hasTransitionRewards(), storm::exceptions::NotSupportedException, "Transition rewards are currently not supported as reward bounds.");
+                                std::vector<ValueType> actionRewards = rewardModel.getTotalRewardVector(this->model.getTransitionMatrix());
+                                auto discretizedRewardsAndFactor = storm::utility::vector::toIntegralVector<ValueType, uint64_t>(actionRewards);
+                                dimensionWiseEpochSteps.push_back(std::move(discretizedRewardsAndFactor.first));
+                                scalingFactors.push_back(std::move(discretizedRewardsAndFactor.second));
+                            }
                         }
                     } else if (formula.isRewardOperatorFormula() && formula.getSubformula().isCumulativeRewardFormula()) {
                         subObjectives.push_back(std::make_pair(formula.getSubformula().asSharedPointer(), objIndex));
@@ -424,8 +438,7 @@ namespace storm {
             storm::storage::BitVector MultiDimensionalRewardUnfolding<ValueType, SingleObjectiveMode>::computeProductInStatesForEpochClass(Epoch const& epoch) {
                 storm::storage::SparseMatrix<ValueType> const& productMatrix = memoryProduct.getProduct().getTransitionMatrix();
                 
-                storm::storage::BitVector result(productMatrix.getRowGroupCount(), false);
-                result.set(*memoryProduct.getProduct().getInitialStates().begin(), true);
+                storm::storage::BitVector result = memoryProduct.getProduct().getInitialStates();
                 // Perform DFS
                 storm::storage::BitVector reachableStates = result;
                 std::vector<uint_fast64_t> stack(reachableStates.begin(), reachableStates.end());
@@ -588,9 +601,23 @@ namespace storm {
             
             template<typename ValueType, bool SingleObjectiveMode>
             typename MultiDimensionalRewardUnfolding<ValueType, SingleObjectiveMode>::SolutionType const& MultiDimensionalRewardUnfolding<ValueType, SingleObjectiveMode>::getInitialStateResult(Epoch const& epoch) {
+                STORM_LOG_ASSERT(model.getInitialStates().getNumberOfSetBits() == 1, "The model has multiple initial states.");
+                STORM_LOG_ASSERT(memoryProduct.getProduct().getInitialStates().getNumberOfSetBits() == 1, "The product has multiple initial states.");
                 return getStateSolution(epoch, *memoryProduct.getProduct().getInitialStates().begin());
             }
 
+            template<typename ValueType, bool SingleObjectiveMode>
+            typename MultiDimensionalRewardUnfolding<ValueType, SingleObjectiveMode>::SolutionType const& MultiDimensionalRewardUnfolding<ValueType, SingleObjectiveMode>::getInitialStateResult(Epoch const& epoch, uint64_t initialStateIndex) {
+                STORM_LOG_ASSERT(model.getInitialStates().get(initialStateIndex), "The given model state is not an initial state.");
+                for (uint64_t memState = 0; memState < memoryProduct.getNumberOfMemoryState(); ++memState) {
+                    uint64_t productState = memoryProduct.getProductState(initialStateIndex, memState);
+                    if (memoryProduct.getProduct().getInitialStates().get(productState)) {
+                        return getStateSolution(epoch, productState);
+                    }
+                }
+                STORM_LOG_THROW(false, storm::exceptions::UnexpectedException, "Could not find the initial product state corresponding to the given initial model state.");
+                return getStateSolution(epoch, -1ull);
+            }
             
             template<typename ValueType, bool SingleObjectiveMode>
             storm::storage::MemoryStructure MultiDimensionalRewardUnfolding<ValueType, SingleObjectiveMode>::computeMemoryStructure() const {
@@ -854,13 +881,21 @@ namespace storm {
 
             template<typename ValueType, bool SingleObjectiveMode>
             storm::storage::BitVector const& MultiDimensionalRewardUnfolding<ValueType, SingleObjectiveMode>::MemoryProduct::convertMemoryState(uint64_t const& memoryState) const {
+                STORM_LOG_ASSERT(!memoryStateMap.empty(), "Tried to convert a memory state, but the memoryStateMap is not yet initialized.");
                 return memoryStateMap[memoryState];
             }
             
             template<typename ValueType, bool SingleObjectiveMode>
             uint64_t MultiDimensionalRewardUnfolding<ValueType, SingleObjectiveMode>::MemoryProduct::convertMemoryState(storm::storage::BitVector const& memoryState) const {
+                STORM_LOG_ASSERT(!memoryStateMap.empty(), "Tried to convert a memory state, but the memoryStateMap is not yet initialized.");
                 auto memStateIt = std::find(memoryStateMap.begin(), memoryStateMap.end(), memoryState);
                 return memStateIt - memoryStateMap.begin();
+            }
+            
+            template<typename ValueType, bool SingleObjectiveMode>
+            uint64_t MultiDimensionalRewardUnfolding<ValueType, SingleObjectiveMode>::MemoryProduct::getNumberOfMemoryState() const {
+                STORM_LOG_ASSERT(!memoryStateMap.empty(), "Tried to retrieve the number of memory states but the memoryStateMap is not yet initialized.");
+                return memoryStateMap.size();
             }
             
             template<typename ValueType, bool SingleObjectiveMode>
