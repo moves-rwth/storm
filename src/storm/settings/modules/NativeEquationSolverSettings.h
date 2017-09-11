@@ -13,7 +13,7 @@ namespace storm {
             class NativeEquationSolverSettings : public ModuleSettings {
             public:
                 // An enumeration of all available methods for solving linear equations.
-                enum class LinearEquationMethod { Jacobi, GaussSeidel, SOR };
+                enum class LinearEquationMethod { Jacobi, GaussSeidel, SOR, WalkerChae };
                 
                 // An enumeration of all available convergence criteria.
                 enum class ConvergenceCriterion { Absolute, Relative };

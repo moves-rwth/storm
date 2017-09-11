@@ -12,7 +12,7 @@ namespace storm {
         class NativeLinearEquationSolverSettings {
         public:
             enum class SolutionMethod {
-                Jacobi, GaussSeidel, SOR
+                Jacobi, GaussSeidel, SOR, WalkerChae
             };
 
             NativeLinearEquationSolverSettings();
@@ -65,6 +65,12 @@ namespace storm {
             virtual uint64_t getMatrixRowCount() const override;
             virtual uint64_t getMatrixColumnCount() const override;
 
+            virtual bool solveEquationsSOR(std::vector<ValueType>& x, std::vector<ValueType> const& b, ValueType const& omega) const;
+            virtual bool solveEquationsJacobi(std::vector<ValueType>& x, std::vector<ValueType> const& b) const;
+            virtual bool solveEquationsWalkerChae(std::vector<ValueType>& x, std::vector<ValueType> const& b) const;
+
+            void computeWalkerChaeMatrix() const;
+            
             // If the solver takes posession of the matrix, we store the moved matrix in this member, so it gets deleted
             // when the solver is destructed.
             std::unique_ptr<storm::storage::SparseMatrix<ValueType>> localA;
@@ -78,6 +84,9 @@ namespace storm {
             
             // cached auxiliary data
             mutable std::unique_ptr<std::pair<storm::storage::SparseMatrix<ValueType>, std::vector<ValueType>>> jacobiDecomposition;
+            
+            mutable std::unique_ptr<storm::storage::SparseMatrix<ValueType>> walkerChaeMatrix;
+            mutable std::unique_ptr<std::vector<ValueType>> walkerChaeB;
         };
         
         template<typename ValueType>

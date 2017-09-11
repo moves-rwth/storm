@@ -847,6 +847,17 @@ namespace storm {
              * @param b The 'right-hand side' of the problem.
              */
             void performSuccessiveOverRelaxationStep(ValueType omega, std::vector<ValueType>& x, std::vector<ValueType> const& b) const;
+
+            /*!
+             * Performs one step of the Walker-Chae technique.
+             *
+             * @param x The current solution vector.
+             * @param columnSums The sums of the entries of the individual columns.
+             * @param b The 'right-hand side' of the problem.
+             * @param ax A vector resulting from multiplying the current matrix with the vector x.
+             * @param result The vector to which to write the result.
+             */
+            void performWalkerChaeStep(std::vector<ValueType> const& x, std::vector<ValueType> const& columnSums, std::vector<ValueType> const& b, std::vector<ValueType> const& ax, std::vector<ValueType>& result) const;
             
             /*!
              * Computes the sum of the entries in a given row.

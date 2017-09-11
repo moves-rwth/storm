@@ -5,6 +5,7 @@
 #include "storm/settings/SettingsManager.h"
 #include "storm/settings/modules/NativeEquationSolverSettings.h"
 
+#include "storm/utility/constants.h"
 #include "storm/utility/vector.h"
 #include "storm/exceptions/InvalidStateException.h"
 #include "storm/exceptions/InvalidSettingsException.h"
@@ -23,6 +24,8 @@ namespace storm {
                 method = SolutionMethod::Jacobi;
             } else if (methodAsSetting == storm::settings::modules::NativeEquationSolverSettings::LinearEquationMethod::SOR) {
                 method = SolutionMethod::SOR;
+            } else if (methodAsSetting == storm::settings::modules::NativeEquationSolverSettings::LinearEquationMethod::WalkerChae) {
+                method = SolutionMethod::WalkerChae;
             } else {
                 STORM_LOG_THROW(false, storm::exceptions::InvalidSettingsException, "The selected solution technique is invalid for this solver.");
             }
@@ -107,101 +110,251 @@ namespace storm {
             clearCache();
         }
 
-        
         template<typename ValueType>
-        bool NativeLinearEquationSolver<ValueType>::solveEquations(std::vector<ValueType>& x, std::vector<ValueType> const& b) const {
+        bool NativeLinearEquationSolver<ValueType>::solveEquationsSOR(std::vector<ValueType>& x, std::vector<ValueType> const& b, ValueType const& omega) const {
+            STORM_LOG_INFO("Solving linear equation system (" << x.size() << " rows) with NativeLinearEquationSolver (Gauss-Seidel, SOR omega = " << omega << ")");
+
             if (!this->cachedRowVector) {
                 this->cachedRowVector = std::make_unique<std::vector<ValueType>>(getMatrixRowCount());
             }
             
-            if (this->getSettings().getSolutionMethod() == NativeLinearEquationSolverSettings<ValueType>::SolutionMethod::SOR || this->getSettings().getSolutionMethod() == NativeLinearEquationSolverSettings<ValueType>::SolutionMethod::GaussSeidel) {
-                // Define the omega used for SOR.
-                ValueType omega = this->getSettings().getSolutionMethod() == NativeLinearEquationSolverSettings<ValueType>::SolutionMethod::SOR ? this->getSettings().getOmega() : storm::utility::one<ValueType>();
-
-                STORM_LOG_INFO("Solving linear equation system (" << x.size() << " rows) with NativeLinearEquationSolver (Gauss-Seidel, SOR omega = " << omega << ")");
-
-                // Set up additional environment variables.
-                uint_fast64_t iterationCount = 0;
-                bool converged = false;
+            // Set up additional environment variables.
+            uint_fast64_t iterationCount = 0;
+            bool converged = false;
+            
+            while (!converged && iterationCount < this->getSettings().getMaximalNumberOfIterations()) {
+                A->performSuccessiveOverRelaxationStep(omega, x, b);
                 
-                while (!converged && iterationCount < this->getSettings().getMaximalNumberOfIterations()) {
-                    A->performSuccessiveOverRelaxationStep(omega, x, b);
-                    
-                    // Now check if the process already converged within our precision.
-                    converged = storm::utility::vector::equalModuloPrecision<ValueType>(*this->cachedRowVector, x, static_cast<ValueType>(this->getSettings().getPrecision()), this->getSettings().getRelativeTerminationCriterion()) || (this->hasCustomTerminationCondition() && this->getTerminationCondition().terminateNow(x));
-                    
-                    // If we did not yet converge, we need to backup the contents of x.
-                    if (!converged) {
-                        *this->cachedRowVector = x;
-                    }
-                    
-                    // Increase iteration count so we can abort if convergence is too slow.
-                    ++iterationCount;
+                // Now check if the process already converged within our precision.
+                converged = storm::utility::vector::equalModuloPrecision<ValueType>(*this->cachedRowVector, x, static_cast<ValueType>(this->getSettings().getPrecision()), this->getSettings().getRelativeTerminationCriterion()) || (this->hasCustomTerminationCondition() && this->getTerminationCondition().terminateNow(x));
+                
+                // If we did not yet converge, we need to backup the contents of x.
+                if (!converged) {
+                    *this->cachedRowVector = x;
                 }
                 
-                if(!this->isCachingEnabled()) {
-                    clearCache();
-                }
-
-                if (converged) {
-                    STORM_LOG_INFO("Iterative solver converged in " << iterationCount << " iterations.");
-                } else {
-                    STORM_LOG_WARN("Iterative solver did not converge in " << iterationCount << " iterations.");
-                }
-
-                return converged;
-                
-            } else {
-                STORM_LOG_INFO("Solving linear equation system (" << x.size() << " rows) with NativeLinearEquationSolver (Jacobi)");
-
-                // Get a Jacobi decomposition of the matrix A.
-                if(!jacobiDecomposition) {
-                    jacobiDecomposition = std::make_unique<std::pair<storm::storage::SparseMatrix<ValueType>, std::vector<ValueType>>>(A->getJacobiDecomposition());
-                }
-                storm::storage::SparseMatrix<ValueType> const& jacobiLU = jacobiDecomposition->first;
-                std::vector<ValueType> const& jacobiD = jacobiDecomposition->second;
-                
-                std::vector<ValueType>* currentX = &x;
-                std::vector<ValueType>* nextX = this->cachedRowVector.get();
-                
-                // Set up additional environment variables.
-                uint_fast64_t iterationCount = 0;
-                bool converged = false;
-                
-                while (!converged && iterationCount < this->getSettings().getMaximalNumberOfIterations() && !(this->hasCustomTerminationCondition() && this->getTerminationCondition().terminateNow(*currentX))) {
-                    // Compute D^-1 * (b - LU * x) and store result in nextX.
-                    jacobiLU.multiplyWithVector(*currentX, *nextX);
-                    storm::utility::vector::subtractVectors(b, *nextX, *nextX);
-                    storm::utility::vector::multiplyVectorsPointwise(jacobiD, *nextX, *nextX);
-                    
-                    // Now check if the process already converged within our precision.
-                    converged = storm::utility::vector::equalModuloPrecision<ValueType>(*currentX, *nextX, static_cast<ValueType>(this->getSettings().getPrecision()), this->getSettings().getRelativeTerminationCriterion());
-
-                    // Swap the two pointers as a preparation for the next iteration.
-                    std::swap(nextX, currentX);
-                    
-                    // Increase iteration count so we can abort if convergence is too slow.
-                    ++iterationCount;
-                }
-                                
-                // If the last iteration did not write to the original x we have to swap the contents, because the
-                // output has to be written to the input parameter x.
-                if (currentX == this->cachedRowVector.get()) {
-                    std::swap(x, *currentX);
-                }
-                
-                if (!this->isCachingEnabled()) {
-                    clearCache();
-                }
-
-                if (converged) {
-                    STORM_LOG_INFO("Iterative solver converged in " << iterationCount << " iterations.");
-                } else {
-                    STORM_LOG_WARN("Iterative solver did not converge in " << iterationCount << " iterations.");
-                }
-
-                return iterationCount < this->getSettings().getMaximalNumberOfIterations();
+                // Increase iteration count so we can abort if convergence is too slow.
+                ++iterationCount;
             }
+            
+            if (!this->isCachingEnabled()) {
+                clearCache();
+            }
+            
+            if (converged) {
+                STORM_LOG_INFO("Iterative solver converged in " << iterationCount << " iterations.");
+            } else {
+                STORM_LOG_WARN("Iterative solver did not converge in " << iterationCount << " iterations.");
+            }
+            
+            return converged;
+        }
+    
+        template<typename ValueType>
+        bool NativeLinearEquationSolver<ValueType>::solveEquationsJacobi(std::vector<ValueType>& x, std::vector<ValueType> const& b) const {
+            STORM_LOG_INFO("Solving linear equation system (" << x.size() << " rows) with NativeLinearEquationSolver (Jacobi)");
+            
+            if (!this->cachedRowVector) {
+                this->cachedRowVector = std::make_unique<std::vector<ValueType>>(getMatrixRowCount());
+            }
+            
+            // Get a Jacobi decomposition of the matrix A.
+            if (!jacobiDecomposition) {
+                jacobiDecomposition = std::make_unique<std::pair<storm::storage::SparseMatrix<ValueType>, std::vector<ValueType>>>(A->getJacobiDecomposition());
+            }
+            storm::storage::SparseMatrix<ValueType> const& jacobiLU = jacobiDecomposition->first;
+            std::vector<ValueType> const& jacobiD = jacobiDecomposition->second;
+            
+            std::vector<ValueType>* currentX = &x;
+            std::vector<ValueType>* nextX = this->cachedRowVector.get();
+            
+            // Set up additional environment variables.
+            uint_fast64_t iterationCount = 0;
+            bool converged = false;
+            
+            while (!converged && iterationCount < this->getSettings().getMaximalNumberOfIterations() && !(this->hasCustomTerminationCondition() && this->getTerminationCondition().terminateNow(*currentX))) {
+                // Compute D^-1 * (b - LU * x) and store result in nextX.
+                jacobiLU.multiplyWithVector(*currentX, *nextX);
+                storm::utility::vector::subtractVectors(b, *nextX, *nextX);
+                storm::utility::vector::multiplyVectorsPointwise(jacobiD, *nextX, *nextX);
+                
+                // Now check if the process already converged within our precision.
+                converged = storm::utility::vector::equalModuloPrecision<ValueType>(*currentX, *nextX, static_cast<ValueType>(this->getSettings().getPrecision()), this->getSettings().getRelativeTerminationCriterion());
+                
+                // Swap the two pointers as a preparation for the next iteration.
+                std::swap(nextX, currentX);
+                
+                // Increase iteration count so we can abort if convergence is too slow.
+                ++iterationCount;
+            }
+            
+            // If the last iteration did not write to the original x we have to swap the contents, because the
+            // output has to be written to the input parameter x.
+            if (currentX == this->cachedRowVector.get()) {
+                std::swap(x, *currentX);
+            }
+            
+            if (!this->isCachingEnabled()) {
+                clearCache();
+            }
+            
+            if (converged) {
+                STORM_LOG_INFO("Iterative solver converged in " << iterationCount << " iterations.");
+            } else {
+                STORM_LOG_WARN("Iterative solver did not converge in " << iterationCount << " iterations.");
+            }
+            
+            return converged;
+        }
+    
+        template<typename ValueType>
+        void NativeLinearEquationSolver<ValueType>::computeWalkerChaeMatrix() const {
+            storm::storage::BitVector columnsWithNegativeEntries(this->A->getColumnCount());
+            ValueType zero = storm::utility::zero<ValueType>();
+            for (auto const& e : *this->A) {
+                if (e.getValue() < zero) {
+                    columnsWithNegativeEntries.set(e.getColumn());
+                }
+            }
+            std::vector<uint64_t> columnsWithNegativeEntriesBefore = columnsWithNegativeEntries.getNumberOfSetBitsBeforeIndices();
+            
+            // We now build an extended equation system matrix that only has non-negative coefficients.
+            storm::storage::SparseMatrixBuilder<ValueType> builder;
+            
+            uint64_t row = 0;
+            for (; row < this->A->getRowCount(); ++row) {
+                for (auto const& entry : this->A->getRow(row)) {
+                    if (entry.getValue() < zero) {
+                        builder.addNextValue(row, this->A->getRowCount() + columnsWithNegativeEntriesBefore[entry.getColumn()], -entry.getValue());
+                    } else {
+                        builder.addNextValue(row, entry.getColumn(), entry.getValue());
+                    }
+                }
+            }
+            ValueType one = storm::utility::one<ValueType>();
+            for (auto column : columnsWithNegativeEntries) {
+                builder.addNextValue(row, column, one);
+                builder.addNextValue(row, this->A->getRowCount() + columnsWithNegativeEntriesBefore[column], one);
+                ++row;
+            }
+            
+            walkerChaeMatrix = std::make_unique<storm::storage::SparseMatrix<ValueType>>(builder.build());
+        }
+        
+        template<typename ValueType>
+        bool NativeLinearEquationSolver<ValueType>::solveEquationsWalkerChae(std::vector<ValueType>& x, std::vector<ValueType> const& b) const {
+            STORM_LOG_INFO("Solving linear equation system (" << x.size() << " rows) with NativeLinearEquationSolver (WalkerChae)");
+            
+            // (1) Compute an equivalent equation system that has only non-negative coefficients.
+            if (!walkerChaeMatrix) {
+                std::cout << *this->A << std::endl;
+                computeWalkerChaeMatrix();
+                std::cout << *walkerChaeMatrix << std::endl;
+            }
+
+            // (2) Enlarge the vectors x and b to account for additional variables.
+            x.resize(walkerChaeMatrix->getRowCount());
+
+            if (walkerChaeMatrix->getRowCount() > this->A->getRowCount() && !walkerChaeB) {
+                walkerChaeB = std::make_unique<std::vector<ValueType>>(b);
+                walkerChaeB->resize(x.size());
+            }
+
+            // Choose a value for t in the algorithm.
+            ValueType t = storm::utility::convertNumber<ValueType>(1000);
+            
+            // Precompute some data.
+            std::vector<ValueType> columnSums(x.size());
+            for (auto const& e : *walkerChaeMatrix) {
+                STORM_LOG_ASSERT(e.getValue() >= storm::utility::zero<ValueType>(), "Expecting only non-negative entries in WalkerChae matrix.");
+                columnSums[e.getColumn()] += e.getValue();
+            }
+            
+            // Square the error bound, so we can use it to check for convergence. We take the squared error, because we
+            // do not want to compute the root in the 2-norm computation.
+            ValueType squaredErrorBound = storm::utility::pow(this->getSettings().getPrecision(), 2);
+            
+            // Create a vector that always holds Ax.
+            std::vector<ValueType> currentAx(x.size());
+            walkerChaeMatrix->multiplyWithVector(x, currentAx);
+            
+            // Create an auxiliary vector that intermediately stores the result of the Walker-Chae step.
+            std::vector<ValueType> tmpX(x.size());
+
+            // Set up references to the x-vectors used in the iteration loop.
+            std::vector<ValueType>* currentX = &x;
+            std::vector<ValueType>* nextX = &tmpX;
+
+            // Prepare a function that adds t to its input.
+            auto addT = [t] (ValueType const& value) { return value + t; };
+            
+            // (3) Perform iterations until convergence.
+            bool converged = false;
+            uint64_t iterations = 0;
+            while (!converged && iterations < this->getSettings().getMaximalNumberOfIterations()) {
+                // Perform one Walker-Chae step.
+                A->performWalkerChaeStep(*currentX, columnSums, *walkerChaeB, currentAx, *nextX);
+
+                // Compute new Ax.
+                A->multiplyWithVector(*nextX, currentAx);
+                
+                // Check for convergence.
+                converged = storm::utility::vector::computeSquaredNorm2Difference(currentAx, *walkerChaeB);
+                
+                // If the method did not yet converge, we need to update the value of Ax.
+                if (!converged) {
+                    // TODO: scale matrix diagonal entries with t and add them to *walkerChaeB.
+                    
+                    // Add t to all entries of x.
+                    storm::utility::vector::applyPointwise(x, x, addT);
+                }
+                
+                std::swap(currentX, nextX);
+                
+                // Increase iteration count so we can abort if convergence is too slow.
+                ++iterations;
+            }
+            
+            // If the last iteration did not write to the original x we have to swap the contents, because the
+            // output has to be written to the input parameter x.
+            if (currentX == &tmpX) {
+                std::swap(x, *currentX);
+            }
+            
+            if (!this->isCachingEnabled()) {
+                clearCache();
+            }
+            
+            if (converged) {
+                STORM_LOG_INFO("Iterative solver converged in " << iterations << " iterations.");
+            } else {
+                STORM_LOG_WARN("Iterative solver did not converge in " << iterations << " iterations.");
+            }
+            
+            // Resize the solution to the right size.
+            x.resize(this->A->getRowCount());
+            
+            // Finalize solution vector.
+            storm::utility::vector::applyPointwise(x, x, [&t,iterations] (ValueType const& value) { return value - iterations * t; } );
+            
+            if (!this->isCachingEnabled()) {
+                clearCache();
+            }
+            return converged;
+        }
+        
+        template<typename ValueType>
+        bool NativeLinearEquationSolver<ValueType>::solveEquations(std::vector<ValueType>& x, std::vector<ValueType> const& b) const {
+            if (this->getSettings().getSolutionMethod() == NativeLinearEquationSolverSettings<ValueType>::SolutionMethod::SOR || this->getSettings().getSolutionMethod() == NativeLinearEquationSolverSettings<ValueType>::SolutionMethod::GaussSeidel) {
+                return this->solveEquationsSOR(x, b, this->getSettings().getSolutionMethod() == NativeLinearEquationSolverSettings<ValueType>::SolutionMethod::SOR ? this->getSettings().getOmega() : storm::utility::one<ValueType>());
+            } else if (this->getSettings().getSolutionMethod() == NativeLinearEquationSolverSettings<ValueType>::SolutionMethod::Jacobi) {
+                return this->solveEquationsJacobi(x, b);
+            } else if (this->getSettings().getSolutionMethod() == NativeLinearEquationSolverSettings<ValueType>::SolutionMethod::WalkerChae) {
+                return this->solveEquationsWalkerChae(x, b);
+            }
+            
+            STORM_LOG_THROW(false, storm::exceptions::InvalidSettingsException, "Unknown solving technique.");
+            return false;
         }
         
         template<typename ValueType>
@@ -271,6 +424,7 @@ namespace storm {
         template<typename ValueType>
         void NativeLinearEquationSolver<ValueType>::clearCache() const {
             jacobiDecomposition.reset();
+            walkerChaeMatrix.reset();
             LinearEquationSolver<ValueType>::clearCache();
         }
         

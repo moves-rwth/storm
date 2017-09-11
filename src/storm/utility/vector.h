@@ -822,6 +822,23 @@ namespace storm {
                 return true;
             }
             
+            template<class T>
+            T computeSquaredNorm2Difference(std::vector<T> const& b1, std::vector<T> const& b2) {
+                STORM_LOG_ASSERT(b1.size() == b2.size(), "Vector sizes mismatch.");
+                
+                T result = storm::utility::zero<T>();
+                
+                auto b1It = b1.begin();
+                auto b1Ite = b1.end();
+                auto b2It = b2.begin();
+                
+                for (; b1It != b1Ite; ++b1It, ++b2It) {
+                    result += storm::utility::pow(*b1It - *b2It, 2);
+                }
+                
+                return result;
+            }
+            
             /*!
              * Takes the input vector and ensures that all entries conform to the bounds.
              */

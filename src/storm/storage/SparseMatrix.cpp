@@ -18,6 +18,7 @@
 
 #include "storm/exceptions/InvalidStateException.h"
 #include "storm/exceptions/NotImplementedException.h"
+#include "storm/exceptions/NotSupportedException.h"
 #include "storm/exceptions/InvalidArgumentException.h"
 #include "storm/exceptions/OutOfRangeException.h"
 
@@ -1455,10 +1456,38 @@ namespace storm {
 #ifdef STORM_HAVE_CARL
         template<>
         void SparseMatrix<Interval>::performSuccessiveOverRelaxationStep(Interval, std::vector<Interval>&, std::vector<Interval> const&) const {
-            STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "This operation is not supported.");
+            STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "This operation is not supported.");
         }
 #endif
+        
+        template<typename ValueType>
+        void SparseMatrix<ValueType>::performWalkerChaeStep(std::vector<ValueType> const& x, std::vector<ValueType> const& columnSums, std::vector<ValueType> const& b, std::vector<ValueType> const& ax, std::vector<ValueType>& result) const {
+            const_iterator it = this->begin();
+            const_iterator ite;
+            std::vector<index_type>::const_iterator rowIterator = rowIndications.begin();
+            typename std::vector<ValueType>::iterator resultIterator = result.begin();
+            typename std::vector<ValueType>::iterator resultIteratorEnd = result.end();
+            typename std::vector<ValueType>::const_iterator xIterator = x.begin();
+            typename std::vector<ValueType>::const_iterator columnSumsIterator = columnSums.begin();
+            
+            for (; resultIterator != resultIteratorEnd; ++rowIterator, ++resultIterator, ++xIterator, ++columnSumsIterator) {
+                *resultIterator = storm::utility::zero<ValueType>();
+                
+                for (ite = this->begin() + *(rowIterator + 1); it != ite; ++it) {
+                    *resultIterator += it->getValue() * (b[it->getColumn()] / ax[it->getColumn()]);
+                }
+                
+                *resultIterator *= (*xIterator / *columnSumsIterator);
+            }
+        }
 
+#ifdef STORM_HAVE_CARL
+        template<>
+        void SparseMatrix<Interval>::performWalkerChaeStep(std::vector<Interval> const& x, std::vector<Interval> const& columnSums, std::vector<Interval> const& b, std::vector<Interval> const& ax, std::vector<Interval>& result) const {
+            STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "This operation is not supported.");
+        }
+#endif
+        
         template<typename ValueType>
         void SparseMatrix<ValueType>::multiplyAndReduceForward(OptimizationDirection const& dir, std::vector<uint64_t> const& rowGroupIndices, std::vector<ValueType> const& vector, std::vector<ValueType> const* summand, std::vector<ValueType>& result, std::vector<uint_fast64_t>* choices) const {
             auto elementIt = this->begin();
