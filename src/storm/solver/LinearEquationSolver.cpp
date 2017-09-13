@@ -69,7 +69,7 @@ namespace storm {
             setCachingEnabled(true);
 
             this->multiply(x, b, *cachedRowVector);
-            storm::utility::vector::reduceVectorMinOrMax(dir, *cachedRowVector, result, rowGroupIndices, choices);
+            vectorHelper.reduceVector(dir, *cachedRowVector, result, rowGroupIndices, choices);
             
             // restore the old caching setting
             setCachingEnabled(cachingWasEnabled);

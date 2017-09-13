@@ -171,10 +171,11 @@ namespace storm {
             // Set up additional environment variables.
             uint_fast64_t iterationCount = 0;
             bool converged = false;
-            
+
             while (!converged && iterationCount < this->getSettings().getMaximalNumberOfIterations() && !(this->hasCustomTerminationCondition() && this->getTerminationCondition().terminateNow(*currentX))) {
                 // Compute D^-1 * (b - LU * x) and store result in nextX.
-                jacobiLU.multiplyWithVector(*currentX, *nextX);
+                multiplier.multAdd(jacobiLU, *currentX, nullptr, *nextX);
+
                 storm::utility::vector::subtractVectors(b, *nextX, *nextX);
                 storm::utility::vector::multiplyVectorsPointwise(jacobiD, *nextX, *nextX);
                 
@@ -292,7 +293,7 @@ namespace storm {
 
             // Create a vector that always holds Ax.
             std::vector<ValueType> currentAx(x.size());
-            walkerChaeData->matrix.multiplyWithVector(*currentX, currentAx);
+            multiplier.multAdd(walkerChaeData->matrix, *currentX, nullptr, currentAx);
             
             // (3) Perform iterations until convergence.
             bool converged = false;
@@ -302,7 +303,7 @@ namespace storm {
                 walkerChaeData->matrix.performWalkerChaeStep(*currentX, walkerChaeData->columnSums, walkerChaeData->b, currentAx, *nextX);
                 
                 // Compute new Ax.
-                walkerChaeData->matrix.multiplyWithVector(*nextX, currentAx);
+                multiplier.multAdd(walkerChaeData->matrix, *nextX, nullptr, currentAx);
                 
                 // Check for convergence.
                 converged = storm::utility::vector::computeSquaredNorm2Difference(currentAx, walkerChaeData->b) <= squaredErrorBound;
@@ -355,14 +356,14 @@ namespace storm {
         template<typename ValueType>
         void NativeLinearEquationSolver<ValueType>::multiply(std::vector<ValueType>& x, std::vector<ValueType> const* b, std::vector<ValueType>& result) const {
             if (&x != &result) {
-                A->multiplyWithVector(x, result, b);
+                multiplier.multAdd(*A, x, b, result);
             } else {
                 // If the two vectors are aliases, we need to create a temporary.
                 if (!this->cachedRowVector) {
                     this->cachedRowVector = std::make_unique<std::vector<ValueType>>(getMatrixRowCount());
                 }
                 
-                A->multiplyWithVector(x, *this->cachedRowVector, b);
+                multiplier.multAdd(*A, x, b, *this->cachedRowVector);
                 result.swap(*this->cachedRowVector);
                 
                 if (!this->isCachingEnabled()) {
@@ -374,14 +375,14 @@ namespace storm {
         template<typename ValueType>
         void NativeLinearEquationSolver<ValueType>::multiplyAndReduce(OptimizationDirection const& dir, std::vector<uint64_t> const& rowGroupIndices, std::vector<ValueType>& x, std::vector<ValueType> const* b, std::vector<ValueType>& result, std::vector<uint_fast64_t>* choices) const {
             if (&x != &result) {
-                A->multiplyAndReduce(dir, rowGroupIndices, x, b, result, choices);
+                multiplier.multAddReduce(dir, rowGroupIndices, *A, x, b, result, choices);
             } else {
                 // If the two vectors are aliases, we need to create a temporary.
                 if (!this->cachedRowVector) {
                     this->cachedRowVector = std::make_unique<std::vector<ValueType>>(getMatrixRowCount());
                 }
             
-                this->A->multiplyAndReduce(dir, rowGroupIndices, x, b, *this->cachedRowVector, choices);
+                multiplier.multAddReduce(dir, rowGroupIndices, *A, x, b, *this->cachedRowVector, choices);
                 result.swap(*this->cachedRowVector);
                 
                 if (!this->isCachingEnabled()) {
@@ -398,12 +399,12 @@ namespace storm {
         template<typename ValueType>
         void NativeLinearEquationSolver<ValueType>::multiplyGaussSeidel(std::vector<ValueType>& x, std::vector<ValueType> const* b) const {
             STORM_LOG_ASSERT(this->A->getRowCount() == this->A->getColumnCount(), "This function is only applicable for square matrices.");
-            A->multiplyWithVector(x, x, b, true, storm::storage::SparseMatrix<ValueType>::MultiplicationDirection::Backward);
+            multiplier.multAddGaussSeidelBackward(*A, x, b);
         }
         
         template<typename ValueType>
         void NativeLinearEquationSolver<ValueType>::multiplyAndReduceGaussSeidel(OptimizationDirection const& dir, std::vector<uint64_t> const& rowGroupIndices, std::vector<ValueType>& x, std::vector<ValueType> const* b, std::vector<uint_fast64_t>* choices) const {
-            A->multiplyAndReduce(dir, rowGroupIndices, x, b, x, choices, true, storm::storage::SparseMatrix<ValueType>::MultiplicationDirection::Backward);
+            multiplier.multAddReduceGaussSeidelBackward(dir, rowGroupIndices, *A, x, b, choices);
         }
         
         template<typename ValueType>

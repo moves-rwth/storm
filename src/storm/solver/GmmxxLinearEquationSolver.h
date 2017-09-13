@@ -5,7 +5,9 @@
 
 #include "storm/utility/gmm.h"
 
-#include "LinearEquationSolver.h"
+#include "storm/solver/GmmxxMultiplier.h"
+
+#include "storm/solver/LinearEquationSolver.h"
 
 namespace storm {
     namespace solver {
@@ -95,7 +97,6 @@ namespace storm {
             void setSettings(GmmxxLinearEquationSolverSettings<ValueType> const& newSettings);
             GmmxxLinearEquationSolverSettings<ValueType> const& getSettings() const;
 
-
             virtual void clearCache() const override;
 
         private:
@@ -107,6 +108,9 @@ namespace storm {
             
             // The settings used by the solver.
             GmmxxLinearEquationSolverSettings<ValueType> settings;
+            
+            // A multiplier object used to dispatch the multiplication calls.
+            GmmxxMultiplier<ValueType> multiplier;
             
             // cached data obtained during solving
             mutable std::unique_ptr<gmm::ilu_precond<gmm::csr_matrix<ValueType>>> iluPreconditioner;

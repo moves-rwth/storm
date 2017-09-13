@@ -8,6 +8,8 @@
 #include "storm/solver/MultiplicationStyle.h"
 #include "storm/solver/OptimizationDirection.h"
 
+#include "storm/utility/VectorHelper.h"
+
 #include "storm/storage/SparseMatrix.h"
 
 namespace storm {
@@ -171,6 +173,9 @@ namespace storm {
             
             /// Whether some of the generated data during solver calls should be cached.
             mutable bool cachingEnabled;
+            
+            /// An object that can be used to reduce vectors.
+            storm::utility::VectorHelper<ValueType> vectorHelper;
         };
         
         template<typename ValueType>

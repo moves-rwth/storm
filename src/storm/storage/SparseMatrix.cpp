@@ -1304,36 +1304,23 @@ namespace storm {
         }
         
         template<typename ValueType>
-        void SparseMatrix<ValueType>::multiplyWithVector(std::vector<ValueType> const& vector, std::vector<ValueType>& result, std::vector<value_type> const* summand, bool allowAliasing, MultiplicationDirection const& multiplicationDirection) const {
+        void SparseMatrix<ValueType>::multiplyWithVector(std::vector<ValueType> const& vector, std::vector<ValueType>& result, std::vector<value_type> const* summand) const {
             // If the vector and the result are aliases and this is not set to be allowed, we need and temporary vector.
             std::vector<ValueType>* target;
             std::vector<ValueType> temporary;
-            bool vectorsAliased = &vector == &result;
-            if (!allowAliasing && vectorsAliased) {
-                STORM_LOG_WARN("Vectors are aliased but are not allowed to be. Using temporary, which is potentially slow.");
+            if (&vector == &result) {
+                STORM_LOG_WARN("Vectors are aliased. Using temporary, which is potentially slow.");
                 temporary = std::vector<ValueType>(vector.size());
                 target = &temporary;
-                STORM_LOG_WARN_COND(multiplicationDirection != MultiplicationDirection::DontCare, "Not specifying multiplication direction for aliased vectors may yield unexpected results.");
             } else {
                 target = &result;
             }
             
-            STORM_LOG_WARN_COND(vectorsAliased || multiplicationDirection == MultiplicationDirection::DontCare, "Setting a multiplication direction for unaliased vectors. Check whether this is intended.");
-
-#ifdef STORM_HAVE_INTELTBB
-            bool useParallel = !allowAliasing && multiplicationDirection == MultiplicationDirection::DontCare && this->getNonzeroEntryCount() > 10000;
-            if (useParallel) {
-                this->multiplyWithVectorParallel(vector, *target, summand);
-            } else {
-#endif
-                if (multiplicationDirection == MultiplicationDirection::Forward || (multiplicationDirection == MultiplicationDirection::DontCare && !vectorsAliased)) {
-                    this->multiplyWithVectorForward(vector, *target, summand);
-                } else {
-                    this->multiplyWithVectorBackward(vector, *target, summand);
-                }
-#ifdef STORM_HAVE_INTELTBB
+            this->multiplyWithVectorForward(vector, *target, summand);
+            
+            if (target == &temporary) {
+                std::swap(result, *target);
             }
-#endif
         }
         
         template<typename ValueType>
@@ -1389,6 +1376,47 @@ namespace storm {
         }
         
 #ifdef STORM_HAVE_INTELTBB
+        template <typename ValueType>
+        class TbbMultAddFunctor {
+        public:
+            typedef typename storm::storage::SparseMatrix<ValueType>::index_type index_type;
+            typedef typename storm::storage::SparseMatrix<ValueType>::value_type value_type;
+            typedef typename storm::storage::SparseMatrix<ValueType>::const_iterator const_iterator;
+            
+            TbbMultAddFunctor(std::vector<MatrixEntry<index_type, value_type>> const& columnsAndEntries, std::vector<uint64_t> const& rowIndications, std::vector<ValueType> const& x, std::vector<ValueType>& result, std::vector<value_type> const* summand) : columnsAndEntries(columnsAndEntries), rowIndications(rowIndications), x(x), result(result), summand(summand) {
+                // Intentionally left empty.
+            }
+            
+            void operator()(tbb::blocked_range<index_type> const& range) const {
+                index_type startRow = range.begin();
+                index_type endRow = range.end();
+                typename std::vector<index_type>::const_iterator rowIterator = rowIndications.begin() + startRow;
+                const_iterator it = columnsAndEntries.begin() + *rowIterator;
+                const_iterator ite;
+                typename std::vector<ValueType>::iterator resultIterator = result.begin() + startRow;
+                typename std::vector<ValueType>::iterator resultIteratorEnd = result.begin() + endRow;
+                typename std::vector<ValueType>::const_iterator summandIterator;
+                if (summand) {
+                    summandIterator = summand->begin() + startRow;
+                }
+                
+                for (; resultIterator != resultIteratorEnd; ++rowIterator, ++resultIterator, ++summandIterator) {
+                    *resultIterator = summand ? *summandIterator : storm::utility::zero<ValueType>();
+                    
+                    for (ite = columnsAndEntries.begin() + *(rowIterator + 1); it != ite; ++it) {
+                        *resultIterator += it->getValue() * x[it->getColumn()];
+                    }
+                }
+            }
+            
+        private:
+            std::vector<MatrixEntry<index_type, value_type>> const& columnsAndEntries;
+            std::vector<uint64_t> const& rowIndications;
+            std::vector<ValueType> const& x;
+            std::vector<ValueType>& result;
+            std::vector<value_type> const* summand;
+        };
+        
         template<typename ValueType>
         void SparseMatrix<ValueType>::multiplyWithVectorParallel(std::vector<ValueType> const& vector, std::vector<ValueType>& result, std::vector<value_type> const* summand) const {
             if (&vector == &result) {
@@ -1397,34 +1425,7 @@ namespace storm {
                 multiplyWithVectorParallel(vector, tmpVector);
                 result = std::move(tmpVector);
             } else {
-                tbb::parallel_for(tbb::blocked_range<index_type>(0, result.size(), 10),
-                                  [&] (tbb::blocked_range<index_type> const& range) {
-                                      index_type startRow = range.begin();
-                                      index_type endRow = range.end();
-                                      const_iterator it = this->begin(startRow);
-                                      const_iterator ite;
-                                      std::vector<index_type>::const_iterator rowIterator = this->rowIndications.begin() + startRow;
-                                      std::vector<index_type>::const_iterator rowIteratorEnd = this->rowIndications.begin() + endRow;
-                                      typename std::vector<ValueType>::iterator resultIterator = result.begin() + startRow;
-                                      typename std::vector<ValueType>::iterator resultIteratorEnd = result.begin() + endRow;
-                                      typename std::vector<ValueType>::const_iterator summandIterator;
-                                      if (summand) {
-                                          summandIterator = summand->begin() + startRow;
-                                      }
-                                      
-                                      for (; resultIterator != resultIteratorEnd; ++rowIterator, ++resultIterator) {
-                                          if (summand) {
-                                              *resultIterator = *summandIterator;
-                                              ++summandIterator;
-                                          } else {
-                                              *resultIterator = storm::utility::zero<ValueType>();
-                                          }
-                                          
-                                          for (ite = this->begin() + *(rowIterator + 1); it != ite; ++it) {
-                                              *resultIterator += it->getValue() * vector[it->getColumn()];
-                                          }
-                                      }
-                                  });
+                tbb::parallel_for(tbb::blocked_range<index_type>(0, result.size(), 10), TbbMultAddFunctor<ValueType>(columnsAndValues, rowIndications, vector, result, summand));
             }
         }
 #endif
@@ -1560,7 +1561,7 @@ namespace storm {
 #ifdef STORM_HAVE_CARL
         template<>
         void SparseMatrix<storm::RationalFunction>::multiplyAndReduceForward(OptimizationDirection const& dir, std::vector<uint64_t> const& rowGroupIndices, std::vector<storm::RationalFunction> const& vector, std::vector<storm::RationalFunction> const* b, std::vector<storm::RationalFunction>& result, std::vector<uint_fast64_t>* choices) const {
-            STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "This operation is not supported.");
+            STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "This operation is not supported.");
         }
 #endif
         
@@ -1618,96 +1619,111 @@ namespace storm {
 #ifdef STORM_HAVE_CARL
         template<>
         void SparseMatrix<storm::RationalFunction>::multiplyAndReduceBackward(OptimizationDirection const& dir, std::vector<uint64_t> const& rowGroupIndices, std::vector<storm::RationalFunction> const& vector, std::vector<storm::RationalFunction> const* b, std::vector<storm::RationalFunction>& result, std::vector<uint_fast64_t>* choices) const {
-            STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "This operation is not supported.");
+            STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "This operation is not supported.");
         }
 #endif
         
 #ifdef STORM_HAVE_INTELTBB
+        template <typename ValueType>
+        class TbbMultAddReduceFunctor {
+        public:
+            typedef typename storm::storage::SparseMatrix<ValueType>::index_type index_type;
+            typedef typename storm::storage::SparseMatrix<ValueType>::value_type value_type;
+            typedef typename storm::storage::SparseMatrix<ValueType>::const_iterator const_iterator;
+            
+            TbbMultAddReduceFunctor(OptimizationDirection const& dir, std::vector<uint64_t> const& rowGroupIndices, std::vector<MatrixEntry<index_type, value_type>> const& columnsAndEntries, std::vector<uint64_t> const& rowIndications, std::vector<ValueType> const& x, std::vector<ValueType>& result, std::vector<value_type> const* summand, std::vector<uint_fast64_t>* choices) : dir(dir), rowGroupIndices(rowGroupIndices), columnsAndEntries(columnsAndEntries), rowIndications(rowIndications), x(x), result(result), summand(summand), choices(choices) {
+                // Intentionally left empty.
+            }
+            
+            void operator()(tbb::blocked_range<index_type> const& range) const {
+                auto groupIt = rowGroupIndices.begin() + range.begin();
+                auto groupIte = rowGroupIndices.begin() + range.end();
+                
+                auto rowIt = rowIndications.begin() + *groupIt;
+                auto elementIt = columnsAndEntries.begin() + *rowIt;
+                typename std::vector<ValueType>::const_iterator summandIt;
+                if (summand) {
+                    summandIt = summand->begin() + *groupIt;
+                }
+                typename std::vector<uint_fast64_t>::iterator choiceIt;
+                if (choices) {
+                    choiceIt = choices->begin() + range.begin();
+                }
+                
+                auto resultIt = result.begin() + range.begin();
+                
+                for (; groupIt != groupIte; ++groupIt, ++resultIt, ++choiceIt) {
+                    ValueType currentValue = summand ? *summandIt : storm::utility::zero<ValueType>();
+                    
+                    for (auto elementIte = columnsAndEntries.begin() + *(rowIt + 1); elementIt != elementIte; ++elementIt) {
+                        currentValue += elementIt->getValue() * x[elementIt->getColumn()];
+                    }
+                    if (choices) {
+                        *choiceIt = 0;
+                    }
+                    
+                    ++rowIt;
+                    ++summandIt;
+                    
+                    for (; static_cast<uint_fast64_t>(std::distance(rowIndications.begin(), rowIt)) < *(groupIt + 1); ++rowIt, ++summandIt) {
+                        ValueType newValue = summand ? *summandIt : storm::utility::zero<ValueType>();
+                        for (auto elementIte = columnsAndEntries.begin() + *(rowIt + 1); elementIt != elementIte; ++elementIt) {
+                            newValue += elementIt->getValue() * x[elementIt->getColumn()];
+                        }
+                        
+                        if ((dir == OptimizationDirection::Minimize && newValue < currentValue) || (dir == OptimizationDirection::Maximize && newValue > currentValue)) {
+                            currentValue = newValue;
+                            if (choices) {
+                                *choiceIt = std::distance(rowIndications.begin(), rowIt) - *groupIt;
+                            }
+                        }
+                    }
+                    
+                    // Finally write value to target vector.
+                    *resultIt = currentValue;
+                }
+            }
+            
+        private:
+            OptimizationDirection dir;
+            std::vector<uint64_t> const& rowGroupIndices;
+            std::vector<MatrixEntry<index_type, value_type>> const& columnsAndEntries;
+            std::vector<uint64_t> const& rowIndications;
+            std::vector<ValueType> const& x;
+            std::vector<ValueType>& result;
+            std::vector<value_type> const* summand;
+            std::vector<uint_fast64_t>* choices;
+        };
+        
         template<typename ValueType>
         void SparseMatrix<ValueType>::multiplyAndReduceParallel(OptimizationDirection const& dir, std::vector<uint64_t> const& rowGroupIndices, std::vector<ValueType> const& vector, std::vector<ValueType> const* summand, std::vector<ValueType>& result, std::vector<uint_fast64_t>* choices) const {
-            tbb::parallel_for(tbb::blocked_range<index_type>(0, rowGroupIndices.size() - 1, 10),
-                              [&] (tbb::blocked_range<index_type> const& range) {
-                                  index_type startRowGroup = range.begin();
-                                  index_type endRowGroup = range.end();
-                                  
-                                  auto rowGroupIt = rowGroupIndices.begin() + startRowGroup;
-                                  auto rowIt = rowIndications.begin() + startRowGroup;
-                                  auto elementIt = this->begin(*rowIt);
-                                  typename std::vector<ValueType>::const_iterator summandIt;
-                                  if (summand) {
-                                      summandIt = summand->begin();
-                                  }
-                                  typename std::vector<uint_fast64_t>::iterator choiceIt;
-                                  if (choices) {
-                                      choiceIt = choices->begin() + startRowGroup;
-                                  }
-                                  
-                                  for (auto resultIt = result.begin() + startRowGroup, resultIte = result.begin() + endRow; resultIt != resultIte; ++resultIt, ++choiceIt, ++rowGroupIt) {
-                                      ValueType currentValue = summand ? *summandIt : storm::utility::zero<ValueType>();
-                                      
-                                      for (auto elementIte = this->begin() + *(rowIt + 1); elementIt != elementIte; ++elementIt) {
-                                          currentValue += elementIt->getValue() * x[elementIt->getColumn()];
-                                      }
-                                      if (choices) {
-                                          *choicesIt = 0;
-                                      }
-                                      
-                                      ++rowIt;
-                                      ++summandIt;
-                                      
-                                      for (; *rowIt < *(rowGroupIt + 1); ++rowIt) {
-                                          ValueType newValue = summand ? *summandIt : storm::utility::zero<ValueType>();
-                                          for (auto elementIte = this->begin() + *(rowIt + 1); elementIt != elementIte; ++elementIt) {
-                                              newValue += elementIt->getValue() * x[elementIt->getColumn()];
-                                          }
-                                          
-                                          if ((dir == OptimizationDirection::Minimize && newValue < currentValue) || (dir == OptimizationDirection::Maximize && newValue > currentValue)) {
-                                              currentValue = newValue;
-                                              if (choices) {
-                                                  *choiceIt = std::distance(rowIndications.begin(), rowIt) - *rowGroupIt;
-                                              }
-                                          }
-                                      }
-                                      
-                                      // Finally write value to target vector.
-                                      *resultIt = currentValue;
-                                  }
-                              });
+            tbb::parallel_for(tbb::blocked_range<index_type>(0, rowGroupIndices.size() - 1, 10), TbbMultAddReduceFunctor<ValueType>(dir, rowGroupIndices, columnsAndValues, rowIndications, vector, result, summand, choices));
         }
+        
+#ifdef STORM_HAVE_CARL
+        template<>
+        void SparseMatrix<storm::RationalFunction>::multiplyAndReduceParallel(OptimizationDirection const& dir, std::vector<uint64_t> const& rowGroupIndices, std::vector<storm::RationalFunction> const& vector, std::vector<storm::RationalFunction> const* summand, std::vector<storm::RationalFunction>& result, std::vector<uint_fast64_t>* choices) const {
+            STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "This operation is not supported.");
+        }
+#endif
 #endif
         
         template<typename ValueType>
-        void SparseMatrix<ValueType>::multiplyAndReduce(OptimizationDirection const& dir, std::vector<uint64_t> const& rowGroupIndices, std::vector<ValueType> const& vector, std::vector<ValueType> const* summand, std::vector<ValueType>& result, std::vector<uint_fast64_t>* choices, bool allowAliasing, MultiplicationDirection const& multiplicationDirection) const {
+        void SparseMatrix<ValueType>::multiplyAndReduce(OptimizationDirection const& dir, std::vector<uint64_t> const& rowGroupIndices, std::vector<ValueType> const& vector, std::vector<ValueType> const* summand, std::vector<ValueType>& result, std::vector<uint_fast64_t>* choices) const {
             
-            // If the vector and the result are aliases and this is not set to be allowed, we need and temporary vector.
+            // If the vector and the result are aliases, we need and temporary vector.
             std::vector<ValueType>* target;
             std::vector<ValueType> temporary;
-            bool vectorsAliased = &vector == &result;
-            if (!allowAliasing && vectorsAliased) {
+            if (&vector == &result) {
                 STORM_LOG_WARN("Vectors are aliased but are not allowed to be. Using temporary, which is potentially slow.");
                 temporary = std::vector<ValueType>(vector.size());
                 target = &temporary;
-                STORM_LOG_WARN_COND(multiplicationDirection != MultiplicationDirection::DontCare, "Not specifying multiplication direction for aliased vectors may yield unexpected results.");
             } else {
                 target = &result;
             }
-
-            STORM_LOG_WARN_COND(vectorsAliased || multiplicationDirection == MultiplicationDirection::DontCare, "Setting a multiplication direction for unaliased vectors. Check whether this is intended.");
             
-#ifdef STORM_HAVE_INTELTBB
-            bool useParallel = !vectorsAliased && multiplicationDirection == MultiplicationDirection::DontCare && this->getNonzeroEntryCount() > 10000;
-            if (useParallel) {
-                multiplyAndReduceParallel(dir, rowGroupIndices, vector, summand, *target, choices);
-            } else {
-#endif
-                if (multiplicationDirection == MultiplicationDirection::Forward || (multiplicationDirection == MultiplicationDirection::DontCare && !vectorsAliased)) {
-                    multiplyAndReduceForward(dir, rowGroupIndices, vector, summand, *target, choices);
-                } else {
-                    multiplyAndReduceBackward(dir, rowGroupIndices, vector, summand, *target, choices);
-                }
-#ifdef STORM_HAVE_INTELTBB
-            }
-#endif
+            this->multiplyAndReduceForward(dir, rowGroupIndices, vector, summand, *target, choices);
+
             if (target == &temporary) {
                 std::swap(temporary, result);
             }

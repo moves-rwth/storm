@@ -4,6 +4,9 @@
 #include <utility>
 
 #include "storm/adapters/GmmxxAdapter.h"
+
+#include "storm/solver/GmmxxMultiplier.h"
+
 #include "storm/settings/SettingsManager.h"
 #include "storm/utility/vector.h"
 #include "storm/utility/constants.h"
@@ -187,7 +190,7 @@ namespace storm {
         
         template<typename ValueType>
         void GmmxxLinearEquationSolver<ValueType>::multiply(std::vector<ValueType>& x, std::vector<ValueType> const* b, std::vector<ValueType>& result) const {
-            storm::adapters::GmmxxMultiplier<ValueType>::multAdd(*gmmxxA, x, b, result);
+            multiplier.multAdd(*gmmxxA, x, b, result);
             
             if (!this->isCachingEnabled()) {
                 clearCache();
@@ -196,7 +199,7 @@ namespace storm {
         
         template<typename ValueType>
         void GmmxxLinearEquationSolver<ValueType>::multiplyAndReduce(OptimizationDirection const& dir, std::vector<uint64_t> const& rowGroupIndices, std::vector<ValueType>& x, std::vector<ValueType> const* b, std::vector<ValueType>& result, std::vector<uint_fast64_t>* choices) const {
-            storm::adapters::GmmxxMultiplier<ValueType>::multAddReduce(dir, rowGroupIndices, *gmmxxA, x, b, result, choices);
+            multiplier.multAddReduce(dir, rowGroupIndices, *gmmxxA, x, b, result, choices);
         }
         
         template<typename ValueType>
@@ -206,12 +209,12 @@ namespace storm {
         
         template<typename ValueType>
         void GmmxxLinearEquationSolver<ValueType>::multiplyGaussSeidel(std::vector<ValueType>& x, std::vector<ValueType> const* b) const {
-            storm::adapters::GmmxxMultiplier<ValueType>::multAddGaussSeidelBackward(*gmmxxA, x, b);
+            multiplier.multAddGaussSeidelBackward(*gmmxxA, x, b);
         }
 
         template<typename ValueType>
         void GmmxxLinearEquationSolver<ValueType>::multiplyAndReduceGaussSeidel(OptimizationDirection const& dir, std::vector<uint64_t> const& rowGroupIndices, std::vector<ValueType>& x, std::vector<ValueType> const* b, std::vector<uint64_t>* choices) const {
-            storm::adapters::GmmxxMultiplier<ValueType>::multAddReduceGaussSeidel(dir, rowGroupIndices, *gmmxxA, x, b, choices);
+            multiplier.multAddReduceGaussSeidel(dir, rowGroupIndices, *gmmxxA, x, b, choices);
         }
         
         template<typename ValueType>

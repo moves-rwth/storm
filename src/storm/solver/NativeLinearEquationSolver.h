@@ -3,7 +3,9 @@
 
 #include <ostream>
 
-#include "LinearEquationSolver.h"
+#include "storm/solver/LinearEquationSolver.h"
+
+#include "storm/solver/NativeMultiplier.h"
 
 namespace storm {
     namespace solver {
@@ -76,10 +78,13 @@ namespace storm {
             // A pointer to the original sparse matrix given to this solver. If the solver takes posession of the matrix
             // the pointer refers to localA.
             storm::storage::SparseMatrix<ValueType> const* A;
-                        
+            
             // The settings used by the solver.
             NativeLinearEquationSolverSettings<ValueType> settings;
-            
+
+            // An object to dispatch all multiplication operations.
+            NativeMultiplier<ValueType> multiplier;
+
             // cached auxiliary data
             mutable std::unique_ptr<std::pair<storm::storage::SparseMatrix<ValueType>, std::vector<ValueType>>> jacobiDecomposition;
             
