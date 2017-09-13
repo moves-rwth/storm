@@ -7,6 +7,7 @@
 #include "storm/modelchecker/multiobjective/Objective.h"
 #include "storm/modelchecker/multiobjective/rewardbounded/EpochManager.h"
 #include "storm/modelchecker/multiobjective/rewardbounded/ProductModel.h"
+#include "storm/modelchecker/multiobjective/rewardbounded/Dimension.h"
 #include "storm/models/sparse/Mdp.h"
 #include "storm/utility/vector.h"
 #include "storm/storage/memorystructure/MemoryStructure.h"
@@ -121,11 +122,8 @@ namespace storm {
                 
                 EpochManager epochManager;
                 
+                std::vector<Dimension<ValueType>> dimensions;
                 std::vector<storm::storage::BitVector> objectiveDimensions;
-                std::vector<std::pair<std::shared_ptr<storm::logic::Formula const>, uint64_t>> subObjectives;
-                std::vector<boost::optional<std::string>> memoryLabels;
-                std::vector<ValueType> scalingFactors;
-                
                 
                 struct EpochSolution {
                     uint64_t count;

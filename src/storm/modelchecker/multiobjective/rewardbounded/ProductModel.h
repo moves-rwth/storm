@@ -5,6 +5,7 @@
 #include "storm/storage/BitVector.h"
 #include "storm/modelchecker/multiobjective/Objective.h"
 #include "storm/modelchecker/multiobjective/rewardbounded/EpochManager.h"
+#include "storm/modelchecker/multiobjective/rewardbounded/Dimension.h"
 #include "storm/models/sparse/Mdp.h"
 #include "storm/utility/vector.h"
 #include "storm/storage/memorystructure/MemoryStructure.h"
@@ -38,7 +39,7 @@ namespace storm {
                 
                 uint64_t getProductStateFromChoice(uint64_t const& productChoice) const;
                 
-                std::vector<std::vector<ValueType>> computeObjectiveRewards(Epoch const& epoch, std::vector<storm::modelchecker::multiobjective::Objective<ValueType>> const& objectives, std::vector<std::pair<std::shared_ptr<storm::logic::Formula const>, uint64_t>> subObjectives, std::vector<boost::optional<std::string>> const& memoryLabels) const;
+                std::vector<std::vector<ValueType>> computeObjectiveRewards(Epoch const& epoch, std::vector<storm::modelchecker::multiobjective::Objective<ValueType>> const& objectives, std::vector<Dimension<ValueType>> const& dimensions) const;
                 storm::storage::BitVector computeInStates(Epoch const& epoch) const;
 
                 

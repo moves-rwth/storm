@@ -178,7 +178,7 @@ namespace storm {
             }
             
             template<typename ValueType>
-            std::vector<std::vector<ValueType>> ProductModel<ValueType>::computeObjectiveRewards(Epoch const& epoch, std::vector<storm::modelchecker::multiobjective::Objective<ValueType>> const& objectives, std::vector<std::pair<std::shared_ptr<storm::logic::Formula const>, uint64_t>> subObjectives, std::vector<boost::optional<std::string>> const& memoryLabels) const {
+            std::vector<std::vector<ValueType>> ProductModel<ValueType>::computeObjectiveRewards(Epoch const& epoch, std::vector<storm::modelchecker::multiobjective::Objective<ValueType>> const& objectives, std::vector<Dimension<ValueType>> const& dimensions) const {
                 std::vector<std::vector<ValueType>> objectiveRewards;
                 objectiveRewards.reserve(objectives.size());
                 
@@ -193,7 +193,7 @@ namespace storm {
                         
                         std::shared_ptr<storm::logic::Formula const> sinkStatesFormula;
                         for (auto const& dim : objectiveDimensions[objIndex]) {
-                            auto memLabelFormula = std::make_shared<storm::logic::AtomicLabelFormula>(memoryLabels[dim].get());
+                            auto memLabelFormula = std::make_shared<storm::logic::AtomicLabelFormula>(dimensions[dim].memoryLabel.get());
                             if (sinkStatesFormula) {
                                 sinkStatesFormula = std::make_shared<storm::logic::BinaryBooleanStateFormula>(storm::logic::BinaryBooleanStateFormula::OperatorType::Or, sinkStatesFormula, memLabelFormula);
                             } else {
@@ -211,7 +211,7 @@ namespace storm {
                             // find out whether objective reward should be earned within this epoch
                             bool collectRewardInEpoch = true;
                             for (auto const& subObjIndex : relevantObjectives) {
-                                if (epochManager.isBottomDimension(epoch, dimensionIndexMap[subObjIndex])) {
+                                if (dimensions[dimensionIndexMap[subObjIndex]].isUpperBounded == epochManager.isBottomDimension(epoch, dimensionIndexMap[subObjIndex])) {
                                     collectRewardInEpoch = false;
                                     break;
                                 }
@@ -221,9 +221,9 @@ namespace storm {
                                 std::shared_ptr<storm::logic::Formula const> relevantStatesFormula;
                                 std::shared_ptr<storm::logic::Formula const> goalStatesFormula =  storm::logic::CloneVisitor().clone(*sinkStatesFormula);
                                 for (uint64_t subObjIndex = 0; subObjIndex < dimensionIndexMap.size(); ++subObjIndex) {
-                                    std::shared_ptr<storm::logic::Formula> memLabelFormula = std::make_shared<storm::logic::AtomicLabelFormula>(memoryLabels[dimensionIndexMap[subObjIndex]].get());
+                                    std::shared_ptr<storm::logic::Formula> memLabelFormula = std::make_shared<storm::logic::AtomicLabelFormula>(dimensions[dimensionIndexMap[subObjIndex]].memoryLabel.get());
                                     if (relevantObjectives.get(subObjIndex)) {
-                                        auto rightSubFormula = subObjectives[dimensionIndexMap[subObjIndex]].first->asBoundedUntilFormula().getRightSubformula().asSharedPointer();
+                                        auto rightSubFormula = dimensions[dimensionIndexMap[subObjIndex]].formula->asBoundedUntilFormula().getRightSubformula().asSharedPointer();
                                         goalStatesFormula = std::make_shared<storm::logic::BinaryBooleanStateFormula>(storm::logic::BinaryBooleanStateFormula::OperatorType::And, goalStatesFormula, rightSubFormula);
                                     } else {
                                         memLabelFormula = std::make_shared<storm::logic::UnaryBooleanStateFormula>(storm::logic::UnaryBooleanStateFormula::OperatorType::Not, memLabelFormula);

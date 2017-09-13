@@ -74,15 +74,19 @@ namespace storm {
                         STORM_LOG_THROW(formula.getSubformula().isBoundedUntilFormula(), storm::exceptions::NotSupportedException, "Unexpected type of subformula for formula " << formula);
                         auto const& subformula = formula.getSubformula().asBoundedUntilFormula();
                         for (uint64_t dim = 0; dim < subformula.getDimension(); ++dim) {
-                            subObjectives.push_back(std::make_pair(subformula.restrictToDimension(dim), objIndex));
-                            std::string memLabel = "dim" + std::to_string(subObjectives.size()) + "_maybe";
+                            Dimension<ValueType> dimension;
+                            dimension.formula = subformula.restrictToDimension(dim);
+                            dimension.objectiveIndex = objIndex;
+                            std::string memLabel = "dim" + std::to_string(dimensions.size()) + "_maybe";
                             while (model.getStateLabeling().containsLabel(memLabel)) {
                                 memLabel = "_" + memLabel;
                             }
-                            memoryLabels.push_back(memLabel);
+                            dimension.memoryLabel = memLabel;
+                            dimension.isUpperBounded = subformula.hasUpperBound(dim);
+                            STORM_LOG_THROW(subformula.hasLowerBound(dim) != dimension.isUpperBounded, storm::exceptions::NotSupportedException, "Bounded until formulas are only supported by this method if they consider either an upper bound or a lower bound. Got " << subformula << " instead.");
                             if (subformula.getTimeBoundReference(dim).isTimeBound() || subformula.getTimeBoundReference(dim).isStepBound()) {
                                 dimensionWiseEpochSteps.push_back(std::vector<uint64_t>(model.getNumberOfChoices(), 1));
-                                scalingFactors.push_back(storm::utility::one<ValueType>());
+                                dimension.scalingFactor = storm::utility::one<ValueType>();
                             } else {
                                 STORM_LOG_ASSERT(subformula.getTimeBoundReference(dim).isRewardBound(), "Unexpected type of time bound.");
                                 std::string const& rewardName = subformula.getTimeBoundReference(dim).getRewardName();
@@ -92,30 +96,34 @@ namespace storm {
                                 std::vector<ValueType> actionRewards = rewardModel.getTotalRewardVector(this->model.getTransitionMatrix());
                                 auto discretizedRewardsAndFactor = storm::utility::vector::toIntegralVector<ValueType, uint64_t>(actionRewards);
                                 dimensionWiseEpochSteps.push_back(std::move(discretizedRewardsAndFactor.first));
-                                scalingFactors.push_back(std::move(discretizedRewardsAndFactor.second));
+                                dimension.scalingFactor = std::move(discretizedRewardsAndFactor.second);
                             }
+                            dimensions.emplace_back(std::move(dimension));
                         }
                     } else if (formula.isRewardOperatorFormula() && formula.getSubformula().isCumulativeRewardFormula()) {
-                        subObjectives.push_back(std::make_pair(formula.getSubformula().asSharedPointer(), objIndex));
+                        Dimension<ValueType> dimension;
+                        dimension.formula = formula.getSubformula().asSharedPointer();
+                        dimension.objectiveIndex = objIndex;
+                        dimension.isUpperBounded = true;
+                        dimension.scalingFactor = storm::utility::one<ValueType>();
+                        dimensions.emplace_back(std::move(dimension));
                         dimensionWiseEpochSteps.push_back(std::vector<uint64_t>(model.getNumberOfChoices(), 1));
-                        scalingFactors.push_back(storm::utility::one<ValueType>());
-                        memoryLabels.push_back(boost::none);
                     }
                 }
                 
                 // Compute a mapping for each objective to the set of dimensions it considers
                 for (uint64_t objIndex = 0; objIndex < this->objectives.size(); ++objIndex) {
-                    storm::storage::BitVector dimensions(subObjectives.size(), false);
-                    for (uint64_t subObjIndex = 0; subObjIndex < subObjectives.size(); ++subObjIndex) {
-                        if (subObjectives[subObjIndex].second == objIndex) {
-                            dimensions.set(subObjIndex, true);
+                    storm::storage::BitVector objDimensions(dimensions.size(), false);
+                    for (uint64_t dim = 0; dim < dimensions.size(); ++dim) {
+                        if (dimensions[dim].objectiveIndex == objIndex) {
+                            objDimensions.set(dim, true);
                         }
                     }
-                    objectiveDimensions.push_back(std::move(dimensions));
+                    objectiveDimensions.push_back(std::move(objDimensions));
                 }
                 
                 // Initialize the epoch manager
-                epochManager = EpochManager(subObjectives.size());
+                epochManager = EpochManager(dimensions.size());
                 
                 // Convert the epoch steps to a choice-wise representation
                 epochSteps.reserve(model.getNumberOfChoices());
@@ -156,21 +164,29 @@ namespace storm {
                 for (uint64_t dim = 0; dim < epochManager.getDimensionCount(); ++dim) {
                     storm::expressions::Expression bound;
                     bool isStrict = false;
-                    storm::logic::Formula const& dimFormula = *subObjectives[dim].first;
+                    storm::logic::Formula const& dimFormula = *dimensions[dim].formula;
                     if (dimFormula.isBoundedUntilFormula()) {
                         assert(!dimFormula.asBoundedUntilFormula().isMultiDimensional());
-                        STORM_LOG_THROW(dimFormula.asBoundedUntilFormula().hasUpperBound() && !dimFormula.asBoundedUntilFormula().hasLowerBound(), storm::exceptions::NotSupportedException, "Until formulas with a lower or no upper bound are not supported.");
-                        bound = dimFormula.asBoundedUntilFormula().getUpperBound();
-                        isStrict = dimFormula.asBoundedUntilFormula().isUpperBoundStrict();
+                        if (dimFormula.asBoundedUntilFormula().hasUpperBound()) {
+                            STORM_LOG_ASSERT(!dimFormula.asBoundedUntilFormula().hasLowerBound(), "Bounded until formulas with interval bounds are not supported.");
+                            bound = dimFormula.asBoundedUntilFormula().getUpperBound();
+                            isStrict = dimFormula.asBoundedUntilFormula().isUpperBoundStrict();
+                        } else {
+                            STORM_LOG_ASSERT(dimFormula.asBoundedUntilFormula().hasLowerBound(), "Bounded until formulas without any bounds are not supported.");
+                            bound = dimFormula.asBoundedUntilFormula().getLowerBound();
+                            isStrict = dimFormula.asBoundedUntilFormula().isLowerBoundStrict();
+                        }
                     } else if (dimFormula.isCumulativeRewardFormula()) {
                         bound = dimFormula.asCumulativeRewardFormula().getBound();
                         isStrict = dimFormula.asCumulativeRewardFormula().isBoundStrict();
                     }
                     STORM_LOG_THROW(!bound.containsVariables(), storm::exceptions::NotSupportedException, "The bound " << bound << " contains undefined constants.");
                     ValueType discretizedBound = storm::utility::convertNumber<ValueType>(bound.evaluateAsRational());
-                    discretizedBound /= scalingFactors[dim];
-                    if (isStrict && discretizedBound == storm::utility::floor(discretizedBound)) {
-                         discretizedBound = storm::utility::floor(discretizedBound) - storm::utility::one<ValueType>();
+                    discretizedBound /= dimensions[dim].scalingFactor;
+                    if (storm::utility::isInteger(discretizedBound)) {
+                        if (isStrict == dimensions[dim].isUpperBounded) {
+                            discretizedBound -= storm::utility::one<ValueType>();
+                        }
                     } else {
                         discretizedBound = storm::utility::floor(discretizedBound);
                     }
@@ -178,7 +194,7 @@ namespace storm {
                     STORM_LOG_THROW(epochManager.isValidDimensionValue(dimensionValue), storm::exceptions::NotSupportedException, "The bound " << bound << " is too high for the considered number of dimensions.");
                     epochManager.setDimensionOfEpoch(startEpoch, dim, dimensionValue);
                 }
-                //std::cout << "Start epoch is " << epochManager.toString(startEpoch) << std::endl;
+                STORM_LOG_TRACE("Start epoch is " << epochManager.toString(startEpoch));
                 return startEpoch;
             }
     
@@ -279,7 +295,7 @@ namespace storm {
                     for (uint64_t objIndex = 0; objIndex < this->objectives.size(); ++objIndex) {
                         if (epochModel.objectiveRewardFilter[objIndex].get(reducedChoice)) {
                             for (auto const& dim : objectiveDimensions[objIndex]) {
-                                if (epochManager.isBottomDimension(successorEpoch, dim) && memoryState.get(dim)) {
+                                if (dimensions[dim].isUpperBounded == epochManager.isBottomDimension(successorEpoch, dim) && memoryState.get(dim)) {
                                     epochModel.objectiveRewardFilter[objIndex].set(reducedChoice, false);
                                     break;
                                 }
@@ -303,7 +319,7 @@ namespace storm {
                         storm::storage::BitVector successorRelevantDimensions(epochManager.getDimensionCount(), true);
                         for (auto const& dim : memoryState) {
                             if (epochManager.isBottomDimension(successorEpoch, dim)) {
-                                successorRelevantDimensions &= ~objectiveDimensions[subObjectives[dim].second];
+                                successorRelevantDimensions &= ~objectiveDimensions[dimensions[dim].objectiveIndex];
                             }
                         }
                         for (auto const& successor : productModel->getProduct().getTransitionMatrix().getRow(productChoice)) {
@@ -353,7 +369,7 @@ namespace storm {
                 // std::cout << "Setting epoch class for epoch " << storm::utility::vector::toString(epoch) << std::endl;
                 swSetEpochClass.start();
                 swAux1.start();
-                auto productObjectiveRewards = productModel->computeObjectiveRewards(epoch, objectives, subObjectives, memoryLabels);
+                auto productObjectiveRewards = productModel->computeObjectiveRewards(epoch, objectives, dimensions);
                 
                 storm::storage::BitVector stepChoices(productModel->getProduct().getNumberOfChoices(), false);
                 uint64_t choice = 0;
@@ -373,7 +389,7 @@ namespace storm {
                 swAux2.start();
                 storm::storage::BitVector allProductStates(productModel->getProduct().getNumberOfStates(), true);
                 
-                // Get the relevant states for this epoch. These are all states
+                // Get the relevant states for this epoch.
                 storm::storage::BitVector productInStates = productModel->computeInStates(epoch);
                 // The epoch model only needs to consider the states that are reachable from a relevant state
                 storm::storage::BitVector consideredStates = storm::utility::graph::getReachableStates(epochModel.epochMatrix, productInStates, allProductStates, ~allProductStates);
@@ -575,11 +591,11 @@ namespace storm {
                     // Get the set of states that for all subobjectives satisfy either the left or the right subformula
                     storm::storage::BitVector constraintStates(model.getNumberOfStates(), true);
                     for (auto const& dim : objectiveDimensions[objIndex]) {
-                        auto const& subObj = subObjectives[dim];
-                        STORM_LOG_ASSERT(subObj.first->isBoundedUntilFormula(), "Unexpected Formula type");
+                        auto const& dimension = dimensions[dim];
+                        STORM_LOG_ASSERT(dimension.formula->isBoundedUntilFormula(), "Unexpected Formula type");
                         constraintStates &=
-                                (mc.check(subObj.first->asBoundedUntilFormula().getLeftSubformula())->asExplicitQualitativeCheckResult().getTruthValuesVector() |
-                                mc.check(subObj.first->asBoundedUntilFormula().getRightSubformula())->asExplicitQualitativeCheckResult().getTruthValuesVector());
+                                (mc.check(dimension.formula->asBoundedUntilFormula().getLeftSubformula())->asExplicitQualitativeCheckResult().getTruthValuesVector() |
+                                mc.check(dimension.formula->asBoundedUntilFormula().getRightSubformula())->asExplicitQualitativeCheckResult().getTruthValuesVector());
                     }
                     
                     // Build the transitions between the memory states
@@ -591,7 +607,7 @@ namespace storm {
                                 
                                 std::shared_ptr<storm::logic::Formula const> transitionFormula = storm::logic::Formula::getTrueFormula();
                                 for (auto const& subObjIndex : memStateBV) {
-                                    std::shared_ptr<storm::logic::Formula const> subObjFormula = subObjectives[dimensionIndexMap[subObjIndex]].first->asBoundedUntilFormula().getRightSubformula().asSharedPointer();
+                                    std::shared_ptr<storm::logic::Formula const> subObjFormula = dimensions[dimensionIndexMap[subObjIndex]].formula->asBoundedUntilFormula().getRightSubformula().asSharedPointer();
                                     if (memStatePrimeBV.get(subObjIndex)) {
                                         subObjFormula = std::make_shared<storm::logic::UnaryBooleanStateFormula>(storm::logic::UnaryBooleanStateFormula::OperatorType::Not, subObjFormula);
                                     }
@@ -624,7 +640,7 @@ namespace storm {
                     for (uint64_t memState = 0; memState < objMemStates.size(); ++memState) {
                         auto const& memStateBV = objMemStates[memState];
                         for (auto const& subObjIndex : memStateBV) {
-                            objMemoryBuilder.setLabel(memState, memoryLabels[dimensionIndexMap[subObjIndex]].get());
+                            objMemoryBuilder.setLabel(memState, dimensions[dimensionIndexMap[subObjIndex]].memoryLabel.get());
                         }
                     }
                     auto objMemory = objMemoryBuilder.build();
@@ -642,7 +658,7 @@ namespace storm {
                     storm::storage::BitVector relevantSubObjectives(epochManager.getDimensionCount(), false);
                     std::set<std::string> stateLabels = memory.getStateLabeling().getLabelsOfState(memState);
                     for (uint64_t dim = 0; dim < epochManager.getDimensionCount(); ++dim) {
-                        if (memoryLabels[dim] && stateLabels.find(memoryLabels[dim].get()) != stateLabels.end()) {
+                        if (dimensions[dim].memoryLabel && stateLabels.find(dimensions[dim].memoryLabel.get()) != stateLabels.end()) {
                             relevantSubObjectives.set(dim, true);
                         }
                     }
