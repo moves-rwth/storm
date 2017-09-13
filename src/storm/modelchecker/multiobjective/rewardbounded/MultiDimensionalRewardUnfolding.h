@@ -73,7 +73,7 @@ namespace storm {
                 
                 EpochModel& setCurrentEpoch(Epoch const& epoch);
                 
-                void setSolutionForCurrentEpoch(std::vector<SolutionType>& inStateSolutions);
+                void setSolutionForCurrentEpoch(std::vector<SolutionType>&& inStateSolutions);
                 SolutionType const& getInitialStateResult(Epoch const& epoch); // Assumes that the initial state is unique
                 SolutionType const& getInitialStateResult(Epoch const& epoch, uint64_t initialStateIndex);
                 
@@ -104,8 +104,6 @@ namespace storm {
                 template<bool SO = SingleObjectiveMode, typename std::enable_if<!SO, int>::type = 0>
                 std::string solutionToString(SolutionType const& solution) const;
                 
-                void setSolutionForCurrentEpoch(uint64_t const& productState, SolutionType const& solution);
-                void setSolutionForCurrentEpoch(uint64_t const& productState, SolutionType&& solution);
                 SolutionType const& getStateSolution(Epoch const& epoch, uint64_t const& productState);
                 
                 storm::models::sparse::Mdp<ValueType> const& model;
@@ -114,7 +112,7 @@ namespace storm {
                 std::unique_ptr<ProductModel<ValueType>> productModel;
                 
                 std::vector<uint64_t> epochModelToProductChoiceMap;
-                std::vector<uint64_t> productToEpochModelStateMap;
+                std::shared_ptr<std::vector<uint64_t> const> productStateToEpochModelInStateMap;
                 std::vector<std::vector<uint64_t>> epochModelInStateToProductStatesMap;
                 std::set<Epoch> possibleEpochSteps;
                 
@@ -129,7 +127,12 @@ namespace storm {
                 std::vector<ValueType> scalingFactors;
                 
                 
-                std::map<std::pair<Epoch, uint64_t>, SolutionType> solutions;
+                struct EpochSolution {
+                    uint64_t count;
+                    std::shared_ptr<std::vector<uint64_t> const> productStateToSolutionVectorMap;
+                    std::vector<SolutionType> solutions;
+                };
+                std::map<Epoch, EpochSolution> epochSolutions;
                 
                 
                 storm::utility::Stopwatch swInit, swFindSol, swInsertSol, swSetEpoch, swSetEpochClass, swAux1, swAux2, swAux3, swAux4;

@@ -389,7 +389,6 @@ namespace storm {
                 swAux4.start();
                 epochModel.epochMatrix = std::move(ecElimResult.matrix);
                 epochModelToProductChoiceMap = std::move(ecElimResult.newToOldRowMapping);
-                productToEpochModelStateMap = std::move(ecElimResult.oldToNewStateMapping);
                 
                 epochModel.stepChoices = storm::storage::BitVector(epochModel.epochMatrix.getRowCount(), false);
                 for (uint64_t choice = 0; choice < epochModel.epochMatrix.getRowCount(); ++choice) {
@@ -410,14 +409,17 @@ namespace storm {
                 
                 epochModel.epochInStates = storm::storage::BitVector(epochModel.epochMatrix.getRowGroupCount(), false);
                 for (auto const& productState : productInStates) {
-                    STORM_LOG_ASSERT(productToEpochModelStateMap[productState] < epochModel.epochMatrix.getRowGroupCount(), "Selected product state does not exist in the epoch model.");
-                    epochModel.epochInStates.set(productToEpochModelStateMap[productState], true);
+                    STORM_LOG_ASSERT(ecElimResult.oldToNewStateMapping[productState] < epochModel.epochMatrix.getRowGroupCount(), "Selected product state does not exist in the epoch model.");
+                    epochModel.epochInStates.set(ecElimResult.oldToNewStateMapping[productState], true);
                 }
                 
                 epochModelInStateToProductStatesMap.assign(epochModel.epochInStates.getNumberOfSetBits(), std::vector<uint64_t>());
+                std::vector<uint64_t> toEpochModelInStatesMap(productModel->getProduct().getNumberOfStates(), std::numeric_limits<uint64_t>::max());
                 for (auto const& productState : productInStates) {
-                    epochModelInStateToProductStatesMap[epochModel.epochInStates.getNumberOfSetBitsBeforeIndex(productToEpochModelStateMap[productState])].push_back(productState);
+                    toEpochModelInStatesMap[productState] = epochModel.epochInStates.getNumberOfSetBitsBeforeIndex(ecElimResult.oldToNewStateMapping[productState]);
+                    epochModelInStateToProductStatesMap[epochModel.epochInStates.getNumberOfSetBitsBeforeIndex(ecElimResult.oldToNewStateMapping[productState])].push_back(productState);
                 }
+                productStateToEpochModelInStateMap = std::make_shared<std::vector<uint64_t> const>(std::move(toEpochModelInStatesMap));
                 
                 swAux4.stop();
                 swSetEpochClass.stop();
@@ -478,49 +480,47 @@ namespace storm {
             }
             
             template<typename ValueType, bool SingleObjectiveMode>
-            void MultiDimensionalRewardUnfolding<ValueType, SingleObjectiveMode>::setSolutionForCurrentEpoch(std::vector<SolutionType>& inStateSolutions) {
+            void MultiDimensionalRewardUnfolding<ValueType, SingleObjectiveMode>::setSolutionForCurrentEpoch(std::vector<SolutionType>&& inStateSolutions) {
                 swInsertSol.start();
+                STORM_LOG_ASSERT(currentEpoch, "Tried to set a solution for the current epoch, but no epoch was specified before.");
                 STORM_LOG_ASSERT(inStateSolutions.size() == epochModelInStateToProductStatesMap.size(), "Invalid number of solutions.");
-                auto solIt = inStateSolutions.begin();
-                for (auto const& productStates : epochModelInStateToProductStatesMap) {
-                    assert(!productStates.empty());
-                    auto productStateIt = productStates.begin();
-                    // Skip the first product state for now. It's result will be std::move'd afterwards.
-                    for (++productStateIt; productStateIt != productStates.end(); ++productStateIt) {
-                        setSolutionForCurrentEpoch(*productStateIt, *solIt);
-                    }
-                    setSolutionForCurrentEpoch(productStates.front(), std::move(*solIt));
-                    
-                    ++solIt;
+
+                std::set<Epoch> predecessorEpochs, successorEpochs;
+                for (auto const& step : possibleEpochSteps) {
+                    epochManager.gatherPredecessorEpochs(predecessorEpochs, currentEpoch.get(), step);
+                    successorEpochs.insert(epochManager.getSuccessorEpoch(currentEpoch.get(), step));
                 }
-                maxSolutionsStored = std::max((uint64_t) solutions.size(), maxSolutionsStored);
+                predecessorEpochs.erase(currentEpoch.get());
+                successorEpochs.erase(currentEpoch.get());
+                STORM_LOG_ASSERT(!predecessorEpochs.empty(), "There are no predecessors for the epoch " << epochManager.toString(currentEpoch.get()));
                 
+                // clean up solutions that are not needed anymore
+                for (auto const& successorEpoch : successorEpochs) {
+                    auto successorEpochSolutionIt = epochSolutions.find(successorEpoch);
+                    STORM_LOG_ASSERT(successorEpochSolutionIt != epochSolutions.end(), "Solution for successor epoch does not exist (anymore).");
+                    --successorEpochSolutionIt->second.count;
+                    if (successorEpochSolutionIt->second.count == 0) {
+                        epochSolutions.erase(successorEpochSolutionIt);
+                    }
+                }
+                
+                // add the new solution
+                EpochSolution solution;
+                solution.count = predecessorEpochs.size();
+                solution.productStateToSolutionVectorMap = productStateToEpochModelInStateMap;
+                solution.solutions = std::move(inStateSolutions);
+                epochSolutions[currentEpoch.get()] = std::move(solution);
+                
+                maxSolutionsStored = std::max((uint64_t) epochSolutions.size(), maxSolutionsStored);
                 swInsertSol.stop();
-            }
-            
-            template<typename ValueType, bool SingleObjectiveMode>
-            void MultiDimensionalRewardUnfolding<ValueType, SingleObjectiveMode>::setSolutionForCurrentEpoch(uint64_t const& productState, SolutionType const& solution) {
-                STORM_LOG_ASSERT(currentEpoch, "Tried to set a solution for the current epoch, but no epoch was specified before.");
-            //    std::cout << "Setting solution for state " << productState << " in epoch " << epochManager.toString(currentEpoch.get()) << std::endl;
-                solutions[std::make_pair(currentEpoch.get(), productState)] = solution;
-            }
-            
-            template<typename ValueType, bool SingleObjectiveMode>
-            void MultiDimensionalRewardUnfolding<ValueType, SingleObjectiveMode>::setSolutionForCurrentEpoch(uint64_t const& productState, SolutionType&& solution) {
-                STORM_LOG_ASSERT(currentEpoch, "Tried to set a solution for the current epoch, but no epoch was specified before.");
-   //             std::cout << "Setting solution for state " << productState << " in epoch " << epochManager.toString(currentEpoch.get()) << std::endl;
-                solutions[std::make_pair(currentEpoch.get(), productState)] = std::move(solution);
+                
             }
             
             template<typename ValueType, bool SingleObjectiveMode>
             typename MultiDimensionalRewardUnfolding<ValueType, SingleObjectiveMode>::SolutionType const& MultiDimensionalRewardUnfolding<ValueType, SingleObjectiveMode>::getStateSolution(Epoch const& epoch, uint64_t const& productState) {
-                swFindSol.start();
-                //std::cout << "Getting solution for epoch " << epochManager.toString(epoch) << " and state " << productState  << std::endl;
-                auto solutionIt = solutions.find(std::make_pair(epoch, productState));
-                STORM_LOG_ASSERT(solutionIt != solutions.end(), "Requested unexisting solution for epoch " << epochManager.toString(epoch) << ".");
-                //std::cout << "Retrieved solution for state " << productState << " in epoch " << epochManager.toString(epoch)  << std::endl;
-                swFindSol.stop();
-                return solutionIt->second;
+                STORM_LOG_ASSERT(epochSolutions.find(epoch) != epochSolutions.end(), "Requested unexisting solution for epoch " << epochManager.toString(epoch) << ".");
+                EpochSolution const& epochSolution = epochSolutions[epoch];
+                return epochSolution.solutions[(*epochSolution.productStateToSolutionVectorMap)[productState]];
             }
             
             template<typename ValueType, bool SingleObjectiveMode>

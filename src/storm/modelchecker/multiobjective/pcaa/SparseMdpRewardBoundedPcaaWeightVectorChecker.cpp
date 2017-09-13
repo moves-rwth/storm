@@ -56,8 +56,8 @@ namespace storm {
                 ++numCheckedEpochs;
                 swEqBuilding.start();
                 
-                auto& result = cachedData.solutions;
-                result.resize(epochModel.epochInStates.getNumberOfSetBits(), typename MultiDimensionalRewardUnfolding<ValueType, false>::SolutionType());
+                std::vector<typename MultiDimensionalRewardUnfolding<ValueType, false>::SolutionType> result;
+                result.reserve(epochModel.epochInStates.getNumberOfSetBits());
                 uint64_t solutionSize = this->objectives.size() + 1;
                 
                 // Formulate a min-max equation system max(A*x+b)=x for the weighted sum of the objectives
@@ -87,12 +87,10 @@ namespace storm {
                 cachedData.minMaxSolver->solveEquations(cachedData.xMinMax, cachedData.bMinMax);
                 swMinMaxSolving.stop();
                 swEqBuilding.start();
-                auto resultIt = result.begin();
                 for (auto const& state : epochModel.epochInStates) {
-                    resultIt->clear();
-                    resultIt->reserve(solutionSize);
-                    resultIt->push_back(cachedData.xMinMax[state]);
-                    ++resultIt;
+                    result.emplace_back();
+                    result.back().reserve(solutionSize);
+                    result.back().push_back(cachedData.xMinMax[state]);
                 }
                 
                 // Check whether the linear equation solver needs to be updated
@@ -144,7 +142,7 @@ namespace storm {
                     cachedData.linEqSolver->solveEquations(x, cachedData.bLinEq);
                     swLinEqSolving.stop();
                     swEqBuilding.start();
-                    resultIt = result.begin();
+                    auto resultIt = result.begin();
                     for (auto const& state : epochModel.epochInStates) {
                         resultIt->push_back(x[state]);
                         ++resultIt;
@@ -152,7 +150,7 @@ namespace storm {
                 }
                 swEqBuilding.stop();
                 swAux3.stop();
-                rewardUnfolding.setSolutionForCurrentEpoch(result);
+                rewardUnfolding.setSolutionForCurrentEpoch(std::move(result));
             }
 
             template <class SparseMdpModelType>

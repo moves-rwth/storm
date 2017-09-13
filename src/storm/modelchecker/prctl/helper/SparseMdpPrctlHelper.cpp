@@ -77,7 +77,7 @@ namespace storm {
                 auto epochOrder = rewardUnfolding.getEpochComputationOrder(initEpoch);
                 
                 // initialize data that will be needed for each epoch
-                std::vector<ValueType> x, b, epochResult;
+                std::vector<ValueType> x, b;
                 std::unique_ptr<storm::solver::MinMaxLinearEquationSolver<ValueType>> minMaxSolver;
                 for (auto const& epoch : epochOrder) {
                     // Update some data for the case that the Matrix has changed
@@ -108,9 +108,7 @@ namespace storm {
                     minMaxSolver->solveEquations(x, b);
                     
                     // Plug in the result into the reward unfolding
-                    epochResult.resize(epochModel.epochInStates.getNumberOfSetBits());
-                    storm::utility::vector::selectVectorValues(epochResult, epochModel.epochInStates, x);
-                    rewardUnfolding.setSolutionForCurrentEpoch(epochResult);
+                    rewardUnfolding.setSolutionForCurrentEpoch(storm::utility::vector::filterVector(x, epochModel.epochInStates));
                 }
                 
                 std::map<storm::storage::sparse::state_type, ValueType> result;

@@ -29,12 +29,12 @@ namespace storm {
             }
             
             uint64_t const& EpochManager::getDimensionCount() const {
-                STORM_LOG_THROW(dimensionCount > 0, storm::exceptions::IllegalArgumentException, "Invoked EpochManager with zero dimension count.");
+                STORM_LOG_ASSERT(dimensionCount > 0, "Invoked EpochManager with zero dimension count.");
                 return dimensionCount;
             }
 
             bool EpochManager::compareEpochClass(Epoch const& epoch1, Epoch const& epoch2) const {
-                STORM_LOG_THROW(dimensionCount > 0, storm::exceptions::IllegalArgumentException, "Invoked EpochManager with zero dimension count.");
+                STORM_LOG_ASSERT(dimensionCount > 0, "Invoked EpochManager with zero dimension count.");
                 uint64_t mask = dimensionBitMask;
                 for (uint64_t d = 0; d < dimensionCount; ++d) {
                     if (((epoch1 & mask) == mask) != ((epoch2 & mask) == mask)) {
@@ -48,7 +48,7 @@ namespace storm {
             }
             
             typename EpochManager::EpochClass EpochManager::getEpochClass(Epoch const& epoch) const {
-                STORM_LOG_THROW(dimensionCount > 0, storm::exceptions::IllegalArgumentException, "Invoked EpochManager with zero dimension count.");
+                STORM_LOG_ASSERT(dimensionCount > 0, "Invoked EpochManager with zero dimension count.");
                 EpochClass result = 0;
                 uint64_t mask = dimensionBitMask;
                 for (uint64_t d  = 0; d < dimensionCount; ++d) {
@@ -62,13 +62,13 @@ namespace storm {
             }
 
             typename EpochManager::Epoch EpochManager::getSuccessorEpoch(Epoch const& epoch, Epoch const& step) const {
-                STORM_LOG_THROW(dimensionCount > 0, storm::exceptions::IllegalArgumentException, "Invoked EpochManager with zero dimension count.");
-                
+                STORM_LOG_ASSERT(dimensionCount > 0, "Invoked EpochManager with zero dimension count.");
+                STORM_LOG_ASSERT(!hasBottomDimension(step), "The given step has at least one bottom dimension.");
+
                 // Start with dimension zero
                 uint64_t mask = dimensionBitMask;
                 uint64_t e_d = epoch & mask;
                 uint64_t s_d = step & mask;
-                assert(s_d != mask);
                 uint64_t result = (e_d < s_d || e_d == mask) ? mask : e_d - s_d;
                 
                 // Consider the remaining dimensions
@@ -76,39 +76,72 @@ namespace storm {
                     mask = mask << bitsPerDimension;
                     e_d = epoch & mask;
                     s_d = step & mask;
-                    assert(s_d != mask);
                     result |= ((e_d < s_d || e_d == mask) ? mask : e_d - s_d);
                 }
                 return result;
             }
             
             std::vector<typename EpochManager::Epoch> EpochManager::getPredecessorEpochs(Epoch const& epoch, Epoch const& step) const {
-                STORM_LOG_THROW(dimensionCount > 0, storm::exceptions::IllegalArgumentException, "Invoked EpochManager with zero dimension count.");
-            
+                STORM_LOG_ASSERT(dimensionCount > 0, "Invoked EpochManager with zero dimension count.");
+                STORM_LOG_ASSERT(!hasBottomDimension(step), "The given step has at least one bottom dimension.");
+                std::set<Epoch> resultAsSet;
+                gatherPredecessorEpochs(resultAsSet, epoch, step);
+                return std::vector<Epoch>(resultAsSet.begin(), resultAsSet.end());
             }
             
             void EpochManager::gatherPredecessorEpochs(std::set<Epoch>& gatheredPredecessorEpochs, Epoch const& epoch, Epoch const& step) const {
-                STORM_LOG_THROW(dimensionCount > 0, storm::exceptions::IllegalArgumentException, "Invoked EpochManager with zero dimension count.");
-            
+                STORM_LOG_ASSERT(dimensionCount > 0, "Invoked EpochManager with zero dimension count.");
+                STORM_LOG_ASSERT(!hasBottomDimension(step), "The given step has at least one bottom dimension.");
+                Epoch currStep = step;
+                uint64_t d = 0;
+                while (d < dimensionCount) {
+                    Epoch predecessor = epoch;
+                    for (uint64_t dPrime = 0; dPrime < dimensionCount; ++dPrime) {
+                        uint64_t step_dPrime = getDimensionOfEpoch(currStep, dPrime);
+                        if (isBottomDimension(predecessor, dPrime)) {
+                            if (step_dPrime != 0) {
+                                setDimensionOfEpoch(predecessor, dPrime, step_dPrime - 1);
+                            }
+                        } else {
+                            setDimensionOfEpoch(predecessor, dPrime, getDimensionOfEpoch(predecessor, dPrime) + step_dPrime);
+                        }
+                    }
+                    assert(epoch == getSuccessorEpoch(predecessor, step));
+                    gatheredPredecessorEpochs.insert(predecessor);
+                    
+                    do {
+                        if (isBottomDimension(epoch, d)) {
+                            uint64_t step_d = getDimensionOfEpoch(currStep, d);
+                            if (step_d == 0) {
+                                setDimensionOfEpoch(currStep, d, getDimensionOfEpoch(step, d));
+                            } else {
+                                setDimensionOfEpoch(currStep, d, step_d - 1);
+                                d = 0;
+                                break;
+                            }
+                        }
+                        ++d;
+                    } while(d < dimensionCount);
+                }
             }
             
             bool EpochManager::isValidDimensionValue(uint64_t const& value) const {
-                STORM_LOG_THROW(dimensionCount > 0, storm::exceptions::IllegalArgumentException, "Invoked EpochManager with zero dimension count.");
+                STORM_LOG_ASSERT(dimensionCount > 0, "Invoked EpochManager with zero dimension count.");
                 return ((value & dimensionBitMask) == value) && value != dimensionBitMask;
             }
             
             bool EpochManager::isZeroEpoch(Epoch const& epoch) const {
-                STORM_LOG_THROW(dimensionCount > 0, storm::exceptions::IllegalArgumentException, "Invoked EpochManager with zero dimension count.");
+                STORM_LOG_ASSERT(dimensionCount > 0, "Invoked EpochManager with zero dimension count.");
                 return (epoch & relevantBitsMask) == 0;
             }
             
             bool EpochManager::isBottomEpoch(Epoch const& epoch) const {
-                STORM_LOG_THROW(dimensionCount > 0, storm::exceptions::IllegalArgumentException, "Invoked EpochManager with zero dimension count.");
+                STORM_LOG_ASSERT(dimensionCount > 0, "Invoked EpochManager with zero dimension count.");
                 return (epoch & relevantBitsMask) == relevantBitsMask;
             }
             
             bool EpochManager::hasBottomDimension(Epoch const& epoch) const {
-                STORM_LOG_THROW(dimensionCount > 0, storm::exceptions::IllegalArgumentException, "Invoked EpochManager with zero dimension count.");
+                STORM_LOG_ASSERT(dimensionCount > 0, "Invoked EpochManager with zero dimension count.");
                 uint64_t mask = dimensionBitMask;
                 for (uint64_t d  = 0; d < dimensionCount; ++d) {
                     if ((epoch | mask) == epoch) {
@@ -120,29 +153,29 @@ namespace storm {
             }
 
             void EpochManager::setBottomDimension(Epoch& epoch, uint64_t const& dimension) const {
-                STORM_LOG_THROW(dimensionCount > 0, storm::exceptions::IllegalArgumentException, "Invoked EpochManager with zero dimension count.");
+                STORM_LOG_ASSERT(dimensionCount > 0, "Invoked EpochManager with zero dimension count.");
                 epoch |= (dimensionBitMask << (dimension * bitsPerDimension));
             }
             
             void EpochManager::setDimensionOfEpoch(Epoch& epoch, uint64_t const& dimension, uint64_t const& value) const {
-                STORM_LOG_THROW(dimensionCount > 0, storm::exceptions::IllegalArgumentException, "Invoked EpochManager with zero dimension count.");
+                STORM_LOG_ASSERT(dimensionCount > 0, "Invoked EpochManager with zero dimension count.");
                 STORM_LOG_ASSERT(isValidDimensionValue(value), "The dimension value " << value << " is too high.");
                 epoch &= ~(dimensionBitMask << (dimension * bitsPerDimension));
                 epoch |= (value << (dimension * bitsPerDimension));
             }
             
             bool EpochManager::isBottomDimension(Epoch const& epoch, uint64_t const& dimension) const {
-                STORM_LOG_THROW(dimensionCount > 0, storm::exceptions::IllegalArgumentException, "Invoked EpochManager with zero dimension count.");
+                STORM_LOG_ASSERT(dimensionCount > 0, "Invoked EpochManager with zero dimension count.");
                 return (epoch | (dimensionBitMask << (dimension * bitsPerDimension))) == epoch;
             }
             
             uint64_t EpochManager::getDimensionOfEpoch(Epoch const& epoch, uint64_t const& dimension) const {
-                STORM_LOG_THROW(dimensionCount > 0, storm::exceptions::IllegalArgumentException, "Invoked EpochManager with zero dimension count.");
+                STORM_LOG_ASSERT(dimensionCount > 0, "Invoked EpochManager with zero dimension count.");
                 return (epoch >> (dimension * bitsPerDimension)) & dimensionBitMask;
             }
             
             std::string EpochManager::toString(Epoch const& epoch) const {
-                STORM_LOG_THROW(dimensionCount > 0, storm::exceptions::IllegalArgumentException, "Invoked EpochManager with zero dimension count.");
+                STORM_LOG_ASSERT(dimensionCount > 0, "Invoked EpochManager with zero dimension count.");
                 std::string res = "<" + (isBottomDimension(epoch, 0) ? "_" : std::to_string(getDimensionOfEpoch(epoch, 0)));
                 for (uint64_t d = 1; d < dimensionCount; ++d) {
                     res += ", ";
@@ -153,7 +186,7 @@ namespace storm {
             }
             
             bool EpochManager::epochClassZigZagOrder(Epoch const& epoch1, Epoch const& epoch2) const {
-                STORM_LOG_THROW(dimensionCount > 0, storm::exceptions::IllegalArgumentException, "Invoked EpochManager with zero dimension count.");
+                STORM_LOG_ASSERT(dimensionCount > 0, "Invoked EpochManager with zero dimension count.");
                 
                 // Return true iff epoch 1 has to be computed before epoch 2
                 
