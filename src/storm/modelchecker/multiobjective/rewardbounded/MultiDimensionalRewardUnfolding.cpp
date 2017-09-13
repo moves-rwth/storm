@@ -116,19 +116,8 @@ namespace storm {
                     objectiveDimensions.push_back(std::move(dimensions));
                 }
                 
-                // Precompute some data to easily access epoch information;
-                dimensionCount = subObjectives.size();
-                STORM_LOG_THROW(dimensionCount > 0, storm::exceptions::UnexpectedException, "Invoked multi dimensional reward unfolding with zero dimensions...");
-                bitsPerDimension = 64 / dimensionCount;
-                if (dimensionCount == 1) {
-                    dimensionBitMask = -1ull;
-                } else {
-                    dimensionBitMask = (1ull << bitsPerDimension) - 1;
-                }
-                
-                //std::cout << "dim count: " << dimensionCount << std::endl;
-                //std::cout << "bitsPerDimension: " << bitsPerDimension << std::endl;
-                //std::cout << "dimensionBitMask: " << dimensionBitMask << std::endl;
+                // Initialize the epoch manager
+                epochManager = EpochManager(subObjectives.size());
                 
                 // Convert the epoch steps to a choice-wise representation
                 epochSteps.reserve(model.getNumberOfChoices());
@@ -136,7 +125,7 @@ namespace storm {
                     Epoch step;
                     uint64_t dim = 0;
                     for (auto const& dimensionSteps : dimensionWiseEpochSteps) {
-                        setDimensionOfEpoch(step, dim, dimensionSteps[choice]);
+                        epochManager.setDimensionOfEpoch(step, dim, dimensionSteps[choice]);
                         ++dim;
                     }
                     epochSteps.push_back(step);
@@ -166,7 +155,7 @@ namespace storm {
             template<typename ValueType, bool SingleObjectiveMode>
             typename MultiDimensionalRewardUnfolding<ValueType, SingleObjectiveMode>::Epoch MultiDimensionalRewardUnfolding<ValueType, SingleObjectiveMode>::getStartEpoch() {
                 Epoch startEpoch;
-                for (uint64_t dim = 0; dim < dimensionCount; ++dim) {
+                for (uint64_t dim = 0; dim < epochManager.getDimensionCount(); ++dim) {
                     storm::expressions::Expression bound;
                     bool isStrict = false;
                     storm::logic::Formula const& dimFormula = *subObjectives[dim].first;
@@ -188,10 +177,10 @@ namespace storm {
                         discretizedBound = storm::utility::floor(discretizedBound);
                     }
                     uint64_t dimensionValue = storm::utility::convertNumber<uint64_t>(discretizedBound);
-                    STORM_LOG_THROW(isValidDimensionValue(dimensionValue), storm::exceptions::NotSupportedException, "The bound " << bound << " is too high for the considered number of dimensions.");
-                    setDimensionOfEpoch(startEpoch, dim, dimensionValue);
+                    STORM_LOG_THROW(epochManager.isValidDimensionValue(dimensionValue), storm::exceptions::NotSupportedException, "The bound " << bound << " is too high for the considered number of dimensions.");
+                    epochManager.setDimensionOfEpoch(startEpoch, dim, dimensionValue);
                 }
-                //std::cout << "Start epoch is " << epochToString(startEpoch) << std::endl;
+                //std::cout << "Start epoch is " << epochManager.toString(startEpoch) << std::endl;
                 return startEpoch;
             }
     
@@ -199,7 +188,7 @@ namespace storm {
             std::vector<typename MultiDimensionalRewardUnfolding<ValueType, SingleObjectiveMode>::Epoch> MultiDimensionalRewardUnfolding<ValueType, SingleObjectiveMode>::getEpochComputationOrder(Epoch const& startEpoch) {
                 // Perform a DFS to find all the reachable epochs
                 std::vector<Epoch> dfsStack;
-                std::set<Epoch, std::function<bool(Epoch const&, Epoch const&)>> collectedEpochs(std::bind(&MultiDimensionalRewardUnfolding<ValueType, SingleObjectiveMode>::epochClassZigZagOrder, this, std::placeholders::_1, std::placeholders::_2));
+                std::set<Epoch, std::function<bool(Epoch const&, Epoch const&)>> collectedEpochs(std::bind(&EpochManager::epochClassZigZagOrder, &epochManager, std::placeholders::_1, std::placeholders::_2));
                 
                 collectedEpochs.insert(startEpoch);
                 dfsStack.push_back(startEpoch);
@@ -207,15 +196,15 @@ namespace storm {
                     Epoch currentEpoch = dfsStack.back();
                     dfsStack.pop_back();
                     for (auto const& step : possibleEpochSteps) {
-                        Epoch successorEpoch = getSuccessorEpoch(currentEpoch, step);
+                        Epoch successorEpoch = epochManager.getSuccessorEpoch(currentEpoch, step);
                         /*
                         for (auto const& e : collectedEpochs) {
-                            std::cout << "Comparing " << epochToString(e) << " and " << epochToString(successorEpoch) << std::endl;
-                            if (epochClassZigZagOrder(e, successorEpoch)) {
-                                std::cout << "    " << epochToString(e) << " < " << epochToString(successorEpoch) << std::endl;
+                            std::cout << "Comparing " << epochManager.toString(e) << " and " << epochManager.toString(successorEpoch) << std::endl;
+                            if (epochManager.epochClassZigZagOrder(e, successorEpoch)) {
+                                std::cout << "    " << epochManager.toString(e) << " < " << epochManager.toString(successorEpoch) << std::endl;
                             }
-                            if (epochClassZigZagOrder(successorEpoch, e)) {
-                                std::cout << "    " << epochToString(e) << " > " << epochToString(successorEpoch) << std::endl;
+                            if (epochManager.epochClassZigZagOrder(successorEpoch, e)) {
+                                std::cout << "    " << epochManager.toString(e) << " > " << epochManager.toString(successorEpoch) << std::endl;
                             }
                         }
                          */
@@ -227,7 +216,7 @@ namespace storm {
                 /*
                 std::cout << "Resulting order: ";
                 for (auto const& e : collectedEpochs) {
-                    std::cout << epochToString(e) << ", ";
+                    std::cout << epochManager.toString(e) << ", ";
                 }
                 std::cout << std::endl;
                 */
@@ -243,7 +232,7 @@ namespace storm {
                 while (!dfsStack.empty()) {
                     bool hasUnseenSuccessor = false;
                     for (auto const& step : possibleEpochSteps) {
-                        Epoch successorEpoch = getSuccessorEpoch(dfsStack.back(), step);
+                        Epoch successorEpoch = epochManager.getSuccessorEpoch(dfsStack.back(), step);
                         if (seenEpochs.find(successorEpoch) == seenEpochs.end()) {
                             seenEpochs.insert(successorEpoch);
                             dfsStack.push_back(std::move(successorEpoch));
@@ -262,10 +251,10 @@ namespace storm {
             
             template<typename ValueType, bool SingleObjectiveMode>
             typename MultiDimensionalRewardUnfolding<ValueType, SingleObjectiveMode>::EpochModel& MultiDimensionalRewardUnfolding<ValueType, SingleObjectiveMode>::setCurrentEpoch(Epoch const& epoch) {
-                // std::cout << "Setting model for epoch " << epochToString(epoch) << std::endl;
+                // std::cout << "Setting model for epoch " << epochManager.toString(epoch) << std::endl;
                 
                 // Check if we need to update the current epoch class
-                if (!currentEpoch || !sameEpochClass(epoch, currentEpoch.get())) {
+                if (!currentEpoch || !epochManager.compareEpochClass(epoch, currentEpoch.get())) {
                     setCurrentEpochClass(epoch);
                     epochModel.epochMatrixChanged = true;
                 } else {
@@ -285,14 +274,14 @@ namespace storm {
                     uint64_t productChoice = epochModelToProductChoiceMap[reducedChoice];
                     uint64_t productState = memoryProduct.getProductStateFromChoice(productChoice);
                     auto memoryState = memoryProduct.convertMemoryState(memoryProduct.getMemoryState(productState));
-                    Epoch successorEpoch = getSuccessorEpoch(epoch, memoryProduct.getSteps()[productChoice]);
+                    Epoch successorEpoch = epochManager.getSuccessorEpoch(epoch, memoryProduct.getSteps()[productChoice]);
                     
                     // Find out whether objective reward is earned for the current choice
                     // Objective reward is not earned if there is a subObjective that is still relevant but the corresponding reward bound is passed after taking the choice
                     for (uint64_t objIndex = 0; objIndex < this->objectives.size(); ++objIndex) {
                         if (epochModel.objectiveRewardFilter[objIndex].get(reducedChoice)) {
                             for (auto const& dim : objectiveDimensions[objIndex]) {
-                                if (isBottomDimension(successorEpoch, dim) && memoryState.get(dim)) {
+                                if (epochManager.isBottomDimension(successorEpoch, dim) && memoryState.get(dim)) {
                                     epochModel.objectiveRewardFilter[objIndex].set(reducedChoice, false);
                                     break;
                                 }
@@ -303,7 +292,7 @@ namespace storm {
                     // compute the solution for the stepChoices
                     SolutionType choiceSolution;
                     bool firstSuccessor = true;
-                    if (sameEpochClass(epoch, successorEpoch)) {
+                    if (epochManager.compareEpochClass(epoch, successorEpoch)) {
                         for (auto const& successor : memoryProduct.getProduct().getTransitionMatrix().getRow(productChoice)) {
                             if (firstSuccessor) {
                                 choiceSolution = getScaledSolution(getStateSolution(successorEpoch, successor.getColumn()), successor.getValue());
@@ -313,9 +302,9 @@ namespace storm {
                             }
                         }
                     } else {
-                        storm::storage::BitVector successorRelevantDimensions(dimensionCount, true);
+                        storm::storage::BitVector successorRelevantDimensions(epochManager.getDimensionCount(), true);
                         for (auto const& dim : memoryState) {
-                            if (isBottomDimension(successorEpoch, dim)) {
+                            if (epochManager.isBottomDimension(successorEpoch, dim)) {
                                 successorRelevantDimensions &= ~objectiveDimensions[subObjectives[dim].second];
                             }
                         }
@@ -371,7 +360,7 @@ namespace storm {
                 storm::storage::BitVector stepChoices(memoryProduct.getProduct().getNumberOfChoices(), false);
                 uint64_t choice = 0;
                 for (auto const& step : memoryProduct.getSteps()) {
-                    if (!isZeroEpoch(step) && getSuccessorEpoch(epoch, step) != epoch) {
+                    if (!epochManager.isZeroEpoch(step) && epochManager.getSuccessorEpoch(epoch, step) != epoch) {
                         stepChoices.set(choice, true);
                     }
                     ++choice;
@@ -443,14 +432,7 @@ namespace storm {
                 
                 // Initialize the result. Initial states are only considered if the epoch contains no bottom dimension.
                 storm::storage::BitVector result;
-                bool epochHasBottomDimension = false;
-                for (uint64_t dim = 0; dim < dimensionCount; ++dim) {
-                    if (isBottomDimension(epoch, dim)) {
-                        epochHasBottomDimension = true;
-                        break;
-                    }
-                }
-                if (epochHasBottomDimension) {
+                if (epochManager.hasBottomDimension(epoch)) {
                     result = storm::storage::BitVector(memoryProduct.getProduct().getNumberOfStates());
                 } else {
                     result = memoryProduct.getProduct().getInitialStates();
@@ -461,7 +443,7 @@ namespace storm {
                 for (uint64_t objIndex = 0; objIndex < objectives.size(); ++objIndex) {
                     bool objIrrelevant = true;
                     for (auto const& dim : objectiveDimensions[objIndex]) {
-                        if (!isBottomDimension(epoch, dim)) {
+                        if (!epochManager.isBottomDimension(epoch, dim)) {
                             objIrrelevant = false;
                         }
                     }
@@ -479,12 +461,12 @@ namespace storm {
                     stack.pop_back();
                     for (uint64_t choice = productMatrix.getRowGroupIndices()[state]; choice < productMatrix.getRowGroupIndices()[state + 1]; ++choice) {
                         auto const& choiceStep = memoryProduct.getSteps()[choice];
-                        if (!isZeroEpoch(choiceStep)) {
+                        if (!epochManager.isZeroEpoch(choiceStep)) {
  
                             // Compute the set of objectives that might or might not become irrelevant when the epoch is reached via the current choice
                             storm::storage::BitVector maybeIrrelevantObjectives(objectives.size(), false);
-                            for (uint64_t dim = 0; dim < dimensionCount; ++dim) {
-                                if (isBottomDimension(epoch, dim) && getDimensionOfEpoch(choiceStep, dim) > 0) {
+                            for (uint64_t dim = 0; dim < epochManager.getDimensionCount(); ++dim) {
+                                if (epochManager.isBottomDimension(epoch, dim) && epochManager.getDimensionOfEpoch(choiceStep, dim) > 0) {
                                     maybeIrrelevantObjectives.set(subObjectives[dim].second);
                                 }
                             }
@@ -628,24 +610,24 @@ namespace storm {
             template<typename ValueType, bool SingleObjectiveMode>
             void MultiDimensionalRewardUnfolding<ValueType, SingleObjectiveMode>::setSolutionForCurrentEpoch(uint64_t const& productState, SolutionType const& solution) {
                 STORM_LOG_ASSERT(currentEpoch, "Tried to set a solution for the current epoch, but no epoch was specified before.");
-            //    std::cout << "Setting solution for state " << productState << " in epoch " << epochToString(currentEpoch.get()) << std::endl;
+            //    std::cout << "Setting solution for state " << productState << " in epoch " << epochManager.toString(currentEpoch.get()) << std::endl;
                 solutions[std::make_pair(currentEpoch.get(), productState)] = solution;
             }
             
             template<typename ValueType, bool SingleObjectiveMode>
             void MultiDimensionalRewardUnfolding<ValueType, SingleObjectiveMode>::setSolutionForCurrentEpoch(uint64_t const& productState, SolutionType&& solution) {
                 STORM_LOG_ASSERT(currentEpoch, "Tried to set a solution for the current epoch, but no epoch was specified before.");
-   //             std::cout << "Setting solution for state " << productState << " in epoch " << epochToString(currentEpoch.get()) << std::endl;
+   //             std::cout << "Setting solution for state " << productState << " in epoch " << epochManager.toString(currentEpoch.get()) << std::endl;
                 solutions[std::make_pair(currentEpoch.get(), productState)] = std::move(solution);
             }
             
             template<typename ValueType, bool SingleObjectiveMode>
             typename MultiDimensionalRewardUnfolding<ValueType, SingleObjectiveMode>::SolutionType const& MultiDimensionalRewardUnfolding<ValueType, SingleObjectiveMode>::getStateSolution(Epoch const& epoch, uint64_t const& productState) {
                 swFindSol.start();
-                //std::cout << "Getting solution for epoch " << epochToString(epoch) << " and state " << productState  << std::endl;
+                //std::cout << "Getting solution for epoch " << epochManager.toString(epoch) << " and state " << productState  << std::endl;
                 auto solutionIt = solutions.find(std::make_pair(epoch, productState));
-                STORM_LOG_ASSERT(solutionIt != solutions.end(), "Requested unexisting solution for epoch " << epochToString(epoch) << ".");
-                //std::cout << "Retrieved solution for state " << productState << " in epoch " << epochToString(epoch)  << std::endl;
+                STORM_LOG_ASSERT(solutionIt != solutions.end(), "Requested unexisting solution for epoch " << epochManager.toString(epoch) << ".");
+                //std::cout << "Retrieved solution for state " << productState << " in epoch " << epochManager.toString(epoch)  << std::endl;
                 swFindSol.stop();
                 return solutionIt->second;
             }
@@ -766,9 +748,9 @@ namespace storm {
                 std::vector<storm::storage::BitVector> result;
                 result.reserve(memory.getNumberOfStates());
                 for (uint64_t memState = 0; memState < memory.getNumberOfStates(); ++memState) {
-                    storm::storage::BitVector relevantSubObjectives(dimensionCount, false);
+                    storm::storage::BitVector relevantSubObjectives(epochManager.getDimensionCount(), false);
                     std::set<std::string> stateLabels = memory.getStateLabeling().getLabelsOfState(memState);
-                    for (uint64_t dim = 0; dim < dimensionCount; ++dim) {
+                    for (uint64_t dim = 0; dim < epochManager.getDimensionCount(); ++dim) {
                         if (memoryLabels[dim] && stateLabels.find(memoryLabels[dim].get()) != stateLabels.end()) {
                             relevantSubObjectives.set(dim, true);
                         }
@@ -988,7 +970,7 @@ namespace storm {
                             // find out whether objective reward should be earned within this epoch
                             bool collectRewardInEpoch = true;
                             for (auto const& subObjIndex : relevantObjectives) {
-                                if (isBottomDimension(epoch, dimensionIndexMap[subObjIndex])) {
+                                if (epochManager.isBottomDimension(epoch, dimensionIndexMap[subObjIndex])) {
                                     collectRewardInEpoch = false;
                                     break;
                                 }
@@ -1029,7 +1011,7 @@ namespace storm {
                         bool rewardCollectedInEpoch = true;
                         if (formula.getSubformula().isCumulativeRewardFormula()) {
                             assert(objectiveDimensions[objIndex].getNumberOfSetBits() == 1);
-                            rewardCollectedInEpoch = !isBottomDimension(epoch, *objectiveDimensions[objIndex].begin());
+                            rewardCollectedInEpoch = !epochManager.isBottomDimension(epoch, *objectiveDimensions[objIndex].begin());
                         } else {
                             STORM_LOG_THROW(formula.getSubformula().isTotalRewardFormula(), storm::exceptions::UnexpectedException, "Unexpected type of formula " << formula);
                         }
@@ -1044,173 +1026,6 @@ namespace storm {
                 }
                 
                 return objectiveRewards;
-            }
-            
-            template<typename ValueType, bool SingleObjectiveMode>
-            bool MultiDimensionalRewardUnfolding<ValueType, SingleObjectiveMode>::sameEpochClass(Epoch const& epoch1, Epoch const& epoch2) const {
-                
-                uint64_t mask = dimensionBitMask;
-                for (uint64_t d = 0; d < dimensionCount; ++d) {
-                    if (((epoch1 & mask) == mask) != ((epoch2 & mask) == mask)) {
-                        return false;
-                    }
-                    mask = mask << bitsPerDimension;
-                }
-                return true;
-            }
-            
-            template<typename ValueType, bool SingleObjectiveMode>
-            typename MultiDimensionalRewardUnfolding<ValueType, SingleObjectiveMode>::Epoch MultiDimensionalRewardUnfolding<ValueType, SingleObjectiveMode>::getSuccessorEpoch(Epoch const& epoch, Epoch const& step) const {
-                
-                // Start with dimension zero
-                uint64_t mask = dimensionBitMask;
-                uint64_t e_d = epoch & mask;
-                uint64_t s_d = step & mask;
-                assert(s_d != mask);
-                uint64_t result = (e_d < s_d || e_d == mask) ? mask : e_d - s_d;
-                
-                // Consider the remaining dimensions
-                for (uint64_t d = 1; d < dimensionCount; ++d) {
-                    mask = mask << bitsPerDimension;
-                    e_d = epoch & mask;
-                    s_d = step & mask;
-                    assert(s_d != mask);
-                    result |= ((e_d < s_d || e_d == mask) ? mask : e_d - s_d);
-                }
-                return result;
-            }
-            
-            template<typename ValueType, bool SingleObjectiveMode>
-            bool MultiDimensionalRewardUnfolding<ValueType, SingleObjectiveMode>::isValidDimensionValue(uint64_t const& value) const {
-                return ((value & dimensionBitMask) == value) && value != dimensionBitMask;
-            }
-            
-            template<typename ValueType, bool SingleObjectiveMode>
-            bool MultiDimensionalRewardUnfolding<ValueType, SingleObjectiveMode>::isZeroEpoch(Epoch const& epoch) const {
-                return epoch == 0;
-            }
-            
-            template<typename ValueType, bool SingleObjectiveMode>
-            void MultiDimensionalRewardUnfolding<ValueType, SingleObjectiveMode>::setBottomDimension(Epoch& epoch, uint64_t const& dimension) const {
-                epoch |= (dimensionBitMask << (dimension * bitsPerDimension));
-            }
-            
-            template<typename ValueType, bool SingleObjectiveMode>
-            void MultiDimensionalRewardUnfolding<ValueType, SingleObjectiveMode>::setDimensionOfEpoch(Epoch& epoch, uint64_t const& dimension, uint64_t const& value) const {
-                STORM_LOG_ASSERT(isValidDimensionValue(value), "The dimension value " << value << " is too high.");
-                epoch &= ~(dimensionBitMask << (dimension * bitsPerDimension));
-                epoch |= (value << (dimension * bitsPerDimension));
-            }
-            
-            template<typename ValueType, bool SingleObjectiveMode>
-            bool MultiDimensionalRewardUnfolding<ValueType, SingleObjectiveMode>::isBottomDimension(Epoch const& epoch, uint64_t const& dimension) const {
-                return (epoch | (dimensionBitMask << (dimension * bitsPerDimension))) == epoch;
-            }
-            
-            template<typename ValueType, bool SingleObjectiveMode>
-            uint64_t MultiDimensionalRewardUnfolding<ValueType, SingleObjectiveMode>::getDimensionOfEpoch(Epoch const& epoch, uint64_t const& dimension) const {
-                return (epoch >> (dimension * bitsPerDimension)) & dimensionBitMask;
-            }
-            
-            template<typename ValueType, bool SingleObjectiveMode>
-            std::string MultiDimensionalRewardUnfolding<ValueType, SingleObjectiveMode>::epochToString(Epoch const& epoch) const {
-                std::string res = "<" + (isBottomDimension(epoch, 0) ? "_" : std::to_string(getDimensionOfEpoch(epoch, 0)));
-                for (uint64_t d = 1; d < dimensionCount; ++d) {
-                    res += ", ";
-                    res += (isBottomDimension(epoch, d) ? "_" : std::to_string(getDimensionOfEpoch(epoch, d)));
-                }
-                res += ">";
-                return res;
-            }
-            
-            template<typename ValueType, bool SingleObjectiveMode>
-            bool MultiDimensionalRewardUnfolding<ValueType, SingleObjectiveMode>::epochClassZigZagOrder(Epoch const& epoch1, Epoch const& epoch2) const {
-                
-                // Return true iff epoch 1 has to be computed before epoch 2
-                
-                // Check whether the number of bottom dimensions is not equal
-                uint64_t e1Count = 0;
-                uint64_t e2Count = 0;
-                for (uint64_t dim = 0; dim < dimensionCount; ++dim) {
-                    if (isBottomDimension(epoch1, dim)) {
-                        ++e1Count;
-                    }
-                    if (isBottomDimension(epoch2, dim)) {
-                        ++e2Count;
-                    }
-                }
-                if (e1Count > e2Count) {
-                    return true;
-                } else if (e1Count < e2Count) {
-                    return false;
-                }
-                
-                // Check the epoch classes
-                uint64_t e1Class = 0;
-                uint64_t e2Class = 0;
-                uint64_t mask = dimensionBitMask;
-                for (uint64_t dim = 0; dim < dimensionCount; ++dim) {
-                    if (isBottomDimension(epoch1, dim)) {
-                        e1Class |= mask;
-                    }
-                    if (isBottomDimension(epoch2, dim)) {
-                        e2Class |= mask;
-                    }
-                    mask = mask << bitsPerDimension;
-                }
-                if (e1Class < e2Class) {
-                    return true;
-                } else if (e1Class > e2Class) {
-                    return false;
-                }
-                assert(sameEpochClass(epoch1, epoch2));
-                
-                // check whether the sum of dimensions is the same
-                uint64_t e1Sum = 0;
-                uint64_t e2Sum = 0;
-                for (uint64_t dim = 0; dim < dimensionCount; ++dim) {
-                    if (!isBottomDimension(epoch1, dim)) {
-                        assert(!isBottomDimension(epoch2, dim));
-                        e1Sum += getDimensionOfEpoch(epoch1, dim);
-                        e2Sum += getDimensionOfEpoch(epoch2, dim);
-                    }
-                }
-                if (e1Sum < e2Sum) {
-                    return true;
-                } else if (e1Sum > e2Sum) {
-                    return false;
-                }
-                
-                // find the first dimension where the epochs do not match.
-                // if the sum is even, we search from left to right, otherwise from right to left
-                bool sumEven = (e1Sum % 2) == 0;
-                if (sumEven) {
-                    for (uint64_t dim = 0; dim < dimensionCount; ++dim) {
-                        uint64_t e1Value = getDimensionOfEpoch(epoch1, dim);
-                        uint64_t e2Value = getDimensionOfEpoch(epoch2, dim);
-                        if (e1Value < e2Value) {
-                            return true;
-                        } else if (e1Value > e2Value) {
-                            return false;
-                        }
-                    }
-                } else {
-                    uint64_t dim = dimensionCount;
-                    while (dim > 0) {
-                        --dim;
-                        uint64_t e1Value = getDimensionOfEpoch(epoch1, dim);
-                        uint64_t e2Value = getDimensionOfEpoch(epoch2, dim);
-                        if (e1Value < e2Value) {
-                            return true;
-                        } else if (e1Value > e2Value) {
-                            return false;
-                        }
-                    }
-                }
-                
-                // reaching this point means that the epochs are equal
-                assert(epoch1 == epoch2);
-                return false;
             }
             
             template class MultiDimensionalRewardUnfolding<double, true>;

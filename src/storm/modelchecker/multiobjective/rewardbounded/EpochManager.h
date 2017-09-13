@@ -1,0 +1,55 @@
+#pragma once
+
+#include <vector>
+#include <set>
+#include <string>
+
+namespace storm {
+    namespace modelchecker {
+        namespace multiobjective {
+            
+            
+            class EpochManager {
+            public:
+                
+                typedef uint64_t Epoch; // The number of reward steps that are "left" for each dimension
+                typedef uint64_t EpochClass; // The number of reward steps that are "left" for each dimension
+                
+                EpochManager();
+                EpochManager(uint64_t dimensionCount);
+                
+                uint64_t const& getDimensionCount() const;
+                
+                bool compareEpochClass(Epoch const& epoch1, Epoch const& epoch2) const;
+                EpochClass getEpochClass(Epoch const& epoch) const;
+                
+                Epoch getSuccessorEpoch(Epoch const& epoch, Epoch const& step) const;
+                std::vector<Epoch> getPredecessorEpochs(Epoch const& epoch, Epoch const& step) const;
+                void gatherPredecessorEpochs(std::set<Epoch>& gatheredPredecessorEpochs, Epoch const& epoch, Epoch const& step) const;
+                
+                bool isZeroEpoch(Epoch const& epoch) const;
+                bool isBottomEpoch(Epoch const& epoch) const;
+                bool hasBottomDimension(Epoch const& epoch) const;
+                
+                bool isValidDimensionValue(uint64_t const& value) const;
+                
+                void setBottomDimension(Epoch& epoch, uint64_t const& dimension) const;
+                void setDimensionOfEpoch(Epoch& epoch, uint64_t const& dimension, uint64_t const& value) const; // assumes that the value is valid, i.e., small enough
+                
+                bool isBottomDimension(Epoch const& epoch, uint64_t const& dimension) const;
+                uint64_t getDimensionOfEpoch(Epoch const& epoch, uint64_t const& dimension) const; // assumes that the dimension is not bottom
+                
+                std::string toString(Epoch const& epoch) const;
+                
+                bool epochClassZigZagOrder(Epoch const& epoch1, Epoch const& epoch2) const;
+                
+            private:
+
+                uint64_t dimensionCount;
+                uint64_t bitsPerDimension;
+                uint64_t dimensionBitMask;
+                uint64_t relevantBitsMask;
+            };
+        }
+    }
+}

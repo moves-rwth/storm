@@ -5,6 +5,7 @@
 #include "storm/storage/BitVector.h"
 #include "storm/storage/SparseMatrix.h"
 #include "storm/modelchecker/multiobjective/Objective.h"
+#include "storm/modelchecker/multiobjective/rewardbounded/EpochManager.h"
 #include "storm/modelchecker/CheckTask.h"
 #include "storm/models/sparse/Mdp.h"
 #include "storm/utility/vector.h"
@@ -129,17 +130,6 @@ namespace storm {
                 std::vector<storm::storage::BitVector> computeMemoryStateMap(storm::storage::MemoryStructure const& memory) const;
                 std::vector<std::vector<ValueType>> computeObjectiveRewardsForProduct(Epoch const& epoch) const;
                 
-                bool sameEpochClass(Epoch const& epoch1, Epoch const& epoch2) const;
-                Epoch getSuccessorEpoch(Epoch const& epoch, Epoch const& step) const;
-                bool isZeroEpoch(Epoch const& epoch) const;
-                bool isValidDimensionValue(uint64_t const& value) const;
-                void setBottomDimension(Epoch& epoch, uint64_t const& dimension) const;
-                void setDimensionOfEpoch(Epoch& epoch, uint64_t const& dimension, uint64_t const& value) const; // assumes that the value is small enough
-                bool isBottomDimension(Epoch const& epoch, uint64_t const& dimension) const;
-                uint64_t getDimensionOfEpoch(Epoch const& epoch, uint64_t const& dimension) const; // assumes that the dimension is not bottom
-                std::string epochToString(Epoch const& epoch) const;
-            public:
-                bool epochClassZigZagOrder(Epoch const& epoch1, Epoch const& epoch2) const;
             private:
 
                 template<bool SO = SingleObjectiveMode, typename std::enable_if<SO, int>::type = 0>
@@ -174,10 +164,7 @@ namespace storm {
                 EpochModel epochModel;
                 boost::optional<Epoch> currentEpoch;
                 
-
-                uint64_t dimensionCount;
-                uint64_t bitsPerDimension;
-                uint64_t dimensionBitMask;
+                EpochManager epochManager;
                 
                 std::vector<storm::storage::BitVector> objectiveDimensions;
                 std::vector<std::pair<std::shared_ptr<storm::logic::Formula const>, uint64_t>> subObjectives;
