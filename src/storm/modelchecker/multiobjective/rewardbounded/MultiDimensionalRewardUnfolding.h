@@ -58,6 +58,7 @@ namespace storm {
                     std::cout << "     aux4StopWatch: " << swAux4 << " seconds." << std::endl;
                     std::cout << "---------------------------------------------" << std::endl;
                     std::cout << "      Product size: " << memoryProduct.getProduct().getNumberOfStates() << std::endl;
+                    std::cout << "maxSolutionsStored: " << maxSolutionsStored << std::endl;
                     std::cout << " Epoch model sizes: ";
                     for (auto const& i : epochModelSizes) {
                         std::cout << i << " ";
@@ -189,6 +190,7 @@ namespace storm {
                 
                 storm::utility::Stopwatch swInit, swFindSol, swInsertSol, swSetEpoch, swSetEpochClass, swAux1, swAux2, swAux3, swAux4;
                 std::vector<uint64_t> epochModelSizes;
+                uint64_t maxSolutionsStored;
             };
         }
     }
