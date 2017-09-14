@@ -30,6 +30,25 @@ namespace storm {
                 actionIndices.emplace("", 0);
             }
             
+            void moveToSecondRun() {
+                // Clear all data except the action to indices mapping.
+                modelType = storm::prism::Program::ModelType::UNDEFINED;
+                constants.clear();
+                formulas.clear();
+                globalBooleanVariables.clear();
+                globalIntegerVariables.clear();
+                moduleToIndexMap.clear();
+                modules.clear();
+                rewardModels.clear();
+                labels.clear();
+                hasInitialConstruct = false;
+                initialConstruct = storm::prism::InitialConstruct();
+                systemCompositionConstruct = boost::none;
+                
+                currentCommandIndex = 0;
+                currentUpdateIndex = 0;
+            }
+            
             // Members for all essential information that needs to be collected.
             storm::prism::Program::ModelType modelType;
             std::vector<storm::prism::Constant> constants;
@@ -50,7 +69,7 @@ namespace storm {
             uint_fast64_t currentUpdateIndex;
         };
 
-        class PrismParser : public qi::grammar<Iterator, storm::prism::Program(), qi::locals<GlobalProgramInformation>, Skipper> {
+        class PrismParser : public qi::grammar<Iterator, storm::prism::Program(), Skipper> {
         public:
             /*!
              * Parses the given file into the PRISM storage classes assuming it complies with the PRISM syntax.
@@ -161,8 +180,11 @@ namespace storm {
             // A function used for annotating the entities with their position.
             phoenix::function<PositionAnnotation> annotate;
             
+            // An object gathering information about the program while parsing.
+            GlobalProgramInformation globalProgramInformation;
+            
             // The starting point of the grammar.
-            qi::rule<Iterator, storm::prism::Program(), qi::locals<GlobalProgramInformation>, Skipper> start;
+            qi::rule<Iterator, storm::prism::Program(), Skipper> start;
             
             // Rules for model type.
             qi::rule<Iterator, storm::prism::Program::ModelType(), Skipper> modelTypeDefinition;
