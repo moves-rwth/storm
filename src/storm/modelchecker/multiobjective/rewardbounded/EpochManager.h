@@ -20,6 +20,9 @@ namespace storm {
                 
                 uint64_t const& getDimensionCount() const;
                 
+                Epoch getBottomEpoch() const;
+                Epoch getZeroEpoch() const;
+                
                 bool compareEpochClass(Epoch const& epoch1, Epoch const& epoch2) const;
                 EpochClass getEpochClass(Epoch const& epoch) const;
                 
@@ -30,6 +33,8 @@ namespace storm {
                 bool isZeroEpoch(Epoch const& epoch) const;
                 bool isBottomEpoch(Epoch const& epoch) const;
                 bool hasBottomDimension(Epoch const& epoch) const;
+                bool hasBottomDimensionEpochClass(EpochClass const& epochClass) const;
+                bool isPredecessorEpochClass(EpochClass const& epochClass1, EpochClass const& epochClass2) const;
                 
                 bool isValidDimensionValue(uint64_t const& value) const;
                 
@@ -37,11 +42,13 @@ namespace storm {
                 void setDimensionOfEpoch(Epoch& epoch, uint64_t const& dimension, uint64_t const& value) const; // assumes that the value is valid, i.e., small enough
                 
                 bool isBottomDimension(Epoch const& epoch, uint64_t const& dimension) const;
+                bool isBottomDimensionEpochClass(EpochClass const& epochClass, uint64_t const& dimension) const;
                 uint64_t getDimensionOfEpoch(Epoch const& epoch, uint64_t const& dimension) const; // assumes that the dimension is not bottom
                 
                 std::string toString(Epoch const& epoch) const;
                 
                 bool epochClassZigZagOrder(Epoch const& epoch1, Epoch const& epoch2) const;
+                bool epochClassOrder(EpochClass const& epochClass1, EpochClass const& epochClass2) const;
                 
             private:
 

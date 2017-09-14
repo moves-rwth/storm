@@ -28,6 +28,15 @@ namespace storm {
                 }
             }
             
+            typename EpochManager::Epoch EpochManager::getBottomEpoch() const {
+                return relevantBitsMask;
+            }
+            
+            typename EpochManager::Epoch EpochManager::getZeroEpoch() const {
+                return 0;
+            }
+
+            
             uint64_t const& EpochManager::getDimensionCount() const {
                 STORM_LOG_ASSERT(dimensionCount > 0, "Invoked EpochManager with zero dimension count.");
                 return dimensionCount;
@@ -50,13 +59,14 @@ namespace storm {
             typename EpochManager::EpochClass EpochManager::getEpochClass(Epoch const& epoch) const {
                 STORM_LOG_ASSERT(dimensionCount > 0, "Invoked EpochManager with zero dimension count.");
                 EpochClass result = 0;
-                uint64_t mask = dimensionBitMask;
+                uint64_t dimensionMask = dimensionBitMask;
+                uint64_t classMask = 1;
                 for (uint64_t d  = 0; d < dimensionCount; ++d) {
-                    if ((epoch & mask) == mask) {
-                        ++result;
+                    if ((epoch & dimensionMask) == dimensionMask) {
+                        result |= classMask;
                     }
-                    result = result << 1;
-                    mask = mask << bitsPerDimension;
+                    classMask = classMask << 1;
+                    dimensionMask = dimensionMask << bitsPerDimension;
                 }
                 return result;
             }
@@ -151,6 +161,16 @@ namespace storm {
                 }
                 return false;
             }
+            
+            bool EpochManager::hasBottomDimensionEpochClass(EpochClass const& epochClass) const {
+                STORM_LOG_ASSERT(dimensionCount > 0, "Invoked EpochManager with zero dimension count.");
+                uint64_t mask = (1 << dimensionCount) - 1;
+                return (epochClass & mask) != 0;
+            }
+            
+            bool EpochManager::isPredecessorEpochClass(EpochClass const& epochClass1, EpochClass const& epochClass2) const {
+                return (epochClass1 & epochClass2) == epochClass1;
+            }
 
             void EpochManager::setBottomDimension(Epoch& epoch, uint64_t const& dimension) const {
                 STORM_LOG_ASSERT(dimensionCount > 0, "Invoked EpochManager with zero dimension count.");
@@ -167,6 +187,11 @@ namespace storm {
             bool EpochManager::isBottomDimension(Epoch const& epoch, uint64_t const& dimension) const {
                 STORM_LOG_ASSERT(dimensionCount > 0, "Invoked EpochManager with zero dimension count.");
                 return (epoch | (dimensionBitMask << (dimension * bitsPerDimension))) == epoch;
+            }
+            
+            bool EpochManager::isBottomDimensionEpochClass(EpochClass const& epochClass, uint64_t const& dimension) const {
+                STORM_LOG_ASSERT(dimensionCount > 0, "Invoked EpochManager with zero dimension count.");
+                return (epochClass | (1 << dimension)) == epochClass;
             }
             
             uint64_t EpochManager::getDimensionOfEpoch(Epoch const& epoch, uint64_t const& dimension) const {
@@ -190,32 +215,9 @@ namespace storm {
                 
                 // Return true iff epoch 1 has to be computed before epoch 2
                 
-                // Check whether the number of bottom dimensions is not equal
-                uint64_t e1Count = 0;
-                uint64_t e2Count = 0;
-                for (uint64_t dim = 0; dim < dimensionCount; ++dim) {
-                    if (isBottomDimension(epoch1, dim)) {
-                        ++e1Count;
-                    }
-                    if (isBottomDimension(epoch2, dim)) {
-                        ++e2Count;
-                    }
+                if (!compareEpochClass(epoch1, epoch2)) {
+                    return epochClassOrder(getEpochClass(epoch1), getEpochClass(epoch2));
                 }
-                if (e1Count > e2Count) {
-                    return true;
-                } else if (e1Count < e2Count) {
-                    return false;
-                }
-                
-                // Check the epoch classes
-                EpochClass e1Class = getEpochClass(epoch1);
-                uint64_t e2Class = getEpochClass(epoch2);
-                if (e1Class < e2Class) {
-                    return true;
-                } else if (e1Class > e2Class) {
-                    return false;
-                }
-                assert(compareEpochClass(epoch1, epoch2));
                 
                 // check whether the sum of dimensions is the same
                 uint64_t e1Sum = 0;
@@ -265,6 +267,34 @@ namespace storm {
                 return false;
             }
             
+            
+            bool EpochManager::epochClassOrder(EpochClass const& epochClass1, EpochClass const& epochClass2) const {
+                STORM_LOG_ASSERT(dimensionCount > 0, "Invoked EpochManager with zero dimension count.");
+                
+                if (epochClass1 == epochClass2) {
+                    return false;
+                }
+                
+                // Return true iff epochClass 1 is a successor class of epochClass 2
+                
+                // Check whether the number of bottom dimensions is not equal
+                int64_t count;
+                EpochClass ec = epochClass1;
+                for (count = 0; ec; ++count) {
+                    ec &= ec - 1;
+                }
+                ec = epochClass2;
+                for (; ec; --count) {
+                    ec &= ec - 1;
+                }
+                if (count > 0) {
+                    return true;
+                } else if (count < 0) {
+                    return false;
+                }
+    
+                return epochClass1 < epochClass2;
+            }
         }
     }
 }
