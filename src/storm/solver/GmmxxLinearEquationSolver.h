@@ -81,6 +81,7 @@ namespace storm {
         template<typename ValueType>
         class GmmxxLinearEquationSolver : public LinearEquationSolver<ValueType> {
         public:
+            GmmxxLinearEquationSolver(GmmxxLinearEquationSolverSettings<ValueType> const& settings = GmmxxLinearEquationSolverSettings<ValueType>());
             GmmxxLinearEquationSolver(storm::storage::SparseMatrix<ValueType> const& A, GmmxxLinearEquationSolverSettings<ValueType> const& settings = GmmxxLinearEquationSolverSettings<ValueType>());
             GmmxxLinearEquationSolver(storm::storage::SparseMatrix<ValueType>&& A, GmmxxLinearEquationSolverSettings<ValueType> const& settings = GmmxxLinearEquationSolverSettings<ValueType>());
             
@@ -97,6 +98,8 @@ namespace storm {
             void setSettings(GmmxxLinearEquationSolverSettings<ValueType> const& newSettings);
             GmmxxLinearEquationSolverSettings<ValueType> const& getSettings() const;
 
+            virtual LinearEquationSolverProblemFormat getEquationProblemFormat() const override;
+            
             virtual void clearCache() const override;
 
         private:
@@ -120,8 +123,9 @@ namespace storm {
         template<typename ValueType>
         class GmmxxLinearEquationSolverFactory : public LinearEquationSolverFactory<ValueType> {
         public:
-            virtual std::unique_ptr<storm::solver::LinearEquationSolver<ValueType>> create(storm::storage::SparseMatrix<ValueType> const& matrix) const override;
-            virtual std::unique_ptr<storm::solver::LinearEquationSolver<ValueType>> create(storm::storage::SparseMatrix<ValueType>&& matrix) const override;
+            using LinearEquationSolverFactory<ValueType>::create;
+            
+            virtual std::unique_ptr<storm::solver::LinearEquationSolver<ValueType>> create() const override;
             
             GmmxxLinearEquationSolverSettings<ValueType>& getSettings();
             GmmxxLinearEquationSolverSettings<ValueType> const& getSettings() const;

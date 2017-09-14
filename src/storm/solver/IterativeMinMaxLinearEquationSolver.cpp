@@ -127,8 +127,11 @@ namespace storm {
             std::vector<ValueType>& subB = *auxiliaryRowGroupVector;
 
             // Resolve the nondeterminism according to the current scheduler.
-            storm::storage::SparseMatrix<ValueType> submatrix = this->A->selectRowsFromRowGroups(scheduler, true);
-            submatrix.convertToEquationSystem();
+            bool convertToEquationSystem = this->linearEquationSolverFactory->getEquationProblemFormat() == LinearEquationSolverProblemFormat::EquationSystem;
+            storm::storage::SparseMatrix<ValueType> submatrix = this->A->selectRowsFromRowGroups(scheduler, convertToEquationSystem);
+            if (convertToEquationSystem) {
+                submatrix.convertToEquationSystem();
+            }
             storm::utility::vector::selectVectorValues<ValueType>(subB, scheduler, this->A->getRowGroupIndices(), b);
 
             // Create a solver that we will use throughout the procedure. We will modify the matrix in each iteration.
@@ -256,8 +259,11 @@ namespace storm {
             
             if (this->hasInitialScheduler()) {
                 // Resolve the nondeterminism according to the initial scheduler.
-                storm::storage::SparseMatrix<ValueType> submatrix = this->A->selectRowsFromRowGroups(this->getInitialScheduler(), true);
-                submatrix.convertToEquationSystem();
+                bool convertToEquationSystem = this->linearEquationSolverFactory->getEquationProblemFormat() == LinearEquationSolverProblemFormat::EquationSystem;
+                storm::storage::SparseMatrix<ValueType> submatrix = this->A->selectRowsFromRowGroups(this->getInitialScheduler(), convertToEquationSystem);
+                if (convertToEquationSystem) {
+                    submatrix.convertToEquationSystem();
+                }
                 storm::utility::vector::selectVectorValues<ValueType>(*auxiliaryRowGroupVector, this->getInitialScheduler(), this->A->getRowGroupIndices(), b);
 
                 // Solve the resulting equation system.

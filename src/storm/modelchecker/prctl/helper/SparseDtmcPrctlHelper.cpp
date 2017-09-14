@@ -106,12 +106,16 @@ namespace storm {
                     if (!maybeStates.empty()) {
                         // In this case we have have to compute the probabilities.
                         
-                        // We can eliminate the rows and columns from the original transition probability matrix.
-                        storm::storage::SparseMatrix<ValueType> submatrix = transitionMatrix.getSubmatrix(true, maybeStates, maybeStates, true);
+                        // Check whether we need to convert the input to equation system format.
+                        bool convertToEquationSystem = linearEquationSolverFactory.getEquationProblemFormat() == storm::solver::LinearEquationSolverProblemFormat::EquationSystem;
                         
-                        // Converting the matrix from the fixpoint notation to the form needed for the equation
-                        // system. That is, we go from x = A*x + b to (I-A)x = b.
-                        submatrix.convertToEquationSystem();
+                        // We can eliminate the rows and columns from the original transition probability matrix.
+                        storm::storage::SparseMatrix<ValueType> submatrix = transitionMatrix.getSubmatrix(true, maybeStates, maybeStates, convertToEquationSystem);
+                        if (convertToEquationSystem) {
+                            // Converting the matrix from the fixpoint notation to the form needed for the equation
+                            // system. That is, we go from x = A*x + b to (I-A)x = b.
+                            submatrix.convertToEquationSystem();
+                        }
                         
                         // Initialize the x vector with the hint (if available) or with 0.5 for each element.
                         // This is the initial guess for the iterative solvers. It should be safe as for all
@@ -237,13 +241,17 @@ namespace storm {
                     storm::utility::vector::setVectorValues<ValueType>(result, maybeStates, storm::utility::one<ValueType>());
                 } else {
                     if (!maybeStates.empty()) {
+                        // Check whether we need to convert the input to equation system format.
+                        bool convertToEquationSystem = linearEquationSolverFactory.getEquationProblemFormat() == storm::solver::LinearEquationSolverProblemFormat::EquationSystem;
+                        
                         // In this case we have to compute the reward values for the remaining states.
                         // We can eliminate the rows and columns from the original transition probability matrix.
-                        storm::storage::SparseMatrix<ValueType> submatrix = transitionMatrix.getSubmatrix(true, maybeStates, maybeStates, true);
-                        
-                        // Converting the matrix from the fixpoint notation to the form needed for the equation
-                        // system. That is, we go from x = A*x + b to (I-A)x = b.
-                        submatrix.convertToEquationSystem();
+                        storm::storage::SparseMatrix<ValueType> submatrix = transitionMatrix.getSubmatrix(true, maybeStates, maybeStates, convertToEquationSystem);
+                        if (convertToEquationSystem) {
+                            // Converting the matrix from the fixpoint notation to the form needed for the equation
+                            // system. That is, we go from x = A*x + b to (I-A)x = b.
+                            submatrix.convertToEquationSystem();
+                        }
                         
                         // Initialize the x vector with the hint (if available) or with 1 for each element.
                         // This is the initial guess for the iterative solvers.

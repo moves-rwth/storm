@@ -60,6 +60,7 @@ namespace storm {
         template<typename ValueType>
         class EigenLinearEquationSolver : public LinearEquationSolver<ValueType> {
         public:
+            EigenLinearEquationSolver(EigenLinearEquationSolverSettings<ValueType> const& settings = EigenLinearEquationSolverSettings<ValueType>());
             EigenLinearEquationSolver(storm::storage::SparseMatrix<ValueType> const& A, EigenLinearEquationSolverSettings<ValueType> const& settings = EigenLinearEquationSolverSettings<ValueType>());
             EigenLinearEquationSolver(storm::storage::SparseMatrix<ValueType>&& A, EigenLinearEquationSolverSettings<ValueType> const& settings = EigenLinearEquationSolverSettings<ValueType>());
             
@@ -71,7 +72,9 @@ namespace storm {
 
             EigenLinearEquationSolverSettings<ValueType>& getSettings();
             EigenLinearEquationSolverSettings<ValueType> const& getSettings() const;
-                        
+            
+            virtual LinearEquationSolverProblemFormat getEquationProblemFormat() const override;
+            
         private:
             virtual uint64_t getMatrixRowCount() const override;
             virtual uint64_t getMatrixColumnCount() const override;
@@ -86,8 +89,9 @@ namespace storm {
         template<typename ValueType>
         class EigenLinearEquationSolverFactory : public LinearEquationSolverFactory<ValueType> {
         public:
-            virtual std::unique_ptr<storm::solver::LinearEquationSolver<ValueType>> create(storm::storage::SparseMatrix<ValueType> const& matrix) const override;
-            virtual std::unique_ptr<storm::solver::LinearEquationSolver<ValueType>> create(storm::storage::SparseMatrix<ValueType>&& matrix) const override;
+            using LinearEquationSolverFactory<ValueType>::create;
+
+            virtual std::unique_ptr<storm::solver::LinearEquationSolver<ValueType>> create() const override;
             
             EigenLinearEquationSolverSettings<ValueType>& getSettings();
             EigenLinearEquationSolverSettings<ValueType> const& getSettings() const;

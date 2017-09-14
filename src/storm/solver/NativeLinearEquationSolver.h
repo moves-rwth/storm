@@ -14,7 +14,7 @@ namespace storm {
         class NativeLinearEquationSolverSettings {
         public:
             enum class SolutionMethod {
-                Jacobi, GaussSeidel, SOR, WalkerChae, Power
+                Jacobi, GaussSeidel, SOR, WalkerChae, Power, SoundPower
             };
 
             NativeLinearEquationSolverSettings();
@@ -24,19 +24,22 @@ namespace storm {
             void setMaximalNumberOfIterations(uint64_t maximalNumberOfIterations);
             void setRelativeTerminationCriterion(bool value);
             void setOmega(ValueType omega);
-            
+            void setPowerMethodMultiplicationStyle(MultiplicationStyle value);
+
             SolutionMethod getSolutionMethod() const;
             ValueType getPrecision() const;
             uint64_t getMaximalNumberOfIterations() const;
             uint64_t getRelativeTerminationCriterion() const;
             ValueType getOmega() const;
-            
+            MultiplicationStyle getPowerMethodMultiplicationStyle() const;
+
         private:
             SolutionMethod method;
             double precision;
             bool relative;
             uint_fast64_t maximalNumberOfIterations;
             ValueType omega;
+            MultiplicationStyle multiplicationStyle;
         };
         
         /*!
@@ -45,6 +48,7 @@ namespace storm {
         template<typename ValueType>
         class NativeLinearEquationSolver : public LinearEquationSolver<ValueType> {
         public:
+            NativeLinearEquationSolver(NativeLinearEquationSolverSettings<ValueType> const& settings = NativeLinearEquationSolverSettings<ValueType>());
             NativeLinearEquationSolver(storm::storage::SparseMatrix<ValueType> const& A, NativeLinearEquationSolverSettings<ValueType> const& settings = NativeLinearEquationSolverSettings<ValueType>());
             NativeLinearEquationSolver(storm::storage::SparseMatrix<ValueType>&& A, NativeLinearEquationSolverSettings<ValueType> const& settings = NativeLinearEquationSolverSettings<ValueType>());
             
@@ -61,6 +65,8 @@ namespace storm {
             void setSettings(NativeLinearEquationSolverSettings<ValueType> const& newSettings);
             NativeLinearEquationSolverSettings<ValueType> const& getSettings() const;
 
+            virtual LinearEquationSolverProblemFormat getEquationProblemFormat() const override;
+
             virtual void clearCache() const override;
 
         private:
@@ -71,6 +77,7 @@ namespace storm {
             virtual bool solveEquationsJacobi(std::vector<ValueType>& x, std::vector<ValueType> const& b) const;
             virtual bool solveEquationsWalkerChae(std::vector<ValueType>& x, std::vector<ValueType> const& b) const;
             virtual bool solveEquationsPower(std::vector<ValueType>& x, std::vector<ValueType> const& b) const;
+            virtual bool solveEquationsSoundPower(std::vector<ValueType>& x, std::vector<ValueType> const& b) const;
             
             // If the solver takes posession of the matrix, we store the moved matrix in this member, so it gets deleted
             // when the solver is destructed.
@@ -110,8 +117,9 @@ namespace storm {
         template<typename ValueType>
         class NativeLinearEquationSolverFactory : public LinearEquationSolverFactory<ValueType> {
         public:
-            virtual std::unique_ptr<storm::solver::LinearEquationSolver<ValueType>> create(storm::storage::SparseMatrix<ValueType> const& matrix) const override;
-            virtual std::unique_ptr<storm::solver::LinearEquationSolver<ValueType>> create(storm::storage::SparseMatrix<ValueType>&& matrix) const override;
+            using LinearEquationSolverFactory<ValueType>::create;
+            
+            virtual std::unique_ptr<storm::solver::LinearEquationSolver<ValueType>> create() const override;
             
             NativeLinearEquationSolverSettings<ValueType>& getSettings();
             NativeLinearEquationSolverSettings<ValueType> const& getSettings() const;

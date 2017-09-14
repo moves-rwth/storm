@@ -137,30 +137,33 @@ namespace storm {
         }
         
         template<typename ValueType>
+        std::unique_ptr<LinearEquationSolver<ValueType>> LinearEquationSolverFactory<ValueType>::create(storm::storage::SparseMatrix<ValueType> const& matrix) const {
+            std::unique_ptr<LinearEquationSolver<ValueType>> solver = this->create();
+            solver->setMatrix(matrix);
+            return solver;
+        }
+        
+        template<typename ValueType>
         std::unique_ptr<LinearEquationSolver<ValueType>> LinearEquationSolverFactory<ValueType>::create(storm::storage::SparseMatrix<ValueType>&& matrix) const {
-            return create(matrix);
+            std::unique_ptr<LinearEquationSolver<ValueType>> solver = this->create();
+            solver->setMatrix(std::move(matrix));
+            return solver;
         }
         
         template<typename ValueType>
-        std::unique_ptr<LinearEquationSolver<ValueType>> GeneralLinearEquationSolverFactory<ValueType>::create(storm::storage::SparseMatrix<ValueType> const& matrix) const {
-            return selectSolver(matrix);
+        LinearEquationSolverProblemFormat LinearEquationSolverFactory<ValueType>::getEquationProblemFormat() const {
+            return this->create()->getEquationProblemFormat();
         }
         
         template<typename ValueType>
-        std::unique_ptr<LinearEquationSolver<ValueType>> GeneralLinearEquationSolverFactory<ValueType>::create(storm::storage::SparseMatrix<ValueType>&& matrix) const {
-            return selectSolver(std::move(matrix));
-        }
-        
-        template<typename ValueType>
-        template<typename MatrixType>
-        std::unique_ptr<LinearEquationSolver<ValueType>> GeneralLinearEquationSolverFactory<ValueType>::selectSolver(MatrixType&& matrix) const {
+        std::unique_ptr<LinearEquationSolver<ValueType>> GeneralLinearEquationSolverFactory<ValueType>::create() const {
             EquationSolverType equationSolver = storm::settings::getModule<storm::settings::modules::CoreSettings>().getEquationSolver();
             switch (equationSolver) {
-                case EquationSolverType::Gmmxx: return std::make_unique<GmmxxLinearEquationSolver<ValueType>>(std::forward<MatrixType>(matrix));
-                case EquationSolverType::Native: return std::make_unique<NativeLinearEquationSolver<ValueType>>(std::forward<MatrixType>(matrix));
-                case EquationSolverType::Eigen: return std::make_unique<EigenLinearEquationSolver<ValueType>>(std::forward<MatrixType>(matrix));
-                case EquationSolverType::Elimination: return std::make_unique<EliminationLinearEquationSolver<ValueType>>(std::forward<MatrixType>(matrix));
-                default: return std::make_unique<GmmxxLinearEquationSolver<ValueType>>(std::forward<MatrixType>(matrix));
+                case EquationSolverType::Gmmxx: return std::make_unique<GmmxxLinearEquationSolver<ValueType>>();
+                case EquationSolverType::Native: return std::make_unique<NativeLinearEquationSolver<ValueType>>();
+                case EquationSolverType::Eigen: return std::make_unique<EigenLinearEquationSolver<ValueType>>();
+                case EquationSolverType::Elimination: return std::make_unique<EliminationLinearEquationSolver<ValueType>>();
+                default: return std::make_unique<GmmxxLinearEquationSolver<ValueType>>();
             }
         }
         
@@ -170,20 +173,11 @@ namespace storm {
         }
         
 #ifdef STORM_HAVE_CARL
-        std::unique_ptr<LinearEquationSolver<storm::RationalNumber>> GeneralLinearEquationSolverFactory<storm::RationalNumber>::create(storm::storage::SparseMatrix<storm::RationalNumber> const& matrix) const {
-            return selectSolver(matrix);
-        }
-        
-        std::unique_ptr<LinearEquationSolver<storm::RationalNumber>> GeneralLinearEquationSolverFactory<storm::RationalNumber>::create(storm::storage::SparseMatrix<storm::RationalNumber>&& matrix) const {
-            return selectSolver(std::move(matrix));
-        }
-        
-        template<typename MatrixType>
-        std::unique_ptr<LinearEquationSolver<storm::RationalNumber>> GeneralLinearEquationSolverFactory<storm::RationalNumber>::selectSolver(MatrixType&& matrix) const {
+        std::unique_ptr<LinearEquationSolver<storm::RationalNumber>> GeneralLinearEquationSolverFactory<storm::RationalNumber>::create() const {
             EquationSolverType equationSolver = storm::settings::getModule<storm::settings::modules::CoreSettings>().getEquationSolver();
             switch (equationSolver) {
-                case EquationSolverType::Elimination: return std::make_unique<EliminationLinearEquationSolver<storm::RationalNumber>>(std::forward<MatrixType>(matrix));
-                default: return std::make_unique<EigenLinearEquationSolver<storm::RationalNumber>>(std::forward<MatrixType>(matrix));
+                case EquationSolverType::Elimination: return std::make_unique<EliminationLinearEquationSolver<storm::RationalNumber>>();
+                default: return std::make_unique<EigenLinearEquationSolver<storm::RationalNumber>>();
             }
         }
         
@@ -191,20 +185,11 @@ namespace storm {
             return std::make_unique<GeneralLinearEquationSolverFactory<storm::RationalNumber>>(*this);
         }
         
-        std::unique_ptr<LinearEquationSolver<storm::RationalFunction>> GeneralLinearEquationSolverFactory<storm::RationalFunction>::create(storm::storage::SparseMatrix<storm::RationalFunction> const& matrix) const {
-            return selectSolver(matrix);
-        }
-        
-        std::unique_ptr<LinearEquationSolver<storm::RationalFunction>> GeneralLinearEquationSolverFactory<storm::RationalFunction>::create(storm::storage::SparseMatrix<storm::RationalFunction>&& matrix) const {
-            return selectSolver(std::move(matrix));
-        }
-        
-        template<typename MatrixType>
-        std::unique_ptr<LinearEquationSolver<storm::RationalFunction>> GeneralLinearEquationSolverFactory<storm::RationalFunction>::selectSolver(MatrixType&& matrix) const {
+        std::unique_ptr<LinearEquationSolver<storm::RationalFunction>> GeneralLinearEquationSolverFactory<storm::RationalFunction>::create() const {
             EquationSolverType equationSolver = storm::settings::getModule<storm::settings::modules::CoreSettings>().getEquationSolver();
             switch (equationSolver) {
-                case EquationSolverType::Elimination: return std::make_unique<EliminationLinearEquationSolver<storm::RationalFunction>>(std::forward<MatrixType>(matrix));
-                default: return std::make_unique<EigenLinearEquationSolver<storm::RationalFunction>>(std::forward<MatrixType>(matrix));
+                case EquationSolverType::Elimination: return std::make_unique<EliminationLinearEquationSolver<storm::RationalFunction>>();
+                default: return std::make_unique<EigenLinearEquationSolver<storm::RationalFunction>>();
             }
         }
         

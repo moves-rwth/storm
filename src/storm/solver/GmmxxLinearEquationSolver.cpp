@@ -102,6 +102,11 @@ namespace storm {
         }
         
         template<typename ValueType>
+        GmmxxLinearEquationSolver<ValueType>::GmmxxLinearEquationSolver(GmmxxLinearEquationSolverSettings<ValueType> const& settings) : settings(settings) {
+            // Intentionally left empty.
+        }
+        
+        template<typename ValueType>
         GmmxxLinearEquationSolver<ValueType>::GmmxxLinearEquationSolver(storm::storage::SparseMatrix<ValueType> const& A, GmmxxLinearEquationSolverSettings<ValueType> const& settings) : settings(settings) {
             this->setMatrix(A);
         }
@@ -228,6 +233,11 @@ namespace storm {
         }
         
         template<typename ValueType>
+        LinearEquationSolverProblemFormat GmmxxLinearEquationSolver<ValueType>::getEquationProblemFormat() const {
+            return LinearEquationSolverProblemFormat::EquationSystem;
+        }
+        
+        template<typename ValueType>
         void GmmxxLinearEquationSolver<ValueType>::clearCache() const {
             iluPreconditioner.reset();
             diagonalPreconditioner.reset();
@@ -245,13 +255,8 @@ namespace storm {
         }
         
         template<typename ValueType>
-        std::unique_ptr<storm::solver::LinearEquationSolver<ValueType>> GmmxxLinearEquationSolverFactory<ValueType>::create(storm::storage::SparseMatrix<ValueType> const& matrix) const {
-            return std::make_unique<storm::solver::GmmxxLinearEquationSolver<ValueType>>(matrix, settings);
-        }
-        
-        template<typename ValueType>
-        std::unique_ptr<storm::solver::LinearEquationSolver<ValueType>> GmmxxLinearEquationSolverFactory<ValueType>::create(storm::storage::SparseMatrix<ValueType>&& matrix) const {
-            return std::make_unique<storm::solver::GmmxxLinearEquationSolver<ValueType>>(std::move(matrix), settings);
+        std::unique_ptr<storm::solver::LinearEquationSolver<ValueType>> GmmxxLinearEquationSolverFactory<ValueType>::create() const {
+            return std::make_unique<storm::solver::GmmxxLinearEquationSolver<ValueType>>(settings);
         }
         
         template<typename ValueType>

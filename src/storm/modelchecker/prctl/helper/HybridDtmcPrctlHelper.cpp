@@ -59,11 +59,16 @@ namespace storm {
                         prob1StatesAsColumn = prob1StatesAsColumn.swapVariables(model.getRowColumnMetaVariablePairs());
                         storm::dd::Add<DdType, ValueType> subvector = submatrix * prob1StatesAsColumn;
                         subvector = subvector.sumAbstract(model.getColumnVariables());
+
+                        // Check whether we need to create an equation system.
+                        bool convertToEquationSystem = linearEquationSolverFactory.getEquationProblemFormat() == storm::solver::LinearEquationSolverProblemFormat::EquationSystem;
                         
-                        // Finally cut away all columns targeting non-maybe states and convert the matrix into the matrix needed
-                        // for solving the equation system (i.e. compute (I-A)).
+                        // Finally cut away all columns targeting non-maybe states and potentially convert the matrix
+                        // into the matrix needed for solving the equation system (i.e. compute (I-A)).
                         submatrix *= maybeStatesAdd.swapVariables(model.getRowColumnMetaVariablePairs());
-                        submatrix = (model.getRowColumnIdentity() * maybeStatesAdd) - submatrix;
+                        if (convertToEquationSystem) {
+                            submatrix = (model.getRowColumnIdentity() * maybeStatesAdd) - submatrix;
+                        }
                         
                         // Create the solution vector.
                         std::vector<ValueType> x(maybeStates.getNonZeroCount(), storm::utility::convertNumber<ValueType>(0.5));
@@ -224,10 +229,15 @@ namespace storm {
                         // Then compute the state reward vector to use in the computation.
                         storm::dd::Add<DdType, ValueType> subvector = rewardModel.getTotalRewardVector(maybeStatesAdd, submatrix, model.getColumnVariables());
 
-                        // Finally cut away all columns targeting non-maybe states and convert the matrix into the matrix needed
-                        // for solving the equation system (i.e. compute (I-A)).
+                        // Check whether we need to create an equation system.
+                        bool convertToEquationSystem = linearEquationSolverFactory.getEquationProblemFormat() == storm::solver::LinearEquationSolverProblemFormat::EquationSystem;
+                        
+                        // Finally cut away all columns targeting non-maybe states and potentially convert the matrix
+                        // into the matrix needed for solving the equation system (i.e. compute (I-A)).
                         submatrix *= maybeStatesAdd.swapVariables(model.getRowColumnMetaVariablePairs());
-                        submatrix = (model.getRowColumnIdentity() * maybeStatesAdd) - submatrix;
+                        if (convertToEquationSystem) {
+                            submatrix = (model.getRowColumnIdentity() * maybeStatesAdd) - submatrix;
+                        }
                         
                         // Create the solution vector.
                         std::vector<ValueType> x(maybeStates.getNonZeroCount(), storm::utility::convertNumber<ValueType>(0.5));

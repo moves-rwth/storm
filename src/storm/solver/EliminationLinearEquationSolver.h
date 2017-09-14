@@ -26,6 +26,7 @@ namespace storm {
         template<typename ValueType>
         class EliminationLinearEquationSolver : public LinearEquationSolver<ValueType> {
         public:
+            EliminationLinearEquationSolver(EliminationLinearEquationSolverSettings<ValueType> const& settings = EliminationLinearEquationSolverSettings<ValueType>());
             EliminationLinearEquationSolver(storm::storage::SparseMatrix<ValueType> const& A, EliminationLinearEquationSolverSettings<ValueType> const& settings = EliminationLinearEquationSolverSettings<ValueType>());
             EliminationLinearEquationSolver(storm::storage::SparseMatrix<ValueType>&& A, EliminationLinearEquationSolverSettings<ValueType> const& settings = EliminationLinearEquationSolverSettings<ValueType>());
             
@@ -37,6 +38,8 @@ namespace storm {
 
             EliminationLinearEquationSolverSettings<ValueType>& getSettings();
             EliminationLinearEquationSolverSettings<ValueType> const& getSettings() const;
+            
+            virtual LinearEquationSolverProblemFormat getEquationProblemFormat() const override;
             
         private:
             void initializeSettings();
@@ -59,8 +62,9 @@ namespace storm {
         template<typename ValueType>
         class EliminationLinearEquationSolverFactory : public LinearEquationSolverFactory<ValueType> {
         public:
-            virtual std::unique_ptr<storm::solver::LinearEquationSolver<ValueType>> create(storm::storage::SparseMatrix<ValueType> const& matrix) const override;
-            virtual std::unique_ptr<storm::solver::LinearEquationSolver<ValueType>> create(storm::storage::SparseMatrix<ValueType>&& matrix) const override;
+            using LinearEquationSolverFactory<ValueType>::create;
+            
+            virtual std::unique_ptr<storm::solver::LinearEquationSolver<ValueType>> create() const override;
             
             EliminationLinearEquationSolverSettings<ValueType>& getSettings();
             EliminationLinearEquationSolverSettings<ValueType> const& getSettings() const;

@@ -1369,7 +1369,7 @@ namespace storm {
                     *resultIterator = storm::utility::zero<ValueType>();
                 }
                 
-                for (ite = this->begin() + *rowIterator - 1; it != ite; ++it) {
+                for (ite = this->begin() + *rowIterator - 1; it != ite; --it) {
                     *resultIterator += it->getValue() * vector[it->getColumn()];
                 }
             }

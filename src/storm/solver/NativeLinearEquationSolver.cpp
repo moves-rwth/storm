@@ -28,6 +28,8 @@ namespace storm {
                 method = SolutionMethod::WalkerChae;
             } else if (methodAsSetting == storm::settings::modules::NativeEquationSolverSettings::LinearEquationMethod::Power) {
                 method = SolutionMethod::Power;
+            } else if (methodAsSetting == storm::settings::modules::NativeEquationSolverSettings::LinearEquationMethod::SoundPower) {
+                method = SolutionMethod::SoundPower;
             } else {
                 STORM_LOG_THROW(false, storm::exceptions::InvalidSettingsException, "The selected solution technique is invalid for this solver.");
             }
@@ -35,7 +37,8 @@ namespace storm {
             maximalNumberOfIterations = settings.getMaximalIterationCount();
             precision = settings.getPrecision();
             relative = settings.getConvergenceCriterion() == storm::settings::modules::NativeEquationSolverSettings::ConvergenceCriterion::Relative;
-            omega = storm::settings::getModule<storm::settings::modules::NativeEquationSolverSettings>().getOmega();
+            omega = settings.getOmega();
+            multiplicationStyle = settings.getPowerMethodMultiplicationStyle();
         }
         
         template<typename ValueType>
@@ -64,6 +67,11 @@ namespace storm {
         }
         
         template<typename ValueType>
+        void NativeLinearEquationSolverSettings<ValueType>::setPowerMethodMultiplicationStyle(MultiplicationStyle value) {
+            this->multiplicationStyle = value;
+        }
+        
+        template<typename ValueType>
         typename NativeLinearEquationSolverSettings<ValueType>::SolutionMethod NativeLinearEquationSolverSettings<ValueType>::getSolutionMethod() const {
             return method;
         }
@@ -88,6 +96,16 @@ namespace storm {
             return omega;
         }
         
+        template<typename ValueType>
+        MultiplicationStyle NativeLinearEquationSolverSettings<ValueType>::getPowerMethodMultiplicationStyle() const {
+            return multiplicationStyle;
+        }
+
+        template<typename ValueType>
+        NativeLinearEquationSolver<ValueType>::NativeLinearEquationSolver(NativeLinearEquationSolverSettings<ValueType> const& settings) : localA(nullptr), A(nullptr), settings(settings) {
+            // Intentionally left empty.
+        }
+
         template<typename ValueType>
         NativeLinearEquationSolver<ValueType>::NativeLinearEquationSolver(storm::storage::SparseMatrix<ValueType> const& A, NativeLinearEquationSolverSettings<ValueType> const& settings) : localA(nullptr), A(nullptr), settings(settings) {
             this->setMatrix(A);
@@ -344,21 +362,7 @@ namespace storm {
         
         template<typename ValueType>
         bool NativeLinearEquationSolver<ValueType>::solveEquationsPower(std::vector<ValueType>& x, std::vector<ValueType> const& b) const {
-            // FIXME: This solver will not work for all input systems. More concretely, the current implementation will
-            // not work for systems that have a 0 on the diagonal. This is not a restriction of this technique in general
-            // but arbitrary matrices require pivoting, which is not currently implemented.
             STORM_LOG_INFO("Solving linear equation system (" << x.size() << " rows) with NativeLinearEquationSolver (Power)");
-            
-            // We need to revert the transformation into an equation system matrix, because the elimination procedure
-            // and the distance computation is based on the probability matrix instead.
-            storm::storage::SparseMatrix<ValueType> locallyConvertedMatrix;
-            if (localA) {
-                localA->convertToEquationSystem();
-            } else {
-                locallyConvertedMatrix = *A;
-                locallyConvertedMatrix.convertToEquationSystem();
-            }
-            storm::storage::SparseMatrix<ValueType> const& transitionMatrix = localA ? *localA : locallyConvertedMatrix;
             
             if (!this->cachedRowVector) {
                 this->cachedRowVector = std::make_unique<std::vector<ValueType>>(getMatrixRowCount());
@@ -367,10 +371,17 @@ namespace storm {
             std::vector<ValueType>* currentX = &x;
             std::vector<ValueType>* nextX = this->cachedRowVector.get();
 
+            bool useGaussSeidelMultiplication = this->getSettings().getPowerMethodMultiplicationStyle() == storm::solver::MultiplicationStyle::GaussSeidel;
+            
             bool converged = false;
             uint64_t iterations = 0;
             while (!converged && iterations < this->getSettings().getMaximalNumberOfIterations() && !(this->hasCustomTerminationCondition() && this->getTerminationCondition().terminateNow(*currentX))) {
-                this->multiplier.multAdd(transitionMatrix, *currentX, &b, *nextX);
+                if (useGaussSeidelMultiplication) {
+                    *nextX = *currentX;
+                    this->multiplier.multAddGaussSeidelBackward(*this->A, *nextX, &b);
+                } else {
+                    this->multiplier.multAdd(*this->A, *currentX, &b, *nextX);
+                }
                 
                 // Now check if the process already converged within our precision.
                 converged = storm::utility::vector::equalModuloPrecision<ValueType>(*currentX, *nextX, static_cast<ValueType>(this->getSettings().getPrecision()), this->getSettings().getRelativeTerminationCriterion());
@@ -395,6 +406,11 @@ namespace storm {
             }
 
             return converged;
+        }
+        
+        template<typename ValueType>
+        bool NativeLinearEquationSolver<ValueType>::solveEquationsSoundPower(std::vector<ValueType>& x, std::vector<ValueType> const& b) const {
+            // TODO
         }
         
         template<typename ValueType>
@@ -478,6 +494,15 @@ namespace storm {
         }
         
         template<typename ValueType>
+        LinearEquationSolverProblemFormat NativeLinearEquationSolver<ValueType>::getEquationProblemFormat() const {
+            if (this->getSettings().getSolutionMethod() == NativeLinearEquationSolverSettings<ValueType>::SolutionMethod::Power || this->getSettings().getSolutionMethod() == NativeLinearEquationSolverSettings<ValueType>::SolutionMethod::SoundPower) {
+                return LinearEquationSolverProblemFormat::FixedPointSystem;
+            } else {
+                return LinearEquationSolverProblemFormat::EquationSystem;
+            }
+        }
+        
+        template<typename ValueType>
         void NativeLinearEquationSolver<ValueType>::clearCache() const {
             jacobiDecomposition.reset();
             walkerChaeData.reset();
@@ -495,13 +520,8 @@ namespace storm {
         }
         
         template<typename ValueType>
-        std::unique_ptr<storm::solver::LinearEquationSolver<ValueType>> NativeLinearEquationSolverFactory<ValueType>::create(storm::storage::SparseMatrix<ValueType> const& matrix) const {
-            return std::make_unique<storm::solver::NativeLinearEquationSolver<ValueType>>(matrix, settings);
-        }
-        
-        template<typename ValueType>
-        std::unique_ptr<storm::solver::LinearEquationSolver<ValueType>> NativeLinearEquationSolverFactory<ValueType>::create(storm::storage::SparseMatrix<ValueType>&& matrix) const {
-            return std::make_unique<storm::solver::NativeLinearEquationSolver<ValueType>>(std::move(matrix), settings);
+        std::unique_ptr<storm::solver::LinearEquationSolver<ValueType>> NativeLinearEquationSolverFactory<ValueType>::create() const {
+            return std::make_unique<storm::solver::NativeLinearEquationSolver<ValueType>>(settings);
         }
         
         template<typename ValueType>

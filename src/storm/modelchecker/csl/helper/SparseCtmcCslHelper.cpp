@@ -22,6 +22,7 @@
 #include "storm/exceptions/InvalidOperationException.h"
 #include "storm/exceptions/InvalidStateException.h"
 #include "storm/exceptions/InvalidPropertyException.h"
+#include "storm/exceptions/FormatUnsupportedBySolverException.h"
 
 namespace storm {
     namespace modelchecker {
@@ -489,6 +490,8 @@ namespace storm {
                     bsccEquationSystem = builder.build();
                     
                     {
+                        // Check whether we have the right input format for the solver.
+                        STORM_LOG_THROW(linearEquationSolverFactory.getEquationProblemFormat() == storm::solver::LinearEquationSolverProblemFormat::EquationSystem, storm::exceptions::FormatUnsupportedBySolverException, "The selected solver does not support the required format.");
                         std::unique_ptr<storm::solver::LinearEquationSolver<ValueType>> solver = linearEquationSolverFactory.create(std::move(bsccEquationSystem));
                         solver->solveEquations(bsccEquationSystemSolution, bsccEquationSystemRightSide);
                     }
@@ -557,6 +560,8 @@ namespace storm {
                     rewardSolution = std::vector<ValueType>(rewardEquationSystemMatrix.getColumnCount(), one);
                     
                     {
+                        // Check whether we have the right input format for the solver.
+                        STORM_LOG_THROW(linearEquationSolverFactory.getEquationProblemFormat() == storm::solver::LinearEquationSolverProblemFormat::EquationSystem, storm::exceptions::FormatUnsupportedBySolverException, "The selected solver does not support the required format.");
                         std::unique_ptr<storm::solver::LinearEquationSolver<ValueType>> solver = linearEquationSolverFactory.create(std::move(rewardEquationSystemMatrix));
                         solver->solveEquations(rewardSolution, rewardRightSide);
                     }

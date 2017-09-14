@@ -106,8 +106,13 @@ namespace storm {
 #endif
 
         template<typename ValueType>
-        EigenLinearEquationSolver<ValueType>::EigenLinearEquationSolver(storm::storage::SparseMatrix<ValueType> const& A, EigenLinearEquationSolverSettings<ValueType> const& settings) : eigenA(storm::adapters::EigenAdapter::toEigenSparseMatrix<ValueType>(A)), settings(settings) {
+        EigenLinearEquationSolver<ValueType>::EigenLinearEquationSolver(EigenLinearEquationSolverSettings<ValueType> const& settings) : settings(settings) {
             // Intentionally left empty.
+        }
+
+        template<typename ValueType>
+        EigenLinearEquationSolver<ValueType>::EigenLinearEquationSolver(storm::storage::SparseMatrix<ValueType> const& A, EigenLinearEquationSolverSettings<ValueType> const& settings) : settings(settings) {
+            this->setMatrix(A);
         }
 
         template<typename ValueType>
@@ -300,6 +305,11 @@ namespace storm {
         }
         
         template<typename ValueType>
+        LinearEquationSolverProblemFormat EigenLinearEquationSolver<ValueType>::getEquationProblemFormat() const {
+            LinearEquationSolverProblemFormat::EquationSystem;
+        }
+        
+        template<typename ValueType>
         EigenLinearEquationSolverSettings<ValueType> const& EigenLinearEquationSolver<ValueType>::getSettings() const {
             return settings;
         }
@@ -347,13 +357,8 @@ namespace storm {
 #endif
 
         template<typename ValueType>
-        std::unique_ptr<storm::solver::LinearEquationSolver<ValueType>> EigenLinearEquationSolverFactory<ValueType>::create(storm::storage::SparseMatrix<ValueType> const& matrix) const {
-            return std::make_unique<storm::solver::EigenLinearEquationSolver<ValueType>>(matrix, settings);
-        }
-        
-        template<typename ValueType>
-        std::unique_ptr<storm::solver::LinearEquationSolver<ValueType>> EigenLinearEquationSolverFactory<ValueType>::create(storm::storage::SparseMatrix<ValueType>&& matrix) const {
-            return std::make_unique<storm::solver::EigenLinearEquationSolver<ValueType>>(std::move(matrix), settings);
+        std::unique_ptr<storm::solver::LinearEquationSolver<ValueType>> EigenLinearEquationSolverFactory<ValueType>::create() const {
+            return std::make_unique<storm::solver::EigenLinearEquationSolver<ValueType>>(settings);
         }
         
         template<typename ValueType>

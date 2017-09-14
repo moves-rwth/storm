@@ -3,6 +3,8 @@
 
 #include "storm/settings/modules/ModuleSettings.h"
 
+#include "storm/solver/MultiplicationStyle.h"
+
 namespace storm {
     namespace settings {
         namespace modules {
@@ -13,7 +15,7 @@ namespace storm {
             class NativeEquationSolverSettings : public ModuleSettings {
             public:
                 // An enumeration of all available methods for solving linear equations.
-                enum class LinearEquationMethod { Jacobi, GaussSeidel, SOR, WalkerChae, Power };
+                enum class LinearEquationMethod { Jacobi, GaussSeidel, SOR, WalkerChae, Power, SoundPower };
                 
                 // An enumeration of all available convergence criteria.
                 enum class ConvergenceCriterion { Absolute, Relative };
@@ -93,6 +95,13 @@ namespace storm {
                  */
                 ConvergenceCriterion getConvergenceCriterion() const;
                 
+                /*!
+                 * Retrieves the multiplication style to use in the power method.
+                 *
+                 * @return The multiplication style.
+                 */
+                storm::solver::MultiplicationStyle getPowerMethodMultiplicationStyle() const;
+                
                 bool check() const override;
                 
                 // The name of the module.
@@ -106,6 +115,7 @@ namespace storm {
                 static const std::string maximalIterationsOptionShortName;
                 static const std::string precisionOptionName;
                 static const std::string absoluteOptionName;
+                static const std::string powerMethodMultiplicationStyleOptionName;
             };
             
         } // namespace modules
