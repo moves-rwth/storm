@@ -9,7 +9,7 @@
 // JSON parser
 #include "json.hpp"
 namespace modernjson {
-    using json = nlohmann::basic_json<std::map, std::vector, std::string, bool, int64_t, uint64_t, double, std::allocator>;
+    using json = nlohmann::json;
 }
 
 namespace storm {
