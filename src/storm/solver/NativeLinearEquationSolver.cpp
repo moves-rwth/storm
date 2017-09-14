@@ -26,6 +26,8 @@ namespace storm {
                 method = SolutionMethod::SOR;
             } else if (methodAsSetting == storm::settings::modules::NativeEquationSolverSettings::LinearEquationMethod::WalkerChae) {
                 method = SolutionMethod::WalkerChae;
+            } else if (methodAsSetting == storm::settings::modules::NativeEquationSolverSettings::LinearEquationMethod::Power) {
+                method = SolutionMethod::Power;
             } else {
                 STORM_LOG_THROW(false, storm::exceptions::InvalidSettingsException, "The selected solution technique is invalid for this solver.");
             }
@@ -321,12 +323,6 @@ namespace storm {
                 std::swap(x, *currentX);
             }
 
-            if (converged) {
-                STORM_LOG_INFO("Iterative solver converged in " << iterations << " iterations.");
-            } else {
-                STORM_LOG_WARN("Iterative solver did not converge in " << iterations << " iterations.");
-            }
-            
             // Resize the solution to the right size.
             x.resize(this->A->getRowCount());
             
@@ -336,6 +332,68 @@ namespace storm {
             if (!this->isCachingEnabled()) {
                 clearCache();
             }
+
+            if (converged) {
+                STORM_LOG_INFO("Iterative solver converged in " << iterations << " iterations.");
+            } else {
+                STORM_LOG_WARN("Iterative solver did not converge in " << iterations << " iterations.");
+            }
+
+            return converged;
+        }
+        
+        template<typename ValueType>
+        bool NativeLinearEquationSolver<ValueType>::solveEquationsPower(std::vector<ValueType>& x, std::vector<ValueType> const& b) const {
+            // FIXME: This solver will not work for all input systems. More concretely, the current implementation will
+            // not work for systems that have a 0 on the diagonal. This is not a restriction of this technique in general
+            // but arbitrary matrices require pivoting, which is not currently implemented.
+            STORM_LOG_INFO("Solving linear equation system (" << x.size() << " rows) with NativeLinearEquationSolver (Power)");
+            
+            // We need to revert the transformation into an equation system matrix, because the elimination procedure
+            // and the distance computation is based on the probability matrix instead.
+            storm::storage::SparseMatrix<ValueType> locallyConvertedMatrix;
+            if (localA) {
+                localA->convertToEquationSystem();
+            } else {
+                locallyConvertedMatrix = *A;
+                locallyConvertedMatrix.convertToEquationSystem();
+            }
+            storm::storage::SparseMatrix<ValueType> const& transitionMatrix = localA ? *localA : locallyConvertedMatrix;
+            
+            if (!this->cachedRowVector) {
+                this->cachedRowVector = std::make_unique<std::vector<ValueType>>(getMatrixRowCount());
+            }
+            
+            std::vector<ValueType>* currentX = &x;
+            std::vector<ValueType>* nextX = this->cachedRowVector.get();
+
+            bool converged = false;
+            uint64_t iterations = 0;
+            while (!converged && iterations < this->getSettings().getMaximalNumberOfIterations() && !(this->hasCustomTerminationCondition() && this->getTerminationCondition().terminateNow(*currentX))) {
+                this->multiplier.multAdd(transitionMatrix, *currentX, &b, *nextX);
+                
+                // Now check if the process already converged within our precision.
+                converged = storm::utility::vector::equalModuloPrecision<ValueType>(*currentX, *nextX, static_cast<ValueType>(this->getSettings().getPrecision()), this->getSettings().getRelativeTerminationCriterion());
+                
+                // Set up next iteration.
+                std::swap(currentX, nextX);
+                ++iterations;
+            }
+            
+            if (currentX == this->cachedRowVector.get()) {
+                std::swap(x, *nextX);
+            }
+            
+            if (!this->isCachingEnabled()) {
+                clearCache();
+            }
+            
+            if (converged) {
+                STORM_LOG_INFO("Iterative solver converged in " << iterations << " iterations.");
+            } else {
+                STORM_LOG_WARN("Iterative solver did not converge in " << iterations << " iterations.");
+            }
+
             return converged;
         }
         
@@ -347,6 +405,8 @@ namespace storm {
                 return this->solveEquationsJacobi(x, b);
             } else if (this->getSettings().getSolutionMethod() == NativeLinearEquationSolverSettings<ValueType>::SolutionMethod::WalkerChae) {
                 return this->solveEquationsWalkerChae(x, b);
+            } else if (this->getSettings().getSolutionMethod() == NativeLinearEquationSolverSettings<ValueType>::SolutionMethod::Power) {
+                return this->solveEquationsPower(x, b);
             }
             
             STORM_LOG_THROW(false, storm::exceptions::InvalidSettingsException, "Unknown solving technique.");

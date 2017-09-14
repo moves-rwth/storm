@@ -136,6 +136,7 @@ namespace storm {
 #endif
         }
         
+#ifdef STORM_HAVE_INTELTBB
         template<typename T>
         class TbbMultAddReduceFunctor {
         public:
@@ -199,10 +200,16 @@ namespace storm {
             std::vector<T>& result;
             std::vector<uint64_t>* choices;
         };
+#endif
         
         template<typename T>
         void GmmxxMultiplier<T>::multAddReduceParallel(storm::solver::OptimizationDirection const& dir, std::vector<uint64_t> const& rowGroupIndices, gmm::csr_matrix<T> const& matrix, std::vector<T> const& x, std::vector<T> const* b, std::vector<T>& result, std::vector<uint64_t>* choices) const {
+#ifdef STORM_HAVE_INTELTBB
             tbb::parallel_for(tbb::blocked_range<unsigned long>(0, rowGroupIndices.size() - 1, 10), TbbMultAddReduceFunctor<T>(dir, rowGroupIndices, matrix, x, b, result, choices));
+#else
+            STORM_LOG_WARN("Storm was built without support for Intel TBB, defaulting to sequential version.");
+            multAddReduce(dir, rowGroupIndices, matrix, x, b, result, choices);
+#endif
         }
         
         template<>

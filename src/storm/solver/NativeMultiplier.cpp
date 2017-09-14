@@ -85,7 +85,7 @@ namespace storm {
             matrix.multiplyAndReduceParallel(dir, rowGroupIndices, x, b, result, choices);
 #else
             STORM_LOG_WARN("Storm was built without support for Intel TBB, defaulting to sequential version.");
-            multAddReduce(dir, rowGroupIndices, x, b, result, choices);
+            multAddReduce(dir, rowGroupIndices, matrix, x, b, result, choices);
 #endif
         }
 

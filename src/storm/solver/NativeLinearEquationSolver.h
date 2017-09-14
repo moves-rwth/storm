@@ -14,7 +14,7 @@ namespace storm {
         class NativeLinearEquationSolverSettings {
         public:
             enum class SolutionMethod {
-                Jacobi, GaussSeidel, SOR, WalkerChae
+                Jacobi, GaussSeidel, SOR, WalkerChae, Power
             };
 
             NativeLinearEquationSolverSettings();
@@ -70,6 +70,7 @@ namespace storm {
             virtual bool solveEquationsSOR(std::vector<ValueType>& x, std::vector<ValueType> const& b, ValueType const& omega) const;
             virtual bool solveEquationsJacobi(std::vector<ValueType>& x, std::vector<ValueType> const& b) const;
             virtual bool solveEquationsWalkerChae(std::vector<ValueType>& x, std::vector<ValueType> const& b) const;
+            virtual bool solveEquationsPower(std::vector<ValueType>& x, std::vector<ValueType> const& b) const;
             
             // If the solver takes posession of the matrix, we store the moved matrix in this member, so it gets deleted
             // when the solver is destructed.

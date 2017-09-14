@@ -20,7 +20,7 @@ namespace storm {
         template<typename ValueType>
         VectorHelper<ValueType>::VectorHelper() : doParallelize(storm::settings::getModule<storm::settings::modules::CoreSettings>().isUseIntelTbbSet()) {
 #ifndef STORM_HAVE_INTELTBB
-            STORM_LOG_THROW(!parallelize, storm::exceptions::InvalidSettingsException, "Cannot parallelize without TBB.");
+            STORM_LOG_THROW(!doParallelize, storm::exceptions::InvalidSettingsException, "Cannot parallelize without TBB.");
 #endif
         }
         
