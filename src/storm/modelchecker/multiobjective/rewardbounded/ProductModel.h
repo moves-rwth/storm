@@ -21,8 +21,10 @@ namespace storm {
             public:
                 
                 typedef typename EpochManager::Epoch Epoch;
+                typedef typename EpochManager::EpochClass EpochClass;
+
                 
-                ProductModel(storm::models::sparse::Mdp<ValueType> const& model, storm::storage::MemoryStructure const& memory, std::vector<storm::storage::BitVector> const& objectiveDimensions, EpochManager const& epochManager, std::vector<storm::storage::BitVector>&& memoryStateMap, std::vector<Epoch> const& originalModelSteps);
+                ProductModel(storm::models::sparse::Mdp<ValueType> const& model, storm::storage::MemoryStructure const& memory, std::vector<Dimension<ValueType>> const& dimensions, std::vector<storm::storage::BitVector> const& objectiveDimensions, EpochManager const& epochManager, std::vector<storm::storage::BitVector>&& memoryStateMap, std::vector<Epoch> const& originalModelSteps);
                 
                 storm::models::sparse::Mdp<ValueType> const& getProduct() const;
                 std::vector<Epoch> const& getSteps() const;
@@ -39,19 +41,27 @@ namespace storm {
                 
                 uint64_t getProductStateFromChoice(uint64_t const& productChoice) const;
                 
-                std::vector<std::vector<ValueType>> computeObjectiveRewards(Epoch const& epoch, std::vector<storm::modelchecker::multiobjective::Objective<ValueType>> const& objectives, std::vector<Dimension<ValueType>> const& dimensions) const;
-                storm::storage::BitVector computeInStates(Epoch const& epoch) const;
+                std::vector<std::vector<ValueType>> computeObjectiveRewards(EpochClass const& epochClass, std::vector<storm::modelchecker::multiobjective::Objective<ValueType>> const& objectives) const;
+                storm::storage::BitVector const& getInStates(EpochClass const& epochClass) const;
 
                 
             private:
                 
-                void setReachableStates(storm::storage::SparseModelMemoryProduct<ValueType>& productBuilder, std::vector<Epoch> const& originalModelSteps) const;
+                void setReachableProductStates(storm::storage::SparseModelMemoryProduct<ValueType>& productBuilder, std::vector<Epoch> const& originalModelSteps) const;
+                
+                void computeReachableStatesInEpochClasses();
+                void computeReachableStates(EpochClass const& epochClass, std::vector<EpochClass> const& predecessors);
+                uint64_t transformProductState(uint64_t productState, storm::storage::BitVector const& allowedRelevantDimensions, storm::storage::BitVector const& forcedRelevantDimensions) const;
+                uint64_t transformMemoryState(uint64_t memoryState, storm::storage::BitVector const& allowedRelevantDimensions, storm::storage::BitVector const& forcedRelevantDimensions) const;
 
+                std::vector<Dimension<ValueType>> const& dimensions;
                 std::vector<storm::storage::BitVector> const& objectiveDimensions;
                 EpochManager const& epochManager;
 
                 std::shared_ptr<storm::models::sparse::Mdp<ValueType>> product;
                 std::vector<Epoch> steps;
+                std::map<EpochClass, storm::storage::BitVector> reachableStates;
+                std::map<EpochClass, storm::storage::BitVector> inStates;
                 
                 std::vector<uint64_t> modelMemoryToProductStateMap;
                 std::vector<uint64_t> productToModelStateMap;

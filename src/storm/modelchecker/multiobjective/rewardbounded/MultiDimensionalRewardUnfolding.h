@@ -23,6 +23,7 @@ namespace storm {
             public:
                 
                 typedef typename EpochManager::Epoch Epoch; // The number of reward steps that are "left" for each dimension
+                typedef typename EpochManager::EpochClass EpochClass;
                 
                 typedef typename std::conditional<SingleObjectiveMode, ValueType, std::vector<ValueType>>::type SolutionType;
 

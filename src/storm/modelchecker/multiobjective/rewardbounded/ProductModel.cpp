@@ -17,11 +17,11 @@ namespace storm {
         namespace multiobjective {
             
             template<typename ValueType>
-            ProductModel<ValueType>::ProductModel(storm::models::sparse::Mdp<ValueType> const& model, storm::storage::MemoryStructure const& memory, std::vector<storm::storage::BitVector> const& objectiveDimensions, EpochManager const& epochManager, std::vector<storm::storage::BitVector>&& memoryStateMap, std::vector<Epoch> const& originalModelSteps) : objectiveDimensions(objectiveDimensions), epochManager(epochManager), memoryStateMap(std::move(memoryStateMap)) {
+            ProductModel<ValueType>::ProductModel(storm::models::sparse::Mdp<ValueType> const& model, storm::storage::MemoryStructure const& memory, std::vector<Dimension<ValueType>> const& dimensions, std::vector<storm::storage::BitVector> const& objectiveDimensions, EpochManager const& epochManager, std::vector<storm::storage::BitVector>&& memoryStateMap, std::vector<Epoch> const& originalModelSteps) : dimensions(dimensions), objectiveDimensions(objectiveDimensions), epochManager(epochManager), memoryStateMap(std::move(memoryStateMap)) {
                 
                 storm::storage::SparseModelMemoryProduct<ValueType> productBuilder(memory.product(model));
                 
-                setReachableStates(productBuilder, originalModelSteps);
+                setReachableProductStates(productBuilder, originalModelSteps);
                 product = productBuilder.build()->template as<storm::models::sparse::Mdp<ValueType>>();
                 
                 uint64_t numModelStates = productBuilder.getOriginalModel().getNumberOfStates();
@@ -71,52 +71,97 @@ namespace storm {
                         }
                     }
                 }
+                
+                computeReachableStatesInEpochClasses();
             }
             
             template<typename ValueType>
-            void ProductModel<ValueType>::setReachableStates(storm::storage::SparseModelMemoryProduct<ValueType>& productBuilder, std::vector<Epoch> const& originalModelSteps) const {
+            void ProductModel<ValueType>::setReachableProductStates(storm::storage::SparseModelMemoryProduct<ValueType>& productBuilder, std::vector<Epoch> const& originalModelSteps) const {
                 
+                storm::storage::BitVector lowerBoundedDimensions(dimensions.size(), false);
+                for (uint64_t dim = 0; dim < dimensions.size(); ++dim) {
+                    if (!dimensions[dim].isUpperBounded) {
+                        lowerBoundedDimensions.set(dim);
+                    }
+                }
+                
+                // We add additional reachable states until no more states are found
                 std::vector<storm::storage::BitVector> additionalReachableStates(memoryStateMap.size(), storm::storage::BitVector(productBuilder.getOriginalModel().getNumberOfStates(), false));
-                for (uint64_t memState = 0; memState < memoryStateMap.size(); ++memState) {
-                    auto const& memStateBv = memoryStateMap[memState];
-                    storm::storage::BitVector consideredObjectives(objectiveDimensions.size(), false);
-                    do {
-                        storm::storage::BitVector memStatePrimeBv = memStateBv;
-                        for (auto const& objIndex : consideredObjectives) {
-                            memStatePrimeBv &= ~objectiveDimensions[objIndex];
-                        }
-                        if (memStatePrimeBv != memStateBv) {
-                            for (uint64_t choice = 0; choice < productBuilder.getOriginalModel().getTransitionMatrix().getRowCount(); ++choice) {
-                                bool consideredChoice = true;
-                                for (auto const& objIndex : consideredObjectives) {
-                                    bool objectiveHasStep = false;
-                                    for (auto const& dim : objectiveDimensions[objIndex]) {
-                                        if (epochManager.getDimensionOfEpoch(originalModelSteps[choice], dim) > 0) {
-                                            objectiveHasStep = true;
-                                            break;
-                                        }
-                                    }
-                                    if (!objectiveHasStep) {
-                                        consideredChoice = false;
-                                        break;
-                                    }
+                bool converged = false;
+                while (!converged) {
+                    for (uint64_t memState = 0; memState < memoryStateMap.size(); ++memState) {
+                        auto const& memStateBv = memoryStateMap[memState];
+                        storm::storage::BitVector consideredObjectives(objectiveDimensions.size(), false);
+                        do {
+                            // The current set of considered objectives can be skipped if it contains an objective that only consists of dimensions with lower reward bounds
+                            bool skipThisObjectiveSet = false;
+                            for (auto const& objindex : consideredObjectives) {
+                                if (objectiveDimensions[objindex].isSubsetOf(lowerBoundedDimensions)) {
+                                    skipThisObjectiveSet = true;
                                 }
-                                if (consideredChoice) {
-                                    for (auto const& successor : productBuilder.getOriginalModel().getTransitionMatrix().getRow(choice)) {
-                                        if (productBuilder.isStateReachable(successor.getColumn(), memState)) {
-                                            additionalReachableStates[convertMemoryState(memStatePrimeBv)].set(successor.getColumn());
+                            }
+                            if (!skipThisObjectiveSet) {
+                                storm::storage::BitVector memStatePrimeBv = memStateBv;
+                                for (auto const& objIndex : consideredObjectives) {
+                                    memStatePrimeBv &= ~objectiveDimensions[objIndex];
+                                }
+                                if (memStatePrimeBv != memStateBv) {
+                                    uint64_t memStatePrime = convertMemoryState(memStatePrimeBv);
+                                    for (uint64_t choice = 0; choice < productBuilder.getOriginalModel().getTransitionMatrix().getRowCount(); ++choice) {
+                                        // Consider the choice only if for every considered objective there is one dimension for which the step of this choice is positive
+                                        bool consideredChoice = true;
+                                        for (auto const& objIndex : consideredObjectives) {
+                                            bool objectiveHasStep = false;
+                                            auto upperBoundedObjectiveDimensions = objectiveDimensions[objIndex] & (~lowerBoundedDimensions);
+                                            for (auto const& dim : upperBoundedObjectiveDimensions) {
+                                                if (epochManager.getDimensionOfEpoch(originalModelSteps[choice], dim) > 0) {
+                                                    objectiveHasStep = true;
+                                                    break;
+                                                }
+                                            }
+                                            if (!objectiveHasStep) {
+                                                consideredChoice = false;
+                                                break;
+                                            }
+                                        }
+                                        if (consideredChoice) {
+                                            for (auto const& successor : productBuilder.getOriginalModel().getTransitionMatrix().getRow(choice)) {
+                                                if (productBuilder.isStateReachable(successor.getColumn(), memState) && !productBuilder.isStateReachable(successor.getColumn(), memStatePrime)) {
+                                                    additionalReachableStates[memStatePrime].set(successor.getColumn());
+                                                }
+                                            }
                                         }
                                     }
                                 }
                             }
+                            consideredObjectives.increment();
+                        } while (!consideredObjectives.empty());
+                    }
+                    
+                    storm::storage::BitVector consideredDimensions(dimensions.size(), false);
+                    do {
+                        if (consideredDimensions.isSubsetOf(lowerBoundedDimensions)) {
+                            for (uint64_t memoryState = 0; memoryState < productBuilder.getMemory().getNumberOfStates(); ++memoryState) {
+                                uint64_t memoryStatePrime = convertMemoryState(convertMemoryState(memoryState) | consideredDimensions);
+                                for (uint64_t modelState = 0; modelState < productBuilder.getOriginalModel().getNumberOfStates(); ++modelState) {
+                                    if (productBuilder.isStateReachable(modelState, memoryState) && !productBuilder.isStateReachable(modelState, memoryStatePrime)) {
+                                        additionalReachableStates[memoryStatePrime].set(modelState);
+                                    }
+                                }
+                            }
                         }
-                        consideredObjectives.increment();
-                    } while (!consideredObjectives.empty());
-                }
-                
-                for (uint64_t memState = 0; memState < memoryStateMap.size(); ++memState) {
-                    for (auto const& modelState : additionalReachableStates[memState]) {
-                        productBuilder.addReachableState(modelState, memState);
+                        consideredDimensions.increment();
+                    } while (!consideredDimensions.empty());
+                    
+                    converged = true;
+                    for (uint64_t memState = 0; memState < memoryStateMap.size(); ++memState) {
+                        if (!additionalReachableStates[memState].empty()) {
+                            converged = false;
+                            for (auto const& modelState : additionalReachableStates[memState]) {
+                                productBuilder.addReachableState(modelState, memState);
+                            }
+                            additionalReachableStates[memState].clear();
+                        }
                     }
                 }
             }
@@ -178,7 +223,7 @@ namespace storm {
             }
             
             template<typename ValueType>
-            std::vector<std::vector<ValueType>> ProductModel<ValueType>::computeObjectiveRewards(Epoch const& epoch, std::vector<storm::modelchecker::multiobjective::Objective<ValueType>> const& objectives, std::vector<Dimension<ValueType>> const& dimensions) const {
+            std::vector<std::vector<ValueType>> ProductModel<ValueType>::computeObjectiveRewards(EpochClass const& epochClass, std::vector<storm::modelchecker::multiobjective::Objective<ValueType>> const& objectives) const {
                 std::vector<std::vector<ValueType>> objectiveRewards;
                 objectiveRewards.reserve(objectives.size());
                 
@@ -208,10 +253,10 @@ namespace storm {
                         while (!relevantObjectives.full()) {
                             relevantObjectives.increment();
                             
-                            // find out whether objective reward should be earned within this epoch
+                            // find out whether objective reward should be earned within this epoch class
                             bool collectRewardInEpoch = true;
                             for (auto const& subObjIndex : relevantObjectives) {
-                                if (dimensions[dimensionIndexMap[subObjIndex]].isUpperBounded == epochManager.isBottomDimension(epoch, dimensionIndexMap[subObjIndex])) {
+                                if (dimensions[dimensionIndexMap[subObjIndex]].isUpperBounded == epochManager.isBottomDimensionEpochClass(epochClass, dimensionIndexMap[subObjIndex])) {
                                     collectRewardInEpoch = false;
                                     break;
                                 }
@@ -252,7 +297,7 @@ namespace storm {
                         bool rewardCollectedInEpoch = true;
                         if (formula.getSubformula().isCumulativeRewardFormula()) {
                             assert(objectiveDimensions[objIndex].getNumberOfSetBits() == 1);
-                            rewardCollectedInEpoch = !epochManager.isBottomDimension(epoch, *objectiveDimensions[objIndex].begin());
+                            rewardCollectedInEpoch = !epochManager.isBottomDimensionEpochClass(epochClass, *objectiveDimensions[objIndex].begin());
                         } else {
                             STORM_LOG_THROW(formula.getSubformula().isTotalRewardFormula(), storm::exceptions::UnexpectedException, "Unexpected type of formula " << formula);
                         }
@@ -270,115 +315,157 @@ namespace storm {
             }
             
             template<typename ValueType>
-            storm::storage::BitVector ProductModel<ValueType>::computeInStates(Epoch const& epoch) const {
-                storm::storage::SparseMatrix<ValueType> const& productMatrix = getProduct().getTransitionMatrix();
-                
-                // Initialize the result. Initial states are only considered if the epoch contains no bottom dimension.
-                storm::storage::BitVector result;
-                if (epochManager.hasBottomDimension(epoch)) {
-                    result = storm::storage::BitVector(getProduct().getNumberOfStates());
-                } else {
-                    result = getProduct().getInitialStates();
-                }
-                
-                // Compute the set of objectives that can not be satisfied anymore in the current epoch
-                storm::storage::BitVector irrelevantObjectives(objectiveDimensions.size(), false);
-                for (uint64_t objIndex = 0; objIndex < objectiveDimensions.size(); ++objIndex) {
-                    bool objIrrelevant = true;
-                    for (auto const& dim : objectiveDimensions[objIndex]) {
-                        if (!epochManager.isBottomDimension(epoch, dim)) {
-                            objIrrelevant = false;
-                        }
-                    }
-                    if (objIrrelevant) {
-                        irrelevantObjectives.set(objIndex, true);
-                    }
-                }
-    
-                // Perform DFS
-                storm::storage::BitVector reachableStates = getProduct().getInitialStates();
-                std::vector<uint_fast64_t> stack(reachableStates.begin(), reachableStates.end());
-                
-                while (!stack.empty()) {
-                    uint64_t state = stack.back();
-                    stack.pop_back();
-                    for (uint64_t choice = productMatrix.getRowGroupIndices()[state]; choice < productMatrix.getRowGroupIndices()[state + 1]; ++choice) {
-                        auto const& choiceStep = getSteps()[choice];
-                        if (!epochManager.isZeroEpoch(choiceStep)) {
- 
-                            // Compute the set of objectives that might or might not become irrelevant when the epoch is reached via the current choice
-                            storm::storage::BitVector maybeIrrelevantObjectives(objectiveDimensions.size(), false);
-                            for (uint64_t objIndex = 0; objIndex < objectiveDimensions.size(); ++objIndex) {
-                                for (auto const& dim : objectiveDimensions[objIndex]) {
-                                    if (epochManager.isBottomDimension(epoch, dim) && epochManager.getDimensionOfEpoch(choiceStep, dim) > 0) {
-                                        maybeIrrelevantObjectives.set(objIndex);
-                                        break;
-                                    }
-                                }
-                            }
-                            maybeIrrelevantObjectives &= ~irrelevantObjectives;
-                            
-                            // For optimization purposes, we treat the case that all objectives will be relevant seperately
-                            if (maybeIrrelevantObjectives.empty() && irrelevantObjectives.empty()) {
-                                for (auto const& choiceSuccessor : productMatrix.getRow(choice)) {
-                                    result.set(choiceSuccessor.getColumn(), true);
-                                    if (!reachableStates.get(choiceSuccessor.getColumn())) {
-                                        reachableStates.set(choiceSuccessor.getColumn());
-                                        stack.push_back(choiceSuccessor.getColumn());
-                                    }
-                                }
-                            } else {
-                                // Enumerate all possible combinations of maybe relevant objectives
-                                storm::storage::BitVector maybeObjSubset(maybeIrrelevantObjectives.getNumberOfSetBits(), false);
-                                do {
-                                    for (auto const& choiceSuccessor : productMatrix.getRow(choice)) {
-                                        // Compute the successor memory state for the current objective-subset and transition
-                                        storm::storage::BitVector successorMemoryState = convertMemoryState(getMemoryState(choiceSuccessor.getColumn()));
-                                        // Unselect dimensions belonging to irrelevant objectives
-                                        for (auto const& irrelevantObjIndex : irrelevantObjectives) {
-                                            successorMemoryState &= ~objectiveDimensions[irrelevantObjIndex];
-                                        }
-                                        // Unselect objectives that are not in the current subset of maybe relevant objectives
-                                        // We can skip a subset if it selects an objective that is irrelevant anyway (according to the original successor memorystate).
-                                        bool skipThisSubSet = false;
-                                        uint64_t i = 0;
-                                        for (auto const& objIndex : maybeIrrelevantObjectives) {
-                                            if (maybeObjSubset.get(i)) {
-                                                if (successorMemoryState.isDisjointFrom(objectiveDimensions[objIndex])) {
-                                                    skipThisSubSet = true;
-                                                    break;
-                                                } else {
-                                                    successorMemoryState &= ~objectiveDimensions[objIndex];
-                                                }
-                                            }
-                                            ++i;
-                                        }
-                                        if (!skipThisSubSet) {
-                                            uint64_t successorState = getProductState(getModelState(choiceSuccessor.getColumn()), convertMemoryState(successorMemoryState));
-                                            result.set(successorState, true);
-                                            if (!reachableStates.get(successorState)) {
-                                                reachableStates.set(successorState);
-                                                stack.push_back(successorState);
-                                            }
-                                        }
-                                    }
-                                    
-                                    maybeObjSubset.increment();
-                                } while (!maybeObjSubset.empty());
-                            }
-                        } else {
-                            for (auto const& choiceSuccessor : productMatrix.getRow(choice)) {
-                                if (!reachableStates.get(choiceSuccessor.getColumn())) {
-                                    reachableStates.set(choiceSuccessor.getColumn());
-                                    stack.push_back(choiceSuccessor.getColumn());
-                                }
-                            }
-                        }
-                    }
-                }
-                
-                return result;
+            storm::storage::BitVector const& ProductModel<ValueType>::getInStates(EpochClass const& epochClass) const {
+                STORM_LOG_ASSERT(inStates.find(epochClass) != inStates.end(), "Could not find InStates for the given epoch class");
+                return inStates.find(epochClass)->second;
             }
+
+            template<typename ValueType>
+            void ProductModel<ValueType>::computeReachableStatesInEpochClasses() {
+                std::set<Epoch> possibleSteps(steps.begin(), steps.end());
+                std::set<EpochClass, std::function<bool(EpochClass const&, EpochClass const&)>> reachableEpochClasses(std::bind(&EpochManager::epochClassOrder, &epochManager, std::placeholders::_1, std::placeholders::_2));
+                
+                std::vector<Epoch> candidates({epochManager.getBottomEpoch()});
+                std::set<Epoch> newCandidates;
+                bool converged = false;
+                while (!converged) {
+                    converged = true;
+                    for (auto const& candidate : candidates) {
+                        converged &= !reachableEpochClasses.insert(epochManager.getEpochClass(candidate)).second;
+                        for (auto const& step : possibleSteps) {
+                            epochManager.gatherPredecessorEpochs(newCandidates, candidate, step);
+                        }
+                    }
+                    candidates.assign(newCandidates.begin(), newCandidates.end());
+                    newCandidates.clear();
+                }
+                
+                for (auto epochClassIt = reachableEpochClasses.rbegin(); epochClassIt != reachableEpochClasses.rend(); ++epochClassIt) {
+                    std::vector<EpochClass> predecessors;
+                    for (auto predecessorIt = reachableEpochClasses.rbegin(); predecessorIt != epochClassIt; ++predecessorIt) {
+                        if (epochManager.isPredecessorEpochClass(*predecessorIt, *epochClassIt)) {
+                            predecessors.push_back(*predecessorIt);
+                        }
+                    }
+                    computeReachableStates(*epochClassIt, predecessors);
+                }
+            }
+
+            
+            template<typename ValueType>
+            void ProductModel<ValueType>::computeReachableStates(EpochClass const& epochClass, std::vector<EpochClass> const& predecessors) {
+                
+                storm::storage::BitVector bottomDimensions(epochManager.getDimensionCount(), false);
+                for (uint64_t dim = 0; dim < epochManager.getDimensionCount(); ++dim) {
+                    if (epochManager.isBottomDimensionEpochClass(epochClass, dim)) {
+                        bottomDimensions.set(dim, true);
+                    }
+                }
+                storm::storage::BitVector nonBottomDimensions = ~bottomDimensions;
+                
+                // Bottom dimensions corresponding to upper bounded subobjectives can not be relevant anymore
+                // Dimensions with a lower bound where the epoch class is not bottom should stay relevant
+                storm::storage::BitVector allowedRelevantDimensions(epochManager.getDimensionCount(), true);
+                storm::storage::BitVector forcedRelevantDimensions(epochManager.getDimensionCount(), false);
+                for (uint64_t dim = 0; dim < epochManager.getDimensionCount(); ++dim) {
+                    if (dimensions[dim].isUpperBounded && bottomDimensions.get(dim)) {
+                        allowedRelevantDimensions.set(dim, false);
+                    } else if (!dimensions[dim].isUpperBounded && nonBottomDimensions.get(dim)) {
+                        forcedRelevantDimensions.set(dim, false);
+                    }
+                }
+                assert(forcedRelevantDimensions.isSubsetOf(allowedRelevantDimensions));
+                
+                storm::storage::BitVector ecInStates(getProduct().getNumberOfStates(), false);
+                
+                if (!epochManager.hasBottomDimensionEpochClass(epochClass)) {
+                    for (auto const& initState : getProduct().getInitialStates()) {
+                        uint64_t transformedInitState = transformProductState(initState, allowedRelevantDimensions, forcedRelevantDimensions);
+                        ecInStates.set(transformedInitState, true);
+                    }
+                }
+                
+                for (auto const& predecessor : predecessors) {
+                    storm::storage::BitVector positiveStepDimensions(epochManager.getDimensionCount(), false);
+                    for (uint64_t dim = 0; dim < epochManager.getDimensionCount(); ++dim) {
+                        if (!epochManager.isBottomDimensionEpochClass(predecessor, dim) && bottomDimensions.get(dim)) {
+                            positiveStepDimensions.set(dim, true);
+                        }
+                    }
+                    STORM_LOG_ASSERT(reachableStates.find(predecessor) != reachableStates.end(), "Could not find reachable states of predecessor epoch class.");
+                    storm::storage::BitVector predecessorChoices = getProduct().getTransitionMatrix().getRowFilter(reachableStates.find(predecessor)->second);
+                    for (auto const& choice : predecessorChoices) {
+                        bool choiceLeadsToThisClass = false;
+                        Epoch const& choiceStep = getSteps()[choice];
+                        for (auto const& dim : positiveStepDimensions) {
+                            if (epochManager.getDimensionOfEpoch(choiceStep, dim) > 0) {
+                                choiceLeadsToThisClass = true;
+                            }
+                        }
+                        
+                        if (choiceLeadsToThisClass) {
+                            for (auto const& transition : getProduct().getTransitionMatrix().getRow(choice)) {
+                                uint64_t successorState = transformProductState(transition.getColumn(), allowedRelevantDimensions, forcedRelevantDimensions);
+                                ecInStates.set(successorState, true);
+                            }
+                        }
+                    }
+                }
+                
+                // Find all states reachable from an InState via DFS.
+                storm::storage::BitVector ecReachableStates = ecInStates;
+                std::vector<uint64_t> dfsStack(ecReachableStates.begin(), ecReachableStates.end());
+                
+                while (!dfsStack.empty()) {
+                    uint64_t currentState = dfsStack.back();
+                    dfsStack.pop_back();
+                    
+                    for (uint64_t choice = getProduct().getTransitionMatrix().getRowGroupIndices()[currentState]; choice != getProduct().getTransitionMatrix().getRowGroupIndices()[currentState + 1]; ++choice) {
+                        
+                        bool choiceLeadsOutsideOfEpoch = false;
+                        Epoch const& choiceStep = getSteps()[choice];
+                        for (auto const& dim : nonBottomDimensions) {
+                            if (epochManager.getDimensionOfEpoch(choiceStep, dim) > 0) {
+                                choiceLeadsOutsideOfEpoch = true;
+                            }
+                        }
+                        
+                        for (auto const& transition : getProduct().getTransitionMatrix().getRow(choice)) {
+                            uint64_t successorState = transformProductState(transition.getColumn(), allowedRelevantDimensions, forcedRelevantDimensions);
+                            if (choiceLeadsOutsideOfEpoch) {
+                                ecInStates.set(successorState, true);
+                            }
+                            if (!ecReachableStates.get(successorState)) {
+                                ecReachableStates.set(successorState, true);
+                                dfsStack.push_back(successorState);
+                            }
+                        }
+                    }
+                }
+                
+                reachableStates[epochClass] = std::move(ecReachableStates);
+                inStates[epochClass] = std::move(ecInStates);
+            }
+
+            template<typename ValueType>
+            uint64_t ProductModel<ValueType>::transformProductState(uint64_t productState, storm::storage::BitVector const& allowedRelevantDimensions, storm::storage::BitVector const& forcedRelevantDimensions) const {
+                return getProductState(getModelState(productState), transformMemoryState(getMemoryState(productState), allowedRelevantDimensions, forcedRelevantDimensions));
+            }
+
+            template<typename ValueType>
+            uint64_t ProductModel<ValueType>::transformMemoryState(uint64_t memoryState, storm::storage::BitVector const& allowedRelevantDimensions, storm::storage::BitVector const& forcedRelevantDimensions) const {
+                if (allowedRelevantDimensions.full() && forcedRelevantDimensions.empty()) {
+                    return memoryState;
+                }
+                storm::storage::BitVector memoryStateBv = convertMemoryState(memoryState) | forcedRelevantDimensions;
+                for (uint64_t dim = 0; dim < epochManager.getDimensionCount(); ++dim) {
+                    if (!allowedRelevantDimensions.get(dim) && memoryStateBv.get(dim)) {
+                        memoryStateBv &= ~objectiveDimensions[dimensions[dim].objectiveIndex];
+                    }
+                }
+                return convertMemoryState(memoryStateBv);
+            }
+
             
             template class ProductModel<double>;
             template class ProductModel<storm::RationalNumber>;

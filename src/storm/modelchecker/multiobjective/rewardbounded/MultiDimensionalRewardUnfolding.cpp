@@ -154,7 +154,7 @@ namespace storm {
                 // build a mapping between the different representations of memory states
                 auto memoryStateMap = computeMemoryStateMap(memoryStructure);
 
-                productModel = std::make_unique<ProductModel<ValueType>>(model, memoryStructure, objectiveDimensions, epochManager, std::move(memoryStateMap), epochSteps);
+                productModel = std::make_unique<ProductModel<ValueType>>(model, memoryStructure, dimensions, objectiveDimensions, epochManager, std::move(memoryStateMap), epochSteps);
                 
             }
             
@@ -276,11 +276,6 @@ namespace storm {
                 }
                 
                 swSetEpoch.start();
-                epochModel.objectiveRewardFilter.clear();
-                for (auto const& objRewards : epochModel.objectiveRewards) {
-                    epochModel.objectiveRewardFilter.push_back(storm::utility::vector::filterZero(objRewards));
-                    epochModel.objectiveRewardFilter.back().complement();
-                }
                 
                 epochModel.stepSolutions.resize(epochModel.stepChoices.getNumberOfSetBits());
                 auto stepSolIt = epochModel.stepSolutions.begin();
@@ -291,19 +286,24 @@ namespace storm {
                     Epoch successorEpoch = epochManager.getSuccessorEpoch(epoch, productModel->getSteps()[productChoice]);
                     
                     // Find out whether objective reward is earned for the current choice
-                    // Objective reward is not earned if there is a subObjective that is still relevant but the corresponding reward bound is passed after taking the choice
+                    // Objective reward is not earned if
+                    // a) there is an upper bounded subObjective that is still relevant but the corresponding reward bound is passed after taking the choice
+                    // b) there is a lower bounded subObjective and the corresponding reward bound is not passed yet.
                     for (uint64_t objIndex = 0; objIndex < this->objectives.size(); ++objIndex) {
-                        if (epochModel.objectiveRewardFilter[objIndex].get(reducedChoice)) {
+                        bool rewardEarned = !storm::utility::isZero(epochModel.objectiveRewards[objIndex][reducedChoice]);
+                        if (rewardEarned) {
                             for (auto const& dim : objectiveDimensions[objIndex]) {
                                 if (dimensions[dim].isUpperBounded == epochManager.isBottomDimension(successorEpoch, dim) && memoryState.get(dim)) {
-                                    epochModel.objectiveRewardFilter[objIndex].set(reducedChoice, false);
+                                    rewardEarned = false;
                                     break;
                                 }
                             }
                         }
+                        epochModel.objectiveRewardFilter[objIndex].set(reducedChoice, rewardEarned);
                     }
                     
                     // compute the solution for the stepChoices
+                    // For optimization purposes, we distinguish the easier case where the successor epoch lies in the same epoch class
                     SolutionType choiceSolution;
                     bool firstSuccessor = true;
                     if (epochManager.compareEpochClass(epoch, successorEpoch)) {
@@ -316,14 +316,17 @@ namespace storm {
                             }
                         }
                     } else {
-                        storm::storage::BitVector successorRelevantDimensions(epochManager.getDimensionCount(), true);
+                        storm::storage::BitVector allowedRelevantDimensions(epochManager.getDimensionCount(), true);
+                        storm::storage::BitVector forcedRelevantDimensions(epochManager.getDimensionCount(), false);
                         for (auto const& dim : memoryState) {
-                            if (epochManager.isBottomDimension(successorEpoch, dim)) {
-                                successorRelevantDimensions &= ~objectiveDimensions[dimensions[dim].objectiveIndex];
+                            if (epochManager.isBottomDimension(successorEpoch, dim) && dimensions[dim].isUpperBounded) {
+                                allowedRelevantDimensions &= ~objectiveDimensions[dimensions[dim].objectiveIndex];
+                            } else if (!epochManager.isBottomDimension(successorEpoch, dim) && !dimensions[dim].isUpperBounded) {
+                                forcedRelevantDimensions.set(dim, true);
                             }
                         }
                         for (auto const& successor : productModel->getProduct().getTransitionMatrix().getRow(productChoice)) {
-                            storm::storage::BitVector successorMemoryState = productModel->convertMemoryState(productModel->getMemoryState(successor.getColumn())) & successorRelevantDimensions;
+                            storm::storage::BitVector successorMemoryState = (productModel->convertMemoryState(productModel->getMemoryState(successor.getColumn())) & allowedRelevantDimensions) | forcedRelevantDimensions;
                             uint64_t successorProductState = productModel->getProductState(productModel->getModelState(successor.getColumn()), productModel->convertMemoryState(successorMemoryState));
                             SolutionType const& successorSolution = getStateSolution(successorEpoch, successorProductState);
                             if (firstSuccessor) {
@@ -366,10 +369,11 @@ namespace storm {
             
             template<typename ValueType, bool SingleObjectiveMode>
             void MultiDimensionalRewardUnfolding<ValueType, SingleObjectiveMode>::setCurrentEpochClass(Epoch const& epoch) {
+                EpochClass epochClass = epochManager.getEpochClass(epoch);
                 // std::cout << "Setting epoch class for epoch " << storm::utility::vector::toString(epoch) << std::endl;
                 swSetEpochClass.start();
                 swAux1.start();
-                auto productObjectiveRewards = productModel->computeObjectiveRewards(epoch, objectives, dimensions);
+                auto productObjectiveRewards = productModel->computeObjectiveRewards(epochClass, objectives);
                 
                 storm::storage::BitVector stepChoices(productModel->getProduct().getNumberOfChoices(), false);
                 uint64_t choice = 0;
@@ -380,17 +384,33 @@ namespace storm {
                     ++choice;
                 }
                 epochModel.epochMatrix = productModel->getProduct().getTransitionMatrix().filterEntries(~stepChoices);
+                // redirect transitions for the case where the lower reward bounds are not met yet
+                storm::storage::BitVector violatedLowerBoundedDimensions(dimensions.size(), false);
+                for (uint64_t dim = 0; dim < dimensions.size(); ++dim) {
+                    if (!dimensions[dim].isUpperBounded && !epochManager.isBottomDimensionEpochClass(epochClass, dim)) {
+                        violatedLowerBoundedDimensions.set(dim);
+                    }
+                }
+                if (!violatedLowerBoundedDimensions.empty()) {
+                    for (auto& entry : epochModel.epochMatrix) {
+                        storm::storage::BitVector successorMemoryState = productModel->convertMemoryState(productModel->getMemoryState(entry.getColumn()));
+                        successorMemoryState |= violatedLowerBoundedDimensions;
+                        entry.setColumn(productModel->getProductState(productModel->getModelState(entry.getColumn()), productModel->convertMemoryState(successorMemoryState)));
+                    }
+                }
                 
                 storm::storage::BitVector zeroObjRewardChoices(productModel->getProduct().getNumberOfChoices(), true);
-                for (auto const& objRewards : productObjectiveRewards) {
-                    zeroObjRewardChoices &= storm::utility::vector::filterZero(objRewards);
+                for (uint64_t objIndex = 0; objIndex < objectives.size(); ++objIndex) {
+                    if (violatedLowerBoundedDimensions.isDisjointFrom(objectiveDimensions[objIndex])) {
+                        zeroObjRewardChoices &= storm::utility::vector::filterZero(productObjectiveRewards[objIndex]);
+                    }
                 }
                 swAux1.stop();
                 swAux2.start();
                 storm::storage::BitVector allProductStates(productModel->getProduct().getNumberOfStates(), true);
                 
                 // Get the relevant states for this epoch.
-                storm::storage::BitVector productInStates = productModel->computeInStates(epoch);
+                storm::storage::BitVector productInStates = productModel->getInStates(epochClass);
                 // The epoch model only needs to consider the states that are reachable from a relevant state
                 storm::storage::BitVector consideredStates = storm::utility::graph::getReachableStates(epochModel.epochMatrix, productInStates, allProductStates, ~allProductStates);
                 // std::cout << "numInStates = " << productInStates.getNumberOfSetBits() << std::endl;
@@ -414,11 +434,22 @@ namespace storm {
                 }
                 
                 epochModel.objectiveRewards.clear();
-                for (auto const& productObjRew : productObjectiveRewards) {
+                for (uint64_t objIndex = 0; objIndex < objectives.size(); ++objIndex) {
+                    bool objHasViolatedLowerDimension = false;
+                    for (auto const& dim : objectiveDimensions[objIndex]) {
+                        if (!dimensions[dim].isUpperBounded && !epochManager.isBottomDimensionEpochClass(epochClass, dim)) {
+                            objHasViolatedLowerDimension = true;
+                        }
+                    }
                     std::vector<ValueType> reducedModelObjRewards;
-                    reducedModelObjRewards.reserve(epochModel.epochMatrix.getRowCount());
-                    for (auto const& productChoice : epochModelToProductChoiceMap) {
-                        reducedModelObjRewards.push_back(productObjRew[productChoice]);
+                    if (objHasViolatedLowerDimension) {
+                        reducedModelObjRewards.assign(epochModel.epochMatrix.getRowCount(), storm::utility::zero<ValueType>());
+                    } else {
+                        std::vector<ValueType> const& productObjRew = productObjectiveRewards[objIndex];
+                        reducedModelObjRewards.reserve(epochModel.epochMatrix.getRowCount());
+                        for (auto const& productChoice : epochModelToProductChoiceMap) {
+                            reducedModelObjRewards.push_back(productObjRew[productChoice]);
+                        }
                     }
                     epochModel.objectiveRewards.push_back(std::move(reducedModelObjRewards));
                 }
@@ -437,6 +468,12 @@ namespace storm {
                 }
                 productStateToEpochModelInStateMap = std::make_shared<std::vector<uint64_t> const>(std::move(toEpochModelInStatesMap));
                 
+                epochModel.objectiveRewardFilter.clear();
+                for (auto const& objRewards : epochModel.objectiveRewards) {
+                    epochModel.objectiveRewardFilter.push_back(storm::utility::vector::filterZero(objRewards));
+                    epochModel.objectiveRewardFilter.back().complement();
+                }
+
                 swAux4.stop();
                 swSetEpochClass.stop();
                 epochModelSizes.push_back(epochModel.epochMatrix.getRowGroupCount());
