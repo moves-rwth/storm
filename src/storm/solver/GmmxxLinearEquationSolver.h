@@ -19,7 +19,6 @@ namespace storm {
             enum class Preconditioner {
                 Ilu, Diagonal, None
             };
-
             
             friend std::ostream& operator<<(std::ostream& out, Preconditioner const& preconditioner) {
                 switch (preconditioner) {
@@ -51,14 +50,19 @@ namespace storm {
             void setPrecision(ValueType precision);
             void setMaximalNumberOfIterations(uint64_t maximalNumberOfIterations);
             void setNumberOfIterationsUntilRestart(uint64_t restart);
+            void setForceSoundness(bool value);
          
             SolutionMethod getSolutionMethod() const;
             Preconditioner getPreconditioner() const;
             ValueType getPrecision() const;
             uint64_t getMaximalNumberOfIterations() const;
             uint64_t getNumberOfIterationsUntilRestart() const;
+            bool getForceSoundness() const;
             
         private:
+            // Whether or not we are forced to be sound.
+            bool forceSoundness;
+            
             // The method to use for solving linear equation systems.
             SolutionMethod method;
             
@@ -88,7 +92,6 @@ namespace storm {
             virtual void setMatrix(storm::storage::SparseMatrix<ValueType> const& A) override;
             virtual void setMatrix(storm::storage::SparseMatrix<ValueType>&& A) override;
             
-            virtual bool solveEquations(std::vector<ValueType>& x, std::vector<ValueType> const& b) const override;
             virtual void multiply(std::vector<ValueType>& x, std::vector<ValueType> const* b, std::vector<ValueType>& result) const override;
             virtual void multiplyAndReduce(OptimizationDirection const& dir, std::vector<uint64_t> const& rowGroupIndices, std::vector<ValueType>& x, std::vector<ValueType> const* b, std::vector<ValueType>& result, std::vector<uint_fast64_t>* choices = nullptr) const override;
             virtual bool supportsGaussSeidelMultiplication() const override;
@@ -102,6 +105,9 @@ namespace storm {
             
             virtual void clearCache() const override;
 
+        protected:
+            virtual bool internalSolveEquations(std::vector<ValueType>& x, std::vector<ValueType> const& b) const override;
+            
         private:
             virtual uint64_t getMatrixRowCount() const override;
             virtual uint64_t getMatrixColumnCount() const override;

@@ -15,7 +15,7 @@ namespace storm {
             class NativeEquationSolverSettings : public ModuleSettings {
             public:
                 // An enumeration of all available methods for solving linear equations.
-                enum class LinearEquationMethod { Jacobi, GaussSeidel, SOR, WalkerChae, Power, SoundPower };
+                enum class LinearEquationMethod { Jacobi, GaussSeidel, SOR, WalkerChae, Power };
                 
                 // An enumeration of all available convergence criteria.
                 enum class ConvergenceCriterion { Absolute, Relative };
@@ -117,6 +117,8 @@ namespace storm {
                 static const std::string absoluteOptionName;
                 static const std::string powerMethodMultiplicationStyleOptionName;
             };
+            
+            std::ostream& operator<<(std::ostream& out, NativeEquationSolverSettings::LinearEquationMethod const& method);
             
         } // namespace modules
     } // namespace settings

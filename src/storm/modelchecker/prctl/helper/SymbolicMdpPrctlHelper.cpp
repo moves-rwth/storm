@@ -88,7 +88,7 @@ namespace storm {
                             if (requirements.requires(storm::solver::MinMaxLinearEquationSolverRequirements::Element::ValidInitialScheduler)) {
                                 STORM_LOG_DEBUG("Computing valid scheduler, because the solver requires it.");
                                 initialScheduler = computeValidSchedulerHint(storm::solver::EquationSystemType::UntilProbabilities, model, transitionMatrix, maybeStates, statesWithProbability01.second);
-                                requirements.set(storm::solver::MinMaxLinearEquationSolverRequirements::Element::ValidInitialScheduler, false);
+                                requirements.clearValidInitialScheduler();
                             }
                             STORM_LOG_THROW(requirements.empty(), storm::exceptions::UncheckedRequirementException, "Could not establish requirements of solver.");
                         }
@@ -247,7 +247,7 @@ namespace storm {
                             if (requirements.requires(storm::solver::MinMaxLinearEquationSolverRequirements::Element::ValidInitialScheduler)) {
                                 STORM_LOG_DEBUG("Computing valid scheduler, because the solver requires it.");
                                 initialScheduler = computeValidSchedulerHint(storm::solver::EquationSystemType::ReachabilityRewards, model, transitionMatrix, maybeStates, targetStates);
-                                requirements.set(storm::solver::MinMaxLinearEquationSolverRequirements::Element::ValidInitialScheduler, false);
+                                requirements.clearValidInitialScheduler();
                             }
                             STORM_LOG_THROW(requirements.empty(), storm::exceptions::UncheckedRequirementException, "Could not establish requirements of solver.");
                         }

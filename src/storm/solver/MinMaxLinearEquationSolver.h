@@ -150,7 +150,27 @@ namespace storm {
              * Sets bounds for the solution that can potentially used by the solver.
              */
             void setBounds(ValueType const& lower, ValueType const& upper);
+
+            /*!
+             * Retrieves whether the solver has an upper bound.
+             */
+            bool hasUpperBound() const;
             
+            /*!
+             * Retrieves whether the solver has a lower bound.
+             */
+            bool hasLowerBound() const;
+
+            /*!
+             * Retrieves the upper bound (if this solver has any).
+             */
+            ValueType const& getUpperBound() const;
+            
+            /*!
+             * Retrieves the upper bound (if this solver has any).
+             */
+            ValueType const& getLowerBound() const;
+
             /*!
              * Sets a valid initial scheduler that is required by some solvers (see requirements of solvers).
              */

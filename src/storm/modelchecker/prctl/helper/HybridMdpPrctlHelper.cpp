@@ -117,7 +117,7 @@ namespace storm {
                                 STORM_LOG_DEBUG("Computing valid scheduler hint, because the solver requires it.");
                                 initialScheduler = computeValidInitialSchedulerForUntilProbabilities<ValueType>(explicitRepresentation.first, explicitRepresentation.second);
 
-                                requirements.set(storm::solver::MinMaxLinearEquationSolverRequirements::Element::ValidInitialScheduler, false);
+                                requirements.clearValidInitialScheduler();
                             }
                             STORM_LOG_THROW(requirements.empty(), storm::exceptions::UncheckedRequirementException, "Cannot establish requirements for solver.");
                         }
@@ -126,6 +126,7 @@ namespace storm {
                         if (initialScheduler) {
                             solver->setInitialScheduler(std::move(initialScheduler.get()));
                         }
+                        solver->setBounds(storm::utility::zero<ValueType>(), storm::utility::one<ValueType>());
                         solver->setRequirementsChecked();
                         solver->solveEquations(dir, x, explicitRepresentation.second);
                         
@@ -357,7 +358,7 @@ namespace storm {
                             if (requirements.requires(storm::solver::MinMaxLinearEquationSolverRequirements::Element::ValidInitialScheduler)) {
                                 STORM_LOG_DEBUG("Computing valid scheduler, because the solver requires it.");
                                 requireInitialScheduler = true;
-                                requirements.set(storm::solver::MinMaxLinearEquationSolverRequirements::Element::ValidInitialScheduler, false);
+                                requirements.clearValidInitialScheduler();
                             }
                             STORM_LOG_THROW(requirements.empty(), storm::exceptions::UncheckedRequirementException, "Cannot establish requirements for solver.");
                         }

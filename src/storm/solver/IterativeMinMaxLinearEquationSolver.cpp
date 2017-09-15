@@ -1,12 +1,14 @@
 #include "storm/solver/IterativeMinMaxLinearEquationSolver.h"
 
 #include "storm/settings/SettingsManager.h"
+#include "storm/settings/modules/GeneralSettings.h"
 #include "storm/settings/modules/MinMaxEquationSolverSettings.h"
 
 #include "storm/utility/vector.h"
 #include "storm/utility/macros.h"
 #include "storm/exceptions/InvalidSettingsException.h"
 #include "storm/exceptions/InvalidStateException.h"
+#include "storm/exceptions/UnmetRequirementException.h"
 
 namespace storm {
     namespace solver {
@@ -22,6 +24,9 @@ namespace storm {
             valueIterationMultiplicationStyle = minMaxSettings.getValueIterationMultiplicationStyle();
             
             setSolutionMethod(minMaxSettings.getMinMaxEquationSolvingMethod());
+            
+            // Finally force soundness and potentially overwrite some other settings.
+            this->setForceSoundness(storm::settings::getModule<storm::settings::modules::GeneralSettings>().isSoundSet());
         }
         
         template<typename ValueType>
@@ -61,6 +66,11 @@ namespace storm {
         }
         
         template<typename ValueType>
+        void IterativeMinMaxLinearEquationSolverSettings<ValueType>::setForceSoundness(bool value) {
+            this->forceSoundness = value;
+        }
+        
+        template<typename ValueType>
         typename IterativeMinMaxLinearEquationSolverSettings<ValueType>::SolutionMethod const& IterativeMinMaxLinearEquationSolverSettings<ValueType>::getSolutionMethod() const {
             return solutionMethod;
         }
@@ -84,6 +94,11 @@ namespace storm {
         MultiplicationStyle IterativeMinMaxLinearEquationSolverSettings<ValueType>::getValueIterationMultiplicationStyle() const {
             return valueIterationMultiplicationStyle;
         }
+        
+        template<typename ValueType>
+        bool IterativeMinMaxLinearEquationSolverSettings<ValueType>::getForceSoundness() const {
+            return forceSoundness;
+        }
     
         template<typename ValueType>
         IterativeMinMaxLinearEquationSolver<ValueType>::IterativeMinMaxLinearEquationSolver(std::unique_ptr<LinearEquationSolverFactory<ValueType>>&& linearEquationSolverFactory, IterativeMinMaxLinearEquationSolverSettings<ValueType> const& settings) : StandardMinMaxLinearEquationSolver<ValueType>(std::move(linearEquationSolverFactory)), settings(settings) {
@@ -104,7 +119,11 @@ namespace storm {
         bool IterativeMinMaxLinearEquationSolver<ValueType>::internalSolveEquations(OptimizationDirection dir, std::vector<ValueType>& x, std::vector<ValueType> const& b) const {
             switch (this->getSettings().getSolutionMethod()) {
                 case IterativeMinMaxLinearEquationSolverSettings<ValueType>::SolutionMethod::ValueIteration:
-                    return solveEquationsValueIteration(dir, x, b);
+                    if (this->getSettings().getForceSoundness()) {
+                        return solveEquationsSoundValueIteration(dir, x, b);
+                    } else {
+                        return solveEquationsValueIteration(dir, x, b);
+                    }
                 case IterativeMinMaxLinearEquationSolverSettings<ValueType>::SolutionMethod::PolicyIteration:
                     return solveEquationsPolicyIteration(dir, x, b);
                 case IterativeMinMaxLinearEquationSolverSettings<ValueType>::SolutionMethod::Acyclic:
@@ -229,18 +248,30 @@ namespace storm {
         
         template<typename ValueType>
         MinMaxLinearEquationSolverRequirements IterativeMinMaxLinearEquationSolver<ValueType>::getRequirements(EquationSystemType const& equationSystemType, boost::optional<storm::solver::OptimizationDirection> const& direction) const {
-            MinMaxLinearEquationSolverRequirements requirements;
+            // Start by copying the requirements of the linear equation solver.
+            MinMaxLinearEquationSolverRequirements requirements(this->linearEquationSolverFactory->getRequirements());
             
+            // If we will use sound value iteration, we require no ECs and an upper bound.
+            if (this->getSettings().getSolutionMethod() == IterativeMinMaxLinearEquationSolverSettings<ValueType>::SolutionMethod::ValueIteration && this->getSettings().getForceSoundness()) {
+                requirements.requireNoEndComponents();
+                requirements.requireGlobalUpperBound();
+            }
+            
+            // Then add our requirements on top of that.
             if (equationSystemType == EquationSystemType::UntilProbabilities) {
                 if (this->getSettings().getSolutionMethod() == IterativeMinMaxLinearEquationSolverSettings<ValueType>::SolutionMethod::PolicyIteration) {
                     if (!direction || direction.get() == OptimizationDirection::Maximize) {
-                        requirements.set(MinMaxLinearEquationSolverRequirements::Element::ValidInitialScheduler);
+                        requirements.requireValidInitialScheduler();
                     }
                 }
             } else if (equationSystemType == EquationSystemType::ReachabilityRewards) {
                 if (!direction || direction.get() == OptimizationDirection::Minimize) {
-                    requirements.set(MinMaxLinearEquationSolverRequirements::Element::ValidInitialScheduler);
+                    requirements.requireValidInitialScheduler();
                 }
+            }
+            
+            if (this->getSettings().getSolutionMethod() == IterativeMinMaxLinearEquationSolverSettings<ValueType>::SolutionMethod::ValueIteration && this->getSettings().getForceSoundness()) {
+                requirements.requireGlobalUpperBound();
             }
             
             return requirements;
@@ -328,6 +359,105 @@ namespace storm {
             }
             
             return status == Status::Converged || status == Status::TerminatedEarly;
+        }
+        
+        template<typename ValueType>
+        bool IterativeMinMaxLinearEquationSolver<ValueType>::solveEquationsSoundValueIteration(OptimizationDirection dir, std::vector<ValueType>& x, std::vector<ValueType> const& b) const {
+            STORM_LOG_THROW(this->hasUpperBound(), storm::exceptions::UnmetRequirementException, "Solver requires upper bound, but none was given.");
+
+            if (!this->linEqSolverA) {
+                this->linEqSolverA = this->linearEquationSolverFactory->create(*this->A);
+                this->linEqSolverA->setCachingEnabled(true);
+            }
+            
+            if (!auxiliaryRowGroupVector) {
+                auxiliaryRowGroupVector = std::make_unique<std::vector<ValueType>>(this->A->getRowGroupCount());
+            }
+            
+            if (this->hasInitialScheduler()) {
+                // Resolve the nondeterminism according to the initial scheduler.
+                bool convertToEquationSystem = this->linearEquationSolverFactory->getEquationProblemFormat() == LinearEquationSolverProblemFormat::EquationSystem;
+                storm::storage::SparseMatrix<ValueType> submatrix = this->A->selectRowsFromRowGroups(this->getInitialScheduler(), convertToEquationSystem);
+                if (convertToEquationSystem) {
+                    submatrix.convertToEquationSystem();
+                }
+                storm::utility::vector::selectVectorValues<ValueType>(*auxiliaryRowGroupVector, this->getInitialScheduler(), this->A->getRowGroupIndices(), b);
+                
+                // Solve the resulting equation system.
+                auto submatrixSolver = this->linearEquationSolverFactory->create(std::move(submatrix));
+                submatrixSolver->setCachingEnabled(true);
+                if (this->lowerBound) {
+                    submatrixSolver->setLowerBound(this->lowerBound.get());
+                }
+                if (this->upperBound) {
+                    submatrixSolver->setUpperBound(this->upperBound.get());
+                }
+                submatrixSolver->solveEquations(x, *auxiliaryRowGroupVector);
+            }
+            
+            // Allow aliased multiplications.
+            bool useGaussSeidelMultiplication = this->linEqSolverA->supportsGaussSeidelMultiplication() && settings.getValueIterationMultiplicationStyle() == storm::solver::MultiplicationStyle::GaussSeidel;
+            
+            std::vector<ValueType>* lowerX = &x;
+            std::vector<ValueType>* upperX = this->auxiliaryRowGroupVector.get();
+            std::vector<ValueType>* tmp;
+            if (!useGaussSeidelMultiplication) {
+                auxiliaryRowGroupVector2 = std::make_unique<std::vector<ValueType>>(lowerX->size());
+                tmp = auxiliaryRowGroupVector2.get();
+            }
+            
+            // Proceed with the iterations as long as the method did not converge or reach the maximum number of iterations.
+            uint64_t iterations = 0;
+            
+            Status status = Status::InProgress;
+            while (status == Status::InProgress && iterations < this->getSettings().getMaximalNumberOfIterations()) {
+                // Compute x' = min/max(A*x + b).
+                if (useGaussSeidelMultiplication) {
+                    this->linEqSolverA->multiplyAndReduceGaussSeidel(dir, this->A->getRowGroupIndices(), *lowerX, &b);
+                    this->linEqSolverA->multiplyAndReduceGaussSeidel(dir, this->A->getRowGroupIndices(), *upperX, &b);
+                } else {
+                    this->linEqSolverA->multiplyAndReduce(dir, this->A->getRowGroupIndices(), *lowerX, &b, *tmp);
+                    std::swap(lowerX, tmp);
+                    this->linEqSolverA->multiplyAndReduce(dir, this->A->getRowGroupIndices(), *upperX, &b, *tmp);
+                    std::swap(upperX, tmp);
+                }
+                
+                // Determine whether the method converged.
+                if (storm::utility::vector::equalModuloPrecision<ValueType>(*lowerX, *upperX, storm::utility::convertNumber<ValueType>(2.0) * this->getSettings().getPrecision(), false)) {
+                    status = Status::Converged;
+                }
+                
+                // Update environment variables.
+                ++iterations;
+            }
+            
+            if (status != Status::Converged) {
+                status = Status::MaximalIterationsExceeded;
+            }
+            
+            reportStatus(status, iterations);
+            
+            // We take the means of the lower and upper bound so we guarantee the desired precision.
+            storm::utility::vector::applyPointwise(*lowerX, *upperX, *lowerX, [] (ValueType const& a, ValueType const& b) { return (a + b) / storm::utility::convertNumber<ValueType>(2.0); });
+            
+            // Since we shuffled the pointer around, we need to write the actual results to the input/output vector x.
+            if (&x == tmp) {
+                std::swap(x, *tmp);
+            } else if (&x == this->auxiliaryRowGroupVector.get()) {
+                std::swap(x, *this->auxiliaryRowGroupVector);
+            }
+            
+            // If requested, we store the scheduler for retrieval.
+            if (this->isTrackSchedulerSet()) {
+                this->schedulerChoices = std::vector<uint_fast64_t>(this->A->getRowGroupCount());
+                this->linEqSolverA->multiplyAndReduce(dir, this->A->getRowGroupIndices(), x, &b, *this->auxiliaryRowGroupVector, &this->schedulerChoices.get());
+            }
+            
+            if (!this->isCachingEnabled()) {
+                clearCache();
+            }
+            
+            return status == Status::Converged;
         }
         
         template<typename ValueType>
@@ -473,6 +603,7 @@ namespace storm {
         template<typename ValueType>
         void IterativeMinMaxLinearEquationSolver<ValueType>::clearCache() const {
             auxiliaryRowGroupVector.reset();
+            auxiliaryRowGroupVector2.reset();
             rowGroupOrdering.reset();
             StandardMinMaxLinearEquationSolver<ValueType>::clearCache();
         }

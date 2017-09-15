@@ -7,6 +7,7 @@
 #include "storm/solver/AbstractEquationSolver.h"
 #include "storm/solver/MultiplicationStyle.h"
 #include "storm/solver/LinearEquationSolverProblemFormat.h"
+#include "storm/solver/LinearEquationSolverRequirements.h"
 #include "storm/solver/OptimizationDirection.h"
 
 #include "storm/utility/VectorHelper.h"
@@ -47,7 +48,7 @@ namespace storm {
              *
              * @return true
              */
-            virtual bool solveEquations(std::vector<ValueType>& x, std::vector<ValueType> const& b) const = 0;
+            bool solveEquations(std::vector<ValueType>& x, std::vector<ValueType> const& b) const;
 
             /*!
              * Performs on matrix-vector multiplication x' = A*x + b.
@@ -128,6 +129,12 @@ namespace storm {
             virtual LinearEquationSolverProblemFormat getEquationProblemFormat() const = 0;
             
             /*!
+             * Retrieves the requirements of the solver under the current settings. Note that these requirements only
+             * apply to solving linear equations and not to the matrix vector multiplications.
+             */
+            virtual LinearEquationSolverRequirements getRequirements() const;
+            
+            /*!
              * Sets whether some of the generated data during solver calls should be cached.
              * This possibly increases the runtime of subsequent calls but also increases memory consumption.
              */
@@ -154,11 +161,33 @@ namespace storm {
             void setUpperBound(ValueType const& value);
 
             /*!
+             * Retrieves the lower bound (if there is any).
+             */
+            ValueType const& getLowerBound() const;
+            
+            /*!
+             * Retrieves the lower bound (if there is any).
+             */
+            ValueType const& getUpperBound() const;
+            
+            /*!
+             * Retrieves whether this solver has a lower bound.
+             */
+            bool hasLowerBound() const;
+
+            /*!
+             * Retrieves whether this solver has an upper bound.
+             */
+            bool hasUpperBound() const;
+
+            /*!
              * Sets bounds for the solution that can potentially be used by the solver.
              */
             void setBounds(ValueType const& lower, ValueType const& upper);
 
         protected:
+            virtual bool internalSolveEquations(std::vector<ValueType>& x, std::vector<ValueType> const& b) const = 0;
+            
             // auxiliary storage. If set, this vector has getMatrixRowCount() entries.
             mutable std::unique_ptr<std::vector<ValueType>> cachedRowVector;
             
@@ -220,6 +249,12 @@ namespace storm {
              * Retrieves the problem format that the solver expects if it was created with the current settings.
              */
             virtual LinearEquationSolverProblemFormat getEquationProblemFormat() const;
+            
+            /*!
+             * Retrieves the requirements of the solver if it was created with the current settings. Note that these
+             * requirements only apply to solving linear equations and not to the matrix vector multiplications.
+             */
+            LinearEquationSolverRequirements getRequirements() const;
         };
 
         template<typename ValueType>

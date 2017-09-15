@@ -84,13 +84,6 @@ namespace storm {
                  * @return True iff the option was set.
                  */
                 bool isParametricSet() const;
-
-                /*!
-                 * Retrieves whether a min/max equation solving technique has been set.
-                 *
-                 * @return True iff an equation solving technique has been set.
-                 */
-                bool isMinMaxEquationSolvingTechniqueSet() const;
                 
                 /*!
                  * Retrieves whether the option enabling exact model checking is set.
@@ -98,6 +91,13 @@ namespace storm {
                  * @return True iff the option was set.
                  */
                 bool isExactSet() const;
+                
+                /*!
+                 * Retrieves whether the option forcing soundnet is set.
+                 *
+                 * @return True iff the option was set.
+                 */
+                bool isSoundSet() const;
 
                 bool check() const override;
                 void finalize() override;
@@ -121,8 +121,8 @@ namespace storm {
                 static const std::string bisimulationOptionName;
                 static const std::string bisimulationOptionShortName;
                 static const std::string parametricOptionName;
-
                 static const std::string exactOptionName;
+                static const std::string soundOptionName;
             };
 
         } // namespace modules

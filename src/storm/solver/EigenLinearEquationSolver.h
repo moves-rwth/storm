@@ -25,14 +25,17 @@ namespace storm {
             void setPrecision(ValueType precision);
             void setMaximalNumberOfIterations(uint64_t maximalNumberOfIterations);
             void setNumberOfIterationsUntilRestart(uint64_t restart);
-
+            void setForceSoundness(bool value);
+            
             SolutionMethod getSolutionMethod() const;
             Preconditioner getPreconditioner() const;
             ValueType getPrecision() const;
             uint64_t getMaximalNumberOfIterations() const;
             uint64_t getNumberOfIterationsUntilRestart() const;
+            bool getForceSoundness() const;
             
         private:
+            bool forceSoundness;
             SolutionMethod method;
             Preconditioner preconditioner;
             double precision;
@@ -67,14 +70,16 @@ namespace storm {
             virtual void setMatrix(storm::storage::SparseMatrix<ValueType> const& A) override;
             virtual void setMatrix(storm::storage::SparseMatrix<ValueType>&& A) override;
             
-            virtual bool solveEquations(std::vector<ValueType>& x, std::vector<ValueType> const& b) const override;
             virtual void multiply(std::vector<ValueType>& x, std::vector<ValueType> const* b, std::vector<ValueType>& result) const override;
 
             EigenLinearEquationSolverSettings<ValueType>& getSettings();
             EigenLinearEquationSolverSettings<ValueType> const& getSettings() const;
             
             virtual LinearEquationSolverProblemFormat getEquationProblemFormat() const override;
-            
+
+        protected:
+            virtual bool internalSolveEquations(std::vector<ValueType>& x, std::vector<ValueType> const& b) const override;
+
         private:
             virtual uint64_t getMatrixRowCount() const override;
             virtual uint64_t getMatrixColumnCount() const override;

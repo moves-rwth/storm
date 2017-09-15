@@ -3,17 +3,19 @@
 #include <cmath>
 #include <utility>
 
+#include "storm/settings/SettingsManager.h"
+#include "storm/settings/modules/GeneralSettings.h"
+#include "storm/settings/modules/GmmxxEquationSolverSettings.h"
+
 #include "storm/adapters/GmmxxAdapter.h"
 
 #include "storm/solver/GmmxxMultiplier.h"
+#include "storm/solver/NativeLinearEquationSolver.h"
 
-#include "storm/settings/SettingsManager.h"
 #include "storm/utility/vector.h"
 #include "storm/utility/constants.h"
 #include "storm/exceptions/InvalidStateException.h"
-#include "storm/settings/modules/GmmxxEquationSolverSettings.h"
-
-#include "storm/solver/NativeLinearEquationSolver.h"
+#include "storm/exceptions/InvalidSolverSettingsException.h"
 
 #include "storm/utility/gmm.h"
 #include "storm/utility/vector.h"
@@ -49,11 +51,17 @@ namespace storm {
             } else if (preconditionAsSetting == storm::settings::modules::GmmxxEquationSolverSettings::PreconditioningMethod::None) {
                 preconditioner = Preconditioner::None;
             }
+            
+            // Finally force soundness and potentially overwrite some other settings.
+            this->setForceSoundness(storm::settings::getModule<storm::settings::modules::GeneralSettings>().isSoundSet());
         }
         
         template<typename ValueType>
         void GmmxxLinearEquationSolverSettings<ValueType>::setSolutionMethod(SolutionMethod const& method) {
             this->method = method;
+            
+            // Make sure we switch the method if we have to guarantee soundness.
+            this->setForceSoundness(forceSoundness);
         }
         
         template<typename ValueType>
@@ -74,6 +82,12 @@ namespace storm {
         template<typename ValueType>
         void GmmxxLinearEquationSolverSettings<ValueType>::setNumberOfIterationsUntilRestart(uint64_t restart) {
             this->restart = restart;
+        }
+        
+        template<typename ValueType>
+        void GmmxxLinearEquationSolverSettings<ValueType>::setForceSoundness(bool value) {
+            STORM_LOG_THROW(!value, storm::exceptions::InvalidSolverSettingsException, "Solver cannot guarantee soundness, please choose a different equation solver.");
+            forceSoundness = value;
         }
         
         template<typename ValueType>
@@ -99,6 +113,11 @@ namespace storm {
         template<typename ValueType>
         uint64_t GmmxxLinearEquationSolverSettings<ValueType>::getNumberOfIterationsUntilRestart() const {
             return restart;
+        }
+        
+        template<typename ValueType>
+        bool GmmxxLinearEquationSolverSettings<ValueType>::getForceSoundness() const {
+            return forceSoundness;
         }
         
         template<typename ValueType>
@@ -129,7 +148,7 @@ namespace storm {
         }
         
         template<typename ValueType>
-        bool GmmxxLinearEquationSolver<ValueType>::solveEquations(std::vector<ValueType>& x, std::vector<ValueType> const& b) const {
+        bool GmmxxLinearEquationSolver<ValueType>::internalSolveEquations(std::vector<ValueType>& x, std::vector<ValueType> const& b) const {
             auto method = this->getSettings().getSolutionMethod();
             auto preconditioner = this->getSettings().getPreconditioner();
             STORM_LOG_INFO("Solving linear equation system (" << x.size() << " rows) with Gmmxx linear equation solver with method '" << method << "' and preconditioner '" << preconditioner << "' (max. " << this->getSettings().getMaximalNumberOfIterations() << " iterations).");

@@ -14,7 +14,7 @@ namespace storm {
         class NativeLinearEquationSolverSettings {
         public:
             enum class SolutionMethod {
-                Jacobi, GaussSeidel, SOR, WalkerChae, Power, SoundPower
+                Jacobi, GaussSeidel, SOR, WalkerChae, Power
             };
 
             NativeLinearEquationSolverSettings();
@@ -25,15 +25,18 @@ namespace storm {
             void setRelativeTerminationCriterion(bool value);
             void setOmega(ValueType omega);
             void setPowerMethodMultiplicationStyle(MultiplicationStyle value);
-
+            void setForceSoundness(bool value);
+            
             SolutionMethod getSolutionMethod() const;
             ValueType getPrecision() const;
             uint64_t getMaximalNumberOfIterations() const;
             uint64_t getRelativeTerminationCriterion() const;
             ValueType getOmega() const;
             MultiplicationStyle getPowerMethodMultiplicationStyle() const;
+            bool getForceSoundness() const;
 
         private:
+            bool forceSoundness;
             SolutionMethod method;
             double precision;
             bool relative;
@@ -55,7 +58,6 @@ namespace storm {
             virtual void setMatrix(storm::storage::SparseMatrix<ValueType> const& A) override;
             virtual void setMatrix(storm::storage::SparseMatrix<ValueType>&& A) override;
             
-            virtual bool solveEquations(std::vector<ValueType>& x, std::vector<ValueType> const& b) const override;
             virtual void multiply(std::vector<ValueType>& x, std::vector<ValueType> const* b, std::vector<ValueType>& result) const override;
             virtual void multiplyAndReduce(OptimizationDirection const& dir, std::vector<uint64_t> const& rowGroupIndices, std::vector<ValueType>& x, std::vector<ValueType> const* b, std::vector<ValueType>& result, std::vector<uint_fast64_t>* choices = nullptr) const override;
             virtual bool supportsGaussSeidelMultiplication() const override;
@@ -69,6 +71,9 @@ namespace storm {
 
             virtual void clearCache() const override;
 
+        protected:
+            virtual bool internalSolveEquations(std::vector<ValueType>& x, std::vector<ValueType> const& b) const override;
+            
         private:
             virtual uint64_t getMatrixRowCount() const override;
             virtual uint64_t getMatrixColumnCount() const override;
@@ -95,6 +100,7 @@ namespace storm {
 
             // cached auxiliary data
             mutable std::unique_ptr<std::pair<storm::storage::SparseMatrix<ValueType>, std::vector<ValueType>>> jacobiDecomposition;
+            mutable std::unique_ptr<std::vector<ValueType>> cachedRowVector2; // A.getRowCount() rows
             
             struct WalkerChaeData {
                 WalkerChaeData(storm::storage::SparseMatrix<ValueType> const& originalMatrix, std::vector<ValueType> const& originalB);

@@ -24,6 +24,11 @@ namespace storm {
         }
         
         template<typename ValueType>
+        bool LinearEquationSolver<ValueType>::solveEquations(std::vector<ValueType>& x, std::vector<ValueType> const& b) const {
+            return this->internalSolveEquations(x, b);
+        }
+        
+        template<typename ValueType>
         void LinearEquationSolver<ValueType>::repeatedMultiply(std::vector<ValueType>& x, std::vector<ValueType> const* b, uint_fast64_t n) const {
             if (!cachedRowVector) {
                 cachedRowVector = std::make_unique<std::vector<ValueType>>(getMatrixRowCount());
@@ -102,6 +107,11 @@ namespace storm {
         }
         
         template<typename ValueType>
+        LinearEquationSolverRequirements LinearEquationSolver<ValueType>::getRequirements() const {
+            return LinearEquationSolverRequirements();
+        }
+        
+        template<typename ValueType>
         void LinearEquationSolver<ValueType>::setCachingEnabled(bool value) const {
             if(cachingEnabled && !value) {
                 // caching will be turned off. Hence we clear the cache at this point
@@ -137,6 +147,26 @@ namespace storm {
         }
         
         template<typename ValueType>
+        bool LinearEquationSolver<ValueType>::hasLowerBound() const {
+            return static_cast<bool>(lowerBound);
+        }
+        
+        template<typename ValueType>
+        bool LinearEquationSolver<ValueType>::hasUpperBound() const {
+            return static_cast<bool>(upperBound);
+        }
+        
+        template<typename ValueType>
+        ValueType const& LinearEquationSolver<ValueType>::getLowerBound() const {
+            return lowerBound.get();
+        }
+        
+        template<typename ValueType>
+        ValueType const& LinearEquationSolver<ValueType>::getUpperBound() const {
+            return upperBound.get();
+        }
+        
+        template<typename ValueType>
         std::unique_ptr<LinearEquationSolver<ValueType>> LinearEquationSolverFactory<ValueType>::create(storm::storage::SparseMatrix<ValueType> const& matrix) const {
             std::unique_ptr<LinearEquationSolver<ValueType>> solver = this->create();
             solver->setMatrix(matrix);
@@ -153,6 +183,11 @@ namespace storm {
         template<typename ValueType>
         LinearEquationSolverProblemFormat LinearEquationSolverFactory<ValueType>::getEquationProblemFormat() const {
             return this->create()->getEquationProblemFormat();
+        }
+        
+        template<typename ValueType>
+        LinearEquationSolverRequirements LinearEquationSolverFactory<ValueType>::getRequirements() const {
+            return this->create()->getRequirements();
         }
         
         template<typename ValueType>

@@ -263,12 +263,12 @@ namespace storm {
             if (equationSystemType == EquationSystemType::UntilProbabilities) {
                 if (this->getSettings().getSolutionMethod() == SymbolicMinMaxLinearEquationSolverSettings<ValueType>::SolutionMethod::PolicyIteration) {
                     if (!direction || direction.get() == OptimizationDirection::Maximize) {
-                        requirements.set(MinMaxLinearEquationSolverRequirements::Element::ValidInitialScheduler);
+                        requirements.requireValidInitialScheduler();
                     }
                 }
             } else if (equationSystemType == EquationSystemType::ReachabilityRewards) {
                 if (!direction || direction.get() == OptimizationDirection::Minimize) {
-                    requirements.set(MinMaxLinearEquationSolverRequirements::Element::ValidInitialScheduler);
+                    requirements.requireValidInitialScheduler();
                 }
             }
             

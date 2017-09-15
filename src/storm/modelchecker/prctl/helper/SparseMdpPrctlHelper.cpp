@@ -207,7 +207,7 @@ namespace storm {
                     if (requirements.requires(storm::solver::MinMaxLinearEquationSolverRequirements::Element::ValidInitialScheduler)) {
                         STORM_LOG_DEBUG("Computing valid scheduler, because the solver requires it.");
                         result.schedulerHint = computeValidSchedulerHint(type, transitionMatrix, backwardTransitions, maybeStates, phiStates, targetStates);
-                        requirements.set(storm::solver::MinMaxLinearEquationSolverRequirements::Element::ValidInitialScheduler, false);
+                        requirements.clearValidInitialScheduler();
                     }
                     STORM_LOG_THROW(requirements.empty(), storm::exceptions::UncheckedRequirementException, "There are unchecked requirements of the solver.");
                 }
@@ -215,15 +215,14 @@ namespace storm {
                 bool skipEcWithinMaybeStatesCheck = dir == storm::OptimizationDirection::Minimize || (hint.isExplicitModelCheckerHint() && hint.asExplicitModelCheckerHint<ValueType>().getNoEndComponentsInMaybeStates());
                 extractHintInformationForMaybeStates(result, transitionMatrix, backwardTransitions, maybeStates, selectedChoices, hint, skipEcWithinMaybeStatesCheck);
 
-                result.lowerResultBound = storm::utility::zero<ValueType>();
-                if (type == storm::solver::EquationSystemType::UntilProbabilities) {
-                    result.upperResultBound = storm::utility::one<ValueType>();
-                } else if (type == storm::solver::EquationSystemType::ReachabilityRewards) {
-                    // Intentionally left empty.
-                } else {
-                    STORM_LOG_ASSERT(false, "Unexpected equation system type.");
+                // Only set bounds if we did not obtain them from the hint.
+                if (!result.hasLowerResultBound()) {
+                    result.lowerResultBound = storm::utility::zero<ValueType>();
                 }
-                
+                if (!result.hasUpperResultBound() && type == storm::solver::EquationSystemType::UntilProbabilities) {
+                    result.upperResultBound = storm::utility::one<ValueType>();
+                }
+
                 return result;
             }
             

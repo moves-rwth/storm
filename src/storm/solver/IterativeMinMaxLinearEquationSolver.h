@@ -23,14 +23,17 @@ namespace storm {
             void setRelativeTerminationCriterion(bool value);
             void setPrecision(ValueType precision);
             void setValueIterationMultiplicationStyle(MultiplicationStyle value);
-
+            void setForceSoundness(bool value);
+            
             SolutionMethod const& getSolutionMethod() const;
             uint64_t getMaximalNumberOfIterations() const;
             ValueType getPrecision() const;
             bool getRelativeTerminationCriterion() const;
             MultiplicationStyle getValueIterationMultiplicationStyle() const;
+            bool getForceSoundness() const;
             
         private:
+            bool forceSoundness;
             SolutionMethod solutionMethod;
             uint64_t maximalNumberOfIterations;
             ValueType precision;
@@ -60,6 +63,7 @@ namespace storm {
         private:
             bool solveEquationsPolicyIteration(OptimizationDirection dir, std::vector<ValueType>& x, std::vector<ValueType> const& b) const;
             bool solveEquationsValueIteration(OptimizationDirection dir, std::vector<ValueType>& x, std::vector<ValueType> const& b) const;
+            bool solveEquationsSoundValueIteration(OptimizationDirection dir, std::vector<ValueType>& x, std::vector<ValueType> const& b) const;
             bool solveEquationsAcyclic(OptimizationDirection dir, std::vector<ValueType>& x, std::vector<ValueType> const& b) const;
 
             bool valueImproved(OptimizationDirection dir, ValueType const& value1, ValueType const& value2) const;
@@ -72,6 +76,7 @@ namespace storm {
             
             // possibly cached data
             mutable std::unique_ptr<std::vector<ValueType>> auxiliaryRowGroupVector; // A.rowGroupCount() entries
+            mutable std::unique_ptr<std::vector<ValueType>> auxiliaryRowGroupVector2; // A.rowGroupCount() entries
             mutable std::unique_ptr<std::vector<uint64_t>> rowGroupOrdering; // A.rowGroupCount() entries
             
             Status updateStatusIfNotConverged(Status status, std::vector<ValueType> const& x, uint64_t iterations) const;

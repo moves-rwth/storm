@@ -128,6 +128,26 @@ namespace storm {
         }
         
         template<typename ValueType>
+        bool MinMaxLinearEquationSolver<ValueType>::hasUpperBound() const {
+            return static_cast<bool>(upperBound);
+        }
+        
+        template<typename ValueType>
+        bool MinMaxLinearEquationSolver<ValueType>::hasLowerBound() const {
+            return static_cast<bool>(lowerBound);
+        }
+
+        template<typename ValueType>
+        ValueType const& MinMaxLinearEquationSolver<ValueType>::getUpperBound() const {
+            return upperBound.get();
+        }
+        
+        template<typename ValueType>
+        ValueType const& MinMaxLinearEquationSolver<ValueType>::getLowerBound() const {
+            return lowerBound.get();
+        }
+        
+        template<typename ValueType>
         void MinMaxLinearEquationSolver<ValueType>::setInitialScheduler(std::vector<uint_fast64_t>&& choices) {
             initialScheduler = std::move(choices);
         }

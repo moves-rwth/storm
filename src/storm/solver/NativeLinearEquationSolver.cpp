@@ -3,12 +3,14 @@
 #include <utility>
 
 #include "storm/settings/SettingsManager.h"
+#include "storm/settings/modules/GeneralSettings.h"
 #include "storm/settings/modules/NativeEquationSolverSettings.h"
 
 #include "storm/utility/constants.h"
 #include "storm/utility/vector.h"
 #include "storm/exceptions/InvalidStateException.h"
 #include "storm/exceptions/InvalidSettingsException.h"
+#include "storm/exceptions/UnmetRequirementException.h"
 
 namespace storm {
     namespace solver {
@@ -28,22 +30,26 @@ namespace storm {
                 method = SolutionMethod::WalkerChae;
             } else if (methodAsSetting == storm::settings::modules::NativeEquationSolverSettings::LinearEquationMethod::Power) {
                 method = SolutionMethod::Power;
-            } else if (methodAsSetting == storm::settings::modules::NativeEquationSolverSettings::LinearEquationMethod::SoundPower) {
-                method = SolutionMethod::SoundPower;
             } else {
                 STORM_LOG_THROW(false, storm::exceptions::InvalidSettingsException, "The selected solution technique is invalid for this solver.");
             }
-            
+        
             maximalNumberOfIterations = settings.getMaximalIterationCount();
             precision = settings.getPrecision();
             relative = settings.getConvergenceCriterion() == storm::settings::modules::NativeEquationSolverSettings::ConvergenceCriterion::Relative;
             omega = settings.getOmega();
             multiplicationStyle = settings.getPowerMethodMultiplicationStyle();
+                                    
+            // Finally force soundness and potentially overwrite some other settings.
+            this->setForceSoundness(storm::settings::getModule<storm::settings::modules::GeneralSettings>().isSoundSet());
         }
         
         template<typename ValueType>
         void NativeLinearEquationSolverSettings<ValueType>::setSolutionMethod(SolutionMethod const& method) {
             this->method = method;
+            
+            // Make sure we switch the method if we have to guarantee soundness.
+            this->setForceSoundness(forceSoundness);
         }
         
         template<typename ValueType>
@@ -69,6 +75,15 @@ namespace storm {
         template<typename ValueType>
         void NativeLinearEquationSolverSettings<ValueType>::setPowerMethodMultiplicationStyle(MultiplicationStyle value) {
             this->multiplicationStyle = value;
+        }
+        
+        template<typename ValueType>
+        void NativeLinearEquationSolverSettings<ValueType>::setForceSoundness(bool value) {
+            forceSoundness = value;
+            if (forceSoundness) {
+                STORM_LOG_WARN_COND(method != SolutionMethod::Power, "To guarantee soundness, the equation solving technique has been switched to '" << storm::settings::modules::NativeEquationSolverSettings::LinearEquationMethod::Power << "'.");
+                method = SolutionMethod::Power;
+            }
         }
         
         template<typename ValueType>
@@ -101,6 +116,11 @@ namespace storm {
             return multiplicationStyle;
         }
 
+        template<typename ValueType>
+        bool NativeLinearEquationSolverSettings<ValueType>::getForceSoundness() const {
+            return forceSoundness;
+        }
+        
         template<typename ValueType>
         NativeLinearEquationSolver<ValueType>::NativeLinearEquationSolver(NativeLinearEquationSolverSettings<ValueType> const& settings) : localA(nullptr), A(nullptr), settings(settings) {
             // Intentionally left empty.
@@ -410,11 +430,69 @@ namespace storm {
         
         template<typename ValueType>
         bool NativeLinearEquationSolver<ValueType>::solveEquationsSoundPower(std::vector<ValueType>& x, std::vector<ValueType> const& b) const {
-            // TODO
+            STORM_LOG_THROW(this->hasUpperBound(), storm::exceptions::UnmetRequirementException, "Solver requires upper bound, but none was given.");
+            STORM_LOG_INFO("Solving linear equation system (" << x.size() << " rows) with NativeLinearEquationSolver (SoundPower)");
+            
+            std::vector<ValueType>* lowerX = &x;
+            if (!this->cachedRowVector) {
+                this->cachedRowVector = std::make_unique<std::vector<ValueType>>(getMatrixRowCount(), this->getUpperBound());
+            }
+            std::vector<ValueType>* upperX = this->cachedRowVector.get();
+            
+            bool useGaussSeidelMultiplication = this->getSettings().getPowerMethodMultiplicationStyle() == storm::solver::MultiplicationStyle::GaussSeidel;
+            std::vector<ValueType>* tmp;
+            if (!useGaussSeidelMultiplication) {
+                cachedRowVector2 = std::make_unique<std::vector<ValueType>>(x.size());
+                tmp = cachedRowVector2.get();
+            }
+            
+            bool converged = false;
+            uint64_t iterations = 0;
+            while (!converged && iterations < this->getSettings().getMaximalNumberOfIterations()) {
+                if (useGaussSeidelMultiplication) {
+                    this->multiplier.multAddGaussSeidelBackward(*this->A, *lowerX, &b);
+                    this->multiplier.multAddGaussSeidelBackward(*this->A, *upperX, &b);
+                } else {
+                    this->multiplier.multAdd(*this->A, *lowerX, &b, *tmp);
+                    std::swap(tmp, lowerX);
+                    this->multiplier.multAdd(*this->A, *upperX, &b, *tmp);
+                    std::swap(tmp, upperX);
+                }
+                
+                // Now check if the process already converged within our precision. Note that we double the target
+                // precision here. Doing so, we need to take the means of the lower and upper values later to guarantee
+                // the original precision.
+                converged = storm::utility::vector::equalModuloPrecision<ValueType>(*lowerX, *upperX, storm::utility::convertNumber<ValueType>(2.0) * static_cast<ValueType>(this->getSettings().getPrecision()), false);
+                
+                // Set up next iteration.
+                ++iterations;
+            }
+            
+            // We take the means of the lower and upper bound so we guarantee the desired precision.
+            storm::utility::vector::applyPointwise(*lowerX, *upperX, *lowerX, [] (ValueType const& a, ValueType const& b) { return (a + b) / storm::utility::convertNumber<ValueType>(2.0); });
+
+            // Since we shuffled the pointer around, we need to write the actual results to the input/output vector x.
+            if (&x == tmp) {
+                std::swap(x, *tmp);
+            } else if (&x == this->cachedRowVector.get()) {
+                std::swap(x, *this->cachedRowVector);
+            }
+            
+            if (!this->isCachingEnabled()) {
+                clearCache();
+            }
+            
+            if (converged) {
+                STORM_LOG_INFO("Iterative solver converged in " << iterations << " iterations.");
+            } else {
+                STORM_LOG_WARN("Iterative solver did not converge in " << iterations << " iterations.");
+            }
+            
+            return converged;
         }
         
         template<typename ValueType>
-        bool NativeLinearEquationSolver<ValueType>::solveEquations(std::vector<ValueType>& x, std::vector<ValueType> const& b) const {
+        bool NativeLinearEquationSolver<ValueType>::internalSolveEquations(std::vector<ValueType>& x, std::vector<ValueType> const& b) const {
             if (this->getSettings().getSolutionMethod() == NativeLinearEquationSolverSettings<ValueType>::SolutionMethod::SOR || this->getSettings().getSolutionMethod() == NativeLinearEquationSolverSettings<ValueType>::SolutionMethod::GaussSeidel) {
                 return this->solveEquationsSOR(x, b, this->getSettings().getSolutionMethod() == NativeLinearEquationSolverSettings<ValueType>::SolutionMethod::SOR ? this->getSettings().getOmega() : storm::utility::one<ValueType>());
             } else if (this->getSettings().getSolutionMethod() == NativeLinearEquationSolverSettings<ValueType>::SolutionMethod::Jacobi) {
@@ -422,7 +500,11 @@ namespace storm {
             } else if (this->getSettings().getSolutionMethod() == NativeLinearEquationSolverSettings<ValueType>::SolutionMethod::WalkerChae) {
                 return this->solveEquationsWalkerChae(x, b);
             } else if (this->getSettings().getSolutionMethod() == NativeLinearEquationSolverSettings<ValueType>::SolutionMethod::Power) {
-                return this->solveEquationsPower(x, b);
+                if (this->getSettings().getForceSoundness()) {
+                    return this->solveEquationsSoundPower(x, b);
+                } else {
+                    return this->solveEquationsPower(x, b);
+                }
             }
             
             STORM_LOG_THROW(false, storm::exceptions::InvalidSettingsException, "Unknown solving technique.");
@@ -495,7 +577,7 @@ namespace storm {
         
         template<typename ValueType>
         LinearEquationSolverProblemFormat NativeLinearEquationSolver<ValueType>::getEquationProblemFormat() const {
-            if (this->getSettings().getSolutionMethod() == NativeLinearEquationSolverSettings<ValueType>::SolutionMethod::Power || this->getSettings().getSolutionMethod() == NativeLinearEquationSolverSettings<ValueType>::SolutionMethod::SoundPower) {
+            if (this->getSettings().getSolutionMethod() == NativeLinearEquationSolverSettings<ValueType>::SolutionMethod::Power) {
                 return LinearEquationSolverProblemFormat::FixedPointSystem;
             } else {
                 return LinearEquationSolverProblemFormat::EquationSystem;
@@ -505,6 +587,7 @@ namespace storm {
         template<typename ValueType>
         void NativeLinearEquationSolver<ValueType>::clearCache() const {
             jacobiDecomposition.reset();
+            cachedRowVector2.reset();
             walkerChaeData.reset();
             LinearEquationSolver<ValueType>::clearCache();
         }

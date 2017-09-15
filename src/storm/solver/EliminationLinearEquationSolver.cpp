@@ -63,9 +63,9 @@ namespace storm {
         }
         
         template<typename ValueType>
-        bool EliminationLinearEquationSolver<ValueType>::solveEquations(std::vector<ValueType>& x, std::vector<ValueType> const& b) const {
+        bool EliminationLinearEquationSolver<ValueType>::internalSolveEquations(std::vector<ValueType>& x, std::vector<ValueType> const& b) const {
             // FIXME: This solver will not work for all input systems. More concretely, the current implementation will
-            // not work for systems that have a 0 on the diagonal. This is not a restriction of this technique in general
+            // not work for systems that have a 1 on the diagonal. This is not a restriction of this technique in general
             // but arbitrary matrices require pivoting, which is not currently implemented.
             
             STORM_LOG_INFO("Solving linear equation system (" << x.size() << " rows) with elimination");
