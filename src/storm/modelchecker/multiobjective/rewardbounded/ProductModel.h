@@ -44,15 +44,20 @@ namespace storm {
                 std::vector<std::vector<ValueType>> computeObjectiveRewards(EpochClass const& epochClass, std::vector<storm::modelchecker::multiobjective::Objective<ValueType>> const& objectives) const;
                 storm::storage::BitVector const& getInStates(EpochClass const& epochClass) const;
 
+
+                uint64_t transformMemoryState(uint64_t const& memoryState, EpochClass const& epochClass, uint64_t const& predecessorMemoryState) const;
+                uint64_t transformProductState(uint64_t const& productState, EpochClass const& epochClass, uint64_t const& predecessorMemoryState) const;
+
                 
             private:
                 
                 void setReachableProductStates(storm::storage::SparseModelMemoryProduct<ValueType>& productBuilder, std::vector<Epoch> const& originalModelSteps) const;
                 
+                void collectReachableEpochClasses(std::set<EpochClass, std::function<bool(EpochClass const&, EpochClass const&)>>& reachableEpochClasses, std::set<Epoch> const& possibleSteps) const;
+                
                 void computeReachableStatesInEpochClasses();
                 void computeReachableStates(EpochClass const& epochClass, std::vector<EpochClass> const& predecessors);
-                uint64_t transformProductState(uint64_t productState, storm::storage::BitVector const& allowedRelevantDimensions, storm::storage::BitVector const& forcedRelevantDimensions) const;
-
+   
                 std::vector<Dimension<ValueType>> const& dimensions;
                 std::vector<storm::storage::BitVector> const& objectiveDimensions;
                 EpochManager const& epochManager;

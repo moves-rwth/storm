@@ -288,7 +288,8 @@ namespace storm {
                 for (auto const& reducedChoice : epochModel.stepChoices) {
                     uint64_t productChoice = epochModelToProductChoiceMap[reducedChoice];
                     uint64_t productState = productModel->getProductStateFromChoice(productChoice);
-                    auto memoryState = productModel->convertMemoryState(productModel->getMemoryState(productState));
+                    auto const& memoryState = productModel->getMemoryState(productState);
+                    auto const& memoryStateBv = productModel->convertMemoryState(memoryState);
                     Epoch successorEpoch = epochManager.getSuccessorEpoch(epoch, productModel->getSteps()[productChoice]);
                     
                     // Find out whether objective reward is earned for the current choice
@@ -299,7 +300,7 @@ namespace storm {
                         bool rewardEarned = !storm::utility::isZero(epochModel.objectiveRewards[objIndex][reducedChoice]);
                         if (rewardEarned) {
                             for (auto const& dim : objectiveDimensions[objIndex]) {
-                                if (dimensions[dim].isUpperBounded == epochManager.isBottomDimension(successorEpoch, dim) && memoryState.get(dim)) {
+                                if (dimensions[dim].isUpperBounded == epochManager.isBottomDimension(successorEpoch, dim) && memoryStateBv.get(dim)) {
                                     rewardEarned = false;
                                     break;
                                 }
@@ -308,7 +309,7 @@ namespace storm {
                         epochModel.objectiveRewardFilter[objIndex].set(reducedChoice, rewardEarned);
                     }
                     // compute the solution for the stepChoices
-                    // For optimization purposes, we distinguish the easier case where the successor epoch lies in the same epoch class
+                    // For optimization purposes, we distinguish the case where the memory state does not have to be transformed
                     SolutionType choiceSolution;
                     bool firstSuccessor = true;
                     if (!containsLowerBoundedObjective && epochManager.compareEpochClass(epoch, successorEpoch)) {
@@ -321,18 +322,8 @@ namespace storm {
                             }
                         }
                     } else {
-                        storm::storage::BitVector allowedRelevantDimensions(epochManager.getDimensionCount(), true);
-                        storm::storage::BitVector forcedRelevantDimensions(epochManager.getDimensionCount(), false);
-                        for (auto const& dim : memoryState) {
-                            if (epochManager.isBottomDimension(successorEpoch, dim) && dimensions[dim].isUpperBounded) {
-                                allowedRelevantDimensions &= ~objectiveDimensions[dimensions[dim].objectiveIndex];
-                            } else if (!epochManager.isBottomDimension(successorEpoch, dim) && !dimensions[dim].isUpperBounded) {
-                                forcedRelevantDimensions.set(dim, true);
-                            }
-                        }
                         for (auto const& successor : productModel->getProduct().getTransitionMatrix().getRow(productChoice)) {
-                            storm::storage::BitVector successorMemoryState = (productModel->convertMemoryState(productModel->getMemoryState(successor.getColumn())) | forcedRelevantDimensions) & allowedRelevantDimensions;
-                            uint64_t successorProductState = productModel->getProductState(productModel->getModelState(successor.getColumn()), productModel->convertMemoryState(successorMemoryState));
+                            uint64_t successorProductState = productModel->transformProductState(successor.getColumn(), epochManager.getEpochClass(successorEpoch), memoryState);
                             SolutionType const& successorSolution = getStateSolution(successorEpoch, successorProductState);
                             if (firstSuccessor) {
                                 choiceSolution = getScaledSolution(successorSolution, successor.getValue());
@@ -398,12 +389,9 @@ namespace storm {
                 }
                 if (!violatedLowerBoundedDimensions.empty()) {
                     for (uint64_t state = 0; state < epochModel.epochMatrix.getRowGroupCount(); ++state) {
-                        auto const& memoryState = productModel->convertMemoryState(productModel->getMemoryState(state));
-                        storm::storage::BitVector forcedRelevantDimensions = memoryState & violatedLowerBoundedDimensions;
+                        auto const& memoryState = productModel->getMemoryState(state);
                         for (auto& entry : epochModel.epochMatrix.getRowGroup(state)) {
-                            storm::storage::BitVector successorMemoryState = productModel->convertMemoryState(productModel->getMemoryState(entry.getColumn()));
-                            successorMemoryState |= forcedRelevantDimensions;
-                            entry.setColumn(productModel->getProductState(productModel->getModelState(entry.getColumn()), productModel->convertMemoryState(successorMemoryState)));
+                            entry.setColumn(productModel->transformProductState(entry.getColumn(), epochClass, memoryState));
                         }
                     }
                 }
