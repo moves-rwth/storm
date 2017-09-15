@@ -155,7 +155,6 @@ namespace storm {
                 auto memoryStateMap = computeMemoryStateMap(memoryStructure);
 
                 productModel = std::make_unique<ProductModel<ValueType>>(model, memoryStructure, dimensions, objectiveDimensions, epochManager, std::move(memoryStateMap), epochSteps);
-                
             }
             
             template<typename ValueType, bool SingleObjectiveMode>
@@ -276,6 +275,13 @@ namespace storm {
                 }
                 
                 swSetEpoch.start();
+                bool containsLowerBoundedObjective = false;
+                for (auto const& dimension : dimensions) {
+                    if (!dimension.isUpperBounded) {
+                        containsLowerBoundedObjective = true;
+                        break;
+                    }
+                }
                 
                 epochModel.stepSolutions.resize(epochModel.stepChoices.getNumberOfSetBits());
                 auto stepSolIt = epochModel.stepSolutions.begin();
@@ -301,12 +307,11 @@ namespace storm {
                         }
                         epochModel.objectiveRewardFilter[objIndex].set(reducedChoice, rewardEarned);
                     }
-                    
                     // compute the solution for the stepChoices
                     // For optimization purposes, we distinguish the easier case where the successor epoch lies in the same epoch class
                     SolutionType choiceSolution;
                     bool firstSuccessor = true;
-                    if (epochManager.compareEpochClass(epoch, successorEpoch)) {
+                    if (!containsLowerBoundedObjective && epochManager.compareEpochClass(epoch, successorEpoch)) {
                         for (auto const& successor : productModel->getProduct().getTransitionMatrix().getRow(productChoice)) {
                             if (firstSuccessor) {
                                 choiceSolution = getScaledSolution(getStateSolution(successorEpoch, successor.getColumn()), successor.getValue());
@@ -326,7 +331,7 @@ namespace storm {
                             }
                         }
                         for (auto const& successor : productModel->getProduct().getTransitionMatrix().getRow(productChoice)) {
-                            storm::storage::BitVector successorMemoryState = (productModel->convertMemoryState(productModel->getMemoryState(successor.getColumn())) & allowedRelevantDimensions) | forcedRelevantDimensions;
+                            storm::storage::BitVector successorMemoryState = (productModel->convertMemoryState(productModel->getMemoryState(successor.getColumn())) | forcedRelevantDimensions) & allowedRelevantDimensions;
                             uint64_t successorProductState = productModel->getProductState(productModel->getModelState(successor.getColumn()), productModel->convertMemoryState(successorMemoryState));
                             SolutionType const& successorSolution = getStateSolution(successorEpoch, successorProductState);
                             if (firstSuccessor) {
@@ -370,7 +375,7 @@ namespace storm {
             template<typename ValueType, bool SingleObjectiveMode>
             void MultiDimensionalRewardUnfolding<ValueType, SingleObjectiveMode>::setCurrentEpochClass(Epoch const& epoch) {
                 EpochClass epochClass = epochManager.getEpochClass(epoch);
-                // std::cout << "Setting epoch class for epoch " << storm::utility::vector::toString(epoch) << std::endl;
+                // std::cout << "Setting epoch class for epoch " << epochManager.toString(epoch) << std::endl;
                 swSetEpochClass.start();
                 swAux1.start();
                 auto productObjectiveRewards = productModel->computeObjectiveRewards(epochClass, objectives);
@@ -392,10 +397,14 @@ namespace storm {
                     }
                 }
                 if (!violatedLowerBoundedDimensions.empty()) {
-                    for (auto& entry : epochModel.epochMatrix) {
-                        storm::storage::BitVector successorMemoryState = productModel->convertMemoryState(productModel->getMemoryState(entry.getColumn()));
-                        successorMemoryState |= violatedLowerBoundedDimensions;
-                        entry.setColumn(productModel->getProductState(productModel->getModelState(entry.getColumn()), productModel->convertMemoryState(successorMemoryState)));
+                    for (uint64_t state = 0; state < epochModel.epochMatrix.getRowGroupCount(); ++state) {
+                        auto const& memoryState = productModel->convertMemoryState(productModel->getMemoryState(state));
+                        storm::storage::BitVector forcedRelevantDimensions = memoryState & violatedLowerBoundedDimensions;
+                        for (auto& entry : epochModel.epochMatrix.getRowGroup(state)) {
+                            storm::storage::BitVector successorMemoryState = productModel->convertMemoryState(productModel->getMemoryState(entry.getColumn()));
+                            successorMemoryState |= forcedRelevantDimensions;
+                            entry.setColumn(productModel->getProductState(productModel->getModelState(entry.getColumn()), productModel->convertMemoryState(successorMemoryState)));
+                        }
                     }
                 }
                 
@@ -435,21 +444,15 @@ namespace storm {
                 
                 epochModel.objectiveRewards.clear();
                 for (uint64_t objIndex = 0; objIndex < objectives.size(); ++objIndex) {
-                    bool objHasViolatedLowerDimension = false;
-                    for (auto const& dim : objectiveDimensions[objIndex]) {
-                        if (!dimensions[dim].isUpperBounded && !epochManager.isBottomDimensionEpochClass(epochClass, dim)) {
-                            objHasViolatedLowerDimension = true;
-                        }
-                    }
+                    std::vector<ValueType> const& productObjRew = productObjectiveRewards[objIndex];
                     std::vector<ValueType> reducedModelObjRewards;
-                    if (objHasViolatedLowerDimension) {
-                        reducedModelObjRewards.assign(epochModel.epochMatrix.getRowCount(), storm::utility::zero<ValueType>());
-                    } else {
-                        std::vector<ValueType> const& productObjRew = productObjectiveRewards[objIndex];
-                        reducedModelObjRewards.reserve(epochModel.epochMatrix.getRowCount());
-                        for (auto const& productChoice : epochModelToProductChoiceMap) {
-                            reducedModelObjRewards.push_back(productObjRew[productChoice]);
-                        }
+                    reducedModelObjRewards.reserve(epochModel.epochMatrix.getRowCount());
+                    for (auto const& productChoice : epochModelToProductChoiceMap) {
+                        reducedModelObjRewards.push_back(productObjRew[productChoice]);
+                    }
+                    // Check if the objective is violated in the current epoch
+                    if (!violatedLowerBoundedDimensions.isDisjointFrom(objectiveDimensions[objIndex])) {
+                        storm::utility::vector::setVectorValues(reducedModelObjRewards, ~epochModel.stepChoices, storm::utility::zero<ValueType>());
                     }
                     epochModel.objectiveRewards.push_back(std::move(reducedModelObjRewards));
                 }
@@ -512,24 +515,27 @@ namespace storm {
             template<typename ValueType, bool SingleObjectiveMode>
             template<bool SO, typename std::enable_if<SO, int>::type>
             std::string MultiDimensionalRewardUnfolding<ValueType, SingleObjectiveMode>::solutionToString(SolutionType const& solution) const {
-                return std::to_string(solution);
+                std::stringstream stringstream;
+                stringstream << solution;
+                return stringstream.str();
             }
             
             template<typename ValueType, bool SingleObjectiveMode>
             template<bool SO, typename std::enable_if<!SO, int>::type>
             std::string MultiDimensionalRewardUnfolding<ValueType, SingleObjectiveMode>::solutionToString(SolutionType const& solution) const {
-                std::string res = "(";
+                std::stringstream stringstream;
+                stringstream << "(";
                 bool first = true;
                 for (auto const& s : solution) {
                     if (first) {
                         first = false;
                     } else {
-                        res += ", ";
+                        stringstream << ", ";
                     }
-                    res += std::to_string(s);
+                    stringstream << s;
                 }
-                res += ")";
-                return res;
+                stringstream << ")";
+                return stringstream.str();
             }
             
             template<typename ValueType, bool SingleObjectiveMode>
@@ -571,8 +577,11 @@ namespace storm {
             
             template<typename ValueType, bool SingleObjectiveMode>
             typename MultiDimensionalRewardUnfolding<ValueType, SingleObjectiveMode>::SolutionType const& MultiDimensionalRewardUnfolding<ValueType, SingleObjectiveMode>::getStateSolution(Epoch const& epoch, uint64_t const& productState) {
-                STORM_LOG_ASSERT(epochSolutions.find(epoch) != epochSolutions.end(), "Requested unexisting solution for epoch " << epochManager.toString(epoch) << ".");
-                EpochSolution const& epochSolution = epochSolutions[epoch];
+                auto epochSolutionIt = epochSolutions.find(epoch);
+                STORM_LOG_ASSERT(epochSolutionIt != epochSolutions.end(), "Requested unexisting solution for epoch " << epochManager.toString(epoch) << ".");
+                auto const& epochSolution = epochSolutionIt->second;
+                STORM_LOG_ASSERT(productState < epochSolution.productStateToSolutionVectorMap->size(), "Requested solution for epoch " << epochManager.toString(epoch) << " at an unexisting product state.");
+                STORM_LOG_ASSERT((*epochSolution.productStateToSolutionVectorMap)[productState] < epochSolution.solutions.size(), "Requested solution for epoch " << epochManager.toString(epoch) << " at a state for which no solution was stored.");
                 return epochSolution.solutions[(*epochSolution.productStateToSolutionVectorMap)[productState]];
             }
             

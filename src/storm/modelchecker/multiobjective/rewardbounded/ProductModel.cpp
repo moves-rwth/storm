@@ -140,6 +140,7 @@ namespace storm {
                     
                     storm::storage::BitVector consideredDimensions(dimensions.size(), false);
                     do {
+                        // todo: this selects more states then necessary
                         if (consideredDimensions.isSubsetOf(lowerBoundedDimensions)) {
                             for (uint64_t memoryState = 0; memoryState < productBuilder.getMemory().getNumberOfStates(); ++memoryState) {
                                 uint64_t memoryStatePrime = convertMemoryState(convertMemoryState(memoryState) | consideredDimensions);
@@ -256,7 +257,7 @@ namespace storm {
                             // find out whether objective reward should be earned within this epoch class
                             bool collectRewardInEpoch = true;
                             for (auto const& subObjIndex : relevantObjectives) {
-                                if (dimensions[dimensionIndexMap[subObjIndex]].isUpperBounded == epochManager.isBottomDimensionEpochClass(epochClass, dimensionIndexMap[subObjIndex])) {
+                                if (dimensions[dimensionIndexMap[subObjIndex]].isUpperBounded && epochManager.isBottomDimensionEpochClass(epochClass, dimensionIndexMap[subObjIndex])) {
                                     collectRewardInEpoch = false;
                                     break;
                                 }
@@ -371,7 +372,7 @@ namespace storm {
                     if (dimensions[dim].isUpperBounded && bottomDimensions.get(dim)) {
                         allowedRelevantDimensions.set(dim, false);
                     } else if (!dimensions[dim].isUpperBounded && nonBottomDimensions.get(dim)) {
-                        forcedRelevantDimensions.set(dim, false);
+                        forcedRelevantDimensions.set(dim, true);
                     }
                 }
                 assert(forcedRelevantDimensions.isSubsetOf(allowedRelevantDimensions));
@@ -393,20 +394,31 @@ namespace storm {
                         }
                     }
                     STORM_LOG_ASSERT(reachableStates.find(predecessor) != reachableStates.end(), "Could not find reachable states of predecessor epoch class.");
-                    storm::storage::BitVector predecessorChoices = getProduct().getTransitionMatrix().getRowFilter(reachableStates.find(predecessor)->second);
-                    for (auto const& choice : predecessorChoices) {
-                        bool choiceLeadsToThisClass = false;
-                        Epoch const& choiceStep = getSteps()[choice];
-                        for (auto const& dim : positiveStepDimensions) {
-                            if (epochManager.getDimensionOfEpoch(choiceStep, dim) > 0) {
-                                choiceLeadsToThisClass = true;
+                    storm::storage::BitVector predecessorStates = reachableStates.find(predecessor)->second;
+                    for (auto const& predecessorState : predecessorStates) {
+                        storm::storage::BitVector const& predecessorMemStateBv = convertMemoryState(getMemoryState(predecessorState));
+                        storm::storage::BitVector currentAllowedRelDim = allowedRelevantDimensions;
+                        for (uint64_t dim = 0; dim < epochManager.getDimensionCount(); ++dim) {
+                            if (!allowedRelevantDimensions.get(dim) && predecessorMemStateBv.get(dim)) {
+                                currentAllowedRelDim &= ~objectiveDimensions[dimensions[dim].objectiveIndex];
                             }
                         }
-                        
-                        if (choiceLeadsToThisClass) {
-                            for (auto const& transition : getProduct().getTransitionMatrix().getRow(choice)) {
-                                uint64_t successorState = transformProductState(transition.getColumn(), allowedRelevantDimensions, forcedRelevantDimensions);
-                                ecInStates.set(successorState, true);
+                        storm::storage::BitVector currentForcedRelDim = forcedRelevantDimensions & predecessorMemStateBv;
+
+                        for (uint64_t choice = getProduct().getTransitionMatrix().getRowGroupIndices()[predecessorState]; choice < getProduct().getTransitionMatrix().getRowGroupIndices()[predecessorState + 1]; ++choice) {
+                            bool choiceLeadsToThisClass = false;
+                            Epoch const& choiceStep = getSteps()[choice];
+                            for (auto const& dim : positiveStepDimensions) {
+                                if (epochManager.getDimensionOfEpoch(choiceStep, dim) > 0) {
+                                    choiceLeadsToThisClass = true;
+                                }
+                            }
+                            
+                            if (choiceLeadsToThisClass) {
+                                for (auto const& transition : getProduct().getTransitionMatrix().getRow(choice)) {
+                                    uint64_t successorState = transformProductState(transition.getColumn(), currentAllowedRelDim, currentForcedRelDim);
+                                    ecInStates.set(successorState, true);
+                                }
                             }
                         }
                     }
@@ -420,6 +432,16 @@ namespace storm {
                     uint64_t currentState = dfsStack.back();
                     dfsStack.pop_back();
                     
+                    storm::storage::BitVector const& currentMemStateBv = convertMemoryState(getMemoryState(currentState));
+                    storm::storage::BitVector currentAllowedRelDim = allowedRelevantDimensions;
+                    for (uint64_t dim = 0; dim < epochManager.getDimensionCount(); ++dim) {
+                        if (!allowedRelevantDimensions.get(dim) && currentMemStateBv.get(dim)) {
+                            currentAllowedRelDim &= ~objectiveDimensions[dimensions[dim].objectiveIndex];
+                        }
+                    }
+                    storm::storage::BitVector currentForcedRelDim = forcedRelevantDimensions & currentMemStateBv;
+
+                    
                     for (uint64_t choice = getProduct().getTransitionMatrix().getRowGroupIndices()[currentState]; choice != getProduct().getTransitionMatrix().getRowGroupIndices()[currentState + 1]; ++choice) {
                         
                         bool choiceLeadsOutsideOfEpoch = false;
@@ -431,7 +453,7 @@ namespace storm {
                         }
                         
                         for (auto const& transition : getProduct().getTransitionMatrix().getRow(choice)) {
-                            uint64_t successorState = transformProductState(transition.getColumn(), allowedRelevantDimensions, forcedRelevantDimensions);
+                            uint64_t successorState = transformProductState(transition.getColumn(), currentAllowedRelDim, currentForcedRelDim);
                             if (choiceLeadsOutsideOfEpoch) {
                                 ecInStates.set(successorState, true);
                             }
@@ -444,29 +466,20 @@ namespace storm {
                 }
                 
                 reachableStates[epochClass] = std::move(ecReachableStates);
+                
                 inStates[epochClass] = std::move(ecInStates);
             }
 
             template<typename ValueType>
             uint64_t ProductModel<ValueType>::transformProductState(uint64_t productState, storm::storage::BitVector const& allowedRelevantDimensions, storm::storage::BitVector const& forcedRelevantDimensions) const {
-                return getProductState(getModelState(productState), transformMemoryState(getMemoryState(productState), allowedRelevantDimensions, forcedRelevantDimensions));
-            }
-
-            template<typename ValueType>
-            uint64_t ProductModel<ValueType>::transformMemoryState(uint64_t memoryState, storm::storage::BitVector const& allowedRelevantDimensions, storm::storage::BitVector const& forcedRelevantDimensions) const {
                 if (allowedRelevantDimensions.full() && forcedRelevantDimensions.empty()) {
-                    return memoryState;
+                    return productState;
+                } else {
+                    storm::storage::BitVector memoryStateBv = (convertMemoryState(getMemoryState(productState)) | forcedRelevantDimensions) & allowedRelevantDimensions;
+                    return getProductState(getModelState(productState), convertMemoryState(memoryStateBv));
                 }
-                storm::storage::BitVector memoryStateBv = convertMemoryState(memoryState) | forcedRelevantDimensions;
-                for (uint64_t dim = 0; dim < epochManager.getDimensionCount(); ++dim) {
-                    if (!allowedRelevantDimensions.get(dim) && memoryStateBv.get(dim)) {
-                        memoryStateBv &= ~objectiveDimensions[dimensions[dim].objectiveIndex];
-                    }
-                }
-                return convertMemoryState(memoryStateBv);
             }
 
-            
             template class ProductModel<double>;
             template class ProductModel<storm::RationalNumber>;
             

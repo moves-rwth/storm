@@ -52,7 +52,6 @@ namespace storm {
                 void computeReachableStatesInEpochClasses();
                 void computeReachableStates(EpochClass const& epochClass, std::vector<EpochClass> const& predecessors);
                 uint64_t transformProductState(uint64_t productState, storm::storage::BitVector const& allowedRelevantDimensions, storm::storage::BitVector const& forcedRelevantDimensions) const;
-                uint64_t transformMemoryState(uint64_t memoryState, storm::storage::BitVector const& allowedRelevantDimensions, storm::storage::BitVector const& forcedRelevantDimensions) const;
 
                 std::vector<Dimension<ValueType>> const& dimensions;
                 std::vector<storm::storage::BitVector> const& objectiveDimensions;
