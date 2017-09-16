@@ -256,7 +256,7 @@ namespace storm {
                         // Initialize the x vector with the hint (if available) or with 1 for each element.
                         // This is the initial guess for the iterative solvers.
                         std::vector<ValueType> x;
-                        if(hint.isExplicitModelCheckerHint() && hint.template asExplicitModelCheckerHint<ValueType>().hasResultHint()) {
+                        if (hint.isExplicitModelCheckerHint() && hint.template asExplicitModelCheckerHint<ValueType>().hasResultHint()) {
                             x = storm::utility::vector::filterVector(hint.template asExplicitModelCheckerHint<ValueType>().getResultHint(), maybeStates);
                         } else {
                             x = std::vector<ValueType>(submatrix.getColumnCount(), storm::utility::one<ValueType>());

@@ -215,6 +215,8 @@ namespace storm {
             storm::utility::VectorHelper<ValueType> vectorHelper;
         };
         
+        enum class EquationSolverType;
+        
         template<typename ValueType>
         class LinearEquationSolverFactory {
         public:
@@ -260,11 +262,23 @@ namespace storm {
         template<typename ValueType>
         class GeneralLinearEquationSolverFactory : public LinearEquationSolverFactory<ValueType> {
         public:
+            GeneralLinearEquationSolverFactory();
+            GeneralLinearEquationSolverFactory(EquationSolverType const& equationSolver);
+            
             using LinearEquationSolverFactory<ValueType>::create;
 
             virtual std::unique_ptr<LinearEquationSolver<ValueType>> create() const override;
 
             virtual std::unique_ptr<LinearEquationSolverFactory<ValueType>> clone() const override;
+            
+        private:
+            /*!
+             * Sets the equation solver type.
+             */
+            void setEquationSolverType(EquationSolverType const& equationSolver);
+            
+            // The equation solver type.
+            EquationSolverType equationSolver;
         };
 
 #ifdef STORM_HAVE_CARL

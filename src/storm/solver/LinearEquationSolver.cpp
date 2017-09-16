@@ -11,6 +11,7 @@
 
 #include "storm/settings/SettingsManager.h"
 #include "storm/settings/modules/CoreSettings.h"
+#include "storm/settings/modules/GeneralSettings.h"
 
 #include "storm/utility/macros.h"
 #include "storm/exceptions/NotSupportedException.h"
@@ -191,8 +192,35 @@ namespace storm {
         }
         
         template<typename ValueType>
+        GeneralLinearEquationSolverFactory<ValueType>::GeneralLinearEquationSolverFactory() {
+            auto const& coreSettings = storm::settings::getModule<storm::settings::modules::CoreSettings>();
+            auto const& generalSettings = storm::settings::getModule<storm::settings::modules::GeneralSettings>();
+            
+            EquationSolverType actualEquationSolver = coreSettings.getEquationSolver();
+            if (generalSettings.isSoundSet()) {
+                if (coreSettings.isEquationSolverSetFromDefaultValue()) {
+                    STORM_LOG_WARN_COND(actualEquationSolver == EquationSolverType::Native, "Switching to native equation solver to guarantee soundness. To select other solvers, please explicitly specify a solver.");
+                } else {
+                    STORM_LOG_WARN_COND(actualEquationSolver == EquationSolverType::Native, "Switching to native equation solver from explicitly selected solver '" << storm::solver::toString(actualEquationSolver) << "' to guarantee soundness.");
+                }
+                actualEquationSolver = EquationSolverType::Native;
+            }
+            
+            setEquationSolverType(actualEquationSolver);
+        }
+        
+        template<typename ValueType>
+        GeneralLinearEquationSolverFactory<ValueType>::GeneralLinearEquationSolverFactory(EquationSolverType const& equationSolver) {
+            setEquationSolverType(equationSolver);
+        }
+        
+        template<typename ValueType>
+        void GeneralLinearEquationSolverFactory<ValueType>::setEquationSolverType(EquationSolverType const& equationSolver) {
+            this->equationSolver = equationSolver;
+        }
+        
+        template<typename ValueType>
         std::unique_ptr<LinearEquationSolver<ValueType>> GeneralLinearEquationSolverFactory<ValueType>::create() const {
-            EquationSolverType equationSolver = storm::settings::getModule<storm::settings::modules::CoreSettings>().getEquationSolver();
             switch (equationSolver) {
                 case EquationSolverType::Gmmxx: return std::make_unique<GmmxxLinearEquationSolver<ValueType>>();
                 case EquationSolverType::Native: return std::make_unique<NativeLinearEquationSolver<ValueType>>();
