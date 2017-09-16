@@ -209,6 +209,9 @@ namespace storm {
                         result.schedulerHint = computeValidSchedulerHint(type, transitionMatrix, backwardTransitions, maybeStates, phiStates, targetStates);
                         requirements.clearValidInitialScheduler();
                     }
+                    if (type == storm::solver::EquationSystemType::UntilProbabilities) {
+                        requirements.clearGlobalUpperBound();
+                    }
                     STORM_LOG_THROW(requirements.empty(), storm::exceptions::UncheckedRequirementException, "There are unchecked requirements of the solver.");
                 }
 

@@ -81,35 +81,39 @@ namespace storm {
             uint64_t choice;
             for (auto row_group_it = rowGroupIndices.end() - 2, row_group_ite = rowGroupIndices.begin() - 1; row_group_it != row_group_ite; --row_group_it, --choice_it, --target_it) {
                 T currentValue = b ? *add_it : storm::utility::zero<T>();
-                currentValue += vect_sp(gmm::linalg_traits<MatrixType>::row(itr), x);
+                --add_it;
                 
-                if (choices) {
-                    choice = *(row_group_it + 1) - 1 - *row_group_it;
-                    *choice_it = choice;
-                }
-                
-                --itr;
-                if (b) {
-                    --add_it;
-                }
-                
-                for (uint64_t row = *row_group_it + 1, rowEnd = *(row_group_it + 1); row < rowEnd; ++row, --itr) {
-                    T newValue = b ? *add_it : storm::utility::zero<T>();
-                    newValue += vect_sp(gmm::linalg_traits<MatrixType>::row(itr), x);
+                // Only multiply and reduce if the row group is not empty.
+                if (*row_group_it != *(row_group_it + 1)) {
+                    currentValue += vect_sp(gmm::linalg_traits<MatrixType>::row(itr), x);
                     
                     if (choices) {
-                        --choice;
+                        choice = *(row_group_it + 1) - 1 - *row_group_it;
+                        *choice_it = choice;
                     }
                     
-                    if ((dir == OptimizationDirection::Minimize && newValue < currentValue) || (dir == OptimizationDirection::Maximize && newValue > currentValue)) {
-                        currentValue = newValue;
+                    --itr;
+                    
+                    for (uint64_t row = *row_group_it + 1, rowEnd = *(row_group_it + 1); row < rowEnd; ++row, --itr) {
+                        T newValue = b ? *add_it : storm::utility::zero<T>();
+                        newValue += vect_sp(gmm::linalg_traits<MatrixType>::row(itr), x);
+                        
                         if (choices) {
-                            *choice_it = choice;
+                            --choice;
+                        }
+                        
+                        if ((dir == OptimizationDirection::Minimize && newValue < currentValue) || (dir == OptimizationDirection::Maximize && newValue > currentValue)) {
+                            currentValue = newValue;
+                            if (choices) {
+                                *choice_it = choice;
+                            }
+                        }
+                        if (b) {
+                            --add_it;
                         }
                     }
-                    if (b) {
-                        --add_it;
-                    }
+                } else if (choices) {
+                    *choice_it = 0;
                 }
                 
                 // Write back final value.
@@ -161,28 +165,28 @@ namespace storm {
                 auto resultIt = result.begin() + range.begin();
 
                 for (; groupIt != groupIte; ++groupIt, ++resultIt, ++choiceIt) {
-                    T currentValue = vect_sp(gmm::linalg_traits<gmm::csr_matrix<T>>::row(itr), x, typename gmm::linalg_traits<gmm::csr_matrix<T>>::storage_type(), typename gmm::linalg_traits<std::vector<T>>::storage_type());
-                    if (b) {
-                        currentValue += *bIt;
-                        ++bIt;
-                    }
+                    T currentValue = b ? *bIt : storm::utility::zero<T>();
+                    ++bIt;
                     if (choices) {
                         *choiceIt = 0;
                     }
                     
-                    ++itr;
-                    
-                    for (auto itre = mat_row_const_begin(matrix) + *(groupIt + 1); itr != itre; ++itr) {
-                        T newValue = vect_sp(gmm::linalg_traits<gmm::csr_matrix<T>>::row(itr), x, typename gmm::linalg_traits<gmm::csr_matrix<T>>::storage_type(), typename gmm::linalg_traits<std::vector<T>>::storage_type());
-                        if (b) {
-                            newValue += *bIt;
-                            ++bIt;
-                        }
+                    // Only multiply and reduce if the row group is not empty.
+                    if (*groupIt != *(groupIt + 1)) {
+                        ++itr;
                         
-                        if ((dir == OptimizationDirection::Minimize && newValue < currentValue) || (dir == OptimizationDirection::Maximize && newValue > currentValue)) {
-                            currentValue = newValue;
-                            if (choices) {
-                                *choiceIt = std::distance(mat_row_const_begin(matrix), itr) - *groupIt;
+                        for (auto itre = mat_row_const_begin(matrix) + *(groupIt + 1); itr != itre; ++itr) {
+                            T newValue = vect_sp(gmm::linalg_traits<gmm::csr_matrix<T>>::row(itr), x, typename gmm::linalg_traits<gmm::csr_matrix<T>>::storage_type(), typename gmm::linalg_traits<std::vector<T>>::storage_type());
+                            if (b) {
+                                newValue += *bIt;
+                                ++bIt;
+                            }
+                            
+                            if ((dir == OptimizationDirection::Minimize && newValue < currentValue) || (dir == OptimizationDirection::Maximize && newValue > currentValue)) {
+                                currentValue = newValue;
+                                if (choices) {
+                                    *choiceIt = std::distance(mat_row_const_begin(matrix), itr) - *groupIt;
+                                }
                             }
                         }
                     }

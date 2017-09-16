@@ -644,7 +644,10 @@ namespace storm {
         template <typename ValueType>
         void processInputWithValueType(SymbolicInput const& input) {
             auto coreSettings = storm::settings::getModule<storm::settings::modules::CoreSettings>();
+            auto generalSettings = storm::settings::getModule<storm::settings::modules::GeneralSettings>();
 
+            STORM_LOG_THROW(!generalSettings.isSoundSet() || coreSettings.getEngine() == storm::settings::modules::CoreSettings::Engine::Sparse, storm::exceptions::NotSupportedException, "Forcing soundness is not supported for engines other than the sparse engine.");
+            
             if (coreSettings.getDdLibraryType() == storm::dd::DdType::CUDD) {
                 processInputWithValueTypeAndDdlib<storm::dd::DdType::CUDD, ValueType>(input);
             } else {

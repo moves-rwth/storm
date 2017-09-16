@@ -1523,33 +1523,37 @@ namespace storm {
             
             for (auto resultIt = result.begin(), resultIte = result.end(); resultIt != resultIte; ++resultIt, ++choiceIt, ++rowGroupIt) {
                 ValueType currentValue = summand ? *summandIt : storm::utility::zero<ValueType>();
-                
-                for (auto elementIte = this->begin() + *(rowIt + 1); elementIt != elementIte; ++elementIt) {
-                    currentValue += elementIt->getValue() * vector[elementIt->getColumn()];
-                }
+                ++summandIt;
                 if (choices) {
                     *choiceIt = 0;
                 }
                 
-                ++rowIt;
-                if (summand) {
-                    ++summandIt;
-                }
-                
-                for (; static_cast<uint_fast64_t>(std::distance(rowIndications.begin(), rowIt)) < *(rowGroupIt + 1); ++rowIt) {
-                    ValueType newValue = summand ? *summandIt : storm::utility::zero<ValueType>();
+                // Only multiply and reduce if there is at least one row in the group.
+                if (*rowGroupIt < *(rowGroupIt + 1)) {
                     for (auto elementIte = this->begin() + *(rowIt + 1); elementIt != elementIte; ++elementIt) {
-                        newValue += elementIt->getValue() * vector[elementIt->getColumn()];
+                        currentValue += elementIt->getValue() * vector[elementIt->getColumn()];
+                    }
+                    if (choices) {
+                        *choiceIt = 0;
                     }
                     
-                    if ((dir == OptimizationDirection::Minimize && newValue < currentValue) || (dir == OptimizationDirection::Maximize && newValue > currentValue)) {
-                        currentValue = newValue;
-                        if (choices) {
-                            *choiceIt = std::distance(rowIndications.begin(), rowIt) - *rowGroupIt;
+                    ++rowIt;
+                    
+                    for (; static_cast<uint_fast64_t>(std::distance(rowIndications.begin(), rowIt)) < *(rowGroupIt + 1); ++rowIt) {
+                        ValueType newValue = summand ? *summandIt : storm::utility::zero<ValueType>();
+                        for (auto elementIte = this->begin() + *(rowIt + 1); elementIt != elementIte; ++elementIt) {
+                            newValue += elementIt->getValue() * vector[elementIt->getColumn()];
                         }
-                    }
-                    if (summand) {
-                        ++summandIt;
+                        
+                        if ((dir == OptimizationDirection::Minimize && newValue < currentValue) || (dir == OptimizationDirection::Maximize && newValue > currentValue)) {
+                            currentValue = newValue;
+                            if (choices) {
+                                *choiceIt = std::distance(rowIndications.begin(), rowIt) - *rowGroupIt;
+                            }
+                        }
+                        if (summand) {
+                            ++summandIt;
+                        }
                     }
                 }
                 
@@ -1581,34 +1585,37 @@ namespace storm {
             
             for (auto resultIt = result.end() - 1, resultIte = result.begin() - 1; resultIt != resultIte; --resultIt, --choiceIt, --rowGroupIt) {
                 ValueType currentValue = summand ? *summandIt : storm::utility::zero<ValueType>();
+                --summandIt;
 
-                for (auto elementIte = this->begin() + *rowIt - 1; elementIt != elementIte; --elementIt) {
-                    currentValue += elementIt->getValue() * vector[elementIt->getColumn()];
-                }
-                if (choices) {
-                    *choiceIt = std::distance(rowIndications.begin(), rowIt) - *rowGroupIt;
-                }
-                
-                --rowIt;
-                if (summand) {
-                    --summandIt;
-                }
-                
-                for (uint64_t i = *rowGroupIt + 1, end = *(rowGroupIt + 1); i < end; --rowIt, ++i) {
-                    ValueType newValue = summand ? *summandIt : storm::utility::zero<ValueType>();
+                // Only multiply and reduce if there is at least one row in the group.
+                if (*rowGroupIt < *(rowGroupIt + 1)) {
                     for (auto elementIte = this->begin() + *rowIt - 1; elementIt != elementIte; --elementIt) {
-                        newValue += elementIt->getValue() * vector[elementIt->getColumn()];
+                        currentValue += elementIt->getValue() * vector[elementIt->getColumn()];
                     }
-
-                    if ((dir == OptimizationDirection::Minimize && newValue < currentValue) || (dir == OptimizationDirection::Maximize && newValue > currentValue)) {
-                        currentValue = newValue;
-                        if (choices) {
-                            *choiceIt = std::distance(rowIndications.begin(), rowIt) - *rowGroupIt;
+                    if (choices) {
+                        *choiceIt = std::distance(rowIndications.begin(), rowIt) - *rowGroupIt;
+                    }
+                    
+                    --rowIt;
+                    
+                    for (uint64_t i = *rowGroupIt + 1, end = *(rowGroupIt + 1); i < end; --rowIt, ++i) {
+                        ValueType newValue = summand ? *summandIt : storm::utility::zero<ValueType>();
+                        for (auto elementIte = this->begin() + *rowIt - 1; elementIt != elementIte; --elementIt) {
+                            newValue += elementIt->getValue() * vector[elementIt->getColumn()];
+                        }
+                        
+                        if ((dir == OptimizationDirection::Minimize && newValue < currentValue) || (dir == OptimizationDirection::Maximize && newValue > currentValue)) {
+                            currentValue = newValue;
+                            if (choices) {
+                                *choiceIt = std::distance(rowIndications.begin(), rowIt) - *rowGroupIt;
+                            }
+                        }
+                        if (summand) {
+                            --summandIt;
                         }
                     }
-                    if (summand) {
-                        --summandIt;
-                    }
+                } else if (choices) {
+                    *choiceIt = 0;
                 }
                 
                 // Finally write value to target vector.
@@ -1654,27 +1661,30 @@ namespace storm {
                 
                 for (; groupIt != groupIte; ++groupIt, ++resultIt, ++choiceIt) {
                     ValueType currentValue = summand ? *summandIt : storm::utility::zero<ValueType>();
-                    
-                    for (auto elementIte = columnsAndEntries.begin() + *(rowIt + 1); elementIt != elementIte; ++elementIt) {
-                        currentValue += elementIt->getValue() * x[elementIt->getColumn()];
-                    }
+                    ++summandIt;
                     if (choices) {
                         *choiceIt = 0;
                     }
                     
-                    ++rowIt;
-                    ++summandIt;
-                    
-                    for (; static_cast<uint_fast64_t>(std::distance(rowIndications.begin(), rowIt)) < *(groupIt + 1); ++rowIt, ++summandIt) {
-                        ValueType newValue = summand ? *summandIt : storm::utility::zero<ValueType>();
+                    // Only multiply and reduce if there is at least one row in the group.
+                    if (*groupIt < *(groupIt + 1)) {
                         for (auto elementIte = columnsAndEntries.begin() + *(rowIt + 1); elementIt != elementIte; ++elementIt) {
-                            newValue += elementIt->getValue() * x[elementIt->getColumn()];
+                            currentValue += elementIt->getValue() * x[elementIt->getColumn()];
                         }
                         
-                        if ((dir == OptimizationDirection::Minimize && newValue < currentValue) || (dir == OptimizationDirection::Maximize && newValue > currentValue)) {
-                            currentValue = newValue;
-                            if (choices) {
-                                *choiceIt = std::distance(rowIndications.begin(), rowIt) - *groupIt;
+                        ++rowIt;
+                        
+                        for (; static_cast<uint_fast64_t>(std::distance(rowIndications.begin(), rowIt)) < *(groupIt + 1); ++rowIt, ++summandIt) {
+                            ValueType newValue = summand ? *summandIt : storm::utility::zero<ValueType>();
+                            for (auto elementIte = columnsAndEntries.begin() + *(rowIt + 1); elementIt != elementIte; ++elementIt) {
+                                newValue += elementIt->getValue() * x[elementIt->getColumn()];
+                            }
+                            
+                            if ((dir == OptimizationDirection::Minimize && newValue < currentValue) || (dir == OptimizationDirection::Maximize && newValue > currentValue)) {
+                                currentValue = newValue;
+                                if (choices) {
+                                    *choiceIt = std::distance(rowIndications.begin(), rowIt) - *groupIt;
+                                }
                             }
                         }
                     }

@@ -436,6 +436,10 @@ namespace storm {
             std::vector<ValueType>* lowerX = &x;
             if (!this->cachedRowVector) {
                 this->cachedRowVector = std::make_unique<std::vector<ValueType>>(getMatrixRowCount(), this->getUpperBound());
+            } else {
+                for (auto& e : *this->cachedRowVector) {
+                    e = this->getUpperBound();
+                }
             }
             std::vector<ValueType>* upperX = this->cachedRowVector.get();
             

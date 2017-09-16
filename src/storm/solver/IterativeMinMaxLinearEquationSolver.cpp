@@ -253,7 +253,9 @@ namespace storm {
             
             // If we will use sound value iteration, we require no ECs and an upper bound.
             if (this->getSettings().getSolutionMethod() == IterativeMinMaxLinearEquationSolverSettings<ValueType>::SolutionMethod::ValueIteration && this->getSettings().getForceSoundness()) {
-                requirements.requireNoEndComponents();
+                if (!direction || direction.get() == OptimizationDirection::Maximize) {
+                    requirements.requireNoEndComponents();
+                }
                 requirements.requireGlobalUpperBound();
             }
             
@@ -375,6 +377,7 @@ namespace storm {
             }
             
             if (this->hasInitialScheduler()) {
+                STORM_LOG_TRACE("Solving initial scheduler hint.");
                 // Resolve the nondeterminism according to the initial scheduler.
                 bool convertToEquationSystem = this->linearEquationSolverFactory->getEquationProblemFormat() == LinearEquationSolverProblemFormat::EquationSystem;
                 storm::storage::SparseMatrix<ValueType> submatrix = this->A->selectRowsFromRowGroups(this->getInitialScheduler(), convertToEquationSystem);
@@ -397,6 +400,11 @@ namespace storm {
             
             // Allow aliased multiplications.
             bool useGaussSeidelMultiplication = this->linEqSolverA->supportsGaussSeidelMultiplication() && settings.getValueIterationMultiplicationStyle() == storm::solver::MultiplicationStyle::GaussSeidel;
+            
+            // Initialize upper bound vector.
+            for (auto& e : *this->auxiliaryRowGroupVector) {
+                e = this->getUpperBound();
+            }
             
             std::vector<ValueType>* lowerX = &x;
             std::vector<ValueType>* upperX = this->auxiliaryRowGroupVector.get();

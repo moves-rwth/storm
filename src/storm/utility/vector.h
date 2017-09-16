@@ -627,36 +627,24 @@ namespace storm {
                     }
                     
                     for (; targetIt != targetIte; ++targetIt, ++rowGroupingIt) {
-                        // Only do work if the row group is not empty.
-                        if (*rowGroupingIt != *(rowGroupingIt + 1)) {
-                            *targetIt = *sourceIt;
-                            ++sourceIt;
-                            localChoice = 1;
-                            if (choices != nullptr) {
-                                *choiceIt = 0;
-                            }
-                            
-                            for (sourceIte = source.begin() + *(rowGroupingIt + 1); sourceIt != sourceIte; ++sourceIt, ++localChoice) {
-                                if (f(*sourceIt, *targetIt)) {
-                                    *targetIt = *sourceIt;
-                                    if (choices != nullptr) {
-                                        *choiceIt = localChoice;
-                                    }
+                        *targetIt = *sourceIt;
+                        ++sourceIt;
+                        localChoice = 1;
+                        if (choices != nullptr) {
+                            *choiceIt = 0;
+                        }
+                        
+                        for (sourceIte = source.begin() + *(rowGroupingIt + 1); sourceIt != sourceIte; ++sourceIt, ++localChoice) {
+                            if (f(*sourceIt, *targetIt)) {
+                                *targetIt = *sourceIt;
+                                if (choices != nullptr) {
+                                    *choiceIt = localChoice;
                                 }
                             }
-                            
-                            if (choices != nullptr) {
-                                ++choiceIt;
-                            }
-                        } else {
-                            // Compensate for the 'wrong' move forward in the loop header.
-                            --targetIt;
-                            
-                            // Record dummy choice.
-                            if (choices != nullptr) {
-                                *choiceIt = 0;
-                                ++choiceIt;
-                            }
+                        }
+                        
+                        if (choices != nullptr) {
+                            ++choiceIt;
                         }
                     }
                 }
@@ -695,34 +683,22 @@ namespace storm {
                 }
                 
                 for (; targetIt != targetIte; ++targetIt, ++rowGroupingIt) {
-                    // Only do work if the row group is not empty.
-                    if (*rowGroupingIt != *(rowGroupingIt + 1)) {
-                        *targetIt = *sourceIt;
-                        ++sourceIt;
-                        localChoice = 1;
-                        if (choices != nullptr) {
-                            *choiceIt = 0;
-                        }
-                        for (sourceIte = source.begin() + *(rowGroupingIt + 1); sourceIt != sourceIte; ++sourceIt, ++localChoice) {
-                            if (f(*sourceIt, *targetIt)) {
-                                *targetIt = *sourceIt;
-                                if (choices != nullptr) {
-                                    *choiceIt = localChoice;
-                                }
+                    *targetIt = *sourceIt;
+                    ++sourceIt;
+                    localChoice = 1;
+                    if (choices != nullptr) {
+                        *choiceIt = 0;
+                    }
+                    for (sourceIte = source.begin() + *(rowGroupingIt + 1); sourceIt != sourceIte; ++sourceIt, ++localChoice) {
+                        if (f(*sourceIt, *targetIt)) {
+                            *targetIt = *sourceIt;
+                            if (choices != nullptr) {
+                                *choiceIt = localChoice;
                             }
                         }
-                        if (choices != nullptr) {
-                            ++choiceIt;
-                        }
-                    } else {
-                        // Compensate for the 'wrong' move forward in the loop header.
-                        --targetIt;
-                        
-                        // Record dummy choice.
-                        if (choices != nullptr) {
-                            *choiceIt = 0;
-                            ++choiceIt;
-                        }
+                    }
+                    if (choices != nullptr) {
+                        ++choiceIt;
                     }
                 }
             }
