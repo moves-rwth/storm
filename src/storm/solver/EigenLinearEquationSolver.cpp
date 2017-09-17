@@ -276,7 +276,7 @@ namespace storm {
                     }
                 }
                 
-                // Make sure that all results conform to the bounds.
+                // Make sure that all results conform to the (global) bounds.
                 storm::utility::vector::clip(x, this->lowerBound, this->upperBound);
                 
                 // Check if the solver converged and issue a warning otherwise.

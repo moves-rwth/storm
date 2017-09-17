@@ -210,7 +210,9 @@ namespace storm {
                         requirements.clearValidInitialScheduler();
                     }
                     if (type == storm::solver::EquationSystemType::UntilProbabilities) {
-                        requirements.clearGlobalUpperBound();
+                        requirements.clearBounds();
+                    } else if (type == storm::solver::EquationSystemType::ReachabilityRewards) {
+                        requirements.clearLowerBounds();
                     }
                     STORM_LOG_THROW(requirements.empty(), storm::exceptions::UncheckedRequirementException, "There are unchecked requirements of the solver.");
                 }

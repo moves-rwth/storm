@@ -132,10 +132,34 @@ namespace storm {
         }
         
         template<typename ValueType>
+        bool LinearEquationSolver<ValueType>::hasLowerBound(BoundType const& type) const {
+            if (type == BoundType::Any) {
+                return static_cast<bool>(lowerBound) || static_cast<bool>(lowerBounds);
+            } else if (type == BoundType::Global) {
+                return static_cast<bool>(lowerBound);
+            } else if (type == BoundType::Local) {
+                return static_cast<bool>(lowerBounds);
+            }
+            return false;
+        }
+        
+        template<typename ValueType>
+        bool LinearEquationSolver<ValueType>::hasUpperBound(BoundType const& type) const {
+            if (type == BoundType::Any) {
+                return static_cast<bool>(upperBound) || static_cast<bool>(upperBounds);
+            } else if (type == BoundType::Global) {
+                return static_cast<bool>(upperBound);
+            } else if (type == BoundType::Local) {
+                return static_cast<bool>(upperBounds);
+            }
+            return false;
+        }
+        
+        template<typename ValueType>
         void LinearEquationSolver<ValueType>::setLowerBound(ValueType const& value) {
             lowerBound = value;
         }
-
+        
         template<typename ValueType>
         void LinearEquationSolver<ValueType>::setUpperBound(ValueType const& value) {
             upperBound = value;
@@ -148,16 +172,6 @@ namespace storm {
         }
         
         template<typename ValueType>
-        bool LinearEquationSolver<ValueType>::hasLowerBound() const {
-            return static_cast<bool>(lowerBound);
-        }
-        
-        template<typename ValueType>
-        bool LinearEquationSolver<ValueType>::hasUpperBound() const {
-            return static_cast<bool>(upperBound);
-        }
-        
-        template<typename ValueType>
         ValueType const& LinearEquationSolver<ValueType>::getLowerBound() const {
             return lowerBound.get();
         }
@@ -165,6 +179,60 @@ namespace storm {
         template<typename ValueType>
         ValueType const& LinearEquationSolver<ValueType>::getUpperBound() const {
             return upperBound.get();
+        }
+        
+        template<typename ValueType>
+        std::vector<ValueType> const& LinearEquationSolver<ValueType>::getLowerBounds() const {
+            return lowerBounds.get();
+        }
+        
+        template<typename ValueType>
+        std::vector<ValueType> const& LinearEquationSolver<ValueType>::getUpperBounds() const {
+            return upperBounds.get();
+        }
+        
+        template<typename ValueType>
+        void LinearEquationSolver<ValueType>::setLowerBounds(std::vector<ValueType> const& values) {
+            lowerBounds = values;
+        }
+        
+        template<typename ValueType>
+        void LinearEquationSolver<ValueType>::setUpperBounds(std::vector<ValueType> const& values) {
+            upperBounds = values;
+        }
+
+        template<typename ValueType>
+        void LinearEquationSolver<ValueType>::setUpperBounds(std::vector<ValueType>&& values) {
+            upperBounds = std::move(values);
+        }
+
+        template<typename ValueType>
+        void LinearEquationSolver<ValueType>::setBounds(std::vector<ValueType> const& lower, std::vector<ValueType> const& upper) {
+            setLowerBounds(lower);
+            setUpperBounds(upper);
+        }
+        
+        template<typename ValueType>
+        void LinearEquationSolver<ValueType>::createUpperBoundsVector(std::unique_ptr<std::vector<ValueType>>& upperBoundsVector) const {
+            if (!upperBoundsVector) {
+                if (this->hasUpperBound(BoundType::Local)) {
+                    upperBoundsVector = std::make_unique<std::vector<ValueType>>(this->getUpperBounds());
+                } else {
+                    upperBoundsVector = std::make_unique<std::vector<ValueType>>(getMatrixRowCount(), this->getUpperBound());
+                }
+            } else {
+                if (this->hasUpperBound(BoundType::Local)) {
+                    for (auto& e : *upperBoundsVector) {
+                        e = this->getUpperBound();
+                    }
+                } else {
+                    auto upperBoundsIt = this->getUpperBounds().begin();
+                    for (auto& e : *upperBoundsVector) {
+                        e = *upperBoundsIt;
+                        ++upperBoundsIt;
+                    }
+                }
+            }
         }
         
         template<typename ValueType>

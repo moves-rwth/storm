@@ -16,35 +16,36 @@ namespace storm {
                 ValidInitialScheduler,
                 
                 // Requirements that are related to bounds for the actual solution.
-                GlobalLowerBound,
-                GlobalUpperBound
+                LowerBounds,
+                UpperBounds
             };
             
             MinMaxLinearEquationSolverRequirements(LinearEquationSolverRequirements const& linearEquationSolverRequirements = LinearEquationSolverRequirements());
             
             MinMaxLinearEquationSolverRequirements& requireNoEndComponents();
             MinMaxLinearEquationSolverRequirements& requireValidInitialScheduler();
-            MinMaxLinearEquationSolverRequirements& requireGlobalLowerBound();
-            MinMaxLinearEquationSolverRequirements& requireGlobalUpperBound();
+            MinMaxLinearEquationSolverRequirements& requireLowerBounds();
+            MinMaxLinearEquationSolverRequirements& requireUpperBounds();
 
             bool requiresNoEndComponents() const;
             bool requiresValidIntialScheduler() const;
-            bool requiresGlobalLowerBound() const;
-            bool requiresGlobalUpperBound() const;
+            bool requiresLowerBounds() const;
+            bool requiresUpperBounds() const;
             bool requires(Element const& element) const;
             
             void clearNoEndComponents();
             void clearValidInitialScheduler();
-            void clearGlobalLowerBound();
-            void clearGlobalUpperBound();
+            void clearLowerBounds();
+            void clearUpperBounds();
+            void clearBounds();
             
             bool empty() const;
             
         private:
             bool noEndComponents;
             bool validInitialScheduler;
-            bool globalLowerBound;
-            bool globalUpperBound;
+            bool lowerBounds;
+            bool upperBounds;
         };
         
     }

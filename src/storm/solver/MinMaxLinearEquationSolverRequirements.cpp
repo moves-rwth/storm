@@ -3,7 +3,7 @@
 namespace storm {
     namespace solver {
         
-        MinMaxLinearEquationSolverRequirements::MinMaxLinearEquationSolverRequirements(LinearEquationSolverRequirements const& linearEquationSolverRequirements) : noEndComponents(false), validInitialScheduler(false), globalLowerBound(linearEquationSolverRequirements.requiresGlobalLowerBound()), globalUpperBound(linearEquationSolverRequirements.requiresGlobalUpperBound()) {
+        MinMaxLinearEquationSolverRequirements::MinMaxLinearEquationSolverRequirements(LinearEquationSolverRequirements const& linearEquationSolverRequirements) : noEndComponents(false), validInitialScheduler(false), lowerBounds(linearEquationSolverRequirements.requiresLowerBounds()), upperBounds(linearEquationSolverRequirements.requiresUpperBounds()) {
             // Intentionally left empty.
         }
         
@@ -17,13 +17,13 @@ namespace storm {
             return *this;
         }
         
-        MinMaxLinearEquationSolverRequirements& MinMaxLinearEquationSolverRequirements::requireGlobalLowerBound() {
-            globalLowerBound = true;
+        MinMaxLinearEquationSolverRequirements& MinMaxLinearEquationSolverRequirements::requireLowerBounds() {
+            lowerBounds = true;
             return *this;
         }
         
-        MinMaxLinearEquationSolverRequirements& MinMaxLinearEquationSolverRequirements::requireGlobalUpperBound() {
-            globalUpperBound = true;
+        MinMaxLinearEquationSolverRequirements& MinMaxLinearEquationSolverRequirements::requireUpperBounds() {
+            upperBounds = true;
             return *this;
         }
         
@@ -35,20 +35,20 @@ namespace storm {
             return validInitialScheduler;
         }
         
-        bool MinMaxLinearEquationSolverRequirements::requiresGlobalLowerBound() const {
-            return globalLowerBound;
+        bool MinMaxLinearEquationSolverRequirements::requiresLowerBounds() const {
+            return lowerBounds;
         }
         
-        bool MinMaxLinearEquationSolverRequirements::requiresGlobalUpperBound() const {
-            return globalUpperBound;
+        bool MinMaxLinearEquationSolverRequirements::requiresUpperBounds() const {
+            return upperBounds;
         }
         
         bool MinMaxLinearEquationSolverRequirements::requires(Element const& element) const {
             switch (element) {
                 case Element::NoEndComponents: return noEndComponents; break;
                 case Element::ValidInitialScheduler: return validInitialScheduler; break;
-                case Element::GlobalLowerBound: return globalLowerBound; break;
-                case Element::GlobalUpperBound: return globalUpperBound; break;
+                case Element::LowerBounds: return lowerBounds; break;
+                case Element::UpperBounds: return upperBounds; break;
             }
         }
         
@@ -61,16 +61,21 @@ namespace storm {
             validInitialScheduler = false;
         }
         
-        void MinMaxLinearEquationSolverRequirements::clearGlobalLowerBound() {
-            globalLowerBound = false;
+        void MinMaxLinearEquationSolverRequirements::clearLowerBounds() {
+            lowerBounds = false;
         }
         
-        void MinMaxLinearEquationSolverRequirements::clearGlobalUpperBound() {
-            globalUpperBound = false;
+        void MinMaxLinearEquationSolverRequirements::clearUpperBounds() {
+            upperBounds = false;
+        }
+        
+        void MinMaxLinearEquationSolverRequirements::clearBounds() {
+            clearLowerBounds();
+            clearUpperBounds();
         }
         
         bool MinMaxLinearEquationSolverRequirements::empty() const {
-            return !noEndComponents && !validInitialScheduler && !globalLowerBound && !globalUpperBound;
+            return !noEndComponents && !validInitialScheduler && !lowerBounds && !upperBounds;
         }
         
     }

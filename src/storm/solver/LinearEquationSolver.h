@@ -150,6 +150,22 @@ namespace storm {
              */
             virtual void clearCache() const;
             
+            enum class BoundType {
+                Global,
+                Local,
+                Any
+            };
+            
+            /*!
+             * Retrieves whether this solver has a lower bound.
+             */
+            bool hasLowerBound(BoundType const& type = BoundType::Any) const;
+            
+            /*!
+             * Retrieves whether this solver has an upper bound.
+             */
+            bool hasUpperBound(BoundType const& type = BoundType::Any) const;
+            
             /*!
              * Sets a lower bound for the solution that can potentially be used by the solver.
              */
@@ -161,32 +177,54 @@ namespace storm {
             void setUpperBound(ValueType const& value);
 
             /*!
+             * Sets bounds for the solution that can potentially be used by the solver.
+             */
+            void setBounds(ValueType const& lower, ValueType const& upper);
+            
+            /*!
              * Retrieves the lower bound (if there is any).
              */
             ValueType const& getLowerBound() const;
             
             /*!
-             * Retrieves the lower bound (if there is any).
+             * Retrieves the upper bound (if there is any).
              */
             ValueType const& getUpperBound() const;
             
             /*!
-             * Retrieves whether this solver has a lower bound.
+             * Retrieves a vector containing the lower bounds (if there are any).
              */
-            bool hasLowerBound() const;
+            std::vector<ValueType> const& getLowerBounds() const;
+            
+            /*!
+             * Retrieves a vector containing the upper bounds (if there are any).
+             */
+            std::vector<ValueType> const& getUpperBounds() const;
+            
+            /*!
+             * Sets lower bounds for the solution that can potentially be used by the solver.
+             */
+            void setLowerBounds(std::vector<ValueType> const& values);
+            
+            /*!
+             * Sets upper bounds for the solution that can potentially be used by the solver.
+             */
+            void setUpperBounds(std::vector<ValueType> const& values);
 
             /*!
-             * Retrieves whether this solver has an upper bound.
+             * Sets upper bounds for the solution that can potentially be used by the solver.
              */
-            bool hasUpperBound() const;
+            void setUpperBounds(std::vector<ValueType>&& values);
 
             /*!
              * Sets bounds for the solution that can potentially be used by the solver.
              */
-            void setBounds(ValueType const& lower, ValueType const& upper);
-
+            void setBounds(std::vector<ValueType> const& lower, std::vector<ValueType> const& upper);
+            
         protected:
             virtual bool internalSolveEquations(std::vector<ValueType>& x, std::vector<ValueType> const& b) const = 0;
+            
+            void createUpperBoundsVector(std::unique_ptr<std::vector<ValueType>>& upperBoundsVector) const;
             
             // auxiliary storage. If set, this vector has getMatrixRowCount() entries.
             mutable std::unique_ptr<std::vector<ValueType>> cachedRowVector;
@@ -196,6 +234,12 @@ namespace storm {
 
             // An upper bound if one was set.
             boost::optional<ValueType> upperBound;
+            
+            // Lower bounds if they were set.
+            boost::optional<std::vector<ValueType>> lowerBounds;
+
+            // Lower bounds if they were set.
+            boost::optional<std::vector<ValueType>> upperBounds;
 
         private:
             /*!

@@ -21,6 +21,7 @@ TEST(EliminationLinearEquationSolver, Solve) {
     
     storm::storage::SparseMatrix<double> A;
     ASSERT_NO_THROW(A = builder.build());
+    ASSERT_NO_THROW(A.convertToEquationSystem());
     
     std::vector<double> x(3);
     std::vector<double> b = {16, -4, -7};

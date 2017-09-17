@@ -434,13 +434,7 @@ namespace storm {
             STORM_LOG_INFO("Solving linear equation system (" << x.size() << " rows) with NativeLinearEquationSolver (SoundPower)");
             
             std::vector<ValueType>* lowerX = &x;
-            if (!this->cachedRowVector) {
-                this->cachedRowVector = std::make_unique<std::vector<ValueType>>(getMatrixRowCount(), this->getUpperBound());
-            } else {
-                for (auto& e : *this->cachedRowVector) {
-                    e = this->getUpperBound();
-                }
-            }
+            this->createUpperBoundsVector(this->cachedRowVector);
             std::vector<ValueType>* upperX = this->cachedRowVector.get();
             
             bool useGaussSeidelMultiplication = this->getSettings().getPowerMethodMultiplicationStyle() == storm::solver::MultiplicationStyle::GaussSeidel;

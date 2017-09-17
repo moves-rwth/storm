@@ -884,6 +884,36 @@ namespace storm {
             }
             
             /*!
+             * Takes the input vector and ensures that all entries conform to the bounds.
+             */
+            template <typename ValueType>
+            void clip(std::vector<ValueType>& x, ValueType const& bound, bool boundFromBelow) {
+                for (auto& entry : x) {
+                    if (boundFromBelow && entry < bound) {
+                        entry = bound;
+                    } else if (!boundFromBelow && entry > bound) {
+                        entry = bound;
+                    }
+                }
+            }
+
+            /*!
+             * Takes the input vector and ensures that all entries conform to the bounds.
+             */
+            template <typename ValueType>
+            void clip(std::vector<ValueType>& x, std::vector<ValueType> const& bounds, bool boundFromBelow) {
+                auto boundsIt = bounds.begin();
+                for (auto& entry : x) {
+                    if (boundFromBelow && entry < *boundsIt) {
+                        entry = *boundsIt;
+                    } else if (!boundFromBelow && entry > *boundsIt) {
+                        entry = *boundsIt;
+                    }
+                    ++boundsIt;
+                }
+            }
+
+            /*!
              * Takes the given offset vector and applies the given contraint. That is, it produces another offset vector that contains
              * the relative offsets of the entries given by the constraint.
              *

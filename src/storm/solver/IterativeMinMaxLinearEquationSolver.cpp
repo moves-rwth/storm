@@ -256,7 +256,7 @@ namespace storm {
                 if (!direction || direction.get() == OptimizationDirection::Maximize) {
                     requirements.requireNoEndComponents();
                 }
-                requirements.requireGlobalUpperBound();
+                requirements.requireUpperBounds();
             }
             
             // Then add our requirements on top of that.
@@ -273,7 +273,7 @@ namespace storm {
             }
             
             if (this->getSettings().getSolutionMethod() == IterativeMinMaxLinearEquationSolverSettings<ValueType>::SolutionMethod::ValueIteration && this->getSettings().getForceSoundness()) {
-                requirements.requireGlobalUpperBound();
+                requirements.requireUpperBounds();
             }
             
             return requirements;

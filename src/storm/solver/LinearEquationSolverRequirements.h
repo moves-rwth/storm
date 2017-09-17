@@ -8,27 +8,27 @@ namespace storm {
             // The different requirements a solver can have.
             enum class Element {
                 // Requirements that are related to bounds for the actual solution.
-                GlobalLowerBound,
-                GlobalUpperBound
+                LowerBounds,
+                UpperBounds
             };
             
             LinearEquationSolverRequirements();
             
-            LinearEquationSolverRequirements& requireGlobalLowerBound();
-            LinearEquationSolverRequirements& requireGlobalUpperBound();
+            LinearEquationSolverRequirements& requireLowerBounds();
+            LinearEquationSolverRequirements& requireUpperBounds();
             
-            bool requiresGlobalLowerBound() const;
-            bool requiresGlobalUpperBound() const;
+            bool requiresLowerBounds() const;
+            bool requiresUpperBounds() const;
             bool requires(Element const& element) const;
             
-            void clearGlobalLowerBound();
-            void clearGlobalUpperBound();
+            void clearLowerBounds();
+            void clearUpperBounds();
             
             bool empty() const;
             
         private:
-            bool globalLowerBound;
-            bool globalUpperBound;
+            bool lowerBounds;
+            bool upperBounds;
         };
         
     }

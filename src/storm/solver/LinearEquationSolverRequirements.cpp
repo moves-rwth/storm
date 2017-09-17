@@ -3,45 +3,45 @@
 namespace storm {
     namespace solver {
         
-        LinearEquationSolverRequirements::LinearEquationSolverRequirements() : globalLowerBound(false), globalUpperBound(false) {
+        LinearEquationSolverRequirements::LinearEquationSolverRequirements() : lowerBounds(false), upperBounds(false) {
             // Intentionally left empty.
         }
         
-        LinearEquationSolverRequirements& LinearEquationSolverRequirements::requireGlobalLowerBound() {
-            globalLowerBound = true;
+        LinearEquationSolverRequirements& LinearEquationSolverRequirements::requireLowerBounds() {
+            lowerBounds = true;
             return *this;
         }
         
-        LinearEquationSolverRequirements& LinearEquationSolverRequirements::requireGlobalUpperBound() {
-            globalUpperBound = true;
+        LinearEquationSolverRequirements& LinearEquationSolverRequirements::requireUpperBounds() {
+            upperBounds = true;
             return *this;
         }
         
-        bool LinearEquationSolverRequirements::requiresGlobalLowerBound() const {
-            return globalLowerBound;
+        bool LinearEquationSolverRequirements::requiresLowerBounds() const {
+            return lowerBounds;
         }
         
-        bool LinearEquationSolverRequirements::requiresGlobalUpperBound() const {
-            return globalUpperBound;
+        bool LinearEquationSolverRequirements::requiresUpperBounds() const {
+            return upperBounds;
         }
         
         bool LinearEquationSolverRequirements::requires(Element const& element) const {
             switch (element) {
-                case Element::GlobalLowerBound: return globalLowerBound; break;
-                case Element::GlobalUpperBound: return globalUpperBound; break;
+                case Element::LowerBounds: return lowerBounds; break;
+                case Element::UpperBounds: return upperBounds; break;
             }
         }
         
-        void LinearEquationSolverRequirements::clearGlobalLowerBound() {
-            globalLowerBound = false;
+        void LinearEquationSolverRequirements::clearLowerBounds() {
+            lowerBounds = false;
         }
         
-        void LinearEquationSolverRequirements::clearGlobalUpperBound() {
-            globalUpperBound = false;
+        void LinearEquationSolverRequirements::clearUpperBounds() {
+            upperBounds = false;
         }
         
         bool LinearEquationSolverRequirements::empty() const {
-            return !globalLowerBound && !globalUpperBound;
+            return !lowerBounds && !upperBounds;
         }
         
     }
