@@ -203,7 +203,10 @@ namespace storm {
 
                 // Check for requirements of the solver.
                 storm::solver::MinMaxLinearEquationSolverRequirements requirements = minMaxLinearEquationSolverFactory.getRequirements(type, dir);
-                if (!(hint.isExplicitModelCheckerHint() && hint.asExplicitModelCheckerHint<ValueType>().getNoEndComponentsInMaybeStates()) && !requirements.empty()) {
+                if (!requirements.empty()) {
+                    if (hint.isExplicitModelCheckerHint() && hint.asExplicitModelCheckerHint<ValueType>().getNoEndComponentsInMaybeStates()) {
+                        requirements.clearNoEndComponents();
+                    }
                     if (requirements.requires(storm::solver::MinMaxLinearEquationSolverRequirements::Element::ValidInitialScheduler)) {
                         STORM_LOG_DEBUG("Computing valid scheduler, because the solver requires it.");
                         result.schedulerHint = computeValidSchedulerHint(type, transitionMatrix, backwardTransitions, maybeStates, phiStates, targetStates);
@@ -286,52 +289,106 @@ namespace storm {
                 return result;
             }
             
+            struct QualitativeStateSetsUntilProbabilities {
+                storm::storage::BitVector maybeStates;
+                storm::storage::BitVector statesWithProbability0;
+                storm::storage::BitVector statesWithProbability1;
+            };
+            
+            template<typename ValueType>
+            QualitativeStateSetsUntilProbabilities getQualitativeStateSetsUntilProbabilitiesFromHint(ModelCheckerHint const& hint) {
+                QualitativeStateSetsUntilProbabilities result;
+                result.maybeStates = hint.template asExplicitModelCheckerHint<ValueType>().getMaybeStates();
+                
+                // Treat the states with probability zero/one.
+                std::vector<ValueType> const& resultsForNonMaybeStates = hint.template asExplicitModelCheckerHint<ValueType>().getResultHint();
+                result.statesWithProbability1 = storm::storage::BitVector(result.maybeStates.size());
+                result.statesWithProbability0 = storm::storage::BitVector(result.maybeStates.size());
+                storm::storage::BitVector nonMaybeStates = ~result.maybeStates;
+                for (auto const& state : nonMaybeStates) {
+                    if (storm::utility::isOne(resultsForNonMaybeStates[state])) {
+                        result.statesWithProbability1.set(state, true);
+                    } else {
+                        STORM_LOG_THROW(storm::utility::isZero(resultsForNonMaybeStates[state]), storm::exceptions::IllegalArgumentException, "Expected that the result hint specifies probabilities in {0,1} for non-maybe states");
+                        result.statesWithProbability0.set(state, true);
+                    }
+                }
+                
+                return result;
+            }
+            
+            template<typename ValueType>
+            QualitativeStateSetsUntilProbabilities computeQualitativeStateSetsUntilProbabilities(storm::solver::SolveGoal const& goal, storm::storage::SparseMatrix<ValueType> const& transitionMatrix, storm::storage::SparseMatrix<ValueType> const& backwardTransitions, storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates) {
+                QualitativeStateSetsUntilProbabilities result;
+
+                // Get all states that have probability 0 and 1 of satisfying the until-formula.
+                std::pair<storm::storage::BitVector, storm::storage::BitVector> statesWithProbability01;
+                if (goal.minimize()) {
+                    statesWithProbability01 = storm::utility::graph::performProb01Min(transitionMatrix, transitionMatrix.getRowGroupIndices(), backwardTransitions, phiStates, psiStates);
+                } else {
+                    statesWithProbability01 = storm::utility::graph::performProb01Max(transitionMatrix, transitionMatrix.getRowGroupIndices(), backwardTransitions, phiStates, psiStates);
+                }
+                result.statesWithProbability0 = std::move(statesWithProbability01.first);
+                result.statesWithProbability1 = std::move(statesWithProbability01.second);
+                result.maybeStates = ~(result.statesWithProbability0 | result.statesWithProbability1);
+                STORM_LOG_INFO("Found " << result.statesWithProbability0.getNumberOfSetBits() << " 'no' states.");
+                STORM_LOG_INFO("Found " << result.statesWithProbability1.getNumberOfSetBits() << " 'yes' states.");
+                STORM_LOG_INFO("Found " << result.maybeStates.getNumberOfSetBits() << " 'maybe' states.");
+                
+                return result;
+            }
+            
+            template<typename ValueType>
+            QualitativeStateSetsUntilProbabilities getQualitativeStateSetsUntilProbabilities(storm::solver::SolveGoal const& goal, storm::storage::SparseMatrix<ValueType> const& transitionMatrix, storm::storage::SparseMatrix<ValueType> const& backwardTransitions, storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates, ModelCheckerHint const& hint) {
+                if (hint.isExplicitModelCheckerHint() && hint.template asExplicitModelCheckerHint<ValueType>().getComputeOnlyMaybeStates()) {
+                    return getQualitativeStateSetsUntilProbabilitiesFromHint<ValueType>(hint);
+                } else {
+                    return computeQualitativeStateSetsUntilProbabilities(goal, transitionMatrix, backwardTransitions, phiStates, psiStates);
+                }
+            }
+            
+            template<typename ValueType>
+            void extractSchedulerChoices(storm::storage::Scheduler<ValueType>& scheduler, std::vector<uint_fast64_t> const& subChoices, storm::storage::BitVector const& maybeStates) {
+                auto subChoiceIt = subChoices.begin();
+                for (auto maybeState : maybeStates) {
+                    scheduler.setChoice(*subChoiceIt, maybeState);
+                    ++subChoiceIt;
+                }
+                assert(subChoiceIt == subChoices.end());
+            }
+            
+            template<typename ValueType>
+            void extendScheduler(storm::storage::Scheduler<ValueType>& scheduler, storm::solver::SolveGoal const& goal, QualitativeStateSetsUntilProbabilities const& qualitativeStateSets, storm::storage::SparseMatrix<ValueType> const& transitionMatrix, storm::storage::SparseMatrix<ValueType> const& backwardTransitions, storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates) {
+                
+                // Finally, if we need to produce a scheduler, we also need to figure out the parts of the scheduler for
+                // the states with probability 1 or 0 (depending on whether we maximize or minimize).
+                // We also need to define some arbitrary choice for the remaining states to obtain a fully defined scheduler.
+                if (goal.minimize()) {
+                    storm::utility::graph::computeSchedulerProb0E(qualitativeStateSets.statesWithProbability0, transitionMatrix, scheduler);
+                    for (auto const& prob1State : qualitativeStateSets.statesWithProbability1) {
+                        scheduler.setChoice(0, prob1State);
+                    }
+                } else {
+                    storm::utility::graph::computeSchedulerProb1E(qualitativeStateSets.statesWithProbability1, transitionMatrix, backwardTransitions, phiStates, psiStates, scheduler);
+                    for (auto const& prob0State : qualitativeStateSets.statesWithProbability0) {
+                        scheduler.setChoice(0, prob0State);
+                    }
+                }
+            }
+            
             template<typename ValueType>
             MDPSparseModelCheckingHelperReturnType<ValueType> SparseMdpPrctlHelper<ValueType>::computeUntilProbabilities(storm::solver::SolveGoal const& goal, storm::storage::SparseMatrix<ValueType> const& transitionMatrix, storm::storage::SparseMatrix<ValueType> const& backwardTransitions, storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates, bool qualitative, bool produceScheduler, storm::solver::MinMaxLinearEquationSolverFactory<ValueType> const& minMaxLinearEquationSolverFactory, ModelCheckerHint const& hint) {
-                STORM_LOG_THROW(!(qualitative && produceScheduler), storm::exceptions::InvalidSettingsException, "Cannot produce scheduler when performing qualitative model checking only.");
-                     
+                STORM_LOG_THROW(!qualitative || !produceScheduler, storm::exceptions::InvalidSettingsException, "Cannot produce scheduler when performing qualitative model checking only.");
+                
+                // Prepare resulting vector.
                 std::vector<ValueType> result(transitionMatrix.getRowGroupCount(), storm::utility::zero<ValueType>());
                  
                 // We need to identify the maybe states (states which have a probability for satisfying the until formula
                 // that is strictly between 0 and 1) and the states that satisfy the formula with probablity 1 and 0, respectively.
-                storm::storage::BitVector maybeStates, statesWithProbability1, statesWithProbability0;
+                QualitativeStateSetsUntilProbabilities qualitativeStateSets = getQualitativeStateSetsUntilProbabilities(goal, transitionMatrix, backwardTransitions, phiStates, psiStates, hint);
                 
-                if (hint.isExplicitModelCheckerHint() && hint.template asExplicitModelCheckerHint<ValueType>().getComputeOnlyMaybeStates()) {
-                    maybeStates = hint.template asExplicitModelCheckerHint<ValueType>().getMaybeStates();
-                    
-                    // Treat the states with probability one
-                    std::vector<ValueType> const& resultsForNonMaybeStates = hint.template asExplicitModelCheckerHint<ValueType>().getResultHint();
-                    statesWithProbability1 = storm::storage::BitVector(maybeStates.size(), false);
-                    statesWithProbability0 = storm::storage::BitVector(maybeStates.size(), false);
-                    storm::storage::BitVector nonMaybeStates = ~maybeStates;
-                    for (auto const& state : nonMaybeStates) {
-                        if (storm::utility::isOne(resultsForNonMaybeStates[state])) {
-                            statesWithProbability1.set(state, true);
-                            result[state] = storm::utility::one<ValueType>();
-                        } else {
-                            STORM_LOG_THROW(storm::utility::isZero(resultsForNonMaybeStates[state]), storm::exceptions::IllegalArgumentException, "Expected that the result hint specifies probabilities in {0,1} for non-maybe states");
-                            statesWithProbability0.set(state, true);
-                        }
-                    }
-                } else {
-                    // Get all states that have probability 0 and 1 of satisfying the until-formula.
-                     std::pair<storm::storage::BitVector, storm::storage::BitVector> statesWithProbability01;
-                    if (goal.minimize()) {
-                        statesWithProbability01 = storm::utility::graph::performProb01Min(transitionMatrix, transitionMatrix.getRowGroupIndices(), backwardTransitions, phiStates, psiStates);
-                    } else {
-                        statesWithProbability01 = storm::utility::graph::performProb01Max(transitionMatrix, transitionMatrix.getRowGroupIndices(), backwardTransitions, phiStates, psiStates);
-                    }
-                    statesWithProbability0 = std::move(statesWithProbability01.first);
-                    statesWithProbability1 = std::move(statesWithProbability01.second);
-                    maybeStates = ~(statesWithProbability0 | statesWithProbability1);
-                    STORM_LOG_INFO("Found " << statesWithProbability0.getNumberOfSetBits() << " 'no' states.");
-                    STORM_LOG_INFO("Found " << statesWithProbability1.getNumberOfSetBits() << " 'yes' states.");
-                    STORM_LOG_INFO("Found " << maybeStates.getNumberOfSetBits() << " 'maybe' states.");
-                
-                    // Set values of resulting vector that are known exactly.
-                    storm::utility::vector::setVectorValues<ValueType>(result, statesWithProbability0, storm::utility::zero<ValueType>());
-                    storm::utility::vector::setVectorValues<ValueType>(result, statesWithProbability1, storm::utility::one<ValueType>());
-                }
+                // Set values of resulting vector that are known exactly.
+                storm::utility::vector::setVectorValues<ValueType>(result, qualitativeStateSets.statesWithProbability1, storm::utility::one<ValueType>());
                 
                 // If requested, we will produce a scheduler.
                 std::unique_ptr<storm::storage::Scheduler<ValueType>> scheduler;
@@ -342,60 +399,43 @@ namespace storm {
                 // Check whether we need to compute exact probabilities for some states.
                 if (qualitative) {
                     // Set the values for all maybe-states to 0.5 to indicate that their probability values are neither 0 nor 1.
-                    storm::utility::vector::setVectorValues<ValueType>(result, maybeStates, storm::utility::convertNumber<ValueType>(0.5));
+                    storm::utility::vector::setVectorValues<ValueType>(result, qualitativeStateSets.maybeStates, storm::utility::convertNumber<ValueType>(0.5));
                 } else {
-                    if (!maybeStates.empty()) {
-                        // In this case we have have to compute the probabilities.
+                    if (!qualitativeStateSets.maybeStates.empty()) {
+                        // In this case we have have to compute the remaining probabilities.
                         
                         // First, we can eliminate the rows and columns from the original transition probability matrix for states
                         // whose probabilities are already known.
-                        storm::storage::SparseMatrix<ValueType> submatrix = transitionMatrix.getSubmatrix(true, maybeStates, maybeStates, false);
+                        storm::storage::SparseMatrix<ValueType> submatrix = transitionMatrix.getSubmatrix(true, qualitativeStateSets.maybeStates, qualitativeStateSets.maybeStates, false);
                         
                         // Prepare the right-hand side of the equation system. For entry i this corresponds to
-                        // the accumulated probability of going from state i to some 'yes' state.
-                        std::vector<ValueType> b = transitionMatrix.getConstrainedRowGroupSumVector(maybeStates, statesWithProbability1);
+                        // the accumulated probability of going from state i to some state that has probability 1.
+                        std::vector<ValueType> b = transitionMatrix.getConstrainedRowGroupSumVector(qualitativeStateSets.maybeStates, qualitativeStateSets.statesWithProbability1);
                         
                         // Obtain proper hint information either from the provided hint or from requirements of the solver.
-                        SparseMdpHintType<ValueType> hintInformation = computeHints(storm::solver::EquationSystemType::UntilProbabilities, hint, goal.direction(), transitionMatrix, backwardTransitions, maybeStates, phiStates, statesWithProbability1, minMaxLinearEquationSolverFactory);
+                        SparseMdpHintType<ValueType> hintInformation = computeHints(storm::solver::EquationSystemType::UntilProbabilities, hint, goal.direction(), transitionMatrix, backwardTransitions, qualitativeStateSets.maybeStates, phiStates, qualitativeStateSets.statesWithProbability1, minMaxLinearEquationSolverFactory);
                         
                         // Now compute the results for the maybe states.
                         MaybeStateResult<ValueType> resultForMaybeStates = computeValuesForMaybeStates(goal, submatrix, b, produceScheduler, minMaxLinearEquationSolverFactory, hintInformation);
                         
                         // Set values of resulting vector according to result.
-                        storm::utility::vector::setVectorValues<ValueType>(result, maybeStates, resultForMaybeStates.getValues());
+                        storm::utility::vector::setVectorValues<ValueType>(result, qualitativeStateSets.maybeStates, resultForMaybeStates.getValues());
 
                         if (produceScheduler) {
-                            std::vector<uint_fast64_t> const& subChoices = resultForMaybeStates.getScheduler();
-                            auto subChoiceIt = subChoices.begin();
-                            for (auto maybeState : maybeStates) {
-                                scheduler->setChoice(*subChoiceIt, maybeState);
-                                ++subChoiceIt;
-                            }
-                            assert(subChoiceIt == subChoices.end());
+                            extractSchedulerChoices(*scheduler, resultForMaybeStates.getScheduler(), qualitativeStateSets.maybeStates);
                         }
                     }
                 }
-                
-                // Finally, if we need to produce a scheduler, we also need to figure out the parts of the scheduler for
-                // the states with probability 1 or 0 (depending on whether we maximize or minimize).
-                // We also need to define some arbitrary choice for the remaining states to obtain a fully defined scheduler.
-                if (produceScheduler) {
-                    if (goal.minimize()) {
-                        storm::utility::graph::computeSchedulerProb0E(statesWithProbability0, transitionMatrix, *scheduler);
-                        for (auto const& prob1State : statesWithProbability1) {
-                            scheduler->setChoice(0, prob1State);
-                        }
-                    } else {
-                        storm::utility::graph::computeSchedulerProb1E(statesWithProbability1, transitionMatrix, backwardTransitions, phiStates, psiStates, *scheduler);
-                        for (auto const& prob0State : statesWithProbability0) {
-                            scheduler->setChoice(0, prob0State);
-                        }
-                    }
-                }
-                
-                STORM_LOG_ASSERT((!produceScheduler && !scheduler) || (!scheduler->isPartialScheduler() && scheduler->isDeterministicScheduler() && scheduler->isMemorylessScheduler()), "Unexpected format of obtained scheduler.");
 
+                // Extend scheduler with choices for the states in the qualitative state sets.
+                if (produceScheduler) {
+                    extendScheduler(*scheduler, goal, qualitativeStateSets, transitionMatrix, backwardTransitions, phiStates, psiStates);
+                }
                 
+                // Sanity check for created scheduler.
+                STORM_LOG_ASSERT((!produceScheduler && !scheduler) || (!scheduler->isPartialScheduler() && scheduler->isDeterministicScheduler() && scheduler->isMemorylessScheduler()), "Unexpected format of obtained scheduler.");
+                
+                // Return result.
                 return MDPSparseModelCheckingHelperReturnType<ValueType>(std::move(result), std::move(scheduler));
             }
 

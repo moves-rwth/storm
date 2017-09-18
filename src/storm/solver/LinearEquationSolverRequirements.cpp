@@ -17,6 +17,12 @@ namespace storm {
             return *this;
         }
         
+        LinearEquationSolverRequirements& LinearEquationSolverRequirements::requireBounds() {
+            requireLowerBounds();
+            requireUpperBounds();
+            return *this;
+        }
+        
         bool LinearEquationSolverRequirements::requiresLowerBounds() const {
             return lowerBounds;
         }

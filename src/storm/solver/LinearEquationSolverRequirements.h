@@ -16,6 +16,7 @@ namespace storm {
             
             LinearEquationSolverRequirements& requireLowerBounds();
             LinearEquationSolverRequirements& requireUpperBounds();
+            LinearEquationSolverRequirements& requireBounds();
             
             bool requiresLowerBounds() const;
             bool requiresUpperBounds() const;

@@ -8,11 +8,15 @@
 
 #include "storm/storage/StronglyConnectedComponentDecomposition.h"
 #include "storm/storage/DynamicPriorityQueue.h"
+#include "storm/storage/ConsecutiveUint64DynamicPriorityQueue.h"
 
 #include "storm/solver/LinearEquationSolver.h"
 
 #include "storm/modelchecker/results/ExplicitQuantitativeCheckResult.h"
 #include "storm/modelchecker/hints/ExplicitModelCheckerHint.h"
+
+#include "storm/utility/macros.h"
+#include "storm/utility/ConstantsComparator.h"
 
 #include "storm/exceptions/InvalidStateException.h"
 #include "storm/exceptions/InvalidPropertyException.h"
@@ -235,6 +239,17 @@ namespace storm {
                         result[state] = w[state] + (one - p[state]) * lambda;
                     }
                     
+#ifndef NDEBUG
+                    ValueType max = storm::utility::zero<ValueType>();
+                    uint64_t nonZeroCount = 0;
+                    for (auto const& e : result) {
+                        if (!storm::utility::isZero(e)) {
+                            ++nonZeroCount;
+                            max = std::max(max, e);
+                        }
+                    }
+                    STORM_LOG_TRACE("DS-MPI computed " << nonZeroCount << " non-zero upper bounds and a maximal bound of " << max << ".");
+#endif
                     return result;
                 }
                 
@@ -269,7 +284,7 @@ namespace storm {
                             for (auto const& e : transitionMatrix.getRow(state)) {
                                 sum += e.getValue() * w[e.getColumn()];
                             }
-                            STORM_LOG_WARN_COND(w[state] >= sum, "Expected condition (II) to hold in state " << state << ", but " << w[state] << " < " << sum << ".");
+                            STORM_LOG_WARN_COND(w[state] >= sum || storm::utility::ConstantsComparator<ValueType>().isEqual(w[state], sum), "Expected condition (II) to hold in state " << state << ", but " << w[state] << " < " << sum << ".");
 #endif
                         }
                     }
@@ -299,18 +314,9 @@ namespace storm {
                 
                 void sweep() {
                     // Create a priority queue that allows for easy retrieval of the currently best state.
-                    storm::storage::DynamicPriorityQueue<storm::storage::sparse::state_type, std::vector<storm::storage::sparse::state_type>, PriorityLess> queue(PriorityLess(*this));
+                    storm::storage::ConsecutiveUint64DynamicPriorityQueue<PriorityLess> queue(transitionMatrix.getRowCount(), PriorityLess(*this));
                     
                     storm::storage::BitVector visited(p.size());
-                    storm::storage::BitVector inQueue(p.size());
-
-                    for (storm::storage::sparse::state_type state = 0; state < targetProbabilities.size(); ++state) {
-                        if (!storm::utility::isZero(targetProbabilities[state])) {
-                            queue.push(state);
-                            inQueue.set(state);
-                        }
-                    }
-                    queue.fix();
                     
                     while (!queue.empty()) {
                         // Get first entry in queue.
@@ -332,13 +338,8 @@ namespace storm {
                             rewards[e.getColumn()] += e.getValue() * w[currentState];
                             targetProbabilities[e.getColumn()] += e.getValue() * p[currentState];
 
-                            // Either insert element or simply fix the queue.
-                            if (!inQueue.get(e.getColumn())) {
-                                queue.push(e.getColumn());
-                                inQueue.set(e.getColumn());
-                            } else {
-                                queue.fix();
-                            }
+                            // Increase priority of element.
+                            queue.increase(e.getColumn());
                         }
                     }
                 }

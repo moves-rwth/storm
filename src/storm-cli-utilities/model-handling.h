@@ -629,6 +629,8 @@ namespace storm {
             } else {
                 std::shared_ptr<storm::models::ModelBase> model = buildPreprocessExportModelWithValueTypeAndDdlib<DdType, ValueType>(input, engine);
 
+                STORM_LOG_THROW(model->isSparseModel() || !storm::settings::getModule<storm::settings::modules::GeneralSettings>().isSoundSet(), storm::exceptions::NotSupportedException, "Forcing soundness is currently only supported for sparse models.");
+                
                 if (model) {
                     if (coreSettings.isCounterexampleSet()) {
                         auto ioSettings = storm::settings::getModule<storm::settings::modules::IOSettings>();
@@ -644,9 +646,6 @@ namespace storm {
         template <typename ValueType>
         void processInputWithValueType(SymbolicInput const& input) {
             auto coreSettings = storm::settings::getModule<storm::settings::modules::CoreSettings>();
-            auto generalSettings = storm::settings::getModule<storm::settings::modules::GeneralSettings>();
-
-            STORM_LOG_THROW(!generalSettings.isSoundSet() || coreSettings.getEngine() == storm::settings::modules::CoreSettings::Engine::Sparse, storm::exceptions::NotSupportedException, "Forcing soundness is not supported for engines other than the sparse engine.");
             
             if (coreSettings.getDdLibraryType() == storm::dd::DdType::CUDD) {
                 processInputWithValueTypeAndDdlib<storm::dd::DdType::CUDD, ValueType>(input);

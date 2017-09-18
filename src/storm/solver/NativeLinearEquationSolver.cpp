@@ -497,7 +497,9 @@ namespace storm {
                 }
                 STORM_LOG_ASSERT(lowerDiff >= storm::utility::zero<ValueType>(), "Expected non-negative lower diff.");
                 STORM_LOG_ASSERT(upperDiff >= storm::utility::zero<ValueType>(), "Expected non-negative upper diff.");
-                STORM_LOG_TRACE("Lower difference: " << lowerDiff << ", upper difference: " << upperDiff << ".");
+                if (iterations % 100 == 0) {
+                    STORM_LOG_TRACE("Iteration " << iterations << ": lower difference: " << lowerDiff << ", upper difference: " << upperDiff << ".");
+                }
                 
                 if (doConvergenceCheck) {
                     // Now check if the process already converged within our precision. Note that we double the target
@@ -632,8 +634,7 @@ namespace storm {
             LinearEquationSolverRequirements requirements;
             if (this->getSettings().getForceSoundness()) {
                 if (this->getSettings().getSolutionMethod() == NativeLinearEquationSolverSettings<ValueType>::SolutionMethod::Power) {
-                    requirements.requireLowerBounds();
-                    requirements.requireUpperBounds();
+                    requirements.requireBounds();
                 } else {
                     STORM_LOG_WARN("Forcing soundness, but selecting a method other than the power iteration is not supported.");
                 }

@@ -251,15 +251,23 @@ namespace storm {
             // Start by copying the requirements of the linear equation solver.
             MinMaxLinearEquationSolverRequirements requirements(this->linearEquationSolverFactory->getRequirements());
             
-            // If we will use sound value iteration, we require no ECs and an upper bound.
-            if (this->getSettings().getSolutionMethod() == IterativeMinMaxLinearEquationSolverSettings<ValueType>::SolutionMethod::ValueIteration && this->getSettings().getForceSoundness()) {
-                if (!direction || direction.get() == OptimizationDirection::Maximize) {
-                    requirements.requireNoEndComponents();
+            // Guide requirements by whether or not we force soundness.
+            if (this->getSettings().getForceSoundness()) {
+                // Only add requirements for value iteration here as the policy iteration requirements are indifferent
+                if (this->getSettings().getSolutionMethod() == IterativeMinMaxLinearEquationSolverSettings<ValueType>::SolutionMethod::ValueIteration) {
+                    if (equationSystemType == EquationSystemType::UntilProbabilities) {
+                        if (!direction || direction.get() == OptimizationDirection::Maximize) {
+                            requirements.requireNoEndComponents();
+                        }
+                    } else if (equationSystemType == EquationSystemType::ReachabilityRewards) {
+                        if (!direction || direction.get() == OptimizationDirection::Minimize) {
+                            requirements.requireNoEndComponents();
+                        }
+                    }
                 }
-                requirements.requireUpperBounds();
             }
             
-            // Then add our requirements on top of that.
+            // 'Regular' requirements (even for non-sound solving techniques).
             if (equationSystemType == EquationSystemType::UntilProbabilities) {
                 if (this->getSettings().getSolutionMethod() == IterativeMinMaxLinearEquationSolverSettings<ValueType>::SolutionMethod::PolicyIteration) {
                     if (!direction || direction.get() == OptimizationDirection::Maximize) {
@@ -271,11 +279,7 @@ namespace storm {
                     requirements.requireValidInitialScheduler();
                 }
             }
-            
-            if (this->getSettings().getSolutionMethod() == IterativeMinMaxLinearEquationSolverSettings<ValueType>::SolutionMethod::ValueIteration && this->getSettings().getForceSoundness()) {
-                requirements.requireUpperBounds();
-            }
-            
+        
             return requirements;
         }
 

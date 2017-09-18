@@ -27,6 +27,12 @@ namespace storm {
             return *this;
         }
         
+        MinMaxLinearEquationSolverRequirements& MinMaxLinearEquationSolverRequirements::requireBounds() {
+            requireLowerBounds();
+            requireUpperBounds();
+            return *this;
+        }
+        
         bool MinMaxLinearEquationSolverRequirements::requiresNoEndComponents() const {
             return noEndComponents;
         }
