@@ -225,6 +225,7 @@ namespace storm {
             virtual bool internalSolveEquations(std::vector<ValueType>& x, std::vector<ValueType> const& b) const = 0;
             
             void createUpperBoundsVector(std::unique_ptr<std::vector<ValueType>>& upperBoundsVector) const;
+            void createLowerBoundsVector(std::vector<ValueType>& lowerBoundsVector) const;
             
             // auxiliary storage. If set, this vector has getMatrixRowCount() entries.
             mutable std::unique_ptr<std::vector<ValueType>> cachedRowVector;

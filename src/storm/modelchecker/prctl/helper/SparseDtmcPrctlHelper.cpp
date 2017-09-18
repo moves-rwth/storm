@@ -7,6 +7,7 @@
 #include "storm/utility/graph.h"
 
 #include "storm/storage/StronglyConnectedComponentDecomposition.h"
+#include "storm/storage/DynamicPriorityQueue.h"
 
 #include "storm/solver/LinearEquationSolver.h"
 
@@ -17,6 +18,7 @@
 #include "storm/exceptions/InvalidPropertyException.h"
 #include "storm/exceptions/IllegalArgumentException.h"
 #include "storm/exceptions/UncheckedRequirementException.h"
+#include "storm/exceptions/NotSupportedException.h"
 
 namespace storm {
     namespace modelchecker {
@@ -217,13 +219,14 @@ namespace storm {
             template<typename ValueType>
             class DsMpi {
             public:
-                DsMpi(storm::storage::SparseMatrix<ValueType> const& transitionMatrix, std::vector<ValueType> const& rewards, std::vector<ValueType> const& oneStepTargetProbabilities) : transitionMatrix(transitionMatrix), originalRewards(rewards), backwardTransitions(transitionMatrix.transpose()), p(transitionMatrix.getRowCount()), w(transitionMatrix.getRowCount()), rewards(rewards), targetProbabilities(oneStepTargetProbabilities) {
+                DsMpi(storm::storage::SparseMatrix<ValueType> const& transitionMatrix, std::vector<ValueType> const& rewards, std::vector<ValueType> const& oneStepTargetProbabilities) : transitionMatrix(transitionMatrix), originalRewards(rewards), originalOneStepTargetProbabilities(oneStepTargetProbabilities), backwardTransitions(transitionMatrix.transpose()), p(transitionMatrix.getRowCount()), w(transitionMatrix.getRowCount()), rewards(rewards), targetProbabilities(oneStepTargetProbabilities) {
                     // Intentionally left empty.
                 }
                 
                 std::vector<ValueType> computeUpperBounds() {
                     sweep();
                     ValueType lambda = computeLambda();
+                    STORM_LOG_TRACE("DS-MPI computed lambda as " << lambda << ".");
                     
                     // Finally compute the upper bounds for the states.
                     std::vector<ValueType> result(transitionMatrix.getRowCount());
@@ -231,18 +234,21 @@ namespace storm {
                     for (storm::storage::sparse::state_type state = 0; state < result.size(); ++state) {
                         result[state] = w[state] + (one - p[state]) * lambda;
                     }
+                    
                     return result;
                 }
                 
             private:
                 ValueType computeLambda() {
-                    ValueType lambda = storm::utility::convertNumber<ValueType>(0.0);
+                    ValueType lambda = storm::utility::zero<ValueType>();
                     for (storm::storage::sparse::state_type state = 0; state < targetProbabilities.size(); ++state) {
                         // Check whether condition (I) or (II) applies.
                         ValueType sum = storm::utility::zero<ValueType>();
                         for (auto const& e : transitionMatrix.getRow(state)) {
                             sum += e.getValue() * p[e.getColumn()];
                         }
+                        sum += originalOneStepTargetProbabilities[state];
+                        
                         if (p[state] < sum) {
                             // Condition (I) applies.
                             ValueType localLambda = sum - p[state];
@@ -256,38 +262,59 @@ namespace storm {
                         } else {
                             // Here, condition (II) automatically applies and as the resulting local lambda is 0, we
                             // don't need to consider it.
+                            
+#ifndef NDEBUG
+                            // Actually check condition (II).
+                            ValueType sum = originalRewards[state];
+                            for (auto const& e : transitionMatrix.getRow(state)) {
+                                sum += e.getValue() * w[e.getColumn()];
+                            }
+                            STORM_LOG_WARN_COND(w[state] >= sum, "Expected condition (II) to hold in state " << state << ", but " << w[state] << " < " << sum << ".");
+#endif
                         }
                     }
                     return lambda;
                 }
                 
-                void sweep() {
-                    // Create a priority queue that allows for easy retrieval of the currently best state.
-                    auto cmp = [this](storm::storage::sparse::state_type const& a, storm::storage::sparse::state_type const& b) {
-                        ValueType pa = p[a];
-                        ValueType pb = p[b];
-                        if (pa > pb) {
+                class PriorityLess {
+                public:
+                    PriorityLess(DsMpi const& dsmpi) : dsmpi(dsmpi) {
+                        // Intentionally left empty.
+                    }
+                    
+                    bool operator()(storm::storage::sparse::state_type const& a, storm::storage::sparse::state_type const& b) {
+                        ValueType pa = dsmpi.targetProbabilities[a];
+                        ValueType pb = dsmpi.targetProbabilities[b];
+                        if (pa < pb) {
                             return true;
                         } else if (pa == pb) {
-                            return w[a] < w[b];
+                            return dsmpi.rewards[a] > dsmpi.rewards[b];
                         }
                         return false;
-                    };
-                    std::set<storm::storage::sparse::state_type, decltype(cmp)> queue;
-
+                    }
+                    
+                private:
+                    DsMpi const& dsmpi;
+                };
+                
+                void sweep() {
+                    // Create a priority queue that allows for easy retrieval of the currently best state.
+                    storm::storage::DynamicPriorityQueue<storm::storage::sparse::state_type, std::vector<storm::storage::sparse::state_type>, PriorityLess> queue(PriorityLess(*this));
                     
                     storm::storage::BitVector visited(p.size());
+                    storm::storage::BitVector inQueue(p.size());
 
                     for (storm::storage::sparse::state_type state = 0; state < targetProbabilities.size(); ++state) {
                         if (!storm::utility::isZero(targetProbabilities[state])) {
-                            queue.insert(state);
+                            queue.push(state);
+                            inQueue.set(state);
                         }
                     }
+                    queue.fix();
                     
                     while (!queue.empty()) {
                         // Get first entry in queue.
-                        storm::storage::sparse::state_type currentState = *queue.begin();
-                        queue.erase(queue.begin());
+                        storm::storage::sparse::state_type currentState = queue.popTop();
                         
                         // Mark state as visited.
                         visited.set(currentState);
@@ -301,18 +328,17 @@ namespace storm {
                                 continue;
                             }
                             
-                            // Delete element from the priority queue if it was in there.
-                            auto it = queue.find(e.getColumn());
-                            if (it != queue.end()) {
-                                queue.erase(it);
-                            }
-                            
                             // Update reward/probability values.
                             rewards[e.getColumn()] += e.getValue() * w[currentState];
                             targetProbabilities[e.getColumn()] += e.getValue() * p[currentState];
 
-                            // (Re-)insert the state with the new rewards/target probabilities.
-                            queue.insert(e.getColumn());
+                            // Either insert element or simply fix the queue.
+                            if (!inQueue.get(e.getColumn())) {
+                                queue.push(e.getColumn());
+                                inQueue.set(e.getColumn());
+                            } else {
+                                queue.fix();
+                            }
                         }
                     }
                 }
@@ -320,6 +346,7 @@ namespace storm {
                 // References to input data.
                 storm::storage::SparseMatrix<ValueType> const& transitionMatrix;
                 std::vector<ValueType> const& originalRewards;
+                std::vector<ValueType> const& originalOneStepTargetProbabilities;
                 
                 // Derived from input data.
                 storm::storage::SparseMatrix<ValueType> backwardTransitions;
@@ -334,8 +361,17 @@ namespace storm {
             // This function computes an upper bound on the reachability rewards (see Baier et al, CAV'17).
             template<typename ValueType>
             std::vector<ValueType> computeUpperRewardBounds(storm::storage::SparseMatrix<ValueType> const& transitionMatrix, std::vector<ValueType> const& rewards, std::vector<ValueType> const& oneStepTargetProbabilities) {
+                std::chrono::high_resolution_clock::time_point start = std::chrono::high_resolution_clock::now();
                 DsMpi<ValueType> dsmpi(transitionMatrix, rewards, oneStepTargetProbabilities);
-                return dsmpi.computeUpperBounds();
+                std::vector<ValueType> bounds = dsmpi.computeUpperBounds();
+                std::chrono::high_resolution_clock::time_point end = std::chrono::high_resolution_clock::now();
+                STORM_LOG_TRACE("Computed upper bounds on rewards in " << std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count() << "ms.");
+                return bounds;
+            }
+            
+            template<>
+            std::vector<storm::RationalFunction> computeUpperRewardBounds(storm::storage::SparseMatrix<storm::RationalFunction> const& transitionMatrix, std::vector<storm::RationalFunction> const& rewards, std::vector<storm::RationalFunction> const& oneStepTargetProbabilities) {
+                STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Computing upper reward bounds is not supported for rational functions.");
             }
             
             template<typename ValueType, typename RewardModelType>

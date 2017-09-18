@@ -15,6 +15,7 @@
 
 #include "storm/utility/macros.h"
 #include "storm/exceptions/NotSupportedException.h"
+#include "storm/exceptions/UnmetRequirementException.h"
 
 namespace storm {
     namespace solver {
@@ -210,6 +211,18 @@ namespace storm {
         void LinearEquationSolver<ValueType>::setBounds(std::vector<ValueType> const& lower, std::vector<ValueType> const& upper) {
             setLowerBounds(lower);
             setUpperBounds(upper);
+        }
+        
+        template<typename ValueType>
+        void LinearEquationSolver<ValueType>::createLowerBoundsVector(std::vector<ValueType>& lowerBoundsVector) const {
+            if (this->hasLowerBound(BoundType::Local)) {
+                lowerBoundsVector = this->getLowerBounds();
+            } else {
+                STORM_LOG_THROW(this->hasLowerBound(BoundType::Global), storm::exceptions::UnmetRequirementException, "Cannot create lower bounds vector without lower bound.");
+                for (auto& e : lowerBoundsVector) {
+                    e = this->getLowerBound();
+                }
+            }
         }
         
         template<typename ValueType>

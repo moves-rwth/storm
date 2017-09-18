@@ -382,6 +382,7 @@ namespace storm {
         
         template<typename ValueType>
         bool NativeLinearEquationSolver<ValueType>::solveEquationsPower(std::vector<ValueType>& x, std::vector<ValueType> const& b) const {
+            STORM_LOG_THROW(this->hasLowerBound(), storm::exceptions::UnmetRequirementException, "Solver requires upper bound, but none was given.");
             STORM_LOG_INFO("Solving linear equation system (" << x.size() << " rows) with NativeLinearEquationSolver (Power)");
             
             if (!this->cachedRowVector) {
@@ -389,6 +390,7 @@ namespace storm {
             }
             
             std::vector<ValueType>* currentX = &x;
+            this->createLowerBoundsVector(*currentX);
             std::vector<ValueType>* nextX = this->cachedRowVector.get();
 
             bool useGaussSeidelMultiplication = this->getSettings().getPowerMethodMultiplicationStyle() == storm::solver::MultiplicationStyle::GaussSeidel;
@@ -430,10 +432,12 @@ namespace storm {
         
         template<typename ValueType>
         bool NativeLinearEquationSolver<ValueType>::solveEquationsSoundPower(std::vector<ValueType>& x, std::vector<ValueType> const& b) const {
+            STORM_LOG_THROW(this->hasLowerBound(), storm::exceptions::UnmetRequirementException, "Solver requires upper bound, but none was given.");
             STORM_LOG_THROW(this->hasUpperBound(), storm::exceptions::UnmetRequirementException, "Solver requires upper bound, but none was given.");
             STORM_LOG_INFO("Solving linear equation system (" << x.size() << " rows) with NativeLinearEquationSolver (SoundPower)");
             
             std::vector<ValueType>* lowerX = &x;
+            this->createLowerBoundsVector(*lowerX);
             this->createUpperBoundsVector(this->cachedRowVector);
             std::vector<ValueType>* upperX = this->cachedRowVector.get();
             
@@ -446,24 +450,65 @@ namespace storm {
             
             bool converged = false;
             uint64_t iterations = 0;
+            bool doConvergenceCheck = false;
+            ValueType upperDiff;
+            ValueType lowerDiff;
             while (!converged && iterations < this->getSettings().getMaximalNumberOfIterations()) {
-                if (useGaussSeidelMultiplication) {
-                    this->multiplier.multAddGaussSeidelBackward(*this->A, *lowerX, &b);
-                    this->multiplier.multAddGaussSeidelBackward(*this->A, *upperX, &b);
+                // In every hundredth iteration, we improve both bounds.
+                if (iterations % 100 == 0) {
+                    if (useGaussSeidelMultiplication) {
+                        lowerDiff = (*lowerX)[0];
+                        this->multiplier.multAddGaussSeidelBackward(*this->A, *lowerX, &b);
+                        lowerDiff = (*lowerX)[0] - lowerDiff;
+                        upperDiff = (*upperX)[0];
+                        this->multiplier.multAddGaussSeidelBackward(*this->A, *upperX, &b);
+                        upperDiff = upperDiff - (*upperX)[0];
+                    } else {
+                        this->multiplier.multAdd(*this->A, *lowerX, &b, *tmp);
+                        lowerDiff = (*tmp)[0] - (*lowerX)[0];
+                        std::swap(tmp, lowerX);
+                        this->multiplier.multAdd(*this->A, *upperX, &b, *tmp);
+                        upperDiff = (*upperX)[0] - (*tmp)[0];
+                        std::swap(tmp, upperX);
+                    }
                 } else {
-                    this->multiplier.multAdd(*this->A, *lowerX, &b, *tmp);
-                    std::swap(tmp, lowerX);
-                    this->multiplier.multAdd(*this->A, *upperX, &b, *tmp);
-                    std::swap(tmp, upperX);
+                    // In the following iterations, we improve the bound with the greatest difference.
+                    if (useGaussSeidelMultiplication) {
+                        if (lowerDiff >= upperDiff) {
+                            lowerDiff = (*lowerX)[0];
+                            this->multiplier.multAddGaussSeidelBackward(*this->A, *lowerX, &b);
+                            lowerDiff = (*lowerX)[0] - lowerDiff;
+                        } else {
+                            upperDiff = (*upperX)[0];
+                            this->multiplier.multAddGaussSeidelBackward(*this->A, *upperX, &b);
+                            upperDiff = upperDiff - (*upperX)[0];
+                        }
+                    } else {
+                        if (lowerDiff >= upperDiff) {
+                            this->multiplier.multAdd(*this->A, *lowerX, &b, *tmp);
+                            lowerDiff = (*tmp)[0] - (*lowerX)[0];
+                            std::swap(tmp, lowerX);
+                        } else {
+                            this->multiplier.multAdd(*this->A, *upperX, &b, *tmp);
+                            upperDiff = (*upperX)[0] - (*tmp)[0];
+                            std::swap(tmp, upperX);
+                        }
+                    }
                 }
+                STORM_LOG_ASSERT(lowerDiff >= storm::utility::zero<ValueType>(), "Expected non-negative lower diff.");
+                STORM_LOG_ASSERT(upperDiff >= storm::utility::zero<ValueType>(), "Expected non-negative upper diff.");
+                STORM_LOG_TRACE("Lower difference: " << lowerDiff << ", upper difference: " << upperDiff << ".");
                 
-                // Now check if the process already converged within our precision. Note that we double the target
-                // precision here. Doing so, we need to take the means of the lower and upper values later to guarantee
-                // the original precision.
-                converged = storm::utility::vector::equalModuloPrecision<ValueType>(*lowerX, *upperX, storm::utility::convertNumber<ValueType>(2.0) * static_cast<ValueType>(this->getSettings().getPrecision()), false);
+                if (doConvergenceCheck) {
+                    // Now check if the process already converged within our precision. Note that we double the target
+                    // precision here. Doing so, we need to take the means of the lower and upper values later to guarantee
+                    // the original precision.
+                    converged = storm::utility::vector::equalModuloPrecision<ValueType>(*lowerX, *upperX, storm::utility::convertNumber<ValueType>(2.0) * static_cast<ValueType>(this->getSettings().getPrecision()), false);
+                }
                 
                 // Set up next iteration.
                 ++iterations;
+                doConvergenceCheck = !doConvergenceCheck;
             }
             
             // We take the means of the lower and upper bound so we guarantee the desired precision.
@@ -580,6 +625,24 @@ namespace storm {
             } else {
                 return LinearEquationSolverProblemFormat::EquationSystem;
             }
+        }
+        
+        template<typename ValueType>
+        LinearEquationSolverRequirements NativeLinearEquationSolver<ValueType>::getRequirements() const {
+            LinearEquationSolverRequirements requirements;
+            if (this->getSettings().getForceSoundness()) {
+                if (this->getSettings().getSolutionMethod() == NativeLinearEquationSolverSettings<ValueType>::SolutionMethod::Power) {
+                    requirements.requireLowerBounds();
+                    requirements.requireUpperBounds();
+                } else {
+                    STORM_LOG_WARN("Forcing soundness, but selecting a method other than the power iteration is not supported.");
+                }
+            } else {
+                if (this->getSettings().getSolutionMethod() == NativeLinearEquationSolverSettings<ValueType>::SolutionMethod::Power) {
+                    requirements.requireLowerBounds();
+                }
+            }
+            return requirements;
         }
         
         template<typename ValueType>

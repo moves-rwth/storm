@@ -68,6 +68,7 @@ namespace storm {
             NativeLinearEquationSolverSettings<ValueType> const& getSettings() const;
 
             virtual LinearEquationSolverProblemFormat getEquationProblemFormat() const override;
+            virtual LinearEquationSolverRequirements getRequirements() const override;
 
             virtual void clearCache() const override;
 
