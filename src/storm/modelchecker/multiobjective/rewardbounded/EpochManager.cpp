@@ -14,6 +14,7 @@ namespace storm {
             
             EpochManager::EpochManager(uint64_t dimensionCount) : dimensionCount(dimensionCount) {
                 STORM_LOG_THROW(dimensionCount > 0, storm::exceptions::IllegalArgumentException, "Invoked EpochManager with zero dimension count.");
+                STORM_LOG_THROW(dimensionCount <= 64, storm::exceptions::IllegalArgumentException, "Invoked EpochManager with too many dimensions.");
                 bitsPerDimension = 64 / dimensionCount;
                 if (dimensionCount == 1) {
                     dimensionBitMask = -1ull;
