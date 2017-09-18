@@ -59,7 +59,8 @@ namespace storm {
             notStateFormula = (unaryBooleanOperator_ >> atomicStateFormulaWithoutExpression)[qi::_val = phoenix::bind(&FormulaParserGrammar::createUnaryBooleanStateFormula, phoenix::ref(*this), qi::_2, qi::_1)] | atomicStateFormula[qi::_val = qi::_1];
             notStateFormula.name("negation formula");
             
-            eventuallyFormula = (qi::lit("F") >> -timeBound >> pathFormulaWithoutUntil(qi::_r1))[qi::_val = phoenix::bind(&FormulaParserGrammar::createEventuallyFormula, phoenix::ref(*this), qi::_1, qi::_r1, qi::_2)];
+            eventuallyFormula = (qi::lit("F") >> -(timeBound % qi::lit(",")) >> pathFormulaWithoutUntil(qi::_r1))[qi::_val = phoenix::bind(&FormulaParserGrammar::createEventuallyFormula, phoenix::ref(*this), qi::_1, qi::_r1, qi::_2)];
+  //          eventuallyFormula = (qi::lit("F") >> -timeBound >> pathFormulaWithoutUntil(qi::_r1))[qi::_val = phoenix::bind(&FormulaParserGrammar::createEventuallyFormula, phoenix::ref(*this), qi::_1, qi::_r1, qi::_2)];
             eventuallyFormula.name("eventually formula");
             
             globallyFormula = (qi::lit("G") >> pathFormulaWithoutUntil(qi::_r1))[qi::_val = phoenix::bind(&FormulaParserGrammar::createGloballyFormula, phoenix::ref(*this), qi::_1)];
@@ -261,13 +262,21 @@ namespace storm {
             return std::shared_ptr<storm::logic::Formula const>(new storm::logic::AtomicLabelFormula(label));
         }
         
-        std::shared_ptr<storm::logic::Formula const> FormulaParserGrammar::createEventuallyFormula(boost::optional<std::tuple<boost::optional<storm::logic::TimeBound>, boost::optional<storm::logic::TimeBound>, boost::optional<std::string>>> const& timeBound, storm::logic::FormulaContext context, std::shared_ptr<storm::logic::Formula const> const& subformula) const {
-            if (timeBound) {
-                if (std::get<2>(timeBound.get())) {
-                    return std::shared_ptr<storm::logic::Formula const>(new storm::logic::BoundedUntilFormula(createBooleanLiteralFormula(true), subformula, std::get<0>(timeBound.get()), std::get<1>(timeBound.get()), storm::logic::TimeBoundReference(std::get<2>(timeBound.get()).get())));
-                } else {
-                    return std::shared_ptr<storm::logic::Formula const>(new storm::logic::BoundedUntilFormula(createBooleanLiteralFormula(true), subformula, std::get<0>(timeBound.get()), std::get<1>(timeBound.get()), storm::logic::TimeBoundReference(storm::logic::TimeBoundType::Time)));
+        std::shared_ptr<storm::logic::Formula const> FormulaParserGrammar::createEventuallyFormula(boost::optional<std::vector<std::tuple<boost::optional<storm::logic::TimeBound>, boost::optional<storm::logic::TimeBound>, boost::optional<std::string>>>> const& timeBounds, storm::logic::FormulaContext context, std::shared_ptr<storm::logic::Formula const> const& subformula) const {
+        //std::shared_ptr<storm::logic::Formula const> FormulaParserGrammar::createEventuallyFormula(boost::optional<std::tuple<boost::optional<storm::logic::TimeBound>, boost::optional<storm::logic::TimeBound>, boost::optional<std::string>>> const& timeBound, storm::logic::FormulaContext context, std::shared_ptr<storm::logic::Formula const> const& subformula) const {
+            if (timeBounds && !timeBounds.get().empty()) {
+                std::vector<boost::optional<storm::logic::TimeBound>> lowerBounds, upperBounds;
+                std::vector<storm::logic::TimeBoundReference> timeBoundReferences;
+                for (auto const& timeBound : timeBounds.get()) {
+                    lowerBounds.push_back(std::get<0>(timeBound));
+                    upperBounds.push_back(std::get<1>(timeBound));
+                    if (std::get<2>(timeBound)) {
+                        timeBoundReferences.emplace_back(std::get<2>(timeBound).get());
+                    } else {
+                        timeBoundReferences.emplace_back(storm::logic::TimeBoundType::Time);
+                    }
                 }
+                return std::shared_ptr<storm::logic::Formula const>(new storm::logic::BoundedUntilFormula(createBooleanLiteralFormula(true), subformula, lowerBounds, upperBounds, timeBoundReferences));
             } else {
                 return std::shared_ptr<storm::logic::Formula const>(new storm::logic::EventuallyFormula(subformula, context));
             }

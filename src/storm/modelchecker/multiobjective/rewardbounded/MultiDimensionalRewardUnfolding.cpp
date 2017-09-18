@@ -402,8 +402,6 @@ namespace storm {
                         zeroObjRewardChoices &= storm::utility::vector::filterZero(productObjectiveRewards[objIndex]);
                     }
                 }
-                swAux1.stop();
-                swAux2.start();
                 storm::storage::BitVector allProductStates(productModel->getProduct().getNumberOfStates(), true);
                 
                 // Get the relevant states for this epoch.
@@ -415,11 +413,11 @@ namespace storm {
                 
                 // We assume that there is no end component in which objective reward is earned
                 STORM_LOG_ASSERT(!storm::utility::graph::checkIfECWithChoiceExists(epochModel.epochMatrix, epochModel.epochMatrix.transpose(true), allProductStates, ~zeroObjRewardChoices & ~stepChoices), "There is a scheduler that yields infinite reward for one objective. This case should be excluded");
+                swAux1.stop();
+                swAux2.start();
+                auto ecElimResult = storm::transformer::EndComponentEliminator<ValueType>::transform(epochModel.epochMatrix, consideredStates, zeroObjRewardChoices & ~stepChoices, consideredStates);
                 swAux2.stop();
                 swAux3.start();
-                auto ecElimResult = storm::transformer::EndComponentEliminator<ValueType>::transform(epochModel.epochMatrix, consideredStates, zeroObjRewardChoices & ~stepChoices, consideredStates);
-                swAux3.stop();
-                swAux4.start();
                 epochModel.epochMatrix = std::move(ecElimResult.matrix);
                 epochModelToProductChoiceMap = std::move(ecElimResult.newToOldRowMapping);
                 
@@ -444,6 +442,8 @@ namespace storm {
                     }
                     epochModel.objectiveRewards.push_back(std::move(reducedModelObjRewards));
                 }
+                swAux3.stop();
+                swAux4.start();
                 
                 epochModel.epochInStates = storm::storage::BitVector(epochModel.epochMatrix.getRowGroupCount(), false);
                 for (auto const& productState : productInStates) {
