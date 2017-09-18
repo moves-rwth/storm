@@ -90,8 +90,6 @@ namespace storm {
 
                 
                 void initializeMemoryProduct(std::vector<Epoch> const& epochSteps);
-                storm::storage::MemoryStructure computeMemoryStructure() const;
-                std::vector<storm::storage::BitVector> computeMemoryStateMap(storm::storage::MemoryStructure const& memory) const;
                 
                 template<bool SO = SingleObjectiveMode, typename std::enable_if<SO, int>::type = 0>
                 SolutionType getScaledSolution(SolutionType const& solution, ValueType const& scalingFactor) const;

@@ -213,6 +213,7 @@ TEST(SparseMdpMultiDimensionalRewardUnfoldingTest, single_obj_lower_bounds) {
     std::string formulasAsString = "Pmax=? [ F{\"a\"}>=1.1 x=1 ]";
     formulasAsString += "; \n Pmin=? [ F{\"a\"}>=1.1 x=1 ]";
     formulasAsString += "; \n Pmax=? [ F{\"b\"}>3 x=1 ]";
+    formulasAsString += "; \n Pmax=? [ F{\"b\"}>=2 x=0 ]";
     formulasAsString += "; \n Pmax=? [ multi(F{\"a\"}<=0.2 x=1, F{\"b\"}>3 x=1) ]";
     formulasAsString += "; \n Pmax=? [ multi(F{\"a\"}>0.2 x=1, F{\"b\"}>3 x=1) ]";
     formulasAsString += "; \n Pmax=? [ multi(F{\"a\"}>=2/5 x=4, F{\"a\"}<=0 x=4) ]";
@@ -245,15 +246,20 @@ TEST(SparseMdpMultiDimensionalRewardUnfoldingTest, single_obj_lower_bounds) {
 
     result = storm::api::verifyWithSparseEngine(mdp, storm::api::createTask<storm::RationalNumber>(formulas[3], true));
     ASSERT_TRUE(result->isExplicitQuantitativeCheckResult());
-    expectedResult = storm::utility::convertNumber<storm::RationalNumber, std::string>("27/64");
+    expectedResult = storm::utility::convertNumber<storm::RationalNumber, std::string>("9/16");
     EXPECT_EQ(expectedResult, result->asExplicitQuantitativeCheckResult<storm::RationalNumber>()[initState]);
 
     result = storm::api::verifyWithSparseEngine(mdp, storm::api::createTask<storm::RationalNumber>(formulas[4], true));
     ASSERT_TRUE(result->isExplicitQuantitativeCheckResult());
-    expectedResult = storm::utility::convertNumber<storm::RationalNumber, std::string>("243/640");
+    expectedResult = storm::utility::convertNumber<storm::RationalNumber, std::string>("27/64");
     EXPECT_EQ(expectedResult, result->asExplicitQuantitativeCheckResult<storm::RationalNumber>()[initState]);
 
     result = storm::api::verifyWithSparseEngine(mdp, storm::api::createTask<storm::RationalNumber>(formulas[5], true));
+    ASSERT_TRUE(result->isExplicitQuantitativeCheckResult());
+    expectedResult = storm::utility::convertNumber<storm::RationalNumber, std::string>("243/640");
+    EXPECT_EQ(expectedResult, result->asExplicitQuantitativeCheckResult<storm::RationalNumber>()[initState]);
+
+    result = storm::api::verifyWithSparseEngine(mdp, storm::api::createTask<storm::RationalNumber>(formulas[6], true));
     ASSERT_TRUE(result->isExplicitQuantitativeCheckResult());
     expectedResult = storm::utility::convertNumber<storm::RationalNumber, std::string>("81/160");
     EXPECT_EQ(expectedResult, result->asExplicitQuantitativeCheckResult<storm::RationalNumber>()[initState]);

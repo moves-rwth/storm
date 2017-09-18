@@ -121,7 +121,7 @@ namespace storm {
         }
         
         Formula const& BoundedUntilFormula::getRightSubformula() const {
-            STORM_LOG_ASSERT(leftSubformula.size() == 1, "The right subformula is not unique.");
+            STORM_LOG_ASSERT(rightSubformula.size() == 1, "The right subformula is not unique.");
             return *rightSubformula.at(0);
         }
         
@@ -323,10 +323,10 @@ namespace storm {
                 if (this->isMultiDimensional()) {
                     out << "]";
                 }
+                
+                this->getRightSubformula().writeToStream(out);
             }
-
             
-            this->getRightSubformula().writeToStream(out);
             return out;
         }
     }

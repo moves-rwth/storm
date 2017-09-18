@@ -6,7 +6,6 @@
 
 #include "storm/utility/macros.h"
 #include "storm/logic/Formulas.h"
-#include "storm/storage/memorystructure/MemoryStructureBuilder.h"
 
 #include "storm/modelchecker/propositional/SparsePropositionalModelChecker.h"
 #include "storm/modelchecker/results/ExplicitQualitativeCheckResult.h"
@@ -83,7 +82,10 @@ namespace storm {
                             }
                             dimension.memoryLabel = memLabel;
                             dimension.isUpperBounded = subformula.hasUpperBound(dim);
+                            // for simplicity we do not allow intervals or unbounded formulas.
                             STORM_LOG_THROW(subformula.hasLowerBound(dim) != dimension.isUpperBounded, storm::exceptions::NotSupportedException, "Bounded until formulas are only supported by this method if they consider either an upper bound or a lower bound. Got " << subformula << " instead.");
+                            // lower bounded until formulas with non-trivial left hand side are excluded as this would require some additional effort (in particular the ProductModel::transformMemoryState method).
+                            STORM_LOG_THROW(dimension.isUpperBounded || subformula.getLeftSubformula(dim).isTrueFormula(), storm::exceptions::NotSupportedException, "Lower bounded until formulas are only supported by this method if the left subformula is 'true'. Got " << subformula << " instead.");
                             if (subformula.getTimeBoundReference(dim).isTimeBound() || subformula.getTimeBoundReference(dim).isStepBound()) {
                                 dimensionWiseEpochSteps.push_back(std::vector<uint64_t>(model.getNumberOfChoices(), 1));
                                 dimension.scalingFactor = storm::utility::one<ValueType>();
@@ -124,12 +126,11 @@ namespace storm {
                         for (uint64_t currDim = dim; currDim < dim + boundedUntilFormula.getDimension(); ++currDim ) {
                             if (!boundedUntilFormula.hasMultiDimensionalSubformulas() || dimensions[currDim].isUpperBounded) {
                                 dimensions[currDim].dependentDimensions = objDimensions;
-                                std::cout << "dimension " << currDim << " has depDims: " << dimensions[currDim].dependentDimensions << std::endl;
                             } else {
                                 dimensions[currDim].dependentDimensions = storm::storage::BitVector(dimensions.size(), false);
                                 dimensions[currDim].dependentDimensions.set(currDim, true);
-                                std::cout << "dimension " << currDim << " has depDims: " << dimensions[currDim].dependentDimensions << std::endl;
                             }
+                            //  std::cout << "dimension " << currDim << " has depDims: " << dimensions[currDim].dependentDimensions << std::endl;
                         }
                         dim += boundedUntilFormula.getDimension();
                     } else if (objectives[objIndex].formula->isRewardOperatorFormula() && objectives[objIndex].formula->getSubformula().isCumulativeRewardFormula()) {
@@ -138,7 +139,6 @@ namespace storm {
                         ++dim;
                     }
                     
-                    std::cout << "obj " << objIndex << " has dimensions " << objDimensions << std::endl;
                     objectiveDimensions.push_back(std::move(objDimensions));
                 }
                 assert(dim == dimensions.size());
@@ -172,14 +172,7 @@ namespace storm {
             
             template<typename ValueType, bool SingleObjectiveMode>
             void MultiDimensionalRewardUnfolding<ValueType, SingleObjectiveMode>::initializeMemoryProduct(std::vector<Epoch> const& epochSteps) {
-                
-                // build the memory structure
-                auto memoryStructure = computeMemoryStructure();
-                
-                // build a mapping between the different representations of memory states
-                auto memoryStateMap = computeMemoryStateMap(memoryStructure);
-
-                productModel = std::make_unique<ProductModel<ValueType>>(model, memoryStructure, dimensions, objectiveDimensions, epochManager, std::move(memoryStateMap), epochSteps);
+                productModel = std::make_unique<ProductModel<ValueType>>(model, objectives, dimensions, objectiveDimensions, epochManager, epochSteps);
             }
             
             template<typename ValueType, bool SingleObjectiveMode>
@@ -205,6 +198,7 @@ namespace storm {
                     }
                     STORM_LOG_THROW(!bound.containsVariables(), storm::exceptions::NotSupportedException, "The bound " << bound << " contains undefined constants.");
                     ValueType discretizedBound = storm::utility::convertNumber<ValueType>(bound.evaluateAsRational());
+                    STORM_LOG_THROW(dimensions[dim].isUpperBounded || isStrict || !storm::utility::isZero(discretizedBound), storm::exceptions::NotSupportedException, "Lower bounds need to be either strict or greater than zero.");
                     discretizedBound /= dimensions[dim].scalingFactor;
                     if (storm::utility::isInteger(discretizedBound)) {
                         if (isStrict == dimensions[dim].isUpperBounded) {
@@ -296,18 +290,17 @@ namespace storm {
                     uint64_t productChoice = epochModelToProductChoiceMap[reducedChoice];
                     uint64_t productState = productModel->getProductStateFromChoice(productChoice);
                     auto const& memoryState = productModel->getMemoryState(productState);
-                    auto const& memoryStateBv = productModel->convertMemoryState(memoryState);
                     Epoch successorEpoch = epochManager.getSuccessorEpoch(epoch, productModel->getSteps()[productChoice]);
                     EpochClass successorEpochClass = epochManager.getEpochClass(successorEpoch);
                     // Find out whether objective reward is earned for the current choice
                     // Objective reward is not earned if
-                    // a) there is an upper bounded subObjective that is still relevant but the corresponding reward bound is passed after taking the choice
+                    // a) there is an upper bounded subObjective that is __still_relevant__ but the corresponding reward bound is passed after taking the choice
                     // b) there is a lower bounded subObjective and the corresponding reward bound is not passed yet.
                     for (uint64_t objIndex = 0; objIndex < this->objectives.size(); ++objIndex) {
                         bool rewardEarned = !storm::utility::isZero(epochModel.objectiveRewards[objIndex][reducedChoice]);
                         if (rewardEarned) {
                             for (auto const& dim : objectiveDimensions[objIndex]) {
-                                if (dimensions[dim].isUpperBounded == epochManager.isBottomDimension(successorEpoch, dim) && memoryStateBv.get(dim)) {
+                                if (dimensions[dim].isUpperBounded == epochManager.isBottomDimension(successorEpoch, dim) && productModel->getMemoryStateManager().isRelevantDimension(memoryState, dim)) {
                                     rewardEarned = false;
                                     break;
                                 }
@@ -583,129 +576,15 @@ namespace storm {
             template<typename ValueType, bool SingleObjectiveMode>
             typename MultiDimensionalRewardUnfolding<ValueType, SingleObjectiveMode>::SolutionType const& MultiDimensionalRewardUnfolding<ValueType, SingleObjectiveMode>::getInitialStateResult(Epoch const& epoch) {
                 STORM_LOG_ASSERT(model.getInitialStates().getNumberOfSetBits() == 1, "The model has multiple initial states.");
-                STORM_LOG_ASSERT(productModel->getProduct().getInitialStates().getNumberOfSetBits() == 1, "The product has multiple initial states.");
-                return getStateSolution(epoch, *productModel->getProduct().getInitialStates().begin());
+                STORM_LOG_ASSERT(!epochManager.hasBottomDimension(epoch), "Tried to get the initial state result in an epoch that still contains at least one bottom dimension.");
+                return getStateSolution(epoch, productModel->getInitialProductState(*model.getInitialStates().begin(), model.getInitialStates()));
             }
 
             template<typename ValueType, bool SingleObjectiveMode>
             typename MultiDimensionalRewardUnfolding<ValueType, SingleObjectiveMode>::SolutionType const& MultiDimensionalRewardUnfolding<ValueType, SingleObjectiveMode>::getInitialStateResult(Epoch const& epoch, uint64_t initialStateIndex) {
                 STORM_LOG_ASSERT(model.getInitialStates().get(initialStateIndex), "The given model state is not an initial state.");
-                for (uint64_t memState = 0; memState < productModel->getNumberOfMemoryState(); ++memState) {
-                    uint64_t productState = productModel->getProductState(initialStateIndex, memState);
-                    if (productModel->getProduct().getInitialStates().get(productState)) {
-                        return getStateSolution(epoch, productState);
-                    }
-                }
-                STORM_LOG_THROW(false, storm::exceptions::UnexpectedException, "Could not find the initial product state corresponding to the given initial model state.");
-                return getStateSolution(epoch, -1ull);
-            }
-            
-            template<typename ValueType, bool SingleObjectiveMode>
-            storm::storage::MemoryStructure MultiDimensionalRewardUnfolding<ValueType, SingleObjectiveMode>::computeMemoryStructure() const {
-                
-                storm::modelchecker::SparsePropositionalModelChecker<storm::models::sparse::Mdp<ValueType>> mc(model);
-                
-                // Create a memory structure that remembers whether (sub)objectives are satisfied
-                storm::storage::MemoryStructure memory = storm::storage::MemoryStructureBuilder<ValueType>::buildTrivialMemoryStructure(model);
-                for (uint64_t objIndex = 0; objIndex < objectives.size(); ++objIndex) {
-                    if (!objectives[objIndex].formula->isProbabilityOperatorFormula()) {
-                        continue;
-                    }
-                    
-                    std::vector<uint64_t> dimensionIndexMap;
-                    for (auto const& globalDimensionIndex : objectiveDimensions[objIndex]) {
-                        dimensionIndexMap.push_back(globalDimensionIndex);
-                    }
-                    
-                    // collect the memory states for this objective
-                    std::vector<storm::storage::BitVector> objMemStates;
-                    storm::storage::BitVector m(dimensionIndexMap.size(), false);
-                    for (; !m.full(); m.increment()) {
-                        objMemStates.push_back(~m);
-                    }
-                    objMemStates.push_back(~m);
-                    assert(objMemStates.size() == 1ull << dimensionIndexMap.size());
-                    
-                    // build objective memory
-                    auto objMemoryBuilder = storm::storage::MemoryStructureBuilder<ValueType>(objMemStates.size(), model);
-                    
-                    // Get the set of states that for all subobjectives satisfy either the left or the right subformula
-                    storm::storage::BitVector constraintStates(model.getNumberOfStates(), true);
-                    for (auto const& dim : objectiveDimensions[objIndex]) {
-                        auto const& dimension = dimensions[dim];
-                        STORM_LOG_ASSERT(dimension.formula->isBoundedUntilFormula(), "Unexpected Formula type");
-                        constraintStates &=
-                                (mc.check(dimension.formula->asBoundedUntilFormula().getLeftSubformula())->asExplicitQualitativeCheckResult().getTruthValuesVector() |
-                                mc.check(dimension.formula->asBoundedUntilFormula().getRightSubformula())->asExplicitQualitativeCheckResult().getTruthValuesVector());
-                    }
-                    
-                    // Build the transitions between the memory states
-                    for (uint64_t memState = 0; memState < objMemStates.size(); ++memState) {
-                        auto const& memStateBV = objMemStates[memState];
-                        for (uint64_t memStatePrime = 0; memStatePrime < objMemStates.size(); ++memStatePrime) {
-                            auto const& memStatePrimeBV = objMemStates[memStatePrime];
-                            if (memStatePrimeBV.isSubsetOf(memStateBV)) {
-                                
-                                std::shared_ptr<storm::logic::Formula const> transitionFormula = storm::logic::Formula::getTrueFormula();
-                                for (auto const& subObjIndex : memStateBV) {
-                                    std::shared_ptr<storm::logic::Formula const> subObjFormula = dimensions[dimensionIndexMap[subObjIndex]].formula->asBoundedUntilFormula().getRightSubformula().asSharedPointer();
-                                    if (memStatePrimeBV.get(subObjIndex)) {
-                                        subObjFormula = std::make_shared<storm::logic::UnaryBooleanStateFormula>(storm::logic::UnaryBooleanStateFormula::OperatorType::Not, subObjFormula);
-                                    }
-                                    transitionFormula = std::make_shared<storm::logic::BinaryBooleanStateFormula>(storm::logic::BinaryBooleanStateFormula::OperatorType::And, transitionFormula, subObjFormula);
-                                }
-                                
-                                storm::storage::BitVector transitionStates = mc.check(*transitionFormula)->asExplicitQualitativeCheckResult().getTruthValuesVector();
-                                if (memStatePrimeBV.empty()) {
-                                    transitionStates |= ~constraintStates;
-                                } else {
-                                    transitionStates &= constraintStates;
-                                }
-                                objMemoryBuilder.setTransition(memState, memStatePrime, transitionStates);
-                                
-                                // Set the initial states
-                                if (memStateBV.full()) {
-                                    storm::storage::BitVector initialTransitionStates = model.getInitialStates() & transitionStates;
-                                    // At this point we can check whether there is an initial state that already satisfies all subObjectives.
-                                    // Such a situation is not supported as we can not reduce this (easily) to an expected reward computation.
-                                    STORM_LOG_THROW(!memStatePrimeBV.empty() || initialTransitionStates.empty() || initialTransitionStates.isDisjointFrom(constraintStates), storm::exceptions::NotSupportedException, "The objective " << *objectives[objIndex].formula << " is already satisfied in an initial state. This special case is not supported.");
-                                    for (auto const& initState : initialTransitionStates) {
-                                        objMemoryBuilder.setInitialMemoryState(initState, memStatePrime);
-                                    }
-                                }
-                            }
-                        }
-                    }
-
-                    // Build the memory labels
-                    for (uint64_t memState = 0; memState < objMemStates.size(); ++memState) {
-                        auto const& memStateBV = objMemStates[memState];
-                        for (auto const& subObjIndex : memStateBV) {
-                            objMemoryBuilder.setLabel(memState, dimensions[dimensionIndexMap[subObjIndex]].memoryLabel.get());
-                        }
-                    }
-                    auto objMemory = objMemoryBuilder.build();
-                    memory = memory.product(objMemory);
-                }
-                return memory;
-            }
-            
-            template<typename ValueType, bool SingleObjectiveMode>
-            std::vector<storm::storage::BitVector> MultiDimensionalRewardUnfolding<ValueType, SingleObjectiveMode>::computeMemoryStateMap(storm::storage::MemoryStructure const& memory) const {
-                // Compute a mapping between the different representations of memory states
-                std::vector<storm::storage::BitVector> result;
-                result.reserve(memory.getNumberOfStates());
-                for (uint64_t memState = 0; memState < memory.getNumberOfStates(); ++memState) {
-                    storm::storage::BitVector relevantSubObjectives(epochManager.getDimensionCount(), false);
-                    std::set<std::string> stateLabels = memory.getStateLabeling().getLabelsOfState(memState);
-                    for (uint64_t dim = 0; dim < epochManager.getDimensionCount(); ++dim) {
-                        if (dimensions[dim].memoryLabel && stateLabels.find(dimensions[dim].memoryLabel.get()) != stateLabels.end()) {
-                            relevantSubObjectives.set(dim, true);
-                        }
-                    }
-                    result.push_back(std::move(relevantSubObjectives));
-                }
-                return result;
+                STORM_LOG_ASSERT(!epochManager.hasBottomDimension(epoch), "Tried to get the initial state result in an epoch that still contains at least one bottom dimension.");
+                return getStateSolution(epoch, productModel->getInitialProductState(initialStateIndex, model.getInitialStates()));
             }
 
             template class MultiDimensionalRewardUnfolding<double, true>;
