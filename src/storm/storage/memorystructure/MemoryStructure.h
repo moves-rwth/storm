@@ -43,6 +43,8 @@ namespace storm {
             std::vector<uint_fast64_t> const& getInitialMemoryStates() const;
             uint_fast64_t getNumberOfStates() const;
             
+            uint_fast64_t getSuccessorMemoryState(uint_fast64_t const& currentMemoryState, uint_fast64_t const& modelTransitionIndex) const;
+            
             /*!
              * Builds the product of this memory structure and the given memory structure.
              * The resulting memory structure will have the state labels of both given structures.
