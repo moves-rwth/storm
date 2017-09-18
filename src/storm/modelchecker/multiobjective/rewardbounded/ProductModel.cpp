@@ -313,19 +313,28 @@ namespace storm {
             template<typename ValueType>
             void ProductModel<ValueType>::collectReachableEpochClasses(std::set<EpochClass, std::function<bool(EpochClass const&, EpochClass const&)>>& reachableEpochClasses, std::set<Epoch> const& possibleSteps) const {
                 
-                std::vector<Epoch> candidates({epochManager.getBottomEpoch()});
-                std::set<Epoch> newCandidates;
-                bool converged = false;
-                while (!converged) {
-                    converged = true;
-                    for (auto const& candidate : candidates) {
-                        converged &= !reachableEpochClasses.insert(epochManager.getEpochClass(candidate)).second;
-                        for (auto const& step : possibleSteps) {
-                            epochManager.gatherPredecessorEpochs(newCandidates, candidate, step);
+                Epoch startEpoch = epochManager.getZeroEpoch();
+                for (uint64_t dim = 0; dim < epochManager.getDimensionCount(); ++dim) {
+                    STORM_LOG_ASSERT(dimensions[dim].maxValue,  "No max-value for dimension " << dim << " was given.");
+                    epochManager.setDimensionOfEpoch(startEpoch, dim, dimensions[dim].maxValue.get());
+                }
+                
+                std::set<Epoch> seenEpochs({startEpoch});
+                std::vector<Epoch> dfsStack({startEpoch});
+                
+                reachableEpochClasses.insert(epochManager.getEpochClass(startEpoch));
+
+                // Perform a DFS to find all the reachable epochs
+                while (!dfsStack.empty()) {
+                    Epoch currentEpoch = dfsStack.back();
+                    dfsStack.pop_back();
+                    for (auto const& step : possibleSteps) {
+                        Epoch successorEpoch = epochManager.getSuccessorEpoch(currentEpoch, step);
+                        if (seenEpochs.insert(successorEpoch).second) {
+                            reachableEpochClasses.insert(epochManager.getEpochClass(successorEpoch));
+                            dfsStack.push_back(std::move(successorEpoch));
                         }
                     }
-                    candidates.assign(newCandidates.begin(), newCandidates.end());
-                    newCandidates.clear();
                 }
             }
 
@@ -424,15 +433,17 @@ namespace storm {
                 storm::storage::BitVector memoryStateBv = convertMemoryState(memoryState);
                 storm::storage::BitVector const& predecessorMemoryStateBv = convertMemoryState(predecessorMemoryState);
                 
-                for (uint64_t objIndex = 0; objIndex < objectiveDimensions.size(); ++objIndex) {
-                    for (auto const& dim : objectiveDimensions[objIndex]) {
-                        bool dimUpperBounded = dimensions[dim].isUpperBounded;
+                for (auto const& objDimensions : objectiveDimensions) {
+                    for (auto const& dim : objDimensions) {
+                        auto const& dimension = dimensions[dim];
+                        bool dimUpperBounded = dimension.isUpperBounded;
                         bool dimBottom = epochManager.isBottomDimensionEpochClass(epochClass, dim);
                         if (dimUpperBounded && dimBottom && predecessorMemoryStateBv.get(dim)) {
-                            memoryStateBv &= ~objectiveDimensions[objIndex];
+                            STORM_LOG_ASSERT(objDimensions == dimension.dependentDimensions, "Unexpected set of dependent dimensions");
+                            memoryStateBv &= ~objDimensions;
                             break;
                         } else if (!dimUpperBounded && !dimBottom && predecessorMemoryStateBv.get(dim)) {
-                            memoryStateBv.set(dim, true);
+                            memoryStateBv |= dimension.dependentDimensions;
                         }
                     }
                 }
