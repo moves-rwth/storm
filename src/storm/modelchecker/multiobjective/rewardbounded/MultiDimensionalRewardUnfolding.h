@@ -86,6 +86,8 @@ namespace storm {
                 void initialize();
                 
                 void initializeObjectives(std::vector<Epoch>& epochSteps);
+                void computeMaxDimensionValues();
+
                 
                 void initializeMemoryProduct(std::vector<Epoch> const& epochSteps);
                 storm::storage::MemoryStructure computeMemoryStructure() const;

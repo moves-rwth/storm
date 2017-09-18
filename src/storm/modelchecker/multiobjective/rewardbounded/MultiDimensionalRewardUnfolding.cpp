@@ -112,15 +112,37 @@ namespace storm {
                 }
                 
                 // Compute a mapping for each objective to the set of dimensions it considers
+                // Also store for each dimension dim, which dimensions should be unsatisfiable whenever the bound of dim is violated
+                uint64_t dim = 0;
                 for (uint64_t objIndex = 0; objIndex < this->objectives.size(); ++objIndex) {
                     storm::storage::BitVector objDimensions(dimensions.size(), false);
-                    for (uint64_t dim = 0; dim < dimensions.size(); ++dim) {
-                        if (dimensions[dim].objectiveIndex == objIndex) {
-                            objDimensions.set(dim, true);
+                    if (objectives[objIndex].formula->isProbabilityOperatorFormula() && objectives[objIndex].formula->getSubformula().isBoundedUntilFormula()) {
+                        auto const& boundedUntilFormula = objectives[objIndex].formula->getSubformula().asBoundedUntilFormula();
+                        for (uint64_t currDim = dim; currDim < dim + boundedUntilFormula.getDimension(); ++currDim ) {
+                            objDimensions.set(currDim);
                         }
+                        for (uint64_t currDim = dim; currDim < dim + boundedUntilFormula.getDimension(); ++currDim ) {
+                            if (!boundedUntilFormula.hasMultiDimensionalSubformulas() || dimensions[currDim].isUpperBounded) {
+                                dimensions[currDim].dependentDimensions = objDimensions;
+                                std::cout << "dimension " << currDim << " has depDims: " << dimensions[currDim].dependentDimensions << std::endl;
+                            } else {
+                                dimensions[currDim].dependentDimensions = storm::storage::BitVector(dimensions.size(), false);
+                                dimensions[currDim].dependentDimensions.set(currDim, true);
+                                std::cout << "dimension " << currDim << " has depDims: " << dimensions[currDim].dependentDimensions << std::endl;
+                            }
+                        }
+                        dim += boundedUntilFormula.getDimension();
+                    } else if (objectives[objIndex].formula->isRewardOperatorFormula() && objectives[objIndex].formula->getSubformula().isCumulativeRewardFormula()) {
+                        objDimensions.set(dim, true);
+                        dimensions[dim].dependentDimensions = objDimensions;
+                        ++dim;
                     }
+                    
+                    std::cout << "obj " << objIndex << " has dimensions " << objDimensions << std::endl;
                     objectiveDimensions.push_back(std::move(objDimensions));
                 }
+                assert(dim == dimensions.size());
+                
                 
                 // Initialize the epoch manager
                 epochManager = EpochManager(dimensions.size());
@@ -143,6 +165,9 @@ namespace storm {
                     possibleEpochSteps.insert(step);
                 }
                 
+                // Set the maximal values we need to consider for each dimension
+                computeMaxDimensionValues();
+                
             }
             
             template<typename ValueType, bool SingleObjectiveMode>
@@ -158,8 +183,7 @@ namespace storm {
             }
             
             template<typename ValueType, bool SingleObjectiveMode>
-            typename MultiDimensionalRewardUnfolding<ValueType, SingleObjectiveMode>::Epoch MultiDimensionalRewardUnfolding<ValueType, SingleObjectiveMode>::getStartEpoch() {
-                Epoch startEpoch;
+            void MultiDimensionalRewardUnfolding<ValueType, SingleObjectiveMode>::computeMaxDimensionValues() {
                 for (uint64_t dim = 0; dim < epochManager.getDimensionCount(); ++dim) {
                     storm::expressions::Expression bound;
                     bool isStrict = false;
@@ -191,7 +215,16 @@ namespace storm {
                     }
                     uint64_t dimensionValue = storm::utility::convertNumber<uint64_t>(discretizedBound);
                     STORM_LOG_THROW(epochManager.isValidDimensionValue(dimensionValue), storm::exceptions::NotSupportedException, "The bound " << bound << " is too high for the considered number of dimensions.");
-                    epochManager.setDimensionOfEpoch(startEpoch, dim, dimensionValue);
+                    dimensions[dim].maxValue = dimensionValue;
+                }
+            }
+    
+            template<typename ValueType, bool SingleObjectiveMode>
+            typename MultiDimensionalRewardUnfolding<ValueType, SingleObjectiveMode>::Epoch MultiDimensionalRewardUnfolding<ValueType, SingleObjectiveMode>::getStartEpoch() {
+                Epoch startEpoch = epochManager.getZeroEpoch();
+                for (uint64_t dim = 0; dim < epochManager.getDimensionCount(); ++dim) {
+                    STORM_LOG_ASSERT(dimensions[dim].maxValue,  "No max-value for dimension " << dim << " was given.");
+                    epochManager.setDimensionOfEpoch(startEpoch, dim, dimensions[dim].maxValue.get());
                 }
                 STORM_LOG_TRACE("Start epoch is " << epochManager.toString(startEpoch));
                 return startEpoch;
@@ -234,32 +267,6 @@ namespace storm {
                 std::cout << std::endl;
                 */
                 return std::vector<Epoch>(collectedEpochs.begin(), collectedEpochs.end());
-                
-                /*
-                
-                // perform DFS to get the 'reachable' epochs in the correct order.
-                std::vector<Epoch> result, dfsStack;
-                std::set<Epoch> seenEpochs;
-                seenEpochs.insert(startEpoch);
-                dfsStack.push_back(startEpoch);
-                while (!dfsStack.empty()) {
-                    bool hasUnseenSuccessor = false;
-                    for (auto const& step : possibleEpochSteps) {
-                        Epoch successorEpoch = epochManager.getSuccessorEpoch(dfsStack.back(), step);
-                        if (seenEpochs.find(successorEpoch) == seenEpochs.end()) {
-                            seenEpochs.insert(successorEpoch);
-                            dfsStack.push_back(std::move(successorEpoch));
-                            hasUnseenSuccessor = true;
-                        }
-                    }
-                    if (!hasUnseenSuccessor) {
-                        result.push_back(std::move(dfsStack.back()));
-                        dfsStack.pop_back();
-                    }
-                }
-                
-                return result;
-                 */
             }
             
             template<typename ValueType, bool SingleObjectiveMode>
@@ -291,7 +298,7 @@ namespace storm {
                     auto const& memoryState = productModel->getMemoryState(productState);
                     auto const& memoryStateBv = productModel->convertMemoryState(memoryState);
                     Epoch successorEpoch = epochManager.getSuccessorEpoch(epoch, productModel->getSteps()[productChoice]);
-                    
+                    EpochClass successorEpochClass = epochManager.getEpochClass(successorEpoch);
                     // Find out whether objective reward is earned for the current choice
                     // Objective reward is not earned if
                     // a) there is an upper bounded subObjective that is still relevant but the corresponding reward bound is passed after taking the choice
@@ -323,7 +330,7 @@ namespace storm {
                         }
                     } else {
                         for (auto const& successor : productModel->getProduct().getTransitionMatrix().getRow(productChoice)) {
-                            uint64_t successorProductState = productModel->transformProductState(successor.getColumn(), epochManager.getEpochClass(successorEpoch), memoryState);
+                            uint64_t successorProductState = productModel->transformProductState(successor.getColumn(), successorEpochClass, memoryState);
                             SolutionType const& successorSolution = getStateSolution(successorEpoch, successorProductState);
                             if (firstSuccessor) {
                                 choiceSolution = getScaledSolution(successorSolution, successor.getValue());

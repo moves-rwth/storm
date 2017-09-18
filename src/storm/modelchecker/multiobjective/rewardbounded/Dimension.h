@@ -23,6 +23,7 @@ namespace storm {
                 boost::optional<std::string> memoryLabel;
                 bool isUpperBounded;
                 ValueType scalingFactor;
+                storm::storage::BitVector dependentDimensions;
                 boost::optional<uint64_t> maxValue;
             };
         }
