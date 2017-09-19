@@ -30,6 +30,7 @@
 #include "storm/exceptions/IllegalFunctionCallException.h"
 #include "storm/exceptions/IllegalArgumentException.h"
 #include "storm/exceptions/UncheckedRequirementException.h"
+#include "storm/exceptions/NotSupportedException.h"
 
 namespace storm {
     namespace modelchecker {
@@ -109,6 +110,10 @@ namespace storm {
             
             template<typename ValueType>
             struct SparseMdpHintType {
+                SparseMdpHintType() : eliminateEndComponents(false) {
+                    // Intentionally left empty.
+                }
+                
                 bool hasSchedulerHint() const {
                     return static_cast<bool>(schedulerHint);
                 }
@@ -140,15 +145,20 @@ namespace storm {
                 std::vector<ValueType>& getValueHint() {
                     return valueHint.get();
                 }
+                
+                bool getEliminateEndComponents() const {
+                    return eliminateEndComponents;
+                }
 
                 boost::optional<std::vector<uint64_t>> schedulerHint;
                 boost::optional<std::vector<ValueType>> valueHint;
                 boost::optional<ValueType> lowerResultBound;
                 boost::optional<ValueType> upperResultBound;
+                bool eliminateEndComponents;
             };
             
             template<typename ValueType>
-            void extractHintInformationForMaybeStates(SparseMdpHintType<ValueType>& hintStorage, storm::storage::SparseMatrix<ValueType> const& transitionMatrix, storm::storage::SparseMatrix<ValueType> const& backwardTransitions, storm::storage::BitVector const& maybeStates, boost::optional<storm::storage::BitVector> const& selectedChoices, ModelCheckerHint const& hint, bool skipECWithinMaybeStatesCheck) {
+            void extractValueAndSchedulerHint(SparseMdpHintType<ValueType>& hintStorage, storm::storage::SparseMatrix<ValueType> const& transitionMatrix, storm::storage::SparseMatrix<ValueType> const& backwardTransitions, storm::storage::BitVector const& maybeStates, boost::optional<storm::storage::BitVector> const& selectedChoices, ModelCheckerHint const& hint, bool skipECWithinMaybeStatesCheck) {
                 
                 // Deal with scheduler hint.
                 if (hint.isExplicitModelCheckerHint() && hint.template asExplicitModelCheckerHint<ValueType>().hasSchedulerHint()) {
@@ -204,24 +214,44 @@ namespace storm {
                 // Check for requirements of the solver.
                 storm::solver::MinMaxLinearEquationSolverRequirements requirements = minMaxLinearEquationSolverFactory.getRequirements(type, dir);
                 if (!requirements.empty()) {
+                    // If the hint tells us that there are no end-components, we can clear that requirement.
                     if (hint.isExplicitModelCheckerHint() && hint.asExplicitModelCheckerHint<ValueType>().getNoEndComponentsInMaybeStates()) {
                         requirements.clearNoEndComponents();
                     }
+                    
+                    // If the solver still requires no end-components, we have to eliminate them later.
+                    if (requirements.requiresNoEndComponents()) {
+                        STORM_LOG_DEBUG("Scheduling EC elimination, because the solver requires it.");
+                        result.eliminateEndComponents = true;
+                        requirements.clearNoEndComponents();
+                    }
+                    
+                    // If the solver requires an initial scheduler, compute one now.
                     if (requirements.requires(storm::solver::MinMaxLinearEquationSolverRequirements::Element::ValidInitialScheduler)) {
                         STORM_LOG_DEBUG("Computing valid scheduler, because the solver requires it.");
                         result.schedulerHint = computeValidSchedulerHint(type, transitionMatrix, backwardTransitions, maybeStates, phiStates, targetStates);
                         requirements.clearValidInitialScheduler();
                     }
+                    
+                    // Finally, we have information on the bounds depending on the problem type.
                     if (type == storm::solver::EquationSystemType::UntilProbabilities) {
                         requirements.clearBounds();
                     } else if (type == storm::solver::EquationSystemType::ReachabilityRewards) {
                         requirements.clearLowerBounds();
                     }
                     STORM_LOG_THROW(requirements.empty(), storm::exceptions::UncheckedRequirementException, "There are unchecked requirements of the solver.");
+                } else {
+                    STORM_LOG_DEBUG("Solver has no requirements.");
                 }
 
-                bool skipEcWithinMaybeStatesCheck = dir == storm::OptimizationDirection::Minimize || (hint.isExplicitModelCheckerHint() && hint.asExplicitModelCheckerHint<ValueType>().getNoEndComponentsInMaybeStates());
-                extractHintInformationForMaybeStates(result, transitionMatrix, backwardTransitions, maybeStates, selectedChoices, hint, skipEcWithinMaybeStatesCheck);
+                // Only if there is no end component decomposition that we will need to do later, we use value and scheduler
+                // hints from the provided hint.
+                if (!result.eliminateEndComponents) {
+                    bool skipEcWithinMaybeStatesCheck = dir == storm::OptimizationDirection::Minimize || (hint.isExplicitModelCheckerHint() && hint.asExplicitModelCheckerHint<ValueType>().getNoEndComponentsInMaybeStates());
+                    extractValueAndSchedulerHint(result, transitionMatrix, backwardTransitions, maybeStates, selectedChoices, hint, skipEcWithinMaybeStatesCheck);
+                } else {
+                    STORM_LOG_WARN_COND(hint.isEmpty(), "A non-empty hint was provided, but its information will be disregarded.");
+                }
 
                 // Only set bounds if we did not obtain them from the hint.
                 if (!result.hasLowerResultBound()) {
@@ -377,6 +407,202 @@ namespace storm {
             }
             
             template<typename ValueType>
+            void computeFixedPointSystemUntilProbabilities(storm::storage::SparseMatrix<ValueType> const& transitionMatrix, QualitativeStateSetsUntilProbabilities const& qualitativeStateSets, storm::storage::SparseMatrix<ValueType>& submatrix, std::vector<ValueType>& b) {
+                // First, we can eliminate the rows and columns from the original transition probability matrix for states
+                // whose probabilities are already known.
+                submatrix = transitionMatrix.getSubmatrix(true, qualitativeStateSets.maybeStates, qualitativeStateSets.maybeStates, false);
+                
+                // Prepare the right-hand side of the equation system. For entry i this corresponds to
+                // the accumulated probability of going from state i to some state that has probability 1.
+                b = transitionMatrix.getConstrainedRowGroupSumVector(qualitativeStateSets.maybeStates, qualitativeStateSets.statesWithProbability1);
+            }
+            
+            static const uint64_t NOT_IN_EC = std::numeric_limits<uint64_t>::max();
+            
+            template<typename ValueType>
+            struct SparseMdpEndComponentInformation {
+                SparseMdpEndComponentInformation(storm::storage::MaximalEndComponentDecomposition<ValueType> const& endComponentDecomposition, storm::storage::BitVector const& maybeStates) : eliminatedEndComponents(false), numberOfMaybeStatesInEc(0), numberOfMaybeStatesNotInEc(0), numberOfEc(endComponentDecomposition.size()) {
+
+                    // (0) Compute how many maybe states there are before each other maybe state.
+                    maybeStatesBefore = maybeStates.getNumberOfSetBitsBeforeIndices();
+                
+                    // (1) Create mapping from maybe states to their MEC. If they are not contained in an MEC, their value
+                    // is set to a special constant.
+                    maybeStateToEc.resize(maybeStates.getNumberOfSetBits(), NOT_IN_EC);
+                    uint64_t mecIndex = 0;
+                    for (auto const& mec : endComponentDecomposition) {
+                        for (auto const& stateActions : mec) {
+                            maybeStateToEc[maybeStatesBefore[stateActions.first]] = mecIndex;
+                            ++numberOfMaybeStatesInEc;
+                        }
+                        ++mecIndex;
+                    }
+                }
+                
+                bool isMaybeStateInEc(uint64_t maybeState) const {
+                    return maybeStateToEc[maybeState] != NOT_IN_EC;
+                }
+
+                bool isStateInEc(uint64_t state) const {
+                    std::cout << "querying state " << state << " and size " << maybeStatesBefore.size() << std::endl;
+                    std::cout << "and other size " << maybeStateToEc.size() << " with offset " << maybeStatesBefore[state] << std::endl;
+                    return maybeStateToEc[maybeStatesBefore[state]] != NOT_IN_EC;
+                }
+
+                std::vector<uint64_t> getNumberOfMaybeStatesNotInEcBeforeIndices() const {
+                    std::vector<uint64_t> result(maybeStateToEc.size());
+                    
+                    uint64_t count = 0;
+                    auto resultIt = result.begin();
+                    for (auto const& e : maybeStateToEc) {
+                        *resultIt = count;
+                        if (e != NOT_IN_EC) {
+                            ++count;
+                        }
+                        ++resultIt;
+                    }
+                    
+                    return result;
+                }
+                
+                uint64_t getEc(uint64_t state) const {
+                    return maybeStateToEc[maybeStatesBefore[state]];
+                }
+                
+                bool eliminatedEndComponents;
+                
+                std::vector<uint64_t> maybeStatesBefore;
+                uint64_t numberOfMaybeStatesInEc;
+                uint64_t numberOfMaybeStatesNotInEc;
+                uint64_t numberOfEc;
+                
+                std::vector<uint64_t> maybeStateToEc;
+            };
+            
+            template<typename ValueType>
+            SparseMdpEndComponentInformation<ValueType> eliminateEndComponents(storm::storage::MaximalEndComponentDecomposition<ValueType> const& endComponentDecomposition, storm::storage::SparseMatrix<ValueType> const& transitionMatrix, QualitativeStateSetsUntilProbabilities const& qualitativeStateSets, storm::storage::SparseMatrix<ValueType>& submatrix, std::vector<ValueType>& b) {
+
+                SparseMdpEndComponentInformation<ValueType> result(endComponentDecomposition, qualitativeStateSets.maybeStates);
+
+                // (2) Compute the number of maybe states not in ECs before any other maybe state.
+                std::vector<uint64_t> maybeStatesNotInEcBefore = result.getNumberOfMaybeStatesNotInEcBeforeIndices();
+                uint64_t numberOfMaybeStatesNotInEc = qualitativeStateSets.maybeStates.getNumberOfSetBits() - result.numberOfMaybeStatesInEc;
+
+                // Create temporary vector storing possible transitions to ECs.
+                std::vector<std::pair<uint64_t, ValueType>> ecValuePairs;
+                
+                // (3) Create the parts of the submatrix and vector b that belong to states not contained in ECs.
+                storm::storage::SparseMatrixBuilder<ValueType> builder(0, 0, 0, false, true, result.numberOfMaybeStatesNotInEc + result.numberOfEc);
+                b.resize(result.numberOfMaybeStatesNotInEc + result.numberOfEc);
+                uint64_t currentRow = 0;
+                for (auto state : qualitativeStateSets.maybeStates) {
+                    if (!result.isStateInEc(state)) {
+                        builder.newRowGroup(currentRow);
+                        for (uint64_t row = transitionMatrix.getRowGroupIndices()[state], endRow = transitionMatrix.getRowGroupIndices()[state + 1]; row < endRow; ++row, ++currentRow) {
+                            ecValuePairs.clear();
+                            
+                            for (auto const& e : transitionMatrix.getRow(row)) {
+                                if (qualitativeStateSets.statesWithProbability1.get(e.getColumn())) {
+                                    b[currentRow] += e.getValue();
+                                } else if (qualitativeStateSets.maybeStates.get(e.getColumn())) {
+                                    // If the target state of the transition is not contained in an EC, we can just add the entry.
+                                    if (result.isStateInEc(e.getColumn())) {
+                                        builder.addNextValue(currentRow, maybeStatesNotInEcBefore[result.maybeStatesBefore[e.getColumn()]], e.getValue());
+                                    } else {
+                                        // Otherwise, we store the information that the state can go to a certain EC.
+                                        ecValuePairs.push_back(std::make_pair(result.getEc(e.getColumn()), e.getValue()));
+                                    }
+                                }
+                            }
+                            
+                            if (!ecValuePairs.empty()) {
+                                std::sort(ecValuePairs.begin(), ecValuePairs.end());
+                                
+                                for (auto const& e : ecValuePairs) {
+                                    builder.addNextValue(currentRow, numberOfMaybeStatesNotInEc + e.first, e.second);
+                                }
+                            }
+                        }
+                    }
+                }
+                
+                // (4) Create the parts of the submatrix and vector b that belong to states contained in ECs.
+                for (auto const& mec : endComponentDecomposition) {
+                    builder.newRowGroup(currentRow);
+                    for (auto const& stateActions : mec) {
+                        uint64_t const& state = stateActions.first;
+                        for (uint64_t row = transitionMatrix.getRowGroupIndices()[state], endRow = transitionMatrix.getRowGroupIndices()[state + 1]; row < endRow; ++row) {
+                            // If the choice is contained in the MEC, drop it.
+                            if (stateActions.second.find(row) != stateActions.second.end()) {
+                                continue;
+                            }
+                            
+                            ecValuePairs.clear();
+
+                            for (auto const& e : transitionMatrix.getRow(row)) {
+                                if (qualitativeStateSets.statesWithProbability1.get(e.getColumn())) {
+                                    b[currentRow] += e.getValue();
+                                } else if (qualitativeStateSets.maybeStates.get(e.getColumn())) {
+                                    // If the target state of the transition is not contained in an EC, we can just add the entry.
+                                    if (result.isStateInEc(e.getColumn())) {
+                                        builder.addNextValue(currentRow, maybeStatesNotInEcBefore[result.maybeStatesBefore[e.getColumn()]], e.getValue());
+                                    } else {
+                                        // Otherwise, we store the information that the state can go to a certain EC.
+                                        ecValuePairs.push_back(std::make_pair(result.getEc(e.getColumn()), e.getValue()));
+                                    }
+                                }
+                            }
+                            
+                            if (!ecValuePairs.empty()) {
+                                std::sort(ecValuePairs.begin(), ecValuePairs.end());
+                                
+                                for (auto const& e : ecValuePairs) {
+                                    builder.addNextValue(currentRow, numberOfMaybeStatesNotInEc + e.first, e.second);
+                                }
+                            }
+                            
+                            ++currentRow;
+                        }
+                    }
+                }
+                
+                submatrix = builder.build();
+                
+                return result;
+            }
+            
+            template<typename ValueType>
+            boost::optional<SparseMdpEndComponentInformation<ValueType>> computeFixedPointSystemUntilProbabilitiesEliminateEndComponents(storm::storage::SparseMatrix<ValueType> const& transitionMatrix, storm::storage::SparseMatrix<ValueType> const& backwardTransitions, QualitativeStateSetsUntilProbabilities const& qualitativeStateSets, storm::storage::SparseMatrix<ValueType>& submatrix, std::vector<ValueType>& b) {
+                
+                // Start by computing the states that are in MECs.
+                storm::storage::MaximalEndComponentDecomposition<ValueType> endComponentDecomposition(transitionMatrix, backwardTransitions, qualitativeStateSets.maybeStates);
+                
+                // Only do more work if there are actually end-components.
+                if (!endComponentDecomposition.empty()) {
+                    STORM_LOG_DEBUG("Eliminating " << endComponentDecomposition.size() << " ECs.");
+                    return eliminateEndComponents(endComponentDecomposition, transitionMatrix, qualitativeStateSets, submatrix, b);
+                } else {
+                    STORM_LOG_DEBUG("Not eliminating ECs as there are none.");
+                    computeFixedPointSystemUntilProbabilities(transitionMatrix, qualitativeStateSets, submatrix, b);
+                    return boost::none;
+                }
+            }
+            
+            template<typename ValueType>
+            void setResultValuesWrtEndComponents(SparseMdpEndComponentInformation<ValueType> const& ecInformation, std::vector<ValueType>& result, storm::storage::BitVector const& maybeStates, std::vector<ValueType> const& fromResult) {
+                auto notInEcResultIt = result.begin();
+                for (auto state : maybeStates) {
+                    if (ecInformation.isStateInEc(state)) {
+                        result[state] = result[ecInformation.numberOfMaybeStatesNotInEc + ecInformation.getEc(state)];
+                    } else {
+                        result[state] = *notInEcResultIt;
+                        ++notInEcResultIt;
+                    }
+                }
+                STORM_LOG_ASSERT(notInEcResultIt == result.begin() + ecInformation.numberOfMaybeStatesNotInEc, "Mismatching iterators.");
+            }
+            
+            template<typename ValueType>
             MDPSparseModelCheckingHelperReturnType<ValueType> SparseMdpPrctlHelper<ValueType>::computeUntilProbabilities(storm::solver::SolveGoal const& goal, storm::storage::SparseMatrix<ValueType> const& transitionMatrix, storm::storage::SparseMatrix<ValueType> const& backwardTransitions, storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates, bool qualitative, bool produceScheduler, storm::solver::MinMaxLinearEquationSolverFactory<ValueType> const& minMaxLinearEquationSolverFactory, ModelCheckerHint const& hint) {
                 STORM_LOG_THROW(!qualitative || !produceScheduler, storm::exceptions::InvalidSettingsException, "Cannot produce scheduler when performing qualitative model checking only.");
                 
@@ -404,22 +630,34 @@ namespace storm {
                     if (!qualitativeStateSets.maybeStates.empty()) {
                         // In this case we have have to compute the remaining probabilities.
                         
-                        // First, we can eliminate the rows and columns from the original transition probability matrix for states
-                        // whose probabilities are already known.
-                        storm::storage::SparseMatrix<ValueType> submatrix = transitionMatrix.getSubmatrix(true, qualitativeStateSets.maybeStates, qualitativeStateSets.maybeStates, false);
-                        
-                        // Prepare the right-hand side of the equation system. For entry i this corresponds to
-                        // the accumulated probability of going from state i to some state that has probability 1.
-                        std::vector<ValueType> b = transitionMatrix.getConstrainedRowGroupSumVector(qualitativeStateSets.maybeStates, qualitativeStateSets.statesWithProbability1);
-                        
                         // Obtain proper hint information either from the provided hint or from requirements of the solver.
                         SparseMdpHintType<ValueType> hintInformation = computeHints(storm::solver::EquationSystemType::UntilProbabilities, hint, goal.direction(), transitionMatrix, backwardTransitions, qualitativeStateSets.maybeStates, phiStates, qualitativeStateSets.statesWithProbability1, minMaxLinearEquationSolverFactory);
+                        
+                        // Declare the components of the equation system we will solve.
+                        storm::storage::SparseMatrix<ValueType> submatrix;
+                        std::vector<ValueType> b;
+                        
+                        // If the hint information tells us that we have to do an (M)EC decomposition, we compute one now.
+                        boost::optional<SparseMdpEndComponentInformation<ValueType>> ecInformation;
+                        if (hintInformation.getEliminateEndComponents()) {
+                            ecInformation = computeFixedPointSystemUntilProbabilitiesEliminateEndComponents(transitionMatrix, backwardTransitions, qualitativeStateSets, submatrix, b);
+
+                            // Make sure we are not supposed to produce a scheduler if we actually eliminate end components.
+                            STORM_LOG_THROW(!ecInformation || !ecInformation.get().eliminatedEndComponents || !produceScheduler, storm::exceptions::NotSupportedException, "Producing schedulers is not supported if end-components need to be eliminated for the solver.");
+                        } else {
+                            computeFixedPointSystemUntilProbabilities(transitionMatrix, qualitativeStateSets, submatrix, b);
+                        }
                         
                         // Now compute the results for the maybe states.
                         MaybeStateResult<ValueType> resultForMaybeStates = computeValuesForMaybeStates(goal, submatrix, b, produceScheduler, minMaxLinearEquationSolverFactory, hintInformation);
                         
-                        // Set values of resulting vector according to result.
-                        storm::utility::vector::setVectorValues<ValueType>(result, qualitativeStateSets.maybeStates, resultForMaybeStates.getValues());
+                        // If we eliminated end components, we need to extract the result differently.
+                        if (ecInformation && ecInformation.get().eliminatedEndComponents) {
+                            setResultValuesWrtEndComponents(ecInformation.get(), result, qualitativeStateSets.maybeStates, resultForMaybeStates.getValues());
+                        } else {
+                            // Set values of resulting vector according to result.
+                            storm::utility::vector::setVectorValues<ValueType>(result, qualitativeStateSets.maybeStates, resultForMaybeStates.getValues());
+                        }
 
                         if (produceScheduler) {
                             extractSchedulerChoices(*scheduler, resultForMaybeStates.getScheduler(), qualitativeStateSets.maybeStates);

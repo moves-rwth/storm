@@ -85,7 +85,7 @@ namespace storm {
                 
                 // We need to do another iteration in case we have either more than once SCC or the SCC is smaller than
                 // the MEC canditate itself.
-                mecChanged |= sccs.size() > 1 || (sccs.size() > 0 && sccs[0].size() < mec.size());
+                mecChanged |= sccs.size() != 1 || (sccs.size() > 0 && sccs[0].size() < mec.size());
                 
                 // Check for each of the SCCs whether there is at least one action for each state that does not leave the SCC.
                 for (auto& scc : sccs) {
@@ -100,7 +100,7 @@ namespace storm {
                             for (uint_fast64_t choice = nondeterministicChoiceIndices[state]; choice < nondeterministicChoiceIndices[state + 1]; ++choice) {
                                 bool choiceContainedInMEC = true;
                                 for (auto const& entry : transitionMatrix.getRow(choice)) {
-                                    if (entry.getValue() == storm::utility::zero<ValueType>()) {
+                                    if (storm::utility::isZero(entry.getValue())) {
                                         continue;
                                     }
                                         
@@ -187,6 +187,8 @@ namespace storm {
                 
                 this->blocks.emplace_back(std::move(newMec));
             }
+            
+            STORM_LOG_DEBUG("MEC decomposition found " << this->size() << " MEC(s).");
         }
         
         // Explicitly instantiate the MEC decomposition.

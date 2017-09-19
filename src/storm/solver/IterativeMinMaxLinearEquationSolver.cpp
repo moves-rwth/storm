@@ -412,7 +412,7 @@ namespace storm {
             
             std::vector<ValueType>* lowerX = &x;
             std::vector<ValueType>* upperX = this->auxiliaryRowGroupVector.get();
-            std::vector<ValueType>* tmp;
+            std::vector<ValueType>* tmp = nullptr;
             if (!useGaussSeidelMultiplication) {
                 auxiliaryRowGroupVector2 = std::make_unique<std::vector<ValueType>>(lowerX->size());
                 tmp = auxiliaryRowGroupVector2.get();
