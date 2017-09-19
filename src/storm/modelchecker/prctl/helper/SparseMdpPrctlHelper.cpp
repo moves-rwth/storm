@@ -305,7 +305,7 @@ namespace storm {
                 
                 // Initialize the solution vector.
                 std::vector<ValueType> x = hint.hasValueHint() ? std::move(hint.getValueHint()) : std::vector<ValueType>(submatrix.getRowGroupCount(), hint.hasLowerResultBound() ? hint.getLowerResultBound() : storm::utility::zero<ValueType>());
-                
+
                 // Solve the corresponding system of equations.
                 solver->solveEquations(x, b);
                 
@@ -423,10 +423,10 @@ namespace storm {
             struct SparseMdpEndComponentInformation {
                 SparseMdpEndComponentInformation(storm::storage::MaximalEndComponentDecomposition<ValueType> const& endComponentDecomposition, storm::storage::BitVector const& maybeStates) : eliminatedEndComponents(false), numberOfMaybeStatesInEc(0), numberOfMaybeStatesNotInEc(0), numberOfEc(endComponentDecomposition.size()) {
 
-                    // (0) Compute how many maybe states there are before each other maybe state.
+                    // (1) Compute how many maybe states there are before each other maybe state.
                     maybeStatesBefore = maybeStates.getNumberOfSetBitsBeforeIndices();
-                
-                    // (1) Create mapping from maybe states to their MEC. If they are not contained in an MEC, their value
+                    
+                    // (2) Create mapping from maybe states to their MEC. If they are not contained in an MEC, their value
                     // is set to a special constant.
                     maybeStateToEc.resize(maybeStates.getNumberOfSetBits(), NOT_IN_EC);
                     uint64_t mecIndex = 0;
@@ -437,6 +437,9 @@ namespace storm {
                         }
                         ++mecIndex;
                     }
+                    
+                    // (3) Compute number of states not in MECs.
+                    numberOfMaybeStatesNotInEc = maybeStateToEc.size() - numberOfMaybeStatesInEc;
                 }
                 
                 bool isMaybeStateInEc(uint64_t maybeState) const {
@@ -467,6 +470,10 @@ namespace storm {
                     return maybeStateToEc[maybeStatesBefore[state]];
                 }
                 
+                uint64_t getSubmatrixRowGroupOfStateInEc(uint64_t state) const {
+                    return numberOfMaybeStatesNotInEc + getEc(state);
+                }
+                
                 bool eliminatedEndComponents;
                 
                 std::vector<uint64_t> maybeStatesBefore;
@@ -478,37 +485,48 @@ namespace storm {
             };
             
             template<typename ValueType>
-            SparseMdpEndComponentInformation<ValueType> eliminateEndComponents(storm::storage::MaximalEndComponentDecomposition<ValueType> const& endComponentDecomposition, storm::storage::SparseMatrix<ValueType> const& transitionMatrix, QualitativeStateSetsUntilProbabilities const& qualitativeStateSets, storm::storage::SparseMatrix<ValueType>& submatrix, std::vector<ValueType>& b) {
+            SparseMdpEndComponentInformation<ValueType> eliminateEndComponents(storm::storage::MaximalEndComponentDecomposition<ValueType> const& endComponentDecomposition, storm::storage::SparseMatrix<ValueType> const& transitionMatrix, storm::storage::BitVector const& maybeStates, storm::storage::BitVector const* sumColumns, storm::storage::BitVector const* selectedChoices, std::vector<ValueType> const* summand, storm::storage::SparseMatrix<ValueType>& submatrix, std::vector<ValueType>& b) {
 
-                SparseMdpEndComponentInformation<ValueType> result(endComponentDecomposition, qualitativeStateSets.maybeStates);
+                SparseMdpEndComponentInformation<ValueType> result(endComponentDecomposition, maybeStates);
 
-                // (2) Compute the number of maybe states not in ECs before any other maybe state.
+                // (1) Compute the number of maybe states not in ECs before any other maybe state.
                 std::vector<uint64_t> maybeStatesNotInEcBefore = result.getNumberOfMaybeStatesNotInEcBeforeIndices();
-                uint64_t numberOfMaybeStatesNotInEc = qualitativeStateSets.maybeStates.getNumberOfSetBits() - result.numberOfMaybeStatesInEc;
 
                 // Create temporary vector storing possible transitions to ECs.
                 std::vector<std::pair<uint64_t, ValueType>> ecValuePairs;
                 
-                // (3) Create the parts of the submatrix and vector b that belong to states not contained in ECs.
-                storm::storage::SparseMatrixBuilder<ValueType> builder(0, 0, 0, false, true, result.numberOfMaybeStatesNotInEc + result.numberOfEc);
-                b.resize(result.numberOfMaybeStatesNotInEc + result.numberOfEc);
+                // (2) Create the parts of the submatrix and vector b that belong to states not contained in ECs.
+                uint64_t numberOfStates = result.numberOfMaybeStatesNotInEc + result.numberOfEc;
+                
+                STORM_LOG_TRACE("Found " << numberOfStates << " states, " << result.numberOfMaybeStatesNotInEc << " not in ECs, " << result.numberOfMaybeStatesInEc << " in ECs and " << result.numberOfEc << " ECs.");
+                
+                storm::storage::SparseMatrixBuilder<ValueType> builder(0, numberOfStates, 0, true, true, numberOfStates);
+                b.resize(numberOfStates);
                 uint64_t currentRow = 0;
-                for (auto state : qualitativeStateSets.maybeStates) {
+                for (auto state : maybeStates) {
                     if (!result.isStateInEc(state)) {
                         builder.newRowGroup(currentRow);
-                        for (uint64_t row = transitionMatrix.getRowGroupIndices()[state], endRow = transitionMatrix.getRowGroupIndices()[state + 1]; row < endRow; ++row, ++currentRow) {
+                        for (uint64_t row = transitionMatrix.getRowGroupIndices()[state], endRow = transitionMatrix.getRowGroupIndices()[state + 1]; row < endRow; ++row) {
+                            // If the choices is not in the selected ones, drop it.
+                            if (selectedChoices && !selectedChoices->get(row)) {
+                                continue;
+                            }
+                            
                             ecValuePairs.clear();
                             
+                            if (summand) {
+                                b[currentRow] += (*summand)[row];
+                            }
                             for (auto const& e : transitionMatrix.getRow(row)) {
-                                if (qualitativeStateSets.statesWithProbability1.get(e.getColumn())) {
+                                if (sumColumns && sumColumns->get(e.getColumn())) {
                                     b[currentRow] += e.getValue();
-                                } else if (qualitativeStateSets.maybeStates.get(e.getColumn())) {
+                                } else if (maybeStates.get(e.getColumn())) {
                                     // If the target state of the transition is not contained in an EC, we can just add the entry.
                                     if (result.isStateInEc(e.getColumn())) {
                                         builder.addNextValue(currentRow, maybeStatesNotInEcBefore[result.maybeStatesBefore[e.getColumn()]], e.getValue());
                                     } else {
                                         // Otherwise, we store the information that the state can go to a certain EC.
-                                        ecValuePairs.push_back(std::make_pair(result.getEc(e.getColumn()), e.getValue()));
+                                        ecValuePairs.emplace_back(result.getEc(e.getColumn()), e.getValue());
                                     }
                                 }
                             }
@@ -517,16 +535,19 @@ namespace storm {
                                 std::sort(ecValuePairs.begin(), ecValuePairs.end());
                                 
                                 for (auto const& e : ecValuePairs) {
-                                    builder.addNextValue(currentRow, numberOfMaybeStatesNotInEc + e.first, e.second);
+                                    builder.addNextValue(currentRow, result.numberOfMaybeStatesNotInEc + e.first, e.second);
                                 }
                             }
+                            
+                            ++currentRow;
                         }
                     }
                 }
                 
-                // (4) Create the parts of the submatrix and vector b that belong to states contained in ECs.
+                // (3) Create the parts of the submatrix and vector b that belong to states contained in ECs.
                 for (auto const& mec : endComponentDecomposition) {
                     builder.newRowGroup(currentRow);
+
                     for (auto const& stateActions : mec) {
                         uint64_t const& state = stateActions.first;
                         for (uint64_t row = transitionMatrix.getRowGroupIndices()[state], endRow = transitionMatrix.getRowGroupIndices()[state + 1]; row < endRow; ++row) {
@@ -534,19 +555,26 @@ namespace storm {
                             if (stateActions.second.find(row) != stateActions.second.end()) {
                                 continue;
                             }
+                            // If the choices is not in the selected ones, drop it.
+                            if (selectedChoices && !selectedChoices->get(row)) {
+                                continue;
+                            }
                             
                             ecValuePairs.clear();
 
+                            if (summand) {
+                                b[currentRow] += (*summand)[row];
+                            }
                             for (auto const& e : transitionMatrix.getRow(row)) {
-                                if (qualitativeStateSets.statesWithProbability1.get(e.getColumn())) {
+                                if (sumColumns && sumColumns->get(e.getColumn())) {
                                     b[currentRow] += e.getValue();
-                                } else if (qualitativeStateSets.maybeStates.get(e.getColumn())) {
+                                } else if (maybeStates.get(e.getColumn())) {
                                     // If the target state of the transition is not contained in an EC, we can just add the entry.
                                     if (result.isStateInEc(e.getColumn())) {
                                         builder.addNextValue(currentRow, maybeStatesNotInEcBefore[result.maybeStatesBefore[e.getColumn()]], e.getValue());
                                     } else {
                                         // Otherwise, we store the information that the state can go to a certain EC.
-                                        ecValuePairs.push_back(std::make_pair(result.getEc(e.getColumn()), e.getValue()));
+                                        ecValuePairs.emplace_back(result.getEc(e.getColumn()), e.getValue());
                                     }
                                 }
                             }
@@ -555,7 +583,7 @@ namespace storm {
                                 std::sort(ecValuePairs.begin(), ecValuePairs.end());
                                 
                                 for (auto const& e : ecValuePairs) {
-                                    builder.addNextValue(currentRow, numberOfMaybeStatesNotInEc + e.first, e.second);
+                                    builder.addNextValue(currentRow, result.numberOfMaybeStatesNotInEc + e.first, e.second);
                                 }
                             }
                             
@@ -565,7 +593,6 @@ namespace storm {
                 }
                 
                 submatrix = builder.build();
-                
                 return result;
             }
             
@@ -578,7 +605,7 @@ namespace storm {
                 // Only do more work if there are actually end-components.
                 if (!endComponentDecomposition.empty()) {
                     STORM_LOG_DEBUG("Eliminating " << endComponentDecomposition.size() << " ECs.");
-                    return eliminateEndComponents(endComponentDecomposition, transitionMatrix, qualitativeStateSets, submatrix, b);
+                    return eliminateEndComponents<ValueType>(endComponentDecomposition, transitionMatrix, qualitativeStateSets.maybeStates, &qualitativeStateSets.statesWithProbability1, nullptr, nullptr, submatrix, b);
                 } else {
                     STORM_LOG_DEBUG("Not eliminating ECs as there are none.");
                     computeFixedPointSystemUntilProbabilities(transitionMatrix, qualitativeStateSets, submatrix, b);
@@ -591,7 +618,7 @@ namespace storm {
                 auto notInEcResultIt = result.begin();
                 for (auto state : maybeStates) {
                     if (ecInformation.isStateInEc(state)) {
-                        result[state] = result[ecInformation.numberOfMaybeStatesNotInEc + ecInformation.getEc(state)];
+                        result[state] = result[ecInformation.getSubmatrixRowGroupOfStateInEc(state)];
                     } else {
                         result[state] = *notInEcResultIt;
                         ++notInEcResultIt;
@@ -635,7 +662,7 @@ namespace storm {
                         storm::storage::SparseMatrix<ValueType> submatrix;
                         std::vector<ValueType> b;
                         
-                        // If the hint information tells us that we have to do an (M)EC decomposition, we compute one now.
+                        // If the hint information tells us that we have to eliminate MECs, we do so now.
                         boost::optional<SparseMdpEndComponentInformation<ValueType>> ecInformation;
                         if (hintInformation.getEliminateEndComponents()) {
                             ecInformation = computeFixedPointSystemUntilProbabilitiesEliminateEndComponents(transitionMatrix, backwardTransitions, qualitativeStateSets, submatrix, b);
@@ -643,6 +670,7 @@ namespace storm {
                             // Make sure we are not supposed to produce a scheduler if we actually eliminate end components.
                             STORM_LOG_THROW(!ecInformation || !ecInformation.get().eliminatedEndComponents || !produceScheduler, storm::exceptions::NotSupportedException, "Producing schedulers is not supported if end-components need to be eliminated for the solver.");
                         } else {
+                            // Otherwise, we compute the standard equations.
                             computeFixedPointSystemUntilProbabilities(transitionMatrix, qualitativeStateSets, submatrix, b);
                         }
                         
@@ -842,6 +870,96 @@ namespace storm {
             }
             
             template<typename ValueType>
+            void extractSchedulerChoices(storm::storage::Scheduler<ValueType>& scheduler, storm::storage::SparseMatrix<ValueType> const& transitionMatrix, std::vector<uint_fast64_t> const& subChoices, storm::storage::BitVector const& maybeStates, boost::optional<storm::storage::BitVector> const& selectedChoices) {
+                auto subChoiceIt = subChoices.begin();
+                if (selectedChoices) {
+                    for (auto maybeState : maybeStates) {
+                        // find the rowindex that corresponds to the selected row of the submodel
+                        uint_fast64_t firstRowIndex = transitionMatrix.getRowGroupIndices()[maybeState];
+                        uint_fast64_t selectedRowIndex = selectedChoices->getNextSetIndex(firstRowIndex);
+                        for (uint_fast64_t choice = 0; choice < *subChoiceIt; ++choice) {
+                            selectedRowIndex = selectedChoices->getNextSetIndex(selectedRowIndex + 1);
+                        }
+                        scheduler.setChoice(selectedRowIndex - firstRowIndex, maybeState);
+                        ++subChoiceIt;
+                    }
+                } else {
+                    for (auto maybeState : maybeStates) {
+                        scheduler.setChoice(*subChoiceIt, maybeState);
+                        ++subChoiceIt;
+                    }
+                }
+                assert(subChoiceIt == subChoices.end());
+            }
+            
+            template<typename ValueType>
+            void computeFixedPointSystemReachabilityRewards(storm::storage::SparseMatrix<ValueType> const& transitionMatrix, QualitativeStateSetsReachabilityRewards const& qualitativeStateSets, boost::optional<storm::storage::BitVector> const& selectedChoices, std::function<std::vector<ValueType>(uint_fast64_t, storm::storage::SparseMatrix<ValueType> const&, storm::storage::BitVector const&)> const& totalStateRewardVectorGetter, storm::storage::SparseMatrix<ValueType>& submatrix, std::vector<ValueType>& b) {
+                // Remove rows and columns from the original transition probability matrix for states whose reward values are already known.
+                // If there are infinity states, we additionally have to remove choices of maybeState that lead to infinity.
+                if (qualitativeStateSets.infinityStates.empty()) {
+                    submatrix = transitionMatrix.getSubmatrix(true, qualitativeStateSets.maybeStates, qualitativeStateSets.maybeStates, false);
+                    b = totalStateRewardVectorGetter(submatrix.getRowCount(), transitionMatrix, qualitativeStateSets.maybeStates);
+                } else {
+                    submatrix = transitionMatrix.getSubmatrix(false, *selectedChoices, qualitativeStateSets.maybeStates, false);
+                    b = totalStateRewardVectorGetter(transitionMatrix.getRowCount(), transitionMatrix, storm::storage::BitVector(transitionMatrix.getRowGroupCount(), true));
+                    storm::utility::vector::filterVectorInPlace(b, *selectedChoices);
+                }
+            }
+            
+            template<typename ValueType>
+            boost::optional<SparseMdpEndComponentInformation<ValueType>> computeFixedPointSystemReachabilityRewardsEliminateEndComponents(storm::storage::SparseMatrix<ValueType> const& transitionMatrix, storm::storage::SparseMatrix<ValueType> const& backwardTransitions, QualitativeStateSetsReachabilityRewards const& qualitativeStateSets, boost::optional<storm::storage::BitVector> const& selectedChoices, std::function<std::vector<ValueType>(uint_fast64_t, storm::storage::SparseMatrix<ValueType> const&, storm::storage::BitVector const&)> const& totalStateRewardVectorGetter, storm::storage::SparseMatrix<ValueType>& submatrix, std::vector<ValueType>& b) {
+                
+                // Start by computing the choices with reward 0, as we only want ECs within this fragment.
+                storm::storage::BitVector zeroRewardChoices(transitionMatrix.getRowCount());
+
+                // Get the rewards of all choices.
+                std::vector<ValueType> rewardVector = totalStateRewardVectorGetter(transitionMatrix.getRowCount(), transitionMatrix, storm::storage::BitVector(transitionMatrix.getRowGroupCount(), true));
+                
+                uint64_t index = 0;
+                for (auto const& e : rewardVector) {
+                    if (storm::utility::isZero(e)) {
+                        zeroRewardChoices.set(index);
+                    }
+                    ++index;
+                }
+                
+                // Compute the states that have some zero reward choice.
+                storm::storage::BitVector candidateStates(qualitativeStateSets.maybeStates);
+                for (auto state : qualitativeStateSets.maybeStates) {
+                    bool keepState = false;
+                    
+                    for (auto row = transitionMatrix.getRowGroupIndices()[state], rowEnd = transitionMatrix.getRowGroupIndices()[state + 1]; row < rowEnd; ++row) {
+                        if (zeroRewardChoices.get(row)) {
+                            keepState = true;
+                            break;
+                        }
+                    }
+                    
+                    if (!keepState) {
+                        candidateStates.set(state, false);
+                    }
+                }
+                
+                bool doDecomposition = !candidateStates.empty();
+                
+                storm::storage::MaximalEndComponentDecomposition<ValueType> endComponentDecomposition;
+                if (doDecomposition) {
+                    // Then compute the states that are in MECs with zero reward.
+                    endComponentDecomposition = storm::storage::MaximalEndComponentDecomposition<ValueType>(transitionMatrix, backwardTransitions, candidateStates, zeroRewardChoices);
+                }
+                
+                // Only do more work if there are actually end-components.
+                if (doDecomposition && !endComponentDecomposition.empty()) {
+                    STORM_LOG_DEBUG("Eliminating " << endComponentDecomposition.size() << " ECs.");
+                    return eliminateEndComponents<ValueType>(endComponentDecomposition, transitionMatrix, qualitativeStateSets.maybeStates, nullptr, selectedChoices ? &selectedChoices.get() : nullptr, &rewardVector, submatrix, b);
+                } else {
+                    STORM_LOG_DEBUG("Not eliminating ECs as there are none.");
+                    computeFixedPointSystemReachabilityRewards(transitionMatrix, qualitativeStateSets, selectedChoices, totalStateRewardVectorGetter, submatrix, b);
+                    return boost::none;
+                }
+            }
+            
+            template<typename ValueType>
             MDPSparseModelCheckingHelperReturnType<ValueType> SparseMdpPrctlHelper<ValueType>::computeReachabilityRewardsHelper(storm::solver::SolveGoal const& goal, storm::storage::SparseMatrix<ValueType> const& transitionMatrix, storm::storage::SparseMatrix<ValueType> const& backwardTransitions, std::function<std::vector<ValueType>(uint_fast64_t, storm::storage::SparseMatrix<ValueType> const&, storm::storage::BitVector const&)> const& totalStateRewardVectorGetter, storm::storage::BitVector const& targetStates, bool qualitative, bool produceScheduler, storm::solver::MinMaxLinearEquationSolverFactory<ValueType> const& minMaxLinearEquationSolverFactory, ModelCheckerHint const& hint) {
                 
                 // Prepare resulting vector.
@@ -866,54 +984,45 @@ namespace storm {
                 } else {
                     if (!qualitativeStateSets.maybeStates.empty()) {
                         // In this case we have to compute the reward values for the remaining states.
-                        
-                        // Prepare matrix and vector for the equation system.
-                        storm::storage::SparseMatrix<ValueType> submatrix;
-                        std::vector<ValueType> b;
-                        
-                        // Remove rows and columns from the original transition probability matrix for states whose reward values are already known.
-                        // If there are infinity states, we additionaly have to remove choices of maybeState that lead to infinity
-                        boost::optional<storm::storage::BitVector> selectedChoices; // if not given, all maybeState choices are selected
-                        if (qualitativeStateSets.infinityStates.empty()) {
-                            submatrix = transitionMatrix.getSubmatrix(true, qualitativeStateSets.maybeStates, qualitativeStateSets.maybeStates, false);
-                            b = totalStateRewardVectorGetter(submatrix.getRowCount(), transitionMatrix, qualitativeStateSets.maybeStates);
-                        } else {
+
+                        // Store the choices that lead to non-infinity values. If none, all choices im maybe states can be selected.
+                        boost::optional<storm::storage::BitVector> selectedChoices;
+                        if (!qualitativeStateSets.infinityStates.empty()) {
                             selectedChoices = transitionMatrix.getRowFilter(qualitativeStateSets.maybeStates, ~qualitativeStateSets.infinityStates);
-                            submatrix = transitionMatrix.getSubmatrix(false, *selectedChoices, qualitativeStateSets.maybeStates, false);
-                            b = totalStateRewardVectorGetter(transitionMatrix.getRowCount(), transitionMatrix, storm::storage::BitVector(transitionMatrix.getRowGroupCount(), true));
-                            storm::utility::vector::filterVectorInPlace(b, *selectedChoices);
                         }
                         
                         // Obtain proper hint information either from the provided hint or from requirements of the solver.
                         SparseMdpHintType<ValueType> hintInformation = computeHints(storm::solver::EquationSystemType::ReachabilityRewards, hint, goal.direction(), transitionMatrix, backwardTransitions, qualitativeStateSets.maybeStates, ~targetStates, targetStates, minMaxLinearEquationSolverFactory, selectedChoices);
                         
+                        // Declare the components of the equation system we will solve.
+                        storm::storage::SparseMatrix<ValueType> submatrix;
+                        std::vector<ValueType> b;
+                        
+                        // If the hint information tells us that we have to eliminate MECs, we do so now.
+                        boost::optional<SparseMdpEndComponentInformation<ValueType>> ecInformation;
+                        if (hintInformation.getEliminateEndComponents()) {
+                            ecInformation = computeFixedPointSystemReachabilityRewardsEliminateEndComponents(transitionMatrix, backwardTransitions, qualitativeStateSets, selectedChoices, totalStateRewardVectorGetter, submatrix, b);
+                            
+                            // Make sure we are not supposed to produce a scheduler if we actually eliminate end components.
+                            STORM_LOG_THROW(!ecInformation || !ecInformation.get().eliminatedEndComponents || !produceScheduler, storm::exceptions::NotSupportedException, "Producing schedulers is not supported if end-components need to be eliminated for the solver.");
+                        } else {
+                            // Otherwise, we compute the standard equations.
+                            computeFixedPointSystemReachabilityRewards(transitionMatrix, qualitativeStateSets, selectedChoices, totalStateRewardVectorGetter, submatrix, b);
+                        }
+                        
                         // Now compute the results for the maybe states.
                         MaybeStateResult<ValueType> resultForMaybeStates = computeValuesForMaybeStates(goal, submatrix, b, produceScheduler, minMaxLinearEquationSolverFactory, hintInformation);
 
-                        // Set values of resulting vector according to result.
-                        storm::utility::vector::setVectorValues<ValueType>(result, qualitativeStateSets.maybeStates, resultForMaybeStates.getValues());
+                        // If we eliminated end components, we need to extract the result differently.
+                        if (ecInformation && ecInformation.get().eliminatedEndComponents) {
+                            setResultValuesWrtEndComponents(ecInformation.get(), result, qualitativeStateSets.maybeStates, resultForMaybeStates.getValues());
+                        } else {
+                            // Set values of resulting vector according to result.
+                            storm::utility::vector::setVectorValues<ValueType>(result, qualitativeStateSets.maybeStates, resultForMaybeStates.getValues());
+                        }
                         
                         if (produceScheduler) {
-                            std::vector<uint_fast64_t> const& subChoices = resultForMaybeStates.getScheduler();
-                            auto subChoiceIt = subChoices.begin();
-                            if (selectedChoices) {
-                                for (auto maybeState : qualitativeStateSets.maybeStates) {
-                                    // find the rowindex that corresponds to the selected row of the submodel
-                                    uint_fast64_t firstRowIndex = transitionMatrix.getRowGroupIndices()[maybeState];
-                                    uint_fast64_t selectedRowIndex = selectedChoices->getNextSetIndex(firstRowIndex);
-                                    for (uint_fast64_t choice = 0; choice < *subChoiceIt; ++choice) {
-                                        selectedRowIndex = selectedChoices->getNextSetIndex(selectedRowIndex + 1);
-                                    }
-                                    scheduler->setChoice(selectedRowIndex - firstRowIndex, maybeState);
-                                    ++subChoiceIt;
-                                }
-                            } else {
-                                for (auto maybeState : qualitativeStateSets.maybeStates) {
-                                    scheduler->setChoice(*subChoiceIt, maybeState);
-                                    ++subChoiceIt;
-                                }
-                            }
-                            assert(subChoiceIt == subChoices.end());
+                            extractSchedulerChoices(*scheduler, transitionMatrix, resultForMaybeStates.getScheduler(), qualitativeStateSets.maybeStates, selectedChoices);
                         }
                     }
                 }
