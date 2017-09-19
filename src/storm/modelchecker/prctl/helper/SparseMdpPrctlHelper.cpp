@@ -444,8 +444,6 @@ namespace storm {
                 }
 
                 bool isStateInEc(uint64_t state) const {
-                    std::cout << "querying state " << state << " and size " << maybeStatesBefore.size() << std::endl;
-                    std::cout << "and other size " << maybeStateToEc.size() << " with offset " << maybeStatesBefore[state] << std::endl;
                     return maybeStateToEc[maybeStatesBefore[state]] != NOT_IN_EC;
                 }
 
@@ -787,31 +785,71 @@ namespace storm {
             }
 #endif
             
+            struct QualitativeStateSetsReachabilityRewards {
+                storm::storage::BitVector maybeStates;
+                storm::storage::BitVector infinityStates;
+            };
+
+            template<typename ValueType>
+            QualitativeStateSetsReachabilityRewards getQualitativeStateSetsReachabilityRewardsFromHint(ModelCheckerHint const& hint, storm::storage::BitVector const& targetStates) {
+                QualitativeStateSetsReachabilityRewards result;
+                result.maybeStates = hint.template asExplicitModelCheckerHint<ValueType>().getMaybeStates();
+                result.infinityStates = ~(result.maybeStates | targetStates);
+                return result;
+            }
+            
+            template<typename ValueType>
+            QualitativeStateSetsReachabilityRewards computeQualitativeStateSetsReachabilityRewards(storm::solver::SolveGoal const& goal, storm::storage::SparseMatrix<ValueType> const& transitionMatrix, storm::storage::SparseMatrix<ValueType> const& backwardTransitions, storm::storage::BitVector const& targetStates) {
+                QualitativeStateSetsReachabilityRewards result;
+                storm::storage::BitVector trueStates(transitionMatrix.getRowGroupCount(), true);
+                if (goal.minimize()) {
+                    result.infinityStates = storm::utility::graph::performProb1E(transitionMatrix, transitionMatrix.getRowGroupIndices(), backwardTransitions, trueStates, targetStates);
+                } else {
+                    result.infinityStates = storm::utility::graph::performProb1A(transitionMatrix, transitionMatrix.getRowGroupIndices(), backwardTransitions, trueStates, targetStates);
+                }
+                result.infinityStates.complement();
+                result.maybeStates = ~(targetStates | result.infinityStates);
+                STORM_LOG_INFO("Found " << result.infinityStates.getNumberOfSetBits() << " 'infinity' states.");
+                STORM_LOG_INFO("Found " << targetStates.getNumberOfSetBits() << " 'target' states.");
+                STORM_LOG_INFO("Found " << result.maybeStates.getNumberOfSetBits() << " 'maybe' states.");
+                return result;
+            }
+            
+            template<typename ValueType>
+            QualitativeStateSetsReachabilityRewards getQualitativeStateSetsReachabilityRewards(storm::solver::SolveGoal const& goal, storm::storage::SparseMatrix<ValueType> const& transitionMatrix, storm::storage::SparseMatrix<ValueType> const& backwardTransitions, storm::storage::BitVector const& targetStates, ModelCheckerHint const& hint) {
+                if (hint.isExplicitModelCheckerHint() && hint.template asExplicitModelCheckerHint<ValueType>().getComputeOnlyMaybeStates()) {
+                    return getQualitativeStateSetsReachabilityRewardsFromHint<ValueType>(hint, targetStates);
+                } else {
+                    return computeQualitativeStateSetsReachabilityRewards(goal, transitionMatrix, backwardTransitions, targetStates);
+                }
+            }
+            
+            template<typename ValueType>
+            void extendScheduler(storm::storage::Scheduler<ValueType>& scheduler, storm::solver::SolveGoal const& goal, QualitativeStateSetsReachabilityRewards const& qualitativeStateSets, storm::storage::SparseMatrix<ValueType> const& transitionMatrix, storm::storage::BitVector const& targetStates) {
+                // Finally, if we need to produce a scheduler, we also need to figure out the parts of the scheduler for
+                // the states with reward infinity. Moreover, we have to set some arbitrary choice for the remaining states
+                // to obtain a fully defined scheduler.
+                if (!goal.minimize()) {
+                    storm::utility::graph::computeSchedulerProb0E(qualitativeStateSets.infinityStates, transitionMatrix, scheduler);
+                } else {
+                    for (auto const& state : qualitativeStateSets.infinityStates) {
+                        scheduler.setChoice(0, state);
+                    }
+                }
+                for (auto const& state : targetStates) {
+                    scheduler.setChoice(0, state);
+                }
+            }
+            
             template<typename ValueType>
             MDPSparseModelCheckingHelperReturnType<ValueType> SparseMdpPrctlHelper<ValueType>::computeReachabilityRewardsHelper(storm::solver::SolveGoal const& goal, storm::storage::SparseMatrix<ValueType> const& transitionMatrix, storm::storage::SparseMatrix<ValueType> const& backwardTransitions, std::function<std::vector<ValueType>(uint_fast64_t, storm::storage::SparseMatrix<ValueType> const&, storm::storage::BitVector const&)> const& totalStateRewardVectorGetter, storm::storage::BitVector const& targetStates, bool qualitative, bool produceScheduler, storm::solver::MinMaxLinearEquationSolverFactory<ValueType> const& minMaxLinearEquationSolverFactory, ModelCheckerHint const& hint) {
                 
+                // Prepare resulting vector.
                 std::vector<ValueType> result(transitionMatrix.getRowGroupCount(), storm::utility::zero<ValueType>());
-                std::vector<uint_fast64_t> const& nondeterministicChoiceIndices = transitionMatrix.getRowGroupIndices();
                 
                 // Determine which states have a reward that is infinity or less than infinity.
-                storm::storage::BitVector maybeStates, infinityStates;
-                if (hint.isExplicitModelCheckerHint() && hint.template asExplicitModelCheckerHint<ValueType>().getComputeOnlyMaybeStates()) {
-                    maybeStates = hint.template asExplicitModelCheckerHint<ValueType>().getMaybeStates();
-                    infinityStates = ~(maybeStates | targetStates);
-                } else {
-                    storm::storage::BitVector trueStates(transitionMatrix.getRowGroupCount(), true);
-                    if (goal.minimize()) {
-                        infinityStates = storm::utility::graph::performProb1E(transitionMatrix, nondeterministicChoiceIndices, backwardTransitions, trueStates, targetStates);
-                    } else {
-                        infinityStates = storm::utility::graph::performProb1A(transitionMatrix, nondeterministicChoiceIndices, backwardTransitions, trueStates, targetStates);
-                    }
-                    infinityStates.complement();
-                    maybeStates = ~(targetStates | infinityStates);
-                    STORM_LOG_INFO("Found " << infinityStates.getNumberOfSetBits() << " 'infinity' states.");
-                    STORM_LOG_INFO("Found " << targetStates.getNumberOfSetBits() << " 'target' states.");
-                    STORM_LOG_INFO("Found " << maybeStates.getNumberOfSetBits() << " 'maybe' states.");
-                }
-                storm::utility::vector::setVectorValues(result, infinityStates, storm::utility::infinity<ValueType>());
+                QualitativeStateSetsReachabilityRewards qualitativeStateSets = getQualitativeStateSetsReachabilityRewards(goal, transitionMatrix, backwardTransitions, targetStates, hint);
+                storm::utility::vector::setVectorValues(result, qualitativeStateSets.infinityStates, storm::utility::infinity<ValueType>());
                 
                 // If requested, we will produce a scheduler.
                 std::unique_ptr<storm::storage::Scheduler<ValueType>> scheduler;
@@ -824,9 +862,9 @@ namespace storm {
                     STORM_LOG_INFO("The rewards for the initial states were determined in a preprocessing step. No exact rewards were computed.");
                     // Set the values for all maybe-states to 1 to indicate that their reward values
                     // are neither 0 nor infinity.
-                    storm::utility::vector::setVectorValues<ValueType>(result, maybeStates, storm::utility::one<ValueType>());
+                    storm::utility::vector::setVectorValues<ValueType>(result, qualitativeStateSets.maybeStates, storm::utility::one<ValueType>());
                 } else {
-                    if (!maybeStates.empty()) {
+                    if (!qualitativeStateSets.maybeStates.empty()) {
                         // In this case we have to compute the reward values for the remaining states.
                         
                         // Prepare matrix and vector for the equation system.
@@ -836,30 +874,30 @@ namespace storm {
                         // Remove rows and columns from the original transition probability matrix for states whose reward values are already known.
                         // If there are infinity states, we additionaly have to remove choices of maybeState that lead to infinity
                         boost::optional<storm::storage::BitVector> selectedChoices; // if not given, all maybeState choices are selected
-                        if (infinityStates.empty()) {
-                            submatrix = transitionMatrix.getSubmatrix(true, maybeStates, maybeStates, false);
-                            b = totalStateRewardVectorGetter(submatrix.getRowCount(), transitionMatrix, maybeStates);
+                        if (qualitativeStateSets.infinityStates.empty()) {
+                            submatrix = transitionMatrix.getSubmatrix(true, qualitativeStateSets.maybeStates, qualitativeStateSets.maybeStates, false);
+                            b = totalStateRewardVectorGetter(submatrix.getRowCount(), transitionMatrix, qualitativeStateSets.maybeStates);
                         } else {
-                            selectedChoices = transitionMatrix.getRowFilter(maybeStates, ~infinityStates);
-                            submatrix = transitionMatrix.getSubmatrix(false, *selectedChoices, maybeStates, false);
+                            selectedChoices = transitionMatrix.getRowFilter(qualitativeStateSets.maybeStates, ~qualitativeStateSets.infinityStates);
+                            submatrix = transitionMatrix.getSubmatrix(false, *selectedChoices, qualitativeStateSets.maybeStates, false);
                             b = totalStateRewardVectorGetter(transitionMatrix.getRowCount(), transitionMatrix, storm::storage::BitVector(transitionMatrix.getRowGroupCount(), true));
                             storm::utility::vector::filterVectorInPlace(b, *selectedChoices);
                         }
                         
                         // Obtain proper hint information either from the provided hint or from requirements of the solver.
-                        SparseMdpHintType<ValueType> hintInformation = computeHints(storm::solver::EquationSystemType::ReachabilityRewards, hint, goal.direction(), transitionMatrix, backwardTransitions, maybeStates, ~targetStates, targetStates, minMaxLinearEquationSolverFactory, selectedChoices);
+                        SparseMdpHintType<ValueType> hintInformation = computeHints(storm::solver::EquationSystemType::ReachabilityRewards, hint, goal.direction(), transitionMatrix, backwardTransitions, qualitativeStateSets.maybeStates, ~targetStates, targetStates, minMaxLinearEquationSolverFactory, selectedChoices);
                         
                         // Now compute the results for the maybe states.
                         MaybeStateResult<ValueType> resultForMaybeStates = computeValuesForMaybeStates(goal, submatrix, b, produceScheduler, minMaxLinearEquationSolverFactory, hintInformation);
 
                         // Set values of resulting vector according to result.
-                        storm::utility::vector::setVectorValues<ValueType>(result, maybeStates, resultForMaybeStates.getValues());
+                        storm::utility::vector::setVectorValues<ValueType>(result, qualitativeStateSets.maybeStates, resultForMaybeStates.getValues());
                         
                         if (produceScheduler) {
                             std::vector<uint_fast64_t> const& subChoices = resultForMaybeStates.getScheduler();
                             auto subChoiceIt = subChoices.begin();
                             if (selectedChoices) {
-                                for (auto maybeState : maybeStates) {
+                                for (auto maybeState : qualitativeStateSets.maybeStates) {
                                     // find the rowindex that corresponds to the selected row of the submodel
                                     uint_fast64_t firstRowIndex = transitionMatrix.getRowGroupIndices()[maybeState];
                                     uint_fast64_t selectedRowIndex = selectedChoices->getNextSetIndex(firstRowIndex);
@@ -870,7 +908,7 @@ namespace storm {
                                     ++subChoiceIt;
                                 }
                             } else {
-                                for (auto maybeState : maybeStates) {
+                                for (auto maybeState : qualitativeStateSets.maybeStates) {
                                     scheduler->setChoice(*subChoiceIt, maybeState);
                                     ++subChoiceIt;
                                 }
@@ -880,21 +918,12 @@ namespace storm {
                     }
                 }
                 
-                // Finally, if we need to produce a scheduler, we also need to figure out the parts of the scheduler for
-                // the states with reward infinity. Moreover, we have to set some arbitrary choice for the remaining states
-                // to obtain a fully defined scheduler
+                // Extend scheduler with choices for the states in the qualitative state sets.
                 if (produceScheduler) {
-                    if (!goal.minimize()) {
-                        storm::utility::graph::computeSchedulerProb0E(infinityStates, transitionMatrix, *scheduler);
-                    } else {
-                        for (auto const& state : infinityStates) {
-                            scheduler->setChoice(0, state);
-                        }
-                    }
-                    for (auto const& state : targetStates) {
-                        scheduler->setChoice(0, state);
-                    }
+                    extendScheduler(*scheduler, goal, qualitativeStateSets, transitionMatrix, targetStates);
                 }
+                
+                // Sanity check for created scheduler.
                 STORM_LOG_ASSERT((!produceScheduler && !scheduler) || (!scheduler->isPartialScheduler() && scheduler->isDeterministicScheduler() && scheduler->isMemorylessScheduler()), "Unexpected format of obtained scheduler.");
 
                 return MDPSparseModelCheckingHelperReturnType<ValueType>(std::move(result), std::move(scheduler));
