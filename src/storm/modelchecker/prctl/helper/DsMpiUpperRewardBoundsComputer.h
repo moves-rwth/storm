@@ -77,7 +77,12 @@ namespace storm {
             class DsMpiMdpUpperRewardBoundsComputer : public DsMpiDtmcUpperRewardBoundsComputer<ValueType> {
             public:
                 /*!
-                 * Creates an object that can compute upper bounds on the expected rewards for the provided DTMC.
+                 * Creates an object that can compute upper bounds on the *minimal* expected rewards for the provided MDP.
+                 *
+                 * @param transitionMatrix The matrix defining the transitions of the system without the transitions
+                 * that lead directly to the goal state.
+                 * @param rewards The rewards of each choice.
+                 * @param oneStepTargetProbabilities For each choice the probability to go to a goal state in one step.
                  */
                 DsMpiMdpUpperRewardBoundsComputer(storm::storage::SparseMatrix<ValueType> const& transitionMatrix, std::vector<ValueType> const& rewards, std::vector<ValueType> const& oneStepTargetProbabilities);
                 
