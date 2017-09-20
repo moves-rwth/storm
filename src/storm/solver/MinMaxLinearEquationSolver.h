@@ -135,41 +135,6 @@ namespace storm {
              * Clears the currently cached data that has been stored during previous calls of the solver.
              */
             virtual void clearCache() const;
-            
-            /*!
-             * Sets a lower bound for the solution that can potentially used by the solver.
-             */
-            void setLowerBound(ValueType const& value);
-            
-            /*!
-             * Sets an upper bound for the solution that can potentially used by the solver.
-             */
-            void setUpperBound(ValueType const& value);
-            
-            /*!
-             * Sets bounds for the solution that can potentially used by the solver.
-             */
-            void setBounds(ValueType const& lower, ValueType const& upper);
-
-            /*!
-             * Retrieves whether the solver has an upper bound.
-             */
-            bool hasUpperBound() const;
-            
-            /*!
-             * Retrieves whether the solver has a lower bound.
-             */
-            bool hasLowerBound() const;
-
-            /*!
-             * Retrieves the upper bound (if this solver has any).
-             */
-            ValueType const& getUpperBound() const;
-            
-            /*!
-             * Retrieves the upper bound (if this solver has any).
-             */
-            ValueType const& getLowerBound() const;
 
             /*!
              * Sets a valid initial scheduler that is required by some solvers (see requirements of solvers).
@@ -205,7 +170,7 @@ namespace storm {
             
         protected:
             virtual bool internalSolveEquations(OptimizationDirection d, std::vector<ValueType>& x, std::vector<ValueType> const& b) const = 0;
-            
+                        
             /// The optimization direction to use for calls to functions that do not provide it explicitly. Can also be unset.
             OptimizationDirectionSetting direction;
             
@@ -214,12 +179,6 @@ namespace storm {
             
             /// The scheduler choices that induce the optimal values (if they could be successfully generated).
             mutable boost::optional<std::vector<uint_fast64_t>> schedulerChoices;
-            
-            // A lower bound if one was set.
-            boost::optional<ValueType> lowerBound;
-            
-            // An upper bound if one was set.
-            boost::optional<ValueType> upperBound;
             
             // A scheduler that can be used by solvers that require a valid initial scheduler.
             boost::optional<std::vector<uint_fast64_t>> initialScheduler;

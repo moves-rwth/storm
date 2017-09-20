@@ -380,37 +380,12 @@ namespace storm {
                 auxiliaryRowGroupVector = std::make_unique<std::vector<ValueType>>(this->A->getRowGroupCount());
             }
             
-            if (this->hasInitialScheduler()) {
-                STORM_LOG_TRACE("Solving initial scheduler hint.");
-                // Resolve the nondeterminism according to the initial scheduler.
-                bool convertToEquationSystem = this->linearEquationSolverFactory->getEquationProblemFormat() == LinearEquationSolverProblemFormat::EquationSystem;
-                storm::storage::SparseMatrix<ValueType> submatrix = this->A->selectRowsFromRowGroups(this->getInitialScheduler(), convertToEquationSystem);
-                if (convertToEquationSystem) {
-                    submatrix.convertToEquationSystem();
-                }
-                storm::utility::vector::selectVectorValues<ValueType>(*auxiliaryRowGroupVector, this->getInitialScheduler(), this->A->getRowGroupIndices(), b);
-                
-                // Solve the resulting equation system.
-                auto submatrixSolver = this->linearEquationSolverFactory->create(std::move(submatrix));
-                submatrixSolver->setCachingEnabled(true);
-                if (this->lowerBound) {
-                    submatrixSolver->setLowerBound(this->lowerBound.get());
-                }
-                if (this->upperBound) {
-                    submatrixSolver->setUpperBound(this->upperBound.get());
-                }
-                submatrixSolver->solveEquations(x, *auxiliaryRowGroupVector);
-            }
-            
             // Allow aliased multiplications.
             bool useGaussSeidelMultiplication = this->linEqSolverA->supportsGaussSeidelMultiplication() && settings.getValueIterationMultiplicationStyle() == storm::solver::MultiplicationStyle::GaussSeidel;
             
-            // Initialize upper bound vector.
-            for (auto& e : *this->auxiliaryRowGroupVector) {
-                e = this->getUpperBound();
-            }
-            
             std::vector<ValueType>* lowerX = &x;
+            this->createLowerBoundsVector(*lowerX);
+            this->createUpperBoundsVector(this->auxiliaryRowGroupVector, this->A->getRowGroupCount());
             std::vector<ValueType>* upperX = this->auxiliaryRowGroupVector.get();
             std::vector<ValueType>* tmp = nullptr;
             if (!useGaussSeidelMultiplication) {

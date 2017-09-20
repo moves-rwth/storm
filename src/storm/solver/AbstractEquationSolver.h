@@ -1,8 +1,11 @@
 #ifndef STORM_SOLVER_ABSTRACTEQUATIONSOLVER_H_
 #define STORM_SOLVER_ABSTRACTEQUATIONSOLVER_H_
 
-#include "storm/solver/TerminationCondition.h"
 #include <memory>
+
+#include <boost/optional.hpp>
+
+#include "storm/solver/TerminationCondition.h"
 
 namespace storm {
     namespace solver {
@@ -16,36 +19,114 @@ namespace storm {
              *
              * @param terminationCondition An object that can be queried whether to terminate early or not.
              */
-            void setTerminationCondition(std::unique_ptr<TerminationCondition<ValueType>> terminationCondition) {
-                this->terminationCondition = std::move(terminationCondition);
-            }
+            void setTerminationCondition(std::unique_ptr<TerminationCondition<ValueType>> terminationCondition);
             
             /*!
              * Removes a previously set custom termination condition.
              */
-            void resetTerminationCondition() {
-                this->terminationCondition = nullptr;
-            }
+            void resetTerminationCondition();
 
             /*!
              * Retrieves whether a custom termination condition has been set.
              */
-            bool hasCustomTerminationCondition() const {
-                return static_cast<bool>(this->terminationCondition);
-            }
+            bool hasCustomTerminationCondition() const;
             
             /*!
              * Retrieves the custom termination condition (if any was set).
              * 
              * @return The custom termination condition.
              */
-            TerminationCondition<ValueType> const& getTerminationCondition() const {
-                return *terminationCondition;
-            }
+            TerminationCondition<ValueType> const& getTerminationCondition() const;
+            
+            enum class BoundType {
+                Global,
+                Local,
+                Any
+            };
+            
+            /*!
+             * Retrieves whether this solver has a lower bound.
+             */
+            bool hasLowerBound(BoundType const& type = BoundType::Any) const;
+            
+            /*!
+             * Retrieves whether this solver has an upper bound.
+             */
+            bool hasUpperBound(BoundType const& type = BoundType::Any) const;
+            
+            /*!
+             * Sets a lower bound for the solution that can potentially be used by the solver.
+             */
+            void setLowerBound(ValueType const& value);
+            
+            /*!
+             * Sets an upper bound for the solution that can potentially be used by the solver.
+             */
+            void setUpperBound(ValueType const& value);
+            
+            /*!
+             * Sets bounds for the solution that can potentially be used by the solver.
+             */
+            void setBounds(ValueType const& lower, ValueType const& upper);
+            
+            /*!
+             * Retrieves the lower bound (if there is any).
+             */
+            ValueType const& getLowerBound() const;
+            
+            /*!
+             * Retrieves the upper bound (if there is any).
+             */
+            ValueType const& getUpperBound() const;
+            
+            /*!
+             * Retrieves a vector containing the lower bounds (if there are any).
+             */
+            std::vector<ValueType> const& getLowerBounds() const;
+            
+            /*!
+             * Retrieves a vector containing the upper bounds (if there are any).
+             */
+            std::vector<ValueType> const& getUpperBounds() const;
+            
+            /*!
+             * Sets lower bounds for the solution that can potentially be used by the solver.
+             */
+            void setLowerBounds(std::vector<ValueType> const& values);
+            
+            /*!
+             * Sets upper bounds for the solution that can potentially be used by the solver.
+             */
+            void setUpperBounds(std::vector<ValueType> const& values);
+            
+            /*!
+             * Sets upper bounds for the solution that can potentially be used by the solver.
+             */
+            void setUpperBounds(std::vector<ValueType>&& values);
+            
+            /*!
+             * Sets bounds for the solution that can potentially be used by the solver.
+             */
+            void setBounds(std::vector<ValueType> const& lower, std::vector<ValueType> const& upper);
             
         protected:
+            void createUpperBoundsVector(std::unique_ptr<std::vector<ValueType>>& upperBoundsVector, uint64_t length) const;
+            void createLowerBoundsVector(std::vector<ValueType>& lowerBoundsVector) const;
+
             // A termination condition to be used (can be unset).
             std::unique_ptr<TerminationCondition<ValueType>> terminationCondition;
+            
+            // A lower bound if one was set.
+            boost::optional<ValueType> lowerBound;
+            
+            // An upper bound if one was set.
+            boost::optional<ValueType> upperBound;
+            
+            // Lower bounds if they were set.
+            boost::optional<std::vector<ValueType>> lowerBounds;
+            
+            // Lower bounds if they were set.
+            boost::optional<std::vector<ValueType>> upperBounds;
         };
         
     }

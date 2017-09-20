@@ -2,9 +2,9 @@
 
 #include <boost/container/flat_map.hpp>
 
-
 #include "storm/modelchecker/results/ExplicitQuantitativeCheckResult.h"
 #include "storm/modelchecker/hints/ExplicitModelCheckerHint.h"
+#include "storm/modelchecker/prctl/helper/DsMpiUpperRewardBoundsComputer.h"
 
 #include "storm/models/sparse/StandardRewardModel.h"
 
@@ -110,7 +110,7 @@ namespace storm {
             
             template<typename ValueType>
             struct SparseMdpHintType {
-                SparseMdpHintType() : eliminateEndComponents(false) {
+                SparseMdpHintType() : eliminateEndComponents(false), computeUpperBounds(false) {
                     // Intentionally left empty.
                 }
                 
@@ -133,9 +133,21 @@ namespace storm {
                 bool hasUpperResultBound() const {
                     return static_cast<bool>(upperResultBound);
                 }
+                
+                bool hasUpperResultBounds() const {
+                    return static_cast<bool>(upperResultBounds);
+                }
 
                 ValueType const& getUpperResultBound() const {
                     return upperResultBound.get();
+                }
+
+                std::vector<ValueType>& getUpperResultBounds() {
+                    return upperResultBounds.get();
+                }
+                
+                std::vector<ValueType> const& getUpperResultBounds() const {
+                    return upperResultBounds.get();
                 }
                 
                 std::vector<uint64_t>& getSchedulerHint() {
@@ -150,11 +162,17 @@ namespace storm {
                     return eliminateEndComponents;
                 }
 
+                bool getComputeUpperBounds() {
+                    return computeUpperBounds;
+                }
+                
                 boost::optional<std::vector<uint64_t>> schedulerHint;
                 boost::optional<std::vector<ValueType>> valueHint;
                 boost::optional<ValueType> lowerResultBound;
                 boost::optional<ValueType> upperResultBound;
+                boost::optional<std::vector<ValueType>> upperResultBounds;
                 bool eliminateEndComponents;
+                bool computeUpperBounds;
             };
             
             template<typename ValueType>
@@ -239,6 +257,10 @@ namespace storm {
                     } else if (type == storm::solver::EquationSystemType::ReachabilityRewards) {
                         requirements.clearLowerBounds();
                     }
+                    if (requirements.requiresUpperBounds()) {
+                        result.computeUpperBounds = true;
+                        requirements.clearUpperBounds();
+                    }
                     STORM_LOG_THROW(requirements.empty(), storm::exceptions::UncheckedRequirementException, "There are unchecked requirements of the solver.");
                 } else {
                     STORM_LOG_DEBUG("Solver has no requirements.");
@@ -259,6 +281,11 @@ namespace storm {
                 }
                 if (!result.hasUpperResultBound() && type == storm::solver::EquationSystemType::UntilProbabilities) {
                     result.upperResultBound = storm::utility::one<ValueType>();
+                }
+                
+                // If we received an upper bound, we can drop the requirement to compute one.
+                if (result.hasUpperResultBound()) {
+                    result.computeUpperBounds = false;
                 }
 
                 return result;
@@ -298,6 +325,9 @@ namespace storm {
                 if (hint.hasUpperResultBound()) {
                     solver->setUpperBound(hint.getUpperResultBound());
                 }
+                if (hint.hasUpperResultBounds()) {
+                    solver->setUpperBounds(std::move(hint.getUpperResultBounds()));
+                }
                 if (hint.hasSchedulerHint()) {
                     solver->setInitialScheduler(std::move(hint.getSchedulerHint()));
                 }
@@ -308,6 +338,17 @@ namespace storm {
 
                 // Solve the corresponding system of equations.
                 solver->solveEquations(x, b);
+                
+#ifndef NDEBUG
+                // As a sanity check, make sure our local upper bounds were in fact correct.
+                if (solver->hasUpperBound(storm::solver::AbstractEquationSolver<ValueType>::BoundType::Local)) {
+                    auto resultIt = x.begin();
+                    for (auto const& entry : solver->getUpperBounds()) {
+                        STORM_LOG_ASSERT(*resultIt <= entry, "Expecting result value for state " << std::distance(x.begin(), resultIt) << " to be <= " << entry << ", but got " << *resultIt << ".");
+                        ++resultIt;
+                    }
+                }
+#endif
                 
                 // Create result.
                 MaybeStateResult<ValueType> result(std::move(x));
@@ -485,23 +526,29 @@ namespace storm {
             };
             
             template<typename ValueType>
-            SparseMdpEndComponentInformation<ValueType> eliminateEndComponents(storm::storage::MaximalEndComponentDecomposition<ValueType> const& endComponentDecomposition, storm::storage::SparseMatrix<ValueType> const& transitionMatrix, storm::storage::BitVector const& maybeStates, storm::storage::BitVector const* sumColumns, storm::storage::BitVector const* selectedChoices, std::vector<ValueType> const* summand, storm::storage::SparseMatrix<ValueType>& submatrix, std::vector<ValueType>& b) {
+            SparseMdpEndComponentInformation<ValueType> eliminateEndComponents(storm::storage::MaximalEndComponentDecomposition<ValueType> const& endComponentDecomposition, storm::storage::SparseMatrix<ValueType> const& transitionMatrix, storm::storage::BitVector const& maybeStates, storm::storage::BitVector const* sumColumns, storm::storage::BitVector const* selectedChoices, std::vector<ValueType> const* summand, storm::storage::SparseMatrix<ValueType>& submatrix, std::vector<ValueType>* columnSumVector, std::vector<ValueType>* summandResultVector) {
 
                 SparseMdpEndComponentInformation<ValueType> result(endComponentDecomposition, maybeStates);
 
                 // (1) Compute the number of maybe states not in ECs before any other maybe state.
                 std::vector<uint64_t> maybeStatesNotInEcBefore = result.getNumberOfMaybeStatesNotInEcBeforeIndices();
-
-                // Create temporary vector storing possible transitions to ECs.
-                std::vector<std::pair<uint64_t, ValueType>> ecValuePairs;
-                
-                // (2) Create the parts of the submatrix and vector b that belong to states not contained in ECs.
                 uint64_t numberOfStates = result.numberOfMaybeStatesNotInEc + result.numberOfEc;
                 
                 STORM_LOG_TRACE("Found " << numberOfStates << " states, " << result.numberOfMaybeStatesNotInEc << " not in ECs, " << result.numberOfMaybeStatesInEc << " in ECs and " << result.numberOfEc << " ECs.");
                 
+                // Prepare builder and vector storage.
                 storm::storage::SparseMatrixBuilder<ValueType> builder(0, numberOfStates, 0, true, true, numberOfStates);
-                b.resize(numberOfStates);
+                STORM_LOG_ASSERT((sumColumns && columnSumVector) || (!sumColumns && !columnSumVector), "Expecting a bit vector for which columns to sum  iff there is a column sum result vector.");
+                if (columnSumVector) {
+                    columnSumVector->resize(numberOfStates);
+                }
+                STORM_LOG_ASSERT((summand && summandResultVector) || (!summand && !summandResultVector), "Expecting summand iff there is a summand result vector.");
+                if (summandResultVector) {
+                    summandResultVector->resize(numberOfStates);
+                }
+                std::vector<std::pair<uint64_t, ValueType>> ecValuePairs;
+                
+                // (2) Create the parts of the submatrix and vector b that belong to states not contained in ECs.
                 uint64_t currentRow = 0;
                 for (auto state : maybeStates) {
                     if (!result.isStateInEc(state)) {
@@ -515,11 +562,11 @@ namespace storm {
                             ecValuePairs.clear();
                             
                             if (summand) {
-                                b[currentRow] += (*summand)[row];
+                                (*summandResultVector)[currentRow] += (*summand)[row];
                             }
                             for (auto const& e : transitionMatrix.getRow(row)) {
                                 if (sumColumns && sumColumns->get(e.getColumn())) {
-                                    b[currentRow] += e.getValue();
+                                    (*columnSumVector)[currentRow] += e.getValue();
                                 } else if (maybeStates.get(e.getColumn())) {
                                     // If the target state of the transition is not contained in an EC, we can just add the entry.
                                     if (result.isStateInEc(e.getColumn())) {
@@ -563,11 +610,11 @@ namespace storm {
                             ecValuePairs.clear();
 
                             if (summand) {
-                                b[currentRow] += (*summand)[row];
+                                (*summandResultVector)[currentRow] += (*summand)[row];
                             }
                             for (auto const& e : transitionMatrix.getRow(row)) {
                                 if (sumColumns && sumColumns->get(e.getColumn())) {
-                                    b[currentRow] += e.getValue();
+                                    (*columnSumVector)[currentRow] += e.getValue();
                                 } else if (maybeStates.get(e.getColumn())) {
                                     // If the target state of the transition is not contained in an EC, we can just add the entry.
                                     if (result.isStateInEc(e.getColumn())) {
@@ -605,7 +652,7 @@ namespace storm {
                 // Only do more work if there are actually end-components.
                 if (!endComponentDecomposition.empty()) {
                     STORM_LOG_DEBUG("Eliminating " << endComponentDecomposition.size() << " ECs.");
-                    return eliminateEndComponents<ValueType>(endComponentDecomposition, transitionMatrix, qualitativeStateSets.maybeStates, &qualitativeStateSets.statesWithProbability1, nullptr, nullptr, submatrix, b);
+                    return eliminateEndComponents<ValueType>(endComponentDecomposition, transitionMatrix, qualitativeStateSets.maybeStates, &qualitativeStateSets.statesWithProbability1, nullptr, nullptr, submatrix, &b, nullptr);
                 } else {
                     STORM_LOG_DEBUG("Not eliminating ECs as there are none.");
                     computeFixedPointSystemUntilProbabilities(transitionMatrix, qualitativeStateSets, submatrix, b);
@@ -893,21 +940,27 @@ namespace storm {
             }
             
             template<typename ValueType>
-            void computeFixedPointSystemReachabilityRewards(storm::storage::SparseMatrix<ValueType> const& transitionMatrix, QualitativeStateSetsReachabilityRewards const& qualitativeStateSets, boost::optional<storm::storage::BitVector> const& selectedChoices, std::function<std::vector<ValueType>(uint_fast64_t, storm::storage::SparseMatrix<ValueType> const&, storm::storage::BitVector const&)> const& totalStateRewardVectorGetter, storm::storage::SparseMatrix<ValueType>& submatrix, std::vector<ValueType>& b) {
+            void computeFixedPointSystemReachabilityRewards(storm::storage::SparseMatrix<ValueType> const& transitionMatrix, QualitativeStateSetsReachabilityRewards const& qualitativeStateSets, storm::storage::BitVector const& targetStates, boost::optional<storm::storage::BitVector> const& selectedChoices, std::function<std::vector<ValueType>(uint_fast64_t, storm::storage::SparseMatrix<ValueType> const&, storm::storage::BitVector const&)> const& totalStateRewardVectorGetter, storm::storage::SparseMatrix<ValueType>& submatrix, std::vector<ValueType>& b, std::vector<ValueType>* oneStepTargetProbabilities = nullptr) {
                 // Remove rows and columns from the original transition probability matrix for states whose reward values are already known.
                 // If there are infinity states, we additionally have to remove choices of maybeState that lead to infinity.
                 if (qualitativeStateSets.infinityStates.empty()) {
                     submatrix = transitionMatrix.getSubmatrix(true, qualitativeStateSets.maybeStates, qualitativeStateSets.maybeStates, false);
                     b = totalStateRewardVectorGetter(submatrix.getRowCount(), transitionMatrix, qualitativeStateSets.maybeStates);
+                    if (oneStepTargetProbabilities) {
+                        (*oneStepTargetProbabilities) = transitionMatrix.getConstrainedRowGroupSumVector(qualitativeStateSets.maybeStates, targetStates);
+                    }
                 } else {
                     submatrix = transitionMatrix.getSubmatrix(false, *selectedChoices, qualitativeStateSets.maybeStates, false);
                     b = totalStateRewardVectorGetter(transitionMatrix.getRowCount(), transitionMatrix, storm::storage::BitVector(transitionMatrix.getRowGroupCount(), true));
                     storm::utility::vector::filterVectorInPlace(b, *selectedChoices);
+                    if (oneStepTargetProbabilities) {
+                        (*oneStepTargetProbabilities) = transitionMatrix.getConstrainedRowSumVector(*selectedChoices, targetStates);
+                    }
                 }
             }
             
             template<typename ValueType>
-            boost::optional<SparseMdpEndComponentInformation<ValueType>> computeFixedPointSystemReachabilityRewardsEliminateEndComponents(storm::storage::SparseMatrix<ValueType> const& transitionMatrix, storm::storage::SparseMatrix<ValueType> const& backwardTransitions, QualitativeStateSetsReachabilityRewards const& qualitativeStateSets, boost::optional<storm::storage::BitVector> const& selectedChoices, std::function<std::vector<ValueType>(uint_fast64_t, storm::storage::SparseMatrix<ValueType> const&, storm::storage::BitVector const&)> const& totalStateRewardVectorGetter, storm::storage::SparseMatrix<ValueType>& submatrix, std::vector<ValueType>& b) {
+            boost::optional<SparseMdpEndComponentInformation<ValueType>> computeFixedPointSystemReachabilityRewardsEliminateEndComponents(storm::storage::SparseMatrix<ValueType> const& transitionMatrix, storm::storage::SparseMatrix<ValueType> const& backwardTransitions, QualitativeStateSetsReachabilityRewards const& qualitativeStateSets, storm::storage::BitVector const& targetStates, boost::optional<storm::storage::BitVector> const& selectedChoices, std::function<std::vector<ValueType>(uint_fast64_t, storm::storage::SparseMatrix<ValueType> const&, storm::storage::BitVector const&)> const& totalStateRewardVectorGetter, storm::storage::SparseMatrix<ValueType>& submatrix, std::vector<ValueType>& b, boost::optional<std::vector<ValueType>>& oneStepTargetProbabilities) {
                 
                 // Start by computing the choices with reward 0, as we only want ECs within this fragment.
                 storm::storage::BitVector zeroRewardChoices(transitionMatrix.getRowCount());
@@ -951,11 +1004,23 @@ namespace storm {
                 // Only do more work if there are actually end-components.
                 if (doDecomposition && !endComponentDecomposition.empty()) {
                     STORM_LOG_DEBUG("Eliminating " << endComponentDecomposition.size() << " ECs.");
-                    return eliminateEndComponents<ValueType>(endComponentDecomposition, transitionMatrix, qualitativeStateSets.maybeStates, nullptr, selectedChoices ? &selectedChoices.get() : nullptr, &rewardVector, submatrix, b);
+                    return eliminateEndComponents<ValueType>(endComponentDecomposition, transitionMatrix, qualitativeStateSets.maybeStates, oneStepTargetProbabilities ? &targetStates : nullptr, selectedChoices ? &selectedChoices.get() : nullptr, &rewardVector, submatrix, oneStepTargetProbabilities ? &oneStepTargetProbabilities.get() : nullptr, &b);
                 } else {
                     STORM_LOG_DEBUG("Not eliminating ECs as there are none.");
-                    computeFixedPointSystemReachabilityRewards(transitionMatrix, qualitativeStateSets, selectedChoices, totalStateRewardVectorGetter, submatrix, b);
+                    computeFixedPointSystemReachabilityRewards(transitionMatrix, qualitativeStateSets, targetStates, selectedChoices, totalStateRewardVectorGetter, submatrix, b, oneStepTargetProbabilities ? &oneStepTargetProbabilities.get() : nullptr);
                     return boost::none;
+                }
+            }
+            
+            template<typename ValueType>
+            void computeUpperRewardBounds(SparseMdpHintType<ValueType>& hintInformation, storm::OptimizationDirection const& direction, storm::storage::SparseMatrix<ValueType> const& submatrix, std::vector<ValueType> const& choiceRewards, std::vector<ValueType> const& oneStepTargetProbabilities) {
+                
+                // For the min-case, we use DS-MPI, for the max-case variant 2 of the Baier et al. paper (CAV'17).
+                if (direction == storm::OptimizationDirection::Minimize) {
+                    DsMpiMdpUpperRewardBoundsComputer<ValueType> dsmpi(submatrix, choiceRewards, oneStepTargetProbabilities);
+                    hintInformation.upperResultBounds = dsmpi.computeUpperBounds();
+                } else {
+                    STORM_LOG_ASSERT(false, "Not yet implemented.");
                 }
             }
             
@@ -997,17 +1062,30 @@ namespace storm {
                         // Declare the components of the equation system we will solve.
                         storm::storage::SparseMatrix<ValueType> submatrix;
                         std::vector<ValueType> b;
+
+                        // If we need to compute upper bounds on the reward values, we need the one step probabilities
+                        // to a target state.
+                        boost::optional<std::vector<ValueType>> oneStepTargetProbabilities;
+                        if (hintInformation.getComputeUpperBounds()) {
+                            oneStepTargetProbabilities = std::vector<ValueType>();
+                        }
                         
                         // If the hint information tells us that we have to eliminate MECs, we do so now.
                         boost::optional<SparseMdpEndComponentInformation<ValueType>> ecInformation;
                         if (hintInformation.getEliminateEndComponents()) {
-                            ecInformation = computeFixedPointSystemReachabilityRewardsEliminateEndComponents(transitionMatrix, backwardTransitions, qualitativeStateSets, selectedChoices, totalStateRewardVectorGetter, submatrix, b);
+                            ecInformation = computeFixedPointSystemReachabilityRewardsEliminateEndComponents(transitionMatrix, backwardTransitions, qualitativeStateSets, targetStates, selectedChoices, totalStateRewardVectorGetter, submatrix, b, oneStepTargetProbabilities);
                             
                             // Make sure we are not supposed to produce a scheduler if we actually eliminate end components.
                             STORM_LOG_THROW(!ecInformation || !ecInformation.get().eliminatedEndComponents || !produceScheduler, storm::exceptions::NotSupportedException, "Producing schedulers is not supported if end-components need to be eliminated for the solver.");
                         } else {
                             // Otherwise, we compute the standard equations.
-                            computeFixedPointSystemReachabilityRewards(transitionMatrix, qualitativeStateSets, selectedChoices, totalStateRewardVectorGetter, submatrix, b);
+                            computeFixedPointSystemReachabilityRewards(transitionMatrix, qualitativeStateSets, targetStates, selectedChoices, totalStateRewardVectorGetter, submatrix, b);
+                        }
+                        
+                        // If we need to compute upper bounds, do so now.
+                        if (hintInformation.getComputeUpperBounds()) {
+                            STORM_LOG_ASSERT(oneStepTargetProbabilities, "Expecting one step target probability vector to be available.");
+                            computeUpperRewardBounds(hintInformation, goal.direction(), submatrix, b, oneStepTargetProbabilities.get());
                         }
                         
                         // Now compute the results for the maybe states.

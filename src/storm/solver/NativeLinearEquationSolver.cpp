@@ -438,7 +438,7 @@ namespace storm {
             
             std::vector<ValueType>* lowerX = &x;
             this->createLowerBoundsVector(*lowerX);
-            this->createUpperBoundsVector(this->cachedRowVector);
+            this->createUpperBoundsVector(this->cachedRowVector, this->getMatrixRowCount());
             std::vector<ValueType>* upperX = this->cachedRowVector.get();
             
             bool useGaussSeidelMultiplication = this->getSettings().getPowerMethodMultiplicationStyle() == storm::solver::MultiplicationStyle::GaussSeidel;

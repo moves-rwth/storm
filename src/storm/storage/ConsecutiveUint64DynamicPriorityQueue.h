@@ -2,6 +2,7 @@
 
 #include <algorithm>
 #include <vector>
+#include <numeric>
 
 #include "storm/utility/macros.h"
 

@@ -14,6 +14,7 @@
 
 #include "storm/modelchecker/results/ExplicitQuantitativeCheckResult.h"
 #include "storm/modelchecker/hints/ExplicitModelCheckerHint.h"
+#include "storm/modelchecker/prctl/helper/DsMpiUpperRewardBoundsComputer.h"
 
 #include "storm/utility/macros.h"
 #include "storm/utility/ConstantsComparator.h"
@@ -220,150 +221,11 @@ namespace storm {
                                                   targetStates, qualitative, linearEquationSolverFactory, hint);
             }
             
-            template<typename ValueType>
-            class DsMpi {
-            public:
-                DsMpi(storm::storage::SparseMatrix<ValueType> const& transitionMatrix, std::vector<ValueType> const& rewards, std::vector<ValueType> const& oneStepTargetProbabilities) : transitionMatrix(transitionMatrix), originalRewards(rewards), originalOneStepTargetProbabilities(oneStepTargetProbabilities), backwardTransitions(transitionMatrix.transpose()), p(transitionMatrix.getRowCount()), w(transitionMatrix.getRowCount()), rewards(rewards), targetProbabilities(oneStepTargetProbabilities) {
-                    // Intentionally left empty.
-                }
-                
-                std::vector<ValueType> computeUpperBounds() {
-                    sweep();
-                    ValueType lambda = computeLambda();
-                    STORM_LOG_TRACE("DS-MPI computed lambda as " << lambda << ".");
-                    
-                    // Finally compute the upper bounds for the states.
-                    std::vector<ValueType> result(transitionMatrix.getRowCount());
-                    auto one = storm::utility::one<ValueType>();
-                    for (storm::storage::sparse::state_type state = 0; state < result.size(); ++state) {
-                        result[state] = w[state] + (one - p[state]) * lambda;
-                    }
-                    
-#ifndef NDEBUG
-                    ValueType max = storm::utility::zero<ValueType>();
-                    uint64_t nonZeroCount = 0;
-                    for (auto const& e : result) {
-                        if (!storm::utility::isZero(e)) {
-                            ++nonZeroCount;
-                            max = std::max(max, e);
-                        }
-                    }
-                    STORM_LOG_TRACE("DS-MPI computed " << nonZeroCount << " non-zero upper bounds and a maximal bound of " << max << ".");
-#endif
-                    return result;
-                }
-                
-            private:
-                ValueType computeLambda() {
-                    ValueType lambda = storm::utility::zero<ValueType>();
-                    for (storm::storage::sparse::state_type state = 0; state < targetProbabilities.size(); ++state) {
-                        // Check whether condition (I) or (II) applies.
-                        ValueType sum = storm::utility::zero<ValueType>();
-                        for (auto const& e : transitionMatrix.getRow(state)) {
-                            sum += e.getValue() * p[e.getColumn()];
-                        }
-                        sum += originalOneStepTargetProbabilities[state];
-                        
-                        if (p[state] < sum) {
-                            // Condition (I) applies.
-                            ValueType localLambda = sum - p[state];
-                            ValueType nominator = originalRewards[state];
-                            for (auto const& e : transitionMatrix.getRow(state)) {
-                                nominator += e.getValue() * w[e.getColumn()];
-                            }
-                            nominator -= w[state];
-                            localLambda = nominator / localLambda;
-                            lambda = std::max(lambda, localLambda);
-                        } else {
-                            // Here, condition (II) automatically applies and as the resulting local lambda is 0, we
-                            // don't need to consider it.
-                            
-#ifndef NDEBUG
-                            // Actually check condition (II).
-                            ValueType sum = originalRewards[state];
-                            for (auto const& e : transitionMatrix.getRow(state)) {
-                                sum += e.getValue() * w[e.getColumn()];
-                            }
-                            STORM_LOG_WARN_COND(w[state] >= sum || storm::utility::ConstantsComparator<ValueType>().isEqual(w[state], sum), "Expected condition (II) to hold in state " << state << ", but " << w[state] << " < " << sum << ".");
-#endif
-                        }
-                    }
-                    return lambda;
-                }
-                
-                class PriorityLess {
-                public:
-                    PriorityLess(DsMpi const& dsmpi) : dsmpi(dsmpi) {
-                        // Intentionally left empty.
-                    }
-                    
-                    bool operator()(storm::storage::sparse::state_type const& a, storm::storage::sparse::state_type const& b) {
-                        ValueType pa = dsmpi.targetProbabilities[a];
-                        ValueType pb = dsmpi.targetProbabilities[b];
-                        if (pa < pb) {
-                            return true;
-                        } else if (pa == pb) {
-                            return dsmpi.rewards[a] > dsmpi.rewards[b];
-                        }
-                        return false;
-                    }
-                    
-                private:
-                    DsMpi const& dsmpi;
-                };
-                
-                void sweep() {
-                    // Create a priority queue that allows for easy retrieval of the currently best state.
-                    storm::storage::ConsecutiveUint64DynamicPriorityQueue<PriorityLess> queue(transitionMatrix.getRowCount(), PriorityLess(*this));
-                    
-                    storm::storage::BitVector visited(p.size());
-                    
-                    while (!queue.empty()) {
-                        // Get first entry in queue.
-                        storm::storage::sparse::state_type currentState = queue.popTop();
-                        
-                        // Mark state as visited.
-                        visited.set(currentState);
-                        
-                        // Set weight and probability for the state.
-                        w[currentState] = rewards[currentState];
-                        p[currentState] = targetProbabilities[currentState];
-                        
-                        for (auto const& e : backwardTransitions.getRow(currentState)) {
-                            if (visited.get(e.getColumn())) {
-                                continue;
-                            }
-                            
-                            // Update reward/probability values.
-                            rewards[e.getColumn()] += e.getValue() * w[currentState];
-                            targetProbabilities[e.getColumn()] += e.getValue() * p[currentState];
-
-                            // Increase priority of element.
-                            queue.increase(e.getColumn());
-                        }
-                    }
-                }
-                
-                // References to input data.
-                storm::storage::SparseMatrix<ValueType> const& transitionMatrix;
-                std::vector<ValueType> const& originalRewards;
-                std::vector<ValueType> const& originalOneStepTargetProbabilities;
-                
-                // Derived from input data.
-                storm::storage::SparseMatrix<ValueType> backwardTransitions;
-                
-                // Data that the algorithm uses internally.
-                std::vector<ValueType> p;
-                std::vector<ValueType> w;
-                std::vector<ValueType> rewards;
-                std::vector<ValueType> targetProbabilities;
-            };
-            
             // This function computes an upper bound on the reachability rewards (see Baier et al, CAV'17).
             template<typename ValueType>
             std::vector<ValueType> computeUpperRewardBounds(storm::storage::SparseMatrix<ValueType> const& transitionMatrix, std::vector<ValueType> const& rewards, std::vector<ValueType> const& oneStepTargetProbabilities) {
                 std::chrono::high_resolution_clock::time_point start = std::chrono::high_resolution_clock::now();
-                DsMpi<ValueType> dsmpi(transitionMatrix, rewards, oneStepTargetProbabilities);
+                DsMpiDtmcUpperRewardBoundsComputer<ValueType> dsmpi(transitionMatrix, rewards, oneStepTargetProbabilities);
                 std::vector<ValueType> bounds = dsmpi.computeUpperBounds();
                 std::chrono::high_resolution_clock::time_point end = std::chrono::high_resolution_clock::now();
                 STORM_LOG_TRACE("Computed upper bounds on rewards in " << std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count() << "ms.");
