@@ -46,6 +46,7 @@ namespace storm {
             const std::string IOSettings::noBuildOptionName = "nobuild";
             const std::string IOSettings::fullModelBuildOptionName = "buildfull";
             const std::string IOSettings::buildChoiceLabelOptionName = "buildchoicelab";
+            const std::string IOSettings::buildStateValuationsOptionName = "buildstateval";
             const std::string IOSettings::janiPropertyOptionName = "janiproperty";
             const std::string IOSettings::janiPropertyOptionShortName = "jprop";
             const std::string IOSettings::propertyOptionName = "prop";
@@ -76,7 +77,8 @@ namespace storm {
                 this->addOption(storm::settings::OptionBuilder(moduleName, prismToJaniOptionName, false, "If set, the input PRISM model is transformed to JANI.").build());
                 this->addOption(storm::settings::OptionBuilder(moduleName, jitOptionName, false, "If set, the model is built using the JIT model builder.").build());
                 this->addOption(storm::settings::OptionBuilder(moduleName, fullModelBuildOptionName, false, "If set, include all rewards and labels.").build());
-                this->addOption(storm::settings::OptionBuilder(moduleName, buildChoiceLabelOptionName, false, "If set, include choice labels").build());
+                this->addOption(storm::settings::OptionBuilder(moduleName, buildChoiceLabelOptionName, false, "If set, also build the choice labels").build());
+                this->addOption(storm::settings::OptionBuilder(moduleName, buildStateValuationsOptionName, false, "If set, also build the state valuations").build());
                 this->addOption(storm::settings::OptionBuilder(moduleName, noBuildOptionName, false, "If set, do not build the model.").build());
                 this->addOption(storm::settings::OptionBuilder(moduleName, propertyOptionName, false, "Specifies the properties to be checked on the model.").setShortName(propertyOptionShortName)
                                         .addArgument(storm::settings::ArgumentBuilder::createStringArgument("property or filename", "The formula or the file containing the formulas.").build())
@@ -264,6 +266,10 @@ namespace storm {
 
             bool IOSettings::isBuildChoiceLabelsSet() const {
                 return this->getOption(buildChoiceLabelOptionName).getHasOptionBeenSet();
+            }
+
+           bool IOSettings::isBuildStateValuationsSet() const {
+                return this->getOption(buildStateValuationsOptionName).getHasOptionBeenSet();
             }
 
             bool IOSettings::isPropertySet() const {

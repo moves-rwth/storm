@@ -317,12 +317,16 @@ namespace storm {
                 for (uint_fast64_t state = 0, highestStateIndex = this->getNumberOfStates() - 1; state <= highestStateIndex; ++state) {
                     if (subsystem == nullptr || subsystem->get(state)) {
                         outStream << "\t" << state;
-                        if (includeLabeling || firstValue != nullptr || secondValue != nullptr || stateColoring != nullptr) {
+                        if (includeLabeling || firstValue != nullptr || secondValue != nullptr || stateColoring != nullptr || hasStateValuations()) {
                             outStream << " [ ";
                             
                             // If we need to print some extra information, do so now.
-                            if (includeLabeling || firstValue != nullptr || secondValue != nullptr) {
-                                outStream << "label = \"" << state << ": ";
+                            if (includeLabeling || firstValue != nullptr || secondValue != nullptr || hasStateValuations()) {
+                                outStream << "label = \"" << state;
+                                if (hasStateValuations()) {
+                                    outStream << " " << getStateValuations().getStateInfo(state);
+                                }
+                                outStream << ": ";
                                 
                                 // Now print the state labeling to the stream if requested.
                                 if (includeLabeling) {
