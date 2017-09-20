@@ -5,6 +5,7 @@
 #include "storm/modelchecker/results/ExplicitQuantitativeCheckResult.h"
 #include "storm/modelchecker/hints/ExplicitModelCheckerHint.h"
 #include "storm/modelchecker/prctl/helper/DsMpiUpperRewardBoundsComputer.h"
+#include "storm/modelchecker/prctl/helper/BaierUpperRewardBoundsComputer.h"
 
 #include "storm/models/sparse/StandardRewardModel.h"
 
@@ -1020,7 +1021,8 @@ namespace storm {
                     DsMpiMdpUpperRewardBoundsComputer<ValueType> dsmpi(submatrix, choiceRewards, oneStepTargetProbabilities);
                     hintInformation.upperResultBounds = dsmpi.computeUpperBounds();
                 } else {
-                    STORM_LOG_ASSERT(false, "Not yet implemented.");
+                    BaierUpperRewardBoundsComputer<ValueType> baier(submatrix, choiceRewards, oneStepTargetProbabilities);
+                    hintInformation.upperResultBound = baier.computeUpperBound();
                 }
             }
             
@@ -1079,7 +1081,7 @@ namespace storm {
                             STORM_LOG_THROW(!ecInformation || !ecInformation.get().eliminatedEndComponents || !produceScheduler, storm::exceptions::NotSupportedException, "Producing schedulers is not supported if end-components need to be eliminated for the solver.");
                         } else {
                             // Otherwise, we compute the standard equations.
-                            computeFixedPointSystemReachabilityRewards(transitionMatrix, qualitativeStateSets, targetStates, selectedChoices, totalStateRewardVectorGetter, submatrix, b);
+                            computeFixedPointSystemReachabilityRewards(transitionMatrix, qualitativeStateSets, targetStates, selectedChoices, totalStateRewardVectorGetter, submatrix, b, oneStepTargetProbabilities ? &oneStepTargetProbabilities.get() : nullptr);
                         }
                         
                         // If we need to compute upper bounds, do so now.

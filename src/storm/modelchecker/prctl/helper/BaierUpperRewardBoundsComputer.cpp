@@ -6,6 +6,8 @@
 #include "storm/storage/BitVector.h"
 #include "storm/storage/StronglyConnectedComponentDecomposition.h"
 
+#include "storm/utility/macros.h"
+
 namespace storm {
     namespace modelchecker {
         namespace helper {
@@ -16,7 +18,9 @@ namespace storm {
             }
 
             template<typename ValueType>
-            std::vector<ValueType> BaierUpperRewardBoundsComputer<ValueType>::computeUpperBounds() {
+            ValueType BaierUpperRewardBoundsComputer<ValueType>::computeUpperBound() {
+                std::chrono::high_resolution_clock::time_point start = std::chrono::high_resolution_clock::now();
+                
                 std::vector<uint64_t> stateToScc(transitionMatrix.getRowGroupCount());
                 {
                     // Start with an SCC decomposition of the system.
@@ -46,8 +50,11 @@ namespace storm {
                     ++index;
                 }
                 
+                // Vector that holds the result.
+                std::vector<ValueType> result(transitionMatrix.getRowGroupCount());
+                
                 // Process all states as long as there are remaining ones.
-                storm::storage::BitVector newStates(remainingStates.size());
+                std::vector<uint64_t> newStates;
                 while (!remainingStates.empty()) {
                     for (auto state : remainingStates) {
                         bool allChoicesValid = true;
@@ -55,45 +62,67 @@ namespace storm {
                             if (validChoices.get(row)) {
                                 continue;
                             }
+                            
+                            bool choiceValid = false;
                             for (auto const& entry : transitionMatrix.getRow(row)) {
                                 if (storm::utility::isZero(entry.getValue())) {
                                     continue;
                                 }
                                 
-                                if (remainingStates.get(entry.getColumn())) {
-                                    allChoicesValid = false;
+                                if (!remainingStates.get(entry.getColumn())) {
+                                    choiceValid = true;
                                     break;
                                 }
                             }
                             
-                            if (allChoicesValid) {
+                            if (choiceValid) {
                                 validChoices.set(row);
+                            } else {
+                                allChoicesValid = false;
                             }
                         }
                         
                         if (allChoicesValid) {
-                            newStates.set(state);
-                            remainingStates.set(state, false);
+                            newStates.push_back(state);
                         }
                     }
                     
                     // Compute d_t over the newly found states.
-                    ValueType d_t = storm::utility::one<ValueType>();
                     for (auto state : newStates) {
+                        result[state] = storm::utility::one<ValueType>();
                         for (auto row = transitionMatrix.getRowGroupIndices()[state], endRow = transitionMatrix.getRowGroupIndices()[state + 1]; row < endRow; ++row) {
-                            ValueType value = storm::utility::zero<ValueType>();
+                            ValueType rowValue = oneStepTargetProbabilities[row];
                             for (auto const& entry : transitionMatrix.getRow(row)) {
-                                if () {
-                                    
+                                if (!remainingStates.get(entry.getColumn())) {
+                                    rowValue += entry.getValue() * (stateToScc[state] == stateToScc[entry.getColumn()] ? result[entry.getColumn()] : storm::utility::one<ValueType>());
                                 }
                             }
-                            d_t = std::min();
+                            STORM_LOG_ASSERT(rowValue > storm::utility::zero<ValueType>(), "Expected entry with value greater 0.");
+                            result[state] = std::min(result[state], rowValue);
                         }
                     }
+                    
+                    remainingStates.set(newStates.begin(), newStates.end(), false);
                     newStates.clear();
                 }
                 
+                for (uint64_t state = 0; state < result.size(); ++state) {
+                    ValueType maxReward = storm::utility::zero<ValueType>();
+                    for (auto row = transitionMatrix.getRowGroupIndices()[state], endRow = transitionMatrix.getRowGroupIndices()[state + 1]; row < endRow; ++row) {
+                        maxReward = std::max(maxReward, rewards[row]);
+                    }
+                    result[state] = storm::utility::one<ValueType>() / result[state] * maxReward;
+                }
                 
+                ValueType upperBound = storm::utility::zero<ValueType>();
+                for (auto const& e : result) {
+                    upperBound += e;
+                }
+                
+                STORM_LOG_TRACE("Baier algorithm for reward bound computation (variant 2) computed bound " << upperBound << ".");
+                std::chrono::high_resolution_clock::time_point end = std::chrono::high_resolution_clock::now();
+                STORM_LOG_TRACE("Computed upper bounds on rewards in " << std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count() << "ms.");
+                return upperBound;
             }
             
             template class BaierUpperRewardBoundsComputer<double>;

@@ -4,6 +4,8 @@
 #include <vector>
 #include <numeric>
 
+#include "storm-config.h"
+
 #include "storm/utility/macros.h"
 
 namespace storm {
@@ -24,10 +26,8 @@ namespace storm {
         public:
             explicit ConsecutiveUint64DynamicPriorityQueue(uint64_t numberOfIntegers, Compare const& compare) : container(numberOfIntegers), compare(compare), positions(numberOfIntegers) {
                 std::iota(container.begin(), container.end(), 0);
-            }
-            
-            void fix() {
                 std::make_heap(container.begin(), container.end(), compare);
+                updatePositions();
             }
             
             void increase(uint64_t element) {
@@ -38,12 +38,14 @@ namespace storm {
                 
                 uint64_t parentPosition = (position - 1) / 2;
                 while (position > 0 && compare(container[parentPosition], container[position])) {
-                    std::swap(container[parentPosition], container[position]);
                     std::swap(positions[container[parentPosition]], positions[container[position]]);
-                    
+                    std::swap(container[parentPosition], container[position]);
+
                     position = parentPosition;
                     parentPosition = (position - 1) / 2;
                 }
+                
+                STORM_LOG_ASSERT(std::is_heap(container.begin(), container.end(), compare), "Heap structure lost.");
             }
             
             bool contains(uint64_t element) const {
@@ -68,14 +70,73 @@ namespace storm {
             }
             
             void pop() {
-                std::pop_heap(container.begin(), container.end(), compare);
-                container.pop_back();
+                if (container.size() > 1) {
+                    // Swap max element to back.
+                    std::swap(positions[container.front()], positions[container.back()]);
+                    std::swap(container.front(), container.back());
+                    container.pop_back();
+                    
+                    // Sift down the element from the top.
+                    uint64_t positionToSift = 0;
+                    uint64_t child = 2 * positionToSift + 1;
+                    
+                    while (child < container.size()) {
+                        if (child + 1 < container.size()) {
+                            // Figure out larger child.
+                            child = compare(container[child], container[child + 1]) ? child + 1 : child;
+                            
+                            // Check if we need to sift down.
+                            if (compare(container[positionToSift], container[child])) {
+                                std::swap(positions[container[positionToSift]], positions[container[child]]);
+                                std::swap(container[positionToSift], container[child]);
+                                
+                                positionToSift = child;
+                                child = 2 * positionToSift + 1;
+                            } else {
+                                break;
+                            }
+                        } else if (compare(container[positionToSift], container[child])) {
+                            std::swap(positions[container[positionToSift]], positions[container[child]]);
+                            std::swap(container[positionToSift], container[child]);
+                            
+                            positionToSift = child;
+                            child = 2 * positionToSift + 1;
+                        } else {
+                            break;
+                        }
+                    }
+                    
+                } else {
+                    container.pop_back();
+                }
+                
+                STORM_LOG_ASSERT(std::is_heap(container.begin(), container.end(), compare), "Heap structure lost.");
             }
             
             T popTop() {
                 T item = top();
                 pop();
                 return item;
+            }
+            
+        private:
+            bool checkPositions() const {
+                uint64_t position = 0;
+                for (auto const& e : container) {
+                    if (positions[e] != position) {
+                        return false;
+                    }
+                    ++position;
+                }
+                return true;
+            }
+            
+            void updatePositions() {
+                uint64_t position = 0;
+                for (auto const& e : container) {
+                    positions[e] = position;
+                    ++position;
+                }
             }
         };
     }

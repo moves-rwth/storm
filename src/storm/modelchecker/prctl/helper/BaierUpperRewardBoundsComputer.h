@@ -25,9 +25,9 @@ namespace storm {
                 BaierUpperRewardBoundsComputer(storm::storage::SparseMatrix<ValueType> const& transitionMatrix, std::vector<ValueType> const& rewards, std::vector<ValueType> const& oneStepTargetProbabilities);
                 
                 /*!
-                 * Computes upper bounds on the expected rewards.
+                 * Computes an upper bound on the expected rewards.
                  */
-                std::vector<ValueType> computeUpperBounds();
+                ValueType computeUpperBound();
                 
             private:
                 storm::storage::SparseMatrix<ValueType> const& transitionMatrix;

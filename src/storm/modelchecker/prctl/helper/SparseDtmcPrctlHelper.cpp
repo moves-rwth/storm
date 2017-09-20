@@ -224,11 +224,8 @@ namespace storm {
             // This function computes an upper bound on the reachability rewards (see Baier et al, CAV'17).
             template<typename ValueType>
             std::vector<ValueType> computeUpperRewardBounds(storm::storage::SparseMatrix<ValueType> const& transitionMatrix, std::vector<ValueType> const& rewards, std::vector<ValueType> const& oneStepTargetProbabilities) {
-                std::chrono::high_resolution_clock::time_point start = std::chrono::high_resolution_clock::now();
                 DsMpiDtmcUpperRewardBoundsComputer<ValueType> dsmpi(transitionMatrix, rewards, oneStepTargetProbabilities);
                 std::vector<ValueType> bounds = dsmpi.computeUpperBounds();
-                std::chrono::high_resolution_clock::time_point end = std::chrono::high_resolution_clock::now();
-                STORM_LOG_TRACE("Computed upper bounds on rewards in " << std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count() << "ms.");
                 return bounds;
             }
             

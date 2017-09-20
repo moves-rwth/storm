@@ -205,7 +205,7 @@ namespace storm {
              * @param last The element past the last element of the iterator range.
              */
             template<typename InputIterator>
-            void set(InputIterator first, InputIterator last);
+            void set(InputIterator first, InputIterator last, bool value = true);
             
             /*!
              * Retrieves the truth value of the bit at the given index. Note: this does not check whether the given

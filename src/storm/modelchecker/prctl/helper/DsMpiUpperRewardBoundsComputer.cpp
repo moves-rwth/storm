@@ -23,6 +23,7 @@ namespace storm {
             
             template<typename ValueType>
             std::vector<ValueType> DsMpiDtmcUpperRewardBoundsComputer<ValueType>::computeUpperBounds() {
+                std::chrono::high_resolution_clock::time_point start = std::chrono::high_resolution_clock::now();
                 sweep();
                 ValueType lambda = computeLambda();
                 STORM_LOG_TRACE("DS-MPI computed lambda as " << lambda << ".");
@@ -45,6 +46,8 @@ namespace storm {
                 }
                 STORM_LOG_TRACE("DS-MPI computed " << nonZeroCount << " non-zero upper bounds and a maximal bound of " << max << ".");
 #endif
+                std::chrono::high_resolution_clock::time_point end = std::chrono::high_resolution_clock::now();
+                STORM_LOG_TRACE("Computed upper bounds on rewards in " << std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count() << "ms.");
                 return result;
             }
             
@@ -63,16 +66,15 @@ namespace storm {
                 uint64_t state = this->getStateForChoice(choice);
                 
                 // Check whether condition (I) or (II) applies.
-                ValueType sum = storm::utility::zero<ValueType>();
+                ValueType probSum = originalOneStepTargetProbabilities[choice];
                 for (auto const& e : transitionMatrix.getRow(choice)) {
-                    sum += e.getValue() * p[e.getColumn()];
+                    probSum += e.getValue() * p[e.getColumn()];
                 }
-                sum += originalOneStepTargetProbabilities[choice];
                 
-                if (p[state] < sum) {
-                    STORM_LOG_TRACE("Condition (I) does apply for state " << state << " as " << p[state] << " < " << sum << ".");
+                if (p[state] < probSum) {
+                    STORM_LOG_TRACE("Condition (I) does apply for state " << state << " as " << p[state] << " < " << probSum << ".");
                     // Condition (I) applies.
-                    localLambda = sum - p[state];
+                    localLambda = probSum - p[state];
                     ValueType nominator = originalRewards[choice];
                     for (auto const& e : transitionMatrix.getRow(choice)) {
                         nominator += e.getValue() * w[e.getColumn()];
@@ -80,17 +82,18 @@ namespace storm {
                     nominator -= w[state];
                     localLambda = nominator / localLambda;
                 } else {
-                    STORM_LOG_TRACE("Condition (I) does not apply for state " << state << " as " << p[state] << " < " << sum << ".");
+                    STORM_LOG_TRACE("Condition (I) does not apply for state " << state << std::setprecision(30) << " as " << probSum << " <= " << p[state] << ".");
                     // Here, condition (II) automatically applies and as the resulting local lambda is 0, we
                     // don't need to consider it.
                     
 #ifndef NDEBUG
                     // Actually check condition (II).
-                    ValueType sum = originalRewards[choice];
+                    ValueType rewardSum = originalRewards[choice];
                     for (auto const& e : transitionMatrix.getRow(choice)) {
-                        sum += e.getValue() * w[e.getColumn()];
+                        rewardSum += e.getValue() * w[e.getColumn()];
                     }
-                    STORM_LOG_WARN_COND(w[state] >= sum || storm::utility::ConstantsComparator<ValueType>().isEqual(w[state], sum), "Expected condition (II) to hold in state " << state << ", but " << w[state] << " < " << sum << ".");
+                    STORM_LOG_WARN_COND(w[state] >= rewardSum || storm::utility::ConstantsComparator<ValueType>().isEqual(w[state], rewardSum), "Expected condition (II) to hold in state " << state << ", but " << w[state] << " < " << rewardSum << ".");
+                    STORM_LOG_WARN_COND(storm::utility::ConstantsComparator<ValueType>().isEqual(probSum, p[state]), "Expected condition (II) to hold in state " << state << ", but " << probSum << " != " << p[state] << ".");
 #endif
                 }
 
@@ -237,7 +240,7 @@ namespace storm {
                 while (!queue.empty()) {
                     // Get first entry in queue.
                     storm::storage::sparse::state_type currentState = queue.popTop();
-                    
+
                     // Mark state as visited.
                     visited.set(currentState);
                     
@@ -245,7 +248,7 @@ namespace storm {
                     uint64_t choiceInCurrentState = this->getChoiceInState(currentState);
                     this->w[currentState] = this->rewards[choiceInCurrentState];
                     this->p[currentState] = this->targetProbabilities[choiceInCurrentState];
-                    
+
                     for (auto const& choiceEntry : this->backwardTransitions.getRow(currentState)) {
                         uint64_t predecessor = this->getStateForChoice(choiceEntry.getColumn());
                         if (visited.get(predecessor)) {

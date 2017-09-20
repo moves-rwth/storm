@@ -410,7 +410,7 @@ namespace storm {
                 }
                 
                 // Determine whether the method converged.
-                if (storm::utility::vector::equalModuloPrecision<ValueType>(*lowerX, *upperX, storm::utility::convertNumber<ValueType>(2.0) * this->getSettings().getPrecision(), false)) {
+                if (storm::utility::vector::equalModuloPrecision<ValueType>(*lowerX, *upperX, storm::utility::convertNumber<ValueType>(2.0) * this->getSettings().getPrecision(), this->getSettings().getRelativeTerminationCriterion())) {
                     status = Status::Converged;
                 }
                 
