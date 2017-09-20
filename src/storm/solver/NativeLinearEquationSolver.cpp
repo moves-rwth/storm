@@ -454,8 +454,8 @@ namespace storm {
             ValueType upperDiff;
             ValueType lowerDiff;
             while (!converged && iterations < this->getSettings().getMaximalNumberOfIterations()) {
-                // In every hundredth iteration, we improve both bounds.
-                if (iterations % 100 == 0) {
+                // In every thousandth iteration, we improve both bounds.
+                if (iterations % 1000 == 0) {
                     if (useGaussSeidelMultiplication) {
                         lowerDiff = (*lowerX)[0];
                         this->multiplier.multAddGaussSeidelBackward(*this->A, *lowerX, &b);
@@ -505,7 +505,7 @@ namespace storm {
                     // Now check if the process already converged within our precision. Note that we double the target
                     // precision here. Doing so, we need to take the means of the lower and upper values later to guarantee
                     // the original precision.
-                    converged = storm::utility::vector::equalModuloPrecision<ValueType>(*lowerX, *upperX, storm::utility::convertNumber<ValueType>(2.0) * static_cast<ValueType>(this->getSettings().getPrecision()), false);
+                    converged = storm::utility::vector::equalModuloPrecision<ValueType>(*lowerX, *upperX, storm::utility::convertNumber<ValueType>(2.0) * static_cast<ValueType>(this->getSettings().getPrecision()), this->getSettings().getRelativeTerminationCriterion());
                 }
                 
                 // Set up next iteration.

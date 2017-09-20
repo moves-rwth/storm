@@ -397,18 +397,51 @@ namespace storm {
             uint64_t iterations = 0;
             
             Status status = Status::InProgress;
+            ValueType upperDiff;
+            ValueType lowerDiff;
             while (status == Status::InProgress && iterations < this->getSettings().getMaximalNumberOfIterations()) {
-                // Compute x' = min/max(A*x + b).
-                if (useGaussSeidelMultiplication) {
-                    this->linEqSolverA->multiplyAndReduceGaussSeidel(dir, this->A->getRowGroupIndices(), *lowerX, &b);
-                    this->linEqSolverA->multiplyAndReduceGaussSeidel(dir, this->A->getRowGroupIndices(), *upperX, &b);
+                // In every thousandth iteration, we improve both bounds.
+                if (iterations % 1000 == 0) {
+                    if (useGaussSeidelMultiplication) {
+                        lowerDiff = (*lowerX)[0];
+                        this->linEqSolverA->multiplyAndReduceGaussSeidel(dir, this->A->getRowGroupIndices(), *lowerX, &b);
+                        lowerDiff = (*lowerX)[0] - lowerDiff;
+                        upperDiff = (*upperX)[0];
+                        this->linEqSolverA->multiplyAndReduceGaussSeidel(dir, this->A->getRowGroupIndices(), *upperX, &b);
+                        upperDiff = upperDiff - (*upperX)[0];
+                    } else {
+                        this->linEqSolverA->multiplyAndReduce(dir, this->A->getRowGroupIndices(), *lowerX, &b, *tmp);
+                        lowerDiff = (*tmp)[0] - (*lowerX)[0];
+                        std::swap(lowerX, tmp);
+                        this->linEqSolverA->multiplyAndReduce(dir, this->A->getRowGroupIndices(), *upperX, &b, *tmp);
+                        upperDiff = (*upperX)[0] - (*tmp)[0];
+                        std::swap(upperX, tmp);
+                    }
                 } else {
-                    this->linEqSolverA->multiplyAndReduce(dir, this->A->getRowGroupIndices(), *lowerX, &b, *tmp);
-                    std::swap(lowerX, tmp);
-                    this->linEqSolverA->multiplyAndReduce(dir, this->A->getRowGroupIndices(), *upperX, &b, *tmp);
-                    std::swap(upperX, tmp);
+                    // In the following iterations, we improve the bound with the greatest difference.
+                    if (useGaussSeidelMultiplication) {
+                        if (lowerDiff >= upperDiff) {
+                            lowerDiff = (*lowerX)[0];
+                            this->linEqSolverA->multiplyAndReduceGaussSeidel(dir, this->A->getRowGroupIndices(), *lowerX, &b);
+                            lowerDiff = (*lowerX)[0] - lowerDiff;
+                        } else {
+                            upperDiff = (*upperX)[0];
+                            this->linEqSolverA->multiplyAndReduceGaussSeidel(dir, this->A->getRowGroupIndices(), *upperX, &b);
+                            upperDiff = upperDiff - (*upperX)[0];
+                        }
+                    } else {
+                        if (lowerDiff >= upperDiff) {
+                            this->linEqSolverA->multiplyAndReduce(dir, this->A->getRowGroupIndices(), *lowerX, &b, *tmp);
+                            lowerDiff = (*tmp)[0] - (*lowerX)[0];
+                            std::swap(tmp, lowerX);
+                        } else {
+                            this->linEqSolverA->multiplyAndReduce(dir, this->A->getRowGroupIndices(), *upperX, &b, *tmp);
+                            upperDiff = (*upperX)[0] - (*tmp)[0];
+                            std::swap(tmp, upperX);
+                        }
+                    }
                 }
-                
+                                
                 // Determine whether the method converged.
                 if (storm::utility::vector::equalModuloPrecision<ValueType>(*lowerX, *upperX, storm::utility::convertNumber<ValueType>(2.0) * this->getSettings().getPrecision(), this->getSettings().getRelativeTerminationCriterion())) {
                     status = Status::Converged;
