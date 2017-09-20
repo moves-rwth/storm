@@ -368,7 +368,6 @@ namespace storm {
                 EpochClass epochClass = epochManager.getEpochClass(epoch);
                 // std::cout << "Setting epoch class for epoch " << epochManager.toString(epoch) << std::endl;
                 swSetEpochClass.start();
-                swAux1.start();
                 auto productObjectiveRewards = productModel->computeObjectiveRewards(epochClass, objectives);
                 
                 storm::storage::BitVector stepChoices(productModel->getProduct().getNumberOfChoices(), false);
@@ -413,11 +412,7 @@ namespace storm {
                 
                 // We assume that there is no end component in which objective reward is earned
                 STORM_LOG_ASSERT(!storm::utility::graph::checkIfECWithChoiceExists(epochModel.epochMatrix, epochModel.epochMatrix.transpose(true), allProductStates, ~zeroObjRewardChoices & ~stepChoices), "There is a scheduler that yields infinite reward for one objective. This case should be excluded");
-                swAux1.stop();
-                swAux2.start();
                 auto ecElimResult = storm::transformer::EndComponentEliminator<ValueType>::transform(epochModel.epochMatrix, consideredStates, zeroObjRewardChoices & ~stepChoices, consideredStates);
-                swAux2.stop();
-                swAux3.start();
                 epochModel.epochMatrix = std::move(ecElimResult.matrix);
                 epochModelToProductChoiceMap = std::move(ecElimResult.newToOldRowMapping);
                 
@@ -442,28 +437,32 @@ namespace storm {
                     }
                     epochModel.objectiveRewards.push_back(std::move(reducedModelObjRewards));
                 }
-                swAux3.stop();
-                swAux4.start();
                 
+                swAux4.start();
+                swAux1.start();
                 epochModel.epochInStates = storm::storage::BitVector(epochModel.epochMatrix.getRowGroupCount(), false);
                 for (auto const& productState : productInStates) {
                     STORM_LOG_ASSERT(ecElimResult.oldToNewStateMapping[productState] < epochModel.epochMatrix.getRowGroupCount(), "Selected product state does not exist in the epoch model.");
                     epochModel.epochInStates.set(ecElimResult.oldToNewStateMapping[productState], true);
                 }
+                swAux1.stop();
                 
-                epochModelInStateToProductStatesMap.assign(epochModel.epochInStates.getNumberOfSetBits(), std::vector<uint64_t>());
+                swAux2.start();
                 std::vector<uint64_t> toEpochModelInStatesMap(productModel->getProduct().getNumberOfStates(), std::numeric_limits<uint64_t>::max());
+                std::vector<uint64_t> epochModelStateToInStateMap = epochModel.epochInStates.getNumberOfSetBitsBeforeIndices();
                 for (auto const& productState : productInStates) {
-                    toEpochModelInStatesMap[productState] = epochModel.epochInStates.getNumberOfSetBitsBeforeIndex(ecElimResult.oldToNewStateMapping[productState]);
-                    epochModelInStateToProductStatesMap[epochModel.epochInStates.getNumberOfSetBitsBeforeIndex(ecElimResult.oldToNewStateMapping[productState])].push_back(productState);
+                    toEpochModelInStatesMap[productState] = epochModelStateToInStateMap[ecElimResult.oldToNewStateMapping[productState]];
                 }
                 productStateToEpochModelInStateMap = std::make_shared<std::vector<uint64_t> const>(std::move(toEpochModelInStatesMap));
+                swAux2.stop();
                 
+                swAux3.start();
                 epochModel.objectiveRewardFilter.clear();
                 for (auto const& objRewards : epochModel.objectiveRewards) {
                     epochModel.objectiveRewardFilter.push_back(storm::utility::vector::filterZero(objRewards));
                     epochModel.objectiveRewardFilter.back().complement();
                 }
+                swAux3.stop();
 
                 swAux4.stop();
                 swSetEpochClass.stop();
@@ -530,7 +529,7 @@ namespace storm {
             void MultiDimensionalRewardUnfolding<ValueType, SingleObjectiveMode>::setSolutionForCurrentEpoch(std::vector<SolutionType>&& inStateSolutions) {
                 swInsertSol.start();
                 STORM_LOG_ASSERT(currentEpoch, "Tried to set a solution for the current epoch, but no epoch was specified before.");
-                STORM_LOG_ASSERT(inStateSolutions.size() == epochModelInStateToProductStatesMap.size(), "Invalid number of solutions.");
+                STORM_LOG_ASSERT(inStateSolutions.size() == epochModel.epochInStates.getNumberOfSetBits(), "Invalid number of solutions.");
 
                 std::set<Epoch> predecessorEpochs, successorEpochs;
                 for (auto const& step : possibleEpochSteps) {

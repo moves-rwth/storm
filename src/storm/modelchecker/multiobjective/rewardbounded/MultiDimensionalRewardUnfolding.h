@@ -115,7 +115,6 @@ namespace storm {
                 
                 std::vector<uint64_t> epochModelToProductChoiceMap;
                 std::shared_ptr<std::vector<uint64_t> const> productStateToEpochModelInStateMap;
-                std::vector<std::vector<uint64_t>> epochModelInStateToProductStatesMap;
                 std::set<Epoch> possibleEpochSteps;
                 
                 EpochModel epochModel;
