@@ -405,7 +405,7 @@ namespace storm {
             }
             while (status == Status::InProgress && iterations < this->getSettings().getMaximalNumberOfIterations()) {
                 // In every thousandth iteration, we improve both bounds.
-                if (iterations % 1000 == 0) {
+                if (iterations % 1000 == 0 || lowerDiff == upperDiff) {
                     if (useGaussSeidelMultiplication) {
                         lowerDiff = (*lowerX)[0];
                         this->linEqSolverA->multiplyAndReduceGaussSeidel(dir, this->A->getRowGroupIndices(), *lowerX, &b);
@@ -445,7 +445,12 @@ namespace storm {
                         }
                     }
                 }
-                                
+                STORM_LOG_ASSERT(lowerDiff >= storm::utility::zero<ValueType>(), "Expected non-negative lower diff.");
+                STORM_LOG_ASSERT(upperDiff >= storm::utility::zero<ValueType>(), "Expected non-negative upper diff.");
+                if (iterations % 1000 == 0) {
+                    STORM_LOG_TRACE("Iteration " << iterations << ": lower difference: " << lowerDiff << ", upper difference: " << upperDiff << ".");
+                }
+
                 // Determine whether the method converged.
                 if (storm::utility::vector::equalModuloPrecision<ValueType>(*lowerX, *upperX, precision, this->getSettings().getRelativeTerminationCriterion())) {
                     status = Status::Converged;

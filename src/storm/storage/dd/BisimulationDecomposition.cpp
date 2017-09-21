@@ -81,7 +81,7 @@ namespace storm {
                     auto durationSinceLastMessage = std::chrono::duration_cast<std::chrono::seconds>(now - timeOfLastMessage).count();
                     if (static_cast<uint64_t>(durationSinceLastMessage) >= showProgressDelay) {
                         auto durationSinceStart = std::chrono::duration_cast<std::chrono::seconds>(now - start).count();
-                        std::cout << "State partition after " << iterations << " iterations (" << durationSinceStart << "ms) has " << refiner->getStatePartition().getNumberOfBlocks() << " blocks." << std::endl;
+                        STORM_LOG_INFO("State partition after " << iterations << " iterations (" << durationSinceStart << "ms) has " << refiner->getStatePartition().getNumberOfBlocks() << " blocks.");
                         timeOfLastMessage = std::chrono::high_resolution_clock::now();
                     }
                 }

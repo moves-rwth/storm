@@ -458,7 +458,7 @@ namespace storm {
                 bool upperStep = false;
                 
                 // In every thousandth iteration, we improve both bounds.
-                if (iterations % 1000 == 0) {
+                if (iterations % 1000 == 0 || lowerDiff == upperDiff) {
                     lowerStep = true;
                     upperStep = true;
                     if (useGaussSeidelMultiplication) {
