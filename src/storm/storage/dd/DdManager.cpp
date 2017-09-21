@@ -125,11 +125,6 @@ namespace storm {
 
             if (metaVariable.hasHigh()) {
                 return Bdd<LibraryType>(*this, internalDdManager.getBddEncodingLessOrEqualThan(static_cast<uint64_t>(metaVariable.getHigh() - metaVariable.getLow()), metaVariable.getCube().getInternalBdd(), metaVariable.getNumberOfDdVariables()), {variable});
-//                Bdd<LibraryType> result = this->getBddZero();
-//                for (int_fast64_t value = metaVariable.getLow(); value <= metaVariable.getHigh(); ++value) {
-//                    result |= this->getEncoding(variable, value);
-//                }
-//                return result;
             } else {
                 // If there is no upper bound on this variable, the whole range is valid.
                 Bdd<LibraryType> result = this->getBddOne();
@@ -265,7 +260,7 @@ namespace storm {
             
             std::stringstream tmp1;
             std::vector<storm::expressions::Variable> result;
-            for (uint64 layer = 0; layer < numberOfLayers; ++layer) {
+            for (uint64_t layer = 0; layer < numberOfLayers; ++layer) {
                 if (type == MetaVariableType::Int) {
                     result.emplace_back(manager->declareIntegerVariable(name + tmp1.str()));
                 } else if (type == MetaVariableType::Bool) {
@@ -279,7 +274,7 @@ namespace storm {
             std::vector<std::vector<Bdd<LibraryType>>> variables(numberOfLayers);
             for (std::size_t i = 0; i < numberOfDdVariables; ++i) {
                 std::vector<InternalBdd<LibraryType>> ddVariables = internalDdManager.createDdVariables(numberOfLayers, level);
-                for (uint64 layer = 0; layer < numberOfLayers; ++layer) {
+                for (uint64_t layer = 0; layer < numberOfLayers; ++layer) {
                     variables[layer].emplace_back(Bdd<LibraryType>(*this, ddVariables[layer], {result[layer]}));
                 }
                 

@@ -159,14 +159,16 @@ namespace storm {
             }
             
             // Set up additional environment variables.
-            uint_fast64_t iterationCount = 0;
+            uint_fast64_t iterations = 0;
             bool converged = false;
+            bool terminate = false;
             
-            while (!converged && iterationCount < this->getSettings().getMaximalNumberOfIterations()) {
+            while (!converged && !terminate && iterations < this->getSettings().getMaximalNumberOfIterations()) {
                 A->performSuccessiveOverRelaxationStep(omega, x, b);
                 
                 // Now check if the process already converged within our precision.
-                converged = storm::utility::vector::equalModuloPrecision<ValueType>(*this->cachedRowVector, x, static_cast<ValueType>(this->getSettings().getPrecision()), this->getSettings().getRelativeTerminationCriterion()) || (this->hasCustomTerminationCondition() && this->getTerminationCondition().terminateNow(x));
+                converged = storm::utility::vector::equalModuloPrecision<ValueType>(*this->cachedRowVector, x, static_cast<ValueType>(this->getSettings().getPrecision()), this->getSettings().getRelativeTerminationCriterion());
+                terminate = this->terminateNow(x, SolverGuarantee::None);
                 
                 // If we did not yet converge, we need to backup the contents of x.
                 if (!converged) {
@@ -174,18 +176,14 @@ namespace storm {
                 }
                 
                 // Increase iteration count so we can abort if convergence is too slow.
-                ++iterationCount;
+                ++iterations;
             }
             
             if (!this->isCachingEnabled()) {
                 clearCache();
             }
             
-            if (converged) {
-                STORM_LOG_INFO("Iterative solver converged in " << iterationCount << " iterations.");
-            } else {
-                STORM_LOG_WARN("Iterative solver did not converge in " << iterationCount << " iterations.");
-            }
+            this->logIterations(converged, terminate, iterations);
             
             return converged;
         }
@@ -209,10 +207,11 @@ namespace storm {
             std::vector<ValueType>* nextX = this->cachedRowVector.get();
             
             // Set up additional environment variables.
-            uint_fast64_t iterationCount = 0;
+            uint_fast64_t iterations = 0;
             bool converged = false;
+            bool terminate = false;
 
-            while (!converged && iterationCount < this->getSettings().getMaximalNumberOfIterations() && !(this->hasCustomTerminationCondition() && this->getTerminationCondition().terminateNow(*currentX))) {
+            while (!converged && !terminate && iterations < this->getSettings().getMaximalNumberOfIterations()) {
                 // Compute D^-1 * (b - LU * x) and store result in nextX.
                 multiplier.multAdd(jacobiLU, *currentX, nullptr, *nextX);
 
@@ -221,12 +220,13 @@ namespace storm {
                 
                 // Now check if the process already converged within our precision.
                 converged = storm::utility::vector::equalModuloPrecision<ValueType>(*currentX, *nextX, static_cast<ValueType>(this->getSettings().getPrecision()), this->getSettings().getRelativeTerminationCriterion());
+                terminate = this->terminateNow(*currentX, SolverGuarantee::None);
                 
                 // Swap the two pointers as a preparation for the next iteration.
                 std::swap(nextX, currentX);
                 
                 // Increase iteration count so we can abort if convergence is too slow.
-                ++iterationCount;
+                ++iterations;
             }
             
             // If the last iteration did not write to the original x we have to swap the contents, because the
@@ -239,12 +239,8 @@ namespace storm {
                 clearCache();
             }
             
-            if (converged) {
-                STORM_LOG_INFO("Iterative solver converged in " << iterationCount << " iterations.");
-            } else {
-                STORM_LOG_WARN("Iterative solver did not converge in " << iterationCount << " iterations.");
-            }
-            
+            this->logIterations(converged, terminate, iterations);
+
             return converged;
         }
         
@@ -396,8 +392,9 @@ namespace storm {
             bool useGaussSeidelMultiplication = this->getSettings().getPowerMethodMultiplicationStyle() == storm::solver::MultiplicationStyle::GaussSeidel;
             
             bool converged = false;
+            bool terminate = this->terminateNow(*currentX, SolverGuarantee::GreaterOrEqual);
             uint64_t iterations = 0;
-            while (!converged && iterations < this->getSettings().getMaximalNumberOfIterations() && !(this->hasCustomTerminationCondition() && this->getTerminationCondition().terminateNow(*currentX))) {
+            while (!converged && !terminate && iterations < this->getSettings().getMaximalNumberOfIterations()) {
                 if (useGaussSeidelMultiplication) {
                     *nextX = *currentX;
                     this->multiplier.multAddGaussSeidelBackward(*this->A, *nextX, &b);
@@ -405,8 +402,9 @@ namespace storm {
                     this->multiplier.multAdd(*this->A, *currentX, &b, *nextX);
                 }
                 
-                // Now check if the process already converged within our precision.
+                // Now check for termination.
                 converged = storm::utility::vector::equalModuloPrecision<ValueType>(*currentX, *nextX, static_cast<ValueType>(this->getSettings().getPrecision()), this->getSettings().getRelativeTerminationCriterion());
+                terminate = this->terminateNow(*currentX, SolverGuarantee::GreaterOrEqual);
                 
                 // Set up next iteration.
                 std::swap(currentX, nextX);
@@ -421,11 +419,7 @@ namespace storm {
                 clearCache();
             }
             
-            if (converged) {
-                STORM_LOG_INFO("Iterative solver converged in " << iterations << " iterations.");
-            } else {
-                STORM_LOG_WARN("Iterative solver did not converge in " << iterations << " iterations.");
-            }
+            this->logIterations(converged, terminate, iterations);
 
             return converged;
         }
@@ -449,13 +443,20 @@ namespace storm {
             }
             
             bool converged = false;
+            bool terminate = false;
             uint64_t iterations = 0;
             bool doConvergenceCheck = false;
             ValueType upperDiff;
             ValueType lowerDiff;
-            while (!converged && iterations < this->getSettings().getMaximalNumberOfIterations()) {
+            while (!converged && !terminate && iterations < this->getSettings().getMaximalNumberOfIterations()) {
+                // Remember in which directions we took steps in this iteration.
+                bool lowerStep = false;
+                bool upperStep = false;
+                
                 // In every thousandth iteration, we improve both bounds.
                 if (iterations % 1000 == 0) {
+                    lowerStep = true;
+                    upperStep = true;
                     if (useGaussSeidelMultiplication) {
                         lowerDiff = (*lowerX)[0];
                         this->multiplier.multAddGaussSeidelBackward(*this->A, *lowerX, &b);
@@ -478,26 +479,30 @@ namespace storm {
                             lowerDiff = (*lowerX)[0];
                             this->multiplier.multAddGaussSeidelBackward(*this->A, *lowerX, &b);
                             lowerDiff = (*lowerX)[0] - lowerDiff;
+                            lowerStep = true;
                         } else {
                             upperDiff = (*upperX)[0];
                             this->multiplier.multAddGaussSeidelBackward(*this->A, *upperX, &b);
                             upperDiff = upperDiff - (*upperX)[0];
+                            upperStep = true;
                         }
                     } else {
                         if (lowerDiff >= upperDiff) {
                             this->multiplier.multAdd(*this->A, *lowerX, &b, *tmp);
                             lowerDiff = (*tmp)[0] - (*lowerX)[0];
                             std::swap(tmp, lowerX);
+                            lowerStep = true;
                         } else {
                             this->multiplier.multAdd(*this->A, *upperX, &b, *tmp);
                             upperDiff = (*upperX)[0] - (*tmp)[0];
                             std::swap(tmp, upperX);
+                            upperStep = true;
                         }
                     }
                 }
                 STORM_LOG_ASSERT(lowerDiff >= storm::utility::zero<ValueType>(), "Expected non-negative lower diff.");
                 STORM_LOG_ASSERT(upperDiff >= storm::utility::zero<ValueType>(), "Expected non-negative upper diff.");
-                if (iterations % 100 == 0) {
+                if (iterations % 1000 == 0) {
                     STORM_LOG_TRACE("Iteration " << iterations << ": lower difference: " << lowerDiff << ", upper difference: " << upperDiff << ".");
                 }
                 
@@ -506,6 +511,12 @@ namespace storm {
                     // precision here. Doing so, we need to take the means of the lower and upper values later to guarantee
                     // the original precision.
                     converged = storm::utility::vector::equalModuloPrecision<ValueType>(*lowerX, *upperX, storm::utility::convertNumber<ValueType>(2.0) * static_cast<ValueType>(this->getSettings().getPrecision()), this->getSettings().getRelativeTerminationCriterion());
+                    if (lowerStep) {
+                        terminate |= this->terminateNow(*lowerX, SolverGuarantee::GreaterOrEqual);
+                    }
+                    if (upperStep) {
+                        terminate |= this->terminateNow(*upperX, SolverGuarantee::GreaterOrEqual);
+                    }
                 }
                 
                 // Set up next iteration.
@@ -527,13 +538,20 @@ namespace storm {
                 clearCache();
             }
             
+            this->logIterations(converged, terminate, iterations);
+
+            return converged;
+        }
+        
+        template<typename ValueType>
+        void NativeLinearEquationSolver<ValueType>::logIterations(bool converged, bool terminate, uint64_t iterations) const {
             if (converged) {
                 STORM_LOG_INFO("Iterative solver converged in " << iterations << " iterations.");
+            } else if (terminate) {
+                STORM_LOG_INFO("Iterative solver terminated after " << iterations << " iterations.");
             } else {
                 STORM_LOG_WARN("Iterative solver did not converge in " << iterations << " iterations.");
             }
-            
-            return converged;
         }
         
         template<typename ValueType>

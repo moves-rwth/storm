@@ -416,7 +416,7 @@ namespace storm {
                     cucNodes.push_back(nodeCUC);
                     builder.setPlaceLayoutInfo(nodeCUC, storm::gspn::LayoutInfo(xcenter-9.0+j*14.0, ycenter+5.0));
                     if (j > 0) {
-                        uint64 tclaim = builder.addImmediateTransition(getFailPriority(dftSpare), 0.0, dftSpare->name() + "_claim_" + child->name());
+                        uint64_t tclaim = builder.addImmediateTransition(getFailPriority(dftSpare), 0.0, dftSpare->name() + "_claim_" + child->name());
                         builder.setTransitionLayoutInfo(tclaim, storm::gspn::LayoutInfo(xcenter-9.0+j*14.0, ycenter));
                         builder.addInhibitionArc(unavailableNodes.at(child->id()), tclaim);
                         builder.addInputArc(considerNodes.back(), tclaim);

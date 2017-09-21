@@ -32,11 +32,10 @@ namespace storm {
             bool hasCustomTerminationCondition() const;
             
             /*!
-             * Retrieves the custom termination condition (if any was set).
-             * 
-             * @return The custom termination condition.
+             * Checks whether the solver can terminate wrt. to its termination condition. If no termination condition,
+             * this will yield false.
              */
-            TerminationCondition<ValueType> const& getTerminationCondition() const;
+            bool terminateNow(std::vector<ValueType> const& values, SolverGuarantee const& guarantee) const;
             
             enum class BoundType {
                 Global,
@@ -110,6 +109,13 @@ namespace storm {
             void setBounds(std::vector<ValueType> const& lower, std::vector<ValueType> const& upper);
             
         protected:
+            /*!
+             * Retrieves the custom termination condition (if any was set).
+             *
+             * @return The custom termination condition.
+             */
+            TerminationCondition<ValueType> const& getTerminationCondition() const;
+            
             void createUpperBoundsVector(std::unique_ptr<std::vector<ValueType>>& upperBoundsVector, uint64_t length) const;
             void createLowerBoundsVector(std::vector<ValueType>& lowerBoundsVector) const;
 

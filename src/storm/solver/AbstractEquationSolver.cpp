@@ -30,6 +30,15 @@ namespace storm {
         }
         
         template<typename ValueType>
+        bool AbstractEquationSolver<ValueType>::terminateNow(std::vector<ValueType> const& values, SolverGuarantee const& guarantee) const {
+            if (!this->hasCustomTerminationCondition()) {
+                return false;
+            }
+            
+            return this->getTerminationCondition().terminateNow(values, guarantee);
+        }
+        
+        template<typename ValueType>
         bool AbstractEquationSolver<ValueType>::hasLowerBound(BoundType const& type) const {
             if (type == BoundType::Any) {
                 return static_cast<bool>(lowerBound) || static_cast<bool>(lowerBounds);

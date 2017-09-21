@@ -76,6 +76,8 @@ namespace storm {
             virtual bool internalSolveEquations(std::vector<ValueType>& x, std::vector<ValueType> const& b) const override;
             
         private:
+            void logIterations(bool converged, bool terminate, uint64_t iterations) const;
+            
             virtual uint64_t getMatrixRowCount() const override;
             virtual uint64_t getMatrixColumnCount() const override;
 
