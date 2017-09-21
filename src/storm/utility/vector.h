@@ -808,7 +808,7 @@ namespace storm {
             
             // Specializiation for double as the relative check for doubles very close to zero is not meaningful.
             template<>
-            bool equalModuloPrecision(double const& val1, double const& val2, double const& precision, bool relativeError) {
+            inline bool equalModuloPrecision(double const& val1, double const& val2, double const& precision, bool relativeError) {
                 if (relativeError) {
                     if (storm::utility::isAlmostZero(val2)) {
                         return storm::utility::isAlmostZero(val1);
