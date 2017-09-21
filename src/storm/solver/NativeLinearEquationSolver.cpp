@@ -448,6 +448,10 @@ namespace storm {
             bool doConvergenceCheck = false;
             ValueType upperDiff;
             ValueType lowerDiff;
+            ValueType precision = static_cast<ValueType>(this->getSettings().getPrecision());
+            if (!this->getSettings().getRelativeTerminationCriterion()) {
+                precision *= storm::utility::convertNumber<ValueType>(2.0);
+            }
             while (!converged && !terminate && iterations < this->getSettings().getMaximalNumberOfIterations()) {
                 // Remember in which directions we took steps in this iteration.
                 bool lowerStep = false;
@@ -510,7 +514,7 @@ namespace storm {
                     // Now check if the process already converged within our precision. Note that we double the target
                     // precision here. Doing so, we need to take the means of the lower and upper values later to guarantee
                     // the original precision.
-                    converged = storm::utility::vector::equalModuloPrecision<ValueType>(*lowerX, *upperX, storm::utility::convertNumber<ValueType>(2.0) * static_cast<ValueType>(this->getSettings().getPrecision()), this->getSettings().getRelativeTerminationCriterion());
+                    converged = storm::utility::vector::equalModuloPrecision<ValueType>(*lowerX, *upperX, precision, this->getSettings().getRelativeTerminationCriterion());
                     if (lowerStep) {
                         terminate |= this->terminateNow(*lowerX, SolverGuarantee::GreaterOrEqual);
                     }

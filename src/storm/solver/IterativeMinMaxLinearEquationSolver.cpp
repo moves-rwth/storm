@@ -399,6 +399,10 @@ namespace storm {
             Status status = Status::InProgress;
             ValueType upperDiff;
             ValueType lowerDiff;
+            ValueType precision = static_cast<ValueType>(this->getSettings().getPrecision());
+            if (!this->getSettings().getRelativeTerminationCriterion()) {
+                precision *= storm::utility::convertNumber<ValueType>(2.0);
+            }
             while (status == Status::InProgress && iterations < this->getSettings().getMaximalNumberOfIterations()) {
                 // In every thousandth iteration, we improve both bounds.
                 if (iterations % 1000 == 0) {
@@ -443,7 +447,7 @@ namespace storm {
                 }
                                 
                 // Determine whether the method converged.
-                if (storm::utility::vector::equalModuloPrecision<ValueType>(*lowerX, *upperX, storm::utility::convertNumber<ValueType>(2.0) * this->getSettings().getPrecision(), this->getSettings().getRelativeTerminationCriterion())) {
+                if (storm::utility::vector::equalModuloPrecision<ValueType>(*lowerX, *upperX, precision, this->getSettings().getRelativeTerminationCriterion())) {
                     status = Status::Converged;
                 }
                 
