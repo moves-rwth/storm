@@ -57,7 +57,7 @@ namespace storm {
                     vec.set(0, false);
                 }
                 assert(!vec.full());
-                std::cout << "state " << state << " vec " << vec << std::endl;
+               // std::cout << "state " << state << " vec " << vec << std::endl;
                 for (uint64_t action = 0; action < pomdp.getNumberOfChoices(state); ++action) {
                     if (vec.get(action)) {
                         filter.set(offset + action);
@@ -65,12 +65,12 @@ namespace storm {
                 }
                 offset += pomdp.getNumberOfChoices(state);
             }
-            std::cout << "filter: " << filter << std::endl;
+           // std::cout << "filter: " << filter << std::endl;
             assert(filter.size() == pomdp.getNumberOfChoices());
             // TODO rewards with state-action rewards
             filter.complement();
 
-            std::cout << "selection: " << filter << std::endl;
+         //   std::cout << "selection: " << filter << std::endl;
 
             ChoiceSelector<ValueType> cs(pomdp);
             return cs.transform(filter)->template as<storm::models::sparse::Pomdp<ValueType>>();
