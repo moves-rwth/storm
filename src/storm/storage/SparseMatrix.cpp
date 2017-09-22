@@ -585,6 +585,27 @@ namespace storm {
         }
 
         template<typename ValueType>
+        void SparseMatrix<ValueType>::setRowGroupIndices(std::vector<index_type> const& newRowGroupIndices) {
+            trivialRowGrouping = false;
+            rowGroupIndices = newRowGroupIndices;
+        }
+
+        template<typename ValueType>
+        bool SparseMatrix<ValueType>::hasTrivialRowGrouping() const {
+            return trivialRowGrouping;
+        }
+        
+        template<typename ValueType>
+        void SparseMatrix<ValueType>::makeRowGroupingTrivial() {
+            if (trivialRowGrouping) {
+                STORM_LOG_ASSERT(!rowGroupIndices || rowGroupIndices.get() == storm::utility::vector::buildVectorForRange(0, this->getRowGroupCount() + 1), "Row grouping is supposed to be trivial but actually it is not.");
+            } else {
+                trivialRowGrouping = true;
+                rowGroupIndices = boost::none;
+            }
+        }
+        
+        template<typename ValueType>
         storm::storage::BitVector SparseMatrix<ValueType>::getRowFilter(storm::storage::BitVector const& groupConstraint) const {
             storm::storage::BitVector res(this->getRowCount(), false);
             for(auto group : groupConstraint) {
@@ -982,6 +1003,30 @@ namespace storm {
             // The all remaining row groups will be empty. Note that it is not allowed to call builder.addNewGroup(...) if there are no more rows afterwards.
             SparseMatrix<ValueType> res = builder.build();
             return res;
+        }
+        
+        template<typename ValueType>
+        SparseMatrix<ValueType> SparseMatrix<ValueType>::filterEntries(storm::storage::BitVector const& rowFilter) const {
+            // Count the number of entries in the resulting matrix.
+            index_type entryCount = 0;
+            for (auto const& row : rowFilter) {
+                entryCount += getRow(row).getNumberOfEntries();
+            }
+            
+            // Build the resulting matrix.
+            SparseMatrixBuilder<ValueType> builder(getRowCount(), getColumnCount(), entryCount);
+            for (auto const& row : rowFilter) {
+                for (auto const& entry : getRow(row)) {
+                    builder.addNextValue(row, entry.getColumn(), entry.getValue());
+                }
+            }
+            SparseMatrix<ValueType> result = builder.build();
+            
+            // Add a row grouping if necessary.
+            if (!hasTrivialRowGrouping()) {
+                result.setRowGroupIndices(getRowGroupIndices());
+            }
+            return result;
         }
         
         template<typename ValueType>
@@ -1547,22 +1592,7 @@ namespace storm {
         typename SparseMatrix<ValueType>::iterator SparseMatrix<ValueType>::end()  {
             return this->columnsAndValues.begin() + this->rowIndications[rowCount];
         }
-        
-        template<typename ValueType>
-        bool SparseMatrix<ValueType>::hasTrivialRowGrouping() const {
-            return trivialRowGrouping;
-        }
-        
-        template<typename ValueType>
-        void SparseMatrix<ValueType>::makeRowGroupingTrivial() {
-            if (trivialRowGrouping) {
-                STORM_LOG_ASSERT(!rowGroupIndices || rowGroupIndices.get() == storm::utility::vector::buildVectorForRange(0, this->getRowGroupCount() + 1), "Row grouping is supposed to be trivial but actually it is not.");
-            } else {
-                trivialRowGrouping = true;
-                rowGroupIndices = boost::none;
-            }
-        }
-        
+
         template<typename ValueType>
         ValueType SparseMatrix<ValueType>::getRowSum(index_type row) const {
             ValueType sum = storm::utility::zero<ValueType>();
