@@ -19,10 +19,42 @@
 #include "storm/solver/MinMaxLinearEquationSolver.h"
 
 #include "storm/exceptions/InvalidPropertyException.h"
+#include "storm/exceptions/UncheckedRequirementException.h"
 
 namespace storm {
     namespace modelchecker {
         namespace helper {
+            
+            template <typename ValueType>
+            std::vector<uint64_t> computeValidInitialSchedulerForUntilProbabilities(storm::storage::SparseMatrix<ValueType> const& transitionMatrix, std::vector<ValueType> const& b) {
+                uint64_t numberOfMaybeStates = transitionMatrix.getRowGroupCount();
+                std::vector<uint64_t> result(numberOfMaybeStates);
+                storm::storage::BitVector targetStates(numberOfMaybeStates);
+                
+                for (uint64_t state = 0; state < numberOfMaybeStates; ++state) {
+                    // Record all states with non-zero probability of moving directly to the target states.
+                    for (uint64_t row = transitionMatrix.getRowGroupIndices()[state]; row < transitionMatrix.getRowGroupIndices()[state + 1]; ++row) {
+                        if (!storm::utility::isZero(b[row])) {
+                            targetStates.set(state);
+                            result[state] = row - transitionMatrix.getRowGroupIndices()[state];
+                        }
+                    }
+                }
+                
+                if (!targetStates.full()) {
+                    storm::storage::Scheduler<ValueType> validScheduler(numberOfMaybeStates);
+                    storm::storage::SparseMatrix<ValueType> backwardTransitions = transitionMatrix.transpose(true);
+                    storm::utility::graph::computeSchedulerProbGreater0E(transitionMatrix, backwardTransitions, storm::storage::BitVector(numberOfMaybeStates, true), targetStates, validScheduler, boost::none);
+                    
+                    for (uint64_t state = 0; state < numberOfMaybeStates; ++state) {
+                        if (!targetStates.get(state)) {
+                            result[state] = validScheduler.getChoice(state).getDeterministicChoice();
+                        }
+                    }
+                }
+                
+                return result;
+            }
             
             template<storm::dd::DdType DdType, typename ValueType>
             std::unique_ptr<CheckResult> HybridMdpPrctlHelper<DdType, ValueType>::computeUntilProbabilities(OptimizationDirection dir, storm::models::symbolic::NondeterministicModel<DdType, ValueType> const& model, storm::dd::Add<DdType, ValueType> const& transitionMatrix, storm::dd::Bdd<DdType> const& phiStates, storm::dd::Bdd<DdType> const& psiStates, bool qualitative, storm::solver::MinMaxLinearEquationSolverFactory<ValueType> const& linearEquationSolverFactory) {
@@ -71,13 +103,30 @@ namespace storm {
                         // Finally cut away all columns targeting non-maybe states.
                         submatrix *= maybeStatesAdd.swapVariables(model.getRowColumnMetaVariablePairs());
                         
-                        // Create the solution vector.
-                        std::vector<ValueType> x(maybeStates.getNonZeroCount(), storm::utility::zero<ValueType>());
-                        
                         // Translate the symbolic matrix/vector to their explicit representations and solve the equation system.
                         std::pair<storm::storage::SparseMatrix<ValueType>, std::vector<ValueType>> explicitRepresentation = submatrix.toMatrixVector(subvector, std::move(rowGroupSizes), model.getNondeterminismVariables(), odd, odd);
                         
+                        // Create the solution vector.
+                        std::vector<ValueType> x(explicitRepresentation.first.getRowGroupCount(), storm::utility::zero<ValueType>());
+
+                        // Check for requirements of the solver.
+                        storm::solver::MinMaxLinearEquationSolverRequirements requirements = linearEquationSolverFactory.getRequirements(storm::solver::MinMaxLinearEquationSolverSystemType::UntilProbabilities, dir);
+                        boost::optional<std::vector<uint64_t>> initialScheduler;
+                        if (!requirements.empty()) {
+                            if (requirements.requires(storm::solver::MinMaxLinearEquationSolverRequirements::Element::ValidInitialScheduler)) {
+                                STORM_LOG_DEBUG("Computing valid scheduler hint, because the solver requires it.");
+                                initialScheduler = computeValidInitialSchedulerForUntilProbabilities<ValueType>(explicitRepresentation.first, explicitRepresentation.second);
+
+                                requirements.set(storm::solver::MinMaxLinearEquationSolverRequirements::Element::ValidInitialScheduler, false);
+                            }
+                            STORM_LOG_THROW(requirements.empty(), storm::exceptions::UncheckedRequirementException, "Cannot establish requirements for solver.");
+                        }
+                        
                         std::unique_ptr<storm::solver::MinMaxLinearEquationSolver<ValueType>> solver = linearEquationSolverFactory.create(std::move(explicitRepresentation.first));
+                        if (initialScheduler) {
+                            solver->setInitialScheduler(std::move(initialScheduler.get()));
+                        }
+                        solver->setRequirementsChecked();
                         solver->solveEquations(dir, x, explicitRepresentation.second);
                         
                         // Return a hybrid check result that stores the numerical values explicitly.
@@ -202,6 +251,76 @@ namespace storm {
                 return std::unique_ptr<CheckResult>(new HybridQuantitativeCheckResult<DdType, ValueType>(model.getReachableStates(), model.getManager().getBddZero(), model.getManager().template getAddZero<ValueType>(), model.getReachableStates(), odd, x));
             }
 
+            template <typename ValueType>
+            storm::storage::BitVector computeTargetStatesForReachabilityRewardsFromExplicitRepresentation(storm::storage::SparseMatrix<ValueType> const& transitionMatrix) {
+                storm::storage::BitVector targetStates(transitionMatrix.getRowGroupCount());
+                
+                // A state is a target state if its row group is empty.
+                for (uint64_t rowGroup = 0; rowGroup < transitionMatrix.getRowGroupCount(); ++rowGroup) {
+                    if (transitionMatrix.getRowGroupIndices()[rowGroup] == transitionMatrix.getRowGroupIndices()[rowGroup + 1]) {
+                        targetStates.set(rowGroup);
+                    }
+                }
+                
+                return targetStates;
+            }
+            
+            template <typename ValueType>
+            std::vector<uint64_t> computeValidInitialSchedulerForReachabilityRewards(storm::storage::SparseMatrix<ValueType> const& transitionMatrix, storm::storage::BitVector const& properMaybeStates, storm::storage::BitVector const& targetStates) {
+                uint64_t numberOfMaybeStates = transitionMatrix.getRowGroupCount();
+                std::vector<uint64_t> result(numberOfMaybeStates);
+
+                storm::storage::Scheduler<ValueType> validScheduler(numberOfMaybeStates);
+                storm::storage::SparseMatrix<ValueType> backwardTransitions = transitionMatrix.transpose(true);
+                storm::utility::graph::computeSchedulerProb1E(storm::storage::BitVector(numberOfMaybeStates, true), transitionMatrix, backwardTransitions, properMaybeStates, targetStates, validScheduler);
+                
+                for (uint64_t state = 0; state < numberOfMaybeStates; ++state) {
+                    if (!targetStates.get(state)) {
+                        result[state] = validScheduler.getChoice(state).getDeterministicChoice();
+                    }
+                }
+                
+                return result;
+            }
+            
+            template <typename ValueType>
+            void eliminateTargetStatesFromExplicitRepresentation(std::pair<storm::storage::SparseMatrix<ValueType>, std::vector<ValueType>>& explicitRepresentation, std::vector<uint64_t>& scheduler, storm::storage::BitVector const& properMaybeStates) {
+                // Eliminate the superfluous entries from the rhs vector and the scheduler.
+                uint64_t position = 0;
+                for (auto state : properMaybeStates) {
+                    for (uint64_t row = explicitRepresentation.first.getRowGroupIndices()[state]; row < explicitRepresentation.first.getRowGroupIndices()[state + 1]; ++row) {
+                        explicitRepresentation.second[position] = explicitRepresentation.second[row];
+                        position++;
+                    }
+                }
+                explicitRepresentation.second.resize(position);
+                explicitRepresentation.second.shrink_to_fit();
+                
+                position = 0;
+                for (auto state : properMaybeStates) {
+                    scheduler[position] = scheduler[state];
+                    position++;
+                }
+                scheduler.resize(properMaybeStates.getNumberOfSetBits());
+                scheduler.shrink_to_fit();
+
+                // Treat the matrix.
+                explicitRepresentation.first = explicitRepresentation.first.getSubmatrix(true, properMaybeStates, properMaybeStates);
+            }
+            
+            template <typename ValueType>
+            std::vector<ValueType> insertTargetStateValuesIntoExplicitRepresentation(std::vector<ValueType> const& x, storm::storage::BitVector const& properMaybeStates) {
+                std::vector<ValueType> expandedResult(properMaybeStates.size(), storm::utility::zero<ValueType>());
+                
+                uint64_t position = 0;
+                for (auto state : properMaybeStates) {
+                    expandedResult[state] = x[position];
+                    position++;
+                }
+                
+                return expandedResult;
+            }
+            
             template<storm::dd::DdType DdType, typename ValueType>
             std::unique_ptr<CheckResult> HybridMdpPrctlHelper<DdType, ValueType>::computeReachabilityRewards(OptimizationDirection dir, storm::models::symbolic::NondeterministicModel<DdType, ValueType> const& model, storm::dd::Add<DdType, ValueType> const& transitionMatrix, RewardModelType const& rewardModel, storm::dd::Bdd<DdType> const& targetStates, bool qualitative, storm::solver::MinMaxLinearEquationSolverFactory<ValueType> const& linearEquationSolverFactory) {
                 
@@ -212,13 +331,13 @@ namespace storm {
                 storm::dd::Bdd<DdType> infinityStates;
                 storm::dd::Bdd<DdType> transitionMatrixBdd = transitionMatrix.notZero();
                 if (dir == OptimizationDirection::Minimize) {
-                    STORM_LOG_WARN("Results of reward computation may be too low, because of zero-reward loops.");
                     infinityStates = storm::utility::graph::performProb1E(model, transitionMatrixBdd, model.getReachableStates(), targetStates, storm::utility::graph::performProbGreater0E(model, transitionMatrixBdd, model.getReachableStates(), targetStates));
                 } else {
                     infinityStates = storm::utility::graph::performProb1A(model, transitionMatrixBdd, targetStates, storm::utility::graph::performProbGreater0A(model, transitionMatrixBdd, model.getReachableStates(), targetStates));
                 }
                 infinityStates = !infinityStates && model.getReachableStates();
-                storm::dd::Bdd<DdType> maybeStates = (!targetStates && !infinityStates) && model.getReachableStates();
+                storm::dd::Bdd<DdType> maybeStatesWithTargetStates = !infinityStates && model.getReachableStates();
+                storm::dd::Bdd<DdType> maybeStates = !targetStates && maybeStatesWithTargetStates;
                 STORM_LOG_INFO("Found " << infinityStates.getNonZeroCount() << " 'infinity' states.");
                 STORM_LOG_INFO("Found " << targetStates.getNonZeroCount() << " 'target' states.");
                 STORM_LOG_INFO("Found " << maybeStates.getNonZeroCount() << " 'maybe' states.");
@@ -231,45 +350,84 @@ namespace storm {
                 } else {
                     // If there are maybe states, we need to solve an equation system.
                     if (!maybeStates.isZero()) {
+                        // Check for requirements of the solver this early so we can adapt the maybe states accordingly.
+                        storm::solver::MinMaxLinearEquationSolverRequirements requirements = linearEquationSolverFactory.getRequirements(storm::solver::MinMaxLinearEquationSolverSystemType::ReachabilityRewards, dir);
+                        bool requireInitialScheduler = false;
+                        if (!requirements.empty()) {
+                            if (requirements.requires(storm::solver::MinMaxLinearEquationSolverRequirements::Element::ValidInitialScheduler)) {
+                                STORM_LOG_DEBUG("Computing valid scheduler, because the solver requires it.");
+                                requireInitialScheduler = true;
+                                requirements.set(storm::solver::MinMaxLinearEquationSolverRequirements::Element::ValidInitialScheduler, false);
+                            }
+                            STORM_LOG_THROW(requirements.empty(), storm::exceptions::UncheckedRequirementException, "Cannot establish requirements for solver.");
+                        }
+
+                        // Compute the set of maybe states that we are required to keep in the translation to explicit.
+                        storm::dd::Bdd<DdType> requiredMaybeStates = requireInitialScheduler ? maybeStatesWithTargetStates : maybeStates;
+                        
                         // Create the ODD for the translation between symbolic and explicit storage.
-                        storm::dd::Odd odd = maybeStates.createOdd();
+                        storm::dd::Odd odd = requiredMaybeStates.createOdd();
                         
                         // Create the matrix and the vector for the equation system.
                         storm::dd::Add<DdType, ValueType> maybeStatesAdd = maybeStates.template toAdd<ValueType>();
                         
-                        // Start by cutting away all rows that do not belong to maybe states. Note that this leaves columns targeting
-                        // non-maybe states in the matrix.
-                        storm::dd::Add<DdType, ValueType> submatrix = transitionMatrix * maybeStatesAdd;
+                        // Start by getting rid of
+                        // (a) transitions from non-maybe states, and
+                        // (b) the choices in the transition matrix that lead to a state that is neither a maybe state
+                        // nor a target state ('infinity choices').
+                        storm::dd::Add<DdType, ValueType> choiceFilterAdd = (transitionMatrixBdd && maybeStatesWithTargetStates.renameVariables(model.getRowVariables(), model.getColumnVariables())).existsAbstract(model.getColumnVariables()).template toAdd<ValueType>();
+                        storm::dd::Add<DdType, ValueType> submatrix = transitionMatrix * maybeStatesAdd * choiceFilterAdd;
                         
-                        // Then compute the state reward vector to use in the computation.
+                        // Then compute the reward vector to use in the computation.
                         storm::dd::Add<DdType, ValueType> subvector = rewardModel.getTotalRewardVector(maybeStatesAdd, submatrix, model.getColumnVariables());
                         if (!rewardModel.hasStateActionRewards() && !rewardModel.hasTransitionRewards()) {
                             // If the reward model neither has state-action nor transition rewards, we need to multiply
                             // it with the legal nondetermism encodings in each state.
-                            subvector *= transitionMatrixBdd.existsAbstract(model.getColumnVariables()).template toAdd<ValueType>();
+                            subvector *= choiceFilterAdd;
                         }
                         
-                        // Since we are cutting away target and infinity states, we need to account for this by giving
-                        // choices the value infinity that have some successor contained in the infinity states.
-                        storm::dd::Bdd<DdType> choicesWithInfinitySuccessor = (maybeStates && transitionMatrixBdd && infinityStates.swapVariables(model.getRowColumnMetaVariablePairs())).existsAbstract(model.getColumnVariables());
-                        subvector = choicesWithInfinitySuccessor.ite(model.getManager().template getInfinity<ValueType>(), subvector);
-
                         // Before cutting the non-maybe columns, we need to compute the sizes of the row groups.
                         storm::dd::Add<DdType, uint_fast64_t> stateActionAdd = submatrix.notZero().existsAbstract(model.getColumnVariables()).template toAdd<uint_fast64_t>();
                         std::vector<uint_fast64_t> rowGroupSizes = stateActionAdd.sumAbstract(model.getNondeterminismVariables()).toVector(odd);
 
-                        // Finally cut away all columns targeting non-maybe states.
-                        submatrix *= maybeStatesAdd.swapVariables(model.getRowColumnMetaVariablePairs());
-                        
-                        // Create the solution vector.
-                        std::vector<ValueType> x(maybeStates.getNonZeroCount(), storm::utility::zero<ValueType>());
+                        // Finally cut away all columns targeting non-maybe states (or non-(maybe or target) states, respectively).
+                        submatrix *= requireInitialScheduler ? maybeStatesWithTargetStates.swapVariables(model.getRowColumnMetaVariablePairs()).template toAdd<ValueType>() : maybeStatesAdd.swapVariables(model.getRowColumnMetaVariablePairs());
                         
                         // Translate the symbolic matrix/vector to their explicit representations.
                         std::pair<storm::storage::SparseMatrix<ValueType>, std::vector<ValueType>> explicitRepresentation = submatrix.toMatrixVector(subvector, std::move(rowGroupSizes), model.getNondeterminismVariables(), odd, odd);
                         
+                        // Compute a valid initial scheduler if necessary.
+                        boost::optional<std::vector<uint64_t>> initialScheduler;
+                        boost::optional<storm::storage::BitVector> properMaybeStates;
+                        if (requireInitialScheduler) {
+                            // Compute a valid initial scheduler.
+                            storm::storage::BitVector targetStates = computeTargetStatesForReachabilityRewardsFromExplicitRepresentation(explicitRepresentation.first);
+                            properMaybeStates = ~targetStates;
+                            initialScheduler = computeValidInitialSchedulerForReachabilityRewards<ValueType>(explicitRepresentation.first, properMaybeStates.get(), targetStates);
+                            
+                            // Since we needed the transitions to target states to be translated as well for the computation
+                            // of the scheduler, we have to get rid of them now.
+                            eliminateTargetStatesFromExplicitRepresentation(explicitRepresentation, initialScheduler.get(), properMaybeStates.get());
+                        }
+
+                        // Create the solution vector.
+                        std::vector<ValueType> x(explicitRepresentation.first.getRowGroupCount(), storm::utility::zero<ValueType>());
+                        
                         // Now solve the resulting equation system.
                         std::unique_ptr<storm::solver::MinMaxLinearEquationSolver<ValueType>> solver = linearEquationSolverFactory.create(std::move(explicitRepresentation.first));
+                        
+                        // Move the scheduler to the solver.
+                        if (initialScheduler) {
+                            solver->setInitialScheduler(std::move(initialScheduler.get()));
+                        }
+                        
+                        solver->setRequirementsChecked();
                         solver->solveEquations(dir, x, explicitRepresentation.second);
+                        
+                        // If we included the target states in the ODD, we need to expand the result from the solver.
+                        if (requireInitialScheduler) {
+                            x = insertTargetStateValuesIntoExplicitRepresentation(x, properMaybeStates.get());
+                        }
                         
                         // Return a hybrid check result that stores the numerical values explicitly.
                         return std::unique_ptr<CheckResult>(new storm::modelchecker::HybridQuantitativeCheckResult<DdType, ValueType>(model.getReachableStates(), model.getReachableStates() && !maybeStates, infinityStates.ite(model.getManager().getConstant(storm::utility::infinity<ValueType>()), model.getManager().template getAddZero<ValueType>()), maybeStates, odd, x));

@@ -39,6 +39,17 @@ namespace storm {
             }
             
             /*!
+             * Casts the model into the model type given by the template parameter.
+             *
+             * @return A shared pointer of the requested type that points to the model if the cast succeeded and a null
+             * pointer otherwise.
+             */
+            template <typename ModelType>
+            std::shared_ptr<ModelType const> as() const {
+                return std::dynamic_pointer_cast<ModelType const>(this->shared_from_this());
+            }
+            
+            /*!
              *	@brief Return the actual type of the model.
              *
              *	Each model must implement this method.
@@ -110,6 +121,14 @@ namespace storm {
              * @return True iff the model is exact.
              */
             virtual bool isExact() const;
+            
+            /*!
+             * Converts the transition rewards of all reward models to state-based rewards. For deterministic models,
+             * this reduces the rewards to state rewards only. For nondeterminstic models, the reward models will
+             * contain state rewards and state-action rewards. Note that this transformation does not preserve all
+             * properties, but it preserves expected rewards.
+             */
+            virtual void reduceToStateBasedRewards() = 0;
             
         private:
             // The type of the model.

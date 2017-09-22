@@ -503,6 +503,9 @@ typedef void (*DD_TOHFP)(DdManager *, void *);
 extern "C" {
 #endif
 
+// Make this visible to the outside.
+extern DdNode * cuddUniqueInter(DdManager *unique, int index, DdNode *T, DdNode *E);
+    
 extern DdNode * Cudd_addNewVar(DdManager *dd);
 extern DdNode * Cudd_addNewVarAtLevel(DdManager *dd, int level);
 extern DdNode * Cudd_bddNewVar(DdManager *dd);

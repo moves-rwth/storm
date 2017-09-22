@@ -40,6 +40,10 @@ namespace storm {
                 return this->getOption(techniqueOptionName).getHasOptionBeenSet();
             }
             
+            bool NativeEquationSolverSettings::isLinearEquationSystemTechniqueSetFromDefaultValue() const {
+                return !this->getOption(techniqueOptionName).getHasOptionBeenSet() || this->getOption(techniqueOptionName).getArgumentByName("name").wasSetFromDefaultValue();
+            }
+            
             NativeEquationSolverSettings::LinearEquationMethod NativeEquationSolverSettings::getLinearEquationSystemMethod() const {
                 std::string linearEquationSystemTechniqueAsString = this->getOption(techniqueOptionName).getArgumentByName("name").getValueAsString();
                 if (linearEquationSystemTechniqueAsString == "jacobi") {

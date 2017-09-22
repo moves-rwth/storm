@@ -350,7 +350,9 @@ Cudd_addMinus(
 
     F = *f; G = *g;
     if (F == G) return(DD_ZERO(dd));
-    if (F == DD_ZERO(dd)) return(cuddAddNegateRecur(dd,G));
+    // CHANGED BY CHRISTIAN DEHNERT.
+    // Commented out this case to avoid issues with dynamic reordering (fix suggested by Fabio Somenzi).
+    // if (F == DD_ZERO(dd)) return(cuddAddNegateRecur(dd,G));
     if (G == DD_ZERO(dd)) return(F);
     if (cuddIsConstant(F) && cuddIsConstant(G)) {
 	value = cuddV(F)-cuddV(G);

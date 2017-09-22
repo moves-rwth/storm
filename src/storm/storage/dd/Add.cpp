@@ -154,31 +154,31 @@ namespace storm {
         template<DdType LibraryType, typename ValueType>
         Add<LibraryType, ValueType> Add<LibraryType, ValueType>::sumAbstract(std::set<storm::expressions::Variable> const& metaVariables) const {
             Bdd<LibraryType> cube = Bdd<LibraryType>::getCube(this->getDdManager(), metaVariables);
-            return Add<LibraryType, ValueType>(this->getDdManager(), internalAdd.sumAbstract(cube), Dd<LibraryType>::subtractMetaVariables(*this, cube));
+            return Add<LibraryType, ValueType>(this->getDdManager(), internalAdd.sumAbstract(cube.getInternalBdd()), Dd<LibraryType>::subtractMetaVariables(*this, cube));
         }
 
         template<DdType LibraryType, typename ValueType>
         Add<LibraryType, ValueType> Add<LibraryType, ValueType>::minAbstract(std::set<storm::expressions::Variable> const& metaVariables) const {
             Bdd<LibraryType> cube = Bdd<LibraryType>::getCube(this->getDdManager(), metaVariables);
-            return Add<LibraryType, ValueType>(this->getDdManager(), internalAdd.minAbstract(cube), Dd<LibraryType>::subtractMetaVariables(*this, cube));
+            return Add<LibraryType, ValueType>(this->getDdManager(), internalAdd.minAbstract(cube.getInternalBdd()), Dd<LibraryType>::subtractMetaVariables(*this, cube));
         }
 		
 		template<DdType LibraryType, typename ValueType>
         Bdd<LibraryType> Add<LibraryType, ValueType>::minAbstractRepresentative(std::set<storm::expressions::Variable> const& metaVariables) const {
             Bdd<LibraryType> cube = Bdd<LibraryType>::getCube(this->getDdManager(), metaVariables);
-            return Bdd<LibraryType>(this->getDdManager(), internalAdd.minAbstractRepresentative(cube), this->getContainedMetaVariables());
+            return Bdd<LibraryType>(this->getDdManager(), internalAdd.minAbstractRepresentative(cube.getInternalBdd()), this->getContainedMetaVariables());
         }
         
         template<DdType LibraryType, typename ValueType>
         Add<LibraryType, ValueType> Add<LibraryType, ValueType>::maxAbstract(std::set<storm::expressions::Variable> const& metaVariables) const {
             Bdd<LibraryType> cube = Bdd<LibraryType>::getCube(this->getDdManager(), metaVariables);
-            return Add<LibraryType, ValueType>(this->getDdManager(), internalAdd.maxAbstract(cube), Dd<LibraryType>::subtractMetaVariables(*this, cube));
+            return Add<LibraryType, ValueType>(this->getDdManager(), internalAdd.maxAbstract(cube.getInternalBdd()), Dd<LibraryType>::subtractMetaVariables(*this, cube));
         }
 		
 		template<DdType LibraryType, typename ValueType>
         Bdd<LibraryType> Add<LibraryType, ValueType>::maxAbstractRepresentative(std::set<storm::expressions::Variable> const& metaVariables) const {
             Bdd<LibraryType> cube = Bdd<LibraryType>::getCube(this->getDdManager(), metaVariables);
-            return Bdd<LibraryType>(this->getDdManager(), internalAdd.maxAbstractRepresentative(cube), this->getContainedMetaVariables());
+            return Bdd<LibraryType>(this->getDdManager(), internalAdd.maxAbstractRepresentative(cube.getInternalBdd()), this->getContainedMetaVariables());
         }
 
         template<DdType LibraryType, typename ValueType>
@@ -187,8 +187,36 @@ namespace storm {
         }
         
         template<DdType LibraryType, typename ValueType>
+        Add<LibraryType, ValueType> Add<LibraryType, ValueType>::renameVariables(std::set<storm::expressions::Variable> const& from, std::set<storm::expressions::Variable> const& to) const {
+            std::vector<InternalBdd<LibraryType>> fromBdds;
+            std::vector<InternalBdd<LibraryType>> toBdds;
+            
+            for (auto const& metaVariable : from) {
+                STORM_LOG_THROW(this->containsMetaVariable(metaVariable), storm::exceptions::InvalidOperationException, "Cannot rename variable '" << metaVariable.getName() << "' that is not present.");
+                DdMetaVariable<LibraryType> const& ddMetaVariable = this->getDdManager().getMetaVariable(metaVariable);
+                for (auto const& ddVariable : ddMetaVariable.getDdVariables()) {
+                    fromBdds.push_back(ddVariable.getInternalBdd());
+                }
+            }
+            for (auto const& metaVariable : to) {
+                STORM_LOG_THROW(!this->containsMetaVariable(metaVariable), storm::exceptions::InvalidOperationException, "Cannot rename to variable '" << metaVariable.getName() << "' that is already present.");
+                DdMetaVariable<LibraryType> const& ddMetaVariable = this->getDdManager().getMetaVariable(metaVariable);
+                for (auto const& ddVariable : ddMetaVariable.getDdVariables()) {
+                    toBdds.push_back(ddVariable.getInternalBdd());
+                }
+            }
+            
+            std::set<storm::expressions::Variable> newContainedMetaVariables = to;
+            std::set_difference(this->getContainedMetaVariables().begin(), this->getContainedMetaVariables().end(), from.begin(), from.end(), std::inserter(newContainedMetaVariables, newContainedMetaVariables.begin()));
+            
+            STORM_LOG_THROW(fromBdds.size() == toBdds.size(), storm::exceptions::InvalidArgumentException, "Unable to rename mismatching meta variables.");
+            return Add<LibraryType, ValueType>(this->getDdManager(), internalAdd.swapVariables(fromBdds, toBdds), newContainedMetaVariables);
+        }
+        
+        template<DdType LibraryType, typename ValueType>
         Add<LibraryType, ValueType> Add<LibraryType, ValueType>::swapVariables(std::vector<std::pair<storm::expressions::Variable, storm::expressions::Variable>> const& metaVariablePairs) const {
             std::set<storm::expressions::Variable> newContainedMetaVariables;
+            std::set<storm::expressions::Variable> deletedMetaVariables;
             std::vector<InternalBdd<LibraryType>> from;
             std::vector<InternalBdd<LibraryType>> to;
             for (auto const& metaVariablePair : metaVariablePairs) {
@@ -197,26 +225,40 @@ namespace storm {
                 
                 // Keep track of the contained meta variables in the DD.
                 if (this->containsMetaVariable(metaVariablePair.first)) {
-                    newContainedMetaVariables.insert(metaVariablePair.second);
+                    if (this->containsMetaVariable(metaVariablePair.second)) {
+                        // Nothing to do here.
+                    } else {
+                        newContainedMetaVariables.insert(metaVariablePair.second);
+                        deletedMetaVariables.insert(metaVariablePair.first);
+                    }
+                } else {
+                    if (!this->containsMetaVariable(metaVariablePair.second)) {
+                        // Nothing to do here.
+                    } else {
+                        newContainedMetaVariables.insert(metaVariablePair.first);
+                        deletedMetaVariables.insert(metaVariablePair.second);
+                    }
                 }
-                if (this->containsMetaVariable(metaVariablePair.second)) {
-                    newContainedMetaVariables.insert(metaVariablePair.first);
-                }
-                
                 for (auto const& ddVariable : variable1.getDdVariables()) {
-                    from.push_back(ddVariable);
+                    from.push_back(ddVariable.getInternalBdd());
                 }
                 for (auto const& ddVariable : variable2.getDdVariables()) {
-                    to.push_back(ddVariable);
+                    to.push_back(ddVariable.getInternalBdd());
                 }
             }
+            
+            std::set<storm::expressions::Variable> tmp;
+            std::set_difference(this->getContainedMetaVariables().begin(), this->getContainedMetaVariables().end(), deletedMetaVariables.begin(), deletedMetaVariables.end(), std::inserter(tmp, tmp.begin()));
+            std::set<storm::expressions::Variable> containedMetaVariables;
+            std::set_union(tmp.begin(), tmp.end(), newContainedMetaVariables.begin(), newContainedMetaVariables.end(), std::inserter(containedMetaVariables, containedMetaVariables.begin()));
             STORM_LOG_THROW(from.size() == to.size(), storm::exceptions::InvalidArgumentException, "Unable to swap mismatching meta variables.");
-            return Add<LibraryType, ValueType>(this->getDdManager(), internalAdd.swapVariables(from, to), newContainedMetaVariables);
+            return Add<LibraryType, ValueType>(this->getDdManager(), internalAdd.swapVariables(from, to), containedMetaVariables);
         }
         
         template<DdType LibraryType, typename ValueType>
         Add<LibraryType, ValueType> Add<LibraryType, ValueType>::permuteVariables(std::vector<std::pair<storm::expressions::Variable, storm::expressions::Variable>> const& metaVariablePairs) const {
             std::set<storm::expressions::Variable> newContainedMetaVariables;
+            std::set<storm::expressions::Variable> deletedMetaVariables;
             std::vector<InternalBdd<LibraryType>> from;
             std::vector<InternalBdd<LibraryType>> to;
             for (auto const& metaVariablePair : metaVariablePairs) {
@@ -225,27 +267,33 @@ namespace storm {
                 
                 // Keep track of the contained meta variables in the DD.
                 if (this->containsMetaVariable(metaVariablePair.first)) {
+                    deletedMetaVariables.insert(metaVariablePair.first);
                     newContainedMetaVariables.insert(metaVariablePair.second);
                 }
                 
                 for (auto const& ddVariable : variable1.getDdVariables()) {
-                    from.push_back(ddVariable);
+                    from.push_back(ddVariable.getInternalBdd());
                 }
                 for (auto const& ddVariable : variable2.getDdVariables()) {
-                    to.push_back(ddVariable);
+                    to.push_back(ddVariable.getInternalBdd());
                 }
             }
+            
+            std::set<storm::expressions::Variable> tmp;
+            std::set_difference(this->getContainedMetaVariables().begin(), this->getContainedMetaVariables().end(), deletedMetaVariables.begin(), deletedMetaVariables.end(), std::inserter(tmp, tmp.begin()));
+            std::set<storm::expressions::Variable> containedMetaVariables;
+            std::set_union(tmp.begin(), tmp.end(), newContainedMetaVariables.begin(), newContainedMetaVariables.end(), std::inserter(containedMetaVariables, containedMetaVariables.begin()));
             STORM_LOG_THROW(from.size() == to.size(), storm::exceptions::InvalidArgumentException, "Unable to swap mismatching meta variables.");
-            return Add<LibraryType, ValueType>(this->getDdManager(), internalAdd.permuteVariables(from, to), newContainedMetaVariables);
+            return Add<LibraryType, ValueType>(this->getDdManager(), internalAdd.permuteVariables(from, to), containedMetaVariables);
         }
         
         template<DdType LibraryType, typename ValueType>
         Add<LibraryType, ValueType> Add<LibraryType, ValueType>::multiplyMatrix(Add<LibraryType, ValueType> const& otherMatrix, std::set<storm::expressions::Variable> const& summationMetaVariables) const {
-            // Create the CUDD summation variables.
+            // Create the summation variables.
             std::vector<InternalBdd<LibraryType>> summationDdVariables;
             for (auto const& metaVariable : summationMetaVariables) {
                 for (auto const& ddVariable : this->getDdManager().getMetaVariable(metaVariable).getDdVariables()) {
-                    summationDdVariables.push_back(ddVariable);
+                    summationDdVariables.push_back(ddVariable.getInternalBdd());
                 }
             }
             
@@ -254,6 +302,23 @@ namespace storm {
             std::set_difference(unionOfMetaVariables.begin(), unionOfMetaVariables.end(), summationMetaVariables.begin(), summationMetaVariables.end(), std::inserter(containedMetaVariables, containedMetaVariables.begin()));
             
             return Add<LibraryType, ValueType>(this->getDdManager(), internalAdd.multiplyMatrix(otherMatrix, summationDdVariables), containedMetaVariables);
+        }
+        
+        template<DdType LibraryType, typename ValueType>
+        Add<LibraryType, ValueType> Add<LibraryType, ValueType>::multiplyMatrix(Bdd<LibraryType> const& otherMatrix, std::set<storm::expressions::Variable> const& summationMetaVariables) const {
+            // Create the summation variables.
+            std::vector<InternalBdd<LibraryType>> summationDdVariables;
+            for (auto const& metaVariable : summationMetaVariables) {
+                for (auto const& ddVariable : this->getDdManager().getMetaVariable(metaVariable).getDdVariables()) {
+                    summationDdVariables.push_back(ddVariable.getInternalBdd());
+                }
+            }
+            
+            std::set<storm::expressions::Variable> unionOfMetaVariables = Dd<LibraryType>::joinMetaVariables(*this, otherMatrix);
+            std::set<storm::expressions::Variable> containedMetaVariables;
+            std::set_difference(unionOfMetaVariables.begin(), unionOfMetaVariables.end(), summationMetaVariables.begin(), summationMetaVariables.end(), std::inserter(containedMetaVariables, containedMetaVariables.begin()));
+            
+            return Add<LibraryType, ValueType>(this->getDdManager(), internalAdd.multiplyMatrix(otherMatrix.getInternalBdd(), summationDdVariables), containedMetaVariables);
         }
 
         template<DdType LibraryType, typename ValueType>
@@ -766,8 +831,8 @@ namespace storm {
         }
 
         template<DdType LibraryType, typename ValueType>
-        void Add<LibraryType, ValueType>::exportToDot(std::string const& filename) const {
-            internalAdd.exportToDot(filename, this->getDdManager().getDdVariableNames());
+        void Add<LibraryType, ValueType>::exportToDot(std::string const& filename, bool showVariablesIfPossible) const {
+            internalAdd.exportToDot(filename, this->getDdManager().getDdVariableNames(), showVariablesIfPossible);
         }
         
         template<DdType LibraryType, typename ValueType>
@@ -778,7 +843,7 @@ namespace storm {
                 numberOfDdVariables += ddMetaVariable.getNumberOfDdVariables();
             }
             
-            return internalAdd.begin(this->getDdManager(), Bdd<LibraryType>::getCube(this->getDdManager(), this->getContainedMetaVariables()), numberOfDdVariables, this->getContainedMetaVariables(), enumerateDontCareMetaVariables);
+            return internalAdd.begin(this->getDdManager(), Bdd<LibraryType>::getCube(this->getDdManager(), this->getContainedMetaVariables()).getInternalBdd(), numberOfDdVariables, this->getContainedMetaVariables(), enumerateDontCareMetaVariables);
         }
         
         template<DdType LibraryType, typename ValueType>
@@ -810,6 +875,16 @@ namespace storm {
         template<DdType LibraryType, typename ValueType>
         Odd Add<LibraryType, ValueType>::createOdd() const {
             return internalAdd.createOdd(this->getSortedVariableIndices());
+        }
+        
+        template<DdType LibraryType, typename ValueType>
+        InternalAdd<LibraryType, ValueType> const& Add<LibraryType, ValueType>::getInternalAdd() const {
+            return internalAdd;
+        }
+        
+        template<DdType LibraryType, typename ValueType>
+        InternalDdManager<LibraryType> const& Add<LibraryType, ValueType>::getInternalDdManager() const {
+            return internalAdd.getInternalDdManager();
         }
 
         template<DdType LibraryType, typename ValueType>

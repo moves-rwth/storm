@@ -9,7 +9,6 @@
 #include "storm/utility/graph.h"
 #include "storm/utility/constants.h"
 
-
 #include "storm/models/symbolic/StandardRewardModel.h"
 
 #include "storm/modelchecker/results/SymbolicQualitativeCheckResult.h"
@@ -17,10 +16,25 @@
 
 #include "storm/exceptions/InvalidPropertyException.h"
 #include "storm/exceptions/InvalidArgumentException.h"
+#include "storm/exceptions/UncheckedRequirementException.h"
 
 namespace storm {
     namespace modelchecker {
         namespace helper {
+            
+            template<storm::dd::DdType DdType, typename ValueType>
+            storm::dd::Bdd<DdType> computeValidSchedulerHint(storm::solver::MinMaxLinearEquationSolverSystemType const& type, storm::models::symbolic::NondeterministicModel<DdType, ValueType> const& model, storm::dd::Add<DdType, ValueType> const& transitionMatrix, storm::dd::Bdd<DdType> const& maybeStates, storm::dd::Bdd<DdType> const& targetStates) {
+            
+                storm::dd::Bdd<DdType> result;
+                
+                if (type == storm::solver::MinMaxLinearEquationSolverSystemType::UntilProbabilities) {
+                    result = storm::utility::graph::computeSchedulerProbGreater0E(model, transitionMatrix.notZero(), maybeStates, targetStates);
+                } else if (type == storm::solver::MinMaxLinearEquationSolverSystemType::ReachabilityRewards) {
+                    result = storm::utility::graph::computeSchedulerProb1E(model, transitionMatrix.notZero(), maybeStates, targetStates, maybeStates || targetStates);
+                }
+                
+                return result;
+            }
             
             template<storm::dd::DdType DdType, typename ValueType>
             std::unique_ptr<CheckResult> SymbolicMdpPrctlHelper<DdType, ValueType>::computeUntilProbabilities(OptimizationDirection dir, storm::models::symbolic::NondeterministicModel<DdType, ValueType> const& model, storm::dd::Add<DdType, ValueType> const& transitionMatrix, storm::dd::Bdd<DdType> const& phiStates, storm::dd::Bdd<DdType> const& psiStates, bool qualitative, storm::solver::SymbolicGeneralMinMaxLinearEquationSolverFactory<DdType, ValueType> const& linearEquationSolverFactory) {
@@ -66,7 +80,24 @@ namespace storm {
                         
                         // Now solve the resulting equation system.
                         std::unique_ptr<storm::solver::SymbolicMinMaxLinearEquationSolver<DdType, ValueType>> solver = linearEquationSolverFactory.create(submatrix, maybeStates, model.getIllegalMask() && maybeStates, model.getRowVariables(), model.getColumnVariables(), model.getNondeterminismVariables(), model.getRowColumnMetaVariablePairs());
-                        storm::dd::Add<DdType, ValueType> result = solver->solveEquations(dir == OptimizationDirection::Minimize, model.getManager().template getAddZero<ValueType>(), subvector);
+
+                        // Check requirements of solver.
+                        storm::solver::MinMaxLinearEquationSolverRequirements requirements = solver->getRequirements(storm::solver::MinMaxLinearEquationSolverSystemType::UntilProbabilities, dir);
+                        boost::optional<storm::dd::Bdd<DdType>> initialScheduler;
+                        if (!requirements.empty()) {
+                            if (requirements.requires(storm::solver::MinMaxLinearEquationSolverRequirements::Element::ValidInitialScheduler)) {
+                                STORM_LOG_DEBUG("Computing valid scheduler, because the solver requires it.");
+                                initialScheduler = computeValidSchedulerHint(storm::solver::MinMaxLinearEquationSolverSystemType::UntilProbabilities, model, transitionMatrix, maybeStates, statesWithProbability01.second);
+                                requirements.set(storm::solver::MinMaxLinearEquationSolverRequirements::Element::ValidInitialScheduler, false);
+                            }
+                            STORM_LOG_THROW(requirements.empty(), storm::exceptions::UncheckedRequirementException, "Could not establish requirements of solver.");
+                        }
+                        if (initialScheduler) {
+                            solver->setInitialScheduler(initialScheduler.get());
+                        }
+                        solver->setRequirementsChecked();
+
+                        storm::dd::Add<DdType, ValueType> result = solver->solveEquations(dir, model.getManager().template getAddZero<ValueType>(), subvector);
                         
                         return std::unique_ptr<CheckResult>(new storm::modelchecker::SymbolicQuantitativeCheckResult<DdType, ValueType>(model.getReachableStates(), statesWithProbability01.second.template toAdd<ValueType>() + result));
                     } else {
@@ -123,7 +154,7 @@ namespace storm {
                     submatrix *= maybeStatesAdd.swapVariables(model.getRowColumnMetaVariablePairs());
                     
                     std::unique_ptr<storm::solver::SymbolicMinMaxLinearEquationSolver<DdType, ValueType>> solver = linearEquationSolverFactory.create(submatrix, maybeStates, model.getIllegalMask() && maybeStates, model.getRowVariables(), model.getColumnVariables(), model.getNondeterminismVariables(), model.getRowColumnMetaVariablePairs());
-                    storm::dd::Add<DdType, ValueType> result = solver->multiply(dir == OptimizationDirection::Minimize, model.getManager().template getAddZero<ValueType>(), &subvector, stepBound);
+                    storm::dd::Add<DdType, ValueType> result = solver->multiply(dir, model.getManager().template getAddZero<ValueType>(), &subvector, stepBound);
                     
                     return std::unique_ptr<CheckResult>(new storm::modelchecker::SymbolicQuantitativeCheckResult<DdType, ValueType>(model.getReachableStates(), psiStates.template toAdd<ValueType>() + result));
                 } else {
@@ -138,7 +169,7 @@ namespace storm {
                 
                 // Perform the matrix-vector multiplication.
                 std::unique_ptr<storm::solver::SymbolicMinMaxLinearEquationSolver<DdType, ValueType>> solver = linearEquationSolverFactory.create(transitionMatrix, model.getReachableStates(), model.getIllegalMask(), model.getRowVariables(), model.getColumnVariables(), model.getNondeterminismVariables(), model.getRowColumnMetaVariablePairs());
-                storm::dd::Add<DdType, ValueType> result = solver->multiply(dir == OptimizationDirection::Minimize, rewardModel.getStateRewardVector(), nullptr, stepBound);
+                storm::dd::Add<DdType, ValueType> result = solver->multiply(dir, rewardModel.getStateRewardVector(), nullptr, stepBound);
 
                 return std::unique_ptr<CheckResult>(new SymbolicQuantitativeCheckResult<DdType, ValueType>(model.getReachableStates(), result));
             }
@@ -153,7 +184,7 @@ namespace storm {
                 
                 // Perform the matrix-vector multiplication.
                 std::unique_ptr<storm::solver::SymbolicMinMaxLinearEquationSolver<DdType, ValueType>> solver = linearEquationSolverFactory.create(model.getTransitionMatrix(), model.getReachableStates(), model.getIllegalMask(), model.getRowVariables(), model.getColumnVariables(), model.getNondeterminismVariables(), model.getRowColumnMetaVariablePairs());
-                storm::dd::Add<DdType, ValueType> result = solver->multiply(dir == OptimizationDirection::Minimize, model.getManager().template getAddZero<ValueType>(), &totalRewardVector, stepBound);
+                storm::dd::Add<DdType, ValueType> result = solver->multiply(dir, model.getManager().template getAddZero<ValueType>(), &totalRewardVector, stepBound);
                 
                 return std::unique_ptr<CheckResult>(new SymbolicQuantitativeCheckResult<DdType, ValueType>(model.getReachableStates(), result));
             }
@@ -208,7 +239,24 @@ namespace storm {
                         
                         // Now solve the resulting equation system.
                         std::unique_ptr<storm::solver::SymbolicMinMaxLinearEquationSolver<DdType, ValueType>> solver = linearEquationSolverFactory.create(submatrix, maybeStates, model.getIllegalMask() && maybeStates, model.getRowVariables(), model.getColumnVariables(), model.getNondeterminismVariables(), model.getRowColumnMetaVariablePairs());
-                        storm::dd::Add<DdType, ValueType> result = solver->solveEquations(dir == OptimizationDirection::Minimize, model.getManager().template getAddZero<ValueType>(), subvector);
+                        
+                        // Check requirements of solver.
+                        storm::solver::MinMaxLinearEquationSolverRequirements requirements = solver->getRequirements(storm::solver::MinMaxLinearEquationSolverSystemType::ReachabilityRewards, dir);
+                        boost::optional<storm::dd::Bdd<DdType>> initialScheduler;
+                        if (!requirements.empty()) {
+                            if (requirements.requires(storm::solver::MinMaxLinearEquationSolverRequirements::Element::ValidInitialScheduler)) {
+                                STORM_LOG_DEBUG("Computing valid scheduler, because the solver requires it.");
+                                initialScheduler = computeValidSchedulerHint(storm::solver::MinMaxLinearEquationSolverSystemType::ReachabilityRewards, model, transitionMatrix, maybeStates, targetStates);
+                                requirements.set(storm::solver::MinMaxLinearEquationSolverRequirements::Element::ValidInitialScheduler, false);
+                            }
+                            STORM_LOG_THROW(requirements.empty(), storm::exceptions::UncheckedRequirementException, "Could not establish requirements of solver.");
+                        }
+                        if (initialScheduler) {
+                            solver->setInitialScheduler(initialScheduler.get());
+                        }
+                        solver->setRequirementsChecked();
+
+                        storm::dd::Add<DdType, ValueType> result = solver->solveEquations(dir, model.getManager().template getAddZero<ValueType>(), subvector);
 
                         return std::unique_ptr<CheckResult>(new storm::modelchecker::SymbolicQuantitativeCheckResult<DdType, ValueType>(model.getReachableStates(), infinityStates.ite(model.getManager().getConstant(storm::utility::infinity<ValueType>()), result)));
                     } else {

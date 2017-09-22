@@ -564,6 +564,27 @@ namespace storm {
             std::vector<index_type> const& getRowGroupIndices() const;
             
             /*!
+             * Sets the row grouping to the given one.
+             * @note It is assumed that the new row grouping is non-trivial.
+             *
+             * @param newRowGroupIndices The new row group indices.
+             */
+            void setRowGroupIndices(std::vector<index_type> const& newRowGroupIndices);
+            
+            /*!
+             * Retrieves whether the matrix has a trivial row grouping.
+             *
+             * @return True iff the matrix has a trivial row grouping.
+             */
+            bool hasTrivialRowGrouping() const;
+            
+            /*!
+             * Makes the row grouping of this matrix trivial.
+             * Has no effect when the row grouping is already trivial.
+             */
+            void makeRowGroupingTrivial();
+
+            /*!
              * Returns the indices of the rows that belong to one of the selected row groups.
              *
              * @param groups the selected row groups
@@ -665,6 +686,15 @@ namespace storm {
              */
             SparseMatrix restrictRows(storm::storage::BitVector const& rowsToKeep, bool allowEmptyRowGroups = false) const;
             
+            /*!
+             * Returns a copy of this matrix that only considers entries in the selected rows.
+             * Non-selected rows will not have any entries
+             *
+             * @note does not change the dimensions (row-, column-, and rowGroup count) of this matrix
+             * @param rowFilter the selected rows
+             */
+            SparseMatrix filterEntries(storm::storage::BitVector const& rowFilter) const;
+            
             /**
              * Compares two rows.
              * @param i1 Index of first row
@@ -688,7 +718,7 @@ namespace storm {
             /*!
              * Selects exactly one row from each row group of this matrix and returns the resulting matrix.
              *
-s             * @param insertDiagonalEntries If set to true, the resulting matrix will have zero entries in column i for
+             * @param insertDiagonalEntries If set to true, the resulting matrix will have zero entries in column i for
              * each row in row group i. This can then be used for inserting other values later.
              * @return A submatrix of the current matrix by selecting one row out of each row group.
              */
@@ -714,7 +744,6 @@ s             * @param insertDiagonalEntries If set to true, the resulting matri
              * @return A sparse matrix that represents the transpose of this matrix.
              */
             storm::storage::SparseMatrix<value_type> transpose(bool joinGroups = false, bool keepZeros = false) const;
-            
             
             /*!
              * Transposes the matrix w.r.t. the selected rows.
@@ -1005,19 +1034,6 @@ s             * @param insertDiagonalEntries If set to true, the resulting matri
              */
             iterator end();
             
-            /*!
-             * Retrieves whether the matrix has a trivial row grouping.
-             *
-             * @return True iff the matrix has a trivial row grouping.
-             */
-            bool hasTrivialRowGrouping() const;
-            
-            /*!
-             * Makes the row grouping of this matrix trivial.
-             * Has no effect when the row grouping is already trivial.
-             */
-            void makeRowGroupingTrivial();
-
 			/*!
 			* Returns a copy of the matrix with the chosen internal data type
 			*/

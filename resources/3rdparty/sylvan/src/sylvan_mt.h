@@ -19,12 +19,10 @@
  * This file contains declarations for custom Multi-Terminal support.
  */
 
+/* Do not include this file directly. Instead, include sylvan.h */
+
 #ifndef SYLVAN_MT_H
 #define SYLVAN_MT_H
-
-#include <stddef.h>
-#include <stdint.h>
-#include <stdio.h>
 
 #ifdef __cplusplus
 extern "C" {

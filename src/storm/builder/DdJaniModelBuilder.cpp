@@ -141,7 +141,7 @@ namespace storm {
         template <storm::dd::DdType Type, typename ValueType>
         class ParameterCreator {
         public:
-            void create(storm::jani::Model const& model, storm::adapters::AddExpressionAdapter<Type, ValueType>& rowExpressionAdapter, storm::adapters::AddExpressionAdapter<Type, ValueType>& columnExpressionAdapter) {
+            void create(storm::jani::Model const& model, storm::adapters::AddExpressionAdapter<Type, ValueType>& rowExpressionAdapter) {
                 // Intentionally left empty: no support for parameters for this data type.
             }
             
@@ -160,14 +160,13 @@ namespace storm {
                 // Intentionally left empty.
             }
             
-            void create(storm::jani::Model const& model, storm::adapters::AddExpressionAdapter<Type, storm::RationalFunction>& rowExpressionAdapter, storm::adapters::AddExpressionAdapter<Type, storm::RationalFunction>& columnExpressionAdapter) {
+            void create(storm::jani::Model const& model, storm::adapters::AddExpressionAdapter<Type, storm::RationalFunction>& rowExpressionAdapter) {
                 for (auto const& constant : model.getConstants()) {
                     if (!constant.isDefined()) {
                         carl::Variable carlVariable = carl::freshRealVariable(constant.getExpressionVariable().getName());
                         parameters.insert(carlVariable);
                         auto rf = convertVariableToPolynomial(carlVariable);
                         rowExpressionAdapter.setValue(constant.getExpressionVariable(), rf);
-                        columnExpressionAdapter.setValue(constant.getExpressionVariable(), rf);
                     }
                 }
             }
@@ -202,8 +201,7 @@ namespace storm {
             CompositionVariables() : manager(std::make_shared<storm::dd::DdManager<Type>>()),
             variableToRowMetaVariableMap(std::make_shared<std::map<storm::expressions::Variable, storm::expressions::Variable>>()),
             rowExpressionAdapter(std::make_shared<storm::adapters::AddExpressionAdapter<Type, ValueType>>(manager, variableToRowMetaVariableMap)),
-            variableToColumnMetaVariableMap(std::make_shared<std::map<storm::expressions::Variable, storm::expressions::Variable>>()),
-            columnExpressionAdapter(std::make_shared<storm::adapters::AddExpressionAdapter<Type, ValueType>>(manager, variableToColumnMetaVariableMap)) {
+            variableToColumnMetaVariableMap(std::make_shared<std::map<storm::expressions::Variable, storm::expressions::Variable>>()) {
                 // Intentionally left empty.
             }
             
@@ -217,7 +215,6 @@ namespace storm {
             // The meta variables for the column encoding.
             std::set<storm::expressions::Variable> columnMetaVariables;
             std::shared_ptr<std::map<storm::expressions::Variable, storm::expressions::Variable>> variableToColumnMetaVariableMap;
-            std::shared_ptr<storm::adapters::AddExpressionAdapter<Type, ValueType>> columnExpressionAdapter;
             
             // All pairs of row/column meta variables.
             std::vector<std::pair<storm::expressions::Variable, storm::expressions::Variable>> rowColumnMetaVariablePairs;
@@ -371,8 +368,8 @@ namespace storm {
                     
                     // Add the identity and ranges of the location variables to the ones of the automaton.
                     std::pair<storm::expressions::Variable, storm::expressions::Variable> const& locationVariables = result.automatonToLocationDdVariableMap[automaton.getName()];
-                    storm::dd::Add<Type, ValueType> variableIdentity = result.manager->template getIdentity<ValueType>(locationVariables.first).equals(result.manager->template getIdentity<ValueType>(locationVariables.second)).template toAdd<ValueType>() * result.manager->getRange(locationVariables.first).template toAdd<ValueType>() * result.manager->getRange(locationVariables.second).template toAdd<ValueType>();
-                    identity &= variableIdentity.toBdd();
+                    storm::dd::Bdd<Type> variableIdentity = result.manager->getIdentity(locationVariables.first, locationVariables.second);
+                    identity &= variableIdentity;
                     range &= result.manager->getRange(locationVariables.first);
                     
                     // Then create variables for the variables of the automaton.
@@ -392,7 +389,7 @@ namespace storm {
                 }
                 
                 ParameterCreator<Type, ValueType> parameterCreator;
-                parameterCreator.create(model, *result.rowExpressionAdapter, *result.columnExpressionAdapter);
+                parameterCreator.create(model, *result.rowExpressionAdapter);
                 if (std::is_same<ValueType, storm::RationalFunction>::value) {
                     result.parameters = parameterCreator.getParameters();
                 }
@@ -423,8 +420,8 @@ namespace storm {
                 result.columnMetaVariables.insert(variablePair.second);
                 result.variableToColumnMetaVariableMap->emplace(variable.getExpressionVariable(), variablePair.second);
                 
-                storm::dd::Add<Type, ValueType> variableIdentity = result.manager->template getIdentity<ValueType>(variablePair.first).equals(result.manager->template getIdentity<ValueType>(variablePair.second)).template toAdd<ValueType>() * result.manager->getRange(variablePair.first).template toAdd<ValueType>() * result.manager->getRange(variablePair.second).template toAdd<ValueType>();
-                result.variableToIdentityMap.emplace(variable.getExpressionVariable(), variableIdentity);
+                storm::dd::Bdd<Type> variableIdentity = result.manager->getIdentity(variablePair.first, variablePair.second);
+                result.variableToIdentityMap.emplace(variable.getExpressionVariable(), variableIdentity.template toAdd<ValueType>());
                 result.rowColumnMetaVariablePairs.push_back(variablePair);
                 result.variableToRangeMap.emplace(variablePair.first, result.manager->getRange(variablePair.first));
                 result.variableToRangeMap.emplace(variablePair.second, result.manager->getRange(variablePair.second));
@@ -443,8 +440,8 @@ namespace storm {
                 result.columnMetaVariables.insert(variablePair.second);
                 result.variableToColumnMetaVariableMap->emplace(variable.getExpressionVariable(), variablePair.second);
                 
-                storm::dd::Add<Type, ValueType> variableIdentity = result.manager->template getIdentity<ValueType>(variablePair.first).equals(result.manager->template getIdentity<ValueType>(variablePair.second)).template toAdd<ValueType>();
-                result.variableToIdentityMap.emplace(variable.getExpressionVariable(), variableIdentity);
+                storm::dd::Bdd<Type> variableIdentity = result.manager->getIdentity(variablePair.first, variablePair.second);
+                result.variableToIdentityMap.emplace(variable.getExpressionVariable(), variableIdentity.template toAdd<ValueType>());
                 
                 result.variableToRangeMap.emplace(variablePair.first, result.manager->getRange(variablePair.first));
                 result.variableToRangeMap.emplace(variablePair.second, result.manager->getRange(variablePair.second));
@@ -1706,11 +1703,11 @@ namespace storm {
         std::shared_ptr<storm::models::symbolic::Model<Type, ValueType>> createModel(storm::jani::ModelType const& modelType, CompositionVariables<Type, ValueType> const& variables, ModelComponents<Type, ValueType> const& modelComponents) {
             std::shared_ptr<storm::models::symbolic::Model<Type, ValueType>> result;
             if (modelType == storm::jani::ModelType::DTMC) {
-                result = std::make_shared<storm::models::symbolic::Dtmc<Type, ValueType>>(variables.manager, modelComponents.reachableStates, modelComponents.initialStates, modelComponents.deadlockStates, modelComponents.transitionMatrix, variables.rowMetaVariables, variables.rowExpressionAdapter, variables.columnMetaVariables, variables.columnExpressionAdapter, variables.rowColumnMetaVariablePairs, modelComponents.labelToExpressionMap, modelComponents.rewardModels);
+                result = std::make_shared<storm::models::symbolic::Dtmc<Type, ValueType>>(variables.manager, modelComponents.reachableStates, modelComponents.initialStates, modelComponents.deadlockStates, modelComponents.transitionMatrix, variables.rowMetaVariables, variables.rowExpressionAdapter, variables.columnMetaVariables, variables.rowColumnMetaVariablePairs, modelComponents.labelToExpressionMap, modelComponents.rewardModels);
             } else if (modelType == storm::jani::ModelType::CTMC) {
-                result = std::make_shared<storm::models::symbolic::Ctmc<Type, ValueType>>(variables.manager, modelComponents.reachableStates, modelComponents.initialStates, modelComponents.deadlockStates, modelComponents.transitionMatrix, variables.rowMetaVariables, variables.rowExpressionAdapter, variables.columnMetaVariables, variables.columnExpressionAdapter, variables.rowColumnMetaVariablePairs, modelComponents.labelToExpressionMap, modelComponents.rewardModels);
+                result = std::make_shared<storm::models::symbolic::Ctmc<Type, ValueType>>(variables.manager, modelComponents.reachableStates, modelComponents.initialStates, modelComponents.deadlockStates, modelComponents.transitionMatrix, variables.rowMetaVariables, variables.rowExpressionAdapter, variables.columnMetaVariables, variables.rowColumnMetaVariablePairs, modelComponents.labelToExpressionMap, modelComponents.rewardModels);
             } else if (modelType == storm::jani::ModelType::MDP || modelType == storm::jani::ModelType::LTS) {
-                result = std::make_shared<storm::models::symbolic::Mdp<Type, ValueType>>(variables.manager, modelComponents.reachableStates, modelComponents.initialStates, modelComponents.deadlockStates, modelComponents.transitionMatrix, variables.rowMetaVariables, variables.rowExpressionAdapter, variables.columnMetaVariables, variables.columnExpressionAdapter, variables.rowColumnMetaVariablePairs, variables.allNondeterminismVariables, modelComponents.labelToExpressionMap, modelComponents.rewardModels);
+                result = std::make_shared<storm::models::symbolic::Mdp<Type, ValueType>>(variables.manager, modelComponents.reachableStates, modelComponents.initialStates, modelComponents.deadlockStates, modelComponents.transitionMatrix, variables.rowMetaVariables, variables.rowExpressionAdapter, variables.columnMetaVariables, variables.rowColumnMetaVariablePairs, variables.allNondeterminismVariables, modelComponents.labelToExpressionMap, modelComponents.rewardModels);
             } else {
                 STORM_LOG_THROW(false, storm::exceptions::WrongFormatException, "Model type '" << modelType << "' not supported.");
             }
@@ -1857,6 +1854,7 @@ namespace storm {
                 }
             } else {
                 auto const& globalVariables = model.getGlobalVariables();
+                
                 for (auto const& rewardModelName : options.getRewardModelNames()) {
                     if (globalVariables.hasVariable(rewardModelName)) {
                         result.push_back(globalVariables.getVariable(rewardModelName).getExpressionVariable());
@@ -1869,7 +1867,12 @@ namespace storm {
                 // If no reward model was yet added, but there was one that was given in the options, we try to build the
                 // standard reward model.
                 if (result.empty() && !options.getRewardModelNames().empty()) {
-                    result.push_back(globalVariables.getTransientVariables().front().getExpressionVariable());
+                    for (auto const& variable : globalVariables.getTransientVariables()) {
+                        if (variable.isRealVariable() || variable.isUnboundedIntegerVariable()) {
+                            result.push_back(variable.getExpressionVariable());
+                            break;
+                        }
+                    }
                 }
             }
             

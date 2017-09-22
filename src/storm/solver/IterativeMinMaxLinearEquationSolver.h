@@ -36,10 +36,11 @@ namespace storm {
         template<typename ValueType>
         class IterativeMinMaxLinearEquationSolver : public StandardMinMaxLinearEquationSolver<ValueType> {
         public:
+            IterativeMinMaxLinearEquationSolver(std::unique_ptr<LinearEquationSolverFactory<ValueType>>&& linearEquationSolverFactory, IterativeMinMaxLinearEquationSolverSettings<ValueType> const& settings = IterativeMinMaxLinearEquationSolverSettings<ValueType>());
             IterativeMinMaxLinearEquationSolver(storm::storage::SparseMatrix<ValueType> const& A, std::unique_ptr<LinearEquationSolverFactory<ValueType>>&& linearEquationSolverFactory, IterativeMinMaxLinearEquationSolverSettings<ValueType> const& settings = IterativeMinMaxLinearEquationSolverSettings<ValueType>());
             IterativeMinMaxLinearEquationSolver(storm::storage::SparseMatrix<ValueType>&& A, std::unique_ptr<LinearEquationSolverFactory<ValueType>>&& linearEquationSolverFactory, IterativeMinMaxLinearEquationSolverSettings<ValueType> const& settings = IterativeMinMaxLinearEquationSolverSettings<ValueType>());
             
-            virtual bool solveEquations(OptimizationDirection dir, std::vector<ValueType>& x, std::vector<ValueType> const& b) const override;
+            virtual bool internalSolveEquations(OptimizationDirection dir, std::vector<ValueType>& x, std::vector<ValueType> const& b) const override;
 
             IterativeMinMaxLinearEquationSolverSettings<ValueType> const& getSettings() const;
             void setSettings(IterativeMinMaxLinearEquationSolverSettings<ValueType> const& newSettings);
@@ -48,6 +49,8 @@ namespace storm {
 
             ValueType getPrecision() const;
             bool getRelative() const;
+            
+            virtual MinMaxLinearEquationSolverRequirements getRequirements(MinMaxLinearEquationSolverSystemType const& equationSystemType, boost::optional<storm::solver::OptimizationDirection> const& direction = boost::none) const override;
             
         private:
             bool solveEquationsPolicyIteration(OptimizationDirection dir, std::vector<ValueType>& x, std::vector<ValueType> const& b) const;
@@ -80,18 +83,19 @@ namespace storm {
             IterativeMinMaxLinearEquationSolverFactory(std::unique_ptr<LinearEquationSolverFactory<ValueType>>&& linearEquationSolverFactory, MinMaxMethodSelection const& method = MinMaxMethodSelection::FROMSETTINGS, bool trackScheduler = false);
             IterativeMinMaxLinearEquationSolverFactory(EquationSolverType const& solverType, MinMaxMethodSelection const& method = MinMaxMethodSelection::FROMSETTINGS, bool trackScheduler = false);
             
-            virtual std::unique_ptr<MinMaxLinearEquationSolver<ValueType>> create(storm::storage::SparseMatrix<ValueType> const& matrix) const override;
-            virtual std::unique_ptr<MinMaxLinearEquationSolver<ValueType>> create(storm::storage::SparseMatrix<ValueType>&& matrix) const override;
-            
             IterativeMinMaxLinearEquationSolverSettings<ValueType>& getSettings();
             IterativeMinMaxLinearEquationSolverSettings<ValueType> const& getSettings() const;
             
             virtual void setMinMaxMethod(MinMaxMethodSelection const& newMethod) override;
             virtual void setMinMaxMethod(MinMaxMethod const& newMethod) override;
+
+            // Make the other create methods visible.
+            using MinMaxLinearEquationSolverFactory<ValueType>::create;
+
+            virtual std::unique_ptr<MinMaxLinearEquationSolver<ValueType>> create() const override;
             
         private:
             IterativeMinMaxLinearEquationSolverSettings<ValueType> settings;
-            
         };
     }
 }

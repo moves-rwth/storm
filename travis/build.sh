@@ -13,7 +13,7 @@ EXITCODE=42
 if [ -f build/skip.txt ]
 then
   # Remove flag s.t. tests will be executed
-  if [[ "$1" == "Build4" ]]
+  if [[ "$1" == "BuildLast" ]]
   then
     rm build/skip.txt
   fi
@@ -63,7 +63,7 @@ osx)
     exit 1
 esac
 
-if [[ $EXITCODE == 124 ]] && [[ "$1" == Build* ]] && [[ "$1" != "Build4" ]]
+if [[ $EXITCODE == 124 ]] && [[ "$1" == Build* ]] && [[ "$1" != "BuildLast" ]]
 then
     exit 0
 else

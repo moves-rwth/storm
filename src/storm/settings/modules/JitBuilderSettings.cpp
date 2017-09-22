@@ -34,8 +34,8 @@ namespace storm {
                                 .addArgument(storm::settings::ArgumentBuilder::createStringArgument("dir", "The directory containing the carl headers.").build()).build());
                 this->addOption(storm::settings::OptionBuilder(moduleName, compilerFlagsOptionName, false, "The flags passed to the compiler.")
                                 .addArgument(storm::settings::ArgumentBuilder::createStringArgument("flags", "The compiler flags.").build()).build());
-                this->addOption(storm::settings::OptionBuilder(moduleName, optimizationLevelOptionName, false, "The optimization level to use.")
-                                .addArgument(storm::settings::ArgumentBuilder::createUnsignedIntegerArgument("level", "The compiler flags.").setDefaultValueUnsignedInteger(3).build()).build());
+                this->addOption(storm::settings::OptionBuilder(moduleName, optimizationLevelOptionName, false, "Sets the optimization level.")
+                                .addArgument(storm::settings::ArgumentBuilder::createUnsignedIntegerArgument("level", "The level to use.").setDefaultValueUnsignedInteger(3).build()).build());
             }
             
             bool JitBuilderSettings::isCompilerSet() const {

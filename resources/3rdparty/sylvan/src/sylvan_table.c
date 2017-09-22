@@ -1,6 +1,6 @@
 /*
  * Copyright 2011-2016 Formal Methods and Tools, University of Twente
- * Copyright 2016 Tom van Dijk, Johannes Kepler University Linz
+ * Copyright 2016-2017 Tom van Dijk, Johannes Kepler University Linz
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,22 +15,11 @@
  * limitations under the License.
  */
 
-#include <sylvan_config.h>
+#include <sylvan_int.h>
 
 #include <errno.h>  // for errno
-#include <stdint.h> // for uint64_t etc
-#include <stdio.h>  // for printf
-#include <stdlib.h>
 #include <string.h> // memset
 #include <sys/mman.h> // for mmap
-
-#include <sylvan_table.h>
-#include <sylvan_stats.h>
-#include <sylvan_tls.h>
-
-#include <hwloc.h>
-
-static hwloc_topology_t topo;
 
 #ifndef MAP_ANONYMOUS
 #define MAP_ANONYMOUS MAP_ANON
@@ -120,15 +109,178 @@ is_custom_bucket(const llmsset_t dbs, uint64_t index)
     return (*ptr & mask) ? 1 : 0;
 }
 
+/**
+ * This tricks the compiler into generating the bit-wise rotation instruction
+ */
+static uint64_t __attribute__((unused))
+rotr64 (uint64_t n, unsigned int c)
+{
+    return (n >> c) | (n << (64-c));
+}
+
+/**
+ * Pseudo-RNG for initializing the hashtab tables.
+ * Implementation of xorshift128+ by Vigna 2016, which is
+ * based on "Xorshift RNGs", Marsaglia 2003
+ */
+static uint64_t __attribute__((unused))
+xor64(void)
+{
+    // For the initial state of s, we select two numbers:
+    // - the initializer of Marsaglia's original xorshift
+    // - the FNV-1a 64-bit offset basis
+    static uint64_t s[2] = {88172645463325252LLU, 14695981039346656037LLU};
+
+    uint64_t s1 = s[0];
+    const uint64_t s0 = s[1];
+    const uint64_t result = s0 + s1;
+    s[0] = s0;
+    s1 ^= s1 << 23; // a
+    s[1] = s1 ^ s0 ^ (s1 >> 18) ^ (s0 >> 5); // b, c
+    return result;
+}
+
+/**
+ * The table for tabulation hashing
+ */
+static uint64_t hashtab[256*16];
+
+/**
+ * Implementation of simple tabulation.
+ * Proposed by e.g. Thorup 2017 "Fast and Powerful Hashing using Tabulation"
+ */
 uint64_t
-llmsset_hash(const uint64_t a, const uint64_t b, const uint64_t seed)
+llmsset_tabhash(uint64_t a, uint64_t b, uint64_t seed)
+{
+    // we use the seed as base
+    uint64_t *t = hashtab;
+    for (int i=0; i<8; i++) {
+        seed ^= t[(uint8_t)a];
+        t += 256; // next table
+        a >>= 8;
+    }
+    for (int i=0; i<8; i++) {
+        seed ^= t[(uint8_t)b];
+        t += 256; // next table
+        b >>= 8;
+    }
+    return seed;
+}
+
+/**
+ * Encoding of the prime 2^89-1 for CWhash
+ */
+static const uint64_t Prime89_0 = (((uint64_t)1)<<32)-1;
+static const uint64_t Prime89_1 = (((uint64_t)1)<<32)-1;
+static const uint64_t Prime89_2 = (((uint64_t)1)<<25)-1;
+static const uint64_t Prime89_21 = (((uint64_t)1)<<57)-1;
+
+typedef uint64_t INT96[3];
+
+/**
+ * Computes (r mod Prime89) mod 2ˆ64
+ * (for CWhash, implementation by Thorup et al.)
+ */
+static uint64_t
+Mod64Prime89(INT96 r)
+{
+    uint64_t r0, r1, r2;
+    r2 = r[2];
+    r1 = r[1];
+    r0 = r[0] + (r2>>25);
+    r2 &= Prime89_2;
+    return (r2 == Prime89_2 && r1 == Prime89_1 && r0 >= Prime89_0) ? (r0 - Prime89_0) : (r0 + (r1<<32));
+}
+
+/**
+ * Computes a 96-bit r such that r = ax+b (mod Prime89)
+ * (for CWhash, implementation by Thorup et al.)
+ */
+static void
+MultAddPrime89(INT96 r, uint64_t x, const INT96 a, const INT96 b)
+{
+#define LOW(x) ((x)&0xFFFFFFFF)
+#define HIGH(x) ((x)>>32)
+    uint64_t x1, x0, c21, c20, c11, c10, c01, c00;
+    uint64_t d0, d1, d2, d3;
+    uint64_t s0, s1, carry;
+    x1 = HIGH(x);
+    x0 = LOW(x);
+    c21 = a[2]*x1;
+    c11 = a[1]*x1;
+    c01 = a[0]*x1;
+    c20 = a[2]*x0;
+    c10 = a[1]*x0;
+    c00 = a[0]*x0;
+    d0 = (c20>>25)+(c11>>25)+(c10>>57)+(c01>>57);
+    d1 = (c21<<7);
+    d2 = (c10&Prime89_21) + (c01&Prime89_21);
+    d3 = (c20&Prime89_2) + (c11&Prime89_2) + (c21>>57);
+    s0 = b[0] + LOW(c00) + LOW(d0) + LOW(d1);
+    r[0] = LOW(s0);
+    carry = HIGH(s0);
+    s1 = b[1] + HIGH(c00) + HIGH(d0) + HIGH(d1) + LOW(d2) + carry;
+    r[1] = LOW(s1);
+    carry = HIGH(s1);
+    r[2] = b[2] + HIGH(d2) + d3 + carry;
+#undef LOW
+#undef HIGH
+}
+
+/**
+ * Compute Carter/Wegman k-independent hash
+ * Implementation by Thorup et al.
+ * - compute polynomial on prime field of 2^89-1 (10th Marsenne prime)
+ * - random coefficients from random.org
+ */
+static uint64_t
+CWhash(uint64_t x)
+{
+    INT96 A = {0xcf90094b0ab9939e, 0x817f998697604ff3, 0x1a6e6f08b65440ea};
+    INT96 B = {0xb989a05a5dcf57f1, 0x7c007611f28daee7, 0xd8bd809d68c26854};
+    INT96 C = {0x1041070633a92679, 0xba9379fd71cd939d, 0x271793709e1cd781};
+    INT96 D = {0x5c240a710b0c6beb, 0xc24ac3b68056ea1c, 0xd46c9c7f2adfaf71};
+    INT96 E = {0xa527cea74b053a87, 0x69ba4a5e23f90577, 0x707b6e053c7741e7};
+    INT96 F = {0xa6c0812cdbcdb982, 0x8cb0c8b73f701489, 0xee08c4dc1dbef243};
+    INT96 G = {0xcf3ab0ec9d538853, 0x982a8457b6db03a9, 0x8659cf6b636c9d37};
+    INT96 H = {0x905d5d14efefc0dd, 0x7e9870e018ead6a2, 0x47e2c9af0ea9325a};
+    INT96 I = {0xc59351a9bf283b09, 0x4a39e35dbc280c7f, 0xc5f160732996be4f};
+    INT96 J = {0x4d58e0b7a57ccddf, 0xc362a25c267d1db4, 0x7c79d2fcd89402b2};
+    INT96 K = {0x62ac342c4393930c, 0xdb2fd2740ebef2a0, 0xc672fd5e72921377};
+    INT96 L = {0xbdae267838862c6d, 0x0e0ee206fdbaf1d1, 0xc270e26fd8dfbae7};
+
+    INT96 r;
+    MultAddPrime89(r, x, A, B);
+    MultAddPrime89(r, x, r, C);
+    MultAddPrime89(r, x, r, D);
+    MultAddPrime89(r, x, r, E);
+    MultAddPrime89(r, x, r, F);
+    MultAddPrime89(r, x, r, G);
+    MultAddPrime89(r, x, r, H);
+    MultAddPrime89(r, x, r, I);
+    MultAddPrime89(r, x, r, J);
+    MultAddPrime89(r, x, r, K);
+    MultAddPrime89(r, x, r, L);
+    return Mod64Prime89(r);
+}
+
+/**
+ * The well-known FNV-1a hash for 64 bits.
+ * Typical seed value (base offset) is 14695981039346656037LLU.
+ *
+ * NOTE: this particular hash is bad for certain nodes, resulting in
+ * early garbage collection and failure. We xor with shifted hash which
+ * suffices as a band-aid, but this is obviously not an ideal solution.
+ */
+uint64_t
+llmsset_fnvhash(const uint64_t a, const uint64_t b, const uint64_t seed)
 {
     // The FNV-1a hash for 64 bits
     const uint64_t prime = 1099511628211;
     uint64_t hash = seed;
     hash = (hash ^ a) * prime;
     hash = (hash ^ b) * prime;
-    return hash;
+    return hash ^ (hash>>32);
 }
 
 /*
@@ -247,6 +399,7 @@ llmsset_rehash_bucket(const llmsset_t dbs, uint64_t d_idx)
     const int custom = is_custom_bucket(dbs, d_idx) ? 1 : 0;
     if (custom) hash_rehash = dbs->hash_cb(a, b, hash_rehash);
     else hash_rehash = llmsset_hash(a, b, hash_rehash);
+    const uint64_t step = (((hash_rehash >> 20) | 1) << 3);
     const uint64_t new_v = (hash_rehash & MASK_HASH) | d_idx;
     int i=0;
 
@@ -271,8 +424,7 @@ llmsset_rehash_bucket(const llmsset_t dbs, uint64_t d_idx)
             }
 
             // go to next cache line in probe sequence
-            if (custom) hash_rehash = dbs->hash_cb(a, b, hash_rehash);
-            else hash_rehash = llmsset_hash(a, b, hash_rehash);
+            hash_rehash += step;
 
 #if LLMSSET_MASK
             last = idx = hash_rehash & dbs->mask;
@@ -286,9 +438,6 @@ llmsset_rehash_bucket(const llmsset_t dbs, uint64_t d_idx)
 llmsset_t
 llmsset_create(size_t initial_size, size_t max_size)
 {
-    hwloc_topology_init(&topo);
-    hwloc_topology_load(topo);
-
     llmsset_t dbs = NULL;
     if (posix_memalign((void**)&dbs, LINE_SIZE, sizeof(struct llmsset)) != 0) {
         fprintf(stderr, "llmsset_create: Unable to allocate memory!\n");
@@ -347,12 +496,6 @@ llmsset_create(size_t initial_size, size_t max_size)
     madvise(dbs->table, dbs->max_size * 8, MADV_RANDOM);
 #endif
 
-    hwloc_set_area_membind(topo, dbs->table, dbs->max_size * 8, hwloc_topology_get_allowed_cpuset(topo), HWLOC_MEMBIND_INTERLEAVE, 0);
-    hwloc_set_area_membind(topo, dbs->data, dbs->max_size * 16, hwloc_topology_get_allowed_cpuset(topo), HWLOC_MEMBIND_FIRSTTOUCH, 0);
-    hwloc_set_area_membind(topo, dbs->bitmap1, dbs->max_size / (512*8), hwloc_topology_get_allowed_cpuset(topo), HWLOC_MEMBIND_INTERLEAVE, 0);
-    hwloc_set_area_membind(topo, dbs->bitmap2, dbs->max_size / 8, hwloc_topology_get_allowed_cpuset(topo), HWLOC_MEMBIND_FIRSTTOUCH, 0);
-    hwloc_set_area_membind(topo, dbs->bitmapc, dbs->max_size / 8, hwloc_topology_get_allowed_cpuset(topo), HWLOC_MEMBIND_FIRSTTOUCH, 0);
-
     // forbid first two positions (index 0 and 1)
     dbs->bitmap2[0] = 0xc000000000000000LL;
 
@@ -368,6 +511,9 @@ llmsset_create(size_t initial_size, size_t max_size)
     LACE_ME;
     INIT_THREAD_LOCAL(my_region);
     TOGETHER(llmsset_reset_region);
+
+    // initialize hashtab
+    for (int i=0; i<256*16; i++) hashtab[i] = CWhash(i);
 
     return dbs;
 }
@@ -392,13 +538,11 @@ VOID_TASK_IMPL_1(llmsset_clear, llmsset_t, dbs)
 VOID_TASK_IMPL_1(llmsset_clear_data, llmsset_t, dbs)
 {
     if (mmap(dbs->bitmap1, dbs->max_size / (512*8), PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANONYMOUS | MAP_FIXED, -1, 0) != (void*)-1) {
-        hwloc_set_area_membind(topo, dbs->bitmap1, dbs->max_size / (512*8), hwloc_topology_get_allowed_cpuset(topo), HWLOC_MEMBIND_INTERLEAVE, 0);
     } else {
         memset(dbs->bitmap1, 0, dbs->max_size / (512*8));
     }
 
     if (mmap(dbs->bitmap2, dbs->max_size / 8, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANONYMOUS | MAP_FIXED, -1, 0) != (void*)-1) {
-        hwloc_set_area_membind(topo, dbs->bitmap2, dbs->max_size / 8, hwloc_topology_get_allowed_cpuset(topo), HWLOC_MEMBIND_FIRSTTOUCH, 0);
     } else {
         memset(dbs->bitmap2, 0, dbs->max_size / 8);
     }
@@ -416,7 +560,6 @@ VOID_TASK_IMPL_1(llmsset_clear_hashes, llmsset_t, dbs)
 #if defined(madvise) && defined(MADV_RANDOM)
         madvise(dbs->table, sizeof(uint64_t[dbs->max_size]), MADV_RANDOM);
 #endif
-        hwloc_set_area_membind(topo, dbs->table, sizeof(uint64_t[dbs->max_size]), hwloc_topology_get_allowed_cpuset(topo), HWLOC_MEMBIND_INTERLEAVE, 0);
     } else {
         // reallocate failed... expensive fallback
         memset(dbs->table, 0, dbs->max_size * 8);

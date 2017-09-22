@@ -82,6 +82,11 @@ namespace storm {
 #endif
         
         template<typename ValueType>
+        bool InternalAdd<DdType::Sylvan, ValueType>::matchesVariableIndex(MTBDD const& node, uint64_t variableIndex, int64_t offset) {
+            return !mtbdd_isleaf(node) && static_cast<uint64_t>(sylvan_var(node) + offset) == variableIndex;
+        }
+        
+        template<typename ValueType>
         bool InternalAdd<DdType::Sylvan, ValueType>::operator==(InternalAdd<DdType::Sylvan, ValueType> const& other) const {
             return this->sylvanMtbdd == other.sylvanMtbdd;
         }
@@ -581,16 +586,6 @@ namespace storm {
             
             return InternalAdd<DdType::Sylvan, ValueType>(ddManager, this->sylvanMtbdd.AndExists(otherMatrix.sylvanMtbdd, summationVariables.getSylvanBdd()));
         }
-
-        template<>
-        InternalAdd<DdType::Sylvan, storm::RationalNumber> InternalAdd<DdType::Sylvan, storm::RationalNumber>::multiplyMatrix(InternalAdd<DdType::Sylvan, storm::RationalNumber> const& otherMatrix, std::vector<InternalBdd<DdType::Sylvan>> const& summationDdVariables) const {
-            InternalBdd<DdType::Sylvan> summationVariables = ddManager->getBddOne();
-            for (auto const& ddVariable : summationDdVariables) {
-                summationVariables &= ddVariable;
-            }
-            
-            return InternalAdd<DdType::Sylvan, storm::RationalNumber>(ddManager, this->sylvanMtbdd.AndExistsRN(otherMatrix.sylvanMtbdd, summationVariables.getSylvanBdd()));
-        }
         
 #ifdef STORM_HAVE_CARL
         template<>
@@ -603,7 +598,49 @@ namespace storm {
             return InternalAdd<DdType::Sylvan, storm::RationalFunction>(ddManager, this->sylvanMtbdd.AndExistsRF(otherMatrix.sylvanMtbdd, summationVariables.getSylvanBdd()));
         }
 #endif
-        
+
+        template<>
+        InternalAdd<DdType::Sylvan, storm::RationalNumber> InternalAdd<DdType::Sylvan, storm::RationalNumber>::multiplyMatrix(InternalAdd<DdType::Sylvan, storm::RationalNumber> const& otherMatrix, std::vector<InternalBdd<DdType::Sylvan>> const& summationDdVariables) const {
+            InternalBdd<DdType::Sylvan> summationVariables = ddManager->getBddOne();
+            for (auto const& ddVariable : summationDdVariables) {
+                summationVariables &= ddVariable;
+            }
+            
+            return InternalAdd<DdType::Sylvan, storm::RationalNumber>(ddManager, this->sylvanMtbdd.AndExistsRN(otherMatrix.sylvanMtbdd, summationVariables.getSylvanBdd()));
+        }
+
+        template<typename ValueType>
+        InternalAdd<DdType::Sylvan, ValueType> InternalAdd<DdType::Sylvan, ValueType>::multiplyMatrix(InternalBdd<DdType::Sylvan> const& otherMatrix, std::vector<InternalBdd<DdType::Sylvan>> const& summationDdVariables) const {
+            InternalBdd<DdType::Sylvan> summationVariables = ddManager->getBddOne();
+            for (auto const& ddVariable : summationDdVariables) {
+                summationVariables &= ddVariable;
+            }
+            
+            return InternalAdd<DdType::Sylvan, ValueType>(ddManager, this->sylvanMtbdd.AndExists(sylvan::Bdd(otherMatrix.getSylvanBdd().GetBDD()), summationVariables.getSylvanBdd()));
+        }
+
+#ifdef STORM_HAVE_CARL
+        template<>
+        InternalAdd<DdType::Sylvan, storm::RationalFunction> InternalAdd<DdType::Sylvan, storm::RationalFunction>::multiplyMatrix(InternalBdd<DdType::Sylvan> const& otherMatrix, std::vector<InternalBdd<DdType::Sylvan>> const& summationDdVariables) const {
+            InternalBdd<DdType::Sylvan> summationVariables = ddManager->getBddOne();
+            for (auto const& ddVariable : summationDdVariables) {
+                summationVariables &= ddVariable;
+            }
+            
+            return InternalAdd<DdType::Sylvan, storm::RationalFunction>(ddManager, this->sylvanMtbdd.AndExistsRF(sylvan::Bdd(otherMatrix.getSylvanBdd().GetBDD()), summationVariables.getSylvanBdd()));
+        }
+#endif
+
+        template<>
+        InternalAdd<DdType::Sylvan, storm::RationalNumber> InternalAdd<DdType::Sylvan, storm::RationalNumber>::multiplyMatrix(InternalBdd<DdType::Sylvan> const& otherMatrix, std::vector<InternalBdd<DdType::Sylvan>> const& summationDdVariables) const {
+            InternalBdd<DdType::Sylvan> summationVariables = ddManager->getBddOne();
+            for (auto const& ddVariable : summationDdVariables) {
+                summationVariables &= ddVariable;
+            }
+            
+            return InternalAdd<DdType::Sylvan, storm::RationalNumber>(ddManager, this->sylvanMtbdd.AndExistsRN(sylvan::Bdd(otherMatrix.getSylvanBdd().GetBDD()), summationVariables.getSylvanBdd()));
+        }
+
         template<typename ValueType>
         InternalBdd<DdType::Sylvan> InternalAdd<DdType::Sylvan, ValueType>::greater(ValueType const& value) const {
             return InternalBdd<DdType::Sylvan>(ddManager, this->sylvanMtbdd.BddStrictThreshold(value));
@@ -751,7 +788,7 @@ namespace storm {
         }
         
         template<typename ValueType>
-        void InternalAdd<DdType::Sylvan, ValueType>::exportToDot(std::string const& filename, std::vector<std::string> const&) const {
+        void InternalAdd<DdType::Sylvan, ValueType>::exportToDot(std::string const& filename, std::vector<std::string> const&, bool) const {
             // Open the file, dump the DD and close it again.
             FILE* filePointer = fopen(filename.c_str() , "w");
             this->sylvanMtbdd.PrintDot(filePointer);
@@ -826,6 +863,11 @@ namespace storm {
                     return oddNode;
                 }
             }
+        }
+        
+        template<typename ValueType>
+        InternalDdManager<DdType::Sylvan> const& InternalAdd<DdType::Sylvan, ValueType>::getInternalDdManager() const {
+            return *ddManager;
         }
         
         template<typename ValueType>

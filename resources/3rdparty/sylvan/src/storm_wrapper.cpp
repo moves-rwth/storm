@@ -18,6 +18,8 @@
 
 #if defined(STORM_HAVE_GMP) && !defined(STORM_USE_CLN_EA)
 #define RATIONAL_NUMBER_THREAD_SAFE
+#else
+#warning "Rational numbers do not appear to be thread-safe. Use in sylvan will be protected by mutexes, performance might degrade."
 #endif
 
 // A mutex that is used to lock all operations accessing rational numbers as they are not necessarily thread-safe.

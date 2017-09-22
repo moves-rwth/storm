@@ -11,8 +11,13 @@ namespace storm {
     namespace solver {
      
         template<storm::dd::DdType DdType, typename ValueType>
-        SymbolicEliminationLinearEquationSolver<DdType, ValueType>::SymbolicEliminationLinearEquationSolver(storm::dd::Add<DdType, ValueType> const& A, storm::dd::Bdd<DdType> const& allRows, std::set<storm::expressions::Variable> const& rowMetaVariables, std::set<storm::expressions::Variable> const& columnMetaVariables, std::vector<std::pair<storm::expressions::Variable, storm::expressions::Variable>> const& rowColumnMetaVariablePairs) : SymbolicLinearEquationSolver<DdType, ValueType>(A, allRows, rowMetaVariables, columnMetaVariables, rowColumnMetaVariablePairs) {
-            storm::dd::DdManager<DdType>& ddManager = A.getDdManager();
+        SymbolicEliminationLinearEquationSolver<DdType, ValueType>::SymbolicEliminationLinearEquationSolver(storm::dd::Add<DdType, ValueType> const& A, storm::dd::Bdd<DdType> const& allRows, std::set<storm::expressions::Variable> const& rowMetaVariables, std::set<storm::expressions::Variable> const& columnMetaVariables, std::vector<std::pair<storm::expressions::Variable, storm::expressions::Variable>> const& rowColumnMetaVariablePairs) : SymbolicEliminationLinearEquationSolver(allRows, rowMetaVariables, columnMetaVariables, rowColumnMetaVariablePairs) {
+            this->setMatrix(A);
+        }
+        
+        template<storm::dd::DdType DdType, typename ValueType>
+        SymbolicEliminationLinearEquationSolver<DdType, ValueType>::SymbolicEliminationLinearEquationSolver(storm::dd::Bdd<DdType> const& allRows, std::set<storm::expressions::Variable> const& rowMetaVariables, std::set<storm::expressions::Variable> const& columnMetaVariables, std::vector<std::pair<storm::expressions::Variable, storm::expressions::Variable>> const& rowColumnMetaVariablePairs) : SymbolicLinearEquationSolver<DdType, ValueType>(allRows, rowMetaVariables, columnMetaVariables, rowColumnMetaVariablePairs) {
+            storm::dd::DdManager<DdType>& ddManager = allRows.getDdManager();
             
             // Create triple-layered meta variables for all original meta variables. We will use them later in the elimination process.
             for (auto const& metaVariablePair : this->rowColumnMetaVariablePairs) {
@@ -29,11 +34,7 @@ namespace storm {
                     ++counter;
                 }
                 
-                if (metaVariable.getType() == storm::dd::MetaVariableType::Bool) {
-                    newMetaVariables = ddManager.addMetaVariable(newMetaVariableName + std::to_string(counter), 3);
-                } else {
-                    newMetaVariables = ddManager.addMetaVariable(newMetaVariableName + std::to_string(counter), metaVariable.getLow(), metaVariable.getHigh(), 3);
-                }
+                newMetaVariables = ddManager.cloneVariable(metaVariablePair.first, newMetaVariableName + std::to_string(counter), 3);
                 
                 newRowVariables.insert(newMetaVariables[0]);
                 newColumnVariables.insert(newMetaVariables[1]);
@@ -108,8 +109,8 @@ namespace storm {
         }
 
         template<storm::dd::DdType DdType, typename ValueType>
-        std::unique_ptr<storm::solver::SymbolicLinearEquationSolver<DdType, ValueType>> SymbolicEliminationLinearEquationSolverFactory<DdType, ValueType>::create(storm::dd::Add<DdType, ValueType> const& A, storm::dd::Bdd<DdType> const& allRows, std::set<storm::expressions::Variable> const& rowMetaVariables, std::set<storm::expressions::Variable> const& columnMetaVariables, std::vector<std::pair<storm::expressions::Variable, storm::expressions::Variable>> const& rowColumnMetaVariablePairs) const {
-            return std::make_unique<SymbolicEliminationLinearEquationSolver<DdType, ValueType>>(A, allRows, rowMetaVariables, columnMetaVariables, rowColumnMetaVariablePairs);
+        std::unique_ptr<storm::solver::SymbolicLinearEquationSolver<DdType, ValueType>> SymbolicEliminationLinearEquationSolverFactory<DdType, ValueType>::create(storm::dd::Bdd<DdType> const& allRows, std::set<storm::expressions::Variable> const& rowMetaVariables, std::set<storm::expressions::Variable> const& columnMetaVariables, std::vector<std::pair<storm::expressions::Variable, storm::expressions::Variable>> const& rowColumnMetaVariablePairs) const {
+            return std::make_unique<SymbolicEliminationLinearEquationSolver<DdType, ValueType>>(allRows, rowMetaVariables, columnMetaVariables, rowColumnMetaVariablePairs);
         }
             
         template<storm::dd::DdType DdType, typename ValueType>

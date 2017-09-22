@@ -29,6 +29,7 @@
 #include "storm/exceptions/InvalidSettingsException.h"
 #include "storm/exceptions/IllegalFunctionCallException.h"
 #include "storm/exceptions/IllegalArgumentException.h"
+#include "storm/exceptions/UncheckedRequirementException.h"
 
 namespace storm {
     namespace modelchecker {
@@ -81,6 +82,203 @@ namespace storm {
                 std::unique_ptr<storm::solver::MinMaxLinearEquationSolver<ValueType>> solver = minMaxLinearEquationSolverFactory.create(transitionMatrix);
                 solver->repeatedMultiply(dir, result, nullptr, 1);
                 
+                return result;
+            }
+            
+            template<typename ValueType>
+            std::vector<uint_fast64_t> computeValidSchedulerHint(storm::solver::MinMaxLinearEquationSolverSystemType const& type, storm::storage::SparseMatrix<ValueType> const& transitionMatrix, storm::storage::SparseMatrix<ValueType> const& backwardTransitions, storm::storage::BitVector const& maybeStates, storm::storage::BitVector const& filterStates, storm::storage::BitVector const& targetStates) {
+                storm::storage::Scheduler<ValueType> validScheduler(maybeStates.size());
+
+                if (type == storm::solver::MinMaxLinearEquationSolverSystemType::UntilProbabilities) {
+                    storm::utility::graph::computeSchedulerProbGreater0E(transitionMatrix, backwardTransitions, filterStates, targetStates, validScheduler, boost::none);
+                } else if (type == storm::solver::MinMaxLinearEquationSolverSystemType::ReachabilityRewards) {
+                    storm::utility::graph::computeSchedulerProb1E(maybeStates | targetStates, transitionMatrix, backwardTransitions, filterStates, targetStates, validScheduler);
+                } else {
+                    STORM_LOG_ASSERT(false, "Unexpected equation system type.");
+                }
+                
+                // Extract the relevant parts of the scheduler for the solver.
+                std::vector<uint_fast64_t> schedulerHint(maybeStates.getNumberOfSetBits());
+                auto maybeIt = maybeStates.begin();
+                for (auto& choice : schedulerHint) {
+                    choice = validScheduler.getChoice(*maybeIt).getDeterministicChoice();
+                    ++maybeIt;
+                }
+                return schedulerHint;
+            }
+            
+            template<typename ValueType>
+            struct SparseMdpHintType {
+                bool hasSchedulerHint() const {
+                    return static_cast<bool>(schedulerHint);
+                }
+
+                bool hasValueHint() const {
+                    return static_cast<bool>(valueHint);
+                }
+
+                bool hasLowerResultBound() const {
+                    return static_cast<bool>(lowerResultBound);
+                }
+
+                ValueType const& getLowerResultBound() const {
+                    return lowerResultBound.get();
+                }
+                
+                bool hasUpperResultBound() const {
+                    return static_cast<bool>(upperResultBound);
+                }
+
+                ValueType const& getUpperResultBound() const {
+                    return upperResultBound.get();
+                }
+                
+                std::vector<uint64_t>& getSchedulerHint() {
+                    return schedulerHint.get();
+                }
+                
+                std::vector<ValueType>& getValueHint() {
+                    return valueHint.get();
+                }
+
+                boost::optional<std::vector<uint64_t>> schedulerHint;
+                boost::optional<std::vector<ValueType>> valueHint;
+                boost::optional<ValueType> lowerResultBound;
+                boost::optional<ValueType> upperResultBound;
+            };
+            
+            template<typename ValueType>
+            void extractHintInformationForMaybeStates(SparseMdpHintType<ValueType>& hintStorage, storm::storage::SparseMatrix<ValueType> const& transitionMatrix, storm::storage::SparseMatrix<ValueType> const& backwardTransitions, storm::storage::BitVector const& maybeStates, boost::optional<storm::storage::BitVector> const& selectedChoices, ModelCheckerHint const& hint, bool skipECWithinMaybeStatesCheck) {
+                
+                // Deal with scheduler hint.
+                if (hint.isExplicitModelCheckerHint() && hint.template asExplicitModelCheckerHint<ValueType>().hasSchedulerHint()) {
+                    if (hintStorage.hasSchedulerHint()) {
+                        STORM_LOG_WARN("A scheduler hint was provided, but the solver requires a specific one. The provided scheduler hint will be ignored.");
+                    } else {
+                        auto const& schedulerHint = hint.template asExplicitModelCheckerHint<ValueType>().getSchedulerHint();
+                        std::vector<uint64_t> hintChoices;
+
+                        // The scheduler hint is only applicable if it induces no BSCC consisting of maybe states.
+                        bool hintApplicable;
+                        if (!skipECWithinMaybeStatesCheck) {
+                            hintChoices.reserve(maybeStates.size());
+                            for (uint_fast64_t state = 0; state < maybeStates.size(); ++state) {
+                                hintChoices.push_back(schedulerHint.getChoice(state).getDeterministicChoice());
+                            }
+                            hintApplicable = storm::utility::graph::performProb1(transitionMatrix.transposeSelectedRowsFromRowGroups(hintChoices), maybeStates, ~maybeStates).full();
+                        } else {
+                            hintApplicable = true;
+                        }
+    
+                        if (hintApplicable) {
+                            // Compute the hint w.r.t. the given subsystem.
+                            hintChoices.clear();
+                            hintChoices.reserve(maybeStates.getNumberOfSetBits());
+                            for (auto const& state : maybeStates) {
+                                uint_fast64_t hintChoice = schedulerHint.getChoice(state).getDeterministicChoice();
+                                if (selectedChoices) {
+                                    uint_fast64_t firstChoice = transitionMatrix.getRowGroupIndices()[state];
+                                    uint_fast64_t lastChoice = firstChoice + hintChoice;
+                                    hintChoice = 0;
+                                    for (uint_fast64_t choice = selectedChoices->getNextSetIndex(firstChoice); choice < lastChoice; choice = selectedChoices->getNextSetIndex(choice + 1)) {
+                                        ++hintChoice;
+                                    }
+                                }
+                                hintChoices.push_back(hintChoice);
+                            }
+                            hintStorage.schedulerHint = std::move(hintChoices);
+                        }
+                    }
+                }
+                
+                // Deal with solution value hint. Only applicable if there are no End Components consisting of maybe states.
+                if (hint.isExplicitModelCheckerHint() && hint.template asExplicitModelCheckerHint<ValueType>().hasResultHint() && (skipECWithinMaybeStatesCheck || hintStorage.hasSchedulerHint() || storm::utility::graph::performProb1A(transitionMatrix, transitionMatrix.getRowGroupIndices(), backwardTransitions, maybeStates, ~maybeStates).full())) {
+                    hintStorage.valueHint = storm::utility::vector::filterVector(hint.template asExplicitModelCheckerHint<ValueType>().getResultHint(), maybeStates);
+                }
+            }
+            
+            template<typename ValueType>
+            SparseMdpHintType<ValueType> computeHints(storm::solver::MinMaxLinearEquationSolverSystemType const& type, ModelCheckerHint const& hint, storm::OptimizationDirection const& dir, storm::storage::SparseMatrix<ValueType> const& transitionMatrix, storm::storage::SparseMatrix<ValueType> const& backwardTransitions, storm::storage::BitVector const& maybeStates, storm::storage::BitVector const& phiStates, storm::storage::BitVector const& targetStates, storm::solver::MinMaxLinearEquationSolverFactory<ValueType> const& minMaxLinearEquationSolverFactory, boost::optional<storm::storage::BitVector> const& selectedChoices = boost::none) {
+                SparseMdpHintType<ValueType> result;
+
+                // Check for requirements of the solver.
+                storm::solver::MinMaxLinearEquationSolverRequirements requirements = minMaxLinearEquationSolverFactory.getRequirements(type, dir);
+                if (!(hint.isExplicitModelCheckerHint() && hint.asExplicitModelCheckerHint<ValueType>().getNoEndComponentsInMaybeStates()) && !requirements.empty()) {
+                    if (requirements.requires(storm::solver::MinMaxLinearEquationSolverRequirements::Element::ValidInitialScheduler)) {
+                        STORM_LOG_DEBUG("Computing valid scheduler, because the solver requires it.");
+                        result.schedulerHint = computeValidSchedulerHint(type, transitionMatrix, backwardTransitions, maybeStates, phiStates, targetStates);
+                        requirements.set(storm::solver::MinMaxLinearEquationSolverRequirements::Element::ValidInitialScheduler, false);
+                    }
+                    STORM_LOG_THROW(requirements.empty(), storm::exceptions::UncheckedRequirementException, "There are unchecked requirements of the solver.");
+                }
+
+                bool skipEcWithinMaybeStatesCheck = dir == storm::OptimizationDirection::Minimize || (hint.isExplicitModelCheckerHint() && hint.asExplicitModelCheckerHint<ValueType>().getNoEndComponentsInMaybeStates());
+                extractHintInformationForMaybeStates(result, transitionMatrix, backwardTransitions, maybeStates, selectedChoices, hint, skipEcWithinMaybeStatesCheck);
+
+                result.lowerResultBound = storm::utility::zero<ValueType>();
+                if (type == storm::solver::MinMaxLinearEquationSolverSystemType::UntilProbabilities) {
+                    result.upperResultBound = storm::utility::one<ValueType>();
+                } else if (type == storm::solver::MinMaxLinearEquationSolverSystemType::ReachabilityRewards) {
+                    // Intentionally left empty.
+                } else {
+                    STORM_LOG_ASSERT(false, "Unexpected equation system type.");
+                }
+                
+                return result;
+            }
+            
+            template<typename ValueType>
+            struct MaybeStateResult {
+                MaybeStateResult(std::vector<ValueType>&& values) : values(std::move(values)) {
+                    // Intentionally left empty.
+                }
+                
+                bool hasScheduler() const {
+                    return static_cast<bool>(scheduler);
+                }
+                
+                std::vector<uint64_t> const& getScheduler() const {
+                    return scheduler.get();
+                }
+                
+                std::vector<ValueType> const& getValues() const {
+                    return values;
+                }
+                
+                std::vector<ValueType> values;
+                boost::optional<std::vector<uint64_t>> scheduler;
+            };
+            
+            template<typename ValueType>
+            MaybeStateResult<ValueType> computeValuesForMaybeStates(storm::solver::SolveGoal const& goal, storm::storage::SparseMatrix<ValueType> const& submatrix, std::vector<ValueType> const& b, bool produceScheduler, storm::solver::MinMaxLinearEquationSolverFactory<ValueType> const& minMaxLinearEquationSolverFactory, SparseMdpHintType<ValueType>& hint) {
+                
+                // Set up the solver.
+                std::unique_ptr<storm::solver::MinMaxLinearEquationSolver<ValueType>> solver = storm::solver::configureMinMaxLinearEquationSolver(goal, minMaxLinearEquationSolverFactory, submatrix);
+                solver->setRequirementsChecked();
+                if (hint.hasLowerResultBound()) {
+                    solver->setLowerBound(hint.getLowerResultBound());
+                }
+                if (hint.hasUpperResultBound()) {
+                    solver->setUpperBound(hint.getUpperResultBound());
+                }
+                if (hint.hasSchedulerHint()) {
+                    solver->setInitialScheduler(std::move(hint.getSchedulerHint()));
+                }
+                solver->setTrackScheduler(produceScheduler);
+                
+                // Initialize the solution vector.
+                std::vector<ValueType> x = hint.hasValueHint() ? std::move(hint.getValueHint()) : std::vector<ValueType>(submatrix.getRowGroupCount(), hint.hasLowerResultBound() ? hint.getLowerResultBound() : storm::utility::zero<ValueType>());
+                
+                // Solve the corresponding system of equations.
+                solver->solveEquations(x, b);
+                
+                // Create result.
+                MaybeStateResult<ValueType> result(std::move(x));
+
+                // If requested, return the requested scheduler.
+                if (produceScheduler) {
+                    result.scheduler = std::move(solver->getSchedulerChoices());
+                }
                 return result;
             }
             
@@ -153,18 +351,17 @@ namespace storm {
                         // the accumulated probability of going from state i to some 'yes' state.
                         std::vector<ValueType> b = transitionMatrix.getConstrainedRowGroupSumVector(maybeStates, statesWithProbability1);
                         
-                        // obtain hint information if possible
-                        bool skipEcWithinMaybeStatesCheck = goal.minimize() || (hint.isExplicitModelCheckerHint() && hint.asExplicitModelCheckerHint<ValueType>().getNoEndComponentsInMaybeStates());
-                        std::pair<boost::optional<std::vector<ValueType>>, boost::optional<std::vector<uint_fast64_t>>> hintInformation = extractHintInformationForMaybeStates(transitionMatrix, backwardTransitions, maybeStates, boost::none, hint, skipEcWithinMaybeStatesCheck);
+                        // Obtain proper hint information either from the provided hint or from requirements of the solver.
+                        SparseMdpHintType<ValueType> hintInformation = computeHints(storm::solver::MinMaxLinearEquationSolverSystemType::UntilProbabilities, hint, goal.direction(), transitionMatrix, backwardTransitions, maybeStates, phiStates, statesWithProbability1, minMaxLinearEquationSolverFactory);
                         
-                        // Now compute the results for the maybeStates
-                        std::pair<std::vector<ValueType>, boost::optional<std::vector<uint_fast64_t>>> resultForMaybeStates = computeValuesOnlyMaybeStates(goal, submatrix, b, produceScheduler, minMaxLinearEquationSolverFactory, std::move(hintInformation.first), std::move(hintInformation.second), storm::utility::zero<ValueType>(), storm::utility::one<ValueType>());
+                        // Now compute the results for the maybe states.
+                        MaybeStateResult<ValueType> resultForMaybeStates = computeValuesForMaybeStates(goal, submatrix, b, produceScheduler, minMaxLinearEquationSolverFactory, hintInformation);
                         
                         // Set values of resulting vector according to result.
-                        storm::utility::vector::setVectorValues<ValueType>(result, maybeStates, resultForMaybeStates.first);
+                        storm::utility::vector::setVectorValues<ValueType>(result, maybeStates, resultForMaybeStates.getValues());
 
                         if (produceScheduler) {
-                            std::vector<uint_fast64_t> const& subChoices = resultForMaybeStates.second.get();
+                            std::vector<uint_fast64_t> const& subChoices = resultForMaybeStates.getScheduler();
                             auto subChoiceIt = subChoices.begin();
                             for (auto maybeState : maybeStates) {
                                 scheduler->setChoice(*subChoiceIt, maybeState);
@@ -196,88 +393,6 @@ namespace storm {
 
                 
                 return MDPSparseModelCheckingHelperReturnType<ValueType>(std::move(result), std::move(scheduler));
-            }
-            
-            template<typename ValueType>
-            std::pair<boost::optional<std::vector<ValueType>>, boost::optional<std::vector<uint_fast64_t>>> SparseMdpPrctlHelper<ValueType>::extractHintInformationForMaybeStates(storm::storage::SparseMatrix<ValueType> const& transitionMatrix, storm::storage::SparseMatrix<ValueType> const& backwardTransitions, storm::storage::BitVector const& maybeStates, boost::optional<storm::storage::BitVector> const& selectedChoices, ModelCheckerHint const& hint, bool skipECWithinMaybeStatesCheck) {
-                
-                // Scheduler hint
-                boost::optional<std::vector<uint_fast64_t>> subSchedulerChoices;
-                if (hint.isExplicitModelCheckerHint() && hint.template asExplicitModelCheckerHint<ValueType>().hasSchedulerHint()) {
-                    auto const& schedulerHint = hint.template asExplicitModelCheckerHint<ValueType>().getSchedulerHint();
-                    std::vector<uint_fast64_t> hintChoices;
-                    
-                    // the scheduler hint is only applicable if it induces no BSCC consisting of maybestates
-                    bool hintApplicable;
-                    if (!skipECWithinMaybeStatesCheck) {
-                        hintChoices.reserve(maybeStates.size());
-                        for (uint_fast64_t state = 0; state < maybeStates.size(); ++state) {
-                            hintChoices.push_back(schedulerHint.getChoice(state).getDeterministicChoice());
-                        }
-                        hintApplicable = storm::utility::graph::performProb1(transitionMatrix.transposeSelectedRowsFromRowGroups(hintChoices), maybeStates, ~maybeStates).full();
-                    } else {
-                        hintApplicable = true;
-                    }
-                    
-                    if (hintApplicable) {
-                        // Compute the hint w.r.t. the given subsystem
-                        hintChoices.clear();
-                        hintChoices.reserve(maybeStates.getNumberOfSetBits());
-                        for (auto const& state : maybeStates) {
-                            uint_fast64_t hintChoice = schedulerHint.getChoice(state).getDeterministicChoice();
-                            if (selectedChoices) {
-                                uint_fast64_t firstChoice = transitionMatrix.getRowGroupIndices()[state];
-                                uint_fast64_t lastChoice = firstChoice + hintChoice;
-                                hintChoice = 0;
-                                for (uint_fast64_t choice = selectedChoices->getNextSetIndex(firstChoice); choice < lastChoice; choice = selectedChoices->getNextSetIndex(choice + 1)) {
-                                    ++hintChoice;
-                                }
-                            }
-                            hintChoices.push_back(hintChoice);
-                        }
-                        subSchedulerChoices = std::move(hintChoices);
-                    }
-                }
-                
-                // Solution value hint
-                boost::optional<std::vector<ValueType>> subValues;
-                // The result hint is only applicable if there are no End Components consisting of maybestates
-                if (hint.isExplicitModelCheckerHint() && hint.template asExplicitModelCheckerHint<ValueType>().hasResultHint() &&
-                   (skipECWithinMaybeStatesCheck || subSchedulerChoices ||
-                    storm::utility::graph::performProb1A(transitionMatrix, transitionMatrix.getRowGroupIndices(), backwardTransitions, maybeStates, ~maybeStates).full())) {
-                    subValues = storm::utility::vector::filterVector(hint.template asExplicitModelCheckerHint<ValueType>().getResultHint(), maybeStates);
-                }
-                return std::make_pair(std::move(subValues), std::move(subSchedulerChoices));
-            }
-            
-            template<typename ValueType>
-            std::pair<std::vector<ValueType>, boost::optional<std::vector<uint_fast64_t>>> SparseMdpPrctlHelper<ValueType>::computeValuesOnlyMaybeStates(storm::solver::SolveGoal const& goal, storm::storage::SparseMatrix<ValueType> const& submatrix, std::vector<ValueType> const& b, bool produceScheduler, storm::solver::MinMaxLinearEquationSolverFactory<ValueType> const& minMaxLinearEquationSolverFactory, boost::optional<std::vector<ValueType>>&& hintValues, boost::optional<std::vector<uint_fast64_t>>&& hintChoices, boost::optional<ValueType> const& lowerResultBound, boost::optional<ValueType> const& upperResultBound) {
-                
-                // Set up the solver
-                std::unique_ptr<storm::solver::MinMaxLinearEquationSolver<ValueType>> solver = storm::solver::configureMinMaxLinearEquationSolver(goal, minMaxLinearEquationSolverFactory, submatrix);
-                if (lowerResultBound) {
-                    solver->setLowerBound(lowerResultBound.get());
-                }
-                if (upperResultBound) {
-                    solver->setUpperBound(upperResultBound.get());
-                }
-                if (hintChoices) {
-                    solver->setSchedulerHint(std::move(hintChoices.get()));
-                }
-                solver->setTrackScheduler(produceScheduler);
-                
-                // Initialize the solution vector.
-                std::vector<ValueType> x = hintValues ? std::move(hintValues.get()) : std::vector<ValueType>(submatrix.getRowGroupCount(), lowerResultBound ? lowerResultBound.get() : storm::utility::zero<ValueType>());
-                
-                // Solve the corresponding system of equations.
-                solver->solveEquations(x, b);
-                
-                // If requested, a scheduler was produced
-                if (produceScheduler) {
-                   return std::pair<std::vector<ValueType>, boost::optional<std::vector<uint_fast64_t>>>(std::move(x), std::move(solver->getSchedulerChoices()));
-                } else {
-                    return std::pair<std::vector<ValueType>, boost::optional<std::vector<uint_fast64_t>>>(std::move(x), boost::none);
-                }
             }
 
             template<typename ValueType>
@@ -394,9 +509,7 @@ namespace storm {
             MDPSparseModelCheckingHelperReturnType<ValueType> SparseMdpPrctlHelper<ValueType>::computeReachabilityRewardsHelper(storm::solver::SolveGoal const& goal, storm::storage::SparseMatrix<ValueType> const& transitionMatrix, storm::storage::SparseMatrix<ValueType> const& backwardTransitions, std::function<std::vector<ValueType>(uint_fast64_t, storm::storage::SparseMatrix<ValueType> const&, storm::storage::BitVector const&)> const& totalStateRewardVectorGetter, storm::storage::BitVector const& targetStates, bool qualitative, bool produceScheduler, storm::solver::MinMaxLinearEquationSolverFactory<ValueType> const& minMaxLinearEquationSolverFactory, ModelCheckerHint const& hint) {
                 
                 std::vector<ValueType> result(transitionMatrix.getRowGroupCount(), storm::utility::zero<ValueType>());
-
                 std::vector<uint_fast64_t> const& nondeterministicChoiceIndices = transitionMatrix.getRowGroupIndices();
-                
                 
                 // Determine which states have a reward that is infinity or less than infinity.
                 storm::storage::BitVector maybeStates, infinityStates;
@@ -406,7 +519,6 @@ namespace storm {
                 } else {
                     storm::storage::BitVector trueStates(transitionMatrix.getRowGroupCount(), true);
                     if (goal.minimize()) {
-                        STORM_LOG_WARN("Results of reward computation may be too low, because of zero-reward loops.");
                         infinityStates = storm::utility::graph::performProb1E(transitionMatrix, nondeterministicChoiceIndices, backwardTransitions, trueStates, targetStates);
                     } else {
                         infinityStates = storm::utility::graph::performProb1A(transitionMatrix, nondeterministicChoiceIndices, backwardTransitions, trueStates, targetStates);
@@ -438,6 +550,7 @@ namespace storm {
                         // Prepare matrix and vector for the equation system.
                         storm::storage::SparseMatrix<ValueType> submatrix;
                         std::vector<ValueType> b;
+                        
                         // Remove rows and columns from the original transition probability matrix for states whose reward values are already known.
                         // If there are infinity states, we additionaly have to remove choices of maybeState that lead to infinity
                         boost::optional<storm::storage::BitVector> selectedChoices; // if not given, all maybeState choices are selected
@@ -451,18 +564,17 @@ namespace storm {
                             storm::utility::vector::filterVectorInPlace(b, *selectedChoices);
                         }
                         
-                        // obtain hint information if possible
-                        bool skipEcWithinMaybeStatesCheck = !goal.minimize() || (hint.isExplicitModelCheckerHint() && hint.asExplicitModelCheckerHint<ValueType>().getNoEndComponentsInMaybeStates());
-                        std::pair<boost::optional<std::vector<ValueType>>, boost::optional<std::vector<uint_fast64_t>>> hintInformation = extractHintInformationForMaybeStates(transitionMatrix, backwardTransitions, maybeStates, selectedChoices, hint, skipEcWithinMaybeStatesCheck);
+                        // Obtain proper hint information either from the provided hint or from requirements of the solver.
+                        SparseMdpHintType<ValueType> hintInformation = computeHints(storm::solver::MinMaxLinearEquationSolverSystemType::ReachabilityRewards, hint, goal.direction(), transitionMatrix, backwardTransitions, maybeStates, ~targetStates, targetStates, minMaxLinearEquationSolverFactory, selectedChoices);
                         
-                        // Now compute the results for the maybeStates
-                        std::pair<std::vector<ValueType>, boost::optional<std::vector<uint_fast64_t>>> resultForMaybeStates = computeValuesOnlyMaybeStates(goal, submatrix, b, produceScheduler, minMaxLinearEquationSolverFactory, std::move(hintInformation.first), std::move(hintInformation.second), storm::utility::zero<ValueType>());
+                        // Now compute the results for the maybe states.
+                        MaybeStateResult<ValueType> resultForMaybeStates = computeValuesForMaybeStates(goal, submatrix, b, produceScheduler, minMaxLinearEquationSolverFactory, hintInformation);
 
                         // Set values of resulting vector according to result.
-                        storm::utility::vector::setVectorValues<ValueType>(result, maybeStates, resultForMaybeStates.first);
+                        storm::utility::vector::setVectorValues<ValueType>(result, maybeStates, resultForMaybeStates.getValues());
                         
                         if (produceScheduler) {
-                            std::vector<uint_fast64_t> const& subChoices = resultForMaybeStates.second.get();
+                            std::vector<uint_fast64_t> const& subChoices = resultForMaybeStates.getScheduler();
                             auto subChoiceIt = subChoices.begin();
                             if (selectedChoices) {
                                 for (auto maybeState : maybeStates) {
@@ -503,7 +615,6 @@ namespace storm {
                 }
                 STORM_LOG_ASSERT((!produceScheduler && !scheduler) || (!scheduler->isPartialScheduler() && scheduler->isDeterministicScheduler() && scheduler->isMemorylessScheduler()), "Unexpected format of obtained scheduler.");
 
-                
                 return MDPSparseModelCheckingHelperReturnType<ValueType>(std::move(result), std::move(scheduler));
             }
             
@@ -654,8 +765,13 @@ namespace storm {
                 // Finalize the matrix and solve the corresponding system of equations.
                 storm::storage::SparseMatrix<ValueType> sspMatrix = sspMatrixBuilder.build(currentChoice, numberOfSspStates, numberOfSspStates);
                 
+                // Check for requirements of the solver.
+                storm::solver::MinMaxLinearEquationSolverRequirements requirements = minMaxLinearEquationSolverFactory.getRequirements(storm::solver::MinMaxLinearEquationSolverSystemType::StochasticShortestPath);
+                STORM_LOG_THROW(requirements.empty(), storm::exceptions::UncheckedRequirementException, "Cannot establish requirements for solver.");
+                
                 std::vector<ValueType> sspResult(numberOfSspStates);
                 std::unique_ptr<storm::solver::MinMaxLinearEquationSolver<ValueType>> solver = minMaxLinearEquationSolverFactory.create(std::move(sspMatrix));
+                solver->setRequirementsChecked();
                 solver->solveEquations(dir, sspResult, b);
                 
                 // Prepare result vector.
@@ -767,6 +883,7 @@ namespace storm {
                 ValueType precision = storm::utility::convertNumber<ValueType>(storm::settings::getModule<storm::settings::modules::MinMaxEquationSolverSettings>().getPrecision());
                 std::vector<ValueType> x(mecTransitions.getRowGroupCount(), storm::utility::zero<ValueType>());
                 std::vector<ValueType> xPrime = x;
+                
                 auto solver = minMaxLinearEquationSolverFactory.create(std::move(mecTransitions));
                 solver->setCachingEnabled(true);
                 ValueType maxDiff, minDiff;

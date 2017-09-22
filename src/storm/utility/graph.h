@@ -448,6 +448,12 @@ namespace storm {
             storm::dd::Bdd<Type> performProbGreater0E(storm::models::symbolic::NondeterministicModel<Type, ValueType> const& model, storm::dd::Bdd<Type> const& transitionMatrix, storm::dd::Bdd<Type> const& phiStates, storm::dd::Bdd<Type> const& psiStates);
             
             /*!
+             * Computes a scheduler realizing a probability greater zero of satisfying phi until psi for all such states.
+             */
+            template <storm::dd::DdType Type, typename ValueType>
+            storm::dd::Bdd<Type> computeSchedulerProbGreater0E(storm::models::symbolic::NondeterministicModel<Type, ValueType> const& model, storm::dd::Bdd<Type> const& transitionMatrix, storm::dd::Bdd<Type> const& phiStates, storm::dd::Bdd<Type> const& psiStates);
+            
+            /*!
              * Computes the set of states for which there does not exist a scheduler that achieves a probability greater
              * than zero of satisfying phi until psi.
              *
@@ -514,6 +520,12 @@ namespace storm {
              */
             template <storm::dd::DdType Type, typename ValueType = double>
             storm::dd::Bdd<Type> performProb1E(storm::models::symbolic::NondeterministicModel<Type, ValueType> const& model, storm::dd::Bdd<Type> const& transitionMatrix, storm::dd::Bdd<Type> const& phiStates, storm::dd::Bdd<Type> const& psiStates, storm::dd::Bdd<Type> const& statesWithProbabilityGreater0E);
+            
+            /*!
+             * Computes a scheduler satisfying phi until psi with probability 1.
+             */
+            template <storm::dd::DdType Type, typename ValueType>
+            storm::dd::Bdd<Type> computeSchedulerProb1E(storm::models::symbolic::NondeterministicModel<Type, ValueType> const& model, storm::dd::Bdd<Type> const& transitionMatrix, storm::dd::Bdd<Type> const& phiStates, storm::dd::Bdd<Type> const& psiStates, storm::dd::Bdd<Type> const& statesWithProbability1E);
             
             template <storm::dd::DdType Type, typename ValueType = double>
             std::pair<storm::dd::Bdd<Type>, storm::dd::Bdd<Type>> performProb01Max(storm::models::symbolic::NondeterministicModel<Type, ValueType> const& model, storm::dd::Bdd<Type> const& phiStates, storm::dd::Bdd<Type> const& psiStates);

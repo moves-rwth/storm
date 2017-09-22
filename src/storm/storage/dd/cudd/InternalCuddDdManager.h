@@ -60,13 +60,28 @@ namespace storm {
             InternalBdd<DdType::CUDD> getBddZero() const;
             
             /*!
+             * Retrieves a BDD that maps to true iff the encoding is less or equal than the given bound.
+             *
+             * @return A BDD with encodings corresponding to values less or equal than the bound.
+             */
+            InternalBdd<DdType::CUDD> getBddEncodingLessOrEqualThan(uint64_t bound, InternalBdd<DdType::CUDD> const& cube, uint64_t numberOfDdVariables) const;
+            
+            /*!
              * Retrieves an ADD representing the constant zero function.
              *
              * @return An ADD representing the constant zero function.
              */
             template<typename ValueType>
             InternalAdd<DdType::CUDD, ValueType> getAddZero() const;
-            
+
+            /*!
+             * Retrieves an ADD representing an undefined value.
+             *
+             * @return An ADD representing an undefined value.
+             */
+            template<typename ValueType>
+            InternalAdd<DdType::CUDD, ValueType> getAddUndefined() const;
+
             /*!
              * Retrieves an ADD representing the constant function with the given value.
              *
@@ -112,26 +127,34 @@ namespace storm {
             void triggerReordering();
             
             /*!
+             * Performs a debug check if available.
+             */
+            void debugCheck() const;
+            
+            /*!
              * Retrieves the number of DD variables managed by this manager.
              *
              * @return The number of managed variables.
              */
             uint_fast64_t getNumberOfDdVariables() const;
 
-        private:
             /*!
              * Retrieves the underlying CUDD manager.
              *
              * @return The underlying CUDD manager.
              */
             cudd::Cudd& getCuddManager();
-            
+
             /*!
              * Retrieves the underlying CUDD manager.
              *
              * @return The underlying CUDD manager.
              */
             cudd::Cudd const& getCuddManager() const;
+
+        private:
+            // Helper function to create the BDD whose encodings are below a given bound.
+            DdNodePtr getBddEncodingLessOrEqualThanRec(uint64_t minimalValue, uint64_t maximalValue, uint64_t bound, DdNodePtr cube, uint64_t remainingDdVariables) const;
             
             // The manager responsible for the DDs created/modified with this DdManager.
             cudd::Cudd cuddManager;

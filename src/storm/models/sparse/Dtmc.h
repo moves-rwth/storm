@@ -50,6 +50,7 @@ namespace storm {
                 Dtmc(Dtmc<ValueType, RewardModelType>&& dtmc) = default;
                 Dtmc& operator=(Dtmc<ValueType, RewardModelType>&& dtmc) = default;
 
+                virtual void reduceToStateBasedRewards() override;
 
             };
             

@@ -1,6 +1,6 @@
 /*
  * Copyright 2011-2016 Formal Methods and Tools, University of Twente
- * Copyright 2016 Tom van Dijk, Johannes Kepler University Linz
+ * Copyright 2016-2017 Tom van Dijk, Johannes Kepler University Linz
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,8 +15,7 @@
  * limitations under the License.
  */
 
-#include <sylvan_config.h>
-#include <lace.h>
+/* Do not include this file directly. Instead, include sylvan.h */
 
 #ifndef SYLVAN_STATS_H
 #define SYLVAN_STATS_H
@@ -93,6 +92,8 @@ typedef enum {
     SYLVAN_COUNTER_COUNTER
 } Sylvan_Counters;
 
+#undef OPCOUNTER
+
 typedef enum
 {
     SYLVAN_GC,
@@ -134,10 +135,8 @@ void sylvan_stats_report(FILE* target);
 #if SYLVAN_STATS
 
 #ifdef __MACH__
-#include <mach/mach_time.h>
 #define getabstime() mach_absolute_time()
 #else
-#include <time.h>
 static uint64_t
 getabstime(void)
 {
@@ -153,7 +152,6 @@ getabstime(void)
 #ifdef __ELF__
 extern __thread sylvan_stats_t sylvan_stats;
 #else
-#include <pthread.h>
 extern pthread_key_t sylvan_stats_key;
 #endif
 

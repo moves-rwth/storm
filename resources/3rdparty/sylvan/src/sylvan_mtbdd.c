@@ -1,6 +1,6 @@
 /*
  * Copyright 2011-2016 Formal Methods and Tools, University of Twente
- * Copyright 2016 Tom van Dijk, Johannes Kepler University Linz
+ * Copyright 2016-2017 Tom van Dijk, Johannes Kepler University Linz
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,25 +15,15 @@
  * limitations under the License.
  */
 
-#include <sylvan_config.h>
+#include <sylvan_int.h>
 
-#include <assert.h>
 #include <inttypes.h>
 #include <math.h>
-#include <pthread.h>
-#include <stdint.h>
-#include <stdio.h>
-#include <stdlib.h>
 #include <string.h>
-
-#include <sylvan.h>
-#include <sylvan_int.h>
 
 #include <sylvan_refs.h>
 #include <sylvan_sl.h>
 #include <sha2.h>
-
-#define BDD                     MTBDD
 
 /* Primitives */
 int
@@ -194,33 +184,77 @@ VOID_TASK_0(mtbdd_gc_mark_protected)
 }
 
 /* Infrastructure for internal markings */
+typedef struct mtbdd_refs_task
+{
+    Task *t;
+    void *f;
+} *mtbdd_refs_task_t;
+
+typedef struct mtbdd_refs_internal
+{
+    const MTBDD **pbegin, **pend, **pcur;
+    MTBDD *rbegin, *rend, *rcur;
+    mtbdd_refs_task_t sbegin, send, scur;
+} *mtbdd_refs_internal_t;
+
 DECLARE_THREAD_LOCAL(mtbdd_refs_key, mtbdd_refs_internal_t);
+
+VOID_TASK_2(mtbdd_refs_mark_p_par, const MTBDD**, begin, size_t, count)
+{
+    if (count < 32) {
+        while (count) {
+            mtbdd_gc_mark_rec(**(begin++));
+            count--;
+        }
+    } else {
+        SPAWN(mtbdd_refs_mark_p_par, begin, count / 2);
+        CALL(mtbdd_refs_mark_p_par, begin + (count / 2), count - count / 2);
+        SYNC(mtbdd_refs_mark_p_par);
+    }
+}
+
+VOID_TASK_2(mtbdd_refs_mark_r_par, MTBDD*, begin, size_t, count)
+{
+    if (count < 32) {
+        while (count) {
+            mtbdd_gc_mark_rec(*begin++);
+            count--;
+        }
+    } else {
+        SPAWN(mtbdd_refs_mark_r_par, begin, count / 2);
+        CALL(mtbdd_refs_mark_r_par, begin + (count / 2), count - count / 2);
+        SYNC(mtbdd_refs_mark_r_par);
+    }
+}
+
+VOID_TASK_2(mtbdd_refs_mark_s_par, mtbdd_refs_task_t, begin, size_t, count)
+{
+    if (count < 32) {
+        while (count > 0) {
+            Task *t = begin->t;
+            if (!TASK_IS_STOLEN(t)) return;
+            if (t->f == begin->f && TASK_IS_COMPLETED(t)) {
+                mtbdd_gc_mark_rec(*(MTBDD*)TASK_RESULT(t));
+            }
+            begin += 1;
+            count -= 1;
+        }
+    } else {
+        if (!TASK_IS_STOLEN(begin->t)) return;
+        SPAWN(mtbdd_refs_mark_s_par, begin, count / 2);
+        CALL(mtbdd_refs_mark_s_par, begin + (count / 2), count - count / 2);
+        SYNC(mtbdd_refs_mark_s_par);
+    }
+}
 
 VOID_TASK_0(mtbdd_refs_mark_task)
 {
     LOCALIZE_THREAD_LOCAL(mtbdd_refs_key, mtbdd_refs_internal_t);
-    size_t i, j=0;
-    for (i=0; i<mtbdd_refs_key->r_count; i++) {
-        if (j >= 40) {
-            while (j--) SYNC(mtbdd_gc_mark_rec);
-            j=0;
-        }
-        SPAWN(mtbdd_gc_mark_rec, mtbdd_refs_key->results[i]);
-        j++;
-    }
-    for (i=0; i<mtbdd_refs_key->s_count; i++) {
-        Task *t = mtbdd_refs_key->spawns[i];
-        if (!TASK_IS_STOLEN(t)) break;
-        if (TASK_IS_COMPLETED(t)) {
-            if (j >= 40) {
-                while (j--) SYNC(mtbdd_gc_mark_rec);
-                j=0;
-            }
-            SPAWN(mtbdd_gc_mark_rec, *(BDD*)TASK_RESULT(t));
-            j++;
-        }
-    }
-    while (j--) SYNC(mtbdd_gc_mark_rec);
+    SPAWN(mtbdd_refs_mark_p_par, mtbdd_refs_key->pbegin, mtbdd_refs_key->pcur-mtbdd_refs_key->pbegin);
+    SPAWN(mtbdd_refs_mark_r_par, mtbdd_refs_key->rbegin, mtbdd_refs_key->rcur-mtbdd_refs_key->rbegin);
+    CALL(mtbdd_refs_mark_s_par, mtbdd_refs_key->sbegin, mtbdd_refs_key->scur-mtbdd_refs_key->sbegin);
+    SYNC(mtbdd_refs_mark_r_par);
+    SYNC(mtbdd_refs_mark_p_par);
 }
 
 VOID_TASK_0(mtbdd_refs_mark)
@@ -231,12 +265,12 @@ VOID_TASK_0(mtbdd_refs_mark)
 VOID_TASK_0(mtbdd_refs_init_task)
 {
     mtbdd_refs_internal_t s = (mtbdd_refs_internal_t)malloc(sizeof(struct mtbdd_refs_internal));
-    s->r_size = 128;
-    s->r_count = 0;
-    s->s_size = 128;
-    s->s_count = 0;
-    s->results = (BDD*)malloc(sizeof(BDD) * 128);
-    s->spawns = (Task**)malloc(sizeof(Task*) * 128);
+    s->pcur = s->pbegin = (const MTBDD**)malloc(sizeof(MTBDD*) * 1024);
+    s->pend = s->pbegin + 1024;
+    s->rcur = s->rbegin = (MTBDD*)malloc(sizeof(MTBDD) * 1024);
+    s->rend = s->rbegin + 1024;
+    s->scur = s->sbegin = (mtbdd_refs_task_t)malloc(sizeof(struct mtbdd_refs_task) * 1024);
+    s->send = s->sbegin + 1024;
     SET_THREAD_LOCAL(mtbdd_refs_key, s);
 }
 
@@ -245,6 +279,84 @@ VOID_TASK_0(mtbdd_refs_init)
     INIT_THREAD_LOCAL(mtbdd_refs_key);
     TOGETHER(mtbdd_refs_init_task);
     sylvan_gc_add_mark(TASK(mtbdd_refs_mark));
+}
+
+void
+mtbdd_refs_ptrs_up(mtbdd_refs_internal_t mtbdd_refs_key)
+{
+    size_t cur = mtbdd_refs_key->pcur - mtbdd_refs_key->pbegin;
+    size_t size = mtbdd_refs_key->pend - mtbdd_refs_key->pbegin;
+    mtbdd_refs_key->pbegin = (const MTBDD**)realloc(mtbdd_refs_key->pbegin, sizeof(MTBDD*) * size * 2);
+    mtbdd_refs_key->pcur = mtbdd_refs_key->pbegin + cur;
+    mtbdd_refs_key->pend = mtbdd_refs_key->pbegin + (size * 2);
+}
+
+MTBDD __attribute__((noinline))
+mtbdd_refs_refs_up(mtbdd_refs_internal_t mtbdd_refs_key, MTBDD res)
+{
+    long size = mtbdd_refs_key->rend - mtbdd_refs_key->rbegin;
+    mtbdd_refs_key->rbegin = (MTBDD*)realloc(mtbdd_refs_key->rbegin, sizeof(MTBDD) * size * 2);
+    mtbdd_refs_key->rcur = mtbdd_refs_key->rbegin + size;
+    mtbdd_refs_key->rend = mtbdd_refs_key->rbegin + (size * 2);
+    return res;
+}
+
+void __attribute__((noinline))
+mtbdd_refs_tasks_up(mtbdd_refs_internal_t mtbdd_refs_key)
+{
+    long size = mtbdd_refs_key->send - mtbdd_refs_key->sbegin;
+    mtbdd_refs_key->sbegin = (mtbdd_refs_task_t)realloc(mtbdd_refs_key->sbegin, sizeof(struct mtbdd_refs_task) * size * 2);
+    mtbdd_refs_key->scur = mtbdd_refs_key->sbegin + size;
+    mtbdd_refs_key->send = mtbdd_refs_key->sbegin + (size * 2);
+}
+
+void __attribute__((unused))
+mtbdd_refs_pushptr(const MTBDD *ptr)
+{
+    LOCALIZE_THREAD_LOCAL(mtbdd_refs_key, mtbdd_refs_internal_t);
+    *mtbdd_refs_key->pcur++ = ptr;
+    if (mtbdd_refs_key->pcur == mtbdd_refs_key->pend) mtbdd_refs_ptrs_up(mtbdd_refs_key);
+}
+
+void __attribute__((unused))
+mtbdd_refs_popptr(size_t amount)
+{
+    LOCALIZE_THREAD_LOCAL(mtbdd_refs_key, mtbdd_refs_internal_t);
+    mtbdd_refs_key->pcur -= amount;
+}
+
+MTBDD __attribute__((unused))
+mtbdd_refs_push(MTBDD mtbdd)
+{
+    LOCALIZE_THREAD_LOCAL(mtbdd_refs_key, mtbdd_refs_internal_t);
+    *(mtbdd_refs_key->rcur++) = mtbdd;
+    if (mtbdd_refs_key->rcur == mtbdd_refs_key->rend) return mtbdd_refs_refs_up(mtbdd_refs_key, mtbdd);
+    else return mtbdd;
+}
+
+void __attribute__((unused))
+mtbdd_refs_pop(long amount)
+{
+    LOCALIZE_THREAD_LOCAL(mtbdd_refs_key, mtbdd_refs_internal_t);
+    mtbdd_refs_key->rcur -= amount;
+}
+
+void
+mtbdd_refs_spawn(Task *t)
+{
+    LOCALIZE_THREAD_LOCAL(mtbdd_refs_key, mtbdd_refs_internal_t);
+    mtbdd_refs_key->scur->t = t;
+    mtbdd_refs_key->scur->f = t->f;
+    mtbdd_refs_key->scur += 1;
+    if (mtbdd_refs_key->scur == mtbdd_refs_key->send) mtbdd_refs_tasks_up(mtbdd_refs_key);
+}
+
+MTBDD
+mtbdd_refs_sync(MTBDD result)
+{
+    LOCALIZE_THREAD_LOCAL(mtbdd_refs_key, mtbdd_refs_internal_t);
+    mtbdd_refs_key->scur -= 1;
+    return result;
 }
 
 /**
@@ -394,6 +506,12 @@ mtbdd_makemapnode(uint32_t var, MTBDD low, MTBDD high)
     return index;
 }
 
+MTBDD
+mtbdd_ithvar(uint32_t var)
+{
+    return mtbdd_makenode(var, mtbdd_false, mtbdd_true);
+}
+
 /* Operations */
 
 /**
@@ -447,31 +565,6 @@ mtbdd_fraction(int64_t nom, uint64_t denom)
     denom /= c;
     if (nom > 2147483647 || nom < -2147483647 || denom > 4294967295) fprintf(stderr, "mtbdd_fraction: fraction overflow\n");
     return mtbdd_makeleaf(2, (nom<<32)|denom);
-}
-
-/**
- * Create the cube of variables in arr.
- */
-MTBDD
-mtbdd_fromarray(uint32_t* arr, size_t length)
-{
-    if (length == 0) return mtbdd_true;
-    else if (length == 1) return mtbdd_makenode(*arr, mtbdd_false, mtbdd_true);
-    else return mtbdd_makenode(*arr, mtbdd_false, mtbdd_fromarray(arr+1, length-1));
-}
-
-/**
- * Given a cube of variables, write each variable to arr.
- * WARNING: arr must be sufficiently long!
- */
-void
-mtbdd_toarray(MTBDD set, uint32_t *arr)
-{
-    while (set != mtbdd_true) {
-        mtbddnode_t n = MTBDD_GETNODE(set);
-        *arr++ = mtbddnode_getvariable(n);
-        set = node_gethigh(set, n);
-    }
 }
 
 /**
@@ -538,10 +631,10 @@ TASK_IMPL_4(MTBDD, mtbdd_union_cube, MTBDD, mtbdd, MTBDD, vars, uint8_t*, cube, 
     if (va < v) {
         MTBDD low = node_getlow(mtbdd, na);
         MTBDD high = node_gethigh(mtbdd, na);
-        SPAWN(mtbdd_union_cube, high, vars, cube, terminal);
+        mtbdd_refs_spawn(SPAWN(mtbdd_union_cube, high, vars, cube, terminal));
         BDD new_low = mtbdd_union_cube(low, vars, cube, terminal);
         mtbdd_refs_push(new_low);
-        BDD new_high = SYNC(mtbdd_union_cube);
+        BDD new_high = mtbdd_refs_sync(SYNC(mtbdd_union_cube));
         mtbdd_refs_pop(1);
         if (new_low != low || new_high != high) return mtbdd_makenode(va, new_low, new_high);
         else return mtbdd;
@@ -563,10 +656,10 @@ TASK_IMPL_4(MTBDD, mtbdd_union_cube, MTBDD, mtbdd, MTBDD, vars, uint8_t*, cube, 
         }
         case 2:
         {
-            SPAWN(mtbdd_union_cube, high, node_gethigh(vars, nv), cube+1, terminal);
+            mtbdd_refs_spawn(SPAWN(mtbdd_union_cube, high, node_gethigh(vars, nv), cube+1, terminal));
             MTBDD new_low = mtbdd_union_cube(low, node_gethigh(vars, nv), cube+1, terminal);
             mtbdd_refs_push(new_low);
-            MTBDD new_high = SYNC(mtbdd_union_cube);
+            MTBDD new_high = mtbdd_refs_sync(SYNC(mtbdd_union_cube));
             mtbdd_refs_pop(1);
             if (new_low != low || new_high != high) return mtbdd_makenode(v, new_low, new_high);
             return mtbdd;
@@ -592,10 +685,10 @@ TASK_IMPL_4(MTBDD, mtbdd_union_cube, MTBDD, mtbdd, MTBDD, vars, uint8_t*, cube, 
         }
         case 2:
         {
-            SPAWN(mtbdd_union_cube, mtbdd, node_gethigh(vars, nv), cube+1, terminal);
+            mtbdd_refs_spawn(SPAWN(mtbdd_union_cube, mtbdd, node_gethigh(vars, nv), cube+1, terminal));
             MTBDD new_low = mtbdd_union_cube(mtbdd, node_gethigh(vars, nv), cube+1, terminal);
             mtbdd_refs_push(new_low);
-            MTBDD new_high = SYNC(mtbdd_union_cube);
+            MTBDD new_high = mtbdd_refs_sync(SYNC(mtbdd_union_cube));
             mtbdd_refs_pop(1);
             return mtbdd_makenode(v, new_low, new_high);
         }
@@ -1270,6 +1363,36 @@ TASK_IMPL_2(MTBDD, mtbdd_op_max, MTBDD*, pa, MTBDD*, pb)
     }
 
     return mtbdd_invalid;
+}
+
+TASK_IMPL_2(MTBDD, mtbdd_op_cmpl, MTBDD, a, size_t, k)
+{
+    // if a is false, then it is a partial function. Keep partial!
+    if (a == mtbdd_false) return mtbdd_false;
+
+    // a != constant
+    mtbddnode_t na = MTBDD_GETNODE(a);
+
+    if (mtbddnode_isleaf(na)) {
+        if (mtbddnode_gettype(na) == 0) {
+            int64_t v = mtbdd_getint64(a);
+            if (v == 0) return mtbdd_int64(1);
+            else return mtbdd_int64(0);
+        } else if (mtbddnode_gettype(na) == 1) {
+            double d = mtbdd_getdouble(a);
+            if (d == 0.0) return mtbdd_double(1.0);
+            else return mtbdd_double(0.0);
+        } else if (mtbddnode_gettype(na) == 2) {
+            uint64_t v = mtbddnode_getvalue(na);
+            if (v == 1) return mtbdd_fraction(1, 1);
+            else return mtbdd_fraction(0, 1);
+        } else {
+            assert(0); // failure
+        }
+    }
+
+    return mtbdd_invalid;
+    (void)k; // unused variable
 }
 
 TASK_IMPL_2(MTBDD, mtbdd_op_negate, MTBDD, a, size_t, k)
@@ -2347,7 +2470,17 @@ TASK_IMPL_2(double, mtbdd_satcount, MTBDD, dd, size_t, nvars)
 {
     /* Trivial cases */
     if (dd == mtbdd_false) return 0.0;
-    if (mtbdd_isleaf(dd)) return powl(2.0L, nvars);
+
+    if (mtbdd_isleaf(dd)) {
+        // test if 0
+        mtbddnode_t dd_node = MTBDD_GETNODE(dd);
+        if (dd != mtbdd_true) {
+            if (mtbddnode_gettype(dd_node) == 0 && mtbdd_getint64(dd) == 0) return 0.0;
+            else if (mtbddnode_gettype(dd_node) == 1 && mtbdd_getdouble(dd) == 0.0) return 0.0;
+            else if (mtbddnode_gettype(dd_node) == 2 && mtbdd_getvalue(dd) == 1) return 0.0;
+        }
+        return powl(2.0L, nvars);
+    }
 
     /* Perhaps execute garbage collection */
     sylvan_gc_test();
@@ -2726,8 +2859,6 @@ mtbdd_leafcount_more(const MTBDD *mtbdds, size_t count)
 static size_t
 mtbdd_nodecount_mark(MTBDD mtbdd)
 {
-    if (mtbdd == mtbdd_true) return 0; // do not count true/false leaf
-    if (mtbdd == mtbdd_false) return 0; // do not count true/false leaf
     mtbddnode_t n = MTBDD_GETNODE(mtbdd);
     if (mtbddnode_getmark(n)) return 0;
     mtbddnode_setmark(n, 1);
@@ -3258,11 +3389,107 @@ TASK_IMPL_3(int, mtbdd_reader_frombinary, FILE*, in, MTBDD*, dds, int, count)
 }
 
 /**
- * Implementation of convenience functions for handling variable sets, i.e., cubes.
+ * Implementation of variable sets, i.e., cubes of (positive) variables.
  */
 
+/**
+ * Create a set of variables, represented as the conjunction of (positive) variables.
+ */
+MTBDD
+mtbdd_set_from_array(uint32_t* arr, size_t length)
+{
+    if (length == 0) return mtbdd_true;
+    else if (length == 1) return mtbdd_makenode(*arr, mtbdd_false, mtbdd_true);
+    else return mtbdd_set_add(mtbdd_fromarray(arr+1, length-1), *arr);
+}
+
+/**
+ * Write all variables in a variable set to the given array.
+ * The array must be sufficiently large.
+ */
+void
+mtbdd_set_to_array(MTBDD set, uint32_t *arr)
+{
+    while (set != mtbdd_true) {
+        mtbddnode_t n = MTBDD_GETNODE(set);
+        *arr++ = mtbddnode_getvariable(n);
+        set = node_gethigh(set, n);
+    }
+}
+
+/**
+ * Add the variable <var> to <set>.
+ */
+MTBDD
+mtbdd_set_add(MTBDD set, uint32_t var)
+{
+    if (set == mtbdd_true) return mtbdd_makenode(var, mtbdd_false, mtbdd_true);
+
+    mtbddnode_t set_node = MTBDD_GETNODE(set);
+    uint32_t set_var = mtbddnode_getvariable(set_node);
+    if (var < set_var) return mtbdd_makenode(var, mtbdd_false, set);
+    else if (set_var == var) return set;
+    else {
+        MTBDD sub = mtbddnode_followhigh(set, set_node);
+        MTBDD res = mtbdd_set_add(sub, var);
+        res = sub == res ? set : mtbdd_makenode(set_var, mtbdd_false, res);
+        return res;
+    }
+}
+
+/**
+ * Remove the variable <var> from <set>.
+ */
+MTBDD
+mtbdd_set_remove(MTBDD set, uint32_t var)
+{
+    if (set == mtbdd_true) return mtbdd_true;
+
+    mtbddnode_t set_node = MTBDD_GETNODE(set);
+    uint32_t set_var = mtbddnode_getvariable(set_node);
+    if (var < set_var) return set;
+    else if (set_var == var) return mtbddnode_followhigh(set, set_node);
+    else {
+        MTBDD sub = mtbddnode_followhigh(set, set_node);
+        MTBDD res = mtbdd_set_remove(sub, var);
+        res = sub == res ? set : mtbdd_makenode(set_var, mtbdd_false, res);
+        return res;
+    }
+}
+
+/**
+ * Remove variables in <set2> from <set1>.
+ */
+TASK_IMPL_2(MTBDD, mtbdd_set_minus, MTBDD, set1, MTBDD, set2)
+{
+    if (set1 == mtbdd_true) return mtbdd_true;
+    if (set2 == mtbdd_true) return set1;
+    if (set1 == set2) return mtbdd_true;
+
+    mtbddnode_t set1_node = MTBDD_GETNODE(set1);
+    mtbddnode_t set2_node = MTBDD_GETNODE(set2);
+    uint32_t set1_var = mtbddnode_getvariable(set1_node);
+    uint32_t set2_var = mtbddnode_getvariable(set2_node);
+
+    if (set1_var == set2_var) {
+        return mtbdd_set_minus(mtbddnode_followhigh(set1, set1_node), mtbddnode_followhigh(set2, set2_node));
+    }
+
+    if (set1_var > set2_var) {
+        return mtbdd_set_minus(set1, mtbddnode_followhigh(set2, set2_node));
+    }
+
+    /* set1_var < set2_var */
+    MTBDD sub = mtbddnode_followhigh(set1, set1_node);
+    MTBDD res = mtbdd_set_minus(sub, set2);
+    return res == sub ? set1 : mtbdd_makenode(set1_var, mtbdd_false, res);
+}
+
+/**
+ * Return 1 if <set> contains <var>, 0 otherwise.
+ */
 int
-mtbdd_set_in(MTBDD set, uint32_t var)
+mtbdd_set_contains(MTBDD set, uint32_t var)
 {
     while (set != mtbdd_true) {
         mtbddnode_t n = MTBDD_GETNODE(set);
@@ -3274,6 +3501,9 @@ mtbdd_set_in(MTBDD set, uint32_t var)
     return 0;
 }
 
+/**
+ * Compute the number of variables in a given set of variables.
+ */
 size_t
 mtbdd_set_count(MTBDD set)
 {
@@ -3285,6 +3515,10 @@ mtbdd_set_count(MTBDD set)
     return result;
 }
 
+/**
+ * Sanity check if the given MTBDD is a conjunction of positive variables,
+ * and if all nodes are marked in the nodes table (detects violations after garbage collection).
+ */
 void
 mtbdd_test_isset(MTBDD set)
 {
@@ -3336,7 +3570,9 @@ mtbdd_map_count(MTBDDMAP map)
 MTBDDMAP
 mtbdd_map_add(MTBDDMAP map, uint32_t key, MTBDD value)
 {
-    if (mtbdd_map_isempty(map)) return mtbdd_makemapnode(key, mtbdd_map_empty(), value);
+    if (mtbdd_map_isempty(map)) {
+        return mtbdd_makemapnode(key, mtbdd_map_empty(), value);
+    }
 
     mtbddnode_t n = MTBDD_GETNODE(map);
     uint32_t k = mtbddnode_getvariable(n);
@@ -3357,7 +3593,7 @@ mtbdd_map_add(MTBDDMAP map, uint32_t key, MTBDD value)
  * Add all values from map2 to map1, overwrites if key already in map1.
  */
 MTBDDMAP
-mtbdd_map_addall(MTBDDMAP map1, MTBDDMAP map2)
+mtbdd_map_update(MTBDDMAP map1, MTBDDMAP map2)
 {
     if (mtbdd_map_isempty(map1)) return map2;
     if (mtbdd_map_isempty(map2)) return map1;
@@ -3369,13 +3605,13 @@ mtbdd_map_addall(MTBDDMAP map1, MTBDDMAP map2)
 
     MTBDDMAP result;
     if (k1 < k2) {
-        MTBDDMAP low = mtbdd_map_addall(node_getlow(map1, n1), map2);
+        MTBDDMAP low = mtbdd_map_update(node_getlow(map1, n1), map2);
         result = mtbdd_makemapnode(k1, low, node_gethigh(map1, n1));
     } else if (k1 > k2) {
-        MTBDDMAP low = mtbdd_map_addall(map1, node_getlow(map2, n2));
+        MTBDDMAP low = mtbdd_map_update(map1, node_getlow(map2, n2));
         result = mtbdd_makemapnode(k2, low, node_gethigh(map2, n2));
     } else {
-        MTBDDMAP low = mtbdd_map_addall(node_getlow(map1, n1), node_getlow(map2, n2));
+        MTBDDMAP low = mtbdd_map_update(node_getlow(map1, n1), node_getlow(map2, n2));
         result = mtbdd_makemapnode(k2, low, node_gethigh(map2, n2));
     }
 

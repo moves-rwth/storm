@@ -59,13 +59,6 @@ namespace storm {
                 }
             }
             
-            template<typename ValueType, typename RewardModelType>
-            void DeterministicModel<ValueType, RewardModelType>::reduceToStateBasedRewards() {
-                for (auto& rewardModel : this->getRewardModels()) {
-                    rewardModel.second.reduceToStateBasedRewards(this->getTransitionMatrix(), true);
-                }
-            }
-            
             template class DeterministicModel<double>;
 #ifdef STORM_HAVE_CARL
             template class DeterministicModel<storm::RationalNumber>;

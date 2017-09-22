@@ -29,6 +29,15 @@ namespace storm {
             template<DdType LibraryTypePrime, typename ValueTypePrime>
             friend class Add;
             
+            /*!
+             * Creates a DD that encapsulates the given internal BDD.
+             *
+             * @param ddManager The manager responsible for this DD.
+             * @param internalBdd The internal BDD to store.
+             * @param containedMetaVariables The meta variables that appear in the DD.
+             */
+            Bdd(DdManager<LibraryType> const& ddManager, InternalBdd<LibraryType> const& internalBdd, std::set<storm::expressions::Variable> const& containedMetaVariables = std::set<storm::expressions::Variable>());
+            
             // Instantiate all copy/move constructors/assignments with the default implementation.
             Bdd() = default;
             Bdd(Bdd<LibraryType> const& other) = default;
@@ -266,6 +275,17 @@ namespace storm {
             Bdd<LibraryType> swapVariables(std::vector<std::pair<storm::expressions::Variable, storm::expressions::Variable>> const& metaVariablePairs) const;
             
             /*!
+             * Renames the given meta variables in the BDD. The number of the underlying DD variables of the both meta
+             * variable sets needs to agree.
+             *
+             * @param from The meta variables to be renamed. The current BDD needs to contain all these meta variables.
+             * @param to The meta variables that are the target of the renaming process. The current BDD must not contain
+             * any of these meta variables.
+             * @return The resulting BDD.
+             */
+            Bdd<LibraryType> renameVariables(std::set<storm::expressions::Variable> const& from, std::set<storm::expressions::Variable> const& to) const;
+            
+            /*!
              * Retrieves whether this DD represents the constant one function.
              *
              * @return True if this DD represents the constant one function.
@@ -317,7 +337,7 @@ namespace storm {
             
             virtual uint_fast64_t getLevel() const override;
             
-            virtual void exportToDot(std::string const& filename) const override;
+            virtual void exportToDot(std::string const& filename, bool showVariablesIfPossible = true) const override;
             
             /*!
              * Retrieves the cube of all given meta variables.
@@ -353,26 +373,17 @@ namespace storm {
              */
             storm::storage::BitVector filterExplicitVector(Odd const& odd, storm::storage::BitVector const& values) const;
             
+            /*!
+             * Retrieves the internal BDD.
+             */
+            InternalBdd<LibraryType> const& getInternalBdd() const;
+            
             friend struct std::hash<storm::dd::Bdd<LibraryType>>;
             
             template<DdType LibraryTypePrime, typename ValueType>
             friend struct FromVectorHelper;
             
         private:
-            /*!
-             * We provide a conversion operator from the BDD to its internal type to ease calling the internal functions.
-             */
-            operator InternalBdd<LibraryType>() const;
-            
-            /*!
-             * Creates a DD that encapsulates the given internal BDD.
-             *
-             * @param ddManager The manager responsible for this DD.
-             * @param internalBdd The internal BDD to store.
-             * @param containedMetaVariables The meta variables that appear in the DD.
-             */
-            Bdd(DdManager<LibraryType> const& ddManager, InternalBdd<LibraryType> const& internalBdd, std::set<storm::expressions::Variable> const& containedMetaVariables = std::set<storm::expressions::Variable>());
-            
             // The internal BDD that depends on the chosen library.
             InternalBdd<LibraryType> internalBdd;
         };

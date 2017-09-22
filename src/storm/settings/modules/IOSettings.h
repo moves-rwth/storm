@@ -325,6 +325,12 @@ namespace storm {
                  */
                 bool isBuildChoiceLabelsSet() const;
 
+                /*!
+                 * Retrieves whether the choice labels should be build
+                 * @return
+                 */
+                bool isBuildStateValuationsSet() const;
+
                 bool check() const override;
                 void finalize() override;
 
@@ -362,6 +368,7 @@ namespace storm {
                 static const std::string fullModelBuildOptionName;
                 static const std::string noBuildOptionName;
                 static const std::string buildChoiceLabelOptionName;
+                static const std::string buildStateValuationsOptionName;
                 static const std::string janiPropertyOptionName;
                 static const std::string janiPropertyOptionShortName;
                 static const std::string propertyOptionName;

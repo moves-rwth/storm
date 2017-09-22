@@ -1,6 +1,6 @@
 /*
  * Copyright 2011-2016 Formal Methods and Tools, University of Twente
- * Copyright 2016 Tom van Dijk, Johannes Kepler University Linz
+ * Copyright 2016-2017 Tom van Dijk, Johannes Kepler University Linz
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,20 +15,14 @@
  * limitations under the License.
  */
 
-#include <sylvan_config.h>
+/* Do not include this file directly. Instead, include sylvan_int.h */
 
-#include <stdint.h> // for uint32_t etc
-
-#ifndef CACHE_H
-#define CACHE_H
+#ifndef SYLVAN_CACHE_H
+#define SYLVAN_CACHE_H
 
 #ifdef __cplusplus
 extern "C" {
 #endif /* __cplusplus */
-
-#ifndef CACHE_MASK
-#define CACHE_MASK 1
-#endif
 
 /**
  * Operation cache

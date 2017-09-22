@@ -316,7 +316,7 @@ namespace storm {
              * @param filename The name of the file to which the BDD is to be exported.
              * @param ddVariableNamesAsStrings The names of the variables to display in the dot file.
              */
-            void exportToDot(std::string const& filename, std::vector<std::string> const& ddVariableNamesAsStrings) const;
+            void exportToDot(std::string const& filename, std::vector<std::string> const& ddVariableNamesAsStrings, bool showVariablesIfPossible = true) const;
             
             /*!
              * Converts a BDD to an equivalent ADD.
@@ -374,7 +374,31 @@ namespace storm {
              */
             void filterExplicitVector(Odd const& odd, std::vector<uint_fast64_t> const& ddVariableIndices, storm::storage::BitVector const& sourceValues, storm::storage::BitVector& targetValues) const;
 
+            /*!
+             * Retrieves whether the topmost variable in the BDD is the one with the given index.
+             *
+             * @param The top node of the BDD.
+             * @param variableIndex The variable index.
+             * @param offset An offset that is applied to the index of the top variable in the BDD.
+             * @return True iff the BDD's top variable has the given index.
+             */
+            static bool matchesVariableIndex(BDD const& node, uint64_t variableIndex, int64_t offset = 0);
+            
             friend struct std::hash<storm::dd::InternalBdd<storm::dd::DdType::Sylvan>>;
+            
+            /*!
+             * Retrieves the sylvan BDD.
+             *
+             * @return The sylvan BDD.
+             */
+            sylvan::Bdd& getSylvanBdd();
+            
+            /*!
+             * Retrieves the sylvan BDD.
+             *
+             * @return The sylvan BDD.
+             */
+            sylvan::Bdd const& getSylvanBdd() const;
             
         private:
             /*!
@@ -474,19 +498,6 @@ namespace storm {
              */
             static storm::expressions::Variable toExpressionRec(BDD dd, storm::expressions::ExpressionManager& manager, std::vector<storm::expressions::Expression>& expressions, std::unordered_map<uint_fast64_t, storm::expressions::Variable>& indexToVariableMap, std::unordered_map<std::pair<uint_fast64_t, uint_fast64_t>, storm::expressions::Variable>& countIndexToVariablePair, std::unordered_map<BDD, uint_fast64_t>& nodeToCounterMap, std::vector<uint_fast64_t>& nextCounterForIndex);
             
-            /*!
-             * Retrieves the sylvan BDD.
-             *
-             * @return The sylvan BDD.
-             */
-            sylvan::Bdd& getSylvanBdd();
-
-            /*!
-             * Retrieves the sylvan BDD.
-             *
-             * @return The sylvan BDD.
-             */
-            sylvan::Bdd const& getSylvanBdd() const;
             
             // The internal manager responsible for this BDD.
             InternalDdManager<DdType::Sylvan> const* ddManager;

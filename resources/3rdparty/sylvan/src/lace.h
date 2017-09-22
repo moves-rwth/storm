@@ -23,39 +23,280 @@
 #ifndef __LACE_H__
 #define __LACE_H__
 
+#ifdef __has_include
+#  if __has_include("lace_config.h")
+#    include <lace_config.h>
+#  else
+#    define LACE_PIE_TIMES     0
+#    define LACE_COUNT_TASKS   0
+#    define LACE_COUNT_STEALS  0
+#    define LACE_COUNT_SPLITS  0
+#    define LACE_USE_HWLOC     0
+#  endif
+#endif
+
 #ifdef __cplusplus
 extern "C" {
 #endif /* __cplusplus */
 
-/* Some flags */
+/**
+ * Using Lace.
+ *
+ * Optionally set the verbosity level with lace_set_verbosity.
+ * Then call lace_init to initialize the system.
+ * - lace_init(n_workers, deque_size);
+ *   set both parameters to 0 for reasonable defaults, using all available cores.
+ *
+ * You can create Worker threads yourself or let Lace create threads with lace_startup.
+ *
+ * When creating threads yourself, call the following functions:
+ *   - lace_init_worker to allocate and initialize the worker data structures
+ *     this method returns when all workers have called lace_init_worker
+ *   - lace_pin_worker (optional) to pin the thread and memory to a core
+ * The main worker can now start its root task. All other workers:
+ *   - lace_run_worker to perform work-stealing until the main worker calls lace_exit
+ *
+ * When letting Lace create threads with lace_startup
+ * - Call lace_startup with a callback to create N threads.
+ *   Returns after the callback has returned and all created threads are destroyed
+ * - Call lace_startup without a callback to create N-1 threads.
+ *   Returns control to the caller. When lace_exit is called, all created threads are terminated.
+ */
+
+/**
+ * Type definitions used in the functions below.
+ * - WorkerP contains the (private) Worker data
+ * - Task contains a single Task
+ */
+typedef struct _WorkerP WorkerP;
+typedef struct _Task Task;
+
+/**
+ * The macro LACE_TYPEDEF_CB(typedefname, taskname, parametertypes) defines
+ * a Task for use as a callback function.
+ */
+#define LACE_TYPEDEF_CB(t, f, ...) typedef t (*f)(WorkerP *, Task *, ##__VA_ARGS__);
+
+/**
+ * The lace_startup_cb type for a void Task with one void* parameter.
+ */
+LACE_TYPEDEF_CB(void, lace_startup_cb, void*);
+
+/**
+ * Set verbosity level (0 = no startup messages, 1 = startup messages)
+ * Default level: 0
+ */
+void lace_set_verbosity(int level);
+
+/**
+ * Initialize Lace for <n_workers> workers with a deque size of <dqsize> per worker.
+ * If <n_workers> is set to 0, automatically detects available cores.
+ * If <dqsize> is est to 0, uses a reasonable default value.
+ */
+void lace_init(unsigned int n_workers, size_t dqsize);
+
+/**
+ * Let Lace create worker threads.
+ * If <stacksize> is set to 0, uses a reaonable default value.
+ * If cb, arg are set to 0, then the current thread is initialized as the main Worker (Worker 0).
+ *
+ * If cb,arg are set, then the current thread is suspended. A new thread is made for Worker 0 and
+ * the task cb with paremeter arg is called; when cb returns, Lace is exited automatically.
+ */
+void lace_startup(size_t stacksize, lace_startup_cb, void* arg);
+
+/**
+ * Initialize worker <worker>, allocating memory.
+ * If <worker> is 0, then the current thread is the main worker.
+ */
+void lace_init_worker(unsigned int worker);
+
+/**
+ * Use hwloc to pin the current thread to a CPU and its allocated memory in the closest domain.
+ * Call this *after* lace_init_worker and *before* lace_run_worker.
+ */
+void lace_pin_worker(void);
+
+/**
+ * Perform work-stealing until lace_exit is called.
+ */
+void lace_run_worker(void);
+
+/**
+ * Steal a random task.
+ */
+#define lace_steal_random() CALL(lace_steal_random)
+void lace_steal_random_CALL(WorkerP*, Task*);
+
+/**
+ * Enter the Lace barrier. (all active workers must enter it before we can continue)
+ */
+void lace_barrier();
+
+/**
+ * Suspend all workers except the current worker.
+ * May only be used when all other workers are idle.
+ */
+void lace_suspend();
+
+/**
+ * Resume all workers.
+ */
+void lace_resume();
+
+/**
+ * When all other workers are suspended, some workers can be disabled using the following functions.
+ * With set_workers, all workers 0..(N-1) are enabled and N..max are disabled.
+ * You can never disable the current worker or reduce the number of workers below 1.
+ * You cannot add workers.
+ */
+void lace_set_workers(unsigned int workercount);
+
+/**
+ * Disable a suspended worker.
+ */
+void lace_disable_worker(unsigned int worker);
+
+/**
+ * Enable a suspended worker.
+ */
+void lace_enable_worker(unsigned int worker);
+
+/**
+ * Retrieve the number of enabled/active workers.
+ */
+unsigned int lace_enabled_workers();
+
+/**
+ * Retrieve the number of Lace workers
+ */
+unsigned int lace_workers();
+
+/**
+ * Retrieve the default program stack size
+ */
+size_t lace_default_stacksize();
+
+/**
+ * Retrieve the current worker data.
+ */
+WorkerP *lace_get_worker();
+
+/**
+ * Retrieve the current head of the deque
+ */
+Task *lace_get_head(WorkerP *);
+
+/**
+ * Exit Lace.
+ * This function is automatically called when lace_startup is called with a callback.
+ * This function must be called to exit Lace when lace_startup is called without a callback.
+ */
+void lace_exit();
+
+/**
+ * Create a pointer to a Tasks main function.
+ */
+#define TASK(f)           ( f##_CALL )
+
+/**
+ * Call a Tasks implementation (adds Lace variables to call)
+ */
+#define WRAP(f, ...)      ( f((WorkerP *)__lace_worker, (Task *)__lace_dq_head, ##__VA_ARGS__) )
+
+/**
+ * Sync a task.
+ */
+#define SYNC(f)           ( __lace_dq_head--, WRAP(f##_SYNC) )
+
+/**
+ * Sync a task, but if the task is not stolen, then do not execute it.
+ */
+#define DROP()            ( __lace_dq_head--, WRAP(lace_drop) )
+
+/**
+ * Spawn a task.
+ */
+#define SPAWN(f, ...)     ( WRAP(f##_SPAWN, ##__VA_ARGS__), __lace_dq_head++ )
+
+/**
+ * Directly execute a task.
+ */
+#define CALL(f, ...)      ( WRAP(f##_CALL, ##__VA_ARGS__) )
+
+/**
+ * Signal all workers to interrupt their current tasks and instead perform (a personal copy of) the given task.
+ */
+#define TOGETHER(f, ...)  ( WRAP(f##_TOGETHER, ##__VA_ARGS__) )
+
+/**
+ * Signal all workers to interrupt their current tasks and help the current thread with the given task.
+ */
+#define NEWFRAME(f, ...)  ( WRAP(f##_NEWFRAME, ##__VA_ARGS__) )
+
+/**
+ * (Try to) steal a task from a random worker.
+ */
+#define STEAL_RANDOM()    ( CALL(lace_steal_random) )
+
+/**
+ * Get the current worker id.
+ */
+#define LACE_WORKER_ID    ( __lace_worker->worker )
+
+/**
+ * Get the core where the current worker is pinned.
+ */
+#define LACE_WORKER_PU    ( __lace_worker->pu )
+
+/**
+ * Initialize local variables __lace_worker and __lace_dq_head which are required for most Lace functionality.
+ */
+#define LACE_ME WorkerP * __attribute__((unused)) __lace_worker = lace_get_worker(); Task * __attribute__((unused)) __lace_dq_head = lace_get_head(__lace_worker);
+
+/**
+ * Check if current tasks must be interrupted, and if so, interrupt.
+ */
+void lace_yield(WorkerP *__lace_worker, Task *__lace_dq_head);
+#define YIELD_NEWFRAME() { if (unlikely((*(Task* volatile *)&lace_newframe.t) != NULL)) lace_yield(__lace_worker, __lace_dq_head); }
+
+/**
+ * True if the given task is stolen, False otherwise.
+ */
+#define TASK_IS_STOLEN(t) ((size_t)t->thief > 1)
+
+/**
+ * True if the given task is completed, False otherwise.
+ */
+#define TASK_IS_COMPLETED(t) ((size_t)t->thief == 2)
+
+/**
+ * Retrieves a pointer to the result of the given task.
+ */
+#define TASK_RESULT(t) (&t->d[0])
+
+/**
+ * Compute a random number, thread-local (so scalable)
+ */
+#define LACE_TRNG (__lace_worker->rng = 2862933555777941757ULL * __lace_worker->rng + 3037000493ULL)
+
+/* Some flags that influence Lace behavior */
 
 #ifndef LACE_DEBUG_PROGRAMSTACK /* Write to stderr when 95% program stack reached */
 #define LACE_DEBUG_PROGRAMSTACK 0
 #endif
 
 #ifndef LACE_LEAP_RANDOM /* Use random leaping when leapfrogging fails */
-#define LACE_LEAP_RANDOM 0
-#endif
-
-#ifndef LACE_PIE_TIMES /* Record time spent stealing and leapfrogging */
-#define LACE_PIE_TIMES 0
-#endif
-
-#ifndef LACE_COUNT_TASKS /* Count number of tasks executed */
-#define LACE_COUNT_TASKS 0
-#endif
-
-#ifndef LACE_COUNT_STEALS /* Count number of steals performed */
-#define LACE_COUNT_STEALS 0
-#endif
-
-#ifndef LACE_COUNT_SPLITS /* Count number of times the split point is moved */
-#define LACE_COUNT_SPLITS 0
+#define LACE_LEAP_RANDOM 1
 #endif
 
 #ifndef LACE_COUNT_EVENTS
 #define LACE_COUNT_EVENTS (LACE_PIE_TIMES || LACE_COUNT_TASKS || LACE_COUNT_STEALS || LACE_COUNT_SPLITS)
 #endif
+
+/**
+ * Now follows the implementation of Lace
+ */
 
 /* Typical cacheline size of system architectures */
 #ifndef LINE_SIZE
@@ -167,10 +408,6 @@ typedef enum {
     CTR_MAX
 } CTR_index;
 
-struct _WorkerP;
-struct _Worker;
-struct _Task;
-
 #define THIEF_EMPTY     ((struct _Worker*)0x0)
 #define THIEF_TASK      ((struct _Worker*)0x1)
 #define THIEF_COMPLETED ((struct _Worker*)0x2)
@@ -215,7 +452,7 @@ typedef struct _WorkerP {
     size_t stack_trigger;       // for stack overflow detection
     uint64_t rng;               // my random seed (for lace_trng)
     uint32_t seed;              // my random seed (for lace_steal_random)
-    int16_t worker;             // what is my worker id?
+    uint16_t worker;            // what is my worker id?
     uint8_t allstolen;          // my allstolen
     volatile int8_t enabled;    // if this worker is enabled
 
@@ -228,144 +465,9 @@ typedef struct _WorkerP {
     int16_t pu;                 // my pu (for HWLOC)
 } WorkerP;
 
-#define LACE_TYPEDEF_CB(t, f, ...) typedef t (*f)(WorkerP *, Task *, ##__VA_ARGS__);
-LACE_TYPEDEF_CB(void, lace_startup_cb, void*);
-
-/**
- * Using Lace.
- *
- * Optionally set the verbosity level with lace_set_verbosity.
- * Call lace_init to allocate all data structures.
- *
- * You can create threads yourself or let Lace create threads with lace_startup.
- *
- * When creating threads yourself:
- * - call lace_init_main for worker 0
- *   this method returns when all other workers have started
- * - call lace_run_worker for all other workers
- *   workers perform work-stealing until worker 0 calls lace_exit
- *
- * When letting Lace create threads with lace_startup
- * - calling with startup callback creates N threads and returns
- *   after the callback has returned, and all created threads are destroyed
- * - calling without a startup callback creates N-1 threads and returns
- *   control to the caller. When lace_exit is called, all created threads are terminated.
- */
-
-/**
- * Set verbosity level (0 = no startup messages, 1 = startup messages)
- * Default level: 0
- */
-void lace_set_verbosity(int level);
-
-/**
- * Initialize master structures for Lace with <n_workers> workers
- * and default deque size of <dqsize>.
- * Does not create new threads.
- * Tries to detect number of cpus, if n_workers equals 0.
- */
-void lace_init(int n_workers, size_t dqsize);
-
-/**
- * After lace_init, start all worker threads.
- * If cb,arg are set, suspend this thread, call cb(arg) in a new thread
- * and exit Lace upon return
- * Otherwise, the current thread is initialized as worker 0.
- */
-void lace_startup(size_t stacksize, lace_startup_cb, void* arg);
-
-/**
- * Initialize worker 0. This method returns when all other workers are initialized
- * (using lace_run_worker).
- *
- * When done, run lace_exit so all worker threads return from lace_run_worker.
- */
-void lace_init_main();
-
-/**
- * Initialize the current thread as the Lace thread of worker <worker>, and perform
- * work-stealing until lace_exit is called.
- *
- * For worker 0, call lace_init_main instead.
- */
-void lace_run_worker(int worker);
-
-/**
- * Steal a random task.
- */
-#define lace_steal_random() CALL(lace_steal_random)
-void lace_steal_random_CALL(WorkerP*, Task*);
-
-/**
- * Barrier (all workers must enter it before progressing)
- */
-void lace_barrier();
-
-/**
- * Suspend and resume all other workers.
- * May only be used when all other workers are idle.
- */
-void lace_suspend();
-void lace_resume();
-
-/**
- * When all tasks are suspended, workers can be temporarily disabled.
- * With set_workers, all workers 0..(N-1) are enabled and N..max are disabled.
- * You can never disable the current worker or reduce the number of workers below 1.
- * You cannot add workers.
- */
-void lace_disable_worker(int worker);
-void lace_enable_worker(int worker);
-void lace_set_workers(int workercount);
-int lace_enabled_workers();
-
-/**
- * Retrieve number of Lace workers
- */
-size_t lace_workers();
-
-/**
- * Retrieve default program stack size
- */
-size_t lace_default_stacksize();
-
-/**
- * Retrieve current worker.
- */
-WorkerP *lace_get_worker();
-
-/**
- * Retrieve the current head of the deque
- */
-Task *lace_get_head(WorkerP *);
-
-/**
- * Exit Lace. Automatically called when started with cb,arg.
- */
-void lace_exit();
-
 #define LACE_STOLEN   ((Worker*)0)
 #define LACE_BUSY     ((Worker*)1)
 #define LACE_NOWORK   ((Worker*)2)
-
-#define TASK(f)           ( f##_CALL )
-#define WRAP(f, ...)      ( f((WorkerP *)__lace_worker, (Task *)__lace_dq_head, ##__VA_ARGS__) )
-#define SYNC(f)           ( __lace_dq_head--, WRAP(f##_SYNC) )
-#define DROP()            ( __lace_dq_head--, WRAP(lace_drop) )
-#define SPAWN(f, ...)     ( WRAP(f##_SPAWN, ##__VA_ARGS__), __lace_dq_head++ )
-#define CALL(f, ...)      ( WRAP(f##_CALL, ##__VA_ARGS__) )
-#define TOGETHER(f, ...)  ( WRAP(f##_TOGETHER, ##__VA_ARGS__) )
-#define NEWFRAME(f, ...)  ( WRAP(f##_NEWFRAME, ##__VA_ARGS__) )
-#define STEAL_RANDOM()    ( CALL(lace_steal_random) )
-#define LACE_WORKER_ID    ( __lace_worker->worker )
-#define LACE_WORKER_PU    ( __lace_worker->pu )
-
-/* Use LACE_ME to initialize Lace variables, in case you want to call multiple Lace tasks */
-#define LACE_ME WorkerP * __attribute__((unused)) __lace_worker = lace_get_worker(); Task * __attribute__((unused)) __lace_dq_head = lace_get_head(__lace_worker);
-
-#define TASK_IS_STOLEN(t) ((size_t)t->thief > 1)
-#define TASK_IS_COMPLETED(t) ((size_t)t->thief == 2)
-#define TASK_RESULT(t) (&t->d[0])
 
 #if LACE_DEBUG_PROGRAMSTACK
 static inline void CHECKSTACK(WorkerP *w)
@@ -401,14 +503,6 @@ extern lace_newframe_t lace_newframe;
  */
 void lace_do_together(WorkerP *__lace_worker, Task *__lace_dq_head, Task *task);
 void lace_do_newframe(WorkerP *__lace_worker, Task *__lace_dq_head, Task *task);
-
-void lace_yield(WorkerP *__lace_worker, Task *__lace_dq_head);
-#define YIELD_NEWFRAME() { if (unlikely((*(Task* volatile *)&lace_newframe.t) != NULL)) lace_yield(__lace_worker, __lace_dq_head); }
-
-/**
- * Compute a random number, thread-local
- */
-#define LACE_TRNG (__lace_worker->rng = 2862933555777941757ULL * __lace_worker->rng + 3037000493ULL)
 
 /**
  * Make all tasks of the current worker shared.

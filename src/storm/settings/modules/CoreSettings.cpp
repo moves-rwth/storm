@@ -89,6 +89,10 @@ namespace storm {
                 return this->getOption(eqSolverOptionName).getHasOptionBeenSet();
             }
             
+            bool CoreSettings::isEquationSolverSetFromDefaultValue() const {
+                return !this->getOption(eqSolverOptionName).getHasOptionBeenSet() || this->getOption(eqSolverOptionName).getArgumentByName("name").wasSetFromDefaultValue();
+            }
+            
             storm::solver::LpSolverType CoreSettings::getLpSolver() const {
                 std::string lpSolverName = this->getOption(lpSolverOptionName).getArgumentByName("name").getValueAsString();
                 if (lpSolverName == "gurobi") {

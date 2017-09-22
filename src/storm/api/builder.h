@@ -31,10 +31,15 @@ namespace storm {
     namespace api {
         
         template<storm::dd::DdType LibraryType, typename ValueType>
-        std::shared_ptr<storm::models::symbolic::Model<LibraryType, ValueType>> buildSymbolicModel(storm::storage::SymbolicModelDescription const& model, std::vector<std::shared_ptr<storm::logic::Formula const>> const& formulas) {
+        std::shared_ptr<storm::models::symbolic::Model<LibraryType, ValueType>> buildSymbolicModel(storm::storage::SymbolicModelDescription const& model, std::vector<std::shared_ptr<storm::logic::Formula const>> const& formulas, bool buildFullModel = false) {
             if (model.isPrismProgram()) {
                 typename storm::builder::DdPrismModelBuilder<LibraryType, ValueType>::Options options;
                 options = typename storm::builder::DdPrismModelBuilder<LibraryType, ValueType>::Options(formulas);
+                
+                if (buildFullModel) {
+                    options.buildAllLabels = true;
+                    options.buildAllRewardModels = true;
+                }
                 
                 storm::builder::DdPrismModelBuilder<LibraryType, ValueType> builder;
                 return builder.build(model.asPrismProgram(), options);
@@ -43,18 +48,23 @@ namespace storm {
                 typename storm::builder::DdJaniModelBuilder<LibraryType, ValueType>::Options options;
                 options = typename storm::builder::DdJaniModelBuilder<LibraryType, ValueType>::Options(formulas);
                 
+                if (buildFullModel) {
+                    options.buildAllLabels = true;
+                    options.buildAllRewardModels = true;
+                }
+                
                 storm::builder::DdJaniModelBuilder<LibraryType, ValueType> builder;
                 return builder.build(model.asJaniModel(), options);
             }
         }
         
         template<>
-        inline std::shared_ptr<storm::models::symbolic::Model<storm::dd::DdType::CUDD, storm::RationalNumber>> buildSymbolicModel(storm::storage::SymbolicModelDescription const& model, std::vector<std::shared_ptr<storm::logic::Formula const>> const& formulas) {
+        inline std::shared_ptr<storm::models::symbolic::Model<storm::dd::DdType::CUDD, storm::RationalNumber>> buildSymbolicModel(storm::storage::SymbolicModelDescription const& model, std::vector<std::shared_ptr<storm::logic::Formula const>> const& formulas, bool buildFullModel) {
             STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "CUDD does not support rational numbers.");
         }
 
         template<>
-        inline std::shared_ptr<storm::models::symbolic::Model<storm::dd::DdType::CUDD, storm::RationalFunction>> buildSymbolicModel(storm::storage::SymbolicModelDescription const& model, std::vector<std::shared_ptr<storm::logic::Formula const>> const& formulas) {
+        inline std::shared_ptr<storm::models::symbolic::Model<storm::dd::DdType::CUDD, storm::RationalFunction>> buildSymbolicModel(storm::storage::SymbolicModelDescription const& model, std::vector<std::shared_ptr<storm::logic::Formula const>> const& formulas, bool buildFullModel) {
             STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "CUDD does not support rational functions.");
         }
 
@@ -90,8 +100,6 @@ namespace storm {
         std::shared_ptr<storm::models::sparse::Model<ValueType>> buildSparseModel(storm::storage::SymbolicModelDescription const& model, std::vector<std::shared_ptr<storm::logic::Formula const>> const& formulas, bool jit = false, bool doctor = false) {
             storm::builder::BuilderOptions options(formulas);
             return buildSparseModel<ValueType>(model, options, jit, doctor);
-
-
         }
         
         template<typename ValueType, typename RewardModelType = storm::models::sparse::StandardRewardModel<ValueType>>
@@ -142,7 +150,6 @@ namespace storm {
         inline std::shared_ptr<storm::models::sparse::Model<double>> buildExplicitIMCAModel(std::string const& imcaFile) {
             return storm::parser::ImcaMarkovAutomatonParser<double>::parseImcaFile(imcaFile);
         }
-
 
     }
 }

@@ -2,7 +2,6 @@
 
 #include "storm/api/storm.h"
 
-
 #include "storm/utility/resources.h"
 #include "storm/utility/file.h"
 #include "storm/utility/storm-version.h"
@@ -172,7 +171,7 @@ namespace storm {
 
         template <storm::dd::DdType DdType, typename ValueType>
         std::shared_ptr<storm::models::ModelBase> buildModelDd(SymbolicInput const& input) {
-            return storm::api::buildSymbolicModel<DdType, ValueType>(input.model.get(), createFormulasToRespect(input.properties));
+            return storm::api::buildSymbolicModel<DdType, ValueType>(input.model.get(), createFormulasToRespect(input.properties), storm::settings::getModule<storm::settings::modules::IOSettings>().isBuildFullModelSet());
         }
 
         template <typename ValueType>
@@ -180,6 +179,7 @@ namespace storm {
             auto counterexampleGeneratorSettings = storm::settings::getModule<storm::settings::modules::CounterexampleGeneratorSettings>();
             storm::builder::BuilderOptions options(createFormulasToRespect(input.properties));
             options.setBuildChoiceLabels(ioSettings.isBuildChoiceLabelsSet());
+            options.setBuildStateValuations(ioSettings.isBuildStateValuationsSet());
             options.setBuildChoiceOrigins(counterexampleGeneratorSettings.isMinimalCommandSetGenerationSet());
             options.setBuildAllLabels(ioSettings.isBuildFullModelSet());
             options.setBuildAllRewardModels(ioSettings.isBuildFullModelSet());
@@ -297,8 +297,25 @@ namespace storm {
         }
 
         template <storm::dd::DdType DdType, typename ValueType>
+        std::shared_ptr<storm::models::Model<ValueType>> preprocessDdModelBisimulation(std::shared_ptr<storm::models::symbolic::Model<DdType, ValueType>> const& model, SymbolicInput const& input, storm::settings::modules::BisimulationSettings const& bisimulationSettings) {
+            STORM_LOG_WARN_COND(!bisimulationSettings.isWeakBisimulationSet(), "Weak bisimulation is currently not supported on DDs. Falling back to strong bisimulation.");
+            
+            STORM_LOG_INFO("Performing bisimulation minimization...");
+            return storm::api::performBisimulationMinimization<DdType, ValueType>(model, createFormulasToRespect(input.properties), storm::storage::BisimulationType::Strong, bisimulationSettings.getSignatureMode());
+        }
+        
+        template <storm::dd::DdType DdType, typename ValueType>
         std::pair<std::shared_ptr<storm::models::ModelBase>, bool> preprocessDdModel(std::shared_ptr<storm::models::symbolic::Model<DdType, ValueType>> const& model, SymbolicInput const& input) {
-            return std::make_pair(model, false);
+            auto bisimulationSettings = storm::settings::getModule<storm::settings::modules::BisimulationSettings>();
+            auto generalSettings = storm::settings::getModule<storm::settings::modules::GeneralSettings>();
+            std::pair<std::shared_ptr<storm::models::Model<ValueType>>, bool> result = std::make_pair(model, false);
+            
+            if (generalSettings.isBisimulationSet()) {
+                result.first = preprocessDdModelBisimulation(model, input, bisimulationSettings);
+                result.second = true;
+            }
+            
+            return result;
         }
 
         template <storm::dd::DdType DdType, typename ValueType>
@@ -312,6 +329,8 @@ namespace storm {
                 STORM_LOG_ASSERT(model->isSymbolicModel(), "Unexpected model type.");
                 result = preprocessDdModel<DdType, ValueType>(result.first->as<storm::models::symbolic::Model<DdType, ValueType>>(), input);
             }
+            
+            preprocessingWatch.stop();
 
             if (result.second) {
                 STORM_PRINT_AND_LOG(std::endl << "Time for model preprocessing: " << preprocessingWatch << "." << std::endl << std::endl);

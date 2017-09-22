@@ -85,17 +85,17 @@ namespace storm {
             virtual void clearCache() const;
             
             /*!
-             * Sets a lower bound for the solution that can potentially used by the solver.
+             * Sets a lower bound for the solution that can potentially be used by the solver.
              */
             void setLowerBound(ValueType const& value);
 
             /*!
-             * Sets an upper bound for the solution that can potentially used by the solver.
+             * Sets an upper bound for the solution that can potentially be used by the solver.
              */
             void setUpperBound(ValueType const& value);
 
             /*!
-             * Sets bounds for the solution that can potentially used by the solver.
+             * Sets bounds for the solution that can potentially be used by the solver.
              */
             void setBounds(ValueType const& lower, ValueType const& upper);
 
