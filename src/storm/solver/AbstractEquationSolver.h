@@ -37,6 +37,26 @@ namespace storm {
              */
             bool terminateNow(std::vector<ValueType> const& values, SolverGuarantee const& guarantee) const;
             
+            /*!
+             * Retrieves whether this solver has particularly relevant values.
+             */
+            bool hasRelevantValues() const;
+            
+            /*!
+             * Retrieves the relevant values (if there are any).
+             */
+            storm::storage::BitVector const& getRelevantValues() const;
+            
+            /*!
+             * Sets the relevant values.
+             */
+            void setRelevantValues(storm::storage::BitVector&& valuesOfInterest);
+
+            /*!
+             * Removes the values of interest (if there were any).
+             */
+            void clearRelevantValues();
+            
             enum class BoundType {
                 Global,
                 Local,
@@ -121,6 +141,9 @@ namespace storm {
 
             // A termination condition to be used (can be unset).
             std::unique_ptr<TerminationCondition<ValueType>> terminationCondition;
+            
+            // A bit vector containing the indices of the relevant values if they were set.
+            boost::optional<storm::storage::BitVector> relevantValues;
             
             // A lower bound if one was set.
             boost::optional<ValueType> lowerBound;

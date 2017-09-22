@@ -140,7 +140,7 @@ namespace storm {
             std::vector<storm::storage::sparse::state_type> scheduler = this->hasInitialScheduler() ? this->getInitialScheduler() : std::vector<storm::storage::sparse::state_type>(this->A->getRowGroupCount());
             
             // Get a vector for storing the right-hand side of the inner equation system.
-            if(!auxiliaryRowGroupVector) {
+            if (!auxiliaryRowGroupVector) {
                 auxiliaryRowGroupVector = std::make_unique<std::vector<ValueType>>(this->A->getRowGroupCount());
             }
             std::vector<ValueType>& subB = *auxiliaryRowGroupVector;
@@ -210,7 +210,7 @@ namespace storm {
                 
                 // Update environment variables.
                 ++iterations;
-                status = updateStatusIfNotConverged(status, x, iterations);
+                status = updateStatusIfNotConverged(status, x, iterations, dir == storm::OptimizationDirection::Minimize ? SolverGuarantee::GreaterOrEqual : SolverGuarantee::LessOrEqual);
             } while (status == Status::InProgress);
             
             reportStatus(status, iterations);
@@ -294,6 +294,10 @@ namespace storm {
                 auxiliaryRowGroupVector = std::make_unique<std::vector<ValueType>>(this->A->getRowGroupCount());
             }
             
+            // By default, the guarantee that we can provide is that our solution is always less-or-equal than the
+            // actual solution.
+            SolverGuarantee guarantee = SolverGuarantee::LessOrEqual;
+            
             if (this->hasInitialScheduler()) {
                 // Resolve the nondeterminism according to the initial scheduler.
                 bool convertToEquationSystem = this->linearEquationSolverFactory->getEquationProblemFormat() == LinearEquationSolverProblemFormat::EquationSystem;
@@ -313,6 +317,12 @@ namespace storm {
                     submatrixSolver->setUpperBound(this->upperBound.get());
                 }
                 submatrixSolver->solveEquations(x, *auxiliaryRowGroupVector);
+                
+                // If we were given an initial scheduler and are in fact minimizing, our current solution becomes
+                // always greater-or-equal than the actual solution.
+                if (dir == storm::OptimizationDirection::Minimize) {
+                    guarantee = SolverGuarantee::GreaterOrEqual;
+                }
             }
 
             // Allow aliased multiplications.
@@ -343,7 +353,7 @@ namespace storm {
                 // Update environment variables.
                 std::swap(currentX, newX);
                 ++iterations;
-                status = updateStatusIfNotConverged(status, *currentX, iterations);
+                status = updateStatusIfNotConverged(status, *currentX, iterations, guarantee);
             }
             
             reportStatus(status, iterations);
@@ -404,8 +414,14 @@ namespace storm {
                 precision *= storm::utility::convertNumber<ValueType>(2.0);
             }
             while (status == Status::InProgress && iterations < this->getSettings().getMaximalNumberOfIterations()) {
+                // Remember in which directions we took steps in this iteration.
+                bool lowerStep = false;
+                bool upperStep = false;
+
                 // In every thousandth iteration, we improve both bounds.
                 if (iterations % 1000 == 0 || lowerDiff == upperDiff) {
+                    lowerStep = true;
+                    upperStep = true;
                     if (useGaussSeidelMultiplication) {
                         lowerDiff = (*lowerX)[0];
                         this->linEqSolverA->multiplyAndReduceGaussSeidel(dir, this->A->getRowGroupIndices(), *lowerX, &b);
@@ -428,20 +444,24 @@ namespace storm {
                             lowerDiff = (*lowerX)[0];
                             this->linEqSolverA->multiplyAndReduceGaussSeidel(dir, this->A->getRowGroupIndices(), *lowerX, &b);
                             lowerDiff = (*lowerX)[0] - lowerDiff;
+                            lowerStep = true;
                         } else {
                             upperDiff = (*upperX)[0];
                             this->linEqSolverA->multiplyAndReduceGaussSeidel(dir, this->A->getRowGroupIndices(), *upperX, &b);
                             upperDiff = upperDiff - (*upperX)[0];
+                            upperStep = true;
                         }
                     } else {
                         if (lowerDiff >= upperDiff) {
                             this->linEqSolverA->multiplyAndReduce(dir, this->A->getRowGroupIndices(), *lowerX, &b, *tmp);
                             lowerDiff = (*tmp)[0] - (*lowerX)[0];
                             std::swap(tmp, lowerX);
+                            lowerStep = true;
                         } else {
                             this->linEqSolverA->multiplyAndReduce(dir, this->A->getRowGroupIndices(), *upperX, &b, *tmp);
                             upperDiff = (*upperX)[0] - (*tmp)[0];
                             std::swap(tmp, upperX);
+                            upperStep = true;
                         }
                     }
                 }
@@ -458,10 +478,12 @@ namespace storm {
                 
                 // Update environment variables.
                 ++iterations;
-            }
-            
-            if (status != Status::Converged) {
-                status = Status::MaximalIterationsExceeded;
+                if (lowerStep) {
+                    status = updateStatusIfNotConverged(status, *lowerX, iterations, SolverGuarantee::LessOrEqual);
+                }
+                if (upperStep) {
+                    status = updateStatusIfNotConverged(status, *upperX, iterations, SolverGuarantee::GreaterOrEqual);
+                }
             }
             
             reportStatus(status, iterations);
@@ -597,9 +619,9 @@ namespace storm {
         }
 
         template<typename ValueType>
-        typename IterativeMinMaxLinearEquationSolver<ValueType>::Status IterativeMinMaxLinearEquationSolver<ValueType>::updateStatusIfNotConverged(Status status, std::vector<ValueType> const& x, uint64_t iterations) const {
+        typename IterativeMinMaxLinearEquationSolver<ValueType>::Status IterativeMinMaxLinearEquationSolver<ValueType>::updateStatusIfNotConverged(Status status, std::vector<ValueType> const& x, uint64_t iterations, SolverGuarantee const& guarantee) const {
             if (status != Status::Converged) {
-                if (this->hasCustomTerminationCondition() && this->getTerminationCondition().terminateNow(x)) {
+                if (this->hasCustomTerminationCondition() && this->getTerminationCondition().terminateNow(x, guarantee)) {
                     status = Status::TerminatedEarly;
                 } else if (iterations >= this->getSettings().getMaximalNumberOfIterations()) {
                     status = Status::MaximalIterationsExceeded;

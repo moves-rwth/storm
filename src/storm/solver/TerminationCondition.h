@@ -11,13 +11,16 @@ namespace storm {
         template<typename ValueType>
         class TerminationCondition {
         public:
+            /*!
+             * Retrieves whether the guarantee provided by the solver for the current result is sufficient to terminate.
+             */
             virtual bool terminateNow(std::vector<ValueType> const& currentValues, SolverGuarantee const& guarantee = SolverGuarantee::None) const = 0;
         };
         
         template<typename ValueType>
         class NoTerminationCondition : public TerminationCondition<ValueType> {
         public:
-            bool terminateNow(std::vector<ValueType> const& currentValues, SolverGuarantee const& guarantee = SolverGuarantee::None) const;
+            virtual bool terminateNow(std::vector<ValueType> const& currentValues, SolverGuarantee const& guarantee = SolverGuarantee::None) const override;
         };
         
         template<typename ValueType>
@@ -26,7 +29,7 @@ namespace storm {
             TerminateIfFilteredSumExceedsThreshold(storm::storage::BitVector const& filter, ValueType const& threshold, bool strict);
             
             bool terminateNow(std::vector<ValueType> const& currentValues, SolverGuarantee const& guarantee = SolverGuarantee::None) const;
-            
+
         protected:
             ValueType threshold;
             storm::storage::BitVector filter;

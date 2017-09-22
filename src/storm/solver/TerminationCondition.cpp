@@ -20,7 +20,7 @@ namespace storm {
         
         template<typename ValueType>
         bool TerminateIfFilteredSumExceedsThreshold<ValueType>::terminateNow(std::vector<ValueType> const& currentValues, SolverGuarantee const& guarantee) const {
-            if (guarantee != SolverGuarantee::GreaterOrEqual) {
+            if (guarantee != SolverGuarantee::LessOrEqual) {
                 return false;
             }
             
@@ -36,7 +36,7 @@ namespace storm {
         
         template<typename ValueType>
         bool TerminateIfFilteredExtremumExceedsThreshold<ValueType>::terminateNow(std::vector<ValueType> const& currentValues, SolverGuarantee const& guarantee) const {
-            if (guarantee != SolverGuarantee::GreaterOrEqual) {
+            if (guarantee != SolverGuarantee::LessOrEqual) {
                 return false;
             }
             
@@ -52,7 +52,7 @@ namespace storm {
         
         template<typename ValueType>
         bool TerminateIfFilteredExtremumBelowThreshold<ValueType>::terminateNow(std::vector<ValueType> const& currentValues, SolverGuarantee const& guarantee) const {
-            if (guarantee != SolverGuarantee::LessOrEqual) {
+            if (guarantee != SolverGuarantee::GreaterOrEqual) {
                 return false;
             }
             
@@ -68,7 +68,7 @@ namespace storm {
         template class TerminateIfFilteredSumExceedsThreshold<storm::RationalNumber>;
         template class TerminateIfFilteredExtremumExceedsThreshold<storm::RationalNumber>;
         template class TerminateIfFilteredExtremumBelowThreshold<storm::RationalNumber>;
-
 #endif
+        
     }
 }

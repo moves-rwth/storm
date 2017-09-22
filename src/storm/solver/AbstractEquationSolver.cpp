@@ -39,6 +39,26 @@ namespace storm {
         }
         
         template<typename ValueType>
+        bool AbstractEquationSolver<ValueType>::hasRelevantValues() const {
+            return static_cast<bool>(relevantValues);
+        }
+        
+        template<typename ValueType>
+        storm::storage::BitVector const& AbstractEquationSolver<ValueType>::getRelevantValues()const {
+            return relevantValues.get();
+        }
+        
+        template<typename ValueType>
+        void AbstractEquationSolver<ValueType>::setRelevantValues(storm::storage::BitVector&& relevantValues) {
+            this->relevantValues = std::move(relevantValues);
+        }
+        
+        template<typename ValueType>
+        void AbstractEquationSolver<ValueType>::clearRelevantValues() {
+            relevantValues = boost::none;
+        }
+        
+        template<typename ValueType>
         bool AbstractEquationSolver<ValueType>::hasLowerBound(BoundType const& type) const {
             if (type == BoundType::Any) {
                 return static_cast<bool>(lowerBound) || static_cast<bool>(lowerBounds);

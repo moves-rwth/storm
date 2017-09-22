@@ -392,7 +392,7 @@ namespace storm {
             bool useGaussSeidelMultiplication = this->getSettings().getPowerMethodMultiplicationStyle() == storm::solver::MultiplicationStyle::GaussSeidel;
             
             bool converged = false;
-            bool terminate = this->terminateNow(*currentX, SolverGuarantee::GreaterOrEqual);
+            bool terminate = this->terminateNow(*currentX, SolverGuarantee::LessOrEqual);
             uint64_t iterations = 0;
             while (!converged && !terminate && iterations < this->getSettings().getMaximalNumberOfIterations()) {
                 if (useGaussSeidelMultiplication) {
@@ -404,7 +404,7 @@ namespace storm {
                 
                 // Now check for termination.
                 converged = storm::utility::vector::equalModuloPrecision<ValueType>(*currentX, *nextX, static_cast<ValueType>(this->getSettings().getPrecision()), this->getSettings().getRelativeTerminationCriterion());
-                terminate = this->terminateNow(*currentX, SolverGuarantee::GreaterOrEqual);
+                terminate = this->terminateNow(*currentX, SolverGuarantee::LessOrEqual);
                 
                 // Set up next iteration.
                 std::swap(currentX, nextX);
@@ -516,7 +516,7 @@ namespace storm {
                     // the original precision.
                     converged = storm::utility::vector::equalModuloPrecision<ValueType>(*lowerX, *upperX, precision, this->getSettings().getRelativeTerminationCriterion());
                     if (lowerStep) {
-                        terminate |= this->terminateNow(*lowerX, SolverGuarantee::GreaterOrEqual);
+                        terminate |= this->terminateNow(*lowerX, SolverGuarantee::LessOrEqual);
                     }
                     if (upperStep) {
                         terminate |= this->terminateNow(*upperX, SolverGuarantee::GreaterOrEqual);
