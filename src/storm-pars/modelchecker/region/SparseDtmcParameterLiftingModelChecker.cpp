@@ -238,7 +238,7 @@ namespace storm {
                 storm::storage::BitVector relevantStatesInSubsystem = this->currentCheckTask->isOnlyInitialStatesRelevantSet() ? this->parametricModel->getInitialStates() % maybeStates : storm::storage::BitVector(maybeStates.getNumberOfSetBits(), true);
                 if (storm::solver::minimize(dirForParameters)) {
                     // Terminate if the value for ALL relevant states is already below the threshold
-                    termCond = std::make_unique<storm::solver::TerminateIfFilteredExtremumBelowThreshold<ConstantType>> (relevantStatesInSubsystem, this->currentCheckTask->getBoundThreshold(), true, false);
+                    termCond = std::make_unique<storm::solver::TerminateIfFilteredExtremumBelowThreshold<ConstantType>> (relevantStatesInSubsystem, true, this->currentCheckTask->getBoundThreshold(), false);
                 } else {
                     // Terminate if the value for ALL relevant states is already above the threshold
                     termCond = std::make_unique<storm::solver::TerminateIfFilteredExtremumExceedsThreshold<ConstantType>> (relevantStatesInSubsystem, true, this->currentCheckTask->getBoundThreshold(), true);

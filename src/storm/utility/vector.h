@@ -858,6 +858,30 @@ namespace storm {
              * @param relativeError If set, the difference between the vectors is computed relative to the value or in absolute terms.
              */
             template<class T>
+            bool equalModuloPrecision(std::vector<T> const& vectorLeft, std::vector<T> const& vectorRight, storm::storage::BitVector const& positions, T const& precision, bool relativeError) {
+                STORM_LOG_ASSERT(vectorLeft.size() == vectorRight.size(), "Lengths of vectors does not match.");
+                
+                for (auto position : positions) {
+                    if (!equalModuloPrecision(vectorLeft[position], vectorRight[position], precision, relativeError)) {
+                        return false;
+                    }
+                }
+                
+                return true;
+            }
+            
+            /*!
+             * Compares the two vectors at the specified positions and determines whether they are equal modulo the provided
+             * precision. Depending on whether the flag is set, the difference between the vectors is computed relative to the value
+             * or in absolute terms.
+             *
+             * @param vectorLeft The first vector of the comparison.
+             * @param vectorRight The second vector of the comparison.
+             * @param precision The precision up to which the vectors are to be checked for equality.
+             * @param positions A vector representing a set of positions at which the vectors are compared.
+             * @param relativeError If set, the difference between the vectors is computed relative to the value or in absolute terms.
+             */
+            template<class T>
             bool equalModuloPrecision(std::vector<T> const& vectorLeft, std::vector<T> const& vectorRight, std::vector<uint_fast64_t> const& positions, T const& precision, bool relativeError) {
                 STORM_LOG_ASSERT(vectorLeft.size() == vectorRight.size(), "Lengths of vectors does not match.");
                 

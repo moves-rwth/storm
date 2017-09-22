@@ -46,7 +46,7 @@ namespace storm {
         }
         
         template<typename ValueType>
-        TerminateIfFilteredExtremumBelowThreshold<ValueType>::TerminateIfFilteredExtremumBelowThreshold(storm::storage::BitVector const& filter, ValueType const& threshold, bool strict, bool useMinimum) : TerminateIfFilteredSumExceedsThreshold<ValueType>(filter, threshold, strict), useMinimum(useMinimum) {
+        TerminateIfFilteredExtremumBelowThreshold<ValueType>::TerminateIfFilteredExtremumBelowThreshold(storm::storage::BitVector const& filter, bool strict, ValueType const& threshold, bool useMinimum) : TerminateIfFilteredSumExceedsThreshold<ValueType>(filter, threshold, strict), useMinimum(useMinimum) {
             // Intentionally left empty.
         }
         

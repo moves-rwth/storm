@@ -1,5 +1,4 @@
-#ifndef ALLOWEARLYTERMINATIONCONDITION_H
-#define	ALLOWEARLYTERMINATIONCONDITION_H
+#pragma once
 
 #include <vector>
 
@@ -50,7 +49,7 @@ namespace storm {
         template<typename ValueType>
         class TerminateIfFilteredExtremumBelowThreshold : public TerminateIfFilteredSumExceedsThreshold<ValueType>{
         public:
-            TerminateIfFilteredExtremumBelowThreshold(storm::storage::BitVector const& filter, ValueType const& threshold, bool strict, bool useMinimum);
+            TerminateIfFilteredExtremumBelowThreshold(storm::storage::BitVector const& filter, bool strict, ValueType const& threshold, bool useMinimum);
             
             bool terminateNow(std::vector<ValueType> const& currentValue, SolverGuarantee const& guarantee = SolverGuarantee::None) const;
             
@@ -59,10 +58,3 @@ namespace storm {
         };
     }
 }
-
-
-
-
-
-#endif	/* ALLOWEARLYTERMINATIONCONDITION_H */
-

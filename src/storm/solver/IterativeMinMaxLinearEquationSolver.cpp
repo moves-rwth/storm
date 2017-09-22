@@ -472,8 +472,10 @@ namespace storm {
                 }
 
                 // Determine whether the method converged.
-                if (storm::utility::vector::equalModuloPrecision<ValueType>(*lowerX, *upperX, precision, this->getSettings().getRelativeTerminationCriterion())) {
-                    status = Status::Converged;
+                if (this->hasRelevantValues()) {
+                    status = storm::utility::vector::equalModuloPrecision<ValueType>(*lowerX, *upperX, this->getRelevantValues(), precision, this->getSettings().getRelativeTerminationCriterion()) ? Status::Converged : status;
+                } else {
+                    status = storm::utility::vector::equalModuloPrecision<ValueType>(*lowerX, *upperX, precision, this->getSettings().getRelativeTerminationCriterion()) ? Status::Converged : status;
                 }
                 
                 // Update environment variables.

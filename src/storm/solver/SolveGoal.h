@@ -96,7 +96,11 @@ namespace storm {
             std::unique_ptr<storm::solver::MinMaxLinearEquationSolver<ValueType>> solver = factory.create(std::forward<MatrixType>(matrix));
             solver->setOptimizationDirection(goal.direction());
             if (goal.isBounded()) {
-                solver->setTerminationCondition(std::make_unique<TerminateIfFilteredExtremumExceedsThreshold<ValueType>>(goal.relevantValues(), goal.boundIsStrict(), goal.thresholdValue(), goal.minimize()));
+                if (goal.boundIsALowerBound()) {
+                    solver->setTerminationCondition(std::make_unique<TerminateIfFilteredExtremumExceedsThreshold<ValueType>>(goal.relevantValues(), goal.boundIsStrict(), goal.thresholdValue(), true));
+                } else {
+                    solver->setTerminationCondition(std::make_unique<TerminateIfFilteredExtremumBelowThreshold<ValueType>>(goal.relevantValues(), goal.boundIsStrict(), goal.thresholdValue(), false));
+                }
             } else if (goal.hasRelevantValues()) {
                 solver->setRelevantValues(std::move(goal.relevantValues()));
             }
