@@ -40,8 +40,9 @@ namespace storm {
                 } else {
                     maybeStates = storm::utility::graph::performProbGreater0(backwardTransitions, phiStates, psiStates, true, stepBound);
                     maybeStates &= ~psiStates;
-                    STORM_LOG_INFO("Found " << maybeStates.getNumberOfSetBits() << " 'maybe' states.");
                 }
+                
+                STORM_LOG_INFO("Preprocessing: " << maybeStates.getNumberOfSetBits() << " non-target states with probability greater 0.");
                 
                 storm::utility::vector::setVectorValues<ValueType>(result, psiStates, storm::utility::one<ValueType>());
                 
@@ -92,17 +93,17 @@ namespace storm {
                             STORM_LOG_THROW(storm::utility::isZero(resultsForNonMaybeStates[state]), storm::exceptions::IllegalArgumentException, "Expected that the result hint specifies probabilities in {0,1} for non-maybe states");
                         }
                     }
+
+                    STORM_LOG_INFO("Preprocessing: " << statesWithProbability1.getNumberOfSetBits() << " states with probability 1 (" << maybeStates.getNumberOfSetBits() << " states remaining).");
                 } else {
                     // Get all states that have probability 0 and 1 of satisfying the until-formula.
                     std::pair<storm::storage::BitVector, storm::storage::BitVector> statesWithProbability01 = storm::utility::graph::performProb01(backwardTransitions, phiStates, psiStates);
                     storm::storage::BitVector statesWithProbability0 = std::move(statesWithProbability01.first);
                     statesWithProbability1 = std::move(statesWithProbability01.second);
                     maybeStates = ~(statesWithProbability0 | statesWithProbability1);
-                                    
-                    STORM_LOG_INFO("Found " << statesWithProbability0.getNumberOfSetBits() << " 'no' states.");
-                    STORM_LOG_INFO("Found " << statesWithProbability1.getNumberOfSetBits() << " 'yes' states.");
-                    STORM_LOG_INFO("Found " << maybeStates.getNumberOfSetBits() << " 'maybe' states.");
-                    
+
+                    STORM_LOG_INFO("Preprocessing: " << statesWithProbability1.getNumberOfSetBits() << " states with probability 1, " << statesWithProbability0.getNumberOfSetBits() << " with probability 0 (" << maybeStates.getNumberOfSetBits() << " states remaining).");
+
                     // Set values of resulting vector that are known exactly.
                     storm::utility::vector::setVectorValues<ValueType>(result, statesWithProbability0, storm::utility::zero<ValueType>());
                     storm::utility::vector::setVectorValues<ValueType>(result, statesWithProbability1, storm::utility::one<ValueType>());
@@ -246,15 +247,15 @@ namespace storm {
                 if (hint.isExplicitModelCheckerHint() && hint.template asExplicitModelCheckerHint<ValueType>().getComputeOnlyMaybeStates()) {
                     maybeStates = hint.template asExplicitModelCheckerHint<ValueType>().getMaybeStates();
                     storm::utility::vector::setVectorValues(result, ~(maybeStates | targetStates), storm::utility::infinity<ValueType>());
+
+                    STORM_LOG_INFO("Preprocessing: " << targetStates.getNumberOfSetBits() << " target states (" << maybeStates.getNumberOfSetBits() << " states remaining).");
                 } else {
                     storm::storage::BitVector trueStates(transitionMatrix.getRowCount(), true);
                     storm::storage::BitVector infinityStates = storm::utility::graph::performProb1(backwardTransitions, trueStates, targetStates);
                     infinityStates.complement();
                     maybeStates = ~(targetStates | infinityStates);
                     
-                    STORM_LOG_INFO("Found " << infinityStates.getNumberOfSetBits() << " 'infinity' states.");
-                    STORM_LOG_INFO("Found " << targetStates.getNumberOfSetBits() << " 'target' states.");
-                    STORM_LOG_INFO("Found " << maybeStates.getNumberOfSetBits() << " 'maybe' states.");
+                    STORM_LOG_INFO("Preprocessing: " << infinityStates.getNumberOfSetBits() << " states with reward infinity, " << targetStates.getNumberOfSetBits() << " target states (" << maybeStates.getNumberOfSetBits() << " states remaining).");
                     
                     storm::utility::vector::setVectorValues(result, infinityStates, storm::utility::infinity<ValueType>());
                 }

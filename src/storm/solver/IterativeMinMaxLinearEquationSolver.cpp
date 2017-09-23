@@ -165,6 +165,7 @@ namespace storm {
             
             Status status = Status::InProgress;
             uint64_t iterations = 0;
+            this->startMeasureProgress();
             do {
                 // Solve the equation system for the 'DTMC'.
                 solver->solveEquations(x, subB);
@@ -207,6 +208,9 @@ namespace storm {
                     storm::utility::vector::selectVectorValues<ValueType>(subB, scheduler, this->A->getRowGroupIndices(), b);
                     solver->setMatrix(std::move(submatrix));
                 }
+                
+                // Potentially show progress.
+                this->showProgressIterative(iterations);
                 
                 // Update environment variables.
                 ++iterations;
@@ -334,6 +338,7 @@ namespace storm {
             // Proceed with the iterations as long as the method did not converge or reach the maximum number of iterations.
             uint64_t iterations = 0;
 
+            this->startMeasureProgress();
             Status status = Status::InProgress;
             while (status == Status::InProgress) {
                 // Compute x' = min/max(A*x + b).
@@ -349,6 +354,9 @@ namespace storm {
                 if (storm::utility::vector::equalModuloPrecision<ValueType>(*currentX, *newX, this->getSettings().getPrecision(), this->getSettings().getRelativeTerminationCriterion())) {
                     status = Status::Converged;
                 }
+                
+                // Potentially show progress.
+                this->showProgressIterative(iterations);
                 
                 // Update environment variables.
                 std::swap(currentX, newX);
@@ -375,6 +383,30 @@ namespace storm {
             }
             
             return status == Status::Converged || status == Status::TerminatedEarly;
+        }
+        
+        template<typename ValueType>
+        void preserveOldRelevantValues(std::vector<ValueType> const& allValues, storm::storage::BitVector const& relevantValues, std::vector<ValueType>& oldValues) {
+            storm::utility::vector::selectVectorValues(oldValues, relevantValues, allValues);
+        }
+        
+        template<typename ValueType>
+        ValueType computeMaxAbsDiff(std::vector<ValueType> const& allValues, storm::storage::BitVector const& relevantValues, std::vector<ValueType> const& oldValues) {
+            ValueType result = storm::utility::zero<ValueType>();
+            auto oldValueIt = oldValues.begin();
+            for (auto value : relevantValues) {
+                result = storm::utility::max<ValueType>(result, storm::utility::abs<ValueType>(allValues[value] - *oldValueIt));
+            }
+            return result;
+        }
+        
+        template<typename ValueType>
+        ValueType computeMaxAbsDiff(std::vector<ValueType> const& allOldValues, std::vector<ValueType> const& allNewValues, storm::storage::BitVector const& relevantValues) {
+            ValueType result = storm::utility::zero<ValueType>();
+            for (auto value : relevantValues) {
+                result = storm::utility::max<ValueType>(result, storm::utility::abs<ValueType>(allNewValues[value] - allOldValues[value]));
+            }
+            return result;
         }
         
         template<typename ValueType>
@@ -407,79 +439,114 @@ namespace storm {
             uint64_t iterations = 0;
             
             Status status = Status::InProgress;
-            ValueType upperDiff;
-            ValueType lowerDiff;
+            bool doConvergenceCheck = true;
+            bool useDiffs = this->hasRelevantValues();
+            std::vector<ValueType> oldValues;
+            if (useGaussSeidelMultiplication && useDiffs) {
+                oldValues.resize(this->getRelevantValues().getNumberOfSetBits());
+            }
+            ValueType maxLowerDiff = storm::utility::zero<ValueType>();
+            ValueType maxUpperDiff = storm::utility::zero<ValueType>();
             ValueType precision = static_cast<ValueType>(this->getSettings().getPrecision());
             if (!this->getSettings().getRelativeTerminationCriterion()) {
                 precision *= storm::utility::convertNumber<ValueType>(2.0);
             }
+            this->startMeasureProgress();
             while (status == Status::InProgress && iterations < this->getSettings().getMaximalNumberOfIterations()) {
                 // Remember in which directions we took steps in this iteration.
                 bool lowerStep = false;
                 bool upperStep = false;
 
                 // In every thousandth iteration, we improve both bounds.
-                if (iterations % 1000 == 0 || lowerDiff == upperDiff) {
+                if (iterations % 1000 == 0 || maxLowerDiff == maxUpperDiff) {
                     lowerStep = true;
                     upperStep = true;
                     if (useGaussSeidelMultiplication) {
-                        lowerDiff = (*lowerX)[0];
+                        if (useDiffs) {
+                            preserveOldRelevantValues(*lowerX, this->getRelevantValues(), oldValues);
+                        }
                         this->linEqSolverA->multiplyAndReduceGaussSeidel(dir, this->A->getRowGroupIndices(), *lowerX, &b);
-                        lowerDiff = (*lowerX)[0] - lowerDiff;
-                        upperDiff = (*upperX)[0];
+                        if (useDiffs) {
+                            maxLowerDiff = computeMaxAbsDiff(*lowerX, this->getRelevantValues(), oldValues);
+                            preserveOldRelevantValues(*upperX, this->getRelevantValues(), oldValues);
+                        }
                         this->linEqSolverA->multiplyAndReduceGaussSeidel(dir, this->A->getRowGroupIndices(), *upperX, &b);
-                        upperDiff = upperDiff - (*upperX)[0];
+                        if (useDiffs) {
+                            maxUpperDiff = computeMaxAbsDiff(*upperX, this->getRelevantValues(), oldValues);
+                        }
                     } else {
                         this->linEqSolverA->multiplyAndReduce(dir, this->A->getRowGroupIndices(), *lowerX, &b, *tmp);
-                        lowerDiff = (*tmp)[0] - (*lowerX)[0];
+                        if (useDiffs) {
+                            maxLowerDiff = computeMaxAbsDiff(*lowerX, *tmp, this->getRelevantValues());
+                        }
                         std::swap(lowerX, tmp);
                         this->linEqSolverA->multiplyAndReduce(dir, this->A->getRowGroupIndices(), *upperX, &b, *tmp);
-                        upperDiff = (*upperX)[0] - (*tmp)[0];
+                        if (useDiffs) {
+                            maxUpperDiff = computeMaxAbsDiff(*upperX, *tmp, this->getRelevantValues());
+                        }
                         std::swap(upperX, tmp);
                     }
                 } else {
                     // In the following iterations, we improve the bound with the greatest difference.
                     if (useGaussSeidelMultiplication) {
-                        if (lowerDiff >= upperDiff) {
-                            lowerDiff = (*lowerX)[0];
+                        if (maxLowerDiff >= maxUpperDiff) {
+                            if (useDiffs) {
+                                preserveOldRelevantValues(*lowerX, this->getRelevantValues(), oldValues);
+                            }
                             this->linEqSolverA->multiplyAndReduceGaussSeidel(dir, this->A->getRowGroupIndices(), *lowerX, &b);
-                            lowerDiff = (*lowerX)[0] - lowerDiff;
+                            if (useDiffs) {
+                                maxLowerDiff = computeMaxAbsDiff(*lowerX, this->getRelevantValues(), oldValues);
+                            }
                             lowerStep = true;
                         } else {
-                            upperDiff = (*upperX)[0];
+                            if (useDiffs) {
+                                preserveOldRelevantValues(*upperX, this->getRelevantValues(), oldValues);
+                            }
                             this->linEqSolverA->multiplyAndReduceGaussSeidel(dir, this->A->getRowGroupIndices(), *upperX, &b);
-                            upperDiff = upperDiff - (*upperX)[0];
+                            if (useDiffs) {
+                                maxUpperDiff = computeMaxAbsDiff(*upperX, this->getRelevantValues(), oldValues);
+                            }
                             upperStep = true;
                         }
                     } else {
-                        if (lowerDiff >= upperDiff) {
+                        if (maxLowerDiff >= maxUpperDiff) {
                             this->linEqSolverA->multiplyAndReduce(dir, this->A->getRowGroupIndices(), *lowerX, &b, *tmp);
-                            lowerDiff = (*tmp)[0] - (*lowerX)[0];
+                            if (useDiffs) {
+                                maxLowerDiff = computeMaxAbsDiff(*lowerX, *tmp, this->getRelevantValues());
+                            }
                             std::swap(tmp, lowerX);
                             lowerStep = true;
                         } else {
                             this->linEqSolverA->multiplyAndReduce(dir, this->A->getRowGroupIndices(), *upperX, &b, *tmp);
-                            upperDiff = (*upperX)[0] - (*tmp)[0];
+                            if (useDiffs) {
+                                maxUpperDiff = computeMaxAbsDiff(*upperX, *tmp, this->getRelevantValues());
+                            }
                             std::swap(tmp, upperX);
                             upperStep = true;
                         }
                     }
                 }
-                STORM_LOG_ASSERT(lowerDiff >= storm::utility::zero<ValueType>(), "Expected non-negative lower diff.");
-                STORM_LOG_ASSERT(upperDiff >= storm::utility::zero<ValueType>(), "Expected non-negative upper diff.");
+                STORM_LOG_ASSERT(maxLowerDiff >= storm::utility::zero<ValueType>(), "Expected non-negative lower diff.");
+                STORM_LOG_ASSERT(maxUpperDiff >= storm::utility::zero<ValueType>(), "Expected non-negative upper diff.");
                 if (iterations % 1000 == 0) {
-                    STORM_LOG_TRACE("Iteration " << iterations << ": lower difference: " << lowerDiff << ", upper difference: " << upperDiff << ".");
+                    STORM_LOG_TRACE("Iteration " << iterations << ": lower difference: " << maxLowerDiff << ", upper difference: " << maxUpperDiff << ".");
                 }
 
-                // Determine whether the method converged.
-                if (this->hasRelevantValues()) {
-                    status = storm::utility::vector::equalModuloPrecision<ValueType>(*lowerX, *upperX, this->getRelevantValues(), precision, this->getSettings().getRelativeTerminationCriterion()) ? Status::Converged : status;
-                } else {
-                    status = storm::utility::vector::equalModuloPrecision<ValueType>(*lowerX, *upperX, precision, this->getSettings().getRelativeTerminationCriterion()) ? Status::Converged : status;
+                if (doConvergenceCheck) {
+                    // Determine whether the method converged.
+                    if (this->hasRelevantValues()) {
+                        status = storm::utility::vector::equalModuloPrecision<ValueType>(*lowerX, *upperX, this->getRelevantValues(), precision, this->getSettings().getRelativeTerminationCriterion()) ? Status::Converged : status;
+                    } else {
+                        status = storm::utility::vector::equalModuloPrecision<ValueType>(*lowerX, *upperX, precision, this->getSettings().getRelativeTerminationCriterion()) ? Status::Converged : status;
+                    }
                 }
+                
+                // Potentially show progress.
+                this->showProgressIterative(iterations);
                 
                 // Update environment variables.
                 ++iterations;
+                doConvergenceCheck = !doConvergenceCheck;
                 if (lowerStep) {
                     status = updateStatusIfNotConverged(status, *lowerX, iterations, SolverGuarantee::LessOrEqual);
                 }

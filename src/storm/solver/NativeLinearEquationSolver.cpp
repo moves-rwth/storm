@@ -163,6 +163,7 @@ namespace storm {
             bool converged = false;
             bool terminate = false;
             
+            this->startMeasureProgress();
             while (!converged && !terminate && iterations < this->getSettings().getMaximalNumberOfIterations()) {
                 A->performSuccessiveOverRelaxationStep(omega, x, b);
                 
@@ -175,6 +176,9 @@ namespace storm {
                     *this->cachedRowVector = x;
                 }
                 
+                // Potentially show progress.
+                this->showProgressIterative(iterations);
+
                 // Increase iteration count so we can abort if convergence is too slow.
                 ++iterations;
             }
@@ -211,6 +215,7 @@ namespace storm {
             bool converged = false;
             bool terminate = false;
 
+            this->startMeasureProgress();
             while (!converged && !terminate && iterations < this->getSettings().getMaximalNumberOfIterations()) {
                 // Compute D^-1 * (b - LU * x) and store result in nextX.
                 multiplier.multAdd(jacobiLU, *currentX, nullptr, *nextX);
@@ -224,6 +229,9 @@ namespace storm {
                 
                 // Swap the two pointers as a preparation for the next iteration.
                 std::swap(nextX, currentX);
+                
+                // Potentially show progress.
+                this->showProgressIterative(iterations);
                 
                 // Increase iteration count so we can abort if convergence is too slow.
                 ++iterations;
@@ -334,6 +342,7 @@ namespace storm {
             // (3) Perform iterations until convergence.
             bool converged = false;
             uint64_t iterations = 0;
+            this->startMeasureProgress();
             while (!converged && iterations < this->getSettings().getMaximalNumberOfIterations()) {
                 // Perform one Walker-Chae step.
                 walkerChaeData->matrix.performWalkerChaeStep(*currentX, walkerChaeData->columnSums, walkerChaeData->b, currentAx, *nextX);
@@ -347,6 +356,9 @@ namespace storm {
                 // Swap the x vectors for the next iteration.
                 std::swap(currentX, nextX);
                 
+                // Potentially show progress.
+                this->showProgressIterative(iterations);
+
                 // Increase iteration count so we can abort if convergence is too slow.
                 ++iterations;
             }
@@ -394,6 +406,7 @@ namespace storm {
             bool converged = false;
             bool terminate = this->terminateNow(*currentX, SolverGuarantee::LessOrEqual);
             uint64_t iterations = 0;
+            this->startMeasureProgress();
             while (!converged && !terminate && iterations < this->getSettings().getMaximalNumberOfIterations()) {
                 if (useGaussSeidelMultiplication) {
                     *nextX = *currentX;
@@ -406,6 +419,9 @@ namespace storm {
                 converged = storm::utility::vector::equalModuloPrecision<ValueType>(*currentX, *nextX, static_cast<ValueType>(this->getSettings().getPrecision()), this->getSettings().getRelativeTerminationCriterion());
                 terminate = this->terminateNow(*currentX, SolverGuarantee::LessOrEqual);
                 
+                // Potentially show progress.
+                this->showProgressIterative(iterations);
+
                 // Set up next iteration.
                 std::swap(currentX, nextX);
                 ++iterations;
@@ -422,6 +438,30 @@ namespace storm {
             this->logIterations(converged, terminate, iterations);
 
             return converged;
+        }
+        
+        template<typename ValueType>
+        void preserveOldRelevantValues(std::vector<ValueType> const& allValues, storm::storage::BitVector const& relevantValues, std::vector<ValueType>& oldValues) {
+            storm::utility::vector::selectVectorValues(oldValues, relevantValues, allValues);
+        }
+        
+        template<typename ValueType>
+        ValueType computeMaxAbsDiff(std::vector<ValueType> const& allValues, storm::storage::BitVector const& relevantValues, std::vector<ValueType> const& oldValues) {
+            ValueType result = storm::utility::zero<ValueType>();
+            auto oldValueIt = oldValues.begin();
+            for (auto value : relevantValues) {
+                result = storm::utility::max<ValueType>(result, storm::utility::abs<ValueType>(allValues[value] - *oldValueIt));
+            }
+            return result;
+        }
+        
+        template<typename ValueType>
+        ValueType computeMaxAbsDiff(std::vector<ValueType> const& allOldValues, std::vector<ValueType> const& allNewValues, storm::storage::BitVector const& relevantValues) {
+            ValueType result = storm::utility::zero<ValueType>();
+            for (auto value : relevantValues) {
+                result = storm::utility::max<ValueType>(result, storm::utility::abs<ValueType>(allNewValues[value] - allOldValues[value]));
+            }
+            return result;
         }
         
         template<typename ValueType>
@@ -446,68 +486,96 @@ namespace storm {
             bool terminate = false;
             uint64_t iterations = 0;
             bool doConvergenceCheck = true;
-            ValueType upperDiff;
-            ValueType lowerDiff;
+            bool useDiffs = this->hasRelevantValues();
+            std::vector<ValueType> oldValues;
+            if (useGaussSeidelMultiplication && useDiffs) {
+                oldValues.resize(this->getRelevantValues().getNumberOfSetBits());
+            }
+            ValueType maxLowerDiff = storm::utility::zero<ValueType>();
+            ValueType maxUpperDiff = storm::utility::zero<ValueType>();
             ValueType precision = static_cast<ValueType>(this->getSettings().getPrecision());
             if (!this->getSettings().getRelativeTerminationCriterion()) {
                 precision *= storm::utility::convertNumber<ValueType>(2.0);
             }
+            this->startMeasureProgress();
             while (!converged && !terminate && iterations < this->getSettings().getMaximalNumberOfIterations()) {
                 // Remember in which directions we took steps in this iteration.
                 bool lowerStep = false;
                 bool upperStep = false;
                 
-                // In every thousandth iteration, we improve both bounds.
-                if (iterations % 1000 == 0 || lowerDiff == upperDiff) {
+                // In every thousandth iteration or if the differences are the same, we improve both bounds.
+                if (iterations % 1000 == 0 || maxLowerDiff == maxUpperDiff) {
                     lowerStep = true;
                     upperStep = true;
                     if (useGaussSeidelMultiplication) {
-                        lowerDiff = (*lowerX)[0];
+                        if (useDiffs) {
+                            preserveOldRelevantValues(*lowerX, this->getRelevantValues(), oldValues);
+                        }
                         this->multiplier.multAddGaussSeidelBackward(*this->A, *lowerX, &b);
-                        lowerDiff = (*lowerX)[0] - lowerDiff;
-                        upperDiff = (*upperX)[0];
+                        if (useDiffs) {
+                            maxLowerDiff = computeMaxAbsDiff(*lowerX, this->getRelevantValues(), oldValues);
+                            preserveOldRelevantValues(*upperX, this->getRelevantValues(), oldValues);
+                        }
                         this->multiplier.multAddGaussSeidelBackward(*this->A, *upperX, &b);
-                        upperDiff = upperDiff - (*upperX)[0];
+                        if (useDiffs) {
+                            maxUpperDiff = computeMaxAbsDiff(*upperX, this->getRelevantValues(), oldValues);
+                        }
                     } else {
                         this->multiplier.multAdd(*this->A, *lowerX, &b, *tmp);
-                        lowerDiff = (*tmp)[0] - (*lowerX)[0];
+                        if (useDiffs) {
+                            maxLowerDiff = computeMaxAbsDiff(*lowerX, *tmp, this->getRelevantValues());
+                        }
                         std::swap(tmp, lowerX);
                         this->multiplier.multAdd(*this->A, *upperX, &b, *tmp);
-                        upperDiff = (*upperX)[0] - (*tmp)[0];
+                        if (useDiffs) {
+                            maxUpperDiff = computeMaxAbsDiff(*upperX, *tmp, this->getRelevantValues());
+                        }
                         std::swap(tmp, upperX);
                     }
                 } else {
                     // In the following iterations, we improve the bound with the greatest difference.
                     if (useGaussSeidelMultiplication) {
-                        if (lowerDiff >= upperDiff) {
-                            lowerDiff = (*lowerX)[0];
+                        if (maxLowerDiff >= maxUpperDiff) {
+                            if (useDiffs) {
+                                preserveOldRelevantValues(*lowerX, this->getRelevantValues(), oldValues);
+                            }
                             this->multiplier.multAddGaussSeidelBackward(*this->A, *lowerX, &b);
-                            lowerDiff = (*lowerX)[0] - lowerDiff;
+                            if (useDiffs) {
+                                maxLowerDiff = computeMaxAbsDiff(*lowerX, this->getRelevantValues(), oldValues);
+                            }
                             lowerStep = true;
                         } else {
-                            upperDiff = (*upperX)[0];
+                            if (useDiffs) {
+                                preserveOldRelevantValues(*upperX, this->getRelevantValues(), oldValues);
+                            }
                             this->multiplier.multAddGaussSeidelBackward(*this->A, *upperX, &b);
-                            upperDiff = upperDiff - (*upperX)[0];
+                            if (useDiffs) {
+                                maxUpperDiff = computeMaxAbsDiff(*upperX, this->getRelevantValues(), oldValues);
+                            }
                             upperStep = true;
                         }
                     } else {
-                        if (lowerDiff >= upperDiff) {
+                        if (maxLowerDiff >= maxUpperDiff) {
                             this->multiplier.multAdd(*this->A, *lowerX, &b, *tmp);
-                            lowerDiff = (*tmp)[0] - (*lowerX)[0];
+                            if (useDiffs) {
+                                maxLowerDiff = computeMaxAbsDiff(*lowerX, *tmp, this->getRelevantValues());
+                            }
                             std::swap(tmp, lowerX);
                             lowerStep = true;
                         } else {
                             this->multiplier.multAdd(*this->A, *upperX, &b, *tmp);
-                            upperDiff = (*upperX)[0] - (*tmp)[0];
+                            if (useDiffs) {
+                                maxUpperDiff = computeMaxAbsDiff(*upperX, *tmp, this->getRelevantValues());
+                            }
                             std::swap(tmp, upperX);
                             upperStep = true;
                         }
                     }
                 }
-                STORM_LOG_ASSERT(lowerDiff >= storm::utility::zero<ValueType>(), "Expected non-negative lower diff.");
-                STORM_LOG_ASSERT(upperDiff >= storm::utility::zero<ValueType>(), "Expected non-negative upper diff.");
+                STORM_LOG_ASSERT(maxLowerDiff >= storm::utility::zero<ValueType>(), "Expected non-negative lower diff.");
+                STORM_LOG_ASSERT(maxUpperDiff >= storm::utility::zero<ValueType>(), "Expected non-negative upper diff.");
                 if (iterations % 1000 == 0) {
-                    STORM_LOG_TRACE("Iteration " << iterations << ": lower difference: " << lowerDiff << ", upper difference: " << upperDiff << ".");
+                    STORM_LOG_TRACE("Iteration " << iterations << ": lower difference: " << maxLowerDiff << ", upper difference: " << maxUpperDiff << ".");
                 }
                 
                 if (doConvergenceCheck) {
@@ -526,6 +594,9 @@ namespace storm {
                         terminate |= this->terminateNow(*upperX, SolverGuarantee::GreaterOrEqual);
                     }
                 }
+                
+                // Potentially show progress.
+                this->showProgressIterative(iterations);
                 
                 // Set up next iteration.
                 ++iterations;

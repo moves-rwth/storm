@@ -68,11 +68,8 @@ namespace storm {
                 }
                 storm::dd::Bdd<DdType> maybeStates = !statesWithProbability01.first && !statesWithProbability01.second && model.getReachableStates();
                 
-                // Perform some logging.
-                STORM_LOG_INFO("Found " << statesWithProbability01.first.getNonZeroCount() << " 'no' states.");
-                STORM_LOG_INFO("Found " << statesWithProbability01.second.getNonZeroCount() << " 'yes' states.");
-                STORM_LOG_INFO("Found " << maybeStates.getNonZeroCount() << " 'maybe' states.");
-                
+                STORM_LOG_INFO("Preprocessing: " << statesWithProbability01.first.getNonZeroCount() << " states with probability 1, " << statesWithProbability01.second.getNonZeroCount() << " with probability 0 (" << maybeStates.getNonZeroCount() << " states remaining).");
+
                 // Check whether we need to compute exact probabilities for some states.
                 if (qualitative) {
                     // Set the values for all maybe-states to 0.5 to indicate that their probability values are neither 0 nor 1.
@@ -162,6 +159,8 @@ namespace storm {
                 }
                 storm::dd::Bdd<DdType> maybeStates = statesWithProbabilityGreater0 && !psiStates && model.getReachableStates();
                 
+                STORM_LOG_INFO("Preprocessing: " << statesWithProbabilityGreater0.getNonZeroCount() << " states with probability greater 0.");
+
                 // If there are maybe states, we need to perform matrix-vector multiplications.
                 if (!maybeStates.isZero()) {
                     // Create the ODD for the translation between symbolic and explicit storage.
@@ -339,10 +338,9 @@ namespace storm {
                 infinityStates = !infinityStates && model.getReachableStates();
                 storm::dd::Bdd<DdType> maybeStatesWithTargetStates = !infinityStates && model.getReachableStates();
                 storm::dd::Bdd<DdType> maybeStates = !targetStates && maybeStatesWithTargetStates;
-                STORM_LOG_INFO("Found " << infinityStates.getNonZeroCount() << " 'infinity' states.");
-                STORM_LOG_INFO("Found " << targetStates.getNonZeroCount() << " 'target' states.");
-                STORM_LOG_INFO("Found " << maybeStates.getNonZeroCount() << " 'maybe' states.");
-                
+
+                STORM_LOG_INFO("Preprocessing: " << infinityStates.getNonZeroCount() << " states with reward infinity, " << targetStates.getNonZeroCount() << " target states (" << maybeStates.getNonZeroCount() << " states remaining).");
+
                 // Check whether we need to compute exact rewards for some states.
                 if (qualitative) {
                     // Set the values for all maybe-states to 1 to indicate that their reward values

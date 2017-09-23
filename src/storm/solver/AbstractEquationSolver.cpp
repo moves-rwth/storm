@@ -3,11 +3,22 @@
 #include "storm/adapters/RationalNumberAdapter.h"
 #include "storm/adapters/RationalFunctionAdapter.h"
 
+#include "storm/settings/SettingsManager.h"
+#include "storm/settings/modules/IOSettings.h"
+#include "storm/settings/modules/GeneralSettings.h"
+
 #include "storm/utility/macros.h"
 #include "storm/exceptions/UnmetRequirementException.h"
 
 namespace storm {
     namespace solver {
+        
+        template<typename ValueType>
+        AbstractEquationSolver<ValueType>::AbstractEquationSolver() {
+            auto const& generalSettings = storm::settings::getModule<storm::settings::modules::GeneralSettings>();
+            showProgressFlag = generalSettings.isVerboseSet();
+            showProgressDelay = generalSettings.getShowProgressDelay();
+        }
         
         template<typename ValueType>
         void AbstractEquationSolver<ValueType>::setTerminationCondition(std::unique_ptr<TerminationCondition<ValueType>> terminationCondition) {
@@ -176,8 +187,43 @@ namespace storm {
             }
         }
         
-        template class AbstractEquationSolver<double>;
+        template<typename ValueType>
+        bool AbstractEquationSolver<ValueType>::isShowProgressSet() const {
+            return showProgressFlag;
+        }
         
+        template<typename ValueType>
+        uint64_t AbstractEquationSolver<ValueType>::getShowProgressDelay() const {
+            return showProgressDelay;
+        }
+        
+        template<typename ValueType>
+        void AbstractEquationSolver<ValueType>::startMeasureProgress() const {
+            timeOfStart = std::chrono::high_resolution_clock::now();
+            timeOfLastMessage = timeOfStart;
+            iterationOfLastMessage = 0;
+        }
+        
+        template<typename ValueType>
+        void AbstractEquationSolver<ValueType>::showProgressIterative(uint64_t iteration, boost::optional<uint64_t> const& bound) const {
+            if (this->isShowProgressSet()) {
+                auto now = std::chrono::high_resolution_clock::now();
+                auto durationSinceLastMessage = static_cast<uint64_t>(std::chrono::duration_cast<std::chrono::seconds>(now - timeOfLastMessage).count());
+                if (durationSinceLastMessage >= this->getShowProgressDelay()) {
+                    uint64_t numberOfIterationsSinceLastMessage = iteration - iterationOfLastMessage;
+                    STORM_LOG_INFO("Completed " << iteration << " iterations "
+                                   << (bound ? "(out of " + std::to_string(bound.get()) + ") " : "")
+                                   << "in " << std::chrono::duration_cast<std::chrono::seconds>(now - timeOfStart).count() << "s (currently " << (static_cast<double>(numberOfIterationsSinceLastMessage) / durationSinceLastMessage) << " per second)."
+                                   );
+                    timeOfLastMessage = std::chrono::high_resolution_clock::now();
+                    iterationOfLastMessage = iteration;
+                }
+            }
+        }
+        
+        template class AbstractEquationSolver<double>;
+        template class AbstractEquationSolver<float>;
+
 #ifdef STORM_HAVE_CARL
         template class AbstractEquationSolver<storm::RationalNumber>;
         template class AbstractEquationSolver<storm::RationalFunction>;

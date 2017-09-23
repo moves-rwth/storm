@@ -85,6 +85,12 @@ namespace storm {
         ValueType pow(ValueType const& value, uint_fast64_t exponent);
 
         template<typename ValueType>
+        ValueType max(ValueType const& first, ValueType const& second);
+
+        template<typename ValueType>
+        ValueType min(ValueType const& first, ValueType const& second);
+
+        template<typename ValueType>
         ValueType sqrt(ValueType const& number);
         
         template<typename ValueType>

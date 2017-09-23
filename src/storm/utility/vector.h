@@ -151,9 +151,10 @@ namespace storm {
              */
             template<class T>
             void selectVectorValues(std::vector<T>& vector, storm::storage::BitVector const& positions, std::vector<T> const& values) {
-                uint_fast64_t oldPosition = 0;
+                auto targetIt = vector.begin();
                 for (auto position : positions) {
-                    vector[oldPosition++] = values[position];
+                    *targetIt = values[position];
+                    ++targetIt;
                 }
             }
 
@@ -167,10 +168,10 @@ namespace storm {
              */
             template<class T>
             void selectVectorValues(std::vector<T>& vector, storm::storage::BitVector const& positions, std::vector<uint_fast64_t> const& rowGrouping, std::vector<T> const& values) {
-                uint_fast64_t oldPosition = 0;
+                auto targetIt = vector.begin();
                 for (auto position : positions) {
-                    for (uint_fast64_t i = rowGrouping[position]; i < rowGrouping[position + 1]; ++i) {
-                        vector[oldPosition++] = values[i];
+                    for (uint_fast64_t i = rowGrouping[position]; i < rowGrouping[position + 1]; ++i, ++targetIt) {
+                        *targetIt = values[i];
                     }
                 }
             }
@@ -186,8 +187,9 @@ namespace storm {
              */
             template<class T>
             void selectVectorValues(std::vector<T>& vector, std::vector<uint_fast64_t> const& rowGroupToRowIndexMapping, std::vector<uint_fast64_t> const& rowGrouping, std::vector<T> const& values) {
-                for (uint_fast64_t i = 0; i < vector.size(); ++i) {
-                    vector[i] = values[rowGrouping[i] + rowGroupToRowIndexMapping[i]];
+                auto targetIt = vector.begin();
+                for (uint_fast64_t i = 0; i < vector.size(); ++i, ++targetIt) {
+                    *targetIt = values[rowGrouping[i] + rowGroupToRowIndexMapping[i]];
                 }
             }
             
@@ -216,10 +218,10 @@ namespace storm {
              */
             template<class T>
             void selectVectorValuesRepeatedly(std::vector<T>& vector, storm::storage::BitVector const& positions, std::vector<uint_fast64_t> const& rowGrouping, std::vector<T> const& values) {
-                uint_fast64_t oldPosition = 0;
+                auto targetIt = vector.begin();
                 for (auto position : positions) {
-                    for (uint_fast64_t i = rowGrouping[position]; i < rowGrouping[position + 1]; ++i) {
-                        vector[oldPosition++] = values[position];
+                    for (uint_fast64_t i = rowGrouping[position]; i < rowGrouping[position + 1]; ++i, ++targetIt) {
+                        *targetIt = values[position];
                     }
                 }
             }
@@ -238,14 +240,12 @@ namespace storm {
             
             template<class T>
             void addFilteredVectorGroupsToGroupedVector(std::vector<T>& target, std::vector<T> const& source, storm::storage::BitVector const& filter, std::vector<uint_fast64_t> const& rowGroupIndices) {
-                uint_fast64_t currentPosition = 0;
+                auto targetIt = target.begin();
                 for (auto group : filter) {
                     auto it = source.cbegin() + rowGroupIndices[group];
                     auto ite = source.cbegin() + rowGroupIndices[group + 1];
-                    while (it != ite) {
-                        target[currentPosition] += *it;
-                        ++currentPosition;
-                        ++it;
+                    for (; it != ite; ++targetIt, ++it) {
+                        *targetIt += *it;
                     }
                 }
             }
@@ -269,10 +269,8 @@ namespace storm {
                     uint_fast64_t current = *rowGroupIt;
                     ++rowGroupIt;
                     uint_fast64_t next = *rowGroupIt;
-                    while (current < next) {
+                    for (; current < next; ++targetIt, ++current) {
                         *targetIt += *sourceIt;
-                        ++targetIt;
-                        ++current;
                     }
                 }
             }
@@ -287,14 +285,12 @@ namespace storm {
              */
             template<class T>
             void addFilteredVectorToGroupedVector(std::vector<T>& target, std::vector<T> const& source, storm::storage::BitVector const& filter, std::vector<uint_fast64_t> const& rowGroupIndices) {
-                uint_fast64_t currentPosition = 0;
+                auto targetIt = target.begin();
                 for (auto group : filter) {
                     uint_fast64_t current = rowGroupIndices[group];
                     uint_fast64_t next = rowGroupIndices[group + 1];
-                    while (current < next) {
-                        target[currentPosition] += source[group];
-                        ++currentPosition;
-                        ++current;
+                    for (; current < next; ++current, ++targetIt) {
+                        *targetIt += source[group];
                     }
                 }
             }

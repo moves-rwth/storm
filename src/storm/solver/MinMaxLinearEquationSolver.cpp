@@ -173,7 +173,7 @@ namespace storm {
                 auto const& minMaxSettings = storm::settings::getModule<storm::settings::modules::MinMaxEquationSolverSettings>();
                 if (std::is_same<ValueType, storm::RationalNumber>::value) {
                     if (minMaxSettings.isMinMaxEquationSolvingMethodSetFromDefaultValue() && minMaxSettings.getMinMaxEquationSolvingMethod() != MinMaxMethod::PolicyIteration) {
-                        STORM_LOG_WARN("Selecting policy iteration as the solution method to guarantee exact results. If you want to override this, please explicitly specify a different method.");
+                        STORM_LOG_INFO("Selecting policy iteration as the solution method to guarantee exact results. If you want to override this, please explicitly specify a different method.");
                         this->setMinMaxMethod(MinMaxMethod::PolicyIteration);
                         wasSet = true;
                     }

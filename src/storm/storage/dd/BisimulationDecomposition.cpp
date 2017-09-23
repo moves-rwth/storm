@@ -10,7 +10,7 @@
 #include "storm/models/symbolic/StandardRewardModel.h"
 
 #include "storm/settings/SettingsManager.h"
-#include "storm/settings/modules/IOSettings.h"
+#include "storm/settings/modules/GeneralSettings.h"
 
 #include "storm/utility/macros.h"
 #include "storm/exceptions/InvalidOperationException.h"
@@ -32,25 +32,25 @@ namespace storm {
         
         template <storm::dd::DdType DdType, typename ValueType>
         BisimulationDecomposition<DdType, ValueType>::BisimulationDecomposition(storm::models::symbolic::Model<DdType, ValueType> const& model, storm::storage::BisimulationType const& bisimulationType) : model(model), preservationInformation(model, bisimulationType), refiner(createRefiner(model, Partition<DdType, ValueType>::create(model, bisimulationType, preservationInformation))) {
-            auto const& ioSettings = storm::settings::getModule<storm::settings::modules::IOSettings>();
-            showProgress = ioSettings.isExplorationShowProgressSet();
-            showProgressDelay = ioSettings.getExplorationShowProgressDelay();
+            auto const& generalSettings = storm::settings::getModule<storm::settings::modules::GeneralSettings>();
+            showProgress = generalSettings.isVerboseSet();
+            showProgressDelay = generalSettings.getShowProgressDelay();
             this->refineWrtRewardModels();
         }
         
         template <storm::dd::DdType DdType, typename ValueType>
         BisimulationDecomposition<DdType, ValueType>::BisimulationDecomposition(storm::models::symbolic::Model<DdType, ValueType> const& model, std::vector<std::shared_ptr<storm::logic::Formula const>> const& formulas, storm::storage::BisimulationType const& bisimulationType) : model(model), preservationInformation(model, formulas, bisimulationType), refiner(createRefiner(model, Partition<DdType, ValueType>::create(model, bisimulationType, preservationInformation))) {
-            auto const& ioSettings = storm::settings::getModule<storm::settings::modules::IOSettings>();
-            showProgress = ioSettings.isExplorationShowProgressSet();
-            showProgressDelay = ioSettings.getExplorationShowProgressDelay();
+            auto const& generalSettings = storm::settings::getModule<storm::settings::modules::GeneralSettings>();
+            showProgress = generalSettings.isVerboseSet();
+            showProgressDelay = generalSettings.getShowProgressDelay();
             this->refineWrtRewardModels();
         }
         
         template <storm::dd::DdType DdType, typename ValueType>
         BisimulationDecomposition<DdType, ValueType>::BisimulationDecomposition(storm::models::symbolic::Model<DdType, ValueType> const& model, Partition<DdType, ValueType> const& initialPartition, bisimulation::PreservationInformation<DdType, ValueType> const& preservationInformation) : model(model), preservationInformation(preservationInformation), refiner(createRefiner(model, initialPartition)) {
-            auto const& ioSettings = storm::settings::getModule<storm::settings::modules::IOSettings>();
-            showProgress = ioSettings.isExplorationShowProgressSet();
-            showProgressDelay = ioSettings.getExplorationShowProgressDelay();
+            auto const& generalSettings = storm::settings::getModule<storm::settings::modules::GeneralSettings>();
+            showProgress = generalSettings.isVerboseSet();
+            showProgressDelay = generalSettings.getShowProgressDelay();
             this->refineWrtRewardModels();
         }
         

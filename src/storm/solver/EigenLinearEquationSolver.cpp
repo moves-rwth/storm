@@ -174,7 +174,7 @@ namespace storm {
                 typename EigenLinearEquationSolverSettings<ValueType>::Preconditioner preconditioner = this->getSettings().getPreconditioner();
                 if (solutionMethod == EigenLinearEquationSolverSettings<ValueType>::SolutionMethod::BiCGSTAB) {
                     if (preconditioner == EigenLinearEquationSolverSettings<ValueType>::Preconditioner::Ilu) {
-                        STORM_LOG_INFO("Solving linear equation system (" << x.size() << " rows) with BicGSTAB with Ilu preconditioner (Eigen library).");
+                        STORM_LOG_INFO("Solving linear equation system (" << x.size() << " rows) with BiCGSTAB with Ilu preconditioner (Eigen library).");
 
                         StormEigen::BiCGSTAB<StormEigen::SparseMatrix<ValueType>, StormEigen::IncompleteLUT<ValueType>> solver;
                         solver.compute(*this->eigenA);
@@ -184,7 +184,7 @@ namespace storm {
                         converged = solver.info() == StormEigen::ComputationInfo::Success;
                         numberOfIterations = solver.iterations();
                     } else if (preconditioner == EigenLinearEquationSolverSettings<ValueType>::Preconditioner::Diagonal) {
-                        STORM_LOG_INFO("Solving linear equation system (" << x.size() << " rows) with BicGSTAB with Diagonal preconditioner (Eigen library).");
+                        STORM_LOG_INFO("Solving linear equation system (" << x.size() << " rows) with BiCGSTAB with Diagonal preconditioner (Eigen library).");
 
                         StormEigen::BiCGSTAB<StormEigen::SparseMatrix<ValueType>, StormEigen::DiagonalPreconditioner<ValueType>> solver;
                         solver.setTolerance(this->getSettings().getPrecision());
@@ -194,7 +194,7 @@ namespace storm {
                         converged = solver.info() == StormEigen::ComputationInfo::Success;
                         numberOfIterations = solver.iterations();
                     } else {
-                        STORM_LOG_INFO("Solving linear equation system (" << x.size() << " rows) with BicGSTAB with identity preconditioner (Eigen library).");
+                        STORM_LOG_INFO("Solving linear equation system (" << x.size() << " rows) with BiCGSTAB with identity preconditioner (Eigen library).");
 
                         StormEigen::BiCGSTAB<StormEigen::SparseMatrix<ValueType>, StormEigen::IdentityPreconditioner> solver;
                         solver.setTolerance(this->getSettings().getPrecision());

@@ -46,9 +46,13 @@ namespace storm {
             std::vector<ValueType>* nextX = cachedRowVector.get();
             
             // Now perform matrix-vector multiplication as long as we meet the bound.
+            this->startMeasureProgress();
             for (uint_fast64_t i = 0; i < n; ++i) {
                 this->multiply(*currentX, b, *nextX);
                 std::swap(nextX, currentX);
+
+                // Potentially show progress.
+                this->showProgressIterative(i, n);
             }
             
             // If we performed an odd number of repetitions, we need to swap the contents of currentVector and x,
@@ -164,9 +168,9 @@ namespace storm {
             EquationSolverType actualEquationSolver = coreSettings.getEquationSolver();
             if (generalSettings.isSoundSet()) {
                 if (coreSettings.isEquationSolverSetFromDefaultValue()) {
-                    STORM_LOG_WARN_COND(actualEquationSolver == EquationSolverType::Native, "Switching to native equation solver to guarantee soundness. To select other solvers, please explicitly specify a solver.");
+                    STORM_LOG_INFO_COND(actualEquationSolver == EquationSolverType::Native, "Switching to native equation solver to guarantee soundness. To select other solvers, please explicitly specify a solver.");
                 } else {
-                    STORM_LOG_WARN_COND(actualEquationSolver == EquationSolverType::Native, "Switching to native equation solver from explicitly selected solver '" << storm::solver::toString(actualEquationSolver) << "' to guarantee soundness.");
+                    STORM_LOG_INFO_COND(actualEquationSolver == EquationSolverType::Native, "Switching to native equation solver from explicitly selected solver '" << storm::solver::toString(actualEquationSolver) << "' to guarantee soundness.");
                 }
                 actualEquationSolver = EquationSolverType::Native;
             }

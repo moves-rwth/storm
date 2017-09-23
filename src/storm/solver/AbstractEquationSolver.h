@@ -13,6 +13,8 @@ namespace storm {
         template<typename ValueType>
         class AbstractEquationSolver {
         public:
+            AbstractEquationSolver();
+            
             /*!
              * Sets a custom termination condition that is used together with the regular termination condition of the
              * solver.
@@ -128,6 +130,26 @@ namespace storm {
              */
             void setBounds(std::vector<ValueType> const& lower, std::vector<ValueType> const& upper);
             
+            /*!
+             * Retrieves whether progress is to be shown.
+             */
+            bool isShowProgressSet() const;
+            
+            /*!
+             * Retrieves the delay between progress emissions.
+             */
+            uint64_t getShowProgressDelay() const;
+            
+            /*!
+             * Starts to measure progress.
+             */
+            void startMeasureProgress() const;
+            
+            /*!
+             * Shows progress if this solver is asked to do so.
+             */
+            void showProgressIterative(uint64_t iterations, boost::optional<uint64_t> const& bound = boost::none) const;
+
         protected:
             /*!
              * Retrieves the custom termination condition (if any was set).
@@ -156,6 +178,18 @@ namespace storm {
             
             // Lower bounds if they were set.
             boost::optional<std::vector<ValueType>> upperBounds;
+
+        private:
+            // A flag that indicates whether progress is to be shown.
+            bool showProgressFlag;
+            
+            // The delay between progress emission.
+            uint64_t showProgressDelay;
+            
+            // Time points that are used when showing progress.
+            mutable uint64_t iterationOfLastMessage;
+            mutable std::chrono::high_resolution_clock::time_point timeOfStart;
+            mutable std::chrono::high_resolution_clock::time_point timeOfLastMessage;
         };
         
     }

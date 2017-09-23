@@ -52,8 +52,9 @@ namespace storm {
                         maybeStates = storm::utility::graph::performProbGreater0E(backwardTransitions, phiStates, psiStates, true, stepBound);
                     }
                     maybeStates &= ~psiStates;
-                    STORM_LOG_INFO("Found " << maybeStates.getNumberOfSetBits() << " 'maybe' states.");
                 }
+                
+                STORM_LOG_INFO("Preprocessing: " << maybeStates.getNumberOfSetBits() << " non-target states with probability greater 0.");
                 
                 if (!maybeStates.empty()) {
                     // We can eliminate the rows and columns from the original transition probability matrix that have probability 0.
@@ -404,9 +405,6 @@ namespace storm {
                 result.statesWithProbability0 = std::move(statesWithProbability01.first);
                 result.statesWithProbability1 = std::move(statesWithProbability01.second);
                 result.maybeStates = ~(result.statesWithProbability0 | result.statesWithProbability1);
-                STORM_LOG_INFO("Found " << result.statesWithProbability0.getNumberOfSetBits() << " 'no' states.");
-                STORM_LOG_INFO("Found " << result.statesWithProbability1.getNumberOfSetBits() << " 'yes' states.");
-                STORM_LOG_INFO("Found " << result.maybeStates.getNumberOfSetBits() << " 'maybe' states.");
                 
                 return result;
             }
@@ -687,6 +685,8 @@ namespace storm {
                 // that is strictly between 0 and 1) and the states that satisfy the formula with probablity 1 and 0, respectively.
                 QualitativeStateSetsUntilProbabilities qualitativeStateSets = getQualitativeStateSetsUntilProbabilities(goal, transitionMatrix, backwardTransitions, phiStates, psiStates, hint);
                 
+                STORM_LOG_INFO("Preprocessing: " << qualitativeStateSets.statesWithProbability1.getNumberOfSetBits() << " states with probability 1, " << qualitativeStateSets.statesWithProbability0.getNumberOfSetBits() << " with probability 0 (" << qualitativeStateSets.maybeStates.getNumberOfSetBits() << " states remaining).");
+                
                 // Set values of resulting vector that are known exactly.
                 storm::utility::vector::setVectorValues<ValueType>(result, qualitativeStateSets.statesWithProbability1, storm::utility::one<ValueType>());
                 
@@ -870,9 +870,6 @@ namespace storm {
                 }
                 result.infinityStates.complement();
                 result.maybeStates = ~(targetStates | result.infinityStates);
-                STORM_LOG_INFO("Found " << result.infinityStates.getNumberOfSetBits() << " 'infinity' states.");
-                STORM_LOG_INFO("Found " << targetStates.getNumberOfSetBits() << " 'target' states.");
-                STORM_LOG_INFO("Found " << result.maybeStates.getNumberOfSetBits() << " 'maybe' states.");
                 return result;
             }
             
@@ -1019,6 +1016,9 @@ namespace storm {
                 
                 // Determine which states have a reward that is infinity or less than infinity.
                 QualitativeStateSetsReachabilityRewards qualitativeStateSets = getQualitativeStateSetsReachabilityRewards(goal, transitionMatrix, backwardTransitions, targetStates, hint);
+                
+                STORM_LOG_INFO("Preprocessing: " << qualitativeStateSets.infinityStates.getNumberOfSetBits() << " states with reward infinity, " << targetStates.getNumberOfSetBits() << " target states (" << qualitativeStateSets.maybeStates.getNumberOfSetBits() << " states remaining).");
+
                 storm::utility::vector::setVectorValues(result, qualitativeStateSets.infinityStates, storm::utility::infinity<ValueType>());
                 
                 // If requested, we will produce a scheduler.

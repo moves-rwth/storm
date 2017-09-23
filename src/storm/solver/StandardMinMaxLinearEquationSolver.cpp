@@ -52,9 +52,13 @@ namespace storm {
                 auxiliaryRowGroupVector = std::make_unique<std::vector<ValueType>>(this->A->getRowGroupCount());
             }
             
+            this->startMeasureProgress();
             for (uint64_t i = 0; i < n; ++i) {
                 linEqSolverA->multiplyAndReduce(dir, this->A->getRowGroupIndices(), x, b, *auxiliaryRowGroupVector);
                 std::swap(x, *auxiliaryRowGroupVector);
+
+                // Potentially show progress.
+                this->showProgressIterative(i, n);
             }
             
             if (!this->isCachingEnabled()) {

@@ -51,6 +51,13 @@ namespace storm {
                 bool isVerboseSet() const;
 
                 /*!
+                 * Retrieves the delay for printing information about the exploration progress.
+                 *
+                 * @return The desired delay in seconds. If 0, no information about the progress shall be printed.
+                 */
+                uint64_t getShowProgressDelay() const;
+                
+                /*!
                  * Retrieves the precision to use for numerical operations.
                  *
                  * @return The precision to use for numerical operations.
@@ -114,6 +121,8 @@ namespace storm {
                 static const std::string versionOptionName;
                 static const std::string verboseOptionName;
                 static const std::string verboseOptionShortName;
+                static const std::string showProgressOptionName;
+                static const std::string showProgressOptionShortName;
                 static const std::string precisionOptionName;
                 static const std::string precisionOptionShortName;
                 static const std::string configOptionName;
