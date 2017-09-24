@@ -81,14 +81,14 @@ namespace storm {
                     auto durationSinceLastMessage = std::chrono::duration_cast<std::chrono::seconds>(now - timeOfLastMessage).count();
                     if (static_cast<uint64_t>(durationSinceLastMessage) >= showProgressDelay) {
                         auto durationSinceStart = std::chrono::duration_cast<std::chrono::seconds>(now - start).count();
-                        STORM_LOG_INFO("State partition after " << iterations << " iterations (" << durationSinceStart << "ms) has " << refiner->getStatePartition().getNumberOfBlocks() << " blocks.");
+                        STORM_LOG_INFO("State partition after " << iterations << " iterations (" << durationSinceStart << "s) has " << refiner->getStatePartition().getNumberOfBlocks() << " blocks.");
                         timeOfLastMessage = std::chrono::high_resolution_clock::now();
                     }
                 }
             }
             auto end = std::chrono::high_resolution_clock::now();
             
-            STORM_LOG_DEBUG("Partition refinement completed in " << std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count() << "ms (" << iterations << " iterations).");
+            STORM_LOG_DEBUG("Partition refinement completed in " << std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count() << "s (" << iterations << " iterations).");
         }
         
         template <storm::dd::DdType DdType, typename ValueType>
