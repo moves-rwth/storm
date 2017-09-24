@@ -567,6 +567,27 @@ namespace storm {
             std::vector<index_type> const& getRowGroupIndices() const;
             
             /*!
+             * Sets the row grouping to the given one.
+             * @note It is assumed that the new row grouping is non-trivial.
+             *
+             * @param newRowGroupIndices The new row group indices.
+             */
+            void setRowGroupIndices(std::vector<index_type> const& newRowGroupIndices);
+            
+            /*!
+             * Retrieves whether the matrix has a trivial row grouping.
+             *
+             * @return True iff the matrix has a trivial row grouping.
+             */
+            bool hasTrivialRowGrouping() const;
+            
+            /*!
+             * Makes the row grouping of this matrix trivial.
+             * Has no effect when the row grouping is already trivial.
+             */
+            void makeRowGroupingTrivial();
+
+            /*!
              * Returns the indices of the rows that belong to one of the selected row groups.
              *
              * @param groups the selected row groups
@@ -674,6 +695,15 @@ namespace storm {
              *
              */
             SparseMatrix restrictRows(storm::storage::BitVector const& rowsToKeep, bool allowEmptyRowGroups = false) const;
+            
+            /*!
+             * Returns a copy of this matrix that only considers entries in the selected rows.
+             * Non-selected rows will not have any entries
+             *
+             * @note does not change the dimensions (row-, column-, and rowGroup count) of this matrix
+             * @param rowFilter the selected rows
+             */
+            SparseMatrix filterEntries(storm::storage::BitVector const& rowFilter) const;
             
             /**
              * Compares two rows.
@@ -1028,19 +1058,6 @@ namespace storm {
              */
             iterator end();
             
-            /*!
-             * Retrieves whether the matrix has a trivial row grouping.
-             *
-             * @return True iff the matrix has a trivial row grouping.
-             */
-            bool hasTrivialRowGrouping() const;
-            
-            /*!
-             * Makes the row grouping of this matrix trivial.
-             * Has no effect when the row grouping is already trivial.
-             */
-            void makeRowGroupingTrivial();
-
 			/*!
 			* Returns a copy of the matrix with the chosen internal data type
 			*/

@@ -179,6 +179,7 @@ namespace storm {
             auto counterexampleGeneratorSettings = storm::settings::getModule<storm::settings::modules::CounterexampleGeneratorSettings>();
             storm::builder::BuilderOptions options(createFormulasToRespect(input.properties));
             options.setBuildChoiceLabels(ioSettings.isBuildChoiceLabelsSet());
+            options.setBuildStateValuations(ioSettings.isBuildStateValuationsSet());
             options.setBuildChoiceOrigins(counterexampleGeneratorSettings.isMinimalCommandSetGenerationSet());
             options.setBuildAllLabels(ioSettings.isBuildFullModelSet());
             options.setBuildAllRewardModels(ioSettings.isBuildFullModelSet());
