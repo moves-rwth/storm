@@ -2,6 +2,7 @@
 #define STORM_SOLVER_ABSTRACTEQUATIONSOLVER_H_
 
 #include <memory>
+#include <chrono>
 
 #include <boost/optional.hpp>
 
