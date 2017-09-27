@@ -109,6 +109,9 @@ namespace storm {
         ValueType log10(ValueType const& number);
 
         template<typename ValueType>
+        ValueType trunc(ValueType const& number);
+
+        template<typename ValueType>
         ValueType mod(ValueType const& first, ValueType const& second);
 
         template<typename ValueType>

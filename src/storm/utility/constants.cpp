@@ -233,6 +233,11 @@ namespace storm {
         }
         
         template<typename ValueType>
+        ValueType trunc(ValueType const& number) {
+            return std::trunc(number);
+        }
+        
+        template<typename ValueType>
         ValueType mod(ValueType const& first, ValueType const& second) {
             return std::fmod(first, second);
         }
@@ -368,6 +373,11 @@ namespace storm {
             return carl::log10(number);
         }
 
+        template<>
+        ClnRationalNumber trunc(ClnRationalNumber const& number) {
+            cln::truncate2(number);
+        }
+        
         template<>
         ClnRationalNumber mod(ClnRationalNumber const& first, ClnRationalNumber const& second) {
             STORM_LOG_ASSERT(isInteger(first) && isInteger(second), "Expecting integers in modulo computation.");
@@ -522,6 +532,12 @@ namespace storm {
         template<>
         GmpRationalNumber log10(GmpRationalNumber const& number) {
             return carl::log10(number);
+        }
+
+        template<>
+        GmpRationalNumber trunc(GmpRationalNumber const& number) {
+            // FIXME: precision issue.
+            return carl::rationalize<GmpRationalNumber>(std::trunc(number.get_d()));
         }
         
         template<>

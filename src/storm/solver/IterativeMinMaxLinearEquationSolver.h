@@ -2,6 +2,8 @@
 
 #include "storm/solver/MultiplicationStyle.h"
 
+#include "storm/utility/NumberTraits.h"
+
 #include "storm/solver/LinearEquationSolver.h"
 #include "storm/solver/StandardMinMaxLinearEquationSolver.h"
 
@@ -70,12 +72,16 @@ namespace storm {
             bool solveEquationsSoundValueIteration(OptimizationDirection dir, std::vector<ValueType>& x, std::vector<ValueType> const& b) const;
             bool solveEquationsAcyclic(OptimizationDirection dir, std::vector<ValueType>& x, std::vector<ValueType> const& b) const;
             bool solveEquationsRationalSearch(OptimizationDirection dir, std::vector<ValueType>& x, std::vector<ValueType> const& b) const;
-            static bool sharpen(storm::OptimizationDirection dir, uint64_t precision, storm::storage::SparseMatrix<storm::RationalNumber> const& A, std::vector<double> const& x, std::vector<storm::RationalNumber> const& b, std::vector<storm::RationalNumber>& tmp);
+            
+            template<typename PreciseValueType, typename ImpreciseValueType>
+            static bool sharpen(storm::OptimizationDirection dir, uint64_t precision, storm::storage::SparseMatrix<PreciseValueType> const& A, std::vector<ImpreciseValueType> const& x, std::vector<PreciseValueType> const& b, std::vector<PreciseValueType>& tmp);
 
             template<typename ImpreciseValueType>
-            std::enable_if<std::is_same<ValueType, ImpreciseValueType>::value, bool>::type solveEquationsRationalSearchHelper(OptimizationDirection dir, std::vector<ValueType>& x, std::vector<ValueType> const& b) const;
+            typename std::enable_if<std::is_same<ValueType, ImpreciseValueType>::value && !NumberTraits<ValueType>::IsExact, bool>::type solveEquationsRationalSearchHelper(OptimizationDirection dir, std::vector<ValueType>& x, std::vector<ValueType> const& b) const;
             template<typename ImpreciseValueType>
-            std::enable_if<!std::is_same<ValueType, ImpreciseValueType>::value, bool>::type solveEquationsRationalSearchHelper(OptimizationDirection dir, std::vector<ValueType>& x, std::vector<ValueType> const& b) const;
+            typename std::enable_if<std::is_same<ValueType, ImpreciseValueType>::value && NumberTraits<ValueType>::IsExact, bool>::type solveEquationsRationalSearchHelper(OptimizationDirection dir, std::vector<ValueType>& x, std::vector<ValueType> const& b) const;
+            template<typename ImpreciseValueType>
+            typename std::enable_if<!std::is_same<ValueType, ImpreciseValueType>::value, bool>::type solveEquationsRationalSearchHelper(OptimizationDirection dir, std::vector<ValueType>& x, std::vector<ValueType> const& b) const;
 
             void computeOptimalValueForRowGroup(uint_fast64_t group, OptimizationDirection dir, std::vector<ValueType>& x, std::vector<ValueType> const& b, uint_fast64_t* choice = nullptr) const;
             

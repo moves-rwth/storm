@@ -305,6 +305,8 @@ namespace storm {
             // Proceed with the iterations as long as the method did not converge or reach the maximum number of iterations.
             uint64_t iterations = currentIterations;
             
+            std::vector<ValueType>* originalX = currentX;
+            
             Status status = Status::InProgress;
             while (status == Status::InProgress) {
                 // Compute x' = min/max(A*x + b).
@@ -330,7 +332,12 @@ namespace storm {
                 status = updateStatusIfNotConverged(status, *currentX, iterations, guarantee);
             }
             
-            return ValueIterationResult(iterations, status);
+            // Swap the pointers so that the output is always in currentX.
+            if (originalX == newX) {
+                std::swap(currentX, newX);
+            }
+            
+            return ValueIterationResult(iterations - currentIterations, status);
         }
         
         template<typename ValueType>
@@ -385,12 +392,6 @@ namespace storm {
             ValueIterationResult result = performValueIteration(dir, currentX, newX, b, this->getSettings().getPrecision(), this->getSettings().getRelativeTerminationCriterion(), guarantee, 0);
 
             reportStatus(result.status, result.iterations);
-            
-            // If we performed an odd number of iterations, we need to swap the x and currentX, because the newest result
-            // is currently stored in currentX, but x is the output vector.
-            if (currentX == auxiliaryRowGroupVector.get()) {
-                std::swap(x, *currentX);
-            }
             
             // If requested, we store the scheduler for retrieval.
             if (this->isTrackSchedulerSet()) {
@@ -656,38 +657,47 @@ namespace storm {
             }
         }
         
-        template<typename ValueType>
-        ValueType truncateToRational(double const& value, uint64_t precision) {
+        template<typename PreciseValueType, typename ImpreciseValueType>
+        PreciseValueType truncateToRational(ImpreciseValueType const& value, uint64_t precision) {
+            STORM_LOG_ASSERT(precision < 16, "Truncating via double is not sound.");
+            PreciseValueType powerOfTen = storm::utility::pow(storm::utility::convertNumber<PreciseValueType>(10), precision);
+            PreciseValueType truncated = storm::utility::trunc<PreciseValueType>(value * powerOfTen);
+            return truncated / powerOfTen;
+        }
+
+        template<typename PreciseValueType>
+        PreciseValueType truncateToRational(double const& value, uint64_t precision) {
             STORM_LOG_ASSERT(precision < 16, "Truncating via double is not sound.");
             auto powerOfTen = std::pow(10, precision);
             double truncated = std::trunc(value * powerOfTen);
-            return storm::utility::convertNumber<ValueType>(truncated) / storm::utility::convertNumber<ValueType>(powerOfTen);
+            return storm::utility::convertNumber<PreciseValueType>(truncated) / storm::utility::convertNumber<PreciseValueType>(powerOfTen);
         }
-        
-        template<typename ValueType>
-        ValueType findRational(uint64_t precision, double const& value) {
-            ValueType truncatedFraction = truncateToRational<ValueType>(value, precision);
 
-            ValueType ten = storm::utility::convertNumber<ValueType>(10);
-            ValueType powerOfTen = storm::utility::pow<ValueType>(ten, precision);
-            ValueType multiplier = powerOfTen / storm::utility::denominator(truncatedFraction);
-            ValueType numerator = storm::utility::numerator(truncatedFraction) * multiplier;
+        template<typename PreciseValueType, typename ImpreciseValueType>
+        PreciseValueType findRational(uint64_t precision, ImpreciseValueType const& value) {
+            PreciseValueType truncatedFraction = truncateToRational<PreciseValueType>(value, precision);
+
+            PreciseValueType ten = storm::utility::convertNumber<PreciseValueType>(10);
+            PreciseValueType powerOfTen = storm::utility::pow<PreciseValueType>(ten, precision);
+            PreciseValueType multiplier = powerOfTen / storm::utility::denominator(truncatedFraction);
+            PreciseValueType numerator = storm::utility::numerator(truncatedFraction) * multiplier;
             
-            std::pair<ValueType, ValueType> result = findRational<ValueType>(numerator, powerOfTen, numerator + storm::utility::one<ValueType>(), powerOfTen);
+            std::pair<PreciseValueType, PreciseValueType> result = findRational<PreciseValueType>(numerator, powerOfTen, numerator + storm::utility::one<PreciseValueType>(), powerOfTen);
             return result.first / result.second;
         }
 
         template<typename ValueType>
-        bool IterativeMinMaxLinearEquationSolver<ValueType>::sharpen(storm::OptimizationDirection dir, uint64_t precision, storm::storage::SparseMatrix<storm::RationalNumber> const& A, std::vector<double> const& x, std::vector<storm::RationalNumber> const& b, std::vector<storm::RationalNumber>& tmp) {
+        template<typename PreciseValueType, typename ImpreciseValueType>
+        bool IterativeMinMaxLinearEquationSolver<ValueType>::sharpen(storm::OptimizationDirection dir, uint64_t precision, storm::storage::SparseMatrix<PreciseValueType> const& A, std::vector<ImpreciseValueType> const& x, std::vector<PreciseValueType> const& b, std::vector<PreciseValueType>& tmp) {
             for (uint64_t p = 1; p < precision; ++p) {
                 for (uint64_t state = 0; state < x.size(); ++state) {
-                    storm::RationalNumber rationalX = storm::utility::convertNumber<storm::RationalNumber, double>(x[state]);
-                    storm::RationalNumber integer = storm::utility::floor(rationalX);
-                    storm::RationalNumber fraction = rationalX - integer;
+                    PreciseValueType rationalX = storm::utility::convertNumber<PreciseValueType, ImpreciseValueType>(x[state]);
+                    PreciseValueType integer = storm::utility::floor(rationalX);
+                    PreciseValueType fraction = rationalX - integer;
                     
-                    tmp[state] = integer + findRational<storm::RationalNumber>(p, storm::utility::convertNumber<double, storm::RationalNumber>(fraction));
+                    tmp[state] = integer + findRational<PreciseValueType>(p, storm::utility::convertNumber<ImpreciseValueType, PreciseValueType>(fraction));
                 }
-                if (IterativeMinMaxLinearEquationSolver<storm::RationalNumber>::isSolution(dir, A, tmp, b)) {
+                if (IterativeMinMaxLinearEquationSolver<PreciseValueType>::isSolution(dir, A, tmp, b)) {
                     return true;
                 }
             }
@@ -701,56 +711,156 @@ namespace storm {
 
         template<typename ValueType>
         template<typename ImpreciseValueType>
-        std::enable_if<std::is_same<ValueType, ImpreciseValueType>::value, bool>::type IterativeMinMaxLinearEquationSolver<ValueType>::solveEquationsRationalSearchHelper(OptimizationDirection dir, std::vector<ValueType>& x, std::vector<ValueType> const& b) const {
+        typename std::enable_if<std::is_same<ValueType, ImpreciseValueType>::value && !NumberTraits<ValueType>::IsExact, bool>::type IterativeMinMaxLinearEquationSolver<ValueType>::solveEquationsRationalSearchHelper(OptimizationDirection dir, std::vector<ValueType>& x, std::vector<ValueType> const& b) const {
 
+            // Create a rational representation of the input so we can check for a proper solution later.
+            storm::storage::SparseMatrix<storm::RationalNumber> rationalA = this->A->template toValueType<storm::RationalNumber>();
+            std::vector<storm::RationalNumber> rationalX(x.size());
+            std::vector<storm::RationalNumber> rationalB = storm::utility::vector::convertNumericVector<storm::RationalNumber>(b);
+            
+            if (!this->linEqSolverA) {
+                this->linEqSolverA = this->linearEquationSolverFactory->create(*this->A);
+                this->linEqSolverA->setCachingEnabled(true);
+            }
+            
+            if (!auxiliaryRowGroupVector) {
+                auxiliaryRowGroupVector = std::make_unique<std::vector<ValueType>>(this->A->getRowGroupCount());
+            }
+            
+            std::vector<ValueType>* newX = auxiliaryRowGroupVector.get();
+            std::vector<ValueType>* currentX = &x;
+            
+            Status status = Status::InProgress;
+            uint64_t overallIterations = 0;
+            ValueType precision = this->getSettings().getPrecision();
+            this->startMeasureProgress();
+            while (status == Status::InProgress && overallIterations < this->getSettings().getMaximalNumberOfIterations()) {
+                // Perform value iteration with the current precision.
+                ValueIterationResult result = performValueIteration(dir, currentX, newX, b, precision, this->getSettings().getRelativeTerminationCriterion(), SolverGuarantee::LessOrEqual, overallIterations);
+                
+                // Count the iterations.
+                overallIterations += result.iterations;
+                
+                // Try to sharpen the result.
+                uint64_t p = storm::utility::convertNumber<uint64_t>(storm::utility::ceil(storm::utility::log10<storm::RationalNumber>(storm::utility::one<storm::RationalNumber>() / storm::utility::convertNumber<storm::RationalNumber>(precision))));
+                bool foundSolution = sharpen(dir, p, rationalA, *currentX, rationalB, rationalX);
+                
+                if (foundSolution) {
+                    status = Status::Converged;
+                    
+                    auto rationalIt = rationalX.begin();
+                    for (auto it = x.begin(), ite = x.end(); it != ite; ++it, ++rationalIt) {
+                        *it = storm::utility::convertNumber<ValueType>(*rationalIt);
+                    }
+                } else {
+                    precision = precision / 10;
+                }
+            }
+            
+            if (status == Status::InProgress && overallIterations == this->getSettings().getMaximalNumberOfIterations()) {
+                status = Status::MaximalIterationsExceeded;
+            }
+            
+            reportStatus(status, overallIterations);
+            
+            if (!this->isCachingEnabled()) {
+                clearCache();
+            }
+            
+            return status == Status::Converged || status == Status::TerminatedEarly;
+        }
+        
+        template<typename ValueType>
+        template<typename ImpreciseValueType>
+        typename std::enable_if<std::is_same<ValueType, ImpreciseValueType>::value && NumberTraits<ValueType>::IsExact, bool>::type IterativeMinMaxLinearEquationSolver<ValueType>::solveEquationsRationalSearchHelper(OptimizationDirection dir, std::vector<ValueType>& x, std::vector<ValueType> const& b) const {
+            
+            if (!this->linEqSolverA) {
+                this->linEqSolverA = this->linearEquationSolverFactory->create(*this->A);
+                this->linEqSolverA->setCachingEnabled(true);
+            }
+            
+            if (!auxiliaryRowGroupVector) {
+                auxiliaryRowGroupVector = std::make_unique<std::vector<ValueType>>(this->A->getRowGroupCount());
+            }
+            
+            std::vector<ValueType>* newX = auxiliaryRowGroupVector.get();
+            std::vector<ValueType>* currentX = &x;
+            
+            Status status = Status::InProgress;
+            uint64_t overallIterations = 0;
+            ValueType precision = this->getSettings().getPrecision();
+            this->startMeasureProgress();
+            while (status == Status::InProgress && overallIterations < this->getSettings().getMaximalNumberOfIterations()) {
+                // Perform value iteration with the current precision.
+                ValueIterationResult result = performValueIteration(dir, currentX, newX, b, precision, this->getSettings().getRelativeTerminationCriterion(), SolverGuarantee::LessOrEqual, overallIterations);
+                
+                // Count the iterations.
+                overallIterations += result.iterations;
+                
+                // Try to sharpen the result.
+                uint64_t p = storm::utility::convertNumber<uint64_t>(storm::utility::ceil(storm::utility::log10<ValueType>(storm::utility::one<ValueType>() / precision)));
+                bool foundSolution = sharpen(dir, p, *this->A, *currentX, b, *newX);
+                
+                if (foundSolution) {
+                    status = Status::Converged;
+                    
+                    // Swap the result in place.
+                    if (&x == currentX) {
+                        std::swap(*currentX, *newX);
+                    }
+                } else {
+                    precision = precision / 10;
+                }
+            }
+
+            if (status == Status::InProgress && overallIterations == this->getSettings().getMaximalNumberOfIterations()) {
+                status = Status::MaximalIterationsExceeded;
+            }
+            
+            reportStatus(status, overallIterations);
+            
+            if (!this->isCachingEnabled()) {
+                clearCache();
+            }
+            
+            return status == Status::Converged || status == Status::TerminatedEarly;
         }
 
         template<typename ValueType>
         template<typename ImpreciseValueType>
-        std::enable_if<!std::is_same<ValueType, ImpreciseValueType>::value, bool>::type IterativeMinMaxLinearEquationSolver<ValueType>::solveEquationsRationalSearchHelper(OptimizationDirection dir, std::vector<ValueType>& x, std::vector<ValueType> const& b) const {
-            
-        }
-
-        template<typename ValueType>
-        bool IterativeMinMaxLinearEquationSolver<ValueType>::solveEquationsRationalSearch(OptimizationDirection dir, std::vector<ValueType>& x, std::vector<ValueType> const& b) const {
-            if (this->getSettings().getForceSoundness()) {
-                solveEquationsRationalSearchHelper<ValueType>(dir, x, b);
-            } else {
-                solveEquationsRationalSearchHelper<double>(dir, x, b);
-            }
-            
+        typename std::enable_if<!std::is_same<ValueType, ImpreciseValueType>::value, bool>::type IterativeMinMaxLinearEquationSolver<ValueType>::solveEquationsRationalSearchHelper(OptimizationDirection dir, std::vector<ValueType>& x, std::vector<ValueType> const& b) const {
             // Create an imprecise solver with caching enabled.
-            IterativeMinMaxLinearEquationSolver<double> impreciseSolver(std::make_unique<storm::solver::GeneralLinearEquationSolverFactory<double>>());
-            impreciseSolver.setMatrix(this->A->template toValueType<double>());
+            IterativeMinMaxLinearEquationSolver<ImpreciseValueType> impreciseSolver(std::make_unique<storm::solver::GeneralLinearEquationSolverFactory<ImpreciseValueType>>());
+            impreciseSolver.setMatrix(this->A->template toValueType<ImpreciseValueType>());
             impreciseSolver.createLinearEquationSolver();
             impreciseSolver.setCachingEnabled(true);
-
-            std::vector<double> impreciseX(x.size());
+            
+            std::vector<ImpreciseValueType> impreciseX(x.size());
             {
                 std::vector<ValueType> tmp(x.size());
                 this->createLowerBoundsVector(tmp);
                 auto targetIt = impreciseX.begin();
                 for (auto sourceIt = tmp.begin(); targetIt != impreciseX.end(); ++targetIt, ++sourceIt) {
-                    *targetIt = storm::utility::convertNumber<double, ValueType>(*sourceIt);
+                    *targetIt = storm::utility::convertNumber<ImpreciseValueType, ValueType>(*sourceIt);
                 }
             }
-            std::vector<double> impreciseTmpX(x.size());
-            std::vector<double> impreciseB(b.size());
+            std::vector<ImpreciseValueType> impreciseTmpX(x.size());
+            std::vector<ImpreciseValueType> impreciseB(b.size());
             auto targetIt = impreciseB.begin();
             for (auto sourceIt = b.begin(); targetIt != impreciseB.end(); ++targetIt, ++sourceIt) {
-                *targetIt = storm::utility::convertNumber<double, ValueType>(*sourceIt);
+                *targetIt = storm::utility::convertNumber<ImpreciseValueType, ValueType>(*sourceIt);
             }
-
-            std::vector<double>* currentX = &impreciseX;
-            std::vector<double>* newX = &impreciseTmpX;
-
+            
+            std::vector<ImpreciseValueType>* currentX = &impreciseX;
+            std::vector<ImpreciseValueType>* newX = &impreciseTmpX;
+            
             Status status = Status::InProgress;
             uint64_t overallIterations = 0;
             ValueType precision = this->getSettings().getPrecision();
             impreciseSolver.startMeasureProgress();
             while (status == Status::InProgress && overallIterations < this->getSettings().getMaximalNumberOfIterations()) {
                 // Perform value iteration with the current precision.
-                IterativeMinMaxLinearEquationSolver<double>::ValueIterationResult result = impreciseSolver.performValueIteration(dir, currentX, newX, impreciseB, storm::utility::convertNumber<double, ValueType>(precision), this->getSettings().getRelativeTerminationCriterion(), SolverGuarantee::LessOrEqual, overallIterations);
+                typename IterativeMinMaxLinearEquationSolver<ImpreciseValueType>::ValueIterationResult result = impreciseSolver.performValueIteration(dir, currentX, newX, impreciseB, storm::utility::convertNumber<ImpreciseValueType, ValueType>(precision), this->getSettings().getRelativeTerminationCriterion(), SolverGuarantee::LessOrEqual, overallIterations);
                 
                 // Count the iterations.
                 overallIterations += result.iterations;
@@ -766,6 +876,11 @@ namespace storm {
                 }
             }
             
+            if (status == Status::InProgress && overallIterations == this->getSettings().getMaximalNumberOfIterations()) {
+                status = Status::MaximalIterationsExceeded;
+            }
+
+            
             reportStatus(status, overallIterations);
             
             if (!this->isCachingEnabled()) {
@@ -774,55 +889,14 @@ namespace storm {
             
             return status == Status::Converged || status == Status::TerminatedEarly;
         }
-        
-        template<>
-        bool IterativeMinMaxLinearEquationSolver<double>::solveEquationsRationalSearch(OptimizationDirection dir, std::vector<double>& x, std::vector<double> const& b) const {
-            // Create a rational representation of the input so we can check for a proper solution later.
-            storm::storage::SparseMatrix<storm::RationalNumber> rationalA = this->A->toValueType<storm::RationalNumber>();
-            std::vector<storm::RationalNumber> rationalX(x.size());
-            std::vector<storm::RationalNumber> rationalB = storm::utility::vector::convertNumericVector<storm::RationalNumber>(b);
 
-            if (!this->linEqSolverA) {
-                this->linEqSolverA = this->linearEquationSolverFactory->create(*this->A);
-                this->linEqSolverA->setCachingEnabled(true);
+        template<typename ValueType>
+        bool IterativeMinMaxLinearEquationSolver<ValueType>::solveEquationsRationalSearch(OptimizationDirection dir, std::vector<ValueType>& x, std::vector<ValueType> const& b) const {
+            if (this->getSettings().getForceSoundness()) {
+                return solveEquationsRationalSearchHelper<ValueType>(dir, x, b);
+            } else {
+                return solveEquationsRationalSearchHelper<double>(dir, x, b);
             }
-            
-            if (!auxiliaryRowGroupVector) {
-                auxiliaryRowGroupVector = std::make_unique<std::vector<double>>(this->A->getRowGroupCount());
-            }
-            
-            std::vector<double>* newX = auxiliaryRowGroupVector.get();
-            std::vector<double>* currentX = &x;
-            
-            Status status = Status::InProgress;
-            uint64_t overallIterations = 0;
-            double precision = this->getSettings().getPrecision();
-            this->startMeasureProgress();
-            while (status == Status::InProgress && overallIterations < this->getSettings().getMaximalNumberOfIterations()) {
-                // Perform value iteration with the current precision.
-                ValueIterationResult result = performValueIteration(dir, currentX, newX, b, precision, this->getSettings().getRelativeTerminationCriterion(), SolverGuarantee::LessOrEqual, overallIterations);
-                
-                // Count the iterations.
-                overallIterations += result.iterations;
-                
-                // Try to sharpen the result.
-                uint64_t p = storm::utility::convertNumber<uint64_t>(storm::utility::ceil(storm::utility::log10<storm::RationalNumber>(storm::utility::one<storm::RationalNumber>() / storm::utility::convertNumber<storm::RationalNumber>(precision))));
-                bool foundSolution = sharpen(dir, p, rationalA, *currentX, rationalB, rationalX);
-                
-                if (foundSolution) {
-                    status = Status::Converged;
-                } else {
-                    precision = precision / 10;
-                }
-            }
-            
-            reportStatus(status, overallIterations);
-            
-            if (!this->isCachingEnabled()) {
-                clearCache();
-            }
-            
-            return status == Status::Converged || status == Status::TerminatedEarly;
         }
         
         template<typename ValueType>
