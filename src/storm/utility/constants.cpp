@@ -1,6 +1,7 @@
 #include "storm/utility/constants.h"
 
 #include <type_traits>
+#include <cmath>
 
 #include "storm/storage/sparse/StateType.h"
 #include "storm/storage/SparseMatrix.h"
@@ -10,7 +11,9 @@
 #include "storm/exceptions/InvalidArgumentException.h"
 
 #include "storm/adapters/RationalFunctionAdapter.h"
+
 #include "storm/utility/macros.h"
+#include "storm/exceptions/NotSupportedException.h"
 
 namespace storm {
     namespace utility {
@@ -218,6 +221,31 @@ namespace storm {
         ValueType ceil(ValueType const& number) {
             return std::ceil(number);
         }
+        
+        template<typename ValueType>
+        ValueType log(ValueType const& number) {
+            return std::log(number);
+        }
+        
+        template<typename ValueType>
+        ValueType log10(ValueType const& number) {
+            return std::log10(number);
+        }
+        
+        template<typename ValueType>
+        ValueType mod(ValueType const& first, ValueType const& second) {
+            return std::fmod(first, second);
+        }
+        
+        template<typename ValueType>
+        ValueType numerator(ValueType const& number) {
+            STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Not supported.");
+        }
+        
+        template<typename ValueType>
+        ValueType denominator(ValueType const& number) {
+            STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Not supported.");
+        }
 
         template<typename ValueType>
         std::string to_string(ValueType const& value) {
@@ -331,8 +359,34 @@ namespace storm {
         }
         
         template<>
+        ClnRationalNumber log(ClnRationalNumber const& number) {
+            return carl::log(number);
+        }
+        
+        template<>
+        ClnRationalNumber log10(ClnRationalNumber const& number) {
+            return carl::log10(number);
+        }
+
+        template<>
+        ClnRationalNumber mod(ClnRationalNumber const& first, ClnRationalNumber const& second) {
+            STORM_LOG_ASSERT(isInteger(first) && isInteger(second), "Expecting integers in modulo computation.");
+            return carl::mod(carl::getNum(first), carl::getNum(second));
+        }
+        
+        template<>
         ClnRationalNumber pow(ClnRationalNumber const& value, uint_fast64_t exponent) {
             return carl::pow(value, exponent);
+        }
+        
+        template<>
+        ClnRationalNumber numerator(ClnRationalNumber const& number) {
+            return carl::getNum(number);
+        }
+        
+        template<>
+        ClnRationalNumber denominator(ClnRationalNumber const& number) {
+            return carl::getDenom(number);
         }
 #endif
         
@@ -461,8 +515,34 @@ namespace storm {
         }
         
         template<>
+        GmpRationalNumber log(GmpRationalNumber const& number) {
+            return carl::log(number);
+        }
+        
+        template<>
+        GmpRationalNumber log10(GmpRationalNumber const& number) {
+            return carl::log10(number);
+        }
+        
+        template<>
+        GmpRationalNumber mod(GmpRationalNumber const& first, GmpRationalNumber const& second) {
+            STORM_LOG_ASSERT(isInteger(first) && isInteger(second), "Expecting integers in modulo computation.");
+            return carl::mod(carl::getNum(first), carl::getNum(second));
+        }
+        
+        template<>
         GmpRationalNumber pow(GmpRationalNumber const& value, uint_fast64_t exponent) {
             return carl::pow(value, exponent);
+        }
+        
+        template<>
+        GmpRationalNumber numerator(GmpRationalNumber const& number) {
+            return carl::getNum(number);
+        }
+        
+        template<>
+        GmpRationalNumber denominator(GmpRationalNumber const& number) {
+            return carl::getDenom(number);
         }
 #endif
         
@@ -689,6 +769,11 @@ namespace storm {
         template double abs(double const& number);
         template double floor(double const& number);
         template double ceil(double const& number);
+        template double log(double const& number);
+        template double log10(double const& number);
+        template double denominator(double const& number);
+        template double numerator(double const& number);
+        template double mod(double const& first, double const& second);
         template std::string to_string(double const& value);
 
         // float
@@ -717,6 +802,7 @@ namespace storm {
         template float abs(float const& number);
         template float floor(float const& number);
         template float ceil(float const& number);
+        template float log(float const& number);
         template std::string to_string(float const& value);
 
         // int
@@ -787,6 +873,7 @@ namespace storm {
         template storm::ClnRationalNumber abs(storm::ClnRationalNumber const& number);
         template storm::ClnRationalNumber floor(storm::ClnRationalNumber const& number);
         template storm::ClnRationalNumber ceil(storm::ClnRationalNumber const& number);
+        template storm::ClnRationalNumber log(storm::ClnRationalNumber const& number);
         template std::string to_string(storm::ClnRationalNumber const& value);
 #endif
         
@@ -822,6 +909,7 @@ namespace storm {
         template storm::GmpRationalNumber abs(storm::GmpRationalNumber const& number);
         template storm::GmpRationalNumber floor(storm::GmpRationalNumber const& number);
         template storm::GmpRationalNumber ceil(storm::GmpRationalNumber const& number);
+        template storm::GmpRationalNumber log(storm::GmpRationalNumber const& number);
         template std::string to_string(storm::GmpRationalNumber const& value);
 #endif
         

@@ -14,7 +14,7 @@ namespace storm {
             IterativeMinMaxLinearEquationSolverSettings();
             
             enum class SolutionMethod {
-                ValueIteration, PolicyIteration, Acyclic
+                ValueIteration, PolicyIteration, Acyclic, RationalSearch
             };
             
             void setSolutionMethod(SolutionMethod const& solutionMethod);
@@ -61,18 +61,43 @@ namespace storm {
             virtual MinMaxLinearEquationSolverRequirements getRequirements(EquationSystemType const& equationSystemType, boost::optional<storm::solver::OptimizationDirection> const& direction = boost::none) const override;
             
         private:
+            static bool isSolution(storm::OptimizationDirection dir, storm::storage::SparseMatrix<ValueType> const& matrix, std::vector<ValueType> const& values, std::vector<ValueType> const& b);
+            
             bool solveEquationsPolicyIteration(OptimizationDirection dir, std::vector<ValueType>& x, std::vector<ValueType> const& b) const;
+            bool valueImproved(OptimizationDirection dir, ValueType const& value1, ValueType const& value2) const;
+
             bool solveEquationsValueIteration(OptimizationDirection dir, std::vector<ValueType>& x, std::vector<ValueType> const& b) const;
             bool solveEquationsSoundValueIteration(OptimizationDirection dir, std::vector<ValueType>& x, std::vector<ValueType> const& b) const;
             bool solveEquationsAcyclic(OptimizationDirection dir, std::vector<ValueType>& x, std::vector<ValueType> const& b) const;
+            bool solveEquationsRationalSearch(OptimizationDirection dir, std::vector<ValueType>& x, std::vector<ValueType> const& b) const;
+            static bool sharpen(storm::OptimizationDirection dir, uint64_t precision, storm::storage::SparseMatrix<storm::RationalNumber> const& A, std::vector<double> const& x, std::vector<storm::RationalNumber> const& b, std::vector<storm::RationalNumber>& tmp);
 
-            bool valueImproved(OptimizationDirection dir, ValueType const& value1, ValueType const& value2) const;
-            
+            template<typename ImpreciseValueType>
+            std::enable_if<std::is_same<ValueType, ImpreciseValueType>::value, bool> solveEquationsRationalSearchHelper(OptimizationDirection dir, std::vector<ValueType>& x, std::vector<ValueType> const& b) const;
+            template<typename ImpreciseValueType>
+            std::enable_if<!std::is_same<ValueType, ImpreciseValueType>::value, bool> solveEquationsRationalSearchHelper(OptimizationDirection dir, std::vector<ValueType>& x, std::vector<ValueType> const& b) const;
+
             void computeOptimalValueForRowGroup(uint_fast64_t group, OptimizationDirection dir, std::vector<ValueType>& x, std::vector<ValueType> const& b, uint_fast64_t* choice = nullptr) const;
             
             enum class Status {
                 Converged, TerminatedEarly, MaximalIterationsExceeded, InProgress
             };
+            
+            struct ValueIterationResult {
+                ValueIterationResult(uint64_t iterations, Status status) : iterations(iterations), status(status) {
+                    // Intentionally left empty.
+                }
+                
+                uint64_t iterations;
+                Status status;
+            };
+            
+            template <typename ValueTypePrime>
+            friend class IterativeMinMaxLinearEquationSolver;
+            
+            ValueIterationResult performValueIteration(OptimizationDirection dir, std::vector<ValueType>*& currentX, std::vector<ValueType>*& newX, std::vector<ValueType> const& b, ValueType const& precision, bool relative, SolverGuarantee const& guarantee, uint64_t currentIterations) const;
+            
+            void createLinearEquationSolver() const;
             
             // possibly cached data
             mutable std::unique_ptr<std::vector<ValueType>> auxiliaryRowGroupVector; // A.rowGroupCount() entries

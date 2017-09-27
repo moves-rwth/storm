@@ -41,6 +41,11 @@ namespace storm {
         }
         
         template<typename ValueType>
+        std::unique_ptr<TerminationCondition<ValueType>> const& AbstractEquationSolver<ValueType>::getTerminationConditionPointer() const {
+            return terminationCondition;
+        }
+        
+        template<typename ValueType>
         bool AbstractEquationSolver<ValueType>::terminateNow(std::vector<ValueType> const& values, SolverGuarantee const& guarantee) const {
             if (!this->hasCustomTerminationCondition()) {
                 return false;
@@ -198,10 +203,10 @@ namespace storm {
         }
         
         template<typename ValueType>
-        void AbstractEquationSolver<ValueType>::startMeasureProgress() const {
+        void AbstractEquationSolver<ValueType>::startMeasureProgress(uint64_t startingIteration) const {
             timeOfStart = std::chrono::high_resolution_clock::now();
             timeOfLastMessage = timeOfStart;
-            iterationOfLastMessage = 0;
+            iterationOfLastMessage = startingIteration;
         }
         
         template<typename ValueType>

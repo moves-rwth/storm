@@ -101,7 +101,22 @@ namespace storm {
 
         template<typename ValueType>
         ValueType ceil(ValueType const& number);
-        
+
+        template<typename ValueType>
+        ValueType log(ValueType const& number);
+
+        template<typename ValueType>
+        ValueType log10(ValueType const& number);
+
+        template<typename ValueType>
+        ValueType mod(ValueType const& first, ValueType const& second);
+
+        template<typename ValueType>
+        ValueType numerator(ValueType const& number);
+
+        template<typename ValueType>
+        ValueType denominator(ValueType const& number);
+
         template<typename ValueType>
         std::string to_string(ValueType const& value);
     }
