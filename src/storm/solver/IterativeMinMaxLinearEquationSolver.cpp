@@ -701,13 +701,13 @@ namespace storm {
 
         template<typename ValueType>
         template<typename ImpreciseValueType>
-        std::enable_if<std::is_same<ValueType, ImpreciseValueType>::value, bool> IterativeMinMaxLinearEquationSolver<ValueType>::solveEquationsRationalSearchHelper(OptimizationDirection dir, std::vector<ValueType>& x, std::vector<ValueType> const& b) const {
+        std::enable_if<std::is_same<ValueType, ImpreciseValueType>::value, bool>::type IterativeMinMaxLinearEquationSolver<ValueType>::solveEquationsRationalSearchHelper(OptimizationDirection dir, std::vector<ValueType>& x, std::vector<ValueType> const& b) const {
 
         }
 
         template<typename ValueType>
         template<typename ImpreciseValueType>
-        std::enable_if<!std::is_same<ValueType, ImpreciseValueType>::value, bool> IterativeMinMaxLinearEquationSolver<ValueType>::solveEquationsRationalSearchHelper(OptimizationDirection dir, std::vector<ValueType>& x, std::vector<ValueType> const& b) const {
+        std::enable_if<!std::is_same<ValueType, ImpreciseValueType>::value, bool>::type IterativeMinMaxLinearEquationSolver<ValueType>::solveEquationsRationalSearchHelper(OptimizationDirection dir, std::vector<ValueType>& x, std::vector<ValueType> const& b) const {
             
         }
 

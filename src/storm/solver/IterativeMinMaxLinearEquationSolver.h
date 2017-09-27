@@ -73,9 +73,9 @@ namespace storm {
             static bool sharpen(storm::OptimizationDirection dir, uint64_t precision, storm::storage::SparseMatrix<storm::RationalNumber> const& A, std::vector<double> const& x, std::vector<storm::RationalNumber> const& b, std::vector<storm::RationalNumber>& tmp);
 
             template<typename ImpreciseValueType>
-            std::enable_if<std::is_same<ValueType, ImpreciseValueType>::value, bool> solveEquationsRationalSearchHelper(OptimizationDirection dir, std::vector<ValueType>& x, std::vector<ValueType> const& b) const;
+            std::enable_if<std::is_same<ValueType, ImpreciseValueType>::value, bool>::type solveEquationsRationalSearchHelper(OptimizationDirection dir, std::vector<ValueType>& x, std::vector<ValueType> const& b) const;
             template<typename ImpreciseValueType>
-            std::enable_if<!std::is_same<ValueType, ImpreciseValueType>::value, bool> solveEquationsRationalSearchHelper(OptimizationDirection dir, std::vector<ValueType>& x, std::vector<ValueType> const& b) const;
+            std::enable_if<!std::is_same<ValueType, ImpreciseValueType>::value, bool>::type solveEquationsRationalSearchHelper(OptimizationDirection dir, std::vector<ValueType>& x, std::vector<ValueType> const& b) const;
 
             void computeOptimalValueForRowGroup(uint_fast64_t group, OptimizationDirection dir, std::vector<ValueType>& x, std::vector<ValueType> const& b, uint_fast64_t* choice = nullptr) const;
             
