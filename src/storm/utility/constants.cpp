@@ -107,6 +107,11 @@ namespace storm {
         }
 
         template<>
+        double convertNumber(std::string const& value){
+            return carl::toDouble(carl::parse<storm::RationalNumber>(value));
+        }
+
+        template<>
         storm::storage::sparse::state_type convertNumber(long long const& number){
             return static_cast<storm::storage::sparse::state_type>(number);
         }
@@ -330,7 +335,7 @@ namespace storm {
             STORM_LOG_ASSERT(static_cast<carl::sint>(number) == number, "Rationalizing failed, because the number is too large.");
             return carl::rationalize<ClnRationalNumber>(static_cast<carl::sint>(number));
         }
-        
+
         template<>
         double convertNumber(ClnRationalNumber const& number) {
             return carl::toDouble(number);
@@ -544,8 +549,7 @@ namespace storm {
 
         template<>
         typename NumberTraits<GmpRationalNumber>::IntegerType trunc(GmpRationalNumber const& number) {
-            // FIXME: precision issue.
-            return typename NumberTraits<GmpRationalNumber>::IntegerType(static_cast<unsigned long int>(std::trunc(number.get_d())));
+            return carl::getNum(number) / carl::getDenom(number);
         }
 
         template<>

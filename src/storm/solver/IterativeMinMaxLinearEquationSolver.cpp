@@ -217,12 +217,12 @@ namespace storm {
                     solver->setMatrix(std::move(submatrix));
                 }
                 
-                // Potentially show progress.
-                this->showProgressIterative(iterations);
-                
                 // Update environment variables.
                 ++iterations;
                 status = updateStatusIfNotConverged(status, x, iterations, dir == storm::OptimizationDirection::Minimize ? SolverGuarantee::GreaterOrEqual : SolverGuarantee::LessOrEqual);
+
+                // Potentially show progress.
+                this->showProgressIterative(iterations);
             } while (status == Status::InProgress);
             
             reportStatus(status, iterations);
@@ -263,6 +263,10 @@ namespace storm {
             // Start by copying the requirements of the linear equation solver.
             MinMaxLinearEquationSolverRequirements requirements(this->linearEquationSolverFactory->getRequirements());
             
+            if (this->getSettings().getSolutionMethod() == IterativeMinMaxLinearEquationSolverSettings<ValueType>::SolutionMethod::ValueIteration) {
+                requirements.requireLowerBounds();
+            }
+            
             // Guide requirements by whether or not we force soundness.
             if (this->getSettings().getForceSoundness()) {
                 // Only add requirements for value iteration here as the policy iteration requirements are indifferent
@@ -277,6 +281,8 @@ namespace storm {
                         }
                     }
                 }
+                
+                requirements.requireBounds();
             }
             
             // 'Regular' requirements (even for non-sound solving techniques).
@@ -297,6 +303,8 @@ namespace storm {
 
         template<typename ValueType>
         typename IterativeMinMaxLinearEquationSolver<ValueType>::ValueIterationResult IterativeMinMaxLinearEquationSolver<ValueType>::performValueIteration(OptimizationDirection dir, std::vector<ValueType>*& currentX, std::vector<ValueType>*& newX, std::vector<ValueType> const& b, ValueType const& precision, bool relative, SolverGuarantee const& guarantee, uint64_t currentIterations) const {
+            
+            STORM_LOG_ASSERT(currentX != newX, "Vectors must not be aliased.");
             
             // Get handle to linear equation solver.
             storm::solver::LinearEquationSolver<ValueType> const& linearEquationSolver = *this->linEqSolverA;
@@ -320,18 +328,20 @@ namespace storm {
                     linearEquationSolver.multiplyAndReduce(dir, this->A->getRowGroupIndices(), *currentX, &b, *newX);
                 }
                 
+                std::cout << "position 4: " << (*currentX)[4] << " vs " << (*newX)[4] << std::endl;
+                
                 // Determine whether the method converged.
                 if (storm::utility::vector::equalModuloPrecision<ValueType>(*currentX, *newX, precision, relative)) {
                     status = Status::Converged;
                 }
                 
-                // Potentially show progress.
-                this->showProgressIterative(iterations);
-                
                 // Update environment variables.
                 std::swap(currentX, newX);
                 ++iterations;
                 status = updateStatusIfNotConverged(status, *currentX, iterations, guarantee);
+
+                // Potentially show progress.
+                this->showProgressIterative(iterations);
             }
             
             // Swap the pointers so that the output is always in currentX.
@@ -570,9 +580,6 @@ namespace storm {
                     }
                 }
                 
-                // Potentially show progress.
-                this->showProgressIterative(iterations);
-                
                 // Update environment variables.
                 ++iterations;
                 doConvergenceCheck = !doConvergenceCheck;
@@ -582,6 +589,9 @@ namespace storm {
                 if (upperStep) {
                     status = updateStatusIfNotConverged(status, *upperX, iterations, SolverGuarantee::GreaterOrEqual);
                 }
+
+                // Potentially show progress.
+                this->showProgressIterative(iterations);
             }
             
             reportStatus(status, iterations);
@@ -634,10 +644,10 @@ namespace storm {
                 
                 // If the value does not match the one in the values vector, the given vector is not a solution.
                 if (!comparator.isEqual(groupValue, *valueIt)) {
-                    std::cout << "group value for " << group << " is " << groupValue << " is not " << *valueIt << ", diff is " << (groupValue - *valueIt) << std::endl;
+                    std::cout << "offending group " << group << " : " << groupValue << " vs " << *valueIt << std::endl;
                     return false;
-                } else {
-                    std::cout << "group value for " << group << " is " << groupValue << " is actually " << *valueIt << std::endl;
+                } else if (group == 1) {
+                    std::cout << "val for group 1 is " << groupValue << " vs 227630345357/3221225472" << std::endl;
                 }
             }
             
@@ -649,12 +659,18 @@ namespace storm {
         template<typename RationalType, typename ImpreciseType>
         bool IterativeMinMaxLinearEquationSolver<ValueType>::sharpen(storm::OptimizationDirection dir, uint64_t precision, storm::storage::SparseMatrix<RationalType> const& A, std::vector<ImpreciseType> const& x, std::vector<RationalType> const& b, std::vector<RationalType>& tmp) {
             
-            for (uint64_t p = 1; p < precision; ++p) {
-                storm::utility::kwek_mehlhorn::sharpen(precision, x, tmp);
+            std::cout << "pre sharpen x[0] " << x[0] << ", is smaller? " << (x[0] < storm::utility::convertNumber<ImpreciseType>(std::string("227630345357/3221225472"))) << " with diff " << (x[0] - storm::utility::convertNumber<ImpreciseType>(std::string("227630345357/3221225472"))) << std::endl;
+            
+            storm::utility::kwek_mehlhorn::sharpen(precision, x, tmp);
 
-                if (IterativeMinMaxLinearEquationSolver<RationalType>::isSolution(dir, A, tmp, b)) {
-                    return true;
-                }
+            std::cout << "post sharpen x[0] " << tmp[0] << ", is smaller? " << (tmp[0] < storm::utility::convertNumber<RationalType>(std::string("227630345357/3221225472"))) << " with diff " << (tmp[0] - storm::utility::convertNumber<RationalType>(std::string("227630345357/3221225472"))) << std::endl;
+            
+            if (std::is_same<RationalType, ImpreciseType>::value) {
+                std::cout << "sharpen smaller? " << (tmp[0] < storm::utility::convertNumber<RationalType>(x[0])) << std::endl;
+            }
+
+            if (IterativeMinMaxLinearEquationSolver<RationalType>::isSolution(dir, A, tmp, b)) {
+                return true;
             }
             return false;
         }
@@ -769,10 +785,7 @@ namespace storm {
                 auto targetIt = auxiliaryRowGroupVector->begin();
                 for (auto it = impreciseX.begin(), ite = impreciseX.end(); it != ite; ++it, ++targetIt) {
                     *targetIt = storm::utility::convertNumber<ValueType>(*it);
-                    
-                    std::cout << "converting vector[" << std::distance(impreciseX.begin(), it) << "] from " << *it << " to " << *targetIt << std::endl;
                 }
-
                 
                 // Get rid of the superfluous data structures.
                 impreciseX = std::vector<ImpreciseType>();
@@ -810,11 +823,7 @@ namespace storm {
         template<typename RationalType>
         struct TemporaryHelper<RationalType, RationalType> {
             static std::vector<RationalType>* getFreeRational(std::vector<RationalType>& rationalX, std::vector<RationalType>*& currentX, std::vector<RationalType>*& newX) {
-                if (&rationalX == currentX) {
-                    return newX;
-                } else {
-                    return currentX;
-                }
+                return newX;
             }
 
             static void swapSolutions(std::vector<RationalType>& rationalX, std::vector<RationalType>*& rationalSolution, std::vector<RationalType>& x, std::vector<RationalType>*& currentX, std::vector<RationalType>*& newX) {
@@ -851,7 +860,7 @@ namespace storm {
                 // At this point, the result of the imprecise value iteration is stored in the (imprecise) current x.
                 
                 ++valueIterationInvocations;
-                STORM_LOG_TRACE("Completed " << valueIterationInvocations << " value iteration invocations, the last one with precision " << precision << ".");
+                STORM_LOG_TRACE("Completed " << valueIterationInvocations << " value iteration invocations, the last one with precision " << precision << " completed in " << result.iterations << " iterations.");
                 
                 // Count the iterations.
                 overallIterations += result.iterations;
@@ -865,7 +874,7 @@ namespace storm {
                 // Sharpen solution and place it in rationalX.
                 bool foundSolution = sharpen(dir, p, rationalA, *currentX, rationalB, *freeRational);
                 
-                // After sharpen, if a solution was found, it is contained in the current rational x.
+                // After sharpen, if a solution was found, it is contained in the free rational.
                 
                 if (foundSolution) {
                     status = Status::Converged;
@@ -873,7 +882,7 @@ namespace storm {
                     TemporaryHelper<RationalType, ImpreciseType>::swapSolutions(rationalX, freeRational, x, currentX, newX);
                 } else {
                     // Increase the precision.
-                    precision = precision / 10;
+                    precision = precision / 100;
                 }
             }
             

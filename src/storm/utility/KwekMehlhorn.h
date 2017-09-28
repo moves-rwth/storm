@@ -29,7 +29,7 @@ namespace storm {
             template<typename RationalType, typename ImpreciseType>
             std::pair<typename NumberTraits<RationalType>::IntegerType, typename NumberTraits<RationalType>::IntegerType> truncateToRational(ImpreciseType const& value, uint64_t precision) {
                 typedef typename NumberTraits<RationalType>::IntegerType IntegerType;
-                
+
                 IntegerType powerOfTen = storm::utility::pow(storm::utility::convertNumber<IntegerType>(10ull), precision);
                 IntegerType truncated = storm::utility::trunc<RationalType>(value * powerOfTen);
                 return std::make_pair(truncated, powerOfTen);
@@ -38,6 +38,7 @@ namespace storm {
             template<typename RationalType>
             std::pair<typename NumberTraits<RationalType>::IntegerType, typename NumberTraits<RationalType>::IntegerType> truncateToRational(double const& value, uint64_t precision) {
                 STORM_LOG_THROW(precision < 17, storm::exceptions::PrecisionExceededException, "Exceeded precision of double, consider switching to rational numbers.");
+                
                 double powerOfTen = std::pow(10, precision);
                 double truncated = storm::utility::trunc<double>(value * powerOfTen);
                 return std::make_pair(truncated, powerOfTen);
@@ -59,7 +60,13 @@ namespace storm {
                 for (uint64_t index = 0; index < input.size(); ++index) {
                     ImpreciseType integer = storm::utility::floor(input[index]);
                     ImpreciseType fraction = input[index] - integer;
-                    output[index] = storm::utility::convertNumber<RationalType>(integer) + findRational<RationalType>(precision, fraction);
+                    auto rational = findRational<RationalType>(precision, fraction);
+                    output[index] = storm::utility::convertNumber<RationalType>(integer) + rational;
+                    STORM_LOG_ASSERT(storm::utility::isZero(fraction) || !storm::utility::isZero(rational), "Found zero rational for non-zero fraction " << fraction << ".");
+                    STORM_LOG_ASSERT(rational >= storm::utility::zero<RationalType>(), "Expected non-negative rational.");
+                    if (std::is_same<RationalType, ImpreciseType>::value) {
+                        STORM_LOG_ASSERT(output[index] >= input[index], "Sharpen decreased value from " << input[index] << " to " << output[index] << ".");
+                    }
                 }
             }
             

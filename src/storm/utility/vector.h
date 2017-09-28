@@ -797,7 +797,10 @@ namespace storm {
                     }
                 } else {
                     T diff = val1 - val2;
-                    if (storm::utility::abs(diff) > precision) return false;
+                    if (storm::utility::abs(diff) > precision) {
+                        std::cout << "diff " << storm::utility::abs(diff) << " vs precision " << precision << std::endl;
+                        return false;
+                    }
                 }
                 return true;
             }
@@ -815,7 +818,9 @@ namespace storm {
                     }
                 } else {
                     double diff = val1 - val2;
-                    if (storm::utility::abs(diff) > precision) return false;
+                    if (storm::utility::abs(diff) > precision) {
+                        return false;
+                    }
                 }
                 return true;
             }
@@ -833,8 +838,12 @@ namespace storm {
             bool equalModuloPrecision(std::vector<T> const& vectorLeft, std::vector<T> const& vectorRight, T const& precision, bool relativeError) {
                 STORM_LOG_ASSERT(vectorLeft.size() == vectorRight.size(), "Lengths of vectors does not match.");
                 
-                for (uint_fast64_t i = 0; i < vectorLeft.size(); ++i) {
-                    if (!equalModuloPrecision(vectorLeft[i], vectorRight[i], precision, relativeError)) {
+                auto leftIt = vectorLeft.begin();
+                auto leftIte = vectorLeft.end();
+                auto rightIt = vectorRight.begin();
+                for (; leftIt != leftIte; ++leftIt, ++rightIt) {
+                    if (!equalModuloPrecision(*leftIt, *rightIt, precision, relativeError)) {
+                        std::cout << "offending position " << std::distance(vectorLeft.begin(), leftIt) << std::endl;
                         return false;
                     }
                 }
