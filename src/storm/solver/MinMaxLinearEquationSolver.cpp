@@ -189,7 +189,7 @@ namespace storm {
         
         template<typename ValueType>
         void MinMaxLinearEquationSolverFactory<ValueType>::setMinMaxMethod(MinMaxMethod const& newMethod) {
-            STORM_LOG_WARN_COND(!(std::is_same<ValueType, storm::RationalNumber>::value) || newMethod == MinMaxMethod::PolicyIteration, "The selected solution method does not guarantee exact result. Consider using policy iteration.");
+            STORM_LOG_WARN_COND(!(std::is_same<ValueType, storm::RationalNumber>::value) || newMethod == MinMaxMethod::PolicyIteration, "The selected solution method does not guarantee exact results. Consider using policy iteration.");
             method = newMethod;
         }
         

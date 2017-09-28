@@ -22,6 +22,9 @@ namespace storm {
     namespace storage {
         template<typename IndexType, typename ValueType> class MatrixEntry;
     }
+    
+    template<typename RationalType>
+    struct NumberTraits;
 
     namespace utility {
 
@@ -109,17 +112,17 @@ namespace storm {
         ValueType log10(ValueType const& number);
 
         template<typename ValueType>
-        ValueType trunc(ValueType const& number);
+        typename NumberTraits<ValueType>::IntegerType trunc(ValueType const& number);
 
-        template<typename ValueType>
-        ValueType mod(ValueType const& first, ValueType const& second);
+        template<typename RationalType>
+        typename NumberTraits<RationalType>::IntegerType numerator(RationalType const& number);
 
-        template<typename ValueType>
-        ValueType numerator(ValueType const& number);
+        template<typename RationalType>
+        typename NumberTraits<RationalType>::IntegerType denominator(RationalType const& number);
 
-        template<typename ValueType>
-        ValueType denominator(ValueType const& number);
-
+        template<typename IntegerType>
+        IntegerType mod(IntegerType const& first, IntegerType const& second);
+        
         template<typename ValueType>
         std::string to_string(ValueType const& value);
     }

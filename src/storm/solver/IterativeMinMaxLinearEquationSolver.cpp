@@ -6,6 +6,8 @@
 #include "storm/settings/modules/GeneralSettings.h"
 #include "storm/settings/modules/MinMaxEquationSolverSettings.h"
 
+#include "storm/utility/KwekMehlhorn.h"
+
 #include "storm/utility/vector.h"
 #include "storm/utility/macros.h"
 #include "storm/exceptions/InvalidSettingsException.h"
@@ -632,7 +634,10 @@ namespace storm {
                 
                 // If the value does not match the one in the values vector, the given vector is not a solution.
                 if (!comparator.isEqual(groupValue, *valueIt)) {
+                    std::cout << "group value for " << group << " is " << groupValue << " is not " << *valueIt << ", diff is " << (groupValue - *valueIt) << std::endl;
                     return false;
+                } else {
+                    std::cout << "group value for " << group << " is " << groupValue << " is actually " << *valueIt << std::endl;
                 }
             }
             
@@ -641,63 +646,13 @@ namespace storm {
         }
 
         template<typename ValueType>
-        std::pair<ValueType, ValueType> findRational(ValueType const& alpha, ValueType const& beta, ValueType const& gamma, ValueType const& delta) {
-            ValueType alphaDivBeta = alpha / beta;
-            ValueType alphaDivBetaFloor = storm::utility::floor(alphaDivBeta);
-            ValueType gammaDivDeltaFloor = storm::utility::floor<ValueType>(gamma / delta);
+        template<typename RationalType, typename ImpreciseType>
+        bool IterativeMinMaxLinearEquationSolver<ValueType>::sharpen(storm::OptimizationDirection dir, uint64_t precision, storm::storage::SparseMatrix<RationalType> const& A, std::vector<ImpreciseType> const& x, std::vector<RationalType> const& b, std::vector<RationalType>& tmp) {
             
-            if (alphaDivBetaFloor == gammaDivDeltaFloor && !storm::utility::isInteger(alphaDivBeta)) {
-                std::pair<ValueType, ValueType> subresult = findRational(delta, storm::utility::mod(gamma, delta), beta, storm::utility::mod(alpha, beta));
-                auto result = std::make_pair(alphaDivBetaFloor * subresult.first + subresult.second, subresult.first);
-                
-                return result;
-            } else {
-                auto result = std::make_pair(storm::utility::ceil(alphaDivBeta), storm::utility::one<ValueType>());
-                return result;
-            }
-        }
-        
-        template<typename PreciseValueType, typename ImpreciseValueType>
-        PreciseValueType truncateToRational(ImpreciseValueType const& value, uint64_t precision) {
-            STORM_LOG_ASSERT(precision < 16, "Truncating via double is not sound.");
-            PreciseValueType powerOfTen = storm::utility::pow(storm::utility::convertNumber<PreciseValueType>(10), precision);
-            PreciseValueType truncated = storm::utility::trunc<PreciseValueType>(value * powerOfTen);
-            return truncated / powerOfTen;
-        }
-
-        template<typename PreciseValueType>
-        PreciseValueType truncateToRational(double const& value, uint64_t precision) {
-            STORM_LOG_ASSERT(precision < 16, "Truncating via double is not sound.");
-            auto powerOfTen = std::pow(10, precision);
-            double truncated = std::trunc(value * powerOfTen);
-            return storm::utility::convertNumber<PreciseValueType>(truncated) / storm::utility::convertNumber<PreciseValueType>(powerOfTen);
-        }
-
-        template<typename PreciseValueType, typename ImpreciseValueType>
-        PreciseValueType findRational(uint64_t precision, ImpreciseValueType const& value) {
-            PreciseValueType truncatedFraction = truncateToRational<PreciseValueType>(value, precision);
-
-            PreciseValueType ten = storm::utility::convertNumber<PreciseValueType>(10);
-            PreciseValueType powerOfTen = storm::utility::pow<PreciseValueType>(ten, precision);
-            PreciseValueType multiplier = powerOfTen / storm::utility::denominator(truncatedFraction);
-            PreciseValueType numerator = storm::utility::numerator(truncatedFraction) * multiplier;
-            
-            std::pair<PreciseValueType, PreciseValueType> result = findRational<PreciseValueType>(numerator, powerOfTen, numerator + storm::utility::one<PreciseValueType>(), powerOfTen);
-            return result.first / result.second;
-        }
-
-        template<typename ValueType>
-        template<typename PreciseValueType, typename ImpreciseValueType>
-        bool IterativeMinMaxLinearEquationSolver<ValueType>::sharpen(storm::OptimizationDirection dir, uint64_t precision, storm::storage::SparseMatrix<PreciseValueType> const& A, std::vector<ImpreciseValueType> const& x, std::vector<PreciseValueType> const& b, std::vector<PreciseValueType>& tmp) {
             for (uint64_t p = 1; p < precision; ++p) {
-                for (uint64_t state = 0; state < x.size(); ++state) {
-                    PreciseValueType rationalX = storm::utility::convertNumber<PreciseValueType, ImpreciseValueType>(x[state]);
-                    PreciseValueType integer = storm::utility::floor(rationalX);
-                    PreciseValueType fraction = rationalX - integer;
-                    
-                    tmp[state] = integer + findRational<PreciseValueType>(p, storm::utility::convertNumber<ImpreciseValueType, PreciseValueType>(fraction));
-                }
-                if (IterativeMinMaxLinearEquationSolver<PreciseValueType>::isSolution(dir, A, tmp, b)) {
+                storm::utility::kwek_mehlhorn::sharpen(precision, x, tmp);
+
+                if (IterativeMinMaxLinearEquationSolver<RationalType>::isSolution(dir, A, tmp, b)) {
                     return true;
                 }
             }
@@ -710,8 +665,8 @@ namespace storm {
         }
 
         template<typename ValueType>
-        template<typename ImpreciseValueType>
-        typename std::enable_if<std::is_same<ValueType, ImpreciseValueType>::value && !NumberTraits<ValueType>::IsExact, bool>::type IterativeMinMaxLinearEquationSolver<ValueType>::solveEquationsRationalSearchHelper(OptimizationDirection dir, std::vector<ValueType>& x, std::vector<ValueType> const& b) const {
+        template<typename ImpreciseType>
+        typename std::enable_if<std::is_same<ValueType, ImpreciseType>::value && !NumberTraits<ValueType>::IsExact, bool>::type IterativeMinMaxLinearEquationSolver<ValueType>::solveEquationsRationalSearchHelper(OptimizationDirection dir, std::vector<ValueType>& x, std::vector<ValueType> const& b) const {
 
             // Create a rational representation of the input so we can check for a proper solution later.
             storm::storage::SparseMatrix<storm::RationalNumber> rationalA = this->A->template toValueType<storm::RationalNumber>();
@@ -727,52 +682,25 @@ namespace storm {
                 auxiliaryRowGroupVector = std::make_unique<std::vector<ValueType>>(this->A->getRowGroupCount());
             }
             
-            std::vector<ValueType>* newX = auxiliaryRowGroupVector.get();
-            std::vector<ValueType>* currentX = &x;
+            // Forward the call to the core rational search routine.
+            bool converged = solveEquationsRationalSearchHelper<storm::RationalNumber, ImpreciseType>(dir, *this, rationalA, rationalX, rationalB, *this->A, x, b, *auxiliaryRowGroupVector);
             
-            Status status = Status::InProgress;
-            uint64_t overallIterations = 0;
-            ValueType precision = this->getSettings().getPrecision();
-            this->startMeasureProgress();
-            while (status == Status::InProgress && overallIterations < this->getSettings().getMaximalNumberOfIterations()) {
-                // Perform value iteration with the current precision.
-                ValueIterationResult result = performValueIteration(dir, currentX, newX, b, precision, this->getSettings().getRelativeTerminationCriterion(), SolverGuarantee::LessOrEqual, overallIterations);
-                
-                // Count the iterations.
-                overallIterations += result.iterations;
-                
-                // Try to sharpen the result.
-                uint64_t p = storm::utility::convertNumber<uint64_t>(storm::utility::ceil(storm::utility::log10<storm::RationalNumber>(storm::utility::one<storm::RationalNumber>() / storm::utility::convertNumber<storm::RationalNumber>(precision))));
-                bool foundSolution = sharpen(dir, p, rationalA, *currentX, rationalB, rationalX);
-                
-                if (foundSolution) {
-                    status = Status::Converged;
-                    
-                    auto rationalIt = rationalX.begin();
-                    for (auto it = x.begin(), ite = x.end(); it != ite; ++it, ++rationalIt) {
-                        *it = storm::utility::convertNumber<ValueType>(*rationalIt);
-                    }
-                } else {
-                    precision = precision / 10;
-                }
+            // Translate back rational result to imprecise result.
+            auto targetIt = x.begin();
+            for (auto it = rationalX.begin(), ite = rationalX.end(); it != ite; ++it, ++targetIt) {
+                *targetIt = storm::utility::convertNumber<ValueType>(*it);
             }
-            
-            if (status == Status::InProgress && overallIterations == this->getSettings().getMaximalNumberOfIterations()) {
-                status = Status::MaximalIterationsExceeded;
-            }
-            
-            reportStatus(status, overallIterations);
-            
+
             if (!this->isCachingEnabled()) {
-                clearCache();
+                this->clearCache();
             }
             
-            return status == Status::Converged || status == Status::TerminatedEarly;
+            return converged;
         }
         
         template<typename ValueType>
-        template<typename ImpreciseValueType>
-        typename std::enable_if<std::is_same<ValueType, ImpreciseValueType>::value && NumberTraits<ValueType>::IsExact, bool>::type IterativeMinMaxLinearEquationSolver<ValueType>::solveEquationsRationalSearchHelper(OptimizationDirection dir, std::vector<ValueType>& x, std::vector<ValueType> const& b) const {
+        template<typename ImpreciseType>
+        typename std::enable_if<std::is_same<ValueType, ImpreciseType>::value && NumberTraits<ValueType>::IsExact, bool>::type IterativeMinMaxLinearEquationSolver<ValueType>::solveEquationsRationalSearchHelper(OptimizationDirection dir, std::vector<ValueType>& x, std::vector<ValueType> const& b) const {
             
             if (!this->linEqSolverA) {
                 this->linEqSolverA = this->linearEquationSolverFactory->create(*this->A);
@@ -783,95 +711,168 @@ namespace storm {
                 auxiliaryRowGroupVector = std::make_unique<std::vector<ValueType>>(this->A->getRowGroupCount());
             }
             
-            std::vector<ValueType>* newX = auxiliaryRowGroupVector.get();
-            std::vector<ValueType>* currentX = &x;
-            
-            Status status = Status::InProgress;
-            uint64_t overallIterations = 0;
-            ValueType precision = this->getSettings().getPrecision();
-            this->startMeasureProgress();
-            while (status == Status::InProgress && overallIterations < this->getSettings().getMaximalNumberOfIterations()) {
-                // Perform value iteration with the current precision.
-                ValueIterationResult result = performValueIteration(dir, currentX, newX, b, precision, this->getSettings().getRelativeTerminationCriterion(), SolverGuarantee::LessOrEqual, overallIterations);
-                
-                // Count the iterations.
-                overallIterations += result.iterations;
-                
-                // Try to sharpen the result.
-                uint64_t p = storm::utility::convertNumber<uint64_t>(storm::utility::ceil(storm::utility::log10<ValueType>(storm::utility::one<ValueType>() / precision)));
-                bool foundSolution = sharpen(dir, p, *this->A, *currentX, b, *newX);
-                
-                if (foundSolution) {
-                    status = Status::Converged;
-                    
-                    // Swap the result in place.
-                    if (&x == currentX) {
-                        std::swap(*currentX, *newX);
-                    }
-                } else {
-                    precision = precision / 10;
-                }
-            }
+            // Forward the call to the core rational search routine.
+            bool converged = solveEquationsRationalSearchHelper<ValueType, ImpreciseType>(dir, *this, *this->A, x, b, *this->A, *auxiliaryRowGroupVector, b, x);
 
-            if (status == Status::InProgress && overallIterations == this->getSettings().getMaximalNumberOfIterations()) {
-                status = Status::MaximalIterationsExceeded;
-            }
-            
-            reportStatus(status, overallIterations);
-            
             if (!this->isCachingEnabled()) {
-                clearCache();
+                this->clearCache();
             }
             
-            return status == Status::Converged || status == Status::TerminatedEarly;
+            return converged;
         }
 
         template<typename ValueType>
-        template<typename ImpreciseValueType>
-        typename std::enable_if<!std::is_same<ValueType, ImpreciseValueType>::value, bool>::type IterativeMinMaxLinearEquationSolver<ValueType>::solveEquationsRationalSearchHelper(OptimizationDirection dir, std::vector<ValueType>& x, std::vector<ValueType> const& b) const {
-            // Create an imprecise solver with caching enabled.
-            IterativeMinMaxLinearEquationSolver<ImpreciseValueType> impreciseSolver(std::make_unique<storm::solver::GeneralLinearEquationSolverFactory<ImpreciseValueType>>());
-            impreciseSolver.setMatrix(this->A->template toValueType<ImpreciseValueType>());
-            impreciseSolver.createLinearEquationSolver();
-            impreciseSolver.setCachingEnabled(true);
+        template<typename ImpreciseType>
+        typename std::enable_if<!std::is_same<ValueType, ImpreciseType>::value, bool>::type IterativeMinMaxLinearEquationSolver<ValueType>::solveEquationsRationalSearchHelper(OptimizationDirection dir, std::vector<ValueType>& x, std::vector<ValueType> const& b) const {
+            // Translate A to its imprecise version.
+            storm::storage::SparseMatrix<ImpreciseType> impreciseA = this->A->template toValueType<ImpreciseType>();
             
-            std::vector<ImpreciseValueType> impreciseX(x.size());
+            // Translate x to its imprecise version.
+            std::vector<ImpreciseType> impreciseX(x.size());
             {
                 std::vector<ValueType> tmp(x.size());
                 this->createLowerBoundsVector(tmp);
                 auto targetIt = impreciseX.begin();
                 for (auto sourceIt = tmp.begin(); targetIt != impreciseX.end(); ++targetIt, ++sourceIt) {
-                    *targetIt = storm::utility::convertNumber<ImpreciseValueType, ValueType>(*sourceIt);
+                    *targetIt = storm::utility::convertNumber<ImpreciseType, ValueType>(*sourceIt);
                 }
             }
-            std::vector<ImpreciseValueType> impreciseTmpX(x.size());
-            std::vector<ImpreciseValueType> impreciseB(b.size());
+            
+            // Create temporary storage for an imprecise x.
+            std::vector<ImpreciseType> impreciseTmpX(x.size());
+            
+            // Translate b to its imprecise version.
+            std::vector<ImpreciseType> impreciseB(b.size());
             auto targetIt = impreciseB.begin();
             for (auto sourceIt = b.begin(); targetIt != impreciseB.end(); ++targetIt, ++sourceIt) {
-                *targetIt = storm::utility::convertNumber<ImpreciseValueType, ValueType>(*sourceIt);
+                *targetIt = storm::utility::convertNumber<ImpreciseType, ValueType>(*sourceIt);
             }
             
-            std::vector<ImpreciseValueType>* currentX = &impreciseX;
-            std::vector<ImpreciseValueType>* newX = &impreciseTmpX;
+            // Create imprecise solver from the imprecise data.
+            IterativeMinMaxLinearEquationSolver<ImpreciseType> impreciseSolver(std::make_unique<storm::solver::GeneralLinearEquationSolverFactory<ImpreciseType>>());
+            impreciseSolver.setMatrix(impreciseA);
+            impreciseSolver.createLinearEquationSolver();
+            impreciseSolver.setCachingEnabled(true);
             
+            bool converged = false;
+            try {
+                // Forward the call to the core rational search routine.
+                converged = solveEquationsRationalSearchHelper<ValueType, ImpreciseType>(dir, impreciseSolver, *this->A, x, b, impreciseA, impreciseX, impreciseB, impreciseTmpX);
+            } catch (storm::exceptions::PrecisionExceededException const& e) {
+                STORM_LOG_WARN("Precision of double was exceeded, trying to recover by switching to rational arithmetic.");
+                
+                if (!auxiliaryRowGroupVector) {
+                    auxiliaryRowGroupVector = std::make_unique<std::vector<ValueType>>(this->A->getRowGroupCount());
+                }
+
+                // Translate the imprecise value iteration result to the one we are going to use from now on.
+                auto targetIt = auxiliaryRowGroupVector->begin();
+                for (auto it = impreciseX.begin(), ite = impreciseX.end(); it != ite; ++it, ++targetIt) {
+                    *targetIt = storm::utility::convertNumber<ValueType>(*it);
+                    
+                    std::cout << "converting vector[" << std::distance(impreciseX.begin(), it) << "] from " << *it << " to " << *targetIt << std::endl;
+                }
+
+                
+                // Get rid of the superfluous data structures.
+                impreciseX = std::vector<ImpreciseType>();
+                impreciseTmpX = std::vector<ImpreciseType>();
+                impreciseB = std::vector<ImpreciseType>();
+                impreciseA = storm::storage::SparseMatrix<ImpreciseType>();
+
+                if (!this->linEqSolverA) {
+                    this->linEqSolverA = this->linearEquationSolverFactory->create(*this->A);
+                    this->linEqSolverA->setCachingEnabled(true);
+                }
+                
+                // Forward the call to the core rational search routine, but now with our value type as the imprecise value type.
+                converged = solveEquationsRationalSearchHelper<ValueType, ValueType>(dir, *this, *this->A, x, b, *this->A, *auxiliaryRowGroupVector, b, x);
+            }
+            
+            if (!this->isCachingEnabled()) {
+                this->clearCache();
+            }
+            
+            return converged;
+        }
+
+        template<typename RationalType, typename ImpreciseType>
+        struct TemporaryHelper {
+            static std::vector<RationalType>* getFreeRational(std::vector<RationalType>& rationalX, std::vector<ImpreciseType>*& currentX, std::vector<ImpreciseType>*& newX) {
+                return &rationalX;
+            }
+            
+            static void swapSolutions(std::vector<RationalType>& rationalX, std::vector<RationalType>*& rationalSolution, std::vector<ImpreciseType>& x, std::vector<ImpreciseType>*& currentX, std::vector<ImpreciseType>*& newX) {
+                // Nothing to do.
+            }
+        };
+        
+        template<typename RationalType>
+        struct TemporaryHelper<RationalType, RationalType> {
+            static std::vector<RationalType>* getFreeRational(std::vector<RationalType>& rationalX, std::vector<RationalType>*& currentX, std::vector<RationalType>*& newX) {
+                if (&rationalX == currentX) {
+                    return newX;
+                } else {
+                    return currentX;
+                }
+            }
+
+            static void swapSolutions(std::vector<RationalType>& rationalX, std::vector<RationalType>*& rationalSolution, std::vector<RationalType>& x, std::vector<RationalType>*& currentX, std::vector<RationalType>*& newX) {
+                if (&rationalX == rationalSolution) {
+                    // In this case, the rational solution is in place.
+                    
+                    // However, since the rational solution is no alias to current x, the imprecise solution is stored
+                    // in current x and and rational x is not an alias to x, we can swap the contents of currentX to x.
+                    std::swap(x, *currentX);
+                } else {
+                    // Still, we may assume that the rational solution is not current x and is therefore new x.
+                    std::swap(rationalX, *rationalSolution);
+                    std::swap(x, *currentX);
+                }
+            }
+        };
+        
+        template<typename ValueType>
+        template<typename RationalType, typename ImpreciseType>
+        bool IterativeMinMaxLinearEquationSolver<ValueType>::solveEquationsRationalSearchHelper(OptimizationDirection dir, IterativeMinMaxLinearEquationSolver<ImpreciseType> const& impreciseSolver, storm::storage::SparseMatrix<RationalType> const& rationalA, std::vector<RationalType>& rationalX, std::vector<RationalType> const& rationalB, storm::storage::SparseMatrix<ImpreciseType> const& A, std::vector<ImpreciseType>& x, std::vector<ImpreciseType> const& b, std::vector<ImpreciseType>& tmpX) const {
+            
+            std::vector<ImpreciseType>* currentX = &x;
+            std::vector<ImpreciseType>* newX = &tmpX;
+
             Status status = Status::InProgress;
             uint64_t overallIterations = 0;
+            uint64_t valueIterationInvocations = 0;
             ValueType precision = this->getSettings().getPrecision();
             impreciseSolver.startMeasureProgress();
             while (status == Status::InProgress && overallIterations < this->getSettings().getMaximalNumberOfIterations()) {
                 // Perform value iteration with the current precision.
-                typename IterativeMinMaxLinearEquationSolver<ImpreciseValueType>::ValueIterationResult result = impreciseSolver.performValueIteration(dir, currentX, newX, impreciseB, storm::utility::convertNumber<ImpreciseValueType, ValueType>(precision), this->getSettings().getRelativeTerminationCriterion(), SolverGuarantee::LessOrEqual, overallIterations);
+                typename IterativeMinMaxLinearEquationSolver<ImpreciseType>::ValueIterationResult result = impreciseSolver.performValueIteration(dir, currentX, newX, b, storm::utility::convertNumber<ImpreciseType, ValueType>(precision), this->getSettings().getRelativeTerminationCriterion(), SolverGuarantee::LessOrEqual, overallIterations);
+                
+                // At this point, the result of the imprecise value iteration is stored in the (imprecise) current x.
+                
+                ++valueIterationInvocations;
+                STORM_LOG_TRACE("Completed " << valueIterationInvocations << " value iteration invocations, the last one with precision " << precision << ".");
                 
                 // Count the iterations.
                 overallIterations += result.iterations;
                 
                 // Try to sharpen the result.
                 uint64_t p = storm::utility::convertNumber<uint64_t>(storm::utility::ceil(storm::utility::log10<ValueType>(storm::utility::one<ValueType>() / precision)));
-                bool foundSolution = sharpen(dir, p, *this->A, *currentX, b, x);
+                
+                // Make sure that currentX and rationalX are not aliased.
+                std::vector<RationalType>* freeRational = TemporaryHelper<RationalType, ImpreciseType>::getFreeRational(rationalX, currentX, newX);
+                
+                // Sharpen solution and place it in rationalX.
+                bool foundSolution = sharpen(dir, p, rationalA, *currentX, rationalB, *freeRational);
+                
+                // After sharpen, if a solution was found, it is contained in the current rational x.
                 
                 if (foundSolution) {
                     status = Status::Converged;
+                    
+                    TemporaryHelper<RationalType, ImpreciseType>::swapSolutions(rationalX, freeRational, x, currentX, newX);
                 } else {
+                    // Increase the precision.
                     precision = precision / 10;
                 }
             }
@@ -879,13 +880,8 @@ namespace storm {
             if (status == Status::InProgress && overallIterations == this->getSettings().getMaximalNumberOfIterations()) {
                 status = Status::MaximalIterationsExceeded;
             }
-
             
             reportStatus(status, overallIterations);
-            
-            if (!this->isCachingEnabled()) {
-                clearCache();
-            }
             
             return status == Status::Converged || status == Status::TerminatedEarly;
         }
@@ -1019,7 +1015,7 @@ namespace storm {
         }
         
         template<typename ValueType>
-        void IterativeMinMaxLinearEquationSolver<ValueType>::reportStatus(Status status, uint64_t iterations) const {
+        void IterativeMinMaxLinearEquationSolver<ValueType>::reportStatus(Status status, uint64_t iterations) {
             switch (status) {
                 case Status::Converged: STORM_LOG_INFO("Iterative solver converged after " << iterations << " iterations."); break;
                 case Status::TerminatedEarly: STORM_LOG_INFO("Iterative solver terminated early after " << iterations << " iterations."); break;
