@@ -255,6 +255,11 @@ namespace storm {
             // Start by copying the requirements of the linear equation solver.
             MinMaxLinearEquationSolverRequirements requirements(this->linearEquationSolverFactory->getRequirements());
             
+            // In case we perform value iteration and need to retrieve a scheduler, end components are forbidden
+            if (this->getSettings().getSolutionMethod() == IterativeMinMaxLinearEquationSolverSettings<ValueType>::SolutionMethod::ValueIteration && isTrackSchedulerSet()) {
+                requirements.requireNoEndComponents();
+            }
+            
             // Guide requirements by whether or not we force soundness.
             if (this->getSettings().getForceSoundness()) {
                 // Only add requirements for value iteration here as the policy iteration requirements are indifferent
