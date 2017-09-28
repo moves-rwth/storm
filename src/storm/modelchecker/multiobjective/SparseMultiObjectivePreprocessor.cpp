@@ -35,6 +35,7 @@ namespace storm {
                     data.objectives.push_back(std::make_shared<Objective<ValueType>>());
                     data.objectives.back()->originalFormula = subFormula;
                     data.finiteRewardCheckObjectives.resize(data.objectives.size(), false);
+                    data.upperResultBoundObjectives.resize(data.objectives.size(), false);
                     if (data.objectives.back()->originalFormula->isOperatorFormula()) {
                         preprocessOperatorFormula(data.objectives.back()->originalFormula->asOperatorFormula(), data);
                     } else {
@@ -68,6 +69,16 @@ namespace storm {
                     obj->formula->gatherReferencedRewardModels(relevantRewardModels);
                 }
                 preprocessedModel->restrictRewardModels(relevantRewardModels);
+                
+                // Compute upper result bounds wherever this is necessarry
+                for (auto const& objIndex : data.upperResultBoundObjectives) {
+                    auto const& formula = data.objectives[objIndex]->formula->asRewardOperatorFormula();
+                    auto const& rewModel = preprocessedModel->getRewardModel(formula.getRewardModelName());
+                //    BaierUpperRewardBoundsComputer<ValueType> baier(submatrix, choiceRewards, oneStepTargetProbabilities);
+                //    hintInformation.upperResultBound = baier.computeUpperBound();
+                }
+
+                    
                 
                 // Build the actual result
                 return buildResult(originalModel, originalFormula, data, preprocessedModel, backwardTransitions);
@@ -330,13 +341,12 @@ namespace storm {
                 auto totalRewardFormula = std::make_shared<storm::logic::TotalRewardFormula>();
                 data.objectives.back()->formula = std::make_shared<storm::logic::RewardOperatorFormula>(totalRewardFormula, auxRewardModelName, opInfo);
                 data.finiteRewardCheckObjectives.set(data.objectives.size() - 1, true);
+                data.upperResultBoundObjectives.set(data.objectives.size() - 1, true);
                 
                 if (formula.isReachabilityRewardFormula()) {
                     assert(optionalRewardModelName.is_initialized());
                     data.tasks.push_back(std::make_shared<SparseMultiObjectivePreprocessorReachRewToTotalRewTask<SparseModelType>>(data.objectives.back(), relevantStatesFormula, optionalRewardModelName.get()));
-                    data.finiteRewardCheckObjectives.set(data.objectives.size() - 1);
                 } else if (formula.isReachabilityTimeFormula() && data.originalModel.isOfType(storm::models::ModelType::MarkovAutomaton)) {
-                    data.finiteRewardCheckObjectives.set(data.objectives.size() - 1);
                     data.tasks.push_back(std::make_shared<SparseMultiObjectivePreprocessorReachTimeToTotalRewTask<SparseModelType>>(data.objectives.back(), relevantStatesFormula));
                 } else {
                     STORM_LOG_THROW(false, storm::exceptions::InvalidPropertyException, "The formula " << formula << " neither considers reachability probabilities nor reachability rewards " << (data.originalModel.isOfType(storm::models::ModelType::MarkovAutomaton) ?  "nor reachability time" : "") << ". This is not supported.");
@@ -358,6 +368,7 @@ namespace storm {
                 auto totalRewardFormula = std::make_shared<storm::logic::TotalRewardFormula>();
                 data.objectives.back()->formula = std::make_shared<storm::logic::RewardOperatorFormula>(totalRewardFormula, *optionalRewardModelName, opInfo);
                 data.finiteRewardCheckObjectives.set(data.objectives.size() - 1, true);
+                data.upperResultBoundObjectives.set(data.objectives.size() - 1, true);
             }
             
             template<typename SparseModelType>

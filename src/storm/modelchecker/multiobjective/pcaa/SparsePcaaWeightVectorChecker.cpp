@@ -19,6 +19,7 @@
 #include "storm/exceptions/UnexpectedException.h"
 #include "storm/exceptions/NotImplementedException.h"
 #include "storm/exceptions/NotSupportedException.h"
+#include "storm/exceptions/UncheckedRequirementException.h"
 
 namespace storm {
     namespace modelchecker {
@@ -92,39 +93,17 @@ namespace storm {
             void SparsePcaaWeightVectorChecker<SparseModelType>::check(std::vector<ValueType> const& weightVector) {
                 checkHasBeenCalled = true;
                 STORM_LOG_INFO("Invoked WeightVectorChecker with weights " << std::endl << "\t" << storm::utility::vector::toString(storm::utility::vector::convertNumericVector<double>(weightVector)));
+                
                 std::vector<ValueType> weightedRewardVector(transitionMatrix.getRowCount(), storm::utility::zero<ValueType>());
-                boost::optional<ValueType> weightedLowerResultBound = storm::utility::zero<ValueType>();
-                boost::optional<ValueType> weightedUpperResultBound = storm::utility::zero<ValueType>();
                 for (auto objIndex : objectivesWithNoUpperTimeBound) {
-                    auto const& obj = this->objectives[objIndex];
                     if (storm::solver::minimize(this->objectives[objIndex].formula->getOptimalityType())) {
-                        if (obj.lowerResultBound && weightedUpperResultBound) {
-                            weightedUpperResultBound.get() -= weightVector[objIndex] * obj.lowerResultBound.get();
-                        } else {
-                            weightedUpperResultBound = boost::none;
-                        }
-                        if (obj.upperResultBound && weightedLowerResultBound) {
-                            weightedLowerResultBound.get() -= weightVector[objIndex] * obj.upperResultBound.get();
-                        } else {
-                            weightedLowerResultBound = boost::none;
-                        }
                         storm::utility::vector::addScaledVector(weightedRewardVector, actionRewards[objIndex], -weightVector[objIndex]);
                     } else {
-                        if (obj.lowerResultBound && weightedLowerResultBound) {
-                            weightedLowerResultBound.get() += weightVector[objIndex] * obj.lowerResultBound.get();
-                        } else {
-                            weightedLowerResultBound = boost::none;
-                        }
-                        if (obj.upperResultBound && weightedUpperResultBound) {
-                            weightedUpperResultBound.get() += weightVector[objIndex] * obj.upperResultBound.get();
-                        } else {
-                            weightedUpperResultBound = boost::none;
-                        }
                         storm::utility::vector::addScaledVector(weightedRewardVector, actionRewards[objIndex], weightVector[objIndex]);
                     }
                 }
                 
-                unboundedWeightedPhase(weightedRewardVector, weightedLowerResultBound, weightedUpperResultBound);
+                unboundedWeightedPhase(weightedRewardVector, weightVector);
                 
                 unboundedIndividualPhase(weightVector);
                 // Only invoke boundedPhase if necessarry, i.e., if there is at least one objective with a time bound
@@ -180,7 +159,28 @@ namespace storm {
             }
             
             template <class SparseModelType>
-            void SparsePcaaWeightVectorChecker<SparseModelType>::unboundedWeightedPhase(std::vector<ValueType> const& weightedRewardVector, boost::optional<ValueType> const& lowerResultBound, boost::optional<ValueType> const& upperResultBound) {
+            boost::optional<typename SparseModelType::ValueType> SparsePcaaWeightVectorChecker<SparseModelType>::computeWeightedResultBound(bool lower, std::vector<ValueType> const& weightVector, storm::storage::BitVector const& objectiveFilter) const {
+                
+                ValueType result = storm::utility::zero<ValueType>();
+                for (auto const& objIndex : objectiveFilter) {
+                    boost::optional<ValueType> const& objBound = (lower == storm::solver::minimize(this->objectives[objIndex].formula->getOptimalityType())) ? this->objectives[objIndex].upperResultBound : this->objectives[objIndex].lowerResultBound;
+                    if (objBound) {
+                        if (storm::solver::minimize(this->objectives[objIndex].formula->getOptimalityType())) {
+                            result -= objBound.get() * weightVector[objIndex];
+                        } else {
+                            result += objBound.get() * weightVector[objIndex];
+                        }
+                    } else {
+                        // If there is an objective without the corresponding bound we can not give guarantees for the weighted sum
+                        return boost::none;
+                    }
+                }
+                return result;
+            }
+
+            
+            template <class SparseModelType>
+            void SparsePcaaWeightVectorChecker<SparseModelType>::unboundedWeightedPhase(std::vector<ValueType> const& weightedRewardVector, std::vector<ValueType> const& weightVector) {
                 
                 if (this->objectivesWithNoUpperTimeBound.empty() || !storm::utility::vector::hasNonZeroEntry(weightedRewardVector)) {
                     this->weightedResult = std::vector<ValueType>(transitionMatrix.getRowGroupCount(), storm::utility::zero<ValueType>());
@@ -194,14 +194,22 @@ namespace storm {
                 
                 storm::solver::GeneralMinMaxLinearEquationSolverFactory<ValueType> solverFactory;
                 std::unique_ptr<storm::solver::MinMaxLinearEquationSolver<ValueType>> solver = solverFactory.create(ecQuotient->matrix);
-                solver->setOptimizationDirection(storm::solver::OptimizationDirection::Maximize);
                 solver->setTrackScheduler(true);
-                if (lowerResultBound) {
-                    solver->setLowerBound(*lowerResultBound);
+                auto req = solver->getRequirements(storm::solver::EquationSystemType::StochasticShortestPath);
+                req.clearNoEndComponents();
+                boost::optional<ValueType> lowerBound = computeWeightedResultBound(true, weightVector, objectivesWithNoUpperTimeBound);
+                if (lowerBound) {
+                    solver->setLowerBound(lowerBound.get());
+                    req.clearLowerBounds();
                 }
-                if (upperResultBound) {
-                    solver->setUpperBound(*upperResultBound);
+                boost::optional<ValueType> upperBound = computeWeightedResultBound(false, weightVector, objectivesWithNoUpperTimeBound);
+                if (upperBound) {
+                    solver->setUpperBound(upperBound.get());
+                    req.clearUpperBounds();
                 }
+                STORM_LOG_THROW(req.empty(), storm::exceptions::UncheckedRequirementException, "At least one requirement of the MinMaxSolver was not met.");
+                solver->setRequirementsChecked(true);
+                solver->setOptimizationDirection(storm::solver::OptimizationDirection::Maximize);
                 
                 // Use the (0...0) vector as initial guess for the solution.
                 std::fill(ecQuotient->auxStateValues.begin(), ecQuotient->auxStateValues.end(), storm::utility::zero<ValueType>());
@@ -273,12 +281,16 @@ namespace storm {
 
                                // Now solve the resulting equation system.
                                std::unique_ptr<storm::solver::LinearEquationSolver<ValueType>> solver = linearEquationSolverFactory.create(std::move(submatrix));
+                               auto req = solver->getRequirements();
                                if (obj.lowerResultBound) {
+                                   req.clearLowerBounds();
                                    solver->setLowerBound(*obj.lowerResultBound);
                                }
                                if (obj.upperResultBound) {
                                    solver->setUpperBound(*obj.upperResultBound);
+                                   req.clearUpperBounds();
                                }
+                               STORM_LOG_THROW(req.empty(), storm::exceptions::UncheckedRequirementException, "At least one requirement of the LinearEquationSolver was not met.");
                                solver->solveEquations(x, b);
 
                                // Set the result for this objective accordingly

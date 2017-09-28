@@ -13,6 +13,7 @@
 #include "storm/exceptions/InvalidOperationException.h"
 #include "storm/exceptions/InvalidPropertyException.h"
 #include "storm/exceptions/UnexpectedException.h"
+#include "storm/exceptions/UncheckedRequirementException.h"
 
 namespace storm {
     namespace modelchecker {
@@ -72,7 +73,7 @@ namespace storm {
                 
                 // Initialize a minMaxSolver to compute an optimal scheduler (w.r.t. PS) for each epoch
                 // No EC elimination is necessary as we assume non-zenoness
-                std::unique_ptr<MinMaxSolverData> minMax = initMinMaxSolver(PS);
+                std::unique_ptr<MinMaxSolverData> minMax = initMinMaxSolver(PS, weightVector);
                 
                 // create a linear equation solver for the model induced by the optimal choice vector.
                 // the solver will be updated whenever the optimal choice vector has changed.
@@ -294,13 +295,27 @@ namespace storm {
             }
             
             template <class SparseMaModelType>
-            std::unique_ptr<typename SparseMaPcaaWeightVectorChecker<SparseMaModelType>::MinMaxSolverData> SparseMaPcaaWeightVectorChecker<SparseMaModelType>::initMinMaxSolver(SubModel const& PS) const {
+            std::unique_ptr<typename SparseMaPcaaWeightVectorChecker<SparseMaModelType>::MinMaxSolverData> SparseMaPcaaWeightVectorChecker<SparseMaModelType>::initMinMaxSolver(SubModel const& PS, std::vector<ValueType> const& weightVector) const {
                 std::unique_ptr<MinMaxSolverData> result(new MinMaxSolverData());
                 storm::solver::GeneralMinMaxLinearEquationSolverFactory<ValueType> minMaxSolverFactory;
                 result->solver = minMaxSolverFactory.create(PS.toPS);
-                result->solver->setOptimizationDirection(storm::solver::OptimizationDirection::Maximize);
                 result->solver->setTrackScheduler(true);
                 result->solver->setCachingEnabled(true);
+                auto req = result->solver->getRequirements(storm::solver::EquationSystemType::StochasticShortestPath);
+                req.clearNoEndComponents();
+                boost::optional<ValueType> lowerBound = this->computeWeightedResultBound(true, weightVector, storm::storage::BitVector(weightVector.size(), true));
+                if (lowerBound) {
+                    result->solver->setLowerBound(lowerBound.get());
+                    req.clearLowerBounds();
+                }
+                boost::optional<ValueType> upperBound = this->computeWeightedResultBound(false, weightVector, storm::storage::BitVector(weightVector.size(), true));
+                if (upperBound) {
+                    result->solver->setUpperBound(upperBound.get());
+                    req.clearUpperBounds();
+                }
+                STORM_LOG_THROW(req.empty(), storm::exceptions::UncheckedRequirementException, "At least one requirement of the MinMaxSolver was not met.");
+                result->solver->setRequirementsChecked(true);
+                result->solver->setOptimizationDirection(storm::solver::OptimizationDirection::Maximize);
                 
                 result->b.resize(PS.getNumberOfChoices());
                 

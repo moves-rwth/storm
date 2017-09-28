@@ -41,6 +41,9 @@ namespace storm {
                     // Indices of the objectives that require a check for finite reward
                     storm::storage::BitVector finiteRewardCheckObjectives;
                     
+                    // Indices of the objectives for which we need to compute an upper bound for the result
+                    storm::storage::BitVector upperResultBoundObjectives;
+                    
                     std::string memoryLabelPrefix;
                     std::string rewardModelNamePrefix;
                     

@@ -117,7 +117,7 @@ namespace storm {
                 /*!
                  * Initializes the data for the MinMax solver
                  */
-                std::unique_ptr<MinMaxSolverData> initMinMaxSolver(SubModel const& PS) const;
+                std::unique_ptr<MinMaxSolverData> initMinMaxSolver(SubModel const& PS, std::vector<ValueType> const& weightVector) const;
                 
                 /*!
                  * Initializes the data for the LinEq solver
