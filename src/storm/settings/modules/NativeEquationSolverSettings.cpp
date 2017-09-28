@@ -120,6 +120,7 @@ namespace storm {
                     case NativeEquationSolverSettings::LinearEquationMethod::WalkerChae: out << "walkerchae"; break;
                     case NativeEquationSolverSettings::LinearEquationMethod::Power: out << "power"; break;
                 }
+                return out;
             }
             
         } // namespace modules
