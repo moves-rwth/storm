@@ -51,6 +51,13 @@ namespace storm {
                 bool isVerboseSet() const;
 
                 /*!
+                 * Retrieves the delay for printing information about the exploration progress.
+                 *
+                 * @return The desired delay in seconds. If 0, no information about the progress shall be printed.
+                 */
+                uint64_t getShowProgressDelay() const;
+                
+                /*!
                  * Retrieves the precision to use for numerical operations.
                  *
                  * @return The precision to use for numerical operations.
@@ -84,13 +91,6 @@ namespace storm {
                  * @return True iff the option was set.
                  */
                 bool isParametricSet() const;
-
-                /*!
-                 * Retrieves whether a min/max equation solving technique has been set.
-                 *
-                 * @return True iff an equation solving technique has been set.
-                 */
-                bool isMinMaxEquationSolvingTechniqueSet() const;
                 
                 /*!
                  * Retrieves whether the option enabling exact model checking is set.
@@ -98,6 +98,13 @@ namespace storm {
                  * @return True iff the option was set.
                  */
                 bool isExactSet() const;
+                
+                /*!
+                 * Retrieves whether the option forcing soundnet is set.
+                 *
+                 * @return True iff the option was set.
+                 */
+                bool isSoundSet() const;
 
                 bool check() const override;
                 void finalize() override;
@@ -114,6 +121,8 @@ namespace storm {
                 static const std::string versionOptionName;
                 static const std::string verboseOptionName;
                 static const std::string verboseOptionShortName;
+                static const std::string showProgressOptionName;
+                static const std::string showProgressOptionShortName;
                 static const std::string precisionOptionName;
                 static const std::string precisionOptionShortName;
                 static const std::string configOptionName;
@@ -121,8 +130,8 @@ namespace storm {
                 static const std::string bisimulationOptionName;
                 static const std::string bisimulationOptionShortName;
                 static const std::string parametricOptionName;
-
                 static const std::string exactOptionName;
+                static const std::string soundOptionName;
             };
 
         } // namespace modules

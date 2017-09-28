@@ -142,38 +142,6 @@ TEST(GmmxxLinearEquationSolver, bicgstab) {
     ASSERT_LT(std::abs(x[2] - (-1)), storm::settings::getModule<storm::settings::modules::GmmxxEquationSolverSettings>().getPrecision());
 }
 
-TEST(GmmxxLinearEquationSolver, jacobi) {
-    ASSERT_NO_THROW(storm::storage::SparseMatrixBuilder<double> builder);
-    storm::storage::SparseMatrixBuilder<double> builder;
-    ASSERT_NO_THROW(builder.addNextValue(0, 0, 4));
-    ASSERT_NO_THROW(builder.addNextValue(0, 1, 2));
-    ASSERT_NO_THROW(builder.addNextValue(0, 2, -1));
-    ASSERT_NO_THROW(builder.addNextValue(1, 0, 1));
-    ASSERT_NO_THROW(builder.addNextValue(1, 1, -5));
-    ASSERT_NO_THROW(builder.addNextValue(1, 2, 2));
-    ASSERT_NO_THROW(builder.addNextValue(2, 0, -1));
-    ASSERT_NO_THROW(builder.addNextValue(2, 1, 2));
-    ASSERT_NO_THROW(builder.addNextValue(2, 2, 4));
-
-    storm::storage::SparseMatrix<double> A;
-    ASSERT_NO_THROW(A = builder.build());
-    
-    std::vector<double> x(3);
-    std::vector<double> b = {11, -16, 1};
-    
-    storm::solver::GmmxxLinearEquationSolver<double> solver(A);
-    auto settings = solver.getSettings();
-    settings.setSolutionMethod(storm::solver::GmmxxLinearEquationSolverSettings<double>::SolutionMethod::Jacobi);
-    settings.setPrecision(1e-6);
-    settings.setMaximalNumberOfIterations(10000);
-    settings.setPreconditioner(storm::solver::GmmxxLinearEquationSolverSettings<double>::Preconditioner::None);
-    solver.setSettings(settings);
-    ASSERT_NO_THROW(solver.solveEquations(x, b));
-    ASSERT_LT(std::abs(x[0] - 1), storm::settings::getModule<storm::settings::modules::GmmxxEquationSolverSettings>().getPrecision());
-    ASSERT_LT(std::abs(x[1] - 3), storm::settings::getModule<storm::settings::modules::GmmxxEquationSolverSettings>().getPrecision());
-    ASSERT_LT(std::abs(x[2] - (-1)), storm::settings::getModule<storm::settings::modules::GmmxxEquationSolverSettings>().getPrecision());
-}
-
 TEST(GmmxxLinearEquationSolver, gmresilu) {
     ASSERT_NO_THROW(storm::storage::SparseMatrixBuilder<double> builder);
     storm::storage::SparseMatrixBuilder<double> builder;

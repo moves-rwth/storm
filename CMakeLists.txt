@@ -386,9 +386,7 @@ string(REGEX REPLACE "^[0-9]+\\.[0-9]+\\.[0-9]+\\-[0-9]+\\-[a-z0-9]+\\-(.*)" "\\
 	
 # now check whether the git version lookup failed
 if (STORM_VERSION_MAJOR MATCHES "NOTFOUND")
-	set(STORM_VERSION_MAJOR 1)
-	set(STORM_VERSION_MINOR 0)
-	set(STORM_VERSION_PATCH 2)
+	include(version.cmake)
 	set(STORM_VERSION_GIT_HASH "")
 	set(STORM_VERSION_COMMITS_AHEAD 0)
 	set(STORM_VERSION_DIRTY boost::none)

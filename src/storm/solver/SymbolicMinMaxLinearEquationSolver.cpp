@@ -78,28 +78,39 @@ namespace storm {
         }
 
         template<storm::dd::DdType DdType, typename ValueType>
-        SymbolicMinMaxLinearEquationSolver<DdType, ValueType>::SymbolicMinMaxLinearEquationSolver(storm::dd::Add<DdType, ValueType> const& A, storm::dd::Bdd<DdType> const& allRows, storm::dd::Bdd<DdType> const& illegalMask, std::set<storm::expressions::Variable> const& rowMetaVariables, std::set<storm::expressions::Variable> const& columnMetaVariables, std::set<storm::expressions::Variable> const& choiceVariables, std::vector<std::pair<storm::expressions::Variable, storm::expressions::Variable>> const& rowColumnMetaVariablePairs, std::unique_ptr<SymbolicLinearEquationSolverFactory<DdType, ValueType>>&& linearEquationSolverFactory, SymbolicMinMaxLinearEquationSolverSettings<ValueType> const& settings) : A(A), allRows(allRows), illegalMaskAdd(illegalMask.ite(A.getDdManager().getConstant(storm::utility::infinity<ValueType>()), A.getDdManager().template getAddZero<ValueType>())), rowMetaVariables(rowMetaVariables), columnMetaVariables(columnMetaVariables), choiceVariables(choiceVariables), rowColumnMetaVariablePairs(rowColumnMetaVariablePairs), linearEquationSolverFactory(std::move(linearEquationSolverFactory)), settings(settings) {
+        SymbolicMinMaxLinearEquationSolver<DdType, ValueType>::SymbolicMinMaxLinearEquationSolver(SymbolicMinMaxLinearEquationSolverSettings<ValueType> const& settings) : settings(settings), requirementsChecked(false) {
             // Intentionally left empty.
         }
         
         template<storm::dd::DdType DdType, typename ValueType>
-        storm::dd::Add<DdType, ValueType>  SymbolicMinMaxLinearEquationSolver<DdType, ValueType>::solveEquations(bool minimize, storm::dd::Add<DdType, ValueType> const& x, storm::dd::Add<DdType, ValueType> const& b) const {
+        SymbolicMinMaxLinearEquationSolver<DdType, ValueType>::SymbolicMinMaxLinearEquationSolver(storm::dd::Add<DdType, ValueType> const& A, storm::dd::Bdd<DdType> const& allRows, storm::dd::Bdd<DdType> const& illegalMask, std::set<storm::expressions::Variable> const& rowMetaVariables, std::set<storm::expressions::Variable> const& columnMetaVariables, std::set<storm::expressions::Variable> const& choiceVariables, std::vector<std::pair<storm::expressions::Variable, storm::expressions::Variable>> const& rowColumnMetaVariablePairs, std::unique_ptr<SymbolicLinearEquationSolverFactory<DdType, ValueType>>&& linearEquationSolverFactory, SymbolicMinMaxLinearEquationSolverSettings<ValueType> const& settings) : A(A), allRows(allRows), illegalMaskAdd(illegalMask.ite(A.getDdManager().getConstant(storm::utility::infinity<ValueType>()), A.getDdManager().template getAddZero<ValueType>())), rowMetaVariables(rowMetaVariables), columnMetaVariables(columnMetaVariables), choiceVariables(choiceVariables), rowColumnMetaVariablePairs(rowColumnMetaVariablePairs), linearEquationSolverFactory(std::move(linearEquationSolverFactory)), settings(settings), requirementsChecked(false) {
+            // Intentionally left empty.
+        }
+        
+        template<storm::dd::DdType DdType, typename ValueType>
+        storm::dd::Add<DdType, ValueType>  SymbolicMinMaxLinearEquationSolver<DdType, ValueType>::solveEquations(storm::solver::OptimizationDirection const& dir, storm::dd::Add<DdType, ValueType> const& x, storm::dd::Add<DdType, ValueType> const& b) const {
+            STORM_LOG_WARN_COND_DEBUG(this->isRequirementsCheckedSet(), "The requirements of the solver have not been marked as checked. Please provide the appropriate check or mark the requirements as checked (if applicable).");
             switch (this->getSettings().getSolutionMethod()) {
                 case SymbolicMinMaxLinearEquationSolverSettings<ValueType>::SolutionMethod::ValueIteration:
-                    return solveEquationsValueIteration(minimize, x, b);
+                    return solveEquationsValueIteration(dir, x, b);
                     break;
                 case SymbolicMinMaxLinearEquationSolverSettings<ValueType>::SolutionMethod::PolicyIteration:
-                    return solveEquationsPolicyIteration(minimize, x, b);
+                    return solveEquationsPolicyIteration(dir, x, b);
                     break;
             }
         }
         
         template<storm::dd::DdType DdType, typename ValueType>
-        storm::dd::Add<DdType, ValueType>  SymbolicMinMaxLinearEquationSolver<DdType, ValueType>::solveEquationsValueIteration(bool minimize, storm::dd::Add<DdType, ValueType> const& x, storm::dd::Add<DdType, ValueType> const& b) const {
+        storm::dd::Add<DdType, ValueType>  SymbolicMinMaxLinearEquationSolver<DdType, ValueType>::solveEquationsValueIteration(storm::solver::OptimizationDirection const& dir, storm::dd::Add<DdType, ValueType> const& x, storm::dd::Add<DdType, ValueType> const& b) const {
             // Set up the environment.
             storm::dd::Add<DdType, ValueType> xCopy = x;
             uint_fast64_t iterations = 0;
             bool converged = false;
+            
+            // If we were given an initial scheduler, we take its solution as the starting point.
+            if (this->hasInitialScheduler()) {
+                xCopy = solveEquationsWithScheduler(this->getInitialScheduler(), xCopy, b);
+            }
             
             while (!converged && iterations < this->settings.getMaximalNumberOfIterations()) {
                 // Compute tmp = A * x + b
@@ -107,7 +118,7 @@ namespace storm {
                 storm::dd::Add<DdType, ValueType> tmp = this->A.multiplyMatrix(xCopyAsColumn, this->columnMetaVariables);
                 tmp += b;
                 
-                if (minimize) {
+                if (dir == storm::solver::OptimizationDirection::Minimize) {
                     tmp += illegalMaskAdd;
                     tmp = tmp.minAbstract(this->choiceVariables);
                 } else {
@@ -132,33 +143,52 @@ namespace storm {
         }
         
         template<storm::dd::DdType DdType, typename ValueType>
-        storm::dd::Add<DdType, ValueType>  SymbolicMinMaxLinearEquationSolver<DdType, ValueType>::solveEquationsPolicyIteration(bool minimize, storm::dd::Add<DdType, ValueType> const& x, storm::dd::Add<DdType, ValueType> const& b) const {
+        storm::dd::Add<DdType, ValueType>  SymbolicMinMaxLinearEquationSolver<DdType, ValueType>::solveEquationsWithScheduler(storm::dd::Bdd<DdType> const& scheduler, storm::dd::Add<DdType, ValueType> const& x, storm::dd::Add<DdType, ValueType> const& b) const {
+            
+            std::unique_ptr<SymbolicLinearEquationSolver<DdType, ValueType>> solver = linearEquationSolverFactory->create(this->allRows, this->rowMetaVariables, this->columnMetaVariables, this->rowColumnMetaVariablePairs);
+            storm::dd::Add<DdType, ValueType> diagonal = (storm::utility::dd::getRowColumnDiagonal<DdType>(x.getDdManager(), this->rowColumnMetaVariablePairs) && this->allRows).template toAdd<ValueType>();
+            return solveEquationsWithScheduler(*solver, scheduler, x, b, diagonal);
+        }
+        
+        template<storm::dd::DdType DdType, typename ValueType>
+        storm::dd::Add<DdType, ValueType>  SymbolicMinMaxLinearEquationSolver<DdType, ValueType>::solveEquationsWithScheduler(SymbolicLinearEquationSolver<DdType, ValueType>& solver, storm::dd::Bdd<DdType> const& scheduler, storm::dd::Add<DdType, ValueType> const& x, storm::dd::Add<DdType, ValueType> const& b, storm::dd::Add<DdType, ValueType> const& diagonal) const {
+            
+            // Apply scheduler to the matrix and vector.
+            storm::dd::Add<DdType, ValueType> schedulerA = diagonal - scheduler.ite(this->A, scheduler.getDdManager().template getAddZero<ValueType>()).sumAbstract(this->choiceVariables);
+            storm::dd::Add<DdType, ValueType> schedulerB = scheduler.ite(b, scheduler.getDdManager().template getAddZero<ValueType>()).sumAbstract(this->choiceVariables);
+
+            // Set the matrix for the solver.
+            solver.setMatrix(schedulerA);
+            
+            // Solve for the value of the scheduler.
+            storm::dd::Add<DdType, ValueType> schedulerX = solver.solveEquations(x, schedulerB);
+
+            return schedulerX;
+        }
+        
+        template<storm::dd::DdType DdType, typename ValueType>
+        storm::dd::Add<DdType, ValueType>  SymbolicMinMaxLinearEquationSolver<DdType, ValueType>::solveEquationsPolicyIteration(storm::solver::OptimizationDirection const& dir, storm::dd::Add<DdType, ValueType> const& x, storm::dd::Add<DdType, ValueType> const& b) const {
             // Set up the environment.
             storm::dd::Add<DdType, ValueType> currentSolution = x;
             storm::dd::Add<DdType, ValueType> diagonal = (storm::utility::dd::getRowColumnDiagonal<DdType>(x.getDdManager(), this->rowColumnMetaVariablePairs) && this->allRows).template toAdd<ValueType>();
             uint_fast64_t iterations = 0;
             bool converged = false;
         
-            // Pick arbitrary initial scheduler.
-            storm::dd::Bdd<DdType> scheduler = this->A.sumAbstract(this->columnMetaVariables).maxAbstractRepresentative(this->choiceVariables);
-            
-            // And apply it to the matrix and vector.
-            storm::dd::Add<DdType, ValueType> schedulerA = diagonal - scheduler.ite(this->A, scheduler.getDdManager().template getAddZero<ValueType>()).sumAbstract(this->choiceVariables);
-            storm::dd::Add<DdType, ValueType> schedulerB = scheduler.ite(b, scheduler.getDdManager().template getAddZero<ValueType>()).sumAbstract(this->choiceVariables);
+            // Choose initial scheduler.
+            storm::dd::Bdd<DdType> scheduler = this->hasInitialScheduler() ? this->getInitialScheduler() : this->A.sumAbstract(this->columnMetaVariables).maxAbstractRepresentative(this->choiceVariables);
             
             // Initialize linear equation solver.
-            std::unique_ptr<SymbolicLinearEquationSolver<DdType, ValueType>> linearEquationSolver = linearEquationSolverFactory->create(schedulerA, this->allRows, this->rowMetaVariables, this->columnMetaVariables, this->rowColumnMetaVariablePairs);
+            std::unique_ptr<SymbolicLinearEquationSolver<DdType, ValueType>> linearEquationSolver = linearEquationSolverFactory->create(this->allRows, this->rowMetaVariables, this->columnMetaVariables, this->rowColumnMetaVariablePairs);
             
             // Iteratively solve and improve the scheduler.
             while (!converged && iterations < this->settings.getMaximalNumberOfIterations()) {
-                // Solve for the value of the scheduler.
-                storm::dd::Add<DdType, ValueType> schedulerX = linearEquationSolver->solveEquations(currentSolution, schedulerB);
+                storm::dd::Add<DdType, ValueType> schedulerX = solveEquationsWithScheduler(*linearEquationSolver, scheduler, currentSolution, b, diagonal);
                 
                 // Policy improvement step.
                 storm::dd::Add<DdType, ValueType> choiceValues = this->A.multiplyMatrix(schedulerX.swapVariables(this->rowColumnMetaVariablePairs), this->columnMetaVariables) + b;
                 
                 storm::dd::Bdd<DdType> nextScheduler;
-                if (minimize) {
+                if (dir == storm::solver::OptimizationDirection::Minimize) {
                     choiceValues += illegalMaskAdd;
                     nextScheduler = choiceValues.minAbstractRepresentative(this->choiceVariables);
                 } else {
@@ -171,9 +201,6 @@ namespace storm {
                 // Set up next iteration.
                 if (!converged) {
                     scheduler = nextScheduler;
-                    schedulerA = diagonal - scheduler.ite(this->A, scheduler.getDdManager().template getAddZero<ValueType>()).sumAbstract(this->choiceVariables);
-                    linearEquationSolver->setMatrix(schedulerA);
-                    schedulerB = scheduler.ite(b, scheduler.getDdManager().template getAddZero<ValueType>()).sumAbstract(this->choiceVariables);
                 }
                 
                 currentSolution = schedulerX;
@@ -190,7 +217,7 @@ namespace storm {
         }
         
         template<storm::dd::DdType DdType, typename ValueType>
-        storm::dd::Add<DdType, ValueType> SymbolicMinMaxLinearEquationSolver<DdType, ValueType>::multiply(bool minimize, storm::dd::Add<DdType, ValueType> const& x, storm::dd::Add<DdType, ValueType> const* b, uint_fast64_t n) const {
+        storm::dd::Add<DdType, ValueType> SymbolicMinMaxLinearEquationSolver<DdType, ValueType>::multiply(storm::solver::OptimizationDirection const& dir, storm::dd::Add<DdType, ValueType> const& x, storm::dd::Add<DdType, ValueType> const* b, uint_fast64_t n) const {
             storm::dd::Add<DdType, ValueType> xCopy = x;
             
             // Perform matrix-vector multiplication while the bound is met.
@@ -201,7 +228,7 @@ namespace storm {
                     xCopy += *b;
                 }
                 
-                if (minimize) {
+                if (dir == storm::solver::OptimizationDirection::Minimize) {
                     // This is a hack and only here because of the lack of a suitable minAbstract/maxAbstract function
                     // that can properly deal with a restriction of the choices.
                     xCopy += illegalMaskAdd;
@@ -215,15 +242,65 @@ namespace storm {
         }
         
         template<storm::dd::DdType DdType, typename ValueType>
+        void SymbolicMinMaxLinearEquationSolver<DdType, ValueType>::setInitialScheduler(storm::dd::Bdd<DdType> const& scheduler) {
+            this->initialScheduler = scheduler;
+        }
+        
+        template<storm::dd::DdType DdType, typename ValueType>
+        storm::dd::Bdd<DdType> const& SymbolicMinMaxLinearEquationSolver<DdType, ValueType>::getInitialScheduler() const {
+            return initialScheduler.get();
+        }
+        
+        template<storm::dd::DdType DdType, typename ValueType>
+        bool SymbolicMinMaxLinearEquationSolver<DdType, ValueType>::hasInitialScheduler() const {
+            return static_cast<bool>(initialScheduler);
+        }
+        
+        template<storm::dd::DdType DdType, typename ValueType>
+        MinMaxLinearEquationSolverRequirements SymbolicMinMaxLinearEquationSolver<DdType, ValueType>::getRequirements(EquationSystemType const& equationSystemType, boost::optional<storm::solver::OptimizationDirection> const& direction) const {
+            MinMaxLinearEquationSolverRequirements requirements;
+            
+            if (equationSystemType == EquationSystemType::UntilProbabilities) {
+                if (this->getSettings().getSolutionMethod() == SymbolicMinMaxLinearEquationSolverSettings<ValueType>::SolutionMethod::PolicyIteration) {
+                    if (!direction || direction.get() == OptimizationDirection::Maximize) {
+                        requirements.requireValidInitialScheduler();
+                    }
+                }
+            } else if (equationSystemType == EquationSystemType::ReachabilityRewards) {
+                if (!direction || direction.get() == OptimizationDirection::Minimize) {
+                    requirements.requireValidInitialScheduler();
+                }
+            }
+            
+            return requirements;
+        }
+        
+        template<storm::dd::DdType DdType, typename ValueType>
+        void SymbolicMinMaxLinearEquationSolver<DdType, ValueType>::setRequirementsChecked(bool value) {
+            this->requirementsChecked = value;
+        }
+        
+        template<storm::dd::DdType DdType, typename ValueType>
+        bool SymbolicMinMaxLinearEquationSolver<DdType, ValueType>::isRequirementsCheckedSet() const {
+            return this->requirementsChecked;
+        }
+        
+        template<storm::dd::DdType DdType, typename ValueType>
         SymbolicMinMaxLinearEquationSolverSettings<ValueType> const& SymbolicMinMaxLinearEquationSolver<DdType, ValueType>::getSettings() const {
             return settings;
         }
 
         template<storm::dd::DdType DdType, typename ValueType>
+        MinMaxLinearEquationSolverRequirements SymbolicMinMaxLinearEquationSolverFactory<DdType, ValueType>::getRequirements(EquationSystemType const& equationSystemType, boost::optional<storm::solver::OptimizationDirection> const& direction) const {
+            std::unique_ptr<storm::solver::SymbolicMinMaxLinearEquationSolver<DdType, ValueType>> solver = this->create();
+            return solver->getRequirements(equationSystemType, direction);
+        }
+        
+        template<storm::dd::DdType DdType, typename ValueType>
         std::unique_ptr<storm::solver::SymbolicMinMaxLinearEquationSolver<DdType, ValueType>> SymbolicGeneralMinMaxLinearEquationSolverFactory<DdType, ValueType>::create(storm::dd::Add<DdType, ValueType> const& A, storm::dd::Bdd<DdType> const& allRows, storm::dd::Bdd<DdType> const& illegalMask, std::set<storm::expressions::Variable> const& rowMetaVariables, std::set<storm::expressions::Variable> const& columnMetaVariables, std::set<storm::expressions::Variable> const& choiceVariables, std::vector<std::pair<storm::expressions::Variable, storm::expressions::Variable>> const& rowColumnMetaVariablePairs) const {
             return std::make_unique<SymbolicMinMaxLinearEquationSolver<DdType, ValueType>>(A, allRows, illegalMask, rowMetaVariables, columnMetaVariables, choiceVariables, rowColumnMetaVariablePairs, std::make_unique<GeneralSymbolicLinearEquationSolverFactory<DdType, ValueType>>(), settings);
         }
-            
+                
         template<storm::dd::DdType DdType, typename ValueType>
         SymbolicMinMaxLinearEquationSolverSettings<ValueType>& SymbolicGeneralMinMaxLinearEquationSolverFactory<DdType, ValueType>::getSettings() {
             return settings;
@@ -232,6 +309,11 @@ namespace storm {
         template<storm::dd::DdType DdType, typename ValueType>
         SymbolicMinMaxLinearEquationSolverSettings<ValueType> const& SymbolicGeneralMinMaxLinearEquationSolverFactory<DdType, ValueType>::getSettings() const {
             return settings;
+        }
+        
+        template<storm::dd::DdType DdType, typename ValueType>
+        std::unique_ptr<storm::solver::SymbolicMinMaxLinearEquationSolver<DdType, ValueType>> SymbolicGeneralMinMaxLinearEquationSolverFactory<DdType, ValueType>::create() const {
+            return std::make_unique<SymbolicMinMaxLinearEquationSolver<DdType, ValueType>>(settings);
         }
         
         template class SymbolicMinMaxLinearEquationSolverSettings<double>;

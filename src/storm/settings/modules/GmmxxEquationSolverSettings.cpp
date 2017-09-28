@@ -23,7 +23,6 @@ namespace storm {
             const std::string GmmxxEquationSolverSettings::maximalIterationsOptionName = "maxiter";
             const std::string GmmxxEquationSolverSettings::maximalIterationsOptionShortName = "i";
             const std::string GmmxxEquationSolverSettings::precisionOptionName = "precision";
-            const std::string GmmxxEquationSolverSettings::absoluteOptionName = "absolute";
 
             GmmxxEquationSolverSettings::GmmxxEquationSolverSettings() : ModuleSettings(moduleName) {
                 std::vector<std::string> methods = {"bicgstab", "qmr", "gmres", "jacobi"};
@@ -38,8 +37,6 @@ namespace storm {
                 this->addOption(storm::settings::OptionBuilder(moduleName, maximalIterationsOptionName, false, "The maximal number of iterations to perform before iterative solving is aborted.").setShortName(maximalIterationsOptionShortName).addArgument(storm::settings::ArgumentBuilder::createUnsignedIntegerArgument("count", "The maximal iteration count.").setDefaultValueUnsignedInteger(20000).build()).build());
                 
                 this->addOption(storm::settings::OptionBuilder(moduleName, precisionOptionName, false, "The precision used for detecting convergence of iterative methods.").addArgument(storm::settings::ArgumentBuilder::createDoubleArgument("value", "The precision to achieve.").setDefaultValueDouble(1e-06).addValidatorDouble(ArgumentValidatorFactory::createDoubleRangeValidatorExcluding(0.0, 1.0)).build()).build());
-                
-                this->addOption(storm::settings::OptionBuilder(moduleName, absoluteOptionName, false, "Sets whether the relative or the absolute error is considered for detecting convergence.").build());
             }
             
             bool GmmxxEquationSolverSettings::isLinearEquationSystemMethodSet() const {
@@ -54,8 +51,6 @@ namespace storm {
                     return GmmxxEquationSolverSettings::LinearEquationMethod::Qmr;
                 } else if (linearEquationSystemTechniqueAsString == "gmres") {
                     return GmmxxEquationSolverSettings::LinearEquationMethod::Gmres;
-                } else if (linearEquationSystemTechniqueAsString == "jacobi") {
-                    return GmmxxEquationSolverSettings::LinearEquationMethod::Jacobi;
                 }
                 STORM_LOG_THROW(false, storm::exceptions::IllegalArgumentValueException, "Unknown solution technique '" << linearEquationSystemTechniqueAsString << "' selected.");
             }
@@ -99,18 +94,10 @@ namespace storm {
             double GmmxxEquationSolverSettings::getPrecision() const {
                 return this->getOption(precisionOptionName).getArgumentByName("value").getValueAsDouble();
             }
-            
-            bool GmmxxEquationSolverSettings::isConvergenceCriterionSet() const {
-                return this->getOption(absoluteOptionName).getHasOptionBeenSet();
-            }
-            
-            GmmxxEquationSolverSettings::ConvergenceCriterion GmmxxEquationSolverSettings::getConvergenceCriterion() const {
-                return this->getOption(absoluteOptionName).getHasOptionBeenSet() ? GmmxxEquationSolverSettings::ConvergenceCriterion::Absolute : GmmxxEquationSolverSettings::ConvergenceCriterion::Relative;
-            }
-            
+                        
             bool GmmxxEquationSolverSettings::check() const {
                 // This list does not include the precision, because this option is shared with other modules.
-                bool optionsSet = isLinearEquationSystemMethodSet() || isPreconditioningMethodSet() || isRestartIterationCountSet() | isMaximalIterationCountSet() || isConvergenceCriterionSet();
+                bool optionsSet = isLinearEquationSystemMethodSet() || isPreconditioningMethodSet() || isRestartIterationCountSet() | isMaximalIterationCountSet();
                 
                 STORM_LOG_WARN_COND(storm::settings::getModule<storm::settings::modules::CoreSettings>().getEquationSolver() == storm::solver::EquationSolverType::Gmmxx || !optionsSet, "gmm++ is not selected as the preferred equation solver, so setting options for gmm++ might have no effect.");
                 

@@ -301,7 +301,7 @@ namespace storm {
                 storm::storage::SparseMatrix<ValueType> explicitProbabilityMatrix = probabilityMatrix.toMatrix(odd, odd);
                 std::vector<ValueType> explicitExitRateVector = exitRateVector.toVector(odd);
                 
-                std::vector<ValueType> result = storm::modelchecker::helper::SparseCtmcCslHelper::computeLongRunAverageProbabilities(explicitProbabilityMatrix, psiStates.toVector(odd), &explicitExitRateVector, linearEquationSolverFactory);
+                std::vector<ValueType> result = storm::modelchecker::helper::SparseCtmcCslHelper::computeLongRunAverageProbabilities(storm::solver::SolveGoal<ValueType>(), explicitProbabilityMatrix, psiStates.toVector(odd), &explicitExitRateVector, linearEquationSolverFactory);
 
                 return std::unique_ptr<CheckResult>(new HybridQuantitativeCheckResult<DdType, ValueType>(model.getReachableStates(), model.getManager().getBddZero(), model.getManager().template getAddZero<ValueType>(), model.getReachableStates(), std::move(odd), std::move(result)));
             }
@@ -318,7 +318,7 @@ namespace storm {
                 storm::storage::SparseMatrix<ValueType> explicitProbabilityMatrix = probabilityMatrix.toMatrix(odd, odd);
                 std::vector<ValueType> explicitExitRateVector = exitRateVector.toVector(odd);
                 
-                std::vector<ValueType> result = storm::modelchecker::helper::SparseCtmcCslHelper::computeLongRunAverageRewards(explicitProbabilityMatrix, rewardModel.getTotalRewardVector(probabilityMatrix, model.getColumnVariables(), exitRateVector, true).toVector(odd), &explicitExitRateVector, linearEquationSolverFactory);
+                std::vector<ValueType> result = storm::modelchecker::helper::SparseCtmcCslHelper::computeLongRunAverageRewards(storm::solver::SolveGoal<ValueType>(), explicitProbabilityMatrix, rewardModel.getTotalRewardVector(probabilityMatrix, model.getColumnVariables(), exitRateVector, true).toVector(odd), &explicitExitRateVector, linearEquationSolverFactory);
                 
                 return std::unique_ptr<CheckResult>(new HybridQuantitativeCheckResult<DdType, ValueType>(model.getReachableStates(), model.getManager().getBddZero(), model.getManager().template getAddZero<ValueType>(), model.getReachableStates(), std::move(odd), std::move(result)));
             }

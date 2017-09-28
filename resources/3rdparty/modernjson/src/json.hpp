@@ -5650,7 +5650,8 @@ Format](http://rfc7159.net/rfc7159)
                 {
                     case value_t::array:
                     {
-                        return *lhs.m_value.array < *rhs.m_value.array;
+                        // Workaround for gcc 7.2.0, which parses array< as a template.
+                        return (*lhs.m_value.array) < *rhs.m_value.array;
                     }
                     case value_t::object:
                     {

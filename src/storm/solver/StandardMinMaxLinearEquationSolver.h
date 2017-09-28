@@ -9,8 +9,12 @@ namespace storm {
         template<typename ValueType>
         class StandardMinMaxLinearEquationSolver : public MinMaxLinearEquationSolver<ValueType> {
         public:
+            StandardMinMaxLinearEquationSolver(std::unique_ptr<LinearEquationSolverFactory<ValueType>>&& linearEquationSolverFactory);
             StandardMinMaxLinearEquationSolver(storm::storage::SparseMatrix<ValueType> const& A, std::unique_ptr<LinearEquationSolverFactory<ValueType>>&& linearEquationSolverFactory);
             StandardMinMaxLinearEquationSolver(storm::storage::SparseMatrix<ValueType>&& A, std::unique_ptr<LinearEquationSolverFactory<ValueType>>&& linearEquationSolverFactory);
+            
+            virtual void setMatrix(storm::storage::SparseMatrix<ValueType> const& matrix) override;
+            virtual void setMatrix(storm::storage::SparseMatrix<ValueType>&& matrix) override;
             
             virtual ~StandardMinMaxLinearEquationSolver() = default;
             
@@ -23,6 +27,7 @@ namespace storm {
             // possibly cached data
             mutable std::unique_ptr<storm::solver::LinearEquationSolver<ValueType>> linEqSolverA;
             mutable std::unique_ptr<std::vector<ValueType>> auxiliaryRowVector; // A.rowCount() entries
+            mutable std::unique_ptr<std::vector<ValueType>> auxiliaryRowGroupVector; // A.rowCount() entries
             
             /// The factory used to obtain linear equation solvers.
             std::unique_ptr<LinearEquationSolverFactory<ValueType>> linearEquationSolverFactory;
@@ -33,7 +38,7 @@ namespace storm {
             
             // A reference to the original sparse matrix given to this solver. If the solver takes posession of the matrix
             // the reference refers to localA.
-            storm::storage::SparseMatrix<ValueType> const& A;
+            storm::storage::SparseMatrix<ValueType> const* A;
             
         };
      
@@ -44,11 +49,16 @@ namespace storm {
             StandardMinMaxLinearEquationSolverFactory(std::unique_ptr<LinearEquationSolverFactory<ValueType>>&& linearEquationSolverFactory, MinMaxMethodSelection const& method = MinMaxMethodSelection::FROMSETTINGS, bool trackScheduler = false);
             StandardMinMaxLinearEquationSolverFactory(EquationSolverType const& solverType, MinMaxMethodSelection const& method = MinMaxMethodSelection::FROMSETTINGS, bool trackScheduler = false);
             
-            virtual std::unique_ptr<MinMaxLinearEquationSolver<ValueType>> create(storm::storage::SparseMatrix<ValueType> const& matrix) const override;
-            virtual std::unique_ptr<MinMaxLinearEquationSolver<ValueType>> create(storm::storage::SparseMatrix<ValueType>&& matrix) const override;
+            // Make the other create methods visible.
+            using MinMaxLinearEquationSolverFactory<ValueType>::create;
             
+            virtual std::unique_ptr<MinMaxLinearEquationSolver<ValueType>> create() const override;
+
         protected:
             std::unique_ptr<LinearEquationSolverFactory<ValueType>> linearEquationSolverFactory;
+            
+        private:
+            void createLinearEquationSolverFactory() const;
         };
         
         template<typename ValueType>

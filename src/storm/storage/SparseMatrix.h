@@ -10,6 +10,8 @@
 #include <boost/functional/hash.hpp>
 #include <boost/optional.hpp>
 
+#include "storm/solver/OptimizationDirection.h"
+
 #include "storm/utility/OsDetection.h"
 #include "storm/utility/macros.h"
 #include "storm/adapters/RationalFunctionAdapter.h"
@@ -17,6 +19,7 @@
 // Forward declaration for adapter classes.
 namespace storm {
 	namespace adapters {
+        template <typename ValueType>
 		class GmmxxAdapter;
 		class EigenAdapter;
 		class StormAdapter;
@@ -313,7 +316,7 @@ namespace storm {
         class SparseMatrix {
         public:
             // Declare adapter classes as friends to use internal data.
-            friend class storm::adapters::GmmxxAdapter;
+            friend class storm::adapters::GmmxxAdapter<ValueType>;
             friend class storm::adapters::EigenAdapter;
             friend class storm::adapters::StormAdapter;
 			friend class storm::solver::TopologicalValueIterationMinMaxLinearEquationSolver<ValueType>;
@@ -627,6 +630,13 @@ namespace storm {
             void makeRowDirac(index_type row, index_type column);
             
             /*
+             * Sums the entries in all rows.
+             *
+             * @return The vector of sums of the entries in the respective rows.
+             */
+            std::vector<ValueType> getRowSumVector() const;
+            
+            /*
              * Sums the entries in the given row and columns.
              *
              * @param row The row whose entries to add.
@@ -718,7 +728,7 @@ namespace storm {
             /*!
              * Selects exactly one row from each row group of this matrix and returns the resulting matrix.
              *
-s             * @param insertDiagonalEntries If set to true, the resulting matrix will have zero entries in column i for
+             * @param insertDiagonalEntries If set to true, the resulting matrix will have zero entries in column i for
              * each row in row group i. This can then be used for inserting other values later.
              * @return A submatrix of the current matrix by selecting one row out of each row group.
              */
@@ -744,7 +754,6 @@ s             * @param insertDiagonalEntries If set to true, the resulting matri
              * @return A sparse matrix that represents the transpose of this matrix.
              */
             storm::storage::SparseMatrix<value_type> transpose(bool joinGroups = false, bool keepZeros = false) const;
-            
             
             /*!
              * Transposes the matrix w.r.t. the selected rows.
@@ -798,16 +807,41 @@ s             * @param insertDiagonalEntries If set to true, the resulting matri
             std::vector<ResultValueType> getPointwiseProductRowSumVector(storm::storage::SparseMatrix<OtherValueType> const& otherMatrix) const;
             
             /*!
-             * Multiplies the matrix with the given vector and writes the result to the given result vector. If a
-             * parallel implementation is available and it is considered worthwhile (heuristically, based on the metrics
-             * of the matrix), the multiplication is carried out in parallel.
+             * Multiplies the matrix with the given vector and writes the result to the given result vector.
              *
              * @param vector The vector with which to multiply the matrix.
              * @param result The vector that is supposed to hold the result of the multiplication after the operation.
+             * @param summand If given, this summand will be added to the result of the multiplication.
              * @return The product of the matrix and the given vector as the content of the given result vector.
              */
-            void multiplyWithVector(std::vector<value_type> const& vector, std::vector<value_type>& result) const;
+            void multiplyWithVector(std::vector<value_type> const& vector, std::vector<value_type>& result, std::vector<value_type> const* summand = nullptr) const;
             
+            void multiplyWithVectorForward(std::vector<value_type> const& vector, std::vector<value_type>& result, std::vector<value_type> const* summand = nullptr) const;
+            void multiplyWithVectorBackward(std::vector<value_type> const& vector, std::vector<value_type>& result, std::vector<value_type> const* summand = nullptr) const;
+#ifdef STORM_HAVE_INTELTBB
+            void multiplyWithVectorParallel(std::vector<value_type> const& vector, std::vector<value_type>& result, std::vector<value_type> const* summand = nullptr) const;
+#endif
+            
+            /*!
+             * Multiplies the matrix with the given vector, reduces it according to the given direction and and writes
+             * the result to the given result vector.
+             *
+             * @param dir The optimization direction for the reduction.
+             * @param rowGroupIndices The row groups for the reduction
+             * @param vector The vector with which to multiply the matrix.
+             * @param summand If given, this summand will be added to the result of the multiplication.
+             * @param result The vector that is supposed to hold the result of the multiplication after the operation.
+             * @param choices If given, the choices made in the reduction process will be written to this vector.
+             * @return The resulting vector the content of the given result vector.
+             */
+            void multiplyAndReduce(storm::solver::OptimizationDirection const& dir, std::vector<uint64_t> const& rowGroupIndices, std::vector<ValueType> const& vector, std::vector<ValueType> const* summand, std::vector<ValueType>& result, std::vector<uint_fast64_t>* choices) const;
+            
+            void multiplyAndReduceForward(storm::solver::OptimizationDirection const& dir, std::vector<uint64_t> const& rowGroupIndices, std::vector<ValueType> const& vector, std::vector<ValueType> const* b, std::vector<ValueType>& result, std::vector<uint_fast64_t>* choices) const;
+            void multiplyAndReduceBackward(storm::solver::OptimizationDirection const& dir, std::vector<uint64_t> const& rowGroupIndices, std::vector<ValueType> const& vector, std::vector<ValueType> const* b, std::vector<ValueType>& result, std::vector<uint_fast64_t>* choices) const;
+#ifdef STORM_HAVE_INTELTBB
+            void multiplyAndReduceParallel(storm::solver::OptimizationDirection const& dir, std::vector<uint64_t> const& rowGroupIndices, std::vector<ValueType> const& vector, std::vector<ValueType> const* b, std::vector<ValueType>& result, std::vector<uint_fast64_t>* choices) const;
+#endif
+
             /*!
              * Multiplies a single row of the matrix with the given vector and returns the result
              *
@@ -841,7 +875,7 @@ s             * @param insertDiagonalEntries If set to true, the resulting matri
              * @param divisors The divisors with which each row is divided.
              */
             void divideRowsInPlace(std::vector<value_type> const& divisors);
-
+            
             /*!
              * Performs one step of the successive over-relaxation technique.
              *
@@ -850,28 +884,17 @@ s             * @param insertDiagonalEntries If set to true, the resulting matri
              * @param b The 'right-hand side' of the problem.
              */
             void performSuccessiveOverRelaxationStep(ValueType omega, std::vector<ValueType>& x, std::vector<ValueType> const& b) const;
-            
-            /*!
-             * Multiplies the matrix with the given vector in a sequential way and writes the result to the given result
-             * vector.
-             *
-             * @param vector The vector with which to multiply the matrix.
-             * @param result The vector that is supposed to hold the result of the multiplication after the operation.
-             * @return The product of the matrix and the given vector as the content of the given result vector.
-             */
-            void multiplyWithVectorSequential(std::vector<value_type> const& vector, std::vector<value_type>& result) const;
 
-#ifdef STORM_HAVE_INTELTBB
             /*!
-             * Multiplies the matrix with the given vector in a parallel fashion using Intel's TBB and writes the result
-             * to the given result vector.
+             * Performs one step of the Walker-Chae technique.
              *
-             * @param vector The vector with which to multiply the matrix.
-             * @param result The vector that is supposed to hold the result of the multiplication after the operation.
-             * @return The product of the matrix and the given vector as the content of the given result vector.
+             * @param x The current solution vector.
+             * @param columnSums The sums the individual columns.
+             * @param b The 'right-hand side' of the problem.
+             * @param ax A vector resulting from multiplying the current matrix with the vector x.
+             * @param result The vector to which to write the result.
              */
-            void multiplyWithVectorParallel(std::vector<value_type> const& vector, std::vector<value_type>& result) const;
-#endif
+            void performWalkerChaeStep(std::vector<ValueType> const& x, std::vector<ValueType> const& columnSums, std::vector<ValueType> const& b, std::vector<ValueType> const& ax, std::vector<ValueType>& result) const;
             
             /*!
              * Computes the sum of the entries in a given row.
@@ -1095,7 +1118,6 @@ s             * @param insertDiagonalEntries If set to true, the resulting matri
             
             // A vector indicating the row groups of the matrix. This needs to be mutible in case we create it on-the-fly.
             mutable boost::optional<std::vector<index_type>> rowGroupIndices;
-            
         };
         
 #ifdef STORM_HAVE_CARL

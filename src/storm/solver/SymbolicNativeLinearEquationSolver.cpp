@@ -54,13 +54,18 @@ namespace storm {
         }
         
         template<storm::dd::DdType DdType, typename ValueType>
-        SymbolicNativeLinearEquationSolver<DdType, ValueType>::SymbolicNativeLinearEquationSolver(storm::dd::Add<DdType, ValueType> const& A, storm::dd::Bdd<DdType> const& allRows, std::set<storm::expressions::Variable> const& rowMetaVariables, std::set<storm::expressions::Variable> const& columnMetaVariables, std::vector<std::pair<storm::expressions::Variable, storm::expressions::Variable>> const& rowColumnMetaVariablePairs, SymbolicNativeLinearEquationSolverSettings<ValueType> const& settings) : SymbolicLinearEquationSolver<DdType, ValueType>(A, allRows, rowMetaVariables, columnMetaVariables, rowColumnMetaVariablePairs), settings(settings) {
+        SymbolicNativeLinearEquationSolver<DdType, ValueType>::SymbolicNativeLinearEquationSolver(storm::dd::Add<DdType, ValueType> const& A, storm::dd::Bdd<DdType> const& allRows, std::set<storm::expressions::Variable> const& rowMetaVariables, std::set<storm::expressions::Variable> const& columnMetaVariables, std::vector<std::pair<storm::expressions::Variable, storm::expressions::Variable>> const& rowColumnMetaVariablePairs, SymbolicNativeLinearEquationSolverSettings<ValueType> const& settings) : SymbolicNativeLinearEquationSolver(allRows, rowMetaVariables, columnMetaVariables, rowColumnMetaVariablePairs, settings) {
+            this->setMatrix(A);
+        }
+        
+        template<storm::dd::DdType DdType, typename ValueType>
+        SymbolicNativeLinearEquationSolver<DdType, ValueType>::SymbolicNativeLinearEquationSolver(storm::dd::Bdd<DdType> const& allRows, std::set<storm::expressions::Variable> const& rowMetaVariables, std::set<storm::expressions::Variable> const& columnMetaVariables, std::vector<std::pair<storm::expressions::Variable, storm::expressions::Variable>> const& rowColumnMetaVariablePairs, SymbolicNativeLinearEquationSolverSettings<ValueType> const& settings) : SymbolicLinearEquationSolver<DdType, ValueType>(allRows, rowMetaVariables, columnMetaVariables, rowColumnMetaVariablePairs), settings(settings) {
             // Intentionally left empty.
         }
         
         template<storm::dd::DdType DdType, typename ValueType>
         storm::dd::Add<DdType, ValueType>  SymbolicNativeLinearEquationSolver<DdType, ValueType>::solveEquations(storm::dd::Add<DdType, ValueType> const& x, storm::dd::Add<DdType, ValueType> const& b) const {
-            storm::dd::DdManager<DdType>& manager = this->A.getDdManager();
+            storm::dd::DdManager<DdType>& manager = this->getDdManager();
             
             // Start by computing the Jacobi decomposition of the matrix A.
             storm::dd::Bdd<DdType> diagonal = storm::utility::dd::getRowColumnDiagonal(x.getDdManager(), this->rowColumnMetaVariablePairs);
@@ -106,8 +111,8 @@ namespace storm {
         }
         
         template<storm::dd::DdType DdType, typename ValueType>
-        std::unique_ptr<storm::solver::SymbolicLinearEquationSolver<DdType, ValueType>> SymbolicNativeLinearEquationSolverFactory<DdType, ValueType>::create(storm::dd::Add<DdType, ValueType> const& A, storm::dd::Bdd<DdType> const& allRows, std::set<storm::expressions::Variable> const& rowMetaVariables, std::set<storm::expressions::Variable> const& columnMetaVariables, std::vector<std::pair<storm::expressions::Variable, storm::expressions::Variable>> const& rowColumnMetaVariablePairs) const {
-            return std::make_unique<SymbolicNativeLinearEquationSolver<DdType, ValueType>>(A, allRows, rowMetaVariables, columnMetaVariables, rowColumnMetaVariablePairs, settings);
+        std::unique_ptr<storm::solver::SymbolicLinearEquationSolver<DdType, ValueType>> SymbolicNativeLinearEquationSolverFactory<DdType, ValueType>::create(storm::dd::Bdd<DdType> const& allRows, std::set<storm::expressions::Variable> const& rowMetaVariables, std::set<storm::expressions::Variable> const& columnMetaVariables, std::vector<std::pair<storm::expressions::Variable, storm::expressions::Variable>> const& rowColumnMetaVariablePairs) const {
+            return std::make_unique<SymbolicNativeLinearEquationSolver<DdType, ValueType>>(allRows, rowMetaVariables, columnMetaVariables, rowColumnMetaVariablePairs, settings);
         }
     
         template<storm::dd::DdType DdType, typename ValueType>

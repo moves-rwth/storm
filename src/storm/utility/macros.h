@@ -15,9 +15,15 @@ do {                                                        \
         assert(cond);                                       \
     }                                                       \
 } while (false)
-
+#define STORM_LOG_WARN_COND_DEBUG(cond, message)            \
+do {                                                        \
+    if (!(cond)) {                                          \
+        STORM_LOG_WARN(message);                            \
+    }                                                       \
+} while (false)
 #else
 #define STORM_LOG_ASSERT(cond, message)
+#define STORM_LOG_WARN_COND_DEBUG(cond, message)
 #endif
 
 // Define STORM_LOG_THROW to always throw the exception with the given message if the condition fails to hold.

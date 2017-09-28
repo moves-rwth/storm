@@ -34,7 +34,7 @@ list(APPEND STORM_DEP_TARGETS l3pp)
 ##
 #############################################################
 
-add_imported_library_interface(gmm "${PROJECT_SOURCE_DIR}/resources/3rdparty/gmm-5.0/include")
+add_imported_library_interface(gmm "${PROJECT_SOURCE_DIR}/resources/3rdparty/gmm-5.2/include")
 list(APPEND STORM_DEP_TARGETS gmm)
 
 #############################################################

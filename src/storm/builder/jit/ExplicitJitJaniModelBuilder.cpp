@@ -528,13 +528,13 @@ namespace storm {
                 }
                 modelData["exploration_checks"] = cpptempl::make_data(list);
                 list = cpptempl::data_list();
-                if (options.isExplorationShowProgressSet()) {
+                if (options.isShowProgressSet()) {
                     list.push_back(cpptempl::data_map());
                 }
                 modelData["expl_progress"] = cpptempl::make_data(list);
                 
                 std::stringstream progressDelayStream;
-                progressDelayStream << options.getExplorationShowProgressDelay();
+                progressDelayStream << options.getShowProgressDelay();
                 modelData["expl_progress_interval"] = cpptempl::make_data(progressDelayStream.str());
                 list = cpptempl::data_list();
                 if (std::is_same<storm::RationalNumber, ValueType>::value) {

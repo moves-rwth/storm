@@ -16,6 +16,8 @@
 #include "storm/exceptions/InvalidArgumentException.h"
 #include "storm/exceptions/InvalidStateException.h"
 
+#include "storm/solver/MinMaxLinearEquationSolver.h"
+
 #include "storm/counterexamples/PrismHighLevelCounterexample.h"
 
 #include "storm/utility/graph.h"

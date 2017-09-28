@@ -10,7 +10,7 @@
 #include "storm/models/symbolic/StandardRewardModel.h"
 
 #include "storm/settings/SettingsManager.h"
-#include "storm/settings/modules/IOSettings.h"
+#include "storm/settings/modules/GeneralSettings.h"
 
 #include "storm/utility/macros.h"
 #include "storm/exceptions/InvalidOperationException.h"
@@ -32,25 +32,25 @@ namespace storm {
         
         template <storm::dd::DdType DdType, typename ValueType>
         BisimulationDecomposition<DdType, ValueType>::BisimulationDecomposition(storm::models::symbolic::Model<DdType, ValueType> const& model, storm::storage::BisimulationType const& bisimulationType) : model(model), preservationInformation(model, bisimulationType), refiner(createRefiner(model, Partition<DdType, ValueType>::create(model, bisimulationType, preservationInformation))) {
-            auto const& ioSettings = storm::settings::getModule<storm::settings::modules::IOSettings>();
-            showProgress = ioSettings.isExplorationShowProgressSet();
-            showProgressDelay = ioSettings.getExplorationShowProgressDelay();
+            auto const& generalSettings = storm::settings::getModule<storm::settings::modules::GeneralSettings>();
+            showProgress = generalSettings.isVerboseSet();
+            showProgressDelay = generalSettings.getShowProgressDelay();
             this->refineWrtRewardModels();
         }
         
         template <storm::dd::DdType DdType, typename ValueType>
         BisimulationDecomposition<DdType, ValueType>::BisimulationDecomposition(storm::models::symbolic::Model<DdType, ValueType> const& model, std::vector<std::shared_ptr<storm::logic::Formula const>> const& formulas, storm::storage::BisimulationType const& bisimulationType) : model(model), preservationInformation(model, formulas, bisimulationType), refiner(createRefiner(model, Partition<DdType, ValueType>::create(model, bisimulationType, preservationInformation))) {
-            auto const& ioSettings = storm::settings::getModule<storm::settings::modules::IOSettings>();
-            showProgress = ioSettings.isExplorationShowProgressSet();
-            showProgressDelay = ioSettings.getExplorationShowProgressDelay();
+            auto const& generalSettings = storm::settings::getModule<storm::settings::modules::GeneralSettings>();
+            showProgress = generalSettings.isVerboseSet();
+            showProgressDelay = generalSettings.getShowProgressDelay();
             this->refineWrtRewardModels();
         }
         
         template <storm::dd::DdType DdType, typename ValueType>
         BisimulationDecomposition<DdType, ValueType>::BisimulationDecomposition(storm::models::symbolic::Model<DdType, ValueType> const& model, Partition<DdType, ValueType> const& initialPartition, bisimulation::PreservationInformation<DdType, ValueType> const& preservationInformation) : model(model), preservationInformation(preservationInformation), refiner(createRefiner(model, initialPartition)) {
-            auto const& ioSettings = storm::settings::getModule<storm::settings::modules::IOSettings>();
-            showProgress = ioSettings.isExplorationShowProgressSet();
-            showProgressDelay = ioSettings.getExplorationShowProgressDelay();
+            auto const& generalSettings = storm::settings::getModule<storm::settings::modules::GeneralSettings>();
+            showProgress = generalSettings.isVerboseSet();
+            showProgressDelay = generalSettings.getShowProgressDelay();
             this->refineWrtRewardModels();
         }
         
@@ -81,14 +81,14 @@ namespace storm {
                     auto durationSinceLastMessage = std::chrono::duration_cast<std::chrono::seconds>(now - timeOfLastMessage).count();
                     if (static_cast<uint64_t>(durationSinceLastMessage) >= showProgressDelay) {
                         auto durationSinceStart = std::chrono::duration_cast<std::chrono::seconds>(now - start).count();
-                        std::cout << "State partition after " << iterations << " iterations (" << durationSinceStart << "ms) has " << refiner->getStatePartition().getNumberOfBlocks() << " blocks." << std::endl;
+                        STORM_LOG_INFO("State partition after " << iterations << " iterations (" << durationSinceStart << "s) has " << refiner->getStatePartition().getNumberOfBlocks() << " blocks.");
                         timeOfLastMessage = std::chrono::high_resolution_clock::now();
                     }
                 }
             }
             auto end = std::chrono::high_resolution_clock::now();
             
-            STORM_LOG_DEBUG("Partition refinement completed in " << std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count() << "ms (" << iterations << " iterations).");
+            STORM_LOG_DEBUG("Partition refinement completed in " << std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count() << "s (" << iterations << " iterations).");
         }
         
         template <storm::dd::DdType DdType, typename ValueType>

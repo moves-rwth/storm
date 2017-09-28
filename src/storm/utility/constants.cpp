@@ -39,6 +39,10 @@ namespace storm {
         bool isZero(ValueType const& a) {
             return a == zero<ValueType>();
         }
+        
+        bool isAlmostZero(double const& a) {
+            return a < 1e-12 && a > -1e-12;
+        }
 
         template<typename ValueType>
         bool isConstant(ValueType const&) {
@@ -185,6 +189,16 @@ namespace storm {
             return std::pow(value, exponent);
         }
 
+        template<typename ValueType>
+        ValueType max(ValueType const& first, ValueType const& second) {
+            return std::max(first, second);
+        }
+        
+        template<typename ValueType>
+        ValueType min(ValueType const& first, ValueType const& second) {
+            return std::min(first, second);
+        }
+        
         template<typename ValueType>
         ValueType sqrt(ValueType const& number) {
             return std::sqrt(number);
@@ -679,6 +693,8 @@ namespace storm {
         template double minimum(std::map<uint64_t, double> const&);
         template double maximum(std::map<uint64_t, double> const&);
         template double pow(double const& value, uint_fast64_t exponent);
+        template double max(double const& first, double const& second);
+        template double min(double const& first, double const& second);
         template double sqrt(double const& number);
         template double abs(double const& number);
         template double floor(double const& number);
@@ -705,6 +721,8 @@ namespace storm {
         template float minimum(std::map<uint64_t, float> const&);
         template float maximum(std::map<uint64_t, float> const&);
         template float pow(float const& value, uint_fast64_t exponent);
+        template float max(float const& first, float const& second);
+        template float min(float const& first, float const& second);
         template float sqrt(float const& number);
         template float abs(float const& number);
         template float floor(float const& number);
@@ -772,6 +790,8 @@ namespace storm {
         template std::pair<storm::ClnRationalNumber, storm::ClnRationalNumber> minmax(std::vector<storm::ClnRationalNumber> const&);
         template storm::ClnRationalNumber minimum(std::vector<storm::ClnRationalNumber> const&);
         template storm::ClnRationalNumber maximum(std::vector<storm::ClnRationalNumber> const&);
+        template storm::ClnRationalNumber max(storm::ClnRationalNumber const& first, storm::ClnRationalNumber const& second);
+        template storm::ClnRationalNumber min(storm::ClnRationalNumber const& first, storm::ClnRationalNumber const& second);
         template storm::ClnRationalNumber pow(storm::ClnRationalNumber const& value, uint_fast64_t exponent);
         template storm::ClnRationalNumber sqrt(storm::ClnRationalNumber const& number);
         template storm::ClnRationalNumber abs(storm::ClnRationalNumber const& number);
@@ -805,6 +825,8 @@ namespace storm {
         template std::pair<storm::GmpRationalNumber, storm::GmpRationalNumber> minmax(std::vector<storm::GmpRationalNumber> const&);
         template storm::GmpRationalNumber minimum(std::vector<storm::GmpRationalNumber> const&);
         template storm::GmpRationalNumber maximum(std::vector<storm::GmpRationalNumber> const&);
+        template storm::GmpRationalNumber max(storm::GmpRationalNumber const& first, storm::GmpRationalNumber const& second);
+        template storm::GmpRationalNumber min(storm::GmpRationalNumber const& first, storm::GmpRationalNumber const& second);
         template storm::GmpRationalNumber pow(storm::GmpRationalNumber const& value, uint_fast64_t exponent);
         template storm::GmpRationalNumber sqrt(storm::GmpRationalNumber const& number);
         template storm::GmpRationalNumber abs(storm::GmpRationalNumber const& number);

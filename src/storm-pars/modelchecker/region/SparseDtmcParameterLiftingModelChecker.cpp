@@ -230,15 +230,15 @@ namespace storm {
             if (lowerResultBound) solver->setLowerBound(lowerResultBound.get());
             if (upperResultBound) solver->setUpperBound(upperResultBound.get());
             if (!stepBound) solver->setTrackScheduler(true);
-            if (storm::solver::minimize(dirForParameters) && minSchedChoices && !stepBound) solver->setSchedulerHint(std::move(minSchedChoices.get()));
-            if (storm::solver::maximize(dirForParameters) && maxSchedChoices && !stepBound) solver->setSchedulerHint(std::move(maxSchedChoices.get()));
-            if (this->currentCheckTask->isBoundSet() && solver->hasSchedulerHint()) {
+            if (storm::solver::minimize(dirForParameters) && minSchedChoices && !stepBound) solver->setInitialScheduler(std::move(minSchedChoices.get()));
+            if (storm::solver::maximize(dirForParameters) && maxSchedChoices && !stepBound) solver->setInitialScheduler(std::move(maxSchedChoices.get()));
+            if (this->currentCheckTask->isBoundSet() && solver->hasInitialScheduler()) {
                 // If we reach this point, we know that after applying the hint, the x-values can only become larger (if we maximize) or smaller (if we minimize).
                 std::unique_ptr<storm::solver::TerminationCondition<ConstantType>> termCond;
                 storm::storage::BitVector relevantStatesInSubsystem = this->currentCheckTask->isOnlyInitialStatesRelevantSet() ? this->parametricModel->getInitialStates() % maybeStates : storm::storage::BitVector(maybeStates.getNumberOfSetBits(), true);
                 if (storm::solver::minimize(dirForParameters)) {
                     // Terminate if the value for ALL relevant states is already below the threshold
-                    termCond = std::make_unique<storm::solver::TerminateIfFilteredExtremumBelowThreshold<ConstantType>> (relevantStatesInSubsystem, this->currentCheckTask->getBoundThreshold(), true, false);
+                    termCond = std::make_unique<storm::solver::TerminateIfFilteredExtremumBelowThreshold<ConstantType>> (relevantStatesInSubsystem, true, this->currentCheckTask->getBoundThreshold(), false);
                 } else {
                     // Terminate if the value for ALL relevant states is already above the threshold
                     termCond = std::make_unique<storm::solver::TerminateIfFilteredExtremumExceedsThreshold<ConstantType>> (relevantStatesInSubsystem, true, this->currentCheckTask->getBoundThreshold(), true);

@@ -115,7 +115,9 @@ namespace storm {
             // Solve the equation system induced by the two schedulers.
             storm::storage::SparseMatrix<ValueType> submatrix;
             getInducedMatrixVector(x, b, player1Choices, player2Choices, submatrix, subB);
-            submatrix.convertToEquationSystem();
+            if (this->linearEquationSolverFactory->getEquationProblemFormat() == LinearEquationSolverProblemFormat::EquationSystem) {
+                submatrix.convertToEquationSystem();
+            }
             auto submatrixSolver = linearEquationSolverFactory->create(std::move(submatrix));
             if (this->lowerBound) { submatrixSolver->setLowerBound(this->lowerBound.get()); }
             if (this->upperBound) { submatrixSolver->setUpperBound(this->upperBound.get()); }
@@ -206,7 +208,9 @@ namespace storm {
                 // Solve the equation system induced by the two schedulers.
                 storm::storage::SparseMatrix<ValueType> submatrix;
                 getInducedMatrixVector(x, b, this->player1ChoicesHint.get(), this->player2ChoicesHint.get(), submatrix, *auxiliaryP1RowGroupVector);
-                submatrix.convertToEquationSystem();
+                if (this->linearEquationSolverFactory->getEquationProblemFormat() == LinearEquationSolverProblemFormat::EquationSystem) {
+                    submatrix.convertToEquationSystem();
+                }
                 auto submatrixSolver = linearEquationSolverFactory->create(std::move(submatrix));
                 if (this->lowerBound) { submatrixSolver->setLowerBound(this->lowerBound.get()); }
                 if (this->upperBound) { submatrixSolver->setUpperBound(this->upperBound.get()); }

@@ -34,6 +34,11 @@ namespace storm {
         }
         
         template<typename ValueType>
+        EliminationLinearEquationSolver<ValueType>::EliminationLinearEquationSolver(EliminationLinearEquationSolverSettings<ValueType> const& settings) : settings(settings) {
+            // Intentionally left empty.
+        }
+        
+        template<typename ValueType>
         EliminationLinearEquationSolver<ValueType>::EliminationLinearEquationSolver(storm::storage::SparseMatrix<ValueType> const& A, EliminationLinearEquationSolverSettings<ValueType> const& settings) : localA(nullptr), A(nullptr), settings(settings) {
             this->setMatrix(A);
         }
@@ -58,24 +63,14 @@ namespace storm {
         }
         
         template<typename ValueType>
-        bool EliminationLinearEquationSolver<ValueType>::solveEquations(std::vector<ValueType>& x, std::vector<ValueType> const& b) const {
+        bool EliminationLinearEquationSolver<ValueType>::internalSolveEquations(std::vector<ValueType>& x, std::vector<ValueType> const& b) const {
             // FIXME: This solver will not work for all input systems. More concretely, the current implementation will
-            // not work for systems that have a 0 on the diagonal. This is not a restriction of this technique in general
+            // not work for systems that have a 1 on the diagonal. This is not a restriction of this technique in general
             // but arbitrary matrices require pivoting, which is not currently implemented.
             
             STORM_LOG_INFO("Solving linear equation system (" << x.size() << " rows) with elimination");
-            
-            // We need to revert the transformation into an equation system matrix, because the elimination procedure
-            // and the distance computation is based on the probability matrix instead.
-            storm::storage::SparseMatrix<ValueType> locallyConvertedMatrix;
-            if (localA) {
-                localA->convertToEquationSystem();
-            } else {
-                locallyConvertedMatrix = *A;
-                locallyConvertedMatrix.convertToEquationSystem();
-            }
-            
-            storm::storage::SparseMatrix<ValueType> const& transitionMatrix = localA ? *localA : locallyConvertedMatrix;
+
+            storm::storage::SparseMatrix<ValueType> const& transitionMatrix = localA ? *localA : *A;
             storm::storage::SparseMatrix<ValueType> backwardTransitions = transitionMatrix.transpose();
             
             // Initialize the solution to the right-hand side of the equation system.
@@ -106,11 +101,6 @@ namespace storm {
                 eliminator.eliminateState(state, false);
             }
             
-            // After having solved the system, we need to revert the transition system if we kept it local.
-            if (localA) {
-                localA->convertToEquationSystem();
-            }
-
             return true;
         }
         
@@ -142,6 +132,11 @@ namespace storm {
         }
         
         template<typename ValueType>
+        LinearEquationSolverProblemFormat EliminationLinearEquationSolver<ValueType>::getEquationProblemFormat() const {
+            return LinearEquationSolverProblemFormat::FixedPointSystem;
+        }
+        
+        template<typename ValueType>
         uint64_t EliminationLinearEquationSolver<ValueType>::getMatrixRowCount() const {
             return this->A->getRowCount();
         }
@@ -152,13 +147,8 @@ namespace storm {
         }
         
         template<typename ValueType>
-        std::unique_ptr<storm::solver::LinearEquationSolver<ValueType>> EliminationLinearEquationSolverFactory<ValueType>::create(storm::storage::SparseMatrix<ValueType> const& matrix) const {
-            return std::make_unique<storm::solver::EliminationLinearEquationSolver<ValueType>>(matrix, settings);
-        }
-        
-        template<typename ValueType>
-        std::unique_ptr<storm::solver::LinearEquationSolver<ValueType>> EliminationLinearEquationSolverFactory<ValueType>::create(storm::storage::SparseMatrix<ValueType>&& matrix) const {
-            return std::make_unique<storm::solver::EliminationLinearEquationSolver<ValueType>>(std::move(matrix), settings);
+        std::unique_ptr<storm::solver::LinearEquationSolver<ValueType>> EliminationLinearEquationSolverFactory<ValueType>::create() const {
+            return std::make_unique<storm::solver::EliminationLinearEquationSolver<ValueType>>(settings);
         }
         
         template<typename ValueType>

@@ -5,6 +5,7 @@
 #include <vector>
 
 #include "storm/storage/expressions/Variable.h"
+#include "storm/storage/dd/DdManager.h"
 #include "storm/storage/dd/DdType.h"
 
 #include "storm/adapters/RationalFunctionAdapter.h"
@@ -46,7 +47,20 @@ namespace storm {
              * variables.
              */
             SymbolicLinearEquationSolver(storm::dd::Add<DdType, ValueType> const& A, storm::dd::Bdd<DdType> const& allRows, std::set<storm::expressions::Variable> const& rowMetaVariables, std::set<storm::expressions::Variable> const& columnMetaVariables, std::vector<std::pair<storm::expressions::Variable, storm::expressions::Variable>> const& rowColumnMetaVariablePairs);
-            
+
+            /*!
+             * Constructs a symbolic linear equation solver with the given meta variable sets and pairs. Note that in
+             * this version, the coefficient matrix has to be set manually afterwards.
+             *
+             * @param diagonal An ADD characterizing the elements on the diagonal of the matrix.
+             * @param allRows A BDD characterizing all rows of the equation system.
+             * @param rowMetaVariables The meta variables used to encode the rows of the matrix.
+             * @param columnMetaVariables The meta variables used to encode the columns of the matrix.
+             * @param rowColumnMetaVariablePairs The pairs of row meta variables and the corresponding column meta
+             * variables.
+             */
+            SymbolicLinearEquationSolver(storm::dd::Bdd<DdType> const& allRows, std::set<storm::expressions::Variable> const& rowMetaVariables, std::set<storm::expressions::Variable> const& columnMetaVariables, std::vector<std::pair<storm::expressions::Variable, storm::expressions::Variable>> const& rowColumnMetaVariablePairs);
+
             /*!
              * Solves the equation system A*x = b. The matrix A is required to be square and have a unique solution.
              * The solution of the set of linear equations will be written to the vector x. Note that the matrix A has
@@ -74,6 +88,8 @@ namespace storm {
             void setMatrix(storm::dd::Add<DdType, ValueType> const& newA);
             
         protected:
+            storm::dd::DdManager<DdType>& getDdManager() const;
+            
             // The matrix defining the coefficients of the linear equation system.
             storm::dd::Add<DdType, ValueType> A;
             
@@ -93,25 +109,33 @@ namespace storm {
         template<storm::dd::DdType DdType, typename ValueType>
         class SymbolicLinearEquationSolverFactory {
         public:
-            virtual std::unique_ptr<storm::solver::SymbolicLinearEquationSolver<DdType, ValueType>> create(storm::dd::Add<DdType, ValueType> const& A, storm::dd::Bdd<DdType> const& allRows, std::set<storm::expressions::Variable> const& rowMetaVariables, std::set<storm::expressions::Variable> const& columnMetaVariables, std::vector<std::pair<storm::expressions::Variable, storm::expressions::Variable>> const& rowColumnMetaVariablePairs) const = 0;
+            virtual std::unique_ptr<storm::solver::SymbolicLinearEquationSolver<DdType, ValueType>> create(storm::dd::Bdd<DdType> const& allRows, std::set<storm::expressions::Variable> const& rowMetaVariables, std::set<storm::expressions::Variable> const& columnMetaVariables, std::vector<std::pair<storm::expressions::Variable, storm::expressions::Variable>> const& rowColumnMetaVariablePairs) const = 0;
+            
+            std::unique_ptr<storm::solver::SymbolicLinearEquationSolver<DdType, ValueType>> create(storm::dd::Add<DdType, ValueType> const& A, storm::dd::Bdd<DdType> const& allRows, std::set<storm::expressions::Variable> const& rowMetaVariables, std::set<storm::expressions::Variable> const& columnMetaVariables, std::vector<std::pair<storm::expressions::Variable, storm::expressions::Variable>> const& rowColumnMetaVariablePairs) const;
         };
         
         template<storm::dd::DdType DdType, typename ValueType>
         class GeneralSymbolicLinearEquationSolverFactory : public SymbolicLinearEquationSolverFactory<DdType, ValueType> {
         public:
-            virtual std::unique_ptr<storm::solver::SymbolicLinearEquationSolver<DdType, ValueType>> create(storm::dd::Add<DdType, ValueType> const& A, storm::dd::Bdd<DdType> const& allRows, std::set<storm::expressions::Variable> const& rowMetaVariables, std::set<storm::expressions::Variable> const& columnMetaVariables, std::vector<std::pair<storm::expressions::Variable, storm::expressions::Variable>> const& rowColumnMetaVariablePairs) const;
+            using SymbolicLinearEquationSolverFactory<DdType, ValueType>::create;
+            
+            virtual std::unique_ptr<storm::solver::SymbolicLinearEquationSolver<DdType, ValueType>> create(storm::dd::Bdd<DdType> const& allRows, std::set<storm::expressions::Variable> const& rowMetaVariables, std::set<storm::expressions::Variable> const& columnMetaVariables, std::vector<std::pair<storm::expressions::Variable, storm::expressions::Variable>> const& rowColumnMetaVariablePairs) const;
         };
 
         template<storm::dd::DdType DdType>
         class GeneralSymbolicLinearEquationSolverFactory<DdType, storm::RationalNumber> : public SymbolicLinearEquationSolverFactory<DdType, storm::RationalNumber> {
         public:
-            virtual std::unique_ptr<storm::solver::SymbolicLinearEquationSolver<DdType, storm::RationalNumber>> create(storm::dd::Add<DdType, storm::RationalNumber> const& A, storm::dd::Bdd<DdType> const& allRows, std::set<storm::expressions::Variable> const& rowMetaVariables, std::set<storm::expressions::Variable> const& columnMetaVariables, std::vector<std::pair<storm::expressions::Variable, storm::expressions::Variable>> const& rowColumnMetaVariablePairs) const;
+            using SymbolicLinearEquationSolverFactory<DdType, storm::RationalNumber>::create;
+
+            virtual std::unique_ptr<storm::solver::SymbolicLinearEquationSolver<DdType, storm::RationalNumber>> create(storm::dd::Bdd<DdType> const& allRows, std::set<storm::expressions::Variable> const& rowMetaVariables, std::set<storm::expressions::Variable> const& columnMetaVariables, std::vector<std::pair<storm::expressions::Variable, storm::expressions::Variable>> const& rowColumnMetaVariablePairs) const;
         };
         
         template<storm::dd::DdType DdType>
         class GeneralSymbolicLinearEquationSolverFactory<DdType, storm::RationalFunction> : public SymbolicLinearEquationSolverFactory<DdType, storm::RationalFunction> {
         public:
-            virtual std::unique_ptr<storm::solver::SymbolicLinearEquationSolver<DdType, storm::RationalFunction>> create(storm::dd::Add<DdType, storm::RationalFunction> const& A, storm::dd::Bdd<DdType> const& allRows, std::set<storm::expressions::Variable> const& rowMetaVariables, std::set<storm::expressions::Variable> const& columnMetaVariables, std::vector<std::pair<storm::expressions::Variable, storm::expressions::Variable>> const& rowColumnMetaVariablePairs) const;
+            using SymbolicLinearEquationSolverFactory<DdType, storm::RationalFunction>::create;
+
+            virtual std::unique_ptr<storm::solver::SymbolicLinearEquationSolver<DdType, storm::RationalFunction>> create(storm::dd::Bdd<DdType> const& allRows, std::set<storm::expressions::Variable> const& rowMetaVariables, std::set<storm::expressions::Variable> const& columnMetaVariables, std::vector<std::pair<storm::expressions::Variable, storm::expressions::Variable>> const& rowColumnMetaVariablePairs) const;
         };
         
     } // namespace solver
