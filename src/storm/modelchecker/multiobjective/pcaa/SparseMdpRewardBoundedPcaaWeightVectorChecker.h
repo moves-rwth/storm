@@ -79,7 +79,7 @@ namespace storm {
                 
                 void computeEpochSolution(typename MultiDimensionalRewardUnfolding<ValueType, false>::Epoch const& epoch, std::vector<ValueType> const& weightVector, EpochCheckingData& cachedData);
                 
-                void updateCachedData(typename MultiDimensionalRewardUnfolding<ValueType, false>::EpochModel const& epochModel, EpochCheckingData& cachedData);
+                void updateCachedData(typename MultiDimensionalRewardUnfolding<ValueType, false>::EpochModel const& epochModel, EpochCheckingData& cachedData, std::vector<ValueType> const& weightVector);
                 
                 storm::utility::Stopwatch swAll, swDataUpdate, swEqBuilding, swLinEqSolving, swMinMaxSolving, swAux1, swAux2, swAux3;
                 uint64_t numSchedChanges, numCheckedEpochs;

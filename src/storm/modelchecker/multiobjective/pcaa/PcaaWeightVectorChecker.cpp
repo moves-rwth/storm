@@ -31,6 +31,26 @@ namespace storm {
                 STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Scheduler generation is not supported in this setting.");
             }
 
+            template <class SparseModelType>
+            boost::optional<typename SparseModelType::ValueType> PcaaWeightVectorChecker<SparseModelType>::computeWeightedResultBound(bool lower, std::vector<ValueType> const& weightVector, storm::storage::BitVector const& objectiveFilter) const {
+                
+                ValueType result = storm::utility::zero<ValueType>();
+                for (auto const& objIndex : objectiveFilter) {
+                    boost::optional<ValueType> const& objBound = (lower == storm::solver::minimize(this->objectives[objIndex].formula->getOptimalityType())) ? this->objectives[objIndex].upperResultBound : this->objectives[objIndex].lowerResultBound;
+                    if (objBound) {
+                        if (storm::solver::minimize(this->objectives[objIndex].formula->getOptimalityType())) {
+                            result -= objBound.get() * weightVector[objIndex];
+                        } else {
+                            result += objBound.get() * weightVector[objIndex];
+                        }
+                    } else {
+                        // If there is an objective without the corresponding bound we can not give guarantees for the weighted sum
+                        return boost::none;
+                    }
+                }
+                return result;
+            }
+
             template <typename ModelType>
             template<typename VT, typename std::enable_if<std::is_same<ModelType, storm::models::sparse::Mdp<VT>>::value, int>::type>
             std::unique_ptr<PcaaWeightVectorChecker<ModelType>>  WeightVectorCheckerFactory<ModelType>::create(SparseMultiObjectivePreprocessorResult<ModelType> const& preprocessorResult) {

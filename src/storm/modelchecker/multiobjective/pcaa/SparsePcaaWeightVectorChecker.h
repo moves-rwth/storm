@@ -66,14 +66,7 @@ namespace storm {
                 
                 void initialize(SparseMultiObjectivePreprocessorResult<SparseModelType> const& preprocessorResult);
                 virtual void initializeModelTypeSpecificData(SparseModelType const& model) = 0;
-       
-                /*!
-                 * Computes the weighted lower and upper bounds for the provided set of objectives.
-                 * @param lower if true, lower result bounds are computed. otherwise upper result bounds
-                 * @param weightVector the weight vector ooof the current check
-                 */
-                boost::optional<ValueType> computeWeightedResultBound(bool lower, std::vector<ValueType> const& weightVector, storm::storage::BitVector const& objectiveFilter) const;
-                
+
                 /*!
                  * Determines the scheduler that optimizes the weighted reward vector of the unbounded objectives
                  *

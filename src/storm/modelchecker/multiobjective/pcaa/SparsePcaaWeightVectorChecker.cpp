@@ -159,27 +159,6 @@ namespace storm {
             }
             
             template <class SparseModelType>
-            boost::optional<typename SparseModelType::ValueType> SparsePcaaWeightVectorChecker<SparseModelType>::computeWeightedResultBound(bool lower, std::vector<ValueType> const& weightVector, storm::storage::BitVector const& objectiveFilter) const {
-                
-                ValueType result = storm::utility::zero<ValueType>();
-                for (auto const& objIndex : objectiveFilter) {
-                    boost::optional<ValueType> const& objBound = (lower == storm::solver::minimize(this->objectives[objIndex].formula->getOptimalityType())) ? this->objectives[objIndex].upperResultBound : this->objectives[objIndex].lowerResultBound;
-                    if (objBound) {
-                        if (storm::solver::minimize(this->objectives[objIndex].formula->getOptimalityType())) {
-                            result -= objBound.get() * weightVector[objIndex];
-                        } else {
-                            result += objBound.get() * weightVector[objIndex];
-                        }
-                    } else {
-                        // If there is an objective without the corresponding bound we can not give guarantees for the weighted sum
-                        return boost::none;
-                    }
-                }
-                return result;
-            }
-
-            
-            template <class SparseModelType>
             void SparsePcaaWeightVectorChecker<SparseModelType>::unboundedWeightedPhase(std::vector<ValueType> const& weightedRewardVector, std::vector<ValueType> const& weightVector) {
                 
                 if (this->objectivesWithNoUpperTimeBound.empty() || !storm::utility::vector::hasNonZeroEntry(weightedRewardVector)) {
@@ -197,12 +176,12 @@ namespace storm {
                 solver->setTrackScheduler(true);
                 auto req = solver->getRequirements(storm::solver::EquationSystemType::StochasticShortestPath);
                 req.clearNoEndComponents();
-                boost::optional<ValueType> lowerBound = computeWeightedResultBound(true, weightVector, objectivesWithNoUpperTimeBound);
+                boost::optional<ValueType> lowerBound = this->computeWeightedResultBound(true, weightVector, objectivesWithNoUpperTimeBound);
                 if (lowerBound) {
                     solver->setLowerBound(lowerBound.get());
                     req.clearLowerBounds();
                 }
-                boost::optional<ValueType> upperBound = computeWeightedResultBound(false, weightVector, objectivesWithNoUpperTimeBound);
+                boost::optional<ValueType> upperBound = this->computeWeightedResultBound(false, weightVector, objectivesWithNoUpperTimeBound);
                 if (upperBound) {
                     solver->setUpperBound(upperBound.get());
                     req.clearUpperBounds();

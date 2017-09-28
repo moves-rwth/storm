@@ -15,6 +15,7 @@
 #include "storm/exceptions/IllegalArgumentException.h"
 #include "storm/exceptions/NotSupportedException.h"
 #include "storm/exceptions/UnexpectedException.h"
+#include "storm/exceptions/UncheckedRequirementException.h"
 
 namespace storm {
     namespace modelchecker {
@@ -52,7 +53,7 @@ namespace storm {
             template <class SparseMdpModelType>
             void SparseMdpRewardBoundedPcaaWeightVectorChecker<SparseMdpModelType>::computeEpochSolution(typename MultiDimensionalRewardUnfolding<ValueType, false>::Epoch const& epoch, std::vector<ValueType> const& weightVector, EpochCheckingData& cachedData) {
                 auto& epochModel = rewardUnfolding.setCurrentEpoch(epoch);
-                updateCachedData(epochModel, cachedData);
+                updateCachedData(epochModel, cachedData, weightVector);
                 ++numCheckedEpochs;
                 swEqBuilding.start();
                 
@@ -137,6 +138,16 @@ namespace storm {
                     }
                     std::vector<ValueType>& x = cachedData.xLinEq[objIndex];
                     assert(x.size() == choices.size());
+                    auto req = cachedData.linEqSolver->getRequirements();
+                    if (this->objectives[objIndex].lowerResultBound) {
+                        req.clearLowerBounds();
+                        cachedData.linEqSolver->setLowerBound(*this->objectives[objIndex].lowerResultBound);
+                    }
+                    if (this->objectives[objIndex].upperResultBound) {
+                        cachedData.linEqSolver->setUpperBound(*this->objectives[objIndex].upperResultBound);
+                        req.clearUpperBounds();
+                    }
+                    STORM_LOG_THROW(req.empty(), storm::exceptions::UncheckedRequirementException, "At least one requirement of the LinearEquationSolver was not met.");
                     swEqBuilding.stop();
                     swLinEqSolving.start();
                     cachedData.linEqSolver->solveEquations(x, cachedData.bLinEq);
@@ -154,7 +165,7 @@ namespace storm {
             }
 
             template <class SparseMdpModelType>
-            void SparseMdpRewardBoundedPcaaWeightVectorChecker<SparseMdpModelType>::updateCachedData(typename MultiDimensionalRewardUnfolding<ValueType, false>::EpochModel const& epochModel, EpochCheckingData& cachedData) {
+            void SparseMdpRewardBoundedPcaaWeightVectorChecker<SparseMdpModelType>::updateCachedData(typename MultiDimensionalRewardUnfolding<ValueType, false>::EpochModel const& epochModel, EpochCheckingData& cachedData, std::vector<ValueType> const& weightVector) {
                 if (epochModel.epochMatrixChanged) {
                     swDataUpdate.start();
                 
@@ -163,9 +174,23 @@ namespace storm {
                     cachedData.xMinMax.assign(epochModel.epochMatrix.getRowGroupCount(), storm::utility::zero<ValueType>());
                     storm::solver::GeneralMinMaxLinearEquationSolverFactory<ValueType> minMaxSolverFactory;
                     cachedData.minMaxSolver = minMaxSolverFactory.create(epochModel.epochMatrix);
-                    cachedData.minMaxSolver->setOptimizationDirection(storm::solver::OptimizationDirection::Maximize);
                     cachedData.minMaxSolver->setTrackScheduler(true);
                     cachedData.minMaxSolver->setCachingEnabled(true);
+                    auto req = cachedData.minMaxSolver->getRequirements(storm::solver::EquationSystemType::StochasticShortestPath);
+                    req.clearNoEndComponents();
+                    boost::optional<ValueType> lowerBound = this->computeWeightedResultBound(true, weightVector, storm::storage::BitVector(weightVector.size(), true));
+                    if (lowerBound) {
+                        cachedData.minMaxSolver->setLowerBound(lowerBound.get());
+                        req.clearLowerBounds();
+                    }
+                    boost::optional<ValueType> upperBound = this->computeWeightedResultBound(false, weightVector, storm::storage::BitVector(weightVector.size(), true));
+                    if (upperBound) {
+                        cachedData.minMaxSolver->setUpperBound(upperBound.get());
+                        req.clearUpperBounds();
+                    }
+                    STORM_LOG_THROW(req.empty(), storm::exceptions::UncheckedRequirementException, "At least one requirement of the MinMaxSolver was not met.");
+                    cachedData.minMaxSolver->setRequirementsChecked(true);
+                    cachedData.minMaxSolver->setOptimizationDirection(storm::solver::OptimizationDirection::Maximize);
                 
                     // Set the scheduler choices to invalid choice indices so that an update of the linEqSolver is enforced
                     cachedData.schedulerChoices.assign(epochModel.epochMatrix.getRowGroupCount(), std::numeric_limits<uint64_t>::max());

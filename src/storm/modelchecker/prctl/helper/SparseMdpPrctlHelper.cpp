@@ -94,6 +94,11 @@ namespace storm {
                         minMaxSolver->setCachingEnabled(true);
                         minMaxSolver->setLowerBound(storm::utility::zero<ValueType>());
                         minMaxSolver->setUpperBound(storm::utility::one<ValueType>());
+                        auto req = minMaxSolver->getRequirements(storm::solver::EquationSystemType::StochasticShortestPath, dir);
+                        req.clearNoEndComponents();
+                        req.clearBounds();
+                        STORM_LOG_THROW(req.empty(), storm::exceptions::UncheckedRequirementException, "A solver requirement is not satisfied.");
+                        minMaxSolver->setRequirementsChecked();
                     }
                     
                     // Prepare the right hand side of the equation system
