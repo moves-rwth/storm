@@ -62,11 +62,6 @@ namespace storm {
                     ImpreciseType fraction = input[index] - integer;
                     auto rational = findRational<RationalType>(precision, fraction);
                     output[index] = storm::utility::convertNumber<RationalType>(integer) + rational;
-                    STORM_LOG_ASSERT(storm::utility::isZero(fraction) || !storm::utility::isZero(rational), "Found zero rational for non-zero fraction " << fraction << ".");
-                    STORM_LOG_ASSERT(rational >= storm::utility::zero<RationalType>(), "Expected non-negative rational.");
-                    if (std::is_same<RationalType, ImpreciseType>::value) {
-                        STORM_LOG_ASSERT(output[index] >= input[index], "Sharpen decreased value from " << input[index] << " to " << output[index] << ".");
-                    }
                 }
             }
             

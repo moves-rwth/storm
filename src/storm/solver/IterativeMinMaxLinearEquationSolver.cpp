@@ -232,7 +232,7 @@ namespace storm {
                 this->schedulerChoices = std::move(scheduler);
             }
             
-            if(!this->isCachingEnabled()) {
+            if (!this->isCachingEnabled()) {
                 clearCache();
             }
             
@@ -328,8 +328,6 @@ namespace storm {
                     linearEquationSolver.multiplyAndReduce(dir, this->A->getRowGroupIndices(), *currentX, &b, *newX);
                 }
                 
-                std::cout << "position 4: " << (*currentX)[4] << " vs " << (*newX)[4] << std::endl;
-                
                 // Determine whether the method converged.
                 if (storm::utility::vector::equalModuloPrecision<ValueType>(*currentX, *newX, precision, relative)) {
                     status = Status::Converged;
@@ -403,6 +401,11 @@ namespace storm {
             this->startMeasureProgress();
             ValueIterationResult result = performValueIteration(dir, currentX, newX, b, this->getSettings().getPrecision(), this->getSettings().getRelativeTerminationCriterion(), guarantee, 0);
 
+            // Swap the result into the output x.
+            if (currentX == auxiliaryRowGroupVector.get()) {
+                std::swap(x, *currentX);
+            }
+            
             reportStatus(result.status, result.iterations);
             
             // If requested, we store the scheduler for retrieval.
@@ -644,10 +647,7 @@ namespace storm {
                 
                 // If the value does not match the one in the values vector, the given vector is not a solution.
                 if (!comparator.isEqual(groupValue, *valueIt)) {
-                    std::cout << "offending group " << group << " : " << groupValue << " vs " << *valueIt << std::endl;
                     return false;
-                } else if (group == 1) {
-                    std::cout << "val for group 1 is " << groupValue << " vs 227630345357/3221225472" << std::endl;
                 }
             }
             
@@ -659,18 +659,12 @@ namespace storm {
         template<typename RationalType, typename ImpreciseType>
         bool IterativeMinMaxLinearEquationSolver<ValueType>::sharpen(storm::OptimizationDirection dir, uint64_t precision, storm::storage::SparseMatrix<RationalType> const& A, std::vector<ImpreciseType> const& x, std::vector<RationalType> const& b, std::vector<RationalType>& tmp) {
             
-            std::cout << "pre sharpen x[0] " << x[0] << ", is smaller? " << (x[0] < storm::utility::convertNumber<ImpreciseType>(std::string("227630345357/3221225472"))) << " with diff " << (x[0] - storm::utility::convertNumber<ImpreciseType>(std::string("227630345357/3221225472"))) << std::endl;
-            
-            storm::utility::kwek_mehlhorn::sharpen(precision, x, tmp);
+            for (uint64_t p = 0; p <= precision; ++p) {
+                storm::utility::kwek_mehlhorn::sharpen(p, x, tmp);
 
-            std::cout << "post sharpen x[0] " << tmp[0] << ", is smaller? " << (tmp[0] < storm::utility::convertNumber<RationalType>(std::string("227630345357/3221225472"))) << " with diff " << (tmp[0] - storm::utility::convertNumber<RationalType>(std::string("227630345357/3221225472"))) << std::endl;
-            
-            if (std::is_same<RationalType, ImpreciseType>::value) {
-                std::cout << "sharpen smaller? " << (tmp[0] < storm::utility::convertNumber<RationalType>(x[0])) << std::endl;
-            }
-
-            if (IterativeMinMaxLinearEquationSolver<RationalType>::isSolution(dir, A, tmp, b)) {
-                return true;
+                if (IterativeMinMaxLinearEquationSolver<RationalType>::isSolution(dir, A, tmp, b)) {
+                    return true;
+                }
             }
             return false;
         }
@@ -811,7 +805,7 @@ namespace storm {
 
         template<typename RationalType, typename ImpreciseType>
         struct TemporaryHelper {
-            static std::vector<RationalType>* getFreeRational(std::vector<RationalType>& rationalX, std::vector<ImpreciseType>*& currentX, std::vector<ImpreciseType>*& newX) {
+            static std::vector<RationalType>* getTemporary(std::vector<RationalType>& rationalX, std::vector<ImpreciseType>*& currentX, std::vector<ImpreciseType>*& newX) {
                 return &rationalX;
             }
             
@@ -822,7 +816,7 @@ namespace storm {
         
         template<typename RationalType>
         struct TemporaryHelper<RationalType, RationalType> {
-            static std::vector<RationalType>* getFreeRational(std::vector<RationalType>& rationalX, std::vector<RationalType>*& currentX, std::vector<RationalType>*& newX) {
+            static std::vector<RationalType>* getTemporary(std::vector<RationalType>& rationalX, std::vector<RationalType>*& currentX, std::vector<RationalType>*& newX) {
                 return newX;
             }
 
@@ -869,17 +863,17 @@ namespace storm {
                 uint64_t p = storm::utility::convertNumber<uint64_t>(storm::utility::ceil(storm::utility::log10<ValueType>(storm::utility::one<ValueType>() / precision)));
                 
                 // Make sure that currentX and rationalX are not aliased.
-                std::vector<RationalType>* freeRational = TemporaryHelper<RationalType, ImpreciseType>::getFreeRational(rationalX, currentX, newX);
+                std::vector<RationalType>* temporaryRational = TemporaryHelper<RationalType, ImpreciseType>::getTemporary(rationalX, currentX, newX);
                 
-                // Sharpen solution and place it in rationalX.
-                bool foundSolution = sharpen(dir, p, rationalA, *currentX, rationalB, *freeRational);
+                // Sharpen solution and place it in the temporary rational.
+                bool foundSolution = sharpen(dir, p, rationalA, *currentX, rationalB, *temporaryRational);
                 
                 // After sharpen, if a solution was found, it is contained in the free rational.
                 
                 if (foundSolution) {
                     status = Status::Converged;
                     
-                    TemporaryHelper<RationalType, ImpreciseType>::swapSolutions(rationalX, freeRational, x, currentX, newX);
+                    TemporaryHelper<RationalType, ImpreciseType>::swapSolutions(rationalX, temporaryRational, x, currentX, newX);
                 } else {
                     // Increase the precision.
                     precision = precision / 100;
@@ -897,11 +891,7 @@ namespace storm {
 
         template<typename ValueType>
         bool IterativeMinMaxLinearEquationSolver<ValueType>::solveEquationsRationalSearch(OptimizationDirection dir, std::vector<ValueType>& x, std::vector<ValueType> const& b) const {
-            if (this->getSettings().getForceSoundness()) {
-                return solveEquationsRationalSearchHelper<ValueType>(dir, x, b);
-            } else {
-                return solveEquationsRationalSearchHelper<double>(dir, x, b);
-            }
+            return solveEquationsRationalSearchHelper<double>(dir, x, b);
         }
         
         template<typename ValueType>

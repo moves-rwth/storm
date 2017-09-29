@@ -7,6 +7,7 @@
 #include "storm/settings/modules/IOSettings.h"
 #include "storm/settings/modules/GeneralSettings.h"
 
+#include "storm/utility/constants.h"
 #include "storm/utility/macros.h"
 #include "storm/exceptions/UnmetRequirementException.h"
 
@@ -160,9 +161,9 @@ namespace storm {
             if (this->hasLowerBound(BoundType::Local)) {
                 lowerBoundsVector = this->getLowerBounds();
             } else {
-                STORM_LOG_THROW(this->hasLowerBound(BoundType::Global), storm::exceptions::UnmetRequirementException, "Cannot create lower bounds vector without lower bound.");
+                ValueType lowerBound = this->hasLowerBound(BoundType::Global) ? this->getLowerBound() : storm::utility::zero<ValueType>();
                 for (auto& e : lowerBoundsVector) {
-                    e = this->getLowerBound();
+                    e = lowerBound;
                 }
             }
         }

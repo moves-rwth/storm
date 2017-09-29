@@ -14,7 +14,7 @@ namespace storm {
         class NativeLinearEquationSolverSettings {
         public:
             enum class SolutionMethod {
-                Jacobi, GaussSeidel, SOR, WalkerChae, Power
+                Jacobi, GaussSeidel, SOR, WalkerChae, Power, RationalSearch
             };
 
             NativeLinearEquationSolverSettings();
@@ -76,6 +76,24 @@ namespace storm {
             virtual bool internalSolveEquations(std::vector<ValueType>& x, std::vector<ValueType> const& b) const override;
             
         private:
+            enum class Status {
+                Converged, TerminatedEarly, MaximalIterationsExceeded, InProgress
+            };
+            
+            struct PowerIterationResult {
+                PowerIterationResult(uint64_t iterations, Status status) : iterations(iterations), status(status) {
+                    // Intentionally left empty.
+                }
+                
+                uint64_t iterations;
+                Status status;
+            };
+            
+            template <typename ValueTypePrime>
+            friend class NativeLinearEquationSolver;
+            
+            PowerIterationResult performPowerIteration(std::vector<ValueType>*& currentX, std::vector<ValueType>*& newX, std::vector<ValueType> const& b, ValueType const& precision, bool relative, SolverGuarantee const& guarantee, uint64_t currentIterations) const;
+            
             void logIterations(bool converged, bool terminate, uint64_t iterations) const;
             
             virtual uint64_t getMatrixRowCount() const override;

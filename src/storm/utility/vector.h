@@ -798,7 +798,6 @@ namespace storm {
                 } else {
                     T diff = val1 - val2;
                     if (storm::utility::abs(diff) > precision) {
-                        std::cout << "diff " << storm::utility::abs(diff) << " vs precision " << precision << std::endl;
                         return false;
                     }
                 }
@@ -843,7 +842,6 @@ namespace storm {
                 auto rightIt = vectorRight.begin();
                 for (; leftIt != leftIte; ++leftIt, ++rightIt) {
                     if (!equalModuloPrecision(*leftIt, *rightIt, precision, relativeError)) {
-                        std::cout << "offending position " << std::distance(vectorLeft.begin(), leftIt) << std::endl;
                         return false;
                     }
                 }

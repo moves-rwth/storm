@@ -30,6 +30,8 @@ namespace storm {
                 method = SolutionMethod::WalkerChae;
             } else if (methodAsSetting == storm::settings::modules::NativeEquationSolverSettings::LinearEquationMethod::Power) {
                 method = SolutionMethod::Power;
+            } else if (methodAsSetting == storm::settings::modules::NativeEquationSolverSettings::LinearEquationMethod::RationalSearch) {
+                method = SolutionMethod::RationalSearch;
             } else {
                 STORM_LOG_THROW(false, storm::exceptions::InvalidSettingsException, "The selected solution technique is invalid for this solver.");
             }
@@ -80,8 +82,8 @@ namespace storm {
         template<typename ValueType>
         void NativeLinearEquationSolverSettings<ValueType>::setForceSoundness(bool value) {
             forceSoundness = value;
-            if (forceSoundness) {
-                STORM_LOG_WARN_COND(method != SolutionMethod::Power, "To guarantee soundness, the equation solving technique has been switched to '" << storm::settings::modules::NativeEquationSolverSettings::LinearEquationMethod::Power << "'.");
+            if (forceSoundness && method != SolutionMethod::Power && method != SolutionMethod::RationalSearch) {
+                STORM_LOG_WARN("To guarantee soundness, the equation solving technique has been switched to '" << storm::settings::modules::NativeEquationSolverSettings::LinearEquationMethod::Power << "'.");
                 method = SolutionMethod::Power;
             }
         }
@@ -389,55 +391,72 @@ namespace storm {
         }
         
         template<typename ValueType>
-        bool NativeLinearEquationSolver<ValueType>::solveEquationsPower(std::vector<ValueType>& x, std::vector<ValueType> const& b) const {
-            STORM_LOG_THROW(this->hasLowerBound(), storm::exceptions::UnmetRequirementException, "Solver requires upper bound, but none was given.");
-            STORM_LOG_INFO("Solving linear equation system (" << x.size() << " rows) with NativeLinearEquationSolver (Power)");
+        typename NativeLinearEquationSolver<ValueType>::PowerIterationResult NativeLinearEquationSolver<ValueType>::performPowerIteration(std::vector<ValueType>*& currentX, std::vector<ValueType>*& newX, std::vector<ValueType> const& b, ValueType const& precision, bool relative, SolverGuarantee const& guarantee, uint64_t currentIterations) const {
             
-            if (!this->cachedRowVector) {
-                this->cachedRowVector = std::make_unique<std::vector<ValueType>>(getMatrixRowCount());
-            }
-            
-            std::vector<ValueType>* currentX = &x;
-            this->createLowerBoundsVector(*currentX);
-            std::vector<ValueType>* nextX = this->cachedRowVector.get();
-
             bool useGaussSeidelMultiplication = this->getSettings().getPowerMethodMultiplicationStyle() == storm::solver::MultiplicationStyle::GaussSeidel;
             
+            std::vector<ValueType>* originalX = currentX;
+            
             bool converged = false;
-            bool terminate = this->terminateNow(*currentX, SolverGuarantee::LessOrEqual);
-            uint64_t iterations = 0;
-            this->startMeasureProgress();
+            bool terminate = this->terminateNow(*currentX, guarantee);
+            uint64_t iterations = currentIterations;
             while (!converged && !terminate && iterations < this->getSettings().getMaximalNumberOfIterations()) {
                 if (useGaussSeidelMultiplication) {
-                    *nextX = *currentX;
-                    this->multiplier.multAddGaussSeidelBackward(*this->A, *nextX, &b);
+                    *newX = *currentX;
+                    this->multiplier.multAddGaussSeidelBackward(*this->A, *newX, &b);
                 } else {
-                    this->multiplier.multAdd(*this->A, *currentX, &b, *nextX);
+                    this->multiplier.multAdd(*this->A, *currentX, &b, *newX);
                 }
                 
                 // Now check for termination.
-                converged = storm::utility::vector::equalModuloPrecision<ValueType>(*currentX, *nextX, static_cast<ValueType>(this->getSettings().getPrecision()), this->getSettings().getRelativeTerminationCriterion());
+                converged = storm::utility::vector::equalModuloPrecision<ValueType>(*currentX, *newX, static_cast<ValueType>(this->getSettings().getPrecision()), this->getSettings().getRelativeTerminationCriterion());
                 terminate = this->terminateNow(*currentX, SolverGuarantee::LessOrEqual);
                 
                 // Potentially show progress.
                 this->showProgressIterative(iterations);
-
+                
                 // Set up next iteration.
-                std::swap(currentX, nextX);
+                std::swap(currentX, newX);
                 ++iterations;
             }
             
+            // Swap the pointers so that the output is always in currentX.
+            if (originalX == newX) {
+                std::swap(currentX, newX);
+            }
+            
+            return PowerIterationResult(iterations - currentIterations, converged ? Status::Converged : (terminate ? Status::TerminatedEarly : Status::MaximalIterationsExceeded));
+        }
+        
+        template<typename ValueType>
+        bool NativeLinearEquationSolver<ValueType>::solveEquationsPower(std::vector<ValueType>& x, std::vector<ValueType> const& b) const {
+            STORM_LOG_THROW(this->hasLowerBound(), storm::exceptions::UnmetRequirementException, "Solver requires upper bound, but none was given.");
+            STORM_LOG_INFO("Solving linear equation system (" << x.size() << " rows) with NativeLinearEquationSolver (Power)");
+
+            // Prepare the solution vectors.
+            if (!this->cachedRowVector) {
+                this->cachedRowVector = std::make_unique<std::vector<ValueType>>(getMatrixRowCount());
+            }
+            std::vector<ValueType>* currentX = &x;
+            this->createLowerBoundsVector(*currentX);
+            std::vector<ValueType>* newX = this->cachedRowVector.get();
+            
+            // Forward call to power iteration implementation.
+            this->startMeasureProgress();
+            PowerIterationResult result = this->performPowerIteration(currentX, newX, b, this->getSettings().getPrecision(), this->getSettings().getRelativeTerminationCriterion(), SolverGuarantee::LessOrEqual, 0);
+
+            // Swap the result in place.
             if (currentX == this->cachedRowVector.get()) {
-                std::swap(x, *nextX);
+                std::swap(x, *newX);
             }
             
             if (!this->isCachingEnabled()) {
                 clearCache();
             }
             
-            this->logIterations(converged, terminate, iterations);
+            this->logIterations(result.status == Status::Converged, result.status == Status::TerminatedEarly, result.iterations);
 
-            return converged;
+            return result.status == Status::Converged || result.status == Status::TerminatedEarly;
         }
         
         template<typename ValueType>

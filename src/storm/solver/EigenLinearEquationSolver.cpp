@@ -358,6 +358,7 @@ namespace storm {
             StormEigen::SparseLU<StormEigen::SparseMatrix<storm::RationalNumber>, StormEigen::COLAMDOrdering<int>> solver;
             solver.compute(*eigenA);
             solver._solve_impl(eigenB, eigenX);
+                        
             return solver.info() == StormEigen::ComputationInfo::Success;
         }
         

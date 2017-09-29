@@ -116,6 +116,7 @@ namespace storm {
 
                                 requirements.clearValidInitialScheduler();
                             }
+                            requirements.clearBounds();
                             STORM_LOG_THROW(requirements.empty(), storm::exceptions::UncheckedRequirementException, "Cannot establish requirements for solver.");
                         }
                         
@@ -358,6 +359,7 @@ namespace storm {
                                 requireInitialScheduler = true;
                                 requirements.clearValidInitialScheduler();
                             }
+                            requirements.clearLowerBounds();
                             STORM_LOG_THROW(requirements.empty(), storm::exceptions::UncheckedRequirementException, "Cannot establish requirements for solver.");
                         }
 
@@ -420,6 +422,7 @@ namespace storm {
                             solver->setInitialScheduler(std::move(initialScheduler.get()));
                         }
                         
+                        solver->setLowerBound(storm::utility::zero<ValueType>());
                         solver->setRequirementsChecked();
                         solver->solveEquations(dir, x, explicitRepresentation.second);
                         

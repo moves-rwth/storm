@@ -1253,11 +1253,13 @@ namespace storm {
                 
                 // Check for requirements of the solver.
                 storm::solver::MinMaxLinearEquationSolverRequirements requirements = minMaxLinearEquationSolverFactory.getRequirements(storm::solver::EquationSystemType::StochasticShortestPath);
+                requirements.clearLowerBounds();
                 STORM_LOG_THROW(requirements.empty(), storm::exceptions::UncheckedRequirementException, "Cannot establish requirements for solver.");
                 
                 std::vector<ValueType> sspResult(numberOfSspStates);
                 goal.restrictRelevantValues(statesNotContainedInAnyMec);
                 std::unique_ptr<storm::solver::MinMaxLinearEquationSolver<ValueType>> solver = storm::solver::configureMinMaxLinearEquationSolver(std::move(goal), minMaxLinearEquationSolverFactory, sspMatrix);
+                solver->setLowerBound(storm::utility::zero<ValueType>());
                 solver->setRequirementsChecked();
                 solver->solveEquations(sspResult, b);
                 
