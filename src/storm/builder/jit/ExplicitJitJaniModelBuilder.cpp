@@ -99,6 +99,7 @@ namespace storm {
                 } else {
                     carlIncludeDirectory = STORM_CARL_INCLUDE_DIR;
                 }
+                sparseppIncludeDirectory = STORM_BUILD_DIR "/include/resources/3rdparty/sparsepp/";
                 
                 // Register all transient variables as transient.
                 for (auto const& variable : this->model.getGlobalVariables().getTransientVariables()) {
@@ -527,13 +528,13 @@ namespace storm {
                 }
                 modelData["exploration_checks"] = cpptempl::make_data(list);
                 list = cpptempl::data_list();
-                if (options.isExplorationShowProgressSet()) {
+                if (options.isShowProgressSet()) {
                     list.push_back(cpptempl::data_map());
                 }
                 modelData["expl_progress"] = cpptempl::make_data(list);
                 
                 std::stringstream progressDelayStream;
-                progressDelayStream << options.getExplorationShowProgressDelay();
+                progressDelayStream << options.getShowProgressDelay();
                 modelData["expl_progress_interval"] = cpptempl::make_data(progressDelayStream.str());
                 list = cpptempl::data_list();
                 if (std::is_same<storm::RationalNumber, ValueType>::value) {
@@ -1087,6 +1088,7 @@ namespace storm {
                 std::stringstream tmp;
                 indent(tmp, indentLevel + 1) << "{% for reward in destination_rewards %}choice.addReward({$reward.index}, probability * transientOut.{$reward.variable});" << std::endl;
                 indent(tmp, indentLevel + 1) << "{% endfor %}" << std::endl;
+                vectorSource << cpptempl::parse(tmp.str(), modelData);
                 indent(vectorSource, indentLevel) << "}" << std::endl << std::endl;
                 
                 indent(vectorSource, indentLevel) << "void performSynchronizedDestinations_" << synchronizationVectorIndex << "(StateType const& in, StateBehaviour<IndexType, ValueType>& behaviour, StateSet<StateType>& statesToExplore, ";
@@ -1675,7 +1677,7 @@ namespace storm {
 #include "storm/adapters/RationalFunctionAdapter.h"
 {% endif %}
                 
-#include "resources/3rdparty/sparsepp/sparsepp.h"
+#include <sparsepp/spp.h>
                 
 #include "storm/builder/jit/StateSet.h"
 #include "storm/builder/jit/JitModelBuilderInterface.h"
@@ -2308,8 +2310,8 @@ namespace storm {
 
                                         {% if dontFixDeadlocks %}
                                         if (behaviour.empty() && behaviour.isExpanded() ) {
-                                            std::cout << currentState << std::endl;
-                                            throw storm::exceptions::WrongFormatException("Error while creating sparse matrix from JANI model: found deadlock state  and fixing deadlocks was explicitly disabled.");
+                                            std::cout << "found deadlock state: " << currentState << std::endl;
+                                            throw storm::exceptions::WrongFormatException("Error while creating sparse matrix from JANI model: found deadlock state and fixing deadlocks was explicitly disabled.");
                                         }
                                         {% endif %}
 
@@ -2462,7 +2464,7 @@ namespace storm {
                 dynamicLibraryPath += DYLIB_EXTENSION;
                 std::string dynamicLibraryFilename = boost::filesystem::absolute(dynamicLibraryPath).string();
                 
-                std::string command = compiler + " " + sourceFilename + " " + compilerFlags + " -I" + stormIncludeDirectory + " -I" + boostIncludeDirectory + " -I" + carlIncludeDirectory + " -o " + dynamicLibraryFilename;
+                std::string command = compiler + " " + sourceFilename + " " + compilerFlags + " -I" + stormIncludeDirectory + " -I" + sparseppIncludeDirectory + " -I" + boostIncludeDirectory + " -I" + carlIncludeDirectory + " -o " + dynamicLibraryFilename;
                 boost::optional<std::string> error = execute(command);
                 
                 if (error) {

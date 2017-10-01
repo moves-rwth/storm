@@ -9,6 +9,7 @@
 #include "storm/utility/constants.h"
 #include "storm/utility/macros.h"
 #include "storm/exceptions/NotSupportedException.h"
+#include "storm/exceptions/InvalidSettingsException.h"
 
 #include "storm/utility/sylvan.h"
 
@@ -16,6 +17,17 @@
 
 namespace storm {
     namespace dd {
+        
+#ifndef NDEBUG
+        VOID_TASK_0(gc_start) {
+            STORM_LOG_TRACE("Starting sylvan garbage collection...");
+        }
+        
+        VOID_TASK_0(gc_end) {
+            STORM_LOG_TRACE("Sylvan garbage collection done.");
+        }
+#endif
+        
         uint_fast64_t InternalDdManager<DdType::Sylvan>::numberOfInstances = 0;
         
         // It is important that the variable pairs start at an even offset, because sylvan assumes this to be true for
@@ -35,9 +47,9 @@ namespace storm {
             if (numberOfInstances == 0) {
                 storm::settings::modules::SylvanSettings const& settings = storm::settings::getModule<storm::settings::modules::SylvanSettings>();
                 if (settings.isNumberOfThreadsSet()) {
-                    lace_init(settings.getNumberOfThreads(), 1000000);
+                    lace_init(settings.getNumberOfThreads(), 1024*1024*16);
                 } else {
-                    lace_init(0, 1000000);
+                    lace_init(0, 1024*1024*16);
                 }
                 lace_startup(0, 0, 0);
                 
@@ -47,10 +59,29 @@ namespace storm {
                 // Compute the power of two that still fits within the total numbers to store.
                 uint_fast64_t powerOfTwo = findLargestPowerOfTwoFitting(totalNodesToStore);
                 
-                sylvan::Sylvan::initPackage(1ull << std::max(16ull, powerOfTwo > 24 ? powerOfTwo - 8 : 0ull), 1ull << (powerOfTwo - 1), 1ull << std::max(16ull, powerOfTwo > 24 ? powerOfTwo - 12 : 0ull), 1ull << (powerOfTwo - 1));
+                STORM_LOG_THROW(powerOfTwo >= 16, storm::exceptions::InvalidSettingsException, "Too little memory assigned to sylvan.");
+                
+                uint64_t maxTableSize = 1ull << powerOfTwo;
+                uint64_t maxCacheSize = 1ull << (powerOfTwo - 1);
+                if (maxTableSize + maxCacheSize > totalNodesToStore) {
+                    maxTableSize >>= 1;
+                }
+                
+                uint64_t initialTableSize = 1ull << std::max(powerOfTwo - 4, static_cast<uint_fast64_t>(16));
+                uint64_t initialCacheSize = initialTableSize;
+                
+                STORM_LOG_DEBUG("Initializing sylvan. Initial/max table size: " << initialTableSize << "/" << maxTableSize << ", initial/max cache size: " << initialCacheSize << "/" << maxCacheSize << ".");
+                sylvan::Sylvan::initPackage(initialTableSize, maxTableSize, initialCacheSize, maxCacheSize);
+
                 sylvan::Sylvan::initBdd();
                 sylvan::Sylvan::initMtbdd();
                 sylvan::Sylvan::initCustomMtbdd();
+                
+#ifndef NDEBUG
+                sylvan_gc_hook_pregc(TASK(gc_start));
+                sylvan_gc_hook_postgc(TASK(gc_end));
+#endif
+
             }
             ++numberOfInstances;
         }
@@ -98,6 +129,28 @@ namespace storm {
             return InternalBdd<DdType::Sylvan>(this, sylvan::Bdd::bddZero());
         }
         
+        InternalBdd<DdType::Sylvan> InternalDdManager<DdType::Sylvan>::getBddEncodingLessOrEqualThan(uint64_t bound, InternalBdd<DdType::Sylvan> const& cube, uint64_t numberOfDdVariables) const {
+            return InternalBdd<DdType::Sylvan>(this, sylvan::Bdd(this->getBddEncodingLessOrEqualThanRec(0, (1ull << numberOfDdVariables) - 1, bound, cube.getSylvanBdd().GetBDD(), numberOfDdVariables)));
+        }
+        
+        BDD InternalDdManager<DdType::Sylvan>::getBddEncodingLessOrEqualThanRec(uint64_t minimalValue, uint64_t maximalValue, uint64_t bound, BDD cube, uint64_t remainingDdVariables) const {
+            if (maximalValue <= bound) {
+                return sylvan_true;
+            } else if (minimalValue > bound) {
+                return sylvan_false;
+            }
+            
+            STORM_LOG_ASSERT(remainingDdVariables > 0, "Expected more remaining DD variables.");
+            uint64_t newRemainingDdVariables = remainingDdVariables - 1;
+            BDD elseResult = getBddEncodingLessOrEqualThanRec(minimalValue, maximalValue & ~(1ull << newRemainingDdVariables), bound, sylvan_high(cube), newRemainingDdVariables);
+            bdd_refs_push(elseResult);
+            BDD thenResult = getBddEncodingLessOrEqualThanRec(minimalValue | (1ull << newRemainingDdVariables), maximalValue, bound, sylvan_high(cube), newRemainingDdVariables);
+            bdd_refs_push(elseResult);
+            BDD result = sylvan_makenode(sylvan_var(cube), elseResult, thenResult);
+            bdd_refs_pop(2);
+            return result;
+        }
+        
         template<>
         InternalAdd<DdType::Sylvan, double> InternalDdManager<DdType::Sylvan>::getAddZero() const {
             return InternalAdd<DdType::Sylvan, double>(this, sylvan::Mtbdd::doubleTerminal(storm::utility::zero<double>()));
@@ -119,7 +172,12 @@ namespace storm {
 			return InternalAdd<DdType::Sylvan, storm::RationalFunction>(this, sylvan::Mtbdd::stormRationalFunctionTerminal(storm::utility::zero<storm::RationalFunction>()));
 		}
 #endif
-        
+
+        template<typename ValueType>
+        InternalAdd<DdType::Sylvan, ValueType> InternalDdManager<DdType::Sylvan>::getAddUndefined() const {
+            return InternalAdd<DdType::Sylvan, ValueType>(this, sylvan::Mtbdd(sylvan::Bdd::bddZero()));
+        }
+
         template<>
         InternalAdd<DdType::Sylvan, double> InternalDdManager<DdType::Sylvan>::getConstant(double const& value) const {
             return InternalAdd<DdType::Sylvan, double>(this, sylvan::Mtbdd::doubleTerminal(value));
@@ -171,6 +229,10 @@ namespace storm {
             STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Operation is not supported by sylvan.");
         }
         
+        void InternalDdManager<DdType::Sylvan>::debugCheck() const {
+            STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Operation is not supported by sylvan.");
+        }
+        
         uint_fast64_t InternalDdManager<DdType::Sylvan>::getNumberOfDdVariables() const {
             return nextFreeVariableIndex;
         }
@@ -191,6 +253,15 @@ namespace storm {
 
 #ifdef STORM_HAVE_CARL
 		template InternalAdd<DdType::Sylvan, storm::RationalFunction> InternalDdManager<DdType::Sylvan>::getAddZero() const;
+#endif
+
+        template InternalAdd<DdType::Sylvan, double> InternalDdManager<DdType::Sylvan>::getAddUndefined() const;
+        template InternalAdd<DdType::Sylvan, uint_fast64_t> InternalDdManager<DdType::Sylvan>::getAddUndefined() const;
+        
+        template InternalAdd<DdType::Sylvan, storm::RationalNumber> InternalDdManager<DdType::Sylvan>::getAddUndefined() const;
+
+#ifdef STORM_HAVE_CARL
+        template InternalAdd<DdType::Sylvan, storm::RationalFunction> InternalDdManager<DdType::Sylvan>::getAddUndefined() const;
 #endif
         
         template InternalAdd<DdType::Sylvan, double> InternalDdManager<DdType::Sylvan>::getConstant(double const& value) const;

@@ -35,6 +35,12 @@ namespace storm {
                 // Intentionally left empty
             }
    
+            template<typename ValueType, typename RewardModelType>
+            void Dtmc<ValueType, RewardModelType>::reduceToStateBasedRewards() {
+                for (auto& rewardModel : this->getRewardModels()) {
+                    rewardModel.second.reduceToStateBasedRewards(this->getTransitionMatrix(), true);
+                }
+            }
             
             template class Dtmc<double>;
 

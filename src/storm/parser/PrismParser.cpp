@@ -216,19 +216,19 @@ namespace storm {
             moduleDefinitionList %= +(moduleRenaming(qi::_r1) | moduleDefinition(qi::_r1))[phoenix::push_back(phoenix::bind(&GlobalProgramInformation::modules, qi::_r1), qi::_1)];
             moduleDefinitionList.name("module list");
             
-            start = (qi::eps[phoenix::bind(&PrismParser::removeInitialConstruct, phoenix::ref(*this), qi::_a)]
-                     > *(modelTypeDefinition[phoenix::bind(&PrismParser::setModelType, phoenix::ref(*this), qi::_a, qi::_1)]
-                         | definedConstantDefinition[phoenix::push_back(phoenix::bind(&GlobalProgramInformation::constants, qi::_a), qi::_1)]
-                         | undefinedConstantDefinition[phoenix::push_back(phoenix::bind(&GlobalProgramInformation::constants, qi::_a), qi::_1)]
-                         | formulaDefinition[phoenix::push_back(phoenix::bind(&GlobalProgramInformation::formulas, qi::_a), qi::_1)]
-                         | globalVariableDefinition(qi::_a)
-                         | (moduleRenaming(qi::_a) | moduleDefinition(qi::_a))[phoenix::push_back(phoenix::bind(&GlobalProgramInformation::modules, qi::_a), qi::_1)]
-                         | initialStatesConstruct(qi::_a)
-                         | rewardModelDefinition(qi::_a)[phoenix::push_back(phoenix::bind(&GlobalProgramInformation::rewardModels, qi::_a), qi::_1)]
-                         | labelDefinition[phoenix::push_back(phoenix::bind(&GlobalProgramInformation::labels, qi::_a), qi::_1)] 
-                         | formulaDefinition[phoenix::push_back(phoenix::bind(&GlobalProgramInformation::formulas, qi::_a), qi::_1)]
+            start = (qi::eps[phoenix::bind(&PrismParser::removeInitialConstruct, phoenix::ref(*this), phoenix::ref(globalProgramInformation))]
+                     > *(modelTypeDefinition[phoenix::bind(&PrismParser::setModelType, phoenix::ref(*this), phoenix::ref(globalProgramInformation), qi::_1)]
+                         | definedConstantDefinition[phoenix::push_back(phoenix::bind(&GlobalProgramInformation::constants, phoenix::ref(globalProgramInformation)), qi::_1)]
+                         | undefinedConstantDefinition[phoenix::push_back(phoenix::bind(&GlobalProgramInformation::constants, phoenix::ref(globalProgramInformation)), qi::_1)]
+                         | formulaDefinition[phoenix::push_back(phoenix::bind(&GlobalProgramInformation::formulas, phoenix::ref(globalProgramInformation)), qi::_1)]
+                         | globalVariableDefinition(phoenix::ref(globalProgramInformation))
+                         | (moduleRenaming(phoenix::ref(globalProgramInformation)) | moduleDefinition(phoenix::ref(globalProgramInformation)))[phoenix::push_back(phoenix::bind(&GlobalProgramInformation::modules, phoenix::ref(globalProgramInformation)), qi::_1)]
+                         | initialStatesConstruct(phoenix::ref(globalProgramInformation))
+                         | rewardModelDefinition(phoenix::ref(globalProgramInformation))[phoenix::push_back(phoenix::bind(&GlobalProgramInformation::rewardModels, phoenix::ref(globalProgramInformation)), qi::_1)]
+                         | labelDefinition[phoenix::push_back(phoenix::bind(&GlobalProgramInformation::labels, phoenix::ref(globalProgramInformation)), qi::_1)]
+                         | formulaDefinition[phoenix::push_back(phoenix::bind(&GlobalProgramInformation::formulas, phoenix::ref(globalProgramInformation)), qi::_1)]
                      )
-                     > -(systemCompositionConstruct(qi::_a)) > qi::eoi)[qi::_val = phoenix::bind(&PrismParser::createProgram, phoenix::ref(*this), qi::_a)];
+                     > -(systemCompositionConstruct(phoenix::ref(globalProgramInformation))) > qi::eoi)[qi::_val = phoenix::bind(&PrismParser::createProgram, phoenix::ref(*this), phoenix::ref(globalProgramInformation))];
             start.name("probabilistic program");
             
             // Enable location tracking for important entities.
@@ -267,6 +267,7 @@ namespace storm {
             
             this->secondRun = true;
             this->expressionParser->setIdentifierMapping(&this->identifiers_);
+            this->globalProgramInformation.moveToSecondRun();
         }
         
         void PrismParser::allowDoubleLiterals(bool flag) {

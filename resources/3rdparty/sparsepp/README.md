@@ -8,7 +8,7 @@ Sparsepp is derived from Google's excellent [sparsehash](https://github.com/spar
 - **Extremely low memory usage** (typically about one byte overhead per entry).
 - **Very efficient**, typically faster than your compiler's unordered map/set or Boost's.
 - **C++11 support** (if supported by compiler).
-- **Single header** implementation - just copy `sparsepp.h` to your project and include it.
+- ~~Single header~~ not anymore
 - **Tested** on Windows (vs2010-2015, g++), linux (g++, clang++) and MacOS (clang++).
 
 We believe Sparsepp provides an unparalleled combination of performance and memory usage, and will outperform your compiler's unordered_map on both counts. Only Google's `dense_hash_map` is consistently faster, at the cost of much greater memory usage (especially when the final size of the map is not known in advance). 
@@ -20,7 +20,7 @@ For a detailed comparison of various hash implementations, including Sparsepp, p
 ```c++
 #include <iostream>
 #include <string>
-#include <sparsepp.h>
+#include <sparsepp/spp.h>
 
 using spp::sparse_hash_map;
  
@@ -50,9 +50,7 @@ int main()
 
 ## Installation
 
-Since the full Sparsepp implementation is contained in a single header file `sparsepp.h`, the installation consist in copying this header file wherever it will be convenient to include in your project(s). 
-
-Optionally, a second header file `spp_utils.h` is provided, which implements only the spp::hash_combine() functionality. This is useful when we want to specify a hash function for a user-defined class in an header file, without including the full `sparsepp.h` header (this is demonstrated in [example 2](#example-2---providing-a-hash-function-for-a-user-defined-class) below).
+No compilation is needed, as this is a header-only library. The installation consist in copying the sparsepp directory wherever it will be convenient to include in your project(s). Also make the path to this directory is provided to the compiler with the `-I` option.
 
 ## Warning - iterator invalidation on erase/insert
 
@@ -62,7 +60,7 @@ Optionally, a second header file `spp_utils.h` is provided, which implements onl
 
 ## Usage
 
-As shown in the example above, you need to include the header file: `#include <sparsepp.h>`
+As shown in the example above, you need to include the header file: `#include <sparsepp/spp.h>`
 
 This provides the implementation for the following classes:
 
@@ -100,6 +98,16 @@ These classes provide the same interface as std::unordered_map and std::unordere
 
 - Since items are not grouped into buckets, Bucket APIs have been adapted: `max_bucket_count` is equivalent to `max_size`, and `bucket_count` returns the sparsetable size, which is normally at least twice the number of items inserted into the hash_map.
 
+## Memory allocator on Windows (when building with Visual Studio)
+
+When building with the Microsoft compiler, we provide a custom allocator because the default one (from the Visual C++ runtime) fragments memory when reallocating. 
+
+This is desirable *only* when creating large sparsepp hash maps. If you create lots of small hash_maps, memory usage may increase instead of decreasing as expected.  The reason is that, for each instance of a hash_map, the custom memory allocator creates a new memory space to allocate from, which is typically 4K, so it may be a big waste if just a few items are allocated.
+
+In order to use the custom spp allocator, define the following preprocessor variable before including `<spp/spp.h>`:
+
+`#define SPP_USE_SPP_ALLOC 1`
+
 ## Integer keys, and other hash function considerations.
 
 1. For basic integer types, sparsepp provides a default hash function which does some mixing of the bits of the keys (see [Integer Hashing](http://burtleburtle.net/bob/hash/integer.html)). This prevents a pathological case where inserted keys are sequential (1, 2, 3, 4, ...), and the lookup on non-present keys becomes very slow. 
@@ -107,7 +115,7 @@ These classes provide the same interface as std::unordered_map and std::unordere
    Of course, the user of sparsepp may provide its own hash function,  as shown below:
    
    ```c++
-   #include <sparsepp.h>
+   #include <sparsepp/spp.h>
    
    struct Hash64 {
        size_t operator()(uint64_t k) const { return (k ^ 14695981039346656037ULL) * 1099511628211ULL; }
@@ -125,7 +133,7 @@ These classes provide the same interface as std::unordered_map and std::unordere
    
    ```
 
-2. When the user provides its own hash function, for example when inserting custom classes into a hash map, sometimes the resulting hash keys have similar low order bits and cause many collisions, decreasing the efficiency of the hash map. To address this use case, sparsepp provides an optional 'mixing' of the hash key (see [Integer Hash Function](https://gist.github.com/badboy/6267743) which can be enabled by defining the proprocessor macro: SPP_HASH_MIX. 
+2. When the user provides its own hash function, for example when inserting custom classes into a hash map, sometimes the resulting hash keys have similar low order bits and cause many collisions, decreasing the efficiency of the hash map. To address this use case, sparsepp provides an optional 'mixing' of the hash key (see [Integer Hash Function](https://gist.github.com/badboy/6267743) which can be enabled by defining the proprocessor macro: SPP_MIX_HASH. 
 
 ## Example 2 - providing a hash function for a user-defined class
 
@@ -135,7 +143,7 @@ In order to use a sparse_hash_set or sparse_hash_map, a hash function should be 
 #include <iostream>
 #include <functional>
 #include <string>
-#include "sparsepp.h"
+#include <sparsepp/spp.h>
 
 using std::string;
 
@@ -179,11 +187,11 @@ int main()
 
 The `std::hash` specialization for `Person` combines the hash values for both first and last name using the convenient spp::hash_combine function, and returns the combined hash value. 
 
-spp::hash_combine is provided by the header `sparsepp.h`. However, class definitions often appear in header files, and it is desirable to limit the size of headers included in such header files, so we provide the very small header `spp_utils.h` for that purpose:
+spp::hash_combine is provided by the header `sparsepp/spp.h`. However, class definitions often appear in header files, and it is desirable to limit the size of headers included in such header files, so we provide the very small header `sparsepp/spp_utils.h` for that purpose:
 
 ```c++
 #include <string>
-#include "spp_utils.h"
+#include <sparsepp/spp_utils.h>
 
 using std::string;
  
@@ -231,12 +239,12 @@ This support is implemented in the following APIs:
     bool unserialize(Serializer serializer, INPUT *stream);
 ```
 
-The following example demontrates how a simple sparse_hash_map can be written to a file, and then read back. The serializer we use read and writes to a file using the stdio APIs, but it would be equally simple to write a serialized using the stream APIS:
+The following example demonstrates how a simple sparse_hash_map can be written to a file, and then read back. The serializer we use read and writes to a file using the stdio APIs, but it would be equally simple to write a serialized using the stream APIS:
 
 ```c++
 #include <cstdio>
 
-#include "sparsepp.h"
+#include <sparsepp/spp.h>
 
 using spp::sparse_hash_map;
 using namespace std;
@@ -319,5 +327,12 @@ int main(int argc, char* argv[])
 }
 ```
 
+## Thread safety
 
+Sparsepp follows the thread safety rules of the Standard C++ library. In Particular:
 
+- A single sparsepp hash table is thread safe for reading from multiple threads. For example, given a hash table A, it is safe to read A from thread 1 and from thread 2 simultaneously.
+
+- If a single hash table is being written to by one thread, then all reads and writes to that hash table on the same or other threads must be protected. For example, given a hash table A, if thread 1 is writing to A, then thread 2 must be prevented from reading from or writing to A.
+
+- It is safe to read and write to one instance of a type even if another thread is reading or writing to a different instance of the same type. For example, given hash tables A and B of the same type, it is safe if A is being written in thread 1 and B is being read in thread 2.

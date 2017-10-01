@@ -6,12 +6,18 @@ The releases of major and minor versions contain an overview of changes since th
 
 Version 1.1.x
 -------------
-Long run average computation via ValueIteration, LP based MDP model checking, parametric model checking has an own binary
+- long run average computation via value iteration
+- LP based MDP model checking
+- parametric model checking has an own binary
+- solvers can now expose requirements
+- unbounded reachability and reachability rewards now correctly respect solver requirements
 
 ### Version 1.1.1
 - c++ api changes: Building model takes BuilderOptions instead of extended list of Booleans, does not depend on settings anymore.
 - storm-cli-utilities now contains cli related stuff, instead of storm-lib
 - storm-pars: support for welldefinedness constraints in mdps.
+- symbolic (MT/BDD) bisimulation 
+- Fixed issue related to variable names that can not be used in Exprtk.
 
 ### Version 1.1.0 (2017/8)
 

@@ -34,8 +34,6 @@ namespace storm {
             const std::string IOSettings::explorationOrderOptionShortName = "eo";
             const std::string IOSettings::explorationChecksOptionName = "explchecks";
             const std::string IOSettings::explorationChecksOptionShortName = "ec";
-            const std::string IOSettings::explorationShowProgressOptionName = "explprog";
-            const std::string IOSettings::explorationShowProgressOptionShortName = "ep";
             const std::string IOSettings::transitionRewardsOptionName = "transrew";
             const std::string IOSettings::stateRewardsOptionName = "staterew";
             const std::string IOSettings::choiceLabelingOptionName = "choicelab";
@@ -46,6 +44,7 @@ namespace storm {
             const std::string IOSettings::noBuildOptionName = "nobuild";
             const std::string IOSettings::fullModelBuildOptionName = "buildfull";
             const std::string IOSettings::buildChoiceLabelOptionName = "buildchoicelab";
+            const std::string IOSettings::buildStateValuationsOptionName = "buildstateval";
             const std::string IOSettings::janiPropertyOptionName = "janiproperty";
             const std::string IOSettings::janiPropertyOptionShortName = "jprop";
             const std::string IOSettings::propertyOptionName = "prop";
@@ -76,7 +75,8 @@ namespace storm {
                 this->addOption(storm::settings::OptionBuilder(moduleName, prismToJaniOptionName, false, "If set, the input PRISM model is transformed to JANI.").build());
                 this->addOption(storm::settings::OptionBuilder(moduleName, jitOptionName, false, "If set, the model is built using the JIT model builder.").build());
                 this->addOption(storm::settings::OptionBuilder(moduleName, fullModelBuildOptionName, false, "If set, include all rewards and labels.").build());
-                this->addOption(storm::settings::OptionBuilder(moduleName, buildChoiceLabelOptionName, false, "If set, include choice labels").build());
+                this->addOption(storm::settings::OptionBuilder(moduleName, buildChoiceLabelOptionName, false, "If set, also build the choice labels").build());
+                this->addOption(storm::settings::OptionBuilder(moduleName, buildStateValuationsOptionName, false, "If set, also build the state valuations").build());
                 this->addOption(storm::settings::OptionBuilder(moduleName, noBuildOptionName, false, "If set, do not build the model.").build());
                 this->addOption(storm::settings::OptionBuilder(moduleName, propertyOptionName, false, "Specifies the properties to be checked on the model.").setShortName(propertyOptionShortName)
                                         .addArgument(storm::settings::ArgumentBuilder::createStringArgument("property or filename", "The formula or the file containing the formulas.").build())
@@ -86,7 +86,6 @@ namespace storm {
                 this->addOption(storm::settings::OptionBuilder(moduleName, explorationOrderOptionName, false, "Sets which exploration order to use.").setShortName(explorationOrderOptionShortName)
                                 .addArgument(storm::settings::ArgumentBuilder::createStringArgument("name", "The name of the exploration order to choose.").addValidatorString(ArgumentValidatorFactory::createMultipleChoiceValidator(explorationOrders)).setDefaultValueString("bfs").build()).build());
                 this->addOption(storm::settings::OptionBuilder(moduleName, explorationChecksOptionName, false, "If set, additional checks (if available) are performed during model exploration to debug the model.").setShortName(explorationChecksOptionShortName).build());
-                this->addOption(storm::settings::OptionBuilder(moduleName, explorationShowProgressOptionName, false, "Sets when additional information (if available) about the exploration progress is printed.").setShortName(explorationShowProgressOptionShortName).addArgument(storm::settings::ArgumentBuilder::createUnsignedIntegerArgument("delay", "The delay to wait between emitting information.").setDefaultValueUnsignedInteger(0).build()).build());
 
                 this->addOption(storm::settings::OptionBuilder(moduleName, transitionRewardsOptionName, false, "If given, the transition rewards are read from this file and added to the explicit model. Note that this requires the model to be given as an explicit model (i.e., via --" + explicitOptionName + ").")
                                 .addArgument(storm::settings::ArgumentBuilder::createStringArgument("filename", "The file from which to read the transition rewards.").addValidatorString(ArgumentValidatorFactory::createExistingFileValidator()).build()).build());
@@ -197,15 +196,7 @@ namespace storm {
             bool IOSettings::isExplorationChecksSet() const {
                 return this->getOption(explorationChecksOptionName).getHasOptionBeenSet();
             }
-            
-            bool IOSettings::isExplorationShowProgressSet() const {
-                return this->getOption(explorationShowProgressOptionName).getArgumentByName("delay").getValueAsUnsignedInteger() > 0;
-            }
-
-            uint64_t IOSettings::getExplorationShowProgressDelay() const {
-                return this->getOption(explorationShowProgressOptionName).getArgumentByName("delay").getValueAsUnsignedInteger();
-            }
-            
+                        
             bool IOSettings::isTransitionRewardsSet() const {
                 return this->getOption(transitionRewardsOptionName).getHasOptionBeenSet();
             }
@@ -264,6 +255,10 @@ namespace storm {
 
             bool IOSettings::isBuildChoiceLabelsSet() const {
                 return this->getOption(buildChoiceLabelOptionName).getHasOptionBeenSet();
+            }
+
+           bool IOSettings::isBuildStateValuationsSet() const {
+                return this->getOption(buildStateValuationsOptionName).getHasOptionBeenSet();
             }
 
             bool IOSettings::isPropertySet() const {

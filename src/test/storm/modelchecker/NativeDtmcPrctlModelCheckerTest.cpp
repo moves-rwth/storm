@@ -208,8 +208,7 @@ TEST(NativeDtmcPrctlModelCheckerTest, LRASingleBscc) {
 		dtmc.reset(new storm::models::sparse::Dtmc<double>(transitionMatrix, ap));
 
         auto factory = std::make_unique<storm::solver::NativeLinearEquationSolverFactory<double>>();
-        factory->getSettings().setSolutionMethod(storm::solver::NativeLinearEquationSolverSettings<double>::SolutionMethod::SOR);
-        factory->getSettings().setOmega(0.9);
+        factory->getSettings().setSolutionMethod(storm::solver::NativeLinearEquationSolverSettings<double>::SolutionMethod::WalkerChae);
         storm::modelchecker::SparseDtmcPrctlModelChecker<storm::models::sparse::Dtmc<double>> checker(*dtmc, std::move(factory));
 
         std::shared_ptr<storm::logic::Formula const> formula = formulaParser.parseSingleFormulaFromString("LRA=? [\"a\"]");
@@ -274,8 +273,9 @@ TEST(NativeDtmcPrctlModelCheckerTest, LRA) {
 		dtmc.reset(new storm::models::sparse::Dtmc<double>(transitionMatrix, ap));
 
         auto factory = std::make_unique<storm::solver::NativeLinearEquationSolverFactory<double>>();
-        factory->getSettings().setSolutionMethod(storm::solver::NativeLinearEquationSolverSettings<double>::SolutionMethod::SOR);
-        factory->getSettings().setOmega(0.9);
+        factory->getSettings().setSolutionMethod(storm::solver::NativeLinearEquationSolverSettings<double>::SolutionMethod::WalkerChae);
+        factory->getSettings().setPrecision(1e-7);
+        factory->getSettings().setMaximalNumberOfIterations(50000);
         storm::modelchecker::SparseDtmcPrctlModelChecker<storm::models::sparse::Dtmc<double>> checker(*dtmc, std::move(factory));
 
         std::shared_ptr<storm::logic::Formula const> formula = formulaParser.parseSingleFormulaFromString("LRA=? [\"a\"]");

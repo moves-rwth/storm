@@ -21,7 +21,7 @@ namespace storm {
     namespace dd {
         // Declare DdManager class so we can then specialize it for the different DD types.
         template<DdType LibraryType>
-        class DdManager {
+        class DdManager : public std::enable_shared_from_this<DdManager<LibraryType>> {
         public:
             friend class Bdd<LibraryType>;
             
@@ -41,6 +41,9 @@ namespace storm {
             DdManager<LibraryType>& operator=(DdManager<LibraryType> const& other) = delete;
             DdManager(DdManager<LibraryType>&& other) = default;
             DdManager<LibraryType>& operator=(DdManager<LibraryType>&& other) = default;
+
+            std::shared_ptr<DdManager<LibraryType>> asSharedPointer();
+            std::shared_ptr<DdManager<LibraryType> const> asSharedPointer() const;
             
             /*!
              * Retrieves a BDD representing the constant one function.
@@ -73,6 +76,14 @@ namespace storm {
             Add<LibraryType, ValueType> getAddZero() const;
 
             /*!
+             * Retrieves an ADD representing the an undefined value.
+             *
+             * @return An ADD representing an undefined value.
+             */
+            template<typename ValueType>
+            Add<LibraryType, ValueType> getAddUndefined() const;
+
+            /*!
              * Retrieves an ADD representing the constant infinity function.
              *
              * @return An ADD representing the constant infinity function.
@@ -94,10 +105,12 @@ namespace storm {
              *
              * @param variable The expression variable associated with the meta variable.
              * @param value The value the meta variable is supposed to have.
+             * @param mostSignificantBitAtTop A flag indicating whether the most significant bit of the value is to be
+             * encoded with the topmost variable or the bottommost.
              * @return The DD representing the function that maps all inputs which have the given meta variable equal
              * to the given value one.
              */
-            Bdd<LibraryType> getEncoding(storm::expressions::Variable const& variable, int_fast64_t value) const;
+            Bdd<LibraryType> getEncoding(storm::expressions::Variable const& variable, int_fast64_t value, bool mostSignificantBitAtTop = true) const;
             
             /*!
              * Retrieves the BDD representing the range of the meta variable, i.e., a function that maps all legal values
@@ -119,6 +132,23 @@ namespace storm {
             Add<LibraryType, ValueType> getIdentity(storm::expressions::Variable const& variable) const;
             
             /*!
+             * Retrieves a BDD in which an encoding is mapped to true iff the meta variables of each pair encode the same value.
+             *
+             * @param variablePairs The variable pairs for which to compute the identity.
+             * @param restrictToFirstRange If set, the identity will be restricted to the legal range of the first variable.
+             */
+            Bdd<LibraryType> getIdentity(std::vector<std::pair<storm::expressions::Variable, storm::expressions::Variable>> const& variablePairs, bool restrictToFirstRange = true) const;
+
+            /*!
+             * Retrieves a BDD in which an encoding is mapped to true iff the two meta variables encode the same value.
+             * 
+             * @param first The first meta variable in the identity.
+             * @param second The second meta variable in the identity.
+             * @param restrictToFirstRange If set, the identity will be restricted to the legal range of the first variable.
+             */
+            Bdd<LibraryType> getIdentity(storm::expressions::Variable const& first, storm::expressions::Variable const& second, bool restrictToFirstRange = true) const;
+
+            /*!
              * Retrieves a BDD that is the cube of the variables representing the given meta variable.
              *
              * @param variable The expression variable associated with the meta variable.
@@ -135,6 +165,15 @@ namespace storm {
             Bdd<LibraryType> getCube(std::set<storm::expressions::Variable> const& variables) const;
 
             /*!
+             * Clones the given meta variable and optionally changes the number of layers of the variable.
+             *
+             * @param variable The variable to clone.
+             * @param newVariableName The name of the variable to crate.
+             * @param numberOfLayers The number of layers of the variable to crate
+             */
+            std::vector<storm::expressions::Variable> cloneVariable(storm::expressions::Variable const& variable, std::string const& newVariableName, boost::optional<uint64_t> const& numberOfLayers = boost::none);
+            
+            /*!
              * Adds an integer meta variable with the given range with two layers (a 'normal' and a 'primed' one).
              *
              * @param variableName The name of the new variable.
@@ -150,7 +189,15 @@ namespace storm {
              * @param numberOfLayers The number of layers of this variable (must be greater or equal 1).
              */
             std::vector<storm::expressions::Variable> addMetaVariable(std::string const& variableName, int_fast64_t low, int_fast64_t high, uint64_t numberOfLayers, boost::optional<std::pair<MetaVariablePosition, storm::expressions::Variable>> const& position = boost::none);
-            
+
+            /*!
+             * Creates a meta variable with the given number of layers.
+             *
+             * @param variableName The name of the variable.
+             * @param numberOfLayers The number of layers of this variable (must be greater or equal 1).
+             */
+            std::vector<storm::expressions::Variable> addBitVectorMetaVariable(std::string const& variableName, uint64_t bits, uint64_t numberOfLayers, boost::optional<std::pair<MetaVariablePosition, storm::expressions::Variable>> const& position = boost::none);
+
             /*!
              * Adds a boolean meta variable with two layers (a 'normal' and a 'primed' one).
              *
@@ -269,8 +316,22 @@ namespace storm {
              * @return The internal DD manager.
              */
             InternalDdManager<LibraryType> const& getInternalDdManager() const;
+            
+            /*!
+             * Performs a debug check if available.
+             */
+            void debugCheck() const;
 
         private:
+            /*!
+             * Creates a meta variable with the given number of DD variables and layers.
+             *
+             * @param type The type of the meta variable to create.
+             * @param name The name of the variable.
+             * @param numberOfLayers The number of layers of this variable (must be greater or equal 1).
+             */
+            std::vector<storm::expressions::Variable> addMetaVariableHelper(MetaVariableType const& type, std::string const& name, uint64_t numberOfDdVariables, uint64_t numberOfLayers, boost::optional<std::pair<MetaVariablePosition, storm::expressions::Variable>> const& position = boost::none, boost::optional<std::pair<int_fast64_t, int_fast64_t>> const& bounds = boost::none);
+            
             /*!
              * Retrieves a list of names of the DD variables in the order of their index.
              *

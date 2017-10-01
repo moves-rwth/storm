@@ -5,13 +5,24 @@
 namespace storm {
     namespace dd {
         template<DdType LibraryType>
-        DdMetaVariable<LibraryType>::DdMetaVariable(std::string const& name, int_fast64_t low, int_fast64_t high, std::vector<Bdd<LibraryType>> const& ddVariables) : name(name), type(MetaVariableType::Int), low(low), high(high), ddVariables(ddVariables) {
+        DdMetaVariable<LibraryType>::DdMetaVariable(std::string const& name, int_fast64_t low, int_fast64_t high, std::vector<Bdd<LibraryType>> const& ddVariables) : name(name), type(MetaVariableType::Int), low(low), high(high), ddVariables(ddVariables), lowestIndex(0) {
             this->createCube();
+            this->precomputeLowestIndex();
         }
         
         template<DdType LibraryType>
-        DdMetaVariable<LibraryType>::DdMetaVariable(std::string const& name, std::vector<Bdd<LibraryType>> const& ddVariables) : name(name), type(MetaVariableType::Bool), low(0), high(1), ddVariables(ddVariables) {
+        DdMetaVariable<LibraryType>::DdMetaVariable(MetaVariableType const& type, std::string const& name, std::vector<Bdd<LibraryType>> const& ddVariables) : name(name), type(type), low(0), ddVariables(ddVariables), lowestIndex(0) {
+            STORM_LOG_ASSERT(type == MetaVariableType::Bool || type == MetaVariableType::BitVector, "Cannot create this type of meta variable in this constructor.");
+            if (ddVariables.size() < 63) {
+                this->high = (1ull << ddVariables.size()) - 1;
+            }
+            
+            // Correct type in the case of boolean variables.
+            if (ddVariables.size() == 1) {
+                this->type = MetaVariableType::Bool;
+            }
             this->createCube();
+            this->precomputeLowestIndex();
         }
         
         template<DdType LibraryType>
@@ -31,7 +42,21 @@ namespace storm {
         
         template<DdType LibraryType>
         int_fast64_t DdMetaVariable<LibraryType>::getHigh() const {
-            return this->high;
+            return this->high.get();
+        }
+        
+        template<DdType LibraryType>
+        bool DdMetaVariable<LibraryType>::hasHigh() const {
+            return static_cast<bool>(this->high);
+        }
+        
+        template<DdType LibraryType>
+        bool DdMetaVariable<LibraryType>::canRepresent(int_fast64_t value) const {
+            bool result = value >= this->low;
+            if (result && high) {
+                return value <= this->high;
+            }
+            return result;
         }
         
         template<DdType LibraryType>
@@ -50,6 +75,51 @@ namespace storm {
         }
         
         template<DdType LibraryType>
+        std::vector<uint64_t> DdMetaVariable<LibraryType>::getIndices(bool sortedByLevel) const {
+            std::vector<std::pair<uint64_t, uint64_t>> indicesAndLevels = this->getIndicesAndLevels();
+            if (sortedByLevel) {
+                std::sort(indicesAndLevels.begin(), indicesAndLevels.end(), [] (std::pair<uint64_t, uint64_t> const& a, std::pair<uint64_t, uint64_t> const& b) { return a.second < b.second; });
+            }
+            
+            std::vector<uint64_t> indices;
+            for (auto const& e : indicesAndLevels) {
+                indices.emplace_back(e.first);
+            }
+            
+            return indices;
+        }
+        
+        template<DdType LibraryType>
+        std::vector<std::pair<uint64_t, uint64_t>> DdMetaVariable<LibraryType>::getIndicesAndLevels() const {
+            std::vector<std::pair<uint64_t, uint64_t>> indicesAndLevels;
+            for (auto const& v : ddVariables) {
+                indicesAndLevels.emplace_back(v.getIndex(), v.getLevel());
+            }
+            
+            return indicesAndLevels;
+        }
+        
+        template<DdType LibraryType>
+        uint64_t DdMetaVariable<LibraryType>::getHighestLevel() const {
+            uint64_t result = 0;
+            bool first = true;
+            for (auto const& v : ddVariables) {
+                if (first) {
+                    result = v.getLevel();
+                } else {
+                    result = std::max(result, v.getLevel());
+                }
+            }
+            
+            return result;
+        }
+        
+        template<DdType LibraryType>
+        uint64_t DdMetaVariable<LibraryType>::getLowestIndex() const {
+            return lowestIndex;
+        }
+        
+        template<DdType LibraryType>
         void DdMetaVariable<LibraryType>::createCube() {
             STORM_LOG_ASSERT(!this->ddVariables.empty(), "The DD variables must not be empty.");
             auto it = this->ddVariables.begin();
@@ -57,6 +127,19 @@ namespace storm {
             ++it;
             for (auto ite = this->ddVariables.end(); it != ite; ++it) {
                 this->cube &= *it;
+            }
+        }
+        
+        template<DdType LibraryType>
+        void DdMetaVariable<LibraryType>::precomputeLowestIndex() {
+            bool first = true;
+            for (auto const& var : this->ddVariables) {
+                if (first) {
+                    first = false;
+                    this->lowestIndex = var.getIndex();
+                } else {
+                    this->lowestIndex = std::min(lowestIndex, var.getIndex());
+                }
             }
         }
         

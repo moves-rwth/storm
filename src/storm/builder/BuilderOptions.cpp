@@ -4,6 +4,7 @@
 
 #include "storm/settings/SettingsManager.h"
 #include "storm/settings/modules/IOSettings.h"
+#include "storm/settings/modules/GeneralSettings.h"
 
 #include "storm/utility/macros.h"
 #include "storm/exceptions/InvalidSettingsException.h"
@@ -35,7 +36,7 @@ namespace storm {
             return boost::get<storm::expressions::Expression>(labelOrExpression);
         }
         
-        BuilderOptions::BuilderOptions(bool buildAllRewardModels, bool buildAllLabels) : buildAllRewardModels(buildAllRewardModels), buildAllLabels(buildAllLabels), buildChoiceLabels(false), buildStateValuations(false), buildChoiceOrigins(false), explorationChecks(false), explorationShowProgress(false), explorationShowProgressDelay(0) {
+        BuilderOptions::BuilderOptions(bool buildAllRewardModels, bool buildAllLabels) : buildAllRewardModels(buildAllRewardModels), buildAllLabels(buildAllLabels), buildChoiceLabels(false), buildStateValuations(false), buildChoiceOrigins(false), explorationChecks(false), showProgress(false), showProgressDelay(0) {
             // Intentionally left empty.
         }
         
@@ -54,9 +55,11 @@ namespace storm {
                 }
             }
             
-            explorationChecks = storm::settings::getModule<storm::settings::modules::IOSettings>().isExplorationChecksSet();
-            explorationShowProgress = storm::settings::getModule<storm::settings::modules::IOSettings>().isExplorationShowProgressSet();
-            explorationShowProgressDelay = storm::settings::getModule<storm::settings::modules::IOSettings>().getExplorationShowProgressDelay();
+            auto const& ioSettings = storm::settings::getModule<storm::settings::modules::IOSettings>();
+            auto const& generalSettings = storm::settings::getModule<storm::settings::modules::GeneralSettings>();
+            explorationChecks = ioSettings.isExplorationChecksSet();
+            showProgress = generalSettings.isVerboseSet();
+            showProgressDelay = generalSettings.getShowProgressDelay();
         }
         
         void BuilderOptions::preserveFormula(storm::logic::Formula const& formula) {
@@ -166,12 +169,12 @@ namespace storm {
             return explorationChecks;
         }
         
-        bool BuilderOptions::isExplorationShowProgressSet() const {
-            return explorationShowProgress;
+        bool BuilderOptions::isShowProgressSet() const {
+            return showProgress;
         }
 
-        uint64_t BuilderOptions::getExplorationShowProgressDelay() const {
-            return explorationShowProgressDelay;
+        uint64_t BuilderOptions::getShowProgressDelay() const {
+            return showProgressDelay;
         }
 
         BuilderOptions& BuilderOptions::setExplorationChecks(bool newValue) {

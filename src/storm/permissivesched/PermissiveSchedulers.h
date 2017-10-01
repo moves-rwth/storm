@@ -2,6 +2,7 @@
 #ifndef PERMISSIVESCHEDULERS_H
 #define	PERMISSIVESCHEDULERS_H
 
+#include <storm/transformer/ChoiceSelector.h>
 #include "../logic/ProbabilityOperatorFormula.h"
 #include "../models/sparse/Mdp.h"
 #include "../models/sparse/StandardRewardModel.h"
@@ -38,7 +39,8 @@ namespace storm {
 
 
             storm::models::sparse::Mdp<double, RM> apply() const {
-                return mdp.restrictChoices(enabledChoices);
+                storm::transformer::ChoiceSelector<double, RM> cs(mdp);
+                return *(cs.transform(enabledChoices)->template as<storm::models::sparse::Mdp<double, RM>>());
             }
 
             template<typename T>

@@ -192,6 +192,9 @@ namespace storm {
                 /// The include directory of carl.
                 std::string carlIncludeDirectory;
                 
+                /// The include directory of sparsepp.
+                std::string sparseppIncludeDirectory;
+                
                 /// A cache that is used by carl.
                 std::shared_ptr<carl::Cache<carl::PolynomialFactorizationPair<RawPolynomial>>> cache;
             };

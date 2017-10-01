@@ -106,8 +106,8 @@ namespace storm {
             bool isBuildAllRewardModelsSet() const;
             bool isBuildAllLabelsSet() const;
             bool isExplorationChecksSet() const;
-            bool isExplorationShowProgressSet() const;
-            uint64_t getExplorationShowProgressDelay() const;
+            bool isShowProgressSet() const;
+            uint64_t getShowProgressDelay() const;
 
             /**
              * Should all reward models be built? If not set, only required reward models are build.
@@ -190,10 +190,10 @@ namespace storm {
             bool explorationChecks;
             
             /// A flag that stores whether the progress of exploration is to be printed.
-            bool explorationShowProgress;
+            bool showProgress;
             
             /// The delay for printing progress information.
-            uint64_t explorationShowProgressDelay;
+            uint64_t showProgressDelay;
         };
         
     }

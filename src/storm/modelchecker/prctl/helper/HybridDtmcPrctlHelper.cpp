@@ -31,10 +31,7 @@ namespace storm {
                 std::pair<storm::dd::Bdd<DdType>, storm::dd::Bdd<DdType>> statesWithProbability01 = storm::utility::graph::performProb01(model, transitionMatrix, phiStates, psiStates);
                 storm::dd::Bdd<DdType> maybeStates = !statesWithProbability01.first && !statesWithProbability01.second && model.getReachableStates();
                 
-                // Perform some logging.
-                STORM_LOG_INFO("Found " << statesWithProbability01.first.getNonZeroCount() << " 'no' states.");
-                STORM_LOG_INFO("Found " << statesWithProbability01.second.getNonZeroCount() << " 'yes' states.");
-                STORM_LOG_INFO("Found " << maybeStates.getNonZeroCount() << " 'maybe' states.");
+                STORM_LOG_INFO("Preprocessing: " << statesWithProbability01.first.getNonZeroCount() << " states with probability 1, " << statesWithProbability01.second.getNonZeroCount() << " with probability 0 (" << maybeStates.getNonZeroCount() << " states remaining).");
                 
                 // Check whether we need to compute exact probabilities for some states.
                 if (qualitative) {
@@ -59,11 +56,16 @@ namespace storm {
                         prob1StatesAsColumn = prob1StatesAsColumn.swapVariables(model.getRowColumnMetaVariablePairs());
                         storm::dd::Add<DdType, ValueType> subvector = submatrix * prob1StatesAsColumn;
                         subvector = subvector.sumAbstract(model.getColumnVariables());
+
+                        // Check whether we need to create an equation system.
+                        bool convertToEquationSystem = linearEquationSolverFactory.getEquationProblemFormat() == storm::solver::LinearEquationSolverProblemFormat::EquationSystem;
                         
-                        // Finally cut away all columns targeting non-maybe states and convert the matrix into the matrix needed
-                        // for solving the equation system (i.e. compute (I-A)).
+                        // Finally cut away all columns targeting non-maybe states and potentially convert the matrix
+                        // into the matrix needed for solving the equation system (i.e. compute (I-A)).
                         submatrix *= maybeStatesAdd.swapVariables(model.getRowColumnMetaVariablePairs());
-                        submatrix = (model.getRowColumnIdentity() * maybeStatesAdd) - submatrix;
+                        if (convertToEquationSystem) {
+                            submatrix = (model.getRowColumnIdentity() * maybeStatesAdd) - submatrix;
+                        }
                         
                         // Create the solution vector.
                         std::vector<ValueType> x(maybeStates.getNonZeroCount(), storm::utility::convertNumber<ValueType>(0.5));
@@ -104,6 +106,8 @@ namespace storm {
                 storm::dd::Bdd<DdType> statesWithProbabilityGreater0 = storm::utility::graph::performProbGreater0(model, transitionMatrix.notZero(), phiStates, psiStates, stepBound);
                 storm::dd::Bdd<DdType> maybeStates = statesWithProbabilityGreater0 && !psiStates && model.getReachableStates();
                 
+                STORM_LOG_INFO("Preprocessing: " << statesWithProbabilityGreater0.getNonZeroCount() << " states with probability greater 0.");
+
                 // If there are maybe states, we need to perform matrix-vector multiplications.
                 if (!maybeStates.isZero()) {
                     // Create the ODD for the translation between symbolic and explicit storage.
@@ -199,9 +203,8 @@ namespace storm {
                 storm::dd::Bdd<DdType> infinityStates = storm::utility::graph::performProb1(model, transitionMatrix.notZero(), model.getReachableStates(), targetStates);
                 infinityStates = !infinityStates && model.getReachableStates();
                 storm::dd::Bdd<DdType> maybeStates = (!targetStates && !infinityStates) && model.getReachableStates();
-                STORM_LOG_INFO("Found " << infinityStates.getNonZeroCount() << " 'infinity' states.");
-                STORM_LOG_INFO("Found " << targetStates.getNonZeroCount() << " 'target' states.");
-                STORM_LOG_INFO("Found " << maybeStates.getNonZeroCount() << " 'maybe' states.");
+
+                STORM_LOG_INFO("Preprocessing: " << infinityStates.getNonZeroCount() << " states with reward infinity, " << targetStates.getNonZeroCount() << " target states (" << maybeStates.getNonZeroCount() << " states remaining).");
                 
                 // Check whether we need to compute exact rewards for some states.
                 if (qualitative) {
@@ -224,10 +227,15 @@ namespace storm {
                         // Then compute the state reward vector to use in the computation.
                         storm::dd::Add<DdType, ValueType> subvector = rewardModel.getTotalRewardVector(maybeStatesAdd, submatrix, model.getColumnVariables());
 
-                        // Finally cut away all columns targeting non-maybe states and convert the matrix into the matrix needed
-                        // for solving the equation system (i.e. compute (I-A)).
+                        // Check whether we need to create an equation system.
+                        bool convertToEquationSystem = linearEquationSolverFactory.getEquationProblemFormat() == storm::solver::LinearEquationSolverProblemFormat::EquationSystem;
+                        
+                        // Finally cut away all columns targeting non-maybe states and potentially convert the matrix
+                        // into the matrix needed for solving the equation system (i.e. compute (I-A)).
                         submatrix *= maybeStatesAdd.swapVariables(model.getRowColumnMetaVariablePairs());
-                        submatrix = (model.getRowColumnIdentity() * maybeStatesAdd) - submatrix;
+                        if (convertToEquationSystem) {
+                            submatrix = (model.getRowColumnIdentity() * maybeStatesAdd) - submatrix;
+                        }
                         
                         // Create the solution vector.
                         std::vector<ValueType> x(maybeStates.getNonZeroCount(), storm::utility::convertNumber<ValueType>(0.5));
@@ -255,7 +263,7 @@ namespace storm {
                 storm::dd::Odd odd = model.getReachableStates().createOdd();
                 storm::storage::SparseMatrix<ValueType> explicitProbabilityMatrix = model.getTransitionMatrix().toMatrix(odd, odd);
 
-                std::vector<ValueType> result = storm::modelchecker::helper::SparseDtmcPrctlHelper<ValueType>::computeLongRunAverageProbabilities(explicitProbabilityMatrix, targetStates.toVector(odd), linearEquationSolverFactory);
+                std::vector<ValueType> result = storm::modelchecker::helper::SparseDtmcPrctlHelper<ValueType>::computeLongRunAverageProbabilities(storm::solver::SolveGoal<ValueType>(), explicitProbabilityMatrix, targetStates.toVector(odd), linearEquationSolverFactory);
                 return std::unique_ptr<CheckResult>(new HybridQuantitativeCheckResult<DdType, ValueType>(model.getReachableStates(), model.getManager().getBddZero(), model.getManager().template getAddZero<ValueType>(), model.getReachableStates(), std::move(odd), std::move(result)));
             }
 
@@ -265,7 +273,7 @@ namespace storm {
                 storm::dd::Odd odd = model.getReachableStates().createOdd();
                 storm::storage::SparseMatrix<ValueType> explicitProbabilityMatrix = model.getTransitionMatrix().toMatrix(odd, odd);
                 
-                std::vector<ValueType> result = storm::modelchecker::helper::SparseDtmcPrctlHelper<ValueType>::computeLongRunAverageRewards(explicitProbabilityMatrix, rewardModel.getTotalRewardVector(model.getTransitionMatrix(), model.getColumnVariables()).toVector(odd), linearEquationSolverFactory);
+                std::vector<ValueType> result = storm::modelchecker::helper::SparseDtmcPrctlHelper<ValueType>::computeLongRunAverageRewards(storm::solver::SolveGoal<ValueType>(), explicitProbabilityMatrix, rewardModel.getTotalRewardVector(model.getTransitionMatrix(), model.getColumnVariables()).toVector(odd), linearEquationSolverFactory);
                 return std::unique_ptr<CheckResult>(new HybridQuantitativeCheckResult<DdType, ValueType>(model.getReachableStates(), model.getManager().getBddZero(), model.getManager().template getAddZero<ValueType>(), model.getReachableStates(), std::move(odd), std::move(result)));
             }
             

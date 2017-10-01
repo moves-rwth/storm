@@ -213,7 +213,7 @@ namespace storm {
         
         uint_fast64_t InternalBdd<DdType::Sylvan>::getNodeCount() const {
             // We have to add one to also count the false-leaf, which is the only leaf appearing in BDDs.
-            return static_cast<uint_fast64_t>(this->sylvanBdd.NodeCount()) + 1;
+            return static_cast<uint_fast64_t>(this->sylvanBdd.NodeCount());
         }
         
         bool InternalBdd<DdType::Sylvan>::isOne() const {
@@ -232,7 +232,7 @@ namespace storm {
             return this->getIndex();
         }
         
-        void InternalBdd<DdType::Sylvan>::exportToDot(std::string const& filename, std::vector<std::string> const&) const {
+        void InternalBdd<DdType::Sylvan>::exportToDot(std::string const& filename, std::vector<std::string> const&, bool) const {
             FILE* filePointer = fopen(filename.c_str() , "w");
             this->sylvanBdd.PrintDot(filePointer);
             fclose(filePointer);
@@ -283,7 +283,7 @@ namespace storm {
             // If we are at the maximal level, the value to be set is stored as a constant in the DD.
             if (currentRowLevel == maxLevel) {
                 result.set(currentRowOffset, true);
-            } else if (ddRowVariableIndices[currentRowLevel] < sylvan_var(dd)) {
+            } else if (bdd_isterminal(dd) || ddRowVariableIndices[currentRowLevel] < sylvan_var(dd)) {
                 toVectorRec(dd, result, rowOdd.getElseSuccessor(), complement, currentRowLevel + 1, maxLevel, currentRowOffset, ddRowVariableIndices);
                 toVectorRec(dd, result, rowOdd.getThenSuccessor(), complement, currentRowLevel + 1, maxLevel, currentRowOffset + rowOdd.getElseOffset(), ddRowVariableIndices);
             } else {
@@ -390,7 +390,7 @@ namespace storm {
             
             if (currentLevel == maxLevel) {
                 result[currentIndex++] = values[currentOffset];
-            } else if (ddVariableIndices[currentLevel] < sylvan_var(dd)) {
+            } else if (bdd_isterminal(dd) || ddVariableIndices[currentLevel] < sylvan_var(dd)) {
                 // If we skipped a level, we need to enumerate the explicit entries for the case in which the bit is set
                 // and for the one in which it is not set.
                 filterExplicitVectorRec(dd, currentLevel + 1, complement, maxLevel, ddVariableIndices, currentOffset, odd.getElseSuccessor(), result, currentIndex, values);
@@ -424,7 +424,7 @@ namespace storm {
             
             if (currentLevel == maxLevel) {
                 result.set(currentIndex++, values.get(currentOffset));
-            } else if (ddVariableIndices[currentLevel] < sylvan_var(dd)) {
+            } else if (bdd_isterminal(dd) || ddVariableIndices[currentLevel] < sylvan_var(dd)) {
                 // If we skipped a level, we need to enumerate the explicit entries for the case in which the bit is set
                 // and for the one in which it is not set.
                 filterExplicitVectorRec(dd, currentLevel + 1, complement, maxLevel, ddVariableIndices, currentOffset, odd.getElseSuccessor(), result, currentIndex, values);
@@ -525,6 +525,10 @@ namespace storm {
             
             // Return the variable for this node.
             return newNodeVariable;
+        }
+        
+        bool InternalBdd<DdType::Sylvan>::matchesVariableIndex(BDD const& node, uint64_t variableIndex, int64_t offset) {
+            return !sylvan_isconst(node) && static_cast<uint64_t>(sylvan_var(node) + offset) == variableIndex;
         }
         
         template InternalAdd<DdType::Sylvan, double> InternalBdd<DdType::Sylvan>::toAdd() const;

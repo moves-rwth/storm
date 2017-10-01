@@ -240,13 +240,13 @@ namespace storm {
                     ++currentRowGroup;
                 }
                 
-                if (generator->getOptions().isExplorationShowProgressSet()) {
+                if (generator->getOptions().isShowProgressSet()) {
                     ++numberOfExploredStatesSinceLastMessage;
                     ++numberOfExploredStates;
                     
                     auto now = std::chrono::high_resolution_clock::now();
                     auto durationSinceLastMessage = std::chrono::duration_cast<std::chrono::seconds>(now - timeOfLastMessage).count();
-                    if (static_cast<uint64_t>(durationSinceLastMessage) >= generator->getOptions().getExplorationShowProgressDelay()) {
+                    if (static_cast<uint64_t>(durationSinceLastMessage) >= generator->getOptions().getShowProgressDelay()) {
                         auto statesPerSecond = numberOfExploredStatesSinceLastMessage / durationSinceLastMessage;
                         auto durationSinceStart = std::chrono::duration_cast<std::chrono::seconds>(now - timeOfStart).count();
                         std::cout << "Explored " << numberOfExploredStates << " states in " << durationSinceStart << " seconds (currently " << statesPerSecond << " states per second)." << std::endl;
@@ -306,7 +306,7 @@ namespace storm {
             
             // initialize the model components with the obtained information.
             storm::storage::sparse::ModelComponents<ValueType, RewardModelType> modelComponents(transitionMatrixBuilder.build(), buildStateLabeling(), std::unordered_map<std::string, RewardModelType>(), !generator->isDiscreteTimeModel(), std::move(markovianStates));
-
+            
             // Now finalize all reward models.
             for (auto& rewardModelBuilder : rewardModelBuilders) {
                 modelComponents.rewardModels.emplace(rewardModelBuilder.getName(), rewardModelBuilder.build(modelComponents.transitionMatrix.getRowCount(), modelComponents.transitionMatrix.getColumnCount(), modelComponents.transitionMatrix.getRowGroupCount()));

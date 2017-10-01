@@ -24,6 +24,8 @@ namespace storm {
         template<class ValueType>
         class TopologicalMinMaxLinearEquationSolver : public MinMaxLinearEquationSolver<ValueType> {
         public:
+            TopologicalMinMaxLinearEquationSolver(double precision = 1e-6, uint_fast64_t maximalNumberOfIterations = 20000, bool relative = true);
+            
             /*!
              * Constructs a min-max linear equation solver with parameters being set according to the settings
              * object.
@@ -31,8 +33,11 @@ namespace storm {
              * @param A The matrix defining the coefficients of the linear equation system.
              */
             TopologicalMinMaxLinearEquationSolver(storm::storage::SparseMatrix<ValueType> const& A, double precision = 1e-6, uint_fast64_t maximalNumberOfIterations = 20000, bool relative = true);
-                        
-            virtual bool solveEquations(OptimizationDirection dir, std::vector<ValueType>& x, std::vector<ValueType> const& b) const override;
+            
+            virtual void setMatrix(storm::storage::SparseMatrix<ValueType> const& matrix) override;
+            virtual void setMatrix(storm::storage::SparseMatrix<ValueType>&& matrix) override;
+            
+            virtual bool internalSolveEquations(OptimizationDirection dir, std::vector<ValueType>& x, std::vector<ValueType> const& b) const override;
             
             virtual void repeatedMultiply(OptimizationDirection dir, std::vector<ValueType>& x, std::vector<ValueType> const* b, uint_fast64_t n) const override;
 
@@ -40,7 +45,8 @@ namespace storm {
             bool getRelative() const;
 
         private:
-            storm::storage::SparseMatrix<ValueType> const& A;
+            storm::storage::SparseMatrix<ValueType> const* A;
+            std::unique_ptr<storm::storage::SparseMatrix<ValueType>> localA;
             double precision;
             uint_fast64_t maximalNumberOfIterations;
             bool relative;
@@ -144,8 +150,8 @@ namespace storm {
         public:
             TopologicalMinMaxLinearEquationSolverFactory(bool trackScheduler = false);
             
-            virtual std::unique_ptr<MinMaxLinearEquationSolver<ValueType>> create(storm::storage::SparseMatrix<ValueType> const& matrix) const override;
-            virtual std::unique_ptr<MinMaxLinearEquationSolver<ValueType>> create(storm::storage::SparseMatrix<ValueType>&& matrix) const override;
+        protected:
+            virtual std::unique_ptr<MinMaxLinearEquationSolver<ValueType>> create() const override;
         };
 
     } // namespace solver

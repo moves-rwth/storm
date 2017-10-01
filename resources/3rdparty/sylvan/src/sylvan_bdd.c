@@ -1,6 +1,6 @@
 /*
  * Copyright 2011-2016 Formal Methods and Tools, University of Twente
- * Copyright 2016 Tom van Dijk, Johannes Kepler University Linz
+ * Copyright 2016-2017 Tom van Dijk, Johannes Kepler University Linz
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,19 +15,11 @@
  * limitations under the License.
  */
 
-#include <sylvan_config.h>
+#include <sylvan_int.h>
 
-#include <assert.h>
 #include <inttypes.h>
 #include <math.h>
-#include <pthread.h>
-#include <stdint.h>
-#include <stdio.h>
-#include <stdlib.h>
 #include <string.h>
-
-#include <sylvan.h>
-#include <sylvan_int.h>
 
 #include <avl.h>
 
@@ -43,12 +35,6 @@ int
 sylvan_get_granularity()
 {
     return granularity;
-}
-
-BDD
-sylvan_ithvar(BDDVAR level)
-{
-    return sylvan_makenode(level, sylvan_false, sylvan_true);
 }
 
 /**
@@ -1834,10 +1820,10 @@ TASK_IMPL_3(BDD, sylvan_union_cube, BDD, bdd, BDDSET, vars, uint8_t *, cube)
     } else if (v > n_level) {
         BDD high = node_high(bdd, n);
         BDD low = node_low(bdd, n);
-        SPAWN(sylvan_union_cube, high, vars, cube);
+        bdd_refs_spawn(SPAWN(sylvan_union_cube, high, vars, cube));
         BDD new_low = sylvan_union_cube(low, vars, cube);
         bdd_refs_push(new_low);
-        BDD new_high = SYNC(sylvan_union_cube);
+        BDD new_high = bdd_refs_sync(SYNC(sylvan_union_cube));
         bdd_refs_pop(1);
         if (new_low != low || new_high != high) {
             result = sylvan_makenode(n_level, new_low, new_high);

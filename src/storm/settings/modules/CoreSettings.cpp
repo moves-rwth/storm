@@ -12,6 +12,7 @@
 
 #include "storm/utility/macros.h"
 #include "storm/exceptions/IllegalArgumentValueException.h"
+#include "storm/exceptions/InvalidOptionException.h"
 
 namespace storm {
     namespace settings {
@@ -31,6 +32,8 @@ namespace storm {
             const std::string CoreSettings::engineOptionShortName = "e";
             const std::string CoreSettings::ddLibraryOptionName = "ddlib";
             const std::string CoreSettings::cudaOptionName = "cuda";
+            const std::string CoreSettings::intelTbbOptionName = "enable-tbb";
+            const std::string CoreSettings::intelTbbOptionShortName = "tbb";
             
             CoreSettings::CoreSettings() : ModuleSettings(moduleName), engine(CoreSettings::Engine::Sparse) {
                 this->addOption(storm::settings::OptionBuilder(moduleName, counterexampleOptionName, false, "Generates a counterexample for the given PRCTL formulas if not satisfied by the model.").setShortName(counterexampleOptionShortName).build());
@@ -56,7 +59,9 @@ namespace storm {
                 this->addOption(storm::settings::OptionBuilder(moduleName, smtSolverOptionName, false, "Sets which SMT solver is preferred.")
                                 .addArgument(storm::settings::ArgumentBuilder::createStringArgument("name", "The name of an SMT solver.").addValidatorString(ArgumentValidatorFactory::createMultipleChoiceValidator(smtSolvers)).setDefaultValueString("z3").build()).build());
                 this->addOption(storm::settings::OptionBuilder(moduleName, statisticsOptionName, false, "Sets whether to display statistics if available.").setShortName(statisticsOptionShortName).build());
+                
                 this->addOption(storm::settings::OptionBuilder(moduleName, cudaOptionName, false, "Sets whether to use CUDA.").build());
+                this->addOption(storm::settings::OptionBuilder(moduleName, intelTbbOptionName, false, "Sets whether to use Intel TBB (if Storm was built with support for TBB).").setShortName(intelTbbOptionShortName).build());
             }
 
             bool CoreSettings::isCounterexampleSet() const {
@@ -87,6 +92,10 @@ namespace storm {
             
             bool CoreSettings::isEquationSolverSet() const {
                 return this->getOption(eqSolverOptionName).getHasOptionBeenSet();
+            }
+            
+            bool CoreSettings::isEquationSolverSetFromDefaultValue() const {
+                return !this->getOption(eqSolverOptionName).getHasOptionBeenSet() || this->getOption(eqSolverOptionName).getArgumentByName("name").wasSetFromDefaultValue();
             }
             
             storm::solver::LpSolverType CoreSettings::getLpSolver() const {
@@ -123,8 +132,12 @@ namespace storm {
             bool CoreSettings::isShowStatisticsSet() const {
                 return this->getOption(statisticsOptionName).getHasOptionBeenSet();
             }
-            
-            bool CoreSettings::isCudaSet() const {
+
+            bool CoreSettings::isUseIntelTbbSet() const {
+                return this->getOption(intelTbbOptionName).getHasOptionBeenSet();
+            }
+
+            bool CoreSettings::isUseCudaSet() const {
                 return this->getOption(cudaOptionName).getHasOptionBeenSet();
             }
             
@@ -155,7 +168,12 @@ namespace storm {
             }
 
             bool CoreSettings::check() const {
+#ifdef STORM_HAVE_INTELTBB
                 return true;
+#else
+                STORM_LOG_WARN_COND(!isUseIntelTbbSet(), "Enabling TBB is not supported in this version of Storm as it was not built with support for it.");
+                return true;
+#endif
             }
 
         } // namespace modules

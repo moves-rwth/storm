@@ -178,21 +178,7 @@ namespace storm {
                  * @return True if additional checks are to be performed.
                  */
                 bool isExplorationChecksSet() const;
-                
-                /*!
-                 * Retrieves whether to show information about exploration progress.
-                 *
-                 * @return True if information is to be shown.
-                 */
-                bool isExplorationShowProgressSet() const;
-                
-                /*!
-                 * Retrieves the delay for printing information about the exploration progress.
-                 *
-                 * @return The desired delay in seconds. If 0, no information about the progress shall be printed.
-                 */
-                uint64_t getExplorationShowProgressDelay() const;
-                
+                                                
                 /*!
                  * Retrieves the exploration order if it was set.
                  *
@@ -325,6 +311,12 @@ namespace storm {
                  */
                 bool isBuildChoiceLabelsSet() const;
 
+                /*!
+                 * Retrieves whether the choice labels should be build
+                 * @return
+                 */
+                bool isBuildStateValuationsSet() const;
+
                 bool check() const override;
                 void finalize() override;
 
@@ -348,8 +340,6 @@ namespace storm {
                 static const std::string jitOptionName;
                 static const std::string explorationChecksOptionName;
                 static const std::string explorationChecksOptionShortName;
-                static const std::string explorationShowProgressOptionName;
-                static const std::string explorationShowProgressOptionShortName;
                 static const std::string explorationOrderOptionName;
                 static const std::string explorationOrderOptionShortName;
                 static const std::string transitionRewardsOptionName;
@@ -362,6 +352,7 @@ namespace storm {
                 static const std::string fullModelBuildOptionName;
                 static const std::string noBuildOptionName;
                 static const std::string buildChoiceLabelOptionName;
+                static const std::string buildStateValuationsOptionName;
                 static const std::string janiPropertyOptionName;
                 static const std::string janiPropertyOptionShortName;
                 static const std::string propertyOptionName;

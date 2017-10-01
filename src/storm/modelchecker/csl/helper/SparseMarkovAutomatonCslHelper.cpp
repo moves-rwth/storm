@@ -27,6 +27,7 @@
 #include "storm/exceptions/InvalidStateException.h"
 #include "storm/exceptions/InvalidPropertyException.h"
 #include "storm/exceptions/InvalidOperationException.h"
+#include "storm/exceptions/UncheckedRequirementException.h"
 
 namespace storm {
     namespace modelchecker {
@@ -86,8 +87,13 @@ namespace storm {
                         }
                     }
                 }
-                
+
+                // Check for requirements of the solver.
+                storm::solver::MinMaxLinearEquationSolverRequirements requirements = minMaxLinearEquationSolverFactory.getRequirements(storm::solver::EquationSystemType::UntilProbabilities);
+                STORM_LOG_THROW(requirements.empty(), storm::exceptions::UncheckedRequirementException, "Cannot establish requirements for solver.");
+
                 std::unique_ptr<storm::solver::MinMaxLinearEquationSolver<ValueType>> solver = minMaxLinearEquationSolverFactory.create(aProbabilistic);
+                solver->setRequirementsChecked();
                 solver->setCachingEnabled(true);
                 
                 // Perform the actual value iteration
@@ -368,7 +374,13 @@ namespace storm {
                 storm::storage::SparseMatrix<ValueType> sspMatrix = sspMatrixBuilder.build(currentChoice, numberOfSspStates, numberOfSspStates);
                 
                 std::vector<ValueType> x(numberOfSspStates);
+                
+                // Check for requirements of the solver.
+                storm::solver::MinMaxLinearEquationSolverRequirements requirements = minMaxLinearEquationSolverFactory.getRequirements(storm::solver::EquationSystemType::StochasticShortestPath);
+                STORM_LOG_THROW(requirements.empty(), storm::exceptions::UncheckedRequirementException, "Cannot establish requirements for solver.");
+
                 std::unique_ptr<storm::solver::MinMaxLinearEquationSolver<ValueType>> solver = minMaxLinearEquationSolverFactory.create(sspMatrix);
+                solver->setRequirementsChecked();
                 solver->solveEquations(dir, x, b);
                 
                 // Prepare result vector.
@@ -570,11 +582,16 @@ namespace storm {
                 std::vector<ValueType> w = v;
                 std::vector<ValueType> x(aProbabilistic.getRowGroupCount(), storm::utility::zero<ValueType>());
                 std::vector<ValueType> b = probabilisticChoiceRewards;
+                
+                // Check for requirements of the solver.
+                storm::solver::MinMaxLinearEquationSolverRequirements requirements = minMaxLinearEquationSolverFactory.getRequirements(storm::solver::EquationSystemType::ReachabilityRewards);
+                STORM_LOG_THROW(requirements.empty(), storm::exceptions::UncheckedRequirementException, "Cannot establish requirements for solver.");
+
                 auto solver = minMaxLinearEquationSolverFactory.create(std::move(aProbabilistic));
+                solver->setRequirementsChecked(true);
                 solver->setCachingEnabled(true);
                 
                 while (true) {
-
                     // Compute the expected total rewards for the probabilistic states
                     solver->solveEquations(dir, x, b);
                     

@@ -189,6 +189,16 @@ namespace storm {
                  */
                 StandardRewardModel<Type, ValueType> divideStateRewardVector(storm::dd::Add<Type, ValueType> const& divisor) const;
                 
+                /*!
+                 * Reduces the transition-based rewards to state-action rewards by taking the average of each row. If
+                 * the corresponding flag is set, the state-action rewards and the state rewards are summed so the model
+                 * only has a state reward vector left. Note that this transformation only  preserves expected rewards,
+                 * but not all reward-based properties.
+                 *
+                 * @param transitionMatrix The transition matrix that is used to weight the rewards in the reward matrix.
+                 */
+                void reduceToStateBasedRewards(storm::dd::Add<Type, ValueType> const& transitionMatrix, std::set<storm::expressions::Variable> const& rowVariables, std::set<storm::expressions::Variable> const& columnVariables, bool reduceToStateRewards);
+                
             private:
                 // The state reward vector.
                 boost::optional<storm::dd::Add<Type, ValueType>> optionalStateRewardVector;

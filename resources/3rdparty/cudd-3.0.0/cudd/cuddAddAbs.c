@@ -1024,6 +1024,10 @@ cuddAddMinAbstractRepresentativeRecur(
         return(res1);
     }
     
+    if ((res = cuddCacheLookup2(manager, Cudd_addMinAbstractRepresentative, f, cube)) != NULL) {
+        return(res);
+    }
+    
     /* Abstract a variable that does not appear in f. */
     if (cuddI(manager,f->index) > cuddI(manager,cube->index)) {
         res = cuddAddMinAbstractRepresentativeRecur(manager, f, cuddT(cube));
@@ -1042,10 +1046,6 @@ cuddAddMinAbstractRepresentativeRecur(
         res1 = Cudd_Not(res1);
         cuddDeref(res);
        	return(res1);
-    }
-    
-    if ((res = cuddCacheLookup2(manager, Cudd_addMinAbstractRepresentative, f, cube)) != NULL) {
-        return(res);
     }
     
     
@@ -1211,6 +1211,10 @@ cuddAddMaxAbstractRepresentativeRecur(
             
     }
     
+    if ((res = cuddCacheLookup2(manager, Cudd_addMaxAbstractRepresentative, f, cube)) != NULL) {
+        return(res);
+    }
+    
     /* Abstract a variable that does not appear in f. */
     if (cuddI(manager,f->index) > cuddI(manager,cube->index)) {
         res = cuddAddMaxAbstractRepresentativeRecur(manager, f, cuddT(cube));
@@ -1229,10 +1233,6 @@ cuddAddMaxAbstractRepresentativeRecur(
         res1 = Cudd_Not(res1);
         Cudd_IterDerefBdd(manager,res);
        	return(res1);
-    }
-    
-    if ((res = cuddCacheLookup2(manager, Cudd_addMaxAbstractRepresentative, f, cube)) != NULL) {
-        return(res);
     }
     
     

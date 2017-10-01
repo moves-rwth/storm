@@ -13,7 +13,7 @@
 namespace storm {
     namespace dd {
         Odd::Odd(std::shared_ptr<Odd> elseNode, uint_fast64_t elseOffset, std::shared_ptr<Odd> thenNode, uint_fast64_t thenOffset) : elseNode(elseNode), thenNode(thenNode), elseOffset(elseOffset), thenOffset(thenOffset) {
-            // Intentionally left empty.
+            STORM_LOG_ASSERT(this != elseNode.get() && this != thenNode.get(), "Cyclic ODD.");
         }
         
         Odd const& Odd::getThenSuccessor() const {
@@ -105,30 +105,23 @@ namespace storm {
             dotFile << boost::join(levelNames, " -> ") << ";";
             dotFile << "}" << std::endl;
             
-            std::map<uint_fast64_t, std::vector<std::reference_wrapper<storm::dd::Odd const>>> levelToOddNodesMap;
+            std::map<uint_fast64_t, std::unordered_set<storm::dd::Odd const*>> levelToOddNodesMap;
             this->addToLevelToOddNodesMap(levelToOddNodesMap);
             
             for (auto const& levelNodes : levelToOddNodesMap) {
                 dotFile << "{ rank = same; \"" << levelNodes.first << "\"" << std::endl;;
                 for (auto const& node : levelNodes.second) {
-                    dotFile << "\"" << &node.get() << "\";" << std::endl;
+                    dotFile << "\"" << node << "\";" << std::endl;
                 }
                 dotFile << "}" << std::endl;
             }
             
-            std::set<storm::dd::Odd const*> printedNodes;
             for (auto const& levelNodes : levelToOddNodesMap) {
                 for (auto const& node : levelNodes.second) {
-                    if (printedNodes.find(&node.get()) != printedNodes.end()) {
-                        continue;
-                    } else {
-                        printedNodes.insert(&node.get());
-                    }
-                    
-                    dotFile << "\"" << &node.get() << "\" [label=\"" << levelNodes.first << "\"];" << std::endl;
-                    if (!node.get().isTerminalNode()) {
-                        dotFile << "\"" << &node.get() << "\" -> \"" << &node.get().getElseSuccessor() << "\" [style=dashed, label=\"0\"];" << std::endl;
-                        dotFile << "\"" << &node.get() << "\" -> \"" << &node.get().getThenSuccessor() << "\" [style=solid, label=\"" << node.get().getElseOffset() << "\"];" << std::endl;
+                    dotFile << "\"" << node << "\" [label=\"" << node->getTotalOffset() << "\"];" << std::endl;
+                    if (!node->isTerminalNode()) {
+                        dotFile << "\"" << node << "\" -> \"" << &node->getElseSuccessor() << "\" [style=dashed, label=\"0\"];" << std::endl;
+                        dotFile << "\"" << node << "\" -> \"" << &node->getThenSuccessor() << "\" [style=solid, label=\"" << node->getElseOffset() << "\"];" << std::endl;
                     }
                 }
             }
@@ -137,11 +130,13 @@ namespace storm {
             storm::utility::closeFile(dotFile);
         }
         
-        void Odd::addToLevelToOddNodesMap(std::map<uint_fast64_t, std::vector<std::reference_wrapper<storm::dd::Odd const>>>& levelToOddNodesMap, uint_fast64_t level) const {
-            levelToOddNodesMap[level].push_back(*this);
+        void Odd::addToLevelToOddNodesMap(std::map<uint_fast64_t, std::unordered_set<storm::dd::Odd const*>>& levelToOddNodesMap, uint_fast64_t level) const {
+            levelToOddNodesMap[level].emplace(this);
             if (!this->isTerminalNode()) {
                 this->getElseSuccessor().addToLevelToOddNodesMap(levelToOddNodesMap, level + 1);
-                this->getThenSuccessor().addToLevelToOddNodesMap(levelToOddNodesMap, level + 1);
+                if (this->thenNode != this->elseNode) {
+                    this->getThenSuccessor().addToLevelToOddNodesMap(levelToOddNodesMap, level + 1);
+                }
             }
         }
         

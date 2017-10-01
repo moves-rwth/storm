@@ -26,7 +26,7 @@ namespace storm {
             
             EigenEquationSolverSettings::EigenEquationSolverSettings() : ModuleSettings(moduleName) {
                 std::vector<std::string> methods = {"sparselu", "bicgstab", "dgmres", "gmres"};
-                this->addOption(storm::settings::OptionBuilder(moduleName, techniqueOptionName, true, "The method to be used for solving linear equation systems with the eigen solver.").addArgument(storm::settings::ArgumentBuilder::createStringArgument("name", "The name of the method to use.").addValidatorString(ArgumentValidatorFactory::createMultipleChoiceValidator(methods)).setDefaultValueString("sparselu").build()).build());
+                this->addOption(storm::settings::OptionBuilder(moduleName, techniqueOptionName, true, "The method to be used for solving linear equation systems with the eigen solver.").addArgument(storm::settings::ArgumentBuilder::createStringArgument("name", "The name of the method to use.").addValidatorString(ArgumentValidatorFactory::createMultipleChoiceValidator(methods)).setDefaultValueString("gmres").build()).build());
                 
                 // Register available preconditioners.
                 std::vector<std::string> preconditioner = {"ilu", "diagonal", "none"};
@@ -101,9 +101,18 @@ namespace storm {
                 // This list does not include the precision, because this option is shared with other modules.
                 bool optionsSet = isLinearEquationSystemMethodSet() || isPreconditioningMethodSet() || isMaximalIterationCountSet();
                 
-                STORM_LOG_WARN_COND(storm::settings::getModule<storm::settings::modules::CoreSettings>().getEquationSolver() == storm::solver::EquationSolverType::Gmmxx || !optionsSet, "eigen is not selected as the preferred equation solver, so setting options for eigen might have no effect.");
+                STORM_LOG_WARN_COND(storm::settings::getModule<storm::settings::modules::CoreSettings>().getEquationSolver() == storm::solver::EquationSolverType::Eigen || !optionsSet, "Eigen is not selected as the preferred equation solver, so setting options for eigen might have no effect.");
                 
                 return true;
+            }
+            
+            std::ostream& operator<<(std::ostream& out, EigenEquationSolverSettings::LinearEquationMethod const& method) {
+                switch (method) {
+                    case EigenEquationSolverSettings::LinearEquationMethod::BiCGSTAB: out << "bicgstab"; break;
+                    case EigenEquationSolverSettings::LinearEquationMethod::GMRES: out << "gmres"; break;
+                    case EigenEquationSolverSettings::LinearEquationMethod::DGMRES: out << "dgmres"; break;
+                    case EigenEquationSolverSettings::LinearEquationMethod::SparseLU: out << "sparselu"; break;
+                }
             }
             
         } // namespace modules

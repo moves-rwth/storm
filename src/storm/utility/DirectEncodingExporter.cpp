@@ -88,7 +88,19 @@ namespace storm {
                 // Iterate over all actions
                 for (typename storm::storage::SparseMatrix<ValueType>::index_type row = start; row < end; ++row) {
                     // Print the actual row.
-                    os << "\taction " << row - start;
+                    if (sparseModel->hasChoiceLabeling()) {
+                        os << "\taction ";
+                        bool lfirst = true;
+                        for (auto const& label : sparseModel->getChoiceLabeling().getLabelsOfChoice(row)) {
+                            if (!lfirst) {
+                                os << "_";
+                            }
+                            os << label;
+                            lfirst = false;
+                        }
+                    } else {
+                        os << "\taction " << row - start;
+                    }
                     bool first = true;
                     // Write transition rewards
                     for (auto const& rewardModelEntry : sparseModel->getRewardModels()) {
@@ -110,11 +122,6 @@ namespace storm {
                         os << "]";
                     }
 
-                    // Write choice labeling
-                    if(sparseModel->hasChoiceLabeling()) {
-                        // TODO export choice labeling
-                        STORM_LOG_WARN("Choice labeling was not exported.");
-                    }
                     os << std::endl;
                     
                     // Write probabilities

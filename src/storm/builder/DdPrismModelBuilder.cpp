@@ -34,7 +34,7 @@ namespace storm {
         template <storm::dd::DdType Type, typename ValueType>
         class ParameterCreator {
         public:
-            void create(storm::prism::Program const& program, storm::adapters::AddExpressionAdapter<Type, ValueType>& rowExpressionAdapter, storm::adapters::AddExpressionAdapter<Type, ValueType>& columnExpressionAdapter) {
+            void create(storm::prism::Program const& program, storm::adapters::AddExpressionAdapter<Type, ValueType>& rowExpressionAdapter) {
                 // Intentionally left empty: no support for parameters for this data type.
             }
             
@@ -53,14 +53,13 @@ namespace storm {
                 // Intentionally left empty.
             }
             
-            void create(storm::prism::Program const& program, storm::adapters::AddExpressionAdapter<Type, storm::RationalFunction>& rowExpressionAdapter, storm::adapters::AddExpressionAdapter<Type, storm::RationalFunction>& columnExpressionAdapter) {
+            void create(storm::prism::Program const& program, storm::adapters::AddExpressionAdapter<Type, storm::RationalFunction>& rowExpressionAdapter) {
                 for (auto const& constant : program.getConstants()) {
                     if (!constant.isDefined()) {
                         carl::Variable carlVariable = carl::freshRealVariable(constant.getExpressionVariable().getName());
                         parameters.insert(carlVariable);
                         auto rf = convertVariableToPolynomial(carlVariable);
                         rowExpressionAdapter.setValue(constant.getExpressionVariable(), rf);
-                        columnExpressionAdapter.setValue(constant.getExpressionVariable(), rf);
                     }
                 }
             }
@@ -93,14 +92,14 @@ namespace storm {
         template <storm::dd::DdType Type, typename ValueType>
         class DdPrismModelBuilder<Type, ValueType>::GenerationInformation {
         public:
-            GenerationInformation(storm::prism::Program const& program) : program(program), manager(std::make_shared<storm::dd::DdManager<Type>>()), rowMetaVariables(), variableToRowMetaVariableMap(std::make_shared<std::map<storm::expressions::Variable, storm::expressions::Variable>>()), rowExpressionAdapter(std::make_shared<storm::adapters::AddExpressionAdapter<Type, ValueType>>(manager, variableToRowMetaVariableMap)), columnMetaVariables(), variableToColumnMetaVariableMap((std::make_shared<std::map<storm::expressions::Variable, storm::expressions::Variable>>())), columnExpressionAdapter(std::make_shared<storm::adapters::AddExpressionAdapter<Type, ValueType>>(manager, variableToColumnMetaVariableMap)), rowColumnMetaVariablePairs(), nondeterminismMetaVariables(), variableToIdentityMap(), allGlobalVariables(), moduleToIdentityMap(), parameters() {
+            GenerationInformation(storm::prism::Program const& program) : program(program), manager(std::make_shared<storm::dd::DdManager<Type>>()), rowMetaVariables(), variableToRowMetaVariableMap(std::make_shared<std::map<storm::expressions::Variable, storm::expressions::Variable>>()), rowExpressionAdapter(std::make_shared<storm::adapters::AddExpressionAdapter<Type, ValueType>>(manager, variableToRowMetaVariableMap)), columnMetaVariables(), variableToColumnMetaVariableMap((std::make_shared<std::map<storm::expressions::Variable, storm::expressions::Variable>>())), rowColumnMetaVariablePairs(), nondeterminismMetaVariables(), variableToIdentityMap(), allGlobalVariables(), moduleToIdentityMap(), parameters() {
                 
                 // Initializes variables and identity DDs.
                 createMetaVariablesAndIdentities();
                 
                 // Initialize the parameters (if any).
                 ParameterCreator<Type, ValueType> parameterCreator;
-                parameterCreator.create(this->program, *this->rowExpressionAdapter, *this->columnExpressionAdapter);
+                parameterCreator.create(this->program, *this->rowExpressionAdapter);
                 if (std::is_same<ValueType, storm::RationalFunction>::value) {
                     this->parameters = parameterCreator.getParameters();
                 }
@@ -120,7 +119,6 @@ namespace storm {
             // The meta variables for the column encoding.
             std::set<storm::expressions::Variable> columnMetaVariables;
             std::shared_ptr<std::map<storm::expressions::Variable, storm::expressions::Variable>> variableToColumnMetaVariableMap;
-            std::shared_ptr<storm::adapters::AddExpressionAdapter<Type, ValueType>> columnExpressionAdapter;
             
             // All pairs of row/column meta variables.
             std::vector<std::pair<storm::expressions::Variable, storm::expressions::Variable>> rowColumnMetaVariablePairs;
@@ -191,8 +189,8 @@ namespace storm {
                     columnMetaVariables.insert(variablePair.second);
                     variableToColumnMetaVariableMap->emplace(integerVariable.getExpressionVariable(), variablePair.second);
                     
-                    storm::dd::Add<Type, ValueType> variableIdentity = manager->template getIdentity<ValueType>(variablePair.first).equals(manager->template getIdentity<ValueType>(variablePair.second)).template toAdd<ValueType>() * manager->getRange(variablePair.first).template toAdd<ValueType>() * manager->getRange(variablePair.second).template toAdd<ValueType>();
-                    variableToIdentityMap.emplace(integerVariable.getExpressionVariable(), variableIdentity);
+                    storm::dd::Bdd<Type> variableIdentity = manager->getIdentity(variablePair.first, variablePair.second);
+                    variableToIdentityMap.emplace(integerVariable.getExpressionVariable(), variableIdentity.template toAdd<ValueType>());
                     rowColumnMetaVariablePairs.push_back(variablePair);
                     
                     allGlobalVariables.insert(integerVariable.getExpressionVariable());
@@ -208,8 +206,8 @@ namespace storm {
                     columnMetaVariables.insert(variablePair.second);
                     variableToColumnMetaVariableMap->emplace(booleanVariable.getExpressionVariable(), variablePair.second);
                     
-                    storm::dd::Add<Type, ValueType> variableIdentity = manager->template getIdentity<ValueType>(variablePair.first).equals(manager->template getIdentity<ValueType>(variablePair.second)).template toAdd<ValueType>();
-                    variableToIdentityMap.emplace(booleanVariable.getExpressionVariable(), variableIdentity);
+                    storm::dd::Bdd<Type> variableIdentity = manager->getIdentity(variablePair.first, variablePair.second);
+                    variableToIdentityMap.emplace(booleanVariable.getExpressionVariable(), variableIdentity.template toAdd<ValueType>());
                     
                     rowColumnMetaVariablePairs.push_back(variablePair);
                     allGlobalVariables.insert(booleanVariable.getExpressionVariable());
@@ -232,7 +230,7 @@ namespace storm {
                         columnMetaVariables.insert(variablePair.second);
                         variableToColumnMetaVariableMap->emplace(integerVariable.getExpressionVariable(), variablePair.second);
                         
-                        storm::dd::Bdd<Type> variableIdentity = manager->template getIdentity<ValueType>(variablePair.first).equals(manager->template getIdentity<ValueType>(variablePair.second)) && manager->getRange(variablePair.first) && manager->getRange(variablePair.second);
+                        storm::dd::Bdd<Type> variableIdentity = manager->getIdentity(variablePair.first, variablePair.second);
                         variableToIdentityMap.emplace(integerVariable.getExpressionVariable(), variableIdentity.template toAdd<ValueType>());
                         moduleIdentity &= variableIdentity;
                         moduleRange &= manager->getRange(variablePair.first);
@@ -249,7 +247,7 @@ namespace storm {
                         columnMetaVariables.insert(variablePair.second);
                         variableToColumnMetaVariableMap->emplace(booleanVariable.getExpressionVariable(), variablePair.second);
                         
-                        storm::dd::Bdd<Type> variableIdentity = manager->template getIdentity<ValueType>(variablePair.first).equals(manager->template getIdentity<ValueType>(variablePair.second)) && manager->getRange(variablePair.first) && manager->getRange(variablePair.second);
+                        storm::dd::Bdd<Type> variableIdentity = manager->getIdentity(variablePair.first, variablePair.second);
                         variableToIdentityMap.emplace(booleanVariable.getExpressionVariable(), variableIdentity.template toAdd<ValueType>());
                         moduleIdentity &= variableIdentity;
                         moduleRange &= manager->getRange(variablePair.first);
@@ -1059,10 +1057,21 @@ namespace storm {
         }
         
         template <storm::dd::DdType Type, typename ValueType>
-        storm::dd::Add<Type, ValueType> DdPrismModelBuilder<Type, ValueType>::createSystemFromModule(GenerationInformation& generationInfo, ModuleDecisionDiagram const& module) {
+        storm::dd::Add<Type, ValueType> DdPrismModelBuilder<Type, ValueType>::createSystemFromModule(GenerationInformation& generationInfo, ModuleDecisionDiagram& module) {
+            storm::dd::Add<Type, ValueType> result;
+            
+            // Make sure all actions contain all necessary meta variables.
+            module.independentAction.ensureContainsVariables(generationInfo.rowMetaVariables, generationInfo.columnMetaVariables);
+            for (auto& synchronizingAction : module.synchronizingActionToDecisionDiagramMap) {
+                synchronizingAction.second.ensureContainsVariables(generationInfo.rowMetaVariables, generationInfo.columnMetaVariables);
+            }
+            
+
+
+            
             // If the model is an MDP, we need to encode the nondeterminism using additional variables.
             if (generationInfo.program.getModelType() == storm::prism::Program::ModelType::MDP) {
-                storm::dd::Add<Type, ValueType> result = generationInfo.manager->template getAddZero<ValueType>();
+                result = generationInfo.manager->template getAddZero<ValueType>();
                 
                 // First, determine the highest number of nondeterminism variables that is used in any action and make
                 // all actions use the same amout of nondeterminism variables.
@@ -1082,6 +1091,7 @@ namespace storm {
                 for (uint_fast64_t i = module.independentAction.numberOfUsedNondeterminismVariables; i < numberOfUsedNondeterminismVariables; ++i) {
                     nondeterminismEncoding *= generationInfo.manager->getEncoding(generationInfo.nondeterminismMetaVariables[i], 0).template toAdd<ValueType>();
                 }
+
                 result = identityEncoding * module.independentAction.transitionsDd * nondeterminismEncoding;
                 
                 // Add variables to synchronized action DDs.
@@ -1114,8 +1124,6 @@ namespace storm {
                 for (auto const& synchronizingAction : synchronizingActionToDdMap) {
                     result += synchronizingAction.second;
                 }
-                
-                return result;
             } else if (generationInfo.program.getModelType() == storm::prism::Program::ModelType::DTMC || generationInfo.program.getModelType() == storm::prism::Program::ModelType::CTMC) {
                 // Simply add all actions, but make sure to include the missing global variable identities.
                 
@@ -1128,8 +1136,7 @@ namespace storm {
                     identityEncoding *= generationInfo.variableToIdentityMap.at(variable);
                 }
 
-                storm::dd::Add<Type, ValueType> result = identityEncoding * module.independentAction.transitionsDd;
-                
+                result = identityEncoding * module.independentAction.transitionsDd;
                 for (auto const& synchronizingAction : module.synchronizingActionToDecisionDiagramMap) {
                     // Compute missing global variable identities in synchronizing actions.
                     missingIdentities = std::set<storm::expressions::Variable>();
@@ -1142,10 +1149,10 @@ namespace storm {
                     
                     result += identityEncoding * synchronizingAction.second.transitionsDd;
                 }
-                return result;
             } else {
                 STORM_LOG_THROW(false, storm::exceptions::InvalidArgumentException, "Illegal model type.");
             }
+            return result;
         }
         
         template <storm::dd::DdType Type, typename ValueType>
@@ -1241,8 +1248,8 @@ namespace storm {
                             stateActionDd = transitionMatrix.notZero().existsAbstract(generationInfo.columnMetaVariables).template toAdd<ValueType>();
                         }
                         stateActionRewardDd *= stateActionDd.get();
-                    } else if (generationInfo.program.getModelType() == storm::prism::Program::ModelType::CTMC) {
-                        // For CTMCs, we need to multiply the entries with the exit rate of the corresponding action.
+                    } else if (generationInfo.program.getModelType() == storm::prism::Program::ModelType::DTMC || generationInfo.program.getModelType() == storm::prism::Program::ModelType::CTMC) {
+                        // For DTMCs and CTMC, we need to multiply the entries with the multiplicity/exit rate of the corresponding action.
                         stateActionRewardDd *= actionDd.transitionsDd.sumAbstract(generationInfo.columnMetaVariables);
                     }
                     
@@ -1358,7 +1365,7 @@ namespace storm {
                         } else {
                             STORM_LOG_THROW(labelName == "init" || labelName == "deadlock", storm::exceptions::InvalidArgumentException, "Terminal states refer to illegal label '" << labelName << "'.");
                         }
-                        }
+                    }
                     
                     if (terminalExpression.isInitialized()) {
                         // If the expression refers to constants of the model, we need to substitute them.
@@ -1484,11 +1491,11 @@ namespace storm {
             
             std::shared_ptr<storm::models::symbolic::Model<Type, ValueType>> result;
             if (program.getModelType() == storm::prism::Program::ModelType::DTMC) {
-                result = std::shared_ptr<storm::models::symbolic::Model<Type, ValueType>>(new storm::models::symbolic::Dtmc<Type, ValueType>(generationInfo.manager, reachableStates, initialStates, deadlockStates, transitionMatrix, generationInfo.rowMetaVariables, generationInfo.rowExpressionAdapter, generationInfo.columnMetaVariables, generationInfo.columnExpressionAdapter, generationInfo.rowColumnMetaVariablePairs, labelToExpressionMapping, rewardModels));
+                result = std::shared_ptr<storm::models::symbolic::Model<Type, ValueType>>(new storm::models::symbolic::Dtmc<Type, ValueType>(generationInfo.manager, reachableStates, initialStates, deadlockStates, transitionMatrix, generationInfo.rowMetaVariables, generationInfo.rowExpressionAdapter, generationInfo.columnMetaVariables, generationInfo.rowColumnMetaVariablePairs, labelToExpressionMapping, rewardModels));
             } else if (program.getModelType() == storm::prism::Program::ModelType::CTMC) {
-                result = std::shared_ptr<storm::models::symbolic::Model<Type, ValueType>>(new storm::models::symbolic::Ctmc<Type, ValueType>(generationInfo.manager, reachableStates, initialStates, deadlockStates, transitionMatrix, system.stateActionDd, generationInfo.rowMetaVariables, generationInfo.rowExpressionAdapter, generationInfo.columnMetaVariables, generationInfo.columnExpressionAdapter, generationInfo.rowColumnMetaVariablePairs, labelToExpressionMapping, rewardModels));
+                result = std::shared_ptr<storm::models::symbolic::Model<Type, ValueType>>(new storm::models::symbolic::Ctmc<Type, ValueType>(generationInfo.manager, reachableStates, initialStates, deadlockStates, transitionMatrix, system.stateActionDd, generationInfo.rowMetaVariables, generationInfo.rowExpressionAdapter, generationInfo.columnMetaVariables, generationInfo.rowColumnMetaVariablePairs, labelToExpressionMapping, rewardModels));
             } else if (program.getModelType() == storm::prism::Program::ModelType::MDP) {
-                result = std::shared_ptr<storm::models::symbolic::Model<Type, ValueType>>(new storm::models::symbolic::Mdp<Type, ValueType>(generationInfo.manager, reachableStates, initialStates, deadlockStates, transitionMatrix, generationInfo.rowMetaVariables, generationInfo.rowExpressionAdapter, generationInfo.columnMetaVariables, generationInfo.columnExpressionAdapter, generationInfo.rowColumnMetaVariablePairs, generationInfo.allNondeterminismVariables, labelToExpressionMapping, rewardModels));
+                result = std::shared_ptr<storm::models::symbolic::Model<Type, ValueType>>(new storm::models::symbolic::Mdp<Type, ValueType>(generationInfo.manager, reachableStates, initialStates, deadlockStates, transitionMatrix, generationInfo.rowMetaVariables, generationInfo.rowExpressionAdapter, generationInfo.columnMetaVariables, generationInfo.rowColumnMetaVariablePairs, generationInfo.allNondeterminismVariables, labelToExpressionMapping, rewardModels));
             } else {
                 STORM_LOG_THROW(false, storm::exceptions::InvalidArgumentException, "Invalid model type.");
             }

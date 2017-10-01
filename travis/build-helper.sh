@@ -13,7 +13,7 @@ travis_fold() {
 # Helper for distinguishing between different runs
 run() {
   case "$1" in
-  Build1 | Build2 | Build3 | Build4)
+  Build*)
     if [[ "$1" == "Build1" ]]
     then
         # CMake
@@ -38,7 +38,7 @@ run() {
     make -j$N_JOBS
     travis_fold end make
     # Set skip-file
-    if [[ "$1" != "Build4" ]]
+    if [[ "$1" != "BuildLast" ]]
     then
         touch skip.txt
     else

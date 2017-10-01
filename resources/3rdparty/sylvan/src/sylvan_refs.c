@@ -1,6 +1,6 @@
 /*
  * Copyright 2011-2016 Formal Methods and Tools, University of Twente
- * Copyright 2016 Tom van Dijk, Johannes Kepler University Linz
+ * Copyright 2016-2017 Tom van Dijk, Johannes Kepler University Linz
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,17 +15,12 @@
  * limitations under the License.
  */
 
-#include <sylvan_config.h>
+#include <sylvan.h>
+#include <sylvan_refs.h>
 
-#include <assert.h> // for assert
 #include <errno.h>  // for errno
-#include <stdio.h>  // for fprintf
-#include <stdint.h> // for uint32_t etc
-#include <stdlib.h> // for exit
 #include <string.h> // for strerror
 #include <sys/mman.h> // for mmap
-
-#include <sylvan_refs.h>
 
 #ifndef compiler_barrier
 #define compiler_barrier() { asm volatile("" ::: "memory"); }

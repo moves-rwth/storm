@@ -7,7 +7,7 @@
 #include "storm/models/sparse/StandardRewardModel.h"
 #include "storm/utility/macros.h"
 #include "storm/utility/vector.h"
-#include "storm/solver/GmmxxLinearEquationSolver.h"
+#include "storm/solver/NativeLinearEquationSolver.h"
 #include "storm/logic/Formulas.h"
 
 #include "storm/exceptions/InvalidOperationException.h"
@@ -306,10 +306,9 @@ namespace storm {
             template <typename VT, typename std::enable_if<storm::NumberTraits<VT>::SupportsExponential, int>::type>
             std::unique_ptr<typename SparseMaPcaaWeightVectorChecker<SparseMaModelType>::LinEqSolverData> SparseMaPcaaWeightVectorChecker<SparseMaModelType>::initLinEqSolver(SubModel const& PS) const {
                 std::unique_ptr<LinEqSolverData> result(new LinEqSolverData());
-                auto factory = std::make_unique<storm::solver::GmmxxLinearEquationSolverFactory<ValueType>>();
+                auto factory = std::make_unique<storm::solver::NativeLinearEquationSolverFactory<ValueType>>();
                 // We choose Jacobi since we call the solver very frequently on 'easy' inputs (note that jacobi without preconditioning has very little overhead).
-                factory->getSettings().setSolutionMethod(storm::solver::GmmxxLinearEquationSolverSettings<ValueType>::SolutionMethod::Jacobi);
-                factory->getSettings().setPreconditioner(storm::solver::GmmxxLinearEquationSolverSettings<ValueType>::Preconditioner::None);
+                factory->getSettings().setSolutionMethod(storm::solver::NativeLinearEquationSolverSettings<ValueType>::SolutionMethod::Jacobi);
                 result->factory = std::move(factory);
                 result->b.resize(PS.getNumberOfStates());
                 return result;

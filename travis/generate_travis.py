@@ -24,6 +24,7 @@ stages = [
     ("Build (2nd run)", "Build2"),
     ("Build (3rd run)", "Build3"),
     ("Build (4th run)", "Build4"),
+    ("Build (5th run)", "BuildLast"),
     ("Test all", "TestAll"),
 ]
 

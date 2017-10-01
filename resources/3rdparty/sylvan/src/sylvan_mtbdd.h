@@ -1,6 +1,6 @@
 /*
  * Copyright 2011-2016 Formal Methods and Tools, University of Twente
- * Copyright 2016 Tom van Dijk, Johannes Kepler University Linz
+ * Copyright 2016-2017 Tom van Dijk, Johannes Kepler University Linz
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -39,8 +39,6 @@
 #ifndef SYLVAN_MTBDD_H
 #define SYLVAN_MTBDD_H
 
-#include <sylvan_mt.h>
-
 #ifdef __cplusplus
 extern "C" {
 #endif /* __cplusplus */
@@ -48,29 +46,38 @@ extern "C" {
 /**
  * An MTBDD is a 64-bit value. The low 40 bits are an index into the unique table.
  * The highest 1 bit is the complement edge, indicating negation.
- * For Boolean MTBDDs, this means "not X", for Integer and Real MTBDDs, this means "-X".
+ *
+ * Currently, negation using complement edges is only implemented for Boolean MTBDDs.
+ * For Integer/Real MTBDDs, negation is not well-defined, as "-0" = "0".
+ *
+ * A MTBDD node has 24 bits for the variable.
+ * A set of MTBDD variables is represented by the MTBDD of the conjunction of these variables.
+ * A MTBDDMAP uses special "MAP" nodes in the MTBDD nodes table.
  */
 typedef uint64_t MTBDD;
-typedef uint64_t BDD;
 typedef MTBDD MTBDDMAP;
 
 /**
- * mtbdd_true is only used in Boolean MTBDDs. mtbdd_false has multiple roles (see above).
+ * mtbdd_true and mtbdd_false are the Boolean leaves representing True and False.
+ * False is also used in Integer/Real/Fraction MTBDDs for partially defined functions.
  */
-#define mtbdd_complement    ((MTBDD)0x8000000000000000LL)
-#define mtbdd_false         ((MTBDD)0)
-#define mtbdd_true          (mtbdd_false|mtbdd_complement)
-#define mtbdd_invalid       ((MTBDD)0xffffffffffffffffLL)
+static const MTBDD mtbdd_complement = 0x8000000000000000LL;
+static const MTBDD mtbdd_false      = 0;
+static const MTBDD mtbdd_true       = 0x8000000000000000LL;
+static const MTBDD mtbdd_invalid    = 0xffffffffffffffffLL;
 
-/* Compatibility */
-// #define BDD                     MTBDD
-#define BDDMAP                  MTBDDMAP
-#define BDDSET                  MTBDD
-#define BDDVAR                  uint32_t
-#define sylvan_complement       mtbdd_complement
-#define sylvan_false            mtbdd_false
-#define sylvan_true             mtbdd_true
-#define sylvan_invalid          mtbdd_invalid
+/**
+ * Definitions for backward compatibility...
+ * We now consider BDDs to be a special case of MTBDDs.
+ */
+typedef MTBDD BDD;
+typedef MTBDDMAP BDDMAP;
+typedef MTBDD BDDSET;
+typedef uint32_t BDDVAR;
+static const MTBDD sylvan_complement = 0x8000000000000000LL;
+static const MTBDD sylvan_false      = 0;
+static const MTBDD sylvan_true       = 0x8000000000000000LL;
+static const MTBDD sylvan_invalid    = 0xffffffffffffffffLL;
 #define sylvan_init_bdd         sylvan_init_mtbdd
 #define sylvan_ref              mtbdd_ref
 #define sylvan_deref            mtbdd_deref
@@ -79,7 +86,9 @@ typedef MTBDD MTBDDMAP;
 #define sylvan_unprotect        mtbdd_unprotect
 #define sylvan_count_protected  mtbdd_count_protected
 #define sylvan_gc_mark_rec      mtbdd_gc_mark_rec
-#define sylvan_notify_ondead    mtbdd_notify_ondead
+#define sylvan_ithvar           mtbdd_ithvar
+#define bdd_refs_pushptr        mtbdd_refs_pushptr
+#define bdd_refs_popptr         mtbdd_refs_popptr
 #define bdd_refs_push           mtbdd_refs_push
 #define bdd_refs_pop            mtbdd_refs_pop
 #define bdd_refs_spawn          mtbdd_refs_spawn
@@ -147,59 +156,199 @@ static inline MTBDD mtbdd_makenode(uint32_t var, MTBDD low, MTBDD high)
 }
 
 /**
- * Returns 1 is the MTBDD is a terminal, or 0 otherwise.
+ * Return 1 if the MTBDD is a terminal, or 0 otherwise.
  */
 int mtbdd_isleaf(MTBDD mtbdd);
-#define mtbdd_isnode(mtbdd) (mtbdd_isleaf(mtbdd) ? 0 : 1)
 
 /**
- * For MTBDD terminals, returns <type> and <value>
+ * Return 1 if the MTBDD is an internal node, or 0 otherwise.
  */
-uint32_t mtbdd_gettype(MTBDD terminal);
-uint64_t mtbdd_getvalue(MTBDD terminal);
+static inline int mtbdd_isnode(MTBDD mtbdd) { return mtbdd_isleaf(mtbdd) ? 0 : 1; }
 
 /**
- * For internal MTBDD nodes, returns <var>, <low> and <high>
+ * Return the <type> field of the given leaf.
+ */
+uint32_t mtbdd_gettype(MTBDD leaf);
+
+/**
+ * Return the <value> field of the given leaf.
+ */
+uint64_t mtbdd_getvalue(MTBDD leaf);
+
+/**
+ * Return the variable field of the given internal node.
  */
 uint32_t mtbdd_getvar(MTBDD node);
+
+/**
+ * Follow the low/false edge of the given internal node.
+ * Also takes complement edges into account.
+ */
 MTBDD mtbdd_getlow(MTBDD node);
+
+/**
+ * Follow the high/true edge of the given internal node.
+ * Also takes complement edges into account.
+ */
 MTBDD mtbdd_gethigh(MTBDD node);
 
 /**
- * Compute the complement of the MTBDD.
- * For Boolean MTBDDs, this means "not X".
+ * Obtain the complement of the MTBDD.
+ * This is only valid for Boolean MTBDDs or custom implementations that support it.
  */
-#define mtbdd_hascomp(dd) ((dd & mtbdd_complement) ? 1 : 0)
-#define mtbdd_comp(dd) (dd ^ mtbdd_complement)
-#define mtbdd_not(dd) (dd ^ mtbdd_complement)
+
+static inline int
+mtbdd_hascomp(MTBDD dd)
+{
+    return (dd & mtbdd_complement) ? 1 : 0;
+}
+
+static inline MTBDD
+mtbdd_comp(MTBDD dd)
+{
+    return dd ^ mtbdd_complement;
+}
+
+static inline MTBDD
+mtbdd_not(MTBDD dd)
+{
+    return dd ^ mtbdd_complement;
+}
 
 /**
- * Create terminals representing int64_t (type 0), double (type 1), or fraction (type 2) values
+ * Create an Integer leaf with the given value.
  */
 MTBDD mtbdd_int64(int64_t value);
+
+/**
+ * Create a Real leaf with the given value.
+ */
 MTBDD mtbdd_double(double value);
+
+/**
+ * Create a Fraction leaf with the given numerator and denominator.
+ */
 MTBDD mtbdd_fraction(int64_t numer, uint64_t denom);
 
 /**
- * Get the value of a terminal (for Integer, Real and Fraction terminals, types 0, 1 and 2)
+ * Obtain the value of an Integer leaf.
  */
 int64_t mtbdd_getint64(MTBDD terminal);
+
+/**
+ * Obtain the value of a Real leaf.
+ */
 double mtbdd_getdouble(MTBDD terminal);
-#define mtbdd_getnumer(terminal) ((int32_t)(mtbdd_getvalue(terminal)>>32))
-#define mtbdd_getdenom(terminal) ((uint32_t)(mtbdd_getvalue(terminal)&0xffffffff))
 
 /**
- * Create the conjunction of variables in arr,
- * i.e. arr[0] \and arr[1] \and ... \and arr[length-1]
- * The variable in arr must be ordered.
+ * Obtain the numerator of a Fraction leaf.
  */
-MTBDD mtbdd_fromarray(uint32_t* arr, size_t length);
+static inline int32_t
+mtbdd_getnumer(MTBDD terminal)
+{
+    return (int32_t)(mtbdd_getvalue(terminal)>>32);
+}
 
 /**
- * Given a cube of variables, write each variable to arr.
- * WARNING: arr must be sufficiently long!
+ * Obtain the denominator of a Fraction leaf.
  */
-void mtbdd_toarray(MTBDD set, uint32_t *arr);
+static inline uint32_t
+mtbdd_getdenom(MTBDD terminal)
+{
+    return (uint32_t)(mtbdd_getvalue(terminal)&0xffffffff);
+}
+
+/**
+ * Create the Boolean MTBDD representing "if <var> then True else False"
+ */
+MTBDD mtbdd_ithvar(uint32_t var);
+
+/**
+ * Functions to manipulate sets of MTBDD variables.
+ *
+ * A set of variables is represented by a cube/conjunction of (positive) variables.
+ */
+static inline MTBDD
+mtbdd_set_empty()
+{
+    return mtbdd_true;
+}
+
+static inline int
+mtbdd_set_isempty(MTBDD set)
+{
+    return (set == mtbdd_true) ? 1 : 0;
+}
+
+static inline uint32_t
+mtbdd_set_first(MTBDD set)
+{
+    return mtbdd_getvar(set);
+}
+
+static inline MTBDD
+mtbdd_set_next(MTBDD set)
+{
+    return mtbdd_gethigh(set);
+}
+
+/**
+ * Create a set of variables, represented as the conjunction of (positive) variables.
+ */
+MTBDD mtbdd_set_from_array(uint32_t* arr, size_t length);
+
+/**
+ * Write all variables in a variable set to the given array.
+ * The array must be sufficiently large.
+ */
+void mtbdd_set_to_array(MTBDD set, uint32_t *arr);
+
+/**
+ * Compute the number of variables in a given set of variables.
+ */
+size_t mtbdd_set_count(MTBDD set);
+
+/**
+ * Compute the union of <set1> and <set2>
+ */
+#define mtbdd_set_union(set1, set2) sylvan_and(set1, set2)
+
+/**
+ * Remove variables in <set2> from <set1>
+ */
+#define mtbdd_set_minus(set1, set2) CALL(mtbdd_set_minus, set1, set2)
+TASK_DECL_2(MTBDD, mtbdd_set_minus, MTBDD, MTBDD);
+
+/**
+ * Return 1 if <set> contains <var>, 0 otherwise.
+ */
+int mtbdd_set_contains(MTBDD set, uint32_t var);
+
+/**
+ * Add the variable <var> to <set>.
+ */
+MTBDD mtbdd_set_add(MTBDD set, uint32_t var);
+
+/**
+ * Remove the variable <var> from <set>.
+ */
+MTBDD mtbdd_set_remove(MTBDD set, uint32_t var);
+
+/**
+ * Sanity check if the given MTBDD is a conjunction of positive variables,
+ * and if all nodes are marked in the nodes table (detects violations after garbage collection).
+ */
+void mtbdd_test_isset(MTBDD set);
+
+/**
+ * Definitions for backwards compatibility
+ */
+#define mtbdd_fromarray mtbdd_set_from_array
+#define mtbdd_set_fromarray mtbdd_set_from_array
+#define mtbdd_set_toarray mtbdd_set_to_array
+#define mtbdd_set_addall mtbdd_set_union
+#define mtbdd_set_removeall mtbdd_set_minus
+#define mtbdd_set_in mtbdd_set_contains
 
 /**
  * Create a MTBDD cube representing the conjunction of variables in their positive or negative
@@ -293,6 +442,12 @@ TASK_DECL_3(MTBDD, mtbdd_abstract, MTBDD, MTBDD, mtbdd_abstract_op);
 TASK_DECL_2(MTBDD, mtbdd_op_negate, MTBDD, size_t);
 
 /**
+ * Unary opeation Complement.
+ * Supported domains: Integer, Real, Fraction
+ */
+TASK_DECL_2(MTBDD, mtbdd_op_cmpl, MTBDD, size_t);
+
+/**
  * Binary operation Plus (for MTBDDs of same type)
  * Only for MTBDDs where either all leaves are Boolean, or Integer, or Double.
  * For Integer/Double MTBDDs, mtbdd_false is interpreted as "0" or "0.0".
@@ -336,8 +491,16 @@ TASK_DECL_3(MTBDD, mtbdd_abstract_op_max, MTBDD, MTBDD, int);
 
 /**
  * Compute -a
+ * (negation, where 0 stays 0, and x into -x)
  */
 #define mtbdd_negate(a) mtbdd_uapply(a, TASK(mtbdd_op_negate), 0)
+
+/**
+ * Compute ~a for partial MTBDDs.
+ * Does not negate Boolean True/False.
+ * (complement, where 0 is turned into 1, and non-0 into 0)
+ */
+#define mtbdd_cmpl(a) mtbdd_uapply(a, TASK(mtbdd_op_cmpl), 0)
 
 /**
  * Compute a + b
@@ -777,33 +940,38 @@ MTBDD mtbdd_reader_get(uint64_t* arr, uint64_t identifier);
 void mtbdd_reader_end(uint64_t *arr);
 
 /**
- * MTBDDSET
- * Just some convenience functions for handling sets of variables represented as a 
- * cube (conjunction) of positive literals
- */
-#define mtbdd_set_empty()                   mtbdd_true
-#define mtbdd_set_isempty(set)              (set == mtbdd_true)
-#define mtbdd_set_add(set, var)             sylvan_and(set, sylvan_ithvar(var))
-#define mtbdd_set_addall(set, set2)         sylvan_and(set, set2)
-#define mtbdd_set_remove(set, var)          sylvan_exists(set, var)
-#define mtbdd_set_removeall(set, set2)      sylvan_exists(set, set2)
-#define mtbdd_set_first(set)                sylvan_var(set)
-#define mtbdd_set_next(set)                 sylvan_high(set)
-#define mtbdd_set_fromarray(arr, count)     mtbdd_fromarray(arr, count)
-#define mtbdd_set_toarray(set, arr)         mtbdd_toarray(set, arr)
-int mtbdd_set_in(BDDSET set, BDDVAR var);
-size_t mtbdd_set_count(BDDSET set);
-void mtbdd_test_isset(BDDSET set);
-
-/**
  * MTBDDMAP, maps uint32_t variables to MTBDDs.
  * A MTBDDMAP node has variable level, low edge going to the next MTBDDMAP, high edge to the mapped MTBDD.
  */
-#define mtbdd_map_empty() mtbdd_false
-#define mtbdd_map_isempty(map) (map == mtbdd_false ? 1 : 0)
-#define mtbdd_map_key(map) mtbdd_getvar(map)
-#define mtbdd_map_value(map) mtbdd_gethigh(map)
-#define mtbdd_map_next(map) mtbdd_getlow(map)
+static inline MTBDD
+mtbdd_map_empty()
+{
+    return mtbdd_false;
+}
+
+static inline int
+mtbdd_map_isempty(MTBDD map)
+{
+    return (map == mtbdd_false) ? 1 : 0;
+}
+
+static inline uint32_t
+mtbdd_map_key(MTBDD map)
+{
+    return mtbdd_getvar(map);
+}
+
+static inline MTBDD
+mtbdd_map_value(MTBDD map)
+{
+    return mtbdd_gethigh(map);
+}
+
+static inline MTBDD
+mtbdd_map_next(MTBDD map)
+{
+    return mtbdd_getlow(map);
+}
 
 /**
  * Return 1 if the map contains the key, 0 otherwise.
@@ -823,7 +991,8 @@ MTBDDMAP mtbdd_map_add(MTBDDMAP map, uint32_t key, MTBDD value);
 /**
  * Add all values from map2 to map1, overwrites if key already in map1.
  */
-MTBDDMAP mtbdd_map_addall(MTBDDMAP map1, MTBDDMAP map2);
+MTBDDMAP mtbdd_map_update(MTBDDMAP map1, MTBDDMAP map2);
+#define mtbdd_map_addall mtbdd_map_update
 
 /**
  * Remove the key <key> from the map and return the result
@@ -850,85 +1019,87 @@ VOID_TASK_DECL_1(mtbdd_gc_mark_rec, MTBDD);
 #define mtbdd_gc_mark_rec(mtbdd) CALL(mtbdd_gc_mark_rec, mtbdd)
 
 /**
- * Default external referencing. During garbage collection, MTBDDs marked with mtbdd_ref will
- * be kept in the forest.
- * It is recommended to prefer mtbdd_protect and mtbdd_unprotect.
+ * Infrastructure for external references using a hash table.
+ * Two hash tables store external references: a pointers table and a values table.
+ * The pointers table stores pointers to MTBDD variables, manipulated with protect and unprotect.
+ * The values table stores MTBDDs, manipulated with ref and deref.
+ * We strongly recommend using the pointers table whenever possible.
  */
-MTBDD mtbdd_ref(MTBDD a);
-void mtbdd_deref(MTBDD a);
-size_t mtbdd_count_refs(void);
 
 /**
- * Default external pointer referencing. During garbage collection, the pointers are followed and the MTBDD
- * that they refer to are kept in the forest.
+ * Store the pointer <ptr> in the pointers table.
  */
 void mtbdd_protect(MTBDD* ptr);
+
+/**
+ * Delete the pointer <ptr> from the pointers table.
+ */
 void mtbdd_unprotect(MTBDD* ptr);
+
+/**
+ * Compute the number of pointers in the pointers table.
+ */
 size_t mtbdd_count_protected(void);
 
 /**
- * If mtbdd_set_ondead is set to a callback, then this function marks MTBDDs (terminals).
- * When they are dead after the mark phase in garbage collection, the callback is called for marked MTBDDs.
- * The ondead callback can either perform cleanup or resurrect dead terminals.
+ * Store the MTBDD <dd> in the values table.
  */
-#define mtbdd_notify_ondead(dd) llmsset_notify_ondead(nodes, dd&~mtbdd_complement)
+MTBDD mtbdd_ref(MTBDD dd);
 
 /**
- * Infrastructure for internal references (per-thread, e.g. during MTBDD operations)
- * Use mtbdd_refs_push and mtbdd_refs_pop to put MTBDDs on a thread-local reference stack.
- * Use mtbdd_refs_spawn and mtbdd_refs_sync around SPAWN and SYNC operations when the result
- * of the spawned Task is a MTBDD that must be kept during garbage collection.
+ * Delete the MTBDD <dd> from the values table.
  */
-typedef struct mtbdd_refs_internal
-{
-    size_t r_size, r_count;
-    size_t s_size, s_count;
-    MTBDD *results;
-    Task **spawns;
-} *mtbdd_refs_internal_t;
+void mtbdd_deref(MTBDD dd);
 
-extern DECLARE_THREAD_LOCAL(mtbdd_refs_key, mtbdd_refs_internal_t);
+/**
+ * Compute the number of values in the values table.
+ */
+size_t mtbdd_count_refs(void);
 
-static inline MTBDD
-mtbdd_refs_push(MTBDD mtbdd)
-{
-    LOCALIZE_THREAD_LOCAL(mtbdd_refs_key, mtbdd_refs_internal_t);
-    if (mtbdd_refs_key->r_count >= mtbdd_refs_key->r_size) {
-        mtbdd_refs_key->r_size *= 2;
-        mtbdd_refs_key->results = (MTBDD*)realloc(mtbdd_refs_key->results, sizeof(MTBDD) * mtbdd_refs_key->r_size);
-    }
-    mtbdd_refs_key->results[mtbdd_refs_key->r_count++] = mtbdd;
-    return mtbdd;
-}
+/**
+ * Infrastructure for internal references.
+ * Every thread has its own reference stacks. There are three stacks: pointer, values, tasks stack.
+ * The pointers stack stores pointers to MTBDD variables, manipulated with pushptr and popptr.
+ * The values stack stores MTBDDs, manipulated with push and pop.
+ * The tasks stack stores Lace tasks (that return MTBDDs), manipulated with spawn and sync.
+ *
+ * It is recommended to use the pointers stack for local variables and the tasks stack for tasks.
+ */
 
-static inline void
-mtbdd_refs_pop(int amount)
-{
-    LOCALIZE_THREAD_LOCAL(mtbdd_refs_key, mtbdd_refs_internal_t);
-    mtbdd_refs_key->r_count-=amount;
-}
+/**
+ * Push a MTBDD variable to the pointer reference stack.
+ * During garbage collection the variable will be inspected and the contents will be marked.
+ */
+void mtbdd_refs_pushptr(const MTBDD *ptr);
 
-static inline void
-mtbdd_refs_spawn(Task *t)
-{
-    LOCALIZE_THREAD_LOCAL(mtbdd_refs_key, mtbdd_refs_internal_t);
-    if (mtbdd_refs_key->s_count >= mtbdd_refs_key->s_size) {
-        mtbdd_refs_key->s_size *= 2;
-        mtbdd_refs_key->spawns = (Task**)realloc(mtbdd_refs_key->spawns, sizeof(Task*) * mtbdd_refs_key->s_size);
-    }
-    mtbdd_refs_key->spawns[mtbdd_refs_key->s_count++] = t;
-}
+/**
+ * Pop the last <amount> MTBDD variables from the pointer reference stack.
+ */
+void mtbdd_refs_popptr(size_t amount);
 
-static inline MTBDD
-mtbdd_refs_sync(MTBDD result)
-{
-    LOCALIZE_THREAD_LOCAL(mtbdd_refs_key, mtbdd_refs_internal_t);
-    mtbdd_refs_key->s_count--;
-    return result;
-}
+/**
+ * Push an MTBDD to the values reference stack.
+ * During garbage collection the references MTBDD will be marked.
+ */
+MTBDD mtbdd_refs_push(MTBDD mtbdd);
 
-#include "sylvan_mtbdd_storm.h"
-    
+/**
+ * Pop the last <amount> MTBDDs from the values reference stack.
+ */
+void mtbdd_refs_pop(long amount);
+
+/**
+ * Push a Task that returns an MTBDD to the tasks reference stack.
+ * Usage: mtbdd_refs_spawn(SPAWN(function, ...));
+ */
+void mtbdd_refs_spawn(Task *t);
+
+/**
+ * Pop a Task from the task reference stack.
+ * Usage: MTBDD result = mtbdd_refs_sync(SYNC(function));
+ */
+MTBDD mtbdd_refs_sync(MTBDD mtbdd);
+
 #ifdef __cplusplus
 }
 #endif /* __cplusplus */

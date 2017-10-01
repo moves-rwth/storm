@@ -3,6 +3,8 @@
 
 #include "storm/settings/modules/ModuleSettings.h"
 
+#include "storm/solver/MultiplicationStyle.h"
+
 namespace storm {
     namespace settings {
         namespace modules {
@@ -13,7 +15,7 @@ namespace storm {
             class NativeEquationSolverSettings : public ModuleSettings {
             public:
                 // An enumeration of all available methods for solving linear equations.
-                enum class LinearEquationMethod { Jacobi, GaussSeidel, SOR };
+                enum class LinearEquationMethod { Jacobi, GaussSeidel, SOR, WalkerChae, Power };
                 
                 // An enumeration of all available convergence criteria.
                 enum class ConvergenceCriterion { Absolute, Relative };
@@ -29,6 +31,13 @@ namespace storm {
                  * @return True iff the linear equation system technique has been set.
                  */
                 bool isLinearEquationSystemTechniqueSet() const;
+                
+                /*!
+                 * Retrieves whether the linear equation system technique is set from its default value.
+                 *
+                 * @return True iff it was set from its default value.
+                 */
+                bool isLinearEquationSystemTechniqueSetFromDefaultValue() const;
                 
                 /*!
                  * Retrieves the method that is to be used for solving systems of linear equations.
@@ -86,6 +95,13 @@ namespace storm {
                  */
                 ConvergenceCriterion getConvergenceCriterion() const;
                 
+                /*!
+                 * Retrieves the multiplication style to use in the power method.
+                 *
+                 * @return The multiplication style.
+                 */
+                storm::solver::MultiplicationStyle getPowerMethodMultiplicationStyle() const;
+                
                 bool check() const override;
                 
                 // The name of the module.
@@ -99,7 +115,10 @@ namespace storm {
                 static const std::string maximalIterationsOptionShortName;
                 static const std::string precisionOptionName;
                 static const std::string absoluteOptionName;
+                static const std::string powerMethodMultiplicationStyleOptionName;
             };
+            
+            std::ostream& operator<<(std::ostream& out, NativeEquationSolverSettings::LinearEquationMethod const& method);
             
         } // namespace modules
     } // namespace settings

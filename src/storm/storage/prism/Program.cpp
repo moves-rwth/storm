@@ -492,6 +492,11 @@ namespace storm {
                     }
                 }
                 
+                // If there are no variables, there is no restriction on the initial states.
+                if (!result.isInitialized()) {
+                    result = manager->boolean(true);
+                }
+                
                 return result;
             }
         }

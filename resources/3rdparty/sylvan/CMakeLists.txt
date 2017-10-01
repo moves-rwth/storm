@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.1)
 
-project(sylvan LANGUAGES C CXX VERSION 1.2.0)
+project(sylvan LANGUAGES C CXX VERSION 1.4.0)
 
 set(PROJECT_DESCRIPTION "Sylvan, a parallel decision diagram library")
 set(PROJECT_URL "https://github.com/trolando/sylvan")
@@ -25,8 +25,8 @@ set(CMAKE_MODULE_PATH "${PROJECT_SOURCE_DIR}/cmake/")
 option(SYLVAN_PORTABLE "If set, the created library will be portable." OFF)
 option(USE_CARL "Sets whether carl should be included." ON)
 
-set(CMAKE_C_FLAGS "-O2 -Wextra -Wall -fno-strict-aliasing -fPIC ${CMAKE_C_FLAGS}")
-set(CMAKE_CXX_FLAGS "-O2 -Wextra -Wall -fno-strict-aliasing -Wno-deprecated -fPIC ${CMAKE_CXX_FLAGS}")
+set(CMAKE_C_FLAGS "-O2 -Wextra -Wall -fno-strict-aliasing ${CMAKE_C_FLAGS}")
+set(CMAKE_CXX_FLAGS "-O2 -Wextra -Wall -fno-strict-aliasing -Wno-deprecated ${CMAKE_CXX_FLAGS}")
 
 if (NOT SYLVAN_PORTABLE)
     set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -march=native")
@@ -73,18 +73,17 @@ include_directories("${PROJECT_BINARY_DIR}/../../../include")
 include_directories(src)
 
 add_subdirectory(src)
-option(SYLVAN_BUILD_TESTS "Build example tools" ON)
+option(SYLVAN_BUILD_TESTS "Build example tests" ON)
 if(SYLVAN_BUILD_TESTS)
     add_subdirectory(test)
 endif()
-    
 
-option(SYLVAN_BUILD_EXAMPLES "Build example tools" ON)
+option(SYLVAN_BUILD_EXAMPLES "Build example tools" OFF)
 if(SYLVAN_BUILD_EXAMPLES)
     add_subdirectory(examples)
 endif()
 
-option(SYLVAN_BUILD_DOCS "Build documentation" ON)
+option(SYLVAN_BUILD_DOCS "Build documentation" OFF)
 if(SYLVAN_BUILD_DOCS)
     configure_file("docs/conf.py.in" "docs/conf.py" @ONLY)
     find_package(Sphinx REQUIRED)

@@ -82,6 +82,13 @@ namespace storm {
                 bool isEquationSolverSet() const;
 
                 /*!
+                 * Retrieves whether the equation solver has been set from its default value.
+                 *
+                 * @return True iff it has been set from its default value.
+                 */
+                bool isEquationSolverSetFromDefaultValue() const;
+                
+                /*!
                  * Retrieves the selected LP solver.
                  *
                  * @return The selected LP solver.
@@ -110,11 +117,18 @@ namespace storm {
                 bool isShowStatisticsSet() const;
 
                 /*!
+                 * Retrieves whether the option to use Intel TBB is set.
+                 *
+                 * @return True iff the option was set.
+                 */
+                bool isUseIntelTbbSet() const;
+
+                /*!
                  * Retrieves whether the option to use CUDA is set.
                  *
                  * @return True iff the option was set.
                  */
-                bool isCudaSet() const;
+                bool isUseCudaSet() const;
 
                 /*!
                  * Retrieves the selected engine.
@@ -150,6 +164,8 @@ namespace storm {
                 static const std::string engineOptionName;
                 static const std::string engineOptionShortName;
                 static const std::string ddLibraryOptionName;
+                static const std::string intelTbbOptionName;
+                static const std::string intelTbbOptionShortName;
                 static const std::string cudaOptionName;
             };
 

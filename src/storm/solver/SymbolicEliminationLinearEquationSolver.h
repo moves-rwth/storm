@@ -15,7 +15,9 @@ namespace storm {
         class SymbolicEliminationLinearEquationSolver : public SymbolicLinearEquationSolver<DdType, ValueType> {
         public:
             SymbolicEliminationLinearEquationSolver(storm::dd::Add<DdType, ValueType> const& A, storm::dd::Bdd<DdType> const& allRows, std::set<storm::expressions::Variable> const& rowMetaVariables, std::set<storm::expressions::Variable> const& columnMetaVariables, std::vector<std::pair<storm::expressions::Variable, storm::expressions::Variable>> const& rowColumnMetaVariablePairs);
-                        
+
+            SymbolicEliminationLinearEquationSolver(storm::dd::Bdd<DdType> const& allRows, std::set<storm::expressions::Variable> const& rowMetaVariables, std::set<storm::expressions::Variable> const& columnMetaVariables, std::vector<std::pair<storm::expressions::Variable, storm::expressions::Variable>> const& rowColumnMetaVariablePairs);
+
             virtual storm::dd::Add<DdType, ValueType> solveEquations(storm::dd::Add<DdType, ValueType> const& x, storm::dd::Add<DdType, ValueType> const& b) const override;
             
         private:
@@ -34,7 +36,9 @@ namespace storm {
         template<storm::dd::DdType DdType, typename ValueType>
         class SymbolicEliminationLinearEquationSolverFactory : public SymbolicLinearEquationSolverFactory<DdType, ValueType> {
         public:
-            virtual std::unique_ptr<storm::solver::SymbolicLinearEquationSolver<DdType, ValueType>> create(storm::dd::Add<DdType, ValueType> const& A, storm::dd::Bdd<DdType> const& allRows, std::set<storm::expressions::Variable> const& rowMetaVariables, std::set<storm::expressions::Variable> const& columnMetaVariables, std::vector<std::pair<storm::expressions::Variable, storm::expressions::Variable>> const& rowColumnMetaVariablePairs) const;
+            using SymbolicLinearEquationSolverFactory<DdType, ValueType>::create;
+            
+            virtual std::unique_ptr<storm::solver::SymbolicLinearEquationSolver<DdType, ValueType>> create(storm::dd::Bdd<DdType> const& allRows, std::set<storm::expressions::Variable> const& rowMetaVariables, std::set<storm::expressions::Variable> const& columnMetaVariables, std::vector<std::pair<storm::expressions::Variable, storm::expressions::Variable>> const& rowColumnMetaVariablePairs) const override;
             
             SymbolicEliminationLinearEquationSolverSettings<ValueType>& getSettings();
             SymbolicEliminationLinearEquationSolverSettings<ValueType> const& getSettings() const;

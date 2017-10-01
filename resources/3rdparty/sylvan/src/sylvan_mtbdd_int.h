@@ -1,6 +1,6 @@
 /*
  * Copyright 2011-2016 Formal Methods and Tools, University of Twente
- * Copyright 2016 Tom van Dijk, Johannes Kepler University Linz
+ * Copyright 2016-2017 Tom van Dijk, Johannes Kepler University Linz
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,6 +14,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
+/* Do not include this file directly. Instead, include sylvan_int.h */
 
 /**
  * Internals for MTBDDs
@@ -29,17 +31,48 @@ typedef struct __attribute__((packed)) mtbddnode {
     uint64_t a, b;
 } * mtbddnode_t; // 16 bytes
 
-#define MTBDD_GETNODE(mtbdd) ((mtbddnode_t)llmsset_index_to_ptr(nodes, mtbdd&0x000000ffffffffff))
+static inline mtbddnode_t
+MTBDD_GETNODE(MTBDD dd)
+{
+    return (mtbddnode_t)llmsset_index_to_ptr(nodes, dd&0x000000ffffffffff);
+}
 
 /**
  * Complement handling macros
  */
-#define MTBDD_HASMARK(s)              (s&mtbdd_complement?1:0)
-#define MTBDD_TOGGLEMARK(s)           (s^mtbdd_complement)
-#define MTBDD_STRIPMARK(s)            (s&~mtbdd_complement)
-#define MTBDD_TRANSFERMARK(from, to)  (to ^ (from & mtbdd_complement))
-// Equal under mark
-#define MTBDD_EQUALM(a, b)            ((((a)^(b))&(~mtbdd_complement))==0)
+
+static inline int
+MTBDD_HASMARK(MTBDD dd)
+{
+    return (dd & mtbdd_complement) ? 1 : 0;
+}
+
+static inline MTBDD
+MTBDD_TOGGLEMARK(MTBDD dd)
+{
+    return dd ^ mtbdd_complement;
+}
+
+static inline MTBDD
+MTBDD_STRIPMARK(MTBDD dd)
+{
+    return dd & (~mtbdd_complement);
+}
+
+static inline MTBDD
+MTBDD_TRANSFERMARK(MTBDD from, MTBDD to)
+{
+    return (to ^ (from & mtbdd_complement));
+}
+
+/**
+ * Are two MTBDDs equal modulo mark?
+ */
+static inline int
+MTBDD_EQUALM(MTBDD a, MTBDD b)
+{
+    return ((a^b)&(~mtbdd_complement)) ? 0 : 1;
+}
 
 // Leaf: a = L=1, M, type; b = value
 // Node: a = L=0, C, M, high; b = variable, low

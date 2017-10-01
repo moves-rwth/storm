@@ -22,6 +22,7 @@ TEST(NativeMinMaxLinearEquationSolver, SolveWithStandardOptions) {
     auto solver = factory.create(A);
 
     ASSERT_NO_THROW(solver->solveEquations(storm::OptimizationDirection::Minimize, x, b));
+    
     ASSERT_LT(std::abs(x[0] - 0.5), storm::settings::getModule<storm::settings::modules::NativeEquationSolverSettings>().getPrecision());
     
     ASSERT_NO_THROW(solver->solveEquations(storm::OptimizationDirection::Maximize, x, b));

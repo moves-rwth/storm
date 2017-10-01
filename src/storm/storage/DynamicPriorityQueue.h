@@ -9,7 +9,6 @@ namespace storm {
 
         template<typename T, typename Container = std::vector<T>, typename Compare = std::less<T>>
         class DynamicPriorityQueue {
-
         private:
             Container container;
             Compare compare;
