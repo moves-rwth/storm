@@ -76,9 +76,8 @@ Furthermore, we recommend the usage of [Homebrew](https://brew.sh){:target="_bla
 $ brew install cln ginac automake cmake doxygen
 $ brew install boost --c++11
 $ brew install gmp --c++11
-$ brew tap homebrew/science
-$ brew install homebrew/science/glpk
-$ brew install homebrew/science/hwloc
+$ brew install glpk
+$ brew install hwloc
 ```
 
 - Recommended:
