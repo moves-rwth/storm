@@ -7,6 +7,7 @@
 #include "storm/models/sparse/MarkovAutomaton.h"
 #include "storm/models/sparse/StandardRewardModel.h"
 #include "storm/modelchecker/propositional/SparsePropositionalModelChecker.h"
+#include "storm/modelchecker/prctl/helper/BaierUpperRewardBoundsComputer.h"
 #include "storm/modelchecker/results/ExplicitQualitativeCheckResult.h"
 #include "storm/storage/MaximalEndComponentDecomposition.h"
 #include "storm/storage/memorystructure/MemoryStructureBuilder.h"
@@ -69,16 +70,6 @@ namespace storm {
                     obj->formula->gatherReferencedRewardModels(relevantRewardModels);
                 }
                 preprocessedModel->restrictRewardModels(relevantRewardModels);
-                
-                // Compute upper result bounds wherever this is necessarry
-                for (auto const& objIndex : data.upperResultBoundObjectives) {
-                    auto const& formula = data.objectives[objIndex]->formula->asRewardOperatorFormula();
-                    auto const& rewModel = preprocessedModel->getRewardModel(formula.getRewardModelName());
-                //    BaierUpperRewardBoundsComputer<ValueType> baier(submatrix, choiceRewards, oneStepTargetProbabilities);
-                //    hintInformation.upperResultBound = baier.computeUpperBound();
-                }
-
-                    
                 
                 // Build the actual result
                 return buildResult(originalModel, originalFormula, data, preprocessedModel, backwardTransitions);
@@ -387,6 +378,12 @@ namespace storm {
                 setReward0States(result, backwardTransitions);
                 checkRewardFiniteness(result, data.finiteRewardCheckObjectives, backwardTransitions);
                 
+                // Compute upper result bounds wherever this is necessarry
+                for (auto const& objIndex : data.upperResultBoundObjectives) {
+                    STORM_LOG_WARN("Computing upper result bound for an objective. TODO: this might not be necessary depending on the solution method.");
+                    result.objectives[objIndex].upperResultBound = computeUpperResultBound(result, objIndex, backwardTransitions);
+                }
+                
                 return result;
             }
             
@@ -500,6 +497,47 @@ namespace storm {
                 
             }
         
+            template<typename SparseModelType>
+            boost::optional<typename SparseModelType::ValueType> SparseMultiObjectivePreprocessor<SparseModelType>::computeUpperResultBound(ReturnType const& result, uint64_t objIndex, storm::storage::SparseMatrix<ValueType> const& backwardTransitions) {
+                
+                if (result.objectives[objIndex].formula->isRewardOperatorFormula() && result.objectives[objIndex].formula->getSubformula().isTotalRewardFormula()) {
+                    auto const& transitions = result.preprocessedModel->getTransitionMatrix();
+                    auto const& rewModel = result.preprocessedModel->getRewardModel(result.objectives[objIndex].formula->asRewardOperatorFormula().getRewardModelName());
+                    storm::storage::BitVector allStates(result.preprocessedModel->getNumberOfStates(), true);
+                    
+                    // Get the set of states from which no reward is reachable
+                    auto nonZeroRewardStates = rewModel.getStatesWithZeroReward(transitions);
+                    nonZeroRewardStates.complement();
+                    auto expRewGreater0EStates = storm::utility::graph::performProbGreater0E(backwardTransitions, allStates, nonZeroRewardStates);
+                    auto expRew0AStates = ~expRewGreater0EStates;
+                    
+                    // An upper reward bound can only be computed if it is below infinity
+                    if (storm::utility::graph::performProb1A(transitions, transitions.getRowGroupIndices(), backwardTransitions, allStates, expRew0AStates).full()) {
+                        storm::storage::SparseMatrix<ValueType> submatrix = transitions.getSubmatrix(true, expRewGreater0EStates, expRewGreater0EStates);
+                        std::vector<ValueType> rew0StateProbs;
+                        rew0StateProbs.reserve(submatrix.getRowCount());
+                        std::vector<ValueType> rewards;
+                        rewards.reserve(submatrix.getRowCount());
+                        for (auto const& state : expRewGreater0EStates) {
+                            for (uint64_t choice = transitions.getRowGroupIndices()[state]; choice < transitions.getRowGroupIndices()[state + 1]; ++choice) {
+                                rew0StateProbs.push_back(transitions.getConstrainedRowSum(choice, expRew0AStates));
+                                rewards.push_back(rewModel.getTotalStateActionReward(state, choice, transitions));
+                            }
+                        }
+                        
+                        storm::modelchecker::helper::BaierUpperRewardBoundsComputer<ValueType> baier(submatrix, rewards, rew0StateProbs);
+                        return baier.computeUpperBound();
+                    }
+                    
+                }
+                
+                
+                // reaching this point means that we were not able to compute an upper bound
+                return boost::none;
+
+            }
+
+            
             template class SparseMultiObjectivePreprocessor<storm::models::sparse::Mdp<double>>;
             template class SparseMultiObjectivePreprocessor<storm::models::sparse::MarkovAutomaton<double>>;
             

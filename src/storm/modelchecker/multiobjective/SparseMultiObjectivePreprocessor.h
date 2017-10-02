@@ -92,6 +92,12 @@ namespace storm {
                  */
                 static void checkRewardFiniteness(ReturnType& result, storm::storage::BitVector const& finiteRewardCheckObjectives, storm::storage::SparseMatrix<ValueType> const& backwardTransitions);
                 
+                /*!
+                 * Finds an upper bound for the expected reward of the objective with the given index (assuming it considers an expected reward objective)
+                 */
+                static boost::optional<ValueType> computeUpperResultBound(ReturnType const& result, uint64_t objIndex, storm::storage::SparseMatrix<ValueType> const& backwardTransitions);
+
+                
             };
         }
     }
