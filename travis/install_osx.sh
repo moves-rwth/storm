@@ -60,8 +60,7 @@ install_brew_package ginac
 install_brew_package doxygen
 install_brew_package boost --c++11
 install_brew_package z3 # optional
-brew tap homebrew/science
-install_brew_package homebrew/science/glpk
-install_brew_package homebrew/science/hwloc
+install_brew_package glpk
+install_brew_package hwloc
 install_brew_package eigen
 travis_fold end brew_install_dependencies
