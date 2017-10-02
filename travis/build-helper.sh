@@ -66,57 +66,17 @@ run() {
 export PATH="/usr/local/opt/coreutils/libexec/gnubin:$PATH"
 
 case $COMPILER in
-gcc-4.8)
-    export CC=gcc-4.8
-    export CXX=g++-4.8
-    ;;
-
-gcc-4.9)
-    export CC=gcc-4.9
-    export CXX=g++-4.9
-    ;;
-
-gcc-5)
-    export CC=gcc-5
-    export CXX=g++-5
-    ;;
-
 gcc-6)
     export CC=gcc-6
     export CXX=g++-6
     ;;
 
-gcc-default)
+gcc)
     export CC=gcc
     export CXX=g++
     ;;
 
-clang-3.5)
-    export CC=clang-3.5
-    export CXX=clang++-3.5
-    ;;
-
-clang-3.6)
-    export CC=clang-3.6
-    export CXX=clang++-3.6
-    ;;
-
-clang-3.7)
-    export CC=clang-3.7
-    export CXX=clang++-3.7
-    ;;
-
-clang-3.8)
-    export CC=clang-3.8
-    export CXX=clang++-3.8
-    ;;
-
-clang-3.9)
-    export CC=clang-3.9
-    export CXX=clang++-3.9
-    ;;
-
-clang-4.0)
+clang-4)
     case "$OS" in
     linux)
         export CC=clang-4.0
@@ -130,7 +90,12 @@ clang-4.0)
     esac
     ;;
 
-clang-default)
+clang)
+    export CC=clang
+    export CXX=clang++
+    ;;
+
+apple-clang)
     export CC=clang
     export CXX=clang++
     ;;

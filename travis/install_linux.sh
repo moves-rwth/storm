@@ -8,4 +8,4 @@ then
   exit 0
 fi
 
-sudo apt-get install -qq -y docker
+#sudo apt-get install -qq -y docker
