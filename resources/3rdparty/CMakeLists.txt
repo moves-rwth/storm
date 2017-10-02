@@ -395,9 +395,9 @@ endif()
 set(STORM_HAVE_MSAT ${ENABLE_MSAT})
 if (ENABLE_MSAT)
     message (STATUS "Storm - Linking with MathSAT.")
-    link_directories("${MSAT_ROOT}/lib")
-    include_directories("${MSAT_ROOT}/include")
-    list(APPEND STORM_LINK_LIBRARIES "mathsat")
+    find_library(MSAT_LIB mathsat PATHS "${MSAT_ROOT}/lib")
+    add_imported_library(msat SHARED ${MSAT_LIB} "${MSAT_ROOT}/include")
+    list(APPEND STORM_DEP_TARGETS msat_SHARED)
 endif(ENABLE_MSAT)
 
 #############################################################
