@@ -95,11 +95,6 @@ clang)
     export CXX=clang++
     ;;
 
-apple-clang)
-    export CC=clang
-    export CXX=clang++
-    ;;
-
 *)
     echo "Unrecognized value of COMPILER: $COMPILER"
     exit 1

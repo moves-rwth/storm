@@ -42,8 +42,8 @@ jobs:
     # osx
     - stage: Build (1st run)
       os: osx
-      compiler: apple-clang
-      env: CONFIG=DefaultDebug COMPILER=apple-clang STL=libc++
+      compiler: clang
+      env: CONFIG=DefaultDebug COMPILER=clang STL=libc++
       install:
         - rm -rf build
         - travis/install_osx.sh
@@ -53,8 +53,8 @@ jobs:
         - find build -iname '*err*.log' -type f -print -exec cat {} \;
     - stage: Build (1st run)
       os: osx
-      compiler: apple-clang
-      env: CONFIG=DefaultRelease COMPILER=apple-clang STL=libc++
+      compiler: clang
+      env: CONFIG=DefaultRelease COMPILER=clang STL=libc++
       install:
         - rm -rf build
         - travis/install_osx.sh
@@ -97,8 +97,8 @@ jobs:
     # osx
     - stage: Build (2nd run)
       os: osx
-      compiler: apple-clang
-      env: CONFIG=DefaultDebug COMPILER=apple-clang STL=libc++
+      compiler: clang
+      env: CONFIG=DefaultDebug COMPILER=clang STL=libc++
       install:
         - travis/install_osx.sh
       script:
@@ -107,8 +107,8 @@ jobs:
         - find build -iname '*err*.log' -type f -print -exec cat {} \;
     - stage: Build (2nd run)
       os: osx
-      compiler: apple-clang
-      env: CONFIG=DefaultRelease COMPILER=apple-clang STL=libc++
+      compiler: clang
+      env: CONFIG=DefaultRelease COMPILER=clang STL=libc++
       install:
         - travis/install_osx.sh
       script:
@@ -148,8 +148,8 @@ jobs:
     # osx
     - stage: Build (3rd run)
       os: osx
-      compiler: apple-clang
-      env: CONFIG=DefaultDebug COMPILER=apple-clang STL=libc++
+      compiler: clang
+      env: CONFIG=DefaultDebug COMPILER=clang STL=libc++
       install:
         - travis/install_osx.sh
       script:
@@ -158,8 +158,8 @@ jobs:
         - find build -iname '*err*.log' -type f -print -exec cat {} \;
     - stage: Build (3rd run)
       os: osx
-      compiler: apple-clang
-      env: CONFIG=DefaultRelease COMPILER=apple-clang STL=libc++
+      compiler: clang
+      env: CONFIG=DefaultRelease COMPILER=clang STL=libc++
       install:
         - travis/install_osx.sh
       script:
@@ -199,8 +199,8 @@ jobs:
     # osx
     - stage: Build (4th run)
       os: osx
-      compiler: apple-clang
-      env: CONFIG=DefaultDebug COMPILER=apple-clang STL=libc++
+      compiler: clang
+      env: CONFIG=DefaultDebug COMPILER=clang STL=libc++
       install:
         - travis/install_osx.sh
       script:
@@ -209,8 +209,8 @@ jobs:
         - find build -iname '*err*.log' -type f -print -exec cat {} \;
     - stage: Build (4th run)
       os: osx
-      compiler: apple-clang
-      env: CONFIG=DefaultRelease COMPILER=apple-clang STL=libc++
+      compiler: clang
+      env: CONFIG=DefaultRelease COMPILER=clang STL=libc++
       install:
         - travis/install_osx.sh
       script:
@@ -250,8 +250,8 @@ jobs:
     # osx
     - stage: Build (5th run)
       os: osx
-      compiler: apple-clang
-      env: CONFIG=DefaultDebug COMPILER=apple-clang STL=libc++
+      compiler: clang
+      env: CONFIG=DefaultDebug COMPILER=clang STL=libc++
       install:
         - travis/install_osx.sh
       script:
@@ -260,8 +260,8 @@ jobs:
         - find build -iname '*err*.log' -type f -print -exec cat {} \;
     - stage: Build (5th run)
       os: osx
-      compiler: apple-clang
-      env: CONFIG=DefaultRelease COMPILER=apple-clang STL=libc++
+      compiler: clang
+      env: CONFIG=DefaultRelease COMPILER=clang STL=libc++
       install:
         - travis/install_osx.sh
       script:
@@ -301,8 +301,8 @@ jobs:
     # osx
     - stage: Test all
       os: osx
-      compiler: apple-clang
-      env: CONFIG=DefaultDebug COMPILER=apple-clang STL=libc++
+      compiler: clang
+      env: CONFIG=DefaultDebug COMPILER=clang STL=libc++
       install:
         - travis/install_osx.sh
       script:
@@ -311,8 +311,8 @@ jobs:
         - find build -iname '*err*.log' -type f -print -exec cat {} \;
     - stage: Test all
       os: osx
-      compiler: apple-clang
-      env: CONFIG=DefaultRelease COMPILER=apple-clang STL=libc++
+      compiler: clang
+      env: CONFIG=DefaultRelease COMPILER=clang STL=libc++
       install:
         - travis/install_osx.sh
       script:

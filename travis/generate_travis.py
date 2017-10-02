@@ -9,7 +9,7 @@ configs_linux = [
 # Configurations for Mac
 configs_mac = [
     # OS, compiler
-    ("osx", "apple-clang", ""),
+    ("osx", "clang", ""),
 ]
 
 # Build types

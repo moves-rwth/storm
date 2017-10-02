@@ -45,9 +45,8 @@ install_brew_package cmake
 case "${COMPILER}" in
 gcc)         install_brew_package gcc ;;
 gcc-6)       install_brew_package gcc@6 ;;
-clang)       install_brew_package llvm   --with-clang --with-libcxx;;
+clang)       ;;
 clang-4)     install_brew_package llvm@4 --with-clang --with-libcxx;;
-apple-clang) ;;
 *) echo "Compiler not supported: ${COMPILER}. See travis/install_osx.sh"; exit 1 ;;
 esac
 travis_fold end brew_install_util
