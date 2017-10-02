@@ -258,16 +258,16 @@ namespace storm {
                 solver->setUpperBound(upperResultBound.get());
             } else if (solvingRequiresUpperRewardBounds) {
                 // For the min-case, we use DS-MPI, for the max-case variant 2 of the Baier et al. paper (CAV'17).
-                std::vector<typename SparseModelType::ValueType> oneStepProbs;
+                std::vector<ConstantType> oneStepProbs;
                 oneStepProbs.reserve(parameterLifter->getMatrix().getRowCount());
                 for (uint64_t row = 0; row < parameterLifter->getMatrix().getRowCount(); ++row) {
-                    oneStepProbs.push_back(storm::utility::one<typename SparseModelType::ValueType>() - parameterLifter->getMatrix().getRowSum(row));
+                    oneStepProbs.push_back(storm::utility::one<ConstantType>() - parameterLifter->getMatrix().getRowSum(row));
                 }
                 if (dirForParameters == storm::OptimizationDirection::Minimize) {
-                    storm::modelchecker::helper::DsMpiMdpUpperRewardBoundsComputer<typename SparseModelType::ValueType> dsmpi(parameterLifter->getMatrix(), parameterLifter->getVector(), oneStepProbs);
+                    storm::modelchecker::helper::DsMpiMdpUpperRewardBoundsComputer<ConstantType> dsmpi(parameterLifter->getMatrix(), parameterLifter->getVector(), oneStepProbs);
                     solver->setUpperBounds(dsmpi.computeUpperBounds());
                 } else {
-                    storm::modelchecker::helper::BaierUpperRewardBoundsComputer<typename SparseModelType::ValueType> baier(parameterLifter->getMatrix(), parameterLifter->getVector(), oneStepProbs);
+                    storm::modelchecker::helper::BaierUpperRewardBoundsComputer<ConstantType> baier(parameterLifter->getMatrix(), parameterLifter->getVector(), oneStepProbs);
                     solver->setUpperBound(baier.computeUpperBound());
                 }
             }
