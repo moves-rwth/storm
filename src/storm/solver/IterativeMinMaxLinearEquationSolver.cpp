@@ -256,7 +256,7 @@ namespace storm {
             MinMaxLinearEquationSolverRequirements requirements(this->linearEquationSolverFactory->getRequirements());
             
             // In case we perform value iteration and need to retrieve a scheduler, end components are forbidden
-            if (this->getSettings().getSolutionMethod() == IterativeMinMaxLinearEquationSolverSettings<ValueType>::SolutionMethod::ValueIteration && isTrackSchedulerSet()) {
+            if (this->getSettings().getSolutionMethod() == IterativeMinMaxLinearEquationSolverSettings<ValueType>::SolutionMethod::ValueIteration && this->isTrackSchedulerSet()) {
                 requirements.requireNoEndComponents();
             }
             
@@ -380,7 +380,7 @@ namespace storm {
             // If requested, we store the scheduler for retrieval.
             if (this->isTrackSchedulerSet()) {
                 this->schedulerChoices = std::vector<uint_fast64_t>(this->A->getRowGroupCount());
-                this->linEqSolverA->multiplyAndReduce(dir, this->A->getRowGroupIndices(), x, &b, *currentX, &this->schedulerChoices.get());
+                this->linEqSolverA->multiplyAndReduce(dir, this->A->getRowGroupIndices(), x, &b, *auxiliaryRowGroupVector.get(), &this->schedulerChoices.get());
             }
 
             if (!this->isCachingEnabled()) {

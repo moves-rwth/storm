@@ -115,7 +115,7 @@ namespace storm {
             MinMaxLinearEquationSolverRequirements requirements;
             
             // In case we need to retrieve a scheduler, end components are forbidden
-            if (isTrackSchedulerSet()) {
+            if (this->isTrackSchedulerSet()) {
                 requirements.requireNoEndComponents();
             }
             
