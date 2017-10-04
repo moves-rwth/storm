@@ -261,13 +261,24 @@ namespace storm {
                                // Now solve the resulting equation system.
                                std::unique_ptr<storm::solver::LinearEquationSolver<ValueType>> solver = linearEquationSolverFactory.create(std::move(submatrix));
                                auto req = solver->getRequirements();
-                               if (obj.lowerResultBound) {
-                                   req.clearLowerBounds();
-                                   solver->setLowerBound(*obj.lowerResultBound);
-                               }
-                               if (obj.upperResultBound) {
-                                   solver->setUpperBound(*obj.upperResultBound);
-                                   req.clearUpperBounds();
+                               if (storm::solver::minimize(obj.formula->getOptimalityType())) {
+                                   if (obj.lowerResultBound) {
+                                       req.clearUpperBounds();
+                                       solver->setUpperBound(-(*obj.lowerResultBound));
+                                   }
+                                   if (obj.upperResultBound) {
+                                       req.clearLowerBounds();
+                                       solver->setLowerBound(-(*obj.upperResultBound));
+                                   }
+                               } else {
+                                   if (obj.lowerResultBound) {
+                                       req.clearLowerBounds();
+                                       solver->setLowerBound(*obj.lowerResultBound);
+                                   }
+                                   if (obj.upperResultBound) {
+                                       solver->setUpperBound(*obj.upperResultBound);
+                                       req.clearUpperBounds();
+                                   }
                                }
                                STORM_LOG_THROW(req.empty(), storm::exceptions::UncheckedRequirementException, "At least one requirement of the LinearEquationSolver was not met.");
                                solver->solveEquations(x, b);

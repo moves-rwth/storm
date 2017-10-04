@@ -112,6 +112,7 @@ namespace storm {
                 swAux3.start();
                 assert(cachedData.bLinEq.size() == choices.size());
                 for (uint64_t objIndex = 0; objIndex < this->objectives.size(); ++objIndex) {
+                    auto const& obj = this->objectives[objIndex];
                     std::vector<ValueType> const& objectiveReward = epochModel.objectiveRewards[objIndex];
                     auto rowGroupIndexIt = epochModel.epochMatrix.getRowGroupIndices().begin();
                     auto choiceIt = choices.begin();
@@ -139,13 +140,24 @@ namespace storm {
                     std::vector<ValueType>& x = cachedData.xLinEq[objIndex];
                     assert(x.size() == choices.size());
                     auto req = cachedData.linEqSolver->getRequirements();
-                    if (this->objectives[objIndex].lowerResultBound) {
-                        req.clearLowerBounds();
-                        cachedData.linEqSolver->setLowerBound(*this->objectives[objIndex].lowerResultBound);
-                    }
-                    if (this->objectives[objIndex].upperResultBound) {
-                        cachedData.linEqSolver->setUpperBound(*this->objectives[objIndex].upperResultBound);
-                        req.clearUpperBounds();
+                    if (storm::solver::minimize(obj.formula->getOptimalityType())) {
+                        if (obj.lowerResultBound) {
+                            req.clearUpperBounds();
+                            cachedData.linEqSolver->setUpperBound(-(*obj.lowerResultBound));
+                        }
+                        if (obj.upperResultBound) {
+                            req.clearLowerBounds();
+                            cachedData.linEqSolver->setLowerBound(-(*obj.upperResultBound));
+                        }
+                    } else {
+                        if (obj.lowerResultBound) {
+                            req.clearLowerBounds();
+                            cachedData.linEqSolver->setLowerBound(*obj.lowerResultBound);
+                        }
+                        if (obj.upperResultBound) {
+                            cachedData.linEqSolver->setUpperBound(*obj.upperResultBound);
+                            req.clearUpperBounds();
+                        }
                     }
                     STORM_LOG_THROW(req.empty(), storm::exceptions::UncheckedRequirementException, "At least one requirement of the LinearEquationSolver was not met.");
                     swEqBuilding.stop();
