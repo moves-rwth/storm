@@ -249,6 +249,11 @@ namespace storm {
             return std::fmod(first, second);
         }
         
+        template<typename IntegerType>
+        std::pair<IntegerType, IntegerType> divide(IntegerType const& dividend, IntegerType const& divisor) {
+            return std::make_pair(dividend / divisor, mod(dividend, divisor));
+        }
+        
         template<typename ValueType>
         std::string to_string(ValueType const& value) {
             std::stringstream ss;
@@ -384,6 +389,13 @@ namespace storm {
         template<>
         typename NumberTraits<ClnRationalNumber>::IntegerType mod(NumberTraits<ClnRationalNumber>::IntegerType const& first, NumberTraits<ClnRationalNumber>::IntegerType const& second) {
             return carl::mod(first, second);
+        }
+        
+        template<>
+        std::pair<typename NumberTraits<ClnRationalNumber>::IntegerType, typename NumberTraits<ClnRationalNumber>::IntegerType> divide(typename NumberTraits<ClnRationalNumber>::IntegerType const& dividend, typename NumberTraits<ClnRationalNumber>::IntegerType const& divisor) {
+            std::pair<typename NumberTraits<ClnRationalNumber>::IntegerType, typename NumberTraits<ClnRationalNumber>::IntegerType> result;
+            carl::divide(dividend, divisor, result.first, result.second);
+            return result;
         }
         
         template<>
@@ -557,6 +569,13 @@ namespace storm {
             return carl::mod(first, second);
         }
 
+        template<>
+        std::pair<typename NumberTraits<GmpRationalNumber>::IntegerType, typename NumberTraits<GmpRationalNumber>::IntegerType> divide(typename NumberTraits<GmpRationalNumber>::IntegerType const& dividend, typename NumberTraits<GmpRationalNumber>::IntegerType const& divisor) {
+            std::pair<typename NumberTraits<GmpRationalNumber>::IntegerType, typename NumberTraits<GmpRationalNumber>::IntegerType> result;
+            carl::divide(dividend, divisor, result.first, result.second);
+            return result;
+        }
+        
         template<>
         typename NumberTraits<GmpRationalNumber>::IntegerType pow(typename NumberTraits<GmpRationalNumber>::IntegerType const& value, uint_fast64_t exponent) {
             return carl::pow(value, exponent);

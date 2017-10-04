@@ -120,6 +120,12 @@ namespace storm {
         template<typename RationalType>
         typename NumberTraits<RationalType>::IntegerType denominator(RationalType const& number);
 
+        /*!
+         * (Integer-)Divides the dividend by the divisor and returns the result plus the remainder.
+         */
+        template<typename IntegerType>
+        std::pair<IntegerType, IntegerType> divide(IntegerType const& dividend, IntegerType const& divisor);
+
         template<typename IntegerType>
         IntegerType mod(IntegerType const& first, IntegerType const& second);
         

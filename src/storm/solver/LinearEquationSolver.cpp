@@ -208,6 +208,7 @@ namespace storm {
         std::unique_ptr<LinearEquationSolver<storm::RationalNumber>> GeneralLinearEquationSolverFactory<storm::RationalNumber>::create() const {
             EquationSolverType equationSolver = storm::settings::getModule<storm::settings::modules::CoreSettings>().getEquationSolver();
             switch (equationSolver) {
+                case EquationSolverType::Native: return std::make_unique<NativeLinearEquationSolver<storm::RationalNumber>>();
                 case EquationSolverType::Elimination: return std::make_unique<EliminationLinearEquationSolver<storm::RationalNumber>>();
                 default: return std::make_unique<EigenLinearEquationSolver<storm::RationalNumber>>();
             }

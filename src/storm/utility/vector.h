@@ -908,7 +908,7 @@ namespace storm {
                 auto b2It = b2.begin();
                 
                 for (; b1It != b1Ite; ++b1It, ++b2It) {
-                    result += storm::utility::pow(*b1It - *b2It, 2);
+                    result += storm::utility::pow<T>(*b1It - *b2It, 2);
                 }
                 
                 return result;

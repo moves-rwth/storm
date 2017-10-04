@@ -262,15 +262,26 @@ namespace storm {
         MinMaxLinearEquationSolverRequirements IterativeMinMaxLinearEquationSolver<ValueType>::getRequirements(EquationSystemType const& equationSystemType, boost::optional<storm::solver::OptimizationDirection> const& direction) const {
             // Start by copying the requirements of the linear equation solver.
             MinMaxLinearEquationSolverRequirements requirements(this->linearEquationSolverFactory->getRequirements());
-            
+
+            // General requirements.
             if (this->getSettings().getSolutionMethod() == IterativeMinMaxLinearEquationSolverSettings<ValueType>::SolutionMethod::ValueIteration) {
                 requirements.requireLowerBounds();
+            } else if (this->getSettings().getSolutionMethod() == IterativeMinMaxLinearEquationSolverSettings<ValueType>::SolutionMethod::RationalSearch) {
+                // As rational search needs to approach the solution from below, we cannot start with a valid scheduler hint as we would otherwise do.
+                // Instead, we need to require no end components.
+                if (equationSystemType == EquationSystemType::ReachabilityRewards) {
+                    if (!direction || direction.get() == OptimizationDirection::Minimize) {
+                        requirements.requireNoEndComponents();
+                    }
+                }
             }
             
-            // Guide requirements by whether or not we force soundness.
             if (this->getSettings().getForceSoundness()) {
-                // Only add requirements for value iteration here as the policy iteration requirements are indifferent
                 if (this->getSettings().getSolutionMethod() == IterativeMinMaxLinearEquationSolverSettings<ValueType>::SolutionMethod::ValueIteration) {
+                    // Require both bounds now.
+                    requirements.requireBounds();
+                    
+                    // If we need to also converge from above, we cannot deal with end components in the notorious cases.
                     if (equationSystemType == EquationSystemType::UntilProbabilities) {
                         if (!direction || direction.get() == OptimizationDirection::Maximize) {
                             requirements.requireNoEndComponents();
@@ -280,21 +291,28 @@ namespace storm {
                             requirements.requireNoEndComponents();
                         }
                     }
-                }
-                
-                requirements.requireBounds();
-            }
-            
-            // 'Regular' requirements (even for non-sound solving techniques).
-            if (equationSystemType == EquationSystemType::UntilProbabilities) {
-                if (this->getSettings().getSolutionMethod() == IterativeMinMaxLinearEquationSolverSettings<ValueType>::SolutionMethod::PolicyIteration) {
-                    if (!direction || direction.get() == OptimizationDirection::Maximize) {
-                        requirements.requireValidInitialScheduler();
+                } else if (this->getSettings().getSolutionMethod() == IterativeMinMaxLinearEquationSolverSettings<ValueType>::SolutionMethod::PolicyIteration) {
+                    if (equationSystemType == EquationSystemType::UntilProbabilities) {
+                        if (!direction || direction.get() == OptimizationDirection::Maximize) {
+                            requirements.requireValidInitialScheduler();
+                        }
+                    } else if (equationSystemType == EquationSystemType::ReachabilityRewards) {
+                        if (!direction || direction.get() == OptimizationDirection::Minimize) {
+                            requirements.requireValidInitialScheduler();
+                        }
                     }
                 }
-            } else if (equationSystemType == EquationSystemType::ReachabilityRewards) {
-                if (!direction || direction.get() == OptimizationDirection::Minimize) {
-                    requirements.requireValidInitialScheduler();
+            } else {
+                if (equationSystemType == EquationSystemType::UntilProbabilities) {
+                    if (this->getSettings().getSolutionMethod() == IterativeMinMaxLinearEquationSolverSettings<ValueType>::SolutionMethod::PolicyIteration) {
+                        if (!direction || direction.get() == OptimizationDirection::Maximize) {
+                            requirements.requireValidInitialScheduler();
+                        }
+                    }
+                } else if (equationSystemType == EquationSystemType::ReachabilityRewards) {
+                    if (!direction || direction.get() == OptimizationDirection::Minimize) {
+                        requirements.requireValidInitialScheduler();
+                    }
                 }
             }
         
@@ -677,6 +695,7 @@ namespace storm {
         template<typename ValueType>
         template<typename ImpreciseType>
         typename std::enable_if<std::is_same<ValueType, ImpreciseType>::value && !NumberTraits<ValueType>::IsExact, bool>::type IterativeMinMaxLinearEquationSolver<ValueType>::solveEquationsRationalSearchHelper(OptimizationDirection dir, std::vector<ValueType>& x, std::vector<ValueType> const& b) const {
+            // Version for when the overall value type is imprecise.
 
             // Create a rational representation of the input so we can check for a proper solution later.
             storm::storage::SparseMatrix<storm::RationalNumber> rationalA = this->A->template toValueType<storm::RationalNumber>();
@@ -711,6 +730,7 @@ namespace storm {
         template<typename ValueType>
         template<typename ImpreciseType>
         typename std::enable_if<std::is_same<ValueType, ImpreciseType>::value && NumberTraits<ValueType>::IsExact, bool>::type IterativeMinMaxLinearEquationSolver<ValueType>::solveEquationsRationalSearchHelper(OptimizationDirection dir, std::vector<ValueType>& x, std::vector<ValueType> const& b) const {
+            // Version for when the overall value type is exact and the same type is to be used for the imprecise part.
             
             if (!this->linEqSolverA) {
                 this->linEqSolverA = this->linearEquationSolverFactory->create(*this->A);
@@ -734,6 +754,9 @@ namespace storm {
         template<typename ValueType>
         template<typename ImpreciseType>
         typename std::enable_if<!std::is_same<ValueType, ImpreciseType>::value, bool>::type IterativeMinMaxLinearEquationSolver<ValueType>::solveEquationsRationalSearchHelper(OptimizationDirection dir, std::vector<ValueType>& x, std::vector<ValueType> const& b) const {
+            // Version for when the overall value type is exact and the imprecise one is not. We first try to solve the
+            // problem using the imprecise data type and fall back to the exact type as needed.
+            
             // Translate A to its imprecise version.
             storm::storage::SparseMatrix<ImpreciseType> impreciseA = this->A->template toValueType<ImpreciseType>();
             
@@ -769,7 +792,7 @@ namespace storm {
                 // Forward the call to the core rational search routine.
                 converged = solveEquationsRationalSearchHelper<ValueType, ImpreciseType>(dir, impreciseSolver, *this->A, x, b, impreciseA, impreciseX, impreciseB, impreciseTmpX);
             } catch (storm::exceptions::PrecisionExceededException const& e) {
-                STORM_LOG_WARN("Precision of double was exceeded, trying to recover by switching to rational arithmetic.");
+                STORM_LOG_WARN("Precision of value type was exceeded, trying to recover by switching to rational arithmetic.");
                 
                 if (!auxiliaryRowGroupVector) {
                     auxiliaryRowGroupVector = std::make_unique<std::vector<ValueType>>(this->A->getRowGroupCount());
@@ -859,7 +882,7 @@ namespace storm {
                 // Count the iterations.
                 overallIterations += result.iterations;
                 
-                // Try to sharpen the result.
+                // Compute maximal precision until which to sharpen.
                 uint64_t p = storm::utility::convertNumber<uint64_t>(storm::utility::ceil(storm::utility::log10<ValueType>(storm::utility::one<ValueType>() / precision)));
                 
                 // Make sure that currentX and rationalX are not aliased.

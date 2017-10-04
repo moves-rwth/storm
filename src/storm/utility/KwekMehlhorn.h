@@ -11,17 +11,16 @@ namespace storm {
             
             template<typename IntegerType>
             std::pair<IntegerType, IntegerType> findRational(IntegerType const& alpha, IntegerType const& beta, IntegerType const& gamma, IntegerType const& delta) {
-                IntegerType alphaDivBetaFloor = alpha / beta;
-                IntegerType gammaDivDeltaFloor = gamma / delta;
-                IntegerType alphaModBeta = storm::utility::mod(alpha, beta);
+                std::pair<IntegerType, IntegerType> alphaDivBetaPair = storm::utility::divide(alpha, beta);
+                std::pair<IntegerType, IntegerType> gammaDivDeltaPair = storm::utility::divide(gamma, delta);
                 
-                if (alphaDivBetaFloor == gammaDivDeltaFloor && !storm::utility::isZero(alphaModBeta)) {
-                    std::pair<IntegerType, IntegerType> subresult = findRational(delta, storm::utility::mod(gamma, delta), beta, alphaModBeta);
-                    auto result = std::make_pair(alphaDivBetaFloor * subresult.first + subresult.second, subresult.first);
+                if (alphaDivBetaPair.first == gammaDivDeltaPair.first && !storm::utility::isZero(alphaDivBetaPair.second)) {
+                    std::pair<IntegerType, IntegerType> subresult = findRational(delta, gammaDivDeltaPair.second, beta, alphaDivBetaPair.second);
+                    auto result = std::make_pair(alphaDivBetaPair.first * subresult.first + subresult.second, subresult.first);
                     
                     return result;
                 } else {
-                    auto result = std::make_pair(storm::utility::isZero(alphaModBeta) ? alphaDivBetaFloor : alphaDivBetaFloor + storm::utility::one<IntegerType>(), storm::utility::one<IntegerType>());
+                    auto result = std::make_pair(storm::utility::isZero(alphaDivBetaPair.second) ? alphaDivBetaPair.first : alphaDivBetaPair.first + storm::utility::one<IntegerType>(), storm::utility::one<IntegerType>());
                     return result;
                 }
             }
