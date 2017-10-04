@@ -97,6 +97,8 @@ namespace storm {
                 // Check whether the linear equation solver needs to be updated
                 auto const& choices = cachedData.minMaxSolver->getSchedulerChoices();
                 if (cachedData.schedulerChoices != choices) {
+                    std::vector<uint64_t> choicesTmp = choices;
+                    cachedData.minMaxSolver->setInitialScheduler(std::move(choicesTmp));
                     swAux2.start();
                     ++numSchedChanges;
                     cachedData.schedulerChoices = choices;
@@ -204,8 +206,9 @@ namespace storm {
                     cachedData.minMaxSolver->setRequirementsChecked(true);
                     cachedData.minMaxSolver->setOptimizationDirection(storm::solver::OptimizationDirection::Maximize);
                 
-                    // Set the scheduler choices to invalid choice indices so that an update of the linEqSolver is enforced
-                    cachedData.schedulerChoices.assign(epochModel.epochMatrix.getRowGroupCount(), std::numeric_limits<uint64_t>::max());
+                    // Clear the scheduler choices so that an update of the linEqSolver is enforced
+                    cachedData.schedulerChoices.clear();
+                    cachedData.schedulerChoices.reserve(epochModel.epochMatrix.getRowGroupCount());
                     
                     // Update data for linear equation solving
                     cachedData.bLinEq.resize(epochModel.epochMatrix.getRowGroupCount());

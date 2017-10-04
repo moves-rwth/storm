@@ -92,6 +92,7 @@ namespace storm {
                         minMaxSolver = minMaxLinearEquationSolverFactory.create(epochModel.epochMatrix);
                         minMaxSolver->setOptimizationDirection(dir);
                         minMaxSolver->setCachingEnabled(true);
+                        minMaxSolver->setTrackScheduler(true);
                         minMaxSolver->setLowerBound(storm::utility::zero<ValueType>());
                         minMaxSolver->setUpperBound(storm::utility::one<ValueType>());
                         auto req = minMaxSolver->getRequirements(storm::solver::EquationSystemType::StochasticShortestPath, dir);
@@ -99,6 +100,9 @@ namespace storm {
                         req.clearBounds();
                         STORM_LOG_THROW(req.empty(), storm::exceptions::UncheckedRequirementException, "A solver requirement is not satisfied.");
                         minMaxSolver->setRequirementsChecked();
+                    } else {
+                        auto choicesTmp = minMaxSolver->getSchedulerChoices();
+                        minMaxSolver->setInitialScheduler(std::move(choicesTmp));
                     }
                     
                     // Prepare the right hand side of the equation system
