@@ -6,12 +6,14 @@
 #include "storm/storage/dd/Add.h"
 #include "storm/storage/dd/Bdd.h"
 #include "storm/storage/dd/Odd.h"
+#include "storm/storage/MaximalEndComponentDecomposition.h"
 
 #include "storm/utility/graph.h"
 #include "storm/utility/constants.h"
 
 #include "storm/models/symbolic/StandardRewardModel.h"
 
+#include "storm/modelchecker/prctl/helper/SparseMdpEndComponentInformation.h"
 #include "storm/modelchecker/results/SymbolicQualitativeCheckResult.h"
 #include "storm/modelchecker/results/SymbolicQuantitativeCheckResult.h"
 #include "storm/modelchecker/results/HybridQuantitativeCheckResult.h"
@@ -24,6 +26,13 @@
 namespace storm {
     namespace modelchecker {
         namespace helper {
+            
+            template<typename ValueType>
+            struct SolverRequirementsData {
+                boost::optional<SparseMdpEndComponentInformation<ValueType>> ecInformation;
+                boost::optional<std::vector<uint64_t>> initialScheduler;
+                storm::storage::BitVector properMaybeStates;
+            };
             
             template <typename ValueType>
             std::vector<uint64_t> computeValidInitialSchedulerForUntilProbabilities(storm::storage::SparseMatrix<ValueType> const& transitionMatrix, std::vector<ValueType> const& b) {
@@ -60,11 +69,12 @@ namespace storm {
             std::unique_ptr<CheckResult> HybridMdpPrctlHelper<DdType, ValueType>::computeUntilProbabilities(OptimizationDirection dir, storm::models::symbolic::NondeterministicModel<DdType, ValueType> const& model, storm::dd::Add<DdType, ValueType> const& transitionMatrix, storm::dd::Bdd<DdType> const& phiStates, storm::dd::Bdd<DdType> const& psiStates, bool qualitative, storm::solver::MinMaxLinearEquationSolverFactory<ValueType> const& linearEquationSolverFactory) {
                 // We need to identify the states which have to be taken out of the matrix, i.e. all states that have
                 // probability 0 and 1 of satisfying the until-formula.
+                storm::dd::Bdd<DdType> transitionMatrixBdd = transitionMatrix.notZero();
                 std::pair<storm::dd::Bdd<DdType>, storm::dd::Bdd<DdType>> statesWithProbability01;
                 if (dir == OptimizationDirection::Minimize) {
-                    statesWithProbability01 = storm::utility::graph::performProb01Min(model, phiStates, psiStates);
+                    statesWithProbability01 = storm::utility::graph::performProb01Min(model, transitionMatrixBdd, phiStates, psiStates);
                 } else {
-                    statesWithProbability01 = storm::utility::graph::performProb01Max(model, phiStates, psiStates);
+                    statesWithProbability01 = storm::utility::graph::performProb01Max(model, transitionMatrixBdd, phiStates, psiStates);
                 }
                 storm::dd::Bdd<DdType> maybeStates = !statesWithProbability01.first && !statesWithProbability01.second && model.getReachableStates();
                 
@@ -77,15 +87,41 @@ namespace storm {
                 } else {
                     // If there are maybe states, we need to solve an equation system.
                     if (!maybeStates.isZero()) {
+                        // Check for requirements of the solver early so we can adjust the maybe state computation accordingly.
+                        storm::solver::MinMaxLinearEquationSolverRequirements requirements = linearEquationSolverFactory.getRequirements(storm::solver::EquationSystemType::UntilProbabilities, dir);
+                        storm::solver::MinMaxLinearEquationSolverRequirements clearedRequirements = requirements;
+                        SolverRequirementsData<ValueType> solverRequirementsData;
+                        bool extendMaybeStates = true;
+                        if (!clearedRequirements.empty()) {
+                            if (clearedRequirements.requiresNoEndComponents()) {
+                                STORM_LOG_DEBUG("Scheduling EC elimination, because the solver requires it.");
+                                extendMaybeStates = true;
+                                clearedRequirements.clearNoEndComponents();
+                            }
+                            if (clearedRequirements.requiresValidInitialScheduler()) {
+                                STORM_LOG_DEBUG("Scheduling valid scheduler computation, because the solver requires it.");
+                                clearedRequirements.clearValidInitialScheduler();
+                            }
+                            clearedRequirements.clearBounds();
+                            STORM_LOG_THROW(clearedRequirements.empty(), storm::exceptions::UncheckedRequirementException, "Cannot establish requirements for solver.");
+                        }
+
+                        storm::dd::Bdd<DdType> extendedMaybeStates = maybeStates;
+                        if (extendMaybeStates) {
+                            // Extend the maybe states by all non-maybe states that can be reached from a maybe state within one step (they
+                            // either are states with probability 0 or 1).
+                            extendedMaybeStates |= maybeStates.relationalProduct(transitionMatrixBdd.existsAbstract(model.getNondeterminismVariables()), model.getRowVariables(), model.getColumnVariables());
+                        }
+                        
                         // Create the ODD for the translation between symbolic and explicit storage.
-                        storm::dd::Odd odd = maybeStates.createOdd();
+                        storm::dd::Odd odd = extendedMaybeStates.createOdd();
                         
                         // Create the matrix and the vector for the equation system.
-                        storm::dd::Add<DdType, ValueType> maybeStatesAdd = maybeStates.template toAdd<ValueType>();
+                        storm::dd::Add<DdType, ValueType> extendedMaybeStatesAdd = extendedMaybeStates.template toAdd<ValueType>();
                         
                         // Start by cutting away all rows that do not belong to maybe states. Note that this leaves columns targeting
                         // non-maybe states in the matrix.
-                        storm::dd::Add<DdType, ValueType> submatrix = transitionMatrix * maybeStatesAdd;
+                        storm::dd::Add<DdType, ValueType> submatrix = transitionMatrix * extendedMaybeStatesAdd;
                         
                         // Then compute the vector that contains the one-step probabilities to a state with probability 1 for all
                         // maybe states.
@@ -103,26 +139,16 @@ namespace storm {
                         // Translate the symbolic matrix/vector to their explicit representations and solve the equation system.
                         std::pair<storm::storage::SparseMatrix<ValueType>, std::vector<ValueType>> explicitRepresentation = submatrix.toMatrixVector(subvector, std::move(rowGroupSizes), model.getNondeterminismVariables(), odd, odd);
                         
-                        // Create the solution vector.
-                        std::vector<ValueType> x(explicitRepresentation.first.getRowGroupCount(), storm::utility::zero<ValueType>());
-
-                        // Check for requirements of the solver.
-                        storm::solver::MinMaxLinearEquationSolverRequirements requirements = linearEquationSolverFactory.getRequirements(storm::solver::EquationSystemType::UntilProbabilities, dir);
-                        boost::optional<std::vector<uint64_t>> initialScheduler;
-                        if (!requirements.empty()) {
-                            if (requirements.requires(storm::solver::MinMaxLinearEquationSolverRequirements::Element::ValidInitialScheduler)) {
-                                STORM_LOG_DEBUG("Computing valid scheduler hint, because the solver requires it.");
-                                initialScheduler = computeValidInitialSchedulerForUntilProbabilities<ValueType>(explicitRepresentation.first, explicitRepresentation.second);
-
-                                requirements.clearValidInitialScheduler();
-                            }
-                            requirements.clearBounds();
-                            STORM_LOG_THROW(requirements.empty(), storm::exceptions::UncheckedRequirementException, "Cannot establish requirements for solver.");
+                        if (requirements.requiresValidInitialScheduler()) {
+                            solverRequirementsData.initialScheduler = computeValidInitialSchedulerForUntilProbabilities<ValueType>(explicitRepresentation.first, explicitRepresentation.second);
                         }
                         
+                        // Create the solution vector.
+                        std::vector<ValueType> x(explicitRepresentation.first.getRowGroupCount(), storm::utility::zero<ValueType>());
+                        
                         std::unique_ptr<storm::solver::MinMaxLinearEquationSolver<ValueType>> solver = linearEquationSolverFactory.create(std::move(explicitRepresentation.first));
-                        if (initialScheduler) {
-                            solver->setInitialScheduler(std::move(initialScheduler.get()));
+                        if (solverRequirementsData.initialScheduler) {
+                            solver->setInitialScheduler(std::move(solverRequirementsData.initialScheduler.get()));
                         }
                         solver->setBounds(storm::utility::zero<ValueType>(), storm::utility::one<ValueType>());
                         solver->setRequirementsChecked();
@@ -256,7 +282,7 @@ namespace storm {
             storm::storage::BitVector computeTargetStatesForReachabilityRewardsFromExplicitRepresentation(storm::storage::SparseMatrix<ValueType> const& transitionMatrix) {
                 storm::storage::BitVector targetStates(transitionMatrix.getRowGroupCount());
                 
-                // A state is a target state if its row group is empty.
+                // A state is a target state iff its row group is empty.
                 for (uint64_t rowGroup = 0; rowGroup < transitionMatrix.getRowGroupCount(); ++rowGroup) {
                     if (transitionMatrix.getRowGroupIndices()[rowGroup] == transitionMatrix.getRowGroupIndices()[rowGroup + 1]) {
                         targetStates.set(rowGroup);
@@ -286,18 +312,8 @@ namespace storm {
             
             template <typename ValueType>
             void eliminateTargetStatesFromExplicitRepresentation(std::pair<storm::storage::SparseMatrix<ValueType>, std::vector<ValueType>>& explicitRepresentation, std::vector<uint64_t>& scheduler, storm::storage::BitVector const& properMaybeStates) {
-                // Eliminate the superfluous entries from the rhs vector and the scheduler.
+                // Eliminate superfluous entries from the scheduler.
                 uint64_t position = 0;
-                for (auto state : properMaybeStates) {
-                    for (uint64_t row = explicitRepresentation.first.getRowGroupIndices()[state]; row < explicitRepresentation.first.getRowGroupIndices()[state + 1]; ++row) {
-                        explicitRepresentation.second[position] = explicitRepresentation.second[row];
-                        position++;
-                    }
-                }
-                explicitRepresentation.second.resize(position);
-                explicitRepresentation.second.shrink_to_fit();
-                
-                position = 0;
                 for (auto state : properMaybeStates) {
                     scheduler[position] = scheduler[state];
                     position++;
@@ -320,6 +336,60 @@ namespace storm {
                 }
                 
                 return expandedResult;
+            }
+            
+            template<typename ValueType>
+            void eliminateEndComponentsAndTargetStatesReachabilityRewards(std::pair<storm::storage::SparseMatrix<ValueType>, std::vector<ValueType>>& explicitRepresentation, SolverRequirementsData<ValueType>& solverRequirementsData) {
+
+                // Get easier handles to the data.
+                auto& transitionMatrix = explicitRepresentation.first;
+                auto& rewardVector = explicitRepresentation.second;
+                
+                // Start by computing the choices with reward 0, as we only want ECs within this fragment.
+                storm::storage::BitVector zeroRewardChoices(transitionMatrix.getRowCount());
+                
+                uint64_t index = 0;
+                for (auto const& e : rewardVector) {
+                    if (storm::utility::isZero(e)) {
+                        zeroRewardChoices.set(index);
+                    }
+                    ++index;
+                }
+                
+                // Compute the states that have some zero reward choice.
+                storm::storage::BitVector candidateStates(solverRequirementsData.properMaybeStates);
+                for (auto state : solverRequirementsData.properMaybeStates) {
+                    bool keepState = false;
+                    
+                    for (auto row = transitionMatrix.getRowGroupIndices()[state], rowEnd = transitionMatrix.getRowGroupIndices()[state + 1]; row < rowEnd; ++row) {
+                        if (zeroRewardChoices.get(row)) {
+                            keepState = true;
+                            break;
+                        }
+                    }
+                    
+                    if (!keepState) {
+                        candidateStates.set(state, false);
+                    }
+                }
+                
+                bool doDecomposition = !candidateStates.empty();
+                
+                storm::storage::MaximalEndComponentDecomposition<ValueType> endComponentDecomposition;
+                if (doDecomposition) {
+                    // Then compute the states that are in MECs with zero reward.
+                    endComponentDecomposition = storm::storage::MaximalEndComponentDecomposition<ValueType>(transitionMatrix, transitionMatrix.transpose(), candidateStates, zeroRewardChoices);
+                }
+
+                // Only do more work if there are actually end-components.
+                if (doDecomposition && !endComponentDecomposition.empty()) {
+                    STORM_LOG_DEBUG("Eliminating " << endComponentDecomposition.size() << " EC(s).");
+                    std::vector<ValueType> subvector;
+                    SparseMdpEndComponentInformation<ValueType>::eliminateEndComponents(endComponentDecomposition, transitionMatrix, rewardVector, solverRequirementsData.properMaybeStates, transitionMatrix, subvector);
+                    rewardVector = std::move(subvector);
+                } else {
+                    STORM_LOG_DEBUG("Not eliminating ECs as there are none.");
+                }
             }
             
             template<storm::dd::DdType DdType, typename ValueType>
@@ -352,19 +422,25 @@ namespace storm {
                     if (!maybeStates.isZero()) {
                         // Check for requirements of the solver this early so we can adapt the maybe states accordingly.
                         storm::solver::MinMaxLinearEquationSolverRequirements requirements = linearEquationSolverFactory.getRequirements(storm::solver::EquationSystemType::ReachabilityRewards, dir);
-                        bool requireInitialScheduler = false;
-                        if (!requirements.empty()) {
-                            if (requirements.requires(storm::solver::MinMaxLinearEquationSolverRequirements::Element::ValidInitialScheduler)) {
-                                STORM_LOG_DEBUG("Computing valid scheduler, because the solver requires it.");
-                                requireInitialScheduler = true;
-                                requirements.clearValidInitialScheduler();
+                        storm::solver::MinMaxLinearEquationSolverRequirements clearedRequirements = requirements;
+                        bool extendMaybeStates = false;
+                        if (!clearedRequirements.empty()) {
+                            if (clearedRequirements.requiresNoEndComponents()) {
+                                STORM_LOG_DEBUG("Scheduling EC elimination, because the solver requires it.");
+                                extendMaybeStates = true;
+                                clearedRequirements.clearNoEndComponents();
                             }
-                            requirements.clearLowerBounds();
-                            STORM_LOG_THROW(requirements.empty(), storm::exceptions::UncheckedRequirementException, "Cannot establish requirements for solver.");
+                            if (clearedRequirements.requiresValidInitialScheduler()) {
+                                STORM_LOG_DEBUG("Computing valid scheduler, because the solver requires it.");
+                                extendMaybeStates = true;
+                                clearedRequirements.clearValidInitialScheduler();
+                            }
+                            clearedRequirements.clearLowerBounds();
+                            STORM_LOG_THROW(clearedRequirements.empty(), storm::exceptions::UncheckedRequirementException, "Cannot establish requirements for solver.");
                         }
 
                         // Compute the set of maybe states that we are required to keep in the translation to explicit.
-                        storm::dd::Bdd<DdType> requiredMaybeStates = requireInitialScheduler ? maybeStatesWithTargetStates : maybeStates;
+                        storm::dd::Bdd<DdType> requiredMaybeStates = extendMaybeStates ? maybeStatesWithTargetStates : maybeStates;
                         
                         // Create the ODD for the translation between symbolic and explicit storage.
                         storm::dd::Odd odd = requiredMaybeStates.createOdd();
@@ -392,23 +468,27 @@ namespace storm {
                         std::vector<uint_fast64_t> rowGroupSizes = stateActionAdd.sumAbstract(model.getNondeterminismVariables()).toVector(odd);
 
                         // Finally cut away all columns targeting non-maybe states (or non-(maybe or target) states, respectively).
-                        submatrix *= requireInitialScheduler ? maybeStatesWithTargetStates.swapVariables(model.getRowColumnMetaVariablePairs()).template toAdd<ValueType>() : maybeStatesAdd.swapVariables(model.getRowColumnMetaVariablePairs());
+                        submatrix *= extendMaybeStates ? maybeStatesWithTargetStates.swapVariables(model.getRowColumnMetaVariablePairs()).template toAdd<ValueType>() : maybeStatesAdd.swapVariables(model.getRowColumnMetaVariablePairs());
                         
                         // Translate the symbolic matrix/vector to their explicit representations.
                         std::pair<storm::storage::SparseMatrix<ValueType>, std::vector<ValueType>> explicitRepresentation = submatrix.toMatrixVector(subvector, std::move(rowGroupSizes), model.getNondeterminismVariables(), odd, odd);
                         
-                        // Compute a valid initial scheduler if necessary.
-                        boost::optional<std::vector<uint64_t>> initialScheduler;
-                        boost::optional<storm::storage::BitVector> properMaybeStates;
-                        if (requireInitialScheduler) {
-                            // Compute a valid initial scheduler.
+                        // Fulfill the solver's requirements.
+                        SolverRequirementsData<ValueType> solverRequirementsData;
+                        if (requirements.requiresNoEndComponents() || requirements.requiresValidInitialScheduler()) {
                             storm::storage::BitVector targetStates = computeTargetStatesForReachabilityRewardsFromExplicitRepresentation(explicitRepresentation.first);
-                            properMaybeStates = ~targetStates;
-                            initialScheduler = computeValidInitialSchedulerForReachabilityRewards<ValueType>(explicitRepresentation.first, properMaybeStates.get(), targetStates);
-                            
-                            // Since we needed the transitions to target states to be translated as well for the computation
-                            // of the scheduler, we have to get rid of them now.
-                            eliminateTargetStatesFromExplicitRepresentation(explicitRepresentation, initialScheduler.get(), properMaybeStates.get());
+                            solverRequirementsData.properMaybeStates = ~targetStates;
+
+                            if (requirements.requiresNoEndComponents()) {
+                                eliminateEndComponentsAndTargetStatesReachabilityRewards(explicitRepresentation, solverRequirementsData);
+                            } else {
+                                // Compute a valid initial scheduler.
+                                solverRequirementsData.initialScheduler = computeValidInitialSchedulerForReachabilityRewards<ValueType>(explicitRepresentation.first, solverRequirementsData.properMaybeStates, targetStates);
+                                
+                                // Since we needed the transitions to target states to be translated as well for the computation
+                                // of the scheduler, we have to get rid of them now.
+                                eliminateTargetStatesFromExplicitRepresentation(explicitRepresentation, solverRequirementsData.initialScheduler.get(), solverRequirementsData.properMaybeStates);
+                            }
                         }
 
                         // Create the solution vector.
@@ -418,8 +498,8 @@ namespace storm {
                         std::unique_ptr<storm::solver::MinMaxLinearEquationSolver<ValueType>> solver = linearEquationSolverFactory.create(std::move(explicitRepresentation.first));
                         
                         // Move the scheduler to the solver.
-                        if (initialScheduler) {
-                            solver->setInitialScheduler(std::move(initialScheduler.get()));
+                        if (solverRequirementsData.initialScheduler) {
+                            solver->setInitialScheduler(std::move(solverRequirementsData.initialScheduler.get()));
                         }
                         
                         solver->setLowerBound(storm::utility::zero<ValueType>());
@@ -427,8 +507,16 @@ namespace storm {
                         solver->solveEquations(dir, x, explicitRepresentation.second);
                         
                         // If we included the target states in the ODD, we need to expand the result from the solver.
-                        if (requireInitialScheduler) {
-                            x = insertTargetStateValuesIntoExplicitRepresentation(x, properMaybeStates.get());
+                        if (extendMaybeStates) {
+                            if (requirements.requiresNoEndComponents()) {
+                                if (solverRequirementsData.ecInformation) {
+                                    std::vector<ValueType> extendedVector(solverRequirementsData.properMaybeStates.size());
+                                    solverRequirementsData.ecInformation.get().setValues(extendedVector, solverRequirementsData.properMaybeStates, x);
+                                    x = std::move(extendedVector);
+                                }
+                            } else {
+                                x = insertTargetStateValuesIntoExplicitRepresentation(x, solverRequirementsData.properMaybeStates);
+                            }
                         }
                         
                         // Return a hybrid check result that stores the numerical values explicitly.

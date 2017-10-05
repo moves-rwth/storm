@@ -631,8 +631,6 @@ namespace storm {
                 std::shared_ptr<storm::models::ModelBase> model = buildPreprocessExportModelWithValueTypeAndDdlib<DdType, ValueType>(input, engine);
 
                 if (model) {
-                    STORM_LOG_THROW(model->isSparseModel() || !storm::settings::getModule<storm::settings::modules::GeneralSettings>().isSoundSet(), storm::exceptions::NotSupportedException, "Forcing soundness is currently only supported for sparse models.");
-
                     if (coreSettings.isCounterexampleSet()) {
                         auto ioSettings = storm::settings::getModule<storm::settings::modules::IOSettings>();
                         generateCounterexamples<ValueType>(model, input);

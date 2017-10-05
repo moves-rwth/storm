@@ -121,7 +121,9 @@ namespace storm {
                     case NativeEquationSolverSettings::LinearEquationMethod::SOR: out << "sor"; break;
                     case NativeEquationSolverSettings::LinearEquationMethod::WalkerChae: out << "walkerchae"; break;
                     case NativeEquationSolverSettings::LinearEquationMethod::Power: out << "power"; break;
+                    case NativeEquationSolverSettings::LinearEquationMethod::RationalSearch: out << "ratsearch"; break;
                 }
+                return out;
             }
             
         } // namespace modules
