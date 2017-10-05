@@ -316,6 +316,8 @@ namespace storm {
                  * @return
                  */
                 bool isBuildStateValuationsSet() const;
+                
+                bool isExportCdfSet() const;
 
                 bool check() const override;
                 void finalize() override;
@@ -328,6 +330,8 @@ namespace storm {
                 static const std::string exportDotOptionName;
                 static const std::string exportJaniDotOptionName;
                 static const std::string exportExplicitOptionName;
+                static const std::string exportCdfOptionName;
+                static const std::string exportCdfOptionShortName;
                 static const std::string explicitOptionName;
                 static const std::string explicitOptionShortName;
                 static const std::string explicitDrnOptionName;

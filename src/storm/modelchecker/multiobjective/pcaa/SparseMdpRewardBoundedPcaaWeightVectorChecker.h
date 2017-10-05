@@ -82,7 +82,7 @@ namespace storm {
                 void updateCachedData(typename MultiDimensionalRewardUnfolding<ValueType, false>::EpochModel const& epochModel, EpochCheckingData& cachedData, std::vector<ValueType> const& weightVector);
                 
                 storm::utility::Stopwatch swAll, swDataUpdate, swEqBuilding, swLinEqSolving, swMinMaxSolving, swAux1, swAux2, swAux3;
-                uint64_t numSchedChanges, numCheckedEpochs;
+                uint64_t numSchedChanges, numCheckedEpochs, numChecks;
                 
                 MultiDimensionalRewardUnfolding<ValueType, false> rewardUnfolding;
                 

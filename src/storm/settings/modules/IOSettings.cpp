@@ -20,6 +20,8 @@ namespace storm {
             const std::string IOSettings::exportDotOptionName = "exportdot";
             const std::string IOSettings::exportExplicitOptionName = "exportexplicit";
             const std::string IOSettings::exportJaniDotOptionName = "exportjanidot";
+            const std::string IOSettings::exportCdfOptionName = "exportcdf";
+            const std::string IOSettings::exportCdfOptionShortName = "cdf";
             const std::string IOSettings::explicitOptionName = "explicit";
             const std::string IOSettings::explicitOptionShortName = "exp";
             const std::string IOSettings::explicitDrnOptionName = "explicit-drn";
@@ -57,6 +59,7 @@ namespace storm {
                                 .addArgument(storm::settings::ArgumentBuilder::createStringArgument("filename", "The name of the file to which the model is to be written.").build()).build());
                 this->addOption(storm::settings::OptionBuilder(moduleName, exportJaniDotOptionName, "", "If given, the loaded jani model will be written to the specified file in the dot format.")
                                         .addArgument(storm::settings::ArgumentBuilder::createStringArgument("filename", "The name of the file to which the model is to be written.").build()).build());
+                this->addOption(storm::settings::OptionBuilder(moduleName, exportCdfOptionName, false, "Exports the cumulative density function for reward bounded properties into a .csv file.").setShortName(exportCdfOptionShortName).build());
                 this->addOption(storm::settings::OptionBuilder(moduleName, exportExplicitOptionName, "", "If given, the loaded model will be written to the specified file in the drn format.")
                                 .addArgument(storm::settings::ArgumentBuilder::createStringArgument("filename", "the name of the file to which the model is to be writen.").build()).build());
                 this->addOption(storm::settings::OptionBuilder(moduleName, explicitOptionName, false, "Parses the model given in an explicit (sparse) representation.").setShortName(explicitOptionShortName)
@@ -256,9 +259,13 @@ namespace storm {
             bool IOSettings::isBuildChoiceLabelsSet() const {
                 return this->getOption(buildChoiceLabelOptionName).getHasOptionBeenSet();
             }
-
-           bool IOSettings::isBuildStateValuationsSet() const {
+            
+            bool IOSettings::isBuildStateValuationsSet() const {
                 return this->getOption(buildStateValuationsOptionName).getHasOptionBeenSet();
+            }
+
+            bool IOSettings::isExportCdfSet() const {
+                return this->getOption(exportCdfOptionName).getHasOptionBeenSet();
             }
 
             bool IOSettings::isPropertySet() const {

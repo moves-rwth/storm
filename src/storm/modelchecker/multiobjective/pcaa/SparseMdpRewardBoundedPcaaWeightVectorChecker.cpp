@@ -9,6 +9,9 @@
 #include "storm/solver/MinMaxLinearEquationSolver.h"
 #include "storm/solver/LinearEquationSolver.h"
 
+#include "storm/settings/SettingsManager.h"
+#include "storm/utility/export.h"
+#include "storm/settings/modules/IOSettings.h"
 
 #include "storm/exceptions/InvalidPropertyException.h"
 #include "storm/exceptions/InvalidOperationException.h"
@@ -16,6 +19,7 @@
 #include "storm/exceptions/NotSupportedException.h"
 #include "storm/exceptions/UnexpectedException.h"
 #include "storm/exceptions/UncheckedRequirementException.h"
+
 
 namespace storm {
     namespace modelchecker {
@@ -29,18 +33,45 @@ namespace storm {
                 
                 numSchedChanges = 0;
                 numCheckedEpochs = 0;
+                numChecks = 0;
             }
             
             template <class SparseMdpModelType>
             void SparseMdpRewardBoundedPcaaWeightVectorChecker<SparseMdpModelType>::check(std::vector<ValueType> const& weightVector) {
+                ++numChecks;
+                
+                // In case we want to export the cdf, we will collect the corresponding data
+                std::vector<std::vector<ValueType>> cdfData;
+                
                 auto initEpoch = rewardUnfolding.getStartEpoch();
                 auto epochOrder = rewardUnfolding.getEpochComputationOrder(initEpoch);
-                
                 EpochCheckingData cachedData;
                 for (auto const& epoch : epochOrder) {
                     computeEpochSolution(epoch, weightVector, cachedData);
+                    if (storm::settings::getModule<storm::settings::modules::IOSettings>().isExportCdfSet() && !rewardUnfolding.getEpochManager().hasBottomDimension(epoch)) {
+                        std::vector<ValueType> cdfEntry;
+                        for (uint64_t i = 0; i < rewardUnfolding.getEpochManager().getDimensionCount(); ++i) {
+                            uint64_t offset = rewardUnfolding.getDimension(i).isUpperBounded ? 0 : 1;
+                            cdfEntry.push_back(storm::utility::convertNumber<ValueType>(rewardUnfolding.getEpochManager().getDimensionOfEpoch(epoch, i) + offset) * rewardUnfolding.getDimension(i).scalingFactor);
+                        }
+                        auto const& solution = rewardUnfolding.getInitialStateResult(epoch);
+                        auto solutionIt = solution.begin();
+                        ++solutionIt;
+                        cdfEntry.insert(cdfEntry.end(), solutionIt, solution.end());
+                        cdfData.push_back(std::move(cdfEntry));
+                    }
                 }
                 
+                if (storm::settings::getModule<storm::settings::modules::IOSettings>().isExportCdfSet()) {
+                    std::vector<std::string> headers;
+                    for (uint64_t i = 0; i < rewardUnfolding.getEpochManager().getDimensionCount(); ++i) {
+                        headers.push_back("obj" + std::to_string(rewardUnfolding.getDimension(i).objectiveIndex) + ":" + rewardUnfolding.getDimension(i).formula->toString());
+                    }
+                    for (uint64_t i = 0; i < this->objectives.size(); ++i) {
+                        headers.push_back("obj" + std::to_string(i));
+                    }
+                    storm::utility::exportDataToCSVFile("cdf" + std::to_string(numChecks) + ".csv", cdfData, headers);
+                }
                 auto solution = rewardUnfolding.getInitialStateResult(initEpoch);
                 // Todo: we currently assume precise results...
                 auto solutionIt = solution.begin();
