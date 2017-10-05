@@ -142,24 +142,13 @@ namespace storm {
                     std::vector<ValueType>& x = cachedData.xLinEq[objIndex];
                     assert(x.size() == choices.size());
                     auto req = cachedData.linEqSolver->getRequirements();
-                    if (storm::solver::minimize(obj.formula->getOptimalityType())) {
-                        if (obj.lowerResultBound) {
-                            req.clearUpperBounds();
-                            cachedData.linEqSolver->setUpperBound(-(*obj.lowerResultBound));
-                        }
-                        if (obj.upperResultBound) {
-                            req.clearLowerBounds();
-                            cachedData.linEqSolver->setLowerBound(-(*obj.upperResultBound));
-                        }
-                    } else {
-                        if (obj.lowerResultBound) {
-                            req.clearLowerBounds();
-                            cachedData.linEqSolver->setLowerBound(*obj.lowerResultBound);
-                        }
-                        if (obj.upperResultBound) {
-                            cachedData.linEqSolver->setUpperBound(*obj.upperResultBound);
-                            req.clearUpperBounds();
-                        }
+                    if (obj.lowerResultBound) {
+                        req.clearLowerBounds();
+                        cachedData.linEqSolver->setLowerBound(*obj.lowerResultBound);
+                    }
+                    if (obj.upperResultBound) {
+                        cachedData.linEqSolver->setUpperBound(*obj.upperResultBound);
+                        req.clearUpperBounds();
                     }
                     STORM_LOG_THROW(req.empty(), storm::exceptions::UncheckedRequirementException, "At least one requirement of the LinearEquationSolver was not met.");
                     swEqBuilding.stop();
