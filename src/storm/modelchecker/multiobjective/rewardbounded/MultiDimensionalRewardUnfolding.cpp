@@ -586,6 +586,16 @@ namespace storm {
                 return getStateSolution(epoch, productModel->getInitialProductState(initialStateIndex, model.getInitialStates()));
             }
 
+            template<typename ValueType, bool SingleObjectiveMode>
+            EpochManager const& MultiDimensionalRewardUnfolding<ValueType, SingleObjectiveMode>::getEpochManager() const {
+                return epochManager;
+            }
+            
+            template<typename ValueType, bool SingleObjectiveMode>
+            Dimension<ValueType> const& MultiDimensionalRewardUnfolding<ValueType, SingleObjectiveMode>::getDimension(uint64_t dim) const {
+                return dimensions.at(dim);
+            }
+            
             template class MultiDimensionalRewardUnfolding<double, true>;
             template class MultiDimensionalRewardUnfolding<double, false>;
             template class MultiDimensionalRewardUnfolding<storm::RationalNumber, true>;

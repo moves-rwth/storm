@@ -79,6 +79,8 @@ namespace storm {
                 SolutionType const& getInitialStateResult(Epoch const& epoch); // Assumes that the initial state is unique
                 SolutionType const& getInitialStateResult(Epoch const& epoch, uint64_t initialStateIndex);
                 
+                EpochManager const& getEpochManager() const;
+                Dimension<ValueType> const& getDimension(uint64_t dim) const;
                 
             private:
             
