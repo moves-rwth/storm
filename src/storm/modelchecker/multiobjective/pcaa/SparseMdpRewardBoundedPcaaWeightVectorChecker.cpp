@@ -120,6 +120,8 @@ namespace storm {
                     auto choiceIt = choices.begin();
                     auto stepChoiceIt = epochModel.stepChoices.begin();
                     auto stepSolutionIt = epochModel.stepSolutions.begin();
+                    std::vector<ValueType>& x = cachedData.xLinEq[objIndex];
+                    auto xIt = x.begin();
                     for (auto& b_i : cachedData.bLinEq) {
                         uint64_t i = *rowGroupIndexIt + *choiceIt;
                         if (epochModel.objectiveRewardFilter[objIndex].get(i)) {
@@ -136,10 +138,15 @@ namespace storm {
                             ++stepChoiceIt;
                             ++stepSolutionIt;
                         }
+                        // We can already set x_i correctly if row i is empty.
+                        // Appearingly, some linear equation solvers struggle to converge otherwise.
+                        if (epochModel.epochMatrix.getRow(i).getNumberOfEntries() == 0) {
+                            *xIt = b_i;
+                        }
+                        ++xIt;
                         ++rowGroupIndexIt;
                         ++choiceIt;
                     }
-                    std::vector<ValueType>& x = cachedData.xLinEq[objIndex];
                     assert(x.size() == choices.size());
                     auto req = cachedData.linEqSolver->getRequirements();
                     if (obj.lowerResultBound) {
