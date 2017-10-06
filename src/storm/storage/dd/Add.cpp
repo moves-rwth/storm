@@ -826,7 +826,7 @@ namespace storm {
                 rowIndications[i] = rowIndications[i - 1];
             }
             rowIndications[0] = 0;
-            
+                        
             return std::make_pair(storm::storage::SparseMatrix<ValueType>(columnOdd.getTotalOffset(), std::move(rowIndications), std::move(columnsAndValues), std::move(rowGroupIndices)), std::move(explicitVector));
         }
 

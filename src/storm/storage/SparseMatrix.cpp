@@ -231,16 +231,13 @@ namespace storm {
                 rowIndications.push_back(currentEntryCount);
             }
             
-            // If there are no rows, we need to erase the start index of the current (non-existing) row.
-            if (rowCount == 0) {
-                rowIndications.pop_back();
-            }
-            
             // We put a sentinel element at the last position of the row indices array. This eases iteration work,
             // as now the indices of row i are always between rowIndications[i] and rowIndications[i + 1], also for
             // the first and last row.
-            rowIndications.push_back(currentEntryCount);
-            STORM_LOG_ASSERT(rowCount == rowIndications.size() - 1, "Wrong sizes of vectors.");
+            if (rowCount > 0) {
+                rowIndications.push_back(currentEntryCount);
+            }
+            STORM_LOG_ASSERT(rowCount == rowIndications.size() - 1, "Wrong sizes of vectors: " << rowCount << " != " << (rowIndications.size() - 1) << ".");
             uint_fast64_t columnCount = hasEntries ? highestColumn + 1 : 0;
             if (initialColumnCountSet && forceInitialDimensions) {
                 STORM_LOG_THROW(columnCount <= initialColumnCount, storm::exceptions::InvalidStateException, "Expected not more than " << initialColumnCount << " columns, but got " << columnCount << ".");
@@ -1478,7 +1475,8 @@ namespace storm {
         template<typename ValueType>
         ValueType SparseMatrix<ValueType>::multiplyRowWithVector(index_type row, std::vector<ValueType> const& vector) const {
             ValueType result = storm::utility::zero<ValueType>();
-            for(auto const& entry : this->getRow(row)){
+
+            for (auto const& entry : this->getRow(row)){
                 result += entry.getValue() * vector[entry.getColumn()];
             }
             return result;

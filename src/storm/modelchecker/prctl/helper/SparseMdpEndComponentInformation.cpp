@@ -161,6 +161,7 @@ namespace storm {
                             if (stateActions.second.find(row) != stateActions.second.end()) {
                                 continue;
                             }
+                            
                             // If the choices is not in the selected ones, drop it.
                             if (selectedChoices && !selectedChoices->get(row)) {
                                 continue;
@@ -198,7 +199,7 @@ namespace storm {
                     }
                 }
                 
-                submatrix = builder.build();
+                submatrix = builder.build(currentRow);
                 return result;
             }
             

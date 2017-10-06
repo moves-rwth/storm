@@ -489,6 +489,7 @@ namespace storm {
             this->createLowerBoundsVector(*lowerX);
             this->createUpperBoundsVector(this->auxiliaryRowGroupVector, this->A->getRowGroupCount());
             std::vector<ValueType>* upperX = this->auxiliaryRowGroupVector.get();
+            
             std::vector<ValueType>* tmp = nullptr;
             if (!useGaussSeidelMultiplication) {
                 auxiliaryRowGroupVector2 = std::make_unique<std::vector<ValueType>>(lowerX->size());
@@ -618,7 +619,8 @@ namespace storm {
             reportStatus(status, iterations);
             
             // We take the means of the lower and upper bound so we guarantee the desired precision.
-            storm::utility::vector::applyPointwise(*lowerX, *upperX, *lowerX, [] (ValueType const& a, ValueType const& b) { return (a + b) / storm::utility::convertNumber<ValueType>(2.0); });
+            ValueType two = storm::utility::convertNumber<ValueType>(2.0);
+            storm::utility::vector::applyPointwise<ValueType, ValueType, ValueType>(*lowerX, *upperX, *lowerX, [&two] (ValueType const& a, ValueType const& b) -> ValueType { return (a + b) / two; });
             
             // Since we shuffled the pointer around, we need to write the actual results to the input/output vector x.
             if (&x == tmp) {
