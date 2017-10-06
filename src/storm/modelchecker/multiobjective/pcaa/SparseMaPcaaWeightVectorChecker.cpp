@@ -376,8 +376,11 @@ namespace storm {
                     if (linEq.solver == nullptr || newChoices != optimalChoicesAtCurrentEpoch) {
                         optimalChoicesAtCurrentEpoch = newChoices;
                         linEq.solver = nullptr;
-                        storm::storage::SparseMatrix<ValueType> linEqMatrix = PS.toPS.selectRowsFromRowGroups(optimalChoicesAtCurrentEpoch, true);
-                        linEqMatrix.convertToEquationSystem();
+                        bool needEquationSystem = linEq.factory->getEquationProblemFormat() == storm::solver::LinearEquationSolverProblemFormat::EquationSystem;
+                        storm::storage::SparseMatrix<ValueType> linEqMatrix = PS.toPS.selectRowsFromRowGroups(optimalChoicesAtCurrentEpoch, needEquationSystem);
+                        if (needEquationSystem) {
+                            linEqMatrix.convertToEquationSystem();
+                        }
                         linEq.solver = linEq.factory->create(std::move(linEqMatrix));
                         linEq.solver->setCachingEnabled(true);
                     }

@@ -248,11 +248,14 @@ namespace storm {
                            objectiveResults[objIndex].resize(transitionMatrix.getRowGroupCount(), storm::utility::zero<ValueType>());
 
                            if (!maybeStates.empty()) {
+                               bool needEquationSystem = linearEquationSolverFactory.getEquationProblemFormat() == storm::solver::LinearEquationSolverProblemFormat::EquationSystem;
                                storm::storage::SparseMatrix<ValueType> submatrix = deterministicMatrix.getSubmatrix(
-                                       true, maybeStates, maybeStates, true);
-                               // Converting the matrix from the fixpoint notation to the form needed for the equation
-                               // system. That is, we go from x = A*x + b to (I-A)x = b.
-                               submatrix.convertToEquationSystem();
+                                       true, maybeStates, maybeStates, needEquationSystem);
+                               if (needEquationSystem) {
+                                   // Converting the matrix from the fixpoint notation to the form needed for the equation
+                                   // system. That is, we go from x = A*x + b to (I-A)x = b.
+                                   submatrix.convertToEquationSystem();
+                               }
 
                                // Prepare solution vector and rhs of the equation system.
                                std::vector<ValueType> x = storm::utility::vector::filterVector(objectiveResults[objIndex], maybeStates);

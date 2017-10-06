@@ -333,6 +333,7 @@ namespace storm {
                             }
                         }
                     }
+                    assert(!firstSuccessor);
                     *stepSolIt = std::move(choiceSolution);
                     ++stepSolIt;
                 }

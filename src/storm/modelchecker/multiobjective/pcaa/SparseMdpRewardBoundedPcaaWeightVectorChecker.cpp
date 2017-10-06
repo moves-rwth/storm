@@ -133,9 +133,12 @@ namespace storm {
                     swAux2.start();
                     ++numSchedChanges;
                     cachedData.schedulerChoices = choices;
-                    storm::storage::SparseMatrix<ValueType> subMatrix = epochModel.epochMatrix.selectRowsFromRowGroups(choices, true);
-                    subMatrix.convertToEquationSystem();
                     storm::solver::GeneralLinearEquationSolverFactory<ValueType> linEqSolverFactory;
+                    bool needEquationSystem = linEqSolverFactory.getEquationProblemFormat() == storm::solver::LinearEquationSolverProblemFormat::EquationSystem;
+                    storm::storage::SparseMatrix<ValueType> subMatrix = epochModel.epochMatrix.selectRowsFromRowGroups(choices, needEquationSystem);
+                    if (needEquationSystem) {
+                        subMatrix.convertToEquationSystem();
+                    }
                     cachedData.linEqSolver = linEqSolverFactory.create(std::move(subMatrix));
                     cachedData.linEqSolver->setCachingEnabled(true);
                     swAux2.stop();
