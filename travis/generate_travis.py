@@ -2,14 +2,14 @@
 # Configuration for Linux
 configs_linux = [
     # OS, compiler
-    ("ubuntu-16.10", "gcc", "-6"),
+    ("ubuntu-16.10", "gcc", ""),
     #("debian-9", "gcc", "-6"),
 ]
 
 # Configurations for Mac
 configs_mac = [
     # OS, compiler
-    ("osx", "clang", "-4.0"),
+    ("osx", "clang", ""),
 ]
 
 # Build types
@@ -23,8 +23,7 @@ stages = [
     ("Build (1st run)", "Build1"),
     ("Build (2nd run)", "Build2"),
     ("Build (3rd run)", "Build3"),
-    ("Build (4th run)", "Build4"),
-    ("Build (5th run)", "BuildLast"),
+    ("Build (4th run)", "BuildLast"),
     ("Test all", "TestAll"),
 ]
 
@@ -41,6 +40,7 @@ if __name__ == "__main__":
     s += "  only:\n"
     s += "  - master\n"
     s += "  - stable\n"
+    s += "sudo: required\n"
     s += "dist: trusty\n"
     s += "language: cpp\n"
     s += "\n"
@@ -54,7 +54,6 @@ if __name__ == "__main__":
     s += "# Enable docker support\n"
     s += "services:\n"
     s += "- docker\n"
-    s += "sudo: required\n"
     s += "\n"
 
     s += "notifications:\n"

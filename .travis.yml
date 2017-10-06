@@ -7,6 +7,7 @@ branches:
   only:
   - master
   - stable
+sudo: required
 dist: trusty
 language: cpp
 
@@ -20,7 +21,6 @@ cache:
 # Enable docker support
 services:
 - docker
-sudo: required
 
 notifications:
   email:
@@ -43,7 +43,7 @@ jobs:
     - stage: Build (1st run)
       os: osx
       compiler: clang
-      env: CONFIG=DefaultDebug COMPILER=clang-4.0 STL=libc++
+      env: CONFIG=DefaultDebug COMPILER=clang STL=libc++
       install:
         - rm -rf build
         - travis/install_osx.sh
@@ -54,7 +54,7 @@ jobs:
     - stage: Build (1st run)
       os: osx
       compiler: clang
-      env: CONFIG=DefaultRelease COMPILER=clang-4.0 STL=libc++
+      env: CONFIG=DefaultRelease COMPILER=clang STL=libc++
       install:
         - rm -rf build
         - travis/install_osx.sh
@@ -66,7 +66,7 @@ jobs:
     - stage: Build (1st run)
       os: linux
       compiler: gcc
-      env: CONFIG=DefaultDebug LINUX=ubuntu-16.10 COMPILER=gcc-6
+      env: CONFIG=DefaultDebug LINUX=ubuntu-16.10 COMPILER=gcc
       install:
         - rm -rf build
         - travis/install_linux.sh
@@ -79,7 +79,7 @@ jobs:
     - stage: Build (1st run)
       os: linux
       compiler: gcc
-      env: CONFIG=DefaultRelease LINUX=ubuntu-16.10 COMPILER=gcc-6
+      env: CONFIG=DefaultRelease LINUX=ubuntu-16.10 COMPILER=gcc
       install:
         - rm -rf build
         - travis/install_linux.sh
@@ -98,7 +98,7 @@ jobs:
     - stage: Build (2nd run)
       os: osx
       compiler: clang
-      env: CONFIG=DefaultDebug COMPILER=clang-4.0 STL=libc++
+      env: CONFIG=DefaultDebug COMPILER=clang STL=libc++
       install:
         - travis/install_osx.sh
       script:
@@ -108,7 +108,7 @@ jobs:
     - stage: Build (2nd run)
       os: osx
       compiler: clang
-      env: CONFIG=DefaultRelease COMPILER=clang-4.0 STL=libc++
+      env: CONFIG=DefaultRelease COMPILER=clang STL=libc++
       install:
         - travis/install_osx.sh
       script:
@@ -119,7 +119,7 @@ jobs:
     - stage: Build (2nd run)
       os: linux
       compiler: gcc
-      env: CONFIG=DefaultDebug LINUX=ubuntu-16.10 COMPILER=gcc-6
+      env: CONFIG=DefaultDebug LINUX=ubuntu-16.10 COMPILER=gcc
       install:
         - travis/install_linux.sh
       script:
@@ -131,7 +131,7 @@ jobs:
     - stage: Build (2nd run)
       os: linux
       compiler: gcc
-      env: CONFIG=DefaultRelease LINUX=ubuntu-16.10 COMPILER=gcc-6
+      env: CONFIG=DefaultRelease LINUX=ubuntu-16.10 COMPILER=gcc
       install:
         - travis/install_linux.sh
       script:
@@ -149,7 +149,7 @@ jobs:
     - stage: Build (3rd run)
       os: osx
       compiler: clang
-      env: CONFIG=DefaultDebug COMPILER=clang-4.0 STL=libc++
+      env: CONFIG=DefaultDebug COMPILER=clang STL=libc++
       install:
         - travis/install_osx.sh
       script:
@@ -159,7 +159,7 @@ jobs:
     - stage: Build (3rd run)
       os: osx
       compiler: clang
-      env: CONFIG=DefaultRelease COMPILER=clang-4.0 STL=libc++
+      env: CONFIG=DefaultRelease COMPILER=clang STL=libc++
       install:
         - travis/install_osx.sh
       script:
@@ -170,7 +170,7 @@ jobs:
     - stage: Build (3rd run)
       os: linux
       compiler: gcc
-      env: CONFIG=DefaultDebug LINUX=ubuntu-16.10 COMPILER=gcc-6
+      env: CONFIG=DefaultDebug LINUX=ubuntu-16.10 COMPILER=gcc
       install:
         - travis/install_linux.sh
       script:
@@ -182,7 +182,7 @@ jobs:
     - stage: Build (3rd run)
       os: linux
       compiler: gcc
-      env: CONFIG=DefaultRelease LINUX=ubuntu-16.10 COMPILER=gcc-6
+      env: CONFIG=DefaultRelease LINUX=ubuntu-16.10 COMPILER=gcc
       install:
         - travis/install_linux.sh
       script:
@@ -200,68 +200,17 @@ jobs:
     - stage: Build (4th run)
       os: osx
       compiler: clang
-      env: CONFIG=DefaultDebug COMPILER=clang-4.0 STL=libc++
-      install:
-        - travis/install_osx.sh
-      script:
-        - travis/build.sh Build4
-      after_failure:
-        - find build -iname '*err*.log' -type f -print -exec cat {} \;
-    - stage: Build (4th run)
-      os: osx
-      compiler: clang
-      env: CONFIG=DefaultRelease COMPILER=clang-4.0 STL=libc++
-      install:
-        - travis/install_osx.sh
-      script:
-        - travis/build.sh Build4
-      after_failure:
-        - find build -iname '*err*.log' -type f -print -exec cat {} \;
-    # ubuntu-16.10
-    - stage: Build (4th run)
-      os: linux
-      compiler: gcc
-      env: CONFIG=DefaultDebug LINUX=ubuntu-16.10 COMPILER=gcc-6
-      install:
-        - travis/install_linux.sh
-      script:
-        - travis/build.sh Build4
-      before_cache:
-        - docker cp storm:/storm/. .
-      after_failure:
-        - find build -iname '*err*.log' -type f -print -exec cat {} \;
-    - stage: Build (4th run)
-      os: linux
-      compiler: gcc
-      env: CONFIG=DefaultRelease LINUX=ubuntu-16.10 COMPILER=gcc-6
-      install:
-        - travis/install_linux.sh
-      script:
-        - travis/build.sh Build4
-      before_cache:
-        - docker cp storm:/storm/. .
-      after_failure:
-        - find build -iname '*err*.log' -type f -print -exec cat {} \;
-
-    ###
-    # Stage: Build (5th run)
-    ###
-
-    # osx
-    - stage: Build (5th run)
-      os: osx
-      compiler: clang
-      env: CONFIG=DefaultDebug COMPILER=clang-4.0 STL=libc++
+      env: CONFIG=DefaultDebug COMPILER=clang STL=libc++
       install:
         - travis/install_osx.sh
       script:
         - travis/build.sh BuildLast
       after_failure:
         - find build -iname '*err*.log' -type f -print -exec cat {} \;
-    - stage: Build (5th run)
+    - stage: Build (4th run)
       os: osx
       compiler: clang
-      env: CONFIG=DefaultRelease COMPILER=clang-4.0 STL=libc++
+      env: CONFIG=DefaultRelease COMPILER=clang STL=libc++
       install:
         - travis/install_osx.sh
       script:
@@ -269,10 +218,10 @@ jobs:
       after_failure:
         - find build -iname '*err*.log' -type f -print -exec cat {} \;
     # ubuntu-16.10
-    - stage: Build (5th run)
+    - stage: Build (4th run)
       os: linux
       compiler: gcc
-      env: CONFIG=DefaultDebug LINUX=ubuntu-16.10 COMPILER=gcc-6
+      env: CONFIG=DefaultDebug LINUX=ubuntu-16.10 COMPILER=gcc
       install:
         - travis/install_linux.sh
       script:
@@ -281,10 +230,10 @@ jobs:
         - docker cp storm:/storm/. .
       after_failure:
         - find build -iname '*err*.log' -type f -print -exec cat {} \;
-    - stage: Build (5th run)
+    - stage: Build (4th run)
       os: linux
       compiler: gcc
-      env: CONFIG=DefaultRelease LINUX=ubuntu-16.10 COMPILER=gcc-6
+      env: CONFIG=DefaultRelease LINUX=ubuntu-16.10 COMPILER=gcc
       install:
         - travis/install_linux.sh
       script:
@@ -302,7 +251,7 @@ jobs:
     - stage: Test all
       os: osx
       compiler: clang
-      env: CONFIG=DefaultDebug COMPILER=clang-4.0 STL=libc++
+      env: CONFIG=DefaultDebug COMPILER=clang STL=libc++
       install:
         - travis/install_osx.sh
       script:
@@ -312,7 +261,7 @@ jobs:
     - stage: Test all
       os: osx
       compiler: clang
-      env: CONFIG=DefaultRelease COMPILER=clang-4.0 STL=libc++
+      env: CONFIG=DefaultRelease COMPILER=clang STL=libc++
       install:
         - travis/install_osx.sh
       script:
@@ -323,7 +272,7 @@ jobs:
     - stage: Test all
       os: linux
       compiler: gcc
-      env: CONFIG=DefaultDebug LINUX=ubuntu-16.10 COMPILER=gcc-6
+      env: CONFIG=DefaultDebug LINUX=ubuntu-16.10 COMPILER=gcc
       install:
         - travis/install_linux.sh
       script:
@@ -335,7 +284,7 @@ jobs:
     - stage: Test all
       os: linux
       compiler: gcc
-      env: CONFIG=DefaultRelease LINUX=ubuntu-16.10 COMPILER=gcc-6
+      env: CONFIG=DefaultRelease LINUX=ubuntu-16.10 COMPILER=gcc
       install:
         - travis/install_linux.sh
       script:
