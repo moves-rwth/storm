@@ -1565,19 +1565,20 @@ namespace storm {
             }
             
             for (auto resultIt = result.begin(), resultIte = result.end(); resultIt != resultIte; ++resultIt, ++choiceIt, ++rowGroupIt) {
-                ValueType currentValue = summand ? *summandIt : storm::utility::zero<ValueType>();
-                ++summandIt;
+                ValueType currentValue = storm::utility::zero<ValueType>();
                 if (choices) {
                     *choiceIt = 0;
                 }
                 
                 // Only multiply and reduce if there is at least one row in the group.
                 if (*rowGroupIt < *(rowGroupIt + 1)) {
+                    if (summand) {
+                        currentValue = *summandIt;
+                        ++summandIt;
+                    }
+
                     for (auto elementIte = this->begin() + *(rowIt + 1); elementIt != elementIte; ++elementIt) {
                         currentValue += elementIt->getValue() * vector[elementIt->getColumn()];
-                    }
-                    if (choices) {
-                        *choiceIt = 0;
                     }
                     
                     ++rowIt;
@@ -1598,6 +1599,8 @@ namespace storm {
                             ++summandIt;
                         }
                     }
+                } else if (choices) {
+                    *choiceIt = 0;
                 }
                 
                 // Finally write value to target vector.
@@ -1627,21 +1630,27 @@ namespace storm {
             }
             
             for (auto resultIt = result.end() - 1, resultIte = result.begin() - 1; resultIt != resultIte; --resultIt, --choiceIt, --rowGroupIt) {
-                ValueType currentValue = summand ? *summandIt : storm::utility::zero<ValueType>();
-                --summandIt;
-
+                if (choices) {
+                    *choiceIt = 0;
+                }
+                ValueType currentValue = storm::utility::zero<ValueType>();
+                
                 // Only multiply and reduce if there is at least one row in the group.
                 if (*rowGroupIt < *(rowGroupIt + 1)) {
+                    if (summand) {
+                        currentValue = *summandIt;
+                        --summandIt;
+                    }
+
                     for (auto elementIte = this->begin() + *rowIt - 1; elementIt != elementIte; --elementIt) {
                         currentValue += elementIt->getValue() * vector[elementIt->getColumn()];
                     }
                     if (choices) {
                         *choiceIt = std::distance(rowIndications.begin(), rowIt) - *rowGroupIt;
                     }
-                    
                     --rowIt;
                     
-                    for (uint64_t i = *rowGroupIt + 1, end = *(rowGroupIt + 1); i < end; --rowIt, ++i) {
+                    for (uint64_t i = *rowGroupIt + 1, end = *(rowGroupIt + 1); i < end; --rowIt, ++i, --summandIt) {
                         ValueType newValue = summand ? *summandIt : storm::utility::zero<ValueType>();
                         for (auto elementIte = this->begin() + *rowIt - 1; elementIt != elementIte; --elementIt) {
                             newValue += elementIt->getValue() * vector[elementIt->getColumn()];
@@ -1653,12 +1662,7 @@ namespace storm {
                                 *choiceIt = std::distance(rowIndications.begin(), rowIt) - *rowGroupIt;
                             }
                         }
-                        if (summand) {
-                            --summandIt;
-                        }
                     }
-                } else if (choices) {
-                    *choiceIt = 0;
                 }
                 
                 // Finally write value to target vector.
@@ -1703,14 +1707,19 @@ namespace storm {
                 auto resultIt = result.begin() + range.begin();
                 
                 for (; groupIt != groupIte; ++groupIt, ++resultIt, ++choiceIt) {
-                    ValueType currentValue = summand ? *summandIt : storm::utility::zero<ValueType>();
-                    ++summandIt;
                     if (choices) {
                         *choiceIt = 0;
                     }
                     
+                    ValueType currentValue = storm::utility::zero<ValueType>();
+                    
                     // Only multiply and reduce if there is at least one row in the group.
                     if (*groupIt < *(groupIt + 1)) {
+                        if (summand) {
+                            currentValue = *summandIt;
+                            ++summandIt;
+                        }
+
                         for (auto elementIte = columnsAndEntries.begin() + *(rowIt + 1); elementIt != elementIte; ++elementIt) {
                             currentValue += elementIt->getValue() * x[elementIt->getColumn()];
                         }

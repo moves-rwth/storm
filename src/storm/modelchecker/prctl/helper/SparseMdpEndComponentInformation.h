@@ -29,7 +29,7 @@ namespace storm {
                  * Retrieves for each maybe state the number of maybe states not contained in ECs with an index smaller
                  * than the requested one.
                  */
-                std::vector<uint64_t> getNumberOfMaybeStatesNotInEcBeforeIndices() const;
+                std::vector<uint64_t> const& getNumberOfMaybeStatesNotInEcBeforeIndices() const;
                 
                 /*!
                  * Retrieves the total number of maybe states on in ECs.
@@ -65,6 +65,7 @@ namespace storm {
 
                 // Data about end components.
                 std::vector<uint64_t> maybeStatesBefore;
+                std::vector<uint64_t> maybeStatesNotInEcBefore;
                 uint64_t numberOfMaybeStatesInEc;
                 uint64_t numberOfMaybeStatesNotInEc;
                 uint64_t numberOfEc;

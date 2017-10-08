@@ -472,6 +472,67 @@ namespace storm {
             internalAdd.composeWithExplicitVector(rowOdd, ddVariableIndices, result, std::plus<ValueType>());
             return result;
         }
+        
+        template<DdType LibraryType, typename ValueType>
+        std::vector<ValueType> Add<LibraryType, ValueType>::toVector(storm::dd::Add<LibraryType, ValueType> const& matrix, std::vector<uint_fast64_t> const& rowGroupIndices, std::set<storm::expressions::Variable> const& rowMetaVariables, std::set<storm::expressions::Variable> const& columnMetaVariables, std::set<storm::expressions::Variable> const& groupMetaVariables, storm::dd::Odd const& rowOdd, storm::dd::Odd const& columnOdd) const {
+            std::vector<uint_fast64_t> ddRowVariableIndices;
+            std::vector<uint_fast64_t> ddColumnVariableIndices;
+            std::vector<uint_fast64_t> ddGroupVariableIndices;
+            std::set<storm::expressions::Variable> rowAndColumnMetaVariables;
+            
+            for (auto const& variable : rowMetaVariables) {
+                DdMetaVariable<LibraryType> const& metaVariable = this->getDdManager().getMetaVariable(variable);
+                for (auto const& ddVariable : metaVariable.getDdVariables()) {
+                    ddRowVariableIndices.push_back(ddVariable.getIndex());
+                }
+                rowAndColumnMetaVariables.insert(variable);
+            }
+            std::sort(ddRowVariableIndices.begin(), ddRowVariableIndices.end());
+            for (auto const& variable : columnMetaVariables) {
+                DdMetaVariable<LibraryType> const& metaVariable = this->getDdManager().getMetaVariable(variable);
+                for (auto const& ddVariable : metaVariable.getDdVariables()) {
+                    ddColumnVariableIndices.push_back(ddVariable.getIndex());
+                }
+                rowAndColumnMetaVariables.insert(variable);
+            }
+            std::sort(ddColumnVariableIndices.begin(), ddColumnVariableIndices.end());
+            for (auto const& variable : groupMetaVariables) {
+                DdMetaVariable<LibraryType> const& metaVariable = this->getDdManager().getMetaVariable(variable);
+                for (auto const& ddVariable : metaVariable.getDdVariables()) {
+                    ddGroupVariableIndices.push_back(ddVariable.getIndex());
+                }
+            }
+            std::sort(ddGroupVariableIndices.begin(), ddGroupVariableIndices.end());
+            
+            Bdd<LibraryType> columnVariableCube = Bdd<LibraryType>::getCube(this->getDdManager(), columnMetaVariables);
+            
+            // Copy the row group indices so we can modify them.
+            std::vector<uint_fast64_t> mutableRowGroupIndices = rowGroupIndices;
+            
+            // Create the explicit vector we need to fill later.
+            std::vector<ValueType> explicitVector(mutableRowGroupIndices.back());
+            
+            // Next, we split the matrix into one for each group. Note that this only works if the group variables are at the very top.
+            std::vector<std::pair<InternalAdd<LibraryType, ValueType>, InternalAdd<LibraryType, ValueType>>> internalAddGroups = matrix.internalAdd.splitIntoGroups(*this, ddGroupVariableIndices);
+            std::vector<std::pair<Add<LibraryType, ValueType>, Add<LibraryType, ValueType>>> groups;
+            for (auto const& internalAdd : internalAddGroups) {
+                groups.push_back(std::make_pair(Add<LibraryType, ValueType>(this->getDdManager(), internalAdd.first, rowAndColumnMetaVariables), Add<LibraryType, ValueType>(this->getDdManager(), internalAdd.second, rowMetaVariables)));
+            }
+            
+            std::vector<InternalAdd<LibraryType, uint_fast64_t>> statesWithGroupEnabled(groups.size());
+            for (uint_fast64_t i = 0; i < groups.size(); ++i) {
+                std::pair<Add<LibraryType, ValueType>, Add<LibraryType, ValueType>> const& ddPair = groups[i];
+                Bdd<LibraryType> matrixDdNotZero = ddPair.first.notZero();
+                Bdd<LibraryType> vectorDdNotZero = ddPair.second.notZero();
+                
+                ddPair.second.internalAdd.composeWithExplicitVector(rowOdd, ddRowVariableIndices, mutableRowGroupIndices, explicitVector, std::plus<ValueType>());
+                
+                InternalAdd<LibraryType, uint_fast64_t> statesWithGroupEnabled = (matrixDdNotZero.existsAbstract(columnMetaVariables) || vectorDdNotZero).template toAdd<uint_fast64_t>();
+                statesWithGroupEnabled.composeWithExplicitVector(rowOdd, ddRowVariableIndices, mutableRowGroupIndices, std::plus<uint_fast64_t>());
+            }
+            
+            return explicitVector;
+        }
                 
         template<DdType LibraryType, typename ValueType>
         storm::storage::SparseMatrix<ValueType> Add<LibraryType, ValueType>::toMatrix() const {
@@ -697,7 +758,7 @@ namespace storm {
         }
 
         template<DdType LibraryType, typename ValueType>
-        std::pair<storm::storage::SparseMatrix<ValueType>, std::vector<ValueType>> Add<LibraryType, ValueType>::toMatrixVector(storm::dd::Add<LibraryType, ValueType> const& vector, std::vector<uint_fast64_t>&& rowGroupSizes, std::set<storm::expressions::Variable> const& groupMetaVariables, storm::dd::Odd const& rowOdd, storm::dd::Odd const& columnOdd) const {
+        std::pair<storm::storage::SparseMatrix<ValueType>, std::vector<ValueType>> Add<LibraryType, ValueType>::toMatrixVector(storm::dd::Add<LibraryType, ValueType> const& vector, std::set<storm::expressions::Variable> const& groupMetaVariables, storm::dd::Odd const& rowOdd, storm::dd::Odd const& columnOdd) const {
             std::set<storm::expressions::Variable> rowMetaVariables;
             std::set<storm::expressions::Variable> columnMetaVariables;
             
@@ -715,11 +776,11 @@ namespace storm {
             }
             
             // Create the canonical row group sizes and build the matrix.
-            return toMatrixVector(vector, std::move(rowGroupSizes), rowMetaVariables, columnMetaVariables, groupMetaVariables, rowOdd, columnOdd);
+            return toMatrixVector(vector, rowMetaVariables, columnMetaVariables, groupMetaVariables, rowOdd, columnOdd);
         }
 
         template<DdType LibraryType, typename ValueType>
-        std::pair<storm::storage::SparseMatrix<ValueType>, std::vector<ValueType>> Add<LibraryType, ValueType>::toMatrixVector(storm::dd::Add<LibraryType, ValueType> const& vector, std::vector<uint_fast64_t>&& rowGroupIndices, std::set<storm::expressions::Variable> const& rowMetaVariables, std::set<storm::expressions::Variable> const& columnMetaVariables, std::set<storm::expressions::Variable> const& groupMetaVariables, storm::dd::Odd const& rowOdd, storm::dd::Odd const& columnOdd) const {
+        std::pair<storm::storage::SparseMatrix<ValueType>, std::vector<ValueType>> Add<LibraryType, ValueType>::toMatrixVector(storm::dd::Add<LibraryType, ValueType> const& vector, std::set<storm::expressions::Variable> const& rowMetaVariables, std::set<storm::expressions::Variable> const& columnMetaVariables, std::set<storm::expressions::Variable> const& groupMetaVariables, storm::dd::Odd const& rowOdd, storm::dd::Odd const& columnOdd) const {
             std::vector<uint_fast64_t> ddRowVariableIndices;
             std::vector<uint_fast64_t> ddColumnVariableIndices;
             std::vector<uint_fast64_t> ddGroupVariableIndices;
@@ -751,6 +812,9 @@ namespace storm {
             
             Bdd<LibraryType> columnVariableCube = Bdd<LibraryType>::getCube(this->getDdManager(), columnMetaVariables);
 
+            // Count how many choices each row group has.
+            std::vector<uint_fast64_t> rowGroupIndices = (this->notZero().existsAbstract(columnMetaVariables) || vector.notZero()).template toAdd<uint_fast64_t>().sumAbstract(groupMetaVariables).toVector(rowOdd);
+            
             // Transform the row group sizes to the actual row group indices.
             rowGroupIndices.resize(rowGroupIndices.size() + 1);
             uint_fast64_t tmp = 0;

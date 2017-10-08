@@ -556,7 +556,26 @@ namespace storm {
             std::vector<ValueType> toVector(storm::dd::Odd const& rowOdd) const;
             
             /*!
-             * Converts the ADD to a (sparse) double matrix. All contained non-primed variables are assumed to encode the
+             * Converts the ADD to a row-grouped vector while respecting the row group sizes of the provided matrix.
+             * That is, if the vector has a zero entry for some row in a row group for which the matrix has a non-zero
+             * row, the value at the vector will be correctly set to zero. Note: this function assumes that the meta
+             * variables used to distinguish different row groups are at the very top of the ADD.
+             *
+             * @param matrix The symbolic matrix whose row group sizes to respect.
+             * @param rowGroupSizes A vector specifying the sizes of the row groups.
+             * @param rowMetaVariables The meta variables that encode the rows of the matrix.
+             * @param columnMetaVariables The meta variables that encode the columns of the matrix.
+             * @param groupMetaVariables The meta variables that are used to distinguish different row groups.
+             * @param rowOdd The ODD used for determining the correct row.
+             * @param columnOdd The ODD used for determining the correct column.
+             * @return The matrix that is represented by this ADD and and a vector corresponding to the symbolic vector
+             * (if it was given).
+             * @return The vector that is represented by this ADD.
+             */
+            std::vector<ValueType> toVector(storm::dd::Add<LibraryType, ValueType> const& matrix, std::vector<uint_fast64_t> const& rowGroupSizes, std::set<storm::expressions::Variable> const& rowMetaVariables, std::set<storm::expressions::Variable> const& columnMetaVariables, std::set<storm::expressions::Variable> const& groupMetaVariables, storm::dd::Odd const& rowOdd, storm::dd::Odd const& columnOdd) const;
+            
+            /*!
+             * Converts the ADD to a (sparse) matrix. All contained non-primed variables are assumed to encode the
              * row, whereas all primed variables are assumed to encode the column.
              *
              * @return The matrix that is represented by this ADD.
@@ -564,7 +583,7 @@ namespace storm {
             storm::storage::SparseMatrix<ValueType> toMatrix() const;
             
             /*!
-             * Converts the ADD to a (sparse) double matrix. All contained non-primed variables are assumed to encode the
+             * Converts the ADD to a (sparse) matrix. All contained non-primed variables are assumed to encode the
              * row, whereas all primed variables are assumed to encode the column. The given offset-labeled DDs are used
              * to determine the correct row and column, respectively, for each entry.
              *
@@ -575,7 +594,7 @@ namespace storm {
             storm::storage::SparseMatrix<ValueType> toMatrix(storm::dd::Odd const& rowOdd, storm::dd::Odd const& columnOdd) const;
             
             /*!
-             * Converts the ADD to a (sparse) double matrix. The given offset-labeled DDs are used to determine the
+             * Converts the ADD to a (sparse) matrix. The given offset-labeled DDs are used to determine the
              * correct row and column, respectively, for each entry.
              *
              * @param rowMetaVariables The meta variables that encode the rows of the matrix.
@@ -587,7 +606,7 @@ namespace storm {
             storm::storage::SparseMatrix<ValueType> toMatrix(std::set<storm::expressions::Variable> const& rowMetaVariables, std::set<storm::expressions::Variable> const& columnMetaVariables, storm::dd::Odd const& rowOdd, storm::dd::Odd const& columnOdd) const;
             
             /*!
-             * Converts the ADD to a row-grouped (sparse) double matrix. The given offset-labeled DDs are used to
+             * Converts the ADD to a row-grouped (sparse) matrix. The given offset-labeled DDs are used to
              * determine the correct row and column, respectively, for each entry. Note: this function assumes that
              * the meta variables used to distinguish different row groups are at the very top of the ADD.
              *
@@ -599,19 +618,18 @@ namespace storm {
             storm::storage::SparseMatrix<ValueType> toMatrix(std::set<storm::expressions::Variable> const& groupMetaVariables, storm::dd::Odd const& rowOdd, storm::dd::Odd const& columnOdd) const;
             
             /*!
-             * Converts the ADD to a row-grouped (sparse) double matrix and the given vector to a row-grouped vector.
+             * Converts the ADD to a row-grouped (sparse) matrix and the given vector to a row-grouped vector.
              * The given offset-labeled DDs are used to determine the correct row and column, respectively, for each
              * entry. Note: this function assumes that the meta variables used to distinguish different row groups are
              * at the very top of the ADD.
              *
              * @param vector The symbolic vector to convert.
-             * @param rowGroupSizes A vector specifying the sizes of the row groups.
              * @param groupMetaVariables The meta variables that are used to distinguish different row groups.
              * @param rowOdd The ODD used for determining the correct row.
              * @param columnOdd The ODD used for determining the correct column.
              * @return The matrix that is represented by this ADD.
              */
-            std::pair<storm::storage::SparseMatrix<ValueType>, std::vector<ValueType>> toMatrixVector(storm::dd::Add<LibraryType, ValueType> const& vector, std::vector<uint_fast64_t>&& rowGroupSizes, std::set<storm::expressions::Variable> const& groupMetaVariables, storm::dd::Odd const& rowOdd, storm::dd::Odd const& columnOdd) const;
+            std::pair<storm::storage::SparseMatrix<ValueType>, std::vector<ValueType>> toMatrixVector(storm::dd::Add<LibraryType, ValueType> const& vector, std::set<storm::expressions::Variable> const& groupMetaVariables, storm::dd::Odd const& rowOdd, storm::dd::Odd const& columnOdd) const;
             
             /*!
              * Exports the DD to the given file in the dot format.
@@ -702,7 +720,6 @@ namespace storm {
              * different row groups are at the very top of the ADD.
              *
              * @param vector The vector that is to be transformed to an equally grouped explicit vector.
-             * @param rowGroupSizes A vector specifying the sizes of the row groups.
              * @param rowMetaVariables The meta variables that encode the rows of the matrix.
              * @param columnMetaVariables The meta variables that encode the columns of the matrix.
              * @param groupMetaVariables The meta variables that are used to distinguish different row groups.
@@ -711,7 +728,7 @@ namespace storm {
              * @return The matrix that is represented by this ADD and and a vector corresponding to the symbolic vector
              * (if it was given).
              */
-            std::pair<storm::storage::SparseMatrix<ValueType>, std::vector<ValueType>> toMatrixVector(storm::dd::Add<LibraryType, ValueType> const& vector, std::vector<uint_fast64_t>&& rowGroupSizes, std::set<storm::expressions::Variable> const& rowMetaVariables, std::set<storm::expressions::Variable> const& columnMetaVariables, std::set<storm::expressions::Variable> const& groupMetaVariables, storm::dd::Odd const& rowOdd, storm::dd::Odd const& columnOdd) const;
+            std::pair<storm::storage::SparseMatrix<ValueType>, std::vector<ValueType>> toMatrixVector(storm::dd::Add<LibraryType, ValueType> const& vector, std::set<storm::expressions::Variable> const& rowMetaVariables, std::set<storm::expressions::Variable> const& columnMetaVariables, std::set<storm::expressions::Variable> const& groupMetaVariables, storm::dd::Odd const& rowOdd, storm::dd::Odd const& columnOdd) const;
                         
             // The internal ADD that depends on the chosen library.
             InternalAdd<LibraryType, ValueType> internalAdd;

@@ -622,25 +622,26 @@ namespace storm {
                         choiceIt = choices->begin() + startRow;
                     }
                     
-                    for (; targetIt != targetIte; ++targetIt, ++rowGroupingIt) {
-                        *targetIt = *sourceIt;
-                        ++sourceIt;
-                        localChoice = 1;
-                        if (choices != nullptr) {
-                            *choiceIt = 0;
-                        }
-                        
-                        for (sourceIte = source.begin() + *(rowGroupingIt + 1); sourceIt != sourceIte; ++sourceIt, ++localChoice) {
-                            if (f(*sourceIt, *targetIt)) {
-                                *targetIt = *sourceIt;
-                                if (choices != nullptr) {
-                                    *choiceIt = localChoice;
+                    for (; targetIt != targetIte; ++targetIt, ++rowGroupingIt, ++choiceIt) {
+                        // Only traverse elements if the row group is non-empty.
+                        if (*rowGroupingIt != *(rowGroupingIt + 1)) {
+                            *targetIt = *sourceIt;
+                            ++sourceIt;
+                            localChoice = 1;
+                            if (choices != nullptr) {
+                                *choiceIt = 0;
+                            }
+                            
+                            for (sourceIte = source.begin() + *(rowGroupingIt + 1); sourceIt != sourceIte; ++sourceIt, ++localChoice) {
+                                if (f(*sourceIt, *targetIt)) {
+                                    *targetIt = *sourceIt;
+                                    if (choices != nullptr) {
+                                        *choiceIt = localChoice;
+                                    }
                                 }
                             }
-                        }
-                        
-                        if (choices != nullptr) {
-                            ++choiceIt;
+                        } else {
+                            *targetIt = storm::utility::zero<T>();
                         }
                     }
                 }
@@ -678,23 +679,25 @@ namespace storm {
                     choiceIt = choices->begin();
                 }
                 
-                for (; targetIt != targetIte; ++targetIt, ++rowGroupingIt) {
-                    *targetIt = *sourceIt;
-                    ++sourceIt;
-                    localChoice = 1;
-                    if (choices != nullptr) {
-                        *choiceIt = 0;
-                    }
-                    for (sourceIte = source.begin() + *(rowGroupingIt + 1); sourceIt != sourceIte; ++sourceIt, ++localChoice) {
-                        if (f(*sourceIt, *targetIt)) {
-                            *targetIt = *sourceIt;
-                            if (choices != nullptr) {
-                                *choiceIt = localChoice;
+                for (; targetIt != targetIte; ++targetIt, ++rowGroupingIt, ++choiceIt) {
+                    // Only traverse elements if the row group is non-empty.
+                    if (*rowGroupingIt != *(rowGroupingIt + 1)) {
+                        *targetIt = *sourceIt;
+                        ++sourceIt;
+                        localChoice = 1;
+                        if (choices != nullptr) {
+                            *choiceIt = 0;
+                        }
+                        for (sourceIte = source.begin() + *(rowGroupingIt + 1); sourceIt != sourceIte; ++sourceIt, ++localChoice) {
+                            if (f(*sourceIt, *targetIt)) {
+                                *targetIt = *sourceIt;
+                                if (choices != nullptr) {
+                                    *choiceIt = localChoice;
+                                }
                             }
                         }
-                    }
-                    if (choices != nullptr) {
-                        ++choiceIt;
+                    } else {
+                        *targetIt = storm::utility::zero<T>();
                     }
                 }
             }

@@ -30,6 +30,19 @@ namespace storm {
                 
                 // (3) Compute number of states not in MECs.
                 numberOfMaybeStatesNotInEc = maybeStateToEc.size() - numberOfMaybeStatesInEc;
+                
+                // (4) Compute the number of maybe states that are not in ECs before every maybe state.
+                maybeStatesNotInEcBefore = std::vector<uint64_t>(maybeStateToEc.size());
+                
+                uint64_t count = 0;
+                auto resultIt = maybeStatesNotInEcBefore.begin();
+                for (auto const& e : maybeStateToEc) {
+                    *resultIt = count;
+                    if (e == NOT_IN_EC) {
+                        ++count;
+                    }
+                    ++resultIt;
+                }
             }
 
             template<typename ValueType>
@@ -43,20 +56,8 @@ namespace storm {
             }
             
             template<typename ValueType>
-            std::vector<uint64_t> SparseMdpEndComponentInformation<ValueType>::getNumberOfMaybeStatesNotInEcBeforeIndices() const {
-                std::vector<uint64_t> result(maybeStateToEc.size());
-                
-                uint64_t count = 0;
-                auto resultIt = result.begin();
-                for (auto const& e : maybeStateToEc) {
-                    *resultIt = count;
-                    if (e != NOT_IN_EC) {
-                        ++count;
-                    }
-                    ++resultIt;
-                }
-                
-                return result;
+            std::vector<uint64_t> const& SparseMdpEndComponentInformation<ValueType>::getNumberOfMaybeStatesNotInEcBeforeIndices() const {
+                return maybeStatesNotInEcBefore;
             }
             
             template<typename ValueType>
@@ -71,7 +72,11 @@ namespace storm {
             
             template<typename ValueType>
             uint64_t SparseMdpEndComponentInformation<ValueType>::getRowGroupAfterElimination(uint64_t state) const {
-                return numberOfMaybeStatesNotInEc + getEc(state);
+                if (this->isStateInEc(state)) {
+                    return numberOfMaybeStatesNotInEc + getEc(state);
+                } else {
+                    return maybeStatesNotInEcBefore[maybeStatesBefore[state]];
+                }
             }
             
             template<typename ValueType>
@@ -90,20 +95,22 @@ namespace storm {
                 SparseMdpEndComponentInformation<ValueType> result(endComponentDecomposition, maybeStates);
                 
                 // (1) Compute the number of maybe states not in ECs before any other maybe state.
-                std::vector<uint64_t> maybeStatesNotInEcBefore = result.getNumberOfMaybeStatesNotInEcBeforeIndices();
+                std::vector<uint64_t> const& maybeStatesNotInEcBefore = result.getNumberOfMaybeStatesNotInEcBeforeIndices();
                 uint64_t numberOfStates = result.numberOfMaybeStatesNotInEc + result.numberOfEc;
                 
-                STORM_LOG_TRACE("Found " << numberOfStates << " states, " << result.numberOfMaybeStatesNotInEc << " not in ECs, " << result.numberOfMaybeStatesInEc << " in ECs and " << result.numberOfEc << " ECs.");
+                STORM_LOG_TRACE("Creating " << numberOfStates << " states from " << result.numberOfMaybeStatesNotInEc << " states not in ECs and " << result.numberOfMaybeStatesInEc << " states in " << result.numberOfEc << " ECs.");
                 
                 // Prepare builder and vector storage.
                 storm::storage::SparseMatrixBuilder<ValueType> builder(0, numberOfStates, 0, true, true, numberOfStates);
                 STORM_LOG_ASSERT((sumColumns && columnSumVector) || (!sumColumns && !columnSumVector), "Expecting a bit vector for which columns to sum iff there is a column sum result vector.");
                 if (columnSumVector) {
-                    columnSumVector->resize(numberOfStates);
+                    // Clearing column sum vector as we do not know the number of choices at this point.
+                    columnSumVector->resize(0);
                 }
                 STORM_LOG_ASSERT((summand && summandResultVector) || (!summand && !summandResultVector), "Expecting summand iff there is a summand result vector.");
                 if (summandResultVector) {
-                    summandResultVector->resize(numberOfStates);
+                    // Clearing summand result vector as we do not know the number of choices at this point.
+                    summandResultVector->resize(0);
                 }
                 std::vector<std::pair<uint64_t, ValueType>> ecValuePairs;
                 
@@ -121,14 +128,17 @@ namespace storm {
                             ecValuePairs.clear();
                             
                             if (summand) {
-                                (*summandResultVector)[currentRow] += (*summand)[row];
+                                summandResultVector->emplace_back((*summand)[row]);
+                            }
+                            if (columnSumVector) {
+                                columnSumVector->emplace_back(storm::utility::zero<ValueType>());
                             }
                             for (auto const& e : transitionMatrix.getRow(row)) {
                                 if (sumColumns && sumColumns->get(e.getColumn())) {
-                                    (*columnSumVector)[currentRow] += e.getValue();
+                                    columnSumVector->back() += e.getValue();
                                 } else if (maybeStates.get(e.getColumn())) {
                                     // If the target state of the transition is not contained in an EC, we can just add the entry.
-                                    if (result.isStateInEc(e.getColumn())) {
+                                    if (!result.isStateInEc(e.getColumn())) {
                                         builder.addNextValue(currentRow, maybeStatesNotInEcBefore[result.maybeStatesBefore[e.getColumn()]], e.getValue());
                                     } else {
                                         // Otherwise, we store the information that the state can go to a certain EC.
@@ -170,14 +180,17 @@ namespace storm {
                             ecValuePairs.clear();
                             
                             if (summand) {
-                                (*summandResultVector)[currentRow] += (*summand)[row];
+                                summandResultVector->emplace_back((*summand)[row]);
+                            }
+                            if (columnSumVector) {
+                                columnSumVector->emplace_back(storm::utility::zero<ValueType>());
                             }
                             for (auto const& e : transitionMatrix.getRow(row)) {
                                 if (sumColumns && sumColumns->get(e.getColumn())) {
-                                    (*columnSumVector)[currentRow] += e.getValue();
+                                    columnSumVector->back() += e.getValue();
                                 } else if (maybeStates.get(e.getColumn())) {
                                     // If the target state of the transition is not contained in an EC, we can just add the entry.
-                                    if (result.isStateInEc(e.getColumn())) {
+                                    if (!result.isStateInEc(e.getColumn())) {
                                         builder.addNextValue(currentRow, maybeStatesNotInEcBefore[result.maybeStatesBefore[e.getColumn()]], e.getValue());
                                     } else {
                                         // Otherwise, we store the information that the state can go to a certain EC.
