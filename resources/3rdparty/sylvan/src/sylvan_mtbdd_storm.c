@@ -590,6 +590,37 @@ TASK_IMPL_2(MTBDD, mtbdd_op_complement, MTBDD, a, size_t, k)
     (void)k; // unused variable
 }
 
+#include "sylvan_storm_rational_number.h"
+
+TASK_IMPL_2(MTBDD, mtbdd_op_sharpen, MTBDD, a, size_t, p)
+{
+    /* We only expect double or rational number terminals, or false */
+    if (a == mtbdd_false) return mtbdd_false;
+    if (a == mtbdd_true) return mtbdd_true;
+    
+    // a != constant
+    mtbddnode_t na = MTBDD_GETNODE(a);
+    
+    if (mtbddnode_isleaf(na)) {
+        if (mtbddnode_gettype(na) == 1) {
+            MTBDD result = mtbdd_storm_rational_number(storm_double_sharpen(mtbdd_getdouble(a), p));
+            return result;
+        } else if (mtbddnode_gettype(na) == srn_type) {
+            return mtbdd_storm_rational_number(storm_rational_number_sharpen((storm_rational_number_ptr)mtbdd_getstorm_rational_function_ptr(a), p));
+        } else {
+            printf("ERROR: Unsupported value type in sharpen.\n");
+            assert(0);
+        }
+    }
+    
+    return mtbdd_invalid;
+}
+
+TASK_IMPL_2(MTBDD, mtbdd_sharpen, MTBDD, dd, size_t, p)
+{
+    return mtbdd_uapply(dd, TASK(mtbdd_op_sharpen), p);
+}
+
 TASK_IMPL_3(BDD, mtbdd_min_abstract_representative, MTBDD, a, BDD, v, BDDVAR, prev_level) {
 	/* Maybe perform garbage collection */
     sylvan_gc_test();

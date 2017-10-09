@@ -9,6 +9,7 @@
 
 #include "storm/adapters/RationalFunctionAdapter.h"
 #include "storm/utility/constants.h"
+#include "storm/utility/KwekMehlhorn.h"
 #include "storm/exceptions/InvalidOperationException.h"
 
 #include <sylvan_config.h>
@@ -297,6 +298,25 @@ storm_rational_number_ptr storm_rational_number_ceil(storm_rational_number_ptr a
     
     storm::RationalNumber const& srn_a = *(storm::RationalNumber const*)a;
     storm::RationalNumber* result_srn = new storm::RationalNumber(carl::ceil(srn_a));
+    return (storm_rational_number_ptr)result_srn;
+}
+
+storm_rational_number_ptr storm_double_sharpen(double value, size_t precision) {
+#ifndef RATIONAL_NUMBER_THREAD_SAFE
+    std::lock_guard<std::mutex> lock(rationalNumberMutex);
+#endif
+
+    storm::RationalNumber* result_srn = new storm::RationalNumber(storm::utility::kwek_mehlhorn::sharpen<storm::RationalNumber, double>(precision, value));
+    return (storm_rational_number_ptr)result_srn;
+}
+
+storm_rational_number_ptr storm_rational_number_sharpen(storm_rational_number_ptr a, size_t precision) {
+#ifndef RATIONAL_NUMBER_THREAD_SAFE
+    std::lock_guard<std::mutex> lock(rationalNumberMutex);
+#endif
+
+    storm::RationalNumber const& srn_a = *(storm::RationalNumber const*)a;
+    storm::RationalNumber* result_srn = new storm::RationalNumber(storm::utility::kwek_mehlhorn::sharpen<storm::RationalNumber, storm::RationalNumber>(precision, srn_a));
     return (storm_rational_number_ptr)result_srn;
 }
 

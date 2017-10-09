@@ -8,7 +8,7 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
-    
+
     /***************************************************
      Function-wrappers for storm::RationalNumber
      ****************************************************/
@@ -48,6 +48,9 @@ extern "C" {
     storm_rational_number_ptr storm_rational_number_negate(storm_rational_number_ptr a);
     storm_rational_number_ptr storm_rational_number_floor(storm_rational_number_ptr a);
     storm_rational_number_ptr storm_rational_number_ceil(storm_rational_number_ptr a);
+    
+    storm_rational_number_ptr storm_double_sharpen(double value, size_t precision);
+    storm_rational_number_ptr storm_rational_number_sharpen(storm_rational_number_ptr a, size_t precision);
     
     // Other operations.
     int storm_rational_number_equal_modulo_precision(int relative, storm_rational_number_ptr a, storm_rational_number_ptr b, storm_rational_number_ptr precision);

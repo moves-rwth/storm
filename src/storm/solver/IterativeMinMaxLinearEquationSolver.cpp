@@ -14,6 +14,7 @@
 #include "storm/exceptions/InvalidStateException.h"
 #include "storm/exceptions/UnmetRequirementException.h"
 #include "storm/exceptions/NotSupportedException.h"
+#include "storm/exceptions/PrecisionExceededException.h"
 
 namespace storm {
     namespace solver {

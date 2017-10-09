@@ -10,6 +10,7 @@
 #include "storm/utility/constants.h"
 #include "storm/utility/macros.h"
 #include "storm/exceptions/NotImplementedException.h"
+#include "storm/exceptions/NotSupportedException.h"
 
 namespace storm {
     namespace dd {
@@ -125,6 +126,11 @@ namespace storm {
         template<typename ValueType>
         InternalAdd<DdType::CUDD, ValueType> InternalAdd<DdType::CUDD, ValueType>::ceil() const {
             return InternalAdd<DdType::CUDD, ValueType>(ddManager, this->getCuddAdd().Ceil());
+        }
+        
+        template<typename ValueType>
+        InternalAdd<DdType::CUDD, storm::RationalNumber> InternalAdd<DdType::CUDD, ValueType>::sharpenKwekMehlhorn(size_t precision) const {
+            STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Operation not supported");
         }
         
         template<typename ValueType>

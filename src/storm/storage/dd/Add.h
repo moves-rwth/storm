@@ -238,6 +238,13 @@ namespace storm {
             Add<LibraryType, ValueType> ceil() const;
             
             /*!
+             * Retrieves the function that sharpens all values in the current ADD with the Kwek-Mehlhorn algorithm.
+             *
+             * @return The resulting ADD.
+             */
+            Add<LibraryType, storm::RationalNumber> sharpenKwekMehlhorn(uint64_t precision) const;
+            
+            /*!
              * Retrieves the function that maps all evaluations to the minimum of the function values of the two ADDs.
              *
              * @param other The ADD with which to perform the operation.

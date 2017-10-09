@@ -197,6 +197,12 @@ Mtbdd::EqualNormRel(const Mtbdd& other, double epsilon) const {
     return mtbdd_equal_norm_rel_d(mtbdd, other.mtbdd, epsilon);
 }
 
+Mtbdd
+Mtbdd::SharpenKwekMehlhorn(size_t precision) const {
+    LACE_ME;
+    return mtbdd_sharpen(mtbdd, precision);
+}
+
 // Functions for Mtbdds over rational numbers.
 Mtbdd
 Mtbdd::stormRationalNumberTerminal(storm::RationalNumber const& value)

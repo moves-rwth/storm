@@ -114,7 +114,7 @@ TASK_DECL_1(MTBDD, mtbdd_bool_to_int64, MTBDD)
  */
 TASK_DECL_2(double, mtbdd_non_zero_count, MTBDD, size_t)
 #define mtbdd_non_zero_count(dd, nvars) CALL(mtbdd_non_zero_count, dd, nvars)
-
+    
 // Checks whether the given MTBDD (does represents a zero leaf.
 int mtbdd_iszero(MTBDD);
 int mtbdd_isnonzero(MTBDD);
@@ -127,6 +127,13 @@ int mtbdd_isnonzero(MTBDD);
 /* Create a MTBDD representing just <var> or the negation of <var> */
 MTBDD mtbdd_ithvar(uint32_t var);
 
+/**
+ * Monad that sharpens the provided vector using the Kwek-Mehlhorn algorithm.
+ */
+TASK_DECL_2(MTBDD, mtbdd_op_sharpen, MTBDD, size_t)
+TASK_DECL_2(MTBDD, mtbdd_sharpen, MTBDD, size_t)
+#define mtbdd_sharpen(dd, p) CALL(mtbdd_sharpen, dd, p)
+    
 /**
  * Unary operation Complement.
  * Supported domains: Integer, Real
