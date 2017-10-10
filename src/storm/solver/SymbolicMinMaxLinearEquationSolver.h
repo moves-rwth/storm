@@ -186,6 +186,9 @@ namespace storm {
             // A BDD characterizing all rows of the equation system.
             storm::dd::Bdd<DdType> allRows;
             
+            // A BDD characterizing the illegal choices.
+            storm::dd::Bdd<DdType> illegalMask;
+            
             // An ADD characterizing the illegal choices.
             storm::dd::Add<DdType, ValueType> illegalMaskAdd;
             
