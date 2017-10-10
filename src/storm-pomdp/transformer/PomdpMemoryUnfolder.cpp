@@ -31,11 +31,11 @@ namespace storm {
             template<typename ValueType>
             storm::storage::SparseMatrix<ValueType> PomdpMemoryUnfolder<ValueType>::transformTransitions() const {
                 storm::storage::SparseMatrix<ValueType> const& origTransitions = pomdp.getTransitionMatrix();
-                storm::storage::SparseMatrixBuilder<ValueType> builder(pomdp.getNumberOfStates() * numMemoryStates * numMemoryStates,
+                storm::storage::SparseMatrixBuilder<ValueType> builder(pomdp.getNumberOfChoices() * numMemoryStates * numMemoryStates,
                                                                         pomdp.getNumberOfStates() * numMemoryStates,
                                                                         origTransitions.getEntryCount() * numMemoryStates * numMemoryStates,
                                                                         true,
-                                                                        false,
+                                                                        true,
                                                                         pomdp.getNumberOfStates() * numMemoryStates);
                 
                 uint64_t row = 0;
@@ -96,7 +96,7 @@ namespace storm {
                 }
                 if (rewardModel.hasStateActionRewards()) {
                     actionRewards = std::vector<ValueType>();
-                    stateRewards->reserve(pomdp.getNumberOfStates() * numMemoryStates * numMemoryStates);
+                    actionRewards->reserve(pomdp.getNumberOfStates() * numMemoryStates * numMemoryStates);
                     for (uint64_t modelState = 0; modelState < pomdp.getNumberOfStates(); ++modelState) {
                         for (uint32_t memState = 0; memState < numMemoryStates; ++memState) {
                             for (uint64_t origRow = pomdp.getTransitionMatrix().getRowGroupIndices()[modelState]; origRow < pomdp.getTransitionMatrix().getRowGroupIndices()[modelState + 1]; ++origRow) {
@@ -108,7 +108,7 @@ namespace storm {
                         }
                     }
                 }
-                STORM_LOG_THROW(rewardModel.hasTransitionRewards(), storm::exceptions::NotSupportedException, "Transition rewards are currently not supported.");
+                STORM_LOG_THROW(!rewardModel.hasTransitionRewards(), storm::exceptions::NotSupportedException, "Transition rewards are currently not supported.");
                 return storm::models::sparse::StandardRewardModel<ValueType>(std::move(stateRewards), std::move(actionRewards));
             }
 

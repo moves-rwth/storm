@@ -17,6 +17,12 @@ namespace storm {
             }
 
             std::shared_ptr<storm::models::sparse::Model<storm::RationalFunction>> transform() const;
+        
+        private:
+        
+        
+            std::unordered_map<uint32_t, std::vector<storm::RationalFunction>> getObservationChoiceWeights() const;
+
             storm::models::sparse::Pomdp<ValueType> const& pomdp;
         };
     }
