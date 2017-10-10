@@ -7,6 +7,7 @@
 #include "storm/settings/SettingsManager.h"
 #include "storm/api/storm.h"
 #include "storm-cli-utilities/cli.h"
+#include "storm-cli-utilities/model-handling.h"
 #include "storm/models/ModelBase.h"
 #include "storm/storage/SymbolicModelDescription.h"
 #include "storm/utility/file.h"
@@ -22,8 +23,6 @@
 #include "storm/exceptions/BaseException.h"
 #include "storm/exceptions/InvalidSettingsException.h"
 #include "storm/exceptions/NotSupportedException.h"
-
-#include "storm-cli-utilities/cli.cpp"
 
 namespace storm {
     namespace pars {

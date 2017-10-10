@@ -28,8 +28,6 @@
 #include "storm-gspn/storm-gspn.h"
 #include "storm/settings/modules/GSPNSettings.h"
 #include "storm/settings/modules/GSPNExportSettings.h"
-#include "storm-cli-utilities/cli.cpp"
-
 
 #include <boost/lexical_cast.hpp>
 #include <memory>
