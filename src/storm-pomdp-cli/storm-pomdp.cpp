@@ -133,41 +133,53 @@ int main(const int argc, const char** argv) {
                     storm::analysis::QualitativeAnalysis<storm::RationalNumber> qualitativeAnalysis(*pomdp);
                     STORM_PRINT_AND_LOG("Computing states with probability 0 ...");
                     std::cout << qualitativeAnalysis.analyseProb0(formula->asProbabilityOperatorFormula()) << std::endl;
+                    STORM_PRINT_AND_LOG(" done." << std::endl);
                     STORM_PRINT_AND_LOG("Computing states with probability 1 ...");
                     std::cout << qualitativeAnalysis.analyseProb1(formula->asProbabilityOperatorFormula()) << std::endl;
+                    STORM_PRINT_AND_LOG(" done." << std::endl);
                     std::cout << "actual reduction not yet implemented..." << std::endl;
                 }
-                if (pomdpSettings.getMemoryBound() > 1) {
-                    storm::transformer::PomdpMemoryUnfolder<storm::RationalNumber> memoryUnfolder(*pomdp, pomdpSettings.getMemoryBound());
-                    pomdp = memoryUnfolder.transform();
-                }
-                
-                // From now on the pomdp is considered memoryless
-                
-                if (pomdpSettings.isMecReductionSet()) {
-                    STORM_PRINT_AND_LOG("Eliminating mec choices ...");
-                    // Note: Elimination of mec choices only preserves memoryless schedulers.
-                    uint64_t oldChoiceCount = pomdp->getNumberOfChoices();
-                    storm::transformer::GlobalPomdpMecChoiceEliminator<storm::RationalNumber> mecChoiceEliminator(*pomdp);
-                    pomdp = mecChoiceEliminator.transform(*formula);
-                    STORM_PRINT_AND_LOG(oldChoiceCount - pomdp->getNumberOfChoices() << " choices eliminated through MEC choice elimination." << std::endl);
-                }
-                
-                if (pomdpSettings.isExportToParametricSet()) {
-                    storm::transformer::ApplyFiniteSchedulerToPomdp<storm::RationalNumber> toPMCTransformer(*pomdp);
-                    auto const &pmc = toPMCTransformer.transform();
-                    storm::analysis::ConstraintCollector<storm::RationalFunction> constraints(*pmc);
-                    pmc->printModelInformationToStream(std::cout);
-                    auto const& parameterSet = constraints.getVariables();
-                    std::vector<storm::RationalFunctionVariable> parameters(parameterSet.begin(), parameterSet.end());
-                    std::vector<std::string> parameterNames;
-                    for (auto const& parameter : parameters) {
-                        parameterNames.push_back(parameter.getName());
-                    }
-                    storm::api::exportSparseModelAsDrn(pmc, pomdpSettings.getExportToParametricFilename(), parameterNames);
-                }
-
             }
+            if (pomdpSettings.getMemoryBound() > 1) {
+                STORM_PRINT_AND_LOG("Computing the unfolding for memory bound " << pomdpSettings.getMemoryBound() << "...");
+                storm::transformer::PomdpMemoryUnfolder<storm::RationalNumber> memoryUnfolder(*pomdp, pomdpSettings.getMemoryBound());
+                pomdp = memoryUnfolder.transform();
+                STORM_PRINT_AND_LOG(" done." << std::endl);
+                pomdp->printModelInformationToStream(std::cout);
+            } else {
+                STORM_PRINT_AND_LOG("Assumming memoryless schedulers.")
+            }
+            
+            // From now on the pomdp is considered memoryless
+            
+            if (pomdpSettings.isMecReductionSet()) {
+                STORM_PRINT_AND_LOG("Eliminating mec choices ...");
+                // Note: Elimination of mec choices only preserves memoryless schedulers.
+                uint64_t oldChoiceCount = pomdp->getNumberOfChoices();
+                storm::transformer::GlobalPomdpMecChoiceEliminator<storm::RationalNumber> mecChoiceEliminator(*pomdp);
+                pomdp = mecChoiceEliminator.transform(*formula);
+                STORM_PRINT_AND_LOG(" done." << std::endl);
+                STORM_PRINT_AND_LOG(oldChoiceCount - pomdp->getNumberOfChoices() << " choices eliminated through MEC choice elimination." << std::endl);
+            }
+            
+            if (pomdpSettings.isExportToParametricSet()) {
+                STORM_PRINT_AND_LOG("Transforming memoryless POMDP to pMC...");
+                storm::transformer::ApplyFiniteSchedulerToPomdp<storm::RationalNumber> toPMCTransformer(*pomdp);
+                auto pmc = toPMCTransformer.transform();
+                STORM_PRINT_AND_LOG(" done." << std::endl);
+                pmc->printModelInformationToStream(std::cout);
+                STORM_PRINT_AND_LOG("Exporting pMC...");
+                storm::analysis::ConstraintCollector<storm::RationalFunction> constraints(*pmc);
+                auto const& parameterSet = constraints.getVariables();
+                std::vector<storm::RationalFunctionVariable> parameters(parameterSet.begin(), parameterSet.end());
+                std::vector<std::string> parameterNames;
+                for (auto const& parameter : parameters) {
+                    parameterNames.push_back(parameter.getName());
+                }
+                storm::api::exportSparseModelAsDrn(pmc, pomdpSettings.getExportToParametricFilename(), parameterNames);
+                STORM_PRINT_AND_LOG(" done." << std::endl);
+            }
+
         }
 
         // All operations have now been performed, so we clean up everything and terminate.
