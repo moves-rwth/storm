@@ -70,7 +70,7 @@ namespace storm {
                     for (uint64_t i = 0; i < this->objectives.size(); ++i) {
                         headers.push_back("obj" + std::to_string(i));
                     }
-                    storm::utility::exportDataToCSVFile("cdf" + std::to_string(numChecks) + ".csv", cdfData, headers);
+                    storm::utility::exportDataToCSVFile<ValueType, ValueType, std::string>("cdf" + std::to_string(numChecks) + ".csv", cdfData, weightVector, headers);
                 }
                 auto solution = rewardUnfolding.getInitialStateResult(initEpoch);
                 // Todo: we currently assume precise results...

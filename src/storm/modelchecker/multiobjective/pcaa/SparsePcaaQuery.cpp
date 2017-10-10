@@ -228,7 +228,7 @@ namespace storm {
                 for(auto const& v : underApproxVertices) {
                     pointsForPlotting.push_back(storm::utility::vector::convertNumericVector<double>(v));
                 }
-                storm::utility::exportDataToCSVFile(destinationDir + "underapproximation.csv", pointsForPlotting, columnHeaders);
+                storm::utility::exportDataToCSVFile<double, std::string>(destinationDir + "underapproximation.csv", pointsForPlotting, columnHeaders);
                 
                 pointsForPlotting.clear();
                 overApproxVertices = transformedOverApprox->intersection(boundariesAsPolytope)->getVerticesInClockwiseOrder();
@@ -236,14 +236,14 @@ namespace storm {
                 for(auto const& v : overApproxVertices) {
                     pointsForPlotting.push_back(storm::utility::vector::convertNumericVector<double>(v));
                 }
-                storm::utility::exportDataToCSVFile(destinationDir + "overapproximation.csv", pointsForPlotting, columnHeaders);
+                storm::utility::exportDataToCSVFile<double, std::string>(destinationDir + "overapproximation.csv", pointsForPlotting, columnHeaders);
                 
                 pointsForPlotting.clear();
                 pointsForPlotting.reserve(paretoPoints.size());
                 for(auto const& v : paretoPoints) {
                     pointsForPlotting.push_back(storm::utility::vector::convertNumericVector<double>(v));
                 }
-                storm::utility::exportDataToCSVFile(destinationDir + "paretopoints.csv", pointsForPlotting, columnHeaders);
+                storm::utility::exportDataToCSVFile<double, std::string>(destinationDir + "paretopoints.csv", pointsForPlotting, columnHeaders);
                 
                 pointsForPlotting.clear();
                 auto boundVertices = boundariesAsPolytope->getVerticesInClockwiseOrder();
@@ -251,7 +251,7 @@ namespace storm {
                 for(auto const& v : boundVertices) {
                     pointsForPlotting.push_back(storm::utility::vector::convertNumericVector<double>(v));
                 }
-                storm::utility::exportDataToCSVFile(destinationDir + "boundaries.csv", pointsForPlotting, columnHeaders);
+                storm::utility::exportDataToCSVFile<double, std::string>(destinationDir + "boundaries.csv", pointsForPlotting, columnHeaders);
             }
             
 #ifdef STORM_HAVE_CARL
