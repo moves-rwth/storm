@@ -621,6 +621,35 @@ TASK_IMPL_2(MTBDD, mtbdd_sharpen, MTBDD, dd, size_t, p)
     return mtbdd_uapply(dd, TASK(mtbdd_op_sharpen), p);
 }
 
+TASK_IMPL_2(MTBDD, mtbdd_op_to_rational_number, MTBDD, a, size_t, p)
+{
+    /* We only expect double or rational number terminals, or false */
+    if (a == mtbdd_false) return mtbdd_false;
+    if (a == mtbdd_true) return mtbdd_true;
+    
+    // a != constant
+    mtbddnode_t na = MTBDD_GETNODE(a);
+    
+    if (mtbddnode_isleaf(na)) {
+        if (mtbddnode_gettype(na) == 1) {
+            MTBDD result = mtbdd_storm_rational_number(storm_rational_number_from_double(mtbdd_getdouble(a)));
+            return result;
+        } else {
+            printf("ERROR: Unsupported value type in conversion to rational number.\n");
+            assert(0);
+        }
+    }
+    
+    return mtbdd_invalid;
+    (void)p; // unused variable
+}
+
+TASK_IMPL_2(MTBDD, mtbdd_to_rational_number, MTBDD, dd, size_t, p)
+{
+    return mtbdd_uapply(dd, TASK(mtbdd_to_rational_number), 0);
+}
+
+
 TASK_IMPL_3(BDD, mtbdd_min_abstract_representative, MTBDD, a, BDD, v, BDDVAR, prev_level) {
 	/* Maybe perform garbage collection */
     sylvan_gc_test();

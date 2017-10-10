@@ -428,7 +428,7 @@ namespace storm {
                 std::swap(currentX, newX);
             }
             
-            return PowerIterationResult(iterations - currentIterations, converged ? Status::Converged : (terminate ? Status::TerminatedEarly : Status::MaximalIterationsExceeded));
+            return PowerIterationResult(iterations - currentIterations, converged ? SolverStatus::Converged : (terminate ? SolverStatus::TerminatedEarly : SolverStatus::MaximalIterationsExceeded));
         }
         
         template<typename ValueType>
@@ -457,9 +457,9 @@ namespace storm {
                 clearCache();
             }
             
-            this->logIterations(result.status == Status::Converged, result.status == Status::TerminatedEarly, result.iterations);
+            this->logIterations(result.status == SolverStatus::Converged, result.status == SolverStatus::TerminatedEarly, result.iterations);
 
-            return result.status == Status::Converged || result.status == Status::TerminatedEarly;
+            return result.status == SolverStatus::Converged || result.status == SolverStatus::TerminatedEarly;
         }
         
         template<typename ValueType>
@@ -688,12 +688,12 @@ namespace storm {
             std::vector<ImpreciseType>* currentX = &x;
             std::vector<ImpreciseType>* newX = &tmpX;
             
-            Status status = Status::InProgress;
+            SolverStatus status = SolverStatus::InProgress;
             uint64_t overallIterations = 0;
             uint64_t valueIterationInvocations = 0;
             ValueType precision = this->getSettings().getPrecision();
             impreciseSolver.startMeasureProgress();
-            while (status == Status::InProgress && overallIterations < this->getSettings().getMaximalNumberOfIterations()) {
+            while (status == SolverStatus::InProgress && overallIterations < this->getSettings().getMaximalNumberOfIterations()) {
                 // Perform value iteration with the current precision.
                 typename NativeLinearEquationSolver<ImpreciseType>::PowerIterationResult result = impreciseSolver.performPowerIteration(currentX, newX, b, storm::utility::convertNumber<ImpreciseType, ValueType>(precision), this->getSettings().getRelativeTerminationCriterion(), SolverGuarantee::LessOrEqual, overallIterations);
                 
@@ -717,7 +717,7 @@ namespace storm {
                 // After sharpen, if a solution was found, it is contained in the free rational.
                 
                 if (foundSolution) {
-                    status = Status::Converged;
+                    status = SolverStatus::Converged;
                     
                     TemporaryHelper<RationalType, ImpreciseType>::swapSolutions(rationalX, temporaryRational, x, currentX, newX);
                 } else {
@@ -726,13 +726,13 @@ namespace storm {
                 }
             }
             
-            if (status == Status::InProgress && overallIterations == this->getSettings().getMaximalNumberOfIterations()) {
-                status = Status::MaximalIterationsExceeded;
+            if (status == SolverStatus::InProgress && overallIterations == this->getSettings().getMaximalNumberOfIterations()) {
+                status = SolverStatus::MaximalIterationsExceeded;
             }
             
-            this->logIterations(status == Status::Converged, status == Status::TerminatedEarly, overallIterations);
+            this->logIterations(status == SolverStatus::Converged, status == SolverStatus::TerminatedEarly, overallIterations);
             
-            return status == Status::Converged || status == Status::TerminatedEarly;
+            return status == SolverStatus::Converged || status == SolverStatus::TerminatedEarly;
         }
      
         template<typename ValueType>

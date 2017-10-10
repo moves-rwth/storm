@@ -457,7 +457,12 @@ namespace storm {
             return InternalAdd<DdType::Sylvan, double>(ddManager, this->sylvanMtbdd.ToDoubleRN());
         }
 
-        
+        template<>
+        template<>
+        InternalAdd<DdType::Sylvan, storm::RationalNumber> InternalAdd<DdType::Sylvan, double>::toValueType() const {
+            return InternalAdd<DdType::Sylvan, storm::RationalNumber>(ddManager, this->sylvanMtbdd.ToRationalNumber());
+        }
+
 #ifdef STORM_HAVE_CARL
 		template<>
         template<>

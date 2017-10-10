@@ -7,11 +7,12 @@
 #include <boost/optional.hpp>
 
 #include "storm/solver/OptimizationDirection.h"
-
 #include "storm/solver/SymbolicLinearEquationSolver.h"
-
 #include "storm/solver/EquationSystemType.h"
 #include "storm/solver/MinMaxLinearEquationSolverRequirements.h"
+#include "storm/solver/SolverStatus.h"
+
+#include "storm/utility/NumberTraits.h"
 
 #include "storm/storage/expressions/Variable.h"
 #include "storm/storage/dd/DdType.h"
@@ -32,7 +33,7 @@ namespace storm {
             SymbolicMinMaxLinearEquationSolverSettings();
             
             enum class SolutionMethod {
-                ValueIteration, PolicyIteration
+                ValueIteration, PolicyIteration, RationalSearch
             };
             
             void setSolutionMethod(SolutionMethod const& solutionMethod);
@@ -137,14 +138,47 @@ namespace storm {
              * Retrieves whether the solver is aware that the requirements were checked.
              */
             bool isRequirementsCheckedSet() const;
-            
+
+            /*!
+             * Determines whether the given vector x satisfies x = Ax + b.
+             */
+            bool isSolution(OptimizationDirection dir, storm::dd::Add<DdType, ValueType> const& x, storm::dd::Add<DdType, ValueType> const& b) const;
+
         private:
             storm::dd::Add<DdType, ValueType> solveEquationsWithScheduler(storm::dd::Bdd<DdType> const& scheduler, storm::dd::Add<DdType, ValueType> const& x, storm::dd::Add<DdType, ValueType> const& b) const;
             storm::dd::Add<DdType, ValueType> solveEquationsWithScheduler(SymbolicLinearEquationSolver<DdType, ValueType>& solver, storm::dd::Bdd<DdType> const& scheduler, storm::dd::Add<DdType, ValueType> const& x, storm::dd::Add<DdType, ValueType> const& b, storm::dd::Add<DdType, ValueType> const& diagonal) const;
             
             storm::dd::Add<DdType, ValueType> solveEquationsValueIteration(storm::solver::OptimizationDirection const& dir, storm::dd::Add<DdType, ValueType> const& x, storm::dd::Add<DdType, ValueType> const& b) const;
             storm::dd::Add<DdType, ValueType> solveEquationsPolicyIteration(storm::solver::OptimizationDirection const& dir, storm::dd::Add<DdType, ValueType> const& x, storm::dd::Add<DdType, ValueType> const& b) const;
-
+            storm::dd::Add<DdType, ValueType> solveEquationsRationalSearch(storm::solver::OptimizationDirection const& dir, storm::dd::Add<DdType, ValueType> const& x, storm::dd::Add<DdType, ValueType> const& b) const;
+            
+            template<typename RationalType, typename ImpreciseType>
+            static storm::dd::Add<DdType, RationalType> sharpen(OptimizationDirection dir, uint64_t precision, SymbolicMinMaxLinearEquationSolver<DdType, RationalType> const& rationalSolver, storm::dd::Add<DdType, ImpreciseType> const& x, storm::dd::Add<DdType, RationalType> const& rationalB, bool& isSolution);
+            
+            template<typename RationalType, typename ImpreciseType>
+            storm::dd::Add<DdType, RationalType> solveEquationsRationalSearchHelper(OptimizationDirection dir, SymbolicMinMaxLinearEquationSolver<DdType, RationalType> const& rationalSolver, SymbolicMinMaxLinearEquationSolver<DdType, ImpreciseType> const& impreciseSolver, storm::dd::Add<DdType, RationalType> const& rationalX, storm::dd::Add<DdType, RationalType> const& rationalB, storm::dd::Add<DdType, ImpreciseType> const& x, storm::dd::Add<DdType, ImpreciseType> const& b) const;
+            template<typename ImpreciseType>
+            typename std::enable_if<std::is_same<ValueType, ImpreciseType>::value && storm::NumberTraits<ValueType>::IsExact, storm::dd::Add<DdType, ValueType>>::type solveEquationsRationalSearchHelper(storm::solver::OptimizationDirection const& dir, storm::dd::Add<DdType, ValueType> const& x, storm::dd::Add<DdType, ValueType> const& b) const;
+            template<typename ImpreciseType>
+            typename std::enable_if<std::is_same<ValueType, ImpreciseType>::value && !storm::NumberTraits<ValueType>::IsExact, storm::dd::Add<DdType, ValueType>>::type solveEquationsRationalSearchHelper(storm::solver::OptimizationDirection const& dir, storm::dd::Add<DdType, ValueType> const& x, storm::dd::Add<DdType, ValueType> const& b) const;
+            template<typename ImpreciseType>
+            typename std::enable_if<!std::is_same<ValueType, ImpreciseType>::value, storm::dd::Add<DdType, ValueType>>::type solveEquationsRationalSearchHelper(storm::solver::OptimizationDirection const& dir, storm::dd::Add<DdType, ValueType> const& x, storm::dd::Add<DdType, ValueType> const& b) const;
+            
+            template<storm::dd::DdType DdTypePrime, typename ValueTypePrime>
+            friend class SymbolicMinMaxLinearEquationSolver;
+            
+            struct ValueIterationResult {
+                ValueIterationResult(SolverStatus status, uint64_t iterations, storm::dd::Add<DdType, ValueType> const& values) : status(status), iterations(iterations), values(values) {
+                    // Intentionally left empty.
+                }
+                
+                SolverStatus status;
+                uint64_t iterations;
+                storm::dd::Add<DdType, ValueType> values;
+            };
+            
+            ValueIterationResult performValueIteration(storm::solver::OptimizationDirection const& dir, storm::dd::Add<DdType, ValueType> const& x, storm::dd::Add<DdType, ValueType> const& b, ValueType const& precision, bool relativeTerminationCriterion) const;
+            
         protected:
             // The matrix defining the coefficients of the linear equation system.
             storm::dd::Add<DdType, ValueType> A;

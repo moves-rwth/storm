@@ -256,7 +256,7 @@ namespace storm {
             InternalAdd<DdType::Sylvan, ValueType> maximum(InternalAdd<DdType::Sylvan, ValueType> const& other) const;
             
 			/*!
-             * Replaces the leaves in this MTBDD, converting them to double if possible, and -1.0 else.
+             * Replaces the leaves in this MTBDD with the converted values in the target value type.
              *
              * @return The resulting function represented as an ADD.
              */

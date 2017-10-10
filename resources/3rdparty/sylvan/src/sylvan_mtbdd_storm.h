@@ -133,6 +133,13 @@ MTBDD mtbdd_ithvar(uint32_t var);
 TASK_DECL_2(MTBDD, mtbdd_op_sharpen, MTBDD, size_t)
 TASK_DECL_2(MTBDD, mtbdd_sharpen, MTBDD, size_t)
 #define mtbdd_sharpen(dd, p) CALL(mtbdd_sharpen, dd, p)
+
+/**
+ * Monad that converts the double MTBDD to an MTBDD over rational numbers.
+ */
+TASK_DECL_2(MTBDD, mtbdd_op_to_rational_number, MTBDD, size_t)
+TASK_DECL_2(MTBDD, mtbdd_to_rational_number, MTBDD, size_t)
+#define mtbdd_to_rational_number(dd) CALL(mtbdd_to_rational_number, dd, 0)
     
 /**
  * Unary operation Complement.

@@ -4,6 +4,8 @@
 #include "storm/utility/macros.h"
 #include "storm/storage/expressions/ExpressionManager.h"
 
+#include "storm/utility/constants.h"
+
 #include <cmath>
 
 namespace storm {
@@ -14,7 +16,7 @@ namespace storm {
         }
         
         template<typename ValueType>
-        AddIterator<DdType::CUDD, ValueType>::AddIterator(DdManager<DdType::CUDD> const& ddManager, DdGen* generator, int* cube, ValueType const& value, bool isAtEnd, std::set<storm::expressions::Variable> const* metaVariables, bool enumerateDontCareMetaVariables) : ddManager(&ddManager), generator(generator), cube(cube), valueAsDouble(static_cast<double>(value)), isAtEnd(isAtEnd), metaVariables(metaVariables), enumerateDontCareMetaVariables(enumerateDontCareMetaVariables), cubeCounter(), relevantDontCareDdVariables(), currentValuation(ddManager.getExpressionManager().getSharedPointer()) {
+        AddIterator<DdType::CUDD, ValueType>::AddIterator(DdManager<DdType::CUDD> const& ddManager, DdGen* generator, int* cube, ValueType const& value, bool isAtEnd, std::set<storm::expressions::Variable> const* metaVariables, bool enumerateDontCareMetaVariables) : ddManager(&ddManager), generator(generator), cube(cube), valueAsDouble(storm::utility::convertNumber<double>(value)), isAtEnd(isAtEnd), metaVariables(metaVariables), enumerateDontCareMetaVariables(enumerateDontCareMetaVariables), cubeCounter(), relevantDontCareDdVariables(), currentValuation(ddManager.getExpressionManager().getSharedPointer()) {
             // If the given generator is not yet at its end, we need to create the current valuation from the cube from
             // scratch.
             if (!this->isAtEnd) {
@@ -186,5 +188,9 @@ namespace storm {
         
         template class AddIterator<DdType::CUDD, double>;
         template class AddIterator<DdType::CUDD, uint_fast64_t>;
+
+#ifdef STORM_HAVE_CARL
+        template class AddIterator<DdType::CUDD, storm::RationalNumber>;
+#endif
     }
 }

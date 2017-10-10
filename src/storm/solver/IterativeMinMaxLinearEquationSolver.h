@@ -7,6 +7,8 @@
 #include "storm/solver/LinearEquationSolver.h"
 #include "storm/solver/StandardMinMaxLinearEquationSolver.h"
 
+#include "storm/solver/SolverStatus.h"
+
 namespace storm {
     namespace solver {
         
@@ -84,18 +86,14 @@ namespace storm {
             static bool isSolution(storm::OptimizationDirection dir, storm::storage::SparseMatrix<ValueType> const& matrix, std::vector<ValueType> const& values, std::vector<ValueType> const& b);
 
             void computeOptimalValueForRowGroup(uint_fast64_t group, OptimizationDirection dir, std::vector<ValueType>& x, std::vector<ValueType> const& b, uint_fast64_t* choice = nullptr) const;
-            
-            enum class Status {
-                Converged, TerminatedEarly, MaximalIterationsExceeded, InProgress
-            };
-            
+                        
             struct ValueIterationResult {
-                ValueIterationResult(uint64_t iterations, Status status) : iterations(iterations), status(status) {
+                ValueIterationResult(uint64_t iterations, SolverStatus status) : iterations(iterations), status(status) {
                     // Intentionally left empty.
                 }
                 
                 uint64_t iterations;
-                Status status;
+                SolverStatus status;
             };
             
             template <typename ValueTypePrime>
@@ -110,8 +108,8 @@ namespace storm {
             mutable std::unique_ptr<std::vector<ValueType>> auxiliaryRowGroupVector2; // A.rowGroupCount() entries
             mutable std::unique_ptr<std::vector<uint64_t>> rowGroupOrdering; // A.rowGroupCount() entries
             
-            Status updateStatusIfNotConverged(Status status, std::vector<ValueType> const& x, uint64_t iterations, SolverGuarantee const& guarantee) const;
-            static void reportStatus(Status status, uint64_t iterations);
+            SolverStatus updateStatusIfNotConverged(SolverStatus status, std::vector<ValueType> const& x, uint64_t iterations, SolverGuarantee const& guarantee) const;
+            static void reportStatus(SolverStatus status, uint64_t iterations);
             
             /// The settings of this solver.
             IterativeMinMaxLinearEquationSolverSettings<ValueType> settings;

@@ -149,6 +149,15 @@ double storm_rational_number_get_value_double(storm_rational_number_ptr a) {
     return storm::utility::convertNumber<double>(srn_a);
 }
 
+storm_rational_number_ptr storm_rational_number_from_double(double value) {
+#ifndef RATIONAL_NUMBER_THREAD_SAFE
+    std::lock_guard<std::mutex> lock(rationalNumberMutex);
+#endif
+    
+    storm::RationalNumber* number = new storm::RationalNumber(storm::utility::convertNumber<storm::RationalNumber>(value));
+    return number;
+}
+
 storm_rational_number_ptr storm_rational_number_plus(storm_rational_number_ptr a, storm_rational_number_ptr b) {
 #ifndef RATIONAL_NUMBER_THREAD_SAFE
     std::lock_guard<std::mutex> lock(rationalNumberMutex);

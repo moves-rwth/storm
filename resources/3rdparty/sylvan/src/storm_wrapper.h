@@ -29,7 +29,8 @@ extern "C" {
     int storm_rational_number_is_zero(storm_rational_number_ptr a);
     uint64_t storm_rational_number_hash(storm_rational_number_ptr const a, uint64_t const seed);
     double storm_rational_number_get_value_double(storm_rational_number_ptr a);
-    
+    storm_rational_number_ptr storm_rational_number_from_double(double value);
+
     // Binary operations.
     storm_rational_number_ptr storm_rational_number_plus(storm_rational_number_ptr a, storm_rational_number_ptr b);
     storm_rational_number_ptr storm_rational_number_minus(storm_rational_number_ptr a, storm_rational_number_ptr b);

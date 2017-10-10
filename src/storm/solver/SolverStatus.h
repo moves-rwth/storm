@@ -1,13 +1,15 @@
-//
-//  SolverStatus.hpp
-//  storm
-//
-//  Created by Christian Dehnert on 10.10.17.
-//
+#pragma once
 
-#ifndef SolverStatus_hpp
-#define SolverStatus_hpp
+#include <ostream>
 
-#include <stdio.h>
-
-#endif /* SolverStatus_hpp */
+namespace storm {
+    namespace solver {
+        
+        enum class SolverStatus {
+            Converged, TerminatedEarly, MaximalIterationsExceeded, InProgress
+        };
+     
+        std::ostream& operator<<(std::ostream& out, SolverStatus const& status);
+        
+    }
+}

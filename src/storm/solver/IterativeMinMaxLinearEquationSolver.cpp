@@ -172,7 +172,7 @@ namespace storm {
             }
             solver->setCachingEnabled(true);
             
-            Status status = Status::InProgress;
+            SolverStatus status = SolverStatus::InProgress;
             uint64_t iterations = 0;
             this->startMeasureProgress();
             do {
@@ -209,7 +209,7 @@ namespace storm {
                 
                 // If the scheduler did not improve, we are done.
                 if (!schedulerImproved) {
-                    status = Status::Converged;
+                    status = SolverStatus::Converged;
                 } else {
                     // Update the scheduler and the solver.
                     submatrix = this->A->selectRowsFromRowGroups(scheduler, true);
@@ -224,7 +224,7 @@ namespace storm {
 
                 // Potentially show progress.
                 this->showProgressIterative(iterations);
-            } while (status == Status::InProgress);
+            } while (status == SolverStatus::InProgress);
             
             reportStatus(status, iterations);
             
@@ -237,7 +237,7 @@ namespace storm {
                 clearCache();
             }
             
-            return status == Status::Converged || status == Status::TerminatedEarly;
+            return status == SolverStatus::Converged || status == SolverStatus::TerminatedEarly;
         }
         
         template<typename ValueType>
@@ -336,8 +336,8 @@ namespace storm {
             
             std::vector<ValueType>* originalX = currentX;
             
-            Status status = Status::InProgress;
-            while (status == Status::InProgress) {
+            SolverStatus status = SolverStatus::InProgress;
+            while (status == SolverStatus::InProgress) {
                 // Compute x' = min/max(A*x + b).
                 if (useGaussSeidelMultiplication) {
                     // Copy over the current vector so we can modify it in-place.
@@ -349,7 +349,7 @@ namespace storm {
                 
                 // Determine whether the method converged.
                 if (storm::utility::vector::equalModuloPrecision<ValueType>(*currentX, *newX, precision, relative)) {
-                    status = Status::Converged;
+                    status = SolverStatus::Converged;
                 }
                 
                 // Update environment variables.
@@ -437,7 +437,7 @@ namespace storm {
                 clearCache();
             }
             
-            return result.status == Status::Converged || result.status == Status::TerminatedEarly;
+            return result.status == SolverStatus::Converged || result.status == SolverStatus::TerminatedEarly;
         }
         
         template<typename ValueType>
@@ -500,7 +500,7 @@ namespace storm {
             // Proceed with the iterations as long as the method did not converge or reach the maximum number of iterations.
             uint64_t iterations = 0;
             
-            Status status = Status::InProgress;
+            SolverStatus status = SolverStatus::InProgress;
             bool doConvergenceCheck = true;
             bool useDiffs = this->hasRelevantValues();
             std::vector<ValueType> oldValues;
@@ -514,7 +514,7 @@ namespace storm {
                 precision *= storm::utility::convertNumber<ValueType>(2.0);
             }
             this->startMeasureProgress();
-            while (status == Status::InProgress && iterations < this->getSettings().getMaximalNumberOfIterations()) {
+            while (status == SolverStatus::InProgress && iterations < this->getSettings().getMaximalNumberOfIterations()) {
                 // Remember in which directions we took steps in this iteration.
                 bool lowerStep = false;
                 bool upperStep = false;
@@ -597,9 +597,9 @@ namespace storm {
                 if (doConvergenceCheck) {
                     // Determine whether the method converged.
                     if (this->hasRelevantValues()) {
-                        status = storm::utility::vector::equalModuloPrecision<ValueType>(*lowerX, *upperX, this->getRelevantValues(), precision, this->getSettings().getRelativeTerminationCriterion()) ? Status::Converged : status;
+                        status = storm::utility::vector::equalModuloPrecision<ValueType>(*lowerX, *upperX, this->getRelevantValues(), precision, this->getSettings().getRelativeTerminationCriterion()) ? SolverStatus::Converged : status;
                     } else {
-                        status = storm::utility::vector::equalModuloPrecision<ValueType>(*lowerX, *upperX, precision, this->getSettings().getRelativeTerminationCriterion()) ? Status::Converged : status;
+                        status = storm::utility::vector::equalModuloPrecision<ValueType>(*lowerX, *upperX, precision, this->getSettings().getRelativeTerminationCriterion()) ? SolverStatus::Converged : status;
                     }
                 }
                 
@@ -640,7 +640,7 @@ namespace storm {
                 clearCache();
             }
             
-            return status == Status::Converged;
+            return status == SolverStatus::Converged;
         }
         
         template<typename ValueType>
@@ -868,12 +868,12 @@ namespace storm {
             std::vector<ImpreciseType>* currentX = &x;
             std::vector<ImpreciseType>* newX = &tmpX;
 
-            Status status = Status::InProgress;
+            SolverStatus status = SolverStatus::InProgress;
             uint64_t overallIterations = 0;
             uint64_t valueIterationInvocations = 0;
             ValueType precision = this->getSettings().getPrecision();
             impreciseSolver.startMeasureProgress();
-            while (status == Status::InProgress && overallIterations < this->getSettings().getMaximalNumberOfIterations()) {
+            while (status == SolverStatus::InProgress && overallIterations < this->getSettings().getMaximalNumberOfIterations()) {
                 // Perform value iteration with the current precision.
                 typename IterativeMinMaxLinearEquationSolver<ImpreciseType>::ValueIterationResult result = impreciseSolver.performValueIteration(dir, currentX, newX, b, storm::utility::convertNumber<ImpreciseType, ValueType>(precision), this->getSettings().getRelativeTerminationCriterion(), SolverGuarantee::LessOrEqual, overallIterations);
                 
@@ -897,7 +897,7 @@ namespace storm {
                 // After sharpen, if a solution was found, it is contained in the free rational.
                 
                 if (foundSolution) {
-                    status = Status::Converged;
+                    status = SolverStatus::Converged;
                     
                     TemporaryHelper<RationalType, ImpreciseType>::swapSolutions(rationalX, temporaryRational, x, currentX, newX);
                 } else {
@@ -906,13 +906,13 @@ namespace storm {
                 }
             }
             
-            if (status == Status::InProgress && overallIterations == this->getSettings().getMaximalNumberOfIterations()) {
-                status = Status::MaximalIterationsExceeded;
+            if (status == SolverStatus::InProgress && overallIterations == this->getSettings().getMaximalNumberOfIterations()) {
+                status = SolverStatus::MaximalIterationsExceeded;
             }
             
             reportStatus(status, overallIterations);
             
-            return status == Status::Converged || status == Status::TerminatedEarly;
+            return status == SolverStatus::Converged || status == SolverStatus::TerminatedEarly;
         }
 
         template<typename ValueType>
@@ -1028,23 +1028,23 @@ namespace storm {
         }
 
         template<typename ValueType>
-        typename IterativeMinMaxLinearEquationSolver<ValueType>::Status IterativeMinMaxLinearEquationSolver<ValueType>::updateStatusIfNotConverged(Status status, std::vector<ValueType> const& x, uint64_t iterations, SolverGuarantee const& guarantee) const {
-            if (status != Status::Converged) {
+        SolverStatus IterativeMinMaxLinearEquationSolver<ValueType>::updateStatusIfNotConverged(SolverStatus status, std::vector<ValueType> const& x, uint64_t iterations, SolverGuarantee const& guarantee) const {
+            if (status != SolverStatus::Converged) {
                 if (this->hasCustomTerminationCondition() && this->getTerminationCondition().terminateNow(x, guarantee)) {
-                    status = Status::TerminatedEarly;
+                    status = SolverStatus::TerminatedEarly;
                 } else if (iterations >= this->getSettings().getMaximalNumberOfIterations()) {
-                    status = Status::MaximalIterationsExceeded;
+                    status = SolverStatus::MaximalIterationsExceeded;
                 }
             }
             return status;
         }
         
         template<typename ValueType>
-        void IterativeMinMaxLinearEquationSolver<ValueType>::reportStatus(Status status, uint64_t iterations) {
+        void IterativeMinMaxLinearEquationSolver<ValueType>::reportStatus(SolverStatus status, uint64_t iterations) {
             switch (status) {
-                case Status::Converged: STORM_LOG_INFO("Iterative solver converged after " << iterations << " iterations."); break;
-                case Status::TerminatedEarly: STORM_LOG_INFO("Iterative solver terminated early after " << iterations << " iterations."); break;
-                case Status::MaximalIterationsExceeded: STORM_LOG_WARN("Iterative solver did not converge after " << iterations << " iterations."); break;
+                case SolverStatus::Converged: STORM_LOG_INFO("Iterative solver converged after " << iterations << " iterations."); break;
+                case SolverStatus::TerminatedEarly: STORM_LOG_INFO("Iterative solver terminated early after " << iterations << " iterations."); break;
+                case SolverStatus::MaximalIterationsExceeded: STORM_LOG_WARN("Iterative solver did not converge after " << iterations << " iterations."); break;
                 default:
                     STORM_LOG_THROW(false, storm::exceptions::InvalidStateException, "Iterative solver terminated unexpectedly.");
             }

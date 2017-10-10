@@ -144,6 +144,18 @@ namespace storm {
         }
         
         template<typename ValueType>
+        template<typename TargetValueType>
+        typename std::enable_if<std::is_same<ValueType, TargetValueType>::value, InternalAdd<DdType::CUDD, TargetValueType>>::type InternalAdd<DdType::CUDD, ValueType>::toValueType() const {
+            return *this;
+        }
+
+        template<typename ValueType>
+        template<typename TargetValueType>
+        typename std::enable_if<!std::is_same<ValueType, TargetValueType>::value, InternalAdd<DdType::CUDD, TargetValueType>>::type InternalAdd<DdType::CUDD, ValueType>::toValueType() const {
+            STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Operation not supported");
+        }
+
+        template<typename ValueType>
         InternalAdd<DdType::CUDD, ValueType> InternalAdd<DdType::CUDD, ValueType>::sumAbstract(InternalBdd<DdType::CUDD> const& cube) const {
             return InternalAdd<DdType::CUDD, ValueType>(ddManager, this->getCuddAdd().ExistAbstract(cube.toAdd<ValueType>().getCuddAdd()));
         }
@@ -175,6 +187,11 @@ namespace storm {
             } else {
                 return this->getCuddAdd().EqualSupNorm(other.getCuddAdd(), precision);
             }
+        }
+
+        template<>
+        bool InternalAdd<DdType::CUDD, storm::RationalNumber>::equalModuloPrecision(InternalAdd<DdType::CUDD, storm::RationalNumber> const& other, storm::RationalNumber const& precision, bool relative) const {
+            STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Operation not supported.");
         }
         
         template<typename ValueType>
@@ -229,10 +246,20 @@ namespace storm {
         InternalBdd<DdType::CUDD> InternalAdd<DdType::CUDD, ValueType>::greater(ValueType const& value) const {
             return InternalBdd<DdType::CUDD>(ddManager, this->getCuddAdd().BddStrictThreshold(value));
         }
-        
+
+        template<>
+        InternalBdd<DdType::CUDD> InternalAdd<DdType::CUDD, storm::RationalNumber>::greater(storm::RationalNumber const& value) const {
+            STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Operation not supported.");
+        }
+
         template<typename ValueType>
         InternalBdd<DdType::CUDD> InternalAdd<DdType::CUDD, ValueType>::greaterOrEqual(ValueType const& value) const {
             return InternalBdd<DdType::CUDD>(ddManager, this->getCuddAdd().BddThreshold(value));
+        }
+
+        template<>
+        InternalBdd<DdType::CUDD> InternalAdd<DdType::CUDD, storm::RationalNumber>::greaterOrEqual(storm::RationalNumber const& value) const {
+            STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Operation not supported.");
         }
         
         template<typename ValueType>
@@ -240,9 +267,19 @@ namespace storm {
             return InternalBdd<DdType::CUDD>(ddManager, ~this->getCuddAdd().BddThreshold(value));
         }
         
+        template<>
+        InternalBdd<DdType::CUDD> InternalAdd<DdType::CUDD, storm::RationalNumber>::less(storm::RationalNumber const& value) const {
+            STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Operation not supported.");
+        }
+        
         template<typename ValueType>
         InternalBdd<DdType::CUDD> InternalAdd<DdType::CUDD, ValueType>::lessOrEqual(ValueType const& value) const {
             return InternalBdd<DdType::CUDD>(ddManager, ~this->getCuddAdd().BddStrictThreshold(value));
+        }
+        
+        template<>
+        InternalBdd<DdType::CUDD> InternalAdd<DdType::CUDD, storm::RationalNumber>::lessOrEqual(storm::RationalNumber const& value) const {
+            STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Operation not supported.");
         }
         
         template<typename ValueType>
@@ -655,7 +692,21 @@ namespace storm {
             }
         }
         
+        template<>
+        DdNode* InternalAdd<DdType::CUDD, storm::RationalNumber>::fromVectorRec(::DdManager* manager, uint_fast64_t& currentOffset, uint_fast64_t currentLevel, uint_fast64_t maxLevel, std::vector<storm::RationalNumber> const& values, Odd const& odd, std::vector<uint_fast64_t> const& ddVariableIndices) {
+            STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Operation not supported");
+        }
+        
         template class InternalAdd<DdType::CUDD, double>;
+        template InternalAdd<DdType::CUDD, double> InternalAdd<DdType::CUDD, double>::toValueType<double>() const;
         template class InternalAdd<DdType::CUDD, uint_fast64_t>;
+        template InternalAdd<DdType::CUDD, uint_fast64_t> InternalAdd<DdType::CUDD, uint_fast64_t>::toValueType<uint_fast64_t>() const;
+
+#ifdef STORM_HAVE_CARL
+        template class InternalAdd<DdType::CUDD, storm::RationalNumber>;
+        template InternalAdd<DdType::CUDD, storm::RationalNumber> InternalAdd<DdType::CUDD, storm::RationalNumber>::toValueType<storm::RationalNumber>() const;
+        template InternalAdd<DdType::CUDD, storm::RationalNumber> InternalAdd<DdType::CUDD, double>::toValueType<storm::RationalNumber>() const;
+        template InternalAdd<DdType::CUDD, double> InternalAdd<DdType::CUDD, storm::RationalNumber>::toValueType<double>() const;
+#endif
     }
 }

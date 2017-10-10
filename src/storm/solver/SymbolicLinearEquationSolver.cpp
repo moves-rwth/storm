@@ -116,17 +116,20 @@ namespace storm {
         }
         
         template class SymbolicLinearEquationSolver<storm::dd::DdType::CUDD, double>;
+        template class SymbolicLinearEquationSolver<storm::dd::DdType::CUDD, storm::RationalNumber>;
+
         template class SymbolicLinearEquationSolver<storm::dd::DdType::Sylvan, double>;
-        
         template class SymbolicLinearEquationSolver<storm::dd::DdType::Sylvan, storm::RationalNumber>;
         template class SymbolicLinearEquationSolver<storm::dd::DdType::Sylvan, storm::RationalFunction>;
         
         template class SymbolicLinearEquationSolverFactory<storm::dd::DdType::CUDD, double>;
+        template class SymbolicLinearEquationSolverFactory<storm::dd::DdType::CUDD, storm::RationalNumber>;
         template class SymbolicLinearEquationSolverFactory<storm::dd::DdType::Sylvan, double>;
         template class SymbolicLinearEquationSolverFactory<storm::dd::DdType::Sylvan, storm::RationalNumber>;
         template class SymbolicLinearEquationSolverFactory<storm::dd::DdType::Sylvan, storm::RationalFunction>;
         
         template class GeneralSymbolicLinearEquationSolverFactory<storm::dd::DdType::CUDD, double>;
+        template class GeneralSymbolicLinearEquationSolverFactory<storm::dd::DdType::CUDD, storm::RationalNumber>;
         template class GeneralSymbolicLinearEquationSolverFactory<storm::dd::DdType::Sylvan, double>;
         template class GeneralSymbolicLinearEquationSolverFactory<storm::dd::DdType::Sylvan, storm::RationalNumber>;
         template class GeneralSymbolicLinearEquationSolverFactory<storm::dd::DdType::Sylvan, storm::RationalFunction>;

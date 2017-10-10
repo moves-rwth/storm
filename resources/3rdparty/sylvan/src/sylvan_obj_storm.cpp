@@ -203,6 +203,12 @@ Mtbdd::SharpenKwekMehlhorn(size_t precision) const {
     return mtbdd_sharpen(mtbdd, precision);
 }
 
+Mtbdd
+Mtbdd::ToRationalNumber() const {
+    LACE_ME;
+    return mtbdd_to_rational_number(mtbdd);
+}
+
 // Functions for Mtbdds over rational numbers.
 Mtbdd
 Mtbdd::stormRationalNumberTerminal(storm::RationalNumber const& value)

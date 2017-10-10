@@ -263,6 +263,16 @@ namespace storm {
             InternalAdd<DdType::CUDD, ValueType> maximum(InternalAdd<DdType::CUDD, ValueType> const& other) const;
             
             /*!
+             * Replaces the leaves in this MTBDD with the converted values in the target value type.
+             *
+             * @return The resulting function represented as an ADD.
+             */
+            template<typename TargetValueType>
+            typename std::enable_if<std::is_same<ValueType, TargetValueType>::value, InternalAdd<DdType::CUDD, TargetValueType>>::type toValueType() const;
+            template<typename TargetValueType>
+            typename std::enable_if<!std::is_same<ValueType, TargetValueType>::value, InternalAdd<DdType::CUDD, TargetValueType>>::type toValueType() const;
+
+            /*!
              * Sum-abstracts from the given cube.
              *
              * @param cube The cube from which to abstract.

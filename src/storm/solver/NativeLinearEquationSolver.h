@@ -6,6 +6,7 @@
 #include "storm/solver/LinearEquationSolver.h"
 
 #include "storm/solver/NativeMultiplier.h"
+#include "storm/solver/SolverStatus.h"
 
 #include "storm/utility/NumberTraits.h"
 
@@ -78,17 +79,13 @@ namespace storm {
             virtual bool internalSolveEquations(std::vector<ValueType>& x, std::vector<ValueType> const& b) const override;
             
         private:
-            enum class Status {
-                Converged, TerminatedEarly, MaximalIterationsExceeded, InProgress
-            };
-            
             struct PowerIterationResult {
-                PowerIterationResult(uint64_t iterations, Status status) : iterations(iterations), status(status) {
+                PowerIterationResult(uint64_t iterations, SolverStatus status) : iterations(iterations), status(status) {
                     // Intentionally left empty.
                 }
                 
                 uint64_t iterations;
-                Status status;
+                SolverStatus status;
             };
             
             template <typename ValueTypePrime>

@@ -1,7 +1,5 @@
 #include "storm/solver/SymbolicMinMaxLinearEquationSolver.h"
 
-
-
 #include "storm/storage/dd/DdManager.h"
 
 #include "storm/storage/dd/Add.h"
@@ -32,6 +30,7 @@ namespace storm {
             switch (method) {
                 case MinMaxMethod::ValueIteration: this->solutionMethod = SolutionMethod::ValueIteration; break;
                 case MinMaxMethod::PolicyIteration: this->solutionMethod = SolutionMethod::PolicyIteration; break;
+                case MinMaxMethod::RationalSearch: this->solutionMethod = SolutionMethod::RationalSearch; break;
                 default:
                     STORM_LOG_THROW(false, storm::exceptions::InvalidSettingsException, "Unsupported technique.");
             }
@@ -97,25 +96,25 @@ namespace storm {
                 case SymbolicMinMaxLinearEquationSolverSettings<ValueType>::SolutionMethod::PolicyIteration:
                     return solveEquationsPolicyIteration(dir, x, b);
                     break;
+                case SymbolicMinMaxLinearEquationSolverSettings<ValueType>::SolutionMethod::RationalSearch:
+                    return solveEquationsRationalSearch(dir, x, b);
+                    break;
             }
         }
         
         template<storm::dd::DdType DdType, typename ValueType>
-        storm::dd::Add<DdType, ValueType>  SymbolicMinMaxLinearEquationSolver<DdType, ValueType>::solveEquationsValueIteration(storm::solver::OptimizationDirection const& dir, storm::dd::Add<DdType, ValueType> const& x, storm::dd::Add<DdType, ValueType> const& b) const {
-            // Set up the environment.
-            storm::dd::Add<DdType, ValueType> xCopy = x;
-            uint_fast64_t iterations = 0;
-            bool converged = false;
+        typename SymbolicMinMaxLinearEquationSolver<DdType, ValueType>::ValueIterationResult SymbolicMinMaxLinearEquationSolver<DdType, ValueType>::performValueIteration(storm::solver::OptimizationDirection const& dir, storm::dd::Add<DdType, ValueType> const& x, storm::dd::Add<DdType, ValueType> const& b, ValueType const& precision, bool relativeTerminationCriterion) const {
+
+            // Set up local variables.
+            storm::dd::Add<DdType, ValueType> localX = x;
+            uint64_t iterations = 0;
             
-            // If we were given an initial scheduler, we take its solution as the starting point.
-            if (this->hasInitialScheduler()) {
-                xCopy = solveEquationsWithScheduler(this->getInitialScheduler(), xCopy, b);
-            }
-            
-            while (!converged && iterations < this->settings.getMaximalNumberOfIterations()) {
+            // Value iteration loop.
+            SolverStatus status = SolverStatus::InProgress;
+            while (status == SolverStatus::Converged && iterations < this->settings.getMaximalNumberOfIterations()) {
                 // Compute tmp = A * x + b
-                storm::dd::Add<DdType, ValueType> xCopyAsColumn = xCopy.swapVariables(this->rowColumnMetaVariablePairs);
-                storm::dd::Add<DdType, ValueType> tmp = this->A.multiplyMatrix(xCopyAsColumn, this->columnMetaVariables);
+                storm::dd::Add<DdType, ValueType> localXAsColumn = localX.swapVariables(this->rowColumnMetaVariablePairs);
+                storm::dd::Add<DdType, ValueType> tmp = this->A.multiplyMatrix(localXAsColumn, this->columnMetaVariables);
                 tmp += b;
                 
                 if (dir == storm::solver::OptimizationDirection::Minimize) {
@@ -126,20 +125,163 @@ namespace storm {
                 }
                 
                 // Now check if the process already converged within our precision.
-                converged = xCopy.equalModuloPrecision(tmp, this->settings.getPrecision(), this->settings.getRelativeTerminationCriterion());
-                
-                xCopy = tmp;
-                
+                if (localX.equalModuloPrecision(tmp, precision, relativeTerminationCriterion)) {
+                    status = SolverStatus::Converged;
+                }
+
+                // Set up next iteration.
+                localX = tmp;
                 ++iterations;
             }
             
-            if (converged) {
-                STORM_LOG_INFO("Iterative solver (value iteration) converged in " << iterations << " iterations.");
-            } else {
-                STORM_LOG_WARN("Iterative solver (value iteration) did not converge in " << iterations << " iterations.");
+            if (status != SolverStatus::Converged) {
+                status = SolverStatus::MaximalIterationsExceeded;
             }
             
-            return xCopy;
+            return SymbolicMinMaxLinearEquationSolver<DdType, ValueType>::ValueIterationResult(status, iterations, localX);
+        }
+
+        template<storm::dd::DdType DdType, typename ValueType>
+        bool SymbolicMinMaxLinearEquationSolver<DdType, ValueType>::isSolution(OptimizationDirection dir, storm::dd::Add<DdType, ValueType> const& x, storm::dd::Add<DdType, ValueType> const& b) const {
+            storm::dd::Add<DdType, ValueType> xAsColumn = x.swapVariables(this->rowColumnMetaVariablePairs);
+            storm::dd::Add<DdType, ValueType> tmp = this->A.multiplyMatrix(xAsColumn, this->columnMetaVariables);
+            tmp += b;
+            
+            if (dir == storm::solver::OptimizationDirection::Minimize) {
+                tmp += illegalMaskAdd;
+                tmp = tmp.minAbstract(this->choiceVariables);
+            } else {
+                tmp = tmp.maxAbstract(this->choiceVariables);
+            }
+            
+            return x == tmp;
+        }
+        
+        template<storm::dd::DdType DdType, typename ValueType>
+        template<typename RationalType, typename ImpreciseType>
+        storm::dd::Add<DdType, RationalType> SymbolicMinMaxLinearEquationSolver<DdType, ValueType>::sharpen(OptimizationDirection dir, uint64_t precision, SymbolicMinMaxLinearEquationSolver<DdType, RationalType> const& rationalSolver, storm::dd::Add<DdType, ImpreciseType> const& x, storm::dd::Add<DdType, RationalType> const& rationalB, bool& isSolution) {
+            
+            storm::dd::Add<DdType, RationalType> sharpenedX;
+            
+            for (uint64_t p = 1; p < precision; ++p) {
+                storm::dd::Add<DdType, RationalType> sharpenedX = x.sharpenKwekMehlhorn(precision);
+                isSolution = rationalSolver.isSolution(dir, sharpenedX, rationalB);
+                
+                if (isSolution) {
+                    break;
+                }
+            }
+            
+            return sharpenedX;
+        }
+        
+        template<storm::dd::DdType DdType, typename ValueType>
+        template<typename RationalType, typename ImpreciseType>
+        storm::dd::Add<DdType, RationalType> SymbolicMinMaxLinearEquationSolver<DdType, ValueType>::solveEquationsRationalSearchHelper(OptimizationDirection dir, SymbolicMinMaxLinearEquationSolver<DdType, RationalType> const& rationalSolver, SymbolicMinMaxLinearEquationSolver<DdType, ImpreciseType> const& impreciseSolver, storm::dd::Add<DdType, RationalType> const& rationalX, storm::dd::Add<DdType, RationalType> const& rationalB, storm::dd::Add<DdType, ImpreciseType> const& x, storm::dd::Add<DdType, ImpreciseType> const& b) const {
+            
+            // Storage for the rational sharpened vector.
+            storm::dd::Add<DdType, RationalType> sharpenedX;
+            
+            // The actual rational search.
+            uint64_t overallIterations = 0;
+            uint64_t valueIterationInvocations = 0;
+            ValueType precision = this->getSettings().getPrecision();
+            SolverStatus status = SolverStatus::InProgress;
+            while (status == SolverStatus::InProgress && overallIterations < this->getSettings().getMaximalNumberOfIterations()) {
+                typename SymbolicMinMaxLinearEquationSolver<DdType, ImpreciseType>::ValueIterationResult viResult = impreciseSolver.performValueIteration(dir, x, b, storm::utility::convertNumber<ImpreciseType, ValueType>(precision), this->getSettings().getRelativeTerminationCriterion());
+                
+                ++valueIterationInvocations;
+                STORM_LOG_TRACE("Completed " << valueIterationInvocations << " value iteration invocations, the last one with precision " << precision << " completed in " << viResult.iterations << " iterations.");
+
+                // Count the iterations.
+                overallIterations += viResult.iterations;
+                
+                // Compute maximal precision until which to sharpen.
+                uint64_t p = storm::utility::convertNumber<uint64_t>(storm::utility::ceil(storm::utility::log10<ValueType>(storm::utility::one<ValueType>() / precision)));
+
+                bool isSolution = false;
+                storm::dd::Add<DdType, RationalType> sharpenedX = sharpen<RationalType, ImpreciseType>(dir, p, rationalSolver, viResult.values, rationalB, isSolution);
+                
+                if (isSolution) {
+                    status = SolverStatus::Converged;
+                } else {
+                    precision = precision / 100;
+                }
+            }
+            
+            if (status == SolverStatus::InProgress) {
+                status = SolverStatus::MaximalIterationsExceeded;
+            }
+            
+            if (status == SolverStatus::Converged) {
+                STORM_LOG_INFO("Iterative solver (rational search) converged in " << overallIterations << " iterations.");
+            } else {
+                STORM_LOG_WARN("Iterative solver (rational search) did not converge in " << overallIterations << " iterations.");
+            }
+            
+            return sharpenedX;
+        }
+
+        template<storm::dd::DdType DdType, typename ValueType>
+        template<typename ImpreciseType>
+        typename std::enable_if<std::is_same<ValueType, ImpreciseType>::value && storm::NumberTraits<ValueType>::IsExact, storm::dd::Add<DdType, ValueType>>::type SymbolicMinMaxLinearEquationSolver<DdType, ValueType>::solveEquationsRationalSearchHelper(storm::solver::OptimizationDirection const& dir, storm::dd::Add<DdType, ValueType> const& x, storm::dd::Add<DdType, ValueType> const& b) const {
+            
+            storm::dd::Add<DdType, storm::RationalNumber> rationalX = x.template toValueType<storm::RationalNumber>();
+            storm::dd::Add<DdType, storm::RationalNumber> rationalB = b.template toValueType<storm::RationalNumber>();
+            SymbolicMinMaxLinearEquationSolver<DdType, storm::RationalNumber> rationalSolver;
+            
+            storm::dd::Add<DdType, storm::RationalNumber> rationalResult = solveEquationsRationalSearchHelper<storm::RationalNumber, ImpreciseType>(dir, *this, *this, rationalX, rationalB, x, b);
+            return rationalResult.template toValueType<ValueType>();
+        }
+        
+        template<storm::dd::DdType DdType, typename ValueType>
+        template<typename ImpreciseType>
+        typename std::enable_if<std::is_same<ValueType, ImpreciseType>::value && !storm::NumberTraits<ValueType>::IsExact, storm::dd::Add<DdType, ValueType>>::type SymbolicMinMaxLinearEquationSolver<DdType, ValueType>::solveEquationsRationalSearchHelper(storm::solver::OptimizationDirection const& dir, storm::dd::Add<DdType, ValueType> const& x, storm::dd::Add<DdType, ValueType> const& b) const {
+
+            storm::dd::Add<DdType, storm::RationalNumber> rationalX = x.template toValueType<storm::RationalNumber>();
+            storm::dd::Add<DdType, storm::RationalNumber> rationalB = b.template toValueType<storm::RationalNumber>();
+            SymbolicMinMaxLinearEquationSolver<DdType, storm::RationalNumber> rationalSolver;
+            
+            storm::dd::Add<DdType, storm::RationalNumber> rationalResult = solveEquationsRationalSearchHelper<storm::RationalNumber, ImpreciseType>(dir, rationalSolver, *this, rationalX, rationalB, x, b);
+            return rationalResult.template toValueType<ValueType>();
+        }
+
+        template<storm::dd::DdType DdType, typename ValueType>
+        template<typename ImpreciseType>
+        typename std::enable_if<!std::is_same<ValueType, ImpreciseType>::value, storm::dd::Add<DdType, ValueType>>::type SymbolicMinMaxLinearEquationSolver<DdType, ValueType>::solveEquationsRationalSearchHelper(storm::solver::OptimizationDirection const& dir, storm::dd::Add<DdType, ValueType> const& x, storm::dd::Add<DdType, ValueType> const& b) const {
+            
+            storm::dd::Add<DdType, ImpreciseType> impreciseX = x.template toValueType<ImpreciseType>();
+            storm::dd::Add<DdType, ImpreciseType> impreciseB = b.template toValueType<ImpreciseType>();
+            SymbolicMinMaxLinearEquationSolver<DdType, ImpreciseType> impreciseSolver;
+
+            storm::dd::Add<DdType, ValueType> rationalResult = solveEquationsRationalSearchHelper<ValueType, ImpreciseType>(dir, *this, impreciseSolver, x, b, impreciseX, impreciseB);
+            return rationalResult.template toValueType<ValueType>();
+        }
+
+        template<storm::dd::DdType DdType, typename ValueType>
+        storm::dd::Add<DdType, ValueType> SymbolicMinMaxLinearEquationSolver<DdType, ValueType>::solveEquationsRationalSearch(storm::solver::OptimizationDirection const& dir, storm::dd::Add<DdType, ValueType> const& x, storm::dd::Add<DdType, ValueType> const& b) const {
+            return solveEquationsRationalSearchHelper<double>(dir, x, b);
+        }
+        
+        template<storm::dd::DdType DdType, typename ValueType>
+        storm::dd::Add<DdType, ValueType>  SymbolicMinMaxLinearEquationSolver<DdType, ValueType>::solveEquationsValueIteration(storm::solver::OptimizationDirection const& dir, storm::dd::Add<DdType, ValueType> const& x, storm::dd::Add<DdType, ValueType> const& b) const {
+            // Set up the environment.
+            storm::dd::Add<DdType, ValueType> localX = x;
+            
+            // If we were given an initial scheduler, we take its solution as the starting point.
+            if (this->hasInitialScheduler()) {
+                localX = solveEquationsWithScheduler(this->getInitialScheduler(), x, b);
+            }
+            
+            ValueIterationResult viResult = performValueIteration(dir, localX, b, this->getSettings().getPrecision(), this->getSettings().getRelativeTerminationCriterion());
+            
+            if (viResult.status == SolverStatus::Converged) {
+                STORM_LOG_INFO("Iterative solver (value iteration) converged in " << viResult.iterations << " iterations.");
+            } else {
+                STORM_LOG_WARN("Iterative solver (value iteration) did not converge in " << viResult.iterations << " iterations.");
+            }
+            
+            return viResult.values;
         }
         
         template<storm::dd::DdType DdType, typename ValueType>

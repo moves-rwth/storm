@@ -266,7 +266,9 @@ namespace storm {
              * @return The resulting function represented as an ADD.
              */
             template<typename TargetValueType>
-            Add<LibraryType, TargetValueType> toValueType() const;
+            typename std::enable_if<std::is_same<TargetValueType, ValueType>::value, Add<LibraryType, TargetValueType>>::type toValueType() const;
+            template<typename TargetValueType>
+            typename std::enable_if<!std::is_same<TargetValueType, ValueType>::value, Add<LibraryType, TargetValueType>>::type toValueType() const;
 
             /*!
              * Sum-abstracts from the given meta variables.

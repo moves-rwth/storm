@@ -436,6 +436,9 @@ ExternalProject_Add(
         LOG_BUILD ON
         DEPENDS ${sylvan_dep}
         BUILD_BYPRODUCTS ${STORM_3RDPARTY_BINARY_DIR}/sylvan/src/libsylvan${STATIC_EXT}
+        
+        // FIXME: remove
+        BUILD_ALWAYS 1
 )
 
 ExternalProject_Get_Property(sylvan source_dir)
