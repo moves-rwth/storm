@@ -406,19 +406,32 @@ namespace storm {
         template<storm::dd::DdType DdType, typename ValueType>
         MinMaxLinearEquationSolverRequirements SymbolicMinMaxLinearEquationSolver<DdType, ValueType>::getRequirements(EquationSystemType const& equationSystemType, boost::optional<storm::solver::OptimizationDirection> const& direction) const {
             MinMaxLinearEquationSolverRequirements requirements;
-            
-            if (equationSystemType == EquationSystemType::UntilProbabilities) {
-                if (this->getSettings().getSolutionMethod() == SymbolicMinMaxLinearEquationSolverSettings<ValueType>::SolutionMethod::PolicyIteration) {
+
+            if (this->getSettings().getSolutionMethod() == SymbolicMinMaxLinearEquationSolverSettings<ValueType>::SolutionMethod::PolicyIteration) {
+                if (equationSystemType == EquationSystemType::UntilProbabilities) {
                     if (!direction || direction.get() == OptimizationDirection::Maximize) {
                         requirements.requireValidInitialScheduler();
                     }
                 }
-            } else if (equationSystemType == EquationSystemType::ReachabilityRewards) {
-                if (!direction || direction.get() == OptimizationDirection::Minimize) {
-                    requirements.requireValidInitialScheduler();
+                if (equationSystemType == EquationSystemType::ReachabilityRewards) {
+                    if (!direction || direction.get() == OptimizationDirection::Minimize) {
+                        requirements.requireValidInitialScheduler();
+                    }
+                }
+            } else if (this->getSettings().getSolutionMethod() == SymbolicMinMaxLinearEquationSolverSettings<ValueType>::SolutionMethod::ValueIteration) {
+                if (equationSystemType == EquationSystemType::ReachabilityRewards) {
+                    if (!direction || direction.get() == OptimizationDirection::Minimize) {
+                        requirements.requireValidInitialScheduler();
+                    }
+                }
+            } else if (this->getSettings().getSolutionMethod() == SymbolicMinMaxLinearEquationSolverSettings<ValueType>::SolutionMethod::RationalSearch) {
+                if (equationSystemType == EquationSystemType::ReachabilityRewards) {
+                    if (!direction || direction.get() == OptimizationDirection::Minimize) {
+                        requirements.requireNoEndComponents();
+                    }
                 }
             }
-            
+
             return requirements;
         }
         
