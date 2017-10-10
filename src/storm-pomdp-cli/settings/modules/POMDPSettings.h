@@ -25,6 +25,13 @@ namespace storm {
                 bool isExportToParametricSet() const;
                 std::string getExportToParametricFilename() const;
                 
+                bool isQualitativeReductionSet() const;
+                bool isAnalyzeUniqueObservationsSet() const;
+                bool isMecReductionSet() const;
+                bool isSelfloopReductionSet() const;
+                uint64_t getMemoryBound() const;
+                
+                
                 bool check() const override;
                 void finalize() override;
 
