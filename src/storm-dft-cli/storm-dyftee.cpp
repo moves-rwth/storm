@@ -28,6 +28,7 @@
 #include "storm-gspn/storm-gspn.h"
 #include "storm/settings/modules/GSPNSettings.h"
 #include "storm/settings/modules/GSPNExportSettings.h"
+#include "storm-cli-utilities/cli.cpp"
 
 
 #include <boost/lexical_cast.hpp>
@@ -125,23 +126,12 @@ void initializeSettings() {
     storm::settings::addModule<storm::settings::modules::JaniExportSettings>();
 }
 
-/*!
- * Entry point for the DyFTeE backend.
- *
- * @param argc The argc argument of main().
- * @param argv The argv argument of main().
- * @return Return code, 0 if successfull, not 0 otherwise.
- */
-int main(const int argc, const char** argv) {
-    try {
-        storm::utility::setUp();
-        storm::cli::printHeader("Storm-DyFTeE", argc, argv);
-        initializeSettings();
-        
-        bool optionsCorrect = storm::cli::parseOptions(argc, argv);
-        if (!optionsCorrect) {
-            return -1;
-        }
+
+void processOptions() {
+        // Start by setting some urgent options (log levels, resources, etc.)
+        storm::cli::setUrgentOptions();
+
+        storm::cli::processOptions();
         
         storm::settings::modules::DFTSettings const& dftSettings = storm::settings::getModule<storm::settings::modules::DFTSettings>();
         storm::settings::modules::GeneralSettings const& generalSettings = storm::settings::getModule<storm::settings::modules::GeneralSettings>();
@@ -157,7 +147,7 @@ int main(const int argc, const char** argv) {
             // Export to json
             storm::storage::DftJsonExporter<double>::toFile(dft, dftSettings.getExportJsonFilename());
             storm::utility::cleanUp();
-            return 0;
+            return;
         }
 
         
@@ -199,7 +189,7 @@ int main(const int argc, const char** argv) {
             delete model;
             delete gspn;
             storm::utility::cleanUp();
-            return 0;
+            return;
         }
         
         bool parametric = false;
@@ -216,7 +206,7 @@ int main(const int argc, const char** argv) {
                 analyzeWithSMT<double>(dftSettings.getDftFilename());
             }
             storm::utility::cleanUp();
-            return 0;
+            return;
         }
 #endif
         
@@ -272,7 +262,38 @@ int main(const int argc, const char** argv) {
         } else {
             analyzeDFT<double>(properties, dftSettings.useSymmetryReduction(), dftSettings.useModularisation(), !dftSettings.isDisableDC(), approximationError);
         }
-        
+}
+
+/*!
+ * Entry point for the DyFTeE backend.
+ *
+ * @param argc The argc argument of main().
+ * @param argv The argv argument of main().
+ * @return Return code, 0 if successfull, not 0 otherwise.
+ */
+/*!
+ * Main entry point of the executable storm-pars.
+ */
+int main(const int argc, const char** argv) {
+    try {
+        storm::utility::setUp();
+        storm::cli::printHeader("Storm-DyFTeE", argc, argv);
+        //storm::settings::initializeParsSettings("Storm-pars", "storm-pars");
+        initializeSettings();
+
+        storm::utility::Stopwatch totalTimer(true);
+        if (!storm::cli::parseOptions(argc, argv)) {
+            return -1;
+        }
+
+        processOptions();
+        //storm::pars::processOptions();
+
+        totalTimer.stop();
+        if (storm::settings::getModule<storm::settings::modules::ResourceSettings>().isPrintTimeAndMemorySet()) {
+            storm::cli::printTimeAndMemoryStatistics(totalTimer.getTimeInMilliseconds());
+        }
+
         // All operations have now been performed, so we clean up everything and terminate.
         storm::utility::cleanUp();
         return 0;
