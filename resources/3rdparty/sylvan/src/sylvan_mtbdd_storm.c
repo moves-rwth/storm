@@ -639,14 +639,14 @@ TASK_IMPL_2(MTBDD, mtbdd_op_to_rational_number, MTBDD, a, size_t, p)
             assert(0);
         }
     }
-    
+
     return mtbdd_invalid;
     (void)p; // unused variable
 }
 
 TASK_IMPL_2(MTBDD, mtbdd_to_rational_number, MTBDD, dd, size_t, p)
 {
-    return mtbdd_uapply(dd, TASK(mtbdd_to_rational_number), 0);
+    return mtbdd_uapply(dd, TASK(mtbdd_op_to_rational_number), 0);
 }
 
 

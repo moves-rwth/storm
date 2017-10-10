@@ -868,7 +868,7 @@ TEST(SylvanDd, AddToRationalTest) {
     std::map<storm::expressions::Variable, int_fast64_t> metaVariableToValueMap;
     metaVariableToValueMap.emplace(x.first, 4);
     
-    ASSERT_EQ(storm::utility::convertNumber<storm::RationalNumber>(std::string("4/10")), rationalDd.getValue(metaVariableToValueMap));
+    ASSERT_EQ(storm::utility::convertNumber<storm::RationalNumber>(std::string("3602879701896397/9007199254740992")), rationalDd.getValue(metaVariableToValueMap));
 }
 
 
