@@ -2,6 +2,7 @@
 
 #include <iostream>
 #include <string>
+#include <boost/algorithm/string/predicate.hpp>
 
 #include "storm/models/sparse/MarkovAutomaton.h"
 #include "storm/models/sparse/Ctmc.h"
@@ -58,46 +59,55 @@ namespace storm {
 
             // Initialize
             ValueParser<ValueType> valueParser;
+            bool sawType = false;
+            bool sawParameters = false;
+            size_t nrStates = 0;
+            storm::models::ModelType type;
+
+             std::shared_ptr<storm::storage::sparse::ModelComponents<ValueType, RewardModelType>> modelComponents;
 
             // Parse header
-            std::getline(file, line);
-            STORM_LOG_THROW(line == "// Exported by storm", storm::exceptions::WrongFormatException, "Expected header information.");
-            std::getline(file, line);
-            STORM_LOG_THROW(boost::starts_with(line, "// Original model type: "), storm::exceptions::WrongFormatException, "Expected header information.");
-            // Parse model type
-            std::getline(file, line);
-            STORM_LOG_THROW(boost::starts_with(line, "@type: "), storm::exceptions::WrongFormatException, "Expected model type.");
-            storm::models::ModelType type = storm::models::getModelType(line.substr(7));
-            STORM_LOG_TRACE("Model type: " << type);
-            STORM_LOG_THROW(type != storm::models::ModelType::MarkovAutomaton, storm::exceptions::NotSupportedException, "Markov Automata in DRN format are not supported (unclear indication of Markovian Choices in DRN format)");
-            STORM_LOG_THROW(type != storm::models::ModelType::S2pg, storm::exceptions::NotSupportedException, "Stochastic Two Player Games in DRN format are not supported.");
-            
-            // Parse parameters
-            std::getline(file, line);
-            STORM_LOG_THROW(line == "@parameters", storm::exceptions::WrongFormatException, "Expected parameter declaration.");
-            std::getline(file, line);
-            if (line != "") {
-                std::vector<std::string> parameters;
-                boost::split(parameters, line, boost::is_any_of(" "));
-                for (std::string parameter : parameters) {
-                    STORM_LOG_TRACE("New parameter: " << parameter);
-                    valueParser.addParameter(parameter);
+            while(std::getline(file, line)) {
+                if(line.empty() || boost::starts_with(line, "//")) {
+                    continue;
+                }
+
+                if (boost::starts_with(line, "@type: ")) {
+                    STORM_LOG_THROW(!sawType, storm::exceptions::WrongFormatException, "Type declared twice");
+                    type = storm::models::getModelType(line.substr(7));
+                    STORM_LOG_TRACE("Model type: " << type);
+                    STORM_LOG_THROW(type != storm::models::ModelType::MarkovAutomaton, storm::exceptions::NotSupportedException, "Markov Automata in DRN format are not supported (unclear indication of Markovian Choices in DRN format)");
+                    STORM_LOG_THROW(type != storm::models::ModelType::S2pg, storm::exceptions::NotSupportedException, "Stochastic Two Player Games in DRN format are not supported.");
+                    sawType = true;
+                }
+                if(line == "@parameters") {
+                    std::getline(file, line);
+                    if (line != "") {
+                        std::vector<std::string> parameters;
+                        boost::split(parameters, line, boost::is_any_of(" "));
+                        for (std::string parameter : parameters) {
+                            STORM_LOG_TRACE("New parameter: " << parameter);
+                            valueParser.addParameter(parameter);
+                        }
+                    }
+                    sawParameters = true;
+                }
+                if(line == "@nr_states") {
+                    STORM_LOG_THROW(nrStates == 0, storm::exceptions::WrongFormatException, "Number states declared twice");
+                    std::getline(file, line);
+                    nrStates = boost::lexical_cast<size_t>(line);
+
+                }
+                if(line == "@model") {
+                    STORM_LOG_THROW(sawType, storm::exceptions::WrongFormatException, "Type has to be declared before model.");
+                    STORM_LOG_THROW(sawParameters, storm::exceptions::WrongFormatException, "Parameters have to be declared before model.");
+                    STORM_LOG_THROW(nrStates != 0, storm::exceptions::WrongFormatException, "Nr States has to be declared before model.");
+
+                    // Construct model components
+                    modelComponents = parseStates(file, type, nrStates, valueParser);
+                    break;
                 }
             }
-
-            // Parse no. states
-            std::getline(file, line);
-            STORM_LOG_THROW(line == "@nr_states", storm::exceptions::WrongFormatException, "Expected number of states.");
-            std::getline(file, line);
-            size_t nrStates = boost::lexical_cast<size_t>(line);
-            STORM_LOG_TRACE("Model type: " << type);
-
-            std::getline(file, line);
-            STORM_LOG_THROW(line == "@model", storm::exceptions::WrongFormatException, "Expected model declaration.");
-
-            // Construct model components
-            std::shared_ptr<storm::storage::sparse::ModelComponents<ValueType, RewardModelType>> modelComponents = parseStates(file, type, nrStates, valueParser);
-            
             // Done parsing
             storm::utility::closeFile(file);
 

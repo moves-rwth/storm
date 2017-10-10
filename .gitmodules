@@ -1,3 +1,0 @@
-[submodule "resources/3rdparty/cusplibrary"]
-	path = resources/3rdparty/cusplibrary
-	url = https://github.com/cusplibrary/cusplibrary.git

@@ -110,23 +110,7 @@ namespace storm {
         void MinMaxLinearEquationSolver<ValueType>::clearCache() const {
             // Intentionally left empty.
         }
-        
-        template<typename ValueType>
-        void MinMaxLinearEquationSolver<ValueType>::setLowerBound(ValueType const& value) {
-            lowerBound = value;
-        }
-        
-        template<typename ValueType>
-        void MinMaxLinearEquationSolver<ValueType>::setUpperBound(ValueType const& value) {
-            upperBound = value;
-        }
-        
-        template<typename ValueType>
-        void MinMaxLinearEquationSolver<ValueType>::setBounds(ValueType const& lower, ValueType const& upper) {
-            setLowerBound(lower);
-            setUpperBound(upper);
-        }
-        
+                
         template<typename ValueType>
         void MinMaxLinearEquationSolver<ValueType>::setInitialScheduler(std::vector<uint_fast64_t>&& choices) {
             initialScheduler = std::move(choices);
@@ -143,7 +127,7 @@ namespace storm {
         }
         
         template<typename ValueType>
-        MinMaxLinearEquationSolverRequirements MinMaxLinearEquationSolver<ValueType>::getRequirements(MinMaxLinearEquationSolverSystemType const& equationSystemType, boost::optional<storm::solver::OptimizationDirection> const& direction) const {
+        MinMaxLinearEquationSolverRequirements MinMaxLinearEquationSolver<ValueType>::getRequirements(EquationSystemType const& equationSystemType, boost::optional<storm::solver::OptimizationDirection> const& direction) const {
             return MinMaxLinearEquationSolverRequirements();
         }
         
@@ -189,7 +173,7 @@ namespace storm {
                 auto const& minMaxSettings = storm::settings::getModule<storm::settings::modules::MinMaxEquationSolverSettings>();
                 if (std::is_same<ValueType, storm::RationalNumber>::value) {
                     if (minMaxSettings.isMinMaxEquationSolvingMethodSetFromDefaultValue() && minMaxSettings.getMinMaxEquationSolvingMethod() != MinMaxMethod::PolicyIteration) {
-                        STORM_LOG_WARN("Selecting policy iteration as the solution method to guarantee exact results. If you want to override this, please explicitly specify a different method.");
+                        STORM_LOG_INFO("Selecting policy iteration as the solution method to guarantee exact results. If you want to override this, please explicitly specify a different method.");
                         this->setMinMaxMethod(MinMaxMethod::PolicyIteration);
                         wasSet = true;
                     }
@@ -215,7 +199,7 @@ namespace storm {
         }
         
         template<typename ValueType>
-        MinMaxLinearEquationSolverRequirements MinMaxLinearEquationSolverFactory<ValueType>::getRequirements(MinMaxLinearEquationSolverSystemType const& equationSystemType, boost::optional<storm::solver::OptimizationDirection> const& direction) const {
+        MinMaxLinearEquationSolverRequirements MinMaxLinearEquationSolverFactory<ValueType>::getRequirements(EquationSystemType const& equationSystemType, boost::optional<storm::solver::OptimizationDirection> const& direction) const {
             // Create dummy solver and ask it for requirements.
             std::unique_ptr<MinMaxLinearEquationSolver<ValueType>> solver = this->create();
             return solver->getRequirements(equationSystemType, direction);

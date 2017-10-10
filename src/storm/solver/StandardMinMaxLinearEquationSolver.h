@@ -27,6 +27,7 @@ namespace storm {
             // possibly cached data
             mutable std::unique_ptr<storm::solver::LinearEquationSolver<ValueType>> linEqSolverA;
             mutable std::unique_ptr<std::vector<ValueType>> auxiliaryRowVector; // A.rowCount() entries
+            mutable std::unique_ptr<std::vector<ValueType>> auxiliaryRowGroupVector; // A.rowCount() entries
             
             /// The factory used to obtain linear equation solvers.
             std::unique_ptr<LinearEquationSolverFactory<ValueType>> linearEquationSolverFactory;

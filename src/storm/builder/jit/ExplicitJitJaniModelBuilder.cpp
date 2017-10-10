@@ -3,6 +3,7 @@
 #include <iostream>
 #include <cstdio>
 #include <chrono>
+#include <errno.h>
 
 #include "storm/solver/SmtSolver.h"
 
@@ -163,7 +164,7 @@ namespace storm {
                 STORM_LOG_TRACE("Executing command: " << command);
                 
                 std::unique_ptr<FILE> pipe(popen(command.c_str(), "r"));
-                STORM_LOG_THROW(pipe, storm::exceptions::InvalidStateException, "Call to popen failed.");
+                STORM_LOG_THROW(pipe, storm::exceptions::InvalidStateException, "Call to popen failed: " << strerror(errno));
                 
                 while (!feof(pipe.get())) {
                     if (fgets(buffer, 128, pipe.get()) != nullptr)
@@ -528,13 +529,13 @@ namespace storm {
                 }
                 modelData["exploration_checks"] = cpptempl::make_data(list);
                 list = cpptempl::data_list();
-                if (options.isExplorationShowProgressSet()) {
+                if (options.isShowProgressSet()) {
                     list.push_back(cpptempl::data_map());
                 }
                 modelData["expl_progress"] = cpptempl::make_data(list);
                 
                 std::stringstream progressDelayStream;
-                progressDelayStream << options.getExplorationShowProgressDelay();
+                progressDelayStream << options.getShowProgressDelay();
                 modelData["expl_progress_interval"] = cpptempl::make_data(progressDelayStream.str());
                 list = cpptempl::data_list();
                 if (std::is_same<storm::RationalNumber, ValueType>::value) {

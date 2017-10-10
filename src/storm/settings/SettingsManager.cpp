@@ -61,7 +61,6 @@ namespace storm {
             this->executableName = executableName;
         }
 
-
         void SettingsManager::setFromCommandLine(int const argc, char const * const argv[]) {
             // We convert the arguments to a vector of strings and strip off the first element since it refers to the
             // name of the program.
@@ -289,7 +288,6 @@ namespace storm {
                     this->addOption(option);
                 }
             }
-
         }
         
         void SettingsManager::addOption(std::shared_ptr<Option> const& option) {
@@ -390,7 +388,6 @@ namespace storm {
             for (auto const& nameModulePair : this->modules) {
                 nameModulePair.second->finalize();
                 nameModulePair.second->check();
-
             }
         }
         

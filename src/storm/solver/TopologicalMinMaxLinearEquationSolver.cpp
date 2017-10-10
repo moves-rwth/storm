@@ -25,7 +25,7 @@ namespace storm {
         template<typename ValueType>
         TopologicalMinMaxLinearEquationSolver<ValueType>::TopologicalMinMaxLinearEquationSolver(double precision, uint_fast64_t maximalNumberOfIterations, bool relative) : precision(precision), maximalNumberOfIterations(maximalNumberOfIterations), relative(relative) {
             // Get the settings object to customize solving.
-            this->enableCuda = storm::settings::getModule<storm::settings::modules::CoreSettings>().isCudaSet();
+            this->enableCuda = storm::settings::getModule<storm::settings::modules::CoreSettings>().isUseCudaSet();
 #ifdef STORM_HAVE_CUDA
             STORM_LOG_INFO_COND(this->enableCuda, "Option CUDA was not set, but the topological value iteration solver will use it anyways.");
 #endif

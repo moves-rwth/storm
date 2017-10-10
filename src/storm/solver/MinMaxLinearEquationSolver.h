@@ -12,7 +12,7 @@
 #include "storm/storage/sparse/StateType.h"
 #include "storm/storage/Scheduler.h"
 #include "storm/solver/OptimizationDirection.h"
-#include "storm/solver/MinMaxLinearEquationSolverSystemType.h"
+#include "storm/solver/EquationSystemType.h"
 #include "storm/solver/MinMaxLinearEquationSolverRequirements.h"
 
 #include "storm/exceptions/InvalidSettingsException.h"
@@ -135,22 +135,7 @@ namespace storm {
              * Clears the currently cached data that has been stored during previous calls of the solver.
              */
             virtual void clearCache() const;
-            
-            /*!
-             * Sets a lower bound for the solution that can potentially used by the solver.
-             */
-            void setLowerBound(ValueType const& value);
-            
-            /*!
-             * Sets an upper bound for the solution that can potentially used by the solver.
-             */
-            void setUpperBound(ValueType const& value);
-            
-            /*!
-             * Sets bounds for the solution that can potentially used by the solver.
-             */
-            void setBounds(ValueType const& lower, ValueType const& upper);
-            
+
             /*!
              * Sets a valid initial scheduler that is required by some solvers (see requirements of solvers).
              */
@@ -170,7 +155,7 @@ namespace storm {
              * Retrieves the requirements of this solver for solving equations with the current settings. The requirements
              * are guaranteed to be ordered according to their appearance in the SolverRequirement type.
              */
-            virtual MinMaxLinearEquationSolverRequirements getRequirements(MinMaxLinearEquationSolverSystemType const& equationSystemType, boost::optional<storm::solver::OptimizationDirection> const& direction = boost::none) const;
+            virtual MinMaxLinearEquationSolverRequirements getRequirements(EquationSystemType const& equationSystemType, boost::optional<storm::solver::OptimizationDirection> const& direction = boost::none) const;
             
             /*!
              * Notifies the solver that the requirements for solving equations have been checked. If this has not been
@@ -185,7 +170,7 @@ namespace storm {
             
         protected:
             virtual bool internalSolveEquations(OptimizationDirection d, std::vector<ValueType>& x, std::vector<ValueType> const& b) const = 0;
-            
+                        
             /// The optimization direction to use for calls to functions that do not provide it explicitly. Can also be unset.
             OptimizationDirectionSetting direction;
             
@@ -194,12 +179,6 @@ namespace storm {
             
             /// The scheduler choices that induce the optimal values (if they could be successfully generated).
             mutable boost::optional<std::vector<uint_fast64_t>> schedulerChoices;
-            
-            // A lower bound if one was set.
-            boost::optional<ValueType> lowerBound;
-            
-            // An upper bound if one was set.
-            boost::optional<ValueType> upperBound;
             
             // A scheduler that can be used by solvers that require a valid initial scheduler.
             boost::optional<std::vector<uint_fast64_t>> initialScheduler;
@@ -233,7 +212,7 @@ namespace storm {
              * Retrieves the requirements of the solver that would be created when calling create() right now. The
              * requirements are guaranteed to be ordered according to their appearance in the SolverRequirement type.
              */
-            MinMaxLinearEquationSolverRequirements getRequirements(MinMaxLinearEquationSolverSystemType const& equationSystemType, boost::optional<storm::solver::OptimizationDirection> const& direction = boost::none) const;
+            MinMaxLinearEquationSolverRequirements getRequirements(EquationSystemType const& equationSystemType, boost::optional<storm::solver::OptimizationDirection> const& direction = boost::none) const;
             void setRequirementsChecked(bool value = true);
             bool isRequirementsCheckedSet() const;
 

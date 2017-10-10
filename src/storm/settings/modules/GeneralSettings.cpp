@@ -22,6 +22,7 @@ namespace storm {
             const std::string GeneralSettings::versionOptionName = "version";
             const std::string GeneralSettings::verboseOptionName = "verbose";
             const std::string GeneralSettings::verboseOptionShortName = "v";
+            const std::string GeneralSettings::showProgressOptionName = "progress";
             const std::string GeneralSettings::precisionOptionName = "precision";
             const std::string GeneralSettings::precisionOptionShortName = "eps";
             const std::string GeneralSettings::configOptionName = "config";
@@ -30,12 +31,14 @@ namespace storm {
             const std::string GeneralSettings::bisimulationOptionShortName = "bisim";
             const std::string GeneralSettings::parametricOptionName = "parametric";
             const std::string GeneralSettings::exactOptionName = "exact";
+            const std::string GeneralSettings::soundOptionName = "sound";
 
             GeneralSettings::GeneralSettings() : ModuleSettings(moduleName) {
                 this->addOption(storm::settings::OptionBuilder(moduleName, helpOptionName, false, "Shows all available options, arguments and descriptions.").setShortName(helpOptionShortName)
                                 .addArgument(storm::settings::ArgumentBuilder::createStringArgument("hint", "A regular expression to show help for all matching entities or 'all' for the complete help.").setDefaultValueString("all").build()).build());
                 this->addOption(storm::settings::OptionBuilder(moduleName, versionOptionName, false, "Prints the version information.").build());
                 this->addOption(storm::settings::OptionBuilder(moduleName, verboseOptionName, false, "Enables more verbose output.").setShortName(verboseOptionShortName).build());
+                this->addOption(storm::settings::OptionBuilder(moduleName, showProgressOptionName, false, "Sets when additional information (if available) about the progress is printed.").addArgument(storm::settings::ArgumentBuilder::createUnsignedIntegerArgument("delay", "The delay to wait (in seconds) between emitting information (0 means never print progress).").setDefaultValueUnsignedInteger(5).build()).build());
                 this->addOption(storm::settings::OptionBuilder(moduleName, precisionOptionName, false, "The internally used precision.").setShortName(precisionOptionShortName)
                                 .addArgument(storm::settings::ArgumentBuilder::createDoubleArgument("value", "The precision to use.").setDefaultValueDouble(1e-06).addValidatorDouble(ArgumentValidatorFactory::createDoubleRangeValidatorExcluding(0.0, 1.0)).build()).build());
                 this->addOption(storm::settings::OptionBuilder(moduleName, configOptionName, false, "If given, this file will be read and parsed for additional configuration settings.").setShortName(configOptionShortName)
@@ -43,6 +46,7 @@ namespace storm {
                 this->addOption(storm::settings::OptionBuilder(moduleName, bisimulationOptionName, false, "Sets whether to perform bisimulation minimization.").setShortName(bisimulationOptionShortName).build());
                 this->addOption(storm::settings::OptionBuilder(moduleName, parametricOptionName, false, "Sets whether to enable parametric model checking.").build());
                 this->addOption(storm::settings::OptionBuilder(moduleName, exactOptionName, false, "Sets whether to enable exact model checking.").build());
+                this->addOption(storm::settings::OptionBuilder(moduleName, soundOptionName, false, "Sets whether to force sound model checking.").build());
             }
             
             bool GeneralSettings::isHelpSet() const {
@@ -59,6 +63,10 @@ namespace storm {
             
             bool GeneralSettings::isVerboseSet() const {
                 return this->getOption(verboseOptionName).getHasOptionBeenSet();
+            }
+            
+            uint64_t GeneralSettings::getShowProgressDelay() const {
+                return this->getOption(showProgressOptionName).getArgumentByName("delay").getValueAsUnsignedInteger();
             }
             
             double GeneralSettings::getPrecision() const {
@@ -84,6 +92,10 @@ namespace storm {
 
             bool GeneralSettings::isExactSet() const {
                 return this->getOption(exactOptionName).getHasOptionBeenSet();
+            }
+            
+            bool GeneralSettings::isSoundSet() const {
+                return this->getOption(soundOptionName).getHasOptionBeenSet();
             }
             
             void GeneralSettings::finalize() {

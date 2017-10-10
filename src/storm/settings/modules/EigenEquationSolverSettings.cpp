@@ -106,6 +106,16 @@ namespace storm {
                 return true;
             }
             
+            std::ostream& operator<<(std::ostream& out, EigenEquationSolverSettings::LinearEquationMethod const& method) {
+                switch (method) {
+                    case EigenEquationSolverSettings::LinearEquationMethod::BiCGSTAB: out << "bicgstab"; break;
+                    case EigenEquationSolverSettings::LinearEquationMethod::GMRES: out << "gmres"; break;
+                    case EigenEquationSolverSettings::LinearEquationMethod::DGMRES: out << "dgmres"; break;
+                    case EigenEquationSolverSettings::LinearEquationMethod::SparseLU: out << "sparselu"; break;
+                }
+                return out;
+            }
+            
         } // namespace modules
     } // namespace settings
 } // namespace storm

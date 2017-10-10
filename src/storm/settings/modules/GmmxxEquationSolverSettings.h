@@ -13,13 +13,10 @@ namespace storm {
             class GmmxxEquationSolverSettings : public ModuleSettings {
             public:
                 // An enumeration of all available methods for solving linear equations.
-                enum class LinearEquationMethod { Bicgstab, Qmr, Gmres, Jacobi };
+                enum class LinearEquationMethod { Bicgstab, Qmr, Gmres };
 
                 // An enumeration of all available preconditioning methods.
                 enum class PreconditioningMethod { Ilu, Diagonal, None };
-                
-                // An enumeration of all available convergence criteria.
-                enum class ConvergenceCriterion { Absolute, Relative };
                 
                 /*!
                  * Creates a new set of gmm++ settings.
@@ -95,21 +92,7 @@ namespace storm {
                  * @return The precision to use for detecting convergence.
                  */
                 double getPrecision() const;
-                
-                /*!
-                 * Retrieves whether the convergence criterion has been set.
-                 *
-                 * @return True iff the convergence criterion has been set.
-                 */
-                bool isConvergenceCriterionSet() const;
-                
-                /*!
-                 * Retrieves the selected convergence criterion.
-                 *
-                 * @return The selected convergence criterion.
-                 */
-                ConvergenceCriterion getConvergenceCriterion() const;
-                
+                                
                 bool check() const override;
                 
                 // The name of the module.
@@ -123,7 +106,6 @@ namespace storm {
                 static const std::string maximalIterationsOptionName;
                 static const std::string maximalIterationsOptionShortName;
                 static const std::string precisionOptionName;
-                static const std::string absoluteOptionName;
             };
             
         } // namespace modules

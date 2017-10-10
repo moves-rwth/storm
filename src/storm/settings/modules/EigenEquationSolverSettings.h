@@ -110,6 +110,8 @@ namespace storm {
                 static const std::string restartOptionName;
             };
             
+            std::ostream& operator<<(std::ostream& out, EigenEquationSolverSettings::LinearEquationMethod const& method);
+            
         } // namespace modules
     } // namespace settings
 } // namespace storm

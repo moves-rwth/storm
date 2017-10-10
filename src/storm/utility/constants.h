@@ -40,6 +40,8 @@ namespace storm {
         template<typename ValueType>
         bool isZero(ValueType const& a);
 
+        bool isAlmostZero(double const& a);
+        
         template<typename ValueType>
         bool isConstant(ValueType const& a);
 
@@ -81,6 +83,12 @@ namespace storm {
         
         template<typename ValueType>
         ValueType pow(ValueType const& value, uint_fast64_t exponent);
+
+        template<typename ValueType>
+        ValueType max(ValueType const& first, ValueType const& second);
+
+        template<typename ValueType>
+        ValueType min(ValueType const& first, ValueType const& second);
 
         template<typename ValueType>
         ValueType sqrt(ValueType const& number);

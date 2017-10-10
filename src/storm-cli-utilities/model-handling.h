@@ -221,7 +221,7 @@ namespace storm {
 
             modelBuildingWatch.stop();
             if (result) {
-                STORM_PRINT_AND_LOG("Time for model construction: " << modelBuildingWatch << "." << std::endl << std::endl);
+                STORM_PRINT("Time for model construction: " << modelBuildingWatch << "." << std::endl << std::endl);
             }
 
             return result;
@@ -232,7 +232,9 @@ namespace storm {
             std::shared_ptr<storm::models::sparse::Model<ValueType>> result = model;
             model->close();
             if (model->hasOnlyTrivialNondeterminism()) {
-                result = model->convertToCTMC();
+                STORM_LOG_WARN_COND(false, "Non-deterministic choices in MA seem to be unnecessary. Consider using a CTMC instead.");
+                // Activate again if transformation is correct
+                //result = model->convertToCTMC();
             }
             return result;
         }
@@ -333,23 +335,23 @@ namespace storm {
             preprocessingWatch.stop();
 
             if (result.second) {
-                STORM_PRINT_AND_LOG(std::endl << "Time for model preprocessing: " << preprocessingWatch << "." << std::endl << std::endl);
+                STORM_PRINT(std::endl << "Time for model preprocessing: " << preprocessingWatch << "." << std::endl << std::endl);
             }
             return result;
         }
 
         void printComputingCounterexample(storm::jani::Property const& property) {
-            STORM_PRINT_AND_LOG("Computing counterexample for property " << *property.getRawFormula() << " ..." << std::endl);
+            STORM_PRINT("Computing counterexample for property " << *property.getRawFormula() << " ..." << std::endl);
         }
 
         void printCounterexample(std::shared_ptr<storm::counterexamples::Counterexample> const& counterexample, storm::utility::Stopwatch* watch = nullptr) {
             if (counterexample) {
-                STORM_PRINT_AND_LOG(*counterexample << std::endl);
+                STORM_PRINT(*counterexample << std::endl);
                 if (watch) {
-                    STORM_PRINT_AND_LOG("Time for computation: " << *watch << "." << std::endl);
+                    STORM_PRINT("Time for computation: " << *watch << "." << std::endl);
                 }
             } else {
-                STORM_PRINT_AND_LOG(" failed." << std::endl);
+                STORM_PRINT(" failed." << std::endl);
             }
         }
 
@@ -396,19 +398,19 @@ namespace storm {
             if (result->isQuantitative()) {
                 switch (ft) {
                     case storm::modelchecker::FilterType::VALUES:
-                        STORM_PRINT_AND_LOG(*result);
+                        STORM_PRINT(*result);
                         break;
                     case storm::modelchecker::FilterType::SUM:
-                        STORM_PRINT_AND_LOG(result->asQuantitativeCheckResult<ValueType>().sum());
+                        STORM_PRINT(result->asQuantitativeCheckResult<ValueType>().sum());
                         break;
                     case storm::modelchecker::FilterType::AVG:
-                        STORM_PRINT_AND_LOG(result->asQuantitativeCheckResult<ValueType>().average());
+                        STORM_PRINT(result->asQuantitativeCheckResult<ValueType>().average());
                         break;
                     case storm::modelchecker::FilterType::MIN:
-                        STORM_PRINT_AND_LOG(result->asQuantitativeCheckResult<ValueType>().getMin());
+                        STORM_PRINT(result->asQuantitativeCheckResult<ValueType>().getMin());
                         break;
                     case storm::modelchecker::FilterType::MAX:
-                        STORM_PRINT_AND_LOG(result->asQuantitativeCheckResult<ValueType>().getMax());
+                        STORM_PRINT(result->asQuantitativeCheckResult<ValueType>().getMax());
                         break;
                     case storm::modelchecker::FilterType::ARGMIN:
                     case storm::modelchecker::FilterType::ARGMAX:
@@ -421,16 +423,16 @@ namespace storm {
             } else {
                 switch (ft) {
                     case storm::modelchecker::FilterType::VALUES:
-                        STORM_PRINT_AND_LOG(*result << std::endl);
+                        STORM_PRINT(*result << std::endl);
                         break;
                     case storm::modelchecker::FilterType::EXISTS:
-                        STORM_PRINT_AND_LOG(result->asQualitativeCheckResult().existsTrue());
+                        STORM_PRINT(result->asQualitativeCheckResult().existsTrue());
                         break;
                     case storm::modelchecker::FilterType::FORALL:
-                        STORM_PRINT_AND_LOG(result->asQualitativeCheckResult().forallTrue());
+                        STORM_PRINT(result->asQualitativeCheckResult().forallTrue());
                         break;
                     case storm::modelchecker::FilterType::COUNT:
-                        STORM_PRINT_AND_LOG(result->asQualitativeCheckResult().count());
+                        STORM_PRINT(result->asQualitativeCheckResult().count());
                         break;
                     case storm::modelchecker::FilterType::ARGMIN:
                     case storm::modelchecker::FilterType::ARGMAX:
@@ -442,11 +444,11 @@ namespace storm {
                         STORM_LOG_THROW(false, storm::exceptions::InvalidArgumentException, "Filter type only defined for quantitative results.");
                 }
             }
-            STORM_PRINT_AND_LOG(std::endl);
+            STORM_PRINT(std::endl);
         }
 
         void printModelCheckingProperty(storm::jani::Property const& property) {
-            STORM_PRINT_AND_LOG(std::endl << "Model checking property " << *property.getRawFormula() << " ..." << std::endl);
+            STORM_PRINT(std::endl << "Model checking property " << *property.getRawFormula() << " ..." << std::endl);
         }
 
         template<typename ValueType>
@@ -454,13 +456,13 @@ namespace storm {
             if (result) {
                 std::stringstream ss;
                 ss << "'" << *property.getFilter().getStatesFormula() << "'";
-                STORM_PRINT_AND_LOG("Result (for " << (property.getFilter().getStatesFormula()->isInitialFormula() ? "initial" : ss.str()) << " states): ");
+                STORM_PRINT("Result (for " << (property.getFilter().getStatesFormula()->isInitialFormula() ? "initial" : ss.str()) << " states): ");
                 printFilteredResult<ValueType>(result, property.getFilter().getFilterType());
                 if (watch) {
-                    STORM_PRINT_AND_LOG("Time for model checking: " << *watch << "." << std::endl);
+                    STORM_PRINT("Time for model checking: " << *watch << "." << std::endl);
                 }
             } else {
-                STORM_PRINT_AND_LOG(" failed, property is unsupported by selected engine/settings." << std::endl);
+                STORM_PRINT(" failed, property is unsupported by selected engine/settings." << std::endl);
             }
         }
 
@@ -631,6 +633,8 @@ namespace storm {
                 std::shared_ptr<storm::models::ModelBase> model = buildPreprocessExportModelWithValueTypeAndDdlib<DdType, ValueType>(input, engine);
 
                 if (model) {
+                    STORM_LOG_THROW(model->isSparseModel() || !storm::settings::getModule<storm::settings::modules::GeneralSettings>().isSoundSet(), storm::exceptions::NotSupportedException, "Forcing soundness is currently only supported for sparse models.");
+
                     if (coreSettings.isCounterexampleSet()) {
                         auto ioSettings = storm::settings::getModule<storm::settings::modules::IOSettings>();
                         generateCounterexamples<ValueType>(model, input);
@@ -645,7 +649,7 @@ namespace storm {
         template <typename ValueType>
         void processInputWithValueType(SymbolicInput const& input) {
             auto coreSettings = storm::settings::getModule<storm::settings::modules::CoreSettings>();
-
+            
             if (coreSettings.getDdLibraryType() == storm::dd::DdType::CUDD) {
                 processInputWithValueTypeAndDdlib<storm::dd::DdType::CUDD, ValueType>(input);
             } else {

@@ -12,7 +12,6 @@
 #include "storm/solver/MinMaxLinearEquationSolver.h"
 #include "storm/logic/FragmentSpecification.h"
 
-
 namespace storm {
     namespace modelchecker {
             
@@ -49,12 +48,13 @@ namespace storm {
             storm::storage::BitVector maybeStates;
             std::vector<ConstantType> resultsForNonMaybeStates;
             boost::optional<uint_fast64_t> stepBound;
-                
+            
             std::unique_ptr<storm::modelchecker::SparseDtmcInstantiationModelChecker<SparseModelType, ConstantType>> instantiationChecker;
-                
+            
             std::unique_ptr<storm::transformer::ParameterLifter<typename SparseModelType::ValueType, ConstantType>> parameterLifter;
             std::unique_ptr<storm::solver::MinMaxLinearEquationSolverFactory<ConstantType>> solverFactory;
-                
+            bool solvingRequiresUpperRewardBounds;
+            
             // Results from the most recent solver call.
             boost::optional<std::vector<uint_fast64_t>> minSchedChoices, maxSchedChoices;
             std::vector<ConstantType> x;

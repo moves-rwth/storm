@@ -68,11 +68,8 @@ namespace storm {
                 }
                 storm::dd::Bdd<DdType> maybeStates = !statesWithProbability01.first && !statesWithProbability01.second && model.getReachableStates();
                 
-                // Perform some logging.
-                STORM_LOG_INFO("Found " << statesWithProbability01.first.getNonZeroCount() << " 'no' states.");
-                STORM_LOG_INFO("Found " << statesWithProbability01.second.getNonZeroCount() << " 'yes' states.");
-                STORM_LOG_INFO("Found " << maybeStates.getNonZeroCount() << " 'maybe' states.");
-                
+                STORM_LOG_INFO("Preprocessing: " << statesWithProbability01.first.getNonZeroCount() << " states with probability 1, " << statesWithProbability01.second.getNonZeroCount() << " with probability 0 (" << maybeStates.getNonZeroCount() << " states remaining).");
+
                 // Check whether we need to compute exact probabilities for some states.
                 if (qualitative) {
                     // Set the values for all maybe-states to 0.5 to indicate that their probability values are neither 0 nor 1.
@@ -110,14 +107,14 @@ namespace storm {
                         std::vector<ValueType> x(explicitRepresentation.first.getRowGroupCount(), storm::utility::zero<ValueType>());
 
                         // Check for requirements of the solver.
-                        storm::solver::MinMaxLinearEquationSolverRequirements requirements = linearEquationSolverFactory.getRequirements(storm::solver::MinMaxLinearEquationSolverSystemType::UntilProbabilities, dir);
+                        storm::solver::MinMaxLinearEquationSolverRequirements requirements = linearEquationSolverFactory.getRequirements(storm::solver::EquationSystemType::UntilProbabilities, dir);
                         boost::optional<std::vector<uint64_t>> initialScheduler;
                         if (!requirements.empty()) {
                             if (requirements.requires(storm::solver::MinMaxLinearEquationSolverRequirements::Element::ValidInitialScheduler)) {
                                 STORM_LOG_DEBUG("Computing valid scheduler hint, because the solver requires it.");
                                 initialScheduler = computeValidInitialSchedulerForUntilProbabilities<ValueType>(explicitRepresentation.first, explicitRepresentation.second);
 
-                                requirements.set(storm::solver::MinMaxLinearEquationSolverRequirements::Element::ValidInitialScheduler, false);
+                                requirements.clearValidInitialScheduler();
                             }
                             STORM_LOG_THROW(requirements.empty(), storm::exceptions::UncheckedRequirementException, "Cannot establish requirements for solver.");
                         }
@@ -126,6 +123,7 @@ namespace storm {
                         if (initialScheduler) {
                             solver->setInitialScheduler(std::move(initialScheduler.get()));
                         }
+                        solver->setBounds(storm::utility::zero<ValueType>(), storm::utility::one<ValueType>());
                         solver->setRequirementsChecked();
                         solver->solveEquations(dir, x, explicitRepresentation.second);
                         
@@ -161,6 +159,8 @@ namespace storm {
                 }
                 storm::dd::Bdd<DdType> maybeStates = statesWithProbabilityGreater0 && !psiStates && model.getReachableStates();
                 
+                STORM_LOG_INFO("Preprocessing: " << statesWithProbabilityGreater0.getNonZeroCount() << " states with probability greater 0.");
+
                 // If there are maybe states, we need to perform matrix-vector multiplications.
                 if (!maybeStates.isZero()) {
                     // Create the ODD for the translation between symbolic and explicit storage.
@@ -338,10 +338,9 @@ namespace storm {
                 infinityStates = !infinityStates && model.getReachableStates();
                 storm::dd::Bdd<DdType> maybeStatesWithTargetStates = !infinityStates && model.getReachableStates();
                 storm::dd::Bdd<DdType> maybeStates = !targetStates && maybeStatesWithTargetStates;
-                STORM_LOG_INFO("Found " << infinityStates.getNonZeroCount() << " 'infinity' states.");
-                STORM_LOG_INFO("Found " << targetStates.getNonZeroCount() << " 'target' states.");
-                STORM_LOG_INFO("Found " << maybeStates.getNonZeroCount() << " 'maybe' states.");
-                
+
+                STORM_LOG_INFO("Preprocessing: " << infinityStates.getNonZeroCount() << " states with reward infinity, " << targetStates.getNonZeroCount() << " target states (" << maybeStates.getNonZeroCount() << " states remaining).");
+
                 // Check whether we need to compute exact rewards for some states.
                 if (qualitative) {
                     // Set the values for all maybe-states to 1 to indicate that their reward values
@@ -351,13 +350,13 @@ namespace storm {
                     // If there are maybe states, we need to solve an equation system.
                     if (!maybeStates.isZero()) {
                         // Check for requirements of the solver this early so we can adapt the maybe states accordingly.
-                        storm::solver::MinMaxLinearEquationSolverRequirements requirements = linearEquationSolverFactory.getRequirements(storm::solver::MinMaxLinearEquationSolverSystemType::ReachabilityRewards, dir);
+                        storm::solver::MinMaxLinearEquationSolverRequirements requirements = linearEquationSolverFactory.getRequirements(storm::solver::EquationSystemType::ReachabilityRewards, dir);
                         bool requireInitialScheduler = false;
                         if (!requirements.empty()) {
                             if (requirements.requires(storm::solver::MinMaxLinearEquationSolverRequirements::Element::ValidInitialScheduler)) {
                                 STORM_LOG_DEBUG("Computing valid scheduler, because the solver requires it.");
                                 requireInitialScheduler = true;
-                                requirements.set(storm::solver::MinMaxLinearEquationSolverRequirements::Element::ValidInitialScheduler, false);
+                                requirements.clearValidInitialScheduler();
                             }
                             STORM_LOG_THROW(requirements.empty(), storm::exceptions::UncheckedRequirementException, "Cannot establish requirements for solver.");
                         }

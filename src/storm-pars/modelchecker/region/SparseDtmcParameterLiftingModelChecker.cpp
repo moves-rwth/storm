@@ -6,6 +6,8 @@
 #include "storm/modelchecker/propositional/SparsePropositionalModelChecker.h"
 #include "storm/modelchecker/results/ExplicitQualitativeCheckResult.h"
 #include "storm/modelchecker/results/ExplicitQuantitativeCheckResult.h"
+#include "storm/modelchecker/prctl/helper/DsMpiUpperRewardBoundsComputer.h"
+#include "storm/modelchecker/prctl/helper/BaierUpperRewardBoundsComputer.h"
 #include "storm/models/sparse/Dtmc.h"
 #include "storm/models/sparse/StandardRewardModel.h"
 #include "storm/solver/StandardMinMaxLinearEquationSolver.h"
@@ -17,6 +19,8 @@
 #include "storm/exceptions/InvalidPropertyException.h"
 #include "storm/exceptions/NotSupportedException.h"
 #include "storm/exceptions/UnexpectedException.h"
+#include "storm/exceptions/UncheckedRequirementException.h"
+
 
 namespace storm {
     namespace modelchecker {
@@ -27,7 +31,7 @@ namespace storm {
         }
         
         template <typename SparseModelType, typename ConstantType>
-        SparseDtmcParameterLiftingModelChecker<SparseModelType, ConstantType>::SparseDtmcParameterLiftingModelChecker(std::unique_ptr<storm::solver::MinMaxLinearEquationSolverFactory<ConstantType>>&& solverFactory) : solverFactory(std::move(solverFactory)) {
+        SparseDtmcParameterLiftingModelChecker<SparseModelType, ConstantType>::SparseDtmcParameterLiftingModelChecker(std::unique_ptr<storm::solver::MinMaxLinearEquationSolverFactory<ConstantType>>&& solverFactory) : solverFactory(std::move(solverFactory)), solvingRequiresUpperRewardBounds(false) {
             // Intentionally left empty
         }
         
@@ -109,6 +113,8 @@ namespace storm {
             // We know some bounds for the results so set them
             lowerResultBound = storm::utility::zero<ConstantType>();
             upperResultBound = storm::utility::one<ConstantType>();
+            // No requirements for bounded formulas
+            solverFactory->setRequirementsChecked(true);
         }
 
         template <typename SparseModelType, typename ConstantType>
@@ -139,6 +145,12 @@ namespace storm {
             // We know some bounds for the results so set them
             lowerResultBound = storm::utility::zero<ConstantType>();
             upperResultBound = storm::utility::one<ConstantType>();
+            
+            auto req = solverFactory->getRequirements(storm::solver::EquationSystemType::UntilProbabilities);
+            req.clearBounds();
+            req.clearNoEndComponents(); // We never have end components within the maybestates (assuming graph-preserving instantiations).
+            STORM_LOG_THROW(req.empty(), storm::exceptions::UncheckedRequirementException, "Unchecked solver requirement.");
+            solverFactory->setRequirementsChecked(true);
         }
 
         template <typename SparseModelType, typename ConstantType>
@@ -172,6 +184,17 @@ namespace storm {
             
             // We only know a lower bound for the result
             lowerResultBound = storm::utility::zero<ConstantType>();
+        
+            auto req = solverFactory->getRequirements(storm::solver::EquationSystemType::ReachabilityRewards);
+            req.clearNoEndComponents(); // We never have end components within the maybestates (assuming graph-preserving instantiations).
+            req.clearLowerBounds();
+            if (req.requiresUpperBounds()) {
+                solvingRequiresUpperRewardBounds = true;
+                req.clearUpperBounds();
+            }
+            STORM_LOG_THROW(req.empty(), storm::exceptions::UncheckedRequirementException, "Unchecked solver requirement.");
+            solverFactory->setRequirementsChecked(true);
+
 
         }
 
@@ -200,6 +223,9 @@ namespace storm {
             
             // We only know a lower bound for the result
             lowerResultBound = storm::utility::zero<ConstantType>();
+            
+            // No requirements for bounded reward formula
+            solverFactory->setRequirementsChecked(true);
         }
         
         template <typename SparseModelType, typename ConstantType>
@@ -228,7 +254,23 @@ namespace storm {
             }
             auto solver = solverFactory->create(parameterLifter->getMatrix());
             if (lowerResultBound) solver->setLowerBound(lowerResultBound.get());
-            if (upperResultBound) solver->setUpperBound(upperResultBound.get());
+            if (upperResultBound) {
+                solver->setUpperBound(upperResultBound.get());
+            } else if (solvingRequiresUpperRewardBounds) {
+                // For the min-case, we use DS-MPI, for the max-case variant 2 of the Baier et al. paper (CAV'17).
+                std::vector<ConstantType> oneStepProbs;
+                oneStepProbs.reserve(parameterLifter->getMatrix().getRowCount());
+                for (uint64_t row = 0; row < parameterLifter->getMatrix().getRowCount(); ++row) {
+                    oneStepProbs.push_back(storm::utility::one<ConstantType>() - parameterLifter->getMatrix().getRowSum(row));
+                }
+                if (dirForParameters == storm::OptimizationDirection::Minimize) {
+                    storm::modelchecker::helper::DsMpiMdpUpperRewardBoundsComputer<ConstantType> dsmpi(parameterLifter->getMatrix(), parameterLifter->getVector(), oneStepProbs);
+                    solver->setUpperBounds(dsmpi.computeUpperBounds());
+                } else {
+                    storm::modelchecker::helper::BaierUpperRewardBoundsComputer<ConstantType> baier(parameterLifter->getMatrix(), parameterLifter->getVector(), oneStepProbs);
+                    solver->setUpperBound(baier.computeUpperBound());
+                }
+            }
             if (!stepBound) solver->setTrackScheduler(true);
             if (storm::solver::minimize(dirForParameters) && minSchedChoices && !stepBound) solver->setInitialScheduler(std::move(minSchedChoices.get()));
             if (storm::solver::maximize(dirForParameters) && maxSchedChoices && !stepBound) solver->setInitialScheduler(std::move(maxSchedChoices.get()));
@@ -238,7 +280,7 @@ namespace storm {
                 storm::storage::BitVector relevantStatesInSubsystem = this->currentCheckTask->isOnlyInitialStatesRelevantSet() ? this->parametricModel->getInitialStates() % maybeStates : storm::storage::BitVector(maybeStates.getNumberOfSetBits(), true);
                 if (storm::solver::minimize(dirForParameters)) {
                     // Terminate if the value for ALL relevant states is already below the threshold
-                    termCond = std::make_unique<storm::solver::TerminateIfFilteredExtremumBelowThreshold<ConstantType>> (relevantStatesInSubsystem, this->currentCheckTask->getBoundThreshold(), true, false);
+                    termCond = std::make_unique<storm::solver::TerminateIfFilteredExtremumBelowThreshold<ConstantType>> (relevantStatesInSubsystem, true, this->currentCheckTask->getBoundThreshold(), false);
                 } else {
                     // Terminate if the value for ALL relevant states is already above the threshold
                     termCond = std::make_unique<storm::solver::TerminateIfFilteredExtremumExceedsThreshold<ConstantType>> (relevantStatesInSubsystem, true, this->currentCheckTask->getBoundThreshold(), true);
@@ -247,7 +289,7 @@ namespace storm {
             }
             
             // Invoke the solver
-            if(stepBound) {
+            if (stepBound) {
                 assert(*stepBound > 0);
                 x = std::vector<ConstantType>(maybeStates.getNumberOfSetBits(), storm::utility::zero<ConstantType>());
                 solver->repeatedMultiply(dirForParameters, x, &parameterLifter->getVector(), *stepBound);

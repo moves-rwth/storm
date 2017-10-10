@@ -108,6 +108,21 @@ namespace storm {
             StandardMinMaxLinearEquationSolver<ValueType>::clearCache();
         }
         
+        
+        template<typename ValueType>
+        MinMaxLinearEquationSolverRequirements LpMinMaxLinearEquationSolver<ValueType>::getRequirements(EquationSystemType const& equationSystemType, boost::optional<storm::solver::OptimizationDirection> const& direction) const {
+            
+            MinMaxLinearEquationSolverRequirements requirements;
+            
+            // In case we need to retrieve a scheduler, end components are forbidden
+            if (this->isTrackSchedulerSet()) {
+                requirements.requireNoEndComponents();
+            }
+            
+            return  requirements;
+        }
+
+        
         template<typename ValueType>
         LpMinMaxLinearEquationSolverFactory<ValueType>::LpMinMaxLinearEquationSolverFactory(bool trackScheduler) : StandardMinMaxLinearEquationSolverFactory<ValueType>(MinMaxMethodSelection::LinearProgramming, trackScheduler), lpSolverFactory(std::make_unique<storm::utility::solver::LpSolverFactory<ValueType>>()) {
             // Intentionally left empty

@@ -26,17 +26,22 @@ namespace storm {
         template<typename ValueType>
         class EliminationLinearEquationSolver : public LinearEquationSolver<ValueType> {
         public:
+            EliminationLinearEquationSolver(EliminationLinearEquationSolverSettings<ValueType> const& settings = EliminationLinearEquationSolverSettings<ValueType>());
             EliminationLinearEquationSolver(storm::storage::SparseMatrix<ValueType> const& A, EliminationLinearEquationSolverSettings<ValueType> const& settings = EliminationLinearEquationSolverSettings<ValueType>());
             EliminationLinearEquationSolver(storm::storage::SparseMatrix<ValueType>&& A, EliminationLinearEquationSolverSettings<ValueType> const& settings = EliminationLinearEquationSolverSettings<ValueType>());
             
             virtual void setMatrix(storm::storage::SparseMatrix<ValueType> const& A) override;
             virtual void setMatrix(storm::storage::SparseMatrix<ValueType>&& A) override;
             
-            virtual bool solveEquations(std::vector<ValueType>& x, std::vector<ValueType> const& b) const override;
             virtual void multiply(std::vector<ValueType>& x, std::vector<ValueType> const* b, std::vector<ValueType>& result) const override;
 
             EliminationLinearEquationSolverSettings<ValueType>& getSettings();
             EliminationLinearEquationSolverSettings<ValueType> const& getSettings() const;
+            
+            virtual LinearEquationSolverProblemFormat getEquationProblemFormat() const override;
+
+        protected:
+            virtual bool internalSolveEquations(std::vector<ValueType>& x, std::vector<ValueType> const& b) const override;
             
         private:
             void initializeSettings();
@@ -59,8 +64,9 @@ namespace storm {
         template<typename ValueType>
         class EliminationLinearEquationSolverFactory : public LinearEquationSolverFactory<ValueType> {
         public:
-            virtual std::unique_ptr<storm::solver::LinearEquationSolver<ValueType>> create(storm::storage::SparseMatrix<ValueType> const& matrix) const override;
-            virtual std::unique_ptr<storm::solver::LinearEquationSolver<ValueType>> create(storm::storage::SparseMatrix<ValueType>&& matrix) const override;
+            using LinearEquationSolverFactory<ValueType>::create;
+            
+            virtual std::unique_ptr<storm::solver::LinearEquationSolver<ValueType>> create() const override;
             
             EliminationLinearEquationSolverSettings<ValueType>& getSettings();
             EliminationLinearEquationSolverSettings<ValueType> const& getSettings() const;

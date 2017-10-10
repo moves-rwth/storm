@@ -125,11 +125,6 @@ namespace storm {
 
             if (metaVariable.hasHigh()) {
                 return Bdd<LibraryType>(*this, internalDdManager.getBddEncodingLessOrEqualThan(static_cast<uint64_t>(metaVariable.getHigh() - metaVariable.getLow()), metaVariable.getCube().getInternalBdd(), metaVariable.getNumberOfDdVariables()), {variable});
-//                Bdd<LibraryType> result = this->getBddZero();
-//                for (int_fast64_t value = metaVariable.getLow(); value <= metaVariable.getHigh(); ++value) {
-//                    result |= this->getEncoding(variable, value);
-//                }
-//                return result;
             } else {
                 // If there is no upper bound on this variable, the whole range is valid.
                 Bdd<LibraryType> result = this->getBddOne();

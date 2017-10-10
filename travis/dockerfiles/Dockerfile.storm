@@ -1,8 +1,0 @@
-FROM mvolk/storm-basesystem:ubuntu-16.10
-MAINTAINER Matthias Volk <matthias.volk@cs.rwth-aachen.de>
-
-COPY build_carl.sh /opt
-RUN cd opt && ./build_carl.sh
-
-COPY build_storm.sh /opt
-RUN cd opt && ./build_storm.sh

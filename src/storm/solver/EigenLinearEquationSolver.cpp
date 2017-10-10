@@ -3,6 +3,7 @@
 #include "storm/adapters/EigenAdapter.h"
 
 #include "storm/settings/SettingsManager.h"
+#include "storm/settings/modules/GeneralSettings.h"
 #include "storm/settings/modules/EigenEquationSolverSettings.h"
 
 #include "storm/utility/vector.h"
@@ -16,12 +17,7 @@ namespace storm {
         EigenLinearEquationSolverSettings<ValueType>::EigenLinearEquationSolverSettings() {
             // Get the settings object to customize linear solving.
             storm::settings::modules::EigenEquationSolverSettings const& settings = storm::settings::getModule<storm::settings::modules::EigenEquationSolverSettings>();
-            
-            // Get appropriate settings.
-            maximalNumberOfIterations = settings.getMaximalIterationCount();
-            precision = settings.getPrecision();
-            restart = settings.getRestartIterationCount();
-            
+
             // Determine the method to be used.
             storm::settings::modules::EigenEquationSolverSettings::LinearEquationMethod methodAsSetting = settings.getLinearEquationSystemMethod();
             if (methodAsSetting == storm::settings::modules::EigenEquationSolverSettings::LinearEquationMethod::BiCGSTAB) {
@@ -33,7 +29,7 @@ namespace storm {
             } else if (methodAsSetting == storm::settings::modules::EigenEquationSolverSettings::LinearEquationMethod::GMRES) {
                 method = SolutionMethod::GMRES;
             }
-            
+        
             // Check which preconditioner to use.
             storm::settings::modules::EigenEquationSolverSettings::PreconditioningMethod preconditionAsSetting = settings.getPreconditioningMethod();
             if (preconditionAsSetting == storm::settings::modules::EigenEquationSolverSettings::PreconditioningMethod::Ilu) {
@@ -43,11 +39,22 @@ namespace storm {
             } else if (preconditionAsSetting == storm::settings::modules::EigenEquationSolverSettings::PreconditioningMethod::None) {
                 preconditioner = Preconditioner::None;
             }
+
+            // Get appropriate settings.
+            maximalNumberOfIterations = settings.getMaximalIterationCount();
+            precision = settings.getPrecision();
+            restart = settings.getRestartIterationCount();
+
+            // Finally force soundness and potentially overwrite some other settings.
+            this->setForceSoundness(storm::settings::getModule<storm::settings::modules::GeneralSettings>().isSoundSet());
         }
         
         template<typename ValueType>
         void EigenLinearEquationSolverSettings<ValueType>::setSolutionMethod(SolutionMethod const& method) {
             this->method = method;
+            
+            // Make sure we switch the method if we have to guarantee soundness.
+            this->setForceSoundness(forceSoundness);
         }
         
         template<typename ValueType>
@@ -68,6 +75,15 @@ namespace storm {
         template<typename ValueType>
         void EigenLinearEquationSolverSettings<ValueType>::setNumberOfIterationsUntilRestart(uint64_t restart) {
             this->restart = restart;
+        }
+            
+        template<typename ValueType>
+        void EigenLinearEquationSolverSettings<ValueType>::setForceSoundness(bool value) {
+            forceSoundness = value;
+            if (value) {
+                STORM_LOG_WARN_COND(method != SolutionMethod::SparseLU, "To guarantee soundness, the equation solving technique has been switched to '" << storm::settings::modules::EigenEquationSolverSettings::  LinearEquationMethod::SparseLU << "'.");
+                method = SolutionMethod::SparseLU;
+            }
         }
         
         template<typename ValueType>
@@ -95,6 +111,11 @@ namespace storm {
             return restart;
         }
         
+        template<typename ValueType>
+        bool EigenLinearEquationSolverSettings<ValueType>::getForceSoundness() const {
+            return forceSoundness;
+        }
+        
 #ifdef STORM_HAVE_CARL
         EigenLinearEquationSolverSettings<storm::RationalNumber>::EigenLinearEquationSolverSettings() {
             // Intentionally left empty.
@@ -106,8 +127,13 @@ namespace storm {
 #endif
 
         template<typename ValueType>
-        EigenLinearEquationSolver<ValueType>::EigenLinearEquationSolver(storm::storage::SparseMatrix<ValueType> const& A, EigenLinearEquationSolverSettings<ValueType> const& settings) : eigenA(storm::adapters::EigenAdapter::toEigenSparseMatrix<ValueType>(A)), settings(settings) {
+        EigenLinearEquationSolver<ValueType>::EigenLinearEquationSolver(EigenLinearEquationSolverSettings<ValueType> const& settings) : settings(settings) {
             // Intentionally left empty.
+        }
+
+        template<typename ValueType>
+        EigenLinearEquationSolver<ValueType>::EigenLinearEquationSolver(storm::storage::SparseMatrix<ValueType> const& A, EigenLinearEquationSolverSettings<ValueType> const& settings) : settings(settings) {
+            this->setMatrix(A);
         }
 
         template<typename ValueType>
@@ -130,7 +156,7 @@ namespace storm {
         }
         
         template<typename ValueType>
-        bool EigenLinearEquationSolver<ValueType>::solveEquations(std::vector<ValueType>& x, std::vector<ValueType> const& b) const {
+        bool EigenLinearEquationSolver<ValueType>::internalSolveEquations(std::vector<ValueType>& x, std::vector<ValueType> const& b) const {
             // Map the input vectors to Eigen's format.
             auto eigenX = StormEigen::Matrix<ValueType, StormEigen::Dynamic, 1>::Map(x.data(), x.size());
             auto eigenB = StormEigen::Matrix<ValueType, StormEigen::Dynamic, 1>::Map(b.data(), b.size());
@@ -148,7 +174,7 @@ namespace storm {
                 typename EigenLinearEquationSolverSettings<ValueType>::Preconditioner preconditioner = this->getSettings().getPreconditioner();
                 if (solutionMethod == EigenLinearEquationSolverSettings<ValueType>::SolutionMethod::BiCGSTAB) {
                     if (preconditioner == EigenLinearEquationSolverSettings<ValueType>::Preconditioner::Ilu) {
-                        STORM_LOG_INFO("Solving linear equation system (" << x.size() << " rows) with BicGSTAB with Ilu preconditioner (Eigen library).");
+                        STORM_LOG_INFO("Solving linear equation system (" << x.size() << " rows) with BiCGSTAB with Ilu preconditioner (Eigen library).");
 
                         StormEigen::BiCGSTAB<StormEigen::SparseMatrix<ValueType>, StormEigen::IncompleteLUT<ValueType>> solver;
                         solver.compute(*this->eigenA);
@@ -158,7 +184,7 @@ namespace storm {
                         converged = solver.info() == StormEigen::ComputationInfo::Success;
                         numberOfIterations = solver.iterations();
                     } else if (preconditioner == EigenLinearEquationSolverSettings<ValueType>::Preconditioner::Diagonal) {
-                        STORM_LOG_INFO("Solving linear equation system (" << x.size() << " rows) with BicGSTAB with Diagonal preconditioner (Eigen library).");
+                        STORM_LOG_INFO("Solving linear equation system (" << x.size() << " rows) with BiCGSTAB with Diagonal preconditioner (Eigen library).");
 
                         StormEigen::BiCGSTAB<StormEigen::SparseMatrix<ValueType>, StormEigen::DiagonalPreconditioner<ValueType>> solver;
                         solver.setTolerance(this->getSettings().getPrecision());
@@ -168,7 +194,7 @@ namespace storm {
                         converged = solver.info() == StormEigen::ComputationInfo::Success;
                         numberOfIterations = solver.iterations();
                     } else {
-                        STORM_LOG_INFO("Solving linear equation system (" << x.size() << " rows) with BicGSTAB with identity preconditioner (Eigen library).");
+                        STORM_LOG_INFO("Solving linear equation system (" << x.size() << " rows) with BiCGSTAB with identity preconditioner (Eigen library).");
 
                         StormEigen::BiCGSTAB<StormEigen::SparseMatrix<ValueType>, StormEigen::IdentityPreconditioner> solver;
                         solver.setTolerance(this->getSettings().getPrecision());
@@ -250,7 +276,7 @@ namespace storm {
                     }
                 }
                 
-                // Make sure that all results conform to the bounds.
+                // Make sure that all results conform to the (global) bounds.
                 storm::utility::vector::clip(x, this->lowerBound, this->upperBound);
                 
                 // Check if the solver converged and issue a warning otherwise.
@@ -300,6 +326,11 @@ namespace storm {
         }
         
         template<typename ValueType>
+        LinearEquationSolverProblemFormat EigenLinearEquationSolver<ValueType>::getEquationProblemFormat() const {
+            return LinearEquationSolverProblemFormat::EquationSystem;
+        }
+        
+        template<typename ValueType>
         EigenLinearEquationSolverSettings<ValueType> const& EigenLinearEquationSolver<ValueType>::getSettings() const {
             return settings;
         }
@@ -317,7 +348,7 @@ namespace storm {
 #ifdef STORM_HAVE_CARL
         // Specialization for storm::RationalNumber
         template<>
-        bool EigenLinearEquationSolver<storm::RationalNumber>::solveEquations(std::vector<storm::RationalNumber>& x, std::vector<storm::RationalNumber> const& b) const {
+        bool EigenLinearEquationSolver<storm::RationalNumber>::internalSolveEquations(std::vector<storm::RationalNumber>& x, std::vector<storm::RationalNumber> const& b) const {
             STORM_LOG_INFO("Solving linear equation system (" << x.size() << " rows) with with rational numbers using LU factorization (Eigen library).");
 
             // Map the input vectors to Eigen's format.
@@ -332,7 +363,7 @@ namespace storm {
         
         // Specialization for storm::RationalFunction
         template<>
-        bool EigenLinearEquationSolver<storm::RationalFunction>::solveEquations(std::vector<storm::RationalFunction>& x, std::vector<storm::RationalFunction> const& b) const {
+        bool EigenLinearEquationSolver<storm::RationalFunction>::internalSolveEquations(std::vector<storm::RationalFunction>& x, std::vector<storm::RationalFunction> const& b) const {
             STORM_LOG_INFO("Solving linear equation system (" << x.size() << " rows) with rational functions using LU factorization (Eigen library).");
 
             // Map the input vectors to Eigen's format.
@@ -347,13 +378,8 @@ namespace storm {
 #endif
 
         template<typename ValueType>
-        std::unique_ptr<storm::solver::LinearEquationSolver<ValueType>> EigenLinearEquationSolverFactory<ValueType>::create(storm::storage::SparseMatrix<ValueType> const& matrix) const {
-            return std::make_unique<storm::solver::EigenLinearEquationSolver<ValueType>>(matrix, settings);
-        }
-        
-        template<typename ValueType>
-        std::unique_ptr<storm::solver::LinearEquationSolver<ValueType>> EigenLinearEquationSolverFactory<ValueType>::create(storm::storage::SparseMatrix<ValueType>&& matrix) const {
-            return std::make_unique<storm::solver::EigenLinearEquationSolver<ValueType>>(std::move(matrix), settings);
+        std::unique_ptr<storm::solver::LinearEquationSolver<ValueType>> EigenLinearEquationSolverFactory<ValueType>::create() const {
+            return std::make_unique<storm::solver::EigenLinearEquationSolver<ValueType>>(settings);
         }
         
         template<typename ValueType>

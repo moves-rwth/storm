@@ -47,7 +47,7 @@ namespace storm {
                         auto signature = signatureIterator.next();
                         auto signatureEnd = std::chrono::high_resolution_clock::now();
                         totalSignatureTime += (signatureEnd - signatureStart);
-                        STORM_LOG_DEBUG("Signature " << refinements << "[" << index << "] DD has " << signature.getSignatureAdd().getNodeCount() << " nodes.");
+                        STORM_LOG_TRACE("Signature " << refinements << "[" << index << "] DD has " << signature.getSignatureAdd().getNodeCount() << " nodes.");
                         
                         auto refinementStart = std::chrono::high_resolution_clock::now();
                         newPartition = signatureRefiner.refine(statePartition, signature);
@@ -65,7 +65,7 @@ namespace storm {
                     
                     auto totalTimeInRefinement = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::high_resolution_clock::now() - start).count();
                     ++refinements;
-                    STORM_LOG_DEBUG("Refinement " << refinements << " produced " << newPartition.getNumberOfBlocks() << " blocks and was completed in " << totalTimeInRefinement << "ms (signature: " << signatureTime << "ms, refinement: " << refinementTime << "ms).");
+                    STORM_LOG_TRACE("Refinement " << refinements << " produced " << newPartition.getNumberOfBlocks() << " blocks and was completed in " << totalTimeInRefinement << "ms (signature: " << signatureTime << "ms, refinement: " << refinementTime << "ms).");
                     return newPartition;
                 } else {
                     return oldPartition;
