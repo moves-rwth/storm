@@ -6,6 +6,7 @@
 #include <vector>
 #include <boost/optional.hpp>
 
+#include "storm/solver/SymbolicEquationSolver.h"
 #include "storm/solver/OptimizationDirection.h"
 #include "storm/solver/SymbolicLinearEquationSolver.h"
 #include "storm/solver/EquationSystemType.h"
@@ -58,7 +59,7 @@ namespace storm {
          * linear equations, the functionality to repeatedly multiply a matrix with a given vector is provided.
          */
         template<storm::dd::DdType DdType, typename ValueType>
-        class SymbolicMinMaxLinearEquationSolver {
+        class SymbolicMinMaxLinearEquationSolver : public SymbolicEquationSolver<DdType, ValueType> {
         public:
             SymbolicMinMaxLinearEquationSolver(SymbolicMinMaxLinearEquationSolverSettings<ValueType> const& settings = SymbolicMinMaxLinearEquationSolverSettings<ValueType>());
             
@@ -140,7 +141,7 @@ namespace storm {
             bool isRequirementsCheckedSet() const;
 
             /*!
-             * Determines whether the given vector x satisfies x = Ax + b.
+             * Determines whether the given vector x satisfies x = min/max Ax + b.
              */
             bool isSolution(OptimizationDirection dir, storm::dd::Add<DdType, ValueType> const& x, storm::dd::Add<DdType, ValueType> const& b) const;
 
@@ -156,7 +157,7 @@ namespace storm {
             static storm::dd::Add<DdType, RationalType> sharpen(OptimizationDirection dir, uint64_t precision, SymbolicMinMaxLinearEquationSolver<DdType, RationalType> const& rationalSolver, storm::dd::Add<DdType, ImpreciseType> const& x, storm::dd::Add<DdType, RationalType> const& rationalB, bool& isSolution);
             
             template<typename RationalType, typename ImpreciseType>
-            storm::dd::Add<DdType, RationalType> solveEquationsRationalSearchHelper(OptimizationDirection dir, SymbolicMinMaxLinearEquationSolver<DdType, RationalType> const& rationalSolver, SymbolicMinMaxLinearEquationSolver<DdType, ImpreciseType> const& impreciseSolver, storm::dd::Add<DdType, RationalType> const& rationalX, storm::dd::Add<DdType, RationalType> const& rationalB, storm::dd::Add<DdType, ImpreciseType> const& x, storm::dd::Add<DdType, ImpreciseType> const& b) const;
+            storm::dd::Add<DdType, RationalType> solveEquationsRationalSearchHelper(OptimizationDirection dir, SymbolicMinMaxLinearEquationSolver<DdType, RationalType> const& rationalSolver, SymbolicMinMaxLinearEquationSolver<DdType, ImpreciseType> const& impreciseSolver, storm::dd::Add<DdType, RationalType> const& rationalB, storm::dd::Add<DdType, ImpreciseType> const& x, storm::dd::Add<DdType, ImpreciseType> const& b) const;
             template<typename ImpreciseType>
             typename std::enable_if<std::is_same<ValueType, ImpreciseType>::value && storm::NumberTraits<ValueType>::IsExact, storm::dd::Add<DdType, ValueType>>::type solveEquationsRationalSearchHelper(storm::solver::OptimizationDirection const& dir, storm::dd::Add<DdType, ValueType> const& x, storm::dd::Add<DdType, ValueType> const& b) const;
             template<typename ImpreciseType>
@@ -177,14 +178,11 @@ namespace storm {
                 storm::dd::Add<DdType, ValueType> values;
             };
             
-            ValueIterationResult performValueIteration(storm::solver::OptimizationDirection const& dir, storm::dd::Add<DdType, ValueType> const& x, storm::dd::Add<DdType, ValueType> const& b, ValueType const& precision, bool relativeTerminationCriterion) const;
+            ValueIterationResult performValueIteration(storm::solver::OptimizationDirection const& dir, storm::dd::Add<DdType, ValueType> const& x, storm::dd::Add<DdType, ValueType> const& b, ValueType const& precision, bool relativeTerminationCriterion, uint64_t maximalIterations) const;
             
         protected:
             // The matrix defining the coefficients of the linear equation system.
             storm::dd::Add<DdType, ValueType> A;
-            
-            // A BDD characterizing all rows of the equation system.
-            storm::dd::Bdd<DdType> allRows;
             
             // A BDD characterizing the illegal choices.
             storm::dd::Bdd<DdType> illegalMask;

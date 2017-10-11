@@ -709,6 +709,11 @@ namespace storm {
         }
 
         template<>
+        RationalFunction convertNumber(std::string const& number){
+            return RationalFunction(convertNumber<RationalFunctionCoefficient>(number));
+        }
+
+        template<>
         RationalFunction convertNumber(storm::storage::sparse::state_type const& number) {
             return RationalFunction(convertNumber<RationalFunctionCoefficient>(number));
         }

@@ -74,7 +74,7 @@ TASK_DECL_3(MTBDD, sylvan_storm_rational_function_and_exists, MTBDD, MTBDD, MTBD
 #define sylvan_storm_rational_function_abstract_max(dd, v) mtbdd_abstract(dd, v, TASK(sylvan_storm_rational_function_abstract_op_max))
     
 TASK_DECL_2(MTBDD, sylvan_storm_rational_function_op_to_double, MTBDD, size_t)
-#define sylvan_storm_rational_function_to_double(a) mtbdd_uapply_nocache(a, TASK(sylvan_storm_rational_function_op_to_double), 0)
+#define sylvan_storm_rational_function_to_double(a) mtbdd_uapply(a, TASK(sylvan_storm_rational_function_op_to_double), 0)
     
 TASK_DECL_2(MTBDD, sylvan_storm_rational_function_op_threshold, MTBDD, size_t*)
 TASK_DECL_2(MTBDD, sylvan_storm_rational_function_op_strict_threshold, MTBDD, size_t*)

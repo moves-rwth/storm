@@ -74,16 +74,12 @@ TASK_DECL_3(MTBDD, sylvan_storm_rational_number_and_exists, MTBDD, MTBDD, MTBDD)
 #define sylvan_storm_rational_number_abstract_max(dd, v) mtbdd_abstract(dd, v, TASK(sylvan_storm_rational_number_abstract_op_max))
     
 TASK_DECL_2(MTBDD, sylvan_storm_rational_number_op_to_double, MTBDD, size_t)
-#define sylvan_storm_rational_number_to_double(a) mtbdd_uapply_nocache(a, TASK(sylvan_storm_rational_number_op_to_double), 0)
+#define sylvan_storm_rational_number_to_double(a) mtbdd_uapply(a, TASK(sylvan_storm_rational_number_op_to_double), 0)
     
-TASK_DECL_2(MTBDD, sylvan_storm_rational_number_op_threshold, MTBDD, size_t*)
-TASK_DECL_2(MTBDD, sylvan_storm_rational_number_op_strict_threshold, MTBDD, size_t*)
-
-TASK_DECL_2(MTBDD, sylvan_storm_rational_number_threshold, MTBDD, storm_rational_number_ptr);
-#define sylvan_storm_rational_number_threshold(dd, value) CALL(sylvan_storm_rational_number_strict_threshold, dd, value)
-    
-TASK_DECL_2(MTBDD, sylvan_storm_rational_number_strict_threshold, MTBDD, storm_rational_number_ptr);
-#define sylvan_storm_rational_number_strict_threshold(dd, value) CALL(sylvan_storm_rational_number_strict_threshold, dd, value)
+TASK_DECL_2(MTBDD, sylvan_storm_rational_number_op_threshold, MTBDD, size_t)
+TASK_DECL_2(MTBDD, sylvan_storm_rational_number_op_strict_threshold, MTBDD, size_t)
+#define sylvan_storm_rational_number_threshold(dd, value) mtbdd_uapply_nocache(dd, TASK(sylvan_storm_rational_number_op_threshold), (size_t)(void*)value)
+#define sylvan_storm_rational_number_strict_threshold(dd, value) mtbdd_uapply_nocache(dd, TASK(sylvan_storm_rational_number_op_strict_threshold), (size_t)(void*)value)
     
 TASK_DECL_3(MTBDD, sylvan_storm_rational_number_equal_norm_d, MTBDD, MTBDD, storm_rational_number_ptr);
 #define sylvan_storm_rational_number_equal_norm_d(a, b, epsilon) CALL(sylvan_storm_rational_number_equal_norm_d, a, b, epsilon)

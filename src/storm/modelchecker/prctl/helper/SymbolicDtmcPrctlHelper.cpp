@@ -52,10 +52,13 @@ namespace storm {
                         // Finally cut away all columns targeting non-maybe states and convert the matrix into the matrix needed
                         // for solving the equation system (i.e. compute (I-A)).
                         submatrix *= maybeStatesAdd.swapVariables(model.getRowColumnMetaVariablePairs());
-                        submatrix = (model.getRowColumnIdentity() * maybeStatesAdd) - submatrix;
+                        if (linearEquationSolverFactory.getEquationProblemFormat() == storm::solver::LinearEquationSolverProblemFormat::EquationSystem) {
+                            submatrix = (model.getRowColumnIdentity() * maybeStatesAdd) - submatrix;
+                        }
                         
                         // Solve the equation system.
                         std::unique_ptr<storm::solver::SymbolicLinearEquationSolver<DdType, ValueType>> solver = linearEquationSolverFactory.create(submatrix, maybeStates, model.getRowVariables(), model.getColumnVariables(), model.getRowColumnMetaVariablePairs());
+                        solver->setBounds(storm::utility::zero<ValueType>(), storm::utility::one<ValueType>());
                         storm::dd::Add<DdType, ValueType> result = solver->solveEquations(model.getManager().template getAddZero<ValueType>(), subvector);
                         
                         return statesWithProbability01.second.template toAdd<ValueType>() + result;
@@ -168,10 +171,13 @@ namespace storm {
                         // Finally cut away all columns targeting non-maybe states and convert the matrix into the matrix needed
                         // for solving the equation system (i.e. compute (I-A)).
                         submatrix *= maybeStatesAdd.swapVariables(model.getRowColumnMetaVariablePairs());
-                        submatrix = (model.getRowColumnIdentity() * maybeStatesAdd) - submatrix;
+                        if (linearEquationSolverFactory.getEquationProblemFormat() == storm::solver::LinearEquationSolverProblemFormat::EquationSystem) {
+                            submatrix = (model.getRowColumnIdentity() * maybeStatesAdd) - submatrix;
+                        }
                         
                         // Solve the equation system.
                         std::unique_ptr<storm::solver::SymbolicLinearEquationSolver<DdType, ValueType>> solver = linearEquationSolverFactory.create(submatrix, maybeStates, model.getRowVariables(), model.getColumnVariables(), model.getRowColumnMetaVariablePairs());
+                        solver->setLowerBound(storm::utility::zero<ValueType>());
                         storm::dd::Add<DdType, ValueType> result = solver->solveEquations(model.getManager().template getAddZero<ValueType>(), subvector);
                         
                         return infinityStates.ite(model.getManager().getConstant(storm::utility::infinity<ValueType>()), result);

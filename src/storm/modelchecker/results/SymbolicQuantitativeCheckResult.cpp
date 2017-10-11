@@ -28,13 +28,7 @@ namespace storm {
             if (comparisonType == storm::logic::ComparisonType::Less) {
                 states &= values.less(bound);
             } else if (comparisonType == storm::logic::ComparisonType::LessEqual) {
-                std::cout << "states zero: " << (values.equals(values.getDdManager().template getAddZero<ValueType>()) && reachableStates).getNonZeroCount() << std::endl;
-                std::cout << "states one: " << (values.equals(values.getDdManager().template getAddOne<ValueType>()) && reachableStates).getNonZeroCount() << std::endl;
-                std::cout << "states before: " << states.getNonZeroCount() << std::endl;
-                values.exportToDot("vals.dot");
-                std::cout << "total: " <<((values.equals(values.getDdManager().template getAddOne<ValueType>()) && states) || (values.lessOrEqual(bound) && states)).getNonZeroCount() << std::endl;
                 states &= values.lessOrEqual(bound);
-                std::cout << "states after: " << states.getNonZeroCount() << std::endl;
             } else if (comparisonType == storm::logic::ComparisonType::Greater) {
                 states &= values.greater(bound);
             } else if (comparisonType == storm::logic::ComparisonType::GreaterEqual) {
