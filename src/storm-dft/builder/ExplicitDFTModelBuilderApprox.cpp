@@ -10,7 +10,7 @@
 #include "storm/exceptions/UnexpectedException.h"
 #include "storm/settings/SettingsManager.h"
 #include "storm/logic/AtomicLabelFormula.h"
-#include "storm-dft/settings/modules/DFTSettings.h"
+#include "storm-dft/settings/modules/FaultTreeSettings.h"
 
 
 namespace storm {
@@ -55,7 +55,7 @@ namespace storm {
                 dft(dft),
                 stateGenerationInfo(std::make_shared<storm::storage::DFTStateGenerationInfo>(dft.buildStateGenerationInfo(symmetries))),
                 enableDC(enableDC),
-                usedHeuristic(storm::settings::getModule<storm::settings::modules::DFTSettings>().getApproximationHeuristic()),
+                usedHeuristic(storm::settings::getModule<storm::settings::modules::FaultTreeSettings>().getApproximationHeuristic()),
                 generator(dft, *stateGenerationInfo, enableDC, mergeFailedStates),
                 matrixBuilder(!generator.isDeterministicModel()),
                 stateStorage(((dft.stateVectorSize() / 64) + 1) * 64),

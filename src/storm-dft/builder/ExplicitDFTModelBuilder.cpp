@@ -9,8 +9,6 @@
 #include "storm/exceptions/UnexpectedException.h"
 #include "storm/settings/SettingsManager.h"
 
-#include "storm-dft/settings/modules/DFTSettings.h"
-
 
 namespace storm {
     namespace builder {

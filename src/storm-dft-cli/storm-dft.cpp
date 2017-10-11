@@ -1,19 +1,13 @@
-#include "storm/logic/Formula.h"
+#include "storm-dft/settings/DftSettings.h"
+
+#include "storm-dft/settings/modules/DftIOSettings.h"
+#include "storm-dft/settings/modules/FaultTreeSettings.h"
+#include "storm/settings/modules/IOSettings.h"
+#include "storm/settings/modules/ResourceSettings.h"
+
 #include "storm/utility/initialize.h"
 #include "storm/api/storm.h"
 #include "storm-cli-utilities/cli.h"
-#include "storm/exceptions/BaseException.h"
-
-#include "storm/logic/Formula.h"
-
-#include "storm/settings/modules/IOSettings.h"
-#include "storm/settings/modules/CoreSettings.h"
-#include "storm/settings/modules/DebugSettings.h"
-#include "storm/settings/modules/GmmxxEquationSolverSettings.h"
-#include "storm/settings/modules/MinMaxEquationSolverSettings.h"
-#include "storm/settings/modules/NativeEquationSolverSettings.h"
-#include "storm/settings/modules/EliminationSettings.h"
-#include "storm/settings/modules/ResourceSettings.h"
 
 #include "storm-dft/parser/DFTGalileoParser.h"
 #include "storm-dft/parser/DFTJsonParser.h"
@@ -22,12 +16,8 @@
 #include "storm-dft/transformations/DftToGspnTransformator.h"
 #include "storm-dft/storage/dft/DftJsonExporter.h"
 
-#include "storm-dft/settings/modules/DFTSettings.h"
-
 #include "storm-gspn/storage/gspn/GSPN.h"
 #include "storm-gspn/storm-gspn.h"
-#include "storm/settings/modules/GSPNSettings.h"
-#include "storm/settings/modules/GSPNExportSettings.h"
 
 #include <boost/lexical_cast.hpp>
 #include <memory>
@@ -44,18 +34,18 @@
  */
 template <typename ValueType>
 void analyzeDFT(std::vector<std::string> const& properties, bool symred, bool allowModularisation, bool enableDC, double approximationError) {
-    storm::settings::modules::DFTSettings const& dftSettings = storm::settings::getModule<storm::settings::modules::DFTSettings>();
+    storm::settings::modules::DftIOSettings const& dftIOSettings = storm::settings::getModule<storm::settings::modules::DftIOSettings>();
     std::shared_ptr<storm::storage::DFT<ValueType>> dft;
 
     // Build DFT from given file.
-    if (dftSettings.isDftJsonFileSet()) {
+    if (dftIOSettings.isDftJsonFileSet()) {
         storm::parser::DFTJsonParser<ValueType> parser;
-        std::cout << "Loading DFT from file " << dftSettings.getDftJsonFilename() << std::endl;
-        dft = std::make_shared<storm::storage::DFT<ValueType>>(parser.parseJson(dftSettings.getDftJsonFilename()));
+        std::cout << "Loading DFT from file " << dftIOSettings.getDftJsonFilename() << std::endl;
+        dft = std::make_shared<storm::storage::DFT<ValueType>>(parser.parseJson(dftIOSettings.getDftJsonFilename()));
     } else {
         storm::parser::DFTGalileoParser<ValueType> parser;
-        std::cout << "Loading DFT from file " << dftSettings.getDftFilename() << std::endl;
-        dft = std::make_shared<storm::storage::DFT<ValueType>>(parser.parseDFT(dftSettings.getDftFilename()));
+        std::cout << "Loading DFT from file " << dftIOSettings.getDftFilename() << std::endl;
+        dft = std::make_shared<storm::storage::DFT<ValueType>>(parser.parseDFT(dftIOSettings.getDftFilename()));
     }
 
     // Build properties
@@ -91,72 +81,39 @@ void analyzeWithSMT(std::string filename) {
     //std::cout << "SMT result: " << sat << std::endl;
 }
 
-
-/*!
- * Initialize the settings manager.
- */
-void initializeSettings() {
-    storm::settings::mutableManager().setName("Storm-DyFTeE", "storm-dft");
-    
-    // Register all known settings modules.
-    storm::settings::addModule<storm::settings::modules::GeneralSettings>();
-    storm::settings::addModule<storm::settings::modules::DFTSettings>();
-    storm::settings::addModule<storm::settings::modules::CoreSettings>();
-    storm::settings::addModule<storm::settings::modules::DebugSettings>();
-    storm::settings::addModule<storm::settings::modules::IOSettings>();
-    //storm::settings::addModule<storm::settings::modules::CounterexampleGeneratorSettings>();
-    //storm::settings::addModule<storm::settings::modules::CuddSettings>();
-    //storm::settings::addModule<storm::settings::modules::SylvanSettings>();
-    storm::settings::addModule<storm::settings::modules::GmmxxEquationSolverSettings>();
-    storm::settings::addModule<storm::settings::modules::MinMaxEquationSolverSettings>();
-    storm::settings::addModule<storm::settings::modules::NativeEquationSolverSettings>();
-    //storm::settings::addModule<storm::settings::modules::BisimulationSettings>();
-    //storm::settings::addModule<storm::settings::modules::GlpkSettings>();
-    //storm::settings::addModule<storm::settings::modules::GurobiSettings>();
-    //storm::settings::addModule<storm::settings::modules::TopologicalValueIterationEquationSolverSettings>();
-    //storm::settings::addModule<storm::settings::modules::ParametricSettings>();
-    storm::settings::addModule<storm::settings::modules::EliminationSettings>();
-    storm::settings::addModule<storm::settings::modules::ResourceSettings>();
-    
-    // For translation into JANI via GSPN.
-    storm::settings::addModule<storm::settings::modules::GSPNSettings>();
-    storm::settings::addModule<storm::settings::modules::GSPNExportSettings>();
-    storm::settings::addModule<storm::settings::modules::JaniExportSettings>();
-}
-
-
 void processOptions() {
         // Start by setting some urgent options (log levels, resources, etc.)
         storm::cli::setUrgentOptions();
 
         storm::cli::processOptions();
         
-        storm::settings::modules::DFTSettings const& dftSettings = storm::settings::getModule<storm::settings::modules::DFTSettings>();
+        storm::settings::modules::DftIOSettings const& dftIOSettings = storm::settings::getModule<storm::settings::modules::DftIOSettings>();
+        storm::settings::modules::FaultTreeSettings const& faultTreeSettings = storm::settings::getModule<storm::settings::modules::FaultTreeSettings>();
         storm::settings::modules::GeneralSettings const& generalSettings = storm::settings::getModule<storm::settings::modules::GeneralSettings>();
         storm::settings::modules::IOSettings const& ioSettings = storm::settings::getModule<storm::settings::modules::IOSettings>();
-        if (!dftSettings.isDftFileSet() && !dftSettings.isDftJsonFileSet()) {
+        if (!dftIOSettings.isDftFileSet() && !dftIOSettings.isDftJsonFileSet()) {
             STORM_LOG_THROW(false, storm::exceptions::InvalidSettingsException, "No input model.");
         }
 
-        if (dftSettings.isExportToJson()) {
-            STORM_LOG_THROW(dftSettings.isDftFileSet(), storm::exceptions::InvalidSettingsException, "No input model in Galileo format given.");
+        if (dftIOSettings.isExportToJson()) {
+            STORM_LOG_THROW(dftIOSettings.isDftFileSet(), storm::exceptions::InvalidSettingsException, "No input model in Galileo format given.");
             storm::parser::DFTGalileoParser<double> parser;
-            storm::storage::DFT<double> dft = parser.parseDFT(dftSettings.getDftFilename());
+            storm::storage::DFT<double> dft = parser.parseDFT(dftIOSettings.getDftFilename());
             // Export to json
-            storm::storage::DftJsonExporter<double>::toFile(dft, dftSettings.getExportJsonFilename());
+            storm::storage::DftJsonExporter<double>::toFile(dft, dftIOSettings.getExportJsonFilename());
             storm::utility::cleanUp();
             return;
         }
 
         
-        if (dftSettings.isTransformToGspn()) {
+        if (dftIOSettings.isTransformToGspn()) {
             std::shared_ptr<storm::storage::DFT<double>> dft;
-            if (dftSettings.isDftJsonFileSet()) {
+            if (dftIOSettings.isDftJsonFileSet()) {
                 storm::parser::DFTJsonParser<double> parser;
-                dft = std::make_shared<storm::storage::DFT<double>>(parser.parseJson(dftSettings.getDftJsonFilename()));
+                dft = std::make_shared<storm::storage::DFT<double>>(parser.parseJson(dftIOSettings.getDftJsonFilename()));
             } else {
                 storm::parser::DFTGalileoParser<double> parser(true, false);
-                dft = std::make_shared<storm::storage::DFT<double>>(parser.parseDFT(dftSettings.getDftFilename()));
+                dft = std::make_shared<storm::storage::DFT<double>>(parser.parseDFT(dftIOSettings.getDftFilename()));
             }
             storm::transformations::dft::DftToGspnTransformator<double> gspnTransformator(*dft);
             gspnTransformator.transform();
@@ -196,12 +153,12 @@ void processOptions() {
 #endif
         
 #ifdef STORM_HAVE_Z3
-        if (dftSettings.solveWithSMT()) {
+        if (faultTreeSettings.solveWithSMT()) {
             // Solve with SMT
             if (parametric) {
             //    analyzeWithSMT<storm::RationalFunction>(dftSettings.getDftFilename());
             } else {
-                analyzeWithSMT<double>(dftSettings.getDftFilename());
+                analyzeWithSMT<double>(dftIOSettings.getDftFilename());
             }
             storm::utility::cleanUp();
             return;
@@ -210,8 +167,8 @@ void processOptions() {
         
         // Set min or max
         std::string optimizationDirection = "min";
-        if (dftSettings.isComputeMaximalValue()) {
-            STORM_LOG_THROW(!dftSettings.isComputeMinimalValue(), storm::exceptions::InvalidSettingsException, "Cannot compute minimal and maximal values at the same time.");
+        if (dftIOSettings.isComputeMaximalValue()) {
+            STORM_LOG_THROW(!dftIOSettings.isComputeMinimalValue(), storm::exceptions::InvalidSettingsException, "Cannot compute minimal and maximal values at the same time.");
             optimizationDirection = "max";
         }
         
@@ -221,19 +178,19 @@ void processOptions() {
         if (ioSettings.isPropertySet()) {
             properties.push_back(ioSettings.getProperty());
         }
-        if (dftSettings.usePropExpectedTime()) {
+        if (dftIOSettings.usePropExpectedTime()) {
             properties.push_back("T" + optimizationDirection + "=? [F \"failed\"]");
         }
-        if (dftSettings.usePropProbability()) {
+        if (dftIOSettings.usePropProbability()) {
             properties.push_back("P" + optimizationDirection + "=? [F \"failed\"]");
         }
-        if (dftSettings.usePropTimebound()) {
+        if (dftIOSettings.usePropTimebound()) {
             std::stringstream stream;
-            stream << "P" << optimizationDirection << "=? [F<=" << dftSettings.getPropTimebound() << " \"failed\"]";
+            stream << "P" << optimizationDirection << "=? [F<=" << dftIOSettings.getPropTimebound() << " \"failed\"]";
             properties.push_back(stream.str());
         }
-        if (dftSettings.usePropTimepoints()) {
-            for (double timepoint : dftSettings.getPropTimepoints()) {
+        if (dftIOSettings.usePropTimepoints()) {
+            for (double timepoint : dftIOSettings.getPropTimepoints()) {
                 std::stringstream stream;
                 stream << "P" << optimizationDirection << "=? [F<=" << timepoint << " \"failed\"]";
                 properties.push_back(stream.str());
@@ -246,19 +203,19 @@ void processOptions() {
 
         // Set possible approximation error
         double approximationError = 0.0;
-        if (dftSettings.isApproximationErrorSet()) {
-            approximationError = dftSettings.getApproximationError();
+        if (faultTreeSettings.isApproximationErrorSet()) {
+            approximationError = faultTreeSettings.getApproximationError();
         }
 
         // From this point on we are ready to carry out the actual computations.
         if (parametric) {
 #ifdef STORM_HAVE_CARL
-            analyzeDFT<storm::RationalFunction>(properties, dftSettings.useSymmetryReduction(), dftSettings.useModularisation(), !dftSettings.isDisableDC(), approximationError);
+            analyzeDFT<storm::RationalFunction>(properties, faultTreeSettings.useSymmetryReduction(), faultTreeSettings.useModularisation(), !faultTreeSettings.isDisableDC(), approximationError);
 #else
             STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Parameters are not supported in this build.");
 #endif
         } else {
-            analyzeDFT<double>(properties, dftSettings.useSymmetryReduction(), dftSettings.useModularisation(), !dftSettings.isDisableDC(), approximationError);
+            analyzeDFT<double>(properties, faultTreeSettings.useSymmetryReduction(), faultTreeSettings.useModularisation(), !faultTreeSettings.isDisableDC(), approximationError);
         }
 }
 
@@ -275,9 +232,8 @@ void processOptions() {
 int main(const int argc, const char** argv) {
     try {
         storm::utility::setUp();
-        storm::cli::printHeader("Storm-DyFTeE", argc, argv);
-        //storm::settings::initializeParsSettings("Storm-pars", "storm-pars");
-        initializeSettings();
+        storm::cli::printHeader("Storm-dft", argc, argv);
+        storm::settings::initializeDftSettings("Storm-dft", "storm-dft");
 
         storm::utility::Stopwatch totalTimer(true);
         if (!storm::cli::parseOptions(argc, argv)) {

@@ -8,7 +8,7 @@
 #include "storm-dft/builder/ExplicitDFTModelBuilder.h"
 #include "storm-dft/builder/ExplicitDFTModelBuilderApprox.h"
 #include "storm-dft/storage/dft/DFTIsomorphism.h"
-#include "storm-dft/settings/modules/DFTSettings.h"
+#include "storm-dft/settings/modules/FaultTreeSettings.h"
 
 
 namespace storm {
@@ -344,7 +344,7 @@ namespace storm {
                 STORM_LOG_INFO("Building Model...");
                 std::shared_ptr<storm::models::sparse::Model<ValueType>> model;
                 // TODO Matthias: use only one builder if everything works again
-                if (storm::settings::getModule<storm::settings::modules::DFTSettings>().isApproximationErrorSet()) {
+                if (storm::settings::getModule<storm::settings::modules::FaultTreeSettings>().isApproximationErrorSet()) {
                     storm::builder::ExplicitDFTModelBuilderApprox<ValueType> builder(dft, symmetries, enableDC);
                     typename storm::builder::ExplicitDFTModelBuilderApprox<ValueType>::LabelOptions labeloptions(properties, storm::settings::getModule<storm::settings::modules::IOSettings>().isExportExplicitSet());
                     builder.buildModel(labeloptions, 0, 0.0);
