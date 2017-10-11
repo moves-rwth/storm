@@ -606,7 +606,7 @@ TASK_IMPL_2(MTBDD, mtbdd_op_sharpen, MTBDD, a, size_t, p)
             MTBDD result = mtbdd_storm_rational_number(storm_double_sharpen(mtbdd_getdouble(a), p));
             return result;
         } else if (mtbddnode_gettype(na) == srn_type) {
-            return mtbdd_storm_rational_number(storm_rational_number_sharpen((storm_rational_number_ptr)mtbdd_getstorm_rational_function_ptr(a), p));
+            return mtbdd_storm_rational_number(storm_rational_number_sharpen((storm_rational_number_ptr)mtbdd_getstorm_rational_number_ptr(a), p));
         } else {
             printf("ERROR: Unsupported value type in sharpen.\n");
             assert(0);

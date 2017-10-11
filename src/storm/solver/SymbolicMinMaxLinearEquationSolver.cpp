@@ -226,7 +226,7 @@ namespace storm {
         template<storm::dd::DdType DdType, typename ValueType>
         template<typename ImpreciseType>
         typename std::enable_if<std::is_same<ValueType, ImpreciseType>::value && storm::NumberTraits<ValueType>::IsExact, storm::dd::Add<DdType, ValueType>>::type SymbolicMinMaxLinearEquationSolver<DdType, ValueType>::solveEquationsRationalSearchHelper(storm::solver::OptimizationDirection const& dir, storm::dd::Add<DdType, ValueType> const& x, storm::dd::Add<DdType, ValueType> const& b) const {
-            return solveEquationsRationalSearchHelper<ValueType, ValueType>(dir, *this, *this, b, this->getLowerBounds(), b);
+            return solveEquationsRationalSearchHelper<ValueType, ValueType>(dir, *this, *this, b, this->getLowerBoundsVector(), b);
         }
         
         template<storm::dd::DdType DdType, typename ValueType>
@@ -236,7 +236,7 @@ namespace storm {
             storm::dd::Add<DdType, storm::RationalNumber> rationalB = b.template toValueType<storm::RationalNumber>();
             SymbolicMinMaxLinearEquationSolver<DdType, storm::RationalNumber> rationalSolver(this->A.template toValueType<storm::RationalNumber>(), this->allRows, this->illegalMask, this->rowMetaVariables, this->columnMetaVariables, this->choiceVariables, this->rowColumnMetaVariablePairs, std::make_unique<GeneralSymbolicLinearEquationSolverFactory<DdType, storm::RationalNumber>>());
             
-            storm::dd::Add<DdType, storm::RationalNumber> rationalResult = solveEquationsRationalSearchHelper<storm::RationalNumber, ImpreciseType>(dir, rationalSolver, *this, rationalB, this->getLowerBounds(), b);
+            storm::dd::Add<DdType, storm::RationalNumber> rationalResult = solveEquationsRationalSearchHelper<storm::RationalNumber, ImpreciseType>(dir, rationalSolver, *this, rationalB, this->getLowerBoundsVector(), b);
             return rationalResult.template toValueType<ValueType>();
         }
 
@@ -248,7 +248,7 @@ namespace storm {
             storm::dd::Add<DdType, ValueType> rationalResult;
             storm::dd::Add<DdType, ImpreciseType> impreciseX;
             try {
-                impreciseX = this->getLowerBounds().template toValueType<ImpreciseType>();
+                impreciseX = this->getLowerBoundsVector().template toValueType<ImpreciseType>();
                 storm::dd::Add<DdType, ImpreciseType> impreciseB = b.template toValueType<ImpreciseType>();
                 SymbolicMinMaxLinearEquationSolver<DdType, ImpreciseType> impreciseSolver(this->A.template toValueType<ImpreciseType>(), this->allRows, this->illegalMask, this->rowMetaVariables, this->columnMetaVariables, this->choiceVariables, this->rowColumnMetaVariablePairs, std::make_unique<GeneralSymbolicLinearEquationSolverFactory<DdType, ImpreciseType>>());
                 
@@ -276,7 +276,7 @@ namespace storm {
             if (this->hasInitialScheduler()) {
                 localX = solveEquationsWithScheduler(this->getInitialScheduler(), x, b);
             } else {
-                localX = this->getLowerBounds();
+                localX = this->getLowerBoundsVector();
             }
             
             ValueIterationResult viResult = performValueIteration(dir, localX, b, this->getSettings().getPrecision(), this->getSettings().getRelativeTerminationCriterion(), this->settings.getMaximalNumberOfIterations());
@@ -294,6 +294,7 @@ namespace storm {
         storm::dd::Add<DdType, ValueType>  SymbolicMinMaxLinearEquationSolver<DdType, ValueType>::solveEquationsWithScheduler(storm::dd::Bdd<DdType> const& scheduler, storm::dd::Add<DdType, ValueType> const& x, storm::dd::Add<DdType, ValueType> const& b) const {
             
             std::unique_ptr<SymbolicLinearEquationSolver<DdType, ValueType>> solver = linearEquationSolverFactory->create(this->allRows, this->rowMetaVariables, this->columnMetaVariables, this->rowColumnMetaVariablePairs);
+            this->forwardBounds(*solver);
             storm::dd::Add<DdType, ValueType> diagonal = (storm::utility::dd::getRowColumnDiagonal<DdType>(x.getDdManager(), this->rowColumnMetaVariablePairs) && this->allRows).template toAdd<ValueType>();
             return solveEquationsWithScheduler(*solver, scheduler, x, b, diagonal);
         }
@@ -327,6 +328,7 @@ namespace storm {
             
             // Initialize linear equation solver.
             std::unique_ptr<SymbolicLinearEquationSolver<DdType, ValueType>> linearEquationSolver = linearEquationSolverFactory->create(this->allRows, this->rowMetaVariables, this->columnMetaVariables, this->rowColumnMetaVariablePairs);
+            this->forwardBounds(*linearEquationSolver);
             
             // Iteratively solve and improve the scheduler.
             while (!converged && iterations < this->settings.getMaximalNumberOfIterations()) {
@@ -451,6 +453,22 @@ namespace storm {
         template<storm::dd::DdType DdType, typename ValueType>
         SymbolicMinMaxLinearEquationSolverSettings<ValueType> const& SymbolicMinMaxLinearEquationSolver<DdType, ValueType>::getSettings() const {
             return settings;
+        }
+        
+        template<storm::dd::DdType DdType, typename ValueType>
+        void SymbolicMinMaxLinearEquationSolver<DdType, ValueType>::forwardBounds(storm::solver::SymbolicLinearEquationSolver<DdType, ValueType>& solver) const {
+            if (this->hasLowerBound()) {
+                solver.setLowerBound(this->getLowerBound());
+            }
+            if (this->hasLowerBounds()) {
+                solver.setLowerBounds(this->getLowerBounds());
+            }
+            if (this->hasUpperBound()) {
+                solver.setUpperBound(this->getUpperBound());
+            }
+            if (this->hasUpperBounds()) {
+                solver.setUpperBounds(this->getUpperBounds());
+            }
         }
 
         template<storm::dd::DdType DdType, typename ValueType>

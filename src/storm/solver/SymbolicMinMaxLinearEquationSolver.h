@@ -213,6 +213,12 @@ namespace storm {
             
             // A scheduler that specifies with which schedulers to start.
             boost::optional<storm::dd::Bdd<DdType>> initialScheduler;
+            
+        private:
+            /*!
+             * Forwards the known bounds of this solver to the given linear equation solver.
+             */
+            void forwardBounds(storm::solver::SymbolicLinearEquationSolver<DdType, ValueType>& solver) const;
         };
         
         template<storm::dd::DdType DdType, typename ValueType>

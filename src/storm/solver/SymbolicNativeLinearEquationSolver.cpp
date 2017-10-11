@@ -185,7 +185,7 @@ namespace storm {
         
         template<storm::dd::DdType DdType, typename ValueType>
         storm::dd::Add<DdType, ValueType> SymbolicNativeLinearEquationSolver<DdType, ValueType>::solveEquationsPower(storm::dd::Add<DdType, ValueType> const& x, storm::dd::Add<DdType, ValueType> const& b) const {
-            PowerIterationResult result = performPowerIteration(this->getLowerBounds(), b, this->getSettings().getPrecision(), this->getSettings().getRelativeTerminationCriterion(), this->getSettings().getMaximalNumberOfIterations());
+            PowerIterationResult result = performPowerIteration(this->getLowerBoundsVector(), b, this->getSettings().getPrecision(), this->getSettings().getRelativeTerminationCriterion(), this->getSettings().getMaximalNumberOfIterations());
             
             if (result.status == SolverStatus::Converged) {
                 STORM_LOG_INFO("Iterative solver (power iteration) converged in " << result.iterations << " iterations.");
@@ -195,7 +195,7 @@ namespace storm {
             
             return result.values;
         }
-        
+
         template<storm::dd::DdType DdType, typename ValueType>
         bool SymbolicNativeLinearEquationSolver<DdType, ValueType>::isSolutionFixedPoint(storm::dd::Add<DdType, ValueType> const& x, storm::dd::Add<DdType, ValueType> const& b) const {
             storm::dd::Add<DdType, ValueType> xAsColumn = x.swapVariables(this->rowColumnMetaVariablePairs);
@@ -273,7 +273,7 @@ namespace storm {
         template<storm::dd::DdType DdType, typename ValueType>
         template<typename ImpreciseType>
         typename std::enable_if<std::is_same<ValueType, ImpreciseType>::value && storm::NumberTraits<ValueType>::IsExact, storm::dd::Add<DdType, ValueType>>::type SymbolicNativeLinearEquationSolver<DdType, ValueType>::solveEquationsRationalSearchHelper(storm::dd::Add<DdType, ValueType> const& x, storm::dd::Add<DdType, ValueType> const& b) const {
-            return solveEquationsRationalSearchHelper<ValueType, ValueType>(*this, *this, b, this->getLowerBounds(), b);
+            return solveEquationsRationalSearchHelper<ValueType, ValueType>(*this, *this, b, this->getLowerBoundsVector(), b);
         }
         
         template<storm::dd::DdType DdType, typename ValueType>
@@ -283,7 +283,7 @@ namespace storm {
             storm::dd::Add<DdType, storm::RationalNumber> rationalB = b.template toValueType<storm::RationalNumber>();
             SymbolicNativeLinearEquationSolver<DdType, storm::RationalNumber> rationalSolver(this->A.template toValueType<storm::RationalNumber>(), this->allRows, this->rowMetaVariables, this->columnMetaVariables, this->rowColumnMetaVariablePairs);
             
-            storm::dd::Add<DdType, storm::RationalNumber> rationalResult = solveEquationsRationalSearchHelper<storm::RationalNumber, ImpreciseType>(rationalSolver, *this, rationalB, this->getLowerBounds(), b);
+            storm::dd::Add<DdType, storm::RationalNumber> rationalResult = solveEquationsRationalSearchHelper<storm::RationalNumber, ImpreciseType>(rationalSolver, *this, rationalB, this->getLowerBoundsVector(), b);
             return rationalResult.template toValueType<ValueType>();
         }
         
@@ -295,7 +295,7 @@ namespace storm {
             storm::dd::Add<DdType, ValueType> rationalResult;
             storm::dd::Add<DdType, ImpreciseType> impreciseX;
             try {
-                impreciseX = this->getLowerBounds().template toValueType<ImpreciseType>();
+                impreciseX = this->getLowerBoundsVector().template toValueType<ImpreciseType>();
                 storm::dd::Add<DdType, ImpreciseType> impreciseB = b.template toValueType<ImpreciseType>();
                 SymbolicNativeLinearEquationSolver<DdType, ImpreciseType> impreciseSolver(this->A.template toValueType<ImpreciseType>(), this->allRows, this->rowMetaVariables, this->columnMetaVariables, this->rowColumnMetaVariablePairs);
                 

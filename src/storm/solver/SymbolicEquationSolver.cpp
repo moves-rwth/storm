@@ -62,7 +62,47 @@ namespace storm {
         }
         
         template<storm::dd::DdType DdType, typename ValueType>
-        storm::dd::Add<DdType, ValueType> SymbolicEquationSolver<DdType, ValueType>::getLowerBounds() const {
+        bool SymbolicEquationSolver<DdType, ValueType>::hasLowerBound() const {
+            return static_cast<bool>(lowerBound);
+        }
+        
+        template<storm::dd::DdType DdType, typename ValueType>
+        ValueType const& SymbolicEquationSolver<DdType, ValueType>::getLowerBound() const {
+            return lowerBound.get();
+        }
+        
+        template<storm::dd::DdType DdType, typename ValueType>
+        bool SymbolicEquationSolver<DdType, ValueType>::hasLowerBounds() const {
+            return static_cast<bool>(lowerBounds);
+        }
+        
+        template<storm::dd::DdType DdType, typename ValueType>
+        storm::dd::Add<DdType, ValueType> const& SymbolicEquationSolver<DdType, ValueType>::getLowerBounds() const {
+            return lowerBounds.get();
+        }
+        
+        template<storm::dd::DdType DdType, typename ValueType>
+        bool SymbolicEquationSolver<DdType, ValueType>::hasUpperBound() const {
+            return static_cast<bool>(upperBound);
+        }
+        
+        template<storm::dd::DdType DdType, typename ValueType>
+        ValueType const& SymbolicEquationSolver<DdType, ValueType>::getUpperBound() const {
+            return upperBound.get();
+        }
+        
+        template<storm::dd::DdType DdType, typename ValueType>
+        bool SymbolicEquationSolver<DdType, ValueType>::hasUpperBounds() const {
+            return static_cast<bool>(upperBounds);
+        }
+        
+        template<storm::dd::DdType DdType, typename ValueType>
+        storm::dd::Add<DdType, ValueType> const& SymbolicEquationSolver<DdType, ValueType>::getUpperBounds() const {
+            return upperBounds.get();
+        }
+        
+        template<storm::dd::DdType DdType, typename ValueType>
+        storm::dd::Add<DdType, ValueType> SymbolicEquationSolver<DdType, ValueType>::getLowerBoundsVector() const {
             STORM_LOG_THROW(lowerBound || lowerBounds, storm::exceptions::UnmetRequirementException, "Requiring lower bounds, but did not get any.");
             if (lowerBounds) {
                 return lowerBounds.get();
@@ -72,7 +112,7 @@ namespace storm {
         }
         
         template<storm::dd::DdType DdType, typename ValueType>
-        storm::dd::Add<DdType, ValueType> SymbolicEquationSolver<DdType, ValueType>::getUpperBounds() const {
+        storm::dd::Add<DdType, ValueType> SymbolicEquationSolver<DdType, ValueType>::getUpperBoundsVector() const {
             STORM_LOG_THROW(upperBound || upperBounds, storm::exceptions::UnmetRequirementException, "Requiring upper bounds, but did not get any.");
             if (upperBounds) {
                 return upperBounds.get();
