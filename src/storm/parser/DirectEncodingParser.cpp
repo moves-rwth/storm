@@ -124,6 +124,8 @@ namespace storm {
             modelComponents->stateLabeling = storm::models::sparse::StateLabeling(stateSize);
             modelComponents->observabilityClasses = std::vector<uint32_t>();
             modelComponents->observabilityClasses->resize(stateSize);
+            std::vector<std::vector<ValueType>> stateRewards;
+            
             // We parse rates for continuous time models.
             if (type == storm::models::ModelType::Ctmc) {
                 modelComponents->rateTransitions = true;
@@ -157,10 +159,18 @@ namespace storm {
                             // Rewards found
                             size_t posEndReward = line.find(']');
                             STORM_LOG_THROW(posEndReward != std::string::npos, storm::exceptions::WrongFormatException, "] missing.");
-                            std::string rewards = line.substr(1, posEndReward-1);
-                            STORM_LOG_TRACE("State rewards: " << rewards);
-                            // TODO import rewards
-                            STORM_LOG_WARN("Rewards were not imported");
+                            std::string rewardsStr = line.substr(1, posEndReward-1);
+                            STORM_LOG_TRACE("State rewards: " << rewardsStr);
+                            std::vector<std::string> rewards;
+                            boost::split(rewards, rewardsStr, boost::is_any_of(","));
+                            if (stateRewards.size() < rewards.size()) {
+                                stateRewards.resize(rewards.size(), std::vector<ValueType>(stateSize, storm::utility::zero<ValueType>()));
+                            }
+                            auto stateRewardsIt = stateRewards.begin();
+                            for (auto const& rew : rewards) {
+                                (*stateRewardsIt)[state] = valueParser.parseValue(rew);
+                                ++stateRewardsIt;
+                            }
                             line = line.substr(posEndReward+1);
                         }
 
@@ -212,6 +222,7 @@ namespace storm {
                         STORM_LOG_THROW(posEndReward != std::string::npos, storm::exceptions::WrongFormatException, "] missing.");
                         std::string rewards = line.substr(1, posEndReward-1);
                         STORM_LOG_TRACE("Transition rewards: " << rewards);
+                        STORM_LOG_WARN("Transition rewards [" << rewards << "] not parsed.");
                         // TODO save rewards
                         line = line.substr(posEndReward+1);
                     }
@@ -231,6 +242,9 @@ namespace storm {
 
             STORM_LOG_TRACE("Finished parsing");
             modelComponents->transitionMatrix = builder.build(row + 1, stateSize, nonDeterministic ? stateSize : 0);
+            for (uint64_t i = 0; i < stateRewards.size(); ++i) {
+                modelComponents->rewardModels.emplace("rew" + std::to_string(i), storm::models::sparse::StandardRewardModel<ValueType>(std::move(stateRewards[i])));
+            }
             STORM_LOG_TRACE("Built matrix");
             return modelComponents;
         }
