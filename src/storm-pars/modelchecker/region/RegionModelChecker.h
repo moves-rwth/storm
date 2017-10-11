@@ -42,6 +42,8 @@ namespace storm {
              */
             std::unique_ptr<storm::modelchecker::RegionCheckResult<ParametricType>> analyzeRegions(std::vector<storm::storage::ParameterRegion<ParametricType>> const& regions, std::vector<RegionResultHypothesis> const& hypotheses, bool sampleVerticesOfRegion = false) ;
             
+            virtual ParametricType getBoundAtInitState(storm::storage::ParameterRegion<ParametricType> const& region, storm::solver::OptimizationDirection const& dirForParameters);
+            
             /*!
              * Iteratively refines the region until the region analysis yields a conclusive result (AllSat or AllViolated).
              * @param region the considered region
