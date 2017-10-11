@@ -45,6 +45,9 @@ namespace storm {
              */
             std::unique_ptr<CheckResult> check(storm::storage::ParameterRegion<typename SparseModelType::ValueType> const& region, storm::solver::OptimizationDirection const& dirForParameters);
             
+            std::unique_ptr<QuantitativeCheckResult<ConstantType>> getBound(storm::storage::ParameterRegion<typename SparseModelType::ValueType> const& region, storm::solver::OptimizationDirection const& dirForParameters);
+            virtual typename SparseModelType::ValueType getBoundAtInitState(storm::storage::ParameterRegion<typename SparseModelType::ValueType> const& region, storm::solver::OptimizationDirection const& dirForParameters) override;
+
             
             SparseModelType const& getConsideredParametricModel() const;
             CheckTask<storm::logic::Formula, ConstantType> const& getCurrentCheckTask() const;

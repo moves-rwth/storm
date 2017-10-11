@@ -17,6 +17,7 @@
 
 #include "storm/settings/SettingsManager.h"
 #include "storm/settings/modules/CoreSettings.h"
+#include "storm/exceptions/NotImplementedException.h"
 
 
 namespace storm {
@@ -43,6 +44,12 @@ namespace storm {
                 return std::make_unique<storm::modelchecker::RegionCheckResult<ParametricType>>(std::move(result));
             }
 
+            template <typename ParametricType>
+            ParametricType RegionModelChecker<ParametricType>::getBoundAtInitState(storm::storage::ParameterRegion<ParametricType> const& region, storm::solver::OptimizationDirection const& dirForParameters) {
+                STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "The selected region model checker does not support this functionality.");
+                return storm::utility::zero<ParametricType>();
+            }
+        
             template <typename ParametricType>
             std::unique_ptr<storm::modelchecker::RegionRefinementCheckResult<ParametricType>> RegionModelChecker<ParametricType>::performRegionRefinement(storm::storage::ParameterRegion<ParametricType> const& region, boost::optional<ParametricType> const& coverageThreshold, boost::optional<uint64_t> depthThreshold, RegionResultHypothesis const& hypothesis) {
                 STORM_LOG_INFO("Applying refinement on region: " << region.toString(true) << " .");
