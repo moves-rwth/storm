@@ -60,9 +60,17 @@ namespace storm {
                 storm::models::sparse::StateLabeling labeling(pomdp.getNumberOfStates() * numMemoryStates);
                 for (auto const& labelName : pomdp.getStateLabeling().getLabels()) {
                     storm::storage::BitVector newStates(pomdp.getNumberOfStates() * numMemoryStates, false);
-                    for (auto const& modelState : pomdp.getStateLabeling().getStates(labelName)) {
-                        for (uint32_t memState = 0; memState < numMemoryStates; ++memState) {
-                            newStates.set(getUnfoldingState(modelState, memState));
+                    
+                    // The init label is only assigned to unfolding states with memState 0
+                    if (labelName == "init") {
+                        for (auto const& modelState : pomdp.getStateLabeling().getStates(labelName)) {
+                            newStates.set(getUnfoldingState(modelState, 0));
+                        }
+                    } else {
+                        for (auto const& modelState : pomdp.getStateLabeling().getStates(labelName)) {
+                            for (uint32_t memState = 0; memState < numMemoryStates; ++memState) {
+                                newStates.set(getUnfoldingState(modelState, memState));
+                            }
                         }
                     }
                     labeling.addLabel(labelName, std::move(newStates));
