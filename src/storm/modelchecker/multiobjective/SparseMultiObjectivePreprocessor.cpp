@@ -285,7 +285,7 @@ namespace storm {
                     } else {
                         STORM_LOG_THROW(!data.originalModel.isOfType(storm::models::ModelType::MarkovAutomaton) || formula.getTimeBoundReference().isTimeBound(), storm::exceptions::InvalidPropertyException, "Bounded until formulas for Markov Automata are only allowed when time bounds are considered.");
                         storm::logic::TimeBound bound(formula.isUpperBoundStrict(), formula.getUpperBound());
-                        subformula = std::make_shared<storm::logic::CumulativeRewardFormula>(bound, formula.getTimeBoundReference().getType());
+                        subformula = std::make_shared<storm::logic::CumulativeRewardFormula>(bound, formula.getTimeBoundReference());
                     }
                     preprocessUntilFormula(storm::logic::UntilFormula(formula.getLeftSubformula().asSharedPointer(), formula.getRightSubformula().asSharedPointer()), opInfo, data, subformula);
                 } else {
@@ -349,8 +349,13 @@ namespace storm {
                 STORM_LOG_THROW(data.originalModel.isOfType(storm::models::ModelType::Mdp), storm::exceptions::InvalidPropertyException, "Cumulative reward formulas are not supported for the given model type.");
                 
                 storm::logic::TimeBound bound(formula.isBoundStrict(), formula.getBound());
-                auto cumulativeRewardFormula = std::make_shared<storm::logic::CumulativeRewardFormula>(bound, storm::logic::TimeBoundType::Steps);
+                storm::logic::TimeBoundReference tbr(formula.getTimeBoundReference());
+                auto cumulativeRewardFormula = std::make_shared<storm::logic::CumulativeRewardFormula>(bound, tbr);
                 data.objectives.back()->formula = std::make_shared<storm::logic::RewardOperatorFormula>(cumulativeRewardFormula, *optionalRewardModelName, opInfo);
+                data.upperResultBoundObjectives.set(data.objectives.size() - 1, true);
+                if (tbr.isRewardBound()) {
+                    data.finiteRewardCheckObjectives.set(data.objectives.size() - 1, true);
+                }
             }
             
             template<typename SparseModelType>
@@ -466,10 +471,19 @@ namespace storm {
                 for (auto const& objIndex : finiteRewardCheckObjectives) {
                     STORM_LOG_ASSERT(result.objectives[objIndex].formula->isRewardOperatorFormula(), "Objective needs to be checked for finite reward but has no reward operator.");
                     auto const& rewModel = result.preprocessedModel->getRewardModel(result.objectives[objIndex].formula->asRewardOperatorFormula().getRewardModelName());
+                    auto unrelevantChoices = rewModel.getChoicesWithZeroReward(transitions);
+                    // For (upper) reward bounded cumulative reward formulas, we do not need to consider the choices where boundReward is collected.
+                    if (result.objectives[objIndex].formula->getSubformula().isCumulativeRewardFormula()) {
+                        auto const& timeBoundReference = result.objectives[objIndex].formula->getSubformula().asCumulativeRewardFormula().getTimeBoundReference();
+                        // Only reward bounded formulas need a finiteness check
+                        assert(timeBoundReference.isRewardBound());
+                        auto const& rewModelOfBound = result.preprocessedModel->getRewardModel(timeBoundReference.getRewardName());
+                        unrelevantChoices |= ~rewModelOfBound.getChoicesWithZeroReward(transitions);
+                    }
                     if (storm::solver::minimize(result.objectives[objIndex].formula->getOptimalityType())) {
-                        minRewardsToCheck &= rewModel.getChoicesWithZeroReward(transitions);
+                        minRewardsToCheck &= unrelevantChoices;
                     } else {
-                        maxRewardsToCheck &= rewModel.getChoicesWithZeroReward(transitions);
+                        maxRewardsToCheck &= unrelevantChoices;
                     }
                 }
                 maxRewardsToCheck.complement();
@@ -500,7 +514,9 @@ namespace storm {
             template<typename SparseModelType>
             boost::optional<typename SparseModelType::ValueType> SparseMultiObjectivePreprocessor<SparseModelType>::computeUpperResultBound(ReturnType const& result, uint64_t objIndex, storm::storage::SparseMatrix<ValueType> const& backwardTransitions) {
                 
-                if (result.objectives[objIndex].formula->isRewardOperatorFormula() && result.objectives[objIndex].formula->getSubformula().isTotalRewardFormula()) {
+                if (result.objectives[objIndex].formula->isRewardOperatorFormula() && (result.objectives[objIndex].formula->getSubformula().isTotalRewardFormula() || result.objectives[objIndex].formula->getSubformula().isCumulativeRewardFormula())) {
+                    // TODO: Consider cumulative reward formulas less naively
+                    // TODO: We have to eliminate ECs here to treat zero-reward ECs
                     auto const& transitions = result.preprocessedModel->getTransitionMatrix();
                     auto const& rewModel = result.preprocessedModel->getRewardModel(result.objectives[objIndex].formula->asRewardOperatorFormula().getRewardModelName());
                     storm::storage::BitVector allStates(result.preprocessedModel->getNumberOfStates(), true);
@@ -528,7 +544,6 @@ namespace storm {
                         storm::modelchecker::helper::BaierUpperRewardBoundsComputer<ValueType> baier(submatrix, rewards, rew0StateProbs);
                         return baier.computeUpperBound();
                     }
-                    
                 }
                 
                 

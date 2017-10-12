@@ -36,7 +36,7 @@ namespace storm {
             public:
                 static std::vector<ValueType> computeStepBoundedUntilProbabilities(storm::solver::SolveGoal<ValueType>&& goal, storm::storage::SparseMatrix<ValueType> const& transitionMatrix, storm::storage::SparseMatrix<ValueType> const& backwardTransitions, storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates, uint_fast64_t stepBound, storm::solver::MinMaxLinearEquationSolverFactory<ValueType> const& minMaxLinearEquationSolverFactory, ModelCheckerHint const& hint = ModelCheckerHint());
 
-                static std::map<storm::storage::sparse::state_type, ValueType> computeNonTrivialBoundedUntilProbabilities(OptimizationDirection dir, storm::modelchecker::multiobjective::MultiDimensionalRewardUnfolding<ValueType, true>& rewardUnfolding, storm::storage::BitVector const& initialStates, storm::solver::MinMaxLinearEquationSolverFactory<ValueType> const& minMaxLinearEquationSolverFactory);
+                static std::map<storm::storage::sparse::state_type, ValueType> computeRewardBoundedValues(OptimizationDirection dir, storm::modelchecker::multiobjective::MultiDimensionalRewardUnfolding<ValueType, true>& rewardUnfolding, storm::storage::BitVector const& initialStates, storm::solver::MinMaxLinearEquationSolverFactory<ValueType> const& minMaxLinearEquationSolverFactory, boost::optional<ValueType> const& upperBound = boost::none);
                 
                 static std::vector<ValueType> computeNextProbabilities(OptimizationDirection dir, storm::storage::SparseMatrix<ValueType> const& transitionMatrix, storm::storage::BitVector const& nextStates, storm::solver::MinMaxLinearEquationSolverFactory<ValueType> const& minMaxLinearEquationSolverFactory);
 

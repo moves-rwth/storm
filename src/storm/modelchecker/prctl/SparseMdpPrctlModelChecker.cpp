@@ -43,14 +43,14 @@ namespace storm {
         template<typename SparseMdpModelType>
         bool SparseMdpPrctlModelChecker<SparseMdpModelType>::canHandle(CheckTask<storm::logic::Formula, ValueType> const& checkTask) const {
             storm::logic::Formula const& formula = checkTask.getFormula();
-            if(formula.isInFragment(storm::logic::prctl().setLongRunAverageRewardFormulasAllowed(true).setLongRunAverageProbabilitiesAllowed(true).setConditionalProbabilityFormulasAllowed(true).setOnlyEventuallyFormuluasInConditionalFormulasAllowed(true).setRewardBoundedUntilFormulasAllowed(true).setMultiDimensionalBoundedUntilFormulasAllowed(true))) {
+            if(formula.isInFragment(storm::logic::prctl().setLongRunAverageRewardFormulasAllowed(true).setLongRunAverageProbabilitiesAllowed(true).setConditionalProbabilityFormulasAllowed(true).setOnlyEventuallyFormuluasInConditionalFormulasAllowed(true).setRewardBoundedUntilFormulasAllowed(true).setRewardBoundedCumulativeRewardFormulasAllowed(true).setMultiDimensionalBoundedUntilFormulasAllowed(true))) {
                 return true;
             } else {
                 // Check whether we consider a multi-objective formula
                 // For multi-objective model checking, each initial state requires an individual scheduler (in contrast to single-objective model checking). Let's exclude multiple initial states.
                 if (this->getModel().getInitialStates().getNumberOfSetBits() > 1) return false;
                 if (!checkTask.isOnlyInitialStatesRelevantSet()) return false;
-                return formula.isInFragment(storm::logic::multiObjective().setCumulativeRewardFormulasAllowed(true).setRewardBoundedUntilFormulasAllowed(true).setMultiDimensionalBoundedUntilFormulasAllowed(true));
+                return formula.isInFragment(storm::logic::multiObjective().setCumulativeRewardFormulasAllowed(true).setTimeBoundedCumulativeRewardFormulasAllowed(true).setStepBoundedCumulativeRewardFormulasAllowed(true).setRewardBoundedCumulativeRewardFormulasAllowed(true).setTimeBoundedUntilFormulasAllowed(true).setStepBoundedUntilFormulasAllowed(true).setRewardBoundedUntilFormulasAllowed(true).setMultiDimensionalBoundedUntilFormulasAllowed(true));
             }
         }
         
@@ -67,7 +67,7 @@ namespace storm {
                 }
                 auto formula = std::make_shared<storm::logic::ProbabilityOperatorFormula>(checkTask.getFormula().asSharedPointer(), opInfo);
                 storm::modelchecker::multiobjective::MultiDimensionalRewardUnfolding<ValueType, true> rewardUnfolding(this->getModel(), formula);
-                auto numericResult = storm::modelchecker::helper::SparseMdpPrctlHelper<ValueType>::computeNonTrivialBoundedUntilProbabilities(checkTask.getOptimizationDirection(), rewardUnfolding, this->getModel().getInitialStates(), *minMaxLinearEquationSolverFactory);
+                auto numericResult = storm::modelchecker::helper::SparseMdpPrctlHelper<ValueType>::computeRewardBoundedValues(checkTask.getOptimizationDirection(), rewardUnfolding, this->getModel().getInitialStates(), *minMaxLinearEquationSolverFactory, storm::utility::one<ValueType>());
                 return std::unique_ptr<CheckResult>(new ExplicitQuantitativeCheckResult<ValueType>(std::move(numericResult)));
             } else {
                 STORM_LOG_THROW(!pathFormula.hasLowerBound() && pathFormula.hasUpperBound(), storm::exceptions::InvalidPropertyException, "Formula needs to have single upper time bound.");
@@ -137,9 +137,23 @@ namespace storm {
         std::unique_ptr<CheckResult> SparseMdpPrctlModelChecker<SparseMdpModelType>::computeCumulativeRewards(storm::logic::RewardMeasureType, CheckTask<storm::logic::CumulativeRewardFormula, ValueType> const& checkTask) {
             storm::logic::CumulativeRewardFormula const& rewardPathFormula = checkTask.getFormula();
             STORM_LOG_THROW(checkTask.isOptimizationDirectionSet(), storm::exceptions::InvalidPropertyException, "Formula needs to specify whether minimal or maximal values are to be computed on nondeterministic model.");
-            STORM_LOG_THROW(rewardPathFormula.hasIntegerBound(), storm::exceptions::InvalidPropertyException, "Formula needs to have a discrete time bound.");
-            std::vector<ValueType> numericResult = storm::modelchecker::helper::SparseMdpPrctlHelper<ValueType>::computeCumulativeRewards(storm::solver::SolveGoal<ValueType>(this->getModel(), checkTask), this->getModel().getTransitionMatrix(), checkTask.isRewardModelSet() ? this->getModel().getRewardModel(checkTask.getRewardModel()) : this->getModel().getRewardModel(""), rewardPathFormula.getNonStrictBound<uint64_t>(), *minMaxLinearEquationSolverFactory);
-            return std::unique_ptr<CheckResult>(new ExplicitQuantitativeCheckResult<ValueType>(std::move(numericResult)));
+            if (rewardPathFormula.getTimeBoundReference().isRewardBound()) {
+                STORM_LOG_THROW(checkTask.isOnlyInitialStatesRelevantSet(), storm::exceptions::InvalidOperationException, "Checking reward bounded cumulative reward formulas can only be done for the initial states of the model.");
+                STORM_LOG_WARN_COND(!checkTask.isQualitativeSet(), "Checking reward bounded until formulas is not optimized w.r.t. qualitative queries");
+                storm::logic::OperatorInformation opInfo(checkTask.getOptimizationDirection());
+                if (checkTask.isBoundSet()) {
+                    opInfo.bound = checkTask.getBound();
+                }
+                auto formula = std::make_shared<storm::logic::RewardOperatorFormula>(checkTask.getFormula().asSharedPointer(), checkTask.getRewardModel(), opInfo);
+                storm::modelchecker::multiobjective::MultiDimensionalRewardUnfolding<ValueType, true> rewardUnfolding(this->getModel(), formula);
+                auto numericResult = storm::modelchecker::helper::SparseMdpPrctlHelper<ValueType>::computeRewardBoundedValues(checkTask.getOptimizationDirection(), rewardUnfolding, this->getModel().getInitialStates(), *minMaxLinearEquationSolverFactory);
+                return std::unique_ptr<CheckResult>(new ExplicitQuantitativeCheckResult<ValueType>(std::move(numericResult)));
+            } else {
+                
+                STORM_LOG_THROW(rewardPathFormula.hasIntegerBound(), storm::exceptions::InvalidPropertyException, "Formula needs to have a discrete time bound.");
+                std::vector<ValueType> numericResult = storm::modelchecker::helper::SparseMdpPrctlHelper<ValueType>::computeCumulativeRewards(storm::solver::SolveGoal<ValueType>(this->getModel(), checkTask), this->getModel().getTransitionMatrix(), checkTask.isRewardModelSet() ? this->getModel().getRewardModel(checkTask.getRewardModel()) : this->getModel().getRewardModel(""), rewardPathFormula.getNonStrictBound<uint64_t>(), *minMaxLinearEquationSolverFactory);
+                return std::unique_ptr<CheckResult>(new ExplicitQuantitativeCheckResult<ValueType>(std::move(numericResult)));
+            }
         }
         
         template<typename SparseMdpModelType>

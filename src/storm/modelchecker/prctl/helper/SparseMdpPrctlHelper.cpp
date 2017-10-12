@@ -77,7 +77,7 @@ namespace storm {
             }
 
             template<typename ValueType>
-            std::map<storm::storage::sparse::state_type, ValueType> SparseMdpPrctlHelper<ValueType>::computeNonTrivialBoundedUntilProbabilities(OptimizationDirection dir, storm::modelchecker::multiobjective::MultiDimensionalRewardUnfolding<ValueType, true>& rewardUnfolding, storm::storage::BitVector const& initialStates, storm::solver::MinMaxLinearEquationSolverFactory<ValueType> const& minMaxLinearEquationSolverFactory) {
+            std::map<storm::storage::sparse::state_type, ValueType> SparseMdpPrctlHelper<ValueType>::computeRewardBoundedValues(OptimizationDirection dir, storm::modelchecker::multiobjective::MultiDimensionalRewardUnfolding<ValueType, true>& rewardUnfolding, storm::storage::BitVector const& initialStates, storm::solver::MinMaxLinearEquationSolverFactory<ValueType> const& minMaxLinearEquationSolverFactory, boost::optional<ValueType> const& upperBound) {
                 auto initEpoch = rewardUnfolding.getStartEpoch();
                 auto epochOrder = rewardUnfolding.getEpochComputationOrder(initEpoch);
                 
@@ -93,11 +93,14 @@ namespace storm {
                         minMaxSolver->setOptimizationDirection(dir);
                         minMaxSolver->setCachingEnabled(true);
                         minMaxSolver->setTrackScheduler(true);
-                        minMaxSolver->setLowerBound(storm::utility::zero<ValueType>());
-                        minMaxSolver->setUpperBound(storm::utility::one<ValueType>());
                         auto req = minMaxSolver->getRequirements(storm::solver::EquationSystemType::StochasticShortestPath, dir);
+                        minMaxSolver->setLowerBound(storm::utility::zero<ValueType>());
+                        req.clearLowerBounds();
+                        if (upperBound) {
+                            minMaxSolver->setUpperBound(upperBound.get());
+                            req.clearUpperBounds();
+                        }
                         req.clearNoEndComponents();
-                        req.clearBounds();
                         STORM_LOG_THROW(req.empty(), storm::exceptions::UncheckedRequirementException, "A solver requirement is not satisfied.");
                         minMaxSolver->setRequirementsChecked();
                     } else {

@@ -65,7 +65,7 @@ namespace storm {
         }
         
         boost::any VariableSubstitutionVisitor::visit(CumulativeRewardFormula const& f, boost::any const&) const {
-            return std::static_pointer_cast<Formula>(std::make_shared<CumulativeRewardFormula>(storm::logic::TimeBound(f.isBoundStrict(), f.getBound().substitute(substitution)), f.getTimeBoundType()));
+            return std::static_pointer_cast<Formula>(std::make_shared<CumulativeRewardFormula>(storm::logic::TimeBound(f.isBoundStrict(), f.getBound().substitute(substitution)), f.getTimeBoundReference()));
         }
         
         boost::any VariableSubstitutionVisitor::visit(InstantaneousRewardFormula const& f, boost::any const&) const {

@@ -44,7 +44,7 @@ namespace storm {
                  *
                  */
                 MultiDimensionalRewardUnfolding(storm::models::sparse::Mdp<ValueType> const& model, std::vector<storm::modelchecker::multiobjective::Objective<ValueType>> const& objectives);
-                MultiDimensionalRewardUnfolding(storm::models::sparse::Mdp<ValueType> const& model, std::shared_ptr<storm::logic::ProbabilityOperatorFormula const> objectiveFormula);
+                MultiDimensionalRewardUnfolding(storm::models::sparse::Mdp<ValueType> const& model, std::shared_ptr<storm::logic::OperatorFormula const> objectiveFormula);
                 
                 ~MultiDimensionalRewardUnfolding() {
                     std::cout << "Unfolding statistics: " << std::endl;

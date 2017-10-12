@@ -203,7 +203,7 @@ namespace storm {
 
                 // Methods that actually create the expression objects.
             std::shared_ptr<storm::logic::Formula const> createInstantaneousRewardFormula(storm::expressions::Expression const& timeBound) const;
-            std::shared_ptr<storm::logic::Formula const> createCumulativeRewardFormula(storm::expressions::Expression const& timeBound, bool strict) const;
+            std::shared_ptr<storm::logic::Formula const> createCumulativeRewardFormula(std::tuple<boost::optional<storm::logic::TimeBound>, boost::optional<storm::logic::TimeBound>, boost::optional<std::string>> const& timeBound) const;
             std::shared_ptr<storm::logic::Formula const> createTotalRewardFormula() const;
             std::shared_ptr<storm::logic::Formula const> createLongRunAverageRewardFormula() const;
             std::shared_ptr<storm::logic::Formula const> createAtomicExpressionFormula(storm::expressions::Expression const& expression) const;

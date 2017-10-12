@@ -8,7 +8,7 @@
 
 namespace storm {
     namespace logic {
-        CumulativeRewardFormula::CumulativeRewardFormula(TimeBound const& bound, TimeBoundType const& timeBoundType) : timeBoundType(timeBoundType), bound(bound) {
+        CumulativeRewardFormula::CumulativeRewardFormula(TimeBound const& bound, TimeBoundReference const& timeBoundReference) : timeBoundReference(timeBoundReference), bound(bound) {
             // Intentionally left empty.
         }
 
@@ -24,16 +24,30 @@ namespace storm {
             return visitor.visit(*this, data);
         }
         
-        TimeBoundType const& CumulativeRewardFormula::getTimeBoundType() const {
-            return timeBoundType;
+        void CumulativeRewardFormula::gatherReferencedRewardModels(std::set<std::string>& referencedRewardModels) const {
+            if (this->isRewardBounded()) {
+                referencedRewardModels.insert(this->getTimeBoundReference().getRewardName());
+            }
+        }
+        
+        TimeBoundType CumulativeRewardFormula::getTimeBoundType() const {
+            return timeBoundReference.getType();
+        }
+        
+        TimeBoundReference const& CumulativeRewardFormula::getTimeBoundReference() const {
+            return timeBoundReference;
         }
 
         bool CumulativeRewardFormula::isStepBounded() const {
-            return timeBoundType == TimeBoundType::Steps;
+            return getTimeBoundType() == TimeBoundType::Steps;
         }
         
         bool CumulativeRewardFormula::isTimeBounded() const {
-            return timeBoundType == TimeBoundType::Time;
+            return getTimeBoundType() == TimeBoundType::Time;
+        }
+        
+        bool CumulativeRewardFormula::isRewardBounded() const {
+            return getTimeBoundType() == TimeBoundType::Reward;
         }
         
         bool CumulativeRewardFormula::isBoundStrict() const {
@@ -87,7 +101,11 @@ namespace storm {
         }
         
         std::ostream& CumulativeRewardFormula::writeToStream(std::ostream& out) const {
-            out << "C<=" << this->getBound();
+            out << "C";
+             if(getTimeBoundReference().isRewardBound()) {
+                out << "{\"" << getTimeBoundReference().getRewardName() << "\"}";
+             }
+             out << "<=" << this->getBound();
             return out;
         }
     }

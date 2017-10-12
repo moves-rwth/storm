@@ -25,7 +25,7 @@ namespace storm {
              
                 STORM_LOG_THROW(preprocessorResult.rewardFinitenessType != SparseMultiObjectivePreprocessorResult<SparseModelType>::RewardFinitenessType::Infinite, storm::exceptions::NotSupportedException, "There is no Pareto optimal scheduler that yields finite reward for all objectives. This is not supported.");
                 STORM_LOG_THROW(preprocessorResult.rewardLessInfinityEStates, storm::exceptions::UnexpectedException, "The set of states with reward < infinity for some scheduler has not been computed during preprocessing.");
-                STORM_LOG_THROW(preprocessorResult.containsOnlyRewardObjectives(), storm::exceptions::NotSupportedException, "At least one objective was not reduced to an expected (total or cumulative) reward objective during preprocessing. This is not supported by the considered weight vector checker.");
+                STORM_LOG_THROW(preprocessorResult.containsOnlyTrivialObjectives(), storm::exceptions::NotSupportedException, "At least one objective was not reduced to an expected (total or cumulative) reward objective during preprocessing. This is not supported by the considered weight vector checker.");
                 STORM_LOG_THROW(preprocessorResult.preprocessedModel->getInitialStates().getNumberOfSetBits() == 1, storm::exceptions::NotSupportedException, "The model has multiple initial states.");
                 
                 // Build a subsystem of the preprocessor result model that discards states that yield infinite reward for all schedulers.

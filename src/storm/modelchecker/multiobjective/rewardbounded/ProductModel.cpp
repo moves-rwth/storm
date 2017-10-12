@@ -20,6 +20,12 @@ namespace storm {
             template<typename ValueType>
             ProductModel<ValueType>::ProductModel(storm::models::sparse::Mdp<ValueType> const& model, std::vector<storm::modelchecker::multiobjective::Objective<ValueType>> const& objectives, std::vector<Dimension<ValueType>> const& dimensions, std::vector<storm::storage::BitVector> const& objectiveDimensions, EpochManager const& epochManager, std::vector<Epoch> const& originalModelSteps) : dimensions(dimensions), objectiveDimensions(objectiveDimensions), epochManager(epochManager), memoryStateManager(dimensions.size()) {
                 
+                for (uint64_t dim = 0; dim < dimensions.size(); ++dim) {
+                    if (!dimensions[dim].memoryLabel) {
+                        memoryStateManager.setDimensionWithoutMemory(dim);
+                    }
+                }
+                
                 storm::storage::MemoryStructure memory = computeMemoryStructure(model, objectives);
                 assert(memoryStateManager.getMemoryStateCount() == memory.getNumberOfStates());
                 std::vector<MemoryState> memoryStateMap = computeMemoryStateMap(memory);
@@ -30,18 +36,19 @@ namespace storm {
                 product = productBuilder.build()->template as<storm::models::sparse::Mdp<ValueType>>();
                 
                 uint64_t numModelStates = productBuilder.getOriginalModel().getNumberOfStates();
+                MemoryState upperMemStateBound = memoryStateManager.getUpperMemoryStateBound();
                 uint64_t numMemoryStates = memoryStateManager.getMemoryStateCount();
                 uint64_t numProductStates = getProduct().getNumberOfStates();
                 
                 // Compute a mappings from product states to model/memory states and back
-                modelMemoryToProductStateMap.resize(numMemoryStates * numModelStates, std::numeric_limits<uint64_t>::max());
+                modelMemoryToProductStateMap.resize(upperMemStateBound * numModelStates, std::numeric_limits<uint64_t>::max());
                 productToModelStateMap.resize(numProductStates, std::numeric_limits<uint64_t>::max());
                 productToMemoryStateMap.resize(numProductStates, std::numeric_limits<uint64_t>::max());
                 for (uint64_t modelState = 0; modelState < numModelStates; ++modelState) {
                     for (uint64_t memoryStateIndex = 0; memoryStateIndex < numMemoryStates; ++memoryStateIndex) {
                         if (productBuilder.isStateReachable(modelState, memoryStateIndex)) {
                             uint64_t productState = productBuilder.getResultState(modelState, memoryStateIndex);
-                            modelMemoryToProductStateMap[modelState * numMemoryStates + memoryStateMap[memoryStateIndex]] = productState;
+                            modelMemoryToProductStateMap[modelState * upperMemStateBound + memoryStateMap[memoryStateIndex]] = productState;
                             productToModelStateMap[productState] = modelState;
                             productToMemoryStateMap[productState] = memoryStateMap[memoryStateIndex];
                         }
@@ -190,10 +197,12 @@ namespace storm {
                     MemoryState memState = memoryStateManager.getInitialMemoryState();
                     std::set<std::string> stateLabels = memory.getStateLabeling().getLabelsOfState(memStateIndex);
                     for (uint64_t dim = 0; dim < epochManager.getDimensionCount(); ++dim) {
-                        if (dimensions[dim].memoryLabel && stateLabels.find(dimensions[dim].memoryLabel.get()) != stateLabels.end()) {
-                            memoryStateManager.setRelevantDimension(memState, dim, true);
-                        } else {
-                            memoryStateManager.setRelevantDimension(memState, dim, false);
+                        if (dimensions[dim].memoryLabel) {
+                            if (stateLabels.find(dimensions[dim].memoryLabel.get()) != stateLabels.end()) {
+                                memoryStateManager.setRelevantDimension(memState, dim, true);
+                            } else {
+                                memoryStateManager.setRelevantDimension(memState, dim, false);
+                            }
                         }
                     }
                     result.push_back(std::move(memState));
@@ -204,7 +213,7 @@ namespace storm {
             template<typename ValueType>
             void ProductModel<ValueType>::setReachableProductStates(storm::storage::SparseModelMemoryProduct<ValueType>& productBuilder, std::vector<Epoch> const& originalModelSteps, std::vector<MemoryState> const& memoryStateMap) const {
 
-                std::vector<uint64_t> inverseMemoryStateMap(memoryStateMap.size(), std::numeric_limits<uint64_t>::max());
+                std::vector<uint64_t> inverseMemoryStateMap(memoryStateManager.getUpperMemoryStateBound(), std::numeric_limits<uint64_t>::max());
                 for (uint64_t memStateIndex = 0; memStateIndex < memoryStateMap.size(); ++memStateIndex) {
                     inverseMemoryStateMap[memoryStateMap[memStateIndex]] = memStateIndex;
                 }
@@ -213,14 +222,17 @@ namespace storm {
                 auto const& model = productBuilder.getOriginalModel();
                 auto const& modelTransitions = model.getTransitionMatrix();
                 
-                std::vector<storm::storage::BitVector> reachableStates(memoryStateManager.getMemoryStateCount(), storm::storage::BitVector(model.getNumberOfStates(), false));
+                std::vector<storm::storage::BitVector> reachableProductStates(memoryStateManager.getUpperMemoryStateBound());
+                for (auto const& memState : memoryStateMap) {
+                    reachableProductStates[memState] = storm::storage::BitVector(model.getNumberOfStates(), false);
+                }
                 
                 // Initialize the reachable states with the initial states
                 EpochClass initEpochClass = epochManager.getEpochClass(epochManager.getZeroEpoch());
                 auto memStateIt = memory.getInitialMemoryStates().begin();
                 for (auto const& initState : model.getInitialStates()) {
                     uint64_t transformedMemoryState = transformMemoryState(memoryStateMap[*memStateIt], initEpochClass, memoryStateManager.getInitialMemoryState());
-                    reachableStates[transformedMemoryState].set(initState, true);
+                    reachableProductStates[transformedMemoryState].set(initState, true);
                     ++memStateIt;
                 }
                 assert(memStateIt == memory.getInitialMemoryStates().end());
@@ -238,7 +250,7 @@ namespace storm {
                     // Find the remaining set of reachable states via DFS.
                     std::vector<std::pair<uint64_t, MemoryState>> dfsStack;
                     for (MemoryState const& memState : memoryStateMap) {
-                        for (auto const& modelState : reachableStates[memState]) {
+                        for (auto const& modelState : reachableProductStates[memState]) {
                             dfsStack.emplace_back(modelState, memState);
                         }
                     }
@@ -255,8 +267,8 @@ namespace storm {
                                 
                                 MemoryState successorMemoryState = memoryStateMap[memory.getSuccessorMemoryState(currentMemoryStateIndex, transitionIt - modelTransitions.begin())];
                                 successorMemoryState = transformMemoryState(successorMemoryState, epochClass, currentMemoryState);
-                                if (!reachableStates[successorMemoryState].get(transitionIt->getColumn())) {
-                                    reachableStates[successorMemoryState].set(transitionIt->getColumn(), true);
+                                if (!reachableProductStates[successorMemoryState].get(transitionIt->getColumn())) {
+                                    reachableProductStates[successorMemoryState].set(transitionIt->getColumn(), true);
                                     dfsStack.emplace_back(transitionIt->getColumn(), successorMemoryState);
                                 }
                             }
@@ -265,7 +277,7 @@ namespace storm {
                 }
                 
                 for (uint64_t memStateIndex = 0; memStateIndex < memoryStateManager.getMemoryStateCount(); ++memStateIndex) {
-                    for (auto const& modelState : reachableStates[memoryStateMap[memStateIndex]]) {
+                    for (auto const& modelState : reachableProductStates[memoryStateMap[memStateIndex]]) {
                         productBuilder.addReachableState(modelState, memStateIndex);
                     }
                 }
@@ -283,13 +295,13 @@ namespace storm {
             
             template<typename ValueType>
             bool ProductModel<ValueType>::productStateExists(uint64_t const& modelState, MemoryState const& memoryState) const {
-                return modelMemoryToProductStateMap[modelState * memoryStateManager.getMemoryStateCount() + memoryState] < getProduct().getNumberOfStates();
+                return modelMemoryToProductStateMap[modelState * memoryStateManager.getUpperMemoryStateBound() + memoryState] < getProduct().getNumberOfStates();
             }
             
             template<typename ValueType>
             uint64_t ProductModel<ValueType>::getProductState(uint64_t const& modelState, MemoryState const& memoryState) const {
                 STORM_LOG_ASSERT(productStateExists(modelState, memoryState), "Tried to obtain a state in the model-memory-product that does not exist");
-                return modelMemoryToProductStateMap[modelState * memoryStateManager.getMemoryStateCount() + memoryState];
+                return modelMemoryToProductStateMap[modelState * memoryStateManager.getUpperMemoryStateBound() + memoryState];
             }
 
             template<typename ValueType>
@@ -560,14 +572,16 @@ namespace storm {
                 for (auto const& objDimensions : objectiveDimensions) {
                     for (auto const& dim : objDimensions) {
                         auto const& dimension = dimensions[dim];
-                        bool dimUpperBounded = dimension.isUpperBounded;
-                        bool dimBottom = epochManager.isBottomDimensionEpochClass(epochClass, dim);
-                        if (dimUpperBounded && dimBottom && memoryStateManager.isRelevantDimension(predecessorMemoryState, dim)) {
-                            STORM_LOG_ASSERT(objDimensions == dimension.dependentDimensions, "Unexpected set of dependent dimensions");
-                            memoryStateManager.setRelevantDimensions(memoryStatePrime, objDimensions, false);
-                            break;
-                        } else if (!dimUpperBounded && !dimBottom && memoryStateManager.isRelevantDimension(predecessorMemoryState, dim)) {
-                            memoryStateManager.setRelevantDimensions(memoryStatePrime, dimension.dependentDimensions, true);
+                        if (dimension.memoryLabel) {
+                            bool dimUpperBounded = dimension.isUpperBounded;
+                            bool dimBottom = epochManager.isBottomDimensionEpochClass(epochClass, dim);
+                            if (dimUpperBounded && dimBottom && memoryStateManager.isRelevantDimension(predecessorMemoryState, dim)) {
+                                STORM_LOG_ASSERT(objDimensions == dimension.dependentDimensions, "Unexpected set of dependent dimensions");
+                                memoryStateManager.setRelevantDimensions(memoryStatePrime, objDimensions, false);
+                                break;
+                            } else if (!dimUpperBounded && !dimBottom && memoryStateManager.isRelevantDimension(predecessorMemoryState, dim)) {
+                                memoryStateManager.setRelevantDimensions(memoryStatePrime, dimension.dependentDimensions, true);
+                            }
                         }
                     }
                 }

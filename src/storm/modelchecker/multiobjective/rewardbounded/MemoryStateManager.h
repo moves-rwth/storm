@@ -18,8 +18,11 @@ namespace storm {
                 
                 MemoryStateManager(uint64_t dimensionCount);
                 
+                void setDimensionWithoutMemory(uint64_t dimension);
+                
                 uint64_t const& getDimensionCount() const;
                 uint64_t const& getMemoryStateCount() const;
+                MemoryState const& getUpperMemoryStateBound() const; // is larger then every valid memory state m, i.e., m < getUpperMemoryStateBound() holds for all m
                 
                 MemoryState getInitialMemoryState() const;
                 bool isRelevantDimension(MemoryState const& state, uint64_t dimension) const;
@@ -32,7 +35,9 @@ namespace storm {
                 uint64_t const dimensionCount;
                 uint64_t const dimensionBitMask;
                 uint64_t const relevantBitsMask;
-                uint64_t const stateCount;
+                uint64_t stateCount;
+                uint64_t dimensionsWithoutMemoryMask;
+                MemoryState const upperMemoryStateBound;
 
             };
         }

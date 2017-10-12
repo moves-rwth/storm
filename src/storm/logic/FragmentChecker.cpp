@@ -113,9 +113,20 @@ namespace storm {
             return result;
         }
         
-        boost::any FragmentChecker::visit(CumulativeRewardFormula const&, boost::any const& data) const {
+        boost::any FragmentChecker::visit(CumulativeRewardFormula const& f, boost::any const& data) const {
             InheritedInformation const& inherited = boost::any_cast<InheritedInformation const&>(data);
-            return inherited.getSpecification().areCumulativeRewardFormulasAllowed();
+            
+            bool result = inherited.getSpecification().areCumulativeRewardFormulasAllowed();
+            auto const& tbr = f.getTimeBoundReference();
+            if (tbr.isStepBound()) {
+                result = result && inherited.getSpecification().areStepBoundedCumulativeRewardFormulasAllowed();
+            } else if(tbr.isTimeBound()) {
+                result = result && inherited.getSpecification().areTimeBoundedCumulativeRewardFormulasAllowed();
+            } else {
+                assert(tbr.isRewardBound());
+                result = result && inherited.getSpecification().areRewardBoundedCumulativeRewardFormulasAllowed();
+            }
+            return result;
         }
         
         boost::any FragmentChecker::visit(EventuallyFormula const& f, boost::any const& data) const {

@@ -49,9 +49,9 @@ namespace storm {
                     // Intentionally left empty
                 }
                 
-                bool containsOnlyRewardObjectives() const {
+                bool containsOnlyTrivialObjectives() const {
                     for (auto const& obj : objectives) {
-                        if (!(obj.formula->isRewardOperatorFormula() && (obj.formula->getSubformula().isTotalRewardFormula() || obj.formula->getSubformula().isCumulativeRewardFormula()))) {
+                        if (!(obj.formula->isRewardOperatorFormula() && (obj.formula->getSubformula().isTotalRewardFormula() || (obj.formula->getSubformula().isCumulativeRewardFormula() && !obj.formula->getSubformula().asCumulativeRewardFormula().getTimeBoundReference().isRewardBound())))) {
                             return false;
                         }
                     }

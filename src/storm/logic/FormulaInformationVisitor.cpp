@@ -30,10 +30,16 @@ namespace storm {
             result.setContainsBoundedUntilFormula(true);
             if (f.hasMultiDimensionalSubformulas()) {
                 for (unsigned i = 0; i < f.getDimension(); ++i){
+                    if (f.getTimeBoundReference(i).isRewardBound()) {
+                        result.setContainsRewardBoundedFormula(true);
+                    }
                     result.join(boost::any_cast<FormulaInformation>(f.getLeftSubformula(i).accept(*this, data)));
                     result.join(boost::any_cast<FormulaInformation>(f.getRightSubformula(i).accept(*this, data)));
                 }
             } else {
+                if (f.getTimeBoundReference().isRewardBound()) {
+                    result.setContainsRewardBoundedFormula(true);
+                }
                 result.join(boost::any_cast<FormulaInformation>(f.getLeftSubformula().accept(*this, data)));
                 result.join(boost::any_cast<FormulaInformation>(f.getRightSubformula().accept(*this, data)));
             }
@@ -44,8 +50,13 @@ namespace storm {
             return boost::any_cast<FormulaInformation>(f.getSubformula().accept(*this, data)).join(boost::any_cast<FormulaInformation>(f.getConditionFormula().accept(*this)));
         }
         
-        boost::any FormulaInformationVisitor::visit(CumulativeRewardFormula const&, boost::any const&) const {
-            return FormulaInformation();
+        boost::any FormulaInformationVisitor::visit(CumulativeRewardFormula const& f, boost::any const&) const {
+            FormulaInformation result;
+            result.setContainsCumulativeRewardFormula(true);
+            if (f.getTimeBoundReference().isRewardBound()) {
+                result.setContainsRewardBoundedFormula(true);
+            }
+            return result;
         }
         
         boost::any FormulaInformationVisitor::visit(EventuallyFormula const& f, boost::any const& data) const {

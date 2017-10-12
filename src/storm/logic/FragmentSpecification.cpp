@@ -60,6 +60,8 @@ namespace storm {
             prctl.setInstantaneousFormulasAllowed(true);
             prctl.setReachabilityRewardFormulasAllowed(true);
             prctl.setLongRunAverageOperatorsAllowed(true);
+            prctl.setStepBoundedCumulativeRewardFormulasAllowed(true);
+            prctl.setTimeBoundedCumulativeRewardFormulasAllowed(true);
             
             return prctl;
         }
@@ -80,6 +82,7 @@ namespace storm {
             csrl.setInstantaneousFormulasAllowed(true);
             csrl.setReachabilityRewardFormulasAllowed(true);
             csrl.setLongRunAverageOperatorsAllowed(true);
+            csrl.setTimeBoundedCumulativeRewardFormulasAllowed(true);
             
             return csrl;
         }
@@ -146,6 +149,9 @@ namespace storm {
             timeBoundedUntilFormulas = false;
             rewardBoundedUntilFormulas = false;
             multiDimensionalBoundedUntilFormulas = false;
+            stepBoundedCumulativeRewardFormulas = false;
+            timeBoundedCumulativeRewardFormulas = false;
+            rewardBoundedCumulativeRewardFormulas = false;
             varianceAsMeasureType = false;
             
             qualitativeOperatorResults = true;
@@ -448,6 +454,33 @@ namespace storm {
             return *this;
         }
 
+        bool FragmentSpecification::areStepBoundedCumulativeRewardFormulasAllowed() const {
+            return this->stepBoundedCumulativeRewardFormulas;
+        }
+        
+        FragmentSpecification& FragmentSpecification::setStepBoundedCumulativeRewardFormulasAllowed(bool newValue) {
+            this->stepBoundedCumulativeRewardFormulas = newValue;
+            return *this;
+        }
+        
+        bool FragmentSpecification::areTimeBoundedCumulativeRewardFormulasAllowed() const {
+            return this->timeBoundedCumulativeRewardFormulas;
+        }
+        
+        FragmentSpecification& FragmentSpecification::setTimeBoundedCumulativeRewardFormulasAllowed(bool newValue) {
+            this->timeBoundedCumulativeRewardFormulas = newValue;
+            return *this;
+        }
+
+        bool FragmentSpecification::areRewardBoundedCumulativeRewardFormulasAllowed() const {
+            return this->rewardBoundedCumulativeRewardFormulas;
+        }
+
+        FragmentSpecification& FragmentSpecification::setRewardBoundedCumulativeRewardFormulasAllowed(bool newValue) {
+            this->rewardBoundedCumulativeRewardFormulas = newValue;
+            return *this;
+        }
+        
         FragmentSpecification& FragmentSpecification::setOperatorsAllowed(bool newValue) {
             this->setProbabilityOperatorsAllowed(newValue);
             this->setRewardOperatorsAllowed(newValue);

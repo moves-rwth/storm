@@ -10,7 +10,7 @@ namespace storm {
     namespace logic {
         class CumulativeRewardFormula : public PathFormula {
         public:
-            CumulativeRewardFormula(TimeBound const& bound, TimeBoundType const& timeBoundType = TimeBoundType::Time);
+            CumulativeRewardFormula(TimeBound const& bound, TimeBoundReference const& timeBoundReference = TimeBoundReference(TimeBoundType::Time));
             
             virtual ~CumulativeRewardFormula() {
                 // Intentionally left empty.
@@ -21,11 +21,16 @@ namespace storm {
             
             virtual boost::any accept(FormulaVisitor const& visitor, boost::any const& data) const override;
 
+            virtual void gatherReferencedRewardModels(std::set<std::string>& referencedRewardModels) const override;
+            
             virtual std::ostream& writeToStream(std::ostream& out) const override;
             
-            TimeBoundType const& getTimeBoundType() const;
+            TimeBoundType getTimeBoundType() const;
+            TimeBoundReference const& getTimeBoundReference() const;
+            
             bool isStepBounded() const;
             bool isTimeBounded() const;
+            bool isRewardBounded() const;
             
             bool isBoundStrict() const;
             bool hasIntegerBound() const;
@@ -41,7 +46,7 @@ namespace storm {
         private:
             static void checkNoVariablesInBound(storm::expressions::Expression const& bound);
 
-            TimeBoundType timeBoundType;
+            TimeBoundReference timeBoundReference;
             TimeBound bound;
         };
     }

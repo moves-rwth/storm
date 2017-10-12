@@ -54,9 +54,10 @@ namespace storm {
             template <typename ModelType>
             template<typename VT, typename std::enable_if<std::is_same<ModelType, storm::models::sparse::Mdp<VT>>::value, int>::type>
             std::unique_ptr<PcaaWeightVectorChecker<ModelType>>  WeightVectorCheckerFactory<ModelType>::create(SparseMultiObjectivePreprocessorResult<ModelType> const& preprocessorResult) {
-                if (preprocessorResult.containsOnlyRewardObjectives()) {
+                if (preprocessorResult.containsOnlyTrivialObjectives()) {
                     return std::make_unique<SparseMdpPcaaWeightVectorChecker<ModelType>>(preprocessorResult);
                 } else {
+                    STORM_LOG_DEBUG("Query contains reward bounded formula");
                     return std::make_unique<SparseMdpRewardBoundedPcaaWeightVectorChecker<ModelType>>(preprocessorResult);
                 }
             }

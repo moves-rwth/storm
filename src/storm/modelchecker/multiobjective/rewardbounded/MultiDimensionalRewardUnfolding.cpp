@@ -26,15 +26,20 @@ namespace storm {
             }
             
             template<typename ValueType, bool SingleObjectiveMode>
-            MultiDimensionalRewardUnfolding<ValueType, SingleObjectiveMode>::MultiDimensionalRewardUnfolding(storm::models::sparse::Mdp<ValueType> const& model, std::shared_ptr<storm::logic::ProbabilityOperatorFormula const> objectiveFormula) : model(model) {
+            MultiDimensionalRewardUnfolding<ValueType, SingleObjectiveMode>::MultiDimensionalRewardUnfolding(storm::models::sparse::Mdp<ValueType> const& model, std::shared_ptr<storm::logic::OperatorFormula const> objectiveFormula) : model(model) {
                 
                 STORM_LOG_THROW(objectiveFormula->hasOptimalityType(), storm::exceptions::InvalidPropertyException, "Formula needs to specify whether minimal or maximal values are to be computed on nondeterministic model.");
-                if (objectiveFormula->getSubformula().isMultiObjectiveFormula()) {
-                    for (auto const& subFormula : objectiveFormula->getSubformula().asMultiObjectiveFormula().getSubformulas()) {
-                        STORM_LOG_THROW(subFormula->isBoundedUntilFormula(), storm::exceptions::InvalidPropertyException, "Formula " << objectiveFormula << " is not supported. Invalid subformula " << *subFormula << ".");
+                if (objectiveFormula->isProbabilityOperatorFormula()) {
+                    if (objectiveFormula->getSubformula().isMultiObjectiveFormula()) {
+                        for (auto const& subFormula : objectiveFormula->getSubformula().asMultiObjectiveFormula().getSubformulas()) {
+                            STORM_LOG_THROW(subFormula->isBoundedUntilFormula(), storm::exceptions::InvalidPropertyException, "Formula " << objectiveFormula << " is not supported. Invalid subformula " << *subFormula << ".");
+                        }
+                    } else {
+                        STORM_LOG_THROW(objectiveFormula->getSubformula().isBoundedUntilFormula(), storm::exceptions::InvalidPropertyException, "Formula " << objectiveFormula << " is not supported. Invalid subformula " << objectiveFormula->getSubformula() << ".");
                     }
                 } else {
-                    STORM_LOG_THROW(objectiveFormula->getSubformula().isBoundedUntilFormula(), storm::exceptions::InvalidPropertyException, "Formula " << objectiveFormula << " is not supported. Invalid subformula " << objectiveFormula->getSubformula() << ".");
+                    STORM_LOG_THROW(objectiveFormula->isRewardOperatorFormula() && objectiveFormula->getSubformula().isCumulativeRewardFormula(), storm::exceptions::InvalidPropertyException, "Formula " << objectiveFormula << " is not supported.");
+                    
                 }
                 
                 // Build an objective from the formula.
@@ -42,8 +47,6 @@ namespace storm {
                 objective.formula = objectiveFormula;
                 objective.originalFormula = objective.formula;
                 objective.considersComplementaryEvent = false;
-                objective.lowerResultBound = storm::utility::zero<ValueType>();
-                objective.upperResultBound = storm::utility::one<ValueType>();
                 objectives.push_back(std::move(objective));
                 
                 initialize();
@@ -103,13 +106,26 @@ namespace storm {
                             dimensions.emplace_back(std::move(dimension));
                         }
                     } else if (formula.isRewardOperatorFormula() && formula.getSubformula().isCumulativeRewardFormula()) {
+                        auto const& subformula = formula.getSubformula().asCumulativeRewardFormula();
                         Dimension<ValueType> dimension;
                         dimension.formula = formula.getSubformula().asSharedPointer();
                         dimension.objectiveIndex = objIndex;
                         dimension.isUpperBounded = true;
-                        dimension.scalingFactor = storm::utility::one<ValueType>();
+                        if (subformula.getTimeBoundReference().isTimeBound() || subformula.getTimeBoundReference().isStepBound()) {
+                            dimensionWiseEpochSteps.push_back(std::vector<uint64_t>(model.getNumberOfChoices(), 1));
+                            dimension.scalingFactor = storm::utility::one<ValueType>();
+                        } else {
+                            STORM_LOG_ASSERT(subformula.getTimeBoundReference().isRewardBound(), "Unexpected type of time bound.");
+                            std::string const& rewardName = subformula.getTimeBoundReference().getRewardName();
+                            STORM_LOG_THROW(this->model.hasRewardModel(rewardName), storm::exceptions::IllegalArgumentException, "No reward model with name '" << rewardName << "' found.");
+                            auto const& rewardModel = this->model.getRewardModel(rewardName);
+                            STORM_LOG_THROW(!rewardModel.hasTransitionRewards(), storm::exceptions::NotSupportedException, "Transition rewards are currently not supported as reward bounds.");
+                            std::vector<ValueType> actionRewards = rewardModel.getTotalRewardVector(this->model.getTransitionMatrix());
+                            auto discretizedRewardsAndFactor = storm::utility::vector::toIntegralVector<ValueType, uint64_t>(actionRewards);
+                            dimensionWiseEpochSteps.push_back(std::move(discretizedRewardsAndFactor.first));
+                            dimension.scalingFactor = std::move(discretizedRewardsAndFactor.second);
+                        }
                         dimensions.emplace_back(std::move(dimension));
-                        dimensionWiseEpochSteps.push_back(std::vector<uint64_t>(model.getNumberOfChoices(), 1));
                     }
                 }
                 
@@ -265,7 +281,7 @@ namespace storm {
             
             template<typename ValueType, bool SingleObjectiveMode>
             typename MultiDimensionalRewardUnfolding<ValueType, SingleObjectiveMode>::EpochModel& MultiDimensionalRewardUnfolding<ValueType, SingleObjectiveMode>::setCurrentEpoch(Epoch const& epoch) {
-                // std::cout << "Setting model for epoch " << epochManager.toString(epoch) << std::endl;
+                STORM_LOG_DEBUG("Setting model for epoch " << epochManager.toString(epoch));
                 
                 // Check if we need to update the current epoch class
                 if (!currentEpoch || !epochManager.compareEpochClass(epoch, currentEpoch.get())) {

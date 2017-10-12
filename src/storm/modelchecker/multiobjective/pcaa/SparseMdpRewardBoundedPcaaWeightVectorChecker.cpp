@@ -38,6 +38,8 @@ namespace storm {
             
             template <class SparseMdpModelType>
             void SparseMdpRewardBoundedPcaaWeightVectorChecker<SparseMdpModelType>::check(std::vector<ValueType> const& weightVector) {
+                STORM_LOG_DEBUG("Analyzing weight vector " << storm::utility::vector::toString(weightVector));
+
                 ++numChecks;
                 
                 // In case we want to export the cdf, we will collect the corresponding data
@@ -183,6 +185,7 @@ namespace storm {
                     }
                     assert(x.size() == choices.size());
                     auto req = cachedData.linEqSolver->getRequirements();
+                    cachedData.linEqSolver->clearBounds();
                     if (obj.lowerResultBound) {
                         req.clearLowerBounds();
                         cachedData.linEqSolver->setLowerBound(*obj.lowerResultBound);

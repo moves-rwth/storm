@@ -26,7 +26,7 @@ namespace storm {
             instantaneousRewardFormula = (qi::lit("I=") > expressionParser)[qi::_val = phoenix::bind(&FormulaParserGrammar::createInstantaneousRewardFormula, phoenix::ref(*this), qi::_1)];
             instantaneousRewardFormula.name("instantaneous reward formula");
             
-            cumulativeRewardFormula = ((qi::lit("C<=")[qi::_a = false] | qi::lit("C<")[qi::_a = true]) > expressionParser)[qi::_val = phoenix::bind(&FormulaParserGrammar::createCumulativeRewardFormula, phoenix::ref(*this), qi::_1, qi::_a)];
+            cumulativeRewardFormula = (qi::lit("C") >> timeBound)[qi::_val = phoenix::bind(&FormulaParserGrammar::createCumulativeRewardFormula, phoenix::ref(*this), qi::_1)];
             cumulativeRewardFormula.name("cumulative reward formula");
             
             totalRewardFormula = (qi::lit("C"))[qi::_val = phoenix::bind(&FormulaParserGrammar::createTotalRewardFormula, phoenix::ref(*this))];
@@ -60,7 +60,6 @@ namespace storm {
             notStateFormula.name("negation formula");
             
             eventuallyFormula = (qi::lit("F") >> -(timeBound % qi::lit(",")) >> pathFormulaWithoutUntil(qi::_r1))[qi::_val = phoenix::bind(&FormulaParserGrammar::createEventuallyFormula, phoenix::ref(*this), qi::_1, qi::_r1, qi::_2)];
-  //          eventuallyFormula = (qi::lit("F") >> -timeBound >> pathFormulaWithoutUntil(qi::_r1))[qi::_val = phoenix::bind(&FormulaParserGrammar::createEventuallyFormula, phoenix::ref(*this), qi::_1, qi::_r1, qi::_2)];
             eventuallyFormula.name("eventually formula");
             
             globallyFormula = (qi::lit("G") >> pathFormulaWithoutUntil(qi::_r1))[qi::_val = phoenix::bind(&FormulaParserGrammar::createGloballyFormula, phoenix::ref(*this), qi::_1)];
@@ -237,8 +236,16 @@ namespace storm {
             return std::shared_ptr<storm::logic::Formula const>(new storm::logic::InstantaneousRewardFormula(timeBound));
         }
         
-        std::shared_ptr<storm::logic::Formula const> FormulaParserGrammar::createCumulativeRewardFormula(storm::expressions::Expression const& timeBound, bool strict) const {
-            return std::shared_ptr<storm::logic::Formula const>(new storm::logic::CumulativeRewardFormula(storm::logic::TimeBound(strict, timeBound)));
+        std::shared_ptr<storm::logic::Formula const> FormulaParserGrammar::createCumulativeRewardFormula(std::tuple<boost::optional<storm::logic::TimeBound>, boost::optional<storm::logic::TimeBound>, boost::optional<std::string>> const& timeBound) const {
+            STORM_LOG_THROW(!std::get<0>(timeBound), storm::exceptions::WrongFormatException, "Cumulative reward formulas with lower time bound are not allowed.");
+            STORM_LOG_THROW(std::get<1>(timeBound), storm::exceptions::WrongFormatException, "Cumulative reward formulas require an upper bound.");
+            if (std::get<2>(timeBound)) {
+                storm::logic::TimeBoundReference tbr(std::get<2>(timeBound).get());
+                return std::shared_ptr<storm::logic::Formula const>(new storm::logic::CumulativeRewardFormula(std::get<1>(timeBound).get(), tbr));
+            } else {
+                storm::logic::TimeBoundReference tbr(storm::logic::TimeBoundType::Time);
+                return std::shared_ptr<storm::logic::Formula const>(new storm::logic::CumulativeRewardFormula(std::get<1>(timeBound).get(), tbr));
+            }
         }
         
         std::shared_ptr<storm::logic::Formula const> FormulaParserGrammar::createTotalRewardFormula() const {
