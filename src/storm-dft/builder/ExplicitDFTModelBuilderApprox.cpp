@@ -581,13 +581,13 @@ namespace storm {
                     maComponents.rateTransitions = true;
                     maComponents.markovianStates = modelComponents.markovianStates;
                     maComponents.exitRates = modelComponents.exitRates;
-                    std::shared_ptr<storm::models::sparse::MarkovAutomaton<ValueType>> ma = std::make_shared<storm::models::sparse::MarkovAutomaton<ValueType>>(std::move(maComponents));
+                    ma = std::make_shared<storm::models::sparse::MarkovAutomaton<ValueType>>(std::move(maComponents));
                 } else {
                     storm::storage::sparse::ModelComponents<ValueType> maComponents(std::move(modelComponents.transitionMatrix), std::move(modelComponents.stateLabeling));
                     maComponents.rateTransitions = true;
                     maComponents.markovianStates = std::move(modelComponents.markovianStates);
                     maComponents.exitRates = std::move(modelComponents.exitRates);
-                    std::shared_ptr<storm::models::sparse::MarkovAutomaton<ValueType>> ma = std::make_shared<storm::models::sparse::MarkovAutomaton<ValueType>>(std::move(maComponents));
+                    ma = std::make_shared<storm::models::sparse::MarkovAutomaton<ValueType>>(std::move(maComponents));
                 }
                 if (ma->hasOnlyTrivialNondeterminism()) {
                     // Markov automaton can be converted into CTMC
