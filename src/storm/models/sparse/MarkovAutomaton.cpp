@@ -50,7 +50,9 @@ namespace storm {
                 
                 if (components.exitRates) {
                     exitRates = std::move(components.exitRates.get());
-                } else {
+                }
+
+                if (components.rateTransitions) {
                     this->turnRatesToProbabilities();
                 }
                 closed = this->checkIsClosed();
