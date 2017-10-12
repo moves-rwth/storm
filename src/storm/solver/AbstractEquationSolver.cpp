@@ -151,6 +151,14 @@ namespace storm {
         }
         
         template<typename ValueType>
+        void AbstractEquationSolver<ValueType>::clearBounds() {
+            lowerBound = boost::none;
+            upperBound = boost::none;
+            lowerBounds = boost::none;
+            upperBounds = boost::none;
+        }
+        
+        template<typename ValueType>
         void AbstractEquationSolver<ValueType>::createLowerBoundsVector(std::vector<ValueType>& lowerBoundsVector) const {
             if (this->hasLowerBound(BoundType::Local)) {
                 lowerBoundsVector = this->getLowerBounds();

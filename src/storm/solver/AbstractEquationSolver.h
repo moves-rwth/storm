@@ -132,6 +132,11 @@ namespace storm {
             void setBounds(std::vector<ValueType> const& lower, std::vector<ValueType> const& upper);
             
             /*!
+             * Removes all specified solution bounds
+             */
+            void clearBounds();
+            
+            /*!
              * Retrieves whether progress is to be shown.
              */
             bool isShowProgressSet() const;
