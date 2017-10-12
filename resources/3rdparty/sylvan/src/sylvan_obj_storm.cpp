@@ -3,6 +3,8 @@
 #include "sylvan_storm_rational_number.h"
 #include "sylvan_storm_rational_function.h"
 
+#include "storm/exceptions/PrecisionExceededException.h"
+
 /*********************************************
  Functions added to sylvan's Sylvan class.
  *********************************************/
@@ -200,7 +202,11 @@ Mtbdd::EqualNormRel(const Mtbdd& other, double epsilon) const {
 Mtbdd
 Mtbdd::SharpenKwekMehlhorn(size_t precision) const {
     LACE_ME;
-    return mtbdd_sharpen(mtbdd, precision);
+    MTBDD result = mtbdd_sharpen(mtbdd, precision);
+    if (result == mtbdd_false) {
+        throw storm::exceptions::PrecisionExceededException() << "Exceeded precision of double, consider switching to rational numbers.";
+    }
+    return result;
 }
 
 Mtbdd

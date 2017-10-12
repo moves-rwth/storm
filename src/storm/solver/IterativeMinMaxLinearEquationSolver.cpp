@@ -902,7 +902,7 @@ namespace storm {
                     TemporaryHelper<RationalType, ImpreciseType>::swapSolutions(rationalX, temporaryRational, x, currentX, newX);
                 } else {
                     // Increase the precision.
-                    precision = precision / 100;
+                    precision /= 10;
                 }
             }
             

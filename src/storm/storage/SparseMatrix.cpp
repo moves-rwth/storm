@@ -1377,17 +1377,19 @@ namespace storm {
                 summandIterator = summand->begin();
             }
             
-            for (; resultIterator != resultIteratorEnd; ++rowIterator, ++resultIterator) {
+            for (; resultIterator != resultIteratorEnd; ++rowIterator, ++resultIterator, ++summandIterator) {
+                ValueType newValue;
                 if (summand) {
-                    *resultIterator = *summandIterator;
-                    ++summandIterator;
+                    newValue = *summandIterator;
                 } else {
-                    *resultIterator = storm::utility::zero<ValueType>();
+                    newValue = storm::utility::zero<ValueType>();
                 }
                 
                 for (ite = this->begin() + *(rowIterator + 1); it != ite; ++it) {
-                    *resultIterator += it->getValue() * vector[it->getColumn()];
+                    newValue += it->getValue() * vector[it->getColumn()];
                 }
+                
+                *resultIterator = newValue;
             }
         }
         
@@ -1404,20 +1406,18 @@ namespace storm {
             }
             
             for (; resultIterator != resultIteratorEnd; --rowIterator, --resultIterator, --summandIterator) {
+                ValueType newValue;
                 if (summand) {
-                    *resultIterator = *summandIterator;
-                    std::cout << "row[" << std::distance(rowIndications.begin(), rowIterator) << "]: " << *resultIterator << " because of summand" << std::endl;
+                    newValue = *summandIterator;
                 } else {
-                    *resultIterator = storm::utility::zero<ValueType>();
+                    newValue = storm::utility::zero<ValueType>();
                 }
                 
                 for (ite = this->begin() + *rowIterator - 1; it != ite; --it) {
-                    std::cout << "row[" << std::distance(rowIndications.begin(), rowIterator) << "]: " << *resultIterator << std::endl;
-                    std::cout << "row[" << std::distance(rowIndications.begin(), rowIterator) << "]: op " << *resultIterator << "  +  " << (it->getValue() * vector[it->getColumn()]) << " (= " << it->getValue() << " * " << vector[it->getColumn()] << ") = " << (*resultIterator + (it->getValue() * vector[it->getColumn()])) << std::endl;
-                    *resultIterator = *resultIterator + (it->getValue() * vector[it->getColumn()]);
-//                    std::cout << "row[" << std::distance(rowIndications.begin(), rowIterator) << "]: " << *resultIterator << " because of " << it->getValue() << " * " << vector[it->getColumn()] << " = " << (it->getValue() * vector[it->getColumn()]) << std::endl;
+                    newValue += (it->getValue() * vector[it->getColumn()]);
                 }
-                std::cout << "row[" << std::distance(rowIndications.begin(), rowIterator) << "] final value " << *resultIterator << std::endl;
+                
+                *resultIterator = newValue;
             }
         }
         
@@ -1447,11 +1447,13 @@ namespace storm {
                 }
                 
                 for (; resultIterator != resultIteratorEnd; ++rowIterator, ++resultIterator, ++summandIterator) {
-                    *resultIterator = summand ? *summandIterator : storm::utility::zero<ValueType>();
+                    ValueType newValue = summand ? *summandIterator : storm::utility::zero<ValueType>();
                     
                     for (ite = columnsAndEntries.begin() + *(rowIterator + 1); it != ite; ++it) {
-                        *resultIterator += it->getValue() * x[it->getColumn()];
+                        newValue += it->getValue() * x[it->getColumn()];
                     }
+                    
+                    *resultIterator = newValue;
                 }
             }
             

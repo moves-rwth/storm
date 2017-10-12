@@ -143,8 +143,6 @@ namespace storm {
         
         template<typename ValueType>
         void EigenLinearEquationSolver<ValueType>::setMatrix(storm::storage::SparseMatrix<ValueType> const& A) {
-            std::cout << A << std::endl;
-            
             eigenA = storm::adapters::EigenAdapter::toEigenSparseMatrix<ValueType>(A);
             this->clearCache();
         }

@@ -146,15 +146,12 @@ namespace storm {
             localA.reset();
             this->A = &A;
             clearCache();
-            
-            std::cout << *this->A << std::endl;
         }
 
         template<typename ValueType>
         void NativeLinearEquationSolver<ValueType>::setMatrix(storm::storage::SparseMatrix<ValueType>&& A) {
             localA = std::make_unique<storm::storage::SparseMatrix<ValueType>>(std::move(A));
             this->A = localA.get();
-            std::cout << *this->A << std::endl;
             clearCache();
         }
 
@@ -690,7 +687,7 @@ namespace storm {
             
             std::vector<ImpreciseType>* currentX = &x;
             std::vector<ImpreciseType>* newX = &tmpX;
-            
+
             SolverStatus status = SolverStatus::InProgress;
             uint64_t overallIterations = 0;
             uint64_t valueIterationInvocations = 0;
@@ -701,24 +698,6 @@ namespace storm {
                 typename NativeLinearEquationSolver<ImpreciseType>::PowerIterationResult result = impreciseSolver.performPowerIteration(currentX, newX, b, storm::utility::convertNumber<ImpreciseType, ValueType>(precision), this->getSettings().getRelativeTerminationCriterion(), SolverGuarantee::LessOrEqual, overallIterations);
                 
                 // At this point, the result of the imprecise value iteration is stored in the (imprecise) current x.
-                std::cout << "solution" << std::endl;
-                uint64_t pos = 0;
-                for (auto const& e : *currentX) {
-                    std::cout << "[" << pos << "] " << e << std::endl;
-                    ++pos;
-                }
-                std::cout << "rational b" << std::endl;
-                pos = 0;
-                for (auto const& e : rationalB) {
-                    std::cout << "[" << pos << "] " << e << std::endl;
-                    ++pos;
-                }
-                std::cout << "b" << std::endl;
-                pos = 0;
-                for (auto const& e : b) {
-                    std::cout << "[" << pos << "] " << e << std::endl;
-                    ++pos;
-                }
 
                 ++valueIterationInvocations;
                 STORM_LOG_TRACE("Completed " << valueIterationInvocations << " power iteration invocations, the last one with precision " << precision << " completed in " << result.iterations << " iterations.");
@@ -743,7 +722,7 @@ namespace storm {
                     TemporaryHelper<RationalType, ImpreciseType>::swapSolutions(rationalX, temporaryRational, x, currentX, newX);
                 } else {
                     // Increase the precision.
-                    precision = precision / 100;
+                    precision = precision / 10;
                 }
             }
             

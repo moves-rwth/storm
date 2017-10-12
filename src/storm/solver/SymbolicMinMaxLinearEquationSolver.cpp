@@ -214,7 +214,7 @@ namespace storm {
                 if (isSolution) {
                     status = SolverStatus::Converged;
                 } else {
-                    precision = precision / 100;
+                    precision /= 10;
                 }
             }
             
