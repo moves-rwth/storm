@@ -236,7 +236,7 @@ namespace storm {
             if (!this->isCachingEnabled()) {
                 clearCache();
             }
-            
+
             return status == SolverStatus::Converged || status == SolverStatus::TerminatedEarly;
         }
         
