@@ -61,7 +61,7 @@ namespace storm {
             template<typename ValueType>
             class InternalSignatureRefiner<storm::dd::DdType::CUDD, ValueType> {
             public:
-                InternalSignatureRefiner(storm::dd::DdManager<storm::dd::DdType::CUDD> const& manager, storm::expressions::Variable const& blockVariable, storm::dd::Bdd<storm::dd::DdType::CUDD> const& nondeterminismVariables, storm::dd::Bdd<storm::dd::DdType::CUDD> const& nonBlockVariables) : manager(manager), internalDdManager(manager.getInternalDdManager()), ddman(internalDdManager.getCuddManager().getManager()), blockVariable(blockVariable), nondeterminismVariables(nondeterminismVariables), nonBlockVariables(nonBlockVariables), nextFreeBlockIndex(0), numberOfRefinements(0), lastNumberOfVisitedNodes(10000), signatureCache(lastNumberOfVisitedNodes), reuseBlocksCache(lastNumberOfVisitedNodes) {
+                InternalSignatureRefiner(storm::dd::DdManager<storm::dd::DdType::CUDD> const& manager, storm::expressions::Variable const& blockVariable, storm::dd::Bdd<storm::dd::DdType::CUDD> const& nondeterminismVariables, storm::dd::Bdd<storm::dd::DdType::CUDD> const& nonBlockVariables, bool shiftStateVariables) : manager(manager), internalDdManager(manager.getInternalDdManager()), ddman(internalDdManager.getCuddManager().getManager()), blockVariable(blockVariable), nondeterminismVariables(nondeterminismVariables), nonBlockVariables(nonBlockVariables), shiftStateVariables(shiftStateVariables), nextFreeBlockIndex(0), numberOfRefinements(0), lastNumberOfVisitedNodes(10000), signatureCache(lastNumberOfVisitedNodes), reuseBlocksCache(lastNumberOfVisitedNodes) {
 
                     // Initialize precomputed data.
                     auto const& ddMetaVariable = manager.getMetaVariable(blockVariable);
@@ -147,12 +147,14 @@ namespace storm {
                         DdNode* partitionElse;
                         DdNode* signatureThen;
                         DdNode* signatureElse;
-                        short offset = 1;
+                        short offset;
+                        bool isNondeterminismVariable = false;
                         while (skippedBoth && !Cudd_IsConstant(nonBlockVariablesNode)) {
                             // Remember an offset that indicates whether the top variable is a nondeterminism variable or not.
-                            offset = 1;
+                            offset = shiftStateVariables ? 1 : 0;
                             if (!Cudd_IsConstant(nondeterminismVariablesNode) && Cudd_NodeReadIndex(nondeterminismVariablesNode) == Cudd_NodeReadIndex(nonBlockVariablesNode)) {
                                 offset = 0;
+                                isNondeterminismVariable = true;
                             }
                             
                             if (Cudd_NodeReadIndex(partitionNode) - offset == Cudd_NodeReadIndex(nonBlockVariablesNode)) {
@@ -175,7 +177,7 @@ namespace storm {
                             if (skippedBoth) {
                                 // If the current variable is a nondeterminism variable, we need to advance both variable sets otherwise just the non-block variables.
                                 nonBlockVariablesNode = Cudd_T(nonBlockVariablesNode);
-                                if (offset == 0) {
+                                if (isNondeterminismVariable) {
                                     nondeterminismVariablesNode = Cudd_T(nondeterminismVariablesNode);
                                 }
                             }
@@ -186,9 +188,9 @@ namespace storm {
                             return refine(partitionNode, signatureNode, nondeterminismVariablesNode, nonBlockVariablesNode);
                         }
                         
-                        DdNode* thenResult = refine(partitionThen, signatureThen, offset == 0 ? Cudd_T(nondeterminismVariablesNode) : nondeterminismVariablesNode, Cudd_T(nonBlockVariablesNode));
+                        DdNode* thenResult = refine(partitionThen, signatureThen, isNondeterminismVariable ? Cudd_T(nondeterminismVariablesNode) : nondeterminismVariablesNode, Cudd_T(nonBlockVariablesNode));
                         Cudd_Ref(thenResult);
-                        DdNode* elseResult = refine(partitionElse, signatureElse, offset == 0 ? Cudd_T(nondeterminismVariablesNode) : nondeterminismVariablesNode, Cudd_T(nonBlockVariablesNode));
+                        DdNode* elseResult = refine(partitionElse, signatureElse, isNondeterminismVariable ? Cudd_T(nondeterminismVariablesNode) : nondeterminismVariablesNode, Cudd_T(nonBlockVariablesNode));
                         Cudd_Ref(elseResult);
 
                         DdNode* result;
@@ -223,6 +225,9 @@ namespace storm {
                 storm::dd::Bdd<storm::dd::DdType::CUDD> nondeterminismVariables;
                 storm::dd::Bdd<storm::dd::DdType::CUDD> nonBlockVariables;
                 
+                // A flag indicating whether we are to shift the state variables by one.
+                bool shiftStateVariables;
+                
                 // The indices of the DD variables associated with the block variable.
                 std::vector<uint64_t> blockDdVariableIndices;
                 
@@ -248,7 +253,7 @@ namespace storm {
             template<typename ValueType>
             class InternalSignatureRefiner<storm::dd::DdType::Sylvan, ValueType> {
             public:
-                InternalSignatureRefiner(storm::dd::DdManager<storm::dd::DdType::Sylvan> const& manager, storm::expressions::Variable const& blockVariable, storm::dd::Bdd<storm::dd::DdType::Sylvan> const& nondeterminismVariables, storm::dd::Bdd<storm::dd::DdType::Sylvan> const& nonBlockVariables) : manager(manager), internalDdManager(manager.getInternalDdManager()), blockVariable(blockVariable), nondeterminismVariables(nondeterminismVariables), nonBlockVariables(nonBlockVariables), numberOfBlockVariables(manager.getMetaVariable(blockVariable).getNumberOfDdVariables()), blockCube(manager.getMetaVariable(blockVariable).getCube()), nextFreeBlockIndex(0), numberOfRefinements(0), signatureCache() {
+                InternalSignatureRefiner(storm::dd::DdManager<storm::dd::DdType::Sylvan> const& manager, storm::expressions::Variable const& blockVariable, storm::dd::Bdd<storm::dd::DdType::Sylvan> const& nondeterminismVariables, storm::dd::Bdd<storm::dd::DdType::Sylvan> const& nonBlockVariables, bool shiftStateVariables) : manager(manager), internalDdManager(manager.getInternalDdManager()), blockVariable(blockVariable), nondeterminismVariables(nondeterminismVariables), nonBlockVariables(nonBlockVariables), shiftStateVariables(shiftStateVariables), numberOfBlockVariables(manager.getMetaVariable(blockVariable).getNumberOfDdVariables()), blockCube(manager.getMetaVariable(blockVariable).getCube()), nextFreeBlockIndex(0), numberOfRefinements(0), signatureCache() {
                     // Perform garbage collection to clean up stuff not needed anymore.
                     LACE_ME;
                     sylvan_gc();
@@ -363,12 +368,14 @@ namespace storm {
                         BDD partitionElse;
                         MTBDD signatureThen;
                         MTBDD signatureElse;
-                        short offset = 1;
+                        short offset;
+                        bool isNondeterminismVariable = false;
                         while (skippedBoth && !sylvan_isconst(nonBlockVariablesNode)) {
                             // Remember an offset that indicates whether the top variable is a nondeterminism variable or not.
-                            offset = 1;
+                            offset = shiftStateVariables ? 1 : 0;
                             if (!sylvan_isconst(nondeterminismVariablesNode) && sylvan_var(nondeterminismVariablesNode) == sylvan_var(nonBlockVariablesNode)) {
                                 offset = 0;
+                                isNondeterminismVariable = true;
                             }
 
                             if (storm::dd::InternalAdd<storm::dd::DdType::Sylvan, ValueType>::matchesVariableIndex(partitionNode, sylvan_var(nonBlockVariablesNode), -offset)) {
@@ -391,7 +398,7 @@ namespace storm {
                             if (skippedBoth) {
                                 // If the current variable is a nondeterminism variable, we need to advance both variable sets otherwise just the non-block variables.
                                 nonBlockVariablesNode = sylvan_high(nonBlockVariablesNode);
-                                if (offset == 0) {
+                                if (isNondeterminismVariable) {
                                     nondeterminismVariablesNode = sylvan_high(nondeterminismVariablesNode);
                                 }
                             }
@@ -402,9 +409,9 @@ namespace storm {
                             return refine(partitionNode, signatureNode, nondeterminismVariablesNode, nonBlockVariablesNode);
                         }
                         
-                        BDD thenResult = refine(partitionThen, signatureThen, offset == 0 ? sylvan_high(nondeterminismVariablesNode) : nondeterminismVariablesNode, sylvan_high(nonBlockVariablesNode));
+                        BDD thenResult = refine(partitionThen, signatureThen, isNondeterminismVariable ? sylvan_high(nondeterminismVariablesNode) : nondeterminismVariablesNode, sylvan_high(nonBlockVariablesNode));
                         bdd_refs_push(thenResult);
-                        BDD elseResult = refine(partitionElse, signatureElse, offset == 0 ? sylvan_high(nondeterminismVariablesNode) : nondeterminismVariablesNode, sylvan_high(nonBlockVariablesNode));
+                        BDD elseResult = refine(partitionElse, signatureElse, isNondeterminismVariable ? sylvan_high(nondeterminismVariablesNode) : nondeterminismVariablesNode, sylvan_high(nonBlockVariablesNode));
                         bdd_refs_push(elseResult);
                         
                         BDD result;
@@ -431,6 +438,8 @@ namespace storm {
 
                 storm::dd::Bdd<storm::dd::DdType::Sylvan> nondeterminismVariables;
                 storm::dd::Bdd<storm::dd::DdType::Sylvan> nonBlockVariables;
+                
+                bool shiftStateVariables;
                 
                 uint64_t numberOfBlockVariables;
                 
@@ -462,7 +471,7 @@ namespace storm {
             };
             
             template<storm::dd::DdType DdType, typename ValueType>
-            SignatureRefiner<DdType, ValueType>::SignatureRefiner(storm::dd::DdManager<DdType> const& manager, storm::expressions::Variable const& blockVariable, std::set<storm::expressions::Variable> const& stateVariables, std::set<storm::expressions::Variable> const& nondeterminismVariables) : manager(&manager), stateVariables(stateVariables) {
+            SignatureRefiner<DdType, ValueType>::SignatureRefiner(storm::dd::DdManager<DdType> const& manager, storm::expressions::Variable const& blockVariable, std::set<storm::expressions::Variable> const& stateVariables, bool shiftStateVariables, std::set<storm::expressions::Variable> const& nondeterminismVariables) : manager(&manager), stateVariables(stateVariables) {
                 
                 storm::dd::Bdd<DdType> nonBlockVariablesCube = manager.getBddOne();
                 storm::dd::Bdd<DdType> nondeterminismVariablesCube = manager.getBddOne();
@@ -476,7 +485,7 @@ namespace storm {
                     nonBlockVariablesCube &= cube;
                 }
                 
-                internalRefiner = std::make_unique<InternalSignatureRefiner<DdType, ValueType>>(manager, blockVariable, nondeterminismVariablesCube, nonBlockVariablesCube);
+                internalRefiner = std::make_unique<InternalSignatureRefiner<DdType, ValueType>>(manager, blockVariable, nondeterminismVariablesCube, nonBlockVariablesCube, shiftStateVariables);
             }
             
             template<storm::dd::DdType DdType, typename ValueType>

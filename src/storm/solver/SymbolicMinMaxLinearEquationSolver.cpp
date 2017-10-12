@@ -35,6 +35,14 @@ namespace storm {
                 default:
                     STORM_LOG_THROW(false, storm::exceptions::InvalidSettingsException, "Unsupported technique.");
             }
+            
+            // Adjust the method if none was specified and we are using rational numbers.
+            if (std::is_same<ValueType, storm::RationalNumber>::value) {
+                if (settings.isMinMaxEquationSolvingMethodSetFromDefaultValue() && this->solutionMethod != SolutionMethod::RationalSearch) {
+                    STORM_LOG_INFO("Selecting 'rational search' as the solution technique to guarantee exact results. If you want to override this, please explicitly specify a different method.");
+                    this->solutionMethod = SolutionMethod::RationalSearch;
+                }
+            }
         }
         
         template<typename ValueType>

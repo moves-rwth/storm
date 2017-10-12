@@ -39,7 +39,7 @@ namespace storm {
             // Adjust the method if none was specified and we are using rational numbers.
             if (std::is_same<ValueType, storm::RationalNumber>::value) {
                 if (settings.isLinearEquationSystemTechniqueSetFromDefaultValue() && this->method != SolutionMethod::RationalSearch) {
-                    STORM_LOG_INFO("Selecting the rational search as the solution technique to guarantee exact results. If you want to override this, please explicitly specify a different method.");
+                    STORM_LOG_INFO("Selecting 'rational search' as the solution technique to guarantee exact results. If you want to override this, please explicitly specify a different method.");
                     this->method = SolutionMethod::RationalSearch;
                 }
             }
