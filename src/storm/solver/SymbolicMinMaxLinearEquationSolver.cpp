@@ -303,6 +303,7 @@ namespace storm {
             
             std::unique_ptr<SymbolicLinearEquationSolver<DdType, ValueType>> solver = linearEquationSolverFactory->create(this->allRows, this->rowMetaVariables, this->columnMetaVariables, this->rowColumnMetaVariablePairs);
             this->forwardBounds(*solver);
+            
             storm::dd::Add<DdType, ValueType> diagonal = (storm::utility::dd::getRowColumnDiagonal<DdType>(x.getDdManager(), this->rowColumnMetaVariablePairs) && this->allRows).template toAdd<ValueType>();
             return solveEquationsWithScheduler(*solver, scheduler, x, b, diagonal);
         }
@@ -311,7 +312,10 @@ namespace storm {
         storm::dd::Add<DdType, ValueType>  SymbolicMinMaxLinearEquationSolver<DdType, ValueType>::solveEquationsWithScheduler(SymbolicLinearEquationSolver<DdType, ValueType>& solver, storm::dd::Bdd<DdType> const& scheduler, storm::dd::Add<DdType, ValueType> const& x, storm::dd::Add<DdType, ValueType> const& b, storm::dd::Add<DdType, ValueType> const& diagonal) const {
             
             // Apply scheduler to the matrix and vector.
-            storm::dd::Add<DdType, ValueType> schedulerA = diagonal - scheduler.ite(this->A, scheduler.getDdManager().template getAddZero<ValueType>()).sumAbstract(this->choiceVariables);
+            storm::dd::Add<DdType, ValueType> schedulerA = scheduler.ite(this->A, scheduler.getDdManager().template getAddZero<ValueType>()).sumAbstract(this->choiceVariables);
+            if (solver.getEquationProblemFormat() == storm::solver::LinearEquationSolverProblemFormat::EquationSystem) {
+                schedulerA = diagonal - schedulerA;
+            }
             storm::dd::Add<DdType, ValueType> schedulerB = scheduler.ite(b, scheduler.getDdManager().template getAddZero<ValueType>()).sumAbstract(this->choiceVariables);
 
             // Set the matrix for the solver.

@@ -24,7 +24,7 @@ namespace storm {
         SymbolicEliminationLinearEquationSolver<DdType, ValueType>::SymbolicEliminationLinearEquationSolver(storm::dd::Bdd<DdType> const& allRows, std::set<storm::expressions::Variable> const& rowMetaVariables, std::set<storm::expressions::Variable> const& columnMetaVariables, std::vector<std::pair<storm::expressions::Variable, storm::expressions::Variable>> const& rowColumnMetaVariablePairs) : SymbolicLinearEquationSolver<DdType, ValueType>(allRows, rowMetaVariables, columnMetaVariables, rowColumnMetaVariablePairs) {
             this->createInternalData(allRows, rowMetaVariables, columnMetaVariables, rowColumnMetaVariablePairs);
         }
-        
+                
         template<storm::dd::DdType DdType, typename ValueType>
         storm::dd::Add<DdType, ValueType> SymbolicEliminationLinearEquationSolver<DdType, ValueType>::solveEquations(storm::dd::Add<DdType, ValueType> const& x, storm::dd::Add<DdType, ValueType> const& b) const {
             storm::dd::DdManager<DdType>& ddManager = x.getDdManager();

@@ -120,7 +120,7 @@ namespace storm {
             }
             orExpression.name("or expression");
             
-            iteExpression = orExpression[qi::_val = qi::_1] > -(qi::lit("?") > orExpression > qi::lit(":") > orExpression)[qi::_val = phoenix::bind(&ExpressionCreator::createIteExpression, phoenix::ref(*expressionCreator), qi::_val, qi::_1, qi::_2, qi::_pass)];
+            iteExpression = orExpression[qi::_val = qi::_1] > -(qi::lit("?") > iteExpression > qi::lit(":") > iteExpression)[qi::_val = phoenix::bind(&ExpressionCreator::createIteExpression, phoenix::ref(*expressionCreator), qi::_val, qi::_1, qi::_2, qi::_pass)];
             iteExpression.name("if-then-else expression");
             
             expression %= iteExpression;
