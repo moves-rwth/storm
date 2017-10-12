@@ -1403,17 +1403,21 @@ namespace storm {
                 summandIterator = summand->end() - 1;
             }
             
-            for (; resultIterator != resultIteratorEnd; --rowIterator, --resultIterator) {
+            for (; resultIterator != resultIteratorEnd; --rowIterator, --resultIterator, --summandIterator) {
                 if (summand) {
                     *resultIterator = *summandIterator;
-                    --summandIterator;
+                    std::cout << "row[" << std::distance(rowIndications.begin(), rowIterator) << "]: " << *resultIterator << " because of summand" << std::endl;
                 } else {
                     *resultIterator = storm::utility::zero<ValueType>();
                 }
                 
                 for (ite = this->begin() + *rowIterator - 1; it != ite; --it) {
-                    *resultIterator += it->getValue() * vector[it->getColumn()];
+                    std::cout << "row[" << std::distance(rowIndications.begin(), rowIterator) << "]: " << *resultIterator << std::endl;
+                    std::cout << "row[" << std::distance(rowIndications.begin(), rowIterator) << "]: op " << *resultIterator << "  +  " << (it->getValue() * vector[it->getColumn()]) << " (= " << it->getValue() << " * " << vector[it->getColumn()] << ") = " << (*resultIterator + (it->getValue() * vector[it->getColumn()])) << std::endl;
+                    *resultIterator = *resultIterator + (it->getValue() * vector[it->getColumn()]);
+//                    std::cout << "row[" << std::distance(rowIndications.begin(), rowIterator) << "]: " << *resultIterator << " because of " << it->getValue() << " * " << vector[it->getColumn()] << " = " << (it->getValue() * vector[it->getColumn()]) << std::endl;
                 }
+                std::cout << "row[" << std::distance(rowIndications.begin(), rowIterator) << "] final value " << *resultIterator << std::endl;
             }
         }
         

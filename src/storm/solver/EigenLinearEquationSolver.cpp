@@ -143,6 +143,8 @@ namespace storm {
         
         template<typename ValueType>
         void EigenLinearEquationSolver<ValueType>::setMatrix(storm::storage::SparseMatrix<ValueType> const& A) {
+            std::cout << A << std::endl;
+            
             eigenA = storm::adapters::EigenAdapter::toEigenSparseMatrix<ValueType>(A);
             this->clearCache();
         }
@@ -358,7 +360,14 @@ namespace storm {
             StormEigen::SparseLU<StormEigen::SparseMatrix<storm::RationalNumber>, StormEigen::COLAMDOrdering<int>> solver;
             solver.compute(*eigenA);
             solver._solve_impl(eigenB, eigenX);
-                        
+            
+            std::cout << "solution" << std::endl;
+            uint64_t pos = 0;
+            for (auto const& e : x) {
+                std::cout << "[" << pos << "] " << e << std::endl;
+                ++pos;
+            }
+
             return solver.info() == StormEigen::ComputationInfo::Success;
         }
         
