@@ -715,6 +715,9 @@ VOID_TASK_1(lace_steal_loop, int*, quit)
             } while (__lace_worker->enabled == 0);
         }
     }
+
+    // Unmap the virtual memory from the worker.
+    munmap(workers_memory[worker_id], workers_memory_size);
 }
 
 /**
