@@ -26,7 +26,7 @@ namespace storm {
          * Build a Markov chain from DFT.
          */
         template<typename ValueType, typename StateType = uint32_t>
-        class ExplicitDFTModelBuilderApprox {
+        class ExplicitDFTModelBuilder {
 
             using DFTStatePointer = std::shared_ptr<storm::storage::DFTState<ValueType>>;
             // TODO Matthias: make choosable
@@ -177,7 +177,7 @@ namespace storm {
              * @param symmetries Symmetries in the dft.
              * @param enableDC Flag indicating if dont care propagation should be used.
              */
-            ExplicitDFTModelBuilderApprox(storm::storage::DFT<ValueType> const& dft, storm::storage::DFTIndependentSymmetries const& symmetries, bool enableDC);
+            ExplicitDFTModelBuilder(storm::storage::DFT<ValueType> const& dft, storm::storage::DFTIndependentSymmetries const& symmetries, bool enableDC);
 
             /*!
              * Build model from DFT.

@@ -1,4 +1,4 @@
-#include "ExplicitDFTModelBuilderApprox.h"
+#include "ExplicitDFTModelBuilder.h"
 
 #include <map>
 
@@ -17,18 +17,18 @@ namespace storm {
     namespace builder {
 
         template<typename ValueType, typename StateType>
-        ExplicitDFTModelBuilderApprox<ValueType, StateType>::ModelComponents::ModelComponents() : transitionMatrix(), stateLabeling(), markovianStates(), exitRates(), choiceLabeling() {
+        ExplicitDFTModelBuilder<ValueType, StateType>::ModelComponents::ModelComponents() : transitionMatrix(), stateLabeling(), markovianStates(), exitRates(), choiceLabeling() {
             // Intentionally left empty.
         }
 
         template<typename ValueType, typename StateType>
-        ExplicitDFTModelBuilderApprox<ValueType, StateType>::MatrixBuilder::MatrixBuilder(bool canHaveNondeterminism) : mappingOffset(0), stateRemapping(), currentRowGroup(0), currentRow(0), canHaveNondeterminism((canHaveNondeterminism)) {
+        ExplicitDFTModelBuilder<ValueType, StateType>::MatrixBuilder::MatrixBuilder(bool canHaveNondeterminism) : mappingOffset(0), stateRemapping(), currentRowGroup(0), currentRow(0), canHaveNondeterminism((canHaveNondeterminism)) {
             // Create matrix builder
             builder = storm::storage::SparseMatrixBuilder<ValueType>(0, 0, 0, false, canHaveNondeterminism, 0);
         }
 
         template<typename ValueType, typename StateType>
-        ExplicitDFTModelBuilderApprox<ValueType, StateType>::LabelOptions::LabelOptions(std::vector<std::shared_ptr<const storm::logic::Formula>> properties, bool buildAllLabels) : buildFailLabel(true), buildFailSafeLabel(false), buildAllLabels(buildAllLabels) {
+        ExplicitDFTModelBuilder<ValueType, StateType>::LabelOptions::LabelOptions(std::vector<std::shared_ptr<const storm::logic::Formula>> properties, bool buildAllLabels) : buildFailLabel(true), buildFailSafeLabel(false), buildAllLabels(buildAllLabels) {
             // Get necessary labels from properties
             std::vector<std::shared_ptr<storm::logic::AtomicLabelFormula const>> atomicLabels;
             for (auto property : properties) {
@@ -51,7 +51,7 @@ namespace storm {
         }
 
         template<typename ValueType, typename StateType>
-        ExplicitDFTModelBuilderApprox<ValueType, StateType>::ExplicitDFTModelBuilderApprox(storm::storage::DFT<ValueType> const& dft, storm::storage::DFTIndependentSymmetries const& symmetries, bool enableDC) :
+        ExplicitDFTModelBuilder<ValueType, StateType>::ExplicitDFTModelBuilder(storm::storage::DFT<ValueType> const& dft, storm::storage::DFTIndependentSymmetries const& symmetries, bool enableDC) :
                 dft(dft),
                 stateGenerationInfo(std::make_shared<storm::storage::DFTStateGenerationInfo>(dft.buildStateGenerationInfo(symmetries))),
                 enableDC(enableDC),
@@ -124,7 +124,7 @@ namespace storm {
         }
 
         template<typename ValueType, typename StateType>
-        void ExplicitDFTModelBuilderApprox<ValueType, StateType>::buildModel(LabelOptions const& labelOpts, size_t iteration, double approximationThreshold) {
+        void ExplicitDFTModelBuilder<ValueType, StateType>::buildModel(LabelOptions const& labelOpts, size_t iteration, double approximationThreshold) {
             STORM_LOG_TRACE("Generating DFT state space");
 
             if (iteration < 1) {
@@ -156,7 +156,7 @@ namespace storm {
                 }
 
                 // Build initial state
-                this->stateStorage.initialStateIndices = generator.getInitialStates(std::bind(&ExplicitDFTModelBuilderApprox::getOrAddStateIndex, this, std::placeholders::_1));
+                this->stateStorage.initialStateIndices = generator.getInitialStates(std::bind(&ExplicitDFTModelBuilder::getOrAddStateIndex, this, std::placeholders::_1));
                 STORM_LOG_ASSERT(stateStorage.initialStateIndices.size() == 1, "Only one initial state assumed.");
                 initialStateIndex = stateStorage.initialStateIndices[0];
                 STORM_LOG_TRACE("Initial state: " << initialStateIndex);
@@ -214,7 +214,7 @@ namespace storm {
         }
 
         template<typename ValueType, typename StateType>
-        void ExplicitDFTModelBuilderApprox<ValueType, StateType>::initializeNextIteration() {
+        void ExplicitDFTModelBuilder<ValueType, StateType>::initializeNextIteration() {
             STORM_LOG_TRACE("Refining DFT state space");
 
             // TODO Matthias: should be easier now as skipped states all are at the end of the matrix
@@ -316,7 +316,7 @@ namespace storm {
         }
 
         template<typename ValueType, typename StateType>
-        void ExplicitDFTModelBuilderApprox<ValueType, StateType>::exploreStateSpace(double approximationThreshold) {
+        void ExplicitDFTModelBuilder<ValueType, StateType>::exploreStateSpace(double approximationThreshold) {
             size_t nrExpandedStates = 0;
             size_t nrSkippedStates = 0;
             // TODO Matthias: do not empty queue every time but break before
@@ -364,7 +364,7 @@ namespace storm {
                 } else {
                     // Explore the current state
                     ++nrExpandedStates;
-                    storm::generator::StateBehavior<ValueType, StateType> behavior = generator.expand(std::bind(&ExplicitDFTModelBuilderApprox::getOrAddStateIndex, this, std::placeholders::_1));
+                    storm::generator::StateBehavior<ValueType, StateType> behavior = generator.expand(std::bind(&ExplicitDFTModelBuilder::getOrAddStateIndex, this, std::placeholders::_1));
                     STORM_LOG_ASSERT(!behavior.empty(), "Behavior is empty.");
                     setMarkovian(behavior.begin()->isMarkovian());
 
@@ -424,7 +424,7 @@ namespace storm {
         }
 
         template<typename ValueType, typename StateType>
-        void ExplicitDFTModelBuilderApprox<ValueType, StateType>::buildLabeling(LabelOptions const& labelOpts) {
+        void ExplicitDFTModelBuilder<ValueType, StateType>::buildLabeling(LabelOptions const& labelOpts) {
             // Build state labeling
             modelComponents.stateLabeling = storm::models::sparse::StateLabeling(modelComponents.transitionMatrix.getRowGroupCount());
             // Initial state
@@ -473,13 +473,13 @@ namespace storm {
         }
 
         template<typename ValueType, typename StateType>
-        std::shared_ptr<storm::models::sparse::Model<ValueType>> ExplicitDFTModelBuilderApprox<ValueType, StateType>::getModel() {
+        std::shared_ptr<storm::models::sparse::Model<ValueType>> ExplicitDFTModelBuilder<ValueType, StateType>::getModel() {
             STORM_LOG_ASSERT(skippedStates.size() == 0, "Concrete model has skipped states");
             return createModel(false);
         }
 
         template<typename ValueType, typename StateType>
-        std::shared_ptr<storm::models::sparse::Model<ValueType>> ExplicitDFTModelBuilderApprox<ValueType, StateType>::getModelApproximation(bool lowerBound, bool expectedTime) {
+        std::shared_ptr<storm::models::sparse::Model<ValueType>> ExplicitDFTModelBuilder<ValueType, StateType>::getModelApproximation(bool lowerBound, bool expectedTime) {
             if (expectedTime) {
                 // TODO Matthias: handle case with no skipped states
                 changeMatrixBound(modelComponents.transitionMatrix, lowerBound);
@@ -550,7 +550,7 @@ namespace storm {
         }
 
         template<typename ValueType, typename StateType>
-        std::shared_ptr<storm::models::sparse::Model<ValueType>> ExplicitDFTModelBuilderApprox<ValueType, StateType>::createModel(bool copy) {
+        std::shared_ptr<storm::models::sparse::Model<ValueType>> ExplicitDFTModelBuilder<ValueType, StateType>::createModel(bool copy) {
             std::shared_ptr<storm::models::sparse::Model<ValueType>> model;
 
             if (modelComponents.deterministicModel) {
@@ -607,7 +607,7 @@ namespace storm {
         }
 
         template<typename ValueType, typename StateType>
-        void ExplicitDFTModelBuilderApprox<ValueType, StateType>::changeMatrixBound(storm::storage::SparseMatrix<ValueType> & matrix, bool lowerBound) const {
+        void ExplicitDFTModelBuilder<ValueType, StateType>::changeMatrixBound(storm::storage::SparseMatrix<ValueType> & matrix, bool lowerBound) const {
             // Set lower bound for skipped states
             for (auto it = skippedStates.begin(); it != skippedStates.end(); ++it) {
                 auto matrixEntry = matrix.getRow(it->first, 0).begin();
@@ -632,7 +632,7 @@ namespace storm {
         }
 
         template<typename ValueType, typename StateType>
-        ValueType ExplicitDFTModelBuilderApprox<ValueType, StateType>::getLowerBound(DFTStatePointer const& state) const {
+        ValueType ExplicitDFTModelBuilder<ValueType, StateType>::getLowerBound(DFTStatePointer const& state) const {
             // Get the lower bound by considering the failure of all possible BEs
             ValueType lowerBound = storm::utility::zero<ValueType>();
             for (size_t index = 0; index < state->nrFailableBEs(); ++index) {
@@ -642,7 +642,7 @@ namespace storm {
         }
 
         template<typename ValueType, typename StateType>
-        ValueType ExplicitDFTModelBuilderApprox<ValueType, StateType>::getUpperBound(DFTStatePointer const& state) const {
+        ValueType ExplicitDFTModelBuilder<ValueType, StateType>::getUpperBound(DFTStatePointer const& state) const {
             if (state->hasFailed(dft.getTopLevelIndex())) {
                 return storm::utility::zero<ValueType>();
             }
@@ -709,7 +709,7 @@ namespace storm {
         }
 
         template<typename ValueType, typename StateType>
-        ValueType ExplicitDFTModelBuilderApprox<ValueType, StateType>::computeMTTFAnd(std::vector<ValueType> const& rates, size_t size) const {
+        ValueType ExplicitDFTModelBuilder<ValueType, StateType>::computeMTTFAnd(std::vector<ValueType> const& rates, size_t size) const {
             ValueType result = storm::utility::zero<ValueType>();
             if (size == 0) {
                 return result;
@@ -762,7 +762,7 @@ namespace storm {
         }
 
         template<typename ValueType, typename StateType>
-        StateType ExplicitDFTModelBuilderApprox<ValueType, StateType>::getOrAddStateIndex(DFTStatePointer const& state) {
+        StateType ExplicitDFTModelBuilder<ValueType, StateType>::getOrAddStateIndex(DFTStatePointer const& state) {
             StateType stateId;
             bool changed = false;
 
@@ -811,7 +811,7 @@ namespace storm {
         }
 
         template<typename ValueType, typename StateType>
-        void ExplicitDFTModelBuilderApprox<ValueType, StateType>::setMarkovian(bool markovian) {
+        void ExplicitDFTModelBuilder<ValueType, StateType>::setMarkovian(bool markovian) {
             if (matrixBuilder.getCurrentRowGroup() > modelComponents.markovianStates.size()) {
                 // Resize BitVector
                 modelComponents.markovianStates.resize(modelComponents.markovianStates.size() + INITIAL_BITVECTOR_SIZE);
@@ -820,7 +820,7 @@ namespace storm {
         }
 
         template<typename ValueType, typename StateType>
-        void ExplicitDFTModelBuilderApprox<ValueType, StateType>::printNotExplored() const {
+        void ExplicitDFTModelBuilder<ValueType, StateType>::printNotExplored() const {
             std::cout << "states not explored:" << std::endl;
             for (auto it : statesNotExplored) {
                 std::cout << it.first << " -> " << dft.getStateString(it.second.first) << std::endl;
@@ -829,10 +829,10 @@ namespace storm {
 
 
         // Explicitly instantiate the class.
-        template class ExplicitDFTModelBuilderApprox<double>;
+        template class ExplicitDFTModelBuilder<double>;
 
 #ifdef STORM_HAVE_CARL
-        template class ExplicitDFTModelBuilderApprox<storm::RationalFunction>;
+        template class ExplicitDFTModelBuilder<storm::RationalFunction>;
 #endif
 
     } // namespace builder
