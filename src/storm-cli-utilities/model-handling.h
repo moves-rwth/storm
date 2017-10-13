@@ -645,8 +645,12 @@ namespace storm {
         template <typename ValueType>
         void processInputWithValueType(SymbolicInput const& input) {
             auto coreSettings = storm::settings::getModule<storm::settings::modules::CoreSettings>();
-            
-            if (coreSettings.getDdLibraryType() == storm::dd::DdType::CUDD) {
+            auto generalSettings = storm::settings::getModule<storm::settings::modules::GeneralSettings>();
+
+            if (coreSettings.getDdLibraryType() == storm::dd::DdType::CUDD && coreSettings.isDdLibraryTypeSetFromDefaultValue() && generalSettings.isExactSet()) {
+                STORM_LOG_INFO("Switching to DD library sylvan to allow for rational arithmetic.");
+                processInputWithValueTypeAndDdlib<storm::dd::DdType::Sylvan, ValueType>(input);
+            } else if (coreSettings.getDdLibraryType() == storm::dd::DdType::CUDD) {
                 processInputWithValueTypeAndDdlib<storm::dd::DdType::CUDD, ValueType>(input);
             } else {
                 STORM_LOG_ASSERT(coreSettings.getDdLibraryType() == storm::dd::DdType::Sylvan, "Unknown DD library.");

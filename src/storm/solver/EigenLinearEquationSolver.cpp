@@ -359,13 +359,6 @@ namespace storm {
             solver.compute(*eigenA);
             solver._solve_impl(eigenB, eigenX);
             
-            std::cout << "solution" << std::endl;
-            uint64_t pos = 0;
-            for (auto const& e : x) {
-                std::cout << "[" << pos << "] " << e << std::endl;
-                ++pos;
-            }
-
             return solver.info() == StormEigen::ComputationInfo::Success;
         }
         
