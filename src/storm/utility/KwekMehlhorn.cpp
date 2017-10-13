@@ -38,7 +38,9 @@ namespace storm {
             
             template<typename RationalType>
             std::pair<typename NumberTraits<RationalType>::IntegerType, typename NumberTraits<RationalType>::IntegerType> truncateToRational(double const& value, uint64_t precision) {
-                STORM_LOG_THROW(precision < 17, storm::exceptions::PrecisionExceededException, "Exceeded precision of double, consider switching to rational numbers.");
+                if (precision >= 18) {
+                    throw storm::exceptions::PrecisionExceededException() << "Exceeded precision of double, consider switching to rational numbers.";
+                }
                 
                 double powerOfTen = std::pow(10, precision);
                 double truncated = storm::utility::trunc<double>(value * powerOfTen);
