@@ -64,7 +64,7 @@ namespace storm {
         }
         
         
-        void printHeader(std::string const& name, const int argc, const char* argv[]) {
+        void printHeader(std::string const& name, const int argc, const char** argv) {
             STORM_PRINT(name << " " << storm::utility::StormVersion::shortVersionString() << std::endl << std::endl);
             
             // "Compute" the command line argument string with which storm was invoked.
