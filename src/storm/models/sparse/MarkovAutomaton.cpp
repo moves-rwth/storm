@@ -50,7 +50,9 @@ namespace storm {
                 
                 if (components.exitRates) {
                     exitRates = std::move(components.exitRates.get());
-                } else {
+                }
+
+                if (components.rateTransitions) {
                     this->turnRatesToProbabilities();
                 }
                 closed = this->checkIsClosed();
@@ -150,7 +152,7 @@ namespace storm {
                     uint_fast64_t row = this->getTransitionMatrix().getRowGroupIndices()[state];
                     if (this->markovianStates.get(state)) {
                         if (assertRates) {
-                        STORM_LOG_THROW(this->exitRates[state] == this->getTransitionMatrix().getRowSum(row), storm::exceptions::InvalidArgumentException, "The specified exit rate is inconsistent with the rate matrix. Difference is " << (this->exitRates[state] - this->getTransitionMatrix().getRowSum(row)) << ".");
+                            STORM_LOG_THROW(this->exitRates[state] == this->getTransitionMatrix().getRowSum(row), storm::exceptions::InvalidArgumentException, "The specified exit rate is inconsistent with the rate matrix. Difference is " << (this->exitRates[state] - this->getTransitionMatrix().getRowSum(row)) << ".");
                         } else {
                             this->exitRates.push_back(this->getTransitionMatrix().getRowSum(row));
                         }
@@ -159,7 +161,11 @@ namespace storm {
                         }
                         ++row;
                     } else {
-                        this->exitRates.push_back(storm::utility::zero<ValueType>());
+                        if (assertRates) {
+                            STORM_LOG_THROW(storm::utility::isZero<ValueType>(this->exitRates[state]), storm::exceptions::InvalidArgumentException, "The specified exit rate for (non-Markovian) choice should be 0.");
+                        } else {
+                            this->exitRates.push_back(storm::utility::zero<ValueType>());
+                        }
                     }
                     for (; row < this->getTransitionMatrix().getRowGroupIndices()[state+1]; ++row) {
                         STORM_LOG_THROW(storm::utility::isOne(this->getTransitionMatrix().getRowSum(row)), storm::exceptions::InvalidArgumentException, "Entries of transition matrix do not sum up to one for (non-Markovian) choice " << row << " of state " << state << " (sum is " << this->getTransitionMatrix().getRowSum(row) << ").");

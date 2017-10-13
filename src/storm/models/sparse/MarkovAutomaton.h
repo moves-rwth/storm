@@ -22,7 +22,7 @@ namespace storm {
                  * For hybrid states (i.e., states with Markovian and probabilistic transitions), it is assumed that the first
                  * choice corresponds to the markovian transitions.
                  *
-                 * @param transitionMatrix The matrix representing the transitions in the model in terms of rates (markocian choices) and probabilities (probabilistic choices).
+                 * @param transitionMatrix The matrix representing the transitions in the model in terms of rates (Markovian choices) and probabilities (probabilistic choices).
                  * @param stateLabeling The labeling of the states.
                  * @param markovianStates A bit vector indicating the Markovian states of the automaton (i.e., states with at least one markovian transition).
                  * @param rewardModels A mapping of reward model names to reward models.
@@ -38,7 +38,7 @@ namespace storm {
                  * For hybrid states (i.e., states with Markovian and probabilistic transitions), it is assumed that the first
                  * choice corresponds to the markovian transitions.
                  *
-                 * @param transitionMatrix The matrix representing the transitions in the model in terms of rates (markocian choices) and probabilities (probabilistic choices).
+                 * @param transitionMatrix The matrix representing the transitions in the model in terms of rates (Markovian choices) and probabilities (probabilistic choices).
                  * @param stateLabeling The labeling of the states.
                  * @param markovianStates A bit vector indicating the Markovian states of the automaton (i.e., states with at least one markovian transition).
                  * @param rewardModels A mapping of reward model names to reward models.
