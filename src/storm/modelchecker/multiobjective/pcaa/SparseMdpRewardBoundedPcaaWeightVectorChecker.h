@@ -30,13 +30,13 @@ namespace storm {
                 virtual ~SparseMdpRewardBoundedPcaaWeightVectorChecker() {
                     swAll.stop();
                     std::cout << "WVC statistics: " << std::endl;
-                    std::cout << "                overall Time: " <<  swAll << " seconds." << std::endl;
+                    std::cout << "                overall Time: " <<  swAll << "." << std::endl;
                     std::cout << "---------------------------------------------" << std::endl;
-                    std::cout << "     #checked weight vectors:" << numChecks << "." << std::endl;
-                    std::cout << "             #checked epochs:" << numCheckedEpochs << "." << std::endl;
+                    std::cout << "     #checked weight vectors: " << numChecks << "." << std::endl;
+                    std::cout << "             #checked epochs: " << numCheckedEpochs << "." << std::endl;
                     std::cout << "#Sched reused from prev. ep.: " << (numCheckedEpochs - numSchedChanges) << "." << std::endl;
-                    std::cout << "   Epoch Model building time: "  << swEpochModelBuild << " seconds." << std::endl;
-                    std::cout << "   Epoch Model checking time: "  << swEpochModelAnalysis << " seconds." << std::endl;
+                    std::cout << "   Epoch Model building time: "  << swEpochModelBuild << "." << std::endl;
+                    std::cout << "   Epoch Model checking time: "  << swEpochModelAnalysis << "." << std::endl;
                 }
                 
 
