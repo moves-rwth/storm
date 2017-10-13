@@ -47,20 +47,10 @@ namespace storm {
                 MultiDimensionalRewardUnfolding(storm::models::sparse::Mdp<ValueType> const& model, std::shared_ptr<storm::logic::OperatorFormula const> objectiveFormula);
                 
                 ~MultiDimensionalRewardUnfolding() {
-                    std::cout << "Unfolding statistics: " << std::endl;
-                    std::cout << "              init: "  << swInit << " seconds." << std::endl;
-                    std::cout << "          setEpoch: " <<  swSetEpoch << " seconds." << std::endl;
-                    std::cout << "     setEpochClass: " << swSetEpochClass << " seconds." << std::endl;
-                    std::cout << "     findSolutions: " << swFindSol << " seconds." << std::endl;
-                    std::cout << "   insertSolutions: " << swInsertSol << " seconds." << std::endl;
-                    std::cout << "     aux1StopWatch: " << swAux1 << " seconds." << std::endl;
-                    std::cout << "     aux2StopWatch: " << swAux2 << " seconds." << std::endl;
-                    std::cout << "     aux3StopWatch: " << swAux3 << " seconds." << std::endl;
-                    std::cout << "     aux4StopWatch: " << swAux4 << " seconds." << std::endl;
-                    std::cout << "---------------------------------------------" << std::endl;
-                    std::cout << "      Product size: " << productModel->getProduct().getNumberOfStates() << std::endl;
-                    std::cout << "maxSolutionsStored: " << maxSolutionsStored << std::endl;
-                    std::cout << " Epoch model sizes: ";
+                    std::cout << "Implicit unfolding statistics: " << std::endl;
+                    std::cout << " Memory Product size: " << productModel->getProduct().getNumberOfStates() << std::endl;
+                    std::cout << "  maxSolutionsStored: " << maxSolutionsStored << std::endl;
+                    std::cout << "Occurring Epoch model sizes: ";
                     for (auto const& i : epochModelSizes) {
                         std::cout << i << " ";
                     }

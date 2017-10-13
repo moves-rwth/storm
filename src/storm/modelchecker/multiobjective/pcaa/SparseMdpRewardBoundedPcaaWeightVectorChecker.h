@@ -30,17 +30,13 @@ namespace storm {
                 virtual ~SparseMdpRewardBoundedPcaaWeightVectorChecker() {
                     swAll.stop();
                     std::cout << "WVC statistics: " << std::endl;
-                    std::cout << "           overall: " <<  swAll << " seconds." << std::endl;
+                    std::cout << "                overall Time: " <<  swAll << " seconds." << std::endl;
                     std::cout << "---------------------------------------------" << std::endl;
-                    std::cout << " Sched changed " << numSchedChanges << "/" << numCheckedEpochs << " times." << std::endl;
-                    std::cout << "        dataUpdate: "  << swDataUpdate << " seconds." << std::endl;
-                    std::cout << "     eqSysBuilding: "  << swEqBuilding << " seconds." << std::endl;
-                    std::cout << "     MinMaxSolving: "  << swMinMaxSolving << " seconds." << std::endl;
-                    std::cout << "      LinEqSolving: "  << swLinEqSolving << " seconds." << std::endl;
-                    std::cout << "     Aux1StopWatch: "  << swAux1 << " seconds." << std::endl;
-                    std::cout << "     Aux2StopWatch: "  << swAux2 << " seconds." << std::endl;
-                    std::cout << "     Aux3StopWatch: "  << swAux3 << " seconds." << std::endl;
-
+                    std::cout << "     #checked weight vectors:" << numChecks << "." << std::endl;
+                    std::cout << "             #checked epochs:" << numCheckedEpochs << "." << std::endl;
+                    std::cout << "#Sched reused from prev. ep.: " << (numCheckedEpochs - numSchedChanges) << "." << std::endl;
+                    std::cout << "   Epoch Model building time: "  << swEpochModelBuild << " seconds." << std::endl;
+                    std::cout << "   Epoch Model checking time: "  << swEpochModelAnalysis << " seconds." << std::endl;
                 }
                 
 
@@ -81,7 +77,7 @@ namespace storm {
                 
                 void updateCachedData(typename MultiDimensionalRewardUnfolding<ValueType, false>::EpochModel const& epochModel, EpochCheckingData& cachedData, std::vector<ValueType> const& weightVector);
                 
-                storm::utility::Stopwatch swAll, swDataUpdate, swEqBuilding, swLinEqSolving, swMinMaxSolving, swAux1, swAux2, swAux3;
+                storm::utility::Stopwatch swAll, swEpochModelBuild, swEpochModelAnalysis;
                 uint64_t numSchedChanges, numCheckedEpochs, numChecks;
                 
                 MultiDimensionalRewardUnfolding<ValueType, false> rewardUnfolding;
