@@ -6,9 +6,8 @@
 #include "storm/utility/DirectEncodingExporter.h"
 
 #include "storm-dft/builder/ExplicitDFTModelBuilder.h"
-#include "storm-dft/builder/ExplicitDFTModelBuilderApprox.h"
 #include "storm-dft/storage/dft/DFTIsomorphism.h"
-#include "storm-dft/settings/modules/DFTSettings.h"
+#include "storm-dft/settings/modules/FaultTreeSettings.h"
 
 
 namespace storm {
@@ -192,8 +191,8 @@ namespace storm {
 
                     // Build a single CTMC
                     STORM_LOG_INFO("Building Model...");
-                    storm::builder::ExplicitDFTModelBuilderApprox<ValueType> builder(ft, symmetries, enableDC);
-                    typename storm::builder::ExplicitDFTModelBuilderApprox<ValueType>::LabelOptions labeloptions(properties);
+                    storm::builder::ExplicitDFTModelBuilder<ValueType> builder(ft, symmetries, enableDC);
+                    typename storm::builder::ExplicitDFTModelBuilder<ValueType>::LabelOptions labeloptions(properties);
                     builder.buildModel(labeloptions, 0, 0.0);
                     std::shared_ptr<storm::models::sparse::Model<ValueType>> model = builder.getModel();
                     explorationTimer.stop();
@@ -244,9 +243,8 @@ namespace storm {
                 // Build a single CTMC
                 STORM_LOG_INFO("Building Model...");
 
-
-                storm::builder::ExplicitDFTModelBuilderApprox<ValueType> builder(dft, symmetries, enableDC);
-                typename storm::builder::ExplicitDFTModelBuilderApprox<ValueType>::LabelOptions labeloptions(properties);
+                storm::builder::ExplicitDFTModelBuilder<ValueType> builder(dft, symmetries, enableDC);
+                typename storm::builder::ExplicitDFTModelBuilder<ValueType>::LabelOptions labeloptions(properties);
                 builder.buildModel(labeloptions, 0, 0.0);
                 std::shared_ptr<storm::models::sparse::Model<ValueType>> model = builder.getModel();
                 model->printModelInformationToStream(std::cout);
@@ -277,8 +275,8 @@ namespace storm {
                 approximation_result approxResult = std::make_pair(storm::utility::zero<ValueType>(), storm::utility::zero<ValueType>());
                 std::shared_ptr<storm::models::sparse::Model<ValueType>> model;
                 std::vector<ValueType> newResult;
-                storm::builder::ExplicitDFTModelBuilderApprox<ValueType> builder(dft, symmetries, enableDC);
-                typename storm::builder::ExplicitDFTModelBuilderApprox<ValueType>::LabelOptions labeloptions(properties);
+                storm::builder::ExplicitDFTModelBuilder<ValueType> builder(dft, symmetries, enableDC);
+                typename storm::builder::ExplicitDFTModelBuilder<ValueType>::LabelOptions labeloptions(properties);
 
                 // TODO Matthias: compute approximation for all properties simultaneously?
                 std::shared_ptr<const storm::logic::Formula> property = properties[0];
@@ -342,18 +340,10 @@ namespace storm {
             } else {
                 // Build a single Markov Automaton
                 STORM_LOG_INFO("Building Model...");
-                std::shared_ptr<storm::models::sparse::Model<ValueType>> model;
-                // TODO Matthias: use only one builder if everything works again
-                if (storm::settings::getModule<storm::settings::modules::DFTSettings>().isApproximationErrorSet()) {
-                    storm::builder::ExplicitDFTModelBuilderApprox<ValueType> builder(dft, symmetries, enableDC);
-                    typename storm::builder::ExplicitDFTModelBuilderApprox<ValueType>::LabelOptions labeloptions(properties, storm::settings::getModule<storm::settings::modules::IOSettings>().isExportExplicitSet());
-                    builder.buildModel(labeloptions, 0, 0.0);
-                    model = builder.getModel();
-                } else {
-                    storm::builder::ExplicitDFTModelBuilder<ValueType> builder(dft, symmetries, enableDC);
-                    typename storm::builder::ExplicitDFTModelBuilder<ValueType>::LabelOptions labeloptions;
-                    model = builder.buildModel(labeloptions);
-                }
+                storm::builder::ExplicitDFTModelBuilder<ValueType> builder(dft, symmetries, enableDC);
+                typename storm::builder::ExplicitDFTModelBuilder<ValueType>::LabelOptions labeloptions(properties, storm::settings::getModule<storm::settings::modules::IOSettings>().isExportExplicitSet());
+                builder.buildModel(labeloptions, 0, 0.0);
+                std::shared_ptr<storm::models::sparse::Model<ValueType>> model = builder.getModel();
                 model->printModelInformationToStream(std::cout);
                 explorationTimer.stop();
 

@@ -1088,6 +1088,12 @@ void lace_exit()
     lace_resume();
     lace_barrier();
 
+    // Free the memory of the workers.
+    for (unsigned int i=0; i<n_workers; i++) munmap(workers_memory[i], workers_memory_size);
+    free(workers_memory);
+    free(workers);
+    free(workers_p);
+    
     // finally, destroy the barriers
     lace_barrier_destroy();
     pthread_barrier_destroy(&suspend_barrier);
