@@ -39,6 +39,7 @@
 #include "storm-pomdp/transformer/PomdpMemoryUnfolder.h"
 #include "storm-pomdp/analysis/UniqueObservationStates.h"
 #include "storm-pomdp/analysis/QualitativeAnalysis.h"
+#include "storm/api/storm.h"
 
 /*!
  * Initialize the settings manager.
@@ -51,8 +52,8 @@ void initializeSettings() {
     storm::settings::addModule<storm::settings::modules::CoreSettings>();
     storm::settings::addModule<storm::settings::modules::DebugSettings>();
     storm::settings::addModule<storm::settings::modules::CounterexampleGeneratorSettings>(false);
-    storm::settings::addModule<storm::settings::modules::CuddSettings>();
-    storm::settings::addModule<storm::settings::modules::SylvanSettings>();
+//storm::settings::addModule<storm::settings::modules::CuddSettings>();
+//    storm::settings::addModule<storm::settings::modules::SylvanSettings>();
     storm::settings::addModule<storm::settings::modules::GmmxxEquationSolverSettings>();
     storm::settings::addModule<storm::settings::modules::EigenEquationSolverSettings>();
     storm::settings::addModule<storm::settings::modules::NativeEquationSolverSettings>();
@@ -95,6 +96,8 @@ int main(const int argc, const char** argv) {
 
 
         auto const& coreSettings = storm::settings::getModule<storm::settings::modules::CoreSettings>();
+        auto const& generalSettings = storm::settings::getModule<storm::settings::modules::GeneralSettings>();
+        auto const& bisimulationSettings = storm::settings::getModule<storm::settings::modules::BisimulationSettings>();
         auto const& pomdpSettings = storm::settings::getModule<storm::settings::modules::POMDPSettings>();
 
         // For several engines, no model building step is performed, but the verification is started right away.
@@ -139,6 +142,14 @@ int main(const int argc, const char** argv) {
                     STORM_PRINT_AND_LOG(" done." << std::endl);
                     std::cout << "actual reduction not yet implemented..." << std::endl;
                 }
+            } else if (formula->isRewardOperatorFormula()) {
+                if (pomdpSettings.isSelfloopReductionSet() && storm::solver::minimize(formula->asRewardOperatorFormula().getOptimalityType())) {
+                    STORM_PRINT_AND_LOG("Eliminating self-loop choices ...");
+                    uint64_t oldChoiceCount = pomdp->getNumberOfChoices();
+                    storm::transformer::GlobalPOMDPSelfLoopEliminator<storm::RationalNumber> selfLoopEliminator(*pomdp);
+                    pomdp = selfLoopEliminator.transform();
+                    STORM_PRINT_AND_LOG(oldChoiceCount - pomdp->getNumberOfChoices() << " choices eliminated through self-loop elimination." << std::endl);
+                }
             }
             if (pomdpSettings.getMemoryBound() > 1) {
                 STORM_PRINT_AND_LOG("Computing the unfolding for memory bound " << pomdpSettings.getMemoryBound() << "...");
@@ -165,7 +176,15 @@ int main(const int argc, const char** argv) {
             if (pomdpSettings.isExportToParametricSet()) {
                 STORM_PRINT_AND_LOG("Transforming memoryless POMDP to pMC...");
                 storm::transformer::ApplyFiniteSchedulerToPomdp<storm::RationalNumber> toPMCTransformer(*pomdp);
-                auto pmc = toPMCTransformer.transform();
+                std::string transformMode = pomdpSettings.getFscApplicationTypeString();
+                auto pmc = toPMCTransformer.transform(storm::transformer::parsePomdpFscApplicationMode(transformMode));
+                STORM_PRINT_AND_LOG(" done." << std::endl);
+                pmc->printModelInformationToStream(std::cout);
+                STORM_PRINT_AND_LOG("Simplifying pMC...");
+                //if (generalSettings.isBisimulationSet()) {
+                pmc = storm::api::performBisimulationMinimization<storm::RationalFunction>(pmc->as<storm::models::sparse::Dtmc<storm::RationalFunction>>(),{formula})->as<storm::models::sparse::Dtmc<storm::RationalFunction>>();
+
+                //}
                 STORM_PRINT_AND_LOG(" done." << std::endl);
                 pmc->printModelInformationToStream(std::cout);
                 STORM_PRINT_AND_LOG("Exporting pMC...");

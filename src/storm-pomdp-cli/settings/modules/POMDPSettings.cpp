@@ -5,10 +5,6 @@
 #include "storm/settings/Option.h"
 #include "storm/settings/OptionBuilder.h"
 #include "storm/settings/ArgumentBuilder.h"
-#include "storm/settings/Argument.h"
-
-#include "storm/exceptions/InvalidSettingsException.h"
-#include "storm/exceptions/IllegalArgumentValueException.h"
 
 namespace storm {
     namespace settings {
@@ -21,6 +17,8 @@ namespace storm {
             const std::string mecReductionOption = "mecreduction";
             const std::string selfloopReductionOption = "selfloopreduction";
             const std::string memoryBoundOption = "memorybound";
+            const std::string fscmode = "fscmode";
+            std::vector<std::string> fscModes = {"standard", "simple-linear", "simple-linear-inverse"};
 
             POMDPSettings::POMDPSettings() : ModuleSettings(moduleName) {
                 this->addOption(storm::settings::OptionBuilder(moduleName, exportAsParametricModelOption, false, "Export the parametric file.").addArgument(storm::settings::ArgumentBuilder::createStringArgument("filename", "The name of the file to which to write the model.").build()).build());
@@ -29,7 +27,7 @@ namespace storm {
                 this->addOption(storm::settings::OptionBuilder(moduleName, mecReductionOption, false, "Reduces the model size by analyzing maximal end components").build());
                 this->addOption(storm::settings::OptionBuilder(moduleName, selfloopReductionOption, false, "Reduces the model size by removing self loop actions").build());
                 this->addOption(storm::settings::OptionBuilder(moduleName, memoryBoundOption, false, "Sets the maximal number of allowed memory states (1 means memoryless schedulers).").addArgument(storm::settings::ArgumentBuilder::createUnsignedIntegerArgument("bound", "The maximal number of memory states.").setDefaultValueUnsignedInteger(1).addValidatorUnsignedInteger(storm::settings::ArgumentValidatorFactory::createUnsignedGreaterValidator(0)).build()).build());
-
+                this->addOption(storm::settings::OptionBuilder(moduleName, fscmode, false, "Sets the way the pMC is obtained").addArgument(storm::settings::ArgumentBuilder::createStringArgument("type", "type name").addValidatorString(ArgumentValidatorFactory::createMultipleChoiceValidator(fscModes)).setDefaultValueString("standard").build()).build());
             }
 
             bool POMDPSettings::isExportToParametricSet() const {
@@ -59,7 +57,10 @@ namespace storm {
             uint64_t POMDPSettings::getMemoryBound() const {
                 return this->getOption(memoryBoundOption).getArgumentByName("bound").getValueAsUnsignedInteger();
             }
-            
+
+            std::string POMDPSettings::getFscApplicationTypeString() const {
+                return this->getOption(fscmode).getArgumentByName("type").getValueAsString();
+            }
 
             
             
