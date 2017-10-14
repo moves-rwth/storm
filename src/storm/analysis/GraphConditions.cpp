@@ -35,6 +35,8 @@ namespace storm {
         void ConstraintCollector<ValueType>::wellformedRequiresNonNegativeEntries(std::vector<ValueType> const& vec) {
             for(auto const& entry : vec) {
                 if (!storm::utility::isConstant(entry)) {
+                    auto const& transitionVars = entry.gatherVariables();
+                    variableSet.insert(transitionVars.begin(), transitionVars.end());
                     if (entry.denominator().isConstant()) {
                         if (entry.denominatorAsNumber() > 0) {
                             wellformedConstraintSet.emplace(entry.nominator().polynomialWithCoefficient(), storm::CompareRelation::GEQ);
