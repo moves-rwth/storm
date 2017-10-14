@@ -711,6 +711,11 @@ namespace storm {
         void NativeLinearEquationSolver<ValueType>::setSettings(NativeLinearEquationSolverSettings<ValueType> const& newSettings) {
             settings = newSettings;
         }
+
+        template<typename ValueType>
+        void NativeLinearEquationSolver<ValueType>::setPrecision(ValueType const& precision) {
+            settings.setPrecision(precision);
+        }
         
         template<typename ValueType>
         NativeLinearEquationSolverSettings<ValueType> const& NativeLinearEquationSolver<ValueType>::getSettings() const {

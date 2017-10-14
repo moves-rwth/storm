@@ -56,6 +56,8 @@ namespace storm {
             virtual void clearCache() const override;
 
             ValueType getPrecision() const;
+            virtual void setPrecision(ValueType const& precision) override;
+
             bool getRelative() const;
             
             virtual MinMaxLinearEquationSolverRequirements getRequirements(EquationSystemType const& equationSystemType, boost::optional<storm::solver::OptimizationDirection> const& direction = boost::none) const override;

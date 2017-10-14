@@ -24,6 +24,7 @@
  
 #include "storm/settings/SettingsManager.h"
 #include "storm/settings/modules/MinMaxEquationSolverSettings.h"
+#include "storm/settings/modules/GeneralSettings.h"
 
 #include "storm/utility/Stopwatch.h"
 
@@ -87,6 +88,16 @@ namespace storm {
                 // initialize data that will be needed for each epoch
                 std::vector<ValueType> x, b;
                 std::unique_ptr<storm::solver::MinMaxLinearEquationSolver<ValueType>> minMaxSolver;
+
+                ValueType precision = storm::utility::convertNumber<ValueType>(storm::settings::getModule<storm::settings::modules::GeneralSettings>().getPrecision());
+                if (storm::settings::getModule<storm::settings::modules::GeneralSettings>().isSoundSet()) {
+                    uint64_t denom = 0;
+                    for (uint64_t dim = 0; dim < rewardUnfolding.getEpochManager().getDimensionCount(); ++dim) {
+                        denom += rewardUnfolding.getEpochManager().getDimensionOfEpoch(initEpoch, dim) + 1;
+                    }
+                    precision = precision / storm::utility::convertNumber<ValueType>(denom);
+                }
+
                 for (auto const& epoch : epochOrder) {
                     swBuild.start();
                     auto& epochModel = rewardUnfolding.setCurrentEpoch(epoch);
@@ -132,6 +143,7 @@ namespace storm {
                         if (epochModel.epochMatrixChanged) {
                             x.assign(epochModel.epochMatrix.getRowGroupCount(), storm::utility::zero<ValueType>());
                             minMaxSolver = minMaxLinearEquationSolverFactory.create(epochModel.epochMatrix);
+                            minMaxSolver->setPrecision(precision);
                             minMaxSolver->setOptimizationDirection(dir);
                             minMaxSolver->setCachingEnabled(true);
                             minMaxSolver->setTrackScheduler(true);

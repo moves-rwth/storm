@@ -246,6 +246,11 @@ namespace storm {
         }
 
         template<typename ValueType>
+        void IterativeMinMaxLinearEquationSolver<ValueType>::setPrecision(ValueType const& precision) {
+            settings.setPrecision(precision);
+        }
+
+        template<typename ValueType>
         bool IterativeMinMaxLinearEquationSolver<ValueType>::getRelative() const {
             return this->getSettings().getRelativeTerminationCriterion();
         }

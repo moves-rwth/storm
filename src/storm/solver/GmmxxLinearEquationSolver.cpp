@@ -247,6 +247,11 @@ namespace storm {
         }
 
         template<typename ValueType>
+        void GmmxxLinearEquationSolver<ValueType>::setPrecision(ValueType const& precision) {
+            settings.setPrecision(precision);
+        }
+        
+        template<typename ValueType>
         GmmxxLinearEquationSolverSettings<ValueType> const& GmmxxLinearEquationSolver<ValueType>::getSettings() const {
             return settings;
         }

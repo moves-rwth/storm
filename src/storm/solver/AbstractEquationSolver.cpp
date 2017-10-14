@@ -229,6 +229,13 @@ namespace storm {
             }
         }
         
+        template<typename ValueType>
+        void AbstractEquationSolver<ValueType>::setPrecision(ValueType const& precision) {
+            STORM_LOG_DEBUG("Setting solver precision for a solver that does not support precisions.");
+        }
+
+        
+        
         template class AbstractEquationSolver<double>;
         template class AbstractEquationSolver<float>;
 

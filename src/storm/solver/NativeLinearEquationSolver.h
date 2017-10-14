@@ -66,6 +66,7 @@ namespace storm {
             
             void setSettings(NativeLinearEquationSolverSettings<ValueType> const& newSettings);
             NativeLinearEquationSolverSettings<ValueType> const& getSettings() const;
+            virtual void setPrecision(ValueType const& precision) override;
 
             virtual LinearEquationSolverProblemFormat getEquationProblemFormat() const override;
             virtual LinearEquationSolverRequirements getRequirements() const override;

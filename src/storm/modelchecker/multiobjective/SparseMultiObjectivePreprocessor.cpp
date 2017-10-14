@@ -13,9 +13,13 @@
 #include "storm/storage/memorystructure/MemoryStructureBuilder.h"
 #include "storm/storage/memorystructure/SparseModelMemoryProduct.h"
 #include "storm/storage/expressions/ExpressionManager.h"
+#include "storm/transformer/EndComponentEliminator.h"
 #include "storm/utility/macros.h"
 #include "storm/utility/vector.h"
 #include "storm/utility/graph.h"
+#include "storm/settings/SettingsManager.h"
+#include "storm/settings/modules/GeneralSettings.h"
+
 
 #include "storm/exceptions/InvalidPropertyException.h"
 #include "storm/exceptions/UnexpectedException.h"
@@ -383,10 +387,11 @@ namespace storm {
                 setReward0States(result, backwardTransitions);
                 checkRewardFiniteness(result, data.finiteRewardCheckObjectives, backwardTransitions);
                 
-                // Compute upper result bounds wherever this is necessarry
-                for (auto const& objIndex : data.upperResultBoundObjectives) {
-                    STORM_LOG_WARN("Computing upper result bound for an objective. TODO: this might not be necessary depending on the solution method.");
-                    result.objectives[objIndex].upperResultBound = computeUpperResultBound(result, objIndex, backwardTransitions);
+                // We compute upper result bounds if the 'sound' option has been enabled
+                if (storm::settings::getModule<storm::settings::modules::GeneralSettings>().isSoundSet()) {
+                    for (auto const& objIndex : data.upperResultBoundObjectives) {
+                        result.objectives[objIndex].upperResultBound = computeUpperResultBound(result, objIndex, backwardTransitions);
+                    }
                 }
                 
                 return result;
@@ -525,27 +530,39 @@ namespace storm {
                     auto nonZeroRewardStates = rewModel.getStatesWithZeroReward(transitions);
                     nonZeroRewardStates.complement();
                     auto expRewGreater0EStates = storm::utility::graph::performProbGreater0E(backwardTransitions, allStates, nonZeroRewardStates);
-                    auto expRew0AStates = ~expRewGreater0EStates;
+                    
+                    auto zeroRewardChoices = rewModel.getChoicesWithZeroReward(transitions);
+                    
+                    auto ecElimRes = storm::transformer::EndComponentEliminator<ValueType>::transform(transitions, expRewGreater0EStates, zeroRewardChoices, ~allStates);
+                    
+                    allStates.resize(ecElimRes.matrix.getRowGroupCount());
+                    storm::storage::BitVector outStates(allStates.size(), false);
+                    std::vector<ValueType> rew0StateProbs;
+                    rew0StateProbs.reserve(ecElimRes.matrix.getRowCount());
+                    for (uint64_t state = 0; state < allStates.size(); ++ state) {
+                        for (uint64_t choice = ecElimRes.matrix.getRowGroupIndices()[state]; choice < ecElimRes.matrix.getRowGroupIndices()[state + 1]; ++choice) {
+                            ValueType outProb = storm::utility::one<ValueType>() - ecElimRes.matrix.getRowSum(choice);
+                            if (!storm::utility::isZero(outProb)) {
+                                outStates.set(state, true);
+                            }
+                            rew0StateProbs.push_back(outProb);
+                        }
+                    }
                     
                     // An upper reward bound can only be computed if it is below infinity
-                    if (storm::utility::graph::performProb1A(transitions, transitions.getRowGroupIndices(), backwardTransitions, allStates, expRew0AStates).full()) {
-                        storm::storage::SparseMatrix<ValueType> submatrix = transitions.getSubmatrix(true, expRewGreater0EStates, expRewGreater0EStates);
-                        std::vector<ValueType> rew0StateProbs;
-                        rew0StateProbs.reserve(submatrix.getRowCount());
+                    if (storm::utility::graph::performProb1A(ecElimRes.matrix, ecElimRes.matrix.getRowGroupIndices(), ecElimRes.matrix.transpose(true), allStates, outStates).full()) {
+                        
+                        auto actionRewards = rewModel.getTotalRewardVector(transitions);
                         std::vector<ValueType> rewards;
-                        rewards.reserve(submatrix.getRowCount());
-                        for (auto const& state : expRewGreater0EStates) {
-                            for (uint64_t choice = transitions.getRowGroupIndices()[state]; choice < transitions.getRowGroupIndices()[state + 1]; ++choice) {
-                                rew0StateProbs.push_back(transitions.getConstrainedRowSum(choice, expRew0AStates));
-                                rewards.push_back(rewModel.getTotalStateActionReward(state, choice, transitions));
-                            }
+                        rewards.reserve(ecElimRes.matrix.getRowCount());
+                        for (auto row : ecElimRes.newToOldRowMapping) {
+                            rewards.push_back(actionRewards[row]);
                         }
                         
-                        storm::modelchecker::helper::BaierUpperRewardBoundsComputer<ValueType> baier(submatrix, rewards, rew0StateProbs);
+                        storm::modelchecker::helper::BaierUpperRewardBoundsComputer<ValueType> baier(ecElimRes.matrix, rewards, rew0StateProbs);
                         return baier.computeUpperBound();
                     }
                 }
-                
                 
                 // reaching this point means that we were not able to compute an upper bound
                 return boost::none;
