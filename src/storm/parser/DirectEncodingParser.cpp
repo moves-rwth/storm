@@ -2,6 +2,8 @@
 
 #include <iostream>
 #include <string>
+
+#include <boost/algorithm/string.hpp>
 #include <boost/algorithm/string/predicate.hpp>
 
 #include "storm/models/sparse/MarkovAutomaton.h"
@@ -18,6 +20,7 @@
 #include "storm/utility/builder.h"
 #include "storm/utility/macros.h"
 #include "storm/utility/file.h"
+
 
 namespace storm {
     namespace parser {
@@ -64,6 +67,8 @@ namespace storm {
             size_t nrStates = 0;
             storm::models::ModelType type;
 
+            std::vector<std::string> rewardModelNames;
+
              std::shared_ptr<storm::storage::sparse::ModelComponents<ValueType, RewardModelType>> modelComponents;
 
             // Parse header
@@ -92,6 +97,11 @@ namespace storm {
                     }
                     sawParameters = true;
                 }
+                if(line == "@reward_models") {
+                    STORM_LOG_THROW(rewardModelNames.size() == 0, storm::exceptions::WrongFormatException, "Reward model names declared twice");
+                    std::getline(file, line);
+                    boost::split(rewardModelNames, line, boost::is_any_of("\t "));
+                }
                 if(line == "@nr_states") {
                     STORM_LOG_THROW(nrStates == 0, storm::exceptions::WrongFormatException, "Number states declared twice");
                     std::getline(file, line);
@@ -104,7 +114,7 @@ namespace storm {
                     STORM_LOG_THROW(nrStates != 0, storm::exceptions::WrongFormatException, "Nr States has to be declared before model.");
 
                     // Construct model components
-                    modelComponents = parseStates(file, type, nrStates, valueParser);
+                    modelComponents = parseStates(file, type, nrStates, valueParser, rewardModelNames);
                     break;
                 }
             }
@@ -116,7 +126,7 @@ namespace storm {
         }
 
         template<typename ValueType, typename RewardModelType>
-        std::shared_ptr<storm::storage::sparse::ModelComponents<ValueType, RewardModelType>> DirectEncodingParser<ValueType, RewardModelType>::parseStates(std::istream& file, storm::models::ModelType type, size_t stateSize, ValueParser<ValueType> const& valueParser) {
+        std::shared_ptr<storm::storage::sparse::ModelComponents<ValueType, RewardModelType>> DirectEncodingParser<ValueType, RewardModelType>::parseStates(std::istream& file, storm::models::ModelType type, size_t stateSize, ValueParser<ValueType> const& valueParser, std::vector<std::string> const& rewardModelNames) {
             // Initialize
             auto modelComponents = std::make_shared<storm::storage::sparse::ModelComponents<ValueType, RewardModelType>>();
             bool nonDeterministic = (type == storm::models::ModelType::Mdp || type == storm::models::ModelType::MarkovAutomaton);
@@ -227,8 +237,15 @@ namespace storm {
 
             STORM_LOG_TRACE("Finished parsing");
             modelComponents->transitionMatrix = builder.build(row + 1, stateSize, nonDeterministic ? stateSize : 0);
+
             for (uint64_t i = 0; i < stateRewards.size(); ++i) {
-                modelComponents->rewardModels.emplace("rew" + std::to_string(i), storm::models::sparse::StandardRewardModel<ValueType>(std::move(stateRewards[i])));
+                std::string rewardModelName;
+                if (rewardModelNames.size() <= i) {
+                    rewardModelName = "rew" + std::to_string(i);
+                } else {
+                    rewardModelName = rewardModelNames[i];
+                }
+                modelComponents->rewardModels.emplace(rewardModelName, storm::models::sparse::StandardRewardModel<ValueType>(std::move(stateRewards[i])));
             }
             STORM_LOG_TRACE("Built matrix");
             return modelComponents;
