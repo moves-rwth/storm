@@ -47,6 +47,11 @@ namespace storm {
                 }
             }
             os << std::endl;
+            os << "@reward_models" << std::endl;
+            for (auto const& rewardModel : sparseModel->getRewardModels()) {
+                os << rewardModel.first << " ";
+            }
+            os << std::endl;
             os << "@nr_states" << std::endl  << sparseModel->getNumberOfStates() <<  std::endl;
             os << "@model" << std::endl;
 
