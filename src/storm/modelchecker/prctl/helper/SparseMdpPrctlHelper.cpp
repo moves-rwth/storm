@@ -128,9 +128,19 @@ namespace storm {
                                     choiceValue += *stepSolutionIt;
                                 }
                                 
-                                if (isFirstChoice || choiceValue > bestValue) {
+                                if (isFirstChoice) {
                                     bestValue = std::move(choiceValue);
                                     isFirstChoice = false;
+                                } else {
+                                    if (storm::solver::minimize(dir)) {
+                                        if (choiceValue < bestValue) {
+                                            bestValue = std::move(choiceValue);
+                                        }
+                                    } else {
+                                        if (choiceValue > bestValue) {
+                                            bestValue = std::move(choiceValue);
+                                        }
+                                    }
                                 }
                             }
                             // Insert the solution w.r.t. this choice
@@ -196,7 +206,7 @@ namespace storm {
                 std::cout << "          #checked epochs: " << epochOrder.size() << "." << std::endl;
                 std::cout << "             overall Time: " << swAll << "." << std::endl;
                 std::cout << "Epoch Model building Time: " << swBuild << "." << std::endl;
-                std::cout << "Epoch Model checking Time: " << swBuild << "." << std::endl;
+                std::cout << "Epoch Model checking Time: " << swCheck << "." << std::endl;
                 std::cout << "---------------------------------" << std::endl;
                 
                 return  result;
