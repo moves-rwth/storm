@@ -99,6 +99,13 @@ namespace storm {
                 std::string solutionToString(SolutionType const& solution) const;
                 
                 SolutionType const& getStateSolution(Epoch const& epoch, uint64_t const& productState);
+                struct EpochSolution {
+                    uint64_t count;
+                    std::shared_ptr<std::vector<uint64_t> const> productStateToSolutionVectorMap;
+                    std::vector<SolutionType> solutions;
+                };
+                std::map<Epoch, EpochSolution> epochSolutions;
+                SolutionType const& getStateSolution(std::map<Epoch, EpochSolution const*> const& solutions, Epoch const& epoch, uint64_t const& productState);
                 
                 storm::models::sparse::Mdp<ValueType> const& model;
                 std::vector<storm::modelchecker::multiobjective::Objective<ValueType>> objectives;
@@ -116,13 +123,6 @@ namespace storm {
                 
                 std::vector<Dimension<ValueType>> dimensions;
                 std::vector<storm::storage::BitVector> objectiveDimensions;
-                
-                struct EpochSolution {
-                    uint64_t count;
-                    std::shared_ptr<std::vector<uint64_t> const> productStateToSolutionVectorMap;
-                    std::vector<SolutionType> solutions;
-                };
-                std::map<Epoch, EpochSolution> epochSolutions;
                 
                 
                 storm::utility::Stopwatch swInit, swFindSol, swInsertSol, swSetEpoch, swSetEpochClass, swAux1, swAux2, swAux3, swAux4;

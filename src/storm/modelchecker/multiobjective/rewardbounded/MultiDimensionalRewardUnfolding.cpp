@@ -296,7 +296,15 @@ namespace storm {
                         break;
                     }
                 }
-                
+                std::map<Epoch, EpochSolution const*> subSolutions;
+                for (auto const& step : possibleEpochSteps) {
+                    Epoch successorEpoch = epochManager.getSuccessorEpoch(epoch, step);
+                    if (successorEpoch != epoch) {
+                        auto successorSolIt = epochSolutions.find(successorEpoch);
+                        STORM_LOG_ASSERT(successorSolIt != epochSolutions.end(), "Solution for successor epoch does not exist (anymore).");
+                        subSolutions.emplace(successorEpoch, &successorSolIt->second);
+                    }
+                }
                 epochModel.stepSolutions.resize(epochModel.stepChoices.getNumberOfSetBits());
                 auto stepSolIt = epochModel.stepSolutions.begin();
                 for (auto const& reducedChoice : epochModel.stepChoices) {
@@ -328,16 +336,16 @@ namespace storm {
                     if (!containsLowerBoundedObjective && epochManager.compareEpochClass(epoch, successorEpoch)) {
                         for (auto const& successor : productModel->getProduct().getTransitionMatrix().getRow(productChoice)) {
                             if (firstSuccessor) {
-                                choiceSolution = getScaledSolution(getStateSolution(successorEpoch, successor.getColumn()), successor.getValue());
+                                choiceSolution = getScaledSolution(getStateSolution(subSolutions, successorEpoch, successor.getColumn()), successor.getValue());
                                 firstSuccessor = false;
                             } else {
-                                addScaledSolution(choiceSolution, getStateSolution(successorEpoch, successor.getColumn()), successor.getValue());
+                                addScaledSolution(choiceSolution, getStateSolution(subSolutions, successorEpoch, successor.getColumn()), successor.getValue());
                             }
                         }
                     } else {
                         for (auto const& successor : productModel->getProduct().getTransitionMatrix().getRow(productChoice)) {
                             uint64_t successorProductState = productModel->transformProductState(successor.getColumn(), successorEpochClass, memoryState);
-                            SolutionType const& successorSolution = getStateSolution(successorEpoch, successorProductState);
+                            SolutionType const& successorSolution = getStateSolution(subSolutions, successorEpoch, successorProductState);
                             if (firstSuccessor) {
                                 choiceSolution = getScaledSolution(successorSolution, successor.getValue());
                                 firstSuccessor = false;
@@ -568,6 +576,16 @@ namespace storm {
                 auto epochSolutionIt = epochSolutions.find(epoch);
                 STORM_LOG_ASSERT(epochSolutionIt != epochSolutions.end(), "Requested unexisting solution for epoch " << epochManager.toString(epoch) << ".");
                 auto const& epochSolution = epochSolutionIt->second;
+                STORM_LOG_ASSERT(productState < epochSolution.productStateToSolutionVectorMap->size(), "Requested solution for epoch " << epochManager.toString(epoch) << " at an unexisting product state.");
+                STORM_LOG_ASSERT((*epochSolution.productStateToSolutionVectorMap)[productState] < epochSolution.solutions.size(), "Requested solution for epoch " << epochManager.toString(epoch) << " at a state for which no solution was stored.");
+                return epochSolution.solutions[(*epochSolution.productStateToSolutionVectorMap)[productState]];
+            }
+            
+            template<typename ValueType, bool SingleObjectiveMode>
+            typename MultiDimensionalRewardUnfolding<ValueType, SingleObjectiveMode>::SolutionType const& MultiDimensionalRewardUnfolding<ValueType, SingleObjectiveMode>::getStateSolution(std::map<Epoch, EpochSolution const*> const& solutions, Epoch const& epoch, uint64_t const& productState) {
+                auto epochSolutionIt = solutions.find(epoch);
+                STORM_LOG_ASSERT(epochSolutionIt != solutions.end(), "Requested unexisting solution for epoch " << epochManager.toString(epoch) << ".");
+                auto const& epochSolution = *epochSolutionIt->second;
                 STORM_LOG_ASSERT(productState < epochSolution.productStateToSolutionVectorMap->size(), "Requested solution for epoch " << epochManager.toString(epoch) << " at an unexisting product state.");
                 STORM_LOG_ASSERT((*epochSolution.productStateToSolutionVectorMap)[productState] < epochSolution.solutions.size(), "Requested solution for epoch " << epochManager.toString(epoch) << " at a state for which no solution was stored.");
                 return epochSolution.solutions[(*epochSolution.productStateToSolutionVectorMap)[productState]];
