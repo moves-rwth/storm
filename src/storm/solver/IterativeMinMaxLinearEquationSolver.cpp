@@ -213,7 +213,9 @@ namespace storm {
                 } else {
                     // Update the scheduler and the solver.
                     submatrix = this->A->selectRowsFromRowGroups(scheduler, true);
-                    submatrix.convertToEquationSystem();
+                    if (convertToEquationSystem) {
+                        submatrix.convertToEquationSystem();
+                    }
                     storm::utility::vector::selectVectorValues<ValueType>(subB, scheduler, this->A->getRowGroupIndices(), b);
                     solver->setMatrix(std::move(submatrix));
                 }
