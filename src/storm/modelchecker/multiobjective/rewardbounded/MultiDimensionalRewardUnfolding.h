@@ -105,7 +105,8 @@ namespace storm {
                     std::vector<SolutionType> solutions;
                 };
                 std::map<Epoch, EpochSolution> epochSolutions;
-                SolutionType const& getStateSolution(std::map<Epoch, EpochSolution const*> const& solutions, Epoch const& epoch, uint64_t const& productState);
+                EpochSolution const& getEpochSolution(std::map<Epoch, EpochSolution const*> const& solutions, Epoch const& epoch);
+                SolutionType const& getStateSolution(EpochSolution const& epochSolution, uint64_t const& productState);
                 
                 storm::models::sparse::Mdp<ValueType> const& model;
                 std::vector<storm::modelchecker::multiobjective::Objective<ValueType>> objectives;
