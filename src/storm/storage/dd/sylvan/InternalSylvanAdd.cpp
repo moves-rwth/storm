@@ -57,9 +57,7 @@ namespace storm {
             bool negated = mtbdd_hascomp(node);
             
             STORM_LOG_ASSERT(mtbdd_gettype(node) == sylvan_storm_rational_number_get_type(), "Expected a storm::RationalNumber value.");
-            uint64_t value = mtbdd_getvalue(node);
-            storm_rational_number_ptr ptr = (storm_rational_number_ptr)value;
-            
+            storm_rational_number_ptr ptr = (storm_rational_number_ptr)mtbdd_getstorm_rational_number_ptr(node);
             storm::RationalNumber* rationalNumber = (storm::RationalNumber*)(ptr);
             
             return negated ? -(*rationalNumber) : (*rationalNumber);
