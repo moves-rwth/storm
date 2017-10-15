@@ -3,6 +3,7 @@
 #include <iostream>
 #include <cstdio>
 #include <chrono>
+#include <errno.h>
 
 #include "storm/solver/SmtSolver.h"
 
@@ -163,7 +164,7 @@ namespace storm {
                 STORM_LOG_TRACE("Executing command: " << command);
                 
                 std::unique_ptr<FILE> pipe(popen(command.c_str(), "r"));
-                STORM_LOG_THROW(pipe, storm::exceptions::InvalidStateException, "Call to popen failed.");
+                STORM_LOG_THROW(pipe, storm::exceptions::InvalidStateException, "Call to popen failed: " << strerror(errno));
                 
                 while (!feof(pipe.get())) {
                     if (fgets(buffer, 128, pipe.get()) != nullptr)

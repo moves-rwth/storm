@@ -11,7 +11,7 @@ namespace storm {
          */
         int64_t process(const int argc, const char** argv);
 
-        void printHeader(std::string const& name, const int argc, const char* argv[]);
+        void printHeader(std::string const& name, const int argc, const char** argv);
         
         void printVersion(std::string const& name);
             
@@ -27,7 +27,8 @@ namespace storm {
         bool parseOptions(const int argc, const char* argv[]);
         
         void processOptions();
-        
+
+        void setUrgentOptions();
     }
 }
 

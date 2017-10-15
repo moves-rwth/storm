@@ -4,7 +4,7 @@
 #include "storm/utility/macros.h"
 #include "storm/exceptions/NotImplementedException.h"
 #include "storm/settings/SettingsManager.h"
-#include "storm-dft/settings/modules/DFTSettings.h"
+#include "storm-dft/settings/modules/FaultTreeSettings.h"
 
 namespace storm {
     namespace generator {
@@ -71,7 +71,7 @@ namespace storm {
 
             // Let BE fail
             while (currentFailable < failableCount) {
-                if (storm::settings::getModule<storm::settings::modules::DFTSettings>().isTakeFirstDependency() && hasDependencies && currentFailable > 0) {
+                if (storm::settings::getModule<storm::settings::modules::FaultTreeSettings>().isTakeFirstDependency() && hasDependencies && currentFailable > 0) {
                     // We discard further exploration as we already chose one dependent event
                     break;
                 }

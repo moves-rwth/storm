@@ -232,7 +232,9 @@ namespace storm {
             std::shared_ptr<storm::models::sparse::Model<ValueType>> result = model;
             model->close();
             if (model->hasOnlyTrivialNondeterminism()) {
-                result = model->convertToCTMC();
+                STORM_LOG_WARN_COND(false, "Non-deterministic choices in MA seem to be unnecessary. Consider using a CTMC instead.");
+                // Activate again if transformation is correct
+                //result = model->convertToCTMC();
             }
             return result;
         }

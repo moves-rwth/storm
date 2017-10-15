@@ -19,6 +19,7 @@ Version 1.1.x
 - storm-pars: support for welldefinedness constraints in mdps.
 - symbolic (MT/BDD) bisimulation 
 - Fixed issue related to variable names that can not be used in Exprtk.
+- DRN parser improved
 
 ### Version 1.1.0 (2017/8)
 

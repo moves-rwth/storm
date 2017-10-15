@@ -18,8 +18,7 @@ install_brew_package() {
     brew outdated "$1" || brew upgrade "$@"
   else
     # Package not installed yet, install.
-    # If there are conflicts, try overwriting the files (these are in /usr/local anyway so it should be ok).
-    brew install "$@" || brew link --overwrite gcc49
+    brew install "$@" || brew link --overwrite "$@"
   fi
 }
 
@@ -40,19 +39,14 @@ install_brew_package md5sha1sum
 # For `timeout'
 install_brew_package coreutils
 
-which cmake &>/dev/null || install_brew_package cmake
+install_brew_package cmake
 
 # Install compiler
 case "${COMPILER}" in
-gcc-4.8)       install_brew_package gcc@4.8 ;;
-gcc-4.9)       install_brew_package gcc@4.9 ;;
-gcc-5)         install_brew_package gcc@5 ;;
-gcc-6)         install_brew_package gcc@6 ;;
-clang-default) ;;
-clang-3.7)     install_brew_package llvm@3.7 --with-clang --with-libcxx;;
-clang-3.8)     install_brew_package llvm@3.8 --with-clang --with-libcxx;;
-clang-3.9)     install_brew_package llvm@3.9 --with-clang --with-libcxx;;
-clang-4.0)     install_brew_package llvm     --with-clang --with-libcxx;;
+gcc)         install_brew_package gcc ;;
+gcc-6)       install_brew_package gcc@6 ;;
+clang)       ;;
+clang-4)     install_brew_package llvm@4 --with-clang --with-libcxx;;
 *) echo "Compiler not supported: ${COMPILER}. See travis/install_osx.sh"; exit 1 ;;
 esac
 travis_fold end brew_install_util
@@ -66,8 +60,7 @@ install_brew_package ginac
 install_brew_package doxygen
 install_brew_package boost --c++11
 install_brew_package z3 # optional
-brew tap homebrew/science
-install_brew_package homebrew/science/glpk
-install_brew_package homebrew/science/hwloc
+install_brew_package glpk
+install_brew_package hwloc
 install_brew_package eigen
 travis_fold end brew_install_dependencies

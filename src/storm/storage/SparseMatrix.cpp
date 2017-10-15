@@ -1497,8 +1497,9 @@ namespace storm {
             typename std::vector<ValueType>::iterator resultIterator = x.end() - 1;
             typename std::vector<ValueType>::iterator resultIteratorEnd = x.begin() - 1;
             
-            index_type currentRow = 0;
+            index_type currentRow = getRowCount();
             for (; resultIterator != resultIteratorEnd; --rowIterator, --resultIterator, --bIt) {
+                --currentRow;
                 ValueType tmpValue = storm::utility::zero<ValueType>();
                 ValueType diagonalElement = storm::utility::zero<ValueType>();
                 
@@ -1509,9 +1510,8 @@ namespace storm {
                         diagonalElement += it->getValue();
                     }
                 }
-                
+                assert(!storm::utility::isZero(diagonalElement));
                 *resultIterator = ((storm::utility::one<ValueType>() - omega) * *resultIterator) + (omega / diagonalElement) * (*bIt - tmpValue);
-                ++currentRow;
             }
         }
         

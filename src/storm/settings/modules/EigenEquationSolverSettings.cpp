@@ -113,6 +113,7 @@ namespace storm {
                     case EigenEquationSolverSettings::LinearEquationMethod::DGMRES: out << "dgmres"; break;
                     case EigenEquationSolverSettings::LinearEquationMethod::SparseLU: out << "sparselu"; break;
                 }
+                return out;
             }
             
         } // namespace modules
