@@ -868,7 +868,6 @@ namespace storm {
         template bool isZero(int const& value);
         template bool isConstant(int const& value);
         template bool isInfinity(int const& value);
-        template bool isInteger(int const& number);
         
         // uint32_t
         template uint32_t one();
@@ -878,7 +877,6 @@ namespace storm {
         template bool isZero(uint32_t const& value);
         template bool isConstant(uint32_t const& value);
         template bool isInfinity(uint32_t const& value);
-        template bool isInteger(uint32_t const& number);
         
         // storm::storage::sparse::state_type
         template storm::storage::sparse::state_type one();
@@ -888,11 +886,8 @@ namespace storm {
         template bool isZero(storm::storage::sparse::state_type const& value);
         template bool isConstant(storm::storage::sparse::state_type const& value);
         template bool isInfinity(storm::storage::sparse::state_type const& value);
-        template bool isInteger(storm::storage::sparse::state_type const& number);
         
         // other instantiations
-        template double convertNumber(long long const&);
-        template storm::storage::sparse::state_type convertNumber(long long const& number);
         template unsigned long convertNumber(long const&);
         template double convertNumber(long const&);
         
@@ -901,20 +896,11 @@ namespace storm {
         template storm::ClnRationalNumber one();
         template NumberTraits<storm::ClnRationalNumber>::IntegerType one();
         template storm::ClnRationalNumber zero();
-        template storm::ClnRationalNumber infinity();
-        template bool isOne(storm::ClnRationalNumber const& value);
         template bool isZero(NumberTraits<storm::ClnRationalNumber>::IntegerType const& value);
-        template bool isZero(storm::ClnRationalNumber const& value);
         template bool isConstant(storm::ClnRationalNumber const& value);
         template bool isInfinity(storm::ClnRationalNumber const& value);
-        template bool isInteger(storm::ClnRationalNumber const& number);
-        template double convertNumber(storm::ClnRationalNumber const& number);
         template storm::NumberTraits<ClnRationalNumber>::IntegerType convertNumber(storm::NumberTraits<ClnRationalNumber>::IntegerType const& number);
-        template storm::NumberTraits<ClnRationalNumber>::IntegerType convertNumber(uint64_t const& number);
-        template uint_fast64_t convertNumber(storm::ClnRationalNumber const& number);
-        template storm::ClnRationalNumber convertNumber(double const& number);
         template storm::ClnRationalNumber convertNumber(storm::ClnRationalNumber const& number);
-        template ClnRationalNumber convertNumber(std::string const& number);
         template storm::ClnRationalNumber simplify(storm::ClnRationalNumber value);
         template storm::storage::MatrixEntry<storm::storage::sparse::state_type, storm::ClnRationalNumber> simplify(storm::storage::MatrixEntry<storm::storage::sparse::state_type, storm::ClnRationalNumber> matrixEntry);
         template storm::storage::MatrixEntry<storm::storage::sparse::state_type, storm::ClnRationalNumber>& simplify(storm::storage::MatrixEntry<storm::storage::sparse::state_type, storm::ClnRationalNumber>& matrixEntry);
@@ -922,17 +908,10 @@ namespace storm {
         template std::pair<storm::ClnRationalNumber, storm::ClnRationalNumber> minmax(std::map<uint64_t, storm::ClnRationalNumber> const&);
         template storm::ClnRationalNumber minimum(std::map<uint64_t, storm::ClnRationalNumber> const&);
         template storm::ClnRationalNumber maximum(std::map<uint64_t, storm::ClnRationalNumber> const&);
-        template std::pair<storm::ClnRationalNumber, storm::ClnRationalNumber> minmax(std::vector<storm::ClnRationalNumber> const&);
         template storm::ClnRationalNumber minimum(std::vector<storm::ClnRationalNumber> const&);
         template storm::ClnRationalNumber maximum(std::vector<storm::ClnRationalNumber> const&);
         template storm::ClnRationalNumber max(storm::ClnRationalNumber const& first, storm::ClnRationalNumber const& second);
         template storm::ClnRationalNumber min(storm::ClnRationalNumber const& first, storm::ClnRationalNumber const& second);
-        template storm::ClnRationalNumber pow(storm::ClnRationalNumber const& value, uint_fast64_t exponent);
-        template storm::ClnRationalNumber sqrt(storm::ClnRationalNumber const& number);
-        template storm::ClnRationalNumber abs(storm::ClnRationalNumber const& number);
-        template storm::ClnRationalNumber floor(storm::ClnRationalNumber const& number);
-        template storm::ClnRationalNumber ceil(storm::ClnRationalNumber const& number);
-        template storm::ClnRationalNumber log(storm::ClnRationalNumber const& number);
         template std::string to_string(storm::ClnRationalNumber const& value);
 #endif
         
@@ -941,74 +920,34 @@ namespace storm {
         template storm::GmpRationalNumber one();
         template NumberTraits<storm::GmpRationalNumber>::IntegerType one();
         template storm::GmpRationalNumber zero();
-        template storm::GmpRationalNumber infinity();
-        template bool isOne(storm::GmpRationalNumber const& value);
-        template bool isZero(storm::GmpRationalNumber const& value);
         template bool isZero(NumberTraits<storm::GmpRationalNumber>::IntegerType const& value);
         template bool isConstant(storm::GmpRationalNumber const& value);
         template bool isInfinity(storm::GmpRationalNumber const& value);
-        template bool isInteger(storm::GmpRationalNumber const& number);
-        template double convertNumber(storm::GmpRationalNumber const& number);
-        template uint_fast64_t convertNumber(storm::GmpRationalNumber const& number);
         template storm::NumberTraits<GmpRationalNumber>::IntegerType convertNumber(storm::NumberTraits<GmpRationalNumber>::IntegerType const& number);
-        template storm::NumberTraits<GmpRationalNumber>::IntegerType convertNumber(uint64_t const& number);
-        template storm::GmpRationalNumber convertNumber(double const& number);
         template storm::GmpRationalNumber convertNumber(storm::GmpRationalNumber const& number);
-        template GmpRationalNumber convertNumber(std::string const& number);
         template storm::GmpRationalNumber simplify(storm::GmpRationalNumber value);
         template storm::storage::MatrixEntry<storm::storage::sparse::state_type, storm::GmpRationalNumber> simplify(storm::storage::MatrixEntry<storm::storage::sparse::state_type, storm::GmpRationalNumber> matrixEntry);
         template storm::storage::MatrixEntry<storm::storage::sparse::state_type, storm::GmpRationalNumber>& simplify(storm::storage::MatrixEntry<storm::storage::sparse::state_type, storm::GmpRationalNumber>& matrixEntry);
         template storm::storage::MatrixEntry<storm::storage::sparse::state_type, storm::GmpRationalNumber>&& simplify(storm::storage::MatrixEntry<storm::storage::sparse::state_type, storm::GmpRationalNumber>&& matrixEntry);
-        template std::pair<storm::GmpRationalNumber, storm::GmpRationalNumber> minmax(std::map<uint64_t, storm::GmpRationalNumber> const&);
         template storm::GmpRationalNumber minimum(std::map<uint64_t, storm::GmpRationalNumber> const&);
         template storm::GmpRationalNumber maximum(std::map<uint64_t, storm::GmpRationalNumber> const&);
-        template std::pair<storm::GmpRationalNumber, storm::GmpRationalNumber> minmax(std::vector<storm::GmpRationalNumber> const&);
         template storm::GmpRationalNumber minimum(std::vector<storm::GmpRationalNumber> const&);
         template storm::GmpRationalNumber maximum(std::vector<storm::GmpRationalNumber> const&);
         template storm::GmpRationalNumber max(storm::GmpRationalNumber const& first, storm::GmpRationalNumber const& second);
         template storm::GmpRationalNumber min(storm::GmpRationalNumber const& first, storm::GmpRationalNumber const& second);
-        template storm::GmpRationalNumber pow(storm::GmpRationalNumber const& value, uint_fast64_t exponent);
-        template storm::GmpRationalNumber sqrt(storm::GmpRationalNumber const& number);
-        template storm::GmpRationalNumber abs(storm::GmpRationalNumber const& number);
-        template storm::GmpRationalNumber floor(storm::GmpRationalNumber const& number);
-        template storm::GmpRationalNumber ceil(storm::GmpRationalNumber const& number);
-        template storm::GmpRationalNumber log(storm::GmpRationalNumber const& number);
         template std::string to_string(storm::GmpRationalNumber const& value);
 #endif
         
 #if defined(STORM_HAVE_CARL) && defined(STORM_HAVE_GMP) && defined(STORM_HAVE_CLN)
-        template storm::GmpRationalNumber convertNumber(storm::ClnRationalNumber const& number);
-        template storm::ClnRationalNumber convertNumber(storm::GmpRationalNumber const& number);
 #endif
         
 #ifdef STORM_HAVE_CARL
         // Instantiations for rational function.
         template RationalFunction one();
         template RationalFunction zero();
-        template storm::RationalFunction infinity();
-        template bool isOne(RationalFunction const& value);
-        template bool isZero(RationalFunction const& value);
-        template bool isConstant(RationalFunction const& value);
-        template bool isInfinity(RationalFunction const& value);
-        template bool isInteger(RationalFunction const&);
-        template storm::RationalFunction convertNumber(storm::RationalFunction const& number);
-        template RationalFunctionCoefficient convertNumber(RationalFunction const& number);
-        template RationalFunction convertNumber(storm::RationalFunctionCoefficient const& number);
-        template RationalFunction convertNumber(storm::storage::sparse::state_type const& number);
-        template RationalFunction convertNumber(double const& number);
-        template RationalFunction simplify(RationalFunction value);
-        template RationalFunction& simplify(RationalFunction& value);
-        template RationalFunction&& simplify(RationalFunction&& value);
         template storm::storage::MatrixEntry<storm::storage::sparse::state_type, RationalFunction> simplify(storm::storage::MatrixEntry<storm::storage::sparse::state_type, RationalFunction> matrixEntry);
         template storm::storage::MatrixEntry<storm::storage::sparse::state_type, RationalFunction>& simplify(storm::storage::MatrixEntry<storm::storage::sparse::state_type, RationalFunction>& matrixEntry);
         template storm::storage::MatrixEntry<storm::storage::sparse::state_type, RationalFunction>&& simplify(storm::storage::MatrixEntry<storm::storage::sparse::state_type, RationalFunction>&& matrixEntry);
-        template std::pair<storm::RationalFunction, storm::RationalFunction> minmax(std::map<uint64_t, storm::RationalFunction> const&);
-        template storm::RationalFunction minimum(std::map<uint64_t, storm::RationalFunction> const&);
-        template storm::RationalFunction maximum(std::map<uint64_t, storm::RationalFunction> const&);
-        template std::pair<storm::RationalFunction, storm::RationalFunction> minmax(std::vector<storm::RationalFunction> const&);
-        template storm::RationalFunction minimum(std::vector<storm::RationalFunction> const&);
-        template storm::RationalFunction maximum(std::vector<storm::RationalFunction> const&);
-        template RationalFunction pow(RationalFunction const& value, uint_fast64_t exponent);
 
         // Instantiations for polynomials.
         template Polynomial one();

@@ -241,9 +241,6 @@ namespace storm {
 
         template class LinearEquationSolverFactory<storm::RationalNumber>;
         template class LinearEquationSolverFactory<storm::RationalFunction>;
-        
-        template class GeneralLinearEquationSolverFactory<storm::RationalNumber>;
-        template class GeneralLinearEquationSolverFactory<storm::RationalFunction>;
 #endif
 
     }
