@@ -82,6 +82,7 @@ namespace storm {
             storm::storage::BitVector const& relevantValues() const;
            
             void restrictRelevantValues(storm::storage::BitVector const& filter);
+            void setRelevantValues(storm::storage::BitVector&& values);
             
         private:
             boost::optional<OptimizationDirection> optimizationDirection;

@@ -14,6 +14,7 @@
 
 #include "storm/utility/OsDetection.h"
 #include "storm/utility/macros.h"
+#include "storm/utility/constants.h"
 #include "storm/adapters/RationalFunctionAdapter.h"
 
 // Forward declaration for adapter classes.
@@ -1070,7 +1071,7 @@ namespace storm {
 				newColumnsAndValues.resize(columnsAndValues.size());
                 std::transform(columnsAndValues.begin(), columnsAndValues.end(), newColumnsAndValues.begin(),
                                [] (MatrixEntry<SparseMatrix::index_type, ValueType> const& a) {
-                                   return MatrixEntry<SparseMatrix::index_type, NewValueType>(a.getColumn(), static_cast<NewValueType>(a.getValue()));
+                                   return MatrixEntry<SparseMatrix::index_type, NewValueType>(a.getColumn(), storm::utility::convertNumber<NewValueType, ValueType>(a.getValue()));
                                });
 
 				return SparseMatrix<NewValueType>(columnCount, std::move(newRowIndications), std::move(newColumnsAndValues), std::move(newRowGroupIndices));

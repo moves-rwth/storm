@@ -14,7 +14,7 @@
 #include "storm/settings/modules/NativeEquationSolverSettings.h"
 #include "storm/parser/AutoParser.h"
 
-TEST(SparseMdpPrctlModelCheckerTest, Dice) {
+TEST(NativeMdpPrctlModelCheckerTest, Dice) {
     std::shared_ptr<storm::models::sparse::Model<double>> abstractModel = storm::parser::AutoParser<>::parseModel(STORM_TEST_RESOURCES_DIR "/tra/two_dice.tra", STORM_TEST_RESOURCES_DIR "/lab/two_dice.lab", "", STORM_TEST_RESOURCES_DIR "/rew/two_dice.flip.trans.rew");
 
     // A parser that we use for conveniently constructing the formulas.
@@ -76,14 +76,14 @@ TEST(SparseMdpPrctlModelCheckerTest, Dice) {
     result = checker.check(*formula);
     storm::modelchecker::ExplicitQuantitativeCheckResult<double>& quantitativeResult7 = result->asExplicitQuantitativeCheckResult<double>();
 
-    EXPECT_NEAR(7.3333328887820244, quantitativeResult7[0], storm::settings::getModule<storm::settings::modules::NativeEquationSolverSettings>().getPrecision());
+    EXPECT_NEAR(7.3333294987678528, quantitativeResult7[0], storm::settings::getModule<storm::settings::modules::NativeEquationSolverSettings>().getPrecision());
 
     formula = formulaParser.parseSingleFormulaFromString("Rmax=? [F \"done\"]");
 
     result = checker.check(*formula);
     storm::modelchecker::ExplicitQuantitativeCheckResult<double>& quantitativeResult8 = result->asExplicitQuantitativeCheckResult<double>();
 
-    EXPECT_NEAR(7.3333328887820244, quantitativeResult8[0], storm::settings::getModule<storm::settings::modules::NativeEquationSolverSettings>().getPrecision());
+    EXPECT_NEAR(7.3333316743373871, quantitativeResult8[0], storm::settings::getModule<storm::settings::modules::NativeEquationSolverSettings>().getPrecision());
 
     abstractModel = storm::parser::AutoParser<>::parseModel(STORM_TEST_RESOURCES_DIR "/tra/two_dice.tra", STORM_TEST_RESOURCES_DIR "/lab/two_dice.lab", STORM_TEST_RESOURCES_DIR "/rew/two_dice.flip.state.rew", "");
 
@@ -98,14 +98,14 @@ TEST(SparseMdpPrctlModelCheckerTest, Dice) {
     result = stateRewardModelChecker.check(*formula);
     storm::modelchecker::ExplicitQuantitativeCheckResult<double>& quantitativeResult9 = result->asExplicitQuantitativeCheckResult<double>();
 
-    EXPECT_NEAR(7.3333329195156693, quantitativeResult9[0], storm::settings::getModule<storm::settings::modules::NativeEquationSolverSettings>().getPrecision());
+    EXPECT_NEAR(7.3333294987678528, quantitativeResult9[0], storm::settings::getModule<storm::settings::modules::NativeEquationSolverSettings>().getPrecision());
 
     formula = formulaParser.parseSingleFormulaFromString("Rmax=? [F \"done\"]");
 
     result = stateRewardModelChecker.check(*formula);
     storm::modelchecker::ExplicitQuantitativeCheckResult<double>& quantitativeResult10 = result->asExplicitQuantitativeCheckResult<double>();
 
-    EXPECT_NEAR(7.3333328887820244, quantitativeResult10[0], storm::settings::getModule<storm::settings::modules::NativeEquationSolverSettings>().getPrecision());
+    EXPECT_NEAR(7.3333316743373871, quantitativeResult10[0], storm::settings::getModule<storm::settings::modules::NativeEquationSolverSettings>().getPrecision());
 
     abstractModel = storm::parser::AutoParser<>::parseModel(STORM_TEST_RESOURCES_DIR "/tra/two_dice.tra", STORM_TEST_RESOURCES_DIR "/lab/two_dice.lab", STORM_TEST_RESOURCES_DIR "/rew/two_dice.flip.state.rew", STORM_TEST_RESOURCES_DIR "/rew/two_dice.flip.trans.rew");
 
@@ -120,17 +120,17 @@ TEST(SparseMdpPrctlModelCheckerTest, Dice) {
     result = stateAndTransitionRewardModelChecker.check(*formula);
     storm::modelchecker::ExplicitQuantitativeCheckResult<double>& quantitativeResult11 = result->asExplicitQuantitativeCheckResult<double>();
 
-    EXPECT_NEAR(14.666665839031339, quantitativeResult11[0], storm::settings::getModule<storm::settings::modules::NativeEquationSolverSettings>().getPrecision());
+    EXPECT_NEAR(14.666658997535706, quantitativeResult11[0], storm::settings::getModule<storm::settings::modules::NativeEquationSolverSettings>().getPrecision());
 
     formula = formulaParser.parseSingleFormulaFromString("Rmax=? [F \"done\"]");
 
     result = stateAndTransitionRewardModelChecker.check(*formula);
     storm::modelchecker::ExplicitQuantitativeCheckResult<double>& quantitativeResult12 = result->asExplicitQuantitativeCheckResult<double>();
 
-    EXPECT_NEAR(14.666665777564049, quantitativeResult12[0], storm::settings::getModule<storm::settings::modules::NativeEquationSolverSettings>().getPrecision());
+    EXPECT_NEAR(14.666663348674774, quantitativeResult12[0], storm::settings::getModule<storm::settings::modules::NativeEquationSolverSettings>().getPrecision());
 }
 
-TEST(SparseMdpPrctlModelCheckerTest, AsynchronousLeader) {
+TEST(NativeMdpPrctlModelCheckerTest, AsynchronousLeader) {
     std::shared_ptr<storm::models::sparse::Model<double>> abstractModel = storm::parser::AutoParser<>::parseModel(STORM_TEST_RESOURCES_DIR "/tra/leader4.tra", STORM_TEST_RESOURCES_DIR "/lab/leader4.lab", "", STORM_TEST_RESOURCES_DIR "/rew/leader4.trans.rew");
 
     // A parser that we use for conveniently constructing the formulas.
@@ -188,7 +188,7 @@ TEST(SparseMdpPrctlModelCheckerTest, AsynchronousLeader) {
     EXPECT_NEAR(4.2857120959008661, quantitativeResult6[0], storm::settings::getModule<storm::settings::modules::NativeEquationSolverSettings>().getPrecision());
 }
 
-TEST(SparseMdpPrctlModelCheckerTest, LRA_SingleMec) {
+TEST(NativeMdpPrctlModelCheckerTest, LRA_SingleMec) {
     storm::storage::SparseMatrixBuilder<double> matrixBuilder;
     std::shared_ptr<storm::models::sparse::Mdp<double>> mdp;
 
@@ -338,7 +338,7 @@ TEST(SparseMdpPrctlModelCheckerTest, LRA_SingleMec) {
     }
 }
 
-TEST(SparseMdpPrctlModelCheckerTest, LRA) {
+TEST(NativeMdpPrctlModelCheckerTest, LRA) {
     storm::storage::SparseMatrixBuilder<double> matrixBuilder;
     std::shared_ptr<storm::models::sparse::Mdp<double>> mdp;
 

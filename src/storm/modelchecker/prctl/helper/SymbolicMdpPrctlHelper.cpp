@@ -87,11 +87,13 @@ namespace storm {
                                 initialScheduler = computeValidSchedulerHint(storm::solver::EquationSystemType::UntilProbabilities, model, transitionMatrix, maybeStates, statesWithProbability01.second);
                                 requirements.clearValidInitialScheduler();
                             }
+                            requirements.clearBounds();
                             STORM_LOG_THROW(requirements.empty(), storm::exceptions::UncheckedRequirementException, "Could not establish requirements of solver.");
                         }
                         if (initialScheduler) {
                             solver->setInitialScheduler(initialScheduler.get());
                         }
+                        solver->setBounds(storm::utility::zero<ValueType>(), storm::utility::one<ValueType>());
                         solver->setRequirementsChecked();
 
                         storm::dd::Add<DdType, ValueType> result = solver->solveEquations(dir, model.getManager().template getAddZero<ValueType>(), subvector);
@@ -244,11 +246,13 @@ namespace storm {
                                 initialScheduler = computeValidSchedulerHint(storm::solver::EquationSystemType::ReachabilityRewards, model, transitionMatrix, maybeStates, targetStates);
                                 requirements.clearValidInitialScheduler();
                             }
+                            requirements.clearLowerBounds();
                             STORM_LOG_THROW(requirements.empty(), storm::exceptions::UncheckedRequirementException, "Could not establish requirements of solver.");
                         }
                         if (initialScheduler) {
                             solver->setInitialScheduler(initialScheduler.get());
                         }
+                        solver->setLowerBound(storm::utility::zero<ValueType>());
                         solver->setRequirementsChecked();
 
                         storm::dd::Add<DdType, ValueType> result = solver->solveEquations(dir, model.getManager().template getAddZero<ValueType>(), subvector);

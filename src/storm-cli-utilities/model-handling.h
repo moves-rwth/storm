@@ -232,7 +232,9 @@ namespace storm {
             std::shared_ptr<storm::models::sparse::Model<ValueType>> result = model;
             model->close();
             if (model->hasOnlyTrivialNondeterminism()) {
-                result = model->convertToCTMC();
+                STORM_LOG_WARN_COND(false, "Non-deterministic choices in MA seem to be unnecessary. Consider using a CTMC instead.");
+                // Activate again if transformation is correct
+                //result = model->convertToCTMC();
             }
             return result;
         }
@@ -631,8 +633,6 @@ namespace storm {
                 std::shared_ptr<storm::models::ModelBase> model = buildPreprocessExportModelWithValueTypeAndDdlib<DdType, ValueType>(input, engine);
 
                 if (model) {
-                    STORM_LOG_THROW(model->isSparseModel() || !storm::settings::getModule<storm::settings::modules::GeneralSettings>().isSoundSet(), storm::exceptions::NotSupportedException, "Forcing soundness is currently only supported for sparse models.");
-
                     if (coreSettings.isCounterexampleSet()) {
                         auto ioSettings = storm::settings::getModule<storm::settings::modules::IOSettings>();
                         generateCounterexamples<ValueType>(model, input);
@@ -647,8 +647,12 @@ namespace storm {
         template <typename ValueType>
         void processInputWithValueType(SymbolicInput const& input) {
             auto coreSettings = storm::settings::getModule<storm::settings::modules::CoreSettings>();
-            
-            if (coreSettings.getDdLibraryType() == storm::dd::DdType::CUDD) {
+            auto generalSettings = storm::settings::getModule<storm::settings::modules::GeneralSettings>();
+
+            if (coreSettings.getDdLibraryType() == storm::dd::DdType::CUDD && coreSettings.isDdLibraryTypeSetFromDefaultValue() && generalSettings.isExactSet()) {
+                STORM_LOG_INFO("Switching to DD library sylvan to allow for rational arithmetic.");
+                processInputWithValueTypeAndDdlib<storm::dd::DdType::Sylvan, ValueType>(input);
+            } else if (coreSettings.getDdLibraryType() == storm::dd::DdType::CUDD) {
                 processInputWithValueTypeAndDdlib<storm::dd::DdType::CUDD, ValueType>(input);
             } else {
                 STORM_LOG_ASSERT(coreSettings.getDdLibraryType() == storm::dd::DdType::Sylvan, "Unknown DD library.");

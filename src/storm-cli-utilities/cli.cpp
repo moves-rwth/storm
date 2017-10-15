@@ -10,6 +10,7 @@
 #include "storm/utility/Stopwatch.h"
 
 #include <type_traits>
+#include <ctime>
 
 #include "storm-cli-utilities/model-handling.h"
 
@@ -64,7 +65,7 @@ namespace storm {
         }
         
         
-        void printHeader(std::string const& name, const int argc, const char* argv[]) {
+        void printHeader(std::string const& name, const int argc, const char** argv) {
             STORM_PRINT(name << " " << storm::utility::StormVersion::shortVersionString() << std::endl << std::endl);
             
             // "Compute" the command line argument string with which storm was invoked.
@@ -76,6 +77,8 @@ namespace storm {
             std::string command = commandStream.str();
             
             if (!command.empty()) {
+                std::time_t result = std::time(nullptr);
+                STORM_PRINT("Date: " << std::ctime(&result));
                 STORM_PRINT("Command line arguments: " << commandStream.str() << std::endl);
                 STORM_PRINT("Current working directory: " << storm::utility::cli::getCurrentWorkingDirectory() << std::endl << std::endl);
             }

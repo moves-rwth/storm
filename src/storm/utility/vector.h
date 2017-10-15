@@ -620,25 +620,26 @@ namespace storm {
                         choiceIt = choices->begin() + startRow;
                     }
                     
-                    for (; targetIt != targetIte; ++targetIt, ++rowGroupingIt) {
-                        *targetIt = *sourceIt;
-                        ++sourceIt;
-                        localChoice = 1;
-                        if (choices != nullptr) {
-                            *choiceIt = 0;
-                        }
-                        
-                        for (sourceIte = source.begin() + *(rowGroupingIt + 1); sourceIt != sourceIte; ++sourceIt, ++localChoice) {
-                            if (f(*sourceIt, *targetIt)) {
-                                *targetIt = *sourceIt;
-                                if (choices != nullptr) {
-                                    *choiceIt = localChoice;
+                    for (; targetIt != targetIte; ++targetIt, ++rowGroupingIt, ++choiceIt) {
+                        // Only traverse elements if the row group is non-empty.
+                        if (*rowGroupingIt != *(rowGroupingIt + 1)) {
+                            *targetIt = *sourceIt;
+                            ++sourceIt;
+                            localChoice = 1;
+                            if (choices != nullptr) {
+                                *choiceIt = 0;
+                            }
+                            
+                            for (sourceIte = source.begin() + *(rowGroupingIt + 1); sourceIt != sourceIte; ++sourceIt, ++localChoice) {
+                                if (f(*sourceIt, *targetIt)) {
+                                    *targetIt = *sourceIt;
+                                    if (choices != nullptr) {
+                                        *choiceIt = localChoice;
+                                    }
                                 }
                             }
-                        }
-                        
-                        if (choices != nullptr) {
-                            ++choiceIt;
+                        } else {
+                            *targetIt = storm::utility::zero<T>();
                         }
                     }
                 }
@@ -676,23 +677,25 @@ namespace storm {
                     choiceIt = choices->begin();
                 }
                 
-                for (; targetIt != targetIte; ++targetIt, ++rowGroupingIt) {
-                    *targetIt = *sourceIt;
-                    ++sourceIt;
-                    localChoice = 1;
-                    if (choices != nullptr) {
-                        *choiceIt = 0;
-                    }
-                    for (sourceIte = source.begin() + *(rowGroupingIt + 1); sourceIt != sourceIte; ++sourceIt, ++localChoice) {
-                        if (f(*sourceIt, *targetIt)) {
-                            *targetIt = *sourceIt;
-                            if (choices != nullptr) {
-                                *choiceIt = localChoice;
+                for (; targetIt != targetIte; ++targetIt, ++rowGroupingIt, ++choiceIt) {
+                    // Only traverse elements if the row group is non-empty.
+                    if (*rowGroupingIt != *(rowGroupingIt + 1)) {
+                        *targetIt = *sourceIt;
+                        ++sourceIt;
+                        localChoice = 1;
+                        if (choices != nullptr) {
+                            *choiceIt = 0;
+                        }
+                        for (sourceIte = source.begin() + *(rowGroupingIt + 1); sourceIt != sourceIte; ++sourceIt, ++localChoice) {
+                            if (f(*sourceIt, *targetIt)) {
+                                *targetIt = *sourceIt;
+                                if (choices != nullptr) {
+                                    *choiceIt = localChoice;
+                                }
                             }
                         }
-                    }
-                    if (choices != nullptr) {
-                        ++choiceIt;
+                    } else {
+                        *targetIt = storm::utility::zero<T>();
                     }
                 }
             }
@@ -795,7 +798,9 @@ namespace storm {
                     }
                 } else {
                     T diff = val1 - val2;
-                    if (storm::utility::abs(diff) > precision) return false;
+                    if (storm::utility::abs(diff) > precision) {
+                        return false;
+                    }
                 }
                 return true;
             }
@@ -813,7 +818,9 @@ namespace storm {
                     }
                 } else {
                     double diff = val1 - val2;
-                    if (storm::utility::abs(diff) > precision) return false;
+                    if (storm::utility::abs(diff) > precision) {
+                        return false;
+                    }
                 }
                 return true;
             }
@@ -831,8 +838,11 @@ namespace storm {
             bool equalModuloPrecision(std::vector<T> const& vectorLeft, std::vector<T> const& vectorRight, T const& precision, bool relativeError) {
                 STORM_LOG_ASSERT(vectorLeft.size() == vectorRight.size(), "Lengths of vectors does not match.");
                 
-                for (uint_fast64_t i = 0; i < vectorLeft.size(); ++i) {
-                    if (!equalModuloPrecision(vectorLeft[i], vectorRight[i], precision, relativeError)) {
+                auto leftIt = vectorLeft.begin();
+                auto leftIte = vectorLeft.end();
+                auto rightIt = vectorRight.begin();
+                for (; leftIt != leftIte; ++leftIt, ++rightIt) {
+                    if (!equalModuloPrecision(*leftIt, *rightIt, precision, relativeError)) {
                         return false;
                     }
                 }
@@ -899,7 +909,7 @@ namespace storm {
                 auto b2It = b2.begin();
                 
                 for (; b1It != b1Ite; ++b1It, ++b2It) {
-                    result += storm::utility::pow(*b1It - *b2It, 2);
+                    result += storm::utility::pow<T>(*b1It - *b2It, 2);
                 }
                 
                 return result;

@@ -149,7 +149,7 @@ namespace storm {
             /*!
              * Starts to measure progress.
              */
-            void startMeasureProgress() const;
+            void startMeasureProgress(uint64_t startingIteration = 0) const;
             
             /*!
              * Shows progress if this solver is asked to do so.
@@ -165,6 +165,7 @@ namespace storm {
              * @return The custom termination condition.
              */
             TerminationCondition<ValueType> const& getTerminationCondition() const;
+            std::unique_ptr<TerminationCondition<ValueType>> const& getTerminationConditionPointer() const;
             
             void createUpperBoundsVector(std::unique_ptr<std::vector<ValueType>>& upperBoundsVector, uint64_t length) const;
             void createLowerBoundsVector(std::vector<ValueType>& lowerBoundsVector) const;

@@ -80,11 +80,19 @@ namespace storm {
             
             uint64_t choice;
             for (auto row_group_it = rowGroupIndices.end() - 2, row_group_ite = rowGroupIndices.begin() - 1; row_group_it != row_group_ite; --row_group_it, --choice_it, --target_it) {
-                T currentValue = b ? *add_it : storm::utility::zero<T>();
-                --add_it;
+                if (choices) {
+                    *choice_it = 0;
+                }
+
+                T currentValue = storm::utility::zero<T>();
                 
                 // Only multiply and reduce if the row group is not empty.
                 if (*row_group_it != *(row_group_it + 1)) {
+                    if (b) {
+                        currentValue = *add_it;
+                        --add_it;
+                    }
+                    
                     currentValue += vect_sp(gmm::linalg_traits<MatrixType>::row(itr), x);
                     
                     if (choices) {
@@ -94,7 +102,7 @@ namespace storm {
                     
                     --itr;
                     
-                    for (uint64_t row = *row_group_it + 1, rowEnd = *(row_group_it + 1); row < rowEnd; ++row, --itr) {
+                    for (uint64_t row = *row_group_it + 1, rowEnd = *(row_group_it + 1); row < rowEnd; ++row, --itr, --add_it) {
                         T newValue = b ? *add_it : storm::utility::zero<T>();
                         newValue += vect_sp(gmm::linalg_traits<MatrixType>::row(itr), x);
                         
@@ -107,9 +115,6 @@ namespace storm {
                             if (choices) {
                                 *choice_it = choice;
                             }
-                        }
-                        if (b) {
-                            --add_it;
                         }
                     }
                 } else if (choices) {
@@ -165,14 +170,19 @@ namespace storm {
                 auto resultIt = result.begin() + range.begin();
 
                 for (; groupIt != groupIte; ++groupIt, ++resultIt, ++choiceIt) {
-                    T currentValue = b ? *bIt : storm::utility::zero<T>();
-                    ++bIt;
                     if (choices) {
                         *choiceIt = 0;
                     }
                     
+                    T currentValue = storm::utility::zero<T>();
+                    
                     // Only multiply and reduce if the row group is not empty.
                     if (*groupIt != *(groupIt + 1)) {
+                        if (b) {
+                            currentValue = *bIt;
+                            ++bIt;
+                        }
+                        
                         ++itr;
                         
                         for (auto itre = mat_row_const_begin(matrix) + *(groupIt + 1); itr != itre; ++itr) {

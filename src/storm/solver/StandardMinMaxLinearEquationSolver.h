@@ -39,7 +39,6 @@ namespace storm {
             // A reference to the original sparse matrix given to this solver. If the solver takes posession of the matrix
             // the reference refers to localA.
             storm::storage::SparseMatrix<ValueType> const* A;
-            
         };
      
         template<typename ValueType>

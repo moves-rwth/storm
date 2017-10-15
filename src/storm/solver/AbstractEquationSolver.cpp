@@ -7,6 +7,7 @@
 #include "storm/settings/modules/IOSettings.h"
 #include "storm/settings/modules/GeneralSettings.h"
 
+#include "storm/utility/constants.h"
 #include "storm/utility/macros.h"
 #include "storm/exceptions/UnmetRequirementException.h"
 
@@ -38,6 +39,11 @@ namespace storm {
         template<typename ValueType>
         TerminationCondition<ValueType> const& AbstractEquationSolver<ValueType>::getTerminationCondition() const {
             return *terminationCondition;
+        }
+        
+        template<typename ValueType>
+        std::unique_ptr<TerminationCondition<ValueType>> const& AbstractEquationSolver<ValueType>::getTerminationConditionPointer() const {
+            return terminationCondition;
         }
         
         template<typename ValueType>
@@ -163,9 +169,9 @@ namespace storm {
             if (this->hasLowerBound(BoundType::Local)) {
                 lowerBoundsVector = this->getLowerBounds();
             } else {
-                STORM_LOG_THROW(this->hasLowerBound(BoundType::Global), storm::exceptions::UnmetRequirementException, "Cannot create lower bounds vector without lower bound.");
+                ValueType lowerBound = this->hasLowerBound(BoundType::Global) ? this->getLowerBound() : storm::utility::zero<ValueType>();
                 for (auto& e : lowerBoundsVector) {
-                    e = this->getLowerBound();
+                    e = lowerBound;
                 }
             }
         }
@@ -206,10 +212,10 @@ namespace storm {
         }
         
         template<typename ValueType>
-        void AbstractEquationSolver<ValueType>::startMeasureProgress() const {
+        void AbstractEquationSolver<ValueType>::startMeasureProgress(uint64_t startingIteration) const {
             timeOfStart = std::chrono::high_resolution_clock::now();
             timeOfLastMessage = timeOfStart;
-            iterationOfLastMessage = 0;
+            iterationOfLastMessage = startingIteration;
         }
         
         template<typename ValueType>

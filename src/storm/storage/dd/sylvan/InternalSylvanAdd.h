@@ -197,7 +197,7 @@ namespace storm {
              * Retrieves the function that represents the current ADD to the power of the given ADD.
              *
              * @other The exponent function (given as an ADD).
-             * @retur The resulting ADD.
+             * @return The resulting ADD.
              */
             InternalAdd<DdType::Sylvan, ValueType> pow(InternalAdd<DdType::Sylvan, ValueType> const& other) const;
             
@@ -205,7 +205,7 @@ namespace storm {
              * Retrieves the function that represents the current ADD modulo the given ADD.
              *
              * @other The modul function (given as an ADD).
-             * @retur The resulting ADD.
+             * @return The resulting ADD.
              */
             InternalAdd<DdType::Sylvan, ValueType> mod(InternalAdd<DdType::Sylvan, ValueType> const& other) const;
             
@@ -214,23 +214,30 @@ namespace storm {
              * ADD.
              *
              * @other The base function (given as an ADD).
-             * @retur The resulting ADD.
+             * @return The resulting ADD.
              */
             InternalAdd<DdType::Sylvan, ValueType> logxy(InternalAdd<DdType::Sylvan, ValueType> const& other) const;
             
             /*!
              * Retrieves the function that floors all values in the current ADD.
              *
-             * @retur The resulting ADD.
+             * @return The resulting ADD.
              */
             InternalAdd<DdType::Sylvan, ValueType> floor() const;
             
             /*!
              * Retrieves the function that ceils all values in the current ADD.
              *
-             * @retur The resulting ADD.
+             * @return The resulting ADD.
              */
             InternalAdd<DdType::Sylvan, ValueType> ceil() const;
+            
+            /*!
+             * Retrieves the function that sharpens all values in the current ADD with the Kwek-Mehlhorn algorithm.
+             *
+             * @return The resulting ADD.
+             */
+            InternalAdd<DdType::Sylvan, storm::RationalNumber> sharpenKwekMehlhorn(size_t precision) const;
             
             /*!
              * Retrieves the function that maps all evaluations to the minimum of the function values of the two ADDs.
@@ -249,7 +256,7 @@ namespace storm {
             InternalAdd<DdType::Sylvan, ValueType> maximum(InternalAdd<DdType::Sylvan, ValueType> const& other) const;
             
 			/*!
-             * Replaces the leaves in this MTBDD, converting them to double if possible, and -1.0 else.
+             * Replaces the leaves in this MTBDD with the converted values in the target value type.
              *
              * @return The resulting function represented as an ADD.
              */

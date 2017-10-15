@@ -89,40 +89,29 @@ namespace storm {
         }
         
         // Explicitly instantiate the templates.
-        template ArgumentType inferToEnumType<std::string>();
-        template ArgumentType inferToEnumType<int_fast64_t>();
-        template ArgumentType inferToEnumType<uint_fast64_t>();
-        template ArgumentType inferToEnumType<double>();
-        template ArgumentType inferToEnumType<bool>();
-        
-        template std::string const& inferToString<std::string>(ArgumentType const& argumentType, std::string const& value);
         template std::string const& inferToString<int_fast64_t>(ArgumentType const& argumentType, int_fast64_t const& value);
         template std::string const& inferToString<uint_fast64_t>(ArgumentType const& argumentType, uint_fast64_t const& value);
         template std::string const& inferToString<double>(ArgumentType const& argumentType, double const& value);
         template std::string const& inferToString<bool>(ArgumentType const& argumentType, bool const& value);
         
         template int_fast64_t inferToInteger<std::string>(ArgumentType const& argumentType, std::string const& value);
-        template int_fast64_t inferToInteger<int_fast64_t>(ArgumentType const& argumentType, int_fast64_t const& value);
         template int_fast64_t inferToInteger<uint_fast64_t>(ArgumentType const& argumentType, uint_fast64_t const& value);
         template int_fast64_t inferToInteger<double>(ArgumentType const& argumentType, double const& value);
         template int_fast64_t inferToInteger<bool>(ArgumentType const& argumentType, bool const& value);
         
         template uint_fast64_t inferToUnsignedInteger<std::string>(ArgumentType const& argumentType, std::string const& value);
         template uint_fast64_t inferToUnsignedInteger<int_fast64_t>(ArgumentType const& argumentType, int_fast64_t const& value);
-        template uint_fast64_t inferToUnsignedInteger<uint_fast64_t>(ArgumentType const& argumentType, uint_fast64_t const& value);
         template uint_fast64_t inferToUnsignedInteger<double>(ArgumentType const& argumentType, double const& value);
         template uint_fast64_t inferToUnsignedInteger<bool>(ArgumentType const& argumentType, bool const& value);
         
         template double inferToDouble<std::string>(ArgumentType const& argumentType, std::string const& value);
         template double inferToDouble<int_fast64_t>(ArgumentType const& argumentType, int_fast64_t const& value);
         template double inferToDouble<uint_fast64_t>(ArgumentType const& argumentType, uint_fast64_t const& value);
-        template double inferToDouble<double>(ArgumentType const& argumentType, double const& value);
         template double inferToDouble<bool>(ArgumentType const& argumentType, bool const& value);
         
         template bool inferToBoolean<std::string>(ArgumentType const& argumentType, std::string const& value);
         template bool inferToBoolean<int_fast64_t>(ArgumentType const& argumentType, int_fast64_t const& value);
         template bool inferToBoolean<uint_fast64_t>(ArgumentType const& argumentType, uint_fast64_t const& value);
         template bool inferToBoolean<double>(ArgumentType const& argumentType, double const& value);
-        template bool inferToBoolean<bool>(ArgumentType const& argumentType, bool const& value);
     }
 }

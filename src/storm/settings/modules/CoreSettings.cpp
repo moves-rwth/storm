@@ -129,6 +129,10 @@ namespace storm {
                 }
             }
             
+            bool CoreSettings::isDdLibraryTypeSetFromDefaultValue() const {
+                return !this->getOption(ddLibraryOptionName).getArgumentByName("name").getHasBeenSet() || this->getOption(ddLibraryOptionName).getArgumentByName("name").wasSetFromDefaultValue();
+            }
+            
             bool CoreSettings::isShowStatisticsSet() const {
                 return this->getOption(statisticsOptionName).getHasOptionBeenSet();
             }

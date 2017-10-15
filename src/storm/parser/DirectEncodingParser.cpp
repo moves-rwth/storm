@@ -3,6 +3,9 @@
 #include <iostream>
 #include <string>
 
+#include <boost/algorithm/string.hpp>
+#include <boost/algorithm/string/predicate.hpp>
+
 #include "storm/models/sparse/MarkovAutomaton.h"
 #include "storm/models/sparse/Ctmc.h"
 
@@ -17,6 +20,7 @@
 #include "storm/utility/builder.h"
 #include "storm/utility/macros.h"
 #include "storm/utility/file.h"
+
 
 namespace storm {
     namespace parser {
@@ -58,46 +62,62 @@ namespace storm {
 
             // Initialize
             ValueParser<ValueType> valueParser;
+            bool sawType = false;
+            bool sawParameters = false;
+            size_t nrStates = 0;
+            storm::models::ModelType type;
+
+            std::vector<std::string> rewardModelNames;
+
+             std::shared_ptr<storm::storage::sparse::ModelComponents<ValueType, RewardModelType>> modelComponents;
 
             // Parse header
-            std::getline(file, line);
-            STORM_LOG_THROW(line == "// Exported by storm", storm::exceptions::WrongFormatException, "Expected header information.");
-            std::getline(file, line);
-            STORM_LOG_THROW(boost::starts_with(line, "// Original model type: "), storm::exceptions::WrongFormatException, "Expected header information.");
-            // Parse model type
-            std::getline(file, line);
-            STORM_LOG_THROW(boost::starts_with(line, "@type: "), storm::exceptions::WrongFormatException, "Expected model type.");
-            storm::models::ModelType type = storm::models::getModelType(line.substr(7));
-            STORM_LOG_TRACE("Model type: " << type);
-            STORM_LOG_THROW(type != storm::models::ModelType::MarkovAutomaton, storm::exceptions::NotSupportedException, "Markov Automata in DRN format are not supported (unclear indication of Markovian Choices in DRN format)");
-            STORM_LOG_THROW(type != storm::models::ModelType::S2pg, storm::exceptions::NotSupportedException, "Stochastic Two Player Games in DRN format are not supported.");
-            
-            // Parse parameters
-            std::getline(file, line);
-            STORM_LOG_THROW(line == "@parameters", storm::exceptions::WrongFormatException, "Expected parameter declaration.");
-            std::getline(file, line);
-            if (line != "") {
-                std::vector<std::string> parameters;
-                boost::split(parameters, line, boost::is_any_of(" "));
-                for (std::string parameter : parameters) {
-                    STORM_LOG_TRACE("New parameter: " << parameter);
-                    valueParser.addParameter(parameter);
+            while(std::getline(file, line)) {
+                if(line.empty() || boost::starts_with(line, "//")) {
+                    continue;
+                }
+
+                if (boost::starts_with(line, "@type: ")) {
+                    STORM_LOG_THROW(!sawType, storm::exceptions::WrongFormatException, "Type declared twice");
+                    type = storm::models::getModelType(line.substr(7));
+                    STORM_LOG_TRACE("Model type: " << type);
+                    STORM_LOG_THROW(type != storm::models::ModelType::MarkovAutomaton, storm::exceptions::NotSupportedException, "Markov Automata in DRN format are not supported (unclear indication of Markovian Choices in DRN format)");
+                    STORM_LOG_THROW(type != storm::models::ModelType::S2pg, storm::exceptions::NotSupportedException, "Stochastic Two Player Games in DRN format are not supported.");
+                    sawType = true;
+                }
+                if(line == "@parameters") {
+                    std::getline(file, line);
+                    if (line != "") {
+                        std::vector<std::string> parameters;
+                        boost::split(parameters, line, boost::is_any_of(" "));
+                        for (std::string parameter : parameters) {
+                            STORM_LOG_TRACE("New parameter: " << parameter);
+                            valueParser.addParameter(parameter);
+                        }
+                    }
+                    sawParameters = true;
+                }
+                if(line == "@reward_models") {
+                    STORM_LOG_THROW(rewardModelNames.size() == 0, storm::exceptions::WrongFormatException, "Reward model names declared twice");
+                    std::getline(file, line);
+                    boost::split(rewardModelNames, line, boost::is_any_of("\t "));
+                }
+                if(line == "@nr_states") {
+                    STORM_LOG_THROW(nrStates == 0, storm::exceptions::WrongFormatException, "Number states declared twice");
+                    std::getline(file, line);
+                    nrStates = boost::lexical_cast<size_t>(line);
+
+                }
+                if(line == "@model") {
+                    STORM_LOG_THROW(sawType, storm::exceptions::WrongFormatException, "Type has to be declared before model.");
+                    STORM_LOG_THROW(sawParameters, storm::exceptions::WrongFormatException, "Parameters have to be declared before model.");
+                    STORM_LOG_THROW(nrStates != 0, storm::exceptions::WrongFormatException, "Nr States has to be declared before model.");
+
+                    // Construct model components
+                    modelComponents = parseStates(file, type, nrStates, valueParser, rewardModelNames);
+                    break;
                 }
             }
-
-            // Parse no. states
-            std::getline(file, line);
-            STORM_LOG_THROW(line == "@nr_states", storm::exceptions::WrongFormatException, "Expected number of states.");
-            std::getline(file, line);
-            size_t nrStates = boost::lexical_cast<size_t>(line);
-            STORM_LOG_TRACE("Model type: " << type);
-
-            std::getline(file, line);
-            STORM_LOG_THROW(line == "@model", storm::exceptions::WrongFormatException, "Expected model declaration.");
-
-            // Construct model components
-            std::shared_ptr<storm::storage::sparse::ModelComponents<ValueType, RewardModelType>> modelComponents = parseStates(file, type, nrStates, valueParser);
-            
             // Done parsing
             storm::utility::closeFile(file);
 
@@ -106,13 +126,14 @@ namespace storm {
         }
 
         template<typename ValueType, typename RewardModelType>
-        std::shared_ptr<storm::storage::sparse::ModelComponents<ValueType, RewardModelType>> DirectEncodingParser<ValueType, RewardModelType>::parseStates(std::istream& file, storm::models::ModelType type, size_t stateSize, ValueParser<ValueType> const& valueParser) {
+        std::shared_ptr<storm::storage::sparse::ModelComponents<ValueType, RewardModelType>> DirectEncodingParser<ValueType, RewardModelType>::parseStates(std::istream& file, storm::models::ModelType type, size_t stateSize, ValueParser<ValueType> const& valueParser, std::vector<std::string> const& rewardModelNames) {
             // Initialize
             auto modelComponents = std::make_shared<storm::storage::sparse::ModelComponents<ValueType, RewardModelType>>();
             bool nonDeterministic = (type == storm::models::ModelType::Mdp || type == storm::models::ModelType::MarkovAutomaton);
             storm::storage::SparseMatrixBuilder<ValueType> builder = storm::storage::SparseMatrixBuilder<ValueType>(0, 0, 0, false, nonDeterministic, 0);
             modelComponents->stateLabeling = storm::models::sparse::StateLabeling(stateSize);
-
+            std::vector<std::vector<ValueType>> stateRewards;
+            
             // We parse rates for continuous time models.
             if (type == storm::models::ModelType::Ctmc) {
                 modelComponents->rateTransitions = true;
@@ -146,10 +167,18 @@ namespace storm {
                             // Rewards found
                             size_t posEndReward = line.find(']');
                             STORM_LOG_THROW(posEndReward != std::string::npos, storm::exceptions::WrongFormatException, "] missing.");
-                            std::string rewards = line.substr(1, posEndReward-1);
-                            STORM_LOG_TRACE("State rewards: " << rewards);
-                            // TODO import rewards
-                            STORM_LOG_WARN("Rewards were not imported");
+                            std::string rewardsStr = line.substr(1, posEndReward-1);
+                            STORM_LOG_TRACE("State rewards: " << rewardsStr);
+                            std::vector<std::string> rewards;
+                            boost::split(rewards, rewardsStr, boost::is_any_of(","));
+                            if (stateRewards.size() < rewards.size()) {
+                                stateRewards.resize(rewards.size(), std::vector<ValueType>(stateSize, storm::utility::zero<ValueType>()));
+                            }
+                            auto stateRewardsIt = stateRewards.begin();
+                            for (auto const& rew : rewards) {
+                                (*stateRewardsIt)[state] = valueParser.parseValue(rew);
+                                ++stateRewardsIt;
+                            }
                             line = line.substr(posEndReward+1);
                         }
                         // Check for labels
@@ -188,6 +217,7 @@ namespace storm {
                         STORM_LOG_THROW(posEndReward != std::string::npos, storm::exceptions::WrongFormatException, "] missing.");
                         std::string rewards = line.substr(1, posEndReward-1);
                         STORM_LOG_TRACE("Transition rewards: " << rewards);
+                        STORM_LOG_WARN("Transition rewards [" << rewards << "] not parsed.");
                         // TODO save rewards
                         line = line.substr(posEndReward+1);
                     }
@@ -207,6 +237,16 @@ namespace storm {
 
             STORM_LOG_TRACE("Finished parsing");
             modelComponents->transitionMatrix = builder.build(row + 1, stateSize, nonDeterministic ? stateSize : 0);
+
+            for (uint64_t i = 0; i < stateRewards.size(); ++i) {
+                std::string rewardModelName;
+                if (rewardModelNames.size() <= i) {
+                    rewardModelName = "rew" + std::to_string(i);
+                } else {
+                    rewardModelName = rewardModelNames[i];
+                }
+                modelComponents->rewardModels.emplace(rewardModelName, storm::models::sparse::StandardRewardModel<ValueType>(std::move(stateRewards[i])));
+            }
             STORM_LOG_TRACE("Built matrix");
             return modelComponents;
         }

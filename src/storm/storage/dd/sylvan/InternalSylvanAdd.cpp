@@ -10,6 +10,7 @@
 #include "storm/utility/constants.h"
 #include "storm/exceptions/NotImplementedException.h"
 #include "storm/exceptions/InvalidOperationException.h"
+#include "storm/exceptions/NotSupportedException.h"
 
 #include "storm-config.h"
 
@@ -394,6 +395,18 @@ namespace storm {
             return InternalAdd<DdType::Sylvan, storm::RationalFunction>(ddManager, this->sylvanMtbdd.CeilRF());
         }
 #endif
+        
+        template<typename ValueType>
+        InternalAdd<DdType::Sylvan, storm::RationalNumber> InternalAdd<DdType::Sylvan, ValueType>::sharpenKwekMehlhorn(size_t precision) const {
+            return InternalAdd<DdType::Sylvan, storm::RationalNumber>(ddManager, this->sylvanMtbdd.SharpenKwekMehlhorn(precision));
+        }
+
+#ifdef STORM_HAVE_CARL
+        template<>
+        InternalAdd<DdType::Sylvan, storm::RationalNumber> InternalAdd<DdType::Sylvan, storm::RationalFunction>::sharpenKwekMehlhorn(size_t precision) const {
+            STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Operation not supported.");
+        }
+#endif
 
         template<typename ValueType>
         InternalAdd<DdType::Sylvan, ValueType> InternalAdd<DdType::Sylvan, ValueType>::minimum(InternalAdd<DdType::Sylvan, ValueType> const& other) const {
@@ -444,7 +457,12 @@ namespace storm {
             return InternalAdd<DdType::Sylvan, double>(ddManager, this->sylvanMtbdd.ToDoubleRN());
         }
 
-        
+        template<>
+        template<>
+        InternalAdd<DdType::Sylvan, storm::RationalNumber> InternalAdd<DdType::Sylvan, double>::toValueType() const {
+            return InternalAdd<DdType::Sylvan, storm::RationalNumber>(ddManager, this->sylvanMtbdd.ToRationalNumber());
+        }
+
 #ifdef STORM_HAVE_CARL
 		template<>
         template<>

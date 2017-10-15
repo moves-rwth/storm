@@ -11,6 +11,7 @@ Version 1.1.x
 - parametric model checking has an own binary
 - solvers can now expose requirements
 - unbounded reachability and reachability rewards now correctly respect solver requirements
+- sound (interval) value iteration
 
 ### Version 1.1.1
 - c++ api changes: Building model takes BuilderOptions instead of extended list of Booleans, does not depend on settings anymore.
@@ -18,6 +19,7 @@ Version 1.1.x
 - storm-pars: support for welldefinedness constraints in mdps.
 - symbolic (MT/BDD) bisimulation 
 - Fixed issue related to variable names that can not be used in Exprtk.
+- DRN parser improved
 
 ### Version 1.1.0 (2017/8)
 

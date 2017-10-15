@@ -8,7 +8,7 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
-    
+
     /***************************************************
      Function-wrappers for storm::RationalNumber
      ****************************************************/
@@ -29,7 +29,8 @@ extern "C" {
     int storm_rational_number_is_zero(storm_rational_number_ptr a);
     uint64_t storm_rational_number_hash(storm_rational_number_ptr const a, uint64_t const seed);
     double storm_rational_number_get_value_double(storm_rational_number_ptr a);
-    
+    storm_rational_number_ptr storm_rational_number_from_double(double value);
+
     // Binary operations.
     storm_rational_number_ptr storm_rational_number_plus(storm_rational_number_ptr a, storm_rational_number_ptr b);
     storm_rational_number_ptr storm_rational_number_minus(storm_rational_number_ptr a, storm_rational_number_ptr b);
@@ -48,6 +49,9 @@ extern "C" {
     storm_rational_number_ptr storm_rational_number_negate(storm_rational_number_ptr a);
     storm_rational_number_ptr storm_rational_number_floor(storm_rational_number_ptr a);
     storm_rational_number_ptr storm_rational_number_ceil(storm_rational_number_ptr a);
+    
+    storm_rational_number_ptr storm_double_sharpen(double value, size_t precision);
+    storm_rational_number_ptr storm_rational_number_sharpen(storm_rational_number_ptr a, size_t precision);
     
     // Other operations.
     int storm_rational_number_equal_modulo_precision(int relative, storm_rational_number_ptr a, storm_rational_number_ptr b, storm_rational_number_ptr precision);

@@ -6,6 +6,9 @@
 #include "storm/solver/LinearEquationSolver.h"
 
 #include "storm/solver/NativeMultiplier.h"
+#include "storm/solver/SolverStatus.h"
+
+#include "storm/utility/NumberTraits.h"
 
 namespace storm {
     namespace solver {
@@ -14,7 +17,7 @@ namespace storm {
         class NativeLinearEquationSolverSettings {
         public:
             enum class SolutionMethod {
-                Jacobi, GaussSeidel, SOR, WalkerChae, Power
+                Jacobi, GaussSeidel, SOR, WalkerChae, Power, RationalSearch
             };
 
             NativeLinearEquationSolverSettings();
@@ -38,7 +41,7 @@ namespace storm {
         private:
             bool forceSoundness;
             SolutionMethod method;
-            double precision;
+            ValueType precision;
             bool relative;
             uint_fast64_t maximalNumberOfIterations;
             ValueType omega;
@@ -77,6 +80,20 @@ namespace storm {
             virtual bool internalSolveEquations(std::vector<ValueType>& x, std::vector<ValueType> const& b) const override;
             
         private:
+            struct PowerIterationResult {
+                PowerIterationResult(uint64_t iterations, SolverStatus status) : iterations(iterations), status(status) {
+                    // Intentionally left empty.
+                }
+                
+                uint64_t iterations;
+                SolverStatus status;
+            };
+            
+            template <typename ValueTypePrime>
+            friend class NativeLinearEquationSolver;
+            
+            PowerIterationResult performPowerIteration(std::vector<ValueType>*& currentX, std::vector<ValueType>*& newX, std::vector<ValueType> const& b, ValueType const& precision, bool relative, SolverGuarantee const& guarantee, uint64_t currentIterations) const;
+            
             void logIterations(bool converged, bool terminate, uint64_t iterations) const;
             
             virtual uint64_t getMatrixRowCount() const override;
@@ -87,6 +104,19 @@ namespace storm {
             virtual bool solveEquationsWalkerChae(std::vector<ValueType>& x, std::vector<ValueType> const& b) const;
             virtual bool solveEquationsPower(std::vector<ValueType>& x, std::vector<ValueType> const& b) const;
             virtual bool solveEquationsSoundPower(std::vector<ValueType>& x, std::vector<ValueType> const& b) const;
+            virtual bool solveEquationsRationalSearch(std::vector<ValueType>& x, std::vector<ValueType> const& b) const;
+
+            template<typename RationalType, typename ImpreciseType>
+            bool solveEquationsRationalSearchHelper(NativeLinearEquationSolver<ImpreciseType> const& impreciseSolver, storm::storage::SparseMatrix<RationalType> const& rationalA, std::vector<RationalType>& rationalX, std::vector<RationalType> const& rationalB, storm::storage::SparseMatrix<ImpreciseType> const& A, std::vector<ImpreciseType>& x, std::vector<ImpreciseType> const& b, std::vector<ImpreciseType>& tmpX) const;
+            template<typename ImpreciseType>
+            typename std::enable_if<std::is_same<ValueType, ImpreciseType>::value && !NumberTraits<ValueType>::IsExact, bool>::type solveEquationsRationalSearchHelper(std::vector<ValueType>& x, std::vector<ValueType> const& b) const;
+            template<typename ImpreciseType>
+            typename std::enable_if<std::is_same<ValueType, ImpreciseType>::value && NumberTraits<ValueType>::IsExact, bool>::type solveEquationsRationalSearchHelper(std::vector<ValueType>& x, std::vector<ValueType> const& b) const;
+            template<typename ImpreciseType>
+            typename std::enable_if<!std::is_same<ValueType, ImpreciseType>::value, bool>::type solveEquationsRationalSearchHelper(std::vector<ValueType>& x, std::vector<ValueType> const& b) const;
+            template<typename RationalType, typename ImpreciseType>
+            static bool sharpen(uint64_t precision, storm::storage::SparseMatrix<RationalType> const& A, std::vector<ImpreciseType> const& x, std::vector<RationalType> const& b, std::vector<RationalType>& tmp);
+            static bool isSolution(storm::storage::SparseMatrix<ValueType> const& matrix, std::vector<ValueType> const& values, std::vector<ValueType> const& b);
             
             // If the solver takes posession of the matrix, we store the moved matrix in this member, so it gets deleted
             // when the solver is destructed.

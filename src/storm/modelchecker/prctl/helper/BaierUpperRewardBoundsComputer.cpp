@@ -19,6 +19,7 @@ namespace storm {
 
             template<typename ValueType>
             ValueType BaierUpperRewardBoundsComputer<ValueType>::computeUpperBound() {
+                STORM_LOG_TRACE("Computing upper reward bounds using variant-2 of Baier et al.");
                 std::chrono::high_resolution_clock::time_point start = std::chrono::high_resolution_clock::now();
                 
                 std::vector<uint64_t> stateToScc(transitionMatrix.getRowGroupCount());
@@ -34,7 +35,7 @@ namespace storm {
                         ++sccIndex;
                     }
                 }
-
+                
                 // The states that we still need to assign a value.
                 storm::storage::BitVector remainingStates(transitionMatrix.getRowGroupCount(), true);
                 
