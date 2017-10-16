@@ -530,11 +530,13 @@ namespace storm {
                         // Then compute the reward vector to use in the computation.
                         storm::dd::Add<DdType, ValueType> subvector = rewardModel.getTotalRewardVector(maybeStatesAdd, choiceFilterAdd, submatrix, model.getColumnVariables());
 
+                        std::vector<uint_fast64_t> rowGroupSizes = (submatrix.notZero().existsAbstract(model.getColumnVariables()) || subvector.notZero()).template toAdd<uint_fast64_t>().sumAbstract(model.getNondeterminismVariables()).toVector(odd);
+                        
                         // Finally cut away all columns targeting non-maybe states (or non-(maybe or target) states, respectively).
                         submatrix *= extendMaybeStates ? maybeStatesWithTargetStates.swapVariables(model.getRowColumnMetaVariablePairs()).template toAdd<ValueType>() : maybeStatesAdd.swapVariables(model.getRowColumnMetaVariablePairs());
                         
                         // Translate the symbolic matrix/vector to their explicit representations.
-                        std::pair<storm::storage::SparseMatrix<ValueType>, std::vector<ValueType>> explicitRepresentation = submatrix.toMatrixVector(subvector, model.getNondeterminismVariables(), odd, odd);
+                        std::pair<storm::storage::SparseMatrix<ValueType>, std::vector<ValueType>> explicitRepresentation = submatrix.toMatrixVector(std::move(rowGroupSizes), subvector, model.getRowVariables(), model.getColumnVariables(), model.getNondeterminismVariables(), odd, odd);
                         
                         // Fulfill the solver's requirements.
                         SolverRequirementsData<ValueType> solverRequirementsData;
