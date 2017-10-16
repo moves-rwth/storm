@@ -427,7 +427,7 @@ namespace storm {
                 
                 void createBlockToOffsetMappingRec(DdNodePtr partitionNode, DdNodePtr representativesNode, DdNodePtr variables, storm::dd::Odd const& odd, uint64_t offset) {
                     STORM_LOG_ASSERT(partitionNode != Cudd_ReadLogicZero(ddman) || representativesNode == Cudd_ReadLogicZero(ddman), "Expected representative to be zero if the partition is zero.");
-                    if (representativesNode == Cudd_ReadLogicZero(ddman)) {
+                    if (representativesNode == Cudd_ReadLogicZero(ddman) || partitionNode == Cudd_ReadLogicZero(ddman)) {
                         return;
                     }
                     
@@ -471,7 +471,7 @@ namespace storm {
                 }
                 
                 void extractVectorRec(DdNodePtr vector, DdNodePtr representativesNode, DdNodePtr variables, storm::dd::Odd const& odd, uint64_t offset, std::vector<ValueType>& result) {
-                    if (representativesNode == Cudd_ReadLogicZero(ddman)) {
+                    if (representativesNode == Cudd_ReadLogicZero(ddman) || vector == Cudd_ReadZero(ddman)) {
                         return;
                     }
                     
@@ -643,7 +643,7 @@ namespace storm {
                 }
                 
                 void extractVectorRec(MTBDD vector, BDD representativesNode, BDD variables, storm::dd::Odd const& odd, uint64_t offset, std::vector<ValueType>& result) {
-                    if (representativesNode == sylvan_false) {
+                    if (representativesNode == sylvan_false || mtbdd_iszero(vector)) {
                         return;
                     }
                     
@@ -680,7 +680,7 @@ namespace storm {
                 
                 void createBlockToOffsetMappingRec(BDD partitionNode, BDD representativesNode, BDD variables, storm::dd::Odd const& odd, uint64_t offset) {
                     STORM_LOG_ASSERT(partitionNode != sylvan_false || representativesNode == sylvan_false, "Expected representative to be zero if the partition is zero.");
-                    if (representativesNode == sylvan_false) {
+                    if (representativesNode == sylvan_false || partitionNode == sylvan_false) {
                         return;
                     }
                     
@@ -892,6 +892,7 @@ namespace storm {
                     
                     boost::optional<std::vector<ValueType>> quotientStateActionRewards;
                     if (rewardModel.hasStateActionRewards()) {
+                        rewardModel.getStateActionRewardVector().exportToDot("vector.dot");
                         quotientStateActionRewards = sparseExtractor.extractStateActionVector(rewardModel.getStateActionRewardVector());
                     }
                     

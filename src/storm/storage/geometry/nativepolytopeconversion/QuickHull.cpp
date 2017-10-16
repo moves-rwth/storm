@@ -34,7 +34,7 @@ namespace storm {
                         for (uint_fast64_t vertexIndex : vertexIndices){
                             insidePoint += points[vertexIndex];
                         }
-                        insidePoint /= storm::utility::convertNumber<ValueType>((uint_fast64_t) vertexIndices.size());
+                        insidePoint /= storm::utility::convertNumber<ValueType>(static_cast<uint_fast64_t>(vertexIndices.size()));
 
                         // Create the initial facets from the found vertices.
                         std::vector<Facet> facets = computeInitialFacets(points, vertexIndices, insidePoint);

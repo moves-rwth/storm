@@ -87,11 +87,11 @@ TEST(SymbolicModelBisimulationDecomposition, TwoDice_Cudd) {
     decomposition.compute();
     std::shared_ptr<storm::models::Model<double>> quotient = decomposition.getQuotient();
 
-    EXPECT_EQ(135ul, quotient->getNumberOfStates());
-    EXPECT_EQ(366ul, quotient->getNumberOfTransitions());
+    EXPECT_EQ(77ul, quotient->getNumberOfStates());
+    EXPECT_EQ(210ul, quotient->getNumberOfTransitions());
     EXPECT_EQ(storm::models::ModelType::Mdp, quotient->getType());
     EXPECT_TRUE(quotient->isSymbolicModel());
-    EXPECT_EQ(194ul, (quotient->as<storm::models::symbolic::Mdp<storm::dd::DdType::CUDD, double>>()->getNumberOfChoices()));
+    EXPECT_EQ(116ul, (quotient->as<storm::models::symbolic::Mdp<storm::dd::DdType::CUDD, double>>()->getNumberOfChoices()));
 
     storm::parser::FormulaParser formulaParser;
     std::shared_ptr<storm::logic::Formula const> formula = formulaParser.parseSingleFormulaFromString("Pmin=? [F \"two\"]");
@@ -103,11 +103,11 @@ TEST(SymbolicModelBisimulationDecomposition, TwoDice_Cudd) {
     decomposition2.compute();
     quotient = decomposition2.getQuotient();
     
-    EXPECT_EQ(40ul, quotient->getNumberOfStates());
-    EXPECT_EQ(110ul, quotient->getNumberOfTransitions());
+    EXPECT_EQ(11ul, quotient->getNumberOfStates());
+    EXPECT_EQ(34ul, quotient->getNumberOfTransitions());
     EXPECT_EQ(storm::models::ModelType::Mdp, quotient->getType());
     EXPECT_TRUE(quotient->isSymbolicModel());
-    EXPECT_EQ(66ul, (quotient->as<storm::models::symbolic::Mdp<storm::dd::DdType::CUDD, double>>()->getNumberOfChoices()));
+    EXPECT_EQ(19ul, (quotient->as<storm::models::symbolic::Mdp<storm::dd::DdType::CUDD, double>>()->getNumberOfChoices()));
 }
 
 TEST(SymbolicModelBisimulationDecomposition, AsynchronousLeader_Cudd) {
@@ -125,11 +125,11 @@ TEST(SymbolicModelBisimulationDecomposition, AsynchronousLeader_Cudd) {
     decomposition.compute();
     std::shared_ptr<storm::models::Model<double>> quotient = decomposition.getQuotient();
     
-    EXPECT_EQ(1166ul, quotient->getNumberOfStates());
-    EXPECT_EQ(2769ul, quotient->getNumberOfTransitions());
+    EXPECT_EQ(252ul, quotient->getNumberOfStates());
+    EXPECT_EQ(624ul, quotient->getNumberOfTransitions());
     EXPECT_EQ(storm::models::ModelType::Mdp, quotient->getType());
     EXPECT_TRUE(quotient->isSymbolicModel());
-    EXPECT_EQ(2237ul, (quotient->as<storm::models::symbolic::Mdp<storm::dd::DdType::CUDD, double>>()->getNumberOfChoices()));
+    EXPECT_EQ(500ul, (quotient->as<storm::models::symbolic::Mdp<storm::dd::DdType::CUDD, double>>()->getNumberOfChoices()));
     
     std::vector<std::shared_ptr<storm::logic::Formula const>> formulas;
     formulas.push_back(formula);
@@ -138,9 +138,9 @@ TEST(SymbolicModelBisimulationDecomposition, AsynchronousLeader_Cudd) {
     decomposition2.compute();
     quotient = decomposition2.getQuotient();
     
-    EXPECT_EQ(1166ul, quotient->getNumberOfStates());
-    EXPECT_EQ(2769ul, quotient->getNumberOfTransitions());
+    EXPECT_EQ(1107ul, quotient->getNumberOfStates());
+    EXPECT_EQ(2684ul, quotient->getNumberOfTransitions());
     EXPECT_EQ(storm::models::ModelType::Mdp, quotient->getType());
     EXPECT_TRUE(quotient->isSymbolicModel());
-    EXPECT_EQ(2237ul, (quotient->as<storm::models::symbolic::Mdp<storm::dd::DdType::CUDD, double>>()->getNumberOfChoices()));
+    EXPECT_EQ(2152ul, (quotient->as<storm::models::symbolic::Mdp<storm::dd::DdType::CUDD, double>>()->getNumberOfChoices()));
 }
