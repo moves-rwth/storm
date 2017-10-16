@@ -34,12 +34,12 @@ namespace storm {
             private:
                 virtual bool refineWrtStateActionRewards(storm::dd::Add<DdType, ValueType> const& stateActionRewards) override;
                 
+                // The model to refine.
+                storm::models::symbolic::Mdp<DdType, ValueType> const& mdp;
+                
                 // The choice partition in the refinement process.
                 Partition<DdType, ValueType> choicePartition;
 
-                // The object used to compute the state signatures.
-                SignatureComputer<DdType, ValueType> stateSignatureComputer;
-                
                 // The object used to refine the state partition based on the signatures.
                 SignatureRefiner<DdType, ValueType> stateSignatureRefiner;
             };
