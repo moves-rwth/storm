@@ -75,7 +75,7 @@ namespace storm {
             template <storm::dd::DdType DdType, typename ValueType>
             Partition<DdType, ValueType> PartitionRefiner<DdType, ValueType>::internalRefine(Signature<DdType, ValueType> const& signature, SignatureRefiner<DdType, ValueType>& signatureRefiner, Partition<DdType, ValueType> const& oldPartition) {
 
-                STORM_LOG_TRACE("Signature " << refinements << "[" << index << "] DD has " << signature.getSignatureAdd().getNodeCount() << " nodes.");
+                STORM_LOG_TRACE("Signature " << refinements << " DD has " << signature.getSignatureAdd().getNodeCount() << " nodes.");
                 auto start = std::chrono::high_resolution_clock::now();
                 auto newPartition = signatureRefiner.refine(oldPartition, signature);
                 auto totalTimeInRefinement = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::high_resolution_clock::now() - start).count();
