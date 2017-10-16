@@ -497,7 +497,7 @@ namespace storm {
         }
 
         template<>
-        GmpRationalNumber convertNumber(unsigned long long const& number){
+        GmpRationalNumber convertNumber(uint_fast64_t const& number){
             STORM_LOG_ASSERT(static_cast<carl::uint>(number) == number, "Rationalizing failed, because the number is too large.");
             return carl::rationalize<GmpRationalNumber>(static_cast<carl::uint>(number));
         }

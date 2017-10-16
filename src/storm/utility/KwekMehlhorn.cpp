@@ -31,7 +31,7 @@ namespace storm {
             std::pair<typename NumberTraits<RationalType>::IntegerType, typename NumberTraits<RationalType>::IntegerType> truncateToRational(ImpreciseType const& value, uint64_t precision) {
                 typedef typename NumberTraits<RationalType>::IntegerType IntegerType;
                 
-                IntegerType powerOfTen = storm::utility::pow(storm::utility::convertNumber<IntegerType>(10ull), precision);
+                IntegerType powerOfTen = storm::utility::pow(storm::utility::convertNumber<IntegerType>(static_cast<uint64_t>(10)), precision);
                 IntegerType truncated = storm::utility::trunc<RationalType>(value * powerOfTen);
                 return std::make_pair(truncated, powerOfTen);
             }
