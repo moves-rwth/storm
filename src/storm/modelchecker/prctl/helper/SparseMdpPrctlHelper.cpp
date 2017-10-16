@@ -91,13 +91,14 @@ namespace storm {
                 std::unique_ptr<storm::solver::MinMaxLinearEquationSolver<ValueType>> minMaxSolver;
 
                 ValueType precision = storm::utility::convertNumber<ValueType>(storm::settings::getModule<storm::settings::modules::GeneralSettings>().getPrecision());
-                if (storm::settings::getModule<storm::settings::modules::GeneralSettings>().isSoundSet()) {
-                    uint64_t denom = 0;
-                    for (uint64_t dim = 0; dim < rewardUnfolding.getEpochManager().getDimensionCount(); ++dim) {
-                        denom += rewardUnfolding.getEpochManager().getDimensionOfEpoch(initEpoch, dim) + 1;
-                    }
-                    precision = precision / storm::utility::convertNumber<ValueType>(denom);
+                uint64_t epochCount = 0;
+                for (uint64_t dim = 0; dim < rewardUnfolding.getEpochManager().getDimensionCount(); ++dim) {
+                    epochCount += rewardUnfolding.getEpochManager().getDimensionOfEpoch(initEpoch, dim) + 1;
                 }
+                if (storm::settings::getModule<storm::settings::modules::GeneralSettings>().isSoundSet()) {
+                    precision = precision / storm::utility::convertNumber<ValueType>(epochCount);
+                }
+                STORM_PRINT_AND_LOG("Objective/Dimension/Epoch count is: " << 1 << "/" << rewardUnfolding.getEpochManager().getDimensionCount() << "/" <<  epochCount << "."  << std::endl);
 
                 for (auto const& epoch : epochOrder) {
                     swBuild.start();
