@@ -27,6 +27,7 @@ ExternalProject_Get_Property(l3pp_ext source_dir)
 set(l3pp_INCLUDE "${source_dir}/")
 add_imported_library_interface(l3pp "${l3pp_INCLUDE}")
 list(APPEND STORM_DEP_TARGETS l3pp)
+add_dependencies(l3pp l3pp_ext)
 
 #############################################################
 ##
