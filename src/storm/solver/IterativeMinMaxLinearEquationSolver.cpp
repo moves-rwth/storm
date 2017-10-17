@@ -124,23 +124,29 @@ namespace storm {
         
         template<typename ValueType>
         bool IterativeMinMaxLinearEquationSolver<ValueType>::internalSolveEquations(OptimizationDirection dir, std::vector<ValueType>& x, std::vector<ValueType> const& b) const {
+            bool result = false;
             switch (this->getSettings().getSolutionMethod()) {
                 case IterativeMinMaxLinearEquationSolverSettings<ValueType>::SolutionMethod::ValueIteration:
                     if (this->getSettings().getForceSoundness()) {
-                        return solveEquationsSoundValueIteration(dir, x, b);
+                        result = solveEquationsSoundValueIteration(dir, x, b);
                     } else {
-                        return solveEquationsValueIteration(dir, x, b);
+                        result = solveEquationsValueIteration(dir, x, b);
                     }
+                    break;
                 case IterativeMinMaxLinearEquationSolverSettings<ValueType>::SolutionMethod::PolicyIteration:
-                    return solveEquationsPolicyIteration(dir, x, b);
+                    result = solveEquationsPolicyIteration(dir, x, b);
+                    break;
                 case IterativeMinMaxLinearEquationSolverSettings<ValueType>::SolutionMethod::Acyclic:
-                    return solveEquationsAcyclic(dir, x, b);
+                    result = solveEquationsAcyclic(dir, x, b);
+                    break;
                 case IterativeMinMaxLinearEquationSolverSettings<ValueType>::SolutionMethod::RationalSearch:
-                    return solveEquationsRationalSearch(dir, x, b);
+                    result = solveEquationsRationalSearch(dir, x, b);
+                    break;
                 default:
                     STORM_LOG_THROW(false, storm::exceptions::InvalidSettingsException, "This solver does not implement the selected solution method");
             }
-            return false;
+            
+            return result;
         }
         
         template<typename ValueType>
