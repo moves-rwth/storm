@@ -278,7 +278,10 @@ namespace storm {
                             cachedData.linEqSolver->setUpperBound(*obj.upperResultBound);
                             req.clearUpperBounds();
                         }
-                        STORM_LOG_THROW(req.empty(), storm::exceptions::UncheckedRequirementException, "At least one requirement of the LinearEquationSolver was not met.");
+                        if (!req.empty()) {
+                            // Todo: currently we wrongly require lower bounds for plain value iteration even if the fixpoint is unique
+                            STORM_LOG_DEBUG("At least one requirement of the LinearEquationSolver was not met.");
+                        }
                         cachedData.linEqSolver->solveEquations(x, cachedData.bLinEq);
                         auto resultIt = result.begin();
                         for (auto const& state : epochModel.epochInStates) {
@@ -315,7 +318,10 @@ namespace storm {
                         cachedData.minMaxSolver->setUpperBound(upperBound.get());
                         req.clearUpperBounds();
                     }
-                    STORM_LOG_THROW(req.empty(), storm::exceptions::UncheckedRequirementException, "At least one requirement of the MinMaxSolver was not met.");
+                    if (!req.empty()) {
+                        // Todo: currently we wrongly require lower bounds for plain value iteration even if the fixpoint is unique
+                        STORM_LOG_DEBUG("At least one requirement of the LinearEquationSolver was not met.");
+                    }
                     cachedData.minMaxSolver->setRequirementsChecked(true);
                     cachedData.minMaxSolver->setOptimizationDirection(storm::solver::OptimizationDirection::Maximize);
                 

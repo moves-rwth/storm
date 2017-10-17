@@ -186,7 +186,10 @@ namespace storm {
                     solver->setUpperBound(upperBound.get());
                     req.clearUpperBounds();
                 }
-                STORM_LOG_THROW(req.empty(), storm::exceptions::UncheckedRequirementException, "At least one requirement of the MinMaxSolver was not met.");
+                if (!req.empty()) {
+                    // Todo: currently we wrongly require lower bounds for plain value iteration even if the fixpoint is unique
+                    STORM_LOG_DEBUG("At least one requirement of the LinearEquationSolver was not met.");
+                }
                 solver->setRequirementsChecked(true);
                 solver->setOptimizationDirection(storm::solver::OptimizationDirection::Maximize);
                 

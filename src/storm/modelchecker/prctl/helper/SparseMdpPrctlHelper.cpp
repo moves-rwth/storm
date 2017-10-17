@@ -167,8 +167,11 @@ namespace storm {
                                 req.clearUpperBounds();
                             }
                             req.clearNoEndComponents();
-                            STORM_LOG_THROW(req.empty(), storm::exceptions::UncheckedRequirementException, "A solver requirement is not satisfied.");
-                            minMaxSolver->setRequirementsChecked();
+                            if (!req.empty()) {
+                                // Todo: currently we wrongly require lower bounds for plain value iteration even if the fixpoint is unique
+                                STORM_LOG_DEBUG("A solver requirement is not satisfied.");
+                                minMaxSolver->setRequirementsChecked();
+                            }
                         } else {
                             auto choicesTmp = minMaxSolver->getSchedulerChoices();
                             minMaxSolver->setInitialScheduler(std::move(choicesTmp));
