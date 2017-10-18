@@ -28,6 +28,9 @@ namespace storm {
 
             template <storm::dd::DdType DdType, typename ValueType>
             class PartitionRefiner;
+            
+            template <storm::dd::DdType DdType, typename ValueType>
+            class PartialQuotientExtractor;
         }
         
         template <storm::dd::DdType DdType, typename ValueType>
@@ -40,9 +43,16 @@ namespace storm {
             ~BisimulationDecomposition();
             
             /*!
-             * Computes the decomposition.
+             * Performs partition refinement until a fixpoint has been reached.
              */
             void compute(bisimulation::SignatureMode const& mode = bisimulation::SignatureMode::Eager);
+            
+            /*!
+             * Performs the given number of refinement steps.
+             *
+             * @return True iff the computation arrived at a fixpoint.
+             */
+            bool compute(uint64_t steps, bisimulation::SignatureMode const& mode);
             
             /*!
              * Retrieves the quotient model after the bisimulation decomposition was computed.
@@ -60,6 +70,9 @@ namespace storm {
             
             // The refiner to use.
             std::unique_ptr<bisimulation::PartitionRefiner<DdType, ValueType>> refiner;
+            
+            // A quotient extractor that is used when the fixpoint has not been reached yet.
+            mutable std::unique_ptr<bisimulation::PartialQuotientExtractor<DdType, ValueType>> partialQuotientExtractor;
             
             // A flag indicating whether progress is reported.
             bool showProgress;

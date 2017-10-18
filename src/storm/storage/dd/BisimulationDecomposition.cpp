@@ -4,6 +4,7 @@
 #include "storm/storage/dd/bisimulation/PartitionRefiner.h"
 #include "storm/storage/dd/bisimulation/MdpPartitionRefiner.h"
 #include "storm/storage/dd/bisimulation/QuotientExtractor.h"
+#include "storm/storage/dd/bisimulation/PartialQuotientExtractor.h"
 
 #include "storm/models/symbolic/Model.h"
 #include "storm/models/symbolic/Mdp.h"
@@ -36,6 +37,11 @@ namespace storm {
             showProgress = generalSettings.isVerboseSet();
             showProgressDelay = generalSettings.getShowProgressDelay();
             this->refineWrtRewardModels();
+            
+            STORM_LOG_TRACE("Initial partition has " << refiner->getStatePartition().getNumberOfBlocks() << " blocks.");
+#ifndef NDEBUG
+            STORM_LOG_TRACE("Initial partition has " << refiner->getStatePartition().getNodeCount() << " nodes.");
+#endif
         }
         
         template <storm::dd::DdType DdType, typename ValueType>
@@ -44,6 +50,11 @@ namespace storm {
             showProgress = generalSettings.isVerboseSet();
             showProgressDelay = generalSettings.getShowProgressDelay();
             this->refineWrtRewardModels();
+            
+            STORM_LOG_TRACE("Initial partition has " << refiner->getStatePartition().getNumberOfBlocks() << " blocks.");
+#ifndef NDEBUG
+            STORM_LOG_TRACE("Initial partition has " << refiner->getStatePartition().getNodeCount() << " nodes.");
+#endif
         }
         
         template <storm::dd::DdType DdType, typename ValueType>
@@ -52,6 +63,11 @@ namespace storm {
             showProgress = generalSettings.isVerboseSet();
             showProgressDelay = generalSettings.getShowProgressDelay();
             this->refineWrtRewardModels();
+            
+            STORM_LOG_TRACE("Initial partition has " << refiner->getStatePartition().getNumberOfBlocks() << " blocks.");
+#ifndef NDEBUG
+            STORM_LOG_TRACE("Initial partition has " << refiner->getStatePartition().getNodeCount() << " nodes.");
+#endif
         }
         
         template <storm::dd::DdType DdType, typename ValueType>
@@ -60,11 +76,7 @@ namespace storm {
         template <storm::dd::DdType DdType, typename ValueType>
         void BisimulationDecomposition<DdType, ValueType>::compute(bisimulation::SignatureMode const& mode) {
             STORM_LOG_ASSERT(refiner, "No suitable refiner.");
-            
-            STORM_LOG_TRACE("Initial partition has " << refiner->getStatePartition().getNumberOfBlocks() << " blocks.");
-#ifndef NDEBUG
-            STORM_LOG_TRACE("Initial partition has " << refiner->getStatePartition().getNodeCount() << " nodes.");
-#endif
+            STORM_LOG_ASSERT(this->refiner->getStatus() != Status::FixedPoint, "Can only proceed if no fixpoint has been reached yet.");
 
             auto start = std::chrono::high_resolution_clock::now();
             auto timeOfLastMessage = start;
@@ -90,16 +102,54 @@ namespace storm {
             
             STORM_LOG_DEBUG("Partition refinement completed in " << std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count() << "s (" << iterations << " iterations).");
         }
+
+        template <storm::dd::DdType DdType, typename ValueType>
+        bool BisimulationDecomposition<DdType, ValueType>::compute(uint64_t steps, bisimulation::SignatureMode const& mode) {
+            STORM_LOG_ASSERT(refiner, "No suitable refiner.");
+            STORM_LOG_ASSERT(this->refiner->getStatus() != Status::FixedPoint, "Can only proceed if no fixpoint has been reached yet.");
+            STORM_LOG_ASSERT(steps > 0, "Can only perform positive number of steps.");
+
+            auto start = std::chrono::high_resolution_clock::now();
+            auto timeOfLastMessage = start;
+            uint64_t iterations = 0;
+            bool refined = true;
+            while (refined && iterations < steps) {
+                refined = refiner->refine(mode);
+                
+                ++iterations;
+                
+                if (showProgress) {
+                    auto now = std::chrono::high_resolution_clock::now();
+                    auto durationSinceLastMessage = std::chrono::duration_cast<std::chrono::seconds>(now - timeOfLastMessage).count();
+                    if (static_cast<uint64_t>(durationSinceLastMessage) >= showProgressDelay) {
+                        auto durationSinceStart = std::chrono::duration_cast<std::chrono::seconds>(now - start).count();
+                        STORM_LOG_INFO("State partition after " << iterations << " iterations (" << durationSinceStart << "s) has " << refiner->getStatePartition().getNumberOfBlocks() << " blocks.");
+                        timeOfLastMessage = std::chrono::high_resolution_clock::now();
+                    }
+                }
+            }
+            
+            return !refined;
+        }
         
         template <storm::dd::DdType DdType, typename ValueType>
         std::shared_ptr<storm::models::Model<ValueType>> BisimulationDecomposition<DdType, ValueType>::getQuotient() const {
-            STORM_LOG_THROW(this->refiner->getStatus() == Status::FixedPoint, storm::exceptions::InvalidOperationException, "Cannot extract quotient, because bisimulation decomposition was not completed.");
-            
-            STORM_LOG_TRACE("Starting quotient extraction.");
-            QuotientExtractor<DdType, ValueType> extractor;
-            std::shared_ptr<storm::models::Model<ValueType>> quotient = extractor.extract(model, refiner->getStatePartition(), preservationInformation);
+            std::shared_ptr<storm::models::Model<ValueType>> quotient;
+            if (this->refiner->getStatus() == Status::FixedPoint) {
+                STORM_LOG_TRACE("Starting full quotient extraction.");
+                QuotientExtractor<DdType, ValueType> extractor;
+                quotient = extractor.extract(model, refiner->getStatePartition(), preservationInformation);
+            } else {
+                STORM_LOG_TRACE("Starting partial quotient extraction.");
+                if (!partialQuotientExtractor) {
+                    partialQuotientExtractor = std::make_unique<bisimulation::PartialQuotientExtractor<DdType, ValueType>>(model);
+                }
+
+                quotient = partialQuotientExtractor->extract(refiner->getStatePartition(), preservationInformation);
+                STORM_LOG_TRACE("Quotient extraction done.");
+            }
+
             STORM_LOG_TRACE("Quotient extraction done.");
-            
             return quotient;
         }
         
