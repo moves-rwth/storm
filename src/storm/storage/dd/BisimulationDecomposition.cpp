@@ -140,6 +140,8 @@ namespace storm {
                 QuotientExtractor<DdType, ValueType> extractor;
                 quotient = extractor.extract(model, refiner->getStatePartition(), preservationInformation);
             } else {
+                STORM_LOG_THROW(model.getType() == storm::models::ModelType::Dtmc || model.getType() == storm::models::ModelType::Mdp, storm::exceptions::InvalidOperationException, "Can only extract partial quotient for discrete-time models.");
+                
                 STORM_LOG_TRACE("Starting partial quotient extraction.");
                 if (!partialQuotientExtractor) {
                     partialQuotientExtractor = std::make_unique<bisimulation::PartialQuotientExtractor<DdType, ValueType>>(model);

@@ -15,20 +15,20 @@
 namespace storm {
     namespace dd {
         namespace bisimulation {
-
+            
             template<storm::dd::DdType DdType, typename ValueType>
             class PartialQuotientExtractor {
-                public:
+            public:
                 PartialQuotientExtractor(storm::models::symbolic::Model<DdType, ValueType> const& model);
                 
                 std::shared_ptr<storm::models::Model<ValueType>> extract(Partition<DdType, ValueType> const& partition, PreservationInformation<DdType, ValueType> const& preservationInformation);
                 
-                private:
+            private:
                 std::shared_ptr<storm::models::symbolic::Model<DdType, ValueType>> extractDdQuotient(Partition<DdType, ValueType> const& partition, PreservationInformation<DdType, ValueType> const& preservationInformation);
                 
                 // The model for which to compute the partial quotient.
                 storm::models::symbolic::Model<DdType, ValueType> const& model;
-                                
+                
                 storm::settings::modules::BisimulationSettings::QuotientFormat quotientFormat;
             };
             

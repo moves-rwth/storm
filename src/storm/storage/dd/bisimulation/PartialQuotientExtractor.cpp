@@ -3,6 +3,7 @@
 #include "storm/storage/dd/DdManager.h"
 
 #include "storm/models/symbolic/Mdp.h"
+#include "storm/models/symbolic/StochasticTwoPlayerGame.h"
 #include "storm/models/symbolic/StandardRewardModel.h"
 
 #include "storm/settings/SettingsManager.h"
@@ -13,7 +14,7 @@
 namespace storm {
     namespace dd {
         namespace bisimulation {
-
+            
             template<storm::dd::DdType DdType, typename ValueType>
             PartialQuotientExtractor<DdType, ValueType>::PartialQuotientExtractor(storm::models::symbolic::Model<DdType, ValueType> const& model) : model(model) {
                 auto const& settings = storm::settings::getModule<storm::settings::modules::BisimulationSettings>();
@@ -26,7 +27,7 @@ namespace storm {
             std::shared_ptr<storm::models::Model<ValueType>> PartialQuotientExtractor<DdType, ValueType>::extract(Partition<DdType, ValueType> const& partition, PreservationInformation<DdType, ValueType> const& preservationInformation) {
                 auto start = std::chrono::high_resolution_clock::now();
                 std::shared_ptr<storm::models::Model<ValueType>> result;
-
+                
                 STORM_LOG_THROW(this->quotientFormat == storm::settings::modules::BisimulationSettings::QuotientFormat::Dd, storm::exceptions::NotSupportedException, "Only DD-based partial quotient extraction is currently supported.");
                 result = extractDdQuotient(partition, preservationInformation);
                 auto end = std::chrono::high_resolution_clock::now();
@@ -41,7 +42,7 @@ namespace storm {
             std::shared_ptr<storm::models::symbolic::Model<DdType, ValueType>> PartialQuotientExtractor<DdType, ValueType>::extractDdQuotient(Partition<DdType, ValueType> const& partition, PreservationInformation<DdType, ValueType> const& preservationInformation) {
                 
                 auto modelType = model.getType();
-                if (modelType == storm::models::ModelType::Dtmc) {
+                if (modelType == storm::models::ModelType::Dtmc || modelType == storm::models::ModelType::Mdp) {
                     // Sanity checks.
                     STORM_LOG_ASSERT(partition.getNumberOfStates() == model.getNumberOfStates(), "Mismatching partition size.");
                     STORM_LOG_ASSERT(partition.getStates().renameVariables(model.getColumnVariables(), model.getRowVariables()) == model.getReachableStates(), "Mismatching partition.");
@@ -84,12 +85,6 @@ namespace storm {
                     storm::dd::Add<DdType, ValueType> partitionAsAdd = partitionAsBdd.template toAdd<ValueType>();
                     storm::dd::Add<DdType, ValueType> quotientTransitionMatrix = model.getTransitionMatrix().multiplyMatrix(partitionAsAdd.renameVariables(blockAndRowVariables, blockPrimeAndColumnVariables), model.getColumnVariables());
                     
-//                    // Pick a representative from each block.
-//                    auto representatives = InternalRepresentativeComputer<DdType>(partitionAsBdd, model.getRowVariables()).getRepresentatives();
-//                    partitionAsBdd &= representatives;
-//                    partitionAsAdd *= partitionAsBdd.template toAdd<ValueType>();
-                    
-//                    quotientTransitionMatrix = quotientTransitionMatrix.multiplyMatrix(partitionAsAdd, model.getRowVariables());
                     quotientTransitionMatrix = quotientTransitionMatrix * partitionAsAdd;
                     end = std::chrono::high_resolution_clock::now();
                     
@@ -125,11 +120,13 @@ namespace storm {
                     end = std::chrono::high_resolution_clock::now();
                     STORM_LOG_TRACE("Reward models extracted in " << std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count() << "ms.");
                     
-                    std::set<storm::expressions::Variable> newNondeterminismVariables = model.getNondeterminismVariables();
-                    newNondeterminismVariables.insert(model.getRowVariables().begin(), model.getRowVariables().end());
-                    
                     if (modelType == storm::models::ModelType::Dtmc) {
-                        return std::shared_ptr<storm::models::symbolic::Mdp<DdType, ValueType>>(new storm::models::symbolic::Mdp<DdType, ValueType>(model.getManager().asSharedPointer(), reachableStates, initialStates, deadlockStates, quotientTransitionMatrix, blockVariableSet, blockPrimeVariableSet, blockMetaVariablePairs, newNondeterminismVariables, preservedLabelBdds, quotientRewardModels));
+                        return std::make_shared<storm::models::symbolic::Mdp<DdType, ValueType>>(model.getManager().asSharedPointer(), reachableStates, initialStates, deadlockStates, quotientTransitionMatrix, blockVariableSet, blockPrimeVariableSet, blockMetaVariablePairs, model.getRowVariables(), preservedLabelBdds, quotientRewardModels);
+                    } else if (modelType == storm::models::ModelType::Mdp) {
+                        std::set<storm::expressions::Variable> allNondeterminismVariables;
+                        std::set_union(model.getRowVariables().begin(), model.getRowVariables().end(), model.getNondeterminismVariables().begin(), model.getNondeterminismVariables().end(), std::inserter(allNondeterminismVariables, allNondeterminismVariables.begin()));
+                        
+                        return std::make_shared<storm::models::symbolic::StochasticTwoPlayerGame<DdType, ValueType>>(model.getManager().asSharedPointer(), reachableStates, initialStates, deadlockStates, quotientTransitionMatrix, blockVariableSet, blockPrimeVariableSet, blockMetaVariablePairs, model.getRowVariables(), model.getNondeterminismVariables(), allNondeterminismVariables, preservedLabelBdds, quotientRewardModels);
                     } else {
                         STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Unsupported quotient type.");
                     }
@@ -140,7 +137,7 @@ namespace storm {
             
             template class PartialQuotientExtractor<storm::dd::DdType::CUDD, double>;
             template class PartialQuotientExtractor<storm::dd::DdType::Sylvan, double>;
-
+            
 #ifdef STORM_HAVE_CARL
             template class PartialQuotientExtractor<storm::dd::DdType::Sylvan, storm::RationalNumber>;
             template class PartialQuotientExtractor<storm::dd::DdType::Sylvan, storm::RationalFunction>;

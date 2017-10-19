@@ -12,6 +12,7 @@ namespace storm {
     namespace settings {
         namespace modules {
             
+            const std::string AbstractionSettings::methodOptionName = "method";
             const std::string AbstractionSettings::moduleName = "abstraction";
             const std::string AbstractionSettings::useDecompositionOptionName = "decomposition";
             const std::string AbstractionSettings::splitModeOptionName = "split";
@@ -22,6 +23,12 @@ namespace storm {
             const std::string AbstractionSettings::reuseResultsOptionName = "reuse";
             
             AbstractionSettings::AbstractionSettings() : ModuleSettings(moduleName) {
+                std::vector<std::string> methods = {"games", "bisimulation", "bisim"};
+                this->addOption(storm::settings::OptionBuilder(moduleName, methodOptionName, true, "Sets which abstraction-refinement method to use.")
+                                .addArgument(storm::settings::ArgumentBuilder::createStringArgument("name", "The name of themethod to use.").addValidatorString(ArgumentValidatorFactory::createMultipleChoiceValidator(methods))
+                                             .setDefaultValueString("bisim").build())
+                                .build());
+                
                 std::vector<std::string> onOff = {"on", "off"};
                 
                 this->addOption(storm::settings::OptionBuilder(moduleName, useDecompositionOptionName, true, "Sets whether to apply decomposition during the abstraction.")
@@ -57,6 +64,16 @@ namespace storm {
                                 .addArgument(storm::settings::ArgumentBuilder::createStringArgument("mode", "The mode to use.").addValidatorString(ArgumentValidatorFactory::createMultipleChoiceValidator(reuseModes))
                                              .setDefaultValueString("all").build())
                                 .build());
+            }
+            
+            AbstractionSettings::Method AbstractionSettings::getAbstractionRefinementMethod() const {
+                std::string methodAsString = this->getOption(methodOptionName).getArgumentByName("method").getValueAsString();
+                if (methodAsString == "games") {
+                    return Method::Games;
+                } else if (methodAsString == "bisimulation" || methodAsString == "bism") {
+                    return Method::Bisimulation;
+                }
+                STORM_LOG_THROW(false, storm::exceptions::IllegalArgumentValueException, "Unknown abstraction-refinement method '" << methodAsString << "'.");
             }
             
             bool AbstractionSettings::isUseDecompositionSet() const {
