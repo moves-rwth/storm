@@ -73,14 +73,14 @@ namespace storm {
                 | qi::int_[qi::_val = phoenix::bind(&ExpressionCreator::createIntegerLiteralExpression, phoenix::ref(*expressionCreator), qi::_1, qi::_pass)];
             literalExpression.name("literal expression");
             
-            atomicExpression = floorCeilExpression | prefixPowerExpression | minMaxExpression | (qi::lit("(") >> expression >> qi::lit(")")) | literalExpression | identifierExpression;
+            atomicExpression = floorCeilExpression | prefixPowerExpression | minMaxExpression | (qi::lit("(") >> expression >> qi::lit(")")) | identifierExpression | literalExpression;
             atomicExpression.name("atomic expression");
             
             unaryExpression = (-unaryOperator_ >> atomicExpression)[qi::_val = phoenix::bind(&ExpressionCreator::createUnaryExpression, phoenix::ref(*expressionCreator), qi::_1, qi::_2, qi::_pass)];
             unaryExpression.name("unary expression");
             
             if (allowBacktracking) {
-                infixPowerExpression = unaryExpression[qi::_val = qi::_1] > -(infixPowerOperator_ > expression)[qi::_val = phoenix::bind(&ExpressionCreator::createPowerExpression, phoenix::ref(*expressionCreator), qi::_val, qi::_1, qi::_2, qi::_pass)];
+                infixPowerExpression = unaryExpression[qi::_val = qi::_1] >> -(infixPowerOperator_ >> expression)[qi::_val = phoenix::bind(&ExpressionCreator::createPowerExpression, phoenix::ref(*expressionCreator), qi::_val, qi::_1, qi::_2, qi::_pass)];
             } else {
                 infixPowerExpression = unaryExpression[qi::_val = qi::_1] > -(infixPowerOperator_ >> expression)[qi::_val = phoenix::bind(&ExpressionCreator::createPowerExpression, phoenix::ref(*expressionCreator), qi::_val, qi::_1, qi::_2, qi::_pass)];
             }
@@ -120,7 +120,7 @@ namespace storm {
             }
             orExpression.name("or expression");
             
-            iteExpression = orExpression[qi::_val = qi::_1] > -(qi::lit("?") > orExpression > qi::lit(":") > orExpression)[qi::_val = phoenix::bind(&ExpressionCreator::createIteExpression, phoenix::ref(*expressionCreator), qi::_val, qi::_1, qi::_2, qi::_pass)];
+            iteExpression = orExpression[qi::_val = qi::_1] > -(qi::lit("?") > iteExpression > qi::lit(":") > iteExpression)[qi::_val = phoenix::bind(&ExpressionCreator::createIteExpression, phoenix::ref(*expressionCreator), qi::_val, qi::_1, qi::_2, qi::_pass)];
             iteExpression.name("if-then-else expression");
             
             expression %= iteExpression;

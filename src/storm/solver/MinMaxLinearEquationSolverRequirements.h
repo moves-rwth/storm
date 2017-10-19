@@ -29,7 +29,7 @@ namespace storm {
             MinMaxLinearEquationSolverRequirements& requireBounds();
 
             bool requiresNoEndComponents() const;
-            bool requiresValidIntialScheduler() const;
+            bool requiresValidInitialScheduler() const;
             bool requiresLowerBounds() const;
             bool requiresUpperBounds() const;
             bool requires(Element const& element) const;

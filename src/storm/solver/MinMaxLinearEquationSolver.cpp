@@ -189,7 +189,7 @@ namespace storm {
         
         template<typename ValueType>
         void MinMaxLinearEquationSolverFactory<ValueType>::setMinMaxMethod(MinMaxMethod const& newMethod) {
-            STORM_LOG_WARN_COND(!(std::is_same<ValueType, storm::RationalNumber>::value) || newMethod == MinMaxMethod::PolicyIteration, "The selected solution method does not guarantee exact result. Consider using policy iteration.");
+            STORM_LOG_WARN_COND(!(std::is_same<ValueType, storm::RationalNumber>::value) || (newMethod == MinMaxMethod::PolicyIteration || newMethod == MinMaxMethod::RationalSearch), "The selected solution method does not guarantee exact results. Consider using policy iteration.");
             method = newMethod;
         }
         
@@ -228,7 +228,7 @@ namespace storm {
         std::unique_ptr<MinMaxLinearEquationSolver<ValueType>> GeneralMinMaxLinearEquationSolverFactory<ValueType>::create() const {
             std::unique_ptr<MinMaxLinearEquationSolver<ValueType>> result;
             auto method = this->getMinMaxMethod();
-            if (method == MinMaxMethod::ValueIteration || method == MinMaxMethod::PolicyIteration || method == MinMaxMethod::Acyclic) {
+            if (method == MinMaxMethod::ValueIteration || method == MinMaxMethod::PolicyIteration || method == MinMaxMethod::Acyclic || method == MinMaxMethod::RationalSearch) {
                 IterativeMinMaxLinearEquationSolverSettings<ValueType> iterativeSolverSettings;
                 iterativeSolverSettings.setSolutionMethod(method);
                 result = std::make_unique<IterativeMinMaxLinearEquationSolver<ValueType>>(std::make_unique<GeneralLinearEquationSolverFactory<ValueType>>(), iterativeSolverSettings);
@@ -248,7 +248,7 @@ namespace storm {
         std::unique_ptr<MinMaxLinearEquationSolver<storm::RationalNumber>> GeneralMinMaxLinearEquationSolverFactory<storm::RationalNumber>::create() const {
             std::unique_ptr<MinMaxLinearEquationSolver<storm::RationalNumber>> result;
             auto method = this->getMinMaxMethod();
-            if (method == MinMaxMethod::ValueIteration || method == MinMaxMethod::PolicyIteration || method == MinMaxMethod::Acyclic) {
+            if (method == MinMaxMethod::ValueIteration || method == MinMaxMethod::PolicyIteration || method == MinMaxMethod::Acyclic || method == MinMaxMethod::RationalSearch) {
                 IterativeMinMaxLinearEquationSolverSettings<storm::RationalNumber> iterativeSolverSettings;
                 iterativeSolverSettings.setSolutionMethod(method);
                 result = std::make_unique<IterativeMinMaxLinearEquationSolver<storm::RationalNumber>>(std::make_unique<GeneralLinearEquationSolverFactory<storm::RationalNumber>>(), iterativeSolverSettings);

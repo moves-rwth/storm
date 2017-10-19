@@ -835,6 +835,63 @@ TEST(SylvanDd, AddOddTest) {
     EXPECT_EQ(106ul, matrix.getNonzeroEntryCount());
 }
 
+TEST(SylvanDd, AddSharpenTest) {
+    std::shared_ptr<storm::dd::DdManager<storm::dd::DdType::Sylvan>> manager(new storm::dd::DdManager<storm::dd::DdType::Sylvan>());
+    std::pair<storm::expressions::Variable, storm::expressions::Variable> x = manager->addMetaVariable("x", 1, 9);
+
+    storm::dd::Add<storm::dd::DdType::Sylvan, double> dd = manager->template getAddOne<double>();
+    ASSERT_NO_THROW(dd.setValue(x.first, 4, 1.89999999));
+    ASSERT_EQ(2ul, dd.getLeafCount());
+
+    storm::dd::Add<storm::dd::DdType::Sylvan, storm::RationalNumber> sharpened = dd.sharpenKwekMehlhorn(1);
+
+    std::map<storm::expressions::Variable, int_fast64_t> metaVariableToValueMap;
+    metaVariableToValueMap.emplace(x.first, 4);
+
+    sharpened = dd.sharpenKwekMehlhorn(1);
+    ASSERT_EQ(storm::utility::convertNumber<storm::RationalNumber>(std::string("9/5")), sharpened.getValue(metaVariableToValueMap));
+
+    sharpened = dd.sharpenKwekMehlhorn(2);
+    ASSERT_EQ(storm::utility::convertNumber<storm::RationalNumber>(std::string("19/10")), sharpened.getValue(metaVariableToValueMap));
+}
+
+TEST(SylvanDd, AddRationalSharpenTest) {
+    std::shared_ptr<storm::dd::DdManager<storm::dd::DdType::Sylvan>> manager(new storm::dd::DdManager<storm::dd::DdType::Sylvan>());
+    std::pair<storm::expressions::Variable, storm::expressions::Variable> x = manager->addMetaVariable("x", 1, 9);
+    
+    storm::dd::Add<storm::dd::DdType::Sylvan, storm::RationalNumber> dd = manager->template getAddOne<storm::RationalNumber>();
+    ASSERT_NO_THROW(dd.setValue(x.first, 4, storm::utility::convertNumber<storm::RationalNumber>(1.89999999)));
+    ASSERT_EQ(2ul, dd.getLeafCount());
+    
+    storm::dd::Add<storm::dd::DdType::Sylvan, storm::RationalNumber> sharpened = dd.sharpenKwekMehlhorn(1);
+    
+    std::map<storm::expressions::Variable, int_fast64_t> metaVariableToValueMap;
+    metaVariableToValueMap.emplace(x.first, 4);
+    
+    sharpened = dd.sharpenKwekMehlhorn(1);
+    ASSERT_EQ(storm::utility::convertNumber<storm::RationalNumber>(std::string("9/5")), sharpened.getValue(metaVariableToValueMap));
+    
+    sharpened = dd.sharpenKwekMehlhorn(2);
+    ASSERT_EQ(storm::utility::convertNumber<storm::RationalNumber>(std::string("19/10")), sharpened.getValue(metaVariableToValueMap));
+}
+
+TEST(SylvanDd, AddToRationalTest) {
+    std::shared_ptr<storm::dd::DdManager<storm::dd::DdType::Sylvan>> manager(new storm::dd::DdManager<storm::dd::DdType::Sylvan>());
+    std::pair<storm::expressions::Variable, storm::expressions::Variable> x = manager->addMetaVariable("x", 1, 9);
+    
+    storm::dd::Add<storm::dd::DdType::Sylvan, double> dd = manager->template getAddOne<double>();
+    ASSERT_NO_THROW(dd.setValue(x.first, 4, 0.4));
+    ASSERT_EQ(2ul, dd.getLeafCount());
+    
+    storm::dd::Add<storm::dd::DdType::Sylvan, storm::RationalNumber> rationalDd = dd.template toValueType<storm::RationalNumber>();
+    
+    std::map<storm::expressions::Variable, int_fast64_t> metaVariableToValueMap;
+    metaVariableToValueMap.emplace(x.first, 4);
+    
+    ASSERT_EQ(storm::utility::convertNumber<storm::RationalNumber>(std::string("3602879701896397/9007199254740992")), rationalDd.getValue(metaVariableToValueMap));
+}
+
+
 TEST(SylvanDd, BddOddTest) {
     std::shared_ptr<storm::dd::DdManager<storm::dd::DdType::Sylvan>> manager(new storm::dd::DdManager<storm::dd::DdType::Sylvan>());
     std::pair<storm::expressions::Variable, storm::expressions::Variable> a = manager->addMetaVariable("a");

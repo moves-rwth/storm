@@ -22,6 +22,9 @@ namespace storm {
     namespace storage {
         template<typename IndexType, typename ValueType> class MatrixEntry;
     }
+    
+    template<typename RationalType>
+    struct NumberTraits;
 
     namespace utility {
 
@@ -101,6 +104,30 @@ namespace storm {
 
         template<typename ValueType>
         ValueType ceil(ValueType const& number);
+
+        template<typename ValueType>
+        ValueType log(ValueType const& number);
+
+        template<typename ValueType>
+        ValueType log10(ValueType const& number);
+
+        template<typename ValueType>
+        typename NumberTraits<ValueType>::IntegerType trunc(ValueType const& number);
+
+        template<typename RationalType>
+        typename NumberTraits<RationalType>::IntegerType numerator(RationalType const& number);
+
+        template<typename RationalType>
+        typename NumberTraits<RationalType>::IntegerType denominator(RationalType const& number);
+
+        /*!
+         * (Integer-)Divides the dividend by the divisor and returns the result plus the remainder.
+         */
+        template<typename IntegerType>
+        std::pair<IntegerType, IntegerType> divide(IntegerType const& dividend, IntegerType const& divisor);
+
+        template<typename IntegerType>
+        IntegerType mod(IntegerType const& first, IntegerType const& second);
         
         template<typename ValueType>
         std::string to_string(ValueType const& value);

@@ -56,11 +56,9 @@ namespace storm {
         }
         
         // Explicitly instantiate the templates.
-        template std::string ArgumentBase::convertFromString(std::string const& valueAsString, bool& conversionSuccessful);
         template int_fast64_t ArgumentBase::convertFromString(std::string const& valueAsString, bool& conversionSuccessful);
         template uint_fast64_t ArgumentBase::convertFromString(std::string const& valueAsString, bool& conversionSuccessful);
         template double ArgumentBase::convertFromString(std::string const& valueAsString, bool& conversionSuccessful);
-        template bool ArgumentBase::convertFromString(std::string const& valueAsString, bool& conversionSuccessful);
         
         template std::string ArgumentBase::convertToString(std::string const& value);
         template std::string ArgumentBase::convertToString(int_fast64_t const& value);

@@ -17,7 +17,7 @@ namespace storm {
             template<storm::dd::DdType DdType, typename ValueType>
             class SignatureRefiner {
             public:
-                SignatureRefiner(storm::dd::DdManager<DdType> const& manager, storm::expressions::Variable const& blockVariable, std::set<storm::expressions::Variable> const& stateVariables, std::set<storm::expressions::Variable> const& nondeterminismVariables = std::set<storm::expressions::Variable>());
+                SignatureRefiner(storm::dd::DdManager<DdType> const& manager, storm::expressions::Variable const& blockVariable, std::set<storm::expressions::Variable> const& stateVariables, bool shiftStateVariables, std::set<storm::expressions::Variable> const& nondeterminismVariables = std::set<storm::expressions::Variable>());
                 
                 Partition<DdType, ValueType> refine(Partition<DdType, ValueType> const& oldPartition, Signature<DdType, ValueType> const& signature);
 

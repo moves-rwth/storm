@@ -358,6 +358,7 @@ namespace storm {
             StormEigen::SparseLU<StormEigen::SparseMatrix<storm::RationalNumber>, StormEigen::COLAMDOrdering<int>> solver;
             solver.compute(*eigenA);
             solver._solve_impl(eigenB, eigenX);
+            
             return solver.info() == StormEigen::ComputationInfo::Success;
         }
         
@@ -402,9 +403,6 @@ namespace storm {
         template class EigenLinearEquationSolverFactory<double>;
 
 #ifdef STORM_HAVE_CARL
-        template class EigenLinearEquationSolverSettings<storm::RationalNumber>;
-        template class EigenLinearEquationSolverSettings<storm::RationalFunction>;
-        
         template class EigenLinearEquationSolver<storm::RationalNumber>;
         template class EigenLinearEquationSolver<storm::RationalFunction>;
         

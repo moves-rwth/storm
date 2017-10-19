@@ -8,7 +8,7 @@ namespace storm {
         namespace bisimulation {
             
             template<storm::dd::DdType DdType, typename ValueType>
-            MdpPartitionRefiner<DdType, ValueType>::MdpPartitionRefiner(storm::models::symbolic::Mdp<DdType, ValueType> const& mdp, Partition<DdType, ValueType> const& initialStatePartition) : PartitionRefiner<DdType, ValueType>(mdp, initialStatePartition), choicePartition(Partition<DdType, ValueType>::createTrivialChoicePartition(mdp, initialStatePartition.getBlockVariables())), stateSignatureComputer(mdp.getQualitativeTransitionMatrix(), mdp.getColumnAndNondeterminismVariables(), SignatureMode::Qualitative, true), stateSignatureRefiner(mdp.getManager(), this->statePartition.getBlockVariable(), mdp.getRowVariables()) {
+            MdpPartitionRefiner<DdType, ValueType>::MdpPartitionRefiner(storm::models::symbolic::Mdp<DdType, ValueType> const& mdp, Partition<DdType, ValueType> const& initialStatePartition) : PartitionRefiner<DdType, ValueType>(mdp, initialStatePartition), mdp(mdp), choicePartition(Partition<DdType, ValueType>::createTrivialChoicePartition(mdp, initialStatePartition.getBlockVariables())), stateSignatureRefiner(mdp.getManager(), this->statePartition.getBlockVariable(), mdp.getRowVariables(), true) {
                 // Intentionally left empty.
             }
             
@@ -29,10 +29,19 @@ namespace storm {
                 } else {
                     this->choicePartition = newChoicePartition;
                     
-                    // If the choice partition changed, refine the state partition. Use qualitative mode we must properly abstract from choice counts.
+                    // Compute state signatures.
+                    storm::dd::Bdd<DdType> choicePartitionAsBdd;
+                    if (this->choicePartition.storedAsBdd()) {
+                        choicePartitionAsBdd = this->choicePartition.asBdd();
+                    } else {
+                        choicePartitionAsBdd = this->choicePartition.asAdd().notZero();
+                    }
+                    Signature<DdType, ValueType> stateSignature(choicePartitionAsBdd.existsAbstract(mdp.getNondeterminismVariables()).template toAdd<ValueType>());
+                    
+                    // If the choice partition changed, refine the state partition.
                     STORM_LOG_TRACE("Refining state partition.");
-                    Partition<DdType, ValueType> newStatePartition = this->internalRefine(this->stateSignatureComputer, this->stateSignatureRefiner, this->statePartition, this->choicePartition, SignatureMode::Qualitative);
-
+                    Partition<DdType, ValueType> newStatePartition = this->internalRefine(stateSignature, this->stateSignatureRefiner, this->statePartition);
+                    
                     if (newStatePartition == this->statePartition) {
                         this->status = Status::FixedPoint;
                         return false;

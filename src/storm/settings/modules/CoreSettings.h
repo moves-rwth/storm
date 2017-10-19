@@ -110,6 +110,13 @@ namespace storm {
                 storm::dd::DdType getDdLibraryType() const;
                 
                 /*!
+                 * Retrieves whether the selected DD library is set from its default value.
+                 *
+                 * @return True iff if it is set from its default value.
+                 */
+                bool isDdLibraryTypeSetFromDefaultValue() const;
+                
+                /*!
                  * Retrieves whether statistics are to be shown for counterexample generation.
                  *
                  * @return True iff statistics are to be shown for counterexample generation.

@@ -116,6 +116,11 @@ namespace storm {
                 relevantValueVector = relevantValueVector.get() % filter;
             }
         }
+        
+        template<typename ValueType>
+        void SolveGoal<ValueType>::setRelevantValues(storm::storage::BitVector&& values) {
+            relevantValueVector = std::move(values);
+        }
 
         template class SolveGoal<double>;
         

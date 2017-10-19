@@ -13,6 +13,8 @@ namespace storm {
     struct NumberTraits<double> {
         static const bool SupportsExponential = true;
         static const bool IsExact = false;
+        
+        typedef uint64_t IntegerType;
     };
     
 #if defined(STORM_HAVE_CLN)
@@ -20,6 +22,8 @@ namespace storm {
     struct NumberTraits<storm::ClnRationalNumber> {
         static const bool SupportsExponential = false;
         static const bool IsExact = true;
+
+        typedef cln::cl_I IntegerType;
     };
 #endif
     
@@ -28,6 +32,8 @@ namespace storm {
     struct NumberTraits<storm::GmpRationalNumber> {
         static const bool SupportsExponential = false;
         static const bool IsExact = true;
+
+        typedef mpz_class IntegerType;
     };
 #endif
    

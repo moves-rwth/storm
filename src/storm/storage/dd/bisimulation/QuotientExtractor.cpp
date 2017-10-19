@@ -269,18 +269,13 @@ namespace storm {
                     } else {
                         STORM_LOG_ASSERT(!this->rowPermutation.empty(), "Expected proper row permutation.");
                         std::vector<ValueType> valueVector = extractVectorInternal(vector, this->allSourceVariablesCube, this->nondeterminismOdd);
-                        
-                        // Reorder the values according to the known row permutation.
-                        for (uint64_t position = 0; position < valueVector.size(); ) {
-                            if (rowPermutation[position] != position) {
-                                std::swap(valueVector[position], valueVector[rowPermutation[position]]);
-                                std::swap(rowPermutation[position], rowPermutation[rowPermutation[position]]);
-                            } else {
-                                ++position;
-                            }
-                        }
 
-                        return valueVector;
+                        // Reorder the values according to the known row permutation.
+                        std::vector<ValueType> reorderedValues(valueVector.size());
+                        for (uint64_t pos = 0; pos < valueVector.size(); ++pos) {
+                            reorderedValues[pos] = valueVector[rowPermutation[pos]];
+                        }
+                        return reorderedValues;
                     }
                 }
                 
@@ -427,7 +422,7 @@ namespace storm {
                 
                 void createBlockToOffsetMappingRec(DdNodePtr partitionNode, DdNodePtr representativesNode, DdNodePtr variables, storm::dd::Odd const& odd, uint64_t offset) {
                     STORM_LOG_ASSERT(partitionNode != Cudd_ReadLogicZero(ddman) || representativesNode == Cudd_ReadLogicZero(ddman), "Expected representative to be zero if the partition is zero.");
-                    if (representativesNode == Cudd_ReadLogicZero(ddman)) {
+                    if (representativesNode == Cudd_ReadLogicZero(ddman) || partitionNode == Cudd_ReadLogicZero(ddman)) {
                         return;
                     }
                     
@@ -471,7 +466,7 @@ namespace storm {
                 }
                 
                 void extractVectorRec(DdNodePtr vector, DdNodePtr representativesNode, DdNodePtr variables, storm::dd::Odd const& odd, uint64_t offset, std::vector<ValueType>& result) {
-                    if (representativesNode == Cudd_ReadLogicZero(ddman)) {
+                    if (representativesNode == Cudd_ReadLogicZero(ddman) || vector == Cudd_ReadZero(ddman)) {
                         return;
                     }
                     
@@ -643,7 +638,7 @@ namespace storm {
                 }
                 
                 void extractVectorRec(MTBDD vector, BDD representativesNode, BDD variables, storm::dd::Odd const& odd, uint64_t offset, std::vector<ValueType>& result) {
-                    if (representativesNode == sylvan_false) {
+                    if (representativesNode == sylvan_false || mtbdd_iszero(vector)) {
                         return;
                     }
                     
@@ -680,7 +675,7 @@ namespace storm {
                 
                 void createBlockToOffsetMappingRec(BDD partitionNode, BDD representativesNode, BDD variables, storm::dd::Odd const& odd, uint64_t offset) {
                     STORM_LOG_ASSERT(partitionNode != sylvan_false || representativesNode == sylvan_false, "Expected representative to be zero if the partition is zero.");
-                    if (representativesNode == sylvan_false) {
+                    if (representativesNode == sylvan_false || partitionNode == sylvan_false) {
                         return;
                     }
                     
@@ -857,7 +852,7 @@ namespace storm {
                 storm::storage::SparseMatrix<ValueType> quotientTransitionMatrix = sparseExtractor.extractTransitionMatrix(model.getTransitionMatrix());
                 auto end = std::chrono::high_resolution_clock::now();
                 STORM_LOG_TRACE("Quotient transition matrix extracted in " << std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count() << "ms.");
-                
+
                 start = std::chrono::high_resolution_clock::now();
                 storm::models::sparse::StateLabeling quotientStateLabeling(partition.getNumberOfBlocks());
                 quotientStateLabeling.addLabel("init", sparseExtractor.extractSetExists(model.getInitialStates()));
@@ -984,7 +979,11 @@ namespace storm {
                     end = std::chrono::high_resolution_clock::now();
                     
                     // Check quotient matrix for sanity.
-                    STORM_LOG_ASSERT(quotientTransitionMatrix.greater(storm::utility::one<ValueType>()).isZero(), "Illegal entries in quotient matrix.");
+                    if (std::is_same<ValueType, storm::RationalNumber>::value) {
+                        STORM_LOG_ASSERT(quotientTransitionMatrix.greater(storm::utility::one<ValueType>()).isZero(), "Illegal entries in quotient matrix.");
+                    } else {
+                        STORM_LOG_ASSERT(quotientTransitionMatrix.greater(storm::utility::one<ValueType>() + storm::utility::convertNumber<ValueType>(1e-6)).isZero(), "Illegal entries in quotient matrix.");
+                    }
                     STORM_LOG_ASSERT(quotientTransitionMatrix.sumAbstract(blockPrimeVariableSet).equalModuloPrecision(quotientTransitionMatrix.notZero().existsAbstract(blockPrimeVariableSet).template toAdd<ValueType>(), ValueType(1e-6)), "Illegal non-probabilistic matrix.");
                     
                     STORM_LOG_TRACE("Quotient transition matrix extracted in " << std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count() << "ms.");

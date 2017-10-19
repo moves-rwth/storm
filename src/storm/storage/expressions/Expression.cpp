@@ -264,6 +264,7 @@ namespace storm {
                 STORM_LOG_THROW(first.hasBooleanType(), storm::exceptions::InvalidTypeException, "Operator requires boolean operands.");
                 return first;
             }
+            
             return Expression(std::shared_ptr<BaseExpression>(new BinaryBooleanFunctionExpression(first.getBaseExpression().getManager(), first.getType().logicalConnective(second.getType()), first.getBaseExpressionPointer(), second.getBaseExpressionPointer(), BinaryBooleanFunctionExpression::OperatorType::And)));
         }
         

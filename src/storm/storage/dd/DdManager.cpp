@@ -173,10 +173,19 @@ namespace storm {
             return result;
         }
         
+#if defined(__clang__)
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Winfinite-recursion"
+#endif
+        
         template<DdType LibraryType>
         Bdd<LibraryType> DdManager<LibraryType>::getCube(storm::expressions::Variable const& variable) const {
             return getCube({variable});
         }
+
+#if defined(__clang__)
+#pragma clang diagnostic pop
+#endif
         
         template<DdType LibraryType>
         Bdd<LibraryType> DdManager<LibraryType>::getCube(std::set<storm::expressions::Variable> const& variables) const {
@@ -481,14 +490,26 @@ namespace storm {
         template Add<DdType::CUDD, double> DdManager<DdType::CUDD>::getAddZero() const;
         template Add<DdType::CUDD, uint_fast64_t> DdManager<DdType::CUDD>::getAddZero() const;
 
+#ifdef STORM_HAVE_CARL
+        template Add<DdType::CUDD, storm::RationalNumber> DdManager<DdType::CUDD>::getAddZero() const;
+#endif
+        
         template Add<DdType::CUDD, double> DdManager<DdType::CUDD>::getAddOne() const;
         template Add<DdType::CUDD, uint_fast64_t> DdManager<DdType::CUDD>::getAddOne() const;
+
+#ifdef STORM_HAVE_CARL
+        template Add<DdType::CUDD, storm::RationalNumber> DdManager<DdType::CUDD>::getAddOne() const;
+#endif
 
         template Add<DdType::CUDD, double> DdManager<DdType::CUDD>::getInfinity<double>() const;
         template Add<DdType::CUDD, uint_fast64_t> DdManager<DdType::CUDD>::getInfinity<uint_fast64_t>() const;
 
         template Add<DdType::CUDD, double> DdManager<DdType::CUDD>::getConstant(double const& value) const;
         template Add<DdType::CUDD, uint_fast64_t> DdManager<DdType::CUDD>::getConstant(uint_fast64_t const& value) const;
+
+#ifdef STORM_HAVE_CARL
+        template Add<DdType::CUDD, storm::RationalNumber> DdManager<DdType::CUDD>::getConstant(storm::RationalNumber const& value) const;
+#endif
         
         template Add<DdType::CUDD, double> DdManager<DdType::CUDD>::getIdentity(storm::expressions::Variable const& variable) const;
         template Add<DdType::CUDD, uint_fast64_t> DdManager<DdType::CUDD>::getIdentity(storm::expressions::Variable const& variable) const;

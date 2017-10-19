@@ -424,13 +424,16 @@ namespace storm {
         
         template Add<DdType::CUDD, double> Bdd<DdType::CUDD>::toAdd() const;
         template Add<DdType::CUDD, uint_fast64_t> Bdd<DdType::CUDD>::toAdd() const;
-        
+        template Add<DdType::CUDD, storm::RationalNumber> Bdd<DdType::CUDD>::toAdd() const;
+
         template std::vector<double> Bdd<DdType::CUDD>::filterExplicitVector(Odd const& odd, std::vector<double> const& values) const;
         template std::vector<uint_fast64_t> Bdd<DdType::CUDD>::filterExplicitVector(Odd const& odd, std::vector<uint_fast64_t> const& values) const;
         
         template Add<DdType::CUDD, double> Bdd<DdType::CUDD>::ite(Add<DdType::CUDD, double> const& thenAdd, Add<DdType::CUDD, double> const& elseAdd) const;
         template Add<DdType::CUDD, uint_fast64_t> Bdd<DdType::CUDD>::ite(Add<DdType::CUDD, uint_fast64_t> const& thenAdd, Add<DdType::CUDD, uint_fast64_t> const& elseAdd) const;
-        
+#ifdef STORM_HAVE_CARL
+        template Add<DdType::CUDD, storm::RationalNumber> Bdd<DdType::CUDD>::ite(Add<DdType::CUDD, storm::RationalNumber> const& thenAdd, Add<DdType::CUDD, storm::RationalNumber> const& elseAdd) const;
+#endif
         
         template class Bdd<DdType::Sylvan>;
 
