@@ -28,9 +28,7 @@ namespace storm {
                 
                 // The model for which to compute the partial quotient.
                 storm::models::symbolic::Model<DdType, ValueType> const& model;
-                
-                storm::expressions::Variable nondeterminismVariable;
-                
+                                
                 storm::settings::modules::BisimulationSettings::QuotientFormat quotientFormat;
             };
             

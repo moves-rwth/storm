@@ -9,9 +9,22 @@
 #include "storm/storage/dd/BisimulationDecomposition.h"
 #include "storm/storage/SymbolicModelDescription.h"
 
+#include "storm/modelchecker/prctl/SymbolicDtmcPrctlModelChecker.h"
+#include "storm/modelchecker/prctl/SymbolicMdpPrctlModelChecker.h"
+#include "storm/modelchecker/results/CheckResult.h"
+#include "storm/modelchecker/results/SymbolicQualitativeCheckResult.h"
+#include "storm/modelchecker/results/QuantitativeCheckResult.h"
+
+#include "storm/solver/SymbolicLinearEquationSolver.h"
+#include "storm/solver/SymbolicMinMaxLinearEquationSolver.h"
+
+#include "storm/logic/Formulas.h"
+#include "storm/parser/FormulaParser.h"
+
 #include "storm/models/sparse/Mdp.h"
 #include "storm/models/sparse/StandardRewardModel.h"
 
+#include "storm/models/symbolic/Dtmc.h"
 #include "storm/models/symbolic/Mdp.h"
 #include "storm/models/symbolic/StandardRewardModel.h"
 
@@ -51,7 +64,88 @@ TEST(SymbolicModelBisimulationDecomposition, DiePartialQuotient_Cudd) {
     std::shared_ptr<storm::models::symbolic::Model<storm::dd::DdType::CUDD, double>> model = storm::builder::DdPrismModelBuilder<storm::dd::DdType::CUDD, double>().build(program);
     
     storm::dd::BisimulationDecomposition<storm::dd::DdType::CUDD, double> decomposition(*model, storm::storage::BisimulationType::Strong);
+
     std::shared_ptr<storm::models::Model<double>> quotient = decomposition.getQuotient();
+    ASSERT_EQ(storm::models::ModelType::Mdp, quotient->getType());
+    ASSERT_TRUE(quotient->isSymbolicModel());
+
+    std::shared_ptr<storm::models::symbolic::Mdp<storm::dd::DdType::CUDD, double>> quotientMdp = quotient->as<storm::models::symbolic::Mdp<storm::dd::DdType::CUDD, double>>();
+    
+    storm::modelchecker::SymbolicMdpPrctlModelChecker<storm::models::symbolic::Mdp<storm::dd::DdType::CUDD, double>> checker(*quotientMdp, std::make_unique<storm::solver::SymbolicGeneralMinMaxLinearEquationSolverFactory<storm::dd::DdType::CUDD, double>>());
+    
+    storm::parser::FormulaParser formulaParser;
+    std::shared_ptr<storm::logic::Formula const> minFormula = formulaParser.parseSingleFormulaFromString("Pmin=? [F \"one\"]");
+    std::shared_ptr<storm::logic::Formula const> maxFormula = formulaParser.parseSingleFormulaFromString("Pmax=? [F \"one\"]");
+
+    std::pair<double, double> resultBounds;
+    
+    std::unique_ptr<storm::modelchecker::CheckResult> result = checker.check(*minFormula);
+    result->filter(storm::modelchecker::SymbolicQualitativeCheckResult<storm::dd::DdType::CUDD>(quotientMdp->getReachableStates(), quotientMdp->getInitialStates()));
+    resultBounds.first = result->asQuantitativeCheckResult<double>().sum();
+    result = checker.check(*maxFormula);
+    result->filter(storm::modelchecker::SymbolicQualitativeCheckResult<storm::dd::DdType::CUDD>(quotientMdp->getReachableStates(), quotientMdp->getInitialStates()));
+    resultBounds.second = result->asQuantitativeCheckResult<double>().sum();
+
+    EXPECT_EQ(resultBounds.first, storm::utility::zero<double>());
+    EXPECT_EQ(resultBounds.second, storm::utility::one<double>());
+
+    // Perform only one step.
+    decomposition.compute(1);
+    
+    quotient = decomposition.getQuotient();
+    ASSERT_EQ(storm::models::ModelType::Mdp, quotient->getType());
+    ASSERT_TRUE(quotient->isSymbolicModel());
+    quotientMdp = quotient->as<storm::models::symbolic::Mdp<storm::dd::DdType::CUDD, double>>();
+    
+    storm::modelchecker::SymbolicMdpPrctlModelChecker<storm::models::symbolic::Mdp<storm::dd::DdType::CUDD, double>> checker2(*quotientMdp, std::make_unique<storm::solver::SymbolicGeneralMinMaxLinearEquationSolverFactory<storm::dd::DdType::CUDD, double>>());
+
+    result = checker2.check(*minFormula);
+    result->filter(storm::modelchecker::SymbolicQualitativeCheckResult<storm::dd::DdType::CUDD>(quotientMdp->getReachableStates(), quotientMdp->getInitialStates()));
+    resultBounds.first = result->asQuantitativeCheckResult<double>().sum();
+    result = checker2.check(*maxFormula);
+    result->filter(storm::modelchecker::SymbolicQualitativeCheckResult<storm::dd::DdType::CUDD>(quotientMdp->getReachableStates(), quotientMdp->getInitialStates()));
+    resultBounds.second = result->asQuantitativeCheckResult<double>().sum();
+
+    EXPECT_EQ(resultBounds.first, storm::utility::zero<double>());
+    EXPECT_NEAR(resultBounds.second, static_cast<double>(1)/3, 1e-6);
+
+    // Perform only one step.
+    decomposition.compute(1);
+    
+    quotient = decomposition.getQuotient();
+    ASSERT_EQ(storm::models::ModelType::Mdp, quotient->getType());
+    ASSERT_TRUE(quotient->isSymbolicModel());
+    quotientMdp = quotient->as<storm::models::symbolic::Mdp<storm::dd::DdType::CUDD, double>>();
+
+    storm::modelchecker::SymbolicMdpPrctlModelChecker<storm::models::symbolic::Mdp<storm::dd::DdType::CUDD, double>> checker3(*quotientMdp, std::make_unique<storm::solver::SymbolicGeneralMinMaxLinearEquationSolverFactory<storm::dd::DdType::CUDD, double>>());
+
+    result = checker3.check(*minFormula);
+    result->filter(storm::modelchecker::SymbolicQualitativeCheckResult<storm::dd::DdType::CUDD>(quotientMdp->getReachableStates(), quotientMdp->getInitialStates()));
+    resultBounds.first = result->asQuantitativeCheckResult<double>().sum();
+    result = checker3.check(*maxFormula);
+    result->filter(storm::modelchecker::SymbolicQualitativeCheckResult<storm::dd::DdType::CUDD>(quotientMdp->getReachableStates(), quotientMdp->getInitialStates()));
+    resultBounds.second = result->asQuantitativeCheckResult<double>().sum();
+
+    EXPECT_NEAR(resultBounds.first, static_cast<double>(1)/6, 1e-6);
+    EXPECT_NEAR(resultBounds.second, static_cast<double>(1)/6, 1e-6);
+    EXPECT_NEAR(resultBounds.first, resultBounds.second, 1e-6);
+    
+    decomposition.compute(1);
+
+    quotient = decomposition.getQuotient();
+    ASSERT_EQ(storm::models::ModelType::Dtmc, quotient->getType());
+    ASSERT_TRUE(quotient->isSymbolicModel());
+    std::shared_ptr<storm::models::symbolic::Dtmc<storm::dd::DdType::CUDD, double>> quotientDtmc = quotient->as<storm::models::symbolic::Dtmc<storm::dd::DdType::CUDD, double>>();
+    
+    storm::modelchecker::SymbolicDtmcPrctlModelChecker<storm::models::symbolic::Dtmc<storm::dd::DdType::CUDD, double>> checker4(*quotientDtmc);
+
+    std::shared_ptr<storm::logic::Formula const> formula = formulaParser.parseSingleFormulaFromString("P=? [F \"one\"]");
+
+    result = checker4.check(*formula);
+    result->filter(storm::modelchecker::SymbolicQualitativeCheckResult<storm::dd::DdType::CUDD>(quotientDtmc->getReachableStates(), quotientDtmc->getInitialStates()));
+    resultBounds.first = resultBounds.second = result->asQuantitativeCheckResult<double>().sum();
+
+    EXPECT_NEAR(resultBounds.first, static_cast<double>(1)/6, 1e-6);
 }
 
 TEST(SymbolicModelBisimulationDecomposition, Die_Sylvan) {
@@ -82,6 +176,96 @@ TEST(SymbolicModelBisimulationDecomposition, Die_Sylvan) {
     EXPECT_EQ(8ul, quotient->getNumberOfTransitions());
     EXPECT_EQ(storm::models::ModelType::Dtmc, quotient->getType());
     EXPECT_TRUE(quotient->isSymbolicModel());
+}
+
+TEST(SymbolicModelBisimulationDecomposition, DiePartialQuotient_Sylvan) {
+    storm::prism::Program program = storm::parser::PrismParser::parse(STORM_TEST_RESOURCES_DIR "/dtmc/die.pm");
+    
+    std::shared_ptr<storm::models::symbolic::Model<storm::dd::DdType::Sylvan, double>> model = storm::builder::DdPrismModelBuilder<storm::dd::DdType::Sylvan, double>().build(program);
+    
+    storm::dd::BisimulationDecomposition<storm::dd::DdType::Sylvan, double> decomposition(*model, storm::storage::BisimulationType::Strong);
+    
+    std::shared_ptr<storm::models::Model<double>> quotient = decomposition.getQuotient();
+    ASSERT_EQ(storm::models::ModelType::Mdp, quotient->getType());
+    ASSERT_TRUE(quotient->isSymbolicModel());
+    
+    std::shared_ptr<storm::models::symbolic::Mdp<storm::dd::DdType::Sylvan, double>> quotientMdp = quotient->as<storm::models::symbolic::Mdp<storm::dd::DdType::Sylvan, double>>();
+    
+    storm::modelchecker::SymbolicMdpPrctlModelChecker<storm::models::symbolic::Mdp<storm::dd::DdType::Sylvan, double>> checker(*quotientMdp, std::make_unique<storm::solver::SymbolicGeneralMinMaxLinearEquationSolverFactory<storm::dd::DdType::Sylvan, double>>());
+    
+    storm::parser::FormulaParser formulaParser;
+    std::shared_ptr<storm::logic::Formula const> minFormula = formulaParser.parseSingleFormulaFromString("Pmin=? [F \"one\"]");
+    std::shared_ptr<storm::logic::Formula const> maxFormula = formulaParser.parseSingleFormulaFromString("Pmax=? [F \"one\"]");
+    
+    std::pair<double, double> resultBounds;
+    
+    std::unique_ptr<storm::modelchecker::CheckResult> result = checker.check(*minFormula);
+    result->filter(storm::modelchecker::SymbolicQualitativeCheckResult<storm::dd::DdType::Sylvan>(quotientMdp->getReachableStates(), quotientMdp->getInitialStates()));
+    resultBounds.first = result->asQuantitativeCheckResult<double>().sum();
+    result = checker.check(*maxFormula);
+    result->filter(storm::modelchecker::SymbolicQualitativeCheckResult<storm::dd::DdType::Sylvan>(quotientMdp->getReachableStates(), quotientMdp->getInitialStates()));
+    resultBounds.second = result->asQuantitativeCheckResult<double>().sum();
+    
+    EXPECT_EQ(resultBounds.first, storm::utility::zero<double>());
+    EXPECT_EQ(resultBounds.second, storm::utility::one<double>());
+    
+    // Perform only one step.
+    decomposition.compute(1);
+    
+    quotient = decomposition.getQuotient();
+    ASSERT_EQ(storm::models::ModelType::Mdp, quotient->getType());
+    ASSERT_TRUE(quotient->isSymbolicModel());
+    quotientMdp = quotient->as<storm::models::symbolic::Mdp<storm::dd::DdType::Sylvan, double>>();
+    
+    storm::modelchecker::SymbolicMdpPrctlModelChecker<storm::models::symbolic::Mdp<storm::dd::DdType::Sylvan, double>> checker2(*quotientMdp, std::make_unique<storm::solver::SymbolicGeneralMinMaxLinearEquationSolverFactory<storm::dd::DdType::Sylvan, double>>());
+    
+    result = checker2.check(*minFormula);
+    result->filter(storm::modelchecker::SymbolicQualitativeCheckResult<storm::dd::DdType::Sylvan>(quotientMdp->getReachableStates(), quotientMdp->getInitialStates()));
+    resultBounds.first = result->asQuantitativeCheckResult<double>().sum();
+    result = checker2.check(*maxFormula);
+    result->filter(storm::modelchecker::SymbolicQualitativeCheckResult<storm::dd::DdType::Sylvan>(quotientMdp->getReachableStates(), quotientMdp->getInitialStates()));
+    resultBounds.second = result->asQuantitativeCheckResult<double>().sum();
+    
+    EXPECT_EQ(resultBounds.first, storm::utility::zero<double>());
+    EXPECT_NEAR(resultBounds.second, static_cast<double>(1)/3, 1e-6);
+    
+    // Perform only one step.
+    decomposition.compute(1);
+    
+    quotient = decomposition.getQuotient();
+    ASSERT_EQ(storm::models::ModelType::Mdp, quotient->getType());
+    ASSERT_TRUE(quotient->isSymbolicModel());
+    quotientMdp = quotient->as<storm::models::symbolic::Mdp<storm::dd::DdType::Sylvan, double>>();
+    
+    storm::modelchecker::SymbolicMdpPrctlModelChecker<storm::models::symbolic::Mdp<storm::dd::DdType::Sylvan, double>> checker3(*quotientMdp, std::make_unique<storm::solver::SymbolicGeneralMinMaxLinearEquationSolverFactory<storm::dd::DdType::Sylvan, double>>());
+    
+    result = checker3.check(*minFormula);
+    result->filter(storm::modelchecker::SymbolicQualitativeCheckResult<storm::dd::DdType::Sylvan>(quotientMdp->getReachableStates(), quotientMdp->getInitialStates()));
+    resultBounds.first = result->asQuantitativeCheckResult<double>().sum();
+    result = checker3.check(*maxFormula);
+    result->filter(storm::modelchecker::SymbolicQualitativeCheckResult<storm::dd::DdType::Sylvan>(quotientMdp->getReachableStates(), quotientMdp->getInitialStates()));
+    resultBounds.second = result->asQuantitativeCheckResult<double>().sum();
+    
+    EXPECT_NEAR(resultBounds.first, static_cast<double>(1)/6, 1e-6);
+    EXPECT_NEAR(resultBounds.second, static_cast<double>(1)/6, 1e-6);
+    EXPECT_NEAR(resultBounds.first, resultBounds.second, 1e-6);
+    
+    decomposition.compute(1);
+    
+    quotient = decomposition.getQuotient();
+    ASSERT_EQ(storm::models::ModelType::Dtmc, quotient->getType());
+    ASSERT_TRUE(quotient->isSymbolicModel());
+    std::shared_ptr<storm::models::symbolic::Dtmc<storm::dd::DdType::Sylvan, double>> quotientDtmc = quotient->as<storm::models::symbolic::Dtmc<storm::dd::DdType::Sylvan, double>>();
+    
+    storm::modelchecker::SymbolicDtmcPrctlModelChecker<storm::models::symbolic::Dtmc<storm::dd::DdType::Sylvan, double>> checker4(*quotientDtmc);
+    
+    std::shared_ptr<storm::logic::Formula const> formula = formulaParser.parseSingleFormulaFromString("P=? [F \"one\"]");
+    
+    result = checker4.check(*formula);
+    result->filter(storm::modelchecker::SymbolicQualitativeCheckResult<storm::dd::DdType::Sylvan>(quotientDtmc->getReachableStates(), quotientDtmc->getInitialStates()));
+    resultBounds.first = resultBounds.second = result->asQuantitativeCheckResult<double>().sum();
+    
+    EXPECT_NEAR(resultBounds.first, static_cast<double>(1)/6, 1e-6);
 }
 
 TEST(SymbolicModelBisimulationDecomposition, Crowds_Cudd) {

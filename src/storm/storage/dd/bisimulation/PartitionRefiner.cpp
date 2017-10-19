@@ -124,6 +124,11 @@ namespace storm {
             }
             
             template <storm::dd::DdType DdType, typename ValueType>
+            Signature<DdType, ValueType> PartitionRefiner<DdType, ValueType>::getFullSignature() const {
+                return signatureComputer.getFullSignature(statePartition);
+            }
+            
+            template <storm::dd::DdType DdType, typename ValueType>
             Status PartitionRefiner<DdType, ValueType>::getStatus() const {
                 return status;
             }

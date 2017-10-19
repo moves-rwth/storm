@@ -52,7 +52,7 @@ namespace storm {
              *
              * @return True iff the computation arrived at a fixpoint.
              */
-            bool compute(uint64_t steps, bisimulation::SignatureMode const& mode);
+            bool compute(uint64_t steps, bisimulation::SignatureMode const& mode = bisimulation::SignatureMode::Eager);
             
             /*!
              * Retrieves the quotient model after the bisimulation decomposition was computed.

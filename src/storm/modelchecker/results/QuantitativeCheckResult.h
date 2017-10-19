@@ -15,7 +15,6 @@ namespace storm {
             
             
             virtual ValueType getMin() const = 0;
-            
             virtual ValueType getMax() const = 0;
             
             virtual ValueType average() const = 0;
