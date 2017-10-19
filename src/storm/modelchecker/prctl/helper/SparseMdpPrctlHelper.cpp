@@ -98,7 +98,7 @@ namespace storm {
                 if (storm::settings::getModule<storm::settings::modules::GeneralSettings>().isSoundSet()) {
                     precision = precision / storm::utility::convertNumber<ValueType>(epochCount);
                 }
-                STORM_PRINT_AND_LOG("Objective/Dimension/Epoch count is: " << 1 << "/" << rewardUnfolding.getEpochManager().getDimensionCount() << "/" <<  epochCount << "."  << std::endl);
+                STORM_PRINT_AND_LOG("Objective/Dimension/Epoch count is: " << 1 << "/" << rewardUnfolding.getEpochManager().getDimensionCount() << "/" <<  epochOrder.size() << "."  << std::endl);
 
                 for (auto const& epoch : epochOrder) {
                     swBuild.start();

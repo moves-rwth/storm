@@ -58,7 +58,7 @@ namespace storm {
                     precision = precision / storm::utility::convertNumber<ValueType>(epochCount);
                 }
                 if (numChecks == 1) {
-                    STORM_PRINT_AND_LOG("Objective/Dimension/Epoch count is: " << 1 << "/" << rewardUnfolding.getEpochManager().getDimensionCount() << "/" <<  epochCount << "."  << std::endl);
+                    STORM_PRINT_AND_LOG("Objective/Dimension/Epoch count is: " << this->objectives.size() << "/" << rewardUnfolding.getEpochManager().getDimensionCount() << "/" <<  epochOrder.size() << "."  << std::endl);
                 }
 
 
