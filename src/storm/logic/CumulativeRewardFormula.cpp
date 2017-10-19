@@ -3,6 +3,7 @@
 #include "storm/logic/FormulaVisitor.h"
 
 #include "storm/utility/macros.h"
+#include "storm/utility/constants.h"
 #include "storm/exceptions/InvalidPropertyException.h"
 #include "storm/exceptions/InvalidOperationException.h"
 
@@ -67,6 +68,14 @@ namespace storm {
             checkNoVariablesInBound(bound.getBound());
             double value = bound.getBound().evaluateAsDouble();
             STORM_LOG_THROW(value >= 0, storm::exceptions::InvalidPropertyException, "Time-bound must not evaluate to negative number.");
+            return value;
+        }
+
+        template <>
+        storm::RationalNumber CumulativeRewardFormula::getBound() const {
+            checkNoVariablesInBound(bound.getBound());
+            storm::RationalNumber value = bound.getBound().evaluateAsRational();
+            STORM_LOG_THROW(value >= storm::utility::zero<storm::RationalNumber>(), storm::exceptions::InvalidPropertyException, "Time-bound must not evaluate to negative number.");
             return value;
         }
 

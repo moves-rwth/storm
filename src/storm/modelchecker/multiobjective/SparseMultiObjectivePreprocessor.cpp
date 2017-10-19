@@ -518,54 +518,111 @@ namespace storm {
         
             template<typename SparseModelType>
             boost::optional<typename SparseModelType::ValueType> SparseMultiObjectivePreprocessor<SparseModelType>::computeUpperResultBound(ReturnType const& result, uint64_t objIndex, storm::storage::SparseMatrix<ValueType> const& backwardTransitions) {
+                boost::optional<ValueType> upperBound;
                 
-                if (result.objectives[objIndex].formula->isRewardOperatorFormula() && (result.objectives[objIndex].formula->getSubformula().isTotalRewardFormula() || result.objectives[objIndex].formula->getSubformula().isCumulativeRewardFormula())) {
-                    // TODO: Consider cumulative reward formulas less naively
-                    // TODO: We have to eliminate ECs here to treat zero-reward ECs
-                    auto const& transitions = result.preprocessedModel->getTransitionMatrix();
+                if (!result.originalModel.isOfType(storm::models::ModelType::Mdp)) {
+                    return upperBound;
+                }
+                
+                auto const& transitions = result.preprocessedModel->getTransitionMatrix();
+                
+                if (result.objectives[objIndex].formula->isRewardOperatorFormula()) {
                     auto const& rewModel = result.preprocessedModel->getRewardModel(result.objectives[objIndex].formula->asRewardOperatorFormula().getRewardModelName());
-                    storm::storage::BitVector allStates(result.preprocessedModel->getNumberOfStates(), true);
+                    auto actionRewards = rewModel.getTotalRewardVector(transitions);
                     
-                    // Get the set of states from which no reward is reachable
-                    auto nonZeroRewardStates = rewModel.getStatesWithZeroReward(transitions);
-                    nonZeroRewardStates.complement();
-                    auto expRewGreater0EStates = storm::utility::graph::performProbGreater0E(backwardTransitions, allStates, nonZeroRewardStates);
-                    
-                    auto zeroRewardChoices = rewModel.getChoicesWithZeroReward(transitions);
-                    
-                    auto ecElimRes = storm::transformer::EndComponentEliminator<ValueType>::transform(transitions, expRewGreater0EStates, zeroRewardChoices, ~allStates);
-                    
-                    allStates.resize(ecElimRes.matrix.getRowGroupCount());
-                    storm::storage::BitVector outStates(allStates.size(), false);
-                    std::vector<ValueType> rew0StateProbs;
-                    rew0StateProbs.reserve(ecElimRes.matrix.getRowCount());
-                    for (uint64_t state = 0; state < allStates.size(); ++ state) {
-                        for (uint64_t choice = ecElimRes.matrix.getRowGroupIndices()[state]; choice < ecElimRes.matrix.getRowGroupIndices()[state + 1]; ++choice) {
-                            ValueType outProb = storm::utility::one<ValueType>() - ecElimRes.matrix.getRowSum(choice);
-                            if (!storm::utility::isZero(outProb)) {
-                                outStates.set(state, true);
+                    // TODO: Consider cumulative reward formulas less naively
+                    if (result.objectives[objIndex].formula->getSubformula().isCumulativeRewardFormula()) {
+                        auto const& cumulativeRewardFormula = result.objectives[objIndex].formula->getSubformula().asCumulativeRewardFormula();
+                        ValueType rewardBound = cumulativeRewardFormula.template getBound<ValueType>();
+                        if (cumulativeRewardFormula.getTimeBoundReference().isRewardBound()) {
+                            auto const& costModel = result.preprocessedModel->getRewardModel(cumulativeRewardFormula.getTimeBoundReference().getRewardName());
+                            if (!costModel.hasTransitionRewards()) {
+                                auto actionCosts = costModel.getTotalRewardVector(transitions);
+                                typename  SparseModelType::ValueType largestRewardPerCost = storm::utility::zero<typename SparseModelType::ValueType>();
+                                bool isFinite = true;
+                                for (auto rewIt = actionRewards.begin(), costIt = actionCosts.begin(); rewIt != actionRewards.end(); ++rewIt, ++costIt) {
+                                    if (!storm::utility::isZero(*rewIt)) {
+                                        if (storm::utility::isZero(*costIt)) {
+                                            isFinite = false;
+                                            break;
+                                        }
+                                        ValueType rewardPerCost = *rewIt / *costIt;
+                                        largestRewardPerCost = std::max(largestRewardPerCost, rewardPerCost);
+                                    }
+                                }
+                                
+                                if (isFinite) {
+                                    ValueType newResultBound = largestRewardPerCost * rewardBound;
+                                    if (upperBound) {
+                                        upperBound = std::min(upperBound.get(), newResultBound);
+                                    } else {
+                                        upperBound = newResultBound;
+                                    }
+                                }
                             }
-                            rew0StateProbs.push_back(outProb);
+                        } else {
+                            ValueType newResultBound = (*std::max_element(actionRewards.begin(), actionRewards.end())) * rewardBound;
+                            if (upperBound) {
+                                upperBound = std::min(upperBound.get(), newResultBound);
+                            } else {
+                                upperBound = newResultBound;
+                            }
                         }
                     }
                     
-                    // An upper reward bound can only be computed if it is below infinity
-                    if (storm::utility::graph::performProb1A(ecElimRes.matrix, ecElimRes.matrix.getRowGroupIndices(), ecElimRes.matrix.transpose(true), allStates, outStates).full()) {
+                    if (result.objectives[objIndex].formula->getSubformula().isTotalRewardFormula() || result.objectives[objIndex].formula->getSubformula().isCumulativeRewardFormula()) {
+                        // We have to eliminate ECs here to treat zero-reward ECs
+ 
+                        storm::storage::BitVector allStates(result.preprocessedModel->getNumberOfStates(), true);
                         
-                        auto actionRewards = rewModel.getTotalRewardVector(transitions);
-                        std::vector<ValueType> rewards;
-                        rewards.reserve(ecElimRes.matrix.getRowCount());
-                        for (auto row : ecElimRes.newToOldRowMapping) {
-                            rewards.push_back(actionRewards[row]);
+                        // Get the set of states from which no reward is reachable
+                        auto nonZeroRewardStates = rewModel.getStatesWithZeroReward(transitions);
+                        nonZeroRewardStates.complement();
+                        auto expRewGreater0EStates = storm::utility::graph::performProbGreater0E(backwardTransitions, allStates, nonZeroRewardStates);
+                        
+                        auto zeroRewardChoices = rewModel.getChoicesWithZeroReward(transitions);
+                        
+                        auto ecElimRes = storm::transformer::EndComponentEliminator<ValueType>::transform(transitions, expRewGreater0EStates, zeroRewardChoices, ~allStates);
+                        
+                        allStates.resize(ecElimRes.matrix.getRowGroupCount());
+                        storm::storage::BitVector outStates(allStates.size(), false);
+                        std::vector<ValueType> rew0StateProbs;
+                        rew0StateProbs.reserve(ecElimRes.matrix.getRowCount());
+                        for (uint64_t state = 0; state < allStates.size(); ++ state) {
+                            for (uint64_t choice = ecElimRes.matrix.getRowGroupIndices()[state]; choice < ecElimRes.matrix.getRowGroupIndices()[state + 1]; ++choice) {
+                                ValueType outProb = storm::utility::one<ValueType>() - ecElimRes.matrix.getRowSum(choice);
+                                if (!storm::utility::isZero(outProb)) {
+                                    outStates.set(state, true);
+                                }
+                                rew0StateProbs.push_back(outProb);
+                            }
                         }
                         
-                        storm::modelchecker::helper::BaierUpperRewardBoundsComputer<ValueType> baier(ecElimRes.matrix, rewards, rew0StateProbs);
-                        return baier.computeUpperBound();
+                        // An upper reward bound can only be computed if it is below infinity
+                        if (storm::utility::graph::performProb1A(ecElimRes.matrix, ecElimRes.matrix.getRowGroupIndices(), ecElimRes.matrix.transpose(true), allStates, outStates).full()) {
+                            
+                            std::vector<ValueType> rewards;
+                            rewards.reserve(ecElimRes.matrix.getRowCount());
+                            for (auto row : ecElimRes.newToOldRowMapping) {
+                                rewards.push_back(actionRewards[row]);
+                            }
+                            
+                            storm::modelchecker::helper::BaierUpperRewardBoundsComputer<ValueType> baier(ecElimRes.matrix, rewards, rew0StateProbs);
+                            if (upperBound) {
+                                upperBound = std::min(upperBound.get(), baier.computeUpperBound());
+                            } else {
+                                upperBound = baier.computeUpperBound();
+                            }
+                        }
                     }
                 }
                 
-                // reaching this point means that we were not able to compute an upper bound
-                return boost::none;
+                if (upperBound) {
+                    STORM_LOG_INFO("Computed upper result bound " << upperBound.get() << " for objective " << *result.objectives[objIndex].formula << ".");
+                } else {
+                    STORM_LOG_WARN("Could not compute upper result bound for objective " << *result.objectives[objIndex].formula);
+                }
+                return upperBound;
 
             }
 
