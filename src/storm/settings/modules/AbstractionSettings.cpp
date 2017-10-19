@@ -67,10 +67,10 @@ namespace storm {
             }
             
             AbstractionSettings::Method AbstractionSettings::getAbstractionRefinementMethod() const {
-                std::string methodAsString = this->getOption(methodOptionName).getArgumentByName("method").getValueAsString();
+                std::string methodAsString = this->getOption(methodOptionName).getArgumentByName("name").getValueAsString();
                 if (methodAsString == "games") {
                     return Method::Games;
-                } else if (methodAsString == "bisimulation" || methodAsString == "bism") {
+                } else if (methodAsString == "bisimulation" || methodAsString == "bisim") {
                     return Method::Bisimulation;
                 }
                 STORM_LOG_THROW(false, storm::exceptions::IllegalArgumentValueException, "Unknown abstraction-refinement method '" << methodAsString << "'.");

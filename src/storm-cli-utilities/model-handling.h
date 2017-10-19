@@ -30,6 +30,7 @@
 #include "storm/settings/modules/DebugSettings.h"
 #include "storm/settings/modules/IOSettings.h"
 #include "storm/settings/modules/CoreSettings.h"
+#include "storm/settings/modules/AbstractionSettings.h"
 #include "storm/settings/modules/ResourceSettings.h"
 #include "storm/settings/modules/JaniExportSettings.h"
 
@@ -209,7 +210,7 @@ namespace storm {
             
             std::shared_ptr<storm::models::ModelBase> result;
             if (input.model) {
-                if (engine == storm::settings::modules::CoreSettings::Engine::Dd || engine == storm::settings::modules::CoreSettings::Engine::Hybrid) {
+                if (engine == storm::settings::modules::CoreSettings::Engine::Dd || engine == storm::settings::modules::CoreSettings::Engine::Hybrid || engine == storm::settings::modules::CoreSettings::Engine::AbstractionRefinement) {
                     result = buildModelDd<DdType, ValueType>(input);
                 } else if (engine == storm::settings::modules::CoreSettings::Engine::Sparse) {
                     result = buildModelSparse<ValueType>(input, ioSettings);
@@ -554,7 +555,7 @@ namespace storm {
                 auto task = storm::api::createTask<ValueType>(formula, filterForInitialStates);
                 
                 auto symbolicModel = model->as<storm::models::symbolic::Model<DdType, ValueType>>();
-                std::unique_ptr<storm::modelchecker::CheckResult> result = storm::api::verifyWithDdEngine<DdType, ValueType>(model->as<storm::models::symbolic::Model<DdType, ValueType>>(), storm::api::createTask<ValueType>(formula, true));
+                std::unique_ptr<storm::modelchecker::CheckResult> result = storm::api::verifyWithDdEngine<DdType, ValueType>(symbolicModel, storm::api::createTask<ValueType>(formula, true));
                 
                 std::unique_ptr<storm::modelchecker::CheckResult> filter;
                 if (filterForInitialStates) {
@@ -566,6 +567,15 @@ namespace storm {
                     result->filter(filter->asQualitativeCheckResult());
                 }
                 return result;
+            });
+        }
+        
+        template <storm::dd::DdType DdType, typename ValueType>
+        void verifyWithAbstractionRefinementEngine(std::shared_ptr<storm::models::ModelBase> const& model, SymbolicInput const& input) {
+            verifyProperties<ValueType>(input.properties, [&model] (std::shared_ptr<storm::logic::Formula const> const& formula, std::shared_ptr<storm::logic::Formula const> const& states) {
+                STORM_LOG_THROW(states->isInitialFormula(), storm::exceptions::NotSupportedException, "Abstraction-refinement can only filter initial states.");
+                auto symbolicModel = model->as<storm::models::symbolic::Model<DdType, ValueType>>();
+                return storm::api::verifyWithAbstractionRefinementEngine<DdType, ValueType>(symbolicModel, storm::api::createTask<ValueType>(formula, true));
             });
         }
         
@@ -629,7 +639,7 @@ namespace storm {
             // For several engines, no model building step is performed, but the verification is started right away.
             storm::settings::modules::CoreSettings::Engine engine = coreSettings.getEngine();
             
-            if (engine == storm::settings::modules::CoreSettings::Engine::AbstractionRefinement && abstractionSettings.getMethod() == storm::settings::modules::AbstractionSettings::Method::Games) {
+            if (engine == storm::settings::modules::CoreSettings::Engine::AbstractionRefinement && abstractionSettings.getAbstractionRefinementMethod() == storm::settings::modules::AbstractionSettings::Method::Games) {
                 verifyWithAbstractionRefinementEngine<DdType, ValueType>(input);
             } else if (engine == storm::settings::modules::CoreSettings::Engine::Exploration) {
                 verifyWithExplorationEngine<ValueType>(input);
