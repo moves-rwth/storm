@@ -37,6 +37,7 @@ namespace storm {
         class BisimulationDecomposition {
         public:
             BisimulationDecomposition(storm::models::symbolic::Model<DdType, ValueType> const& model, storm::storage::BisimulationType const& bisimulationType);
+            BisimulationDecomposition(storm::models::symbolic::Model<DdType, ValueType> const& model, storm::storage::BisimulationType const& bisimulationType, bisimulation::PreservationInformation<DdType, ValueType> const& preservationInformation);
             BisimulationDecomposition(storm::models::symbolic::Model<DdType, ValueType> const& model, std::vector<std::shared_ptr<storm::logic::Formula const>> const& formulas, storm::storage::BisimulationType const& bisimulationType);
             BisimulationDecomposition(storm::models::symbolic::Model<DdType, ValueType> const& model, bisimulation::Partition<DdType, ValueType> const& initialPartition, bisimulation::PreservationInformation<DdType, ValueType> const& preservationInformation);
             
@@ -55,11 +56,18 @@ namespace storm {
             bool compute(uint64_t steps, bisimulation::SignatureMode const& mode = bisimulation::SignatureMode::Eager);
             
             /*!
+             * Retrieves whether a fixed point has been reached. Depending on this, extracting a quotient will either
+             * give a full quotient or a partial one.
+             */
+            bool getReachedFixedPoint() const;
+            
+            /*!
              * Retrieves the quotient model after the bisimulation decomposition was computed.
              */
             std::shared_ptr<storm::models::Model<ValueType>> getQuotient() const;
             
         private:
+            void initialize();
             void refineWrtRewardModels();
             
             // The model for which to compute the bisimulation decomposition.

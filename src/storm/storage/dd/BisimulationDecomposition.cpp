@@ -33,32 +33,29 @@ namespace storm {
         
         template <storm::dd::DdType DdType, typename ValueType>
         BisimulationDecomposition<DdType, ValueType>::BisimulationDecomposition(storm::models::symbolic::Model<DdType, ValueType> const& model, storm::storage::BisimulationType const& bisimulationType) : model(model), preservationInformation(model, bisimulationType), refiner(createRefiner(model, Partition<DdType, ValueType>::create(model, bisimulationType, preservationInformation))) {
-            auto const& generalSettings = storm::settings::getModule<storm::settings::modules::GeneralSettings>();
-            showProgress = generalSettings.isVerboseSet();
-            showProgressDelay = generalSettings.getShowProgressDelay();
-            this->refineWrtRewardModels();
-            
-            STORM_LOG_TRACE("Initial partition has " << refiner->getStatePartition().getNumberOfBlocks() << " blocks.");
-#ifndef NDEBUG
-            STORM_LOG_TRACE("Initial partition has " << refiner->getStatePartition().getNodeCount() << " nodes.");
-#endif
+            this->initialize();
         }
-        
+      
+        template <storm::dd::DdType DdType, typename ValueType>
+        BisimulationDecomposition<DdType, ValueType>::BisimulationDecomposition(storm::models::symbolic::Model<DdType, ValueType> const& model, storm::storage::BisimulationType const& bisimulationType, bisimulation::PreservationInformation<DdType, ValueType> const& preservationInformation) : model(model), preservationInformation(preservationInformation), refiner(createRefiner(model, Partition<DdType, ValueType>::create(model, bisimulationType, preservationInformation))) {
+            this->initialize();
+        }
+  
         template <storm::dd::DdType DdType, typename ValueType>
         BisimulationDecomposition<DdType, ValueType>::BisimulationDecomposition(storm::models::symbolic::Model<DdType, ValueType> const& model, std::vector<std::shared_ptr<storm::logic::Formula const>> const& formulas, storm::storage::BisimulationType const& bisimulationType) : model(model), preservationInformation(model, formulas, bisimulationType), refiner(createRefiner(model, Partition<DdType, ValueType>::create(model, bisimulationType, preservationInformation))) {
-            auto const& generalSettings = storm::settings::getModule<storm::settings::modules::GeneralSettings>();
-            showProgress = generalSettings.isVerboseSet();
-            showProgressDelay = generalSettings.getShowProgressDelay();
-            this->refineWrtRewardModels();
-            
-            STORM_LOG_TRACE("Initial partition has " << refiner->getStatePartition().getNumberOfBlocks() << " blocks.");
-#ifndef NDEBUG
-            STORM_LOG_TRACE("Initial partition has " << refiner->getStatePartition().getNodeCount() << " nodes.");
-#endif
+            this->initialize();
         }
         
         template <storm::dd::DdType DdType, typename ValueType>
         BisimulationDecomposition<DdType, ValueType>::BisimulationDecomposition(storm::models::symbolic::Model<DdType, ValueType> const& model, Partition<DdType, ValueType> const& initialPartition, bisimulation::PreservationInformation<DdType, ValueType> const& preservationInformation) : model(model), preservationInformation(preservationInformation), refiner(createRefiner(model, initialPartition)) {
+            this->initialize();
+        }
+        
+        template <storm::dd::DdType DdType, typename ValueType>
+        BisimulationDecomposition<DdType, ValueType>::~BisimulationDecomposition() = default;
+        
+        template <storm::dd::DdType DdType, typename ValueType>
+        void BisimulationDecomposition<DdType, ValueType>::initialize() {
             auto const& generalSettings = storm::settings::getModule<storm::settings::modules::GeneralSettings>();
             showProgress = generalSettings.isVerboseSet();
             showProgressDelay = generalSettings.getShowProgressDelay();
@@ -69,9 +66,6 @@ namespace storm {
             STORM_LOG_TRACE("Initial partition has " << refiner->getStatePartition().getNodeCount() << " nodes.");
 #endif
         }
-        
-        template <storm::dd::DdType DdType, typename ValueType>
-        BisimulationDecomposition<DdType, ValueType>::~BisimulationDecomposition() = default;
         
         template <storm::dd::DdType DdType, typename ValueType>
         void BisimulationDecomposition<DdType, ValueType>::compute(bisimulation::SignatureMode const& mode) {
@@ -133,6 +127,11 @@ namespace storm {
         }
         
         template <storm::dd::DdType DdType, typename ValueType>
+        bool BisimulationDecomposition<DdType, ValueType>::getReachedFixedPoint() const {
+            return this->refiner->getStatus() == Status::FixedPoint;
+        }
+        
+        template <storm::dd::DdType DdType, typename ValueType>
         std::shared_ptr<storm::models::Model<ValueType>> BisimulationDecomposition<DdType, ValueType>::getQuotient() const {
             std::shared_ptr<storm::models::Model<ValueType>> quotient;
             if (this->refiner->getStatus() == Status::FixedPoint) {
@@ -148,7 +147,6 @@ namespace storm {
                 }
 
                 quotient = partialQuotientExtractor->extract(refiner->getStatePartition(), preservationInformation);
-                STORM_LOG_TRACE("Quotient extraction done.");
             }
 
             STORM_LOG_TRACE("Quotient extraction done.");

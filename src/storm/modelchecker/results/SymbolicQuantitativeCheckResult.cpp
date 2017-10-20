@@ -57,6 +57,16 @@ namespace storm {
             return values;
         }
         
+        template<storm::dd::DdType Type, typename ValueType>
+        storm::dd::Bdd<Type> const& SymbolicQuantitativeCheckResult<Type, ValueType>::getStates() const {
+            return states;
+        }
+        
+        template<storm::dd::DdType Type, typename ValueType>
+        storm::dd::Bdd<Type> const& SymbolicQuantitativeCheckResult<Type, ValueType>::getReachableStates() const {
+            return reachableStates;
+        }
+        
         template<typename ValueType>
         void print(std::ostream& out, ValueType const& value) {
             if (value == storm::utility::infinity<ValueType>()) {
