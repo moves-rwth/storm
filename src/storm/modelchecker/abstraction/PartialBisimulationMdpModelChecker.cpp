@@ -61,19 +61,17 @@ namespace storm {
             STORM_LOG_THROW(checkTask.isOnlyInitialStatesRelevantSet(), storm::exceptions::InvalidPropertyException, "The game-based abstraction refinement model checker can only compute the result for the initial states.");
             
             // Create the appropriate preservation information.
-            storm::dd::bisimulation::PreservationInformation<DdType, ValueType> preservationInformation(model, storm::storage::BisimulationType::Strong);
-            if (checkTask.isRewardModelSet()) {
-                if (checkTask.getRewardModel() != "" || model.hasRewardModel(checkTask.getRewardModel())) {
-                    preservationInformation.addRewardModel(checkTask.getRewardModel());
-                } else if (model.hasUniqueRewardModel()) {
+            storm::dd::bisimulation::PreservationInformation<DdType, ValueType> preservationInformation(model, {checkTask.getFormula().asSharedPointer()});
+            if (rewards) {
+                if (!checkTask.isRewardModelSet() || model.hasUniqueRewardModel()) {
                     preservationInformation.addRewardModel(model.getUniqueRewardModelName());
-                } else {
-                    STORM_LOG_THROW(false, storm::exceptions::InvalidPropertyException, "Property refers to illegal reward model '" << checkTask.getRewardModel() << "'.");
+                } else if (checkTask.isRewardModelSet()) {
+                    preservationInformation.addRewardModel(checkTask.getRewardModel());
                 }
             }
             
             // Create a bisimulation object that is used to obtain (partial) quotients.
-            storm::dd::BisimulationDecomposition<DdType, ValueType> bisimulation(this->model, {checkTask.getFormula().asSharedPointer()}, storm::storage::BisimulationType::Strong);
+            storm::dd::BisimulationDecomposition<DdType, ValueType> bisimulation(this->model, storm::storage::BisimulationType::Strong, preservationInformation);
             
             auto start = std::chrono::high_resolution_clock::now();
             
@@ -124,20 +122,17 @@ namespace storm {
             if (lowerBounds.getStates().getNonZeroCount() == 1 && upperBounds.getStates().getNonZeroCount() == 1) {
                 STORM_LOG_TRACE("Obtained bounds [" << lowerBounds.getValueVector().getMax() << ", " << upperBounds.getValueVector().getMax() << "] on actual result.");
             } else {
-                STORM_LOG_TRACE("Largest difference over initial states is " << getLargestDifference(bounds) << ".");
+                storm::dd::Add<DdType, ValueType> diffs = upperBounds.getValueVector() - lowerBounds.getValueVector();
+                storm::dd::Bdd<DdType> maxDiffRepresentative = diffs.maxAbstractRepresentative(diffs.getContainedMetaVariables());
+                
+                std::pair<ValueType, ValueType> bounds;
+                bounds.first = (lowerBounds.getValueVector() * maxDiffRepresentative.template toAdd<ValueType>()).getMax();
+                bounds.second = (upperBounds.getValueVector() * maxDiffRepresentative.template toAdd<ValueType>()).getMax();
+
+                STORM_LOG_TRACE("Largest interval over initial is [" << bounds.first << ", " << bounds.second << "], difference " << (bounds.second - bounds.first) << ".");
             }
         }
         
-        template<typename ModelType>
-        typename PartialBisimulationMdpModelChecker<ModelType>::ValueType PartialBisimulationMdpModelChecker<ModelType>::getLargestDifference(std::pair<std::unique_ptr<CheckResult>, std::unique_ptr<CheckResult>> const& bounds) {
-            STORM_LOG_THROW(bounds.first->isSymbolicQuantitativeCheckResult(), storm::exceptions::InvalidTypeException, "Expected symbolic quantitative check result.");
-            storm::modelchecker::SymbolicQuantitativeCheckResult<DdType, ValueType> const& lowerBounds = bounds.first->asSymbolicQuantitativeCheckResult<DdType, ValueType>();
-            STORM_LOG_THROW(bounds.second->isSymbolicQuantitativeCheckResult(), storm::exceptions::InvalidTypeException, "Expected symbolic quantitative check result.");
-            storm::modelchecker::SymbolicQuantitativeCheckResult<DdType, ValueType> const& upperBounds = bounds.second->asSymbolicQuantitativeCheckResult<DdType, ValueType>();
-
-            return (upperBounds.getValueVector() - lowerBounds.getValueVector()).getMax();
-        }
-
         template<typename ModelType>
         bool PartialBisimulationMdpModelChecker<ModelType>::checkBoundsSufficientlyClose(std::pair<std::unique_ptr<CheckResult>, std::unique_ptr<CheckResult>> const& bounds) {
             STORM_LOG_THROW(bounds.first->isSymbolicQuantitativeCheckResult(), storm::exceptions::InvalidTypeException, "Expected symbolic quantitative check result.");
@@ -174,15 +169,17 @@ namespace storm {
             } else {
                 result.first = checker.computeProbabilities(newCheckTask);
             }
+            STORM_LOG_ASSERT(result.first, "Expected result.");
             result.first->asSymbolicQuantitativeCheckResult<DdType, ValueType>().getValueVector().exportToDot("lower_values" + std::to_string(i) + ".dot");
             result.first->filter(storm::modelchecker::SymbolicQualitativeCheckResult<DdType>(quotient.getReachableStates(), quotient.getInitialStates()));
             
             newCheckTask.setOptimizationDirection(storm::OptimizationDirection::Maximize);
             if (rewards) {
-                result.first = checker.computeRewards(storm::logic::RewardMeasureType::Expectation, newCheckTask);
+                result.second = checker.computeRewards(storm::logic::RewardMeasureType::Expectation, newCheckTask);
             } else {
                 result.second = checker.computeProbabilities(newCheckTask);
             }
+            STORM_LOG_ASSERT(result.second, "Expected result.");
             result.first->asSymbolicQuantitativeCheckResult<DdType, ValueType>().getValueVector().exportToDot("upper_values" + std::to_string(i++) + ".dot");
             result.second->filter(storm::modelchecker::SymbolicQualitativeCheckResult<DdType>(quotient.getReachableStates(), quotient.getInitialStates()));
 

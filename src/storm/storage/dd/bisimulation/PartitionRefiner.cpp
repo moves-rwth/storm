@@ -17,7 +17,7 @@ namespace storm {
             template <storm::dd::DdType DdType, typename ValueType>
             bool PartitionRefiner<DdType, ValueType>::refine(SignatureMode const& mode) {
                 Partition<DdType, ValueType> newStatePartition = this->internalRefine(signatureComputer, signatureRefiner, statePartition, statePartition, mode);
-                if (statePartition == newStatePartition) {
+                if (statePartition.getNumberOfBlocks() == newStatePartition.getNumberOfBlocks()) {
                     this->status = Status::FixedPoint;
                     return false;
                 } else {

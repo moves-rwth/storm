@@ -31,8 +31,8 @@ namespace storm {
                 
                 bool operator==(Partition<DdType, ValueType> const& other);
                 
-                Partition<DdType, ValueType> replacePartition(storm::dd::Add<DdType, ValueType> const& newPartitionAdd, uint64_t nextFreeBlockIndex) const;
-                Partition<DdType, ValueType> replacePartition(storm::dd::Bdd<DdType> const& newPartitionBdd, uint64_t nextFreeBlockIndex) const;
+                Partition<DdType, ValueType> replacePartition(storm::dd::Add<DdType, ValueType> const& newPartitionAdd, uint64_t numberOfBlocks, uint64_t nextFreeBlockIndex) const;
+                Partition<DdType, ValueType> replacePartition(storm::dd::Bdd<DdType> const& newPartitionBdd, uint64_t numberOfBlocks, uint64_t nextFreeBlockIndex) const;
 
                 static Partition create(storm::models::symbolic::Model<DdType, ValueType> const& model, storm::storage::BisimulationType const& bisimulationType, PreservationInformation<DdType, ValueType> const& preservationInformation);
                 static Partition createTrivialChoicePartition(storm::models::symbolic::NondeterministicModel<DdType, ValueType> const& model, std::pair<storm::expressions::Variable, storm::expressions::Variable> const& blockVariables);
@@ -63,10 +63,10 @@ namespace storm {
                  * one iff the state is in the block.
                  * @param blockVariables The variables to use for the block encoding. Its range must be [0, x] where x is
                  * greater or equal than the number of states in the partition.
-                 * @param nextFreeBlockIndex The next free block index. The existing blocks must be encoded with indices
-                 * between 0 and this number.
+                 * @param numberOfBlocks The number of blocks in this partition.
+                 * @param nextFreeBlockIndex The next free block index.
                  */
-                Partition(storm::dd::Add<DdType, ValueType> const& partitionAdd, std::pair<storm::expressions::Variable, storm::expressions::Variable> const& blockVariables, uint64_t nextFreeBlockIndex);
+                Partition(storm::dd::Add<DdType, ValueType> const& partitionAdd, std::pair<storm::expressions::Variable, storm::expressions::Variable> const& blockVariables, uint64_t numberOfBlocks, uint64_t nextFreeBlockIndex);
                 
                 /*!
                  * Creates a new partition from the given data.
@@ -75,10 +75,10 @@ namespace storm {
                  * true iff the state is in the block.
                  * @param blockVariables The variables to use for the block encoding. Their range must be [0, x] where x is
                  * greater or equal than the number of states in the partition.
-                 * @param nextFreeBlockIndex The next free block index. The existing blocks must be encoded with indices
-                 * between 0 and this number.
+                 * @param numberOfBlocks The number of blocks in this partition.
+                 * @param nextFreeBlockIndex The next free block index.
                  */
-                Partition(storm::dd::Bdd<DdType> const& partitionBdd, std::pair<storm::expressions::Variable, storm::expressions::Variable> const& blockVariables, uint64_t nextFreeBlockIndex);
+                Partition(storm::dd::Bdd<DdType> const& partitionBdd, std::pair<storm::expressions::Variable, storm::expressions::Variable> const& blockVariables, uint64_t numberOfBlocks, uint64_t nextFreeBlockIndex);
                 
                 /*!
                  * Creates a partition from the given model that respects the given expressions.
@@ -94,6 +94,9 @@ namespace storm {
                 
                 /// The meta variables used to encode the block of each state in this partition.
                 std::pair<storm::expressions::Variable, storm::expressions::Variable> blockVariables;
+                
+                /// The number of blocks in this partition.
+                uint64_t numberOfBlocks;
                 
                 /// The next free block index.
                 uint64_t nextFreeBlockIndex;

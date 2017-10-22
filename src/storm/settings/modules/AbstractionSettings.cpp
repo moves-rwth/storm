@@ -121,7 +121,7 @@ namespace storm {
             }
             
             AbstractionSettings::ReuseMode AbstractionSettings::getReuseMode() const {
-                std::string reuseModeAsString = this->getOption(splitModeOptionName).getArgumentByName("mode").getValueAsString();
+                std::string reuseModeAsString = this->getOption(reuseResultsOptionName).getArgumentByName("mode").getValueAsString();
                 if (reuseModeAsString == "all") {
                     return ReuseMode::All;
                 } else if (reuseModeAsString == "none") {

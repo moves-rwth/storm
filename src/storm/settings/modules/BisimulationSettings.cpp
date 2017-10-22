@@ -17,6 +17,7 @@ namespace storm {
             const std::string BisimulationSettings::representativeOptionName = "repr";
             const std::string BisimulationSettings::quotientFormatOptionName = "quot";
             const std::string BisimulationSettings::signatureModeOptionName = "sigmode";
+            const std::string BisimulationSettings::reuseOptionName = "reuse";
             
             BisimulationSettings::BisimulationSettings() : ModuleSettings(moduleName) {
                 std::vector<std::string> types = { "strong", "weak" };
@@ -29,6 +30,12 @@ namespace storm {
 
                 std::vector<std::string> signatureModes = { "eager", "lazy" };
                 this->addOption(storm::settings::OptionBuilder(moduleName, signatureModeOptionName, false, "Sets the signature computation mode.").addArgument(storm::settings::ArgumentBuilder::createStringArgument("mode", "The mode to use.").addValidatorString(ArgumentValidatorFactory::createMultipleChoiceValidator(signatureModes)).setDefaultValueString("eager").build()).build());
+                
+                std::vector<std::string> reuseModes = {"all", "none", "blocks", "sig"};
+                this->addOption(storm::settings::OptionBuilder(moduleName, reuseOptionName, true, "Sets whether to reuse all results.")
+                                .addArgument(storm::settings::ArgumentBuilder::createStringArgument("mode", "The mode to use.").addValidatorString(ArgumentValidatorFactory::createMultipleChoiceValidator(reuseModes))
+                                             .setDefaultValueString("blocks").build())
+                                .build());
             }
             
             bool BisimulationSettings::isStrongBisimulationSet() const {
@@ -65,6 +72,20 @@ namespace storm {
                     return storm::dd::bisimulation::SignatureMode::Lazy;
                 }
                 STORM_LOG_THROW(false, storm::exceptions::InvalidSettingsException, "Unknown signature mode '" << modeAsString << ".");
+            }
+            
+            BisimulationSettings::ReuseMode BisimulationSettings::getReuseMode() const {
+                std::string reuseModeAsString = this->getOption(reuseOptionName).getArgumentByName("mode").getValueAsString();
+                if (reuseModeAsString == "all") {
+                    return ReuseMode::All;
+                } else if (reuseModeAsString == "none") {
+                    return ReuseMode::None;
+                } else if (reuseModeAsString == "blocks") {
+                    return ReuseMode::BlockNumbers;
+                } else if (reuseModeAsString == "sig") {
+                    return ReuseMode::SignatureResults;
+                }
+                return ReuseMode::All;
             }
             
             bool BisimulationSettings::check() const {

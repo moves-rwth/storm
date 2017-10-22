@@ -19,6 +19,8 @@ namespace storm {
                 
                 enum class QuotientFormat { Sparse, Dd };
                 
+                enum class ReuseMode { All, None, BlockNumbers, SignatureResults };
+                
                 /*!
                  * Creates a new set of bisimulation settings.
                  */
@@ -55,6 +57,11 @@ namespace storm {
                  */
                 storm::dd::bisimulation::SignatureMode getSignatureMode() const;
                 
+                /*!
+                 * Retrieves the selected reuse mode.
+                 */
+                ReuseMode getReuseMode() const;
+                
                 virtual bool check() const override;
                 
                 // The name of the module.
@@ -66,6 +73,7 @@ namespace storm {
                 static const std::string representativeOptionName;
                 static const std::string quotientFormatOptionName;
                 static const std::string signatureModeOptionName;
+                static const std::string reuseOptionName;
             };
         } // namespace modules
     } // namespace settings

@@ -52,7 +52,6 @@ namespace storm {
             bool checkBoundsSufficientlyClose(std::pair<std::unique_ptr<CheckResult>, std::unique_ptr<CheckResult>> const& bounds);
             std::unique_ptr<CheckResult> getAverageOfBounds(std::pair<std::unique_ptr<CheckResult>, std::unique_ptr<CheckResult>> const& bounds);
             void printBoundsInformation(std::pair<std::unique_ptr<CheckResult>, std::unique_ptr<CheckResult>> const& bounds);
-            ValueType getLargestDifference(std::pair<std::unique_ptr<CheckResult>, std::unique_ptr<CheckResult>> const& bounds);
 
             // Methods to compute bounds on the partial quotient.
             std::pair<std::unique_ptr<CheckResult>, std::unique_ptr<CheckResult>> computeBoundsPartialQuotient(storm::models::symbolic::Mdp<DdType, ValueType> const& quotient, bool rewards, CheckTask<storm::logic::Formula> const& checkTask);
