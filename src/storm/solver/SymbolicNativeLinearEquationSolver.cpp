@@ -119,7 +119,9 @@ namespace storm {
         template<storm::dd::DdType DdType, typename ValueType>
         storm::dd::Add<DdType, ValueType> SymbolicNativeLinearEquationSolver<DdType, ValueType>::solveEquationsJacobi(storm::dd::Add<DdType, ValueType> const& x, storm::dd::Add<DdType, ValueType> const& b) const {
             storm::dd::DdManager<DdType>& manager = this->getDdManager();
-            
+
+            STORM_LOG_INFO("Solving symbolic linear equation system with NativeLinearEquationSolver (jacobi)");
+
             // Start by computing the Jacobi decomposition of the matrix A.
             storm::dd::Bdd<DdType> diagonal = storm::utility::dd::getRowColumnDiagonal(x.getDdManager(), this->rowColumnMetaVariablePairs);
             diagonal &= this->allRows;
@@ -185,6 +187,7 @@ namespace storm {
         
         template<storm::dd::DdType DdType, typename ValueType>
         storm::dd::Add<DdType, ValueType> SymbolicNativeLinearEquationSolver<DdType, ValueType>::solveEquationsPower(storm::dd::Add<DdType, ValueType> const& x, storm::dd::Add<DdType, ValueType> const& b) const {
+            STORM_LOG_INFO("Solving symbolic linear equation system with NativeLinearEquationSolver (power)");
             PowerIterationResult result = performPowerIteration(this->getLowerBoundsVector(), b, this->getSettings().getPrecision(), this->getSettings().getRelativeTerminationCriterion(), this->getSettings().getMaximalNumberOfIterations());
             
             if (result.status == SolverStatus::Converged) {
@@ -311,6 +314,7 @@ namespace storm {
         
         template<storm::dd::DdType DdType, typename ValueType>
         storm::dd::Add<DdType, ValueType> SymbolicNativeLinearEquationSolver<DdType, ValueType>::solveEquationsRationalSearch(storm::dd::Add<DdType, ValueType> const& x, storm::dd::Add<DdType, ValueType> const& b) const {
+            STORM_LOG_INFO("Solving symbolic linear equation system with NativeLinearEquationSolver (rational search)");
             return solveEquationsRationalSearchHelper<double>(x, b);
         }
         
