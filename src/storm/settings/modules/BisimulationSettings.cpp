@@ -31,7 +31,7 @@ namespace storm {
                 std::vector<std::string> signatureModes = { "eager", "lazy" };
                 this->addOption(storm::settings::OptionBuilder(moduleName, signatureModeOptionName, false, "Sets the signature computation mode.").addArgument(storm::settings::ArgumentBuilder::createStringArgument("mode", "The mode to use.").addValidatorString(ArgumentValidatorFactory::createMultipleChoiceValidator(signatureModes)).setDefaultValueString("eager").build()).build());
                 
-                std::vector<std::string> reuseModes = {"all", "none", "blocks", "sig"};
+                std::vector<std::string> reuseModes = {"none", "blocks"};
                 this->addOption(storm::settings::OptionBuilder(moduleName, reuseOptionName, true, "Sets whether to reuse all results.")
                                 .addArgument(storm::settings::ArgumentBuilder::createStringArgument("mode", "The mode to use.").addValidatorString(ArgumentValidatorFactory::createMultipleChoiceValidator(reuseModes))
                                              .setDefaultValueString("blocks").build())
@@ -76,16 +76,12 @@ namespace storm {
             
             BisimulationSettings::ReuseMode BisimulationSettings::getReuseMode() const {
                 std::string reuseModeAsString = this->getOption(reuseOptionName).getArgumentByName("mode").getValueAsString();
-                if (reuseModeAsString == "all") {
-                    return ReuseMode::All;
-                } else if (reuseModeAsString == "none") {
+                if (reuseModeAsString == "none") {
                     return ReuseMode::None;
                 } else if (reuseModeAsString == "blocks") {
                     return ReuseMode::BlockNumbers;
-                } else if (reuseModeAsString == "sig") {
-                    return ReuseMode::SignatureResults;
                 }
-                return ReuseMode::All;
+                return ReuseMode::BlockNumbers;
             }
             
             bool BisimulationSettings::check() const {

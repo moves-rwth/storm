@@ -19,7 +19,7 @@ namespace storm {
                 
                 enum class QuotientFormat { Sparse, Dd };
                 
-                enum class ReuseMode { All, None, BlockNumbers, SignatureResults };
+                enum class ReuseMode { None, BlockNumbers };
                 
                 /*!
                  * Creates a new set of bisimulation settings.
