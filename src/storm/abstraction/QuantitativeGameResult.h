@@ -8,10 +8,10 @@ namespace storm {
     namespace abstraction {
 
         template<storm::dd::DdType Type, typename ValueType>
-        struct QuantitativeResult {
-            QuantitativeResult() = default;
+        struct QuantitativeGameResult {
+            QuantitativeGameResult() = default;
             
-            QuantitativeResult(std::pair<ValueType, ValueType> initialStatesRange, storm::dd::Add<Type, ValueType> const& values, storm::dd::Bdd<Type> const& player1Strategy, storm::dd::Bdd<Type> const& player2Strategy) : initialStatesRange(initialStatesRange), values(values), player1Strategy(player1Strategy), player2Strategy(player2Strategy) {
+            QuantitativeGameResult(std::pair<ValueType, ValueType> initialStatesRange, storm::dd::Add<Type, ValueType> const& values, storm::dd::Bdd<Type> const& player1Strategy, storm::dd::Bdd<Type> const& player2Strategy) : initialStatesRange(initialStatesRange), values(values), player1Strategy(player1Strategy), player2Strategy(player2Strategy) {
                 // Intentionally left empty.
             }
             

@@ -8,9 +8,9 @@ namespace storm {
     namespace abstraction {
 
         template<storm::dd::DdType Type>
-        struct QualitativeResultMinMax {
+        struct QualitativeGameResultMinMax {
         public:
-            QualitativeResultMinMax() = default;
+            QualitativeGameResultMinMax() = default;
             
             storm::utility::graph::GameProb01Result<Type> prob0Min;
             storm::utility::graph::GameProb01Result<Type> prob1Min;

@@ -6,7 +6,7 @@ namespace storm {
     namespace abstraction {
         
         template <storm::dd::DdType Type>
-        using QualitativeResult = storm::utility::graph::GameProb01Result<Type>;
+        using QualitativeGameResult = storm::utility::graph::GameProb01Result<Type>;
         
     }
 }

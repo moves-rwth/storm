@@ -4,6 +4,8 @@
 
 #include "storm/storage/dd/DdType.h"
 
+#include "storm/solver/OptimizationDirection.h"
+
 namespace storm {
     namespace dd {
         template <storm::dd::DdType DdType>
@@ -27,7 +29,12 @@ namespace storm {
     }
     
     namespace modelchecker {
+        template <typename ModelType>
+        class SymbolicMdpPrctlModelChecker;
         
+        template <typename ValueType>
+        class QuantitativeCheckResult;
+
         template<typename ModelType>
         class PartialBisimulationMdpModelChecker : public AbstractModelChecker<ModelType> {
         public:
@@ -46,22 +53,33 @@ namespace storm {
             virtual std::unique_ptr<CheckResult> computeReachabilityRewards(storm::logic::RewardMeasureType rewardMeasureType, CheckTask<storm::logic::EventuallyFormula, ValueType> const& checkTask) override;
 
         private:
-            std::unique_ptr<CheckResult> computeValuesAbstractionRefinement(bool rewards, CheckTask<storm::logic::Formula> const& checkTask);
+            std::unique_ptr<CheckResult> computeValuesAbstractionRefinement(CheckTask<storm::logic::Formula> const& checkTask);
             
             // Methods to check for convergence and postprocessing the result.
             bool checkBoundsSufficientlyClose(std::pair<std::unique_ptr<CheckResult>, std::unique_ptr<CheckResult>> const& bounds);
             std::unique_ptr<CheckResult> getAverageOfBounds(std::pair<std::unique_ptr<CheckResult>, std::unique_ptr<CheckResult>> const& bounds);
             void printBoundsInformation(std::pair<std::unique_ptr<CheckResult>, std::unique_ptr<CheckResult>> const& bounds);
 
+            // Retrieves the constraint and target states of the quotient wrt. to the formula in the check task.
+            std::pair<storm::dd::Bdd<DdType>, storm::dd::Bdd<DdType>> getConstraintAndTargetStates(storm::models::symbolic::Mdp<DdType, ValueType> const& quotient, CheckTask<storm::logic::Formula> const& checkTask);
+            
+            // Retrieves the extremal bound (wrt. to the optimization direction) of the quantitative check result.
+            ValueType getExtremalBound(storm::OptimizationDirection dir, QuantitativeCheckResult<ValueType> const& result);
+            
+            // Retrieves whether the quantitative bounds are sufficient to answer the the query given by the bound (comparison
+            // type and threshold).
+            bool boundsSufficient(storm::models::Model<ValueType> const& quotient, bool lowerBounds, QuantitativeCheckResult<ValueType> const& result, storm::logic::ComparisonType comparisonType, ValueType const& threshold);
+            
             // Methods to compute bounds on the partial quotient.
-            std::pair<std::unique_ptr<CheckResult>, std::unique_ptr<CheckResult>> computeBoundsPartialQuotient(storm::models::symbolic::Mdp<DdType, ValueType> const& quotient, bool rewards, CheckTask<storm::logic::Formula> const& checkTask);
-            std::pair<std::unique_ptr<CheckResult>, std::unique_ptr<CheckResult>> computeBoundsPartialQuotient(storm::models::symbolic::StochasticTwoPlayerGame<DdType, ValueType> const& quotient, bool rewards, CheckTask<storm::logic::Formula> const& checkTask);
-            std::pair<std::unique_ptr<CheckResult>, std::unique_ptr<CheckResult>> computeBoundsPartialQuotient(storm::models::Model<ValueType> const& quotient, bool rewards, CheckTask<storm::logic::Formula> const& checkTask);
+            std::unique_ptr<CheckResult> computeBoundsPartialQuotient(SymbolicMdpPrctlModelChecker<storm::models::symbolic::Mdp<DdType, ValueType>>& checker, storm::models::symbolic::Mdp<DdType, ValueType> const& quotient, storm::OptimizationDirection const& dir, CheckTask<storm::logic::Formula>& checkTask);
+            std::pair<std::unique_ptr<CheckResult>, std::unique_ptr<CheckResult>> computeBoundsPartialQuotient(storm::models::symbolic::Mdp<DdType, ValueType> const& quotient, CheckTask<storm::logic::Formula> const& checkTask);
+            std::pair<std::unique_ptr<CheckResult>, std::unique_ptr<CheckResult>> computeBoundsPartialQuotient(storm::models::symbolic::StochasticTwoPlayerGame<DdType, ValueType> const& quotient, CheckTask<storm::logic::Formula> const& checkTask);
+            std::pair<std::unique_ptr<CheckResult>, std::unique_ptr<CheckResult>> computeBoundsPartialQuotient(storm::models::Model<ValueType> const& quotient, CheckTask<storm::logic::Formula> const& checkTask);
             
             // Methods to solve the query on the full quotient.
-            std::unique_ptr<CheckResult> computeResultFullQuotient(storm::models::symbolic::Dtmc<DdType, ValueType> const& quotient, bool rewards, CheckTask<storm::logic::Formula> const& checkTask);
-            std::unique_ptr<CheckResult> computeResultFullQuotient(storm::models::symbolic::Mdp<DdType, ValueType> const& quotient, bool rewards, CheckTask<storm::logic::Formula> const& checkTask);
-            std::unique_ptr<CheckResult> computeResultFullQuotient(storm::models::Model<ValueType> const& quotient, bool rewards, CheckTask<storm::logic::Formula> const& checkTask);
+            std::unique_ptr<CheckResult> computeResultFullQuotient(storm::models::symbolic::Dtmc<DdType, ValueType> const& quotient, CheckTask<storm::logic::Formula> const& checkTask);
+            std::unique_ptr<CheckResult> computeResultFullQuotient(storm::models::symbolic::Mdp<DdType, ValueType> const& quotient, CheckTask<storm::logic::Formula> const& checkTask);
+            std::unique_ptr<CheckResult> computeResultFullQuotient(storm::models::Model<ValueType> const& quotient, CheckTask<storm::logic::Formula> const& checkTask);
             
             // The non-abstracted model.
             ModelType const& model;

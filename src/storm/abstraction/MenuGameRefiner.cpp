@@ -120,7 +120,7 @@ namespace storm {
         }
                 
         template<storm::dd::DdType Type, typename ValueType>
-        PivotStateResult<Type, ValueType> pickPivotState(AbstractionSettings::PivotSelectionHeuristic const& heuristic, storm::abstraction::MenuGame<Type, ValueType> const& game, PivotStateCandidatesResult<Type> const& pivotStateCandidateResult, boost::optional<QualitativeResultMinMax<Type>> const& qualitativeResult, boost::optional<QuantitativeResultMinMax<Type, ValueType>> const& quantitativeResult) {
+        PivotStateResult<Type, ValueType> pickPivotState(AbstractionSettings::PivotSelectionHeuristic const& heuristic, storm::abstraction::MenuGame<Type, ValueType> const& game, PivotStateCandidatesResult<Type> const& pivotStateCandidateResult, boost::optional<QualitativeGameResultMinMax<Type>> const& qualitativeResult, boost::optional<QuantitativeGameResultMinMax<Type, ValueType>> const& quantitativeResult) {
             
             // Get easy access to strategies.
             storm::dd::Bdd<Type> minPlayer1Strategy;
@@ -571,7 +571,7 @@ namespace storm {
         }
         
         template<storm::dd::DdType Type, typename ValueType>
-        bool MenuGameRefiner<Type, ValueType>::refine(storm::abstraction::MenuGame<Type, ValueType> const& game, storm::dd::Bdd<Type> const& transitionMatrixBdd, QualitativeResultMinMax<Type> const& qualitativeResult) const {
+        bool MenuGameRefiner<Type, ValueType>::refine(storm::abstraction::MenuGame<Type, ValueType> const& game, storm::dd::Bdd<Type> const& transitionMatrixBdd, QualitativeGameResultMinMax<Type> const& qualitativeResult) const {
             STORM_LOG_TRACE("Trying refinement after qualitative check.");
             // Get all relevant strategies.
             storm::dd::Bdd<Type> minPlayer1Strategy = qualitativeResult.prob0Min.getPlayer1Strategy();
@@ -616,7 +616,7 @@ namespace storm {
         }
         
         template<storm::dd::DdType Type, typename ValueType>
-        bool MenuGameRefiner<Type, ValueType>::refine(storm::abstraction::MenuGame<Type, ValueType> const& game, storm::dd::Bdd<Type> const& transitionMatrixBdd, QuantitativeResultMinMax<Type, ValueType> const& quantitativeResult) const {
+        bool MenuGameRefiner<Type, ValueType>::refine(storm::abstraction::MenuGame<Type, ValueType> const& game, storm::dd::Bdd<Type> const& transitionMatrixBdd, QuantitativeGameResultMinMax<Type, ValueType> const& quantitativeResult) const {
             STORM_LOG_TRACE("Refining after quantitative check.");
             // Get all relevant strategies.
             storm::dd::Bdd<Type> minPlayer1Strategy = quantitativeResult.min.player1Strategy;
