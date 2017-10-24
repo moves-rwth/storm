@@ -28,6 +28,11 @@ namespace storm {
         }
     }
     
+    namespace abstraction {
+        template <storm::dd::DdType DdType>
+        struct QualitativeMdpResultMinMax;
+    }
+    
     namespace modelchecker {
         template <typename ModelType>
         class SymbolicMdpPrctlModelChecker;
@@ -60,6 +65,14 @@ namespace storm {
             std::unique_ptr<CheckResult> getAverageOfBounds(std::pair<std::unique_ptr<CheckResult>, std::unique_ptr<CheckResult>> const& bounds);
             void printBoundsInformation(std::pair<std::unique_ptr<CheckResult>, std::unique_ptr<CheckResult>> const& bounds);
 
+            // Methods related to the qualitative solution.
+            storm::abstraction::QualitativeMdpResultMinMax<DdType> computeQualitativeResult(storm::models::symbolic::Mdp<DdType, ValueType> const& quotient, CheckTask<storm::logic::Formula> const& checkTask, storm::dd::Bdd<DdType> const& constraintStates, storm::dd::Bdd<DdType> const& targetStates);
+            std::unique_ptr<CheckResult> checkForResult(storm::models::symbolic::Mdp<DdType, ValueType> const& quotient, storm::abstraction::QualitativeMdpResultMinMax<DdType> const& qualitativeResults, CheckTask<storm::logic::Formula> const& checkTask);
+            bool skipQuantitativeSolution(storm::models::symbolic::Mdp<DdType, ValueType> const& quotient, storm::abstraction::QualitativeMdpResultMinMax<DdType> const& qualitativeResults, CheckTask<storm::logic::Formula> const& checkTask);
+
+            // Methods related to the quantitative solution.
+            std::pair<std::unique_ptr<CheckResult>, std::unique_ptr<CheckResult>> computeQuantitativeResult(storm::models::symbolic::Mdp<DdType, ValueType> const& quotient, CheckTask<storm::logic::Formula> const& checkTask, storm::dd::Bdd<DdType> const& constraintStates, storm::dd::Bdd<DdType> const& targetStates, storm::abstraction::QualitativeMdpResultMinMax<DdType> const& qualitativeResults);
+            
             // Retrieves the constraint and target states of the quotient wrt. to the formula in the check task.
             std::pair<storm::dd::Bdd<DdType>, storm::dd::Bdd<DdType>> getConstraintAndTargetStates(storm::models::symbolic::Mdp<DdType, ValueType> const& quotient, CheckTask<storm::logic::Formula> const& checkTask);
             

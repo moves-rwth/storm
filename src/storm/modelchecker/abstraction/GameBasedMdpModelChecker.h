@@ -9,7 +9,7 @@
 
 #include "storm/storage/SymbolicModelDescription.h"
 
-#include "storm/abstraction/QualitativeResult.h"
+#include "storm/abstraction/QualitativeGameResult.h"
 #include "storm/abstraction/QualitativeGameResultMinMax.h"
 
 #include "storm/logic/Bound.h"

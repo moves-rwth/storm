@@ -10,6 +10,7 @@
 #include "storm/modelchecker/results/SymbolicQuantitativeCheckResult.h"
 #include "storm/modelchecker/prctl/SymbolicDtmcPrctlModelChecker.h"
 #include "storm/modelchecker/prctl/SymbolicMdpPrctlModelChecker.h"
+#include "storm/modelchecker/prctl/helper/SymbolicMdpPrctlHelper.h"
 
 #include "storm/logic/FragmentSpecification.h"
 
@@ -93,24 +94,30 @@ namespace storm {
                     // Obtain lower and upper bounds from the partial quotient.
                     std::pair<std::unique_ptr<CheckResult>, std::unique_ptr<CheckResult>> bounds = computeBoundsPartialQuotient(*quotient, checkTask);
                     
-                    // If either of the two bounds does not exist, the answer can be derived from the existing bounds.
-                    if (bounds.first == nullptr || bounds.second == nullptr) {
-                        STORM_LOG_ASSERT(bounds.first || bounds.second, "Expected at least one bound.");
-                        quotient->printModelInformationToStream(std::cout);
-                        if (bounds.first) {
-                            return std::move(bounds.first);
-                        } else {
-                            return std::move(bounds.second);
+                    bool converged = false;
+                    if (!bounds.first && !bounds.second) {
+                        STORM_LOG_TRACE("Did not compute any bounds, skipping convergence check.");
+                    } else {
+                        // If either of the two bounds does not exist, the answer can be derived from the existing bounds.
+                        if (bounds.first == nullptr || bounds.second == nullptr) {
+                            STORM_LOG_ASSERT(bounds.first || bounds.second, "Expected at least one bound.");
+                            STORM_LOG_TRACE("Obtained result on partial quotient.");
+                            quotient->printModelInformationToStream(std::cout);
+                            if (bounds.first) {
+                                return std::move(bounds.first);
+                            } else {
+                                return std::move(bounds.second);
+                            }
+                        }
+                    
+                        // Check whether the bounds are sufficiently close.
+                        converged = checkBoundsSufficientlyClose(bounds);
+                        if (converged) {
+                            result = getAverageOfBounds(bounds);
                         }
                     }
-                    
-                    // Check whether the bounds are sufficiently close.
-                    bool converged = checkBoundsSufficientlyClose(bounds);
-                    if (converged) {
-                        result = getAverageOfBounds(bounds);
-                    } else {
-                        printBoundsInformation(bounds);
                         
+                    if (!converged) {
                         STORM_LOG_TRACE("Performing bisimulation step.");
                         bisimulation.compute(10);
                     }
@@ -237,6 +244,95 @@ namespace storm {
         }
         
         template<typename ModelType>
+        storm::abstraction::QualitativeMdpResultMinMax<PartialBisimulationMdpModelChecker<ModelType>::DdType> PartialBisimulationMdpModelChecker<ModelType>::computeQualitativeResult(storm::models::symbolic::Mdp<DdType, ValueType> const& quotient, CheckTask<storm::logic::Formula> const& checkTask, storm::dd::Bdd<DdType> const& constraintStates, storm::dd::Bdd<DdType> const& targetStates) {
+
+            STORM_LOG_DEBUG("Computing qualitative solution.");
+            storm::abstraction::QualitativeMdpResultMinMax<DdType> result;
+            
+            auto start = std::chrono::high_resolution_clock::now();
+            bool isRewardFormula = checkTask.getFormula().isEventuallyFormula() && checkTask.getFormula().asEventuallyFormula().getContext() == storm::logic::FormulaContext::Reward;
+            storm::dd::Bdd<DdType> transitionMatrixBdd = quotient.getTransitionMatrix().notZero();
+            if (isRewardFormula) {
+                result.min.second = storm::utility::graph::performProb1E(quotient, transitionMatrixBdd, constraintStates, targetStates, storm::utility::graph::performProbGreater0E(quotient, transitionMatrixBdd, constraintStates, targetStates));
+                result.max.second = storm::utility::graph::performProb1A(quotient, transitionMatrixBdd, targetStates, storm::utility::graph::performProbGreater0A(quotient, transitionMatrixBdd, constraintStates, targetStates));
+            } else {
+                result.min = storm::utility::graph::performProb01Min(quotient, transitionMatrixBdd, constraintStates, targetStates);
+                result.max = storm::utility::graph::performProb01Max(quotient, transitionMatrixBdd, constraintStates, targetStates);
+            }
+            auto end = std::chrono::high_resolution_clock::now();
+
+            auto timeInMilliseconds = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
+            STORM_LOG_DEBUG("Computed qualitative solution in " << timeInMilliseconds << "ms.");
+
+            return result;
+        }
+        
+        template<typename ModelType>
+        std::unique_ptr<CheckResult> PartialBisimulationMdpModelChecker<ModelType>::checkForResult(storm::models::symbolic::Mdp<DdType, ValueType> const& quotient, storm::abstraction::QualitativeMdpResultMinMax<DdType> const& qualitativeResults, CheckTask<storm::logic::Formula> const& checkTask) {
+            std::unique_ptr<CheckResult> result;
+            
+            bool isRewardFormula = checkTask.getFormula().isEventuallyFormula() && checkTask.getFormula().asEventuallyFormula().getContext() == storm::logic::FormulaContext::Reward;
+            if (isRewardFormula) {
+                // In the reachability reward case, we can give an answer if all initial states of the system are infinity
+                // states in the min result.
+                if ((quotient.getInitialStates() && !qualitativeResults.min.second) == quotient.getInitialStates()) {
+                    result = std::make_unique<storm::modelchecker::SymbolicQuantitativeCheckResult<DdType, ValueType>>(quotient.getReachableStates(), quotient.getInitialStates(), quotient.getInitialStates().ite(quotient.getManager().getConstant(storm::utility::infinity<ValueType>()), quotient.getManager().template getAddZero<ValueType>()));
+                }
+            } else {
+                // In the reachability probability case, we can give the answer if all initial states are prob1 states
+                // in the min result or if all initial states are prob0 in the max case.
+                if ((quotient.getInitialStates() && qualitativeResults.min.second) == quotient.getInitialStates()) {
+                    result = std::make_unique<storm::modelchecker::SymbolicQuantitativeCheckResult<DdType, ValueType>>(quotient.getReachableStates(), quotient.getInitialStates(), quotient.getManager().template getAddOne<ValueType>());
+                } else if ((quotient.getInitialStates() && qualitativeResults.max.first) == quotient.getInitialStates()) {
+                    result = std::make_unique<storm::modelchecker::SymbolicQuantitativeCheckResult<DdType, ValueType>>(quotient.getReachableStates(), quotient.getInitialStates(), quotient.getManager().template getAddZero<ValueType>());
+                }
+            }
+            
+            return result;
+        }
+        
+        template<typename ModelType>
+        bool PartialBisimulationMdpModelChecker<ModelType>::skipQuantitativeSolution(storm::models::symbolic::Mdp<DdType, ValueType> const& quotient, storm::abstraction::QualitativeMdpResultMinMax<DdType> const& qualitativeResults, CheckTask<storm::logic::Formula> const& checkTask) {
+            
+            bool isRewardFormula = checkTask.getFormula().isEventuallyFormula() && checkTask.getFormula().asEventuallyFormula().getContext() == storm::logic::FormulaContext::Reward;
+            if (isRewardFormula) {
+                if ((quotient.getInitialStates() && qualitativeResults.min.second) != (quotient.getInitialStates() && qualitativeResults.max.second)) {
+                    return true;
+                }
+            } else {
+                if ((quotient.getInitialStates() && qualitativeResults.min.first) != (quotient.getInitialStates() && qualitativeResults.max.first)) {
+                    return true;
+                } else if ((quotient.getInitialStates() && qualitativeResults.min.second) != (quotient.getInitialStates() && qualitativeResults.max.second)) {
+                    return true;
+                }
+            }
+            return false;
+        }
+        
+        template<typename ModelType>
+        std::pair<std::unique_ptr<CheckResult>, std::unique_ptr<CheckResult>> PartialBisimulationMdpModelChecker<ModelType>::computeQuantitativeResult(storm::models::symbolic::Mdp<DdType, ValueType> const& quotient, CheckTask<storm::logic::Formula> const& checkTask, storm::dd::Bdd<DdType> const& constraintStates, storm::dd::Bdd<DdType> const& targetStates, storm::abstraction::QualitativeMdpResultMinMax<DdType> const& qualitativeResults) {
+
+            std::pair<std::unique_ptr<CheckResult>, std::unique_ptr<CheckResult>> result;
+            
+            bool isRewardFormula = checkTask.getFormula().isEventuallyFormula() && checkTask.getFormula().asEventuallyFormula().getContext() == storm::logic::FormulaContext::Reward;
+            if (isRewardFormula) {
+                storm::dd::Bdd<DdType> maybeMin = qualitativeResults.min.second && quotient.getReachableStates();
+                result.first = storm::modelchecker::helper::SymbolicMdpPrctlHelper<DdType, ValueType>::computeReachabilityRewards(storm::OptimizationDirection::Minimize, quotient, quotient.getTransitionMatrix(), quotient.getTransitionMatrix().notZero(), checkTask.isRewardModelSet() ? quotient.getRewardModel(checkTask.getRewardModel()) : quotient.getRewardModel(""), maybeMin, targetStates, !qualitativeResults.min.second && quotient.getReachableStates(), storm::solver::SymbolicGeneralMinMaxLinearEquationSolverFactory<DdType, ValueType>(), quotient.getManager().template getAddZero<ValueType>());
+                
+                storm::dd::Bdd<DdType> maybeMax = qualitativeResults.max.second && quotient.getReachableStates();
+                result.second = storm::modelchecker::helper::SymbolicMdpPrctlHelper<DdType, ValueType>::computeReachabilityRewards(storm::OptimizationDirection::Maximize, quotient, quotient.getTransitionMatrix(), quotient.getTransitionMatrix().notZero(), checkTask.isRewardModelSet() ? quotient.getRewardModel(checkTask.getRewardModel()) : quotient.getRewardModel(""), maybeMin, targetStates, !qualitativeResults.min.second && quotient.getReachableStates(), storm::solver::SymbolicGeneralMinMaxLinearEquationSolverFactory<DdType, ValueType>(), maybeMax.ite(result.first->asSymbolicQuantitativeCheckResult<DdType, ValueType>().getValueVector(), quotient.getManager().template getAddZero<ValueType>()));
+            } else {
+                storm::dd::Bdd<DdType> maybeMin = !(qualitativeResults.min.first || qualitativeResults.min.second) && quotient.getReachableStates();
+                result.first = storm::modelchecker::helper::SymbolicMdpPrctlHelper<DdType, ValueType>::computeUntilProbabilities(storm::OptimizationDirection::Minimize, quotient, quotient.getTransitionMatrix(), maybeMin, qualitativeResults.min.second, storm::solver::SymbolicGeneralMinMaxLinearEquationSolverFactory<DdType, ValueType>(), quotient.getManager().template getAddZero<ValueType>());
+                
+                storm::dd::Bdd<DdType> maybeMax = !(qualitativeResults.max.first || qualitativeResults.max.second) && quotient.getReachableStates();
+                result.second = storm::modelchecker::helper::SymbolicMdpPrctlHelper<DdType, ValueType>::computeUntilProbabilities(storm::OptimizationDirection::Maximize, quotient, quotient.getTransitionMatrix(), maybeMax, qualitativeResults.max.second, storm::solver::SymbolicGeneralMinMaxLinearEquationSolverFactory<DdType, ValueType>(), maybeMax.ite(result.first->asSymbolicQuantitativeCheckResult<DdType, ValueType>().getValueVector(), quotient.getManager().template getAddZero<ValueType>()));
+            }
+            
+            return result;
+        }
+        
+        template<typename ModelType>
         std::pair<std::unique_ptr<CheckResult>, std::unique_ptr<CheckResult>> PartialBisimulationMdpModelChecker<ModelType>::computeBoundsPartialQuotient(storm::models::symbolic::Mdp<DdType, ValueType> const& quotient, CheckTask<storm::logic::Formula> const& checkTask) {
 
             std::pair<std::unique_ptr<CheckResult>, std::unique_ptr<CheckResult>> result;
@@ -244,63 +340,31 @@ namespace storm {
             // We go through two phases. In phase (1) we are solving the qualitative part and in phase (2) the quantitative part.
             
             // Preparation: determine the constraint states and the target states of the reachability objective.
-            bool isRewardFormula = checkTask.getFormula().isEventuallyFormula() && checkTask.getFormula().asEventuallyFormula().getContext() == storm::logic::FormulaContext::Reward;
             std::pair<storm::dd::Bdd<DdType>, storm::dd::Bdd<DdType>> constraintTargetStates = getConstraintAndTargetStates(quotient, checkTask);
             
             // Phase (1): solve qualitatively.
-            storm::abstraction::QualitativeMdpResultMinMax<DdType> qualitativeResults;
-            storm::dd::Bdd<DdType> transitionMatrixBdd = quotient.getTransitionMatrix().notZero();
-            if (isRewardFormula) {
-                qualitativeResults.min.second = storm::utility::graph::performProb1E(quotient, transitionMatrixBdd, constraintTargetStates.first, constraintTargetStates.second, storm::utility::graph::performProbGreater0E(quotient, transitionMatrixBdd, constraintTargetStates.first, constraintTargetStates.second));
-                qualitativeResults.max.second = storm::utility::graph::performProb1A(quotient, transitionMatrixBdd, constraintTargetStates.first, storm::utility::graph::performProbGreater0A(quotient, transitionMatrixBdd, constraintTargetStates.first, constraintTargetStates.second));
-            } else {
-                qualitativeResults.min = storm::utility::graph::performProb01Min(quotient, transitionMatrixBdd, constraintTargetStates.first, constraintTargetStates.second);
-                qualitativeResults.max = storm::utility::graph::performProb01Max(quotient, transitionMatrixBdd, constraintTargetStates.first, constraintTargetStates.second);
+            storm::abstraction::QualitativeMdpResultMinMax<DdType> qualitativeResults = computeQualitativeResult(quotient, checkTask, constraintTargetStates.first, constraintTargetStates.second);
+
+            // Check whether the answer can be given after the qualitative solution.
+            result.first = checkForResult(quotient, qualitativeResults, checkTask);
+            if (result.first) {
+                return result;
             }
             
+            // Check whether we should skip the quantitative solution (for example if there are initial states for which
+            // the value is already known to be different at this point.
+            bool doSkipQuantitativeSolution = skipQuantitativeSolution(quotient, qualitativeResults, checkTask);
+            STORM_LOG_TRACE("" << (doSkipQuantitativeSolution ? "Skipping" : "Not skipping") << " quantitative solution.");
             
-//            CheckTask<storm::logic::Formula> newCheckTask(checkTask);
-//
-//            if (!checkTask.isBoundSet() || storm::logic::isLowerBound(checkTask.getBoundComparisonType())) {
-//                // Check whether we can answer the query (lower bound above bound).
-//                result.first = computeBoundsPartialQuotient(checker, quotient, rewards, storm::OptimizationDirection::Minimize, newCheckTask);
-//                if (checkTask.isBoundSet()) {
-//                    bool sufficient = boundsSufficient(quotient, true, result.first->asQuantitativeCheckResult<ValueType>(), checkTask.getBoundComparisonType(), checkTask.getBoundThreshold());
-//                    if (sufficient) {
-//                        return result;
-//                    }
-//                }
-//
-//                // Check whether we can answer the query (upper bound below bound).
-//                result.second = computeBoundsPartialQuotient(checker, quotient, rewards, storm::OptimizationDirection::Maximize, newCheckTask);
-//                if (checkTask.isBoundSet()) {
-//                    bool sufficient = boundsSufficient(quotient, false, result.second->asQuantitativeCheckResult<ValueType>(), checkTask.getBoundComparisonType(), checkTask.getBoundThreshold());
-//                    if (sufficient) {
-//                        result.first = nullptr;
-//                        return result;
-//                    }
-//                }
-//            } else {
-//                // Check whether we can answer the query (upper bound below bound).
-//                result.second = computeBoundsPartialQuotient(checker, quotient, rewards, storm::OptimizationDirection::Maximize, newCheckTask);
-//                if (checkTask.isBoundSet()) {
-//                    bool sufficient = boundsSufficient(quotient, false, result.second->asQuantitativeCheckResult<ValueType>(), checkTask.getBoundComparisonType(), checkTask.getBoundThreshold());
-//                    if (sufficient) {
-//                        return result;
-//                    }
-//                }
-//
-//                // Check whether we can answer the query (lower bound above bound).
-//                result.first = computeBoundsPartialQuotient(checker, quotient, rewards, storm::OptimizationDirection::Minimize, newCheckTask);
-//                if (checkTask.isBoundSet()) {
-//                    bool sufficient = boundsSufficient(quotient, true, result.first->asQuantitativeCheckResult<ValueType>(), checkTask.getBoundComparisonType(), checkTask.getBoundThreshold());
-//                    if (sufficient) {
-//                        result.second = nullptr;
-//                        return result;
-//                    }
-//                }
-//            }
-            
+            // Phase (2): solve quantitatively.
+            if (!doSkipQuantitativeSolution) {
+                result = computeQuantitativeResult(quotient, checkTask, constraintTargetStates.first, constraintTargetStates.second, qualitativeResults);
+
+                storm::modelchecker::SymbolicQualitativeCheckResult<DdType> initialStateFilter(quotient.getReachableStates(), quotient.getInitialStates());
+                result.first->filter(initialStateFilter);
+                result.second->filter(initialStateFilter);
+                printBoundsInformation(result);
+            }
             return result;
         }
 
