@@ -21,6 +21,8 @@ namespace storm {
                 
                 enum class ReuseMode { None, BlockNumbers };
                 
+                enum class InitialPartitionMode { Regular, Finer };
+                
                 /*!
                  * Creates a new set of bisimulation settings.
                  */
@@ -62,6 +64,11 @@ namespace storm {
                  */
                 ReuseMode getReuseMode() const;
                 
+                /*!
+                 * Retrieves the initial partition mode.
+                 */
+                InitialPartitionMode getInitialPartitionMode() const;
+                
                 virtual bool check() const override;
                 
                 // The name of the module.
@@ -74,6 +81,7 @@ namespace storm {
                 static const std::string quotientFormatOptionName;
                 static const std::string signatureModeOptionName;
                 static const std::string reuseOptionName;
+                static const std::string initialPartitionOptionName;
             };
         } // namespace modules
     } // namespace settings

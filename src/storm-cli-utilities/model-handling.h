@@ -44,8 +44,11 @@ namespace storm {
             // The symbolic model description.
             boost::optional<storm::storage::SymbolicModelDescription> model;
             
-            // The properties to check.
+            // The original properties to check.
             std::vector<storm::jani::Property> properties;
+            
+            // The preprocessed properties to check (in case they needed amendment).
+            boost::optional<std::vector<storm::jani::Property>> preprocessedProperties;
         };
         
         void parseSymbolicModelDescription(storm::settings::modules::IOSettings const& ioSettings, SymbolicInput& input) {
@@ -129,7 +132,7 @@ namespace storm {
                         for (auto const& property : output.properties) {
                             amendedProperties.emplace_back(property.substituteLabels(labelRenaming));
                         }
-                        output.properties = std::move(amendedProperties);
+                        output.preprocessedProperties = std::move(amendedProperties);
                     }
                 }
             }
@@ -474,7 +477,8 @@ namespace storm {
         };
         
         template<typename ValueType>
-        void verifyProperties(std::vector<storm::jani::Property> const& properties, std::function<std::unique_ptr<storm::modelchecker::CheckResult>(std::shared_ptr<storm::logic::Formula const> const& formula, std::shared_ptr<storm::logic::Formula const> const& states)> const& verificationCallback, std::function<void(std::unique_ptr<storm::modelchecker::CheckResult> const&)> const& postprocessingCallback = PostprocessingIdentity()) {
+        void verifyProperties(SymbolicInput const& input, std::function<std::unique_ptr<storm::modelchecker::CheckResult>(std::shared_ptr<storm::logic::Formula const> const& formula, std::shared_ptr<storm::logic::Formula const> const& states)> const& verificationCallback, std::function<void(std::unique_ptr<storm::modelchecker::CheckResult> const&)> const& postprocessingCallback = PostprocessingIdentity()) {
+            auto const& properties = input.preprocessedProperties ? input.preprocessedProperties.get() : input.properties;
             for (auto const& property : properties) {
                 printModelCheckingProperty(property);
                 storm::utility::Stopwatch watch(true);
@@ -488,7 +492,7 @@ namespace storm {
         template <storm::dd::DdType DdType, typename ValueType>
         void verifyWithAbstractionRefinementEngine(SymbolicInput const& input) {
             STORM_LOG_ASSERT(input.model, "Expected symbolic model description.");
-            verifyProperties<ValueType>(input.properties, [&input] (std::shared_ptr<storm::logic::Formula const> const& formula, std::shared_ptr<storm::logic::Formula const> const& states) {
+            verifyProperties<ValueType>(input, [&input] (std::shared_ptr<storm::logic::Formula const> const& formula, std::shared_ptr<storm::logic::Formula const> const& states) {
                 STORM_LOG_THROW(states->isInitialFormula(), storm::exceptions::NotSupportedException, "Abstraction-refinement can only filter initial states.");
                 return storm::api::verifyWithAbstractionRefinementEngine<DdType, ValueType>(input.model.get(), storm::api::createTask<ValueType>(formula, true));
             });
@@ -498,7 +502,7 @@ namespace storm {
         void verifyWithExplorationEngine(SymbolicInput const& input) {
             STORM_LOG_ASSERT(input.model, "Expected symbolic model description.");
             STORM_LOG_THROW((std::is_same<ValueType, double>::value), storm::exceptions::NotSupportedException, "Exploration does not support other data-types than floating points.");
-            verifyProperties<ValueType>(input.properties, [&input] (std::shared_ptr<storm::logic::Formula const> const& formula, std::shared_ptr<storm::logic::Formula const> const& states) {
+            verifyProperties<ValueType>(input, [&input] (std::shared_ptr<storm::logic::Formula const> const& formula, std::shared_ptr<storm::logic::Formula const> const& states) {
                 STORM_LOG_THROW(states->isInitialFormula(), storm::exceptions::NotSupportedException, "Exploration can only filter initial states.");
                 return storm::api::verifyWithExplorationEngine<ValueType>(input.model.get(), storm::api::createTask<ValueType>(formula, true));
             });
@@ -507,7 +511,7 @@ namespace storm {
         template <typename ValueType>
         void verifyWithSparseEngine(std::shared_ptr<storm::models::ModelBase> const& model, SymbolicInput const& input) {
             auto sparseModel = model->as<storm::models::sparse::Model<ValueType>>();
-            verifyProperties<ValueType>(input.properties,
+            verifyProperties<ValueType>(input,
                                         [&sparseModel] (std::shared_ptr<storm::logic::Formula const> const& formula, std::shared_ptr<storm::logic::Formula const> const& states) {
                                             bool filterForInitialStates = states->isInitialFormula();
                                             auto task = storm::api::createTask<ValueType>(formula, filterForInitialStates);
@@ -528,7 +532,7 @@ namespace storm {
         
         template <storm::dd::DdType DdType, typename ValueType>
         void verifyWithHybridEngine(std::shared_ptr<storm::models::ModelBase> const& model, SymbolicInput const& input) {
-            verifyProperties<ValueType>(input.properties, [&model] (std::shared_ptr<storm::logic::Formula const> const& formula, std::shared_ptr<storm::logic::Formula const> const& states) {
+            verifyProperties<ValueType>(input, [&model] (std::shared_ptr<storm::logic::Formula const> const& formula, std::shared_ptr<storm::logic::Formula const> const& states) {
                 bool filterForInitialStates = states->isInitialFormula();
                 auto task = storm::api::createTask<ValueType>(formula, filterForInitialStates);
                 
@@ -550,7 +554,7 @@ namespace storm {
         
         template <storm::dd::DdType DdType, typename ValueType>
         void verifyWithDdEngine(std::shared_ptr<storm::models::ModelBase> const& model, SymbolicInput const& input) {
-            verifyProperties<ValueType>(input.properties, [&model] (std::shared_ptr<storm::logic::Formula const> const& formula, std::shared_ptr<storm::logic::Formula const> const& states) {
+            verifyProperties<ValueType>(input, [&model] (std::shared_ptr<storm::logic::Formula const> const& formula, std::shared_ptr<storm::logic::Formula const> const& states) {
                 bool filterForInitialStates = states->isInitialFormula();
                 auto task = storm::api::createTask<ValueType>(formula, filterForInitialStates);
                 
@@ -572,7 +576,7 @@ namespace storm {
         
         template <storm::dd::DdType DdType, typename ValueType>
         void verifyWithAbstractionRefinementEngine(std::shared_ptr<storm::models::ModelBase> const& model, SymbolicInput const& input) {
-            verifyProperties<ValueType>(input.properties, [&model] (std::shared_ptr<storm::logic::Formula const> const& formula, std::shared_ptr<storm::logic::Formula const> const& states) {
+            verifyProperties<ValueType>(input, [&model] (std::shared_ptr<storm::logic::Formula const> const& formula, std::shared_ptr<storm::logic::Formula const> const& states) {
                 STORM_LOG_THROW(states->isInitialFormula(), storm::exceptions::NotSupportedException, "Abstraction-refinement can only filter initial states.");
                 auto symbolicModel = model->as<storm::models::symbolic::Model<DdType, ValueType>>();
                 return storm::api::verifyWithAbstractionRefinementEngine<DdType, ValueType>(symbolicModel, storm::api::createTask<ValueType>(formula, true));

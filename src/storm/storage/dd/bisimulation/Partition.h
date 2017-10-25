@@ -35,6 +35,7 @@ namespace storm {
                 Partition<DdType, ValueType> replacePartition(storm::dd::Bdd<DdType> const& newPartitionBdd, uint64_t numberOfBlocks, uint64_t nextFreeBlockIndex) const;
 
                 static Partition create(storm::models::symbolic::Model<DdType, ValueType> const& model, storm::storage::BisimulationType const& bisimulationType, PreservationInformation<DdType, ValueType> const& preservationInformation);
+                static Partition create(storm::models::symbolic::Model<DdType, ValueType> const& model, storm::storage::BisimulationType const& bisimulationType, std::vector<std::shared_ptr<storm::logic::Formula const>> const& formulas);
                 static Partition createTrivialChoicePartition(storm::models::symbolic::NondeterministicModel<DdType, ValueType> const& model, std::pair<storm::expressions::Variable, storm::expressions::Variable> const& blockVariables);
                 
                 uint64_t getNumberOfStates() const;
@@ -85,8 +86,13 @@ namespace storm {
                  */
                 static Partition create(storm::models::symbolic::Model<DdType, ValueType> const& model, std::vector<storm::expressions::Expression> const& expressions, storm::storage::BisimulationType const& bisimulationType);
                 
+                static Partition<DdType, ValueType> createDistanceBased(storm::models::symbolic::Model<DdType, ValueType> const& model, storm::logic::Formula const& constraintFormula, storm::logic::Formula const& targetFormula);
+                static Partition<DdType, ValueType> createDistanceBased(storm::models::symbolic::Model<DdType, ValueType> const& model, storm::dd::Bdd<DdType> const& constraintStates, storm::dd::Bdd<DdType> const& targetStates);
+                static boost::optional<std::pair<std::shared_ptr<storm::logic::Formula const>, std::shared_ptr<storm::logic::Formula const>>> extractConstraintTargetFormulas(storm::logic::Formula const& formula);
+                
                 static std::pair<storm::dd::Bdd<DdType>, uint64_t> createPartitionBdd(storm::dd::DdManager<DdType> const& manager, storm::models::symbolic::Model<DdType, ValueType> const& model, std::vector<storm::dd::Bdd<DdType>> const& stateSets, storm::expressions::Variable const& blockVariable);
                 
+                static std::pair<storm::expressions::Variable, storm::expressions::Variable> createBlockVariables(storm::models::symbolic::Model<DdType, ValueType> const& model);
                 static std::pair<storm::expressions::Variable, storm::expressions::Variable> createBlockVariables(storm::dd::DdManager<DdType>& manager, uint64_t numberOfDdVariables);
                 
                 /// The DD representing the partition. The DD is over the row variables of the model and the block variable.

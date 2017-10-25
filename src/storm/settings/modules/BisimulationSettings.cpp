@@ -18,6 +18,7 @@ namespace storm {
             const std::string BisimulationSettings::quotientFormatOptionName = "quot";
             const std::string BisimulationSettings::signatureModeOptionName = "sigmode";
             const std::string BisimulationSettings::reuseOptionName = "reuse";
+            const std::string BisimulationSettings::initialPartitionOptionName = "init";
             
             BisimulationSettings::BisimulationSettings() : ModuleSettings(moduleName) {
                 std::vector<std::string> types = { "strong", "weak" };
@@ -35,6 +36,12 @@ namespace storm {
                 this->addOption(storm::settings::OptionBuilder(moduleName, reuseOptionName, true, "Sets whether to reuse all results.")
                                 .addArgument(storm::settings::ArgumentBuilder::createStringArgument("mode", "The mode to use.").addValidatorString(ArgumentValidatorFactory::createMultipleChoiceValidator(reuseModes))
                                              .setDefaultValueString("blocks").build())
+                                .build());
+
+                std::vector<std::string> initialPartitionModes = {"regular", "finer"};
+                this->addOption(storm::settings::OptionBuilder(moduleName, initialPartitionOptionName, true, "Sets which initial partition mode to use.")
+                                .addArgument(storm::settings::ArgumentBuilder::createStringArgument("mode", "The mode to use.").addValidatorString(ArgumentValidatorFactory::createMultipleChoiceValidator(initialPartitionModes))
+                                             .setDefaultValueString("finer").build())
                                 .build());
             }
             
@@ -82,6 +89,16 @@ namespace storm {
                     return ReuseMode::BlockNumbers;
                 }
                 return ReuseMode::BlockNumbers;
+            }
+            
+            BisimulationSettings::InitialPartitionMode BisimulationSettings::getInitialPartitionMode() const {
+                std::string initialPartitionModeAsString = this->getOption(initialPartitionOptionName).getArgumentByName("mode").getValueAsString();
+                if (initialPartitionModeAsString == "regular") {
+                    return InitialPartitionMode::Regular;
+                } else if (initialPartitionModeAsString == "finer") {
+                    return InitialPartitionMode::Finer;
+                }
+                return InitialPartitionMode::Finer;
             }
             
             bool BisimulationSettings::check() const {
