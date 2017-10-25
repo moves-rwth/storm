@@ -367,9 +367,8 @@ namespace storm {
                 auxiliaryRowGroupVector = std::make_unique<std::vector<ValueType>>(this->A->getRowGroupCount());
             }
             
-            // By default, the guarantee that we can provide is that our solution is always less-or-equal than the
-            // actual solution.
-            SolverGuarantee guarantee = SolverGuarantee::LessOrEqual;
+            // By default, we can not provide any guarantee
+            SolverGuarantee guarantee = SolverGuarantee::None;
             
             if (this->hasInitialScheduler()) {
                 // Resolve the nondeterminism according to the initial scheduler.
@@ -391,14 +390,21 @@ namespace storm {
                 }
                 submatrixSolver->solveEquations(x, *auxiliaryRowGroupVector);
                 
-                // If we were given an initial scheduler and are in fact minimizing, our current solution becomes
-                // always greater-or-equal than the actual solution.
-                if (dir == storm::OptimizationDirection::Minimize) {
+                // If we were given an initial scheduler and are maximizing (minimizing), our current solution becomes
+                // always less-or-equal (greater-or-equal) than the actual solution.
+                if (dir == storm::OptimizationDirection::Maximize) {
+                    guarantee = SolverGuarantee::LessOrEqual;
+                } else {
                     guarantee = SolverGuarantee::GreaterOrEqual;
                 }
-            } else {
-                // If no initial scheduler is given, we start from the lower bound.
-                this->createLowerBoundsVector(x);
+            } else if (!this->hasUniqueSolution()) {
+                if (dir == storm::OptimizationDirection::Maximize) {
+                    this->createLowerBoundsVector(x);
+                    guarantee = SolverGuarantee::LessOrEqual;
+                } else {
+                    this->createUpperBoundsVector(x);
+                    guarantee = SolverGuarantee::GreaterOrEqual;
+                }
             }
 
             std::vector<ValueType>* newX = auxiliaryRowGroupVector.get();

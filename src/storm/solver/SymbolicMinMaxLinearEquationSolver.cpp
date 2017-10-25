@@ -280,11 +280,15 @@ namespace storm {
             // Set up the environment.
             storm::dd::Add<DdType, ValueType> localX;
             
-            // If we were given an initial scheduler, we take its solution as the starting point.
-            if (this->hasInitialScheduler()) {
-                localX = solveEquationsWithScheduler(this->getInitialScheduler(), x, b);
+            if (this->hasUniqueSolution()) {
+                localX = x;
             } else {
-                localX = this->getLowerBoundsVector();
+                // If we were given an initial scheduler, we take its solution as the starting point.
+                if (this->hasInitialScheduler()) {
+                    localX = solveEquationsWithScheduler(this->getInitialScheduler(), x, b);
+                } else {
+                    localX = this->getLowerBoundsVector();
+                }
             }
             
             ValueIterationResult viResult = performValueIteration(dir, localX, b, this->getSettings().getPrecision(), this->getSettings().getRelativeTerminationCriterion(), this->settings.getMaximalNumberOfIterations());
