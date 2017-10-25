@@ -89,11 +89,13 @@ namespace storm {
                 }
 
                 // Check for requirements of the solver.
-                storm::solver::MinMaxLinearEquationSolverRequirements requirements = minMaxLinearEquationSolverFactory.getRequirements(storm::solver::EquationSystemType::UntilProbabilities);
+                // The solution is unique as we assume non-zeno MAs.
+                storm::solver::MinMaxLinearEquationSolverRequirements requirements = minMaxLinearEquationSolverFactory.getRequirements(true, dir);
                 requirements.clearBounds();
                 STORM_LOG_THROW(requirements.empty(), storm::exceptions::UncheckedRequirementException, "Cannot establish requirements for solver.");
 
                 std::unique_ptr<storm::solver::MinMaxLinearEquationSolver<ValueType>> solver = minMaxLinearEquationSolverFactory.create(aProbabilistic);
+                solver->setHasUniqueSolution();
                 solver->setBounds(storm::utility::zero<ValueType>(), storm::utility::one<ValueType>());
                 solver->setRequirementsChecked();
                 solver->setCachingEnabled(true);
@@ -378,12 +380,14 @@ namespace storm {
                 std::vector<ValueType> x(numberOfSspStates);
                 
                 // Check for requirements of the solver.
-                storm::solver::MinMaxLinearEquationSolverRequirements requirements = minMaxLinearEquationSolverFactory.getRequirements(storm::solver::EquationSystemType::StochasticShortestPath);
-                requirements.clearLowerBounds();
+                storm::solver::MinMaxLinearEquationSolverRequirements requirements = minMaxLinearEquationSolverFactory.getRequirements(true, dir);
+                requirements.clearBounds();
                 STORM_LOG_THROW(requirements.empty(), storm::exceptions::UncheckedRequirementException, "Cannot establish requirements for solver.");
 
                 std::unique_ptr<storm::solver::MinMaxLinearEquationSolver<ValueType>> solver = minMaxLinearEquationSolverFactory.create(sspMatrix);
+                solver->setHasUniqueSolution();
                 solver->setLowerBound(storm::utility::zero<ValueType>());
+                solver->setUpperBound(*std::max_element(lraValuesForEndComponents.begin(), lraValuesForEndComponents.end()));
                 solver->setRequirementsChecked();
                 solver->solveEquations(dir, x, b);
                 
@@ -588,10 +592,14 @@ namespace storm {
                 std::vector<ValueType> b = probabilisticChoiceRewards;
                 
                 // Check for requirements of the solver.
-                storm::solver::MinMaxLinearEquationSolverRequirements requirements = minMaxLinearEquationSolverFactory.getRequirements(storm::solver::EquationSystemType::ReachabilityRewards);
+                // The solution is unique as we assume non-zeno MAs.
+                storm::solver::MinMaxLinearEquationSolverRequirements requirements = minMaxLinearEquationSolverFactory.getRequirements(true, dir);
+                requirements.clearLowerBounds();
                 STORM_LOG_THROW(requirements.empty(), storm::exceptions::UncheckedRequirementException, "Cannot establish requirements for solver.");
 
                 auto solver = minMaxLinearEquationSolverFactory.create(std::move(aProbabilistic));
+                solver->setLowerBound(storm::utility::zero<ValueType>());
+                solver->setHasUniqueSolution(true);
                 solver->setRequirementsChecked(true);
                 solver->setCachingEnabled(true);
                 

@@ -45,7 +45,6 @@ namespace storm {
             switch (solutionMethod) {
                 case MinMaxMethod::ValueIteration: this->solutionMethod = SolutionMethod::ValueIteration; break;
                 case MinMaxMethod::PolicyIteration: this->solutionMethod = SolutionMethod::PolicyIteration; break;
-                case MinMaxMethod::Acyclic: this->solutionMethod = SolutionMethod::Acyclic; break;
                 case MinMaxMethod::RationalSearch: this->solutionMethod = SolutionMethod::RationalSearch; break;
                 default:
                     STORM_LOG_THROW(false, storm::exceptions::InvalidSettingsException, "Unsupported technique for iterative MinMax linear equation solver.");
@@ -135,9 +134,6 @@ namespace storm {
                     break;
                 case IterativeMinMaxLinearEquationSolverSettings<ValueType>::SolutionMethod::PolicyIteration:
                     result = solveEquationsPolicyIteration(dir, x, b);
-                    break;
-                case IterativeMinMaxLinearEquationSolverSettings<ValueType>::SolutionMethod::Acyclic:
-                    result = solveEquationsAcyclic(dir, x, b);
                     break;
                 case IterativeMinMaxLinearEquationSolverSettings<ValueType>::SolutionMethod::RationalSearch:
                     result = solveEquationsRationalSearch(dir, x, b);
@@ -268,67 +264,44 @@ namespace storm {
         }
         
         template<typename ValueType>
-        MinMaxLinearEquationSolverRequirements IterativeMinMaxLinearEquationSolver<ValueType>::getRequirements(EquationSystemType const& equationSystemType, boost::optional<storm::solver::OptimizationDirection> const& direction) const {
+        MinMaxLinearEquationSolverRequirements IterativeMinMaxLinearEquationSolver<ValueType>::getRequirements(boost::optional<storm::solver::OptimizationDirection> const& direction) const {
             // Start by copying the requirements of the linear equation solver.
             MinMaxLinearEquationSolverRequirements requirements(this->linearEquationSolverFactory->getRequirements());
 
-            // General requirements.
             if (this->getSettings().getSolutionMethod() == IterativeMinMaxLinearEquationSolverSettings<ValueType>::SolutionMethod::ValueIteration) {
-                requirements.requireLowerBounds();
-            } else if (this->getSettings().getSolutionMethod() == IterativeMinMaxLinearEquationSolverSettings<ValueType>::SolutionMethod::RationalSearch) {
-                // As rational search needs to approach the solution from below, we cannot start with a valid scheduler hint as we would otherwise do.
-                // Instead, we need to require no end components.
-                if (equationSystemType == EquationSystemType::ReachabilityRewards) {
-                    if (!direction || direction.get() == OptimizationDirection::Minimize) {
+                if (this->getSettings().getForceSoundness()) {
+                    // Interval iteration requires a unique solution and lower+upper bounds
+                    if (!this->hasUniqueSolution()) {
                         requirements.requireNoEndComponents();
                     }
-                }
-            }
-            
-            // In case we perform value iteration and need to retrieve a scheduler, end components are forbidden
-            if (this->getSettings().getSolutionMethod() == IterativeMinMaxLinearEquationSolverSettings<ValueType>::SolutionMethod::ValueIteration && this->isTrackSchedulerSet()) {
-                requirements.requireNoEndComponents();
-            }
-            
-            // Guide requirements by whether or not we force soundness.
-            if (this->getSettings().getForceSoundness()) {
-                if (this->getSettings().getSolutionMethod() == IterativeMinMaxLinearEquationSolverSettings<ValueType>::SolutionMethod::ValueIteration) {
-                    // Require both bounds now.
                     requirements.requireBounds();
-                    
-                    // If we need to also converge from above, we cannot deal with end components in the notorious cases.
-                    if (equationSystemType == EquationSystemType::UntilProbabilities) {
+                } else if (!this->hasUniqueSolution()) { // Traditional value iteration has no requirements if the solution is unique.
+                    // Computing a scheduler is only possible if the solution is unique
+                    if (this->isTrackSchedulerSet()) {
+                        requirements.requireNoEndComponents();
+                    } else {
+                        // As we want the smallest (largest) solution for maximizing (minimizing) equation systems, we have to approach the solution from below (above).
                         if (!direction || direction.get() == OptimizationDirection::Maximize) {
-                            requirements.requireNoEndComponents();
+                            requirements.requireLowerBounds();
                         }
-                    } else if (equationSystemType == EquationSystemType::ReachabilityRewards) {
                         if (!direction || direction.get() == OptimizationDirection::Minimize) {
-                            requirements.requireNoEndComponents();
+                            requirements.requireUpperBounds();
                         }
                     }
-                } else if (this->getSettings().getSolutionMethod() == IterativeMinMaxLinearEquationSolverSettings<ValueType>::SolutionMethod::PolicyIteration) {
-                    if (equationSystemType == EquationSystemType::UntilProbabilities) {
-                        if (!direction || direction.get() == OptimizationDirection::Maximize) {
-                            requirements.requireValidInitialScheduler();
-                        }
-                    } else if (equationSystemType == EquationSystemType::ReachabilityRewards) {
-                        if (!direction || direction.get() == OptimizationDirection::Minimize) {
-                            requirements.requireValidInitialScheduler();
-                        }
-                    }
+                }
+            } else if (this->getSettings().getSolutionMethod() == IterativeMinMaxLinearEquationSolverSettings<ValueType>::SolutionMethod::RationalSearch) {
+                // Rational search needs to approach the solution from below.
+                requirements.requireLowerBounds();
+                // The solution needs to be unique in case of minimizing or in cases where we want a scheduler.
+                if (!this->hasUniqueSolution() && (!direction || direction.get() == OptimizationDirection::Minimize || this->isTrackSchedulerSet())) {
+                    requirements.requireNoEndComponents();
+                }
+            } else if (this->getSettings().getSolutionMethod() == IterativeMinMaxLinearEquationSolverSettings<ValueType>::SolutionMethod::PolicyIteration) {
+                if (!this->hasUniqueSolution()) {
+                    requirements.requireValidInitialScheduler();
                 }
             } else {
-                if (equationSystemType == EquationSystemType::UntilProbabilities) {
-                    if (this->getSettings().getSolutionMethod() == IterativeMinMaxLinearEquationSolverSettings<ValueType>::SolutionMethod::PolicyIteration) {
-                        if (!direction || direction.get() == OptimizationDirection::Maximize) {
-                            requirements.requireValidInitialScheduler();
-                        }
-                    }
-                } else if (equationSystemType == EquationSystemType::ReachabilityRewards) {
-                    if (!direction || direction.get() == OptimizationDirection::Minimize) {
-                        requirements.requireValidInitialScheduler();
-                    }
-                }
+                STORM_LOG_THROW(false, storm::exceptions::InvalidSettingsException, "Unsupported technique for iterative MinMax linear equation solver.");
             }
         
             return requirements;
@@ -932,83 +905,6 @@ namespace storm {
         template<typename ValueType>
         bool IterativeMinMaxLinearEquationSolver<ValueType>::solveEquationsRationalSearch(OptimizationDirection dir, std::vector<ValueType>& x, std::vector<ValueType> const& b) const {
             return solveEquationsRationalSearchHelper<double>(dir, x, b);
-        }
-        
-        template<typename ValueType>
-        bool IterativeMinMaxLinearEquationSolver<ValueType>::solveEquationsAcyclic(OptimizationDirection dir, std::vector<ValueType>& x, std::vector<ValueType> const& b) const {
-            uint64_t numGroups = this->A->getRowGroupCount();
-
-            // Allocate memory for the scheduler (if required)
-            if (this->isTrackSchedulerSet()) {
-                if (this->schedulerChoices) {
-                    this->schedulerChoices->resize(numGroups);
-                } else {
-                    this->schedulerChoices = std::vector<uint_fast64_t>(numGroups);
-                }
-            }
-            
-            // We now compute a topological sort of the row groups.
-            // If caching is enabled, it might be possible to obtain this sort from the cache.
-            if (this->isCachingEnabled()) {
-                if (rowGroupOrdering) {
-                    for (auto const& group : *rowGroupOrdering) {
-                        computeOptimalValueForRowGroup(group, dir, x, b, this->isTrackSchedulerSet() ? &this->schedulerChoices.get()[group] : nullptr);
-                    }
-                    return true;
-                } else {
-                    rowGroupOrdering = std::make_unique<std::vector<uint64_t>>();
-                    rowGroupOrdering->reserve(numGroups);
-                }
-            }
-            
-            auto transposedMatrix = this->A->transpose(true);
-            
-            // We store the groups that have already been processed, i.e., the groups for which x[group] was already set to the correct value.
-            storm::storage::BitVector processedGroups(numGroups, false);
-            // Furthermore, we keep track of all candidate groups for which we still need to check whether this group can be processed now.
-            // A group can be processed if all successors have already been processed.
-            // Notice that the BitVector candidates is considered in a reversed way, i.e., group i is a candidate iff candidates.get(numGroups - i - 1) is true.
-            // This is due to the observation that groups with higher indices usually need to be processed earlier.
-            storm::storage::BitVector candidates(numGroups, true);
-            uint64_t candidate = numGroups - 1;
-            for (uint64_t numCandidates = candidates.size(); numCandidates > 0; --numCandidates) {
-                candidates.set(numGroups - candidate - 1, false);
-                
-                // Check if the candidate row group has an unprocessed successor
-                bool hasUnprocessedSuccessor = false;
-                for (auto const& entry : this->A->getRowGroup(candidate)) {
-                    if (!processedGroups.get(entry.getColumn())) {
-                        hasUnprocessedSuccessor = true;
-                        break;
-                    }
-                }
-                
-                uint64_t nextCandidate = numGroups - candidates.getNextSetIndex(numGroups - candidate - 1 + 1) - 1;
-                
-                if (!hasUnprocessedSuccessor) {
-                    // This candidate can be processed.
-                    processedGroups.set(candidate);
-                    computeOptimalValueForRowGroup(candidate, dir, x, b, this->isTrackSchedulerSet() ? &this->schedulerChoices.get()[candidate] : nullptr);
-                    if (this->isCachingEnabled()) {
-                        rowGroupOrdering->push_back(candidate);
-                    }
-                    
-                    // Add new candidates
-                    for (auto const& predecessorEntry : transposedMatrix.getRow(candidate)) {
-                        uint64_t predecessor = predecessorEntry.getColumn();
-                        if (!candidates.get(numGroups - predecessor - 1)) {
-                            candidates.set(numGroups - predecessor - 1, true);
-                            nextCandidate = std::max(nextCandidate, predecessor);
-                            ++numCandidates;
-                        }
-                    }
-                }
-                candidate = nextCandidate;
-            }
-            
-            assert(candidates.empty());
-            STORM_LOG_THROW(processedGroups.full(), storm::exceptions::InvalidOperationException, "The MinMax equation system is not acyclic.");
-            return true;
         }
         
         template<typename ValueType>

@@ -12,7 +12,6 @@
 #include "storm/storage/sparse/StateType.h"
 #include "storm/storage/Scheduler.h"
 #include "storm/solver/OptimizationDirection.h"
-#include "storm/solver/EquationSystemType.h"
 #include "storm/solver/MinMaxLinearEquationSolverRequirements.h"
 
 #include "storm/exceptions/InvalidSettingsException.h"
@@ -95,6 +94,16 @@ namespace storm {
             void unsetOptimizationDirection();
             
             /*!
+             * Sets whether the solution to the min max equation system is known to be unique.
+             */
+            void setHasUniqueSolution(bool value = true);
+            
+            /*!
+             * Retrieves whether the solution to the min max equation system is assumed to be unique
+             */
+            bool hasUniqueSolution() const;
+            
+            /*!
              * Sets whether schedulers are generated when solving equation systems. If the argument is false, the currently
              * stored scheduler (if any) is deleted.
              */
@@ -155,7 +164,7 @@ namespace storm {
              * Retrieves the requirements of this solver for solving equations with the current settings. The requirements
              * are guaranteed to be ordered according to their appearance in the SolverRequirement type.
              */
-            virtual MinMaxLinearEquationSolverRequirements getRequirements(EquationSystemType const& equationSystemType, boost::optional<storm::solver::OptimizationDirection> const& direction = boost::none) const;
+            virtual MinMaxLinearEquationSolverRequirements getRequirements(boost::optional<storm::solver::OptimizationDirection> const& direction = boost::none) const;
             
             /*!
              * Notifies the solver that the requirements for solving equations have been checked. If this has not been
@@ -184,6 +193,9 @@ namespace storm {
             boost::optional<std::vector<uint_fast64_t>> initialScheduler;
             
         private:
+            // Whether the solver can assume that the min-max equation system has a unique solution
+            bool uniqueSolution;
+            
             /// Whether some of the generated data during solver calls should be cached.
             bool cachingEnabled;
             
@@ -212,7 +224,7 @@ namespace storm {
              * Retrieves the requirements of the solver that would be created when calling create() right now. The
              * requirements are guaranteed to be ordered according to their appearance in the SolverRequirement type.
              */
-            MinMaxLinearEquationSolverRequirements getRequirements(EquationSystemType const& equationSystemType, boost::optional<storm::solver::OptimizationDirection> const& direction = boost::none) const;
+            MinMaxLinearEquationSolverRequirements getRequirements(bool hasUniqueSolution = false, boost::optional<storm::solver::OptimizationDirection> const& direction = boost::none) const;
             void setRequirementsChecked(bool value = true);
             bool isRequirementsCheckedSet() const;
 

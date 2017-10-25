@@ -146,9 +146,9 @@ namespace storm {
             lowerResultBound = storm::utility::zero<ConstantType>();
             upperResultBound = storm::utility::one<ConstantType>();
             
-            auto req = solverFactory->getRequirements(storm::solver::EquationSystemType::UntilProbabilities);
+            // The solution of the min-max equation system will always be unique (assuming graph-preserving instantiations).
+            auto req = solverFactory->getRequirements(true);
             req.clearBounds();
-            req.clearNoEndComponents(); // We never have end components within the maybestates (assuming graph-preserving instantiations).
             STORM_LOG_THROW(req.empty(), storm::exceptions::UncheckedRequirementException, "Unchecked solver requirement.");
             solverFactory->setRequirementsChecked(true);
         }
@@ -185,8 +185,8 @@ namespace storm {
             // We only know a lower bound for the result
             lowerResultBound = storm::utility::zero<ConstantType>();
         
-            auto req = solverFactory->getRequirements(storm::solver::EquationSystemType::ReachabilityRewards);
-            req.clearNoEndComponents(); // We never have end components within the maybestates (assuming graph-preserving instantiations).
+            // The solution of the min-max equation system will always be unique (assuming graph-preserving instantiations).
+            auto req = solverFactory->getRequirements(true);
             req.clearLowerBounds();
             if (req.requiresUpperBounds()) {
                 solvingRequiresUpperRewardBounds = true;
@@ -253,6 +253,7 @@ namespace storm {
                 solverFactory->setMinMaxMethod(storm::solver::MinMaxMethod::PolicyIteration);
             }
             auto solver = solverFactory->create(parameterLifter->getMatrix());
+            solver->setHasUniqueSolution();
             if (lowerResultBound) solver->setLowerBound(lowerResultBound.get());
             if (upperResultBound) {
                 solver->setUpperBound(upperResultBound.get());

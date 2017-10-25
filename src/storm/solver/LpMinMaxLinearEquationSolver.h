@@ -18,7 +18,7 @@ namespace storm {
 
             virtual void clearCache() const override;
 
-            virtual MinMaxLinearEquationSolverRequirements getRequirements(EquationSystemType const& equationSystemType, boost::optional<storm::solver::OptimizationDirection> const& direction = boost::none) const override;
+            virtual MinMaxLinearEquationSolverRequirements getRequirements(boost::optional<storm::solver::OptimizationDirection> const& direction = boost::none) const override;
             
         private:
             std::unique_ptr<storm::utility::solver::LpSolverFactory<ValueType>> lpSolverFactory;
