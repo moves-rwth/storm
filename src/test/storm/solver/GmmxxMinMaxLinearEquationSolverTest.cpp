@@ -19,6 +19,7 @@ TEST(GmmxxMinMaxLinearEquationSolver, SolveWithStandardOptions) {
     
     auto factory = storm::solver::GmmxxMinMaxLinearEquationSolverFactory<double>();
     auto solver = factory.create(A);
+    solver->setHasUniqueSolution();
     ASSERT_NO_THROW(solver->solveEquations(storm::OptimizationDirection::Minimize, x, b));
     ASSERT_LT(std::abs(x[0] - 0.5), storm::settings::getModule<storm::settings::modules::GmmxxEquationSolverSettings>().getPrecision());
     
@@ -42,6 +43,8 @@ TEST(GmmxxMinMaxLinearEquationSolver, SolveWithStandardOptionsAndEarlyTerminatio
     
     auto factory = storm::solver::GmmxxMinMaxLinearEquationSolverFactory<double>();
     auto solver = factory.create(A);
+    solver->setLowerBound(0.0);
+    solver->setUpperBound(1.0);
     
     solver->setTerminationCondition(std::make_unique<storm::solver::TerminateIfFilteredExtremumExceedsThreshold<double>>(storm::storage::BitVector(A.getRowGroupCount(), true), false, bound, true));
     ASSERT_NO_THROW(solver->solveEquations(storm::OptimizationDirection::Minimize, x, b));
@@ -111,6 +114,7 @@ TEST(GmmxxMinMaxLinearEquationSolver, SolveWithPolicyIteration) {
 
     auto factory = storm::solver::GmmxxMinMaxLinearEquationSolverFactory<double>(storm::solver::MinMaxMethodSelection::PolicyIteration);
     auto solver = factory.create(A);
+    solver->setHasUniqueSolution();
     
 	ASSERT_NO_THROW(solver->solveEquations(storm::OptimizationDirection::Minimize, x, b));
 	ASSERT_LT(std::abs(x[0] - 0.5), storm::settings::getModule<storm::settings::modules::GmmxxEquationSolverSettings>().getPrecision());

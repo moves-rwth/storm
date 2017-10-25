@@ -20,6 +20,7 @@ TEST(NativeMinMaxLinearEquationSolver, SolveWithStandardOptions) {
     
     auto factory = storm::solver::NativeMinMaxLinearEquationSolverFactory<double>();
     auto solver = factory.create(A);
+    solver->setHasUniqueSolution();
 
     ASSERT_NO_THROW(solver->solveEquations(storm::OptimizationDirection::Minimize, x, b));
     
@@ -83,7 +84,9 @@ TEST(NativeMinMaxLinearEquationSolver, SolveWithPolicyIteration) {
 
     auto factory = storm::solver::NativeMinMaxLinearEquationSolverFactory<double>(storm::solver::MinMaxMethodSelection::PolicyIteration);
     auto solver = factory.create(A);
-    
+    solver->setLowerBound(0.0);
+    solver->setUpperBound(1.0);
+
 	ASSERT_NO_THROW(solver->solveEquations(storm::OptimizationDirection::Minimize, x, b));
 	ASSERT_LT(std::abs(x[0] - 0.5), storm::settings::getModule<storm::settings::modules::NativeEquationSolverSettings>().getPrecision());
 
