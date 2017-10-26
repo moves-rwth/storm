@@ -14,7 +14,8 @@ set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${PROJECT_SOURCE_DIR}/resources/cmak
 include(ExternalProject)
 include(RegisterSourceGroup)
 include(imported)
-
+include(CheckCXXSourceCompiles)
+include(CheckCSourceCompiles)
 
 #############################################################
 ##
@@ -290,6 +291,31 @@ if (STORM_DEVELOPER)
 	endif ()
 else()
 	set (CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -fomit-frame-pointer")
+endif()
+
+# Test compiler by compiling small program.
+CHECK_C_SOURCE_COMPILES("
+	#include <stdio.h>
+	int main() {
+		const char* text = \"A Storm is coming.\";
+		return 0;
+	}"
+	COMPILER_C_WORKS
+)
+CHECK_CXX_SOURCE_COMPILES("
+	#include <string>
+	int main() {
+		const std::string text = \"A Storm is coming.\";
+		return 0;
+	}"
+	COMPILER_CXX_WORKS
+)
+if ((NOT COMPILER_CXX_WORKS) OR (NOT COMPILER_C_WORKS))
+	if (MACOSX)
+		message(FATAL_ERROR "The C/C++ compiler is not configured correctly.\nTry running 'xcode-select --install'.")
+	else()
+		message(FATAL_ERROR "The C/C++ compiler is not configured correctly.")
+	endif()
 endif()
 
 #############################################################
