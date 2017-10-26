@@ -23,6 +23,8 @@ namespace storm {
                 
                 enum class InitialPartitionMode { Regular, Finer };
                 
+                enum class RefinementMode { Full, ChangedStates };
+                
                 /*!
                  * Creates a new set of bisimulation settings.
                  */
@@ -69,6 +71,11 @@ namespace storm {
                  */
                 InitialPartitionMode getInitialPartitionMode() const;
                 
+                /*!
+                 * Retrieves the refinement mode to use.
+                 */
+                RefinementMode getRefinementMode() const;
+                
                 virtual bool check() const override;
                 
                 // The name of the module.
@@ -82,6 +89,7 @@ namespace storm {
                 static const std::string signatureModeOptionName;
                 static const std::string reuseOptionName;
                 static const std::string initialPartitionOptionName;
+                static const std::string refinementModeOptionName;
             };
         } // namespace modules
     } // namespace settings

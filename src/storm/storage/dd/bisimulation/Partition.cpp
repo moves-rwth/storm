@@ -32,12 +32,12 @@ namespace storm {
             }
             
             template<storm::dd::DdType DdType, typename ValueType>
-            Partition<DdType, ValueType>::Partition(storm::dd::Add<DdType, ValueType> const& partitionAdd, std::pair<storm::expressions::Variable, storm::expressions::Variable> const& blockVariables, uint64_t numberOfBlocks, uint64_t nextFreeBlockIndex) : partition(partitionAdd), blockVariables(blockVariables), numberOfBlocks(numberOfBlocks), nextFreeBlockIndex(nextFreeBlockIndex) {
+            Partition<DdType, ValueType>::Partition(storm::dd::Add<DdType, ValueType> const& partitionAdd, std::pair<storm::expressions::Variable, storm::expressions::Variable> const& blockVariables, uint64_t numberOfBlocks, uint64_t nextFreeBlockIndex, boost::optional<storm::dd::Add<DdType, ValueType>> const& changedStates) : partition(partitionAdd), changedStates(changedStates), blockVariables(blockVariables), numberOfBlocks(numberOfBlocks), nextFreeBlockIndex(nextFreeBlockIndex) {
                 // Intentionally left empty.
             }
 
             template<storm::dd::DdType DdType, typename ValueType>
-            Partition<DdType, ValueType>::Partition(storm::dd::Bdd<DdType> const& partitionBdd, std::pair<storm::expressions::Variable, storm::expressions::Variable> const& blockVariables, uint64_t numberOfBlocks, uint64_t nextFreeBlockIndex) : partition(partitionBdd), blockVariables(blockVariables), numberOfBlocks(numberOfBlocks), nextFreeBlockIndex(nextFreeBlockIndex) {
+            Partition<DdType, ValueType>::Partition(storm::dd::Bdd<DdType> const& partitionBdd, std::pair<storm::expressions::Variable, storm::expressions::Variable> const& blockVariables, uint64_t numberOfBlocks, uint64_t nextFreeBlockIndex, boost::optional<storm::dd::Bdd<DdType>> const& changedStates) : partition(partitionBdd), changedStates(changedStates), blockVariables(blockVariables), numberOfBlocks(numberOfBlocks), nextFreeBlockIndex(nextFreeBlockIndex) {
                 // Intentionally left empty.
             }
 
@@ -47,13 +47,13 @@ namespace storm {
             }
             
             template<storm::dd::DdType DdType, typename ValueType>
-            Partition<DdType, ValueType> Partition<DdType, ValueType>::replacePartition(storm::dd::Add<DdType, ValueType> const& newPartitionAdd, uint64_t numberOfBlocks, uint64_t nextFreeBlockIndex) const {
-                return Partition<DdType, ValueType>(newPartitionAdd, blockVariables, numberOfBlocks, nextFreeBlockIndex);
+            Partition<DdType, ValueType> Partition<DdType, ValueType>::replacePartition(storm::dd::Add<DdType, ValueType> const& newPartitionAdd, uint64_t numberOfBlocks, uint64_t nextFreeBlockIndex, boost::optional<storm::dd::Add<DdType, ValueType>> const& changedStates) const {
+                return Partition<DdType, ValueType>(newPartitionAdd, blockVariables, numberOfBlocks, nextFreeBlockIndex, changedStates);
             }
 
             template<storm::dd::DdType DdType, typename ValueType>
-            Partition<DdType, ValueType> Partition<DdType, ValueType>::replacePartition(storm::dd::Bdd<DdType> const& newPartitionBdd, uint64_t numberOfBlocks, uint64_t nextFreeBlockIndex) const {
-                return Partition<DdType, ValueType>(newPartitionBdd, blockVariables, numberOfBlocks, nextFreeBlockIndex);
+            Partition<DdType, ValueType> Partition<DdType, ValueType>::replacePartition(storm::dd::Bdd<DdType> const& newPartitionBdd, uint64_t numberOfBlocks, uint64_t nextFreeBlockIndex, boost::optional<storm::dd::Bdd<DdType>> const& changedStates) const {
+                return Partition<DdType, ValueType>(newPartitionBdd, blockVariables, numberOfBlocks, nextFreeBlockIndex, changedStates);
             }
 
             template<storm::dd::DdType DdType, typename ValueType>
@@ -225,6 +225,21 @@ namespace storm {
                 } else {
                     return this->asBdd().existsAbstract({this->getBlockVariable()});
                 }
+            }
+            
+            template<storm::dd::DdType DdType, typename ValueType>
+            bool Partition<DdType, ValueType>::hasChangedStates() const {
+                return static_cast<bool>(changedStates);
+            }
+            
+            template<storm::dd::DdType DdType, typename ValueType>
+            storm::dd::Add<DdType, ValueType> const& Partition<DdType, ValueType>::changedStatesAsAdd() const {
+                return boost::get<storm::dd::Add<DdType, ValueType>>(changedStates.get());
+            }
+            
+            template<storm::dd::DdType DdType, typename ValueType>
+            storm::dd::Bdd<DdType> const& Partition<DdType, ValueType>::changedStatesAsBdd() const {
+                return boost::get<storm::dd::Bdd<DdType>>(changedStates.get());
             }
             
             template<storm::dd::DdType DdType, typename ValueType>

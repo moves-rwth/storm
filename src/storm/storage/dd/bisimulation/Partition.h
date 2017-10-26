@@ -31,8 +31,8 @@ namespace storm {
                 
                 bool operator==(Partition<DdType, ValueType> const& other);
                 
-                Partition<DdType, ValueType> replacePartition(storm::dd::Add<DdType, ValueType> const& newPartitionAdd, uint64_t numberOfBlocks, uint64_t nextFreeBlockIndex) const;
-                Partition<DdType, ValueType> replacePartition(storm::dd::Bdd<DdType> const& newPartitionBdd, uint64_t numberOfBlocks, uint64_t nextFreeBlockIndex) const;
+                Partition<DdType, ValueType> replacePartition(storm::dd::Add<DdType, ValueType> const& newPartitionAdd, uint64_t numberOfBlocks, uint64_t nextFreeBlockIndex, boost::optional<storm::dd::Add<DdType, ValueType>> const& changedStates = boost::none) const;
+                Partition<DdType, ValueType> replacePartition(storm::dd::Bdd<DdType> const& newPartitionBdd, uint64_t numberOfBlocks, uint64_t nextFreeBlockIndex, boost::optional<storm::dd::Bdd<DdType>> const& changedStates = boost::none) const;
 
                 static Partition create(storm::models::symbolic::Model<DdType, ValueType> const& model, storm::storage::BisimulationType const& bisimulationType, PreservationInformation<DdType, ValueType> const& preservationInformation);
                 static Partition create(storm::models::symbolic::Model<DdType, ValueType> const& model, storm::storage::BisimulationType const& bisimulationType, std::vector<std::shared_ptr<storm::logic::Formula const>> const& formulas);
@@ -55,7 +55,18 @@ namespace storm {
                 uint64_t getNodeCount() const;
 
                 storm::dd::Bdd<DdType> getStates() const;
-                                
+                
+                /*!
+                 * Retrieves whether this partition has information about the states whose partition block assignment changed.
+                 */
+                bool hasChangedStates() const;
+                
+                /*!
+                 * Retrieves the DD representing the states whose partition block assignment changed.
+                 */
+                storm::dd::Add<DdType, ValueType> const& changedStatesAsAdd() const;
+                storm::dd::Bdd<DdType> const& changedStatesAsBdd() const;
+                
             private:
                 /*!
                  * Creates a new partition from the given data.
@@ -66,8 +77,9 @@ namespace storm {
                  * greater or equal than the number of states in the partition.
                  * @param numberOfBlocks The number of blocks in this partition.
                  * @param nextFreeBlockIndex The next free block index.
+                 * @param changedStates If given, this DD indicates the block assignment for which states has changed.
                  */
-                Partition(storm::dd::Add<DdType, ValueType> const& partitionAdd, std::pair<storm::expressions::Variable, storm::expressions::Variable> const& blockVariables, uint64_t numberOfBlocks, uint64_t nextFreeBlockIndex);
+                Partition(storm::dd::Add<DdType, ValueType> const& partitionAdd, std::pair<storm::expressions::Variable, storm::expressions::Variable> const& blockVariables, uint64_t numberOfBlocks, uint64_t nextFreeBlockIndex, boost::optional<storm::dd::Add<DdType, ValueType>> const& changedStates = boost::none);
                 
                 /*!
                  * Creates a new partition from the given data.
@@ -78,8 +90,9 @@ namespace storm {
                  * greater or equal than the number of states in the partition.
                  * @param numberOfBlocks The number of blocks in this partition.
                  * @param nextFreeBlockIndex The next free block index.
+                 * @param changedStates If given, this DD indicates the block assignment for which states has changed.
                  */
-                Partition(storm::dd::Bdd<DdType> const& partitionBdd, std::pair<storm::expressions::Variable, storm::expressions::Variable> const& blockVariables, uint64_t numberOfBlocks, uint64_t nextFreeBlockIndex);
+                Partition(storm::dd::Bdd<DdType> const& partitionBdd, std::pair<storm::expressions::Variable, storm::expressions::Variable> const& blockVariables, uint64_t numberOfBlocks, uint64_t nextFreeBlockIndex, boost::optional<storm::dd::Bdd<DdType>> const& changedStates = boost::none);
                 
                 /*!
                  * Creates a partition from the given model that respects the given expressions.
@@ -97,6 +110,9 @@ namespace storm {
                 
                 /// The DD representing the partition. The DD is over the row variables of the model and the block variable.
                 boost::variant<storm::dd::Bdd<DdType>, storm::dd::Add<DdType, ValueType>> partition;
+                
+                /// A DD representing the states whose block assignment in the partition was changed from the last partition.
+                boost::optional<boost::variant<storm::dd::Bdd<DdType>, storm::dd::Add<DdType, ValueType>>> changedStates;
                 
                 /// The meta variables used to encode the block of each state in this partition.
                 std::pair<storm::expressions::Variable, storm::expressions::Variable> blockVariables;

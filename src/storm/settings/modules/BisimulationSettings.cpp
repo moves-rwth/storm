@@ -19,6 +19,7 @@ namespace storm {
             const std::string BisimulationSettings::signatureModeOptionName = "sigmode";
             const std::string BisimulationSettings::reuseOptionName = "reuse";
             const std::string BisimulationSettings::initialPartitionOptionName = "init";
+            const std::string BisimulationSettings::refinementModeOptionName = "refine";
             
             BisimulationSettings::BisimulationSettings() : ModuleSettings(moduleName) {
                 std::vector<std::string> types = { "strong", "weak" };
@@ -42,6 +43,12 @@ namespace storm {
                 this->addOption(storm::settings::OptionBuilder(moduleName, initialPartitionOptionName, true, "Sets which initial partition mode to use.")
                                 .addArgument(storm::settings::ArgumentBuilder::createStringArgument("mode", "The mode to use.").addValidatorString(ArgumentValidatorFactory::createMultipleChoiceValidator(initialPartitionModes))
                                              .setDefaultValueString("finer").build())
+                                .build());
+                
+                std::vector<std::string> refinementModes = {"full", "changed"};
+                this->addOption(storm::settings::OptionBuilder(moduleName, refinementModeOptionName, true, "Sets which refinement mode to use.")
+                                .addArgument(storm::settings::ArgumentBuilder::createStringArgument("mode", "The mode to use.").addValidatorString(ArgumentValidatorFactory::createMultipleChoiceValidator(refinementModes))
+                                             .setDefaultValueString("full").build())
                                 .build());
             }
             
@@ -100,7 +107,17 @@ namespace storm {
                 }
                 return InitialPartitionMode::Finer;
             }
-            
+
+            BisimulationSettings::RefinementMode BisimulationSettings::getRefinementMode() const {
+                std::string refinementModeAsString = this->getOption(refinementModeOptionName).getArgumentByName("mode").getValueAsString();
+                if (refinementModeAsString == "full") {
+                    return RefinementMode::Full;
+                } else if (refinementModeAsString == "changed") {
+                    return RefinementMode::ChangedStates;
+                }
+                return RefinementMode::Full;
+            }
+
             bool BisimulationSettings::check() const {
                 bool optionsSet = this->getOption(typeOptionName).getHasOptionBeenSet();
                 STORM_LOG_WARN_COND(storm::settings::getModule<storm::settings::modules::GeneralSettings>().isBisimulationSet() || !optionsSet, "Bisimulation minimization is not selected, so setting options for bisimulation has no effect.");
