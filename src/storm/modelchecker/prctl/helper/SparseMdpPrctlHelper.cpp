@@ -29,6 +29,7 @@
 #include "storm/settings/modules/CoreSettings.h"
 
 #include "storm/utility/Stopwatch.h"
+#include "storm/utility/ProgressMeasurement.h"
 
 #include "storm/exceptions/InvalidStateException.h"
 #include "storm/exceptions/InvalidPropertyException.h"
@@ -99,6 +100,10 @@ namespace storm {
                 if (storm::settings::getModule<storm::settings::modules::GeneralSettings>().isSoundSet()) {
                     precision = precision / storm::utility::convertNumber<ValueType>(epochCount);
                 }
+                storm::utility::ProgressMeasurement progress("epochs");
+                progress.setMaxCount(epochOrder.size());
+                progress.startNewMeasurement(0);
+                uint64_t numCheckedEpochs = 0;
                 for (auto const& epoch : epochOrder) {
                     swBuild.start();
                     auto& epochModel = rewardUnfolding.setCurrentEpoch(epoch);
@@ -196,6 +201,8 @@ namespace storm {
                         rewardUnfolding.setSolutionForCurrentEpoch(storm::utility::vector::filterVector(x, epochModel.epochInStates));
                     }
                     swCheck.stop();
+                    ++numCheckedEpochs;
+                    progress.updateProgress(numCheckedEpochs);
                 }
                 
                 std::map<storm::storage::sparse::state_type, ValueType> result;

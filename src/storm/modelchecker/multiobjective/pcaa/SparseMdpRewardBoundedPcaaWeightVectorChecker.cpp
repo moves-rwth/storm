@@ -5,6 +5,7 @@
 #include "storm/models/sparse/StandardRewardModel.h"
 #include "storm/utility/macros.h"
 #include "storm/utility/vector.h"
+#include "storm/utility/ProgressMeasurement.h"
 #include "storm/logic/Formulas.h"
 #include "storm/solver/MinMaxLinearEquationSolver.h"
 #include "storm/solver/LinearEquationSolver.h"
@@ -39,9 +40,8 @@ namespace storm {
             
             template <class SparseMdpModelType>
             void SparseMdpRewardBoundedPcaaWeightVectorChecker<SparseMdpModelType>::check(std::vector<ValueType> const& weightVector) {
-                STORM_LOG_DEBUG("Analyzing weight vector " << storm::utility::vector::toString(weightVector));
-
                 ++numChecks;
+                STORM_LOG_INFO("Analyzing weight vector #" << numChecks << ": "  << storm::utility::vector::toString(weightVector));
                 
                 // In case we want to export the cdf, we will collect the corresponding data
                 std::vector<std::vector<ValueType>> cdfData;
@@ -61,7 +61,10 @@ namespace storm {
                     STORM_PRINT_AND_LOG("Objective/Dimension/Epoch count is: " << this->objectives.size() << "/" << rewardUnfolding.getEpochManager().getDimensionCount() << "/" <<  epochOrder.size() << "."  << std::endl);
                 }
 
-
+                storm::utility::ProgressMeasurement progress("epochs");
+                progress.setMaxCount(epochOrder.size());
+                progress.startNewMeasurement(0);
+                uint64_t numCheckedEpochs = 0;
                 for (auto const& epoch : epochOrder) {
                     computeEpochSolution(epoch, weightVector, cachedData, precision);
                     if (storm::settings::getModule<storm::settings::modules::IOSettings>().isExportCdfSet() && !rewardUnfolding.getEpochManager().hasBottomDimension(epoch)) {
@@ -76,6 +79,8 @@ namespace storm {
                         cdfEntry.insert(cdfEntry.end(), solutionIt, solution.end());
                         cdfData.push_back(std::move(cdfEntry));
                     }
+                    ++numCheckedEpochs;
+                    progress.updateProgress(numCheckedEpochs);
                 }
                 
                 if (storm::settings::getModule<storm::settings::modules::IOSettings>().isExportCdfSet()) {
