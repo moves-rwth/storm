@@ -67,7 +67,7 @@ namespace storm {
                 }
                 auto formula = std::make_shared<storm::logic::ProbabilityOperatorFormula>(checkTask.getFormula().asSharedPointer(), opInfo);
                 storm::modelchecker::multiobjective::MultiDimensionalRewardUnfolding<ValueType, true> rewardUnfolding(this->getModel(), formula);
-                auto numericResult = storm::modelchecker::helper::SparseMdpPrctlHelper<ValueType>::computeRewardBoundedValues(checkTask.getOptimizationDirection(), rewardUnfolding, this->getModel().getInitialStates(), *minMaxLinearEquationSolverFactory, storm::utility::one<ValueType>());
+                auto numericResult = storm::modelchecker::helper::SparseMdpPrctlHelper<ValueType>::computeRewardBoundedValues(helper::SolutionType::UntilProbabilities, checkTask.getOptimizationDirection(), rewardUnfolding, this->getModel().getInitialStates(), *minMaxLinearEquationSolverFactory);
                 return std::unique_ptr<CheckResult>(new ExplicitQuantitativeCheckResult<ValueType>(std::move(numericResult)));
             } else {
                 STORM_LOG_THROW(!pathFormula.hasLowerBound() && pathFormula.hasUpperBound(), storm::exceptions::InvalidPropertyException, "Formula needs to have single upper time bound.");
@@ -146,7 +146,7 @@ namespace storm {
                 }
                 auto formula = std::make_shared<storm::logic::RewardOperatorFormula>(checkTask.getFormula().asSharedPointer(), checkTask.getRewardModel(), opInfo);
                 storm::modelchecker::multiobjective::MultiDimensionalRewardUnfolding<ValueType, true> rewardUnfolding(this->getModel(), formula);
-                auto numericResult = storm::modelchecker::helper::SparseMdpPrctlHelper<ValueType>::computeRewardBoundedValues(checkTask.getOptimizationDirection(), rewardUnfolding, this->getModel().getInitialStates(), *minMaxLinearEquationSolverFactory);
+                auto numericResult = storm::modelchecker::helper::SparseMdpPrctlHelper<ValueType>::computeRewardBoundedValues(helper::SolutionType::ExpectedRewards, checkTask.getOptimizationDirection(), rewardUnfolding, this->getModel().getInitialStates(), *minMaxLinearEquationSolverFactory);
                 return std::unique_ptr<CheckResult>(new ExplicitQuantitativeCheckResult<ValueType>(std::move(numericResult)));
             } else {
                 

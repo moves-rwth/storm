@@ -269,18 +269,13 @@ namespace storm {
                     } else {
                         STORM_LOG_ASSERT(!this->rowPermutation.empty(), "Expected proper row permutation.");
                         std::vector<ValueType> valueVector = extractVectorInternal(vector, this->allSourceVariablesCube, this->nondeterminismOdd);
-                        
-                        // Reorder the values according to the known row permutation.
-                        for (uint64_t position = 0; position < valueVector.size(); ) {
-                            if (rowPermutation[position] != position) {
-                                std::swap(valueVector[position], valueVector[rowPermutation[position]]);
-                                std::swap(rowPermutation[position], rowPermutation[rowPermutation[position]]);
-                            } else {
-                                ++position;
-                            }
-                        }
 
-                        return valueVector;
+                        // Reorder the values according to the known row permutation.
+                        std::vector<ValueType> reorderedValues(valueVector.size());
+                        for (uint64_t pos = 0; pos < valueVector.size(); ++pos) {
+                            reorderedValues[pos] = valueVector[rowPermutation[pos]];
+                        }
+                        return reorderedValues;
                     }
                 }
                 
@@ -857,7 +852,7 @@ namespace storm {
                 storm::storage::SparseMatrix<ValueType> quotientTransitionMatrix = sparseExtractor.extractTransitionMatrix(model.getTransitionMatrix());
                 auto end = std::chrono::high_resolution_clock::now();
                 STORM_LOG_TRACE("Quotient transition matrix extracted in " << std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count() << "ms.");
-                
+
                 start = std::chrono::high_resolution_clock::now();
                 storm::models::sparse::StateLabeling quotientStateLabeling(partition.getNumberOfBlocks());
                 quotientStateLabeling.addLabel("init", sparseExtractor.extractSetExists(model.getInitialStates()));
@@ -892,7 +887,6 @@ namespace storm {
                     
                     boost::optional<std::vector<ValueType>> quotientStateActionRewards;
                     if (rewardModel.hasStateActionRewards()) {
-                        rewardModel.getStateActionRewardVector().exportToDot("vector.dot");
                         quotientStateActionRewards = sparseExtractor.extractStateActionVector(rewardModel.getStateActionRewardVector());
                     }
                     

@@ -278,10 +278,7 @@ namespace storm {
                             cachedData.linEqSolver->setUpperBound(*obj.upperResultBound);
                             req.clearUpperBounds();
                         }
-                        if (!req.empty()) {
-                            // Todo: currently we wrongly require lower bounds for plain value iteration even if the fixpoint is unique
-                            STORM_LOG_DEBUG("At least one requirement of the LinearEquationSolver was not met.");
-                        }
+                        STORM_LOG_THROW(req.empty(), storm::exceptions::UncheckedRequirementException, "At least one requirement was not checked.");
                         cachedData.linEqSolver->solveEquations(x, cachedData.bLinEq);
                         auto resultIt = result.begin();
                         for (auto const& state : epochModel.epochInStates) {
@@ -303,11 +300,11 @@ namespace storm {
                     cachedData.xMinMax.assign(epochModel.epochMatrix.getRowGroupCount(), storm::utility::zero<ValueType>());
                     storm::solver::GeneralMinMaxLinearEquationSolverFactory<ValueType> minMaxSolverFactory;
                     cachedData.minMaxSolver = minMaxSolverFactory.create(epochModel.epochMatrix);
+                    cachedData.minMaxSolver->setHasUniqueSolution();
                     cachedData.minMaxSolver->setPrecision(precision);
                     cachedData.minMaxSolver->setTrackScheduler(true);
                     cachedData.minMaxSolver->setCachingEnabled(true);
-                    auto req = cachedData.minMaxSolver->getRequirements(storm::solver::EquationSystemType::StochasticShortestPath);
-                    req.clearNoEndComponents();
+                    auto req = cachedData.minMaxSolver->getRequirements();
                     boost::optional<ValueType> lowerBound = this->computeWeightedResultBound(true, weightVector, storm::storage::BitVector(weightVector.size(), true));
                     if (lowerBound) {
                         cachedData.minMaxSolver->setLowerBound(lowerBound.get());
@@ -318,10 +315,7 @@ namespace storm {
                         cachedData.minMaxSolver->setUpperBound(upperBound.get());
                         req.clearUpperBounds();
                     }
-                    if (!req.empty()) {
-                        // Todo: currently we wrongly require lower bounds for plain value iteration even if the fixpoint is unique
-                        STORM_LOG_DEBUG("At least one requirement of the LinearEquationSolver was not met.");
-                    }
+                    STORM_LOG_THROW(req.empty(), storm::exceptions::UncheckedRequirementException, "At least one requirement was not checked.");
                     cachedData.minMaxSolver->setRequirementsChecked(true);
                     cachedData.minMaxSolver->setOptimizationDirection(storm::solver::OptimizationDirection::Maximize);
                 

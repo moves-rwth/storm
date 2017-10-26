@@ -86,7 +86,7 @@ namespace storm {
         void NativeLinearEquationSolverSettings<ValueType>::setForceSoundness(bool value) {
             forceSoundness = value;
             if (forceSoundness && method != SolutionMethod::Power && method != SolutionMethod::RationalSearch) {
-                STORM_LOG_WARN("To guarantee soundness, the equation solving technique has been switched to '" << storm::settings::modules::NativeEquationSolverSettings::LinearEquationMethod::Power << "'.");
+                STORM_LOG_INFO("To guarantee soundness, the equation solving technique has been switched to '" << storm::settings::modules::NativeEquationSolverSettings::LinearEquationMethod::Power << "'.");
                 method = SolutionMethod::Power;
             }
         }

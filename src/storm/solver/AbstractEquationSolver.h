@@ -167,6 +167,7 @@ namespace storm {
             TerminationCondition<ValueType> const& getTerminationCondition() const;
             std::unique_ptr<TerminationCondition<ValueType>> const& getTerminationConditionPointer() const;
             
+            void createUpperBoundsVector(std::vector<ValueType>& upperBoundsVector) const;
             void createUpperBoundsVector(std::unique_ptr<std::vector<ValueType>>& upperBoundsVector, uint64_t length) const;
             void createLowerBoundsVector(std::vector<ValueType>& lowerBoundsVector) const;
 

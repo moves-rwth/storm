@@ -174,8 +174,8 @@ namespace storm {
                 storm::solver::GeneralMinMaxLinearEquationSolverFactory<ValueType> solverFactory;
                 std::unique_ptr<storm::solver::MinMaxLinearEquationSolver<ValueType>> solver = solverFactory.create(ecQuotient->matrix);
                 solver->setTrackScheduler(true);
-                auto req = solver->getRequirements(storm::solver::EquationSystemType::StochasticShortestPath);
-                req.clearNoEndComponents();
+                solver->setHasUniqueSolution(true);
+                auto req = solver->getRequirements();
                 boost::optional<ValueType> lowerBound = this->computeWeightedResultBound(true, weightVector, objectivesWithNoUpperTimeBound);
                 if (lowerBound) {
                     solver->setLowerBound(lowerBound.get());
@@ -186,10 +186,7 @@ namespace storm {
                     solver->setUpperBound(upperBound.get());
                     req.clearUpperBounds();
                 }
-                if (!req.empty()) {
-                    // Todo: currently we wrongly require lower bounds for plain value iteration even if the fixpoint is unique
-                    STORM_LOG_DEBUG("At least one requirement of the LinearEquationSolver was not met.");
-                }
+                STORM_LOG_THROW(req.empty(), storm::exceptions::UncheckedRequirementException, "At least one requirement was not checked.");
                 solver->setRequirementsChecked(true);
                 solver->setOptimizationDirection(storm::solver::OptimizationDirection::Maximize);
                 

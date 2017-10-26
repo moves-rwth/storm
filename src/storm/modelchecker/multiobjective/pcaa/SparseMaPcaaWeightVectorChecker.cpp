@@ -299,10 +299,10 @@ namespace storm {
                 std::unique_ptr<MinMaxSolverData> result(new MinMaxSolverData());
                 storm::solver::GeneralMinMaxLinearEquationSolverFactory<ValueType> minMaxSolverFactory;
                 result->solver = minMaxSolverFactory.create(PS.toPS);
+                result->solver->setHasUniqueSolution(true);
                 result->solver->setTrackScheduler(true);
                 result->solver->setCachingEnabled(true);
-                auto req = result->solver->getRequirements(storm::solver::EquationSystemType::StochasticShortestPath);
-                req.clearNoEndComponents();
+                auto req = result->solver->getRequirements(storm::solver::OptimizationDirection::Maximize);
                 boost::optional<ValueType> lowerBound = this->computeWeightedResultBound(true, weightVector, storm::storage::BitVector(weightVector.size(), true));
                 if (lowerBound) {
                     result->solver->setLowerBound(lowerBound.get());

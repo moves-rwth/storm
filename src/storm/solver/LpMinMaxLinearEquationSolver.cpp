@@ -110,12 +110,12 @@ namespace storm {
         
         
         template<typename ValueType>
-        MinMaxLinearEquationSolverRequirements LpMinMaxLinearEquationSolver<ValueType>::getRequirements(EquationSystemType const& equationSystemType, boost::optional<storm::solver::OptimizationDirection> const& direction) const {
+        MinMaxLinearEquationSolverRequirements LpMinMaxLinearEquationSolver<ValueType>::getRequirements(boost::optional<storm::solver::OptimizationDirection> const& direction) const {
             
             MinMaxLinearEquationSolverRequirements requirements;
             
-            // In case we need to retrieve a scheduler, end components are forbidden
-            if (this->isTrackSchedulerSet()) {
+            // In case we need to retrieve a scheduler, the solution has to be unique
+            if (!this->hasUniqueSolution() && this->isTrackSchedulerSet()) {
                 requirements.requireNoEndComponents();
             }
             
