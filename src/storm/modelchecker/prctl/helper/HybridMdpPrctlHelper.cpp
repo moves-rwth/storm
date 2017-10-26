@@ -108,8 +108,8 @@ namespace storm {
                     oneStepProbabilities = std::move(subvector);
                 } else {
                     STORM_LOG_DEBUG("Not eliminating ECs as there are none.");
-                    eliminateExtendedStatesFromExplicitRepresentation(explicitRepresentation, solverRequirementsData.initialScheduler, solverRequirementsData.properMaybeStates);
                     oneStepProbabilities = explicitRepresentation.first.getConstrainedRowGroupSumVector(solverRequirementsData.properMaybeStates, targetStates);
+                    eliminateExtendedStatesFromExplicitRepresentation(explicitRepresentation, solverRequirementsData.initialScheduler, solverRequirementsData.properMaybeStates);
                 }
             }
             
