@@ -34,6 +34,12 @@ namespace storm {
                 STORM_LOG_THROW(preprocessorResult.rewardFinitenessType == SparseMultiObjectivePreprocessorResult<SparseMdpModelType>::RewardFinitenessType::AllFinite, storm::exceptions::NotSupportedException, "There is a scheduler that yields infinite reward for one  objective. This is not supported.");
                 STORM_LOG_THROW(preprocessorResult.preprocessedModel->getInitialStates().getNumberOfSetBits() == 1, storm::exceptions::NotSupportedException, "The model has multiple initial states.");
                 
+                // Update the objective bounds with what the reward unfolding can compute
+                for (uint64_t objIndex = 0; objIndex < this->objectives.size(); ++objIndex) {
+                    this->objectives[objIndex].lowerResultBound = rewardUnfolding.getLowerObjectiveBound(objIndex);
+                    this->objectives[objIndex].upperResultBound = rewardUnfolding.getUpperObjectiveBound(objIndex);
+                }
+                
                 numCheckedEpochs = 0;
                 numChecks = 0;
             }

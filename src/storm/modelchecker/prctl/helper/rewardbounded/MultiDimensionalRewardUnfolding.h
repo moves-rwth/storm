@@ -58,6 +58,12 @@ namespace storm {
                      */
                     ValueType getRequiredEpochModelPrecision(Epoch const& startEpoch, ValueType const& precision);
                     
+                    /*!
+                     * Returns an upper/lower bound for the objective result in every state (if this bound could be computed)
+                     */
+                    boost::optional<ValueType> getUpperObjectiveBound(uint64_t objectiveIndex = 0);
+                    boost::optional<ValueType> getLowerObjectiveBound(uint64_t objectiveIndex = 0);
+                    
                     void setSolutionForCurrentEpoch(std::vector<SolutionType>&& inStateSolutions);
                     SolutionType const& getInitialStateResult(Epoch const& epoch); // Assumes that the initial state is unique
                     SolutionType const& getInitialStateResult(Epoch const& epoch, uint64_t initialStateIndex);

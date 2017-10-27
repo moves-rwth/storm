@@ -9,6 +9,8 @@
 
 #include "storm/modelchecker/propositional/SparsePropositionalModelChecker.h"
 #include "storm/modelchecker/results/ExplicitQualitativeCheckResult.h"
+#include "storm/modelchecker/prctl/helper/BaierUpperRewardBoundsComputer.h"
+
 #include "storm/transformer/EndComponentEliminator.h"
 
 #include "storm/exceptions/UnexpectedException.h"
@@ -547,6 +549,103 @@ namespace storm {
                     }
                     return precision / storm::utility::convertNumber<ValueType>(sumOfDimensions);
                 }
+                
+                template<typename ValueType, bool SingleObjectiveMode>
+                boost::optional<ValueType> MultiDimensionalRewardUnfolding<ValueType, SingleObjectiveMode>::getUpperObjectiveBound(uint64_t objectiveIndex) {
+                    auto& objective = this->objectives[objectiveIndex];
+                    if (!objective.upperResultBound) {
+                        if (objective.formula->isProbabilityOperatorFormula()) {
+                            objective.upperResultBound = storm::utility::one<ValueType>();
+                        } else if (objective.formula->isRewardOperatorFormula()) {
+                            auto const& rewModel = this->model.getRewardModel(objective.formula->asRewardOperatorFormula().getRewardModelName());
+                            auto actionRewards = rewModel.getTotalRewardVector(this->model.getTransitionMatrix());
+                            if (objective.formula->getSubformula().isCumulativeRewardFormula()) {
+                                // Try to get an upper bound by computing the maximal reward achievable within one epoch step
+                                auto const& cumulativeRewardFormula = objective.formula->getSubformula().asCumulativeRewardFormula();
+                                ValueType rewardBound = cumulativeRewardFormula.template getBound<ValueType>();
+                                if (cumulativeRewardFormula.getTimeBoundReference().isRewardBound()) {
+                                    auto const& costModel = this->model.getRewardModel(cumulativeRewardFormula.getTimeBoundReference().getRewardName());
+                                    if (!costModel.hasTransitionRewards()) {
+                                        auto actionCosts = costModel.getTotalRewardVector(this->model.getTransitionMatrix());
+                                        ValueType largestRewardPerCost = storm::utility::zero<ValueType>();
+                                        bool isFinite = true;
+                                        for (auto rewIt = actionRewards.begin(), costIt = actionCosts.begin(); rewIt != actionRewards.end(); ++rewIt, ++costIt) {
+                                            if (!storm::utility::isZero(*rewIt)) {
+                                                if (storm::utility::isZero(*costIt)) {
+                                                    isFinite = false;
+                                                    break;
+                                                }
+                                                ValueType rewardPerCost = *rewIt / *costIt;
+                                                largestRewardPerCost = std::max(largestRewardPerCost, rewardPerCost);
+                                            }
+                                        }
+                                        if (isFinite) {
+                                            objective.upperResultBound = largestRewardPerCost * rewardBound;
+                                        }
+                                    }
+                                } else {
+                                    objective.upperResultBound = (*std::max_element(actionRewards.begin(), actionRewards.end())) * rewardBound;
+                                }
+                                
+                                // If we could not find an upper bound, try to get an upper bound for the unbounded case
+                                if (!objective.upperResultBound) {
+                                    storm::storage::BitVector allStates(model.getNumberOfStates(), true);
+                                    // Get the set of states from which reward is reachable
+                                    auto nonZeroRewardStates = rewModel.getStatesWithZeroReward(model.getTransitionMatrix());
+                                    nonZeroRewardStates.complement();
+                                    auto expRewGreater0EStates = storm::utility::graph::performProbGreater0E(model.getBackwardTransitions(), allStates, nonZeroRewardStates);
+                                    // Eliminate zero-reward ECs
+                                    auto zeroRewardChoices = rewModel.getChoicesWithZeroReward(model.getTransitionMatrix());
+                                    auto ecElimRes = storm::transformer::EndComponentEliminator<ValueType>::transform(model.getTransitionMatrix(), expRewGreater0EStates, zeroRewardChoices, ~allStates);
+                                    allStates.resize(ecElimRes.matrix.getRowGroupCount());
+                                    storm::storage::BitVector outStates(allStates.size(), false);
+                                    std::vector<ValueType> rew0StateProbs;
+                                    rew0StateProbs.reserve(ecElimRes.matrix.getRowCount());
+                                    for (uint64_t state = 0; state < allStates.size(); ++ state) {
+                                        for (uint64_t choice = ecElimRes.matrix.getRowGroupIndices()[state]; choice < ecElimRes.matrix.getRowGroupIndices()[state + 1]; ++choice) {
+                                            // Check whether the choice lead to a state with expRew 0 in the original model
+                                            bool isOutChoice = false;
+                                            uint64_t originalModelChoice = ecElimRes.newToOldRowMapping[choice];
+                                            for (auto const& entry : model.getTransitionMatrix().getRow(originalModelChoice)) {
+                                                if (!expRewGreater0EStates.get(entry.getColumn())) {
+                                                    isOutChoice = true;
+                                                    outStates.set(state, true);
+                                                    rew0StateProbs.push_back(storm::utility::one<ValueType>() - ecElimRes.matrix.getRowSum(choice));
+                                                    assert (!storm::utility::isZero(rew0StateProbs.back()));
+                                                    break;
+                                                }
+                                            }
+                                            if (!isOutChoice) {
+                                                rew0StateProbs.push_back(storm::utility::zero<ValueType>());
+                                            }
+                                        }
+                                    }
+                                    // An upper reward bound can only be computed if it is below infinity
+                                    if (storm::utility::graph::performProb1A(ecElimRes.matrix, ecElimRes.matrix.getRowGroupIndices(), ecElimRes.matrix.transpose(true), allStates, outStates).full()) {
+                                        std::vector<ValueType> rewards;
+                                        rewards.reserve(ecElimRes.matrix.getRowCount());
+                                        for (auto row : ecElimRes.newToOldRowMapping) {
+                                            rewards.push_back(actionRewards[row]);
+                                        }
+                                        storm::modelchecker::helper::BaierUpperRewardBoundsComputer<ValueType> baier(ecElimRes.matrix, rewards, rew0StateProbs);
+                                        objective.upperResultBound = baier.computeUpperBound();
+                                    }
+                                }
+                            }
+                        }
+                    }
+                    return objective.upperResultBound;
+                }
+
+                template<typename ValueType, bool SingleObjectiveMode>
+                boost::optional<ValueType> MultiDimensionalRewardUnfolding<ValueType, SingleObjectiveMode>::getLowerObjectiveBound(uint64_t objectiveIndex) {
+                    auto& objective = this->objectives[objectiveIndex];
+                    if (!objective.lowerResultBound) {
+                        objective.lowerResultBound = storm::utility::zero<ValueType>();
+                    }
+                    return objective.lowerResultBound;
+                }
+
                 
                 template<typename ValueType, bool SingleObjectiveMode>
                 void MultiDimensionalRewardUnfolding<ValueType, SingleObjectiveMode>::setSolutionForCurrentEpoch(std::vector<SolutionType>&& inStateSolutions) {
