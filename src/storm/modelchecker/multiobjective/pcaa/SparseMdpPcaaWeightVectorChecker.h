@@ -4,7 +4,7 @@
 #include <vector>
 
 #include "storm/modelchecker/multiobjective/pcaa/SparsePcaaWeightVectorChecker.h"
-#include "storm/modelchecker/multiobjective/rewardbounded/MultiDimensionalRewardUnfolding.h"
+#include "storm/modelchecker/prctl/helper/rewardbounded/MultiDimensionalRewardUnfolding.h"
 
 namespace storm {
     namespace modelchecker {

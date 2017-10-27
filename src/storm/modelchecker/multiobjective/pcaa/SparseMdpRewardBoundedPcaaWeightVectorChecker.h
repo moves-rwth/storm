@@ -3,7 +3,7 @@
 #include <vector>
 
 #include "storm/modelchecker/multiobjective/pcaa/PcaaWeightVectorChecker.h"
-#include "storm/modelchecker/multiobjective/rewardbounded/MultiDimensionalRewardUnfolding.h"
+#include "storm/modelchecker/prctl/helper/rewardbounded/MultiDimensionalRewardUnfolding.h"
 #include "storm/solver/MinMaxLinearEquationSolver.h"
 #include "storm/solver/LinearEquationSolver.h"
 
@@ -70,17 +70,17 @@ namespace storm {
                     std::vector<std::vector<ValueType>> xLinEq;
                     std::unique_ptr<storm::solver::LinearEquationSolver<ValueType>> linEqSolver;
                     
-                    std::vector<typename MultiDimensionalRewardUnfolding<ValueType, false>::SolutionType> solutions;
+                    std::vector<typename helper::rewardbounded::MultiDimensionalRewardUnfolding<ValueType, false>::SolutionType> solutions;
                 };
                 
-                void computeEpochSolution(typename MultiDimensionalRewardUnfolding<ValueType, false>::Epoch const& epoch, std::vector<ValueType> const& weightVector, EpochCheckingData& cachedData, ValueType const& precision);
+                void computeEpochSolution(typename helper::rewardbounded::MultiDimensionalRewardUnfolding<ValueType, false>::Epoch const& epoch, std::vector<ValueType> const& weightVector, EpochCheckingData& cachedData, ValueType const& precision);
                 
-                void updateCachedData(typename MultiDimensionalRewardUnfolding<ValueType, false>::EpochModel const& epochModel, EpochCheckingData& cachedData, std::vector<ValueType> const& weightVector, ValueType const& precision);
+                void updateCachedData(typename helper::rewardbounded::MultiDimensionalRewardUnfolding<ValueType, false>::EpochModel const& epochModel, EpochCheckingData& cachedData, std::vector<ValueType> const& weightVector, ValueType const& precision);
                 
                 storm::utility::Stopwatch swAll, swEpochModelBuild, swEpochModelAnalysis;
                 uint64_t numSchedChanges, numCheckedEpochs, numChecks;
                 
-                MultiDimensionalRewardUnfolding<ValueType, false> rewardUnfolding;
+                helper::rewardbounded::MultiDimensionalRewardUnfolding<ValueType, false> rewardUnfolding;
                 
                 boost::optional<std::vector<ValueType>> underApproxResult;
                 boost::optional<std::vector<ValueType>> overApproxResult;

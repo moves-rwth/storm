@@ -84,7 +84,6 @@ namespace storm {
                     storm::utility::exportDataToCSVFile<ValueType, ValueType, std::string>("cdf" + std::to_string(numChecks) + ".csv", cdfData, weightVector, headers);
                 }
                 auto solution = rewardUnfolding.getInitialStateResult(initEpoch);
-                // Todo: we currently assume precise results...
                 auto solutionIt = solution.begin();
                 ++solutionIt;
                 underApproxResult = std::vector<ValueType>(solutionIt, solution.end());
@@ -93,14 +92,14 @@ namespace storm {
             }
             
             template <class SparseMdpModelType>
-            void SparseMdpRewardBoundedPcaaWeightVectorChecker<SparseMdpModelType>::computeEpochSolution(typename MultiDimensionalRewardUnfolding<ValueType, false>::Epoch const& epoch, std::vector<ValueType> const& weightVector, EpochCheckingData& cachedData, ValueType const& precision) {
+            void SparseMdpRewardBoundedPcaaWeightVectorChecker<SparseMdpModelType>::computeEpochSolution(typename helper::rewardbounded::MultiDimensionalRewardUnfolding<ValueType, false>::Epoch const& epoch, std::vector<ValueType> const& weightVector, EpochCheckingData& cachedData, ValueType const& precision) {
                 
                 ++numCheckedEpochs;
                 swEpochModelBuild.start();
                 auto& epochModel = rewardUnfolding.setCurrentEpoch(epoch);
                 swEpochModelBuild.stop();
                 swEpochModelAnalysis.start();
-                std::vector<typename MultiDimensionalRewardUnfolding<ValueType, false>::SolutionType> result;
+                std::vector<typename helper::rewardbounded::MultiDimensionalRewardUnfolding<ValueType, false>::SolutionType> result;
                 result.reserve(epochModel.epochInStates.getNumberOfSetBits());
                 uint64_t solutionSize = this->objectives.size() + 1;
 
@@ -287,7 +286,7 @@ namespace storm {
             }
 
             template <class SparseMdpModelType>
-            void SparseMdpRewardBoundedPcaaWeightVectorChecker<SparseMdpModelType>::updateCachedData(typename MultiDimensionalRewardUnfolding<ValueType, false>::EpochModel const& epochModel, EpochCheckingData& cachedData, std::vector<ValueType> const& weightVector, ValueType const& precision) {
+            void SparseMdpRewardBoundedPcaaWeightVectorChecker<SparseMdpModelType>::updateCachedData(typename helper::rewardbounded::MultiDimensionalRewardUnfolding<ValueType, false>::EpochModel const& epochModel, EpochCheckingData& cachedData, std::vector<ValueType> const& weightVector, ValueType const& precision) {
                 if (epochModel.epochMatrixChanged) {
                 
                     // Update the cached MinMaxSolver data

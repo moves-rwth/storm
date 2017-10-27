@@ -66,7 +66,7 @@ namespace storm {
                     opInfo.bound = checkTask.getBound();
                 }
                 auto formula = std::make_shared<storm::logic::ProbabilityOperatorFormula>(checkTask.getFormula().asSharedPointer(), opInfo);
-                storm::modelchecker::multiobjective::MultiDimensionalRewardUnfolding<ValueType, true> rewardUnfolding(this->getModel(), formula);
+                helper::rewardbounded::MultiDimensionalRewardUnfolding<ValueType, true> rewardUnfolding(this->getModel(), formula);
                 auto numericResult = storm::modelchecker::helper::SparseMdpPrctlHelper<ValueType>::computeRewardBoundedValues(helper::SolutionType::UntilProbabilities, checkTask.getOptimizationDirection(), rewardUnfolding, this->getModel().getInitialStates(), *minMaxLinearEquationSolverFactory);
                 return std::unique_ptr<CheckResult>(new ExplicitQuantitativeCheckResult<ValueType>(std::move(numericResult)));
             } else {
@@ -145,7 +145,7 @@ namespace storm {
                     opInfo.bound = checkTask.getBound();
                 }
                 auto formula = std::make_shared<storm::logic::RewardOperatorFormula>(checkTask.getFormula().asSharedPointer(), checkTask.getRewardModel(), opInfo);
-                storm::modelchecker::multiobjective::MultiDimensionalRewardUnfolding<ValueType, true> rewardUnfolding(this->getModel(), formula);
+                helper::rewardbounded::MultiDimensionalRewardUnfolding<ValueType, true> rewardUnfolding(this->getModel(), formula);
                 auto numericResult = storm::modelchecker::helper::SparseMdpPrctlHelper<ValueType>::computeRewardBoundedValues(helper::SolutionType::ExpectedRewards, checkTask.getOptimizationDirection(), rewardUnfolding, this->getModel().getInitialStates(), *minMaxLinearEquationSolverFactory);
                 return std::unique_ptr<CheckResult>(new ExplicitQuantitativeCheckResult<ValueType>(std::move(numericResult)));
             } else {

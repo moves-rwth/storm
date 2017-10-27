@@ -84,7 +84,7 @@ namespace storm {
 
             
             template<typename ValueType>
-            std::vector<ValueType> analyzeTrivialEpochModel(OptimizationDirection dir, typename storm::modelchecker::multiobjective::MultiDimensionalRewardUnfolding<ValueType, true>::EpochModel& epochModel) {
+            std::vector<ValueType> analyzeTrivialEpochModel(OptimizationDirection dir, typename rewardbounded::MultiDimensionalRewardUnfolding<ValueType, true>::EpochModel& epochModel) {
                 // Assert that the epoch model is indeed trivial
                 assert(epochModel.epochMatrix.getEntryCount() == 0);
                 
@@ -134,7 +134,7 @@ namespace storm {
             }
             
             template<typename ValueType>
-            std::vector<ValueType> analyzeNonTrivialEpochModel(OptimizationDirection dir, typename storm::modelchecker::multiobjective::MultiDimensionalRewardUnfolding<ValueType, true>::EpochModel& epochModel, std::vector<ValueType>& x, std::vector<ValueType>& b, std::unique_ptr<storm::solver::MinMaxLinearEquationSolver<ValueType>>& minMaxSolver, storm::solver::MinMaxLinearEquationSolverFactory<ValueType> const& minMaxLinearEquationSolverFactory, ValueType const& precision, SolutionType const& type) {
+            std::vector<ValueType> analyzeNonTrivialEpochModel(OptimizationDirection dir, typename rewardbounded::MultiDimensionalRewardUnfolding<ValueType, true>::EpochModel& epochModel, std::vector<ValueType>& x, std::vector<ValueType>& b, std::unique_ptr<storm::solver::MinMaxLinearEquationSolver<ValueType>>& minMaxSolver, storm::solver::MinMaxLinearEquationSolverFactory<ValueType> const& minMaxLinearEquationSolverFactory, ValueType const& precision, SolutionType const& type) {
  
                 // Update some data for the case that the Matrix has changed
                 if (epochModel.epochMatrixChanged) {
@@ -182,7 +182,7 @@ namespace storm {
             }
             
             template<typename ValueType>
-            std::map<storm::storage::sparse::state_type, ValueType> SparseMdpPrctlHelper<ValueType>::computeRewardBoundedValues(SolutionType const& type, OptimizationDirection dir, storm::modelchecker::multiobjective::MultiDimensionalRewardUnfolding<ValueType, true>& rewardUnfolding, storm::storage::BitVector const& initialStates, storm::solver::MinMaxLinearEquationSolverFactory<ValueType> const& minMaxLinearEquationSolverFactory) {
+            std::map<storm::storage::sparse::state_type, ValueType> SparseMdpPrctlHelper<ValueType>::computeRewardBoundedValues(SolutionType const& type, OptimizationDirection dir, rewardbounded::MultiDimensionalRewardUnfolding<ValueType, true>& rewardUnfolding, storm::storage::BitVector const& initialStates, storm::solver::MinMaxLinearEquationSolverFactory<ValueType> const& minMaxLinearEquationSolverFactory) {
                 storm::utility::Stopwatch swAll(true), swBuild, swCheck;
                 auto initEpoch = rewardUnfolding.getStartEpoch();
                 auto epochOrder = rewardUnfolding.getEpochComputationOrder(initEpoch);
