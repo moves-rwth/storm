@@ -49,17 +49,7 @@ namespace storm {
                 auto initEpoch = rewardUnfolding.getStartEpoch();
                 auto epochOrder = rewardUnfolding.getEpochComputationOrder(initEpoch);
                 EpochCheckingData cachedData;
-                ValueType precision = storm::utility::convertNumber<ValueType>(storm::settings::getModule<storm::settings::modules::GeneralSettings>().getPrecision());
-                uint64_t epochCount = 0;
-                for (uint64_t dim = 0; dim < rewardUnfolding.getEpochManager().getDimensionCount(); ++dim) {
-                    epochCount += rewardUnfolding.getEpochManager().getDimensionOfEpoch(initEpoch, dim) + 1;
-                }
-                if (storm::settings::getModule<storm::settings::modules::GeneralSettings>().isSoundSet()) {
-                    precision = precision / storm::utility::convertNumber<ValueType>(epochCount);
-                }
-                if (numChecks == 1) {
-                    STORM_PRINT_AND_LOG("Objective/Dimension/Epoch count is: " << this->objectives.size() << "/" << rewardUnfolding.getEpochManager().getDimensionCount() << "/" <<  epochOrder.size() << "."  << std::endl);
-                }
+                ValueType precision = rewardUnfolding.getRequiredEpochModelPrecision(initEpoch, storm::utility::convertNumber<ValueType>(storm::settings::getModule<storm::settings::modules::GeneralSettings>().getPrecision()));
 
                 storm::utility::ProgressMeasurement progress("epochs");
                 progress.setMaxCount(epochOrder.size());

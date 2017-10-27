@@ -46,24 +46,17 @@ namespace storm {
                 MultiDimensionalRewardUnfolding(storm::models::sparse::Mdp<ValueType> const& model, std::vector<storm::modelchecker::multiobjective::Objective<ValueType>> const& objectives);
                 MultiDimensionalRewardUnfolding(storm::models::sparse::Mdp<ValueType> const& model, std::shared_ptr<storm::logic::OperatorFormula const> objectiveFormula);
                 
-                ~MultiDimensionalRewardUnfolding() {
-                    std::cout << "Implicit unfolding statistics: " << std::endl;
-                    std::cout << " Memory Product size: " << productModel->getProduct().getNumberOfStates() << std::endl;
-                    std::cout << "  maxSolutionsStored: " << maxSolutionsStored << std::endl;
-                    std::cout << "Occurring Epoch model sizes: ";
-                    for (auto const& i : epochModelSizes) {
-                        std::cout << i << " ";
-                    }
-                    std::cout << std::endl;
-                    std::cout << "---------------------------------------------" << std::endl;
-                    std::cout << std::endl;
-                    
-                }
+                ~MultiDimensionalRewardUnfolding() = default;
                 
                 Epoch getStartEpoch();
                 std::vector<Epoch> getEpochComputationOrder(Epoch const& startEpoch);
                 
                 EpochModel& setCurrentEpoch(Epoch const& epoch);
+                
+                /*!
+                 * Returns the precision required for the analyzis of each epoch model in order to achieve the given overall precision
+                 */
+                ValueType getRequiredEpochModelPrecision(Epoch const& startEpoch, ValueType const& precision);
                 
                 void setSolutionForCurrentEpoch(std::vector<SolutionType>&& inStateSolutions);
                 SolutionType const& getInitialStateResult(Epoch const& epoch); // Assumes that the initial state is unique
@@ -79,7 +72,6 @@ namespace storm {
                 
                 void initializeObjectives(std::vector<Epoch>& epochSteps);
                 void computeMaxDimensionValues();
-
                 
                 void initializeMemoryProduct(std::vector<Epoch> const& epochSteps);
                 

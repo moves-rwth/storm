@@ -82,6 +82,105 @@ namespace storm {
                 return result;
             }
 
+            
+            template<typename ValueType>
+            std::vector<ValueType> analyzeTrivialEpochModel(OptimizationDirection dir, typename storm::modelchecker::multiobjective::MultiDimensionalRewardUnfolding<ValueType, true>::EpochModel& epochModel) {
+                // Assert that the epoch model is indeed trivial
+                assert(epochModel.epochMatrix.getEntryCount() == 0);
+                
+                std::vector<ValueType> epochResult;
+                epochResult.reserve(epochModel.epochInStates.getNumberOfSetBits());
+                
+                auto stepSolutionIt = epochModel.stepSolutions.begin();
+                auto stepChoiceIt = epochModel.stepChoices.begin();
+                for (auto const& state : epochModel.epochInStates) {
+                    // Obtain the best choice for this state
+                    ValueType bestValue;
+                    uint64_t lastChoice = epochModel.epochMatrix.getRowGroupIndices()[state + 1];
+                    bool isFirstChoice = true;
+                    for (uint64_t choice = epochModel.epochMatrix.getRowGroupIndices()[state]; choice < lastChoice; ++choice) {
+                        while (*stepChoiceIt < choice) {
+                            ++stepChoiceIt;
+                            ++stepSolutionIt;
+                        }
+                        
+                        ValueType choiceValue = storm::utility::zero<ValueType>();
+                        if (epochModel.objectiveRewardFilter.front().get(choice)) {
+                            choiceValue += epochModel.objectiveRewards.front()[choice];
+                        }
+                        if (*stepChoiceIt == choice) {
+                            choiceValue += *stepSolutionIt;
+                        }
+                        
+                        if (isFirstChoice) {
+                            bestValue = std::move(choiceValue);
+                            isFirstChoice = false;
+                        } else {
+                            if (storm::solver::minimize(dir)) {
+                                if (choiceValue < bestValue) {
+                                    bestValue = std::move(choiceValue);
+                                }
+                            } else {
+                                if (choiceValue > bestValue) {
+                                    bestValue = std::move(choiceValue);
+                                }
+                            }
+                        }
+                    }
+                    // Insert the solution w.r.t. this choice
+                    epochResult.push_back(std::move(bestValue));
+                }
+                return epochResult;
+            }
+            
+            template<typename ValueType>
+            std::vector<ValueType> analyzeNonTrivialEpochModel(OptimizationDirection dir, typename storm::modelchecker::multiobjective::MultiDimensionalRewardUnfolding<ValueType, true>::EpochModel& epochModel, std::vector<ValueType>& x, std::vector<ValueType>& b, std::unique_ptr<storm::solver::MinMaxLinearEquationSolver<ValueType>>& minMaxSolver, storm::solver::MinMaxLinearEquationSolverFactory<ValueType> const& minMaxLinearEquationSolverFactory, ValueType const& precision, SolutionType const& type) {
+ 
+                // Update some data for the case that the Matrix has changed
+                if (epochModel.epochMatrixChanged) {
+                    x.assign(epochModel.epochMatrix.getRowGroupCount(), storm::utility::zero<ValueType>());
+                    minMaxSolver = minMaxLinearEquationSolverFactory.create(epochModel.epochMatrix);
+                    minMaxSolver->setHasUniqueSolution();
+                    minMaxSolver->setPrecision(precision);
+                    minMaxSolver->setOptimizationDirection(dir);
+                    minMaxSolver->setCachingEnabled(true);
+                    minMaxSolver->setTrackScheduler(true);
+                    auto req = minMaxSolver->getRequirements(dir);
+                    minMaxSolver->setLowerBound(storm::utility::zero<ValueType>());
+                    req.clearLowerBounds();
+                    if (type == SolutionType::UntilProbabilities) {
+                        minMaxSolver->setUpperBound(storm::utility::one<ValueType>());
+                        req.clearUpperBounds();
+                    } else if (type == SolutionType::ExpectedRewards) {
+                        // TODO
+                        STORM_LOG_WARN_COND(!req.requiresUpperBounds(), "Upper bounds for expected reward are not specified.");
+                    }
+                    STORM_LOG_THROW(req.empty(), storm::exceptions::UncheckedRequirementException, "At least one requirement was not checked.");
+                    minMaxSolver->setRequirementsChecked();
+                } else {
+                    auto choicesTmp = minMaxSolver->getSchedulerChoices();
+                    minMaxSolver->setInitialScheduler(std::move(choicesTmp));
+                }
+                
+                // Prepare the right hand side of the equation system
+                b.assign(epochModel.epochMatrix.getRowCount(), storm::utility::zero<ValueType>());
+                std::vector<ValueType> const& objectiveValues = epochModel.objectiveRewards.front();
+                for (auto const& choice : epochModel.objectiveRewardFilter.front()) {
+                    b[choice] = objectiveValues[choice];
+                }
+                auto stepSolutionIt = epochModel.stepSolutions.begin();
+                for (auto const& choice : epochModel.stepChoices) {
+                    b[choice] += *stepSolutionIt;
+                    ++stepSolutionIt;
+                }
+                assert(stepSolutionIt == epochModel.stepSolutions.end());
+                
+                // Solve the minMax equation system
+                minMaxSolver->solveEquations(x, b);
+                
+                return storm::utility::vector::filterVector(x, epochModel.epochInStates);
+            }
+            
             template<typename ValueType>
             std::map<storm::storage::sparse::state_type, ValueType> SparseMdpPrctlHelper<ValueType>::computeRewardBoundedValues(SolutionType const& type, OptimizationDirection dir, storm::modelchecker::multiobjective::MultiDimensionalRewardUnfolding<ValueType, true>& rewardUnfolding, storm::storage::BitVector const& initialStates, storm::solver::MinMaxLinearEquationSolverFactory<ValueType> const& minMaxLinearEquationSolverFactory) {
                 storm::utility::Stopwatch swAll(true), swBuild, swCheck;
@@ -92,14 +191,8 @@ namespace storm {
                 std::vector<ValueType> x, b;
                 std::unique_ptr<storm::solver::MinMaxLinearEquationSolver<ValueType>> minMaxSolver;
 
-                ValueType precision = storm::utility::convertNumber<ValueType>(storm::settings::getModule<storm::settings::modules::GeneralSettings>().getPrecision());
-                uint64_t epochCount = 0;
-                for (uint64_t dim = 0; dim < rewardUnfolding.getEpochManager().getDimensionCount(); ++dim) {
-                    epochCount += rewardUnfolding.getEpochManager().getDimensionOfEpoch(initEpoch, dim) + 1;
-                }
-                if (storm::settings::getModule<storm::settings::modules::GeneralSettings>().isSoundSet()) {
-                    precision = precision / storm::utility::convertNumber<ValueType>(epochCount);
-                }
+                ValueType precision = rewardUnfolding.getRequiredEpochModelPrecision(initEpoch, storm::utility::convertNumber<ValueType>(storm::settings::getModule<storm::settings::modules::GeneralSettings>().getPrecision()));
+
                 storm::utility::ProgressMeasurement progress("epochs");
                 progress.setMaxCount(epochOrder.size());
                 progress.startNewMeasurement(0);
@@ -110,95 +203,9 @@ namespace storm {
                     swBuild.stop(); swCheck.start();
                     // If the epoch matrix is empty we do not need to solve a linear equation system
                     if (epochModel.epochMatrix.getEntryCount() == 0) {
-                        std::vector<ValueType> epochResult;
-                        epochResult.reserve(epochModel.epochInStates.getNumberOfSetBits());
-                        
-                        auto stepSolutionIt = epochModel.stepSolutions.begin();
-                        auto stepChoiceIt = epochModel.stepChoices.begin();
-                        for (auto const& state : epochModel.epochInStates) {
-                            // Obtain the best choice for this state
-                            ValueType bestValue;
-                            uint64_t lastChoice = epochModel.epochMatrix.getRowGroupIndices()[state + 1];
-                            bool isFirstChoice = true;
-                            for (uint64_t choice = epochModel.epochMatrix.getRowGroupIndices()[state]; choice < lastChoice; ++choice) {
-                                while (*stepChoiceIt < choice) {
-                                    ++stepChoiceIt;
-                                    ++stepSolutionIt;
-                                }
-                                
-                                ValueType choiceValue = storm::utility::zero<ValueType>();
-                                if (epochModel.objectiveRewardFilter.front().get(choice)) {
-                                    choiceValue += epochModel.objectiveRewards.front()[choice];
-                                }
-                                if (*stepChoiceIt == choice) {
-                                    choiceValue += *stepSolutionIt;
-                                }
-                                
-                                if (isFirstChoice) {
-                                    bestValue = std::move(choiceValue);
-                                    isFirstChoice = false;
-                                } else {
-                                    if (storm::solver::minimize(dir)) {
-                                        if (choiceValue < bestValue) {
-                                            bestValue = std::move(choiceValue);
-                                        }
-                                    } else {
-                                        if (choiceValue > bestValue) {
-                                            bestValue = std::move(choiceValue);
-                                        }
-                                    }
-                                }
-                            }
-                            // Insert the solution w.r.t. this choice
-                            epochResult.push_back(std::move(bestValue));
-                        }
-                        
-                        rewardUnfolding.setSolutionForCurrentEpoch(std::move(epochResult));
+                        rewardUnfolding.setSolutionForCurrentEpoch(analyzeTrivialEpochModel<ValueType>(dir, epochModel));
                     } else {
-                        // Update some data for the case that the Matrix has changed
-                        if (epochModel.epochMatrixChanged) {
-                            x.assign(epochModel.epochMatrix.getRowGroupCount(), storm::utility::zero<ValueType>());
-                            minMaxSolver = minMaxLinearEquationSolverFactory.create(epochModel.epochMatrix);
-                            minMaxSolver->setHasUniqueSolution();
-                            minMaxSolver->setPrecision(precision);
-                            minMaxSolver->setOptimizationDirection(dir);
-                            minMaxSolver->setCachingEnabled(true);
-                            minMaxSolver->setTrackScheduler(true);
-                            auto req = minMaxSolver->getRequirements(dir);
-                            minMaxSolver->setLowerBound(storm::utility::zero<ValueType>());
-                            req.clearLowerBounds();
-                            if (type == SolutionType::UntilProbabilities) {
-                                minMaxSolver->setUpperBound(storm::utility::one<ValueType>());
-                                req.clearUpperBounds();
-                            } else if (type == SolutionType::ExpectedRewards) {
-                                // TODO
-                                STORM_LOG_WARN_COND(!req.requiresUpperBounds(), "Upper bounds for expected reward are not specified.");
-                            }
-                            STORM_LOG_THROW(req.empty(), storm::exceptions::UncheckedRequirementException, "At least one requirement was not checked.");
-                            minMaxSolver->setRequirementsChecked();
-                        } else {
-                            auto choicesTmp = minMaxSolver->getSchedulerChoices();
-                            minMaxSolver->setInitialScheduler(std::move(choicesTmp));
-                        }
-                        
-                        // Prepare the right hand side of the equation system
-                        b.assign(epochModel.epochMatrix.getRowCount(), storm::utility::zero<ValueType>());
-                        std::vector<ValueType> const& objectiveValues = epochModel.objectiveRewards.front();
-                        for (auto const& choice : epochModel.objectiveRewardFilter.front()) {
-                            b[choice] = objectiveValues[choice];
-                        }
-                        auto stepSolutionIt = epochModel.stepSolutions.begin();
-                        for (auto const& choice : epochModel.stepChoices) {
-                            b[choice] += *stepSolutionIt;
-                            ++stepSolutionIt;
-                        }
-                        assert(stepSolutionIt == epochModel.stepSolutions.end());
-                        
-                        // Solve the minMax equation system
-                        minMaxSolver->solveEquations(x, b);
-                        
-                        // Plug in the result into the reward unfolding
-                        rewardUnfolding.setSolutionForCurrentEpoch(storm::utility::vector::filterVector(x, epochModel.epochInStates));
+                        rewardUnfolding.setSolutionForCurrentEpoch(analyzeNonTrivialEpochModel<ValueType>(dir, epochModel, x, b, minMaxSolver, minMaxLinearEquationSolverFactory, precision, type));
                     }
                     swCheck.stop();
                     ++numCheckedEpochs;

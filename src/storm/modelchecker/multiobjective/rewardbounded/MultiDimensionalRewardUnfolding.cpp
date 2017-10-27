@@ -538,6 +538,16 @@ namespace storm {
             }
             
             template<typename ValueType, bool SingleObjectiveMode>
+            ValueType MultiDimensionalRewardUnfolding<ValueType, SingleObjectiveMode>::getRequiredEpochModelPrecision(Epoch const& startEpoch, ValueType const& precision) {
+                // if (storm::settings::getModule<storm::settings::modules::GeneralSettings>().isSoundSet()) {
+                uint64_t sumOfDimensions = 0;
+                for (uint64_t dim = 0; dim < epochManager.getDimensionCount(); ++dim) {
+                    sumOfDimensions += epochManager.getDimensionOfEpoch(startEpoch, dim) + 1;
+                }
+                return precision / storm::utility::convertNumber<ValueType>(sumOfDimensions);
+            }
+            
+            template<typename ValueType, bool SingleObjectiveMode>
             void MultiDimensionalRewardUnfolding<ValueType, SingleObjectiveMode>::setSolutionForCurrentEpoch(std::vector<SolutionType>&& inStateSolutions) {
                 STORM_LOG_ASSERT(currentEpoch, "Tried to set a solution for the current epoch, but no epoch was specified before.");
                 STORM_LOG_ASSERT(inStateSolutions.size() == epochModel.epochInStates.getNumberOfSetBits(), "Invalid number of solutions.");
