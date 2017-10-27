@@ -27,18 +27,7 @@ namespace storm {
             
                 SparseMdpRewardBoundedPcaaWeightVectorChecker(SparseMultiObjectivePreprocessorResult<SparseMdpModelType> const& preprocessorResult);
 
-                virtual ~SparseMdpRewardBoundedPcaaWeightVectorChecker() {
-                    swAll.stop();
-                    std::cout << "WVC statistics: " << std::endl;
-                    std::cout << "                overall Time: " <<  swAll << "." << std::endl;
-                    std::cout << "---------------------------------------------" << std::endl;
-                    std::cout << "     #checked weight vectors: " << numChecks << "." << std::endl;
-                    std::cout << "             #checked epochs: " << numCheckedEpochs << "." << std::endl;
-                    std::cout << "#Sched reused from prev. ep.: " << (numCheckedEpochs - numSchedChanges) << "." << std::endl;
-                    std::cout << "   Epoch Model building time: "  << swEpochModelBuild << "." << std::endl;
-                    std::cout << "   Epoch Model checking time: "  << swEpochModelAnalysis << "." << std::endl;
-                }
-                
+                virtual ~SparseMdpRewardBoundedPcaaWeightVectorChecker();
 
                 /*!
                  * - computes the optimal expected reward w.r.t. the weighted sum of the rewards of the individual objectives
@@ -78,7 +67,7 @@ namespace storm {
                 void updateCachedData(typename helper::rewardbounded::MultiDimensionalRewardUnfolding<ValueType, false>::EpochModel const& epochModel, EpochCheckingData& cachedData, std::vector<ValueType> const& weightVector, ValueType const& precision);
                 
                 storm::utility::Stopwatch swAll, swEpochModelBuild, swEpochModelAnalysis;
-                uint64_t numSchedChanges, numCheckedEpochs, numChecks;
+                uint64_t numCheckedEpochs, numChecks;
                 
                 helper::rewardbounded::MultiDimensionalRewardUnfolding<ValueType, false> rewardUnfolding;
                 

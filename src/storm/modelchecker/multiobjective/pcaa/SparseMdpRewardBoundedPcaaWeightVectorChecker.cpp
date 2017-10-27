@@ -14,6 +14,7 @@
 #include "storm/utility/export.h"
 #include "storm/settings/modules/IOSettings.h"
 #include "storm/settings/modules/GeneralSettings.h"
+#include "storm/settings/modules/CoreSettings.h"
 
 #include "storm/exceptions/InvalidPropertyException.h"
 #include "storm/exceptions/InvalidOperationException.h"
@@ -33,9 +34,25 @@ namespace storm {
                 STORM_LOG_THROW(preprocessorResult.rewardFinitenessType == SparseMultiObjectivePreprocessorResult<SparseMdpModelType>::RewardFinitenessType::AllFinite, storm::exceptions::NotSupportedException, "There is a scheduler that yields infinite reward for one  objective. This is not supported.");
                 STORM_LOG_THROW(preprocessorResult.preprocessedModel->getInitialStates().getNumberOfSetBits() == 1, storm::exceptions::NotSupportedException, "The model has multiple initial states.");
                 
-                numSchedChanges = 0;
                 numCheckedEpochs = 0;
                 numChecks = 0;
+            }
+            
+            template <class SparseMdpModelType>
+            SparseMdpRewardBoundedPcaaWeightVectorChecker<SparseMdpModelType>::~SparseMdpRewardBoundedPcaaWeightVectorChecker() {
+                swAll.stop();
+                if (storm::settings::getModule<storm::settings::modules::CoreSettings>().isShowStatisticsSet()) {
+                    STORM_PRINT_AND_LOG("--------------------------------------------------" << std::endl);
+                    STORM_PRINT_AND_LOG("Statistics:" << std::endl);
+                    STORM_PRINT_AND_LOG("--------------------------------------------------" << std::endl);
+                    STORM_PRINT_AND_LOG("           #checked weight vectors: " << numChecks << "." << std::endl);
+                    STORM_PRINT_AND_LOG("           #checked epochs overall: " << numCheckedEpochs << "." << std::endl);
+                    STORM_PRINT_AND_LOG("# checked epochs per weight vector: " << numCheckedEpochs / numChecks << "." << std::endl);
+                    STORM_PRINT_AND_LOG("                      overall Time: " <<  swAll << "." << std::endl);
+                    STORM_PRINT_AND_LOG("         Epoch Model building time: "  << swEpochModelBuild << "." << std::endl);
+                    STORM_PRINT_AND_LOG("         Epoch Model checking time: "  << swEpochModelAnalysis << "." << std::endl);
+                    STORM_PRINT_AND_LOG("--------------------------------------------------" << std::endl);
+                }
             }
             
             template <class SparseMdpModelType>
@@ -212,7 +229,6 @@ namespace storm {
                     if (cachedData.schedulerChoices != choices) {
                         std::vector<uint64_t> choicesTmp = choices;
                         cachedData.minMaxSolver->setInitialScheduler(std::move(choicesTmp));
-                        ++numSchedChanges;
                         cachedData.schedulerChoices = choices;
                         storm::solver::GeneralLinearEquationSolverFactory<ValueType> linEqSolverFactory;
                         bool needEquationSystem = linEqSolverFactory.getEquationProblemFormat() == storm::solver::LinearEquationSolverProblemFormat::EquationSystem;
