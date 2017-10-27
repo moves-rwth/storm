@@ -18,7 +18,7 @@ namespace storm {
             IterativeMinMaxLinearEquationSolverSettings();
             
             enum class SolutionMethod {
-                ValueIteration, PolicyIteration, Acyclic, RationalSearch
+                ValueIteration, PolicyIteration, RationalSearch
             };
             
             void setSolutionMethod(SolutionMethod const& solutionMethod);

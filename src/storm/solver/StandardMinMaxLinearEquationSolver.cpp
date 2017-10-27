@@ -107,7 +107,7 @@ namespace storm {
         std::unique_ptr<MinMaxLinearEquationSolver<ValueType>> StandardMinMaxLinearEquationSolverFactory<ValueType>::create() const {
             std::unique_ptr<MinMaxLinearEquationSolver<ValueType>> result;
             auto method = this->getMinMaxMethod();
-            if (method == MinMaxMethod::ValueIteration || method == MinMaxMethod::PolicyIteration || method == MinMaxMethod::Acyclic) {
+            if (method == MinMaxMethod::ValueIteration || method == MinMaxMethod::PolicyIteration) {
                 IterativeMinMaxLinearEquationSolverSettings<ValueType> iterativeSolverSettings;
                 iterativeSolverSettings.setSolutionMethod(method);
                 result = std::make_unique<IterativeMinMaxLinearEquationSolver<ValueType>>(this->linearEquationSolverFactory->clone(), iterativeSolverSettings);
