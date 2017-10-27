@@ -67,12 +67,12 @@ namespace storm {
             virtual MinMaxLinearEquationSolverRequirements getRequirements(boost::optional<storm::solver::OptimizationDirection> const& direction = boost::none) const override;
             
         private:
+            bool solveInducedEquationSystem(std::unique_ptr<LinearEquationSolver<ValueType>>& linearEquationSolver, std::vector<uint64_t> const& scheduler, std::vector<ValueType>& x, std::vector<ValueType>& subB, std::vector<ValueType> const& originalB) const;
             bool solveEquationsPolicyIteration(OptimizationDirection dir, std::vector<ValueType>& x, std::vector<ValueType> const& b) const;
             bool valueImproved(OptimizationDirection dir, ValueType const& value1, ValueType const& value2) const;
 
             bool solveEquationsValueIteration(OptimizationDirection dir, std::vector<ValueType>& x, std::vector<ValueType> const& b) const;
             bool solveEquationsSoundValueIteration(OptimizationDirection dir, std::vector<ValueType>& x, std::vector<ValueType> const& b) const;
-            bool solveEquationsAcyclic(OptimizationDirection dir, std::vector<ValueType>& x, std::vector<ValueType> const& b) const;
             bool solveEquationsRationalSearch(OptimizationDirection dir, std::vector<ValueType>& x, std::vector<ValueType> const& b) const;
             
             template<typename RationalType, typename ImpreciseType>

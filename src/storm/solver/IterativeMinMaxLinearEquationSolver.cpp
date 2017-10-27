@@ -144,6 +144,37 @@ namespace storm {
             
             return result;
         }
+
+        template<typename ValueType>
+        bool IterativeMinMaxLinearEquationSolver<ValueType>::solveInducedEquationSystem(std::unique_ptr<LinearEquationSolver<ValueType>>& linearEquationSolver, std::vector<uint64_t> const& scheduler, std::vector<ValueType>& x, std::vector<ValueType>& subB, std::vector<ValueType> const& originalB) const {
+            assert(subB.size() == x.size());
+            
+            // Resolve the nondeterminism according to the given scheduler.
+            bool convertToEquationSystem = this->linearEquationSolverFactory->getEquationProblemFormat() == LinearEquationSolverProblemFormat::EquationSystem;
+            storm::storage::SparseMatrix<ValueType> submatrix = this->A->selectRowsFromRowGroups(scheduler, convertToEquationSystem);
+            if (convertToEquationSystem) {
+                submatrix.convertToEquationSystem();
+            }
+            storm::utility::vector::selectVectorValues<ValueType>(subB, scheduler, this->A->getRowGroupIndices(), originalB);
+            
+            // Check whether the linear equation solver is already initialized
+            if (!linearEquationSolver) {
+                // Initialize the equation solver
+                linearEquationSolver = this->linearEquationSolverFactory->create(std::move(submatrix));
+                if (this->lowerBound) { // TODO
+                    linearEquationSolver->setLowerBound(this->lowerBound.get());
+                }
+                if (this->upperBound) {
+                    linearEquationSolver->setUpperBound(this->upperBound.get());
+                }
+                linearEquationSolver->setCachingEnabled(true);
+            } else {
+                // If the equation solver is already initialized, it suffices to update the matrix
+                linearEquationSolver->setMatrix(std::move(submatrix));
+            }
+            // Solve the equation system for the 'DTMC' and return true upon success
+            return linearEquationSolver->solveEquations(x, subB);
+        }
         
         template<typename ValueType>
         bool IterativeMinMaxLinearEquationSolver<ValueType>::solveEquationsPolicyIteration(OptimizationDirection dir, std::vector<ValueType>& x, std::vector<ValueType> const& b) const {
@@ -156,30 +187,15 @@ namespace storm {
             }
             std::vector<ValueType>& subB = *auxiliaryRowGroupVector;
 
-            // Resolve the nondeterminism according to the current scheduler.
-            bool convertToEquationSystem = this->linearEquationSolverFactory->getEquationProblemFormat() == LinearEquationSolverProblemFormat::EquationSystem;
-            storm::storage::SparseMatrix<ValueType> submatrix = this->A->selectRowsFromRowGroups(scheduler, convertToEquationSystem);
-            if (convertToEquationSystem) {
-                submatrix.convertToEquationSystem();
-            }
-            storm::utility::vector::selectVectorValues<ValueType>(subB, scheduler, this->A->getRowGroupIndices(), b);
-
-            // Create a solver that we will use throughout the procedure. We will modify the matrix in each iteration.
-            auto solver = this->linearEquationSolverFactory->create(std::move(submatrix));
-            if (this->lowerBound) {
-                solver->setLowerBound(this->lowerBound.get());
-            }
-            if (this->upperBound) {
-                solver->setUpperBound(this->upperBound.get());
-            }
-            solver->setCachingEnabled(true);
+            // The solver that we will use throughout the procedure.
+            std::unique_ptr<storm::solver::LinearEquationSolver<ValueType>> solver;
             
             SolverStatus status = SolverStatus::InProgress;
             uint64_t iterations = 0;
             this->startMeasureProgress();
             do {
                 // Solve the equation system for the 'DTMC'.
-                solver->solveEquations(x, subB);
+                solveInducedEquationSystem(solver, scheduler, x, subB, b);
                 
                 // Go through the multiplication result and see whether we can improve any of the choices.
                 bool schedulerImproved = false;
@@ -212,14 +228,6 @@ namespace storm {
                 // If the scheduler did not improve, we are done.
                 if (!schedulerImproved) {
                     status = SolverStatus::Converged;
-                } else {
-                    // Update the scheduler and the solver.
-                    submatrix = this->A->selectRowsFromRowGroups(scheduler, true);
-                    if (convertToEquationSystem) {
-                        submatrix.convertToEquationSystem();
-                    }
-                    storm::utility::vector::selectVectorValues<ValueType>(subB, scheduler, this->A->getRowGroupIndices(), b);
-                    solver->setMatrix(std::move(submatrix));
                 }
                 
                 // Update environment variables.
@@ -376,37 +384,25 @@ namespace storm {
             SolverGuarantee guarantee = SolverGuarantee::None;
             
             if (this->hasInitialScheduler()) {
-                // Resolve the nondeterminism according to the initial scheduler.
-                bool convertToEquationSystem = this->linearEquationSolverFactory->getEquationProblemFormat() == LinearEquationSolverProblemFormat::EquationSystem;
-                storm::storage::SparseMatrix<ValueType> submatrix = this->A->selectRowsFromRowGroups(this->getInitialScheduler(), convertToEquationSystem);
-                if (convertToEquationSystem) {
-                    submatrix.convertToEquationSystem();
-                }
-                storm::utility::vector::selectVectorValues<ValueType>(*auxiliaryRowGroupVector, this->getInitialScheduler(), this->A->getRowGroupIndices(), b);
-
-                // Solve the resulting equation system.
-                auto submatrixSolver = this->linearEquationSolverFactory->create(std::move(submatrix));
-                submatrixSolver->setCachingEnabled(true);
-                if (this->lowerBound) {
-                    submatrixSolver->setLowerBound(this->lowerBound.get());
-                }
-                if (this->upperBound) {
-                    submatrixSolver->setUpperBound(this->upperBound.get());
-                }
-                submatrixSolver->solveEquations(x, *auxiliaryRowGroupVector);
-                
+                // Solve the equation system induced by the initial scheduler.
+                std::unique_ptr<storm::solver::LinearEquationSolver<ValueType>> linEqSolver;
+                solveInducedEquationSystem(linEqSolver, this->getInitialScheduler(), x, *auxiliaryRowGroupVector, b);
                 // If we were given an initial scheduler and are maximizing (minimizing), our current solution becomes
                 // always less-or-equal (greater-or-equal) than the actual solution.
-                if (dir == storm::OptimizationDirection::Maximize) {
-                    guarantee = SolverGuarantee::LessOrEqual;
-                } else {
-                    guarantee = SolverGuarantee::GreaterOrEqual;
-                }
+                guarantee = maximize(dir) ? SolverGuarantee::LessOrEqual : SolverGuarantee::GreaterOrEqual;
             } else if (!this->hasUniqueSolution()) {
-                if (dir == storm::OptimizationDirection::Maximize) {
+                if (maximize(dir)) {
                     this->createLowerBoundsVector(x);
                     guarantee = SolverGuarantee::LessOrEqual;
                 } else {
+                    this->createUpperBoundsVector(x);
+                    guarantee = SolverGuarantee::GreaterOrEqual;
+                }
+            } else if (this->hasCustomTerminationCondition()) {
+                if (this->getTerminationCondition().requiresGuarantee(SolverGuarantee::LessOrEqual)) {
+                    this->createLowerBoundsVector(x);
+                    guarantee = SolverGuarantee::LessOrEqual;
+                } else if (this->getTerminationCondition().requiresGuarantee(SolverGuarantee::GreaterOrEqual)) {
                     this->createUpperBoundsVector(x);
                     guarantee = SolverGuarantee::GreaterOrEqual;
                 }
