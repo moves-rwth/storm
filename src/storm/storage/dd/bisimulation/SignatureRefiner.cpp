@@ -81,7 +81,7 @@ namespace storm {
             template<typename ValueType>
             class InternalSignatureRefiner<storm::dd::DdType::CUDD, ValueType> {
             public:
-                InternalSignatureRefiner(storm::dd::DdManager<storm::dd::DdType::CUDD> const& manager, storm::expressions::Variable const& blockVariable, std::set<storm::expressions::Variable> const& stateVariables, storm::dd::Bdd<storm::dd::DdType::CUDD> const& nondeterminismVariables, storm::dd::Bdd<storm::dd::DdType::CUDD> const& nonBlockVariables, InternalSignatureRefinerOptions const& options = InternalSignatureRefinerOptions()) : manager(manager), internalDdManager(manager.getInternalDdManager()), ddman(internalDdManager.getCuddManager().getManager()), blockVariable(blockVariable), stateVariables(stateVariables), nondeterminismVariables(nondeterminismVariables), nonBlockVariables(nonBlockVariables), options(options), nextFreeBlockIndex(0), numberOfRefinements(0), lastNumberOfVisitedNodes(10000), signatureCache(lastNumberOfVisitedNodes), reuseBlocksCache(lastNumberOfVisitedNodes) {
+                InternalSignatureRefiner(storm::models::symbolic::Model<storm::dd::DdType::CUDD, ValueType> const& model, storm::dd::DdManager<storm::dd::DdType::CUDD> const& manager, storm::expressions::Variable const& blockVariable, std::set<storm::expressions::Variable> const& stateVariables, storm::dd::Bdd<storm::dd::DdType::CUDD> const& nondeterminismVariables, storm::dd::Bdd<storm::dd::DdType::CUDD> const& nonBlockVariables, InternalSignatureRefinerOptions const& options = InternalSignatureRefinerOptions()) : model(model), manager(manager), internalDdManager(manager.getInternalDdManager()), ddman(internalDdManager.getCuddManager().getManager()), blockVariable(blockVariable), stateVariables(stateVariables), nondeterminismVariables(nondeterminismVariables), nonBlockVariables(nonBlockVariables), options(options), nextFreeBlockIndex(0), numberOfRefinements(0), lastNumberOfVisitedNodes(10000), signatureCache(lastNumberOfVisitedNodes), reuseBlocksCache(lastNumberOfVisitedNodes) {
 
                     // Initialize precomputed data.
                     auto const& ddMetaVariable = manager.getMetaVariable(blockVariable);
@@ -108,12 +108,51 @@ namespace storm {
 
                     nextFreeBlockIndex = options.reuseBlockNumbers ? oldPartition.getNextFreeBlockIndex() : 0;
 
-                    // Perform the actual recursive refinement step.
-                    std::pair<DdNodePtr, DdNodePtr> result = refine(oldPartition.asAdd().getInternalAdd().getCuddDdNode(), signatureAdd.getInternalAdd().getCuddDdNode(), nondeterminismVariables.getInternalBdd().getCuddDdNode(), nonBlockVariables.getInternalBdd().getCuddDdNode());
+                    std::cout << "refining" << std::endl;
+                    
+                    auto start = std::chrono::high_resolution_clock::now();
+                    storm::dd::Bdd<storm::dd::DdType::CUDD> unchangedPartition;
+                    storm::dd::Bdd<storm::dd::DdType::CUDD> changedPartition;
+                    if (oldPartition.hasChangedStates()) {
+                        auto oldPartitionBdd = oldPartition.asAdd().notZero();
+                        auto changedBlocks = model.getTransitionMatrix().notZero().andExists(oldPartition.changedStatesAsAdd().notZero(), model.getColumnVariables()).swapVariables(model.getRowColumnMetaVariablePairs()).andExists(oldPartitionBdd, model.getColumnVariables());
+                        unchangedPartition = oldPartitionBdd && !changedBlocks;
+                        changedPartition = oldPartitionBdd && changedBlocks;
+                    } else {
+                        unchangedPartition = manager.getBddZero();
+                        changedPartition = oldPartition.asAdd().notZero();
+                    }
+                    auto end = std::chrono::high_resolution_clock::now();
+                    std::cout << "[1] took " << std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count() << "ms" << std::endl;
+                    
+                    
+                    // Experiment start here:
+                    std::pair<DdNodePtr, DdNodePtr> resultTmp = refine(changedPartition.template toAdd<ValueType>().getInternalAdd().getCuddDdNode(), signatureAdd.getInternalAdd().getCuddDdNode(), nondeterminismVariables.getInternalBdd().getCuddDdNode(), nonBlockVariables.getInternalBdd().getCuddDdNode());
 
+                    storm::dd::InternalAdd<storm::dd::DdType::CUDD, ValueType> internalNewPartitionAddTmp(&internalDdManager, cudd::ADD(internalDdManager.getCuddManager(), resultTmp.first));
+                    storm::dd::Add<storm::dd::DdType::CUDD, ValueType> newPartitionAddTmp(oldPartition.asAdd().getDdManager(), internalNewPartitionAddTmp, oldPartition.asAdd().getContainedMetaVariables());
+                    newPartitionAddTmp = unchangedPartition.template toAdd<ValueType>() + newPartitionAddTmp;
+                    
+                    // Perform the actual recursive refinement step.
+                    clearCaches();
+                    nextFreeBlockIndex = oldPartition.getNextFreeBlockIndex();
+                    std::pair<DdNodePtr, DdNodePtr> result = refine(oldPartition.asAdd().getInternalAdd().getCuddDdNode(), signatureAdd.getInternalAdd().getCuddDdNode(), nondeterminismVariables.getInternalBdd().getCuddDdNode(), nonBlockVariables.getInternalBdd().getCuddDdNode());
+                    
                     // Construct resulting ADD from the obtained node and the meta information.
                     storm::dd::InternalAdd<storm::dd::DdType::CUDD, ValueType> internalNewPartitionAdd(&internalDdManager, cudd::ADD(internalDdManager.getCuddManager(), result.first));
                     storm::dd::Add<storm::dd::DdType::CUDD, ValueType> newPartitionAdd(oldPartition.asAdd().getDdManager(), internalNewPartitionAdd, oldPartition.asAdd().getContainedMetaVariables());
+                    
+                    if (newPartitionAdd != newPartitionAddTmp) {
+                        std::cout << "failed " << nextFreeBlockIndex << std::endl;
+                        unchangedPartition.template toAdd<ValueType>().exportToDot("unchanged.dot");
+                        changedPartition.template toAdd<ValueType>().exportToDot("changed.dot");
+                        newPartitionAdd.exportToDot("new.dot");
+                        newPartitionAddTmp.exportToDot("new_experiment.dot");
+                        exit(-1);
+                    } else {
+                        std::cout << "passed!" << std::endl;
+                    }
+
                     
                     boost::optional<storm::dd::Add<storm::dd::DdType::CUDD, ValueType>> optionalChangedAdd;
                     if (result.second) {
@@ -183,8 +222,6 @@ namespace storm {
                         bool skipped = true;
                         DdNode* partitionThen;
                         DdNode* partitionElse;
-                        DdNode* signatureThen;
-                        DdNode* signatureElse;
                         short offset;
                         bool isNondeterminismVariable = false;
                         while (skipped && !Cudd_IsConstant(nonBlockVariablesNode)) {
@@ -428,6 +465,7 @@ namespace storm {
                     }
                 }
                 
+                storm::models::symbolic::Model<storm::dd::DdType::CUDD, ValueType> const& model;
                 storm::dd::DdManager<storm::dd::DdType::CUDD> const& manager;
                 storm::dd::InternalDdManager<storm::dd::DdType::CUDD> const& internalDdManager;
                 ::DdManager* ddman;
@@ -466,7 +504,7 @@ namespace storm {
             template<typename ValueType>
             class InternalSignatureRefiner<storm::dd::DdType::Sylvan, ValueType> {
             public:
-                InternalSignatureRefiner(storm::dd::DdManager<storm::dd::DdType::Sylvan> const& manager, storm::expressions::Variable const& blockVariable, std::set<storm::expressions::Variable> const& stateVariables, storm::dd::Bdd<storm::dd::DdType::Sylvan> const& nondeterminismVariables, storm::dd::Bdd<storm::dd::DdType::Sylvan> const& nonBlockVariables, InternalSignatureRefinerOptions const& options) : manager(manager), internalDdManager(manager.getInternalDdManager()), blockVariable(blockVariable), stateVariables(stateVariables), nondeterminismVariables(nondeterminismVariables), nonBlockVariables(nonBlockVariables), options(options), numberOfBlockVariables(manager.getMetaVariable(blockVariable).getNumberOfDdVariables()), blockCube(manager.getMetaVariable(blockVariable).getCube()), nextFreeBlockIndex(0), numberOfRefinements(0), signatureCache() {
+                InternalSignatureRefiner(storm::models::symbolic::Model<storm::dd::DdType::Sylvan, ValueType> const& model, storm::dd::DdManager<storm::dd::DdType::Sylvan> const& manager, storm::expressions::Variable const& blockVariable, std::set<storm::expressions::Variable> const& stateVariables, storm::dd::Bdd<storm::dd::DdType::Sylvan> const& nondeterminismVariables, storm::dd::Bdd<storm::dd::DdType::Sylvan> const& nonBlockVariables, InternalSignatureRefinerOptions const& options) : model(model), manager(manager), internalDdManager(manager.getInternalDdManager()), blockVariable(blockVariable), stateVariables(stateVariables), nondeterminismVariables(nondeterminismVariables), nonBlockVariables(nonBlockVariables), options(options), numberOfBlockVariables(manager.getMetaVariable(blockVariable).getNumberOfDdVariables()), blockCube(manager.getMetaVariable(blockVariable).getCube()), nextFreeBlockIndex(0), numberOfRefinements(0), signatureCache() {
                     // Perform garbage collection to clean up stuff not needed anymore.
                     LACE_ME;
                     sylvan_gc();
@@ -488,14 +526,52 @@ namespace storm {
                     STORM_LOG_ASSERT(oldPartition.storedAsBdd(), "Expecting partition to be stored as BDD for Sylvan.");
                     
                     nextFreeBlockIndex = options.reuseBlockNumbers ? oldPartition.getNextFreeBlockIndex() : 0;
+
+                    auto start = std::chrono::high_resolution_clock::now();
+                    storm::dd::Bdd<storm::dd::DdType::Sylvan> unchangedPartition;
+                    storm::dd::Bdd<storm::dd::DdType::Sylvan> changedPartition;
+                    if (oldPartition.hasChangedStates()) {
+                        auto changedBlocks = model.getTransitionMatrix().notZero().andExists(oldPartition.changedStatesAsBdd(), model.getColumnVariables()).swapVariables(model.getRowColumnMetaVariablePairs()).andExists(oldPartition.asBdd(), model.getColumnVariables());
+                        unchangedPartition = oldPartition.asBdd() && !changedBlocks;
+                        changedPartition = oldPartition.asBdd() && changedBlocks;
+                    } else {
+                        unchangedPartition = manager.getBddZero();
+                        changedPartition = oldPartition.asBdd();
+                    }
+                    auto end = std::chrono::high_resolution_clock::now();
+                    std::cout << "[1] took " << std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count() << "ms" << std::endl;
+
+                    
+                    // Experiment start here:
+//                    std::pair<BDD, BDD> resultTmp = refine(changedPartition.getInternalBdd().getSylvanBdd().GetBDD(), signatureAdd.getInternalAdd().getSylvanMtbdd().GetMTBDD(), nondeterminismVariables.getInternalBdd().getSylvanBdd().GetBDD(), nonBlockVariables.getInternalBdd().getSylvanBdd().GetBDD());
+//                    storm::dd::InternalBdd<storm::dd::DdType::Sylvan> internalNewPartitionBdd(&internalDdManager, sylvan::Bdd(resultTmp.first));
+//                    storm::dd::Bdd<storm::dd::DdType::Sylvan> newPartitionBdd(oldPartition.asBdd().getDdManager(), internalNewPartitionBdd, oldPartition.asBdd().getContainedMetaVariables());
+//                    newPartitionBdd = unchangedPartition || newPartitionBdd;
                     
                     // Perform the actual recursive refinement step.
-                    std::pair<BDD, BDD> result = refine(oldPartition.asBdd().getInternalBdd().getSylvanBdd().GetBDD(), signatureAdd.getInternalAdd().getSylvanMtbdd().GetMTBDD(), nondeterminismVariables.getInternalBdd().getSylvanBdd().GetBDD(), nonBlockVariables.getInternalBdd().getSylvanBdd().GetBDD());
+                     std::pair<BDD, BDD> result = refine(oldPartition.asBdd().getInternalBdd().getSylvanBdd().GetBDD(), signatureAdd.getInternalAdd().getSylvanMtbdd().GetMTBDD(), nondeterminismVariables.getInternalBdd().getSylvanBdd().GetBDD(), nonBlockVariables.getInternalBdd().getSylvanBdd().GetBDD());
 
                     // Construct resulting BDD from the obtained node and the meta information.
-                    storm::dd::InternalBdd<storm::dd::DdType::Sylvan> internalNewPartitionBdd(&internalDdManager, sylvan::Bdd(result.first));
-                    storm::dd::Bdd<storm::dd::DdType::Sylvan> newPartitionBdd(oldPartition.asBdd().getDdManager(), internalNewPartitionBdd, oldPartition.asBdd().getContainedMetaVariables());
+                     storm::dd::InternalBdd<storm::dd::DdType::Sylvan> internalNewPartitionBdd(&internalDdManager, sylvan::Bdd(result.first));
+                     storm::dd::Bdd<storm::dd::DdType::Sylvan> newPartitionBdd(oldPartition.asBdd().getDdManager(), internalNewPartitionBdd, oldPartition.asBdd().getContainedMetaVariables());
+
+//                    if (newPartitionBdd != newPartitionBddTmp) {
+//                        std::cout << "failed " << std::endl;
+//                        newPartitionBdd.template toAdd<ValueType>().exportToDot("new.dot");
+//                        newPartitionBddTmp.template toAdd<ValueType>().exportToDot("new_experiment.dot");
+//                        exit(-1);
+//                    } else {
+//                        std::cout << "passed!" << std::endl;
+//                    }
                     
+//                    if (false) {
+//                        auto start = std::chrono::high_resolution_clock::now();
+//                        uint64_t blocks = newPartitionBdd.existsAbstract(stateVariables).getNonZeroCount();
+//                        STORM_LOG_ASSERT(blocks == nextFreeBlockIndex, "as;df");
+//                        auto end = std::chrono::high_resolution_clock::now();
+//                        std::cout << "[2] took " << std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count() << "ms" << std::endl;
+//                    }
+
                     boost::optional<storm::dd::Bdd<storm::dd::DdType::Sylvan>> optionalChangedBdd;
                     if (options.createChangedStates) {
                         storm::dd::InternalBdd<storm::dd::DdType::Sylvan> internalChangedBdd(&internalDdManager, sylvan::Bdd(result.second));
@@ -805,6 +881,7 @@ namespace storm {
                     }
                 }
                 
+                storm::models::symbolic::Model<storm::dd::DdType::Sylvan, ValueType> const& model;
                 storm::dd::DdManager<storm::dd::DdType::Sylvan> const& manager;
                 storm::dd::InternalDdManager<storm::dd::DdType::Sylvan> const& internalDdManager;
                 storm::expressions::Variable blockVariable;
@@ -845,7 +922,7 @@ namespace storm {
             };
             
             template<storm::dd::DdType DdType, typename ValueType>
-            SignatureRefiner<DdType, ValueType>::SignatureRefiner(storm::dd::DdManager<DdType> const& manager, storm::expressions::Variable const& blockVariable, std::set<storm::expressions::Variable> const& stateRowVariables, std::set<storm::expressions::Variable> const& stateColumnVariables, bool shiftStateVariables, std::set<storm::expressions::Variable> const& nondeterminismVariables) : manager(&manager) {
+            SignatureRefiner<DdType, ValueType>::SignatureRefiner(storm::models::symbolic::Model<DdType, ValueType> const& model, storm::dd::DdManager<DdType> const& manager, storm::expressions::Variable const& blockVariable, std::set<storm::expressions::Variable> const& stateRowVariables, std::set<storm::expressions::Variable> const& stateColumnVariables, bool shiftStateVariables, std::set<storm::expressions::Variable> const& nondeterminismVariables) : model(model), manager(&manager) {
                 
                 storm::dd::Bdd<DdType> nonBlockVariablesCube = manager.getBddOne();
                 storm::dd::Bdd<DdType> nondeterminismVariablesCube = manager.getBddOne();
@@ -859,7 +936,7 @@ namespace storm {
                     nonBlockVariablesCube &= cube;
                 }
                 
-                internalRefiner = std::make_unique<InternalSignatureRefiner<DdType, ValueType>>(manager, blockVariable, shiftStateVariables ? stateColumnVariables : stateRowVariables, nondeterminismVariablesCube, nonBlockVariablesCube, InternalSignatureRefinerOptions(shiftStateVariables));
+                internalRefiner = std::make_unique<InternalSignatureRefiner<DdType, ValueType>>(model, manager, blockVariable, shiftStateVariables ? stateColumnVariables : stateRowVariables, nondeterminismVariablesCube, nonBlockVariablesCube, InternalSignatureRefinerOptions(shiftStateVariables));
             }
             
             template<storm::dd::DdType DdType, typename ValueType>
