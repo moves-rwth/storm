@@ -1,12 +1,24 @@
 #pragma once
 
-#include "storm/utility/graph.h"
+#include "storm/abstraction/QualitativeResult.h"
 
 namespace storm {
     namespace abstraction {
         
         template <storm::dd::DdType Type>
-        using QualitativeMdpResult = std::pair<storm::dd::Bdd<Type>, storm::dd::Bdd<Type>>;
+        struct QualitativeMdpResult : public QualitativeResult<Type> {
+            QualitativeMdpResult() = default;
+            
+            QualitativeMdpResult(storm::dd::Bdd<Type> const& states) : states(states) {
+                // Intentionally left empty.
+            }
+            
+            virtual storm::dd::Bdd<Type> const& getStates() const override {
+                return states;
+            }
+            
+            storm::dd::Bdd<Type> states;
+        };
         
     }
 }

@@ -2,20 +2,37 @@
 
 #include "storm/storage/dd/DdType.h"
 
-#include "storm/utility/graph.h"
+#include "storm/abstraction/QualitativeResultMinMax.h"
+#include "storm/abstraction/QualitativeGameResult.h"
 
 namespace storm {
     namespace abstraction {
 
         template<storm::dd::DdType Type>
-        struct QualitativeGameResultMinMax {
+        struct QualitativeGameResultMinMax : public QualitativeResultMinMax<Type> {
         public:
             QualitativeGameResultMinMax() = default;
             
-            storm::utility::graph::GameProb01Result<Type> prob0Min;
-            storm::utility::graph::GameProb01Result<Type> prob1Min;
-            storm::utility::graph::GameProb01Result<Type> prob0Max;
-            storm::utility::graph::GameProb01Result<Type> prob1Max;
+            virtual QualitativeResult<Type> const& getProb0(storm::OptimizationDirection const& dir) const override {
+                if (dir == storm::OptimizationDirection::Minimize) {
+                    return prob0Min;
+                } else {
+                    return prob0Max;
+                }
+            }
+            
+            virtual QualitativeResult<Type> const& getProb1(storm::OptimizationDirection const& dir) const override {
+                if (dir == storm::OptimizationDirection::Minimize) {
+                    return prob1Min;
+                } else {
+                    return prob1Max;
+                }
+            }
+            
+            QualitativeGameResult<Type> prob0Min;
+            QualitativeGameResult<Type> prob1Min;
+            QualitativeGameResult<Type> prob0Max;
+            QualitativeGameResult<Type> prob1Max;
         };
 
     }

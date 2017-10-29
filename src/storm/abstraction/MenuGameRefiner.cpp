@@ -133,10 +133,10 @@ namespace storm {
                 maxPlayer1Strategy = qualitativeResult.get().prob1Max.getPlayer1Strategy();
                 maxPlayer2Strategy = qualitativeResult.get().prob1Max.getPlayer2Strategy();
             } else if (quantitativeResult) {
-                minPlayer1Strategy = quantitativeResult.get().min.player1Strategy;
-                minPlayer2Strategy = quantitativeResult.get().min.player2Strategy;
-                maxPlayer1Strategy = quantitativeResult.get().max.player1Strategy;
-                maxPlayer2Strategy = quantitativeResult.get().max.player2Strategy;
+                minPlayer1Strategy = quantitativeResult.get().min.getPlayer1Strategy();
+                minPlayer2Strategy = quantitativeResult.get().min.getPlayer2Strategy();
+                maxPlayer1Strategy = quantitativeResult.get().max.getPlayer1Strategy();
+                maxPlayer2Strategy = quantitativeResult.get().max.getPlayer2Strategy();
             } else {
                 STORM_LOG_ASSERT(false, "Either qualitative or quantitative result is required.");
             }
@@ -619,10 +619,10 @@ namespace storm {
         bool MenuGameRefiner<Type, ValueType>::refine(storm::abstraction::MenuGame<Type, ValueType> const& game, storm::dd::Bdd<Type> const& transitionMatrixBdd, QuantitativeGameResultMinMax<Type, ValueType> const& quantitativeResult) const {
             STORM_LOG_TRACE("Refining after quantitative check.");
             // Get all relevant strategies.
-            storm::dd::Bdd<Type> minPlayer1Strategy = quantitativeResult.min.player1Strategy;
-            storm::dd::Bdd<Type> minPlayer2Strategy = quantitativeResult.min.player2Strategy;
-            storm::dd::Bdd<Type> maxPlayer1Strategy = quantitativeResult.max.player1Strategy;
-            storm::dd::Bdd<Type> maxPlayer2Strategy = quantitativeResult.max.player2Strategy;
+            storm::dd::Bdd<Type> minPlayer1Strategy = quantitativeResult.min.getPlayer1Strategy();
+            storm::dd::Bdd<Type> minPlayer2Strategy = quantitativeResult.min.getPlayer2Strategy();
+            storm::dd::Bdd<Type> maxPlayer1Strategy = quantitativeResult.max.getPlayer1Strategy();
+            storm::dd::Bdd<Type> maxPlayer2Strategy = quantitativeResult.max.getPlayer2Strategy();
             
             // Compute all reached pivot states.
             PivotStateCandidatesResult<Type> pivotStateCandidatesResult = computePivotStates(game, transitionMatrixBdd, minPlayer1Strategy, minPlayer2Strategy, maxPlayer1Strategy, maxPlayer2Strategy);

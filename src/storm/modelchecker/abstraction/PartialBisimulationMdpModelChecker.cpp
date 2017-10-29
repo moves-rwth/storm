@@ -18,9 +18,13 @@
 #include "storm/storage/dd/BisimulationDecomposition.h"
 
 #include "storm/abstraction/QualitativeMdpResultMinMax.h"
+#include "storm/abstraction/QualitativeGameResultMinMax.h"
+#include "storm/abstraction/QuantitativeGameResult.h"
 
 #include "storm/settings/SettingsManager.h"
 #include "storm/settings/modules/AbstractionSettings.h"
+
+#include "storm/solver/SymbolicGameSolver.h"
 
 #include "storm/utility/macros.h"
 #include "storm/exceptions/NotSupportedException.h"
@@ -119,7 +123,7 @@ namespace storm {
                         
                     if (!converged) {
                         STORM_LOG_TRACE("Performing bisimulation step.");
-                        bisimulation.compute(10);
+                        bisimulation.compute(1);
                     }
                 }
                 
@@ -184,7 +188,10 @@ namespace storm {
         }
         
         template<typename ModelType>
-        bool PartialBisimulationMdpModelChecker<ModelType>::boundsSufficient(storm::models::Model<ValueType> const& quotient, bool lowerBounds, QuantitativeCheckResult<ValueType> const& result, storm::logic::ComparisonType comparisonType, ValueType const& threshold) {
+        bool PartialBisimulationMdpModelChecker<ModelType>::checkForResult(storm::models::Model<ValueType> const& quotient, bool lowerBounds, QuantitativeCheckResult<ValueType> const& result, CheckTask<storm::logic::Formula> const& checkTask) {
+            storm::logic::ComparisonType comparisonType = checkTask.getBoundComparisonType();
+            ValueType threshold = checkTask.getBoundThreshold();
+            
             if (lowerBounds) {
                 if (storm::logic::isLowerBound(comparisonType)) {
                     ValueType minimalLowerBound = getExtremalBound(storm::OptimizationDirection::Minimize, result);
@@ -222,10 +229,11 @@ namespace storm {
         }
         
         template<typename ModelType>
-        std::pair<storm::dd::Bdd<PartialBisimulationMdpModelChecker<ModelType>::DdType>, storm::dd::Bdd<PartialBisimulationMdpModelChecker<ModelType>::DdType>> PartialBisimulationMdpModelChecker<ModelType>::getConstraintAndTargetStates(storm::models::symbolic::Mdp<DdType, ValueType> const& quotient, CheckTask<storm::logic::Formula> const& checkTask) {
+        template<typename QuotientModelType>
+        std::pair<storm::dd::Bdd<PartialBisimulationMdpModelChecker<ModelType>::DdType>, storm::dd::Bdd<PartialBisimulationMdpModelChecker<ModelType>::DdType>> PartialBisimulationMdpModelChecker<ModelType>::getConstraintAndTargetStates(QuotientModelType const& quotient, CheckTask<storm::logic::Formula> const& checkTask) {
             std::pair<storm::dd::Bdd<DdType>, storm::dd::Bdd<DdType>> result;
             
-            SymbolicPropositionalModelChecker<storm::models::symbolic::Mdp<DdType, ValueType>> checker(quotient);
+            SymbolicPropositionalModelChecker<QuotientModelType> checker(quotient);
             if (checkTask.getFormula().isUntilFormula()) {
                 std::unique_ptr<CheckResult> subresult = checker.check(checkTask.getFormula().asUntilFormula().getLeftSubformula());
                 result.first = subresult->asSymbolicQualitativeCheckResult<DdType>().getTruthValuesVector();
@@ -246,18 +254,24 @@ namespace storm {
         template<typename ModelType>
         storm::abstraction::QualitativeMdpResultMinMax<PartialBisimulationMdpModelChecker<ModelType>::DdType> PartialBisimulationMdpModelChecker<ModelType>::computeQualitativeResult(storm::models::symbolic::Mdp<DdType, ValueType> const& quotient, CheckTask<storm::logic::Formula> const& checkTask, storm::dd::Bdd<DdType> const& constraintStates, storm::dd::Bdd<DdType> const& targetStates) {
 
-            STORM_LOG_DEBUG("Computing qualitative solution.");
+            STORM_LOG_DEBUG("Computing qualitative solution for quotient MDP.");
             storm::abstraction::QualitativeMdpResultMinMax<DdType> result;
             
             auto start = std::chrono::high_resolution_clock::now();
             bool isRewardFormula = checkTask.getFormula().isEventuallyFormula() && checkTask.getFormula().asEventuallyFormula().getContext() == storm::logic::FormulaContext::Reward;
             storm::dd::Bdd<DdType> transitionMatrixBdd = quotient.getTransitionMatrix().notZero();
             if (isRewardFormula) {
-                result.min.second = storm::utility::graph::performProb1E(quotient, transitionMatrixBdd, constraintStates, targetStates, storm::utility::graph::performProbGreater0E(quotient, transitionMatrixBdd, constraintStates, targetStates));
-                result.max.second = storm::utility::graph::performProb1A(quotient, transitionMatrixBdd, targetStates, storm::utility::graph::performProbGreater0A(quotient, transitionMatrixBdd, constraintStates, targetStates));
+                auto prob1 = storm::utility::graph::performProb1E(quotient, transitionMatrixBdd, constraintStates, targetStates, storm::utility::graph::performProbGreater0E(quotient, transitionMatrixBdd, constraintStates, targetStates));
+                result.prob1Min = storm::abstraction::QualitativeMdpResult<DdType>(prob1);
+                prob1 = storm::utility::graph::performProb1A(quotient, transitionMatrixBdd, targetStates, storm::utility::graph::performProbGreater0A(quotient, transitionMatrixBdd, constraintStates, targetStates));
+                result.prob1Max = storm::abstraction::QualitativeMdpResult<DdType>(prob1);
             } else {
-                result.min = storm::utility::graph::performProb01Min(quotient, transitionMatrixBdd, constraintStates, targetStates);
-                result.max = storm::utility::graph::performProb01Max(quotient, transitionMatrixBdd, constraintStates, targetStates);
+                auto prob01 = storm::utility::graph::performProb01Min(quotient, transitionMatrixBdd, constraintStates, targetStates);
+                result.prob0Min = storm::abstraction::QualitativeMdpResult<DdType>(prob01.first);
+                result.prob1Min = storm::abstraction::QualitativeMdpResult<DdType>(prob01.second);
+                prob01 = storm::utility::graph::performProb01Max(quotient, transitionMatrixBdd, constraintStates, targetStates);
+                result.prob0Max = storm::abstraction::QualitativeMdpResult<DdType>(prob01.first);
+                result.prob1Max = storm::abstraction::QualitativeMdpResult<DdType>(prob01.second);
             }
             auto end = std::chrono::high_resolution_clock::now();
 
@@ -266,25 +280,57 @@ namespace storm {
 
             return result;
         }
-        
+
         template<typename ModelType>
-        std::unique_ptr<CheckResult> PartialBisimulationMdpModelChecker<ModelType>::checkForResult(storm::models::symbolic::Mdp<DdType, ValueType> const& quotient, storm::abstraction::QualitativeMdpResultMinMax<DdType> const& qualitativeResults, CheckTask<storm::logic::Formula> const& checkTask) {
+        storm::abstraction::QualitativeGameResultMinMax<PartialBisimulationMdpModelChecker<ModelType>::DdType> PartialBisimulationMdpModelChecker<ModelType>::computeQualitativeResult(storm::models::symbolic::StochasticTwoPlayerGame<DdType, ValueType> const& quotient, CheckTask<storm::logic::Formula> const& checkTask, storm::dd::Bdd<DdType> const& constraintStates, storm::dd::Bdd<DdType> const& targetStates, storm::OptimizationDirection optimizationDirectionInModel) {
+            
+            STORM_LOG_DEBUG("Computing qualitative solution for quotient game.");
+            storm::abstraction::QualitativeGameResultMinMax<DdType> result;
+            
+            auto start = std::chrono::high_resolution_clock::now();
+            bool isRewardFormula = checkTask.getFormula().isEventuallyFormula() && checkTask.getFormula().asEventuallyFormula().getContext() == storm::logic::FormulaContext::Reward;
+            storm::dd::Bdd<DdType> transitionMatrixBdd = quotient.getTransitionMatrix().notZero();
+            if (isRewardFormula) {
+                STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Rewards are currently not supported for quotient stochastic games.");
+            } else {
+                result.prob0Min = storm::utility::graph::performProb0(quotient, quotient.getQualitativeTransitionMatrix(), constraintStates, targetStates, storm::OptimizationDirection::Minimize, optimizationDirectionInModel);
+                result.prob1Min = storm::utility::graph::performProb1(quotient, quotient.getQualitativeTransitionMatrix(), constraintStates, targetStates, storm::OptimizationDirection::Minimize, optimizationDirectionInModel);
+                result.prob0Max = storm::utility::graph::performProb0(quotient, quotient.getQualitativeTransitionMatrix(), constraintStates, targetStates, storm::OptimizationDirection::Maximize, optimizationDirectionInModel);
+                result.prob1Max = storm::utility::graph::performProb1(quotient, quotient.getQualitativeTransitionMatrix(), constraintStates, targetStates, storm::OptimizationDirection::Maximize, optimizationDirectionInModel);
+            }
+            auto end = std::chrono::high_resolution_clock::now();
+            
+            auto timeInMilliseconds = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
+            STORM_LOG_DEBUG("Computed qualitative solution in " << timeInMilliseconds << "ms.");
+            
+            return result;
+        }
+
+        template<typename ModelType>
+        std::unique_ptr<CheckResult> PartialBisimulationMdpModelChecker<ModelType>::checkForResult(storm::models::symbolic::Model<DdType, ValueType> const& quotient, storm::abstraction::QualitativeResultMinMax<DdType> const& qualitativeResults, CheckTask<storm::logic::Formula> const& checkTask) {
             std::unique_ptr<CheckResult> result;
             
             bool isRewardFormula = checkTask.getFormula().isEventuallyFormula() && checkTask.getFormula().asEventuallyFormula().getContext() == storm::logic::FormulaContext::Reward;
             if (isRewardFormula) {
                 // In the reachability reward case, we can give an answer if all initial states of the system are infinity
                 // states in the min result.
-                if ((quotient.getInitialStates() && !qualitativeResults.min.second) == quotient.getInitialStates()) {
+                if ((quotient.getInitialStates() && !qualitativeResults.getProb1Min().getStates()) == quotient.getInitialStates()) {
                     result = std::make_unique<storm::modelchecker::SymbolicQuantitativeCheckResult<DdType, ValueType>>(quotient.getReachableStates(), quotient.getInitialStates(), quotient.getInitialStates().ite(quotient.getManager().getConstant(storm::utility::infinity<ValueType>()), quotient.getManager().template getAddZero<ValueType>()));
                 }
             } else {
                 // In the reachability probability case, we can give the answer if all initial states are prob1 states
                 // in the min result or if all initial states are prob0 in the max case.
-                if ((quotient.getInitialStates() && qualitativeResults.min.second) == quotient.getInitialStates()) {
+                // Furthermore, we can give the answer if there are initial states with probability > 0 in the min case
+                // and the probability bound was 0 or if there are initial states with probability < 1 in the max case
+                // and the probability bound was 1.
+                if ((quotient.getInitialStates() && qualitativeResults.getProb1Min().getStates()) == quotient.getInitialStates()) {
                     result = std::make_unique<storm::modelchecker::SymbolicQuantitativeCheckResult<DdType, ValueType>>(quotient.getReachableStates(), quotient.getInitialStates(), quotient.getManager().template getAddOne<ValueType>());
-                } else if ((quotient.getInitialStates() && qualitativeResults.max.first) == quotient.getInitialStates()) {
+                } else if ((quotient.getInitialStates() && qualitativeResults.getProb0Max().getStates()) == quotient.getInitialStates()) {
                     result = std::make_unique<storm::modelchecker::SymbolicQuantitativeCheckResult<DdType, ValueType>>(quotient.getReachableStates(), quotient.getInitialStates(), quotient.getManager().template getAddZero<ValueType>());
+                } else if (checkTask.isBoundSet() && checkTask.getBoundThreshold() == storm::utility::zero<ValueType>() && (quotient.getInitialStates() && qualitativeResults.getProb0Min().getStates()) != quotient.getInitialStates()) {
+                    result = std::make_unique<storm::modelchecker::SymbolicQuantitativeCheckResult<DdType, ValueType>>(quotient.getReachableStates(), quotient.getInitialStates(), (quotient.getInitialStates() && qualitativeResults.getProb0Min().getStates()).ite(quotient.getManager().template getConstant<ValueType>(0.5), quotient.getManager().template getAddZero<ValueType>()));
+                } else if (checkTask.isBoundSet() && checkTask.getBoundThreshold() == storm::utility::one<ValueType>() && (quotient.getInitialStates() && qualitativeResults.getProb1Max().getStates()) != quotient.getInitialStates()) {
+                    result = std::make_unique<storm::modelchecker::SymbolicQuantitativeCheckResult<DdType, ValueType>>(quotient.getReachableStates(), quotient.getInitialStates(), (quotient.getInitialStates() && qualitativeResults.getProb1Max().getStates()).ite(quotient.getManager().template getConstant<ValueType>(0.5), quotient.getManager().template getAddZero<ValueType>()) + qualitativeResults.getProb1Max().getStates().template toAdd<ValueType>());
                 }
             }
             
@@ -292,17 +338,17 @@ namespace storm {
         }
         
         template<typename ModelType>
-        bool PartialBisimulationMdpModelChecker<ModelType>::skipQuantitativeSolution(storm::models::symbolic::Mdp<DdType, ValueType> const& quotient, storm::abstraction::QualitativeMdpResultMinMax<DdType> const& qualitativeResults, CheckTask<storm::logic::Formula> const& checkTask) {
+        bool PartialBisimulationMdpModelChecker<ModelType>::skipQuantitativeSolution(storm::models::symbolic::Model<DdType, ValueType> const& quotient, storm::abstraction::QualitativeResultMinMax<DdType> const& qualitativeResults, CheckTask<storm::logic::Formula> const& checkTask) {
             
             bool isRewardFormula = checkTask.getFormula().isEventuallyFormula() && checkTask.getFormula().asEventuallyFormula().getContext() == storm::logic::FormulaContext::Reward;
             if (isRewardFormula) {
-                if ((quotient.getInitialStates() && qualitativeResults.min.second) != (quotient.getInitialStates() && qualitativeResults.max.second)) {
+                if ((quotient.getInitialStates() && qualitativeResults.getProb1Min().getStates()) != (quotient.getInitialStates() && qualitativeResults.getProb1Max().getStates())) {
                     return true;
                 }
             } else {
-                if ((quotient.getInitialStates() && qualitativeResults.min.first) != (quotient.getInitialStates() && qualitativeResults.max.first)) {
+                if ((quotient.getInitialStates() && qualitativeResults.getProb0Min().getStates()) != (quotient.getInitialStates() && qualitativeResults.getProb0Max().getStates())) {
                     return true;
-                } else if ((quotient.getInitialStates() && qualitativeResults.min.second) != (quotient.getInitialStates() && qualitativeResults.max.second)) {
+                } else if ((quotient.getInitialStates() && qualitativeResults.getProb1Min().getStates()) != (quotient.getInitialStates() && qualitativeResults.getProb1Max().getStates())) {
                     return true;
                 }
             }
@@ -310,31 +356,75 @@ namespace storm {
         }
         
         template<typename ModelType>
-        std::pair<std::unique_ptr<CheckResult>, std::unique_ptr<CheckResult>> PartialBisimulationMdpModelChecker<ModelType>::computeQuantitativeResult(storm::models::symbolic::Mdp<DdType, ValueType> const& quotient, CheckTask<storm::logic::Formula> const& checkTask, storm::dd::Bdd<DdType> const& constraintStates, storm::dd::Bdd<DdType> const& targetStates, storm::abstraction::QualitativeMdpResultMinMax<DdType> const& qualitativeResults) {
+        std::pair<std::unique_ptr<CheckResult>, std::unique_ptr<CheckResult>> PartialBisimulationMdpModelChecker<ModelType>::computeQuantitativeResult(storm::models::symbolic::Mdp<DdType, ValueType> const& quotient, CheckTask<storm::logic::Formula> const& checkTask, storm::dd::Bdd<DdType> const& constraintStates, storm::dd::Bdd<DdType> const& targetStates, storm::abstraction::QualitativeResultMinMax<DdType> const& qualitativeResults) {
 
             std::pair<std::unique_ptr<CheckResult>, std::unique_ptr<CheckResult>> result;
             
             bool isRewardFormula = checkTask.getFormula().isEventuallyFormula() && checkTask.getFormula().asEventuallyFormula().getContext() == storm::logic::FormulaContext::Reward;
             if (isRewardFormula) {
-                storm::dd::Bdd<DdType> maybeMin = qualitativeResults.min.second && quotient.getReachableStates();
-                result.first = storm::modelchecker::helper::SymbolicMdpPrctlHelper<DdType, ValueType>::computeReachabilityRewards(storm::OptimizationDirection::Minimize, quotient, quotient.getTransitionMatrix(), quotient.getTransitionMatrix().notZero(), checkTask.isRewardModelSet() ? quotient.getRewardModel(checkTask.getRewardModel()) : quotient.getRewardModel(""), maybeMin, targetStates, !qualitativeResults.min.second && quotient.getReachableStates(), storm::solver::SymbolicGeneralMinMaxLinearEquationSolverFactory<DdType, ValueType>(), quotient.getManager().template getAddZero<ValueType>());
+                storm::dd::Bdd<DdType> maybeMin = qualitativeResults.getProb1Min().getStates() && quotient.getReachableStates();
+                result.first = storm::modelchecker::helper::SymbolicMdpPrctlHelper<DdType, ValueType>::computeReachabilityRewards(storm::OptimizationDirection::Minimize, quotient, quotient.getTransitionMatrix(), quotient.getTransitionMatrix().notZero(), checkTask.isRewardModelSet() ? quotient.getRewardModel(checkTask.getRewardModel()) : quotient.getRewardModel(""), maybeMin, targetStates, !qualitativeResults.getProb1Min().getStates() && quotient.getReachableStates(), storm::solver::SymbolicGeneralMinMaxLinearEquationSolverFactory<DdType, ValueType>(), quotient.getManager().template getAddZero<ValueType>());
                 
-                storm::dd::Bdd<DdType> maybeMax = qualitativeResults.max.second && quotient.getReachableStates();
-                result.second = storm::modelchecker::helper::SymbolicMdpPrctlHelper<DdType, ValueType>::computeReachabilityRewards(storm::OptimizationDirection::Maximize, quotient, quotient.getTransitionMatrix(), quotient.getTransitionMatrix().notZero(), checkTask.isRewardModelSet() ? quotient.getRewardModel(checkTask.getRewardModel()) : quotient.getRewardModel(""), maybeMin, targetStates, !qualitativeResults.min.second && quotient.getReachableStates(), storm::solver::SymbolicGeneralMinMaxLinearEquationSolverFactory<DdType, ValueType>(), maybeMax.ite(result.first->asSymbolicQuantitativeCheckResult<DdType, ValueType>().getValueVector(), quotient.getManager().template getAddZero<ValueType>()));
+                storm::dd::Bdd<DdType> maybeMax = qualitativeResults.getProb1Max().getStates() && quotient.getReachableStates();
+                result.second = storm::modelchecker::helper::SymbolicMdpPrctlHelper<DdType, ValueType>::computeReachabilityRewards(storm::OptimizationDirection::Maximize, quotient, quotient.getTransitionMatrix(), quotient.getTransitionMatrix().notZero(), checkTask.isRewardModelSet() ? quotient.getRewardModel(checkTask.getRewardModel()) : quotient.getRewardModel(""), maybeMin, targetStates, !qualitativeResults.getProb1Max().getStates() && quotient.getReachableStates(), storm::solver::SymbolicGeneralMinMaxLinearEquationSolverFactory<DdType, ValueType>(), maybeMax.ite(result.first->asSymbolicQuantitativeCheckResult<DdType, ValueType>().getValueVector(), quotient.getManager().template getAddZero<ValueType>()));
             } else {
-                storm::dd::Bdd<DdType> maybeMin = !(qualitativeResults.min.first || qualitativeResults.min.second) && quotient.getReachableStates();
-                result.first = storm::modelchecker::helper::SymbolicMdpPrctlHelper<DdType, ValueType>::computeUntilProbabilities(storm::OptimizationDirection::Minimize, quotient, quotient.getTransitionMatrix(), maybeMin, qualitativeResults.min.second, storm::solver::SymbolicGeneralMinMaxLinearEquationSolverFactory<DdType, ValueType>(), quotient.getManager().template getAddZero<ValueType>());
+                storm::dd::Bdd<DdType> maybeMin = !(qualitativeResults.getProb0Min().getStates() || qualitativeResults.getProb1Min().getStates()) && quotient.getReachableStates();
+                result.first = storm::modelchecker::helper::SymbolicMdpPrctlHelper<DdType, ValueType>::computeUntilProbabilities(storm::OptimizationDirection::Minimize, quotient, quotient.getTransitionMatrix(), maybeMin, qualitativeResults.getProb1Min().getStates(), storm::solver::SymbolicGeneralMinMaxLinearEquationSolverFactory<DdType, ValueType>(), quotient.getManager().template getAddZero<ValueType>());
                 
-                storm::dd::Bdd<DdType> maybeMax = !(qualitativeResults.max.first || qualitativeResults.max.second) && quotient.getReachableStates();
-                result.second = storm::modelchecker::helper::SymbolicMdpPrctlHelper<DdType, ValueType>::computeUntilProbabilities(storm::OptimizationDirection::Maximize, quotient, quotient.getTransitionMatrix(), maybeMax, qualitativeResults.max.second, storm::solver::SymbolicGeneralMinMaxLinearEquationSolverFactory<DdType, ValueType>(), maybeMax.ite(result.first->asSymbolicQuantitativeCheckResult<DdType, ValueType>().getValueVector(), quotient.getManager().template getAddZero<ValueType>()));
+                storm::dd::Bdd<DdType> maybeMax = !(qualitativeResults.getProb0Max().getStates() || qualitativeResults.getProb1Max().getStates()) && quotient.getReachableStates();
+                result.second = storm::modelchecker::helper::SymbolicMdpPrctlHelper<DdType, ValueType>::computeUntilProbabilities(storm::OptimizationDirection::Maximize, quotient, quotient.getTransitionMatrix(), maybeMax, qualitativeResults.getProb1Max().getStates(), storm::solver::SymbolicGeneralMinMaxLinearEquationSolverFactory<DdType, ValueType>(), maybeMax.ite(result.first->asSymbolicQuantitativeCheckResult<DdType, ValueType>().getValueVector(), quotient.getManager().template getAddZero<ValueType>()));
             }
             
             return result;
         }
+
+        template<storm::dd::DdType Type, typename ValueType>
+        std::unique_ptr<CheckResult> computeReachabilityProbabilitiesHelper(storm::models::symbolic::StochasticTwoPlayerGame<Type, ValueType> const& quotient, storm::OptimizationDirection const& player1Direction, storm::OptimizationDirection const& player2Direction,  storm::dd::Bdd<Type> const& maybeStates, storm::dd::Bdd<Type> const& prob1States) {
+            
+            STORM_LOG_TRACE("Performing quantative solution step. Player 1: " << player1Direction << ", player 2: " << player2Direction << ".");
+            
+            // Compute the ingredients of the equation system.
+            storm::dd::Add<Type, ValueType> maybeStatesAdd = maybeStates.template toAdd<ValueType>();
+            storm::dd::Add<Type, ValueType> submatrix = maybeStatesAdd * quotient.getTransitionMatrix();
+            storm::dd::Add<Type, ValueType> prob1StatesAsColumn = prob1States.template toAdd<ValueType>().swapVariables(quotient.getRowColumnMetaVariablePairs());
+            storm::dd::Add<Type, ValueType> subvector = submatrix * prob1StatesAsColumn;
+            subvector = subvector.sumAbstract(quotient.getColumnVariables());
+            
+            // Cut away all columns targeting non-maybe states.
+            submatrix *= maybeStatesAdd.swapVariables(quotient.getRowColumnMetaVariablePairs());
+            
+            // Cut the starting vector to the maybe states of this query.
+            storm::dd::Add<Type, ValueType> startVector = quotient.getManager().template getAddZero<ValueType>();
+            
+            // Create the solver and solve the equation system.
+            storm::solver::SymbolicGameSolverFactory<Type, ValueType> solverFactory;
+            std::unique_ptr<storm::solver::SymbolicGameSolver<Type, ValueType>> solver = solverFactory.create(submatrix, maybeStates, quotient.getIllegalPlayer1Mask(), quotient.getIllegalPlayer2Mask(), quotient.getRowVariables(), quotient.getColumnVariables(), quotient.getRowColumnMetaVariablePairs(), quotient.getPlayer1Variables(), quotient.getPlayer2Variables());
+            auto values = solver->solveGame(player1Direction, player2Direction, startVector, subvector);
+            
+            return std::make_unique<storm::modelchecker::SymbolicQuantitativeCheckResult<Type, ValueType>>(quotient.getReachableStates(), prob1States.template toAdd<ValueType>() + values);
+        }
         
         template<typename ModelType>
-        std::pair<std::unique_ptr<CheckResult>, std::unique_ptr<CheckResult>> PartialBisimulationMdpModelChecker<ModelType>::computeBoundsPartialQuotient(storm::models::symbolic::Mdp<DdType, ValueType> const& quotient, CheckTask<storm::logic::Formula> const& checkTask) {
+        std::pair<std::unique_ptr<CheckResult>, std::unique_ptr<CheckResult>> PartialBisimulationMdpModelChecker<ModelType>::computeQuantitativeResult(storm::models::symbolic::StochasticTwoPlayerGame<DdType, ValueType> const& quotient, CheckTask<storm::logic::Formula> const& checkTask, storm::dd::Bdd<DdType> const& constraintStates, storm::dd::Bdd<DdType> const& targetStates, storm::abstraction::QualitativeResultMinMax<DdType> const& qualitativeResults) {
+            
+            std::pair<std::unique_ptr<CheckResult>, std::unique_ptr<CheckResult>> result;
+            
+            bool isRewardFormula = checkTask.getFormula().isEventuallyFormula() && checkTask.getFormula().asEventuallyFormula().getContext() == storm::logic::FormulaContext::Reward;
+            if (isRewardFormula) {
+                STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Computing rewards for stochastic games is currently unsupported.");
+            } else {
+                storm::dd::Bdd<DdType> maybeMin = !(qualitativeResults.getProb0Min().getStates() || qualitativeResults.getProb1Min().getStates()) && quotient.getReachableStates();
+                result.first = computeReachabilityProbabilitiesHelper(quotient, storm::OptimizationDirection::Minimize, checkTask.getOptimizationDirection(), maybeMin, qualitativeResults.getProb1Min().getStates());
+                
+                storm::dd::Bdd<DdType> maybeMax = !(qualitativeResults.getProb0Max().getStates() || qualitativeResults.getProb1Max().getStates()) && quotient.getReachableStates();
+                result.second = computeReachabilityProbabilitiesHelper(quotient, storm::OptimizationDirection::Maximize, checkTask.getOptimizationDirection(), maybeMin, qualitativeResults.getProb1Max().getStates());
+            }
+            
+            return result;
+        }
 
+        template<typename ModelType>
+        std::pair<std::unique_ptr<CheckResult>, std::unique_ptr<CheckResult>> PartialBisimulationMdpModelChecker<ModelType>::computeBoundsPartialQuotient(storm::models::symbolic::Mdp<DdType, ValueType> const& quotient, CheckTask<storm::logic::Formula> const& checkTask) {
             std::pair<std::unique_ptr<CheckResult>, std::unique_ptr<CheckResult>> result;
 
             // We go through two phases. In phase (1) we are solving the qualitative part and in phase (2) the quantitative part.
@@ -364,13 +454,58 @@ namespace storm {
                 result.first->filter(initialStateFilter);
                 result.second->filter(initialStateFilter);
                 printBoundsInformation(result);
+                
+                // Check whether the answer can be given after the quantitative solution.
+                if (checkForResult(quotient, true, result.first->asQuantitativeCheckResult<ValueType>(), checkTask)) {
+                    result.second = nullptr;
+                }
+                if (checkForResult(quotient, false, result.second->asQuantitativeCheckResult<ValueType>(), checkTask)) {
+                    result.first = nullptr;
+                }
             }
             return result;
         }
 
         template<typename ModelType>
         std::pair<std::unique_ptr<CheckResult>, std::unique_ptr<CheckResult>> PartialBisimulationMdpModelChecker<ModelType>::computeBoundsPartialQuotient(storm::models::symbolic::StochasticTwoPlayerGame<DdType, ValueType> const& quotient, CheckTask<storm::logic::Formula> const& checkTask) {
-            STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "Currently not implemented.");
+            std::pair<std::unique_ptr<CheckResult>, std::unique_ptr<CheckResult>> result;
+            
+            // We go through two phases. In phase (1) we are solving the qualitative part and in phase (2) the quantitative part.
+            
+            // Preparation: determine the constraint states and the target states of the reachability objective.
+            std::pair<storm::dd::Bdd<DdType>, storm::dd::Bdd<DdType>> constraintTargetStates = getConstraintAndTargetStates(quotient, checkTask);
+            
+            // Phase (1): solve qualitatively.
+            storm::abstraction::QualitativeGameResultMinMax<DdType> qualitativeResults = computeQualitativeResult(quotient, checkTask, constraintTargetStates.first, constraintTargetStates.second, checkTask.getOptimizationDirection());
+            
+            // Check whether the answer can be given after the qualitative solution.
+            result.first = checkForResult(quotient, qualitativeResults, checkTask);
+            if (result.first) {
+                return result;
+            }
+
+            // Check whether we should skip the quantitative solution (for example if there are initial states for which
+            // the value is already known to be different at this point.
+            bool doSkipQuantitativeSolution = skipQuantitativeSolution(quotient, qualitativeResults, checkTask);
+            STORM_LOG_TRACE("" << (doSkipQuantitativeSolution ? "Skipping" : "Not skipping") << " quantitative solution.");
+
+            // Phase (2): solve quantitatively.
+            if (!doSkipQuantitativeSolution) {
+                result = computeQuantitativeResult(quotient, checkTask, constraintTargetStates.first, constraintTargetStates.second, qualitativeResults);
+
+                storm::modelchecker::SymbolicQualitativeCheckResult<DdType> initialStateFilter(quotient.getReachableStates(), quotient.getInitialStates());
+                result.first->filter(initialStateFilter);
+                result.second->filter(initialStateFilter);
+                printBoundsInformation(result);
+                
+                // Check whether the answer can be given after the quantitative solution.
+                if (checkForResult(quotient, true, result.first->asQuantitativeCheckResult<ValueType>(), checkTask)) {
+                    result.second = nullptr;
+                } else if (checkForResult(quotient, false, result.second->asQuantitativeCheckResult<ValueType>(), checkTask)) {
+                    result.first = nullptr;
+                }
+            }
+            return result;
         }
 
         template<typename ModelType>

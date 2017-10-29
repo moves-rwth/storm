@@ -18,6 +18,9 @@ namespace storm {
 
         namespace symbolic {
             template <storm::dd::DdType DdType, typename ValueType>
+            class Model;
+            
+            template <storm::dd::DdType DdType, typename ValueType>
             class Dtmc;
             
             template <storm::dd::DdType DdType, typename ValueType>
@@ -30,7 +33,13 @@ namespace storm {
     
     namespace abstraction {
         template <storm::dd::DdType DdType>
+        struct QualitativeResultMinMax;
+        
+        template <storm::dd::DdType DdType>
         struct QualitativeMdpResultMinMax;
+        
+        template <storm::dd::DdType DdType>
+        struct QualitativeGameResultMinMax;
     }
     
     namespace modelchecker {
@@ -67,21 +76,23 @@ namespace storm {
 
             // Methods related to the qualitative solution.
             storm::abstraction::QualitativeMdpResultMinMax<DdType> computeQualitativeResult(storm::models::symbolic::Mdp<DdType, ValueType> const& quotient, CheckTask<storm::logic::Formula> const& checkTask, storm::dd::Bdd<DdType> const& constraintStates, storm::dd::Bdd<DdType> const& targetStates);
-            std::unique_ptr<CheckResult> checkForResult(storm::models::symbolic::Mdp<DdType, ValueType> const& quotient, storm::abstraction::QualitativeMdpResultMinMax<DdType> const& qualitativeResults, CheckTask<storm::logic::Formula> const& checkTask);
-            bool skipQuantitativeSolution(storm::models::symbolic::Mdp<DdType, ValueType> const& quotient, storm::abstraction::QualitativeMdpResultMinMax<DdType> const& qualitativeResults, CheckTask<storm::logic::Formula> const& checkTask);
+            storm::abstraction::QualitativeGameResultMinMax<DdType> computeQualitativeResult(storm::models::symbolic::StochasticTwoPlayerGame<DdType, ValueType> const& quotient, CheckTask<storm::logic::Formula> const& checkTask, storm::dd::Bdd<DdType> const& constraintStates, storm::dd::Bdd<DdType> const& targetStates, storm::OptimizationDirection optimizationDirectionInModel);
+            std::unique_ptr<CheckResult> checkForResult(storm::models::symbolic::Model<DdType, ValueType> const& quotient, storm::abstraction::QualitativeResultMinMax<DdType> const& qualitativeResults, CheckTask<storm::logic::Formula> const& checkTask);
+            bool skipQuantitativeSolution(storm::models::symbolic::Model<DdType, ValueType> const& quotient, storm::abstraction::QualitativeResultMinMax<DdType> const& qualitativeResults, CheckTask<storm::logic::Formula> const& checkTask);
 
             // Methods related to the quantitative solution.
-            std::pair<std::unique_ptr<CheckResult>, std::unique_ptr<CheckResult>> computeQuantitativeResult(storm::models::symbolic::Mdp<DdType, ValueType> const& quotient, CheckTask<storm::logic::Formula> const& checkTask, storm::dd::Bdd<DdType> const& constraintStates, storm::dd::Bdd<DdType> const& targetStates, storm::abstraction::QualitativeMdpResultMinMax<DdType> const& qualitativeResults);
-            
+            std::pair<std::unique_ptr<CheckResult>, std::unique_ptr<CheckResult>> computeQuantitativeResult(storm::models::symbolic::Mdp<DdType, ValueType> const& quotient, CheckTask<storm::logic::Formula> const& checkTask, storm::dd::Bdd<DdType> const& constraintStates, storm::dd::Bdd<DdType> const& targetStates, storm::abstraction::QualitativeResultMinMax<DdType> const& qualitativeResults);
+            std::pair<std::unique_ptr<CheckResult>, std::unique_ptr<CheckResult>> computeQuantitativeResult(storm::models::symbolic::StochasticTwoPlayerGame<DdType, ValueType> const& quotient, CheckTask<storm::logic::Formula> const& checkTask, storm::dd::Bdd<DdType> const& constraintStates, storm::dd::Bdd<DdType> const& targetStates, storm::abstraction::QualitativeResultMinMax<DdType> const& qualitativeResults);
+
             // Retrieves the constraint and target states of the quotient wrt. to the formula in the check task.
-            std::pair<storm::dd::Bdd<DdType>, storm::dd::Bdd<DdType>> getConstraintAndTargetStates(storm::models::symbolic::Mdp<DdType, ValueType> const& quotient, CheckTask<storm::logic::Formula> const& checkTask);
+            template<typename QuotientModelType>
+            std::pair<storm::dd::Bdd<DdType>, storm::dd::Bdd<DdType>> getConstraintAndTargetStates(QuotientModelType const& quotient, CheckTask<storm::logic::Formula> const& checkTask);
             
             // Retrieves the extremal bound (wrt. to the optimization direction) of the quantitative check result.
             ValueType getExtremalBound(storm::OptimizationDirection dir, QuantitativeCheckResult<ValueType> const& result);
             
-            // Retrieves whether the quantitative bounds are sufficient to answer the the query given by the bound (comparison
-            // type and threshold).
-            bool boundsSufficient(storm::models::Model<ValueType> const& quotient, bool lowerBounds, QuantitativeCheckResult<ValueType> const& result, storm::logic::ComparisonType comparisonType, ValueType const& threshold);
+            // Checks whether the quantitative result is sufficient for answering the query.
+            bool checkForResult(storm::models::Model<ValueType> const& quotient, bool lowerBounds, QuantitativeCheckResult<ValueType> const& result, CheckTask<storm::logic::Formula> const& checkTask);
             
             // Methods to compute bounds on the partial quotient.
             std::unique_ptr<CheckResult> computeBoundsPartialQuotient(SymbolicMdpPrctlModelChecker<storm::models::symbolic::Mdp<DdType, ValueType>>& checker, storm::models::symbolic::Mdp<DdType, ValueType> const& quotient, storm::OptimizationDirection const& dir, CheckTask<storm::logic::Formula>& checkTask);

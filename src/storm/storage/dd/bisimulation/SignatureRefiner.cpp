@@ -183,8 +183,6 @@ namespace storm {
                         bool skipped = true;
                         DdNode* partitionThen;
                         DdNode* partitionElse;
-                        DdNode* signatureThen;
-                        DdNode* signatureElse;
                         short offset;
                         bool isNondeterminismVariable = false;
                         while (skipped && !Cudd_IsConstant(nonBlockVariablesNode)) {
