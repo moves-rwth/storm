@@ -11,7 +11,6 @@
 #include "storm/utility/shortestPaths.h"
 
 // FIXME: I've accidentally used k=0 *twice* now without realizing that k>=1 is required!
-// Accessing zero should trigger a warning!
 // (Also, did I document this? I think so, somewhere. I went with k>=1 because
 // that's what the KSP paper used, but in retrospect k>=0 seems more intuitive ...)
 
@@ -336,6 +335,10 @@ namespace storm {
 
             template <typename T>
             void ShortestPathsGenerator<T>::computeKSP(unsigned long k) {
+                if (k == 0) {
+                    throw std::invalid_argument("Index 0 is invalid, since we use 1-based indices (sorry)!");
+                }
+
                 unsigned long alreadyComputedK = kShortestPaths[metaTarget].size();
 
                 for (unsigned long nextK = alreadyComputedK + 1; nextK <= k; nextK++) {
