@@ -5,6 +5,7 @@
 #include <algorithm>
 
 #include "storm/utility/macros.h"
+#include "storm/exceptions/InternalException.h"
 
 namespace storm {
     namespace storage {
@@ -72,7 +73,7 @@ namespace storm {
         template<class ValueType, class Hash1, class Hash2>
         void BitVectorHashMap<ValueType, Hash1, Hash2>::increaseSize() {
             ++currentSizeIterator;
-            STORM_LOG_ASSERT(currentSizeIterator != sizes.end(), "Hash map became to big.");
+            STORM_LOG_THROW(currentSizeIterator != sizes.end(), storm::exceptions::InternalException, "Hash map became to big.");
             
             // Create new containers and swap them with the old ones.
             numberOfElements = 0;
@@ -97,10 +98,10 @@ namespace storm {
             uint_fast64_t failCount = 0;
             while (fail) {
                 ++failCount;
-                STORM_LOG_ASSERT(failCount < 2, "Increasing size failed too often.");
+                STORM_LOG_THROW(failCount < 2, storm::exceptions::InternalException, "Increasing size failed too often.");
                 
                 ++currentSizeIterator;
-                STORM_LOG_ASSERT(currentSizeIterator != sizes.end(), "Hash map became to big.");
+                STORM_LOG_THROW(currentSizeIterator != sizes.end(), storm::exceptions::InternalException, "Hash map became to big.");
                 
                 numberOfElements = 0;
                 buckets = storm::storage::BitVector(bucketSize * *currentSizeIterator);
