@@ -149,7 +149,9 @@ namespace storm {
                     stateRemapping.get()[currentIndex] = currentRowGroup;
                 }
                 
-                STORM_LOG_TRACE("Exploring state with id " << currentIndex << ".");
+                if (currentIndex % 100000 == 0) {
+                    STORM_LOG_TRACE("Exploring state with id " << currentIndex << ".");
+                }
                 
                 generator->load(currentState);
                 storm::generator::StateBehavior<ValueType, StateType> behavior = generator->expand(stateToIdCallback);
