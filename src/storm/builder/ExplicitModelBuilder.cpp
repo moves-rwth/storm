@@ -11,7 +11,7 @@
 #include "storm/storage/expressions/ExpressionManager.h"
 
 #include "storm/settings/modules/CoreSettings.h"
-#include "storm/settings/modules/IOSettings.h"
+#include "storm/settings/modules/BuildSettings.h"
 
 #include "storm/builder/RewardModelBuilder.h"
 #include "storm/builder/ChoiceInformationBuilder.h"
@@ -43,7 +43,7 @@ namespace storm {
     namespace builder {
                         
         template <typename ValueType, typename RewardModelType, typename StateType>
-        ExplicitModelBuilder<ValueType, RewardModelType, StateType>::Options::Options() : explorationOrder(storm::settings::getModule<storm::settings::modules::IOSettings>().getExplorationOrder()) {
+        ExplicitModelBuilder<ValueType, RewardModelType, StateType>::Options::Options() : explorationOrder(storm::settings::getModule<storm::settings::modules::BuildSettings>().getExplorationOrder()) {
             // Intentionally left empty.
         }
         

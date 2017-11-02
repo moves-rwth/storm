@@ -8,8 +8,6 @@
 #include "storm/storage/jani/Property.h"
 
 #include "storm/storage/expressions/ExpressionManager.h"
-#include "storm/settings/SettingsManager.h"
-#include "storm/settings/modules/IOSettings.h"
 #include "storm/utility/macros.h"
 #include "storm/utility/solver.h"
 #include "storm/utility/vector.h"
@@ -138,7 +136,7 @@ namespace storm {
             std::set<std::string> appearingModules;
         };
         
-        Program::Program(std::shared_ptr<storm::expressions::ExpressionManager> manager, ModelType modelType, std::vector<Constant> const& constants, std::vector<BooleanVariable> const& globalBooleanVariables, std::vector<IntegerVariable> const& globalIntegerVariables, std::vector<Formula> const& formulas, std::vector<Module> const& modules, std::map<std::string, uint_fast64_t> const& actionToIndexMap, std::vector<RewardModel> const& rewardModels, std::vector<Label> const& labels, boost::optional<InitialConstruct> const& initialConstruct, boost::optional<SystemCompositionConstruct> const& compositionConstruct, std::string const& filename, uint_fast64_t lineNumber, bool finalModel)
+        Program::Program(std::shared_ptr<storm::expressions::ExpressionManager> manager, ModelType modelType, std::vector<Constant> const& constants, std::vector<BooleanVariable> const& globalBooleanVariables, std::vector<IntegerVariable> const& globalIntegerVariables, std::vector<Formula> const& formulas, std::vector<Module> const& modules, std::map<std::string, uint_fast64_t> const& actionToIndexMap, std::vector<RewardModel> const& rewardModels, std::vector<Label> const& labels, boost::optional<InitialConstruct> const& initialConstruct, boost::optional<SystemCompositionConstruct> const& compositionConstruct, bool prismCompatibility, std::string const& filename, uint_fast64_t lineNumber, bool finalModel)
         : LocatedInformation(filename, lineNumber), manager(manager),
         modelType(modelType), constants(constants), constantToIndexMap(),
         globalBooleanVariables(globalBooleanVariables), globalBooleanVariableToIndexMap(),
@@ -146,7 +144,7 @@ namespace storm {
         formulas(formulas), formulaToIndexMap(), modules(modules), moduleToIndexMap(),
         rewardModels(rewardModels), rewardModelToIndexMap(), systemCompositionConstruct(compositionConstruct),
         labels(labels), labelToIndexMap(), actionToIndexMap(actionToIndexMap), indexToActionMap(), actions(),
-        synchronizingActionIndices(), actionIndicesToModuleIndexMap(), variableToModuleIndexMap()
+        synchronizingActionIndices(), actionIndicesToModuleIndexMap(), variableToModuleIndexMap(), prismCompatibility(prismCompatibility)
         {
             
             // Start by creating the necessary mappings from the given ones.
@@ -166,7 +164,7 @@ namespace storm {
             if (finalModel) {
                 // If the model is supposed to be a CTMC, but contains probabilistic commands, we transform them to Markovian
                 // commands and issue a warning.
-                if (modelType == storm::prism::Program::ModelType::CTMC && storm::settings::getModule<storm::settings::modules::IOSettings>().isPrismCompatibilityEnabled()) {
+                if (modelType == storm::prism::Program::ModelType::CTMC && prismCompatibility) {
                     bool hasProbabilisticCommands = false;
                     for (auto& module : this->modules) {
                         for (auto& command : module.getCommands()) {
@@ -689,7 +687,7 @@ namespace storm {
                 newModules.push_back(module.restrictCommands(indexSet));
             }
             
-            return Program(this->manager, this->getModelType(), this->getConstants(), this->getGlobalBooleanVariables(), this->getGlobalIntegerVariables(), this->getFormulas(), newModules, this->getActionNameToIndexMapping(), this->getRewardModels(), this->getLabels(), this->getOptionalInitialConstruct(), this->getOptionalSystemCompositionConstruct());
+            return Program(this->manager, this->getModelType(), this->getConstants(), this->getGlobalBooleanVariables(), this->getGlobalIntegerVariables(), this->getFormulas(), newModules, this->getActionNameToIndexMapping(), this->getRewardModels(), this->getLabels(), this->getOptionalInitialConstruct(), this->getOptionalSystemCompositionConstruct(), prismCompatibility);
         }
         
         void Program::createMappings() {
@@ -783,7 +781,7 @@ namespace storm {
                 }
             }
             
-            return Program(this->manager, this->getModelType(), newConstants, this->getGlobalBooleanVariables(), this->getGlobalIntegerVariables(), this->getFormulas(), this->getModules(), this->getActionNameToIndexMapping(), this->getRewardModels(), this->getLabels(), this->getOptionalInitialConstruct(), this->getOptionalSystemCompositionConstruct());
+            return Program(this->manager, this->getModelType(), newConstants, this->getGlobalBooleanVariables(), this->getGlobalIntegerVariables(), this->getFormulas(), this->getModules(), this->getActionNameToIndexMapping(), this->getRewardModels(), this->getLabels(), this->getOptionalInitialConstruct(), this->getOptionalSystemCompositionConstruct(), prismCompatibility);
         }
         
         Program Program::substituteConstants() const {
@@ -846,7 +844,7 @@ namespace storm {
                 newLabels.emplace_back(label.substitute(constantSubstitution));
             }
             
-            return Program(this->manager, this->getModelType(), newConstants, newBooleanVariables, newIntegerVariables, newFormulas, newModules, this->getActionNameToIndexMapping(), newRewardModels, newLabels, newInitialConstruct, this->getOptionalSystemCompositionConstruct());
+            return Program(this->manager, this->getModelType(), newConstants, newBooleanVariables, newIntegerVariables, newFormulas, newModules, this->getActionNameToIndexMapping(), newRewardModels, newLabels, newInitialConstruct, this->getOptionalSystemCompositionConstruct(), prismCompatibility);
         }
         
         void Program::checkValidity(Program::ValidityCheckLevel lvl) const {
@@ -1122,7 +1120,7 @@ namespace storm {
             }
             
             if (hasLabeledMarkovianCommand) {
-                if (storm::settings::getModule<storm::settings::modules::IOSettings>().isPrismCompatibilityEnabled()) {
+                if (prismCompatibility) {
                     STORM_LOG_WARN_COND(false, "The model uses synchronizing Markovian commands. This may lead to unexpected verification results, because of unclear semantics.");
                 } else {
                     STORM_LOG_THROW(false, storm::exceptions::WrongFormatException, "The model uses synchronizing Markovian commands. This may lead to unexpected verification results, because of unclear semantics.");
@@ -1362,7 +1360,7 @@ namespace storm {
                 }
             }
             
-            return Program(this->manager, modelType, newConstants, getGlobalBooleanVariables(), getGlobalIntegerVariables(), getFormulas(), newModules, actionIndicesToDelete.empty() ? getActionNameToIndexMapping() : newActionToIndexMap, actionIndicesToDelete.empty() ? this->getRewardModels() : newRewardModels, getLabels(), getOptionalInitialConstruct(), this->getOptionalSystemCompositionConstruct());
+            return Program(this->manager, modelType, newConstants, getGlobalBooleanVariables(), getGlobalIntegerVariables(), getFormulas(), newModules, actionIndicesToDelete.empty() ? getActionNameToIndexMapping() : newActionToIndexMap, actionIndicesToDelete.empty() ? this->getRewardModels() : newRewardModels, getLabels(), getOptionalInitialConstruct(), this->getOptionalSystemCompositionConstruct(), prismCompatibility);
         }
         
         Program Program::flattenModules(std::shared_ptr<storm::utility::solver::SmtSolverFactory> const& smtSolverFactory) const {
@@ -1558,7 +1556,7 @@ namespace storm {
             
             // Finally, we can create the module and the program and return it.
             storm::prism::Module singleModule(newModuleName.str(), allBooleanVariables, allIntegerVariables, newCommands, this->getFilename(), 0);
-            return Program(manager, this->getModelType(), this->getConstants(), std::vector<storm::prism::BooleanVariable>(), std::vector<storm::prism::IntegerVariable>(), this->getFormulas(), {singleModule}, actionToIndexMap, this->getRewardModels(), this->getLabels(), this->getOptionalInitialConstruct(), this->getOptionalSystemCompositionConstruct(), this->getFilename(), 0, true);
+            return Program(manager, this->getModelType(), this->getConstants(), std::vector<storm::prism::BooleanVariable>(), std::vector<storm::prism::IntegerVariable>(), this->getFormulas(), {singleModule}, actionToIndexMap, this->getRewardModels(), this->getLabels(), this->getOptionalInitialConstruct(), this->getOptionalSystemCompositionConstruct(), prismCompatibility, this->getFilename(), 0, true);
         }
         
         std::unordered_map<uint_fast64_t, std::string> Program::buildCommandIndexToActionNameMap() const {

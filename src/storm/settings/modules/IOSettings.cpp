@@ -29,22 +29,13 @@ namespace storm {
             const std::string IOSettings::prismInputOptionName = "prism";
             const std::string IOSettings::janiInputOptionName = "jani";
             const std::string IOSettings::prismToJaniOptionName = "prism2jani";
-            const std::string IOSettings::jitOptionName = "jit";
-            const std::string IOSettings::explorationOrderOptionName = "explorder";
-            const std::string IOSettings::explorationOrderOptionShortName = "eo";
-            const std::string IOSettings::explorationChecksOptionName = "explchecks";
-            const std::string IOSettings::explorationChecksOptionShortName = "ec";
+
             const std::string IOSettings::transitionRewardsOptionName = "transrew";
             const std::string IOSettings::stateRewardsOptionName = "staterew";
             const std::string IOSettings::choiceLabelingOptionName = "choicelab";
             const std::string IOSettings::constantsOptionName = "constants";
             const std::string IOSettings::constantsOptionShortName = "const";
-            const std::string IOSettings::prismCompatibilityOptionName = "prismcompat";
-            const std::string IOSettings::prismCompatibilityOptionShortName = "pc";
-            const std::string IOSettings::noBuildOptionName = "nobuild";
-            const std::string IOSettings::fullModelBuildOptionName = "buildfull";
-            const std::string IOSettings::buildChoiceLabelOptionName = "buildchoicelab";
-            const std::string IOSettings::buildStateValuationsOptionName = "buildstateval";
+
             const std::string IOSettings::janiPropertyOptionName = "janiproperty";
             const std::string IOSettings::janiPropertyOptionShortName = "jprop";
             const std::string IOSettings::propertyOptionName = "prop";
@@ -52,7 +43,6 @@ namespace storm {
 
             
             IOSettings::IOSettings() : ModuleSettings(moduleName) {
-                this->addOption(storm::settings::OptionBuilder(moduleName, prismCompatibilityOptionName, false, "Enables PRISM compatibility. This may be necessary to process some PRISM models.").setShortName(prismCompatibilityOptionShortName).build());
                 this->addOption(storm::settings::OptionBuilder(moduleName, exportDotOptionName, "", "If given, the loaded model will be written to the specified file in the dot format.")
                                 .addArgument(storm::settings::ArgumentBuilder::createStringArgument("filename", "The name of the file to which the model is to be written.").build()).build());
                 this->addOption(storm::settings::OptionBuilder(moduleName, exportJaniDotOptionName, "", "If given, the loaded jani model will be written to the specified file in the dot format.")
@@ -73,19 +63,10 @@ namespace storm {
                 this->addOption(storm::settings::OptionBuilder(moduleName, janiInputOptionName, false, "Parses the model given in the JANI format.")
                                 .addArgument(storm::settings::ArgumentBuilder::createStringArgument("filename", "The name of the file from which to read the JANI input.").addValidatorString(ArgumentValidatorFactory::createExistingFileValidator()).build()).build());
                 this->addOption(storm::settings::OptionBuilder(moduleName, prismToJaniOptionName, false, "If set, the input PRISM model is transformed to JANI.").build());
-                this->addOption(storm::settings::OptionBuilder(moduleName, jitOptionName, false, "If set, the model is built using the JIT model builder.").build());
-                this->addOption(storm::settings::OptionBuilder(moduleName, fullModelBuildOptionName, false, "If set, include all rewards and labels.").build());
-                this->addOption(storm::settings::OptionBuilder(moduleName, buildChoiceLabelOptionName, false, "If set, also build the choice labels").build());
-                this->addOption(storm::settings::OptionBuilder(moduleName, buildStateValuationsOptionName, false, "If set, also build the state valuations").build());
-                this->addOption(storm::settings::OptionBuilder(moduleName, noBuildOptionName, false, "If set, do not build the model.").build());
                 this->addOption(storm::settings::OptionBuilder(moduleName, propertyOptionName, false, "Specifies the properties to be checked on the model.").setShortName(propertyOptionShortName)
                                         .addArgument(storm::settings::ArgumentBuilder::createStringArgument("property or filename", "The formula or the file containing the formulas.").build())
                                         .addArgument(storm::settings::ArgumentBuilder::createStringArgument("filter", "The names of the properties to check.").setDefaultValueString("all").build())
                                         .build());
-                std::vector<std::string> explorationOrders = {"dfs", "bfs"};
-                this->addOption(storm::settings::OptionBuilder(moduleName, explorationOrderOptionName, false, "Sets which exploration order to use.").setShortName(explorationOrderOptionShortName)
-                                .addArgument(storm::settings::ArgumentBuilder::createStringArgument("name", "The name of the exploration order to choose.").addValidatorString(ArgumentValidatorFactory::createMultipleChoiceValidator(explorationOrders)).setDefaultValueString("bfs").build()).build());
-                this->addOption(storm::settings::OptionBuilder(moduleName, explorationChecksOptionName, false, "If set, additional checks (if available) are performed during model exploration to debug the model.").setShortName(explorationChecksOptionShortName).build());
 
                 this->addOption(storm::settings::OptionBuilder(moduleName, transitionRewardsOptionName, false, "If given, the transition rewards are read from this file and added to the explicit model. Note that this requires the model to be given as an explicit model (i.e., via --" + explicitOptionName + ").")
                                 .addArgument(storm::settings::ArgumentBuilder::createStringArgument("filename", "The file from which to read the transition rewards.").addValidatorString(ArgumentValidatorFactory::createExistingFileValidator()).build()).build());
@@ -102,7 +83,7 @@ namespace storm {
             bool IOSettings::isExportDotSet() const {
                 return this->getOption(exportDotOptionName).getHasOptionBeenSet();
             }
-            
+
             std::string IOSettings::getExportDotFilename() const {
                 return this->getOption(exportDotOptionName).getArgumentByName("filename").getValueAsString();
             }
@@ -114,11 +95,11 @@ namespace storm {
             std::string IOSettings::getExportJaniDotFilename() const {
                 return this->getOption(exportJaniDotOptionName).getArgumentByName("filename").getValueAsString();
             }
-            
+
             bool IOSettings::isExportExplicitSet() const {
                 return this->getOption(exportExplicitOptionName).getHasOptionBeenSet();
             }
-            
+
             std::string IOSettings::getExportExplicitFilename() const {
                 return this->getOption(exportExplicitOptionName).getArgumentByName("filename").getValueAsString();
             }
@@ -126,11 +107,11 @@ namespace storm {
             bool IOSettings::isExplicitSet() const {
                 return this->getOption(explicitOptionName).getHasOptionBeenSet();
             }
-            
+
             std::string IOSettings::getTransitionFilename() const {
                 return this->getOption(explicitOptionName).getArgumentByName("transition filename").getValueAsString();
             }
-                        
+
             std::string IOSettings::getLabelingFilename() const {
                 return this->getOption(explicitOptionName).getArgumentByName("labeling filename").getValueAsString();
             }
@@ -154,15 +135,15 @@ namespace storm {
             bool IOSettings::isPrismInputSet() const {
                 return this->getOption(prismInputOptionName).getHasOptionBeenSet();
             }
-            
+
             bool IOSettings::isPrismOrJaniInputSet() const {
                 return isJaniInputSet() || isPrismInputSet();
             }
-            
+
             bool IOSettings::isPrismToJaniSet() const {
                 return this->getOption(prismToJaniOptionName).getHasOptionBeenSet();
             }
-            
+
             std::string IOSettings::getPrismInputFilename() const {
                 return this->getOption(prismInputOptionName).getArgumentByName("filename").getValueAsString();
             }
@@ -174,91 +155,46 @@ namespace storm {
             std::string IOSettings::getJaniInputFilename() const {
                 return this->getOption(janiInputOptionName).getArgumentByName("filename").getValueAsString();
             }
-            
-            bool IOSettings::isJitSet() const {
-                return this->getOption(jitOptionName).getHasOptionBeenSet();
-            }
 
-            bool IOSettings::isExplorationOrderSet() const {
-                return this->getOption(explorationOrderOptionName).getHasOptionBeenSet();
-            }
-            
-            storm::builder::ExplorationOrder IOSettings::getExplorationOrder() const {
-                std::string explorationOrderAsString = this->getOption(explorationOrderOptionName).getArgumentByName("name").getValueAsString();
-                if (explorationOrderAsString == "dfs") {
-                    return storm::builder::ExplorationOrder::Dfs;
-                } else if (explorationOrderAsString == "bfs") {
-                    return storm::builder::ExplorationOrder::Bfs;
-                }
-                STORM_LOG_THROW(false, storm::exceptions::IllegalArgumentValueException, "Unknown exploration order '" << explorationOrderAsString << "'.");
-            }
-            
-            bool IOSettings::isExplorationChecksSet() const {
-                return this->getOption(explorationChecksOptionName).getHasOptionBeenSet();
-            }
-                        
+
             bool IOSettings::isTransitionRewardsSet() const {
                 return this->getOption(transitionRewardsOptionName).getHasOptionBeenSet();
             }
-            
+
             std::string IOSettings::getTransitionRewardsFilename() const {
                 return this->getOption(transitionRewardsOptionName).getArgumentByName("filename").getValueAsString();
             }
-            
+
             bool IOSettings::isStateRewardsSet() const {
                 return this->getOption(stateRewardsOptionName).getHasOptionBeenSet();
             }
-            
+
             std::string IOSettings::getStateRewardsFilename() const {
                 return this->getOption(stateRewardsOptionName).getArgumentByName("filename").getValueAsString();
             }
-            
+
             bool IOSettings::isChoiceLabelingSet() const {
                 return this->getOption(choiceLabelingOptionName).getHasOptionBeenSet();
             }
-                
+
             std::string IOSettings::getChoiceLabelingFilename() const {
                 return this->getOption(choiceLabelingOptionName).getArgumentByName("filename").getValueAsString();
             }
-            
-            std::unique_ptr<storm::settings::SettingMemento> IOSettings::overridePrismCompatibilityMode(bool stateToSet) {
-                return this->overrideOption(prismCompatibilityOptionName, stateToSet);
-            }
-            
+
             bool IOSettings::isConstantsSet() const {
                 return this->getOption(constantsOptionName).getHasOptionBeenSet();
             }
-            
+
             std::string IOSettings::getConstantDefinitionString() const {
                 return this->getOption(constantsOptionName).getArgumentByName("values").getValueAsString();
             }
-            
+
             bool IOSettings::isJaniPropertiesSet() const {
                 return this->getOption(janiPropertyOptionName).getHasOptionBeenSet();
             }
-            
+
             std::vector<std::string> IOSettings::getJaniProperties() const {
                 return storm::parser::parseCommaSeperatedValues(this->getOption(janiPropertyOptionName).getArgumentByName("values").getValueAsString());
-            }
-
-            bool IOSettings::isPrismCompatibilityEnabled() const {
-                return this->getOption(prismCompatibilityOptionName).getHasOptionBeenSet();
-            }
-            
-            bool IOSettings::isBuildFullModelSet() const {
-                return this->getOption(fullModelBuildOptionName).getHasOptionBeenSet();
-            }
-            
-            bool IOSettings::isNoBuildModelSet() const {
-                return this->getOption(noBuildOptionName).getHasOptionBeenSet();
-            }
-
-            bool IOSettings::isBuildChoiceLabelsSet() const {
-                return this->getOption(buildChoiceLabelOptionName).getHasOptionBeenSet();
-            }
-
-           bool IOSettings::isBuildStateValuationsSet() const {
-                return this->getOption(buildStateValuationsOptionName).getHasOptionBeenSet();
             }
 
             bool IOSettings::isPropertySet() const {

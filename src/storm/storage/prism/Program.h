@@ -57,7 +57,7 @@ namespace storm {
              * @param lineNumber The line number in which the program is defined.
              * @param finalModel If set to true, the program is checked for input-validity, as well as some post-processing.
              */
-            Program(std::shared_ptr<storm::expressions::ExpressionManager> manager, ModelType modelType, std::vector<Constant> const& constants, std::vector<BooleanVariable> const& globalBooleanVariables, std::vector<IntegerVariable> const& globalIntegerVariables, std::vector<Formula> const& formulas, std::vector<Module> const& modules, std::map<std::string, uint_fast64_t> const& actionToIndexMap, std::vector<RewardModel> const& rewardModels, std::vector<Label> const& labels, boost::optional<InitialConstruct> const& initialConstruct, boost::optional<SystemCompositionConstruct> const& compositionConstruct, std::string const& filename = "", uint_fast64_t lineNumber = 0, bool finalModel = true);
+            Program(std::shared_ptr<storm::expressions::ExpressionManager> manager, ModelType modelType, std::vector<Constant> const& constants, std::vector<BooleanVariable> const& globalBooleanVariables, std::vector<IntegerVariable> const& globalIntegerVariables, std::vector<Formula> const& formulas, std::vector<Module> const& modules, std::map<std::string, uint_fast64_t> const& actionToIndexMap, std::vector<RewardModel> const& rewardModels, std::vector<Label> const& labels, boost::optional<InitialConstruct> const& initialConstruct, boost::optional<SystemCompositionConstruct> const& compositionConstruct, bool prismCompatibility, std::string const& filename = "", uint_fast64_t lineNumber = 0, bool finalModel = true);
             
             // Provide default implementations for constructors and assignments.
             Program() = default;
@@ -697,6 +697,8 @@ namespace storm {
             
             // A mapping from variable names to the modules in which they were declared.
             std::map<std::string, uint_fast64_t> variableToModuleIndexMap;
+
+            bool prismCompatibility;
         };
         
         std::ostream& operator<<(std::ostream& out, Program::ModelType const& type);

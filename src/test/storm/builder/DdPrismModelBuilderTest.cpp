@@ -2,7 +2,7 @@
 #include "storm-config.h"
 #include "storm/settings/SettingMemento.h"
 #include "storm/settings/SettingsManager.h"
-#include "storm/settings/modules/IOSettings.h"
+#include "storm/settings/modules/BuildSettings.h"
 #include "storm/storage/SymbolicModelDescription.h"
 #include "storm/models/symbolic/Dtmc.h"
 #include "storm/models/symbolic/Ctmc.h"
@@ -78,35 +78,33 @@ TEST(DdPrismModelBuilderTest_Cudd, Dtmc) {
 }
 
 TEST(DdPrismModelBuilderTest_Sylvan, Ctmc) {
-    // Set the PRISM compatibility mode temporarily. It is set to its old value once the returned object is destructed.
-    std::unique_ptr<storm::settings::SettingMemento> enablePrismCompatibility = storm::settings::mutableIOSettings().overridePrismCompatibilityMode(true);
-    
-    storm::storage::SymbolicModelDescription modelDescription = storm::parser::PrismParser::parse(STORM_TEST_RESOURCES_DIR "/ctmc/cluster2.sm");
+
+    storm::storage::SymbolicModelDescription modelDescription = storm::parser::PrismParser::parse(STORM_TEST_RESOURCES_DIR "/ctmc/cluster2.sm", true);
     storm::prism::Program program = modelDescription.preprocess().asPrismProgram();
     
     std::shared_ptr<storm::models::symbolic::Model<storm::dd::DdType::Sylvan>> model = storm::builder::DdPrismModelBuilder<storm::dd::DdType::Sylvan>().build(program);
     EXPECT_EQ(276ul, model->getNumberOfStates());
     EXPECT_EQ(1120ul, model->getNumberOfTransitions());
     
-    modelDescription = storm::parser::PrismParser::parse(STORM_TEST_RESOURCES_DIR "/ctmc/embedded2.sm");
+    modelDescription = storm::parser::PrismParser::parse(STORM_TEST_RESOURCES_DIR "/ctmc/embedded2.sm", true);
     program = modelDescription.preprocess().asPrismProgram();
     model = storm::builder::DdPrismModelBuilder<storm::dd::DdType::Sylvan>().build(program);
     EXPECT_EQ(3478ul, model->getNumberOfStates());
     EXPECT_EQ(14639ul, model->getNumberOfTransitions());
     
-    modelDescription = storm::parser::PrismParser::parse(STORM_TEST_RESOURCES_DIR "/ctmc/polling2.sm");
+    modelDescription = storm::parser::PrismParser::parse(STORM_TEST_RESOURCES_DIR "/ctmc/polling2.sm", true);
     program = modelDescription.preprocess().asPrismProgram();
     model = storm::builder::DdPrismModelBuilder<storm::dd::DdType::Sylvan>().build(program);
     EXPECT_EQ(12ul, model->getNumberOfStates());
     EXPECT_EQ(22ul, model->getNumberOfTransitions());
 
-    modelDescription = storm::parser::PrismParser::parse(STORM_TEST_RESOURCES_DIR "/ctmc/fms2.sm");
+    modelDescription = storm::parser::PrismParser::parse(STORM_TEST_RESOURCES_DIR "/ctmc/fms2.sm", true);
     program = modelDescription.preprocess().asPrismProgram();
     model = storm::builder::DdPrismModelBuilder<storm::dd::DdType::Sylvan>().build(program);
     EXPECT_EQ(810ul, model->getNumberOfStates());
     EXPECT_EQ(3699ul, model->getNumberOfTransitions());
     
-    modelDescription = storm::parser::PrismParser::parse(STORM_TEST_RESOURCES_DIR "/ctmc/tandem5.sm");
+    modelDescription = storm::parser::PrismParser::parse(STORM_TEST_RESOURCES_DIR "/ctmc/tandem5.sm", true);
     program = modelDescription.preprocess().asPrismProgram();
     model = storm::builder::DdPrismModelBuilder<storm::dd::DdType::Sylvan>().build(program);
     EXPECT_EQ(66ul, model->getNumberOfStates());
@@ -114,35 +112,33 @@ TEST(DdPrismModelBuilderTest_Sylvan, Ctmc) {
 }
 
 TEST(DdPrismModelBuilderTest_Cudd, Ctmc) {
-    // Set the PRISM compatibility mode temporarily. It is set to its old value once the returned object is destructed.
-    std::unique_ptr<storm::settings::SettingMemento> enablePrismCompatibility = storm::settings::mutableIOSettings().overridePrismCompatibilityMode(true);
 
-    storm::storage::SymbolicModelDescription modelDescription = storm::parser::PrismParser::parse(STORM_TEST_RESOURCES_DIR "/ctmc/cluster2.sm");
+    storm::storage::SymbolicModelDescription modelDescription = storm::parser::PrismParser::parse(STORM_TEST_RESOURCES_DIR "/ctmc/cluster2.sm", true);
     storm::prism::Program program = modelDescription.preprocess().asPrismProgram();
     
     std::shared_ptr<storm::models::symbolic::Model<storm::dd::DdType::CUDD>> model = storm::builder::DdPrismModelBuilder<storm::dd::DdType::CUDD>().build(program);
     EXPECT_EQ(276ul, model->getNumberOfStates());
     EXPECT_EQ(1120ul, model->getNumberOfTransitions());
     
-    modelDescription = storm::parser::PrismParser::parse(STORM_TEST_RESOURCES_DIR "/ctmc/embedded2.sm");
+    modelDescription = storm::parser::PrismParser::parse(STORM_TEST_RESOURCES_DIR "/ctmc/embedded2.sm", true);
     program = modelDescription.preprocess().asPrismProgram();
     model = storm::builder::DdPrismModelBuilder<storm::dd::DdType::CUDD>().build(program);
     EXPECT_EQ(3478ul, model->getNumberOfStates());
     EXPECT_EQ(14639ul, model->getNumberOfTransitions());
     
-    modelDescription = storm::parser::PrismParser::parse(STORM_TEST_RESOURCES_DIR "/ctmc/polling2.sm");
+    modelDescription = storm::parser::PrismParser::parse(STORM_TEST_RESOURCES_DIR "/ctmc/polling2.sm", true);
     program = modelDescription.preprocess().asPrismProgram();
     model = storm::builder::DdPrismModelBuilder<storm::dd::DdType::CUDD>().build(program);
     EXPECT_EQ(12ul, model->getNumberOfStates());
     EXPECT_EQ(22ul, model->getNumberOfTransitions());
     
-    modelDescription = storm::parser::PrismParser::parse(STORM_TEST_RESOURCES_DIR "/ctmc/fms2.sm");
+    modelDescription = storm::parser::PrismParser::parse(STORM_TEST_RESOURCES_DIR "/ctmc/fms2.sm", true);
     program = modelDescription.preprocess().asPrismProgram();
     model = storm::builder::DdPrismModelBuilder<storm::dd::DdType::CUDD>().build(program);
     EXPECT_EQ(810ul, model->getNumberOfStates());
     EXPECT_EQ(3699ul, model->getNumberOfTransitions());
     
-    modelDescription = storm::parser::PrismParser::parse(STORM_TEST_RESOURCES_DIR "/ctmc/tandem5.sm");
+    modelDescription = storm::parser::PrismParser::parse(STORM_TEST_RESOURCES_DIR "/ctmc/tandem5.sm", true);
     program = modelDescription.preprocess().asPrismProgram();
     model = storm::builder::DdPrismModelBuilder<storm::dd::DdType::CUDD>().build(program);
     EXPECT_EQ(66ul, model->getNumberOfStates());
