@@ -119,13 +119,11 @@ namespace storm {
                 STORM_LOG_TRACE("Model in iteration " << iterations << " has " << abstractModel->getNumberOfStates() << " states and " << abstractModel->getNumberOfTransitions() << " transitions (retrieved in " << std::chrono::duration_cast<std::chrono::milliseconds>(abstractionEnd - abstractionStart).count() << "ms).");
 
                 // Obtain lower and upper bounds from the abstract model.
-                std::pair<std::unique_ptr<CheckResult>, std::unique_ptr<CheckResult>> bounds = computeBounds(*abstractModel);
+                computeBounds(*abstractModel);
                 
                 // Try to derive the final result from the obtained bounds.
-                std::unique_ptr<CheckResult> finalResult = tryToObtainResultFromBounds(abstractModel, bounds);
-                if (finalResult) {
-                    result = std::move(finalResult);
-                } else {
+                result = tryToObtainResultFromBounds(abstractModel, this->bounds);
+                if (!result) {
                     auto refinementStart = std::chrono::high_resolution_clock::now();
                     this->refineAbstractModel();
                     auto refinementEnd = std::chrono::high_resolution_clock::now();
@@ -161,6 +159,55 @@ namespace storm {
             bool doSkipQuantitativeSolution = skipQuantitativeSolution(abstractModel, qualitativeResults, checkTask);
             STORM_LOG_TRACE("" << (doSkipQuantitativeSolution ? "Skipping" : "Not skipping") << " quantitative solution.");
 
+            // Phase (2): solve quantitatively.
+            if (!doSkipQuantitativeSolution) {
+                result = computeQuantitativeResult(abstractModel, checkTask, constraintTargetStates.first, constraintTargetStates.second, qualitativeResults);
+                
+//                storm::modelchecker::SymbolicQualitativeCheckResult<DdType> initialStateFilter(quotient.getReachableStates(), quotient.getInitialStates());
+//                result.first->filter(initialStateFilter);
+//                result.second->filter(initialStateFilter);
+//                printBoundsInformation(result);
+//
+//                // Check whether the answer can be given after the quantitative solution.
+//                if (checkForResult(abstractModel, true, result.first->asQuantitativeCheckResult<ValueType>(), checkTask)) {
+//                    result.second = nullptr;
+//                }
+//                if (checkForResult(abstractModel, false, result.second->asQuantitativeCheckResult<ValueType>(), checkTask)) {
+//                    result.first = nullptr;
+//                }
+            } else {
+                // In this case, we construct the full results from the qualitative results.
+                
+            }
+            
+            //
+            fullResults = result;
+            
+            return result;
+        }
+        
+        template<typename ModelType>
+        bool AbstractAbstractionRefinementModelChecker<ModelType>::skipQuantitativeSolution(storm::models::Model<ValueType> const& abstractModel) {
+            STORM_LOG_THROW(abstractModel.isSymbolicModel(), storm::exceptions::NotSupportedException, "Expected symbolic model.");
+            
+            return skipQuantitativeSolution(*abstractModel.template as<storm::models::symbolic::Model<DdType, ValueType>>());
+        }
+
+        template<typename ModelType>
+        bool AbstractAbstractionRefinementModelChecker<ModelType>::skipQuantitativeSolution(storm::models::symbolic::Model<DdType, ValueType> const& abstractModel) {
+            bool isRewardFormula = checkTask->getFormula().isEventuallyFormula() && checkTask->getFormula().asEventuallyFormula().getContext() == storm::logic::FormulaContext::Reward;
+            if (isRewardFormula) {
+                if ((abstractModel.getInitialStates() && qualitativeResults->asSymbolicQualitativeResultMinMax<DdType>().getProb1Min().getStates()) != (abstractModel.getInitialStates() && qualitativeResults->asSymbolicQualitativeResultMinMax<DdType>().getProb1Max().getStates())) {
+                    return true;
+                }
+            } else {
+                if ((abstractModel.getInitialStates() && qualitativeResults->asSymbolicQualitativeResultMinMax<DdType>().getProb0Min().getStates()) != (abstractModel.getInitialStates() && qualitativeResults->asSymbolicQualitativeResultMinMax<DdType>().getProb0Max().getStates())) {
+                    return true;
+                } else if ((abstractModel.getInitialStates() && qualitativeResults->asSymbolicQualitativeResultMinMax<DdType>().getProb1Min().getStates()) != (abstractModel.getInitialStates() && qualitativeResults->asSymbolicQualitativeResultMinMax<DdType>().getProb1Max().getStates())) {
+                    return true;
+                }
+            }
+            return false;
         }
         
         template<typename ModelType>
@@ -390,7 +437,7 @@ namespace storm {
         }
         
         template<typename ModelType>
-        std::unique_ptr<CheckResult> AbstractAbstractionRefinementModelChecker<ModelType>::tryToObtainResultFromBounds(std::shared_ptr<storm::models::Model<ValueType>> const& abstractModel, std::pair<std::unique_ptr<CheckResult>, std::unique_ptr<CheckResult>>& bounds) {
+        std::unique_ptr<CheckResult> AbstractAbstractionRefinementModelChecker<ModelType>::tryToObtainResultFromBounds(storm::models::Model<ValueType> const& abstractModel, std::pair<std::unique_ptr<CheckResult>, std::unique_ptr<CheckResult>>& bounds) {
             std::unique_ptr<CheckResult> result;
             
             if (bounds.first == nullptr || bounds.second == nullptr) {
@@ -408,7 +455,7 @@ namespace storm {
             }
             
             if (result) {
-                abstractModel->printModelInformationToStream(std::cout);
+                abstractModel.printModelInformationToStream(std::cout);
             }
             
             return result;

@@ -105,8 +105,8 @@ namespace storm {
             /// Performs the actual abstraction refinement loop.
             std::unique_ptr<CheckResult> performAbstractionRefinement();
             
-            /// Computes lower and upper bounds on the
-            std::pair<std::unique_ptr<CheckResult>, std::unique_ptr<CheckResult>> computeBounds(storm::models::Model<ValueType> const& abstractModel);
+            /// Computes lower and upper bounds on the abstract model and stores them in a member.
+            void computeBounds(storm::models::Model<ValueType> const& abstractModel);
             
             /// Solves the current check task qualitatively, i.e. computes all states with probability 0/1.
             std::unique_ptr<storm::abstraction::QualitativeResultMinMax> computeQualitativeResult(storm::models::Model<ValueType> const& abstractModel, storm::abstraction::StateSet const& constraintStates, storm::abstraction::StateSet const& targetStates);
@@ -118,10 +118,14 @@ namespace storm {
             std::unique_ptr<CheckResult> checkForResultAfterQualitativeCheck(storm::models::Model<ValueType> const& abstractModel);
             std::unique_ptr<CheckResult> checkForResultAfterQualitativeCheck(storm::models::symbolic::Model<DdType, ValueType> const& abstractModel);
             
+            // Methods related to the quantitative solution.
+            bool skipQuantitativeSolution(storm::models::Model<ValueType> const& abstractModel);
+            bool skipQuantitativeSolution(storm::models::symbolic::Model<DdType, ValueType> const& abstractModel);
+
             /// Tries to obtain the results from the bounds. If either of the two bounds is null, the result is assumed
             /// to be the non-null bound. If neither is null and the bounds are sufficiently close, the average of the
             /// bounds is returned.
-            std::unique_ptr<CheckResult> tryToObtainResultFromBounds(std::shared_ptr<storm::models::Model<ValueType>> const& model, std::pair<std::unique_ptr<CheckResult>, std::unique_ptr<CheckResult>>& bounds);
+            std::unique_ptr<CheckResult> tryToObtainResultFromBounds(storm::models::Model<ValueType> const& model, std::pair<std::unique_ptr<CheckResult>, std::unique_ptr<CheckResult>>& bounds);
             /// Checks whether the provided bounds are sufficiently close to terminate.
             bool boundsAreSufficientlyClose(std::pair<std::unique_ptr<CheckResult>, std::unique_ptr<CheckResult>> const& bounds);
             /// Retrieves the average of the two bounds. This should only be used to derive the overall result when the
@@ -148,6 +152,9 @@ namespace storm {
             
             /// The last qualitative results.
             std::unique_ptr<storm::abstraction::QualitativeResultMinMax> qualitativeResults;
+            
+            /// The last full result that was obtained.
+            std::pair<std::unique_ptr<CheckResult>, std::unique_ptr<CheckResult>> bounds;
         };
     }
 }
