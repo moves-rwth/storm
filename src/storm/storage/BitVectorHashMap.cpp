@@ -226,7 +226,7 @@ namespace storm {
         }
         
         template<class ValueType, class Hash>
-        uint_fast64_t BitVectorHashMap<ValueType, Hash>::getNextBucketInProbingSequence(uint_fast64_t currentValue, uint_fast64_t step) const {
+        uint_fast64_t BitVectorHashMap<ValueType, Hash>::getNextBucketInProbingSequence(uint_fast64_t, uint_fast64_t currentValue, uint_fast64_t step) const {
             return (currentValue + step + step*step) % *currentSizeIterator;
         }
         
@@ -237,7 +237,7 @@ namespace storm {
 #endif
             uint_fast64_t initialHash = hasher(key) % *currentSizeIterator;
             uint_fast64_t bucket = initialHash;
-
+            
             uint_fast64_t i = 0;
             while (isBucketOccupied(bucket)) {
                 ++i;
@@ -247,7 +247,7 @@ namespace storm {
                 if (buckets.matches(bucket * bucketSize, key)) {
                     return std::make_pair(true, bucket);
                 }
-                bucket = getNextBucketInProbingSequence(bucket, i);
+                bucket = getNextBucketInProbingSequence(initialHash, bucket, i);
                 
                 if (bucket == initialHash) {
                     return std::make_pair(false, bucket);
@@ -275,7 +275,7 @@ namespace storm {
                 if (buckets.matches(bucket * bucketSize, key)) {
                     return std::make_tuple(true, bucket, false);
                 }
-                bucket = getNextBucketInProbingSequence(bucket, i);
+                bucket = getNextBucketInProbingSequence(initialHash, bucket, i);
                 
                 if (bucket == initialHash) {
                     if (increaseStorage) {

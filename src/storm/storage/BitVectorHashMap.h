@@ -207,7 +207,7 @@ namespace storm {
             /*!
              * Computes the next bucket in the probing sequence.
              */
-            uint_fast64_t getNextBucketInProbingSequence(uint_fast64_t currentValue, uint_fast64_t step) const;
+            uint_fast64_t getNextBucketInProbingSequence(uint_fast64_t initialValue, uint_fast64_t currentValue, uint_fast64_t step) const;
 
             // The load factor determining when the size of the map is increased.
             double loadFactor;
