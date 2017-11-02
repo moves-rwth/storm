@@ -10,11 +10,15 @@
 namespace storm {
     namespace storage {
         template<class ValueType, class Hash1, class Hash2>
-        const std::vector<std::size_t> BitVectorHashMap<ValueType, Hash1, Hash2>::sizes = {5, 13, 31, 79, 163, 277, 499, 1021, 2029, 3989, 8059, 16001, 32099, 64301, 127921, 256499, 511111, 1024901, 2048003, 4096891, 8192411, 15485863, 32142191, 64285127, 128572517, 257148523, 514299959, 102863003, 205726009, 411452021, 822904099, 1645808237, 3291616481, 6583232969, 13166465941, 26332931887, 52665863819, 105331727639};
+        const std::vector<std::size_t> BitVectorHashMap<ValueType, Hash1, Hash2>::sizes = {5, 13, 31, 79, 163, 277, 499, 1021, 2029, 3989, 8059, 16001, 32099, 64301, 127921, 256499, 511111, 1024901, 2048003, 4096891, 8192411, 15485863, 32142191, 64285127, 128572517, 257148523, 514299959, 1028599919, 2057199839, 4114399697, 8228799419, 16457598791, 32915197603, 65830395223};
         
         template<class ValueType, class Hash1, class Hash2>
         BitVectorHashMap<ValueType, Hash1, Hash2>::BitVectorHashMapIterator::BitVectorHashMapIterator(BitVectorHashMap const& map, BitVector::const_iterator indexIt) : map(map), indexIt(indexIt) {
-            // Intentionally left empty.
+#ifndef NDEBUG
+            for (uint64_t i = 0; i < sizes.size() - 1; ++i) {
+                STORM_LOG_ASSERT(sizes[i] < sizes[i + 1], "Expected stricly increasing sizes.");
+            }
+#endif
         }
         
         template<class ValueType, class Hash1, class Hash2>
@@ -73,7 +77,8 @@ namespace storm {
         template<class ValueType, class Hash1, class Hash2>
         void BitVectorHashMap<ValueType, Hash1, Hash2>::increaseSize() {
             ++currentSizeIterator;
-            STORM_LOG_THROW(currentSizeIterator != sizes.end(), storm::exceptions::InternalException, "Hash map became to big.");
+            STORM_LOG_ASSERT(currentSizeIterator != sizes.end(), "Hash map became to big.");
+            STORM_LOG_TRACE("Increasing size of hash map from " << *(currentSizeIterator - 1) << " to " << *currentSizeIterator << ".");
             
             // Create new containers and swap them with the old ones.
             numberOfElements = 0;
@@ -113,7 +118,7 @@ namespace storm {
                     
                     // If we failed to insert just one element, we have to redo the procedure with a larger container size.
                     if (fail) {
-                        continue;
+                        break;
                     }
                 }
             }
@@ -213,6 +218,7 @@ namespace storm {
         template<class ValueType, class Hash1, class Hash2>
         std::pair<bool, std::size_t> BitVectorHashMap<ValueType, Hash1, Hash2>::findBucket(storm::storage::BitVector const& key) const {
             uint_fast64_t initialHash = hasher1(key) % *currentSizeIterator;
+            uint_fast64_t stride = hasher2(key);
             uint_fast64_t bucket = initialHash;
 
             uint_fast64_t counter = 0;
@@ -221,7 +227,7 @@ namespace storm {
                 if (buckets.matches(bucket * bucketSize, key)) {
                     return std::make_pair(true, bucket);
                 }
-                bucket += hasher2(key);
+                bucket += stride;
                 bucket %= *currentSizeIterator;
                 
                 if (bucket == initialHash) {
@@ -236,15 +242,16 @@ namespace storm {
         template<bool increaseStorage>
         std::tuple<bool, std::size_t, bool> BitVectorHashMap<ValueType, Hash1, Hash2>::findBucketToInsert(storm::storage::BitVector const& key) {
             uint_fast64_t initialHash = hasher1(key) % *currentSizeIterator;
+            uint_fast64_t stride = hasher2(key);
             uint_fast64_t bucket = initialHash;
-            
+
             uint_fast64_t counter = 0;
             while (isBucketOccupied(bucket)) {
                 ++counter;
                 if (buckets.matches(bucket * bucketSize, key)) {
                     return std::make_tuple(true, bucket, false);
                 }
-                bucket += hasher2(key);
+                bucket += stride;
                 bucket %= *currentSizeIterator;
                 
                 if (bucket == initialHash) {
@@ -256,7 +263,7 @@ namespace storm {
                     }
                 }
             }
-            
+
             return std::make_tuple(false, bucket, false);
         }
         
