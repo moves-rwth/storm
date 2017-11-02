@@ -1,32 +1,28 @@
 #include "storm/abstraction/QualitativeResultMinMax.h"
 
-#include "storm/abstraction/QualitativeResult.h"
+#include "storm/abstraction/SymbolicQualitativeResultMinMax.h"
 
 namespace storm {
     namespace abstraction {
         
-        template<storm::dd::DdType Type>
-        QualitativeResult<Type> const& QualitativeResultMinMax<Type>::getProb0Min() const {
-            return getProb0(storm::OptimizationDirection::Minimize);
+        bool QualitativeResultMinMax::isSymbolic() const {
+            return false;
         }
         
         template<storm::dd::DdType Type>
-        QualitativeResult<Type> const& QualitativeResultMinMax<Type>::getProb1Min() const {
-            return getProb1(storm::OptimizationDirection::Minimize);
+        SymbolicQualitativeResultMinMax<Type> const& QualitativeResultMinMax::asSymbolicQualitativeResultMinMax() const {
+            return static_cast<SymbolicQualitativeResultMinMax<Type> const&>(*this);
         }
         
         template<storm::dd::DdType Type>
-        QualitativeResult<Type> const& QualitativeResultMinMax<Type>::getProb0Max() const {
-            return getProb0(storm::OptimizationDirection::Maximize);
+        SymbolicQualitativeResultMinMax<Type>& QualitativeResultMinMax::asSymbolicQualitativeResultMinMax() {
+            return static_cast<SymbolicQualitativeResultMinMax<Type>&>(*this);
         }
         
-        template<storm::dd::DdType Type>
-        QualitativeResult<Type> const& QualitativeResultMinMax<Type>::getProb1Max() const {
-            return getProb1(storm::OptimizationDirection::Maximize);
-        }
-        
-        template struct QualitativeResultMinMax<storm::dd::DdType::CUDD>;
-        template struct QualitativeResultMinMax<storm::dd::DdType::Sylvan>;
+        template SymbolicQualitativeResultMinMax<storm::dd::DdType::CUDD> const& QualitativeResultMinMax::asSymbolicQualitativeResultMinMax() const;
+        template SymbolicQualitativeResultMinMax<storm::dd::DdType::CUDD>& QualitativeResultMinMax::asSymbolicQualitativeResultMinMax();
+        template SymbolicQualitativeResultMinMax<storm::dd::DdType::Sylvan> const& QualitativeResultMinMax::asSymbolicQualitativeResultMinMax() const;
+        template SymbolicQualitativeResultMinMax<storm::dd::DdType::Sylvan>& QualitativeResultMinMax::asSymbolicQualitativeResultMinMax();
 
     }
 }

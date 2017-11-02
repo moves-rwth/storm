@@ -11,7 +11,8 @@ namespace storm {
     namespace abstraction {
         
         template <storm::dd::DdType Type>
-        struct QualitativeResult {
+        class QualitativeResult {
+        public:
             virtual storm::dd::Bdd<Type> const& getStates() const = 0;
         };
         

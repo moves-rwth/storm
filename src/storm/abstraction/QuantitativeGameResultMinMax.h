@@ -6,7 +6,8 @@ namespace storm {
     namespace abstraction {
      
         template<storm::dd::DdType Type, typename ValueType>
-        struct QuantitativeGameResultMinMax {
+        class QuantitativeGameResultMinMax {
+        public:
             QuantitativeGameResultMinMax() = default;
             
             QuantitativeGameResultMinMax(QuantitativeGameResult<Type, ValueType> const& min, QuantitativeGameResult<Type, ValueType> const& max) : min(min), max(max) {

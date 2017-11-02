@@ -65,7 +65,6 @@ namespace storm {
 
         template<typename ModelType>
         std::unique_ptr<CheckResult> PartialBisimulationMdpModelChecker<ModelType>::computeValuesAbstractionRefinement(CheckTask<storm::logic::Formula> const& checkTask) {
-
             STORM_LOG_THROW(checkTask.isOnlyInitialStatesRelevantSet(), storm::exceptions::InvalidPropertyException, "The game-based abstraction refinement model checker can only compute the result for the initial states.");
             
             // Create the appropriate preservation information.
@@ -307,7 +306,7 @@ namespace storm {
         }
 
         template<typename ModelType>
-        std::unique_ptr<CheckResult> PartialBisimulationMdpModelChecker<ModelType>::checkForResult(storm::models::symbolic::Model<DdType, ValueType> const& quotient, storm::abstraction::QualitativeResultMinMax<DdType> const& qualitativeResults, CheckTask<storm::logic::Formula> const& checkTask) {
+        std::unique_ptr<CheckResult> PartialBisimulationMdpModelChecker<ModelType>::checkForResult(storm::models::symbolic::Model<DdType, ValueType> const& quotient, storm::abstraction::SymbolicQualitativeResultMinMax<DdType> const& qualitativeResults, CheckTask<storm::logic::Formula> const& checkTask) {
             std::unique_ptr<CheckResult> result;
             
             bool isRewardFormula = checkTask.getFormula().isEventuallyFormula() && checkTask.getFormula().asEventuallyFormula().getContext() == storm::logic::FormulaContext::Reward;
@@ -338,7 +337,7 @@ namespace storm {
         }
         
         template<typename ModelType>
-        bool PartialBisimulationMdpModelChecker<ModelType>::skipQuantitativeSolution(storm::models::symbolic::Model<DdType, ValueType> const& quotient, storm::abstraction::QualitativeResultMinMax<DdType> const& qualitativeResults, CheckTask<storm::logic::Formula> const& checkTask) {
+        bool PartialBisimulationMdpModelChecker<ModelType>::skipQuantitativeSolution(storm::models::symbolic::Model<DdType, ValueType> const& quotient, storm::abstraction::SymbolicQualitativeResultMinMax<DdType> const& qualitativeResults, CheckTask<storm::logic::Formula> const& checkTask) {
             
             bool isRewardFormula = checkTask.getFormula().isEventuallyFormula() && checkTask.getFormula().asEventuallyFormula().getContext() == storm::logic::FormulaContext::Reward;
             if (isRewardFormula) {
@@ -356,7 +355,7 @@ namespace storm {
         }
         
         template<typename ModelType>
-        std::pair<std::unique_ptr<CheckResult>, std::unique_ptr<CheckResult>> PartialBisimulationMdpModelChecker<ModelType>::computeQuantitativeResult(storm::models::symbolic::Mdp<DdType, ValueType> const& quotient, CheckTask<storm::logic::Formula> const& checkTask, storm::dd::Bdd<DdType> const& constraintStates, storm::dd::Bdd<DdType> const& targetStates, storm::abstraction::QualitativeResultMinMax<DdType> const& qualitativeResults) {
+        std::pair<std::unique_ptr<CheckResult>, std::unique_ptr<CheckResult>> PartialBisimulationMdpModelChecker<ModelType>::computeQuantitativeResult(storm::models::symbolic::Mdp<DdType, ValueType> const& quotient, CheckTask<storm::logic::Formula> const& checkTask, storm::dd::Bdd<DdType> const& constraintStates, storm::dd::Bdd<DdType> const& targetStates, storm::abstraction::SymbolicQualitativeResultMinMax<DdType> const& qualitativeResults) {
 
             std::pair<std::unique_ptr<CheckResult>, std::unique_ptr<CheckResult>> result;
             
@@ -405,7 +404,7 @@ namespace storm {
         }
         
         template<typename ModelType>
-        std::pair<std::unique_ptr<CheckResult>, std::unique_ptr<CheckResult>> PartialBisimulationMdpModelChecker<ModelType>::computeQuantitativeResult(storm::models::symbolic::StochasticTwoPlayerGame<DdType, ValueType> const& quotient, CheckTask<storm::logic::Formula> const& checkTask, storm::dd::Bdd<DdType> const& constraintStates, storm::dd::Bdd<DdType> const& targetStates, storm::abstraction::QualitativeResultMinMax<DdType> const& qualitativeResults) {
+        std::pair<std::unique_ptr<CheckResult>, std::unique_ptr<CheckResult>> PartialBisimulationMdpModelChecker<ModelType>::computeQuantitativeResult(storm::models::symbolic::StochasticTwoPlayerGame<DdType, ValueType> const& quotient, CheckTask<storm::logic::Formula> const& checkTask, storm::dd::Bdd<DdType> const& constraintStates, storm::dd::Bdd<DdType> const& targetStates, storm::abstraction::SymbolicQualitativeResultMinMax<DdType> const& qualitativeResults) {
             
             std::pair<std::unique_ptr<CheckResult>, std::unique_ptr<CheckResult>> result;
             

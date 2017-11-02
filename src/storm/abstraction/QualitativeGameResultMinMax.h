@@ -2,14 +2,14 @@
 
 #include "storm/storage/dd/DdType.h"
 
-#include "storm/abstraction/QualitativeResultMinMax.h"
+#include "storm/abstraction/SymbolicQualitativeResultMinMax.h"
 #include "storm/abstraction/QualitativeGameResult.h"
 
 namespace storm {
     namespace abstraction {
 
         template<storm::dd::DdType Type>
-        struct QualitativeGameResultMinMax : public QualitativeResultMinMax<Type> {
+        class QualitativeGameResultMinMax : public SymbolicQualitativeResultMinMax<Type> {
         public:
             QualitativeGameResultMinMax() = default;
             

@@ -33,13 +33,13 @@ namespace storm {
     
     namespace abstraction {
         template <storm::dd::DdType DdType>
-        struct QualitativeResultMinMax;
+        class SymbolicQualitativeResultMinMax;
         
         template <storm::dd::DdType DdType>
-        struct QualitativeMdpResultMinMax;
+        class QualitativeMdpResultMinMax;
         
         template <storm::dd::DdType DdType>
-        struct QualitativeGameResultMinMax;
+        class QualitativeGameResultMinMax;
     }
     
     namespace modelchecker {
@@ -77,12 +77,12 @@ namespace storm {
             // Methods related to the qualitative solution.
             storm::abstraction::QualitativeMdpResultMinMax<DdType> computeQualitativeResult(storm::models::symbolic::Mdp<DdType, ValueType> const& quotient, CheckTask<storm::logic::Formula> const& checkTask, storm::dd::Bdd<DdType> const& constraintStates, storm::dd::Bdd<DdType> const& targetStates);
             storm::abstraction::QualitativeGameResultMinMax<DdType> computeQualitativeResult(storm::models::symbolic::StochasticTwoPlayerGame<DdType, ValueType> const& quotient, CheckTask<storm::logic::Formula> const& checkTask, storm::dd::Bdd<DdType> const& constraintStates, storm::dd::Bdd<DdType> const& targetStates, storm::OptimizationDirection optimizationDirectionInModel);
-            std::unique_ptr<CheckResult> checkForResult(storm::models::symbolic::Model<DdType, ValueType> const& quotient, storm::abstraction::QualitativeResultMinMax<DdType> const& qualitativeResults, CheckTask<storm::logic::Formula> const& checkTask);
-            bool skipQuantitativeSolution(storm::models::symbolic::Model<DdType, ValueType> const& quotient, storm::abstraction::QualitativeResultMinMax<DdType> const& qualitativeResults, CheckTask<storm::logic::Formula> const& checkTask);
+            std::unique_ptr<CheckResult> checkForResult(storm::models::symbolic::Model<DdType, ValueType> const& quotient, storm::abstraction::SymbolicQualitativeResultMinMax<DdType> const& qualitativeResults, CheckTask<storm::logic::Formula> const& checkTask);
+            bool skipQuantitativeSolution(storm::models::symbolic::Model<DdType, ValueType> const& quotient, storm::abstraction::SymbolicQualitativeResultMinMax<DdType> const& qualitativeResults, CheckTask<storm::logic::Formula> const& checkTask);
 
             // Methods related to the quantitative solution.
-            std::pair<std::unique_ptr<CheckResult>, std::unique_ptr<CheckResult>> computeQuantitativeResult(storm::models::symbolic::Mdp<DdType, ValueType> const& quotient, CheckTask<storm::logic::Formula> const& checkTask, storm::dd::Bdd<DdType> const& constraintStates, storm::dd::Bdd<DdType> const& targetStates, storm::abstraction::QualitativeResultMinMax<DdType> const& qualitativeResults);
-            std::pair<std::unique_ptr<CheckResult>, std::unique_ptr<CheckResult>> computeQuantitativeResult(storm::models::symbolic::StochasticTwoPlayerGame<DdType, ValueType> const& quotient, CheckTask<storm::logic::Formula> const& checkTask, storm::dd::Bdd<DdType> const& constraintStates, storm::dd::Bdd<DdType> const& targetStates, storm::abstraction::QualitativeResultMinMax<DdType> const& qualitativeResults);
+            std::pair<std::unique_ptr<CheckResult>, std::unique_ptr<CheckResult>> computeQuantitativeResult(storm::models::symbolic::Mdp<DdType, ValueType> const& quotient, CheckTask<storm::logic::Formula> const& checkTask, storm::dd::Bdd<DdType> const& constraintStates, storm::dd::Bdd<DdType> const& targetStates, storm::abstraction::SymbolicQualitativeResultMinMax<DdType> const& qualitativeResults);
+            std::pair<std::unique_ptr<CheckResult>, std::unique_ptr<CheckResult>> computeQuantitativeResult(storm::models::symbolic::StochasticTwoPlayerGame<DdType, ValueType> const& quotient, CheckTask<storm::logic::Formula> const& checkTask, storm::dd::Bdd<DdType> const& constraintStates, storm::dd::Bdd<DdType> const& targetStates, storm::abstraction::SymbolicQualitativeResultMinMax<DdType> const& qualitativeResults);
 
             // Retrieves the constraint and target states of the quotient wrt. to the formula in the check task.
             template<typename QuotientModelType>

@@ -4,19 +4,19 @@
 
 namespace storm {
     namespace abstraction {
-
-        template<storm::dd::DdType Type>
-        class SymbolicQualitativeResultMinMax;
         
-        class QualitativeResultMinMax {
+        template<storm::dd::DdType Type>
+        class SymbolicStateSet;
+        
+        class StateSet {
         public:
             virtual bool isSymbolic() const;
             
             template<storm::dd::DdType Type>
-            SymbolicQualitativeResultMinMax<Type> const& asSymbolicQualitativeResultMinMax() const;
+            SymbolicStateSet<Type> const& asSymbolicStateSet() const;
             
             template<storm::dd::DdType Type>
-            SymbolicQualitativeResultMinMax<Type>& asSymbolicQualitativeResultMinMax();
+            SymbolicStateSet<Type>& asSymbolicStateSet();
         };
         
     }
