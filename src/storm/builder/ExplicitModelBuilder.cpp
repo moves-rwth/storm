@@ -91,12 +91,12 @@ namespace storm {
             
             if (actualIndexBucketPair.first == newIndex) {
                 if (options.explorationOrder == ExplorationOrder::Dfs) {
-                    statesToExplore.push_front(state);
+                    statesToExplore.emplace_front(state, actualIndexBucketPair.first);
 
                     // Reserve one slot for the new state in the remapping.
                     stateRemapping.get().push_back(storm::utility::zero<StateType>());
                 } else if (options.explorationOrder == ExplorationOrder::Bfs) {
-                    statesToExplore.push_back(state);
+                    statesToExplore.emplace_back(state, actualIndexBucketPair.first);
                 } else {
                     STORM_LOG_ASSERT(false, "Invalid exploration order.");
                 }
@@ -139,8 +139,8 @@ namespace storm {
             // Perform a search through the model.
             while (!statesToExplore.empty()) {
                 // Get the first state in the queue.
-                CompressedState currentState = statesToExplore.front();
-                StateType currentIndex = stateStorage.stateToId.getValue(currentState);
+                CompressedState currentState = statesToExplore.front().first;
+                StateType currentIndex = statesToExplore.front().second;
                 statesToExplore.pop_front();
                 
                 // If the exploration order differs from breadth-first, we remember that this row group was actually

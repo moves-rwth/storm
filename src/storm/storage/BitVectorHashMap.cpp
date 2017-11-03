@@ -211,6 +211,11 @@ namespace storm {
         }
         
         template<class ValueType, class Hash>
+        ValueType BitVectorHashMap<ValueType, Hash>::getValue(std::size_t bucket) const {
+            return values[bucket];
+        }
+        
+        template<class ValueType, class Hash>
         bool BitVectorHashMap<ValueType, Hash>::contains(storm::storage::BitVector const& key) const {
             return findBucket(key).first;
         }

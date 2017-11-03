@@ -5,7 +5,7 @@
 namespace storm {
     namespace expressions {
         
-        bool SyntacticalEqualityCheckVisitor::isSyntaticallyEqual(storm::expressions::Expression const& expression1, storm::expressions::Expression const& expression2) {
+        bool SyntacticalEqualityCheckVisitor::isSyntacticallyEqual(storm::expressions::Expression const& expression1, storm::expressions::Expression const& expression2) {
             return boost::any_cast<bool>(expression1.accept(*this, std::ref(expression2.getBaseExpression())));
         }
         

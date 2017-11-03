@@ -113,6 +113,13 @@ namespace storm {
              * @return The value associated with the given key (if any).
              */
             ValueType getValue(storm::storage::BitVector const& key) const;
+
+            /*!
+             * Retrieves the value associated with the given bucket.
+             *
+             * @return The value associated with the given bucket (if any).
+             */
+            ValueType getValue(std::size_t bucket) const;
             
             /*!
              * Checks if the given key is already contained in the map.

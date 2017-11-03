@@ -15,6 +15,7 @@ namespace storm {
         class ExpressionManager;
         class Variable;
         class ExpressionVisitor;
+        class CompiledExpression;
         
         class Expression {
         public:
@@ -58,6 +59,7 @@ namespace storm {
             friend Expression maximum(Expression const& first, Expression const& second);
 
             Expression() = default;
+            ~Expression();
             
             /*!
              * Creates an expression representing the given variable.
@@ -358,11 +360,29 @@ namespace storm {
              */
             bool isSyntacticallyEqual(storm::expressions::Expression const& other) const;
             
+            /*!
+             * Retrieves whether this expression object has an associated compiled expression.
+             */
+            bool hasCompiledExpression() const;
+            
+            /*!
+             * Associates the given compiled expression with this expression object.
+             */
+            void setCompiledExpression(std::shared_ptr<CompiledExpression> const& compiledExpression) const;
+            
+            /*!
+             * Retrieves the associated compiled expression object (if there is any).
+             */
+            CompiledExpression const& getCompiledExpression() const;
+            
             friend std::ostream& operator<<(std::ostream& stream, Expression const& expression);
 
         private:
             // A pointer to the underlying base expression.
             std::shared_ptr<BaseExpression const> expressionPtr;
+            
+            // A pointer to an associated compiled expression object (if any).
+            mutable std::shared_ptr<CompiledExpression> compiledExpression;
         };
         
         // Provide operator overloads to conveniently construct new expressions from other expressions.

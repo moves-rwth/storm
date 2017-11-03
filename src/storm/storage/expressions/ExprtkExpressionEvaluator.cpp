@@ -26,34 +26,26 @@ namespace storm {
         
         template<typename RationalType>
         bool ExprtkExpressionEvaluatorBase<RationalType>::asBool(Expression const& expression) const {
-            std::shared_ptr<BaseExpression const> expressionPtr = expression.getBaseExpressionPointer();
-            auto const& expressionPair = this->compiledExpressions.find(expression.getBaseExpressionPointer());
-            if (expressionPair == this->compiledExpressions.end()) {
-                CompiledExpressionType const& compiledExpression = this->getCompiledExpression(expression);
-                return compiledExpression.value() == ValueType(1);
-            }
-            return expressionPair->second.value() == ValueType(1);
+            auto const& compiledExpression = getCompiledExpression(expression);
+            return compiledExpression.value() == ValueType(1);
         }
         
         template<typename RationalType>
         int_fast64_t ExprtkExpressionEvaluatorBase<RationalType>::asInt(Expression const& expression) const {
-            std::shared_ptr<BaseExpression const> expressionPtr = expression.getBaseExpressionPointer();
-            auto const& expressionPair = this->compiledExpressions.find(expression.getBaseExpressionPointer());
-            if (expressionPair == this->compiledExpressions.end()) {
-                CompiledExpressionType const& compiledExpression = this->getCompiledExpression(expression);
-                return static_cast<int_fast64_t>(compiledExpression.value());
-            }
-            return static_cast<int_fast64_t>(expressionPair->second.value());
+            auto const& compiledExpression = getCompiledExpression(expression);
+            return static_cast<int_fast64_t>(compiledExpression.value());
         }
         
         template<typename RationalType>
-        typename ExprtkExpressionEvaluatorBase<RationalType>::CompiledExpressionType& ExprtkExpressionEvaluatorBase<RationalType>::getCompiledExpression(storm::expressions::Expression const& expression) const {
-            std::pair<CacheType::iterator, bool> result = this->compiledExpressions.emplace(expression.getBaseExpressionPointer(), CompiledExpressionType());
-            CompiledExpressionType& compiledExpression = result.first->second;
-            compiledExpression.register_symbol_table(*symbolTable);
-            bool parsingOk = parser->compile(ToExprtkStringVisitor().toString(expression), compiledExpression);
-            STORM_LOG_THROW(parsingOk, storm::exceptions::UnexpectedException, "Expression was not properly parsed by ExprTk: " << expression << ". (Returned error: " << parser->error() << ")");
-            return compiledExpression;
+        typename ExprtkExpressionEvaluatorBase<RationalType>::CompiledExpressionType const& ExprtkExpressionEvaluatorBase<RationalType>::getCompiledExpression(storm::expressions::Expression const& expression) const {
+            if (!expression.hasCompiledExpression() || !expression.getCompiledExpression().isExprtkCompiledExpression()) {
+                CompiledExpressionType compiledExpression;
+                compiledExpression.register_symbol_table(*symbolTable);
+                bool parsingOk = parser->compile(ToExprtkStringVisitor().toString(expression), compiledExpression);
+                STORM_LOG_THROW(parsingOk, storm::exceptions::UnexpectedException, "Expression was not properly parsed by ExprTk: " << expression << ". (Returned error: " << parser->error() << ")");
+                expression.setCompiledExpression(std::make_shared<ExprtkCompiledExpression>(compiledExpression));
+            }
+            return expression.getCompiledExpression().asExprtkCompiledExpression().getCompiledExpression();
         }
         
         template<typename RationalType>
@@ -76,13 +68,8 @@ namespace storm {
         }
         
         double ExprtkExpressionEvaluator::asRational(Expression const& expression) const {
-            std::shared_ptr<BaseExpression const> expressionPtr = expression.getBaseExpressionPointer();
-            auto const& expressionPair = this->compiledExpressions.find(expression.getBaseExpressionPointer());
-            if (expressionPair == this->compiledExpressions.end()) {
-                CompiledExpressionType const& compiledExpression = this->getCompiledExpression(expression);
-                return static_cast<double>(compiledExpression.value());
-            }
-            return static_cast<double>(expressionPair->second.value());
+            auto const& compiledExpression = getCompiledExpression(expression);
+            return static_cast<double>(compiledExpression.value());
         }
         
         template class ExprtkExpressionEvaluatorBase<double>;
