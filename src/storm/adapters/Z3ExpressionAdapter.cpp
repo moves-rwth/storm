@@ -237,7 +237,7 @@ namespace storm {
             }
             
             boost::any Z3ExpressionAdapter::visit(storm::expressions::IntegerLiteralExpression const& expression, boost::any const&)  {
-                return context.int_val(expression.getValue());
+                return context.int_val(static_cast<long long>(expression.getValue()));
             }
             
             boost::any Z3ExpressionAdapter::visit(storm::expressions::UnaryBooleanFunctionExpression const& expression, boost::any const& data)  {
