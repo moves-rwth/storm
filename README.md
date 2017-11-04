@@ -1,5 +1,7 @@
 Storm - A Modern Probabilistic Model Checker
 ============================================
+
+[![Join the chat at https://gitter.im/storm-modelchecker/Lobby](https://badges.gitter.im/storm-modelchecker/Lobby.svg)](https://gitter.im/storm-modelchecker/Lobby?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
 [![Build Status](https://travis-ci.org/moves-rwth/storm.svg?branch=master)](https://travis-ci.org/moves-rwth/storm)
 
 For more instructions, check out the documentation found in [Getting Started](http://www.stormchecker.org/getting-started.html).
