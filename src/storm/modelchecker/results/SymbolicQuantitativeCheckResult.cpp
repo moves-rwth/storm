@@ -23,6 +23,11 @@ namespace storm {
         }
         
         template<storm::dd::DdType Type, typename ValueType>
+        std::unique_ptr<CheckResult> SymbolicQuantitativeCheckResult<Type, ValueType>::clone() const {
+            return std::make_unique<SymbolicQuantitativeCheckResult<Type, ValueType>>(this->reachableStates, this->states, this->values);
+        }
+        
+        template<storm::dd::DdType Type, typename ValueType>
         std::unique_ptr<CheckResult> SymbolicQuantitativeCheckResult<Type, ValueType>::compareAgainstBound(storm::logic::ComparisonType comparisonType, ValueType const& bound) const {
             storm::dd::Bdd<Type> states = this->states;
             if (comparisonType == storm::logic::ComparisonType::Less) {

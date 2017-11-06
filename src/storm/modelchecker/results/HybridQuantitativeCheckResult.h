@@ -23,6 +23,8 @@ namespace storm {
             HybridQuantitativeCheckResult& operator=(HybridQuantitativeCheckResult&& other) = default;
 #endif
             
+            virtual std::unique_ptr<CheckResult> clone() const override;
+
             virtual std::unique_ptr<CheckResult> compareAgainstBound(storm::logic::ComparisonType comparisonType, ValueType const& bound) const override;
             
             std::unique_ptr<CheckResult> toExplicitQuantitativeCheckResult() const;

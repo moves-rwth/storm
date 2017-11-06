@@ -19,7 +19,7 @@ namespace storm {
         namespace helper {
      
             template<storm::dd::DdType DdType, typename ValueType>
-            storm::dd::Add<DdType, ValueType> SymbolicDtmcPrctlHelper<DdType, ValueType>::computeUntilProbabilities(storm::models::symbolic::Model<DdType, ValueType> const& model, storm::dd::Add<DdType, ValueType> const& transitionMatrix, storm::dd::Bdd<DdType> const& phiStates, storm::dd::Bdd<DdType> const& psiStates, bool qualitative, storm::solver::SymbolicLinearEquationSolverFactory<DdType, ValueType> const& linearEquationSolverFactory) {
+            storm::dd::Add<DdType, ValueType> SymbolicDtmcPrctlHelper<DdType, ValueType>::computeUntilProbabilities(storm::models::symbolic::Model<DdType, ValueType> const& model, storm::dd::Add<DdType, ValueType> const& transitionMatrix, storm::dd::Bdd<DdType> const& phiStates, storm::dd::Bdd<DdType> const& psiStates, bool qualitative, storm::solver::SymbolicLinearEquationSolverFactory<DdType, ValueType> const& linearEquationSolverFactory, boost::optional<storm::dd::Add<DdType, ValueType>> const& startValues) {
                 // We need to identify the states which have to be taken out of the matrix, i.e. all states that have
                 // probability 0 and 1 of satisfying the until-formula.
                 STORM_LOG_TRACE("Found " << phiStates.getNonZeroCount() << " phi states and " << psiStates.getNonZeroCount() << " psi states.");
@@ -35,37 +35,41 @@ namespace storm {
                 } else {
                     // If there are maybe states, we need to solve an equation system.
                     if (!maybeStates.isZero()) {
-                        // Create the matrix and the vector for the equation system.
-                        storm::dd::Add<DdType, ValueType> maybeStatesAdd = maybeStates.template toAdd<ValueType>();
-                        
-                        // Start by cutting away all rows that do not belong to maybe states. Note that this leaves columns targeting
-                        // non-maybe states in the matrix.
-                        storm::dd::Add<DdType, ValueType> submatrix = transitionMatrix * maybeStatesAdd;
-                        
-                        // Then compute the vector that contains the one-step probabilities to a state with probability 1 for all
-                        // maybe states.
-                        storm::dd::Add<DdType, ValueType> prob1StatesAsColumn = statesWithProbability01.second.template toAdd<ValueType>();
-                        prob1StatesAsColumn = prob1StatesAsColumn.swapVariables(model.getRowColumnMetaVariablePairs());
-                        storm::dd::Add<DdType, ValueType> subvector = submatrix * prob1StatesAsColumn;
-                        subvector = subvector.sumAbstract(model.getColumnVariables());
-                        
-                        // Finally cut away all columns targeting non-maybe states and convert the matrix into the matrix needed
-                        // for solving the equation system (i.e. compute (I-A)).
-                        submatrix *= maybeStatesAdd.swapVariables(model.getRowColumnMetaVariablePairs());
-                        if (linearEquationSolverFactory.getEquationProblemFormat() == storm::solver::LinearEquationSolverProblemFormat::EquationSystem) {
-                            submatrix = (model.getRowColumnIdentity() * maybeStatesAdd) - submatrix;
-                        }
-                        
-                        // Solve the equation system.
-                        std::unique_ptr<storm::solver::SymbolicLinearEquationSolver<DdType, ValueType>> solver = linearEquationSolverFactory.create(submatrix, maybeStates, model.getRowVariables(), model.getColumnVariables(), model.getRowColumnMetaVariablePairs());
-                        solver->setBounds(storm::utility::zero<ValueType>(), storm::utility::one<ValueType>());
-                        storm::dd::Add<DdType, ValueType> result = solver->solveEquations(model.getManager().template getAddZero<ValueType>(), subvector);
-                        
-                        return statesWithProbability01.second.template toAdd<ValueType>() + result;
+                        return computeUntilProbabilities(model, transitionMatrix, maybeStates, statesWithProbability01.second, linearEquationSolverFactory, startValues ? maybeStates.ite(startValues.get(), model.getManager().template getAddZero<ValueType>()) : model.getManager().template getAddZero<ValueType>());
                     } else {
                         return statesWithProbability01.second.template toAdd<ValueType>();
                     }
                 }
+            }
+            
+            template<storm::dd::DdType DdType, typename ValueType>
+            storm::dd::Add<DdType, ValueType> SymbolicDtmcPrctlHelper<DdType, ValueType>::computeUntilProbabilities(storm::models::symbolic::Model<DdType, ValueType> const& model, storm::dd::Add<DdType, ValueType> const& transitionMatrix, storm::dd::Bdd<DdType> const& maybeStates, storm::dd::Bdd<DdType> const& statesWithProbability1, storm::solver::SymbolicLinearEquationSolverFactory<DdType, ValueType> const& linearEquationSolverFactory, boost::optional<storm::dd::Add<DdType, ValueType>> const& startValues) {
+                // Create the matrix and the vector for the equation system.
+                storm::dd::Add<DdType, ValueType> maybeStatesAdd = maybeStates.template toAdd<ValueType>();
+                
+                // Start by cutting away all rows that do not belong to maybe states. Note that this leaves columns targeting
+                // non-maybe states in the matrix.
+                storm::dd::Add<DdType, ValueType> submatrix = transitionMatrix * maybeStatesAdd;
+                
+                // Then compute the vector that contains the one-step probabilities to a state with probability 1 for all
+                // maybe states.
+                storm::dd::Add<DdType, ValueType> prob1StatesAsColumn = statesWithProbability1.template toAdd<ValueType>().swapVariables(model.getRowColumnMetaVariablePairs());
+                storm::dd::Add<DdType, ValueType> subvector = submatrix * prob1StatesAsColumn;
+                subvector = subvector.sumAbstract(model.getColumnVariables());
+                
+                // Finally cut away all columns targeting non-maybe states and convert the matrix into the matrix needed
+                // for solving the equation system (i.e. compute (I-A)).
+                submatrix *= maybeStatesAdd.swapVariables(model.getRowColumnMetaVariablePairs());
+                if (linearEquationSolverFactory.getEquationProblemFormat() == storm::solver::LinearEquationSolverProblemFormat::EquationSystem) {
+                    submatrix = (model.getRowColumnIdentity() * maybeStatesAdd) - submatrix;
+                }
+                
+                // Solve the equation system.
+                std::unique_ptr<storm::solver::SymbolicLinearEquationSolver<DdType, ValueType>> solver = linearEquationSolverFactory.create(submatrix, maybeStates, model.getRowVariables(), model.getColumnVariables(), model.getRowColumnMetaVariablePairs());
+                solver->setBounds(storm::utility::zero<ValueType>(), storm::utility::one<ValueType>());
+                storm::dd::Add<DdType, ValueType> result = solver->solveEquations(model.getManager().template getAddZero<ValueType>(), subvector);
+                
+                return statesWithProbability1.template toAdd<ValueType>() + result;
             }
             
             template<storm::dd::DdType DdType, typename ValueType>
@@ -139,7 +143,7 @@ namespace storm {
             }
             
             template<storm::dd::DdType DdType, typename ValueType>
-            storm::dd::Add<DdType, ValueType> SymbolicDtmcPrctlHelper<DdType, ValueType>::computeReachabilityRewards(storm::models::symbolic::Model<DdType, ValueType> const& model, storm::dd::Add<DdType, ValueType> const& transitionMatrix, RewardModelType const& rewardModel, storm::dd::Bdd<DdType> const& targetStates, bool qualitative, storm::solver::SymbolicLinearEquationSolverFactory<DdType, ValueType> const& linearEquationSolverFactory) {
+            storm::dd::Add<DdType, ValueType> SymbolicDtmcPrctlHelper<DdType, ValueType>::computeReachabilityRewards(storm::models::symbolic::Model<DdType, ValueType> const& model, storm::dd::Add<DdType, ValueType> const& transitionMatrix, RewardModelType const& rewardModel, storm::dd::Bdd<DdType> const& targetStates, bool qualitative, storm::solver::SymbolicLinearEquationSolverFactory<DdType, ValueType> const& linearEquationSolverFactory, boost::optional<storm::dd::Add<DdType, ValueType>> const& startValues) {
                 // Only compute the result if there is at least one reward model.
                 STORM_LOG_THROW(!rewardModel.empty(), storm::exceptions::InvalidPropertyException, "Missing reward model for formula. Skipping formula.");
                 
@@ -158,33 +162,39 @@ namespace storm {
                 } else {
                     // If there are maybe states, we need to solve an equation system.
                     if (!maybeStates.isZero()) {
-                        // Create the matrix and the vector for the equation system.
-                        storm::dd::Add<DdType, ValueType> maybeStatesAdd = maybeStates.template toAdd<ValueType>();
-                        
-                        // Start by cutting away all rows that do not belong to maybe states. Note that this leaves columns targeting
-                        // non-maybe states in the matrix.
-                        storm::dd::Add<DdType, ValueType> submatrix = transitionMatrix * maybeStatesAdd;
-                        
-                        // Then compute the state reward vector to use in the computation.
-                        storm::dd::Add<DdType, ValueType> subvector = rewardModel.getTotalRewardVector(maybeStatesAdd, submatrix, model.getColumnVariables());
-                        
-                        // Finally cut away all columns targeting non-maybe states and convert the matrix into the matrix needed
-                        // for solving the equation system (i.e. compute (I-A)).
-                        submatrix *= maybeStatesAdd.swapVariables(model.getRowColumnMetaVariablePairs());
-                        if (linearEquationSolverFactory.getEquationProblemFormat() == storm::solver::LinearEquationSolverProblemFormat::EquationSystem) {
-                            submatrix = (model.getRowColumnIdentity() * maybeStatesAdd) - submatrix;
-                        }
-                        
-                        // Solve the equation system.
-                        std::unique_ptr<storm::solver::SymbolicLinearEquationSolver<DdType, ValueType>> solver = linearEquationSolverFactory.create(submatrix, maybeStates, model.getRowVariables(), model.getColumnVariables(), model.getRowColumnMetaVariablePairs());
-                        solver->setLowerBound(storm::utility::zero<ValueType>());
-                        storm::dd::Add<DdType, ValueType> result = solver->solveEquations(model.getManager().template getAddZero<ValueType>(), subvector);
-                        
-                        return infinityStates.ite(model.getManager().getConstant(storm::utility::infinity<ValueType>()), result);
+                        return computeReachabilityRewards(model, transitionMatrix, rewardModel, maybeStates, targetStates, infinityStates, linearEquationSolverFactory, startValues ? maybeStates.ite(startValues.get(), model.getManager().template getAddZero<ValueType>()) : model.getManager().template getAddZero<ValueType>());
                     } else {
                         return infinityStates.ite(model.getManager().getConstant(storm::utility::infinity<ValueType>()), model.getManager().getConstant(storm::utility::zero<ValueType>()));
                     }
                 }
+            }
+            
+            template<storm::dd::DdType DdType, typename ValueType>
+            storm::dd::Add<DdType, ValueType> SymbolicDtmcPrctlHelper<DdType, ValueType>::computeReachabilityRewards(storm::models::symbolic::Model<DdType, ValueType> const& model, storm::dd::Add<DdType, ValueType> const& transitionMatrix, RewardModelType const& rewardModel, storm::dd::Bdd<DdType> const& maybeStates, storm::dd::Bdd<DdType> const& targetStates, storm::dd::Bdd<DdType> const& infinityStates, storm::solver::SymbolicLinearEquationSolverFactory<DdType, ValueType> const& linearEquationSolverFactory, boost::optional<storm::dd::Add<DdType, ValueType>> const& startValues) {
+                
+                // Create the matrix and the vector for the equation system.
+                storm::dd::Add<DdType, ValueType> maybeStatesAdd = maybeStates.template toAdd<ValueType>();
+                
+                // Start by cutting away all rows that do not belong to maybe states. Note that this leaves columns targeting
+                // non-maybe states in the matrix.
+                storm::dd::Add<DdType, ValueType> submatrix = transitionMatrix * maybeStatesAdd;
+                
+                // Then compute the state reward vector to use in the computation.
+                storm::dd::Add<DdType, ValueType> subvector = rewardModel.getTotalRewardVector(maybeStatesAdd, submatrix, model.getColumnVariables());
+                
+                // Finally cut away all columns targeting non-maybe states and convert the matrix into the matrix needed
+                // for solving the equation system (i.e. compute (I-A)).
+                submatrix *= maybeStatesAdd.swapVariables(model.getRowColumnMetaVariablePairs());
+                if (linearEquationSolverFactory.getEquationProblemFormat() == storm::solver::LinearEquationSolverProblemFormat::EquationSystem) {
+                    submatrix = (model.getRowColumnIdentity() * maybeStatesAdd) - submatrix;
+                }
+                
+                // Solve the equation system.
+                std::unique_ptr<storm::solver::SymbolicLinearEquationSolver<DdType, ValueType>> solver = linearEquationSolverFactory.create(submatrix, maybeStates, model.getRowVariables(), model.getColumnVariables(), model.getRowColumnMetaVariablePairs());
+                solver->setLowerBound(storm::utility::zero<ValueType>());
+                storm::dd::Add<DdType, ValueType> result = solver->solveEquations(startValues ? startValues.get() : maybeStatesAdd.getDdManager().template getAddZero<ValueType>(), subvector);
+                
+                return infinityStates.ite(model.getManager().getConstant(storm::utility::infinity<ValueType>()), result);
             }
             
             template class SymbolicDtmcPrctlHelper<storm::dd::DdType::CUDD, double>;

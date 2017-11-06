@@ -10,9 +10,8 @@ namespace storm {
             virtual ~QuantitativeCheckResult() = default;
             
             virtual std::unique_ptr<CheckResult> compareAgainstBound(storm::logic::ComparisonType comparisonType, ValueType const& bound) const;
-            
-            virtual void oneMinus() = 0;
-            
+                        
+            virtual void oneMinus() = 0;            
             
             virtual ValueType getMin() const = 0;
             virtual ValueType getMax() const = 0;

@@ -22,8 +22,9 @@ namespace storm {
             SymbolicQuantitativeCheckResult& operator=(SymbolicQuantitativeCheckResult&& other) = default;
 #endif
             
-            virtual std::unique_ptr<CheckResult> compareAgainstBound(storm::logic::ComparisonType comparisonType, ValueType const& bound) const override;
+            virtual std::unique_ptr<CheckResult> clone() const override;
 
+            virtual std::unique_ptr<CheckResult> compareAgainstBound(storm::logic::ComparisonType comparisonType, ValueType const& bound) const override;
 
             virtual bool isSymbolic() const override;
             virtual bool isResultForAllStates() const override;

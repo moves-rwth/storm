@@ -25,7 +25,9 @@ namespace storm {
             ExplicitQuantitativeCheckResult(storm::storage::sparse::state_type const& state, ValueType const& value);
             ExplicitQuantitativeCheckResult(vector_type const& values);
             ExplicitQuantitativeCheckResult(vector_type&& values);
-            
+            ExplicitQuantitativeCheckResult(boost::variant<vector_type, map_type> const& values, boost::optional<std::shared_ptr<storm::storage::Scheduler<ValueType>>> scheduler = boost::none);
+            ExplicitQuantitativeCheckResult(boost::variant<vector_type, map_type>&& values, boost::optional<std::shared_ptr<storm::storage::Scheduler<ValueType>>> scheduler = boost::none);
+
             ExplicitQuantitativeCheckResult(ExplicitQuantitativeCheckResult const& other) = default;
             ExplicitQuantitativeCheckResult& operator=(ExplicitQuantitativeCheckResult const& other) = default;
 #ifndef WINDOWS
@@ -33,6 +35,8 @@ namespace storm {
             ExplicitQuantitativeCheckResult& operator=(ExplicitQuantitativeCheckResult&& other) = default;
 #endif
             virtual ~ExplicitQuantitativeCheckResult() = default;
+            
+            virtual std::unique_ptr<CheckResult> clone() const override;
             
             ValueType& operator[](storm::storage::sparse::state_type state);
             ValueType const& operator[](storm::storage::sparse::state_type state) const;

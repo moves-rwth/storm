@@ -43,6 +43,21 @@ namespace storm {
         }
         
         template<typename ValueType>
+        ExplicitQuantitativeCheckResult<ValueType>::ExplicitQuantitativeCheckResult(boost::variant<vector_type, map_type> const& values, boost::optional<std::shared_ptr<storm::storage::Scheduler<ValueType>>> scheduler) : values(values), scheduler(scheduler) {
+            // Intentionally left empty.
+        }
+        
+        template<typename ValueType>
+        ExplicitQuantitativeCheckResult<ValueType>::ExplicitQuantitativeCheckResult(boost::variant<vector_type, map_type>&& values, boost::optional<std::shared_ptr<storm::storage::Scheduler<ValueType>>> scheduler) : values(std::move(values)), scheduler(scheduler) {
+            // Intentionally left empty.
+        }
+        
+        template<typename ValueType>
+        std::unique_ptr<CheckResult> ExplicitQuantitativeCheckResult<ValueType>::clone() const {
+            return std::make_unique<ExplicitQuantitativeCheckResult<ValueType>>(this->values, this->scheduler);
+        }
+        
+        template<typename ValueType>
         typename ExplicitQuantitativeCheckResult<ValueType>::vector_type const& ExplicitQuantitativeCheckResult<ValueType>::getValueVector() const {
             return boost::get<vector_type>(values);
         }
