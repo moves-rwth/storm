@@ -897,12 +897,11 @@ namespace storm {
             // Start by creating a temporary vector that stores for each index whose bit is set to true the number of
             // bits that were set before that particular index.
             std::vector<index_type> columnBitsSetBeforeIndex = columnConstraint.getNumberOfSetBitsBeforeIndices();
-            std::vector<index_type>* rowBitsSetBeforeIndex;
-            if (&rowGroupConstraint == &columnConstraint) {
-                rowBitsSetBeforeIndex = &columnBitsSetBeforeIndex;
-            } else {
-                rowBitsSetBeforeIndex = new std::vector<index_type>(rowGroupConstraint.getNumberOfSetBitsBeforeIndices());
+            std::unique_ptr<std::vector<index_type>> tmp;
+            if (rowGroupConstraint != columnConstraint) {
+                tmp = std::make_unique<std::vector<index_type>>(rowGroupConstraint.getNumberOfSetBitsBeforeIndices());
             }
+            std::vector<index_type> const& rowBitsSetBeforeIndex = tmp ? *tmp : columnBitsSetBeforeIndex;
             
             // Then, we need to determine the number of entries and the number of rows of the submatrix.
             index_type subEntries = 0;
@@ -917,7 +916,7 @@ namespace storm {
                         if (columnConstraint.get(it->getColumn())) {
                             ++subEntries;
                             
-                            if (columnBitsSetBeforeIndex[it->getColumn()] == (*rowBitsSetBeforeIndex)[index]) {
+                            if (columnBitsSetBeforeIndex[it->getColumn()] == rowBitsSetBeforeIndex[index]) {
                                 foundDiagonalElement = true;
                             }
                         }
@@ -946,9 +945,9 @@ namespace storm {
                     
                     for (const_iterator it = this->begin(i), ite = this->end(i); it != ite; ++it) {
                         if (columnConstraint.get(it->getColumn())) {
-                            if (columnBitsSetBeforeIndex[it->getColumn()] == (*rowBitsSetBeforeIndex)[index]) {
+                            if (columnBitsSetBeforeIndex[it->getColumn()] == rowBitsSetBeforeIndex[index]) {
                                 insertedDiagonalElement = true;
-                            } else if (insertDiagonalEntries && !insertedDiagonalElement && columnBitsSetBeforeIndex[it->getColumn()] > (*rowBitsSetBeforeIndex)[index]) {
+                            } else if (insertDiagonalEntries && !insertedDiagonalElement && columnBitsSetBeforeIndex[it->getColumn()] > rowBitsSetBeforeIndex[index]) {
                                 matrixBuilder.addNextValue(rowCount, rowGroupCount, storm::utility::zero<ValueType>());
                                 insertedDiagonalElement = true;
                             }
@@ -956,16 +955,11 @@ namespace storm {
                         }
                     }
                     if (insertDiagonalEntries && !insertedDiagonalElement && rowGroupCount < submatrixColumnCount) {
-                        matrixBuilder.addNextValue(rowGroupCount, rowGroupCount, storm::utility::zero<ValueType>());
+                        matrixBuilder.addNextValue(rowCount, rowGroupCount, storm::utility::zero<ValueType>());
                     }
                     ++rowCount;
                 }
                 ++rowGroupCount;
-            }
-            
-            // If the constraints were not the same, we have allocated some additional memory we need to free now.
-            if (&rowGroupConstraint != &columnConstraint) {
-                delete rowBitsSetBeforeIndex;
             }
             
             return matrixBuilder.build();
