@@ -12,7 +12,7 @@
 #include "storm/modelchecker/prctl/SymbolicMdpPrctlModelChecker.h"
 #include "storm/modelchecker/csl/SparseMarkovAutomatonCslModelChecker.h"
 #include "storm/modelchecker/abstraction/GameBasedMdpModelChecker.h"
-#include "storm/modelchecker/abstraction/PartialBisimulationMdpModelChecker.h"
+#include "storm/modelchecker/abstraction/BisimulationAbstractionRefinementModelChecker.h"
 #include "storm/modelchecker/exploration/SparseExplorationModelChecker.h"
 #include "storm/modelchecker/reachability/SparseDtmcEliminationModelChecker.h"
 
@@ -68,12 +68,12 @@ namespace storm {
         typename std::enable_if<std::is_same<ValueType, double>::value, std::unique_ptr<storm::modelchecker::CheckResult>>::type verifyWithAbstractionRefinementEngine(std::shared_ptr<storm::models::symbolic::Model<DdType, ValueType>> const& model, storm::modelchecker::CheckTask<storm::logic::Formula, ValueType> const& task) {
             std::unique_ptr<storm::modelchecker::CheckResult> result;
             if (model->getType() == storm::models::ModelType::Dtmc) {
-                storm::modelchecker::PartialBisimulationMdpModelChecker<storm::models::symbolic::Dtmc<DdType, ValueType>> modelchecker(*model->template as<storm::models::symbolic::Dtmc<DdType, double>>());
+                storm::modelchecker::BisimulationAbstractionRefinementModelChecker<storm::models::symbolic::Dtmc<DdType, ValueType>> modelchecker(*model->template as<storm::models::symbolic::Dtmc<DdType, double>>());
                 if (modelchecker.canHandle(task)) {
                     result = modelchecker.check(task);
                 }
             } else if (model->getType() == storm::models::ModelType::Mdp) {
-                storm::modelchecker::PartialBisimulationMdpModelChecker<storm::models::symbolic::Mdp<DdType, ValueType>> modelchecker(*model->template as<storm::models::symbolic::Mdp<DdType, double>>());
+                storm::modelchecker::BisimulationAbstractionRefinementModelChecker<storm::models::symbolic::Mdp<DdType, ValueType>> modelchecker(*model->template as<storm::models::symbolic::Mdp<DdType, double>>());
                 if (modelchecker.canHandle(task)) {
                     result = modelchecker.check(task);
                 }

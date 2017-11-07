@@ -168,7 +168,8 @@ namespace storm {
             // Phase (2): solve quantitatively.
             if (!doSkipQuantitativeSolution) {
                 lastBounds = computeQuantitativeResult(abstractModel, *constraintAndTargetStates.first, *constraintAndTargetStates.second, *lastQualitativeResults);
-
+                STORM_LOG_ASSERT(lastBounds.first && lastBounds.second, "Expected both bounds.");
+                
                 result = std::make_pair(lastBounds.first->clone(), lastBounds.second->clone());
                 filterInitialStates(abstractModel, result);
                 printBoundsInformation(result);
@@ -176,8 +177,7 @@ namespace storm {
                 // Check whether the answer can be given after the quantitative solution.
                 if (checkForResultAfterQuantitativeCheck(abstractModel, true, result.first->asQuantitativeCheckResult<ValueType>())) {
                     result.second = nullptr;
-                }
-                if (checkForResultAfterQuantitativeCheck(abstractModel, false, result.second->asQuantitativeCheckResult<ValueType>())) {
+                } else if (checkForResultAfterQuantitativeCheck(abstractModel, false, result.second->asQuantitativeCheckResult<ValueType>())) {
                     result.first = nullptr;
                 }
             } else {
@@ -193,27 +193,37 @@ namespace storm {
         }
         
         template<typename ModelType>
-        bool AbstractAbstractionRefinementModelChecker<ModelType>::checkForResultAfterQuantitativeCheck(storm::models::Model<ValueType> const& abstractModel, bool lowerBounds, QuantitativeCheckResult<ValueType> const& result) {
-            storm::logic::ComparisonType comparisonType = checkTask->getBoundComparisonType();
-            ValueType threshold = checkTask->getBoundThreshold();
+        bool AbstractAbstractionRefinementModelChecker<ModelType>::checkForResultAfterQuantitativeCheck(storm::models::Model<ValueType> const& abstractModel, bool lowerBounds, QuantitativeCheckResult<ValueType> const& quantitativeResult) {
             
-            if (lowerBounds) {
-                if (storm::logic::isLowerBound(comparisonType)) {
-                    ValueType minimalLowerBound = result.getMin();
-                    return (storm::logic::isStrict(comparisonType) && minimalLowerBound > threshold) || (!storm::logic::isStrict(comparisonType) && minimalLowerBound >= threshold);
+            bool result = false;
+            if (checkTask->isBoundSet()) {
+                storm::logic::ComparisonType comparisonType = checkTask->getBoundComparisonType();
+                ValueType threshold = checkTask->getBoundThreshold();
+                
+                if (lowerBounds) {
+                    if (storm::logic::isLowerBound(comparisonType)) {
+                        ValueType minimalLowerBound = quantitativeResult.getMin();
+                        result = (storm::logic::isStrict(comparisonType) && minimalLowerBound > threshold) || (!storm::logic::isStrict(comparisonType) && minimalLowerBound >= threshold);
+                    } else {
+                        ValueType maximalLowerBound = quantitativeResult.getMax();
+                        result = (storm::logic::isStrict(comparisonType) && maximalLowerBound >= threshold) || (!storm::logic::isStrict(comparisonType) && maximalLowerBound > threshold);
+                    }
                 } else {
-                    ValueType maximalLowerBound = result.getMax();
-                    return (storm::logic::isStrict(comparisonType) && maximalLowerBound >= threshold) || (!storm::logic::isStrict(comparisonType) && maximalLowerBound > threshold);
+                    if (storm::logic::isLowerBound(comparisonType)) {
+                        ValueType minimalUpperBound = quantitativeResult.getMin();
+                        result = (storm::logic::isStrict(comparisonType) && minimalUpperBound <= threshold) || (!storm::logic::isStrict(comparisonType) && minimalUpperBound < threshold);
+                    } else {
+                        ValueType maximalUpperBound = quantitativeResult.getMax();
+                        result = (storm::logic::isStrict(comparisonType) && maximalUpperBound < threshold) || (!storm::logic::isStrict(comparisonType) && maximalUpperBound <= threshold);
+                    }
                 }
-            } else {
-                if (storm::logic::isLowerBound(comparisonType)) {
-                    ValueType minimalUpperBound = result.getMin();
-                    return (storm::logic::isStrict(comparisonType) && minimalUpperBound <= threshold) || (!storm::logic::isStrict(comparisonType) && minimalUpperBound < threshold);
-                } else {
-                    ValueType maximalUpperBound = result.getMax();
-                    return (storm::logic::isStrict(comparisonType) && maximalUpperBound < threshold) || (!storm::logic::isStrict(comparisonType) && maximalUpperBound <= threshold);
+                
+                if (result) {
+                    STORM_LOG_TRACE("Check for result after quantiative check positive.");
                 }
             }
+            
+            return result;
         }
 
         template<typename ModelType>
@@ -458,7 +468,7 @@ namespace storm {
                     states = storm::utility::graph::performProb1E(abstractModel, transitionMatrixBdd, constraintStates.getStates(), targetStates.getStates(), lastQualitativeResults ? lastQualitativeResults->asSymbolicQualitativeResultMinMax<DdType>().getProb1Min().getStates() : storm::utility::graph::performProbGreater0E(abstractModel, transitionMatrixBdd, constraintStates.getStates(), targetStates.getStates()));
                     result->prob1Max = storm::abstraction::QualitativeMdpResult<DdType>(states);
 
-                    states = storm::utility::graph::performProb1A(abstractModel, transitionMatrixBdd, lastQualitativeResults ? lastQualitativeResults->asSymbolicQualitativeResultMinMax<DdType>().getProb1Min().getStates() : targetStates.getStates(), states);
+                    states = storm::utility::graph::performProb1A(abstractModel, transitionMatrixBdd, lastQualitativeResults ? lastQualitativeResults->asSymbolicQualitativeResultMinMax<DdType>().getProb1Min().getStates() : targetStates.getStates(), storm::utility::graph::performProbGreater0A(abstractModel, transitionMatrixBdd, constraintStates.getStates(), targetStates.getStates()));
                     result->prob1Min = storm::abstraction::QualitativeMdpResult<DdType>(states);
 
                     states = storm::utility::graph::performProb0E(abstractModel, transitionMatrixBdd, constraintStates.getStates(), targetStates.getStates());
@@ -482,6 +492,13 @@ namespace storm {
             auto end = std::chrono::high_resolution_clock::now();
             
             auto timeInMilliseconds = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
+            if (isRewardFormula) {
+                STORM_LOG_TRACE("Min: " << result->getProb1Min().getStates().getNonZeroCount() << " states with probability 1.");
+                STORM_LOG_TRACE("Max: " << result->getProb1Max().getStates().getNonZeroCount() << " states with probability 1.");
+            } else {
+                STORM_LOG_TRACE("Min: " << result->getProb0Min().getStates().getNonZeroCount() << " states with probability 0, " << result->getProb1Min().getStates().getNonZeroCount() << " states with probability 1.");
+                STORM_LOG_TRACE("Max: " << result->getProb0Max().getStates().getNonZeroCount() << " states with probability 0, " << result->getProb1Max().getStates().getNonZeroCount() << " states with probability 1.");
+            }
             STORM_LOG_DEBUG("Computed qualitative solution in " << timeInMilliseconds << "ms.");
             
             return result;
@@ -615,6 +632,10 @@ namespace storm {
                 } else if (checkTask->isBoundSet() && checkTask->getBoundThreshold() == storm::utility::one<ValueType>() && (abstractModel.getInitialStates() && symbolicQualitativeResultMinMax.getProb1Max().getStates()) != abstractModel.getInitialStates()) {
                     result = std::make_unique<storm::modelchecker::SymbolicQuantitativeCheckResult<DdType, ValueType>>(abstractModel.getReachableStates(), abstractModel.getInitialStates(), (abstractModel.getInitialStates() && symbolicQualitativeResultMinMax.getProb1Max().getStates()).ite(abstractModel.getManager().template getConstant<ValueType>(0.5), abstractModel.getManager().template getAddZero<ValueType>()) + symbolicQualitativeResultMinMax.getProb1Max().getStates().template toAdd<ValueType>());
                 }
+            }
+            
+            if (result) {
+                STORM_LOG_TRACE("Check for result after qualitative check positive.");
             }
             
             return result;

@@ -31,16 +31,19 @@ namespace storm {
             virtual ~BisimulationAbstractionRefinementModelChecker();
             
         protected:
-//            virtual bool supportsReachabilityRewards() const override;
-//            virtual std::string const& getName() const override;
-//            virtual void initializeAbstractionRefinement() override;
-//            virtual std::shared_ptr<storm::models::Model<ValueType>> getAbstractModel() override;
-//            virtual std::pair<std::unique_ptr<storm::abstraction::StateSet>, std::unique_ptr<storm::abstraction::StateSet>> getConstraintAndTargetStates(storm::models::Model<ValueType> const& abstractModel) override;
-//            virtual uint64_t getAbstractionPlayer() const override;
-//            virtual bool requiresSchedulerSynthesis() const override;
-//            virtual void refineAbstractModel() override;
+            virtual bool supportsReachabilityRewards() const override;
+            virtual std::string const& getName() const override;
+            virtual void initializeAbstractionRefinement() override;
+            virtual std::shared_ptr<storm::models::Model<ValueType>> getAbstractModel() override;
+            virtual std::pair<std::unique_ptr<storm::abstraction::StateSet>, std::unique_ptr<storm::abstraction::StateSet>> getConstraintAndTargetStates(storm::models::Model<ValueType> const& abstractModel) override;
+            virtual uint64_t getAbstractionPlayer() const override;
+            virtual bool requiresSchedulerSynthesis() const override;
+            virtual void refineAbstractModel() override;
             
         private:
+            template<typename QuotientModelType>
+            std::pair<storm::dd::Bdd<DdType>, storm::dd::Bdd<DdType>> getConstraintAndTargetStates(QuotientModelType const& quotient);
+            
             ModelType const& model;
 
             /// The bisimulation object that maintains and refines the model.

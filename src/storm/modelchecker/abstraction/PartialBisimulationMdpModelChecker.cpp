@@ -122,7 +122,7 @@ namespace storm {
                         
                     if (!converged) {
                         STORM_LOG_TRACE("Performing bisimulation step.");
-                        bisimulation.compute(1);
+                        bisimulation.compute(10);
                     }
                 }
                 
