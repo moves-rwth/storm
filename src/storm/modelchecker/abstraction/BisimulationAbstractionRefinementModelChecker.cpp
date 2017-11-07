@@ -109,7 +109,9 @@ namespace storm {
         
         template<typename ModelType>
         uint64_t BisimulationAbstractionRefinementModelChecker<ModelType>::getAbstractionPlayer() const {
-            return 1;
+            // Usually, the abstraction player is the first player. However, when we have arrived at the actual bisimulation
+            // quotient, the abstraction player vanishes.
+            return model.getType() == lastAbstractModel->getType() ? 0 : 1;
         }
         
         template<typename ModelType>

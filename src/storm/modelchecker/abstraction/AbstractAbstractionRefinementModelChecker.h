@@ -96,7 +96,8 @@ namespace storm {
             /// Retrieves the state sets corresponding to the constraint and target states.
             virtual std::pair<std::unique_ptr<storm::abstraction::StateSet>, std::unique_ptr<storm::abstraction::StateSet>> getConstraintAndTargetStates(storm::models::Model<ValueType> const& abstractModel) = 0;
             
-            /// Retrieves the index of the abstraction player. Must be in {1} for DTMCs and MDPs and in {1, 2} for games.
+            /// Retrieves the index of the abstraction player. Arbitrary for DTMCs, in {0, 1} for MDPs (0 = no player,
+            /// 1 = the only player) and in {1, 2} for games.
             virtual uint64_t getAbstractionPlayer() const = 0;
             
             /// Retrieves whether schedulers need to be computed.
@@ -138,8 +139,6 @@ namespace storm {
             void printBoundsInformation(SymbolicQuantitativeCheckResult<DdType, ValueType> const& lowerBounds, SymbolicQuantitativeCheckResult<DdType, ValueType> const& upperBounds);
             bool checkForResultAfterQuantitativeCheck(storm::models::Model<ValueType> const& abstractModel, bool lowerBounds, QuantitativeCheckResult<ValueType> const& result);
             std::unique_ptr<CheckResult> computeReachabilityProbabilitiesHelper(storm::models::symbolic::StochasticTwoPlayerGame<DdType, ValueType> const& abstractModel, storm::OptimizationDirection const& player1Direction, storm::OptimizationDirection const& player2Direction, storm::dd::Bdd<DdType> const& maybeStates, storm::dd::Bdd<DdType> const& prob1States, storm::dd::Add<DdType, ValueType> const& startValues);
-            std::pair<std::unique_ptr<CheckResult>, std::unique_ptr<CheckResult>> createBoundsFromQualitativeResults(storm::models::Model<ValueType> const& abstractModel, storm::abstraction::QualitativeResultMinMax const& qualitativeResults);
-            std::pair<std::unique_ptr<CheckResult>, std::unique_ptr<CheckResult>> createBoundsFromQualitativeResults(storm::models::symbolic::Model<DdType, ValueType> const& abstractModel, storm::abstraction::SymbolicQualitativeResultMinMax<DdType> const& qualitativeResults);
 
             /// Tries to obtain the results from the bounds. If either of the two bounds is null, the result is assumed
             /// to be the non-null bound. If neither is null and the bounds are sufficiently close, the average of the

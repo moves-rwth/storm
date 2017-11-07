@@ -128,9 +128,13 @@ namespace storm {
                 std::pair<std::unique_ptr<CheckResult>, std::unique_ptr<CheckResult>> bounds = computeBounds(*abstractModel);
                 
                 // Try to derive the final result from the obtained bounds.
-                result = tryToObtainResultFromBounds(*abstractModel, bounds);
+                if (bounds.first || bounds.second) {
+                    result = tryToObtainResultFromBounds(*abstractModel, bounds);
+                }
                 if (!result) {
-                    printBoundsInformation(bounds);
+                    if (bounds.first && bounds.second) {
+                        printBoundsInformation(bounds);
+                    }
                     
                     auto refinementStart = std::chrono::high_resolution_clock::now();
                     this->refineAbstractModel();
@@ -181,38 +185,9 @@ namespace storm {
                 } else if (checkForResultAfterQuantitativeCheck(abstractModel, false, result.second->asQuantitativeCheckResult<ValueType>())) {
                     result.first = nullptr;
                 }
-            } else {
-                // In this case, we construct the full results from the qualitative results.
-                result = createBoundsFromQualitativeResults(abstractModel, *lastQualitativeResults);
             }
             
             return result;
-        }
-        
-        template<typename ModelType>
-        std::pair<std::unique_ptr<CheckResult>, std::unique_ptr<CheckResult>> AbstractAbstractionRefinementModelChecker<ModelType>::createBoundsFromQualitativeResults(storm::models::Model<ValueType> const& abstractModel, storm::abstraction::QualitativeResultMinMax const& qualitativeResults) {
-            
-            STORM_LOG_THROW(qualitativeResults.isSymbolic(), storm::exceptions::NotSupportedException, "Expected symbolic bounds.");
-            
-            return createBoundsFromQualitativeResults(*abstractModel.template as<storm::models::symbolic::Model<DdType, ValueType>>(), qualitativeResults.asSymbolicQualitativeResultMinMax<DdType>());
-        }
-
-        template<typename ModelType>
-        std::pair<std::unique_ptr<CheckResult>, std::unique_ptr<CheckResult>> AbstractAbstractionRefinementModelChecker<ModelType>::createBoundsFromQualitativeResults(storm::models::symbolic::Model<DdType, ValueType> const& abstractModel, storm::abstraction::SymbolicQualitativeResultMinMax<DdType> const& qualitativeResults) {
-
-            std::unique_ptr<CheckResult> lowerBounds;
-            std::unique_ptr<CheckResult> upperBounds;
-
-            bool isRewardFormula = checkTask->getFormula().isEventuallyFormula() && checkTask->getFormula().asEventuallyFormula().getContext() == storm::logic::FormulaContext::Reward;
-            if (isRewardFormula) {
-                lowerBounds = std::make_unique<SymbolicQuantitativeCheckResult<DdType, ValueType>>(abstractModel.getReachableStates(), abstractModel.getInitialStates(), abstractModel.getInitialStates().ite(qualitativeResults.getProb1Min().getStates().ite(abstractModel.getManager().template getAddZero<ValueType>(), abstractModel.getManager().template getConstant<ValueType>(storm::utility::infinity<ValueType>())), abstractModel.getManager().template getAddZero<ValueType>()));
-                upperBounds = std::make_unique<SymbolicQuantitativeCheckResult<DdType, ValueType>>(abstractModel.getReachableStates(), abstractModel.getInitialStates(), abstractModel.getInitialStates().ite(qualitativeResults.getProb1Max().getStates().ite(abstractModel.getManager().template getAddZero<ValueType>(), abstractModel.getManager().template getConstant<ValueType>(storm::utility::infinity<ValueType>())), abstractModel.getManager().template getAddZero<ValueType>()));
-            } else {
-                lowerBounds = std::make_unique<SymbolicQuantitativeCheckResult<DdType, ValueType>>(abstractModel.getReachableStates(), abstractModel.getInitialStates(), abstractModel.getInitialStates().ite(qualitativeResults.getProb1Min().getStates().template toAdd<ValueType>(), abstractModel.getManager().template getAddZero<ValueType>()));
-                upperBounds = std::make_unique<SymbolicQuantitativeCheckResult<DdType, ValueType>>(abstractModel.getReachableStates(), abstractModel.getInitialStates(), abstractModel.getInitialStates().ite(qualitativeResults.getProb1Max().getStates().template toAdd<ValueType>(), abstractModel.getManager().template getAddZero<ValueType>()));
-            }
-            
-            return std::make_pair<std::unique_ptr<CheckResult>, std::unique_ptr<CheckResult>>(std::move(lowerBounds), std::move(upperBounds));
         }
         
         template<typename ModelType>
@@ -242,7 +217,9 @@ namespace storm {
                 }
                 
                 if (result) {
-                    STORM_LOG_TRACE("Check for result after quantiative check positive.");
+                    STORM_LOG_TRACE("Found result after quantiative check.");
+                } else {
+                    STORM_LOG_TRACE("Did not find result after quantiative check.");
                 }
             }
             
@@ -391,12 +368,23 @@ namespace storm {
                 minStartValues = abstractModel.getManager().template getAddZero<ValueType>();
             }
 
+            uint64_t abstractionPlayer = this->getAbstractionPlayer();
             if (isRewardFormula) {
-                result.first = storm::modelchecker::helper::SymbolicMdpPrctlHelper<DdType, ValueType>::computeReachabilityRewards(storm::OptimizationDirection::Minimize, abstractModel, abstractModel.getTransitionMatrix(), abstractModel.getTransitionMatrix().notZero(), checkTask->isRewardModelSet() ? abstractModel.getRewardModel(checkTask->getRewardModel()) : abstractModel.getRewardModel(""), maybeMin, targetStates.getStates(), !qualitativeResults.getProb1Min().getStates() && abstractModel.getReachableStates(), storm::solver::GeneralSymbolicMinMaxLinearEquationSolverFactory<DdType, ValueType>(), minStartValues);
-                result.second = storm::modelchecker::helper::SymbolicMdpPrctlHelper<DdType, ValueType>::computeReachabilityRewards(storm::OptimizationDirection::Maximize, abstractModel, abstractModel.getTransitionMatrix(), abstractModel.getTransitionMatrix().notZero(), checkTask->isRewardModelSet() ? abstractModel.getRewardModel(checkTask->getRewardModel()) : abstractModel.getRewardModel(""), maybeMin, targetStates.getStates(), !qualitativeResults.getProb1Max().getStates() && abstractModel.getReachableStates(), storm::solver::GeneralSymbolicMinMaxLinearEquationSolverFactory<DdType, ValueType>(), maybeMax.ite(result.first->asSymbolicQuantitativeCheckResult<DdType, ValueType>().getValueVector(), abstractModel.getManager().template getAddZero<ValueType>()));
+                result.first = storm::modelchecker::helper::SymbolicMdpPrctlHelper<DdType, ValueType>::computeReachabilityRewards(abstractionPlayer == 1 ? storm::OptimizationDirection::Minimize : checkTask->getOptimizationDirection(), abstractModel, abstractModel.getTransitionMatrix(), abstractModel.getTransitionMatrix().notZero(), checkTask->isRewardModelSet() ? abstractModel.getRewardModel(checkTask->getRewardModel()) : abstractModel.getRewardModel(""), maybeMin, targetStates.getStates(), !qualitativeResults.getProb1Min().getStates() && abstractModel.getReachableStates(), storm::solver::GeneralSymbolicMinMaxLinearEquationSolverFactory<DdType, ValueType>(), minStartValues);
+                
+                if (abstractionPlayer == 0) {
+                    result.second = result.first->clone();
+                } else {
+                    result.second = storm::modelchecker::helper::SymbolicMdpPrctlHelper<DdType, ValueType>::computeReachabilityRewards(storm::OptimizationDirection::Maximize, abstractModel, abstractModel.getTransitionMatrix(), abstractModel.getTransitionMatrix().notZero(), checkTask->isRewardModelSet() ? abstractModel.getRewardModel(checkTask->getRewardModel()) : abstractModel.getRewardModel(""), maybeMin, targetStates.getStates(), !qualitativeResults.getProb1Max().getStates() && abstractModel.getReachableStates(), storm::solver::GeneralSymbolicMinMaxLinearEquationSolverFactory<DdType, ValueType>(), maybeMax.ite(result.first->asSymbolicQuantitativeCheckResult<DdType, ValueType>().getValueVector(), abstractModel.getManager().template getAddZero<ValueType>()));
+                }
             } else {
-                result.first = storm::modelchecker::helper::SymbolicMdpPrctlHelper<DdType, ValueType>::computeUntilProbabilities(storm::OptimizationDirection::Minimize, abstractModel, abstractModel.getTransitionMatrix(), maybeMin, qualitativeResults.getProb1Min().getStates(), storm::solver::GeneralSymbolicMinMaxLinearEquationSolverFactory<DdType, ValueType>(), minStartValues);
-                result.second = storm::modelchecker::helper::SymbolicMdpPrctlHelper<DdType, ValueType>::computeUntilProbabilities(storm::OptimizationDirection::Maximize, abstractModel, abstractModel.getTransitionMatrix(), maybeMax, qualitativeResults.getProb1Max().getStates(), storm::solver::GeneralSymbolicMinMaxLinearEquationSolverFactory<DdType, ValueType>(), maybeMax.ite(result.first->asSymbolicQuantitativeCheckResult<DdType, ValueType>().getValueVector(), abstractModel.getManager().template getAddZero<ValueType>()));
+                result.first = storm::modelchecker::helper::SymbolicMdpPrctlHelper<DdType, ValueType>::computeUntilProbabilities(abstractionPlayer == 1 ? storm::OptimizationDirection::Minimize : checkTask->getOptimizationDirection(), abstractModel, abstractModel.getTransitionMatrix(), maybeMin, qualitativeResults.getProb1Min().getStates(), storm::solver::GeneralSymbolicMinMaxLinearEquationSolverFactory<DdType, ValueType>(), minStartValues);
+                
+                if (abstractionPlayer == 0) {
+                    result.second = result.first->clone();
+                } else {
+                    result.second = storm::modelchecker::helper::SymbolicMdpPrctlHelper<DdType, ValueType>::computeUntilProbabilities(storm::OptimizationDirection::Maximize, abstractModel, abstractModel.getTransitionMatrix(), maybeMax, qualitativeResults.getProb1Max().getStates(), storm::solver::GeneralSymbolicMinMaxLinearEquationSolverFactory<DdType, ValueType>(), maybeMax.ite(result.first->asSymbolicQuantitativeCheckResult<DdType, ValueType>().getValueVector(), abstractModel.getManager().template getAddZero<ValueType>()));
+                }
             }
             
             return result;
@@ -510,38 +498,91 @@ namespace storm {
             auto start = std::chrono::high_resolution_clock::now();
             bool isRewardFormula = checkTask->getFormula().isEventuallyFormula() && checkTask->getFormula().asEventuallyFormula().getContext() == storm::logic::FormulaContext::Reward;
             storm::dd::Bdd<DdType> transitionMatrixBdd = abstractModel.getTransitionMatrix().notZero();
+            uint64_t abstractionPlayer = this->getAbstractionPlayer();
             if (this->getReuseQualitativeResults()) {
                 if (isRewardFormula) {
-                    auto states = storm::utility::graph::performProb1E(abstractModel, transitionMatrixBdd, constraintStates.getStates(), targetStates.getStates(), lastQualitativeResults ? lastQualitativeResults->asSymbolicQualitativeResultMinMax<DdType>().getProb1Min().getStates() : storm::utility::graph::performProbGreater0E(abstractModel, transitionMatrixBdd, constraintStates.getStates(), targetStates.getStates()));
-                    result->prob1Min = storm::abstraction::QualitativeMdpResult<DdType>(states);
+                    bool computedMin = false;
+                    if (abstractionPlayer == 1 || checkTask->getOptimizationDirection() == storm::OptimizationDirection::Minimize) {
+                        auto states = storm::utility::graph::performProb1E(abstractModel, transitionMatrixBdd, constraintStates.getStates(), targetStates.getStates(), lastQualitativeResults ? lastQualitativeResults->asSymbolicQualitativeResultMinMax<DdType>().getProb1Min().getStates() : storm::utility::graph::performProbGreater0E(abstractModel, transitionMatrixBdd, constraintStates.getStates(), targetStates.getStates()));
+                        result->prob1Min = storm::abstraction::QualitativeMdpResult<DdType>(states);
+                        computedMin = true;
+                    }
                     
-                    states = storm::utility::graph::performProb1A(abstractModel, transitionMatrixBdd, targetStates.getStates(), storm::utility::graph::performProbGreater0A(abstractModel, transitionMatrixBdd, constraintStates.getStates(), targetStates.getStates()));
-                    result->prob1Max = storm::abstraction::QualitativeMdpResult<DdType>(states);
+                    if (abstractionPlayer == 1 || checkTask->getOptimizationDirection() == storm::OptimizationDirection::Maximize) {
+                        auto states = storm::utility::graph::performProb1A(abstractModel, transitionMatrixBdd, targetStates.getStates(), storm::utility::graph::performProbGreater0A(abstractModel, transitionMatrixBdd, constraintStates.getStates(), targetStates.getStates()));
+                        result->prob1Max = storm::abstraction::QualitativeMdpResult<DdType>(states);
+                        if (!computedMin) {
+                            result->prob1Min = result->prob1Max;
+                        }
+                    } else {
+                        result->prob1Max = result->prob1Min;
+                    }
+                    
                 } else {
-                    auto states = storm::utility::graph::performProb0A(abstractModel, transitionMatrixBdd, constraintStates.getStates(), targetStates.getStates());
-                    result->prob0Max = storm::abstraction::QualitativeMdpResult<DdType>(states);
-                    states = storm::utility::graph::performProb1E(abstractModel, transitionMatrixBdd, constraintStates.getStates(), targetStates.getStates(), lastQualitativeResults ? lastQualitativeResults->asSymbolicQualitativeResultMinMax<DdType>().getProb1Min().getStates() : storm::utility::graph::performProbGreater0E(abstractModel, transitionMatrixBdd, constraintStates.getStates(), targetStates.getStates()));
-                    result->prob1Max = storm::abstraction::QualitativeMdpResult<DdType>(states);
+                    bool computedMax = false;
+                    if (abstractionPlayer == 1 || checkTask->getOptimizationDirection() == storm::OptimizationDirection::Maximize) {
+                        auto states = storm::utility::graph::performProb0A(abstractModel, transitionMatrixBdd, constraintStates.getStates(), targetStates.getStates());
+                        result->prob0Max = storm::abstraction::QualitativeMdpResult<DdType>(states);
+                        states = storm::utility::graph::performProb1E(abstractModel, transitionMatrixBdd, constraintStates.getStates(), targetStates.getStates(), lastQualitativeResults ? lastQualitativeResults->asSymbolicQualitativeResultMinMax<DdType>().getProb1Min().getStates() : storm::utility::graph::performProbGreater0E(abstractModel, transitionMatrixBdd, constraintStates.getStates(), targetStates.getStates()));
+                        result->prob1Max = storm::abstraction::QualitativeMdpResult<DdType>(states);
+                        computedMax = true;
+                    }
 
-                    states = storm::utility::graph::performProb1A(abstractModel, transitionMatrixBdd, lastQualitativeResults ? lastQualitativeResults->asSymbolicQualitativeResultMinMax<DdType>().getProb1Min().getStates() : targetStates.getStates(), storm::utility::graph::performProbGreater0A(abstractModel, transitionMatrixBdd, constraintStates.getStates(), targetStates.getStates()));
-                    result->prob1Min = storm::abstraction::QualitativeMdpResult<DdType>(states);
+                    if (abstractionPlayer == 1 || checkTask->getOptimizationDirection() == storm::OptimizationDirection::Minimize) {
+                        auto states = storm::utility::graph::performProb1A(abstractModel, transitionMatrixBdd, lastQualitativeResults ? lastQualitativeResults->asSymbolicQualitativeResultMinMax<DdType>().getProb1Min().getStates() : targetStates.getStates(), storm::utility::graph::performProbGreater0A(abstractModel, transitionMatrixBdd, constraintStates.getStates(), targetStates.getStates()));
+                        result->prob1Min = storm::abstraction::QualitativeMdpResult<DdType>(states);
 
-                    states = storm::utility::graph::performProb0E(abstractModel, transitionMatrixBdd, constraintStates.getStates(), targetStates.getStates());
-                    result->prob0Min = storm::abstraction::QualitativeMdpResult<DdType>(states);
+                        states = storm::utility::graph::performProb0E(abstractModel, transitionMatrixBdd, constraintStates.getStates(), targetStates.getStates());
+                        result->prob0Min = storm::abstraction::QualitativeMdpResult<DdType>(states);
+                        
+                        if (!computedMax) {
+                            result->prob0Max = result->prob0Min;
+                            result->prob1Max = result->prob1Min;
+                        }
+                    } else {
+                        result->prob0Min = result->prob0Max;
+                        result->prob1Min = result->prob1Max;
+                    }
                 }
             } else {
                 if (isRewardFormula) {
-                    auto prob1 = storm::utility::graph::performProb1E(abstractModel, transitionMatrixBdd, constraintStates.getStates(), targetStates.getStates(), storm::utility::graph::performProbGreater0E(abstractModel, transitionMatrixBdd, constraintStates.getStates(), targetStates.getStates()));
-                    result->prob1Min = storm::abstraction::QualitativeMdpResult<DdType>(prob1);
-                    prob1 = storm::utility::graph::performProb1A(abstractModel, transitionMatrixBdd, targetStates.getStates(), storm::utility::graph::performProbGreater0A(abstractModel, transitionMatrixBdd, constraintStates.getStates(), targetStates.getStates()));
-                    result->prob1Max = storm::abstraction::QualitativeMdpResult<DdType>(prob1);
+                    bool computedMin = false;
+                    if (abstractionPlayer == 1 || checkTask->getOptimizationDirection() == storm::OptimizationDirection::Minimize) {
+                        auto prob1 = storm::utility::graph::performProb1E(abstractModel, transitionMatrixBdd, constraintStates.getStates(), targetStates.getStates(), storm::utility::graph::performProbGreater0E(abstractModel, transitionMatrixBdd, constraintStates.getStates(), targetStates.getStates()));
+                        result->prob1Min = storm::abstraction::QualitativeMdpResult<DdType>(prob1);
+                        computedMin = true;
+                    }
+                    
+                    if (abstractionPlayer == 1 || checkTask->getOptimizationDirection() == storm::OptimizationDirection::Maximize) {
+                        auto prob1 = storm::utility::graph::performProb1A(abstractModel, transitionMatrixBdd, targetStates.getStates(), storm::utility::graph::performProbGreater0A(abstractModel, transitionMatrixBdd, constraintStates.getStates(), targetStates.getStates()));
+                        result->prob1Max = storm::abstraction::QualitativeMdpResult<DdType>(prob1);
+                        if (!computedMin) {
+                            result->prob1Min = result->prob1Max;
+                        }
+                    } else {
+                        result->prob1Max = result->prob1Min;
+                    }
                 } else {
-                    auto prob01 = storm::utility::graph::performProb01Min(abstractModel, transitionMatrixBdd, constraintStates.getStates(), targetStates.getStates());
-                    result->prob0Min = storm::abstraction::QualitativeMdpResult<DdType>(prob01.first);
-                    result->prob1Min = storm::abstraction::QualitativeMdpResult<DdType>(prob01.second);
-                    prob01 = storm::utility::graph::performProb01Max(abstractModel, transitionMatrixBdd, constraintStates.getStates(), targetStates.getStates());
-                    result->prob0Max = storm::abstraction::QualitativeMdpResult<DdType>(prob01.first);
-                    result->prob1Max = storm::abstraction::QualitativeMdpResult<DdType>(prob01.second);
+                    bool computedMin = false;
+                    if (abstractionPlayer == 1 || checkTask->getOptimizationDirection() == storm::OptimizationDirection::Minimize) {
+                        auto prob01 = storm::utility::graph::performProb01Min(abstractModel, transitionMatrixBdd, constraintStates.getStates(), targetStates.getStates());
+                        result->prob0Min = storm::abstraction::QualitativeMdpResult<DdType>(prob01.first);
+                        result->prob1Min = storm::abstraction::QualitativeMdpResult<DdType>(prob01.second);
+                        computedMin = true;
+                    }
+                    
+                    if (abstractionPlayer == 1 || checkTask->getOptimizationDirection() == storm::OptimizationDirection::Maximize) {
+                        auto prob01 = storm::utility::graph::performProb01Max(abstractModel, transitionMatrixBdd, constraintStates.getStates(), targetStates.getStates());
+                        result->prob0Max = storm::abstraction::QualitativeMdpResult<DdType>(prob01.first);
+                        result->prob1Max = storm::abstraction::QualitativeMdpResult<DdType>(prob01.second);
+                        if (!computedMin) {
+                            result->prob0Min = result->prob0Max;
+                            result->prob1Min = result->prob1Max;
+                        }
+                    } else {
+                        result->prob0Max = result->prob0Min;
+                        result->prob1Max = result->prob1Min;
+                    }
                 }
             }
             auto end = std::chrono::high_resolution_clock::now();
@@ -690,7 +731,9 @@ namespace storm {
             }
             
             if (result) {
-                STORM_LOG_TRACE("Check for result after qualitative check positive.");
+                STORM_LOG_TRACE("Found result after qualitative check.");
+            } else {
+                STORM_LOG_TRACE("Did not find result after qualitative check.");
             }
             
             return result;
@@ -710,6 +753,7 @@ namespace storm {
                 }
             } else {
                 if (boundsAreSufficientlyClose(bounds)) {
+                    STORM_LOG_TRACE("Obtained bounds are sufficiently close.");
                     result = getAverageOfBounds(bounds);
                 }
             }
