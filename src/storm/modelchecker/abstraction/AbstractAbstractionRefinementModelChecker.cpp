@@ -299,7 +299,7 @@ namespace storm {
         template<typename ModelType>
         std::pair<std::unique_ptr<CheckResult>, std::unique_ptr<CheckResult>> AbstractAbstractionRefinementModelChecker<ModelType>::computeQuantitativeResult(storm::models::symbolic::Model<DdType, ValueType> const& abstractModel, storm::abstraction::SymbolicStateSet<DdType> const& constraintStates, storm::abstraction::SymbolicStateSet<DdType> const& targetStates, storm::abstraction::SymbolicQualitativeResultMinMax<DdType> const& qualitativeResults) {
 
-            STORM_LOG_THROW(abstractModel.isOfType(storm::models::ModelType::Dtmc) || abstractModel.isOfType(storm::models::ModelType::Mdp) || abstractModel.isOfType(storm::models::ModelType::Mdp), storm::exceptions::NotSupportedException, "Abstract model type is not supported.");
+            STORM_LOG_THROW(abstractModel.isOfType(storm::models::ModelType::Dtmc) || abstractModel.isOfType(storm::models::ModelType::Mdp) || abstractModel.isOfType(storm::models::ModelType::S2pg), storm::exceptions::NotSupportedException, "Abstract model type is not supported.");
             
             if (abstractModel.isOfType(storm::models::ModelType::Dtmc)) {
                 return computeQuantitativeResult(*abstractModel.template as<storm::models::symbolic::Dtmc<DdType, ValueType>>(), constraintStates, targetStates, qualitativeResults);
