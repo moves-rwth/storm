@@ -6,6 +6,11 @@ namespace storm {
     namespace abstraction {
         
         template<storm::dd::DdType Type>
+        bool SymbolicQualitativeResultMinMax<Type>::isSymbolic() const {
+            return true;
+        }
+        
+        template<storm::dd::DdType Type>
         QualitativeResult<Type> const& SymbolicQualitativeResultMinMax<Type>::getProb0Min() const {
             return getProb0(storm::OptimizationDirection::Minimize);
         }

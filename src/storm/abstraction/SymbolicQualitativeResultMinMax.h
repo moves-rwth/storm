@@ -20,7 +20,9 @@ namespace storm {
         class SymbolicQualitativeResultMinMax : public QualitativeResultMinMax {
         public:
             SymbolicQualitativeResultMinMax() = default;
-
+            
+            virtual bool isSymbolic() const override;
+            
             QualitativeResult<Type> const& getProb0Min() const;
             QualitativeResult<Type> const& getProb1Min() const;
             QualitativeResult<Type> const& getProb0Max() const;
