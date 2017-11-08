@@ -247,13 +247,7 @@ namespace storm {
                 }
             }
             
-            // Then check the formulas.
-            for (auto const& formula : this->getFormulas()) {
-                if (formula.getExpression().containsVariable(undefinedConstantVariables)) {
-                    return false;
-                }
-            }
-            
+
             // Proceed by checking each of the modules.
             for (auto const& module : this->getModules()) {
                 if (!module.containsVariablesOnlyInUpdateProbabilities(undefinedConstantVariables)) {
