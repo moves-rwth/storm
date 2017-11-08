@@ -29,6 +29,11 @@ namespace storm {
         storm::storage::ParameterRegion<ValueType> const& RegionRefinementCheckResult<ValueType>::getParameterSpace() const {
             return parameterSpace;
         }
+        
+        template<typename ValueType>
+        std::unique_ptr<CheckResult> RegionRefinementCheckResult<ValueType>::clone() const {
+            return std::make_unique<RegionRefinementCheckResult<ValueType>>(this->regionResults, this->parameterSpace);
+        }
 
         template<typename ValueType>
         std::ostream& RegionRefinementCheckResult<ValueType>::writeIllustrationToStream(std::ostream& out) const {
