@@ -27,9 +27,11 @@
 #include "storm/settings/modules/MinMaxEquationSolverSettings.h"
 #include "storm/settings/modules/GeneralSettings.h"
 #include "storm/settings/modules/CoreSettings.h"
+#include "storm/settings/modules/IOSettings.h"
 
 #include "storm/utility/Stopwatch.h"
 #include "storm/utility/ProgressMeasurement.h"
+#include "storm/utility/export.h"
 
 #include "storm/exceptions/InvalidStateException.h"
 #include "storm/exceptions/InvalidPropertyException.h"
@@ -198,6 +200,9 @@ namespace storm {
 
                 ValueType precision = rewardUnfolding.getRequiredEpochModelPrecision(initEpoch, storm::utility::convertNumber<ValueType>(storm::settings::getModule<storm::settings::modules::GeneralSettings>().getPrecision()));
 
+                // In case of cdf export we store the necessary data.
+                std::vector<std::vector<ValueType>> cdfData;
+
                 storm::utility::ProgressMeasurement progress("epochs");
                 progress.setMaxCount(epochOrder.size());
                 progress.startNewMeasurement(0);
@@ -213,6 +218,15 @@ namespace storm {
                         rewardUnfolding.setSolutionForCurrentEpoch(analyzeNonTrivialEpochModel<ValueType>(dir, epochModel, x, b, minMaxSolver, minMaxLinearEquationSolverFactory, precision, lowerBound, upperBound));
                     }
                     swCheck.stop();
+                    if (storm::settings::getModule<storm::settings::modules::IOSettings>().isExportCdfSet() && !rewardUnfolding.getEpochManager().hasBottomDimension(epoch)) {
+                        std::vector<ValueType> cdfEntry;
+                        for (uint64_t i = 0; i < rewardUnfolding.getEpochManager().getDimensionCount(); ++i) {
+                            uint64_t offset = rewardUnfolding.getDimension(i).isUpperBounded ? 0 : 1;
+                            cdfEntry.push_back(storm::utility::convertNumber<ValueType>(rewardUnfolding.getEpochManager().getDimensionOfEpoch(epoch, i) + offset) * rewardUnfolding.getDimension(i).scalingFactor);
+                        }
+                        cdfEntry.push_back(rewardUnfolding.getInitialStateResult(epoch));
+                        cdfData.push_back(std::move(cdfEntry));
+                    }
                     ++numCheckedEpochs;
                     progress.updateProgress(numCheckedEpochs);
                 }
@@ -223,6 +237,17 @@ namespace storm {
                 }
                 
                 swAll.stop();
+                
+                if (storm::settings::getModule<storm::settings::modules::IOSettings>().isExportCdfSet()) {
+                    std::vector<std::string> headers;
+                    for (uint64_t i = 0; i < rewardUnfolding.getEpochManager().getDimensionCount(); ++i) {
+                        headers.push_back(rewardUnfolding.getDimension(i).formula->toString());
+                    }
+                    headers.push_back("Result");
+                    storm::utility::exportDataToCSVFile<ValueType, std::string, std::string>(storm::settings::getModule<storm::settings::modules::IOSettings>().getExportCdfDirectory() + "cdf.csv", cdfData, headers);
+                }
+
+                
                 if (storm::settings::getModule<storm::settings::modules::CoreSettings>().isShowStatisticsSet()) {
                     STORM_PRINT_AND_LOG("---------------------------------" << std::endl);
                     STORM_PRINT_AND_LOG("Statistics:" << std::endl);
