@@ -1,4 +1,4 @@
-#include "GSPNSettings.h"
+#include "storm-gspn/settings/modules/GSPNSettings.h"
 
 #include "storm/settings/SettingsManager.h"
 #include "storm/settings/SettingMemento.h"

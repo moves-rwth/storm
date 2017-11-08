@@ -1,4 +1,4 @@
-#include "storm/settings/modules/PGCLSettings.h"
+#include "PGCLSettings.h"
 
 #include "storm/settings/SettingsManager.h"
 #include "storm/settings/SettingMemento.h"

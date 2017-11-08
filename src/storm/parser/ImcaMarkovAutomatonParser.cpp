@@ -1,7 +1,7 @@
 #include "storm/parser/ImcaMarkovAutomatonParser.h"
 
 #include "storm/settings/SettingsManager.h"
-#include "storm/settings/modules/IOSettings.h"
+#include "storm/settings/modules/BuildSettings.h"
 #include "storm/settings/modules/CoreSettings.h"
 #include "storm/utility/file.h"
 #include "storm/utility/builder.h"
@@ -11,7 +11,7 @@ namespace storm {
 
         template <typename ValueType, typename StateType>
         ImcaParserGrammar<ValueType, StateType>::ImcaParserGrammar() : ImcaParserGrammar<ValueType, StateType>::base_type(start), numStates(0), numChoices(0), numTransitions(0), hasStateReward(false), hasActionReward(false) {
-            buildChoiceLabels = storm::settings::getModule<storm::settings::modules::IOSettings>().isBuildChoiceLabelsSet();
+            buildChoiceLabels = storm::settings::getModule<storm::settings::modules::BuildSettings>().isBuildChoiceLabelsSet();
             initialize();
         }
         

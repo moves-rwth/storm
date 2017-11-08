@@ -6,11 +6,15 @@
 #include "storm/storage/jani/Model.h"
 #include "storm/storage/jani/Property.h"
 
+
+#include "storm/settings/SettingsManager.h"
+#include "storm/settings/modules/BuildSettings.h"
+
 namespace storm {
     namespace api {
         
-        storm::prism::Program parseProgram(std::string const& filename) {
-            storm::prism::Program program = storm::parser::PrismParser::parse(filename).simplify().simplify();
+        storm::prism::Program parseProgram(std::string const& filename, bool prismCompatibility) {
+            storm::prism::Program program = storm::parser::PrismParser::parse(filename, prismCompatibility).simplify().simplify();
             program.checkValidity();
             return program;
         }

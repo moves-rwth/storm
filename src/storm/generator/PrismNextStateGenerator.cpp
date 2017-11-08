@@ -575,7 +575,7 @@ namespace storm {
         }
         
         template<typename ValueType, typename StateType>
-        storm::models::sparse::StateLabeling PrismNextStateGenerator<ValueType, StateType>::label(storm::storage::BitVectorHashMap<StateType> const& states, std::vector<StateType> const& initialStateIndices, std::vector<StateType> const& deadlockStateIndices) {
+        storm::models::sparse::StateLabeling PrismNextStateGenerator<ValueType, StateType>::label(storm::storage::sparse::StateStorage<StateType> const& stateStorage, std::vector<StateType> const& initialStateIndices, std::vector<StateType> const& deadlockStateIndices) {
             // Gather a vector of labels and their expressions.
             std::vector<std::pair<std::string, storm::expressions::Expression>> labels;
             if (this->options.isBuildAllLabelsSet()) {
@@ -592,7 +592,7 @@ namespace storm {
                 }
             }
             
-            return NextStateGenerator<ValueType, StateType>::label(states, initialStateIndices, deadlockStateIndices, labels);
+            return NextStateGenerator<ValueType, StateType>::label(stateStorage, initialStateIndices, deadlockStateIndices, labels);
         }
         
         template<typename ValueType, typename StateType>

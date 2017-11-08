@@ -451,7 +451,7 @@ namespace storm {
                             // This is because it could be that the commands are taken to enable other synchronizations. Therefore, we need
                             // to add an additional clause that says that the right-hand side of the implication is also true if all commands
                             // of the current choice have enabled synchronization options.
-                            storm::expressions::Expression finalDisjunct = variableInformation.manager->boolean(false);
+                            storm::expressions::Expression finalDisjunct = variableInformation.manager->boolean(true);
                             for (auto label : labelSetFollowingSetsPair.first) {
                                 storm::expressions::Expression alternativeExpressionForLabel = variableInformation.manager->boolean(false);
                                 std::set<boost::container::flat_set<uint_fast64_t>> const& synchsForCommand = synchronizingLabels.at(label);

@@ -29,7 +29,6 @@ namespace storm {
                 return this->getOption(minimalCommandSetOptionName).getHasOptionBeenSet();
             }
             
-            
             bool CounterexampleGeneratorSettings::isUseMilpBasedMinimalCommandSetGenerationSet() const {
                 return this->getOption(minimalCommandSetOptionName).getArgumentByName("method").getValueAsString() == "milp";
             }

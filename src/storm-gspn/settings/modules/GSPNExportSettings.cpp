@@ -1,5 +1,5 @@
-#include "GSPNExportSettings.h"
-#include "JaniExportSettings.h"
+#include "storm-gspn/settings/modules/GSPNExportSettings.h"
+#include "storm/settings/modules/JaniExportSettings.h"
 
 #include "storm/settings/SettingsManager.h"
 #include "storm/settings/SettingMemento.h"

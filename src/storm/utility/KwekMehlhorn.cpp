@@ -73,6 +73,9 @@ namespace storm {
                 }
             }
          
+            template storm::RationalNumber sharpen(uint64_t precision, double const& input);
+            template storm::RationalNumber sharpen(uint64_t precision, storm::RationalNumber const& input);
+
             template void sharpen(uint64_t precision, std::vector<double> const& input, std::vector<storm::RationalNumber>& output);
             template void sharpen(uint64_t precision, std::vector<storm::RationalNumber> const& input, std::vector<storm::RationalNumber>& output);
             

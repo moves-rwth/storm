@@ -1031,22 +1031,6 @@ namespace storm {
             out << std::endl;
         }
 
-        std::size_t NonZeroBitVectorHash::operator()(storm::storage::BitVector const& bitvector) const {
-            STORM_LOG_ASSERT(bitvector.size() > 0, "Cannot hash bit vector of zero size.");
-            std::size_t result = 0;
-
-            for (uint_fast64_t index = 0; index < bitvector.bucketCount(); ++index) {
-                result ^= result << 3;
-                result ^= result >> bitvector.getAsInt(index << 6, 5);
-            }
-
-            // Erase the last bit and add one to definitely make this hash value non-zero.
-            result &= ~1ull;
-            result += 1;
-
-            return result;
-        }
-
         // All necessary explicit template instantiations.
         template BitVector::BitVector(uint_fast64_t length, std::vector<uint_fast64_t>::iterator begin, std::vector<uint_fast64_t>::iterator end);
         template BitVector::BitVector(uint_fast64_t length, std::vector<uint_fast64_t>::const_iterator begin, std::vector<uint_fast64_t>::const_iterator end);
@@ -1060,7 +1044,6 @@ namespace storm {
 }
 
 namespace std {
-
     std::size_t hash<storm::storage::BitVector>::operator()(storm::storage::BitVector const& bitvector) const {
         return boost::hash_range(bitvector.buckets, bitvector.buckets + bitvector.bucketCount());
     }

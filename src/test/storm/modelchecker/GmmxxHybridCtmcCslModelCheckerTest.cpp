@@ -17,18 +17,15 @@
 
 #include "storm/settings/SettingsManager.h"
 #include "storm/settings/modules/GeneralSettings.h"
-#include "storm/settings/modules/IOSettings.h"
 #include "storm/settings/modules/GmmxxEquationSolverSettings.h"
 
 #include "storm/settings/modules/NativeEquationSolverSettings.h"
 #include "storm/storage/expressions/ExpressionManager.h"
 
 TEST(GmmxxHybridCtmcCslModelCheckerTest, Cluster_Cudd) {
-    // Set the PRISM compatibility mode temporarily. It is set to its old value once the returned object is destructed.
-    std::unique_ptr<storm::settings::SettingMemento> enablePrismCompatibility = storm::settings::mutableIOSettings().overridePrismCompatibilityMode(true);
-    
+
     // Parse the model description.
-    storm::storage::SymbolicModelDescription modelDescription = storm::parser::PrismParser::parse(STORM_TEST_RESOURCES_DIR "/ctmc/cluster2.sm");
+    storm::storage::SymbolicModelDescription modelDescription = storm::parser::PrismParser::parse(STORM_TEST_RESOURCES_DIR "/ctmc/cluster2.sm", true);
     storm::prism::Program program = modelDescription.preprocess().asPrismProgram();
     storm::parser::FormulaParser formulaParser(program.getManager().getSharedPointer());
     std::shared_ptr<storm::logic::Formula const> formula(nullptr);
@@ -122,11 +119,8 @@ TEST(GmmxxHybridCtmcCslModelCheckerTest, Cluster_Cudd) {
 }
 
 TEST(GmmxxHybridCtmcCslModelCheckerTest, Cluster_Sylvan) {
-    // Set the PRISM compatibility mode temporarily. It is set to its old value once the returned object is destructed.
-    std::unique_ptr<storm::settings::SettingMemento> enablePrismCompatibility = storm::settings::mutableIOSettings().overridePrismCompatibilityMode(true);
-    
     // Parse the model description.
-    storm::storage::SymbolicModelDescription modelDescription = storm::parser::PrismParser::parse(STORM_TEST_RESOURCES_DIR "/ctmc/cluster2.sm");
+    storm::storage::SymbolicModelDescription modelDescription = storm::parser::PrismParser::parse(STORM_TEST_RESOURCES_DIR "/ctmc/cluster2.sm", true);
     storm::prism::Program program = modelDescription.preprocess().asPrismProgram();
     storm::parser::FormulaParser formulaParser(program.getManager().getSharedPointer());
     std::shared_ptr<storm::logic::Formula const> formula(nullptr);
@@ -220,11 +214,8 @@ TEST(GmmxxHybridCtmcCslModelCheckerTest, Cluster_Sylvan) {
 }
 
 TEST(GmmxxHybridCtmcCslModelCheckerTest, Embedded_Cudd) {
-    // Set the PRISM compatibility mode temporarily. It is set to its old value once the returned object is destructed.
-    std::unique_ptr<storm::settings::SettingMemento> enablePrismCompatibility = storm::settings::mutableIOSettings().overridePrismCompatibilityMode(true);
-    
     // Parse the model description.
-    storm::storage::SymbolicModelDescription modelDescription = storm::parser::PrismParser::parse(STORM_TEST_RESOURCES_DIR "/ctmc/embedded2.sm");
+    storm::storage::SymbolicModelDescription modelDescription = storm::parser::PrismParser::parse(STORM_TEST_RESOURCES_DIR "/ctmc/embedded2.sm", true);
     storm::prism::Program program = modelDescription.preprocess().asPrismProgram();
     storm::parser::FormulaParser formulaParser(program.getManager().getSharedPointer());
     std::shared_ptr<storm::logic::Formula const> formula(nullptr);
@@ -300,11 +291,8 @@ TEST(GmmxxHybridCtmcCslModelCheckerTest, Embedded_Cudd) {
 }
 
 TEST(GmmxxHybridCtmcCslModelCheckerTest, Embedded_Sylvan) {
-    // Set the PRISM compatibility mode temporarily. It is set to its old value once the returned object is destructed.
-    std::unique_ptr<storm::settings::SettingMemento> enablePrismCompatibility = storm::settings::mutableIOSettings().overridePrismCompatibilityMode(true);
-    
     // Parse the model description.
-    storm::storage::SymbolicModelDescription modelDescription = storm::parser::PrismParser::parse(STORM_TEST_RESOURCES_DIR "/ctmc/embedded2.sm");
+    storm::storage::SymbolicModelDescription modelDescription = storm::parser::PrismParser::parse(STORM_TEST_RESOURCES_DIR "/ctmc/embedded2.sm", true);
     storm::prism::Program program = modelDescription.preprocess().asPrismProgram();
     storm::parser::FormulaParser formulaParser(program.getManager().getSharedPointer());
     std::shared_ptr<storm::logic::Formula const> formula(nullptr);
@@ -380,11 +368,8 @@ TEST(GmmxxHybridCtmcCslModelCheckerTest, Embedded_Sylvan) {
 }
 
 TEST(GmmxxHybridCtmcCslModelCheckerTest, Polling_Cudd) {
-    // Set the PRISM compatibility mode temporarily. It is set to its old value once the returned object is destructed.
-    std::unique_ptr<storm::settings::SettingMemento> enablePrismCompatibility = storm::settings::mutableIOSettings().overridePrismCompatibilityMode(true);
-    
     // Parse the model description.
-    storm::storage::SymbolicModelDescription modelDescription = storm::parser::PrismParser::parse(STORM_TEST_RESOURCES_DIR "/ctmc/polling2.sm");
+    storm::storage::SymbolicModelDescription modelDescription = storm::parser::PrismParser::parse(STORM_TEST_RESOURCES_DIR "/ctmc/polling2.sm", true);
     storm::prism::Program program = modelDescription.preprocess().asPrismProgram();
     storm::parser::FormulaParser formulaParser(program.getManager().getSharedPointer());
     std::shared_ptr<storm::logic::Formula const> formula(nullptr);
@@ -417,11 +402,9 @@ TEST(GmmxxHybridCtmcCslModelCheckerTest, Polling_Cudd) {
 }
 
 TEST(GmmxxHybridCtmcCslModelCheckerTest, Polling_Sylvan) {
-    // Set the PRISM compatibility mode temporarily. It is set to its old value once the returned object is destructed.
-    std::unique_ptr<storm::settings::SettingMemento> enablePrismCompatibility = storm::settings::mutableIOSettings().overridePrismCompatibilityMode(true);
     
     // Parse the model description.
-    storm::storage::SymbolicModelDescription modelDescription = storm::parser::PrismParser::parse(STORM_TEST_RESOURCES_DIR "/ctmc/polling2.sm");
+    storm::storage::SymbolicModelDescription modelDescription = storm::parser::PrismParser::parse(STORM_TEST_RESOURCES_DIR "/ctmc/polling2.sm", true);
     storm::prism::Program program = modelDescription.preprocess().asPrismProgram();
     storm::parser::FormulaParser formulaParser(program.getManager().getSharedPointer());
     std::shared_ptr<storm::logic::Formula const> formula(nullptr);
@@ -454,18 +437,13 @@ TEST(GmmxxHybridCtmcCslModelCheckerTest, Polling_Sylvan) {
 }
 
 TEST(GmmxxHybridCtmcCslModelCheckerTest, Fms) {
-    // Set the PRISM compatibility mode temporarily. It is set to its old value once the returned object is destructed.
-    std::unique_ptr<storm::settings::SettingMemento> enablePrismCompatibility = storm::settings::mutableIOSettings().overridePrismCompatibilityMode(true);
-    
+
     // No properties to check at this point.
 }
 
 TEST(GmmxxHybridCtmcCslModelCheckerTest, Tandem_Cudd) {
-    // Set the PRISM compatibility mode temporarily. It is set to its old value once the returned object is destructed.
-    std::unique_ptr<storm::settings::SettingMemento> enablePrismCompatibility = storm::settings::mutableIOSettings().overridePrismCompatibilityMode(true);
-    
     // Parse the model description.
-    storm::storage::SymbolicModelDescription modelDescription = storm::parser::PrismParser::parse(STORM_TEST_RESOURCES_DIR "/ctmc/tandem5.sm");
+    storm::storage::SymbolicModelDescription modelDescription = storm::parser::PrismParser::parse(STORM_TEST_RESOURCES_DIR "/ctmc/tandem5.sm", true);
     storm::prism::Program program = modelDescription.preprocess().asPrismProgram();
     storm::parser::FormulaParser formulaParser(program.getManager().getSharedPointer());
     std::shared_ptr<storm::logic::Formula const> formula(nullptr);
@@ -550,11 +528,8 @@ TEST(GmmxxHybridCtmcCslModelCheckerTest, Tandem_Cudd) {
 }
 
 TEST(GmmxxHybridCtmcCslModelCheckerTest, Tandem_Sylvan) {
-    // Set the PRISM compatibility mode temporarily. It is set to its old value once the returned object is destructed.
-    std::unique_ptr<storm::settings::SettingMemento> enablePrismCompatibility = storm::settings::mutableIOSettings().overridePrismCompatibilityMode(true);
-    
     // Parse the model description.
-    storm::storage::SymbolicModelDescription modelDescription = storm::parser::PrismParser::parse(STORM_TEST_RESOURCES_DIR "/ctmc/tandem5.sm");
+    storm::storage::SymbolicModelDescription modelDescription = storm::parser::PrismParser::parse(STORM_TEST_RESOURCES_DIR "/ctmc/tandem5.sm", true);
     storm::prism::Program program = modelDescription.preprocess().asPrismProgram();
     storm::parser::FormulaParser formulaParser(program.getManager().getSharedPointer());
     std::shared_ptr<storm::logic::Formula const> formula(nullptr);

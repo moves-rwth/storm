@@ -117,9 +117,9 @@ namespace storm {
                 bool isDdLibraryTypeSetFromDefaultValue() const;
                 
                 /*!
-                 * Retrieves whether statistics are to be shown for counterexample generation.
+                 * Retrieves whether statistics are to be shown
                  *
-                 * @return True iff statistics are to be shown for counterexample generation.
+                 * @return True iff statistics are to be shown
                  */
                 bool isShowStatisticsSet() const;
 

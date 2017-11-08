@@ -104,7 +104,7 @@ namespace storm {
                     for (uint64_t i = 0; i < this->objectives.size(); ++i) {
                         headers.push_back("obj" + std::to_string(i));
                     }
-                    storm::utility::exportDataToCSVFile<ValueType, ValueType, std::string>("cdf" + std::to_string(numChecks) + ".csv", cdfData, weightVector, headers);
+                    storm::utility::exportDataToCSVFile<ValueType, ValueType, std::string>(storm::settings::getModule<storm::settings::modules::IOSettings>().getExportCdfDirectory() + "cdf" + std::to_string(numChecks) + ".csv", cdfData, weightVector, headers);
                 }
                 auto solution = rewardUnfolding.getInitialStateResult(initEpoch);
                 auto solutionIt = solution.begin();

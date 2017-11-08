@@ -64,6 +64,16 @@ namespace storm {
                 std::string getExportExplicitFilename() const;
                 
                 /*!
+                 * Retrieves whether the cumulative density function for reward bounded properties should be exported
+                 */
+                bool isExportCdfSet() const;
+                
+                /*!
+                 * Retrieves a path to a directory in which the cdf files will be stored
+                 */
+                 std::string getExportCdfDirectory() const;
+                
+                /*!
                  * Retrieves whether the explicit option was set.
                  *
                  * @return True if the explicit option was set.
@@ -159,34 +169,6 @@ namespace storm {
                 std::string getJaniInputFilename() const;
 
                 /*!
-                 * Retrieves whether the option to use the JIT builder is set.
-                 *
-                 * @return True iff the JIT builder is to be used.
-                 */
-                bool isJitSet() const;
-                
-                /*!
-                 * Retrieves whether the model exploration order was set.
-                 *
-                 * @return True if the model exploration option was set.
-                 */
-                bool isExplorationOrderSet() const;
-                
-                /*!
-                 * Retrieves whether to perform additional checks during model exploration (e.g. out-of-bounds, etc.).
-                 *
-                 * @return True if additional checks are to be performed.
-                 */
-                bool isExplorationChecksSet() const;
-                                                
-                /*!
-                 * Retrieves the exploration order if it was set.
-                 *
-                 * @return The chosen exploration order.
-                 */
-                storm::builder::ExplorationOrder getExplorationOrder() const;
-
-                /*!
                  * Retrieves whether the transition reward option was set.
                  *
                  * @return True if the transition reward option was set.
@@ -218,7 +200,7 @@ namespace storm {
 
                 /*!
                  * Retrieves whether the choice labeling option was set.
-                 * 
+                 *
                  * @return True iff the choice labeling option was set.
                  */
                 bool isChoiceLabelingSet() const;
@@ -231,15 +213,6 @@ namespace storm {
                  */
                 std::string getChoiceLabelingFilename() const;
 
-                /*!
-                 * Overrides the option to enable the PRISM compatibility mode by setting it to the specified value. As
-                 * soon as the returned memento goes out of scope, the original value is restored.
-                 *
-                 * @param stateToSet The value that is to be set for the option.
-                 * @return The memento that will eventually restore the original value.
-                 */
-                std::unique_ptr<storm::settings::SettingMemento> overridePrismCompatibilityMode(bool stateToSet);
-                
                 /*!
                  * Retrieves whether the export-to-dot option was set.
                  *
@@ -286,39 +259,6 @@ namespace storm {
                  */
                 std::string getPropertyFilter() const;
 
-                /*!
-                 * Retrieves whether the PRISM compatibility mode was enabled.
-                 *
-                 * @return True iff the PRISM compatibility mode was enabled.
-                 */
-                bool isPrismCompatibilityEnabled() const;
-                
-                /**
-                 * Retrieves whether no model should be build at all, in case one just want to translate models or parse a file.
-                 */
-                bool isNoBuildModelSet() const;
-                
-                /*!
-                 * Retrieves whether the full model should be build, that is, the model including all labels and rewards.
-                 *
-                 * @return true iff the full model should be build.
-                 */
-                bool isBuildFullModelSet() const;
-
-                /*!
-                 * Retrieves whether the choice labels should be build
-                 * @return
-                 */
-                bool isBuildChoiceLabelsSet() const;
-
-                /*!
-                 * Retrieves whether the choice labels should be build
-                 * @return
-                 */
-                bool isBuildStateValuationsSet() const;
-                
-                bool isExportCdfSet() const;
-
                 bool check() const override;
                 void finalize() override;
 
@@ -341,22 +281,11 @@ namespace storm {
                 static const std::string prismInputOptionName;
                 static const std::string janiInputOptionName;
                 static const std::string prismToJaniOptionName;
-                static const std::string jitOptionName;
-                static const std::string explorationChecksOptionName;
-                static const std::string explorationChecksOptionShortName;
-                static const std::string explorationOrderOptionName;
-                static const std::string explorationOrderOptionShortName;
                 static const std::string transitionRewardsOptionName;
                 static const std::string stateRewardsOptionName;
                 static const std::string choiceLabelingOptionName;
                 static const std::string constantsOptionName;
                 static const std::string constantsOptionShortName;
-                static const std::string prismCompatibilityOptionName;
-                static const std::string prismCompatibilityOptionShortName;
-                static const std::string fullModelBuildOptionName;
-                static const std::string noBuildOptionName;
-                static const std::string buildChoiceLabelOptionName;
-                static const std::string buildStateValuationsOptionName;
                 static const std::string janiPropertyOptionName;
                 static const std::string janiPropertyOptionShortName;
                 static const std::string propertyOptionName;

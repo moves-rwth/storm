@@ -14,7 +14,7 @@ namespace storm {
          * queries and insertions are supported. Also, the keys must be bit vectors with a length that is a multiple of
          * 64.
          */
-        template<typename ValueType, typename Hash1 = std::hash<storm::storage::BitVector>, class Hash2 = storm::storage::NonZeroBitVectorHash>
+        template<typename ValueType, typename Hash = std::hash<storm::storage::BitVector>>
         class BitVectorHashMap {
         public:
             class BitVectorHashMapIterator {
@@ -113,6 +113,13 @@ namespace storm {
              * @return The value associated with the given key (if any).
              */
             ValueType getValue(storm::storage::BitVector const& key) const;
+
+            /*!
+             * Retrieves the value associated with the given bucket.
+             *
+             * @return The value associated with the given bucket (if any).
+             */
+            ValueType getValue(std::size_t bucket) const;
             
             /*!
              * Checks if the given key is already contained in the map.
@@ -204,6 +211,11 @@ namespace storm {
              */
             void increaseSize();
             
+            /*!
+             * Computes the next bucket in the probing sequence.
+             */
+            uint_fast64_t getNextBucketInProbingSequence(uint_fast64_t initialValue, uint_fast64_t currentValue, uint_fast64_t step) const;
+
             // The load factor determining when the size of the map is increased.
             double loadFactor;
             
@@ -229,11 +241,18 @@ namespace storm {
             std::vector<std::size_t>::const_iterator currentSizeIterator;
             
             // Functor object that are used to perform the actual hashing.
-            Hash1 hasher1;
-            Hash2 hasher2;
+            Hash hasher;
             
             // A static table that produces the next possible size of the hash table.
             static const std::vector<std::size_t> sizes;
+            
+#ifndef NDEBUG
+            // Some performance metrics.
+            mutable uint64_t numberOfInsertions;
+            mutable uint64_t numberOfInsertionProbingSteps;
+            mutable uint64_t numberOfFinds;
+            mutable uint64_t numberOfFindProbingSteps;
+#endif
         };
 
     }
