@@ -117,14 +117,17 @@ namespace storm {
             InheritedInformation const& inherited = boost::any_cast<InheritedInformation const&>(data);
             
             bool result = inherited.getSpecification().areCumulativeRewardFormulasAllowed();
-            auto const& tbr = f.getTimeBoundReference();
-            if (tbr.isStepBound()) {
-                result = result && inherited.getSpecification().areStepBoundedCumulativeRewardFormulasAllowed();
-            } else if(tbr.isTimeBound()) {
-                result = result && inherited.getSpecification().areTimeBoundedCumulativeRewardFormulasAllowed();
-            } else {
-                assert(tbr.isRewardBound());
-                result = result && inherited.getSpecification().areRewardBoundedCumulativeRewardFormulasAllowed();
+            result = result && (!f.isMultiDimensional() || inherited.getSpecification().areMultiDimensionalCumulativeRewardFormulasAllowed());
+            for (uint64_t i = 0; i < f.getDimension(); ++i) {
+                auto tbr = f.getTimeBoundReference(i);
+                if (tbr.isStepBound()) {
+                    result = result && inherited.getSpecification().areStepBoundedCumulativeRewardFormulasAllowed();
+                } else if(tbr.isTimeBound()) {
+                    result = result && inherited.getSpecification().areTimeBoundedCumulativeRewardFormulasAllowed();
+                } else {
+                    assert(tbr.isRewardBound());
+                    result = result && inherited.getSpecification().areRewardBoundedCumulativeRewardFormulasAllowed();
+                }
             }
             return result;
         }

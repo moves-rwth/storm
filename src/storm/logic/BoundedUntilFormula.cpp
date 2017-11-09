@@ -278,14 +278,19 @@ namespace storm {
                 
                 out << " U";
                 if (this->isMultiDimensional()) {
-                    out << "[";
+                    out << "^{";
                 }
-                for(unsigned i = 0; i < this->getDimension(); ++i) {
+                for (unsigned i = 0; i < this->getDimension(); ++i) {
                     if (i > 0) {
                         out << ",";
                     }
                     if (this->getTimeBoundReference(i).isRewardBound()) {
-                        out << "{\"" << this->getTimeBoundReference(i).getRewardName() << "\"}";
+                        out << "rew{\"" << this->getTimeBoundReference(i).getRewardName() << "\"}";
+                    } else if (this->getTimeBoundReference(i).isStepBound()) {
+                        out << "steps";
+                  //} else if (this->getTimeBoundReference(i).isStepBound())
+                  //  Note: the 'time' keyword is optional.
+                  //    out << "time";
                     }
                     if (this->hasLowerBound(i)) {
                         if (this->hasUpperBound(i)) {
@@ -321,7 +326,7 @@ namespace storm {
                     out << " ";
                 }
                 if (this->isMultiDimensional()) {
-                    out << "]";
+                    out << "}";
                 }
                 
                 this->getRightSubformula().writeToStream(out);

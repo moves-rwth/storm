@@ -352,13 +352,18 @@ namespace storm {
             void SparseMultiObjectivePreprocessor<SparseModelType>::preprocessCumulativeRewardFormula(storm::logic::CumulativeRewardFormula const& formula, storm::logic::OperatorInformation const& opInfo, PreprocessorData& data, boost::optional<std::string> const& optionalRewardModelName) {
                 STORM_LOG_THROW(data.originalModel.isOfType(storm::models::ModelType::Mdp), storm::exceptions::InvalidPropertyException, "Cumulative reward formulas are not supported for the given model type.");
                 
-                storm::logic::TimeBound bound(formula.isBoundStrict(), formula.getBound());
-                storm::logic::TimeBoundReference tbr(formula.getTimeBoundReference());
-                auto cumulativeRewardFormula = std::make_shared<storm::logic::CumulativeRewardFormula>(bound, tbr);
+                auto cumulativeRewardFormula = std::make_shared<storm::logic::CumulativeRewardFormula>(formula);
                 data.objectives.back()->formula = std::make_shared<storm::logic::RewardOperatorFormula>(cumulativeRewardFormula, *optionalRewardModelName, opInfo);
-                data.upperResultBoundObjectives.set(data.objectives.size() - 1, true);
-                if (tbr.isRewardBound()) {
+                bool onlyRewardBounds = true;
+                for (uint64_t i = 0; i < cumulativeRewardFormula->getDimension(); ++i) {
+                    if (!cumulativeRewardFormula->getTimeBoundReference(i).isRewardBound()) {
+                        onlyRewardBounds = false;
+                        break;
+                    }
+                }
+                if (onlyRewardBounds) {
                     data.finiteRewardCheckObjectives.set(data.objectives.size() - 1, true);
+                    data.upperResultBoundObjectives.set(data.objectives.size() - 1, true);
                 }
             }
             
@@ -513,7 +518,6 @@ namespace storm {
                 } else {
                     result.rewardLessInfinityEStates = allStates;
                 }
-                
             }
         
             template<typename SparseModelType>

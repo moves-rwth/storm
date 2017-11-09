@@ -108,25 +108,27 @@ namespace storm {
                             }
                         } else if (formula.isRewardOperatorFormula() && formula.getSubformula().isCumulativeRewardFormula()) {
                             auto const& subformula = formula.getSubformula().asCumulativeRewardFormula();
-                            Dimension<ValueType> dimension;
-                            dimension.formula = formula.getSubformula().asSharedPointer();
-                            dimension.objectiveIndex = objIndex;
-                            dimension.isUpperBounded = true;
-                            if (subformula.getTimeBoundReference().isTimeBound() || subformula.getTimeBoundReference().isStepBound()) {
-                                dimensionWiseEpochSteps.push_back(std::vector<uint64_t>(model.getNumberOfChoices(), 1));
-                                dimension.scalingFactor = storm::utility::one<ValueType>();
-                            } else {
-                                STORM_LOG_ASSERT(subformula.getTimeBoundReference().isRewardBound(), "Unexpected type of time bound.");
-                                std::string const& rewardName = subformula.getTimeBoundReference().getRewardName();
-                                STORM_LOG_THROW(this->model.hasRewardModel(rewardName), storm::exceptions::IllegalArgumentException, "No reward model with name '" << rewardName << "' found.");
-                                auto const& rewardModel = this->model.getRewardModel(rewardName);
-                                STORM_LOG_THROW(!rewardModel.hasTransitionRewards(), storm::exceptions::NotSupportedException, "Transition rewards are currently not supported as reward bounds.");
-                                std::vector<ValueType> actionRewards = rewardModel.getTotalRewardVector(this->model.getTransitionMatrix());
-                                auto discretizedRewardsAndFactor = storm::utility::vector::toIntegralVector<ValueType, uint64_t>(actionRewards);
-                                dimensionWiseEpochSteps.push_back(std::move(discretizedRewardsAndFactor.first));
-                                dimension.scalingFactor = std::move(discretizedRewardsAndFactor.second);
+                            for (uint64_t dim = 0; dim < subformula.getDimension(); ++dim) {
+                                Dimension<ValueType> dimension;
+                                dimension.formula = subformula.restrictToDimension(dim);
+                                dimension.objectiveIndex = objIndex;
+                                dimension.isUpperBounded = true;
+                                if (subformula.getTimeBoundReference(dim).isTimeBound() || subformula.getTimeBoundReference(dim).isStepBound()) {
+                                    dimensionWiseEpochSteps.push_back(std::vector<uint64_t>(model.getNumberOfChoices(), 1));
+                                    dimension.scalingFactor = storm::utility::one<ValueType>();
+                                } else {
+                                    STORM_LOG_ASSERT(subformula.getTimeBoundReference(dim).isRewardBound(), "Unexpected type of time bound.");
+                                    std::string const& rewardName = subformula.getTimeBoundReference(dim).getRewardName();
+                                    STORM_LOG_THROW(this->model.hasRewardModel(rewardName), storm::exceptions::IllegalArgumentException, "No reward model with name '" << rewardName << "' found.");
+                                    auto const& rewardModel = this->model.getRewardModel(rewardName);
+                                    STORM_LOG_THROW(!rewardModel.hasTransitionRewards(), storm::exceptions::NotSupportedException, "Transition rewards are currently not supported as reward bounds.");
+                                    std::vector<ValueType> actionRewards = rewardModel.getTotalRewardVector(this->model.getTransitionMatrix());
+                                    auto discretizedRewardsAndFactor = storm::utility::vector::toIntegralVector<ValueType, uint64_t>(actionRewards);
+                                    dimensionWiseEpochSteps.push_back(std::move(discretizedRewardsAndFactor.first));
+                                    dimension.scalingFactor = std::move(discretizedRewardsAndFactor.second);
+                                }
+                                dimensions.emplace_back(std::move(dimension));
                             }
-                            dimensions.emplace_back(std::move(dimension));
                         }
                     }
                     
@@ -135,27 +137,26 @@ namespace storm {
                     uint64_t dim = 0;
                     for (uint64_t objIndex = 0; objIndex < this->objectives.size(); ++objIndex) {
                         storm::storage::BitVector objDimensions(dimensions.size(), false);
+                        uint64_t objDimensionCount = 0;
+                        bool objDimensionsCanBeSatisfiedIndividually = false;
                         if (objectives[objIndex].formula->isProbabilityOperatorFormula() && objectives[objIndex].formula->getSubformula().isBoundedUntilFormula()) {
-                            auto const& boundedUntilFormula = objectives[objIndex].formula->getSubformula().asBoundedUntilFormula();
-                            for (uint64_t currDim = dim; currDim < dim + boundedUntilFormula.getDimension(); ++currDim ) {
-                                objDimensions.set(currDim);
-                            }
-                            for (uint64_t currDim = dim; currDim < dim + boundedUntilFormula.getDimension(); ++currDim ) {
-                                if (!boundedUntilFormula.hasMultiDimensionalSubformulas() || dimensions[currDim].isUpperBounded) {
-                                    dimensions[currDim].dependentDimensions = objDimensions;
-                                } else {
-                                    dimensions[currDim].dependentDimensions = storm::storage::BitVector(dimensions.size(), false);
-                                    dimensions[currDim].dependentDimensions.set(currDim, true);
-                                }
-                                //  std::cout << "dimension " << currDim << " has depDims: " << dimensions[currDim].dependentDimensions << std::endl;
-                            }
-                            dim += boundedUntilFormula.getDimension();
+                            objDimensionCount = objectives[objIndex].formula->getSubformula().asBoundedUntilFormula().getDimension();
+                            objDimensionsCanBeSatisfiedIndividually = objectives[objIndex].formula->getSubformula().asBoundedUntilFormula().hasMultiDimensionalSubformulas();
                         } else if (objectives[objIndex].formula->isRewardOperatorFormula() && objectives[objIndex].formula->getSubformula().isCumulativeRewardFormula()) {
-                            objDimensions.set(dim, true);
-                            dimensions[dim].dependentDimensions = objDimensions;
-                            ++dim;
+                            objDimensionCount = objectives[objIndex].formula->getSubformula().asCumulativeRewardFormula().getDimension();
                         }
-                        
+                        for (uint64_t currDim = dim; currDim < dim + objDimensionCount; ++currDim ) {
+                            objDimensions.set(currDim);
+                        }
+                        for (uint64_t currDim = dim; currDim < dim + objDimensionCount; ++currDim ) {
+                            if (!objDimensionsCanBeSatisfiedIndividually || dimensions[currDim].isUpperBounded) {
+                                dimensions[currDim].dependentDimensions = objDimensions;
+                            } else {
+                                dimensions[currDim].dependentDimensions = storm::storage::BitVector(dimensions.size(), false);
+                                dimensions[currDim].dependentDimensions.set(currDim, true);
+                            }
+                        }
+                        dim += objDimensionCount;
                         objectiveDimensions.push_back(std::move(objDimensions));
                     }
                     assert(dim == dimensions.size());
@@ -210,6 +211,7 @@ namespace storm {
                                 isStrict = dimFormula.asBoundedUntilFormula().isLowerBoundStrict();
                             }
                         } else if (dimFormula.isCumulativeRewardFormula()) {
+                            assert(!dimFormula.asCumulativeRewardFormula().isMultiDimensional());
                             bound = dimFormula.asCumulativeRewardFormula().getBound();
                             isStrict = dimFormula.asCumulativeRewardFormula().isBoundStrict();
                         }
@@ -562,29 +564,35 @@ namespace storm {
                             if (objective.formula->getSubformula().isCumulativeRewardFormula()) {
                                 // Try to get an upper bound by computing the maximal reward achievable within one epoch step
                                 auto const& cumulativeRewardFormula = objective.formula->getSubformula().asCumulativeRewardFormula();
-                                ValueType rewardBound = cumulativeRewardFormula.template getBound<ValueType>();
-                                if (cumulativeRewardFormula.getTimeBoundReference().isRewardBound()) {
-                                    auto const& costModel = this->model.getRewardModel(cumulativeRewardFormula.getTimeBoundReference().getRewardName());
-                                    if (!costModel.hasTransitionRewards()) {
-                                        auto actionCosts = costModel.getTotalRewardVector(this->model.getTransitionMatrix());
-                                        ValueType largestRewardPerCost = storm::utility::zero<ValueType>();
-                                        bool isFinite = true;
-                                        for (auto rewIt = actionRewards.begin(), costIt = actionCosts.begin(); rewIt != actionRewards.end(); ++rewIt, ++costIt) {
-                                            if (!storm::utility::isZero(*rewIt)) {
-                                                if (storm::utility::isZero(*costIt)) {
-                                                    isFinite = false;
-                                                    break;
+                                for (uint64_t objDim = 0; objDim < cumulativeRewardFormula.getDimension(); ++objDim) {
+                                    boost::optional<ValueType> resBound;
+                                    ValueType rewardBound = cumulativeRewardFormula.template getBound<ValueType>(objDim);
+                                    if (cumulativeRewardFormula.getTimeBoundReference(objDim).isRewardBound()) {
+                                        auto const& costModel = this->model.getRewardModel(cumulativeRewardFormula.getTimeBoundReference(objDim).getRewardName());
+                                        if (!costModel.hasTransitionRewards()) {
+                                            auto actionCosts = costModel.getTotalRewardVector(this->model.getTransitionMatrix());
+                                            ValueType largestRewardPerCost = storm::utility::zero<ValueType>();
+                                            bool isFinite = true;
+                                            for (auto rewIt = actionRewards.begin(), costIt = actionCosts.begin(); rewIt != actionRewards.end(); ++rewIt, ++costIt) {
+                                                if (!storm::utility::isZero(*rewIt)) {
+                                                    if (storm::utility::isZero(*costIt)) {
+                                                        isFinite = false;
+                                                        break;
+                                                    }
+                                                    ValueType rewardPerCost = *rewIt / *costIt;
+                                                    largestRewardPerCost = std::max(largestRewardPerCost, rewardPerCost);
                                                 }
-                                                ValueType rewardPerCost = *rewIt / *costIt;
-                                                largestRewardPerCost = std::max(largestRewardPerCost, rewardPerCost);
+                                            }
+                                            if (isFinite) {
+                                                resBound = largestRewardPerCost * rewardBound;
                                             }
                                         }
-                                        if (isFinite) {
-                                            objective.upperResultBound = largestRewardPerCost * rewardBound;
-                                        }
+                                    } else {
+                                        resBound = (*std::max_element(actionRewards.begin(), actionRewards.end())) * rewardBound;
                                     }
-                                } else {
-                                    objective.upperResultBound = (*std::max_element(actionRewards.begin(), actionRewards.end())) * rewardBound;
+                                    if (resBound && (!objective.upperResultBound || objective.upperResultBound.get() > resBound.get())) {
+                                        objective.upperResultBound = resBound;
+                                    }
                                 }
                                 
                                 // If we could not find an upper bound, try to get an upper bound for the unbounded case

@@ -28,18 +28,18 @@ namespace storm {
         boost::any FormulaInformationVisitor::visit(BoundedUntilFormula const& f, boost::any const& data) const {
             FormulaInformation result;
             result.setContainsBoundedUntilFormula(true);
+            for (unsigned i = 0; i < f.getDimension(); ++i) {
+                if (f.getTimeBoundReference(i).isRewardBound()) {
+                    result.setContainsRewardBoundedFormula(true);
+                }
+            }
+            
             if (f.hasMultiDimensionalSubformulas()) {
-                for (unsigned i = 0; i < f.getDimension(); ++i){
-                    if (f.getTimeBoundReference(i).isRewardBound()) {
-                        result.setContainsRewardBoundedFormula(true);
-                    }
+                for (unsigned i = 0; i < f.getDimension(); ++i) {
                     result.join(boost::any_cast<FormulaInformation>(f.getLeftSubformula(i).accept(*this, data)));
                     result.join(boost::any_cast<FormulaInformation>(f.getRightSubformula(i).accept(*this, data)));
                 }
             } else {
-                if (f.getTimeBoundReference().isRewardBound()) {
-                    result.setContainsRewardBoundedFormula(true);
-                }
                 result.join(boost::any_cast<FormulaInformation>(f.getLeftSubformula().accept(*this, data)));
                 result.join(boost::any_cast<FormulaInformation>(f.getRightSubformula().accept(*this, data)));
             }
@@ -53,8 +53,10 @@ namespace storm {
         boost::any FormulaInformationVisitor::visit(CumulativeRewardFormula const& f, boost::any const&) const {
             FormulaInformation result;
             result.setContainsCumulativeRewardFormula(true);
-            if (f.getTimeBoundReference().isRewardBound()) {
-                result.setContainsRewardBoundedFormula(true);
+            for (unsigned i = 0; i < f.getDimension(); ++i) {
+                if (f.getTimeBoundReference(i).isRewardBound()) {
+                    result.setContainsRewardBoundedFormula(true);
+                }
             }
             return result;
         }

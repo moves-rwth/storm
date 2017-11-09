@@ -50,10 +50,19 @@ namespace storm {
                 }
                 
                 bool containsOnlyTrivialObjectives() const {
+                    // Trivial objectives are either total reward formulas or single-dimensional step or time bounded cumulative reward formulas
                     for (auto const& obj : objectives) {
-                        if (!(obj.formula->isRewardOperatorFormula() && (obj.formula->getSubformula().isTotalRewardFormula() || (obj.formula->getSubformula().isCumulativeRewardFormula() && !obj.formula->getSubformula().asCumulativeRewardFormula().getTimeBoundReference().isRewardBound())))) {
-                            return false;
+                        if (obj.formula->isRewardOperatorFormula() && obj.formula->getSubformula().isTotalRewardFormula()) {
+                            continue;
                         }
+                        if (obj.formula->isRewardOperatorFormula() && obj.formula->getSubformula().isCumulativeRewardFormula()) {
+                            auto const& subf = obj.formula->getSubformula().asCumulativeRewardFormula();
+                            if (!subf.isMultiDimensional() && (subf.getTimeBoundReference().isTimeBound() || subf.getTimeBoundReference().isStepBound())) {
+                                continue;
+                            }
+                        }
+                        // Reaching this point means that the objective is considered as non-trivial
+                        return false;
                     }
                     return true;
                 }

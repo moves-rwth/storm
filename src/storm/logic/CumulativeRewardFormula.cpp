@@ -9,8 +9,14 @@
 
 namespace storm {
     namespace logic {
-        CumulativeRewardFormula::CumulativeRewardFormula(TimeBound const& bound, TimeBoundReference const& timeBoundReference) : timeBoundReference(timeBoundReference), bound(bound) {
+        CumulativeRewardFormula::CumulativeRewardFormula(TimeBound const& bound, TimeBoundReference const& timeBoundReference) : timeBoundReferences({timeBoundReference}), bounds({bound}) {
             // Intentionally left empty.
+        }
+
+        CumulativeRewardFormula::CumulativeRewardFormula(std::vector<TimeBound> const& bounds, std::vector<TimeBoundReference> const& timeBoundReferences) : timeBoundReferences(timeBoundReferences), bounds(bounds) {
+
+            STORM_LOG_ASSERT(this->timeBoundReferences.size() == this->bounds.size(), "Number of time bounds and number of time bound references does not match.");
+            STORM_LOG_ASSERT(!this->timeBoundReferences.empty(), "No time bounds given.");
         }
 
         bool CumulativeRewardFormula::isCumulativeRewardFormula() const {
@@ -21,74 +27,95 @@ namespace storm {
             return true;
         }
         
+        bool CumulativeRewardFormula::isMultiDimensional() const {
+            return getDimension() > 1;
+        }
+        
+        unsigned CumulativeRewardFormula::getDimension() const {
+            return timeBoundReferences.size();
+        }
+        
         boost::any CumulativeRewardFormula::accept(FormulaVisitor const& visitor, boost::any const& data) const {
             return visitor.visit(*this, data);
         }
         
         void CumulativeRewardFormula::gatherReferencedRewardModels(std::set<std::string>& referencedRewardModels) const {
-            if (this->isRewardBounded()) {
-                referencedRewardModels.insert(this->getTimeBoundReference().getRewardName());
+            for (unsigned i = 0; i < this->getDimension(); ++i) {
+                if (getTimeBoundReference(i).isRewardBound()) {
+                    referencedRewardModels.insert(this->getTimeBoundReference(i).getRewardName());
+                }
             }
         }
         
-        TimeBoundType CumulativeRewardFormula::getTimeBoundType() const {
-            return timeBoundReference.getType();
-        }
-        
         TimeBoundReference const& CumulativeRewardFormula::getTimeBoundReference() const {
-            return timeBoundReference;
+            STORM_LOG_ASSERT(!isMultiDimensional(), "Cumulative Reward Formula is multi-dimensional.");
+            return getTimeBoundReference(0);
         }
 
-        bool CumulativeRewardFormula::isStepBounded() const {
-            return getTimeBoundType() == TimeBoundType::Steps;
+        TimeBoundReference const& CumulativeRewardFormula::getTimeBoundReference(unsigned i) const {
+            return timeBoundReferences.at(i);
         }
-        
-        bool CumulativeRewardFormula::isTimeBounded() const {
-            return getTimeBoundType() == TimeBoundType::Time;
-        }
-        
-        bool CumulativeRewardFormula::isRewardBounded() const {
-            return getTimeBoundType() == TimeBoundType::Reward;
-        }
-        
+
         bool CumulativeRewardFormula::isBoundStrict() const {
-            return bound.isStrict();
+            STORM_LOG_ASSERT(!isMultiDimensional(), "Cumulative Reward Formula is multi-dimensional.");
+            return isBoundStrict(0);
+        }
+        
+        bool CumulativeRewardFormula::isBoundStrict(unsigned i) const {
+            return bounds.at(i).isStrict();
         }
         
         bool CumulativeRewardFormula::hasIntegerBound() const {
-            return bound.getBound().hasIntegerType();
+            STORM_LOG_ASSERT(!isMultiDimensional(), "Cumulative Reward Formula is multi-dimensional.");
+            return hasIntegerBound(0);
+        }
+        
+        bool CumulativeRewardFormula::hasIntegerBound(unsigned i) const {
+            return bounds.at(i).getBound().hasIntegerType();
         }
         
         storm::expressions::Expression const& CumulativeRewardFormula::getBound() const {
-            return bound.getBound();
+            STORM_LOG_ASSERT(!isMultiDimensional(), "Cumulative Reward Formula is multi-dimensional.");
+            return getBound(0);
+        }
+        
+        storm::expressions::Expression const& CumulativeRewardFormula::getBound(unsigned i) const {
+            return bounds.at(i).getBound();
+        }
+        
+        template <typename  ValueType>
+        ValueType CumulativeRewardFormula::getBound() const {
+            STORM_LOG_ASSERT(!isMultiDimensional(), "Cumulative Reward Formula is multi-dimensional.");
+            return getBound<ValueType>(0);
         }
         
         template <>
-        double CumulativeRewardFormula::getBound() const {
-            checkNoVariablesInBound(bound.getBound());
-            double value = bound.getBound().evaluateAsDouble();
-            STORM_LOG_THROW(value >= 0, storm::exceptions::InvalidPropertyException, "Time-bound must not evaluate to negative number.");
+        double CumulativeRewardFormula::getBound(unsigned i) const {
+            checkNoVariablesInBound(bounds.at(i).getBound());
+            double value = bounds.at(i).getBound().evaluateAsDouble();
+            STORM_LOG_THROW(value >= 0.0, storm::exceptions::InvalidPropertyException, "Time-bound must not evaluate to negative number.");
             return value;
         }
 
         template <>
-        storm::RationalNumber CumulativeRewardFormula::getBound() const {
-            checkNoVariablesInBound(bound.getBound());
-            storm::RationalNumber value = bound.getBound().evaluateAsRational();
+        storm::RationalNumber CumulativeRewardFormula::getBound(unsigned i) const {
+            checkNoVariablesInBound(bounds.at(i).getBound());
+            storm::RationalNumber value = bounds.at(i).getBound().evaluateAsRational();
             STORM_LOG_THROW(value >= storm::utility::zero<storm::RationalNumber>(), storm::exceptions::InvalidPropertyException, "Time-bound must not evaluate to negative number.");
             return value;
         }
 
         template <>
-        uint64_t CumulativeRewardFormula::getBound() const {
-            checkNoVariablesInBound(bound.getBound());
-            uint64_t value = bound.getBound().evaluateAsInt();
+        uint64_t CumulativeRewardFormula::getBound(unsigned i) const {
+            checkNoVariablesInBound(bounds.at(i).getBound());
+            uint64_t value = bounds.at(i).getBound().evaluateAsInt();
             STORM_LOG_THROW(value >= 0, storm::exceptions::InvalidPropertyException, "Time-bound must not evaluate to negative number.");
             return value;
         }
         
         template <>
         double CumulativeRewardFormula::getNonStrictBound() const {
+            STORM_LOG_ASSERT(!isMultiDimensional(), "Cumulative Reward Formula is multi-dimensional.");
             double bound = getBound<double>();
             STORM_LOG_THROW(bound > 0, storm::exceptions::InvalidPropertyException, "Cannot retrieve non-strict bound from strict zero-bound.");
             return bound;
@@ -96,6 +123,7 @@ namespace storm {
         
         template <>
         uint64_t CumulativeRewardFormula::getNonStrictBound() const {
+            STORM_LOG_ASSERT(!isMultiDimensional(), "Cumulative Reward Formula is multi-dimensional.");
             int_fast64_t bound = getBound<uint64_t>();
             if (isBoundStrict()) {
                 STORM_LOG_THROW(bound > 0, storm::exceptions::InvalidPropertyException, "Cannot retrieve non-strict bound from strict zero-bound.");
@@ -109,13 +137,43 @@ namespace storm {
             STORM_LOG_THROW(!bound.containsVariables(), storm::exceptions::InvalidOperationException, "Cannot evaluate time-bound '" << bound << "' as it contains undefined constants.");
         }
         
+        std::shared_ptr<CumulativeRewardFormula const> CumulativeRewardFormula::restrictToDimension(unsigned i) const {
+            return std::make_shared<CumulativeRewardFormula const>(bounds.at(i), getTimeBoundReference(i));
+        }
+        
         std::ostream& CumulativeRewardFormula::writeToStream(std::ostream& out) const {
             out << "C";
-             if(getTimeBoundReference().isRewardBound()) {
-                out << "{\"" << getTimeBoundReference().getRewardName() << "\"}";
-             }
-             out << "<=" << this->getBound();
+            if (this->isMultiDimensional()) {
+                out << "^{";
+            }
+            for (unsigned i = 0; i < this->getDimension(); ++i) {
+                if (i > 0) {
+                    out << ",";
+                }
+                if (this->getTimeBoundReference(i).isRewardBound()) {
+                    out << "rew{\"" << this->getTimeBoundReference(i).getRewardName() << "\"}";
+                } else if (this->getTimeBoundReference(i).isStepBound()) {
+                    out << "steps";
+              //} else if (this->getTimeBoundReference(i).isStepBound())
+              //  Note: the 'time' keyword is optional.
+              //    out << "time";
+                }
+                if (this->isBoundStrict(i)) {
+                    out << "<";
+                } else {
+                    out << "<=";
+                }
+                out << this->getBound(i);
+            }
+            if (this->isMultiDimensional()) {
+                out << "}";
+            }
             return out;
         }
+        
+        template uint64_t CumulativeRewardFormula::getBound<uint64_t>() const;
+        template double CumulativeRewardFormula::getBound<double>() const;
+        template storm::RationalNumber CumulativeRewardFormula::getBound<storm::RationalNumber>() const;
+        
     }
 }

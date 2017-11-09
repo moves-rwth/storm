@@ -152,6 +152,7 @@ namespace storm {
             stepBoundedCumulativeRewardFormulas = false;
             timeBoundedCumulativeRewardFormulas = false;
             rewardBoundedCumulativeRewardFormulas = false;
+            multiDimensionalCumulativeRewardFormulas = false;
             varianceAsMeasureType = false;
             
             qualitativeOperatorResults = true;
@@ -478,6 +479,15 @@ namespace storm {
 
         FragmentSpecification& FragmentSpecification::setRewardBoundedCumulativeRewardFormulasAllowed(bool newValue) {
             this->rewardBoundedCumulativeRewardFormulas = newValue;
+            return *this;
+        }
+        
+        bool FragmentSpecification::areMultiDimensionalCumulativeRewardFormulasAllowed() const {
+            return this->multiDimensionalCumulativeRewardFormulas;
+        }
+
+        FragmentSpecification& FragmentSpecification::setMultiDimensionalCumulativeRewardFormulasAllowed(bool newValue) {
+            this->multiDimensionalCumulativeRewardFormulas = newValue;
             return *this;
         }
         

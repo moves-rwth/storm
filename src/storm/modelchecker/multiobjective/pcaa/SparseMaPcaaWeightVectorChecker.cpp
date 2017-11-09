@@ -48,7 +48,7 @@ namespace storm {
                             }
                         }
                     } else {
-                        STORM_LOG_THROW(formula.getSubformula().isCumulativeRewardFormula() && formula.getSubformula().asCumulativeRewardFormula().isTimeBounded(), storm::exceptions::UnexpectedException, "Unexpected type of sub-formula: " << formula.getSubformula());
+                        STORM_LOG_THROW(formula.getSubformula().isCumulativeRewardFormula() && formula.getSubformula().asCumulativeRewardFormula().getTimeBoundReference().isTimeBound(), storm::exceptions::UnexpectedException, "Unexpected type of sub-formula: " << formula.getSubformula());
                         STORM_LOG_THROW(!rewModel.hasStateRewards(), storm::exceptions::InvalidPropertyException, "Found state rewards for time bounded objective " << this->objectives[objIndex].originalFormula << ". This is not supported.");
                         STORM_LOG_WARN_COND(this->objectives[objIndex].originalFormula->isProbabilityOperatorFormula() && this->objectives[objIndex].originalFormula->asProbabilityOperatorFormula().getSubformula().isBoundedUntilFormula(), "Objective " << this->objectives[objIndex].originalFormula << " was simplified to a cumulative reward formula. Correctness of the algorithm is unknown for this type of property.");
                     }

@@ -259,7 +259,7 @@ namespace storm {
                 bounds.push_back(std::get<1>(timeBound).get());
                 timeBoundReferences.emplace_back(*std::get<2>(timeBound));
             }
-            return std::shared_ptr<storm::logic::Formula const>(new storm::logic::CumulativeRewardFormula(bounds.front(), timeBoundReferences.front()));
+            return std::shared_ptr<storm::logic::Formula const>(new storm::logic::CumulativeRewardFormula(bounds, timeBoundReferences));
         }
         
         std::shared_ptr<storm::logic::Formula const> FormulaParserGrammar::createTotalRewardFormula() const {
