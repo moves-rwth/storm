@@ -282,7 +282,7 @@ namespace storm {
                 }
                 for (unsigned i = 0; i < this->getDimension(); ++i) {
                     if (i > 0) {
-                        out << ",";
+                        out << ", ";
                     }
                     if (this->getTimeBoundReference(i).isRewardBound()) {
                         out << "rew{\"" << this->getTimeBoundReference(i).getRewardName() << "\"}";

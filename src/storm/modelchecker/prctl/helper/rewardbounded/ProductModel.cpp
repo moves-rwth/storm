@@ -407,8 +407,12 @@ namespace storm {
                             STORM_LOG_THROW(!rewModel.hasTransitionRewards(), storm::exceptions::NotSupportedException, "Reward model has transition rewards which is not expected.");
                             bool rewardCollectedInEpoch = true;
                             if (formula.getSubformula().isCumulativeRewardFormula()) {
-                                assert(objectiveDimensions[objIndex].getNumberOfSetBits() == 1);
-                                rewardCollectedInEpoch = !epochManager.isBottomDimensionEpochClass(epochClass, *objectiveDimensions[objIndex].begin());
+                                for (auto const& dim : objectiveDimensions[objIndex]) {
+                                    if (epochManager.isBottomDimensionEpochClass(epochClass, dim)) {
+                                        rewardCollectedInEpoch = false;
+                                        break;
+                                    }
+                                }
                             } else {
                                 STORM_LOG_THROW(formula.getSubformula().isTotalRewardFormula(), storm::exceptions::UnexpectedException, "Unexpected type of formula " << formula);
                             }
