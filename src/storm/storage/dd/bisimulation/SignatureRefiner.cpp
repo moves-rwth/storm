@@ -466,7 +466,7 @@ namespace storm {
                 spp::sparse_hash_map<DdNode const*, ReuseWrapper> reuseBlocksCache;
             };
             
-            TASK_DECL_5(BDD, refine_double, BDD, MTBDD, BDD, BDD, void*);
+            TASK_DECL_5(BDD, refine_parallel, BDD, MTBDD, BDD, BDD, void*);
 
             template<storm::dd::DdType DdType>
             class InternalSignatureRefinerBase;
@@ -709,7 +709,7 @@ namespace storm {
                 
                 std::pair<BDD, BDD> refineParallel(BDD partitionNode, MTBDD signatureNode, BDD nondeterminismVariablesNode, BDD nonBlockVariablesNode) {
                     LACE_ME;
-                    return std::make_pair(CALL(refine_double, partitionNode, signatureNode, nondeterminismVariablesNode, nonBlockVariablesNode, this), 0);
+                    return std::make_pair(CALL(refine_parallel, partitionNode, signatureNode, nondeterminismVariablesNode, nonBlockVariablesNode, this), 0);
                 }
                 
                 std::pair<BDD, BDD> refineSequential(BDD partitionNode, MTBDD signatureNode, BDD nondeterminismVariablesNode, BDD nonBlockVariablesNode) {
@@ -868,7 +868,7 @@ namespace storm {
                 
             };
             
-            TASK_IMPL_5(BDD, refine_double, BDD, partitionNode, MTBDD, signatureNode, BDD, nondeterminismVariablesNode, BDD, nonBlockVariablesNode, void*, refinerPtr)
+            TASK_IMPL_5(BDD, refine_parallel, BDD, partitionNode, MTBDD, signatureNode, BDD, nondeterminismVariablesNode, BDD, nonBlockVariablesNode, void*, refinerPtr)
             {
                 auto& refiner = *static_cast<InternalSignatureRefinerBase<storm::dd::DdType::Sylvan>*>(refinerPtr);
                 std::unique_lock<std::mutex> lock(refiner.mutex, std::defer_lock);
@@ -881,8 +881,12 @@ namespace storm {
                 
                 STORM_LOG_ASSERT(partitionNode != mtbdd_false, "Expected non-false node.");
                 
+                // Check the cache whether we have seen the same node before.
                 BDD result;
-
+                if (cache_get(signatureNode|(256LL<<42), nonBlockVariablesNode, partitionNode|(refiner.numberOfRefinements<<40), &result)) {
+                    return result;
+                }
+                
                 if (sylvan_isconst(nonBlockVariablesNode)) {
                     // Get the lock so we can modify the signature cache.
                     lock.lock();
@@ -911,11 +915,10 @@ namespace storm {
                     result = refiner.encodeBlock(refiner.nextFreeBlockIndex++);
                     refiner.signatureCacheSingle[nodePair] = result;
                     lock.unlock();
-                    return result;
-                }
-                
-                // Check the cache whether we have seen the same node before.
-                if (cache_get(signatureNode|(256LL<<42), nonBlockVariablesNode, partitionNode|(refiner.numberOfRefinements<<40), &result)) {
+                    
+                    // Store the result in the cache.
+                    cache_put(signatureNode|(256LL<<42), nonBlockVariablesNode, partitionNode|(refiner.numberOfRefinements<<40), result);
+                    
                     return result;
                 }
                 
@@ -966,15 +969,15 @@ namespace storm {
                 
                 // If there are no more non-block variables remaining, make a recursive call to enter the base case.
                 if (sylvan_isconst(nonBlockVariablesNode)) {
-                    return CALL(refine_double, partitionNode, signatureNode, nondeterminismVariablesNode, nonBlockVariablesNode, refinerPtr);
+                    return CALL(refine_parallel, partitionNode, signatureNode, nondeterminismVariablesNode, nonBlockVariablesNode, refinerPtr);
                 }
                 
                 BDD nextNondeterminismVariables = isNondeterminismVariable ? sylvan_set_next(nondeterminismVariablesNode) : nondeterminismVariablesNode;
                 BDD nextNonBlockVariables = sylvan_set_next(nonBlockVariablesNode);
-                bdd_refs_spawn(SPAWN(refine_double, partitionThen, signatureThen, nextNondeterminismVariables, nextNonBlockVariables, refinerPtr));
+                bdd_refs_spawn(SPAWN(refine_parallel, partitionElse, signatureElse, nextNondeterminismVariables, nextNonBlockVariables, refinerPtr));
                 
-                BDD elseResult = bdd_refs_push(CALL(refine_double, partitionElse, signatureElse, nextNondeterminismVariables, nextNonBlockVariables, refinerPtr));
-                BDD thenResult = bdd_refs_sync(SYNC(refine_double));
+                BDD thenResult = bdd_refs_push(CALL(refine_parallel, partitionThen, signatureThen, nextNondeterminismVariables, nextNonBlockVariables, refinerPtr));
+                BDD elseResult = bdd_refs_sync(SYNC(refine_parallel));
                 bdd_refs_pop(1);
                 
                 if (thenResult == elseResult) {

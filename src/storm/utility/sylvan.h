@@ -28,9 +28,7 @@ namespace storm {
          * @param offset An offset that is applied to the index of the top variable in the BDD.
          * @return True iff the BDD's top variable has the given index.
          */
-        bool sylvan_bdd_matches_variable_index(BDD node, uint64_t variableIndex, int64_t offset = 0) {
-            return !sylvan_isconst(node) && static_cast<uint64_t>(sylvan_var(node) + offset) == variableIndex;
-        }
+        bool sylvan_bdd_matches_variable_index(BDD node, uint64_t variableIndex, int64_t offset = 0);
         
         /*!
          * Retrieves whether the topmost variable in the MTBDD is the one with the given index.
@@ -40,9 +38,7 @@ namespace storm {
          * @param offset An offset that is applied to the index of the top variable in the BDD.
          * @return True iff the BDD's top variable has the given index.
          */
-        bool sylvan_mtbdd_matches_variable_index(MTBDD node, uint64_t variableIndex, int64_t offset = 0) {
-            return !mtbdd_isleaf(node) && static_cast<uint64_t>(sylvan_var(node) + offset) == variableIndex;
-        }
+        bool sylvan_mtbdd_matches_variable_index(MTBDD node, uint64_t variableIndex, int64_t offset = 0);
         
     }
 }
