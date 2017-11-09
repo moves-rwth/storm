@@ -527,10 +527,6 @@ namespace storm {
             return newNodeVariable;
         }
         
-        bool InternalBdd<DdType::Sylvan>::matchesVariableIndex(BDD const& node, uint64_t variableIndex, int64_t offset) {
-            return !sylvan_isconst(node) && static_cast<uint64_t>(sylvan_var(node) + offset) == variableIndex;
-        }
-        
         template InternalAdd<DdType::Sylvan, double> InternalBdd<DdType::Sylvan>::toAdd() const;
         template InternalAdd<DdType::Sylvan, uint_fast64_t> InternalBdd<DdType::Sylvan>::toAdd() const;
         template InternalAdd<DdType::Sylvan, storm::RationalNumber> InternalBdd<DdType::Sylvan>::toAdd() const;

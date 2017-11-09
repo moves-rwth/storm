@@ -25,6 +25,8 @@ namespace storm {
                 
                 enum class RefinementMode { Full, ChangedStates };
                 
+                enum class ParallelismMode { Parallel, Sequential };
+                
                 /*!
                  * Creates a new set of bisimulation settings.
                  */
@@ -76,6 +78,11 @@ namespace storm {
                  */
                 RefinementMode getRefinementMode() const;
                 
+                /*!
+                 * Retrieves whether parallel is set.
+                 */
+                ParallelismMode getParallelismMode() const;
+                
                 virtual bool check() const override;
                 
                 // The name of the module.
@@ -90,6 +97,7 @@ namespace storm {
                 static const std::string reuseOptionName;
                 static const std::string initialPartitionOptionName;
                 static const std::string refinementModeOptionName;
+                static const std::string parallelismModeOptionName;
             };
         } // namespace modules
     } // namespace settings
