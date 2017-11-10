@@ -29,7 +29,7 @@ namespace storm {
         }
         
         template<typename ModelType>
-        std::unique_ptr<CheckResult> SymbolicPropositionalModelChecker<ModelType>::checkBooleanLiteralFormula(CheckTask<storm::logic::BooleanLiteralFormula, ValueType> const& checkTask) {
+        std::unique_ptr<CheckResult> SymbolicPropositionalModelChecker<ModelType>::checkBooleanLiteralFormula(Environment const& env, CheckTask<storm::logic::BooleanLiteralFormula, ValueType> const& checkTask) {
             storm::logic::BooleanLiteralFormula const& stateFormula = checkTask.getFormula();
             if (stateFormula.isTrueFormula()) {
                 return std::unique_ptr<CheckResult>(new SymbolicQualitativeCheckResult<DdType>(model.getReachableStates(), model.getReachableStates()));
@@ -39,14 +39,14 @@ namespace storm {
         }
         
         template<typename ModelType>
-        std::unique_ptr<CheckResult> SymbolicPropositionalModelChecker<ModelType>::checkAtomicLabelFormula(CheckTask<storm::logic::AtomicLabelFormula, ValueType> const& checkTask) {
+        std::unique_ptr<CheckResult> SymbolicPropositionalModelChecker<ModelType>::checkAtomicLabelFormula(Environment const& env,CheckTask<storm::logic::AtomicLabelFormula, ValueType> const& checkTask) {
             storm::logic::AtomicLabelFormula const& stateFormula = checkTask.getFormula();
             STORM_LOG_THROW(model.hasLabel(stateFormula.getLabel()), storm::exceptions::InvalidPropertyException, "The property refers to unknown label '" << stateFormula.getLabel() << "'.");
             return std::unique_ptr<CheckResult>(new SymbolicQualitativeCheckResult<DdType>(model.getReachableStates(), model.getStates(stateFormula.getLabel())));
         }
         
         template<typename ModelType>
-        std::unique_ptr<CheckResult> SymbolicPropositionalModelChecker<ModelType>::checkAtomicExpressionFormula(CheckTask<storm::logic::AtomicExpressionFormula, ValueType> const& checkTask) {
+        std::unique_ptr<CheckResult> SymbolicPropositionalModelChecker<ModelType>::checkAtomicExpressionFormula(Environment const& env,CheckTask<storm::logic::AtomicExpressionFormula, ValueType> const& checkTask) {
             storm::logic::AtomicExpressionFormula const& stateFormula = checkTask.getFormula();
             return std::unique_ptr<CheckResult>(new SymbolicQualitativeCheckResult<DdType>(model.getReachableStates(), model.getStates(stateFormula.getExpression())));
         }

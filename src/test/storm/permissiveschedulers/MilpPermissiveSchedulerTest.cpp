@@ -7,7 +7,7 @@
 #include "storm/logic/Formulas.h"
 #include "storm/permissivesched/PermissiveSchedulers.h"
 #include "storm/builder/ExplicitModelBuilder.h"
-#include "storm/solver/StandardMinMaxLinearEquationSolver.h"
+#include "storm/solver/MinMaxLinearEquationSolver.h"
 
 #include "storm/models/sparse/StandardRewardModel.h"
 #include "storm/modelchecker/prctl/SparseMdpPrctlModelChecker.h"
@@ -48,7 +48,7 @@ TEST(MilpPermissiveSchedulerTest, DieSelection) {
     ASSERT_FALSE(qualitativeResult0[0]);
 
     auto submdp = perms->apply();
-    storm::modelchecker::SparseMdpPrctlModelChecker<storm::models::sparse::Mdp<double>> checker1(submdp, std::unique_ptr<storm::solver::MinMaxLinearEquationSolverFactory<double>>(new storm::solver::StandardMinMaxLinearEquationSolverFactory<double>(storm::solver::EquationSolverType::Native)));
+    storm::modelchecker::SparseMdpPrctlModelChecker<storm::models::sparse::Mdp<double>> checker1(submdp, std::unique_ptr<storm::solver::MinMaxLinearEquationSolverFactory<double>>(new storm::solver::GeneralMinMaxLinearEquationSolverFactory<double>(storm::solver::EquationSolverType::Native)));
 
     std::unique_ptr<storm::modelchecker::CheckResult> result1 = checker1.check(formula02);
     storm::modelchecker::ExplicitQualitativeCheckResult& qualitativeResult1 = result1->asExplicitQualitativeCheckResult();

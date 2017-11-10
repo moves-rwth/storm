@@ -17,8 +17,8 @@ namespace storm {
             
             // The implemented methods of the AbstractModelChecker interface.
             virtual bool canHandle(CheckTask<storm::logic::Formula, ValueType> const& checkTask) const override;
-            virtual std::unique_ptr<CheckResult> checkBooleanLiteralFormula(CheckTask<storm::logic::BooleanLiteralFormula, ValueType> const& checkTask) override;
-            virtual std::unique_ptr<CheckResult> checkAtomicLabelFormula(CheckTask<storm::logic::AtomicLabelFormula, ValueType> const& checkTask) override;
+            virtual std::unique_ptr<CheckResult> checkBooleanLiteralFormula(Environment const& env, CheckTask<storm::logic::BooleanLiteralFormula, ValueType> const& checkTask) override;
+            virtual std::unique_ptr<CheckResult> checkAtomicLabelFormula(Environment const& env, CheckTask<storm::logic::AtomicLabelFormula, ValueType> const& checkTask) override;
             
         protected:
             /*!

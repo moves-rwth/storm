@@ -93,8 +93,8 @@ namespace storm {
         };
         
         template<typename ValueType, typename MatrixType>
-        std::unique_ptr<storm::solver::MinMaxLinearEquationSolver<ValueType>> configureMinMaxLinearEquationSolver(SolveGoal<ValueType>&& goal, storm::solver::MinMaxLinearEquationSolverFactory<ValueType> const& factory, MatrixType&& matrix) {
-            std::unique_ptr<storm::solver::MinMaxLinearEquationSolver<ValueType>> solver = factory.create(std::forward<MatrixType>(matrix));
+        std::unique_ptr<storm::solver::MinMaxLinearEquationSolver<ValueType>> configureMinMaxLinearEquationSolver(Environment const& env, SolveGoal<ValueType>&& goal, storm::solver::MinMaxLinearEquationSolverFactory<ValueType> const& factory, MatrixType&& matrix) {
+            std::unique_ptr<storm::solver::MinMaxLinearEquationSolver<ValueType>> solver = factory.create(env, std::forward<MatrixType>(matrix));
             solver->setOptimizationDirection(goal.direction());
             if (goal.isBounded()) {
                 if (goal.boundIsALowerBound()) {

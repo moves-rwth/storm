@@ -18,6 +18,9 @@
 #include "storm/utility/macros.h"
 
 namespace storm {
+    
+    class Environment;
+    
     namespace storage {
         template<typename T> class SparseMatrix;
     }
@@ -48,14 +51,14 @@ namespace storm {
              * solver, but may be ignored.
              * @param b The vector to add after matrix-vector multiplication.
              */
-            bool solveEquations(OptimizationDirection d, std::vector<ValueType>& x, std::vector<ValueType> const& b) const;
+            bool solveEquations(Environment const& env, OptimizationDirection d, std::vector<ValueType>& x, std::vector<ValueType> const& b) const;
             
             /*!
              * Behaves the same as the other variant of <code>solveEquations</code>, with the distinction that
              * instead of providing the optimization direction as an argument, the internally set optimization direction
              * is used. Note: this method can only be called after setting the optimization direction.
              */
-            void solveEquations(std::vector<ValueType>& x, std::vector<ValueType> const& b) const;
+            void solveEquations(Environment const& env, std::vector<ValueType>& x, std::vector<ValueType> const& b) const;
             
             /*!
              * Performs (repeated) matrix-vector multiplication with the given parameters, i.e. computes
@@ -164,7 +167,7 @@ namespace storm {
              * Retrieves the requirements of this solver for solving equations with the current settings. The requirements
              * are guaranteed to be ordered according to their appearance in the SolverRequirement type.
              */
-            virtual MinMaxLinearEquationSolverRequirements getRequirements(boost::optional<storm::solver::OptimizationDirection> const& direction = boost::none) const;
+            virtual MinMaxLinearEquationSolverRequirements getRequirements(Environment const& env, boost::optional<storm::solver::OptimizationDirection> const& direction = boost::none) const;
             
             /*!
              * Notifies the solver that the requirements for solving equations have been checked. If this has not been
@@ -206,43 +209,33 @@ namespace storm {
         template<typename ValueType>
         class MinMaxLinearEquationSolverFactory {
         public:
-            MinMaxLinearEquationSolverFactory(MinMaxMethodSelection const& method = MinMaxMethodSelection::FROMSETTINGS, bool trackScheduler = false);
+            MinMaxLinearEquationSolverFactory();
             
-            std::unique_ptr<MinMaxLinearEquationSolver<ValueType>> create(storm::storage::SparseMatrix<ValueType> const& matrix) const;
-            std::unique_ptr<MinMaxLinearEquationSolver<ValueType>> create(storm::storage::SparseMatrix<ValueType>&& matrix) const;
-            virtual std::unique_ptr<MinMaxLinearEquationSolver<ValueType>> create() const = 0;
-
-            void setTrackScheduler(bool value);
-            bool isTrackSchedulerSet() const;
-            
-            virtual void setMinMaxMethod(MinMaxMethodSelection const& newMethod);
-            virtual void setMinMaxMethod(MinMaxMethod const& newMethod);
-            
-            MinMaxMethod const& getMinMaxMethod() const;
+            std::unique_ptr<MinMaxLinearEquationSolver<ValueType>> create(Environment const& env, storm::storage::SparseMatrix<ValueType> const& matrix) const;
+            std::unique_ptr<MinMaxLinearEquationSolver<ValueType>> create(Environment const& env, storm::storage::SparseMatrix<ValueType>&& matrix) const;
+            virtual std::unique_ptr<MinMaxLinearEquationSolver<ValueType>> create(Environment const& env) const = 0;
             
             /*!
              * Retrieves the requirements of the solver that would be created when calling create() right now. The
              * requirements are guaranteed to be ordered according to their appearance in the SolverRequirement type.
              */
-            MinMaxLinearEquationSolverRequirements getRequirements(bool hasUniqueSolution = false, boost::optional<storm::solver::OptimizationDirection> const& direction = boost::none) const;
+            MinMaxLinearEquationSolverRequirements getRequirements(Environment const& env, bool hasUniqueSolution = false, boost::optional<storm::solver::OptimizationDirection> const& direction = boost::none) const;
             void setRequirementsChecked(bool value = true);
             bool isRequirementsCheckedSet() const;
 
         private:
-            bool trackScheduler;
-            MinMaxMethod method;
             bool requirementsChecked;
         };
         
         template<typename ValueType>
         class GeneralMinMaxLinearEquationSolverFactory : public MinMaxLinearEquationSolverFactory<ValueType> {
         public:
-            GeneralMinMaxLinearEquationSolverFactory(MinMaxMethodSelection const& method = MinMaxMethodSelection::FROMSETTINGS, bool trackScheduler = false);
+            GeneralMinMaxLinearEquationSolverFactory();
             
             // Make the other create methods visible.
             using MinMaxLinearEquationSolverFactory<ValueType>::create;
             
-            virtual std::unique_ptr<MinMaxLinearEquationSolver<ValueType>> create() const override;
+            virtual std::unique_ptr<MinMaxLinearEquationSolver<ValueType>> create(Environment const& env) const override;
         };
         
     } // namespace solver

@@ -6,6 +6,10 @@
 #include "storm/solver/NativeLinearEquationSolver.h"
 #include "storm/solver/EliminationLinearEquationSolver.h"
 
+#include "storm/environment/Environment.h"
+#include "storm/environment/solver/SolverEnvironment.h"
+#include "storm/environment/solver/MinMaxSolverEnvironment.h"
+
 #include "storm/utility/vector.h"
 #include "storm/utility/macros.h"
 #include "storm/exceptions/InvalidSettingsException.h"
@@ -74,17 +78,17 @@ namespace storm {
         }
 
         template<typename ValueType>
-        StandardMinMaxLinearEquationSolverFactory<ValueType>::StandardMinMaxLinearEquationSolverFactory(MinMaxMethodSelection const& method, bool trackScheduler) : MinMaxLinearEquationSolverFactory<ValueType>(method, trackScheduler), linearEquationSolverFactory(std::make_unique<GeneralLinearEquationSolverFactory<ValueType>>()) {
+        StandardMinMaxLinearEquationSolverFactory<ValueType>::StandardMinMaxLinearEquationSolverFactory() : MinMaxLinearEquationSolverFactory<ValueType>(), linearEquationSolverFactory(std::make_unique<GeneralLinearEquationSolverFactory<ValueType>>()) {
             // Intentionally left empty.
         }
         
         template<typename ValueType>
-        StandardMinMaxLinearEquationSolverFactory<ValueType>::StandardMinMaxLinearEquationSolverFactory(std::unique_ptr<LinearEquationSolverFactory<ValueType>>&& linearEquationSolverFactory, MinMaxMethodSelection const& method, bool trackScheduler) : MinMaxLinearEquationSolverFactory<ValueType>(method, trackScheduler), linearEquationSolverFactory(std::move(linearEquationSolverFactory)) {
+        StandardMinMaxLinearEquationSolverFactory<ValueType>::StandardMinMaxLinearEquationSolverFactory(std::unique_ptr<LinearEquationSolverFactory<ValueType>>&& linearEquationSolverFactory, MinMaxMethodSelection) : MinMaxLinearEquationSolverFactory<ValueType>(), linearEquationSolverFactory(std::move(linearEquationSolverFactory)) {
             // Intentionally left empty.
         }
         
         template<typename ValueType>
-        StandardMinMaxLinearEquationSolverFactory<ValueType>::StandardMinMaxLinearEquationSolverFactory(EquationSolverType const& solverType, MinMaxMethodSelection const& method, bool trackScheduler) : MinMaxLinearEquationSolverFactory<ValueType>(method, trackScheduler) {
+        StandardMinMaxLinearEquationSolverFactory<ValueType>::StandardMinMaxLinearEquationSolverFactory(EquationSolverType const& solverType) : MinMaxLinearEquationSolverFactory<ValueType>() {
             switch (solverType) {
                 case EquationSolverType::Gmmxx: linearEquationSolverFactory = std::make_unique<GmmxxLinearEquationSolverFactory<ValueType>>(); break;
                 case EquationSolverType::Eigen: linearEquationSolverFactory = std::make_unique<EigenLinearEquationSolverFactory<ValueType>>(); break;
@@ -94,7 +98,7 @@ namespace storm {
         }
 
         template<>
-        StandardMinMaxLinearEquationSolverFactory<storm::RationalNumber>::StandardMinMaxLinearEquationSolverFactory(EquationSolverType const& solverType, MinMaxMethodSelection const& method, bool trackScheduler) : MinMaxLinearEquationSolverFactory<storm::RationalNumber>(method, trackScheduler) {
+        StandardMinMaxLinearEquationSolverFactory<storm::RationalNumber>::StandardMinMaxLinearEquationSolverFactory(EquationSolverType const& solverType) : MinMaxLinearEquationSolverFactory<storm::RationalNumber>() {
             switch (solverType) {
                 case EquationSolverType::Eigen: linearEquationSolverFactory = std::make_unique<EigenLinearEquationSolverFactory<storm::RationalNumber>>(); break;
                 case EquationSolverType::Elimination: linearEquationSolverFactory = std::make_unique<EliminationLinearEquationSolverFactory<storm::RationalNumber>>(); break;
@@ -104,38 +108,35 @@ namespace storm {
         }
 
         template<typename ValueType>
-        std::unique_ptr<MinMaxLinearEquationSolver<ValueType>> StandardMinMaxLinearEquationSolverFactory<ValueType>::create() const {
+        std::unique_ptr<MinMaxLinearEquationSolver<ValueType>> StandardMinMaxLinearEquationSolverFactory<ValueType>::create(Environment const& env) const {
             std::unique_ptr<MinMaxLinearEquationSolver<ValueType>> result;
-            auto method = this->getMinMaxMethod();
+            auto method = env.solver().minMax().getMethod();
             if (method == MinMaxMethod::ValueIteration || method == MinMaxMethod::PolicyIteration || method == MinMaxMethod::Acyclic) {
-                IterativeMinMaxLinearEquationSolverSettings<ValueType> iterativeSolverSettings;
-                iterativeSolverSettings.setSolutionMethod(method);
-                result = std::make_unique<IterativeMinMaxLinearEquationSolver<ValueType>>(this->linearEquationSolverFactory->clone(), iterativeSolverSettings);
+                result = std::make_unique<IterativeMinMaxLinearEquationSolver<ValueType>>(this->linearEquationSolverFactory->clone());
             } else {
-                STORM_LOG_THROW(false, storm::exceptions::InvalidSettingsException, "Unsupported technique.");
+                STORM_LOG_THROW(false, storm::exceptions::InvalidSettingsException, "The selected min max method is not supported by this solver.");
             }
-            result->setTrackScheduler(this->isTrackSchedulerSet());
             result->setRequirementsChecked(this->isRequirementsCheckedSet());
             return result;
         }
         
         template<typename ValueType>
-        GmmxxMinMaxLinearEquationSolverFactory<ValueType>::GmmxxMinMaxLinearEquationSolverFactory(MinMaxMethodSelection const& method, bool trackScheduler) : StandardMinMaxLinearEquationSolverFactory<ValueType>(EquationSolverType::Gmmxx, method, trackScheduler) {
+        GmmxxMinMaxLinearEquationSolverFactory<ValueType>::GmmxxMinMaxLinearEquationSolverFactory() : StandardMinMaxLinearEquationSolverFactory<ValueType>(EquationSolverType::Gmmxx) {
             // Intentionally left empty.
         }
         
         template<typename ValueType>
-        EigenMinMaxLinearEquationSolverFactory<ValueType>::EigenMinMaxLinearEquationSolverFactory(MinMaxMethodSelection const& method, bool trackScheduler) : StandardMinMaxLinearEquationSolverFactory<ValueType>(EquationSolverType::Eigen, method, trackScheduler) {
+        EigenMinMaxLinearEquationSolverFactory<ValueType>::EigenMinMaxLinearEquationSolverFactory() : StandardMinMaxLinearEquationSolverFactory<ValueType>(EquationSolverType::Eigen) {
             // Intentionally left empty.
         }
         
         template<typename ValueType>
-        NativeMinMaxLinearEquationSolverFactory<ValueType>::NativeMinMaxLinearEquationSolverFactory(MinMaxMethodSelection const& method, bool trackScheduler) : StandardMinMaxLinearEquationSolverFactory<ValueType>(EquationSolverType::Native, method, trackScheduler) {
+        NativeMinMaxLinearEquationSolverFactory<ValueType>::NativeMinMaxLinearEquationSolverFactory() : StandardMinMaxLinearEquationSolverFactory<ValueType>(EquationSolverType::Native) {
             // Intentionally left empty.
         }
         
         template<typename ValueType>
-        EliminationMinMaxLinearEquationSolverFactory<ValueType>::EliminationMinMaxLinearEquationSolverFactory(MinMaxMethodSelection const& method, bool trackScheduler) : StandardMinMaxLinearEquationSolverFactory<ValueType>(EquationSolverType::Elimination, method, trackScheduler) {
+        EliminationMinMaxLinearEquationSolverFactory<ValueType>::EliminationMinMaxLinearEquationSolverFactory() : StandardMinMaxLinearEquationSolverFactory<ValueType>(EquationSolverType::Elimination) {
             // Intentionally left empty.
         }
         

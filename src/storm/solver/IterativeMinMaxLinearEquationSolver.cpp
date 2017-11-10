@@ -2,15 +2,15 @@
 
 #include "storm/utility/ConstantsComparator.h"
 
-#include "storm/settings/SettingsManager.h"
-#include "storm/settings/modules/GeneralSettings.h"
-#include "storm/settings/modules/MinMaxEquationSolverSettings.h"
+#include "storm/environment/Environment.h"
+#include "storm/environment/solver/SolverEnvironment.h"
+#include "storm/environment/solver/MinMaxSolverEnvironment.h"
 
 #include "storm/utility/KwekMehlhorn.h"
 
 #include "storm/utility/vector.h"
 #include "storm/utility/macros.h"
-#include "storm/exceptions/InvalidSettingsException.h"
+#include "storm/exceptions/InvalidEnvironmentException.h"
 #include "storm/exceptions/InvalidStateException.h"
 #include "storm/exceptions/UnmetRequirementException.h"
 #include "storm/exceptions/NotSupportedException.h"
@@ -20,126 +20,39 @@ namespace storm {
     namespace solver {
         
         template<typename ValueType>
-        IterativeMinMaxLinearEquationSolverSettings<ValueType>::IterativeMinMaxLinearEquationSolverSettings() {
-            // Get the settings object to customize solving.
-            storm::settings::modules::MinMaxEquationSolverSettings const& minMaxSettings = storm::settings::getModule<storm::settings::modules::MinMaxEquationSolverSettings>();
-            
-            maximalNumberOfIterations = minMaxSettings.getMaximalIterationCount();
-            precision = storm::utility::convertNumber<ValueType>(minMaxSettings.getPrecision());
-            relative = minMaxSettings.getConvergenceCriterion() == storm::settings::modules::MinMaxEquationSolverSettings::ConvergenceCriterion::Relative;
-            valueIterationMultiplicationStyle = minMaxSettings.getValueIterationMultiplicationStyle();
-            
-            setSolutionMethod(minMaxSettings.getMinMaxEquationSolvingMethod());
-            
-            // Finally force soundness and potentially overwrite some other settings.
-            this->setForceSoundness(storm::settings::getModule<storm::settings::modules::GeneralSettings>().isSoundSet());
-        }
-        
-        template<typename ValueType>
-        void IterativeMinMaxLinearEquationSolverSettings<ValueType>::setSolutionMethod(SolutionMethod const& solutionMethod) {
-            this->solutionMethod = solutionMethod;
-        }
-        
-        template<typename ValueType>
-        void IterativeMinMaxLinearEquationSolverSettings<ValueType>::setSolutionMethod(MinMaxMethod const& solutionMethod) {
-            switch (solutionMethod) {
-                case MinMaxMethod::ValueIteration: this->solutionMethod = SolutionMethod::ValueIteration; break;
-                case MinMaxMethod::PolicyIteration: this->solutionMethod = SolutionMethod::PolicyIteration; break;
-                case MinMaxMethod::RationalSearch: this->solutionMethod = SolutionMethod::RationalSearch; break;
-                default:
-                    STORM_LOG_THROW(false, storm::exceptions::InvalidSettingsException, "Unsupported technique for iterative MinMax linear equation solver.");
-            }
-        }
-        
-        template<typename ValueType>
-        void IterativeMinMaxLinearEquationSolverSettings<ValueType>::setMaximalNumberOfIterations(uint64_t maximalNumberOfIterations) {
-            this->maximalNumberOfIterations = maximalNumberOfIterations;
-        }
-        
-        template<typename ValueType>
-        void IterativeMinMaxLinearEquationSolverSettings<ValueType>::setRelativeTerminationCriterion(bool value) {
-            this->relative = value;
-        }
-        
-        template<typename ValueType>
-        void IterativeMinMaxLinearEquationSolverSettings<ValueType>::setPrecision(ValueType precision) {
-            this->precision = precision;
-        }
-        
-        template<typename ValueType>
-        void IterativeMinMaxLinearEquationSolverSettings<ValueType>::setValueIterationMultiplicationStyle(MultiplicationStyle value) {
-            this->valueIterationMultiplicationStyle = value;
-        }
-        
-        template<typename ValueType>
-        void IterativeMinMaxLinearEquationSolverSettings<ValueType>::setForceSoundness(bool value) {
-            this->forceSoundness = value;
-        }
-        
-        template<typename ValueType>
-        typename IterativeMinMaxLinearEquationSolverSettings<ValueType>::SolutionMethod const& IterativeMinMaxLinearEquationSolverSettings<ValueType>::getSolutionMethod() const {
-            return solutionMethod;
-        }
-        
-        template<typename ValueType>
-        uint64_t IterativeMinMaxLinearEquationSolverSettings<ValueType>::getMaximalNumberOfIterations() const {
-            return maximalNumberOfIterations;
-        }
-        
-        template<typename ValueType>
-        ValueType IterativeMinMaxLinearEquationSolverSettings<ValueType>::getPrecision() const {
-            return precision;
-        }
-        
-        template<typename ValueType>
-        bool IterativeMinMaxLinearEquationSolverSettings<ValueType>::getRelativeTerminationCriterion() const {
-            return relative;
-        }
-        
-        template<typename ValueType>
-        MultiplicationStyle IterativeMinMaxLinearEquationSolverSettings<ValueType>::getValueIterationMultiplicationStyle() const {
-            return valueIterationMultiplicationStyle;
-        }
-        
-        template<typename ValueType>
-        bool IterativeMinMaxLinearEquationSolverSettings<ValueType>::getForceSoundness() const {
-            return forceSoundness;
-        }
-    
-        template<typename ValueType>
-        IterativeMinMaxLinearEquationSolver<ValueType>::IterativeMinMaxLinearEquationSolver(std::unique_ptr<LinearEquationSolverFactory<ValueType>>&& linearEquationSolverFactory, IterativeMinMaxLinearEquationSolverSettings<ValueType> const& settings) : StandardMinMaxLinearEquationSolver<ValueType>(std::move(linearEquationSolverFactory)), settings(settings) {
+        IterativeMinMaxLinearEquationSolver<ValueType>::IterativeMinMaxLinearEquationSolver(std::unique_ptr<LinearEquationSolverFactory<ValueType>>&& linearEquationSolverFactory) : StandardMinMaxLinearEquationSolver<ValueType>(std::move(linearEquationSolverFactory)) {
             // Intentionally left empty
         }
         
         template<typename ValueType>
-        IterativeMinMaxLinearEquationSolver<ValueType>::IterativeMinMaxLinearEquationSolver(storm::storage::SparseMatrix<ValueType> const& A, std::unique_ptr<LinearEquationSolverFactory<ValueType>>&& linearEquationSolverFactory, IterativeMinMaxLinearEquationSolverSettings<ValueType> const& settings) : StandardMinMaxLinearEquationSolver<ValueType>(A, std::move(linearEquationSolverFactory)), settings(settings) {
+        IterativeMinMaxLinearEquationSolver<ValueType>::IterativeMinMaxLinearEquationSolver(storm::storage::SparseMatrix<ValueType> const& A, std::unique_ptr<LinearEquationSolverFactory<ValueType>>&& linearEquationSolverFactory) : StandardMinMaxLinearEquationSolver<ValueType>(A, std::move(linearEquationSolverFactory)) {
             // Intentionally left empty.
         }
         
         template<typename ValueType>
-        IterativeMinMaxLinearEquationSolver<ValueType>::IterativeMinMaxLinearEquationSolver(storm::storage::SparseMatrix<ValueType>&& A, std::unique_ptr<LinearEquationSolverFactory<ValueType>>&& linearEquationSolverFactory, IterativeMinMaxLinearEquationSolverSettings<ValueType> const& settings) : StandardMinMaxLinearEquationSolver<ValueType>(std::move(A), std::move(linearEquationSolverFactory)), settings(settings) {
+        IterativeMinMaxLinearEquationSolver<ValueType>::IterativeMinMaxLinearEquationSolver(storm::storage::SparseMatrix<ValueType>&& A, std::unique_ptr<LinearEquationSolverFactory<ValueType>>&& linearEquationSolverFactory) : StandardMinMaxLinearEquationSolver<ValueType>(std::move(A), std::move(linearEquationSolverFactory)) {
             // Intentionally left empty.
         }
         
         template<typename ValueType>
-        bool IterativeMinMaxLinearEquationSolver<ValueType>::internalSolveEquations(OptimizationDirection dir, std::vector<ValueType>& x, std::vector<ValueType> const& b) const {
+        bool IterativeMinMaxLinearEquationSolver<ValueType>::internalSolveEquations(Environment const& env, OptimizationDirection dir, std::vector<ValueType>& x, std::vector<ValueType> const& b) const {
             bool result = false;
-            switch (this->getSettings().getSolutionMethod()) {
-                case IterativeMinMaxLinearEquationSolverSettings<ValueType>::SolutionMethod::ValueIteration:
-                    if (this->getSettings().getForceSoundness()) {
-                        result = solveEquationsSoundValueIteration(dir, x, b);
+            switch (env.solver().minMax().getMethod()) {
+                case MinMaxMethod::ValueIteration:
+                    if (env.solver().isForceSoundness()) {
+                        result = solveEquationsSoundValueIteration(env, dir, x, b);
                     } else {
-                        result = solveEquationsValueIteration(dir, x, b);
+                        result = solveEquationsValueIteration(env, dir, x, b);
                     }
                     break;
-                case IterativeMinMaxLinearEquationSolverSettings<ValueType>::SolutionMethod::PolicyIteration:
-                    result = solveEquationsPolicyIteration(dir, x, b);
+                case MinMaxMethod::PolicyIteration:
+                    result = solveEquationsPolicyIteration(env, dir, x, b);
                     break;
-                case IterativeMinMaxLinearEquationSolverSettings<ValueType>::SolutionMethod::RationalSearch:
-                    result = solveEquationsRationalSearch(dir, x, b);
+                case MinMaxMethod::RationalSearch:
+                    result = solveEquationsRationalSearch(env, dir, x, b);
                     break;
                 default:
-                    STORM_LOG_THROW(false, storm::exceptions::InvalidSettingsException, "This solver does not implement the selected solution method");
+                    STORM_LOG_THROW(false, storm::exceptions::InvalidEnvironmentException, "This solver does not implement the selected solution method");
             }
             
             return result;
@@ -253,23 +166,32 @@ namespace storm {
             }
         }
 
-        template<typename ValueType>
-        ValueType IterativeMinMaxLinearEquationSolver<ValueType>::getPrecision() const {
-            return this->getSettings().getPrecision();
-        }
-
-        template<typename ValueType>
-        bool IterativeMinMaxLinearEquationSolver<ValueType>::getRelative() const {
-            return this->getSettings().getRelativeTerminationCriterion();
+        MinMaxMethod getMethod(Environment const& env, bool isExactMode) {
+            // Adjust the method if none was specified and we are using rational numbers.
+            auto method = env.solver().minMax().getMethod();
+            
+            if (isExactMode && method != MinMaxMethod::PolicyIteration || method != MinMaxMethod::RationalSearch) {
+                if (env.solver().minMax().isMethodSetFromDefault()) {
+                    STORM_LOG_INFO("Selecting 'Policy iteration' as the solution technique to guarantee exact results. If you want to override this, please explicitly specify a different method.");
+                    method = MinMaxMethod::PolicyIteration;
+                } else {
+                    STORM_LOG_WARN("The selected solution method does not guarantee exact results.");
+                }
+            }
+    
+            STORM_LOG_THROW(method == MinMaxMethod::ValueIteration || method == MinMaxMethod::PolicyIteration || method == MinMaxMethod::RationalSearch, storm::exceptions::InvalidEnvironmentException, "This solver does not support the selected method.");
+            
+            return method;
         }
         
         template<typename ValueType>
-        MinMaxLinearEquationSolverRequirements IterativeMinMaxLinearEquationSolver<ValueType>::getRequirements(boost::optional<storm::solver::OptimizationDirection> const& direction) const {
+        MinMaxLinearEquationSolverRequirements IterativeMinMaxLinearEquationSolver<ValueType>::getRequirements(Environment const& env, boost::optional<storm::solver::OptimizationDirection> const& direction) const {
             // Start by copying the requirements of the linear equation solver.
             MinMaxLinearEquationSolverRequirements requirements(this->linearEquationSolverFactory->getRequirements());
 
-            if (this->getSettings().getSolutionMethod() == IterativeMinMaxLinearEquationSolverSettings<ValueType>::SolutionMethod::ValueIteration) {
-                if (this->getSettings().getForceSoundness()) {
+            auto method = getMethod(env, std::is_same<ValueType, storm::RationalNumber>::value);
+            if (method == MinMaxMethod::ValueIteration) {
+                if (env.solver().isForceSoundness()) {
                     // Interval iteration requires a unique solution and lower+upper bounds
                     if (!this->hasUniqueSolution()) {
                         requirements.requireNoEndComponents();
@@ -289,26 +211,26 @@ namespace storm {
                         }
                     }
                 }
-            } else if (this->getSettings().getSolutionMethod() == IterativeMinMaxLinearEquationSolverSettings<ValueType>::SolutionMethod::RationalSearch) {
+            } else if (method == MinMaxMethod::RationalSearch) {
                 // Rational search needs to approach the solution from below.
                 requirements.requireLowerBounds();
                 // The solution needs to be unique in case of minimizing or in cases where we want a scheduler.
                 if (!this->hasUniqueSolution() && (!direction || direction.get() == OptimizationDirection::Minimize || this->isTrackSchedulerSet())) {
                     requirements.requireNoEndComponents();
                 }
-            } else if (this->getSettings().getSolutionMethod() == IterativeMinMaxLinearEquationSolverSettings<ValueType>::SolutionMethod::PolicyIteration) {
+            } else if (method == MinMaxMethod::PolicyIteration) {
                 if (!this->hasUniqueSolution()) {
                     requirements.requireValidInitialScheduler();
                 }
             } else {
-                STORM_LOG_THROW(false, storm::exceptions::InvalidSettingsException, "Unsupported technique for iterative MinMax linear equation solver.");
+                STORM_LOG_THROW(false, storm::exceptions::InvalidEnvironmentException, "Unsupported technique for iterative MinMax linear equation solver.");
             }
         
             return requirements;
         }
 
         template<typename ValueType>
-        typename IterativeMinMaxLinearEquationSolver<ValueType>::ValueIterationResult IterativeMinMaxLinearEquationSolver<ValueType>::performValueIteration(OptimizationDirection dir, std::vector<ValueType>*& currentX, std::vector<ValueType>*& newX, std::vector<ValueType> const& b, ValueType const& precision, bool relative, SolverGuarantee const& guarantee, uint64_t currentIterations) const {
+        typename IterativeMinMaxLinearEquationSolver<ValueType>::ValueIterationResult IterativeMinMaxLinearEquationSolver<ValueType>::performValueIteration(OptimizationDirection dir, std::vector<ValueType>*& currentX, std::vector<ValueType>*& newX, std::vector<ValueType> const& b, ValueType const& precision, bool relative, SolverGuarantee const& guarantee, uint64_t currentIterations, storm::solver::MultiplicationStyle const& multiplicationStyle) const {
             
             STORM_LOG_ASSERT(currentX != newX, "Vectors must not be aliased.");
             
@@ -316,7 +238,7 @@ namespace storm {
             storm::solver::LinearEquationSolver<ValueType> const& linearEquationSolver = *this->linEqSolverA;
             
             // Allow aliased multiplications.
-            bool useGaussSeidelMultiplication = linearEquationSolver.supportsGaussSeidelMultiplication() && settings.getValueIterationMultiplicationStyle() == storm::solver::MultiplicationStyle::GaussSeidel;
+            bool useGaussSeidelMultiplication = linearEquationSolver.supportsGaussSeidelMultiplication() && multiplicationStyle == storm::solver::MultiplicationStyle::GaussSeidel;
             
             // Proceed with the iterations as long as the method did not converge or reach the maximum number of iterations.
             uint64_t iterations = currentIterations;
@@ -357,7 +279,7 @@ namespace storm {
         }
         
         template<typename ValueType>
-        bool IterativeMinMaxLinearEquationSolver<ValueType>::solveEquationsValueIteration(OptimizationDirection dir, std::vector<ValueType>& x, std::vector<ValueType> const& b) const {
+        bool IterativeMinMaxLinearEquationSolver<ValueType>::solveEquationsValueIteration(Environment const& env, OptimizationDirection dir, std::vector<ValueType>& x, std::vector<ValueType> const& b) const {
             if (!this->linEqSolverA) {
                 this->linEqSolverA = this->linearEquationSolverFactory->create(*this->A);
                 this->linEqSolverA->setCachingEnabled(true);
@@ -411,7 +333,7 @@ namespace storm {
             std::vector<ValueType>* currentX = &x;
             
             this->startMeasureProgress();
-            ValueIterationResult result = performValueIteration(dir, currentX, newX, b, this->getSettings().getPrecision(), this->getSettings().getRelativeTerminationCriterion(), guarantee, 0);
+            ValueIterationResult result = performValueIteration(dir, currentX, newX, b, env.solver().minMax().getPrecision(), env.solver().minMax().getRelativeTerminationCriterion(), guarantee, 0);
 
             // Swap the result into the output x.
             if (currentX == auxiliaryRowGroupVector.get()) {
@@ -464,7 +386,7 @@ namespace storm {
          * Model Checker: Interval Iteration for Markov Decision Processes, CAV 2017).
          */
         template<typename ValueType>
-        bool IterativeMinMaxLinearEquationSolver<ValueType>::solveEquationsSoundValueIteration(OptimizationDirection dir, std::vector<ValueType>& x, std::vector<ValueType> const& b) const {
+        bool IterativeMinMaxLinearEquationSolver<ValueType>::solveEquationsSoundValueIteration(Environment const& env, OptimizationDirection dir, std::vector<ValueType>& x, std::vector<ValueType> const& b, storm::solver::MultiplicationStyle const& multiplicationStyle) const {
             STORM_LOG_THROW(this->hasUpperBound(), storm::exceptions::UnmetRequirementException, "Solver requires upper bound, but none was given.");
 
             if (!this->linEqSolverA) {
@@ -477,7 +399,7 @@ namespace storm {
             }
             
             // Allow aliased multiplications.
-            bool useGaussSeidelMultiplication = this->linEqSolverA->supportsGaussSeidelMultiplication() && settings.getValueIterationMultiplicationStyle() == storm::solver::MultiplicationStyle::GaussSeidel;
+            bool useGaussSeidelMultiplication = this->linEqSolverA->supportsGaussSeidelMultiplication() && env.solver().minMax().getMultiplicationStyle() == storm::solver::MultiplicationStyle::GaussSeidel;
             
             std::vector<ValueType>* lowerX = &x;
             this->createLowerBoundsVector(*lowerX);
@@ -502,12 +424,13 @@ namespace storm {
             }
             ValueType maxLowerDiff = storm::utility::zero<ValueType>();
             ValueType maxUpperDiff = storm::utility::zero<ValueType>();
-            ValueType precision = static_cast<ValueType>(this->getSettings().getPrecision());
-            if (!this->getSettings().getRelativeTerminationCriterion()) {
+            bool relative = env.solver().minMax().getRelativeTerminationCriterion();
+            ValueType precision = storm::utility::convertNumber<ValueType>(env.solver().minMax().getPrecision())
+            if (!relative) {
                 precision *= storm::utility::convertNumber<ValueType>(2.0);
             }
             this->startMeasureProgress();
-            while (status == SolverStatus::InProgress && iterations < this->getSettings().getMaximalNumberOfIterations()) {
+            while (status == SolverStatus::InProgress && iterations < env.solver().minMax().getMaximalNumberOfIterations()) {
                 // Remember in which directions we took steps in this iteration.
                 bool lowerStep = false;
                 bool upperStep = false;
@@ -590,9 +513,9 @@ namespace storm {
                 if (doConvergenceCheck) {
                     // Determine whether the method converged.
                     if (this->hasRelevantValues()) {
-                        status = storm::utility::vector::equalModuloPrecision<ValueType>(*lowerX, *upperX, this->getRelevantValues(), precision, this->getSettings().getRelativeTerminationCriterion()) ? SolverStatus::Converged : status;
+                        status = storm::utility::vector::equalModuloPrecision<ValueType>(*lowerX, *upperX, this->getRelevantValues(), precision, relative) ? SolverStatus::Converged : status;
                     } else {
-                        status = storm::utility::vector::equalModuloPrecision<ValueType>(*lowerX, *upperX, precision, this->getSettings().getRelativeTerminationCriterion()) ? SolverStatus::Converged : status;
+                        status = storm::utility::vector::equalModuloPrecision<ValueType>(*lowerX, *upperX, precision, relative) ? SolverStatus::Converged : status;
                     }
                 }
                 
@@ -690,7 +613,7 @@ namespace storm {
 
         template<typename ValueType>
         template<typename ImpreciseType>
-        typename std::enable_if<std::is_same<ValueType, ImpreciseType>::value && !NumberTraits<ValueType>::IsExact, bool>::type IterativeMinMaxLinearEquationSolver<ValueType>::solveEquationsRationalSearchHelper(OptimizationDirection dir, std::vector<ValueType>& x, std::vector<ValueType> const& b) const {
+        typename std::enable_if<std::is_same<ValueType, ImpreciseType>::value && !NumberTraits<ValueType>::IsExact, bool>::type IterativeMinMaxLinearEquationSolver<ValueType>::solveEquationsRationalSearchHelper(Environment const& env, OptimizationDirection dir, std::vector<ValueType>& x, std::vector<ValueType> const& b) const {
             // Version for when the overall value type is imprecise.
 
             // Create a rational representation of the input so we can check for a proper solution later.
@@ -708,7 +631,7 @@ namespace storm {
             }
             
             // Forward the call to the core rational search routine.
-            bool converged = solveEquationsRationalSearchHelper<storm::RationalNumber, ImpreciseType>(dir, *this, rationalA, rationalX, rationalB, *this->A, x, b, *auxiliaryRowGroupVector);
+            bool converged = solveEquationsRationalSearchHelper<storm::RationalNumber, ImpreciseType>(env, dir, *this, rationalA, rationalX, rationalB, *this->A, x, b, *auxiliaryRowGroupVector);
             
             // Translate back rational result to imprecise result.
             auto targetIt = x.begin();
@@ -725,7 +648,7 @@ namespace storm {
         
         template<typename ValueType>
         template<typename ImpreciseType>
-        typename std::enable_if<std::is_same<ValueType, ImpreciseType>::value && NumberTraits<ValueType>::IsExact, bool>::type IterativeMinMaxLinearEquationSolver<ValueType>::solveEquationsRationalSearchHelper(OptimizationDirection dir, std::vector<ValueType>& x, std::vector<ValueType> const& b) const {
+        typename std::enable_if<std::is_same<ValueType, ImpreciseType>::value && NumberTraits<ValueType>::IsExact, bool>::type IterativeMinMaxLinearEquationSolver<ValueType>::solveEquationsRationalSearchHelper(Environment const& env, OptimizationDirection dir, std::vector<ValueType>& x, std::vector<ValueType> const& b) const {
             // Version for when the overall value type is exact and the same type is to be used for the imprecise part.
             
             if (!this->linEqSolverA) {
@@ -738,7 +661,7 @@ namespace storm {
             }
             
             // Forward the call to the core rational search routine.
-            bool converged = solveEquationsRationalSearchHelper<ValueType, ImpreciseType>(dir, *this, *this->A, x, b, *this->A, *auxiliaryRowGroupVector, b, x);
+            bool converged = solveEquationsRationalSearchHelper<ValueType, ImpreciseType>(env, dir, *this, *this->A, x, b, *this->A, *auxiliaryRowGroupVector, b, x);
 
             if (!this->isCachingEnabled()) {
                 this->clearCache();
@@ -749,7 +672,7 @@ namespace storm {
 
         template<typename ValueType>
         template<typename ImpreciseType>
-        typename std::enable_if<!std::is_same<ValueType, ImpreciseType>::value, bool>::type IterativeMinMaxLinearEquationSolver<ValueType>::solveEquationsRationalSearchHelper(OptimizationDirection dir, std::vector<ValueType>& x, std::vector<ValueType> const& b) const {
+        typename std::enable_if<!std::is_same<ValueType, ImpreciseType>::value, bool>::type IterativeMinMaxLinearEquationSolver<ValueType>::solveEquationsRationalSearchHelper(Environment const& env, OptimizationDirection dir, std::vector<ValueType>& x, std::vector<ValueType> const& b) const {
             // Version for when the overall value type is exact and the imprecise one is not. We first try to solve the
             // problem using the imprecise data type and fall back to the exact type as needed.
             
@@ -786,7 +709,7 @@ namespace storm {
             bool converged = false;
             try {
                 // Forward the call to the core rational search routine.
-                converged = solveEquationsRationalSearchHelper<ValueType, ImpreciseType>(dir, impreciseSolver, *this->A, x, b, impreciseA, impreciseX, impreciseB, impreciseTmpX);
+                converged = solveEquationsRationalSearchHelper<ValueType, ImpreciseType>(env, dir, impreciseSolver, *this->A, x, b, impreciseA, impreciseX, impreciseB, impreciseTmpX);
             } catch (storm::exceptions::PrecisionExceededException const& e) {
                 STORM_LOG_WARN("Precision of value type was exceeded, trying to recover by switching to rational arithmetic.");
                 
@@ -812,7 +735,7 @@ namespace storm {
                 }
                 
                 // Forward the call to the core rational search routine, but now with our value type as the imprecise value type.
-                converged = solveEquationsRationalSearchHelper<ValueType, ValueType>(dir, *this, *this->A, x, b, *this->A, *auxiliaryRowGroupVector, b, x);
+                converged = solveEquationsRationalSearchHelper<ValueType, ValueType>(env, dir, *this, *this->A, x, b, *this->A, *auxiliaryRowGroupVector, b, x);
             }
             
             if (!this->isCachingEnabled()) {
@@ -856,7 +779,7 @@ namespace storm {
         
         template<typename ValueType>
         template<typename RationalType, typename ImpreciseType>
-        bool IterativeMinMaxLinearEquationSolver<ValueType>::solveEquationsRationalSearchHelper(OptimizationDirection dir, IterativeMinMaxLinearEquationSolver<ImpreciseType> const& impreciseSolver, storm::storage::SparseMatrix<RationalType> const& rationalA, std::vector<RationalType>& rationalX, std::vector<RationalType> const& rationalB, storm::storage::SparseMatrix<ImpreciseType> const& A, std::vector<ImpreciseType>& x, std::vector<ImpreciseType> const& b, std::vector<ImpreciseType>& tmpX) const {
+        bool IterativeMinMaxLinearEquationSolver<ValueType>::solveEquationsRationalSearchHelper(Environment const& env, OptimizationDirection dir, IterativeMinMaxLinearEquationSolver<ImpreciseType> const& impreciseSolver, storm::storage::SparseMatrix<RationalType> const& rationalA, std::vector<RationalType>& rationalX, std::vector<RationalType> const& rationalB, storm::storage::SparseMatrix<ImpreciseType> const& A, std::vector<ImpreciseType>& x, std::vector<ImpreciseType> const& b, std::vector<ImpreciseType>& tmpX) const {
             
             std::vector<ImpreciseType>* currentX = &x;
             std::vector<ImpreciseType>* newX = &tmpX;
@@ -864,11 +787,11 @@ namespace storm {
             SolverStatus status = SolverStatus::InProgress;
             uint64_t overallIterations = 0;
             uint64_t valueIterationInvocations = 0;
-            ValueType precision = this->getSettings().getPrecision();
+            ValueType precision = storm::utility::convertNumber<ValueType>(env.solver().minMax().getPrecision());
             impreciseSolver.startMeasureProgress();
-            while (status == SolverStatus::InProgress && overallIterations < this->getSettings().getMaximalNumberOfIterations()) {
+            while (status == SolverStatus::InProgress && overallIterations < env.solver().minMax().getMaximalNumberOfIterations()) {
                 // Perform value iteration with the current precision.
-                typename IterativeMinMaxLinearEquationSolver<ImpreciseType>::ValueIterationResult result = impreciseSolver.performValueIteration(dir, currentX, newX, b, storm::utility::convertNumber<ImpreciseType, ValueType>(precision), this->getSettings().getRelativeTerminationCriterion(), SolverGuarantee::LessOrEqual, overallIterations);
+                typename IterativeMinMaxLinearEquationSolver<ImpreciseType>::ValueIterationResult result = impreciseSolver.performValueIteration(env, dir, currentX, newX, b, storm::utility::convertNumber<ImpreciseType, ValueType>(precision), env.solver().minMax().getRelativeTerminationCriterion(), SolverGuarantee::LessOrEqual, overallIterations);
                 
                 // At this point, the result of the imprecise value iteration is stored in the (imprecise) current x.
                 
@@ -899,7 +822,7 @@ namespace storm {
                 }
             }
             
-            if (status == SolverStatus::InProgress && overallIterations == this->getSettings().getMaximalNumberOfIterations()) {
+            if (status == SolverStatus::InProgress && overallIterations == env.solver().minMax().getMaximalNumberOfIterations()) {
                 status = SolverStatus::MaximalIterationsExceeded;
             }
             
@@ -909,8 +832,8 @@ namespace storm {
         }
 
         template<typename ValueType>
-        bool IterativeMinMaxLinearEquationSolver<ValueType>::solveEquationsRationalSearch(OptimizationDirection dir, std::vector<ValueType>& x, std::vector<ValueType> const& b) const {
-            return solveEquationsRationalSearchHelper<double>(dir, x, b);
+        bool IterativeMinMaxLinearEquationSolver<ValueType>::solveEquationsRationalSearch(Environment const& env, OptimizationDirection dir, std::vector<ValueType>& x, std::vector<ValueType> const& b) const {
+            return solveEquationsRationalSearchHelper<double>(env, dir, x, b);
         }
         
         template<typename ValueType>
@@ -944,11 +867,11 @@ namespace storm {
         }
 
         template<typename ValueType>
-        SolverStatus IterativeMinMaxLinearEquationSolver<ValueType>::updateStatusIfNotConverged(SolverStatus status, std::vector<ValueType> const& x, uint64_t iterations, SolverGuarantee const& guarantee) const {
+        SolverStatus IterativeMinMaxLinearEquationSolver<ValueType>::updateStatusIfNotConverged(Environment const& env, SolverStatus status, std::vector<ValueType> const& x, uint64_t iterations, SolverGuarantee const& guarantee) const {
             if (status != SolverStatus::Converged) {
                 if (this->hasCustomTerminationCondition() && this->getTerminationCondition().terminateNow(x, guarantee)) {
                     status = SolverStatus::TerminatedEarly;
-                } else if (iterations >= this->getSettings().getMaximalNumberOfIterations()) {
+                } else if (iterations >= env.solver().minMax().getMaximalNumberOfIterations()) {
                     status = SolverStatus::MaximalIterationsExceeded;
                 }
             }
@@ -967,16 +890,6 @@ namespace storm {
         }
         
         template<typename ValueType>
-        IterativeMinMaxLinearEquationSolverSettings<ValueType> const& IterativeMinMaxLinearEquationSolver<ValueType>::getSettings() const {
-            return settings;
-        }
-        
-        template<typename ValueType>
-        void IterativeMinMaxLinearEquationSolver<ValueType>::setSettings(IterativeMinMaxLinearEquationSolverSettings<ValueType> const& newSettings) {
-            settings = newSettings;
-        }
-        
-        template<typename ValueType>
         void IterativeMinMaxLinearEquationSolver<ValueType>::clearCache() const {
             auxiliaryRowGroupVector.reset();
             auxiliaryRowGroupVector2.reset();
@@ -985,58 +898,34 @@ namespace storm {
         }
         
         template<typename ValueType>
-        IterativeMinMaxLinearEquationSolverFactory<ValueType>::IterativeMinMaxLinearEquationSolverFactory(MinMaxMethodSelection const& method, bool trackScheduler) : StandardMinMaxLinearEquationSolverFactory<ValueType>(method, trackScheduler) {
-            settings.setSolutionMethod(this->getMinMaxMethod());
+        IterativeMinMaxLinearEquationSolverFactory<ValueType>::IterativeMinMaxLinearEquationSolverFactory() : StandardMinMaxLinearEquationSolverFactory<ValueType>() {
+            // Intentionally left empty
         }
         
         template<typename ValueType>
-        IterativeMinMaxLinearEquationSolverFactory<ValueType>::IterativeMinMaxLinearEquationSolverFactory(std::unique_ptr<LinearEquationSolverFactory<ValueType>>&& linearEquationSolverFactory, MinMaxMethodSelection const& method, bool trackScheduler) : StandardMinMaxLinearEquationSolverFactory<ValueType>(std::move(linearEquationSolverFactory), method, trackScheduler) {
-            settings.setSolutionMethod(this->getMinMaxMethod());
+        IterativeMinMaxLinearEquationSolverFactory<ValueType>::IterativeMinMaxLinearEquationSolverFactory(std::unique_ptr<LinearEquationSolverFactory<ValueType>>&& linearEquationSolverFactory) : StandardMinMaxLinearEquationSolverFactory<ValueType>(std::move(linearEquationSolverFactory)) {
+            // Intentionally left empty
         }
         
         template<typename ValueType>
-        IterativeMinMaxLinearEquationSolverFactory<ValueType>::IterativeMinMaxLinearEquationSolverFactory(EquationSolverType const& solverType, MinMaxMethodSelection const& method, bool trackScheduler) : StandardMinMaxLinearEquationSolverFactory<ValueType>(solverType, method, trackScheduler) {
-            settings.setSolutionMethod(this->getMinMaxMethod());
+        IterativeMinMaxLinearEquationSolverFactory<ValueType>::IterativeMinMaxLinearEquationSolverFactory(EquationSolverType const& solverType) : StandardMinMaxLinearEquationSolverFactory<ValueType>(solverType) {
+            // Intentionally left empty
         }
         
         template<typename ValueType>
-        std::unique_ptr<MinMaxLinearEquationSolver<ValueType>> IterativeMinMaxLinearEquationSolverFactory<ValueType>::create() const {
+        std::unique_ptr<MinMaxLinearEquationSolver<ValueType>> IterativeMinMaxLinearEquationSolverFactory<ValueType>::create(Environment const& env) const {
             STORM_LOG_ASSERT(this->linearEquationSolverFactory, "Linear equation solver factory not initialized.");
             
-            std::unique_ptr<MinMaxLinearEquationSolver<ValueType>> result = std::make_unique<IterativeMinMaxLinearEquationSolver<ValueType>>(this->linearEquationSolverFactory->clone(), settings);
-            result->setTrackScheduler(this->isTrackSchedulerSet());
+            auto method = getMethod(env, std::is_same<ValueType, storm::RationalNumber>::value);
+            std::unique_ptr<MinMaxLinearEquationSolver<ValueType>> result = std::make_unique<IterativeMinMaxLinearEquationSolver<ValueType>>(this->linearEquationSolverFactory->clone());
             result->setRequirementsChecked(this->isRequirementsCheckedSet());
             return result;
         }
         
-        template<typename ValueType>
-        IterativeMinMaxLinearEquationSolverSettings<ValueType>& IterativeMinMaxLinearEquationSolverFactory<ValueType>::getSettings() {
-            return settings;
-        }
-        
-        template<typename ValueType>
-        IterativeMinMaxLinearEquationSolverSettings<ValueType> const& IterativeMinMaxLinearEquationSolverFactory<ValueType>::getSettings() const {
-            return settings;
-        }
- 
-        template<typename ValueType>
-        void IterativeMinMaxLinearEquationSolverFactory<ValueType>::setMinMaxMethod(MinMaxMethodSelection const& newMethod) {
-            MinMaxLinearEquationSolverFactory<ValueType>::setMinMaxMethod(newMethod);
-            settings.setSolutionMethod(this->getMinMaxMethod());
-        }
-        
-        template<typename ValueType>
-        void IterativeMinMaxLinearEquationSolverFactory<ValueType>::setMinMaxMethod(MinMaxMethod const& newMethod) {
-            MinMaxLinearEquationSolverFactory<ValueType>::setMinMaxMethod(newMethod);
-            settings.setSolutionMethod(this->getMinMaxMethod());
-        }
-
-        template class IterativeMinMaxLinearEquationSolverSettings<double>;
         template class IterativeMinMaxLinearEquationSolver<double>;
         template class IterativeMinMaxLinearEquationSolverFactory<double>;
         
 #ifdef STORM_HAVE_CARL
-        template class IterativeMinMaxLinearEquationSolverSettings<storm::RationalNumber>;
         template class IterativeMinMaxLinearEquationSolver<storm::RationalNumber>;
         template class IterativeMinMaxLinearEquationSolverFactory<storm::RationalNumber>;
 #endif

@@ -5,6 +5,9 @@
 #include "storm/utility/solver.h"
 
 namespace storm {
+    
+    class Environment;
+    
     namespace solver {
         
         template<typename ValueType>
@@ -14,11 +17,11 @@ namespace storm {
             LpMinMaxLinearEquationSolver(storm::storage::SparseMatrix<ValueType> const& A, std::unique_ptr<LinearEquationSolverFactory<ValueType>>&& linearEquationSolverFactory, std::unique_ptr<storm::utility::solver::LpSolverFactory<ValueType>>&& lpSolverFactory);
             LpMinMaxLinearEquationSolver(storm::storage::SparseMatrix<ValueType>&& A, std::unique_ptr<LinearEquationSolverFactory<ValueType>>&& linearEquationSolverFactory, std::unique_ptr<storm::utility::solver::LpSolverFactory<ValueType>>&& lpSolverFactory);
             
-            virtual bool internalSolveEquations(OptimizationDirection dir, std::vector<ValueType>& x, std::vector<ValueType> const& b) const override;
+            virtual bool internalSolveEquations(Environment const& env, OptimizationDirection dir, std::vector<ValueType>& x, std::vector<ValueType> const& b) const override;
 
             virtual void clearCache() const override;
 
-            virtual MinMaxLinearEquationSolverRequirements getRequirements(boost::optional<storm::solver::OptimizationDirection> const& direction = boost::none) const override;
+            virtual MinMaxLinearEquationSolverRequirements getRequirements(Environment const& env, boost::optional<storm::solver::OptimizationDirection> const& direction = boost::none) const override;
             
         private:
             std::unique_ptr<storm::utility::solver::LpSolverFactory<ValueType>> lpSolverFactory;
@@ -27,17 +30,14 @@ namespace storm {
         template<typename ValueType>
         class LpMinMaxLinearEquationSolverFactory : public StandardMinMaxLinearEquationSolverFactory<ValueType> {
         public:
-            LpMinMaxLinearEquationSolverFactory(bool trackScheduler = false);
-            LpMinMaxLinearEquationSolverFactory(std::unique_ptr<storm::utility::solver::LpSolverFactory<ValueType>>&& lpSolverFactory, bool trackScheduler = false);
-            LpMinMaxLinearEquationSolverFactory(std::unique_ptr<LinearEquationSolverFactory<ValueType>>&& linearEquationSolverFactory, std::unique_ptr<storm::utility::solver::LpSolverFactory<ValueType>>&& lpSolverFactory, bool trackScheduler = false);
+            LpMinMaxLinearEquationSolverFactory();
+            LpMinMaxLinearEquationSolverFactory(std::unique_ptr<storm::utility::solver::LpSolverFactory<ValueType>>&& lpSolverFactory);
+            LpMinMaxLinearEquationSolverFactory(std::unique_ptr<LinearEquationSolverFactory<ValueType>>&& linearEquationSolverFactory, std::unique_ptr<storm::utility::solver::LpSolverFactory<ValueType>>&& lpSolverFactory);
             
-            virtual void setMinMaxMethod(MinMaxMethodSelection const& newMethod) override;
-            virtual void setMinMaxMethod(MinMaxMethod const& newMethod) override;
-
             // Make the other create methods visible.
             using MinMaxLinearEquationSolverFactory<ValueType>::create;
 
-            virtual std::unique_ptr<MinMaxLinearEquationSolver<ValueType>> create() const override;
+            virtual std::unique_ptr<MinMaxLinearEquationSolver<ValueType>> create(Environment const& env) const override;
 
         private:
             std::unique_ptr<storm::utility::solver::LpSolverFactory<ValueType>> lpSolverFactory;

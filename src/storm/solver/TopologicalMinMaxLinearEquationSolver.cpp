@@ -10,8 +10,6 @@
 
 #include "storm/settings/SettingsManager.h"
 #include "storm/settings/modules/CoreSettings.h"
-#include "storm/settings/modules/NativeEquationSolverSettings.h"
-#include "storm/settings/modules/TopologicalValueIterationEquationSolverSettings.h"
 
 #include "storm/utility/macros.h"
 #include "storm-config.h"
