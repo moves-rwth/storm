@@ -133,10 +133,304 @@ namespace storm {
             void SparseMarkovAutomatonCslHelper::computeBoundedReachabilityProbabilities(OptimizationDirection dir, storm::storage::SparseMatrix<ValueType> const& transitionMatrix, std::vector<ValueType> const& exitRates, storm::storage::BitVector const& goalStates, storm::storage::BitVector const& markovianNonGoalStates, storm::storage::BitVector const& probabilisticNonGoalStates, std::vector<ValueType>& markovianNonGoalValues, std::vector<ValueType>& probabilisticNonGoalValues, ValueType delta, uint64_t numberOfSteps, storm::solver::MinMaxLinearEquationSolverFactory<ValueType> const& minMaxLinearEquationSolverFactory) {
                 STORM_LOG_THROW(false, storm::exceptions::InvalidOperationException, "Computing bounded reachability probabilities is unsupported for this value type.");
             }
+            
+            template <typename ValueType, typename std::enable_if<storm::NumberTraits<ValueType>::SupportsExponential, int>::type=0>
+            void SparseMarkovAutomatonCslHelper::printTransitions(std::vector<ValueType> const& exitRateVector, storm::storage::SparseMatrix<ValueType> const& fullTransitionMatrix, storm::storage::BitVector const& markovianStates, std::vector<std::vector<ValueType>>& vd, std::vector<std::vector<ValueType>>& vu, std::vector<std::vector<ValueType>>& wu){
+                std::ofstream logfile("U+logfile.txt", std::ios::app);
                 
+                auto rowGroupIndices = fullTransitionMatrix.getRowGroupIndices();
+                auto numberOfStates = fullTransitionMatrix.getRowGroupCount();            
+
+                logfile << "number of states = num of row group count " << numberOfStates << "\n";
+                for (int i = 0; i < fullTransitionMatrix.getRowGroupCount(); i++) {
+                    logfile << " from node  " << i << " ";
+                    auto from = rowGroupIndices[i];
+                    auto to = rowGroupIndices[i+1];
+                    for (auto j = from ; j< to; j++){
+                        for (auto &v : fullTransitionMatrix.getRow(j)) {
+                            if (markovianStates[i]){
+                                logfile   << v.getValue()  *exitRateVector[i] << " -> "<< v.getColumn()  << "\t";
+                            } else {
+                                logfile   << v.getValue() << " -> "<< v.getColumn()  << "\t";
+                            }
+                        }
+                        logfile << "\n";
+                    }
+                }
+                logfile << "\n";
+
+                logfile << "vd: \n";
+                for (int i =0 ; i<vd.size(); i++){
+                    for(int j=0; j<fullTransitionMatrix.getRowGroupCount(); j++){
+                        logfile << vd[i][j] << "\t" ;
+                    }
+                    logfile << "\n";
+                }
+
+                logfile << "\nvu:\n";
+                for (int i =0 ; i<vu.size(); i++){
+                    for(int j=0; j<fullTransitionMatrix.getRowGroupCount(); j++){
+                        logfile << vu[i][j] << "\t" ;
+                    }
+                    logfile << "\n";
+                }
+
+                logfile << "\nwu\n";
+                for (int i =0 ; i<wu.size(); i++){
+                    for(int j=0; j<fullTransitionMatrix.getRowGroupCount(); j++){
+                        logfile << wu[i][j] << "\t" ;
+                    }
+                    logfile << "\n";
+                }
+
+                logfile.close();
+            }
+
+            template<typename ValueType>
+            ValueType SparseMarkovAutomatonCslHelper::poisson(ValueType lambda, uint64_t i) {
+                ValueType res = pow(lambda, i);
+                ValueType fac = 1;
+                for (long j = i ; j>0 ; j--){
+                    fac = fac *j;
+                }
+                res = res / fac ;
+                res = res * exp(-lambda);
+                return res;
+            }
+
+            template <typename ValueType, typename std::enable_if<storm::NumberTraits<ValueType>::SupportsExponential, int>::type=0>    
+            void SparseMarkovAutomatonCslHelper::calculateVu(uint64_t k, uint64_t node, ValueType lambda, std::vector<std::vector<ValueType>>& vu, std::vector<std::vector<ValueType>>& wu, storm::storage::SparseMatrix<ValueType> const& fullTransitionMatrix, storm::storage::BitVector const& markovianStates, storm::storage::BitVector const& psiStates){
+                if (vu[k][node]!=-1){return;} //dynamic programming. avoiding multiple calculation.
+                uint64_t N = vu.size()-1;
+                auto rowGroupIndices = fullTransitionMatrix.getRowGroupIndices();
+                
+                ValueType res =0;
+                for (long i = k ; i < N ; i++ ){
+                    if (wu[N-1-(i-k)][node]==-1){
+                        calculateWu((N-1-(i-k)),node,lambda,wu,fullTransitionMatrix,markovianStates,psiStates);
+                    }
+                    res+=poisson(lambda, i)*wu[N-1-(i-k)][node];
+                }
+                vu[k][node]=res;
+            }
+
+            template <typename ValueType, typename std::enable_if<storm::NumberTraits<ValueType>::SupportsExponential, int>::type=0>    
+            void SparseMarkovAutomatonCslHelper::calculateWu(uint64_t k, uint64_t node, ValueType lambda, std::vector<std::vector<ValueType>>& wu, storm::storage::SparseMatrix<ValueType> const& fullTransitionMatrix, storm::storage::BitVector const& markovianStates, storm::storage::BitVector const& psiStates){
+                if (wu[k][node]!=-1){return;} //dynamic programming. avoiding multiple calculation.
+                uint64_t N = wu.size()-1;
+                auto rowGroupIndices = fullTransitionMatrix.getRowGroupIndices();
+
+                ValueType res;
+                if (k==N){
+                    wu[k][node]=0;
+                    return;
+                }
+
+                if (psiStates[node]){
+                    wu[k][node]=1;
+                    return;
+                }
+
+                if (markovianStates[node]){
+                    res = 0;
+                    auto line = fullTransitionMatrix.getRow(rowGroupIndices[node]);
+                    for (auto &element : line){
+                        uint64_t to = element.getColumn();
+                        if (wu[k+1][to]==-1){
+                            calculateWu(k+1,to,lambda,wu,fullTransitionMatrix,markovianStates,psiStates);
+                        }
+                        res+=element.getValue()*wu[k+1][to];
+                    }
+                } else {
+                    res = 0;
+                    uint64_t rowStart = rowGroupIndices[node];
+                    uint64_t rowEnd = rowGroupIndices[node+1];
+                    for (uint64_t i = rowStart; i< rowEnd; i++){
+                        auto line = fullTransitionMatrix.getRow(i);
+                        ValueType between = 0;
+                        for (auto& element: line){
+                            uint64_t to = element.getColumn();
+                            if (to==node){
+                                continue;
+                            }
+                            if (wu[k][to]==-1){
+                                calculateWu(k,to,lambda,wu,fullTransitionMatrix,markovianStates,psiStates);
+                            }
+                            between+=element.getValue()*wu[k][to];
+                        }
+                        if (between > res){
+                            res = between;
+                        }
+                    }
+                } // end no goal-prob state
+                
+                wu[k][node]=res;
+            }
+
+            template <typename ValueType, typename std::enable_if<storm::NumberTraits<ValueType>::SupportsExponential, int>::type=0>    
+            void SparseMarkovAutomatonCslHelper::calculateVd(uint64_t k, uint64_t node, ValueType lambda, std::vector<std::vector<ValueType>>& vd, storm::storage::SparseMatrix<ValueType> const& fullTransitionMatrix, storm::storage::BitVector const& markovianStates, storm::storage::BitVector const& psiStates){
+               
+                std::ofstream logfile("U+logfile.txt", std::ios::app);
+
+                if (vd[k][node]!=-1){return;} //dynamic programming. avoiding multiple calculation.
+                logfile << "calculating vd for k = " << k << " node "<< node << " \t";
+                uint64_t N = vd.size()-1;
+                auto rowGroupIndices = fullTransitionMatrix.getRowGroupIndices();
+
+                ValueType res;
+                if (k==N){
+                    logfile << "k == N! res = 0\n";
+                    vd[k][node]=0;
+                    return;
+                }
+                
+                //goal state
+                if (psiStates[node]){
+                    res = 0;
+                    for (uint64_t i = k ; i<N ; i++){
+                        res+=poisson(lambda,i);
+                    }
+                    vd[k][node]=res;
+                    logfile << "goal state node " << node << " res = " << res << "\n";
+                    return;
+                }
+
+                // no-goal markovian state
+                if (markovianStates[node]){
+                    logfile << "markovian state: ";
+                    res = 0;
+                    auto line = fullTransitionMatrix.getRow(rowGroupIndices[node]);
+                    for (auto &element : line){
+                        uint64_t to = element.getColumn();
+                        if (vd[k+1][to]==-1){
+                            calculateVd(k+1,to,lambda,vd, fullTransitionMatrix, markovianStates,psiStates);
+                        }
+                        res+=element.getValue()*vd[k+1][to];
+                    }
+                } else { //no-goal prob state
+                    logfile << "prob state: ";
+                    res = 0;
+                    uint64_t rowStart = rowGroupIndices[node];
+                    uint64_t rowEnd = rowGroupIndices[node+1];
+                    for (uint64_t i = rowStart; i< rowEnd; i++){
+                        auto line = fullTransitionMatrix.getRow(i);
+                        ValueType between = 0;
+                        for (auto& element: line){
+                            uint64_t to = element.getColumn();
+                            if (to==node){
+                                logfile << "ignoring self loops for now";
+                                continue;
+                            }
+                            if (vd[k][to]==-1){
+                                calculateVd(k,to,lambda,vd, fullTransitionMatrix, markovianStates,psiStates);
+                            }
+                            between+=element.getValue()*vd[k][to];
+                        }
+                        if (between > res){
+                                res = between;
+                        }
+                    }
+                } 
+                vd[k][node]=res;
+                logfile << " res = " << res << "\n";
+            }
+
+            template <typename ValueType, typename std::enable_if<storm::NumberTraits<ValueType>::SupportsExponential, int>::type>
+            std::vector<ValueType> SparseMarkovAutomatonCslHelper::unifPlus( std::pair<double, double> const& boundsPair, std::vector<ValueType> const& exitRateVector, storm::storage::SparseMatrix<ValueType> const& transitionMatrix, storm::storage::BitVector const& markovianStates, storm::storage::BitVector const& psiStates){
+                std::ofstream logfile("U+logfile.txt", std::ios::app);
+                ValueType maxNorm = 0;
+
+                //bitvectors to identify different kind of states
+                storm::storage::BitVector const &markovianNonGoalStates = markovianStates & ~psiStates;
+                storm::storage::BitVector const &probabilisticNonGoalStates = ~markovianStates & ~psiStates;
+                storm::storage::BitVector const &allStates = markovianStates | ~markovianStates;
+
+                //vectors to save calculation
+                std::vector<std::vector<ValueType>> vd,vu,wu;
+
+                //transition matrix with diagonal entries. The values can be changed during uniformisation
+                typename storm::storage::SparseMatrix<ValueType> fullTransitionMatrix = transitionMatrix.getSubmatrix(true, allStates , allStates , true);
+                auto rowGroupIndices = fullTransitionMatrix.getRowGroupIndices();
+                std::vector<ValueType> exitRate{exitRateVector};
+
+                //(1) define horizon, epsilon, kappa , N, lambda,
+                double T = boundsPair.second;
+                ValueType kappa = storm::utility::one<ValueType>() /10; // would be better as option-parameter
+                uint64_t numberOfStates = fullTransitionMatrix.getRowGroupCount();
+                ValueType epsilon = storm::settings::getModule<storm::settings::modules::GeneralSettings>().getPrecision();
+                ValueType lambda = exitRateVector[0];
+                for (ValueType act: exitRateVector) {
+                    lambda = std::max(act, lambda);
+                }
+                uint64_t N;
+
+
+                // while not close enough to precision:
+                do {
+                    // (2) update parameter
+                    N = ceil(lambda*T*exp(2)-log(kappa*epsilon));
+
+                    // (3) uniform  - just applied to markovian states
+                    for (int i = 0; i < fullTransitionMatrix.getRowGroupCount(); i++) {
+                        if (!markovianStates[i]) {
+                            continue;
+                        }
+                        uint64_t from = rowGroupIndices[i]; //markovian state -> no Nondeterminism -> only one row
+
+                        if (exitRate[i] == lambda) {
+                            continue; //already unified
+                        }
+
+                        auto line = fullTransitionMatrix.getRow(from);
+                        ValueType exitOld = exitRate[i];
+                        ValueType exitNew = lambda;
+                        for (auto &v : line) {
+                            if (v.getColumn() == i) { //diagonal element
+                                ValueType newSelfLoop = exitNew - exitOld + v.getValue();
+                                ValueType newRate = newSelfLoop / exitNew;
+                                v.setValue(newRate);
+                            } else { //modify probability
+                                ValueType propOld = v.getValue();
+                                ValueType propNew = propOld * exitOld / exitNew;
+                                v.setValue(propNew);
+                            }
+                        }
+                        exitRate[i] = exitNew;
+                    }
+                       
+                    // (4) define vectors/matrices
+                    std::vector<ValueType> init(numberOfStates, -1);
+                    vd = std::vector<std::vector<ValueType>> (N + 1, init);
+                    vu = std::vector<std::vector<ValueType>> (N + 1, init);
+                    wu = std::vector<std::vector<ValueType>> (N + 1, init);
+                    
+                    printTransitions(exitRate, fullTransitionMatrix, markovianStates,vd,vu,wu); // TODO: delete when develepmont is finished
+
+                    // (5) calculate vectors and maxNorm
+                    for (uint64_t i = 0; i < numberOfStates; i++) {
+                        for (uint64_t k = N; k <= N; k--) {
+                                calculateVd(k, i, T*lambda, vd, fullTransitionMatrix, markovianStates, psiStates);
+                                calculateWu(k, i, T*lambda, wu, fullTransitionMatrix, markovianStates, psiStates);
+                                calculateVu(k, i, T*lambda, vu, wu, fullTransitionMatrix, markovianStates, psiStates);
+                                //also use iteration to keep maxNorm of vd and vu up to date, so the loop-condition is easy to prove
+                                ValueType diff = std::abs(vd[k][i]-vu[k][i]);
+                                maxNorm  = std::max(maxNorm, diff);
+                            }
+                    }
+                    printTransitions(exitRate, fullTransitionMatrix, markovianStates,vd,vu,wu); // TODO: delete when development is finished
+
+
+                    // (6) double lambda 
+                    lambda=2*lambda;
+
+                } while (maxNorm>epsilon*(1-kappa));
+                return vd[0];
+            }
+
             template <typename ValueType, typename std::enable_if<storm::NumberTraits<ValueType>::SupportsExponential, int>::type>
             std::vector<ValueType> SparseMarkovAutomatonCslHelper::computeBoundedUntilProbabilities(OptimizationDirection dir, storm::storage::SparseMatrix<ValueType> const& transitionMatrix, std::vector<ValueType> const& exitRateVector, storm::storage::BitVector const& markovianStates, storm::storage::BitVector const& psiStates, std::pair<double, double> const& boundsPair, storm::solver::MinMaxLinearEquationSolverFactory<ValueType> const& minMaxLinearEquationSolverFactory) {
-
+                return unifPlus(boundsPair, exitRateVector, transitionMatrix, markovianStates, psiStates);                
+                /*
                 uint64_t numberOfStates = transitionMatrix.getRowGroupCount();
                
                 // 'Unpack' the bounds to make them more easily accessible.
@@ -195,7 +489,7 @@ namespace storm {
                     storm::utility::vector::setVectorValues(result, probabilisticNonGoalStates, vProbabilistic);
                     storm::utility::vector::setVectorValues(result, markovianNonGoalStates, vMarkovian);
                     return result;
-                }
+                }*/
             }
               
             template <typename ValueType, typename std::enable_if<!storm::NumberTraits<ValueType>::SupportsExponential, int>::type>
