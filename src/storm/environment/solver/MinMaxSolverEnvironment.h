@@ -10,6 +10,7 @@ namespace storm {
     public:
         
         MinMaxSolverEnvironment();
+        ~MinMaxSolverEnvironment();
         
         storm::solver::MinMaxMethod const& getMethod() const;
         bool const& isMethodSetFromDefault() const;

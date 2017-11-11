@@ -14,6 +14,7 @@ namespace storm {
     public:
         
         SolverEnvironment();
+        ~SolverEnvironment();
         
 //        EigenSolverEnvironment& eigen();
 //        EigenSolverEnvironment const& eigen() const;

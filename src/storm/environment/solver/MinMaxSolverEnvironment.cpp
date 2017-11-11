@@ -21,6 +21,11 @@ namespace storm {
         multiplicationStyle = minMaxSettings.getValueIterationMultiplicationStyle();
     }
 
+    MinMaxSolverEnvironment::~MinMaxSolverEnvironment() {
+        // Intentionally left empty
+    }
+
+    
     storm::solver::MinMaxMethod const& MinMaxSolverEnvironment::getMethod() const {
         return minMaxMethod;
     }

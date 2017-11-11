@@ -13,7 +13,7 @@ namespace storm {
         
         Environment();
         
-        virtual ~Environment() = default;
+        virtual ~Environment();
 
         SolverEnvironment& solver();
         SolverEnvironment const& solver() const;

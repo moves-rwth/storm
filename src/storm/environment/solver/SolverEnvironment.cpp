@@ -10,6 +10,9 @@ namespace storm {
 //        nativeSolverEnvironment(std::make_unique<NativeSolverEnvironment>()) {
     { }
     
+    SolverEnvironment::~SolverEnvironment() {
+        // Intentionally left empty
+    }
     
     MinMaxSolverEnvironment& SolverEnvironment::minMax() {
         return *minMaxSolverEnvironment;

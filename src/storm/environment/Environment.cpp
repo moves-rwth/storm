@@ -9,6 +9,10 @@ namespace storm {
         // Intentionally left empty.
     }
     
+    Environment::~Environment() {
+        // Intentionally left empty.
+    }
+    
     SolverEnvironment& Environment::solver() {
         return *solverEnvironment;
     }
