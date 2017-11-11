@@ -12,6 +12,7 @@ namespace storm {
     public:
         
         Environment();
+        Environment(Environment const& other);
         
         virtual ~Environment();
 

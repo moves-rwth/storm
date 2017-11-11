@@ -9,6 +9,11 @@ namespace storm {
         // Intentionally left empty.
     }
     
+    Environment::Environment(Environment const& other) :
+            solverEnvironment(new SolverEnvironment(*other.solverEnvironment)) {
+        // Intentionally left empty.
+    }
+
     Environment::~Environment() {
         // Intentionally left empty.
     }
