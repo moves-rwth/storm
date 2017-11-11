@@ -1,11 +1,12 @@
-#ifndef STORM_MODELCHECKER_MULTIOBJECTIVE_PCAA_SPARSEPCAAWEIGHTVECTORCHECKER_H_
-#define STORM_MODELCHECKER_MULTIOBJECTIVE_PCAA_SPARSEPCAAWEIGHTVECTORCHECKER_H_
-
+#pragma once
 
 #include "storm/storage/BitVector.h"
 #include "storm/storage/SparseMatrix.h"
 #include "storm/storage/Scheduler.h"
+#include "storm/transformer/EndComponentEliminator.h"
 #include "storm/modelchecker/multiobjective/Objective.h"
+#include "storm/modelchecker/multiobjective/pcaa/PcaaWeightVectorChecker.h"
+#include "storm/modelchecker/multiobjective/SparseMultiObjectivePreprocessorResult.h"
 #include "storm/utility/vector.h"
 
 namespace storm {
@@ -19,7 +20,7 @@ namespace storm {
              * - computes for each objective the value induced by this scheduler
              */
             template <class SparseModelType>
-            class SparsePcaaWeightVectorChecker {
+            class SparsePcaaWeightVectorChecker : public PcaaWeightVectorChecker<SparseModelType> {
             public:
                 typedef typename SparseModelType::ValueType ValueType;
                 
@@ -33,10 +34,7 @@ namespace storm {
                  *
                  */
                 
-                SparsePcaaWeightVectorChecker(SparseModelType const& model,
-                                                        std::vector<Objective<ValueType>> const& objectives,
-                                                        storm::storage::BitVector const& possibleECActions,
-                                                        storm::storage::BitVector const& possibleBottomStates);
+                SparsePcaaWeightVectorChecker(SparseMultiObjectivePreprocessorResult<SparseModelType> const& preprocessorResult);
                 
                 virtual ~SparsePcaaWeightVectorChecker() = default;
                 
@@ -45,7 +43,7 @@ namespace storm {
                  * - extracts the scheduler that induces this optimum
                  * - computes for each objective the value induced by this scheduler
                  */
-                void check(std::vector<ValueType> const& weightVector);
+                virtual void check(std::vector<ValueType> const& weightVector) override;
                 
                 /*!
                  * Retrieves the results of the individual objectives at the initial state of the given model.
@@ -53,46 +51,32 @@ namespace storm {
                  * Also note that there is no guarantee that the under/over approximation is in fact correct
                  * as long as the underlying solution methods are unsound (e.g., standard value iteration).
                  */
-                std::vector<ValueType> getUnderApproximationOfInitialStateResults() const;
-                std::vector<ValueType> getOverApproximationOfInitialStateResults() const;
-                
-                
-                /*!
-                 * Sets the precision of this weight vector checker. After calling check() the following will hold:
-                 * Let h_lower and h_upper be two hyperplanes such that
-                 * * the normal vector is the provided weight-vector where the entry for minimizing objectives is negated
-                 * * getUnderApproximationOfInitialStateResults() lies on h_lower and
-                 * * getOverApproximationOfInitialStateResults() lies on h_upper.
-                 * Then the distance between the two hyperplanes is at most weightedPrecision
-                 */
-                void setWeightedPrecision(ValueType const& weightedPrecision);
-                
-                /*!
-                 * Returns the precision of this weight vector checker.
-                 */
-                ValueType const& getWeightedPrecision() const;
+                virtual std::vector<ValueType> getUnderApproximationOfInitialStateResults() const override;
+                virtual std::vector<ValueType> getOverApproximationOfInitialStateResults() const override;
                 
                 /*!
                  * Retrieves a scheduler that induces the current values
                  * Note that check(..) has to be called before retrieving the scheduler. Otherwise, an exception is thrown.
                  * Also note that (currently) the scheduler only supports unbounded objectives.
                  */
-                storm::storage::Scheduler<ValueType> computeScheduler() const;
+                virtual storm::storage::Scheduler<ValueType> computeScheduler() const override;
                 
                 
             protected:
                 
+                void initialize(SparseMultiObjectivePreprocessorResult<SparseModelType> const& preprocessorResult);
+                virtual void initializeModelTypeSpecificData(SparseModelType const& model) = 0;
+
                 /*!
                  * Determines the scheduler that optimizes the weighted reward vector of the unbounded objectives
                  *
                  * @param weightedRewardVector the weighted rewards (only considering the unbounded objectives)
                  */
-                void unboundedWeightedPhase(std::vector<ValueType> const& weightedRewardVector, boost::optional<ValueType> const& lowerResultBound, boost::optional<ValueType> const& upperResultBound);
+                void unboundedWeightedPhase(std::vector<ValueType> const& weightedRewardVector, std::vector<ValueType> const& weightVector);
                 
                 /*!
                  * Computes the values of the objectives that do not have a stepBound w.r.t. the scheduler computed in the unboundedWeightedPhase
                  *
-                 * @param weightVector the weight vector of the current check
                  */
                 void unboundedIndividualPhase(std::vector<ValueType> const& weightVector);
                 
@@ -107,6 +91,8 @@ namespace storm {
                  */
                 virtual void boundedPhase(std::vector<ValueType> const& weightVector, std::vector<ValueType>& weightedRewardVector) = 0;
                 
+                void updateEcQuotient(std::vector<ValueType> const& weightedRewardVector);
+                
                 /*!
                  * Transforms the results of a min-max-solver that considers a reduced model (without end components) to a result for the original (unreduced) model
                  */
@@ -118,25 +104,24 @@ namespace storm {
                                                              std::vector<ValueType>& originalSolution,
                                                              std::vector<uint_fast64_t>& originalOptimalChoices) const;
                 
-                // The (preprocessed) model
-                SparseModelType const& model;
-                // The (preprocessed) objectives
-                std::vector<Objective<ValueType>> const& objectives;
                 
+                // Data regarding the given model
+                // The transition matrix of the considered model
+                storm::storage::SparseMatrix<ValueType> transitionMatrix;
+                // The initial state of the considered model
+                uint64_t initialState;
                 // Overapproximation of the set of choices that are part of an end component.
-                storm::storage::BitVector possibleECActions;
+                storm::storage::BitVector ecChoicesHint;
                 // The actions that have reward assigned for at least one objective without upper timeBound
                 storm::storage::BitVector actionsWithoutRewardInUnboundedPhase;
-                // The states for which it is allowed to visit them infinitely often
-                // Put differently, if one of the states is part of a neutral EC, it is possible to
-                // stay in this EC forever (withoud inducing infinite reward for some objective).
-                storm::storage::BitVector possibleBottomStates;
+                // The states for which there is a scheduler yielding reward 0 for each objective
+                storm::storage::BitVector reward0EStates;
+                // stores the state action rewards for each objective.
+                std::vector<std::vector<ValueType>> actionRewards;
+                
                 // stores the indices of the objectives for which there is no upper time bound
                 storm::storage::BitVector objectivesWithNoUpperTimeBound;
-                // stores the (discretized) state action rewards for each objective.
-                std::vector<std::vector<ValueType>> discreteActionRewards;
-                // stores the precision of this weight vector checker.
-                ValueType weightedPrecision;
+                
                 // Memory for the solution of the most recent call of check(..)
                 // becomes true after the first call of check(..)
                 bool checkHasBeenCalled;
@@ -151,10 +136,22 @@ namespace storm {
                 // The scheduler choices that optimize the weighted rewards of undounded objectives.
                 std::vector<uint_fast64_t> optimalChoices;
                 
+                struct EcQuotient {
+                    storm::storage::SparseMatrix<ValueType> matrix;
+                    std::vector<uint_fast64_t> ecqToOriginalChoiceMapping;
+                    std::vector<uint_fast64_t> originalToEcqStateMapping;
+                    storm::storage::BitVector origReward0Choices;
+                    
+                    std::vector<ValueType> auxStateValues;
+                    std::vector<ValueType> auxChoiceValues;
+                    
+                };
+                
+                boost::optional<EcQuotient> ecQuotient;
+                
             };
             
         }
     }
 }
 
-#endif /* STORM_MODELCHECKER_MULTIOBJECTIVE_PCAA_SPARSEPCAAWEIGHTVECTORCHECKER_H_ */

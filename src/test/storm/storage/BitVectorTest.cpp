@@ -74,6 +74,7 @@ TEST(BitVectorTest, GetAsInt) {
     vector.set(64);
     vector.set(65);
 
+    EXPECT_EQ(3ul, vector.getAsInt(0, 64));
     EXPECT_EQ(1ul, vector.getAsInt(62, 1));
     EXPECT_EQ(3ul, vector.getAsInt(62, 2));
     EXPECT_EQ(7ul, vector.getAsInt(62, 3));
@@ -353,6 +354,48 @@ TEST(BitVectorTest, Complement) {
 	for (uint_fast64_t i = 0; i < 32; ++i) {
 		ASSERT_EQ(vector1.get(i), vector2.get(i));
 	}
+}
+
+TEST(BitVectorTest, Increment) {
+	storm::storage::BitVector vector1(130, false);
+	storm::storage::BitVector vector2(130, false);
+    
+    vector1.increment();
+    EXPECT_EQ(1ull, vector1.getNumberOfSetBits());
+    vector2.set(0, true);
+    EXPECT_EQ(vector1, vector2);
+    
+    vector1.increment();
+    EXPECT_EQ(1ull, vector1.getNumberOfSetBits());
+    vector2.clear();
+    vector2.set(1, true);
+    EXPECT_EQ(vector1, vector2);
+    
+    vector1.increment();
+    EXPECT_EQ(2ull, vector1.getNumberOfSetBits());
+    vector2.set(0, true);
+    EXPECT_EQ(vector1, vector2);
+    
+    vector1.clear();
+	for (uint_fast64_t i = 0; i < 66; ++i) {
+        vector1.set(i, true);
+	}
+    vector1.increment();
+    EXPECT_EQ(1ull, vector1.getNumberOfSetBits());
+    vector2.clear();
+    vector2.set(66, true);
+    EXPECT_EQ(vector1, vector2);
+    
+    vector1.increment();
+    EXPECT_EQ(2ull, vector1.getNumberOfSetBits());
+    vector2.set(0, true);
+    EXPECT_EQ(vector1, vector2);
+    
+    vector1.clear();
+    vector1.complement();
+    EXPECT_TRUE(vector1.full());
+    vector1.increment();
+    EXPECT_TRUE(vector1.empty());
 }
 
 TEST(BitVectorTest, Implies) {

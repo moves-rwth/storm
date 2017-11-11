@@ -190,6 +190,11 @@ namespace storm {
                  * @return true, iff such a reward model existed
                  */
                 bool removeRewardModel(std::string const& rewardModelName);
+                
+                /*!
+                 * Removes all reward models whose name is not in the given set
+                 */
+                void restrictRewardModels(std::set<std::string> const& keptRewardModels);
 
                 /*!
                  * Returns the state labeling associated with this model.

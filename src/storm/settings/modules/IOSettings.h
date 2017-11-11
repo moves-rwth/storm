@@ -64,6 +64,16 @@ namespace storm {
                 std::string getExportExplicitFilename() const;
                 
                 /*!
+                 * Retrieves whether the cumulative density function for reward bounded properties should be exported
+                 */
+                bool isExportCdfSet() const;
+                
+                /*!
+                 * Retrieves a path to a directory in which the cdf files will be stored
+                 */
+                 std::string getExportCdfDirectory() const;
+                
+                /*!
                  * Retrieves whether the explicit option was set.
                  *
                  * @return True if the explicit option was set.
@@ -203,7 +213,6 @@ namespace storm {
                  */
                 std::string getChoiceLabelingFilename() const;
 
-
                 /*!
                  * Retrieves whether the export-to-dot option was set.
                  *
@@ -250,7 +259,6 @@ namespace storm {
                  */
                 std::string getPropertyFilter() const;
 
-
                 bool check() const override;
                 void finalize() override;
 
@@ -262,6 +270,8 @@ namespace storm {
                 static const std::string exportDotOptionName;
                 static const std::string exportJaniDotOptionName;
                 static const std::string exportExplicitOptionName;
+                static const std::string exportCdfOptionName;
+                static const std::string exportCdfOptionShortName;
                 static const std::string explicitOptionName;
                 static const std::string explicitOptionShortName;
                 static const std::string explicitDrnOptionName;

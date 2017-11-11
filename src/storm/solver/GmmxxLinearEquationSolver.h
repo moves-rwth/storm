@@ -99,6 +99,8 @@ namespace storm {
             virtual void multiplyAndReduceGaussSeidel(OptimizationDirection const& dir, std::vector<uint64_t> const& rowGroupIndices, std::vector<ValueType>& x, std::vector<ValueType> const* b, std::vector<uint_fast64_t>* choices = nullptr) const override;
 
             void setSettings(GmmxxLinearEquationSolverSettings<ValueType> const& newSettings);
+            virtual void setPrecision(ValueType const& precision) override;
+
             GmmxxLinearEquationSolverSettings<ValueType> const& getSettings() const;
 
             virtual LinearEquationSolverProblemFormat getEquationProblemFormat() const override;

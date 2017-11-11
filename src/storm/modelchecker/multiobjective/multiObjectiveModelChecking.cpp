@@ -58,13 +58,13 @@ namespace storm {
                     {
                         std::unique_ptr<SparsePcaaQuery<SparseModelType, storm::RationalNumber>> query;
                         switch (preprocessorResult.queryType) {
-                            case SparseMultiObjectivePreprocessorReturnType<SparseModelType>::QueryType::Achievability:
+                            case SparseMultiObjectivePreprocessorResult<SparseModelType>::QueryType::Achievability:
                                 query = std::unique_ptr<SparsePcaaQuery<SparseModelType, storm::RationalNumber>> (new SparsePcaaAchievabilityQuery<SparseModelType, storm::RationalNumber>(preprocessorResult));
                                 break;
-                            case SparseMultiObjectivePreprocessorReturnType<SparseModelType>::QueryType::Quantitative:
+                            case SparseMultiObjectivePreprocessorResult<SparseModelType>::QueryType::Quantitative:
                                 query = std::unique_ptr<SparsePcaaQuery<SparseModelType, storm::RationalNumber>> (new SparsePcaaQuantitativeQuery<SparseModelType, storm::RationalNumber>(preprocessorResult));
                                 break;
-                            case SparseMultiObjectivePreprocessorReturnType<SparseModelType>::QueryType::Pareto:
+                            case SparseMultiObjectivePreprocessorResult<SparseModelType>::QueryType::Pareto:
                                 query = std::unique_ptr<SparsePcaaQuery<SparseModelType, storm::RationalNumber>> (new SparsePcaaParetoQuery<SparseModelType, storm::RationalNumber>(preprocessorResult));
                                 break;
                             default:
@@ -83,7 +83,7 @@ namespace storm {
                     {
                         std::unique_ptr<SparseCbQuery<SparseModelType>> query;
                         switch (preprocessorResult.queryType) {
-                            case SparseMultiObjectivePreprocessorReturnType<SparseModelType>::QueryType::Achievability:
+                            case SparseMultiObjectivePreprocessorResult<SparseModelType>::QueryType::Achievability:
                                 query = std::unique_ptr<SparseCbQuery<SparseModelType>> (new SparseCbAchievabilityQuery<SparseModelType>(preprocessorResult));
                                 break;
                             default:

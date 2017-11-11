@@ -17,8 +17,8 @@ namespace storm {
         namespace multiobjective {
             
             template <class SparseModelType, typename GeometryValueType>
-            SparsePcaaParetoQuery<SparseModelType, GeometryValueType>::SparsePcaaParetoQuery(SparseMultiObjectivePreprocessorReturnType<SparseModelType>& preprocessorResult) : SparsePcaaQuery<SparseModelType, GeometryValueType>(preprocessorResult) {
-                STORM_LOG_ASSERT(preprocessorResult.queryType==SparseMultiObjectivePreprocessorReturnType<SparseModelType>::QueryType::Pareto, "Invalid query Type");
+            SparsePcaaParetoQuery<SparseModelType, GeometryValueType>::SparsePcaaParetoQuery(SparseMultiObjectivePreprocessorResult<SparseModelType>& preprocessorResult) : SparsePcaaQuery<SparseModelType, GeometryValueType>(preprocessorResult) {
+                STORM_LOG_ASSERT(preprocessorResult.queryType==SparseMultiObjectivePreprocessorResult<SparseModelType>::QueryType::Pareto, "Invalid query Type");
                 
                 // Set the precision of the weight vector checker
                 typename SparseModelType::ValueType weightedPrecision = storm::utility::convertNumber<typename SparseModelType::ValueType>(storm::settings::getModule<storm::settings::modules::MultiObjectiveSettings>().getPrecision());

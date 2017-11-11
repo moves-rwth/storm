@@ -95,11 +95,7 @@ namespace storm {
             
             template <typename ValueType, typename RewardModelType>
             ValueType MarkovAutomaton<ValueType, RewardModelType>::getMaximalExitRate() const {
-                ValueType result = storm::utility::zero<ValueType>();
-                for (auto markovianState : this->markovianStates) {
-                    result = std::max(result, this->exitRates[markovianState]);
-                }
-                return result;
+                return storm::utility::vector::max_if(this->exitRates, this->markovianStates);
             }
             
             template <typename ValueType, typename RewardModelType>

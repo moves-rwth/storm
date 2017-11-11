@@ -12,8 +12,6 @@ namespace storm {
                     return "linearprogramming";
                 case MinMaxMethod::Topological:
                     return "topological";
-                case MinMaxMethod::Acyclic:
-                    return "acyclic";
                 case MinMaxMethod::RationalSearch:
                     return "ratsearch";
             }
