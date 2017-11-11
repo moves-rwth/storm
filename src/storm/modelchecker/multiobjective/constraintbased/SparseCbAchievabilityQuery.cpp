@@ -31,7 +31,7 @@ namespace storm {
             }
 
             template <class SparseModelType>
-            std::unique_ptr<CheckResult> SparseCbAchievabilityQuery<SparseModelType>::check() {
+            std::unique_ptr<CheckResult> SparseCbAchievabilityQuery<SparseModelType>::check(Environment const& env) {
                
                 bool result = this->checkAchievability();
                 

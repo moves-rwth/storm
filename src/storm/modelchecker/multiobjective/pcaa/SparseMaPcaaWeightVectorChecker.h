@@ -79,7 +79,7 @@ namespace storm {
                  * @param weightVector the weight vector of the current check
                  * @param weightedRewardVector the weighted rewards considering the unbounded objectives. Will be invalidated after calling this.
                  */
-                virtual void boundedPhase(std::vector<ValueType> const& weightVector, std::vector<ValueType>& weightedRewardVector) override;
+                virtual void boundedPhase(Environment const& env, std::vector<ValueType> const& weightVector, std::vector<ValueType>& weightedRewardVector) override;
                 
                 /*!
                  * Retrieves the data for a submodel of the data->preprocessedModel
@@ -117,15 +117,15 @@ namespace storm {
                 /*!
                  * Initializes the data for the MinMax solver
                  */
-                std::unique_ptr<MinMaxSolverData> initMinMaxSolver(SubModel const& PS, std::vector<ValueType> const& weightVector) const;
+                std::unique_ptr<MinMaxSolverData> initMinMaxSolver(Environment const& env, SubModel const& PS, std::vector<ValueType> const& weightVector) const;
                 
                 /*!
                  * Initializes the data for the LinEq solver
                  */
                 template <typename VT = ValueType, typename std::enable_if<storm::NumberTraits<VT>::SupportsExponential, int>::type = 0>
-                std::unique_ptr<LinEqSolverData> initLinEqSolver(SubModel const& PS) const;
+                std::unique_ptr<LinEqSolverData> initLinEqSolver(Environment const& env, SubModel const& PS) const;
                 template <typename VT = ValueType, typename std::enable_if<!storm::NumberTraits<VT>::SupportsExponential, int>::type = 0>
-                std::unique_ptr<LinEqSolverData> initLinEqSolver(SubModel const& PS) const;
+                std::unique_ptr<LinEqSolverData> initLinEqSolver(Environment const& env, SubModel const& PS) const;
                 
                 /*
                  * Updates the reward vectors within the split model,
@@ -141,7 +141,7 @@ namespace storm {
                  * 
                  * The resulting values represent the rewards at probabilistic states that are obtained at the current time epoch.
                  */
-                void performPSStep(SubModel& PS, SubModel const& MS, MinMaxSolverData& minMax, LinEqSolverData& linEq, std::vector<uint_fast64_t>& optimalChoicesAtCurrentEpoch,  storm::storage::BitVector const& consideredObjectives, std::vector<ValueType> const& weightVector) const;
+                void performPSStep(Environment const& env, SubModel& PS, SubModel const& MS, MinMaxSolverData& minMax, LinEqSolverData& linEq, std::vector<uint_fast64_t>& optimalChoicesAtCurrentEpoch,  storm::storage::BitVector const& consideredObjectives, std::vector<ValueType> const& weightVector) const;
                 
                 /*
                  * Performs a step for the Markovian states, that is
@@ -149,7 +149,7 @@ namespace storm {
                  *
                  * The resulting values represent the rewards at Markovian states that are obtained after one (digitized) time unit has passed.
                  */
-                void performMSStep(SubModel& MS, SubModel const& PS, storm::storage::BitVector const& consideredObjectives, std::vector<ValueType> const& weightVector) const;
+                void performMSStep(Environment const& env, SubModel& MS, SubModel const& PS, storm::storage::BitVector const& consideredObjectives, std::vector<ValueType> const& weightVector) const;
                 
                 
                 // Data regarding the given Markov automaton

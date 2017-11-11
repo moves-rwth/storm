@@ -10,6 +10,10 @@
 #include "storm/solver/MinMaxLinearEquationSolver.h"
 #include "storm/solver/LinearEquationSolver.h"
 
+#include "storm/environment/Environment.h"
+#include "storm/environment/solver/SolverEnvironment.h"
+#include "storm/environment/solver/MinMaxSolverEnvironment.h"
+
 #include "storm/settings/SettingsManager.h"
 #include "storm/utility/export.h"
 #include "storm/settings/modules/IOSettings.h"
@@ -62,7 +66,7 @@ namespace storm {
             }
             
             template <class SparseMdpModelType>
-            void SparseMdpRewardBoundedPcaaWeightVectorChecker<SparseMdpModelType>::check(std::vector<ValueType> const& weightVector) {
+            void SparseMdpRewardBoundedPcaaWeightVectorChecker<SparseMdpModelType>::check(Environment const& env, std::vector<ValueType> const& weightVector) {
                 ++numChecks;
                 STORM_LOG_INFO("Analyzing weight vector #" << numChecks << ": "  << storm::utility::vector::toString(weightVector));
                 
@@ -73,13 +77,14 @@ namespace storm {
                 auto epochOrder = rewardUnfolding.getEpochComputationOrder(initEpoch);
                 EpochCheckingData cachedData;
                 ValueType precision = rewardUnfolding.getRequiredEpochModelPrecision(initEpoch, storm::utility::convertNumber<ValueType>(storm::settings::getModule<storm::settings::modules::GeneralSettings>().getPrecision()));
-
+                Environment newEnv = env;
+                newEnv.solver().minMax().setPrecision(precision);
                 storm::utility::ProgressMeasurement progress("epochs");
                 progress.setMaxCount(epochOrder.size());
                 progress.startNewMeasurement(0);
                 uint64_t numCheckedEpochs = 0;
                 for (auto const& epoch : epochOrder) {
-                    computeEpochSolution(epoch, weightVector, cachedData, precision);
+                    computeEpochSolution(newEnv, epoch, weightVector, cachedData);
                     if (storm::settings::getModule<storm::settings::modules::IOSettings>().isExportCdfSet() && !rewardUnfolding.getEpochManager().hasBottomDimension(epoch)) {
                         std::vector<ValueType> cdfEntry;
                         for (uint64_t i = 0; i < rewardUnfolding.getEpochManager().getDimensionCount(); ++i) {
@@ -115,7 +120,7 @@ namespace storm {
             }
             
             template <class SparseMdpModelType>
-            void SparseMdpRewardBoundedPcaaWeightVectorChecker<SparseMdpModelType>::computeEpochSolution(typename helper::rewardbounded::MultiDimensionalRewardUnfolding<ValueType, false>::Epoch const& epoch, std::vector<ValueType> const& weightVector, EpochCheckingData& cachedData, ValueType const& precision) {
+            void SparseMdpRewardBoundedPcaaWeightVectorChecker<SparseMdpModelType>::computeEpochSolution(Environment const& env, typename helper::rewardbounded::MultiDimensionalRewardUnfolding<ValueType, false>::Epoch const& epoch, std::vector<ValueType> const& weightVector, EpochCheckingData& cachedData) {
                 
                 ++numCheckedEpochs;
                 swEpochModelBuild.start();
@@ -198,10 +203,7 @@ namespace storm {
                         }
                     }
                 } else {
-                    
-                    
-                    updateCachedData(epochModel, cachedData, weightVector, precision);
-                    
+                    updateCachedData(env, epochModel, cachedData, weightVector);
                     
                     // Formulate a min-max equation system max(A*x+b)=x for the weighted sum of the objectives
                     assert(cachedData.bMinMax.capacity() >= epochModel.epochMatrix.getRowCount());
@@ -223,7 +225,7 @@ namespace storm {
                     }
                     
                     // Invoke the min max solver
-                    cachedData.minMaxSolver->solveEquations(cachedData.xMinMax, cachedData.bMinMax);
+                    cachedData.minMaxSolver->solveEquations(env, cachedData.xMinMax, cachedData.bMinMax);
                     for (auto const& state : epochModel.epochInStates) {
                         result.emplace_back();
                         result.back().reserve(solutionSize);
@@ -243,7 +245,7 @@ namespace storm {
                             subMatrix.convertToEquationSystem();
                         }
                         cachedData.linEqSolver = linEqSolverFactory.create(std::move(subMatrix));
-                        cachedData.linEqSolver->setPrecision(precision);
+                        cachedData.linEqSolver->setPrecision(storm::utility::convertNumber<ValueType>(env.solver().minMax().getPrecision()));
                         cachedData.linEqSolver->setCachingEnabled(true);
                     }
                     
@@ -308,19 +310,18 @@ namespace storm {
             }
 
             template <class SparseMdpModelType>
-            void SparseMdpRewardBoundedPcaaWeightVectorChecker<SparseMdpModelType>::updateCachedData(typename helper::rewardbounded::MultiDimensionalRewardUnfolding<ValueType, false>::EpochModel const& epochModel, EpochCheckingData& cachedData, std::vector<ValueType> const& weightVector, ValueType const& precision) {
+            void SparseMdpRewardBoundedPcaaWeightVectorChecker<SparseMdpModelType>::updateCachedData(Environment const& env, typename helper::rewardbounded::MultiDimensionalRewardUnfolding<ValueType, false>::EpochModel const& epochModel, EpochCheckingData& cachedData, std::vector<ValueType> const& weightVector) {
                 if (epochModel.epochMatrixChanged) {
                 
                     // Update the cached MinMaxSolver data
                     cachedData.bMinMax.resize(epochModel.epochMatrix.getRowCount());
                     cachedData.xMinMax.assign(epochModel.epochMatrix.getRowGroupCount(), storm::utility::zero<ValueType>());
                     storm::solver::GeneralMinMaxLinearEquationSolverFactory<ValueType> minMaxSolverFactory;
-                    cachedData.minMaxSolver = minMaxSolverFactory.create(epochModel.epochMatrix);
+                    cachedData.minMaxSolver = minMaxSolverFactory.create(env, epochModel.epochMatrix);
                     cachedData.minMaxSolver->setHasUniqueSolution();
-                    cachedData.minMaxSolver->setPrecision(precision);
                     cachedData.minMaxSolver->setTrackScheduler(true);
                     cachedData.minMaxSolver->setCachingEnabled(true);
-                    auto req = cachedData.minMaxSolver->getRequirements();
+                    auto req = cachedData.minMaxSolver->getRequirements(env);
                     boost::optional<ValueType> lowerBound = this->computeWeightedResultBound(true, weightVector, storm::storage::BitVector(weightVector.size(), true));
                     if (lowerBound) {
                         cachedData.minMaxSolver->setLowerBound(lowerBound.get());

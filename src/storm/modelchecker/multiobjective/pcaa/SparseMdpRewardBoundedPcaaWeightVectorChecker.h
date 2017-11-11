@@ -34,7 +34,7 @@ namespace storm {
                  * - extracts the scheduler that induces this optimum
                  * - computes for each objective the value induced by this scheduler
                  */
-                virtual void check(std::vector<ValueType> const& weightVector) override;
+                virtual void check(Environment const& env, std::vector<ValueType> const& weightVector) override;
                 
                 /*!
                  * Retrieves the results of the individual objectives at the initial state of the given model.
@@ -62,9 +62,9 @@ namespace storm {
                     std::vector<typename helper::rewardbounded::MultiDimensionalRewardUnfolding<ValueType, false>::SolutionType> solutions;
                 };
                 
-                void computeEpochSolution(typename helper::rewardbounded::MultiDimensionalRewardUnfolding<ValueType, false>::Epoch const& epoch, std::vector<ValueType> const& weightVector, EpochCheckingData& cachedData, ValueType const& precision);
+                void computeEpochSolution(Environment const& env, typename helper::rewardbounded::MultiDimensionalRewardUnfolding<ValueType, false>::Epoch const& epoch, std::vector<ValueType> const& weightVector, EpochCheckingData& cachedData);
                 
-                void updateCachedData(typename helper::rewardbounded::MultiDimensionalRewardUnfolding<ValueType, false>::EpochModel const& epochModel, EpochCheckingData& cachedData, std::vector<ValueType> const& weightVector, ValueType const& precision);
+                void updateCachedData(Environment const& env, typename helper::rewardbounded::MultiDimensionalRewardUnfolding<ValueType, false>::EpochModel const& epochModel, EpochCheckingData& cachedData, std::vector<ValueType> const& weightVector);
                 
                 storm::utility::Stopwatch swAll, swEpochModelBuild, swEpochModelAnalysis;
                 uint64_t numCheckedEpochs, numChecks;

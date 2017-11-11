@@ -197,7 +197,7 @@ namespace storm {
         
         template<typename SparseMdpModelType>
         std::unique_ptr<CheckResult> SparseMdpPrctlModelChecker<SparseMdpModelType>::checkMultiObjectiveFormula(Environment const& env, CheckTask<storm::logic::MultiObjectiveFormula, ValueType> const& checkTask) {
-            return multiobjective::performMultiObjectiveModelChecking(this->getModel(), checkTask.getFormula());
+            return multiobjective::performMultiObjectiveModelChecking(env, this->getModel(), checkTask.getFormula());
         }
         
         template class SparseMdpPrctlModelChecker<storm::models::sparse::Mdp<double>>;

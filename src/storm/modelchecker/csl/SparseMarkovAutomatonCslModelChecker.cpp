@@ -129,7 +129,7 @@ namespace storm {
         
         template<typename SparseMarkovAutomatonModelType>
         std::unique_ptr<CheckResult> SparseMarkovAutomatonCslModelChecker<SparseMarkovAutomatonModelType>::checkMultiObjectiveFormula(Environment const& env, CheckTask<storm::logic::MultiObjectiveFormula, ValueType> const& checkTask) {
-            return multiobjective::performMultiObjectiveModelChecking(this->getModel(), checkTask.getFormula());
+            return multiobjective::performMultiObjectiveModelChecking(env, this->getModel(), checkTask.getFormula());
         }
         
         template class SparseMarkovAutomatonCslModelChecker<storm::models::sparse::MarkovAutomaton<double>>;

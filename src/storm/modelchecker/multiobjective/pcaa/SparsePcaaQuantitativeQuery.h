@@ -30,7 +30,7 @@ namespace storm {
                 /*
                  * Invokes the computation and retrieves the result
                  */
-                virtual std::unique_ptr<CheckResult> check() override;
+                virtual std::unique_ptr<CheckResult> check(Environment const& env) override;
                 
             private:
                 
@@ -39,7 +39,7 @@ namespace storm {
                 /* 
                  * Returns whether the given thresholds are achievable.
                  */
-                bool checkAchievability();
+                bool checkAchievability(Environment const& env);
                 
                 /*
                  * Updates the precision of the weightVectorChecker w.r.t. the provided weights
@@ -50,7 +50,7 @@ namespace storm {
                 /*
                  * Given that the thresholds are achievable, this function further refines the approximations and returns the optimized value
                  */
-                GeometryValueType improveSolution();
+                GeometryValueType improveSolution(Environment const& env);
                 
                 /*
                  * Returns true iff there is one point in the given polytope that satisfies the given thresholds.

@@ -7,6 +7,9 @@
 #include "storm/storage/geometry/Polytope.h"
 
 namespace storm {
+
+    class Environment;
+    
     namespace modelchecker {
         namespace multiobjective {
             
@@ -27,7 +30,7 @@ namespace storm {
                 /*
                  * Invokes the computation and retrieves the result
                  */
-                virtual std::unique_ptr<CheckResult> check() = 0;
+                virtual std::unique_ptr<CheckResult> check(Environment const& env) = 0;
                 
                 /*
                  * Exports the current approximations and the currently processed points into respective .csv files located at the given directory.
@@ -65,7 +68,7 @@ namespace storm {
                 /*
                  * Refines the current result w.r.t. the given direction vector.
                  */
-                void performRefinementStep(WeightVector&& direction);
+                void performRefinementStep(Environment const& env, WeightVector&& direction);
                 
                 /*
                  * Updates the overapproximation after a refinement step has been performed

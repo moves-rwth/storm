@@ -73,10 +73,10 @@ namespace storm {
             }
             
             template <class SparseModelType, typename GeometryValueType>
-            void SparsePcaaQuery<SparseModelType, GeometryValueType>::performRefinementStep(WeightVector&& direction) {
+            void SparsePcaaQuery<SparseModelType, GeometryValueType>::performRefinementStep(Environment const& env, WeightVector&& direction) {
                 // Normalize the direction vector so that the entries sum up to one
                 storm::utility::vector::scaleVectorInPlace(direction, storm::utility::one<GeometryValueType>() / std::accumulate(direction.begin(), direction.end(), storm::utility::zero<GeometryValueType>()));
-                weightVectorChecker->check(storm::utility::vector::convertNumericVector<typename SparseModelType::ValueType>(direction));
+                weightVectorChecker->check(env, storm::utility::vector::convertNumericVector<typename SparseModelType::ValueType>(direction));
                 STORM_LOG_DEBUG("weighted objectives checker result (under approximation) is " << storm::utility::vector::toString(storm::utility::vector::convertNumericVector<double>(weightVectorChecker->getUnderApproximationOfInitialStateResults())));
                 RefinementStep step;
                 step.weightVector = direction;

@@ -43,7 +43,7 @@ namespace storm {
                  * - extracts the scheduler that induces this optimum
                  * - computes for each objective the value induced by this scheduler
                  */
-                virtual void check(std::vector<ValueType> const& weightVector) override;
+                virtual void check(Environment const& env, std::vector<ValueType> const& weightVector) override;
                 
                 /*!
                  * Retrieves the results of the individual objectives at the initial state of the given model.
@@ -72,13 +72,13 @@ namespace storm {
                  *
                  * @param weightedRewardVector the weighted rewards (only considering the unbounded objectives)
                  */
-                void unboundedWeightedPhase(std::vector<ValueType> const& weightedRewardVector, std::vector<ValueType> const& weightVector);
+                void unboundedWeightedPhase(Environment const& env, std::vector<ValueType> const& weightedRewardVector, std::vector<ValueType> const& weightVector);
                 
                 /*!
                  * Computes the values of the objectives that do not have a stepBound w.r.t. the scheduler computed in the unboundedWeightedPhase
                  *
                  */
-                void unboundedIndividualPhase(std::vector<ValueType> const& weightVector);
+                void unboundedIndividualPhase(Environment const& env, std::vector<ValueType> const& weightVector);
                 
                 /*!
                  * For each time epoch (starting with the maximal stepBound occurring in the objectives), this method
@@ -89,7 +89,7 @@ namespace storm {
                  * @param weightVector the weight vector of the current check
                  * @param weightedRewardVector the weighted rewards considering the unbounded objectives. Will be invalidated after calling this.
                  */
-                virtual void boundedPhase(std::vector<ValueType> const& weightVector, std::vector<ValueType>& weightedRewardVector) = 0;
+                virtual void boundedPhase(Environment const& env, std::vector<ValueType> const& weightVector, std::vector<ValueType>& weightedRewardVector) = 0;
                 
                 void updateEcQuotient(std::vector<ValueType> const& weightedRewardVector);
                 

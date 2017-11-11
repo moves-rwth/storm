@@ -33,7 +33,13 @@ namespace storm {
                 for (uint_fast64_t objIndex = 0; objIndex < this->objectives.size(); ++objIndex) {
                     auto const& formula = *this->objectives[objIndex].formula;
                     STORM_LOG_THROW(formula.isRewardOperatorFormula() && formula.asRewardOperatorFormula().hasRewardModelName(), storm::exceptions::UnexpectedException, "Unexpected type of operator formula: " << formula);
-                    STORM_LOG_THROW(formula.getSubformula().isCumulativeRewardFormula() || formula.getSubformula().isTotalRewardFormula(), storm::exceptions::UnexpectedException, "Unexpected type of sub-formula: " << formula.getSubformula());
+                    if (formula.getSubformula().isCumulativeRewardFormula()) {
+                        auto const& cumulativeRewardFormula = formula.getSubformula().asCumulativeRewardFormula();
+                        STORM_LOG_THROW(!cumulativeRewardFormula.isMultiDimensional() && !cumulativeRewardFormula.getTimeBoundReference().isRewardBound(), storm::exceptions::UnexpectedException, "Unexpected type of sub-formula: " << formula.getSubformula());
+                    } else {
+                        STORM_LOG_THROW(formula.getSubformula().isTotalRewardFormula(), storm::exceptions::UnexpectedException, "Unexpected type of sub-formula: " << formula.getSubformula());
+                        
+                    }
                     typename SparseMdpModelType::RewardModelType const& rewModel = model.getRewardModel(formula.asRewardOperatorFormula().getRewardModelName());
                     STORM_LOG_THROW(!rewModel.hasTransitionRewards(), storm::exceptions::NotSupportedException, "Reward model has transition rewards which is not expected.");
                     this->actionRewards[objIndex] = rewModel.getTotalRewardVector(model.getTransitionMatrix());
@@ -41,7 +47,7 @@ namespace storm {
             }
             
             template <class SparseMdpModelType>
-            void SparseMdpPcaaWeightVectorChecker<SparseMdpModelType>::boundedPhase(std::vector<ValueType> const& weightVector, std::vector<ValueType>& weightedRewardVector) {
+            void SparseMdpPcaaWeightVectorChecker<SparseMdpModelType>::boundedPhase(Environment const& env,std::vector<ValueType> const& weightVector, std::vector<ValueType>& weightedRewardVector) {
                 // Allocate some memory so this does not need to happen for each time epoch
                 std::vector<uint_fast64_t> optimalChoicesInCurrentEpoch(this->transitionMatrix.getRowGroupCount());
                 std::vector<ValueType> choiceValues(weightedRewardVector.size());
@@ -88,7 +94,6 @@ namespace storm {
                     storm::utility::vector::reduceVectorMax(choiceValues, this->weightedResult, this->transitionMatrix.getRowGroupIndices(), &optimalChoicesInCurrentEpoch);
                     
                     // get values for individual objectives
-                    // TODO we could compute the result for one of the objectives from the weighted result, the given weight vector, and the remaining objective results.
                     for (auto objIndex : consideredObjectives) {
                         std::vector<ValueType>& objectiveResult = this->objectiveResults[objIndex];
                         std::vector<ValueType> const& objectiveRewards = this->actionRewards[objIndex];

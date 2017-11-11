@@ -30,7 +30,7 @@ namespace storm {
                 /*
                  * Invokes the computation and retrieves the result
                  */
-                virtual std::unique_ptr<CheckResult> check() override;
+                virtual std::unique_ptr<CheckResult> check(Environment const& env) override;
                 
             private:
                 
@@ -39,7 +39,7 @@ namespace storm {
                 /* 
                  * Returns whether the given thresholds are achievable.
                  */
-                bool checkAchievability();
+                bool checkAchievability(Environment const& env);
                 
                 /*
                  * Updates the precision of the weightVectorChecker w.r.t. the provided weights

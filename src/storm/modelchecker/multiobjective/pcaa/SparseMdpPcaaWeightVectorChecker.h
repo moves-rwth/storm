@@ -48,7 +48,7 @@ namespace storm {
                  * @param weightVector the weight vector of the current check
                  * @param weightedRewardVector the weighted rewards considering the unbounded objectives. Will be invalidated after calling this.
                  */
-                virtual void boundedPhase(std::vector<ValueType> const& weightVector, std::vector<ValueType>& weightedRewardVector) override;
+                virtual void boundedPhase(Environment const& env, std::vector<ValueType> const& weightVector, std::vector<ValueType>& weightedRewardVector) override;
                 
             };
             

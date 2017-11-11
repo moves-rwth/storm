@@ -90,7 +90,7 @@ namespace storm {
 
             
             template <class SparseModelType>
-            void SparsePcaaWeightVectorChecker<SparseModelType>::check(std::vector<ValueType> const& weightVector) {
+            void SparsePcaaWeightVectorChecker<SparseModelType>::check(Environment const& env, std::vector<ValueType> const& weightVector) {
                 checkHasBeenCalled = true;
                 STORM_LOG_INFO("Invoked WeightVectorChecker with weights " << std::endl << "\t" << storm::utility::vector::toString(storm::utility::vector::convertNumericVector<double>(weightVector)));
                 
@@ -103,13 +103,13 @@ namespace storm {
                     }
                 }
                 
-                unboundedWeightedPhase(weightedRewardVector, weightVector);
+                unboundedWeightedPhase(env, weightedRewardVector, weightVector);
                 
-                unboundedIndividualPhase(weightVector);
+                unboundedIndividualPhase(env, weightVector);
                 // Only invoke boundedPhase if necessarry, i.e., if there is at least one objective with a time bound
                 for (auto const& obj : this->objectives) {
                     if (!obj.formula->getSubformula().isTotalRewardFormula()) {
-                        boundedPhase(weightVector, weightedRewardVector);
+                        boundedPhase(env, weightVector, weightedRewardVector);
                         break;
                     }
                 }
@@ -159,7 +159,7 @@ namespace storm {
             }
             
             template <class SparseModelType>
-            void SparsePcaaWeightVectorChecker<SparseModelType>::unboundedWeightedPhase(std::vector<ValueType> const& weightedRewardVector, std::vector<ValueType> const& weightVector) {
+            void SparsePcaaWeightVectorChecker<SparseModelType>::unboundedWeightedPhase(Environment const& env, std::vector<ValueType> const& weightedRewardVector, std::vector<ValueType> const& weightVector) {
                 
                 if (this->objectivesWithNoUpperTimeBound.empty() || !storm::utility::vector::hasNonZeroEntry(weightedRewardVector)) {
                     this->weightedResult = std::vector<ValueType>(transitionMatrix.getRowGroupCount(), storm::utility::zero<ValueType>());
@@ -172,10 +172,10 @@ namespace storm {
                 storm::utility::vector::selectVectorValues(ecQuotient->auxChoiceValues, ecQuotient->ecqToOriginalChoiceMapping, weightedRewardVector);
                 
                 storm::solver::GeneralMinMaxLinearEquationSolverFactory<ValueType> solverFactory;
-                std::unique_ptr<storm::solver::MinMaxLinearEquationSolver<ValueType>> solver = solverFactory.create(ecQuotient->matrix);
+                std::unique_ptr<storm::solver::MinMaxLinearEquationSolver<ValueType>> solver = solverFactory.create(env, ecQuotient->matrix);
                 solver->setTrackScheduler(true);
                 solver->setHasUniqueSolution(true);
-                auto req = solver->getRequirements();
+                auto req = solver->getRequirements(env);
                 boost::optional<ValueType> lowerBound = this->computeWeightedResultBound(true, weightVector, objectivesWithNoUpperTimeBound);
                 if (lowerBound) {
                     solver->setLowerBound(lowerBound.get());
@@ -187,13 +187,13 @@ namespace storm {
                     req.clearUpperBounds();
                 }
                 STORM_LOG_THROW(req.empty(), storm::exceptions::UncheckedRequirementException, "At least one requirement was not checked.");
-                solver->setRequirementsChecked(true);
+                solver->setRequirementsChecked(env, true);
                 solver->setOptimizationDirection(storm::solver::OptimizationDirection::Maximize);
                 
                 // Use the (0...0) vector as initial guess for the solution.
                 std::fill(ecQuotient->auxStateValues.begin(), ecQuotient->auxStateValues.end(), storm::utility::zero<ValueType>());
                 
-                solver->solveEquations(ecQuotient->auxStateValues, ecQuotient->auxChoiceValues);
+                solver->solveEquations(env, ecQuotient->auxStateValues, ecQuotient->auxChoiceValues);
 
                 this->weightedResult = std::vector<ValueType>(transitionMatrix.getRowGroupCount());
                 
@@ -201,7 +201,7 @@ namespace storm {
             }
             
             template <class SparseModelType>
-            void SparsePcaaWeightVectorChecker<SparseModelType>::unboundedIndividualPhase(std::vector<ValueType> const& weightVector) {
+            void SparsePcaaWeightVectorChecker<SparseModelType>::unboundedIndividualPhase(Environment const& env,std::vector<ValueType> const& weightVector) {
                 if (objectivesWithNoUpperTimeBound.getNumberOfSetBits() == 1 && storm::utility::isOne(weightVector[*objectivesWithNoUpperTimeBound.begin()])) {
                    uint_fast64_t objIndex = *objectivesWithNoUpperTimeBound.begin();
                    objectiveResults[objIndex] = weightedResult;

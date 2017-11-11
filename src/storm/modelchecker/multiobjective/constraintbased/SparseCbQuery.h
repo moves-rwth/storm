@@ -7,6 +7,9 @@
 #include "storm/storage/expressions/ExpressionManager.h"
 
 namespace storm {
+
+    class Environment;
+
     namespace modelchecker {
         namespace multiobjective {
             
@@ -23,7 +26,7 @@ namespace storm {
                 /*
                  * Invokes the computation and retrieves the result
                  */
-                virtual std::unique_ptr<CheckResult> check() = 0;
+                virtual std::unique_ptr<CheckResult> check(Environment const& env) = 0;
                 
             protected:
                 

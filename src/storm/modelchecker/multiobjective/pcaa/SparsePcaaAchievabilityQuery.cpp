@@ -46,21 +46,21 @@ namespace storm {
             }
             
             template <class SparseModelType, typename GeometryValueType>
-            std::unique_ptr<CheckResult> SparsePcaaAchievabilityQuery<SparseModelType, GeometryValueType>::check() {
+            std::unique_ptr<CheckResult> SparsePcaaAchievabilityQuery<SparseModelType, GeometryValueType>::check(Environment const& env) {
                
-                bool result = this->checkAchievability();
+                bool result = this->checkAchievability(env);
                 
                 return std::unique_ptr<CheckResult>(new ExplicitQualitativeCheckResult(this->originalModel.getInitialStates().getNextSetIndex(0), result));
                 
             }
             
             template <class SparseModelType, typename GeometryValueType>
-            bool SparsePcaaAchievabilityQuery<SparseModelType, GeometryValueType>::checkAchievability() {
+            bool SparsePcaaAchievabilityQuery<SparseModelType, GeometryValueType>::checkAchievability(Environment const& env) {
                 // repeatedly refine the over/ under approximation until the threshold point is either in the under approx. or not in the over approx.
                 while(!this->maxStepsPerformed()){
                     WeightVector separatingVector = this->findSeparatingVector(thresholds);
                     this->updateWeightedPrecision(separatingVector);
-                    this->performRefinementStep(std::move(separatingVector));
+                    this->performRefinementStep(env, std::move(separatingVector));
                     if(!checkIfThresholdsAreSatisfied(this->overApproximation)){
                         return false;
                     }

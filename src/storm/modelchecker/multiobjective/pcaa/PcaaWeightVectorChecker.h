@@ -10,6 +10,9 @@
 
 
 namespace storm {
+    
+    class Environment;
+    
     namespace modelchecker {
         namespace multiobjective {
             
@@ -35,7 +38,7 @@ namespace storm {
                 
                 virtual ~PcaaWeightVectorChecker() = default;
                 
-                virtual void check(std::vector<ValueType> const& weightVector) = 0;
+                virtual void check(Environment const& env, std::vector<ValueType> const& weightVector) = 0;
                 
                 /*!
                  * Retrieves the results of the individual objectives at the initial state of the given model.

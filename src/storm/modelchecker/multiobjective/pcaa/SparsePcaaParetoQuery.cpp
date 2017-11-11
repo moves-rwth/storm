@@ -31,10 +31,10 @@ namespace storm {
             }
             
             template <class SparseModelType, typename GeometryValueType>
-            std::unique_ptr<CheckResult> SparsePcaaParetoQuery<SparseModelType, GeometryValueType>::check() {
+            std::unique_ptr<CheckResult> SparsePcaaParetoQuery<SparseModelType, GeometryValueType>::check(Environment const& env) {
                 
                 // refine the approximation
-                exploreSetOfAchievablePoints();
+                exploreSetOfAchievablePoints(env);
                 
                 // obtain the data for the checkresult
                 std::vector<std::vector<typename SparseModelType::ValueType>> paretoOptimalPoints;
@@ -52,13 +52,13 @@ namespace storm {
             }
             
             template <class SparseModelType, typename GeometryValueType>
-            void SparsePcaaParetoQuery<SparseModelType, GeometryValueType>::exploreSetOfAchievablePoints() {
+            void SparsePcaaParetoQuery<SparseModelType, GeometryValueType>::exploreSetOfAchievablePoints(Environment const& env) {
             
                 //First consider the objectives individually
                 for(uint_fast64_t objIndex = 0; objIndex<this->objectives.size() && !this->maxStepsPerformed(); ++objIndex) {
                     WeightVector direction(this->objectives.size(), storm::utility::zero<GeometryValueType>());
                     direction[objIndex] = storm::utility::one<GeometryValueType>();
-                    this->performRefinementStep(std::move(direction));
+                    this->performRefinementStep(env, std::move(direction));
                 }
                 
                 while(!this->maxStepsPerformed()) {
@@ -82,7 +82,7 @@ namespace storm {
                     }
                     STORM_LOG_INFO("Current precision of the approximation of the pareto curve is ~" << storm::utility::convertNumber<double>(farestDistance));
                     WeightVector direction = underApproxHalfspaces[farestHalfspaceIndex].normalVector();
-                    this->performRefinementStep(std::move(direction));
+                    this->performRefinementStep(env, std::move(direction));
                 }
                 STORM_LOG_ERROR("Could not reach the desired precision: Exceeded maximum number of refinement steps");
             }
