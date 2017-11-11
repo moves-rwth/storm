@@ -3,6 +3,7 @@
 #include "storm/models/symbolic/Dtmc.h"
 #include "storm/models/symbolic/Mdp.h"
 #include "storm/models/symbolic/StochasticTwoPlayerGame.h"
+#include "storm/models/symbolic/StandardRewardModel.h"
 
 #include "storm/modelchecker/results/CheckResult.h"
 #include "storm/modelchecker/results/SymbolicQualitativeCheckResult.h"
