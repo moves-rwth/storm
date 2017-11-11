@@ -10,6 +10,7 @@
 #include "storm/settings/SettingsManager.h"
 #include "storm/settings/modules/GeneralSettings.h"
 #include "storm/settings/modules/MinMaxEquationSolverSettings.h"
+#include "storm/settings/modules/MarkovAutomatonSettings.h"
 
 #include "storm/utility/macros.h"
 #include "storm/utility/vector.h"
@@ -134,19 +135,19 @@ namespace storm {
                 STORM_LOG_THROW(false, storm::exceptions::InvalidOperationException, "Computing bounded reachability probabilities is unsupported for this value type.");
             }
             
-            template <typename ValueType, typename std::enable_if<storm::NumberTraits<ValueType>::SupportsExponential, int>::type=0>
+            template <typename ValueType, typename std::enable_if<storm::NumberTraits<ValueType>::SupportsExponential, int>::type>
             void SparseMarkovAutomatonCslHelper::printTransitions(std::vector<ValueType> const& exitRateVector, storm::storage::SparseMatrix<ValueType> const& fullTransitionMatrix, storm::storage::BitVector const& markovianStates, std::vector<std::vector<ValueType>>& vd, std::vector<std::vector<ValueType>>& vu, std::vector<std::vector<ValueType>>& wu){
                 std::ofstream logfile("U+logfile.txt", std::ios::app);
                 
-                auto rowGroupIndices = fullTransitionMatrix.getRowGroupIndices();
+                auto const& rowGroupIndices = fullTransitionMatrix.getRowGroupIndices();
                 auto numberOfStates = fullTransitionMatrix.getRowGroupCount();            
 
                 logfile << "number of states = num of row group count " << numberOfStates << "\n";
-                for (int i = 0; i < fullTransitionMatrix.getRowGroupCount(); i++) {
+                for (uint_fast64_t i = 0; i < fullTransitionMatrix.getRowGroupCount(); i++) {
                     logfile << " from node  " << i << " ";
                     auto from = rowGroupIndices[i];
                     auto to = rowGroupIndices[i+1];
-                    for (auto j = from ; j< to; j++){
+                    for (auto j = from ; j < to; j++){
                         for (auto &v : fullTransitionMatrix.getRow(j)) {
                             if (markovianStates[i]){
                                 logfile   << v.getValue()  *exitRateVector[i] << " -> "<< v.getColumn()  << "\t";
@@ -160,24 +161,24 @@ namespace storm {
                 logfile << "\n";
 
                 logfile << "vd: \n";
-                for (int i =0 ; i<vd.size(); i++){
-                    for(int j=0; j<fullTransitionMatrix.getRowGroupCount(); j++){
+                for (uint_fast64_t i =0 ; i<vd.size(); i++){
+                    for(uint_fast64_t j=0; j<fullTransitionMatrix.getRowGroupCount(); j++){
                         logfile << vd[i][j] << "\t" ;
                     }
                     logfile << "\n";
                 }
 
                 logfile << "\nvu:\n";
-                for (int i =0 ; i<vu.size(); i++){
-                    for(int j=0; j<fullTransitionMatrix.getRowGroupCount(); j++){
+                for (uint_fast64_t i =0 ; i<vu.size(); i++){
+                    for(uint_fast64_t j=0; j<fullTransitionMatrix.getRowGroupCount(); j++){
                         logfile << vu[i][j] << "\t" ;
                     }
                     logfile << "\n";
                 }
 
                 logfile << "\nwu\n";
-                for (int i =0 ; i<wu.size(); i++){
-                    for(int j=0; j<fullTransitionMatrix.getRowGroupCount(); j++){
+                for (uint_fast64_t i =0 ; i<wu.size(); i++){
+                    for(uint_fast64_t j=0; j<fullTransitionMatrix.getRowGroupCount(); j++){
                         logfile << wu[i][j] << "\t" ;
                     }
                     logfile << "\n";
@@ -198,14 +199,14 @@ namespace storm {
                 return res;
             }
 
-            template <typename ValueType, typename std::enable_if<storm::NumberTraits<ValueType>::SupportsExponential, int>::type=0>    
+            template <typename ValueType, typename std::enable_if<storm::NumberTraits<ValueType>::SupportsExponential, int>::type>
             void SparseMarkovAutomatonCslHelper::calculateVu(uint64_t k, uint64_t node, ValueType lambda, std::vector<std::vector<ValueType>>& vu, std::vector<std::vector<ValueType>>& wu, storm::storage::SparseMatrix<ValueType> const& fullTransitionMatrix, storm::storage::BitVector const& markovianStates, storm::storage::BitVector const& psiStates){
                 if (vu[k][node]!=-1){return;} //dynamic programming. avoiding multiple calculation.
                 uint64_t N = vu.size()-1;
                 auto rowGroupIndices = fullTransitionMatrix.getRowGroupIndices();
                 
                 ValueType res =0;
-                for (long i = k ; i < N ; i++ ){
+                for (uint_fast64_t i = k ; i < N ; i++ ){
                     if (wu[N-1-(i-k)][node]==-1){
                         calculateWu((N-1-(i-k)),node,lambda,wu,fullTransitionMatrix,markovianStates,psiStates);
                     }
@@ -214,11 +215,11 @@ namespace storm {
                 vu[k][node]=res;
             }
 
-            template <typename ValueType, typename std::enable_if<storm::NumberTraits<ValueType>::SupportsExponential, int>::type=0>    
+            template <typename ValueType, typename std::enable_if<storm::NumberTraits<ValueType>::SupportsExponential, int>::type>
             void SparseMarkovAutomatonCslHelper::calculateWu(uint64_t k, uint64_t node, ValueType lambda, std::vector<std::vector<ValueType>>& wu, storm::storage::SparseMatrix<ValueType> const& fullTransitionMatrix, storm::storage::BitVector const& markovianStates, storm::storage::BitVector const& psiStates){
                 if (wu[k][node]!=-1){return;} //dynamic programming. avoiding multiple calculation.
                 uint64_t N = wu.size()-1;
-                auto rowGroupIndices = fullTransitionMatrix.getRowGroupIndices();
+                auto const& rowGroupIndices = fullTransitionMatrix.getRowGroupIndices();
 
                 ValueType res;
                 if (k==N){
@@ -267,7 +268,7 @@ namespace storm {
                 wu[k][node]=res;
             }
 
-            template <typename ValueType, typename std::enable_if<storm::NumberTraits<ValueType>::SupportsExponential, int>::type=0>    
+            template <typename ValueType, typename std::enable_if<storm::NumberTraits<ValueType>::SupportsExponential, int>::type>
             void SparseMarkovAutomatonCslHelper::calculateVd(uint64_t k, uint64_t node, ValueType lambda, std::vector<std::vector<ValueType>>& vd, storm::storage::SparseMatrix<ValueType> const& fullTransitionMatrix, storm::storage::BitVector const& markovianStates, storm::storage::BitVector const& psiStates){
                
                 std::ofstream logfile("U+logfile.txt", std::ios::app);
@@ -275,7 +276,7 @@ namespace storm {
                 if (vd[k][node]!=-1){return;} //dynamic programming. avoiding multiple calculation.
                 logfile << "calculating vd for k = " << k << " node "<< node << " \t";
                 uint64_t N = vd.size()-1;
-                auto rowGroupIndices = fullTransitionMatrix.getRowGroupIndices();
+                auto const& rowGroupIndices = fullTransitionMatrix.getRowGroupIndices();
 
                 ValueType res;
                 if (k==N){
@@ -337,13 +338,15 @@ namespace storm {
 
             template <typename ValueType, typename std::enable_if<storm::NumberTraits<ValueType>::SupportsExponential, int>::type>
             std::vector<ValueType> SparseMarkovAutomatonCslHelper::unifPlus( std::pair<double, double> const& boundsPair, std::vector<ValueType> const& exitRateVector, storm::storage::SparseMatrix<ValueType> const& transitionMatrix, storm::storage::BitVector const& markovianStates, storm::storage::BitVector const& psiStates){
+                STORM_LOG_TRACE("Using UnifPlus to compute bounded until probabilities.");
+                
                 std::ofstream logfile("U+logfile.txt", std::ios::app);
                 ValueType maxNorm = 0;
 
                 //bitvectors to identify different kind of states
-                storm::storage::BitVector const &markovianNonGoalStates = markovianStates & ~psiStates;
-                storm::storage::BitVector const &probabilisticNonGoalStates = ~markovianStates & ~psiStates;
-                storm::storage::BitVector const &allStates = markovianStates | ~markovianStates;
+//                storm::storage::BitVector const &markovianNonGoalStates = markovianStates & ~psiStates;
+//                storm::storage::BitVector const &probabilisticNonGoalStates = ~markovianStates & ~psiStates;
+                storm::storage::BitVector allStates(markovianStates.size(), true);
 
                 //vectors to save calculation
                 std::vector<std::vector<ValueType>> vd,vu,wu;
@@ -371,7 +374,7 @@ namespace storm {
                     N = ceil(lambda*T*exp(2)-log(kappa*epsilon));
 
                     // (3) uniform  - just applied to markovian states
-                    for (int i = 0; i < fullTransitionMatrix.getRowGroupCount(); i++) {
+                    for (uint_fast64_t i = 0; i < fullTransitionMatrix.getRowGroupCount(); i++) {
                         if (!markovianStates[i]) {
                             continue;
                         }
@@ -428,15 +431,15 @@ namespace storm {
             }
 
             template <typename ValueType, typename std::enable_if<storm::NumberTraits<ValueType>::SupportsExponential, int>::type>
-            std::vector<ValueType> SparseMarkovAutomatonCslHelper::computeBoundedUntilProbabilities(OptimizationDirection dir, storm::storage::SparseMatrix<ValueType> const& transitionMatrix, std::vector<ValueType> const& exitRateVector, storm::storage::BitVector const& markovianStates, storm::storage::BitVector const& psiStates, std::pair<double, double> const& boundsPair, storm::solver::MinMaxLinearEquationSolverFactory<ValueType> const& minMaxLinearEquationSolverFactory) {
-                return unifPlus(boundsPair, exitRateVector, transitionMatrix, markovianStates, psiStates);                
-                /*
+            std::vector<ValueType> SparseMarkovAutomatonCslHelper::computeBoundedUntilProbabilitiesImca(OptimizationDirection dir, storm::storage::SparseMatrix<ValueType> const& transitionMatrix, std::vector<ValueType> const& exitRateVector, storm::storage::BitVector const& markovianStates, storm::storage::BitVector const& psiStates, std::pair<double, double> const& boundsPair, storm::solver::MinMaxLinearEquationSolverFactory<ValueType> const& minMaxLinearEquationSolverFactory) {
+                STORM_LOG_TRACE("Using IMCA's technique to compute bounded until probabilities.");
+                
                 uint64_t numberOfStates = transitionMatrix.getRowGroupCount();
-               
+                
                 // 'Unpack' the bounds to make them more easily accessible.
                 double lowerBound = boundsPair.first;
                 double upperBound = boundsPair.second;
-
+                
                 // (1) Compute the accuracy we need to achieve the required error bound.
                 ValueType maxExitRate = 0;
                 for (auto value : exitRateVector) {
@@ -489,7 +492,21 @@ namespace storm {
                     storm::utility::vector::setVectorValues(result, probabilisticNonGoalStates, vProbabilistic);
                     storm::utility::vector::setVectorValues(result, markovianNonGoalStates, vMarkovian);
                     return result;
-                }*/
+                }
+            }
+            
+            template <typename ValueType, typename std::enable_if<storm::NumberTraits<ValueType>::SupportsExponential, int>::type>
+            std::vector<ValueType> SparseMarkovAutomatonCslHelper::computeBoundedUntilProbabilities(OptimizationDirection dir, storm::storage::SparseMatrix<ValueType> const& transitionMatrix, std::vector<ValueType> const& exitRateVector, storm::storage::BitVector const& markovianStates, storm::storage::BitVector const& psiStates, std::pair<double, double> const& boundsPair, storm::solver::MinMaxLinearEquationSolverFactory<ValueType> const& minMaxLinearEquationSolverFactory) {
+                
+                auto const& markovAutomatonSettings = storm::settings::getModule<storm::settings::modules::MarkovAutomatonSettings>();
+                if (markovAutomatonSettings.getTechnique() == storm::settings::modules::MarkovAutomatonSettings::BoundedReachabilityTechnique::Imca) {
+                    return computeBoundedUntilProbabilitiesImca(dir, transitionMatrix, exitRateVector, markovianStates, psiStates, boundsPair, minMaxLinearEquationSolverFactory);
+                } else {
+                    STORM_LOG_ASSERT(markovAutomatonSettings.getTechnique() == storm::settings::modules::MarkovAutomatonSettings::BoundedReachabilityTechnique::UnifPlus, "Unknown solution technique.");
+                    
+                    // Why is optimization direction not passed?
+                    return unifPlus(boundsPair, exitRateVector, transitionMatrix, markovianStates, psiStates);
+                }
             }
               
             template <typename ValueType, typename std::enable_if<!storm::NumberTraits<ValueType>::SupportsExponential, int>::type>
