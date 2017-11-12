@@ -11,25 +11,15 @@ namespace storm {
     namespace dd {
         namespace bisimulation {
             
-            InternalSylvanSignatureRefinerBase::InternalSylvanSignatureRefinerBase(storm::dd::DdManager<storm::dd::DdType::Sylvan> const& manager, storm::expressions::Variable const& blockVariable, std::set<storm::expressions::Variable> const& stateVariables, storm::dd::Bdd<storm::dd::DdType::Sylvan> const& nondeterminismVariables, storm::dd::Bdd<storm::dd::DdType::Sylvan> const& nonBlockVariables, InternalSignatureRefinerOptions const& options) : manager(manager), blockVariable(blockVariable), stateVariables(stateVariables), nondeterminismVariables(nondeterminismVariables), nonBlockVariables(nonBlockVariables), options(options), numberOfBlockVariables(manager.getMetaVariable(blockVariable).getNumberOfDdVariables()), blockCube(manager.getMetaVariable(blockVariable).getCube()), nextFreeBlockIndex(0), numberOfRefinements(0), signatureCache(), resize(0) {
+            InternalSylvanSignatureRefinerBase::InternalSylvanSignatureRefinerBase(storm::dd::DdManager<storm::dd::DdType::Sylvan> const& manager, storm::expressions::Variable const& blockVariable, std::set<storm::expressions::Variable> const& stateVariables, storm::dd::Bdd<storm::dd::DdType::Sylvan> const& nondeterminismVariables, storm::dd::Bdd<storm::dd::DdType::Sylvan> const& nonBlockVariables, InternalSignatureRefinerOptions const& options) : manager(manager), blockVariable(blockVariable), stateVariables(stateVariables), nondeterminismVariables(nondeterminismVariables), nonBlockVariables(nonBlockVariables), options(options), numberOfBlockVariables(manager.getMetaVariable(blockVariable).getNumberOfDdVariables()), blockCube(manager.getMetaVariable(blockVariable).getCube()), nextFreeBlockIndex(0), numberOfRefinements(0), currentCapacity(1ull << 20), resizeFlag(0) {
                 
                 // Perform garbage collection to clean up stuff not needed anymore.
                 LACE_ME;
                 sylvan_gc();
                 
-                table.resize(3 * 8 * (1ull << 14));
+                table.resize(3 * currentCapacity);
             }
-            
-            BDD InternalSylvanSignatureRefinerBase::encodeBlock(uint64_t blockIndex) {
-                std::vector<uint8_t> e(numberOfBlockVariables);
-                for (uint64_t i = 0; i < numberOfBlockVariables; ++i) {
-                    e[i] = blockIndex & 1 ? 1 : 0;
-                    blockIndex >>= 1;
-                }
-                return sylvan_cube(blockCube.getInternalBdd().getSylvanBdd().GetBDD(), e.data());
-            }
-            
-            
+                        
             template<typename ValueType>
             InternalSignatureRefiner<storm::dd::DdType::Sylvan, ValueType>::InternalSignatureRefiner(storm::dd::DdManager<storm::dd::DdType::Sylvan> const& manager, storm::expressions::Variable const& blockVariable, std::set<storm::expressions::Variable> const& stateVariables, storm::dd::Bdd<storm::dd::DdType::Sylvan> const& nondeterminismVariables, storm::dd::Bdd<storm::dd::DdType::Sylvan> const& nonBlockVariables, InternalSignatureRefinerOptions const& options) : storm::dd::bisimulation::InternalSylvanSignatureRefinerBase(manager, blockVariable, stateVariables, nondeterminismVariables, nonBlockVariables, options) {
                 
@@ -45,28 +35,26 @@ namespace storm {
             
             template<typename ValueType>
             void InternalSignatureRefiner<storm::dd::DdType::Sylvan, ValueType>::clearCaches() {
-                signatureCache.clear();
-                reuseBlocksCache.clear();
-                this->table = std::vector<uint64_t>(table.size());
-                this->signatures = std::vector<uint64_t>(signatures.size());
+                for (auto& e : this->table) {
+                    e = 0ull;
+                }
+                for (auto& e : this->signatures) {
+                    e = 0ull;
+                }
             }
             
             template<typename ValueType>
             std::pair<storm::dd::Bdd<storm::dd::DdType::Sylvan>, boost::optional<storm::dd::Bdd<storm::dd::DdType::Sylvan>>> InternalSignatureRefiner<storm::dd::DdType::Sylvan, ValueType>::refine(Partition<storm::dd::DdType::Sylvan, ValueType> const& oldPartition, storm::dd::Add<storm::dd::DdType::Sylvan, ValueType> const& signatureAdd) {
                 STORM_LOG_ASSERT(oldPartition.storedAsBdd(), "Expecting partition to be stored as BDD for Sylvan.");
                 
+                LACE_ME;
+
                 nextFreeBlockIndex = options.reuseBlockNumbers ? oldPartition.getNextFreeBlockIndex() : 0;
                 signatures.resize(nextFreeBlockIndex);
                 
                 // Perform the actual recursive refinement step.
-                std::pair<BDD, BDD> result;
-                if (options.parallel) {
-                    STORM_LOG_TRACE("Using parallel refine.");
-                    result = refineParallel(oldPartition.asBdd().getInternalBdd().getSylvanBdd().GetBDD(), signatureAdd.getInternalAdd().getSylvanMtbdd().GetMTBDD(), nondeterminismVariables.getInternalBdd().getSylvanBdd().GetBDD(), nonBlockVariables.getInternalBdd().getSylvanBdd().GetBDD());
-                } else {
-                    STORM_LOG_TRACE("Using sequential refine.");
-                    result = refineSequential(oldPartition.asBdd().getInternalBdd().getSylvanBdd().GetBDD(), signatureAdd.getInternalAdd().getSylvanMtbdd().GetMTBDD(), nondeterminismVariables.getInternalBdd().getSylvanBdd().GetBDD(), nonBlockVariables.getInternalBdd().getSylvanBdd().GetBDD());
-                }
+                std::pair<BDD, BDD> result(0, 0);
+                result.first = CALL(sylvan_refine_partition, signatureAdd.getInternalAdd().getSylvanMtbdd().GetMTBDD(), oldPartition.asBdd().getInternalBdd().getSylvanBdd().GetBDD(), nondeterminismVariables.getInternalBdd().getSylvanBdd().GetBDD(), nonBlockVariables.getInternalBdd().getSylvanBdd().GetBDD(), this);
                 
                 // Construct resulting BDD from the obtained node and the meta information.
                 storm::dd::InternalBdd<storm::dd::DdType::Sylvan> internalNewPartitionBdd(&manager.getInternalDdManager(), sylvan::Bdd(result.first));
@@ -82,306 +70,7 @@ namespace storm {
                 clearCaches();
                 return std::make_pair(newPartitionBdd, optionalChangedBdd);
             }
-            
-            template<typename ValueType>
-            std::pair<BDD, BDD> InternalSignatureRefiner<storm::dd::DdType::Sylvan, ValueType>::reuseOrRelabel(BDD partitionNode, BDD nondeterminismVariablesNode, BDD nonBlockVariablesNode) {
-                LACE_ME;
-                
-                if (partitionNode == sylvan_false) {
-                    if (options.createChangedStates) {
-                        return std::make_pair(sylvan_false, sylvan_false);
-                    } else {
-                        return std::make_pair(sylvan_false, 0);
-                    }
-                }
-                
-                // Check the cache whether we have seen the same node before.
-                auto nodePair = std::make_pair(0, partitionNode);
-                auto it = signatureCache.find(nodePair);
-                if (it != signatureCache.end()) {
-                    // If so, we return the corresponding result.
-                    return it->second;
-                }
-                
-                sylvan_gc_test();
-                
-                // If there are no more non-block variables, we hit the signature.
-                if (sylvan_isconst(nonBlockVariablesNode)) {
-                    if (options.reuseBlockNumbers) {
-                        // If this is the first time (in this traversal) that we encounter this signature, we check
-                        // whether we can assign the old block number to it.
                         
-                        auto& reuseBlockEntry = reuseBlocksCache[partitionNode];
-                        if (!reuseBlockEntry.isReused()) {
-                            reuseBlockEntry.setReused();
-                            std::pair<BDD, BDD> result;
-                            if (options.createChangedStates) {
-                                result = std::make_pair(partitionNode, sylvan_false);
-                            } else {
-                                result = std::make_pair(partitionNode, 0);
-                            }
-                            signatureCache[nodePair] = result;
-                            return result;
-                        }
-                    }
-                    
-                    std::pair<BDD, BDD> result;
-                    if (options.createChangedStates) {
-                        result = std::make_pair(encodeBlock(nextFreeBlockIndex++), sylvan_true);
-                    } else {
-                        result = std::make_pair(encodeBlock(nextFreeBlockIndex++), 0);
-                    }
-                    signatureCache[nodePair] = result;
-                    return result;
-                } else {
-                    // If there are more variables that belong to the non-block part of the encoding, we need to recursively descend.
-                    
-                    bool skipped = true;
-                    BDD partitionThen;
-                    BDD partitionElse;
-                    short offset;
-                    bool isNondeterminismVariable = false;
-                    while (skipped && !sylvan_isconst(nonBlockVariablesNode)) {
-                        // Remember an offset that indicates whether the top variable is a nondeterminism variable or not.
-                        offset = options.shiftStateVariables ? 1 : 0;
-                        if (!sylvan_isconst(nondeterminismVariablesNode) && sylvan_var(nondeterminismVariablesNode) == sylvan_var(nonBlockVariablesNode)) {
-                            offset = 0;
-                            isNondeterminismVariable = true;
-                        }
-                        
-                        if (sylvan_mtbdd_matches_variable_index(partitionNode, sylvan_var(nonBlockVariablesNode), -offset)) {
-                            partitionThen = sylvan_high(partitionNode);
-                            partitionElse = sylvan_low(partitionNode);
-                            skipped = false;
-                        } else {
-                            partitionThen = partitionElse = partitionNode;
-                        }
-                        
-                        // If we skipped the next variable, we fast-forward.
-                        if (skipped) {
-                            // If the current variable is a nondeterminism variable, we need to advance both variable sets otherwise just the non-block variables.
-                            nonBlockVariablesNode = sylvan_high(nonBlockVariablesNode);
-                            if (isNondeterminismVariable) {
-                                nondeterminismVariablesNode = sylvan_high(nondeterminismVariablesNode);
-                            }
-                        }
-                    }
-                    
-                    // If there are no more non-block variables remaining, make a recursive call to enter the base case.
-                    if (sylvan_isconst(nonBlockVariablesNode)) {
-                        return reuseOrRelabel(partitionNode, nondeterminismVariablesNode, nonBlockVariablesNode);
-                    }
-                    
-                    std::pair<BDD, BDD> combinedThenResult = reuseOrRelabel(partitionThen, isNondeterminismVariable ? sylvan_high(nondeterminismVariablesNode) : nondeterminismVariablesNode, sylvan_high(nonBlockVariablesNode));
-                    BDD thenResult = combinedThenResult.first;
-                    bdd_refs_push(thenResult);
-                    BDD changedThenResult = combinedThenResult.second;
-                    if (options.createChangedStates) {
-                        bdd_refs_push(changedThenResult);
-                    }
-                    std::pair<BDD, BDD> combinedElseResult = reuseOrRelabel(partitionElse, isNondeterminismVariable ? sylvan_high(nondeterminismVariablesNode) : nondeterminismVariablesNode, sylvan_high(nonBlockVariablesNode));
-                    BDD elseResult = combinedElseResult.first;
-                    bdd_refs_push(elseResult);
-                    BDD changedElseResult = combinedElseResult.second;
-                    if (options.createChangedStates) {
-                        bdd_refs_push(changedElseResult);
-                    }
-                    
-                    std::pair<BDD, BDD> result;
-                    if (thenResult == elseResult) {
-                        result.first = thenResult;
-                    } else {
-                        // Get the node to connect the subresults.
-                        result.first = sylvan_makenode(sylvan_var(nonBlockVariablesNode) + offset, elseResult, thenResult);
-                    }
-                    
-                    result.second = 0;
-                    if (options.createChangedStates) {
-                        if (changedThenResult == changedElseResult) {
-                            result.second = changedThenResult;
-                        } else {
-                            // Get the node to connect the subresults.
-                            result.second = sylvan_makenode(sylvan_var(nonBlockVariablesNode) + offset, changedElseResult, changedThenResult);
-                        }
-                    }
-                    
-                    // Dispose of the intermediate results.
-                    if (options.createChangedStates) {
-                        bdd_refs_pop(4);
-                    } else {
-                        bdd_refs_pop(2);
-                    }
-                    
-                    // Store the result in the cache.
-                    signatureCache[nodePair] = result;
-                    return result;
-                }
-            }
-            
-            template<typename ValueType>
-            std::pair<BDD, BDD> InternalSignatureRefiner<storm::dd::DdType::Sylvan, ValueType>::refineParallel(BDD partitionNode, MTBDD signatureNode, BDD nondeterminismVariablesNode, BDD nonBlockVariablesNode) {
-                LACE_ME;
-                // return std::make_pair(CALL(refine_parallel, partitionNode, signatureNode, nondeterminismVariablesNode, nonBlockVariablesNode, this), 0);
-                return std::make_pair(CALL(sylvan_refine_partition, signatureNode, nonBlockVariablesNode, partitionNode, this), 0);
-            }
-            
-            template<typename ValueType>
-            std::pair<BDD, BDD> InternalSignatureRefiner<storm::dd::DdType::Sylvan, ValueType>::refineSequential(BDD partitionNode, MTBDD signatureNode, BDD nondeterminismVariablesNode, BDD nonBlockVariablesNode) {
-                LACE_ME;
-                
-                // If we arrived at the constant zero node, then this was an illegal state encoding (we require
-                // all states to be non-deadlock).
-                if (partitionNode == sylvan_false) {
-                    if (options.createChangedStates) {
-                        return std::make_pair(sylvan_false, sylvan_false);
-                    } else {
-                        return std::make_pair(sylvan_false, 0);
-                    }
-                } else if (mtbdd_iszero(signatureNode)) {
-                    std::pair<BDD, BDD> result = reuseOrRelabel(partitionNode, nondeterminismVariablesNode, nonBlockVariablesNode);
-                    signatureCache[std::make_pair(signatureNode, partitionNode)] = result;
-                    return result;
-                }
-                
-                STORM_LOG_ASSERT(partitionNode != mtbdd_false, "Expected non-false node.");
-                
-                // Check the cache whether we have seen the same node before.
-                auto nodePair = std::make_pair(signatureNode, partitionNode);
-                auto it = signatureCache.find(nodePair);
-                if (it != signatureCache.end()) {
-                    // If so, we return the corresponding result.
-                    return it->second;
-                }
-                
-                sylvan_gc_test();
-                
-                // If there are no more non-block variables, we hit the signature.
-                if (sylvan_isconst(nonBlockVariablesNode)) {
-                    if (options.reuseBlockNumbers) {
-                        // If this is the first time (in this traversal) that we encounter this signature, we check
-                        // whether we can assign the old block number to it.
-                        
-                        auto& reuseBlockEntry = reuseBlocksCache[partitionNode];
-                        if (!reuseBlockEntry.isReused()) {
-                            reuseBlockEntry.setReused();
-                            std::pair<BDD, BDD> result;
-                            if (options.createChangedStates) {
-                                result = std::make_pair(partitionNode, sylvan_false);
-                            } else {
-                                result = std::make_pair(partitionNode, 0);
-                            }
-                            signatureCache[nodePair] = result;
-                            return result;
-                        }
-                    }
-                    
-                    std::pair<BDD, BDD> result;
-                    if (options.createChangedStates) {
-                        result = std::make_pair(encodeBlock(nextFreeBlockIndex++), sylvan_true);
-                    } else {
-                        result = std::make_pair(encodeBlock(nextFreeBlockIndex++), 0);
-                    }
-                    signatureCache[nodePair] = result;
-                    return result;
-                } else {
-                    // If there are more variables that belong to the non-block part of the encoding, we need to recursively descend.
-                    
-                    bool skippedBoth = true;
-                    BDD partitionThen;
-                    BDD partitionElse;
-                    MTBDD signatureThen;
-                    MTBDD signatureElse;
-                    short offset;
-                    bool isNondeterminismVariable = false;
-                    while (skippedBoth && !sylvan_isconst(nonBlockVariablesNode)) {
-                        // Remember an offset that indicates whether the top variable is a nondeterminism variable or not.
-                        offset = options.shiftStateVariables ? 1 : 0;
-                        if (!sylvan_isconst(nondeterminismVariablesNode) && sylvan_var(nondeterminismVariablesNode) == sylvan_var(nonBlockVariablesNode)) {
-                            offset = 0;
-                            isNondeterminismVariable = true;
-                        }
-                        
-                        if (sylvan_mtbdd_matches_variable_index(partitionNode, sylvan_var(nonBlockVariablesNode), -offset)) {
-                            partitionThen = sylvan_high(partitionNode);
-                            partitionElse = sylvan_low(partitionNode);
-                            skippedBoth = false;
-                        } else {
-                            partitionThen = partitionElse = partitionNode;
-                        }
-                        
-                        if (sylvan_mtbdd_matches_variable_index(signatureNode, sylvan_var(nonBlockVariablesNode))) {
-                            signatureThen = sylvan_high(signatureNode);
-                            signatureElse = sylvan_low(signatureNode);
-                            skippedBoth = false;
-                        } else {
-                            signatureThen = signatureElse = signatureNode;
-                        }
-                        
-                        // If both (signature and partition) skipped the next variable, we fast-forward.
-                        if (skippedBoth) {
-                            // If the current variable is a nondeterminism variable, we need to advance both variable sets otherwise just the non-block variables.
-                            nonBlockVariablesNode = sylvan_high(nonBlockVariablesNode);
-                            if (isNondeterminismVariable) {
-                                nondeterminismVariablesNode = sylvan_high(nondeterminismVariablesNode);
-                            }
-                        }
-                    }
-                    
-                    // If there are no more non-block variables remaining, make a recursive call to enter the base case.
-                    if (sylvan_isconst(nonBlockVariablesNode)) {
-                        return refineSequential(partitionNode, signatureNode, nondeterminismVariablesNode, nonBlockVariablesNode);
-                    }
-                    
-                    std::pair<BDD, BDD> combinedThenResult = refineSequential(partitionThen, signatureThen, isNondeterminismVariable ? sylvan_high(nondeterminismVariablesNode) : nondeterminismVariablesNode, sylvan_high(nonBlockVariablesNode));
-                    BDD thenResult = combinedThenResult.first;
-                    bdd_refs_push(thenResult);
-                    BDD changedThenResult = combinedThenResult.second;
-                    if (options.createChangedStates) {
-                        bdd_refs_push(changedThenResult);
-                    }
-                    std::pair<BDD, BDD> combinedElseResult = refineSequential(partitionElse, signatureElse, isNondeterminismVariable ? sylvan_high(nondeterminismVariablesNode) : nondeterminismVariablesNode, sylvan_high(nonBlockVariablesNode));
-                    BDD elseResult = combinedElseResult.first;
-                    bdd_refs_push(elseResult);
-                    BDD changedElseResult = combinedElseResult.second;
-                    if (options.createChangedStates) {
-                        bdd_refs_push(changedElseResult);
-                    }
-                    
-                    std::pair<BDD, BDD> result;
-                    if (thenResult == elseResult) {
-                        result.first = thenResult;
-                    } else {
-                        // Get the node to connect the subresults.
-                        result.first = sylvan_makenode(sylvan_var(nonBlockVariablesNode) + offset, elseResult, thenResult);
-                    }
-                    
-                    result.second = 0;
-                    if (options.createChangedStates) {
-                        if (changedThenResult == changedElseResult) {
-                            result.second = changedThenResult;
-                        } else {
-                            // Get the node to connect the subresults.
-                            result.second = sylvan_makenode(sylvan_var(nonBlockVariablesNode) + offset, changedElseResult, changedThenResult);
-                        }
-                    }
-                    
-                    // Dispose of the intermediate results.
-                    if (options.createChangedStates) {
-                        bdd_refs_pop(4);
-                    } else {
-                        bdd_refs_pop(2);
-                    }
-                    
-                    // Store the result in the cache.
-                    signatureCache[nodePair] = result;
-                    
-                    return result;
-                }
-            }
-            
-#define cas(ptr, old, new) (__sync_bool_compare_and_swap((ptr),(old),(new)))
-#define ATOMIC_READ(x) (*(volatile decltype(x) *)&(x))
-            
             /* Rotating 64-bit FNV-1a hash */
             static uint64_t
             sylvan_hash(uint64_t a, uint64_t b)
@@ -394,29 +83,32 @@ namespace storm {
                 return hash ^ (hash>>32);
             }
             
-            VOID_TASK_3(sylvan_rehash, size_t, first, size_t, count, void*, refinerPtr)
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wc99-extensions"
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wpedantic"
+            
+            VOID_TASK_3(sylvan_rehash, size_t, first, size_t, count, InternalSylvanSignatureRefinerBase*, refiner)
             {
-                auto& refiner = *static_cast<InternalSylvanSignatureRefinerBase*>(refinerPtr);
-                
                 if (count > 128) {
-                    SPAWN(sylvan_rehash, first, count/2, refinerPtr);
-                    CALL(sylvan_rehash, first+count/2, count-count/2, refinerPtr);
+                    SPAWN(sylvan_rehash, first, count/2, refiner);
+                    CALL(sylvan_rehash, first+count/2, count-count/2, refiner);
                     SYNC(sylvan_rehash);
                     return;
                 }
                 
                 while (count--) {
-                    uint64_t *old_ptr = refiner.oldTable.data() + first*3;
+                    uint64_t *old_ptr = refiner->oldTable.data() + first*3;
                     uint64_t a = old_ptr[0];
                     uint64_t b = old_ptr[1];
                     uint64_t c = old_ptr[2];
                     
                     uint64_t hash = sylvan_hash(a, b);
-                    uint64_t pos = hash % (refiner.table.size() / 3);
+                    uint64_t pos = hash % refiner->currentCapacity;
                     
                     volatile uint64_t *ptr = 0;
                     for (;;) {
-                        ptr = refiner.table.data() + pos*3;
+                        ptr = refiner->table.data() + pos*3;
                         if (*ptr == 0) {
                             if (cas(ptr, 0, a)) {
                                 ptr[1] = b;
@@ -425,33 +117,31 @@ namespace storm {
                             }
                         }
                         pos++;
-                        if (pos >= (refiner.table.size() / 3)) pos = 0;
+                        if (pos >= refiner->currentCapacity) pos = 0;
                     }
                     
                     first++;
                 }
             }
             
-            VOID_TASK_1(sylvan_grow_it, void*, refinerPtr)
+            VOID_TASK_1(sylvan_grow_it, InternalSylvanSignatureRefinerBase*, refiner)
             {
-                auto& refiner = *static_cast<InternalSylvanSignatureRefinerBase*>(refinerPtr);
+                refiner->oldTable = std::move(refiner->table);
                 
-                refiner.oldTable = std::move(refiner.table);
+                uint64_t oldCapacity = refiner->currentCapacity;
+                refiner->currentCapacity <<= 1;
+                refiner->table = std::vector<uint64_t>(3 * refiner->currentCapacity);
                 
-                refiner.table = std::vector<uint64_t>(refiner.oldTable.size() << 1);
+                CALL(sylvan_rehash, 0, oldCapacity, refiner);
                 
-                CALL(sylvan_rehash, 0, refiner.oldTable.size() / 3, refinerPtr);
-                
-                refiner.oldTable.clear();
+                refiner->oldTable.clear();
             }
             
-            VOID_TASK_1(sylvan_grow, void*, refinerPtr)
+            VOID_TASK_1(sylvan_grow, InternalSylvanSignatureRefinerBase*, refiner)
             {
-                auto& refiner = *static_cast<InternalSylvanSignatureRefinerBase*>(refinerPtr);
-                
-                if (cas(&refiner.resize, 0, 1)) {
-                    NEWFRAME(sylvan_grow_it, refinerPtr);
-                    refiner.resize = 0;
+                if (cas(&refiner->resizeFlag, 0, 1)) {
+                    NEWFRAME(sylvan_grow_it, refiner);
+                    refiner->resizeFlag = 0;
                 } else {
                     /* wait for new frame to appear */
                     while (ATOMIC_READ(lace_newframe.t) == 0) {}
@@ -459,19 +149,16 @@ namespace storm {
                 }
             }
             
-            static uint64_t
-            sylvan_search_or_insert(uint64_t sig, uint64_t previous_block, void* refinerPtr)
+            static uint64_t sylvan_search_or_insert(uint64_t sig, uint64_t previous_block, InternalSylvanSignatureRefinerBase* refiner)
             {
-                auto& refiner = *static_cast<InternalSylvanSignatureRefinerBase*>(refinerPtr);
-                
                 uint64_t hash = sylvan_hash(sig, previous_block);
-                uint64_t pos = hash % (refiner.table.size() / 3);
+                uint64_t pos = hash % refiner->currentCapacity;
                 
                 volatile uint64_t *ptr = 0;
                 uint64_t a, b, c;
                 int count = 0;
                 for (;;) {
-                    ptr = refiner.table.data() + pos*3;
+                    ptr = refiner->table.data() + pos*3;
                     a = *ptr;
                     if (a == sig) {
                         while ((b=ptr[1]) == 0) continue;
@@ -481,7 +168,7 @@ namespace storm {
                         }
                     } else if (a == 0) {
                         if (cas(ptr, 0, sig)) {
-                            c = ptr[2] = __sync_fetch_and_add(&refiner.nextFreeBlockIndex, 1);
+                            c = ptr[2] = __sync_fetch_and_add(&refiner->nextFreeBlockIndex, 1);
                             ptr[1] = previous_block;
                             return c;
                         } else {
@@ -489,9 +176,19 @@ namespace storm {
                         }
                     }
                     pos++;
-                    if (pos >= (refiner.table.size() / 3)) pos = 0;
+                    if (pos >= refiner->currentCapacity) pos = 0;
                     if (++count >= 128) return 0;
                 }
+            }
+            
+            TASK_3(BDD, sylvan_encode_block, BDD, vars, uint64_t, numberOfVariables, uint64_t, blockIndex)
+            {
+                std::vector<uint8_t> e(numberOfVariables);
+                for (uint64_t i = 0; i < numberOfVariables; ++i) {
+                    e[i] = blockIndex & 1 ? 1 : 0;
+                    blockIndex >>= 1;
+                }
+                return sylvan_cube(vars, e.data());
             }
             
             TASK_1(uint64_t, sylvan_decode_block, BDD, block)
@@ -511,11 +208,9 @@ namespace storm {
                 return result;
             }
             
-            TASK_3(BDD, sylvan_assign_block, BDD, sig, BDD, previous_block, void*, refinerPtr)
+            TASK_3(BDD, sylvan_assign_block, BDD, sig, BDD, previous_block, InternalSylvanSignatureRefinerBase*, refiner)
             {
                 assert(previous_block != mtbdd_false); // if so, incorrect call!
-                
-                auto& refiner = *static_cast<InternalSylvanSignatureRefinerBase*>(refinerPtr);
                 
                 // maybe do garbage collection
                 sylvan_gc_test();
@@ -526,33 +221,25 @@ namespace storm {
                 }
                 
                 // try to claim previous block number
+                assert(previous_block != sylvan_false);
                 const uint64_t p_b = CALL(sylvan_decode_block, previous_block);
-                assert(p_b != 0);
                 
                 for (;;) {
-                    BDD cur = *(volatile BDD*)&refiner.signatures[p_b];
+                    BDD cur = *(volatile BDD*)&refiner->signatures[p_b];
                     if (cur == sig) return previous_block;
                     if (cur != 0) break;
-                    if (cas(&refiner.signatures[p_b], 0, sig)) return previous_block;
+                    if (cas(&refiner->signatures[p_b], 0, sig)) return previous_block;
                 }
                 
                 // no previous block number, search or insert
                 uint64_t c;
-                while ((c = sylvan_search_or_insert(sig, previous_block, refinerPtr)) == 0) CALL(sylvan_grow, refinerPtr);
+                while ((c = sylvan_search_or_insert(sig, previous_block, refiner)) == 0) CALL(sylvan_grow, refiner);
                 
-                //                if (c >= refiner.signatures.size()) {
-                //                    fprintf(stderr, "Out of cheese exception, no more blocks available\n");
-                //                    exit(1);
-                //                }
-                
-                //                return CALL(refiner.encodeBlock(c));
-                return refiner.encodeBlock(c);
+                return CALL(sylvan_encode_block, refiner->blockCube.getInternalBdd().getSylvanBdd().GetBDD(), refiner->numberOfBlockVariables, c);
             }
             
-            TASK_4(BDD, sylvan_refine_partition, BDD, dd, BDD, vars, BDD, previous_partition, void*, refinerPtr)
+            TASK_5(BDD, sylvan_refine_partition, BDD, dd, BDD, previous_partition, BDD, nondetvars, BDD, vars, InternalSylvanSignatureRefinerBase*, refiner)
             {
-                auto& refiner = *static_cast<InternalSylvanSignatureRefinerBase*>(refinerPtr);
-                
                 /* expecting dd as in s,a,B */
                 /* expecting vars to be conjunction of variables in s */
                 /* expecting previous_partition as in t,B */
@@ -564,9 +251,9 @@ namespace storm {
                 
                 if (sylvan_set_isempty(vars)) {
                     BDD result;
-                    if (cache_get(dd|(256LL<<42), vars, previous_partition|(refiner.numberOfRefinements<<40), &result)) return result;
-                    result = CALL(sylvan_assign_block, dd, previous_partition, refinerPtr);
-                    cache_put(dd|(256LL<<42), vars, previous_partition|(refiner.numberOfRefinements<<40), result);
+                    if (cache_get(dd|(256LL<<42), vars, previous_partition|(refiner->numberOfRefinements<<40), &result)) return result;
+                    result = CALL(sylvan_assign_block, dd, previous_partition, refiner);
+                    cache_put(dd|(256LL<<42), vars, previous_partition|(refiner->numberOfRefinements<<40), result);
                     return result;
                 }
                 
@@ -578,16 +265,27 @@ namespace storm {
                 BDDVAR dd_var = sylvan_isconst(dd) ? 0xffffffff : sylvan_var(dd);
                 BDDVAR pp_var = sylvan_var(previous_partition);
                 BDDVAR vars_var = sylvan_var(vars);
-                
-                while (vars_var < dd_var && vars_var+1 < pp_var) {
+                BDDVAR nondetvars_var = sylvan_isconst(nondetvars) ? 0xffffffff : sylvan_var(nondetvars);
+                bool nondet = nondetvars_var == vars_var;
+                uint64_t offset = (nondet || !refiner->options.shiftStateVariables) ? 0 : 1;
+
+                while (vars_var < dd_var && vars_var < pp_var+offset) {
                     vars = sylvan_set_next(vars);
-                    if (sylvan_set_isempty(vars)) return CALL(sylvan_refine_partition, dd, vars, previous_partition, refinerPtr);
+                    if (nondet) {
+                        nondetvars = sylvan_set_next(nondetvars);
+                    }
+                    if (sylvan_set_isempty(vars)) return CALL(sylvan_refine_partition, dd, previous_partition, nondetvars, vars, refiner);
                     vars_var = sylvan_var(vars);
+                    if (nondet) {
+                        nondetvars_var = sylvan_isconst(nondetvars) ? 0xffffffff : sylvan_var(nondetvars);
+                        nondet = nondetvars_var == vars_var;
+                        offset = (nondet || !refiner->options.shiftStateVariables) ? 0 : 1;
+                    }
                 }
                 
                 /* Consult cache */
                 BDD result;
-                if (cache_get(dd|(256LL<<42), vars, previous_partition|(refiner.numberOfRefinements<<40), &result)) {
+                if (cache_get(dd|(256LL<<42), vars, previous_partition|(refiner->numberOfRefinements<<40), &result)) {
                     return result;
                 }
                 
@@ -601,27 +299,31 @@ namespace storm {
                 }
                 
                 BDD pp_low, pp_high;
-                if (vars_var+1 == pp_var) {
+                if (vars_var+offset == pp_var) {
                     pp_low = sylvan_low(previous_partition);
                     pp_high = sylvan_high(previous_partition);
                 } else {
                     pp_low = pp_high = previous_partition;
                 }
-                
+
                 /* Recursive steps */
                 BDD next_vars = sylvan_set_next(vars);
-                bdd_refs_spawn(SPAWN(sylvan_refine_partition, dd_low, next_vars, pp_low, refinerPtr));
-                BDD high = bdd_refs_push(CALL(sylvan_refine_partition, dd_high, next_vars, pp_high, refinerPtr));
+                BDD next_nondetvars = nondet ? sylvan_set_next(nondetvars) : nondetvars;
+                bdd_refs_spawn(SPAWN(sylvan_refine_partition, dd_low, pp_low, next_nondetvars, next_vars, refiner));
+                BDD high = bdd_refs_push(CALL(sylvan_refine_partition, dd_high, pp_high, next_nondetvars, next_vars, refiner));
                 BDD low = bdd_refs_sync(SYNC(sylvan_refine_partition));
                 bdd_refs_pop(1);
                 
                 /* rename from s to t */
-                result = sylvan_makenode(vars_var+1, low, high);
+                result = sylvan_makenode(vars_var+offset, low, high);
                 
                 /* Write to cache */
-                cache_put(dd|(256LL<<42), vars, previous_partition|(refiner.numberOfRefinements<<40), result);
+                cache_put(dd|(256LL<<42), vars, previous_partition|(refiner->numberOfRefinements<<40), result);
                 return result;
             }
+            
+#pragma GCC diagnostic pop
+#pragma clang diagnostic pop
             
             template class InternalSignatureRefiner<storm::dd::DdType::Sylvan, double>;
             template class InternalSignatureRefiner<storm::dd::DdType::Sylvan, storm::RationalNumber>;

@@ -17,6 +17,9 @@
 #include "sylvan_storm_rational_number.h"
 #include "sylvan_storm_rational_function.h"
 
+#define cas(ptr, old, new) (__sync_bool_compare_and_swap((ptr),(old),(new)))
+#define ATOMIC_READ(x) (*(volatile decltype(x) *)&(x))
+
 namespace storm {
     namespace dd {
 

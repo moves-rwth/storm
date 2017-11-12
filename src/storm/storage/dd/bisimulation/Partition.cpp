@@ -135,7 +135,7 @@ namespace storm {
                 storm::dd::Bdd<DdType> partitionBdd = manager.getBddZero();
                 storm::dd::Bdd<DdType> transitionMatrixBdd = model.getTransitionMatrix().notZero().existsAbstract(model.getNondeterminismVariables());
                 storm::dd::Bdd<DdType> coveredStates = manager.getBddZero();
-                uint64_t blockCount = 1;
+                uint64_t blockCount = 0;
 
                 // Backward BFS.
                 storm::dd::Bdd<DdType> backwardFrontier = targetStates;
@@ -244,7 +244,7 @@ namespace storm {
             
             template<storm::dd::DdType DdType, typename ValueType>
             uint64_t Partition<DdType, ValueType>::getNumberOfBlocks() const {
-                return numberOfBlocks - 1;
+                return numberOfBlocks;
             }
             
             template<storm::dd::DdType DdType, typename ValueType>
@@ -311,7 +311,7 @@ namespace storm {
             
             template<storm::dd::DdType DdType, typename ValueType>
             std::pair<storm::dd::Bdd<DdType>, uint64_t> Partition<DdType, ValueType>::createPartitionBdd(storm::dd::DdManager<DdType> const& manager, storm::models::symbolic::Model<DdType, ValueType> const& model, std::vector<storm::dd::Bdd<DdType>> const& stateSets, storm::expressions::Variable const& blockVariable) {
-                uint64_t blockCount = 1;
+                uint64_t blockCount = 0;
                 storm::dd::Bdd<DdType> partitionBdd = manager.getBddZero();
                 
                 // Enumerate all realizable blocks.
