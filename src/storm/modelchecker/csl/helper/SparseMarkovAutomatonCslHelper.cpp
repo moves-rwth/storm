@@ -190,7 +190,7 @@ namespace storm {
             ValueType SparseMarkovAutomatonCslHelper::poisson(ValueType lambda, uint64_t i) {
                 ValueType res = pow(lambda, i);
                 ValueType fac = 1;
-                for (long j = i ; j>0 ; j--){
+                for (uint64_t j = i ; j>0 ; j--){
                     fac = fac *j;
                 }
                 res = res / fac ;
@@ -205,7 +205,7 @@ namespace storm {
                 auto rowGroupIndices = fullTransitionMatrix.getRowGroupIndices();
                 
                 ValueType res =0;
-                for (long i = k ; i < N ; i++ ){
+                for (uint64_t i = k ; i < N ; i++ ){
                     if (wu[N-1-(i-k)][node]==-1){
                         calculateWu((N-1-(i-k)),node,lambda,wu,fullTransitionMatrix,markovianStates,psiStates);
                     }
@@ -286,9 +286,10 @@ namespace storm {
                 
                 //goal state
                 if (psiStates[node]){
-                    res = 0;
+                    res = storm::utility::zero<ValueType>();
                     for (uint64_t i = k ; i<N ; i++){
-                        res+=poisson(lambda,i);
+                        ValueType between = poisson(lambda,i);
+                        res+=between;
                     }
                     vd[k][node]=res;
                     logfile << "goal state node " << node << " res = " << res << "\n";
@@ -349,14 +350,42 @@ namespace storm {
                 std::vector<std::vector<ValueType>> vd,vu,wu;
 
                 //transition matrix with diagonal entries. The values can be changed during uniformisation
+                std::vector<ValueType> exitRate{exitRateVector};
                 typename storm::storage::SparseMatrix<ValueType> fullTransitionMatrix = transitionMatrix.getSubmatrix(true, allStates , allStates , true);
                 auto rowGroupIndices = fullTransitionMatrix.getRowGroupIndices();
-                std::vector<ValueType> exitRate{exitRateVector};
+
+                //delete prob-diagonal entries
+                for (uint64_t i =0; i<fullTransitionMatrix.getRowGroupCount(); i++) {
+                    if (markovianStates[i]) {
+                        continue;
+                    }
+                    auto from = rowGroupIndices[i];
+                    auto to = rowGroupIndices[i + 1];
+                    for (uint64_t j = from; j < to; j++) {
+                        ValueType selfLoop = 0;
+                        for (auto& element: fullTransitionMatrix.getRow(j)){
+                            if (element.getColumn()==i){
+                                selfLoop = element.getValue();
+                            }
+                        }
+                        if (selfLoop==0){
+                            continue;
+                        }
+                        for (auto& element : fullTransitionMatrix.getRow(j)){
+                            if (element.getColumn()!=i && selfLoop!=1){
+                                element.setValue(element.getValue()/(1-selfLoop));
+                            } else {
+                                element.setValue(0);
+                            }
+                        }
+                    }
+                }
+
 
                 //(1) define horizon, epsilon, kappa , N, lambda,
+                uint64_t numberOfStates = fullTransitionMatrix.getRowGroupCount();
                 double T = boundsPair.second;
                 ValueType kappa = storm::utility::one<ValueType>() /10; // would be better as option-parameter
-                uint64_t numberOfStates = fullTransitionMatrix.getRowGroupCount();
                 ValueType epsilon = storm::settings::getModule<storm::settings::modules::GeneralSettings>().getPrecision();
                 ValueType lambda = exitRateVector[0];
                 for (ValueType act: exitRateVector) {
