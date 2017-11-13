@@ -501,6 +501,7 @@ namespace storm {
             
             friend std::ostream& operator<<(std::ostream& out, BitVector const& bitVector);
             friend struct std::hash<storm::storage::BitVector>;
+            friend struct FNV1aBitVectorHash;
             
         private:
             /*!
@@ -568,6 +569,10 @@ namespace storm {
             
             // A bit mask that can be used to reduce a modulo 64 operation to a logical "and".
             static const uint_fast64_t mod64mask = (1 << 6) - 1;
+        };
+        
+        struct FNV1aBitVectorHash {
+            std::size_t operator()(storm::storage::BitVector const& bv) const;
         };
         
     } // namespace storage

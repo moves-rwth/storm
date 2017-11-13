@@ -74,7 +74,7 @@ namespace storm {
                 result.addLabel(label.first);
             }
             
-            storm::storage::BitVectorHashMap<StateType> const& states = stateStorage.stateToId;
+            auto const& states = stateStorage.stateToId;
             for (auto const& stateIndexPair : states) {
                 unpackStateIntoEvaluator(stateIndexPair.first, variableInformation, *this->evaluator);
                 

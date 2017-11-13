@@ -999,6 +999,20 @@ namespace storm {
             out << std::endl;
         }
 
+        std::size_t FNV1aBitVectorHash::operator()(storm::storage::BitVector const& bv) const {
+            std::size_t seed = 14695981039346656037ull;
+            uint64_t prime = 1099511628211ull;
+            
+            unsigned char const* it = reinterpret_cast<unsigned char const*>(bv.buckets);
+            unsigned char const* ite = it + 8 * bv.bucketCount();
+            
+            for (; it != ite; ++it) {
+                seed = (*it ^ seed) * prime;
+            }
+            
+            return seed;
+        }
+        
         // All necessary explicit template instantiations.
         template BitVector::BitVector(uint_fast64_t length, std::vector<uint_fast64_t>::iterator begin, std::vector<uint_fast64_t>::iterator end);
         template BitVector::BitVector(uint_fast64_t length, std::vector<uint_fast64_t>::const_iterator begin, std::vector<uint_fast64_t>::const_iterator end);
