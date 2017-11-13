@@ -1001,13 +1001,15 @@ namespace storm {
 
         std::size_t FNV1aBitVectorHash::operator()(storm::storage::BitVector const& bv) const {
             std::size_t seed = 14695981039346656037ull;
-            uint64_t prime = 1099511628211ull;
             
             unsigned char const* it = reinterpret_cast<unsigned char const*>(bv.buckets);
             unsigned char const* ite = it + 8 * bv.bucketCount();
             
-            for (; it != ite; ++it) {
-                seed = (*it ^ seed) * prime;
+            while (it < ite) {
+                seed ^= *it++;
+                
+                // Multiplication with magic prime.
+                seed += (seed << 1) + (seed << 4) + (seed << 5) + (seed << 7) + (seed << 8) + (seed << 40);
             }
             
             return seed;
