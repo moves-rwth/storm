@@ -83,7 +83,7 @@ namespace storm {
         }
         
         template<typename ValueType>
-        StandardMinMaxLinearEquationSolverFactory<ValueType>::StandardMinMaxLinearEquationSolverFactory(std::unique_ptr<LinearEquationSolverFactory<ValueType>>&& linearEquationSolverFactory, MinMaxMethodSelection) : MinMaxLinearEquationSolverFactory<ValueType>(), linearEquationSolverFactory(std::move(linearEquationSolverFactory)) {
+        StandardMinMaxLinearEquationSolverFactory<ValueType>::StandardMinMaxLinearEquationSolverFactory(std::unique_ptr<LinearEquationSolverFactory<ValueType>>&& linearEquationSolverFactory) : MinMaxLinearEquationSolverFactory<ValueType>(), linearEquationSolverFactory(std::move(linearEquationSolverFactory)) {
             // Intentionally left empty.
         }
         

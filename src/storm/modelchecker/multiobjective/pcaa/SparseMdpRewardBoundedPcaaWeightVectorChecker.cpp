@@ -78,7 +78,7 @@ namespace storm {
                 EpochCheckingData cachedData;
                 ValueType precision = rewardUnfolding.getRequiredEpochModelPrecision(initEpoch, storm::utility::convertNumber<ValueType>(storm::settings::getModule<storm::settings::modules::GeneralSettings>().getPrecision()));
                 Environment newEnv = env;
-                newEnv.solver().minMax().setPrecision(precision);
+                newEnv.solver().minMax().setPrecision(storm::utility::convertNumber<storm::RationalNumber>(precision));
                 storm::utility::ProgressMeasurement progress("epochs");
                 progress.setMaxCount(epochOrder.size());
                 progress.startNewMeasurement(0);

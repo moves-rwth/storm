@@ -181,7 +181,7 @@ namespace storm {
             bool isRequirementsCheckedSet() const;
             
         protected:
-            virtual bool internalSolveEquations(OptimizationDirection d, std::vector<ValueType>& x, std::vector<ValueType> const& b) const = 0;
+            virtual bool internalSolveEquations(Environment const& env, OptimizationDirection d, std::vector<ValueType>& x, std::vector<ValueType> const& b) const = 0;
                         
             /// The optimization direction to use for calls to functions that do not provide it explicitly. Can also be unset.
             OptimizationDirectionSetting direction;

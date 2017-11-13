@@ -9,8 +9,6 @@
 
 namespace storm {
     
-    class Environment;
-    
     namespace models {
         namespace symbolic {
             template<storm::dd::DdType Type, typename ValueType>

@@ -9,8 +9,6 @@
 
 namespace storm {
     
-    class Environment;
-    
     namespace modelchecker {
         
         template<typename SparseMarkovAutomatonModelType>

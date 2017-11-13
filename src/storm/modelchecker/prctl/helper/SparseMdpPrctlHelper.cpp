@@ -33,7 +33,9 @@
 #include "storm/utility/ProgressMeasurement.h"
 #include "storm/utility/export.h"
 
-#include "storm/environment/environments.h"
+#include "storm/environment/Environment.h"
+#include "storm/environment/solver/SolverEnvironment.h"
+#include "storm/environment/solver/MinMaxSolverEnvironment.h"
 
 #include "storm/exceptions/InvalidStateException.h"
 #include "storm/exceptions/InvalidPropertyException.h"
@@ -147,7 +149,7 @@ namespace storm {
                     minMaxSolver->setOptimizationDirection(dir);
                     minMaxSolver->setCachingEnabled(true);
                     minMaxSolver->setTrackScheduler(true);
-                    auto req = minMaxSolver->getRequirements(dir);
+                    auto req = minMaxSolver->getRequirements(env, dir);
                     if (lowerBound) {
                         minMaxSolver->setLowerBound(lowerBound.get());
                         req.clearLowerBounds();
@@ -200,7 +202,7 @@ namespace storm {
 
                 ValueType precision = rewardUnfolding.getRequiredEpochModelPrecision(initEpoch, storm::utility::convertNumber<ValueType>(storm::settings::getModule<storm::settings::modules::GeneralSettings>().getPrecision()));
                 Environment preciseEnv = env;
-                preciseEnv.solver().minMax().setPrecision(precision);
+                preciseEnv.solver().minMax().setPrecision(storm::utility::convertNumber<storm::RationalNumber>(precision));
                 
                 // In case of cdf export we store the necessary data.
                 std::vector<std::vector<ValueType>> cdfData;
@@ -217,7 +219,7 @@ namespace storm {
                     if (epochModel.epochMatrix.getEntryCount() == 0) {
                         rewardUnfolding.setSolutionForCurrentEpoch(analyzeTrivialEpochModel<ValueType>(dir, epochModel));
                     } else {
-                        rewardUnfolding.setSolutionForCurrentEpoch(analyzeNonTrivialEpochModel<ValueType>(preciseEnv, dir, epochModel, x, b, minMaxSolver, minMaxLinearEquationSolverFactory, precision, lowerBound, upperBound));
+                        rewardUnfolding.setSolutionForCurrentEpoch(analyzeNonTrivialEpochModel<ValueType>(preciseEnv, dir, epochModel, x, b, minMaxSolver, minMaxLinearEquationSolverFactory, lowerBound, upperBound));
                     }
                     swCheck.stop();
                     if (storm::settings::getModule<storm::settings::modules::IOSettings>().isExportCdfSet() && !rewardUnfolding.getEpochManager().hasBottomDimension(epoch)) {
@@ -446,7 +448,7 @@ namespace storm {
                     // If the solver requires an initial scheduler, compute one now.
                     if (requirements.requires(storm::solver::MinMaxLinearEquationSolverRequirements::Element::ValidInitialScheduler)) {
                         STORM_LOG_DEBUG("Computing valid scheduler, because the solver requires it.");
-                        result.schedulerHint = computeValidSchedulerHint(type, transitionMatrix, backwardTransitions, maybeStates, phiStates, targetStates);
+                        result.schedulerHint = computeValidSchedulerHint(env, type, transitionMatrix, backwardTransitions, maybeStates, phiStates, targetStates);
                         requirements.clearValidInitialScheduler();
                     }
                     
@@ -779,10 +781,10 @@ namespace storm {
                         }
                     }
                     
-                    return std::move(computeUntilProbabilities(std::move(goal), transitionMatrix, backwardTransitions, psiStates, statesInPsiMecs, qualitative, false, minMaxLinearEquationSolverFactory).values);
+                    return std::move(computeUntilProbabilities(env, std::move(goal), transitionMatrix, backwardTransitions, psiStates, statesInPsiMecs, qualitative, false, minMaxLinearEquationSolverFactory).values);
                 } else {
                     goal.oneMinus();
-                    std::vector<ValueType> result = computeUntilProbabilities(std::move(goal), transitionMatrix, backwardTransitions, storm::storage::BitVector(transitionMatrix.getRowGroupCount(), true), ~psiStates, qualitative, false, minMaxLinearEquationSolverFactory).values;
+                    std::vector<ValueType> result = computeUntilProbabilities(env, std::move(goal), transitionMatrix, backwardTransitions, storm::storage::BitVector(transitionMatrix.getRowGroupCount(), true), ~psiStates, qualitative, false, minMaxLinearEquationSolverFactory).values;
                     for (auto& element : result) {
                         element = storm::utility::one<ValueType>() - element;
                     }
@@ -830,7 +832,7 @@ namespace storm {
             MDPSparseModelCheckingHelperReturnType<ValueType> SparseMdpPrctlHelper<ValueType>::computeReachabilityRewards(Environment const& env, storm::solver::SolveGoal<ValueType>&& goal, storm::storage::SparseMatrix<ValueType> const& transitionMatrix, storm::storage::SparseMatrix<ValueType> const& backwardTransitions, RewardModelType const& rewardModel, storm::storage::BitVector const& targetStates, bool qualitative, bool produceScheduler, storm::solver::MinMaxLinearEquationSolverFactory<ValueType> const& minMaxLinearEquationSolverFactory, ModelCheckerHint const& hint) {
                 // Only compute the result if the model has at least one reward this->getModel().
                 STORM_LOG_THROW(!rewardModel.empty(), storm::exceptions::InvalidPropertyException, "Missing reward model for formula. Skipping formula.");
-                return computeReachabilityRewardsHelper(std::move(goal), transitionMatrix, backwardTransitions,
+                return computeReachabilityRewardsHelper(env, std::move(goal), transitionMatrix, backwardTransitions,
                                                         [&rewardModel] (uint_fast64_t rowCount, storm::storage::SparseMatrix<ValueType> const& transitionMatrix, storm::storage::BitVector const& maybeStates) {
                                                             return rewardModel.getTotalRewardVector(rowCount, transitionMatrix, maybeStates);
                                                         },
@@ -842,7 +844,7 @@ namespace storm {
             std::vector<ValueType> SparseMdpPrctlHelper<ValueType>::computeReachabilityRewards(Environment const& env, storm::solver::SolveGoal<ValueType>&& goal, storm::storage::SparseMatrix<ValueType> const& transitionMatrix, storm::storage::SparseMatrix<ValueType> const& backwardTransitions, storm::models::sparse::StandardRewardModel<storm::Interval> const& intervalRewardModel, bool lowerBoundOfIntervals, storm::storage::BitVector const& targetStates, bool qualitative, storm::solver::MinMaxLinearEquationSolverFactory<ValueType> const& minMaxLinearEquationSolverFactory) {
                 // Only compute the result if the reward model is not empty.
                 STORM_LOG_THROW(!intervalRewardModel.empty(), storm::exceptions::InvalidPropertyException, "Missing reward model for formula. Skipping formula.");
-                return computeReachabilityRewardsHelper(std::move(goal), transitionMatrix, backwardTransitions, \
+                return computeReachabilityRewardsHelper(env, std::move(goal), transitionMatrix, backwardTransitions, \
                                                         [&] (uint_fast64_t rowCount, storm::storage::SparseMatrix<ValueType> const& transitionMatrix, storm::storage::BitVector const& maybeStates) {
                                                             std::vector<ValueType> result;
                                                             result.reserve(rowCount);
@@ -1154,7 +1156,7 @@ namespace storm {
                 std::vector<ValueType> stateRewards(psiStates.size(), storm::utility::zero<ValueType>());
                 storm::utility::vector::setVectorValues(stateRewards, psiStates, storm::utility::one<ValueType>());
                 storm::models::sparse::StandardRewardModel<ValueType> rewardModel(std::move(stateRewards));
-                return computeLongRunAverageRewards(std::move(goal), transitionMatrix, backwardTransitions, rewardModel, minMaxLinearEquationSolverFactory);
+                return computeLongRunAverageRewards(env, std::move(goal), transitionMatrix, backwardTransitions, rewardModel, minMaxLinearEquationSolverFactory);
             }
             
             template<typename ValueType>
@@ -1178,7 +1180,7 @@ namespace storm {
                 for (uint_fast64_t currentMecIndex = 0; currentMecIndex < mecDecomposition.size(); ++currentMecIndex) {
                     storm::storage::MaximalEndComponent const& mec = mecDecomposition[currentMecIndex];
                     
-                    lraValuesForEndComponents[currentMecIndex] = computeLraForMaximalEndComponent(goal.direction(), transitionMatrix, rewardModel, mec, minMaxLinearEquationSolverFactory);
+                    lraValuesForEndComponents[currentMecIndex] = computeLraForMaximalEndComponent(env, goal.direction(), transitionMatrix, rewardModel, mec, minMaxLinearEquationSolverFactory);
                     
                     // Gather information for later use.
                     for (auto const& stateChoicesPair : mec) {
@@ -1333,9 +1335,9 @@ namespace storm {
                 // Solve MEC with the method specified in the settings
                 storm::solver::LraMethod method = storm::settings::getModule<storm::settings::modules::MinMaxEquationSolverSettings>().getLraMethod();
                 if (method == storm::solver::LraMethod::LinearProgramming) {
-                    return computeLraForMaximalEndComponentLP(dir, transitionMatrix, rewardModel, mec);
+                    return computeLraForMaximalEndComponentLP(env, dir, transitionMatrix, rewardModel, mec);
                 } else if (method == storm::solver::LraMethod::ValueIteration) {
-                    return computeLraForMaximalEndComponentVI(dir, transitionMatrix, rewardModel, mec, minMaxLinearEquationSolverFactory);
+                    return computeLraForMaximalEndComponentVI(env, dir, transitionMatrix, rewardModel, mec, minMaxLinearEquationSolverFactory);
                 } else {
                     STORM_LOG_THROW(false, storm::exceptions::InvalidSettingsException, "Unsupported technique.");
                 }
@@ -1517,7 +1519,7 @@ namespace storm {
 
                 STORM_LOG_DEBUG("Computing probabilities to satisfy condition.");
                 std::chrono::high_resolution_clock::time_point conditionStart = std::chrono::high_resolution_clock::now();
-                std::vector<ValueType> conditionProbabilities = std::move(computeUntilProbabilities(OptimizationDirection::Maximize, transitionMatrix, backwardTransitions, allStates, extendedConditionStates, false, false, minMaxLinearEquationSolverFactory).values);
+                std::vector<ValueType> conditionProbabilities = std::move(computeUntilProbabilities(env, OptimizationDirection::Maximize, transitionMatrix, backwardTransitions, allStates, extendedConditionStates, false, false, minMaxLinearEquationSolverFactory).values);
                 std::chrono::high_resolution_clock::time_point conditionEnd = std::chrono::high_resolution_clock::now();
                 STORM_LOG_DEBUG("Computed probabilities to satisfy for condition in " << std::chrono::duration_cast<std::chrono::milliseconds>(conditionEnd - conditionStart).count() << "ms.");
                 
@@ -1528,7 +1530,7 @@ namespace storm {
                 
                 STORM_LOG_DEBUG("Computing probabilities to reach target.");
                 std::chrono::high_resolution_clock::time_point targetStart = std::chrono::high_resolution_clock::now();
-                std::vector<ValueType> targetProbabilities = std::move(computeUntilProbabilities(OptimizationDirection::Maximize, transitionMatrix, backwardTransitions, allStates, fixedTargetStates, false, false, minMaxLinearEquationSolverFactory).values);
+                std::vector<ValueType> targetProbabilities = std::move(computeUntilProbabilities(env, OptimizationDirection::Maximize, transitionMatrix, backwardTransitions, allStates, fixedTargetStates, false, false, minMaxLinearEquationSolverFactory).values);
                 std::chrono::high_resolution_clock::time_point targetEnd = std::chrono::high_resolution_clock::now();
                 STORM_LOG_DEBUG("Computed probabilities to reach target in " << std::chrono::duration_cast<std::chrono::milliseconds>(targetEnd - targetStart).count() << "ms.");
 
@@ -1620,7 +1622,7 @@ namespace storm {
                 }
                 
                 std::chrono::high_resolution_clock::time_point conditionalStart = std::chrono::high_resolution_clock::now();
-                std::vector<ValueType> goalProbabilities = std::move(computeUntilProbabilities(std::move(goal), newTransitionMatrix, newBackwardTransitions, storm::storage::BitVector(newFailState + 1, true), newGoalStates, false, false, minMaxLinearEquationSolverFactory).values);
+                std::vector<ValueType> goalProbabilities = std::move(computeUntilProbabilities(env, std::move(goal), newTransitionMatrix, newBackwardTransitions, storm::storage::BitVector(newFailState + 1, true), newGoalStates, false, false, minMaxLinearEquationSolverFactory).values);
                 std::chrono::high_resolution_clock::time_point conditionalEnd = std::chrono::high_resolution_clock::now();
                 STORM_LOG_DEBUG("Computed conditional probabilities in transformed model in " << std::chrono::duration_cast<std::chrono::milliseconds>(conditionalEnd - conditionalStart).count() << "ms.");
                 

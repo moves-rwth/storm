@@ -10,8 +10,6 @@
 namespace storm {
     namespace modelchecker {
         
-        class Environment;
-        
         template<class SparseDtmcModelType>
         class SparseDtmcPrctlModelChecker : public SparsePropositionalModelChecker<SparseDtmcModelType> {
         public:

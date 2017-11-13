@@ -32,13 +32,13 @@ namespace storm {
         template<typename ValueType>
         bool MinMaxLinearEquationSolver<ValueType>::solveEquations(Environment const& env, OptimizationDirection d, std::vector<ValueType>& x, std::vector<ValueType> const& b) const {
             STORM_LOG_WARN_COND_DEBUG(this->isRequirementsCheckedSet(), "The requirements of the solver have not been marked as checked. Please provide the appropriate check or mark the requirements as checked (if applicable).");
-            return internalSolveEquations(Environment const& env, d, x, b);
+            return internalSolveEquations(env, d, x, b);
         }
         
         template<typename ValueType>
         void MinMaxLinearEquationSolver<ValueType>::solveEquations(Environment const& env, std::vector<ValueType>& x, std::vector<ValueType> const& b) const {
             STORM_LOG_THROW(isSet(this->direction), storm::exceptions::IllegalFunctionCallException, "Optimization direction not set.");
-            solveEquations(Environment const& env, convert(this->direction), x, b);
+            solveEquations(env, convert(this->direction), x, b);
         }
 
         template<typename ValueType>
@@ -216,7 +216,6 @@ namespace storm {
             std::unique_ptr<MinMaxLinearEquationSolver<storm::RationalNumber>> result;
             auto method = env.solver().minMax().getMethod();
             if (method == MinMaxMethod::ValueIteration || method == MinMaxMethod::PolicyIteration || method == MinMaxMethod::RationalSearch) {
-                IterativeMinMaxLinearEquationSolverSettings<storm::RationalNumber> iterativeSolverSettings;
                 result = std::make_unique<IterativeMinMaxLinearEquationSolver<storm::RationalNumber>>(std::make_unique<GeneralLinearEquationSolverFactory<storm::RationalNumber>>());
             } else if (method == MinMaxMethod::LinearProgramming) {
                 result = std::make_unique<LpMinMaxLinearEquationSolver<storm::RationalNumber>>(std::make_unique<GeneralLinearEquationSolverFactory<storm::RationalNumber>>(), std::make_unique<storm::utility::solver::LpSolverFactory<storm::RationalNumber>>());

@@ -29,7 +29,8 @@ namespace storm {
             // Intentionally left empty.
         }
         
-        MinMaxMethod getMethod(Environment const& env, bool isExactMode) {
+        template<storm::dd::DdType DdType, typename ValueType>
+        MinMaxMethod SymbolicMinMaxLinearEquationSolver<DdType, ValueType>::getMethod(Environment const& env, bool isExactMode) const {
             // Adjust the method if none was specified and we are using rational numbers.
             auto method = env.solver().minMax().getMethod();
             
@@ -222,7 +223,7 @@ namespace storm {
                 STORM_LOG_WARN("Precision of value type was exceeded, trying to recover by switching to rational arithmetic.");
 
                 // Fall back to precise value type if the precision of the imprecise value type was exceeded.
-                rationalResult = solveEquationsRationalSearchHelper<ValueType, ValueType>(dir, *this, *this, b, impreciseX.template toValueType<ValueType>(), b);
+                rationalResult = solveEquationsRationalSearchHelper<ValueType, ValueType>(env, dir, *this, *this, b, impreciseX.template toValueType<ValueType>(), b);
             }
             return rationalResult.template toValueType<ValueType>();
         }

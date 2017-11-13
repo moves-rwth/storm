@@ -29,7 +29,7 @@ TEST(EigenLinearEquationSolver, SolveWithStandardOptions) {
     ASSERT_NO_THROW(storm::solver::EigenLinearEquationSolver<double> solver(A));
     
     storm::solver::EigenLinearEquationSolver<double> solver(A);
-    ASSERT_NO_THROW(solver.solveEquations(x, b));
+    ASSERT_NO_THROW(solver.solveEquations(env, x, b));
     ASSERT_LT(std::abs(x[0] - 1), storm::settings::getModule<storm::settings::modules::EigenEquationSolverSettings>().getPrecision());
     ASSERT_LT(std::abs(x[1] - 3), storm::settings::getModule<storm::settings::modules::EigenEquationSolverSettings>().getPrecision());
     ASSERT_LT(std::abs(x[2] - (-1)), storm::settings::getModule<storm::settings::modules::EigenEquationSolverSettings>().getPrecision());
@@ -58,7 +58,7 @@ TEST(EigenLinearEquationSolver, SparseLU) {
     solver.getSettings().setSolutionMethod(storm::solver::EigenLinearEquationSolverSettings<double>::SolutionMethod::SparseLU);
     solver.getSettings().setMaximalNumberOfIterations(10000);
     solver.getSettings().setPreconditioner(storm::solver::EigenLinearEquationSolverSettings<double>::Preconditioner::None);
-    ASSERT_NO_THROW(solver.solveEquations(x, b));
+    ASSERT_NO_THROW(solver.solveEquations(env, x, b));
     ASSERT_LT(std::abs(x[0] - 1), storm::settings::getModule<storm::settings::modules::EigenEquationSolverSettings>().getPrecision());
     ASSERT_LT(std::abs(x[1] - 3), storm::settings::getModule<storm::settings::modules::EigenEquationSolverSettings>().getPrecision());
     ASSERT_LT(std::abs(x[2] - (-1)), storm::settings::getModule<storm::settings::modules::EigenEquationSolverSettings>().getPrecision());
@@ -85,7 +85,7 @@ TEST(EigenLinearEquationSolver, SparseLU_RationalNumber) {
     std::vector<storm::RationalNumber> b = {16, -4, -7};
     
     storm::solver::EigenLinearEquationSolver<storm::RationalNumber> solver(A);
-    ASSERT_NO_THROW(solver.solveEquations(x, b));
+    ASSERT_NO_THROW(solver.solveEquations(env, x, b));
     ASSERT_TRUE(storm::utility::isOne(x[0]));
     ASSERT_TRUE(x[1] == 3);
     ASSERT_TRUE(x[2] == -1);
@@ -111,7 +111,7 @@ TEST(EigenLinearEquationSolver, SparseLU_RationalFunction) {
     std::vector<storm::RationalFunction> b = {storm::RationalFunction(16), storm::RationalFunction(-4), storm::RationalFunction(-7)};
     
     storm::solver::EigenLinearEquationSolver<storm::RationalFunction> solver(A);
-    ASSERT_NO_THROW(solver.solveEquations(x, b));
+    ASSERT_NO_THROW(solver.solveEquations(env, x, b));
     ASSERT_TRUE(storm::utility::isOne(x[0]));
     ASSERT_TRUE(x[1] == storm::RationalFunction(3));
     ASSERT_TRUE(x[2] == storm::RationalFunction(-1));
@@ -144,7 +144,7 @@ TEST(EigenLinearEquationSolver, DGMRES) {
     solver.getSettings().setPreconditioner(storm::solver::EigenLinearEquationSolverSettings<double>::Preconditioner::None);
     solver.getSettings().setNumberOfIterationsUntilRestart(50);
     
-    ASSERT_NO_THROW(solver.solveEquations(x, b));
+    ASSERT_NO_THROW(solver.solveEquations(env, x, b));
     ASSERT_LT(std::abs(x[0] - 1), storm::settings::getModule<storm::settings::modules::EigenEquationSolverSettings>().getPrecision());
     ASSERT_LT(std::abs(x[1] - 3), storm::settings::getModule<storm::settings::modules::EigenEquationSolverSettings>().getPrecision());
     ASSERT_LT(std::abs(x[2] - (-1)), storm::settings::getModule<storm::settings::modules::EigenEquationSolverSettings>().getPrecision());
@@ -174,7 +174,7 @@ TEST(EigenLinearEquationSolver, DGMRES_Ilu) {
     solver.getSettings().setPrecision(1e-6);
     solver.getSettings().setMaximalNumberOfIterations(10000);
     solver.getSettings().setPreconditioner(storm::solver::EigenLinearEquationSolverSettings<double>::Preconditioner::Ilu);
-    ASSERT_NO_THROW(solver.solveEquations(x, b));
+    ASSERT_NO_THROW(solver.solveEquations(env, x, b));
     ASSERT_LT(std::abs(x[0] - 1), storm::settings::getModule<storm::settings::modules::EigenEquationSolverSettings>().getPrecision());
     ASSERT_LT(std::abs(x[1] - 3), storm::settings::getModule<storm::settings::modules::EigenEquationSolverSettings>().getPrecision());
     ASSERT_LT(std::abs(x[2] - (-1)), storm::settings::getModule<storm::settings::modules::EigenEquationSolverSettings>().getPrecision());
@@ -204,7 +204,7 @@ TEST(EigenLinearEquationSolver, DGMRES_Diagonal) {
     solver.getSettings().setPrecision(1e-6);
     solver.getSettings().setMaximalNumberOfIterations(10000);
     solver.getSettings().setPreconditioner(storm::solver::EigenLinearEquationSolverSettings<double>::Preconditioner::Diagonal);
-    ASSERT_NO_THROW(solver.solveEquations(x, b));
+    ASSERT_NO_THROW(solver.solveEquations(env, x, b));
     ASSERT_LT(std::abs(x[0] - 1), storm::settings::getModule<storm::settings::modules::EigenEquationSolverSettings>().getPrecision());
     ASSERT_LT(std::abs(x[1] - 3), storm::settings::getModule<storm::settings::modules::EigenEquationSolverSettings>().getPrecision());
     ASSERT_LT(std::abs(x[2] - (-1)), storm::settings::getModule<storm::settings::modules::EigenEquationSolverSettings>().getPrecision());
@@ -236,7 +236,7 @@ TEST(EigenLinearEquationSolver, GMRES) {
     solver.getSettings().setPreconditioner(storm::solver::EigenLinearEquationSolverSettings<double>::Preconditioner::None);
     solver.getSettings().setNumberOfIterationsUntilRestart(50);
     
-    ASSERT_NO_THROW(solver.solveEquations(x, b));
+    ASSERT_NO_THROW(solver.solveEquations(env, x, b));
     ASSERT_LT(std::abs(x[0] - 1), storm::settings::getModule<storm::settings::modules::EigenEquationSolverSettings>().getPrecision());
     ASSERT_LT(std::abs(x[1] - 3), storm::settings::getModule<storm::settings::modules::EigenEquationSolverSettings>().getPrecision());
     ASSERT_LT(std::abs(x[2] - (-1)), storm::settings::getModule<storm::settings::modules::EigenEquationSolverSettings>().getPrecision());
@@ -266,7 +266,7 @@ TEST(EigenLinearEquationSolver, GMRES_Ilu) {
     solver.getSettings().setPrecision(1e-6);
     solver.getSettings().setMaximalNumberOfIterations(10000);
     solver.getSettings().setPreconditioner(storm::solver::EigenLinearEquationSolverSettings<double>::Preconditioner::Ilu);
-    ASSERT_NO_THROW(solver.solveEquations(x, b));
+    ASSERT_NO_THROW(solver.solveEquations(env, x, b));
     ASSERT_LT(std::abs(x[0] - 1), storm::settings::getModule<storm::settings::modules::EigenEquationSolverSettings>().getPrecision());
     ASSERT_LT(std::abs(x[1] - 3), storm::settings::getModule<storm::settings::modules::EigenEquationSolverSettings>().getPrecision());
     ASSERT_LT(std::abs(x[2] - (-1)), storm::settings::getModule<storm::settings::modules::EigenEquationSolverSettings>().getPrecision());
@@ -296,7 +296,7 @@ TEST(EigenLinearEquationSolver, GMRES_Diagonal) {
     solver.getSettings().setPrecision(1e-6);
     solver.getSettings().setMaximalNumberOfIterations(10000);
     solver.getSettings().setPreconditioner(storm::solver::EigenLinearEquationSolverSettings<double>::Preconditioner::Diagonal);
-    ASSERT_NO_THROW(solver.solveEquations(x, b));
+    ASSERT_NO_THROW(solver.solveEquations(env, x, b));
     ASSERT_LT(std::abs(x[0] - 1), storm::settings::getModule<storm::settings::modules::EigenEquationSolverSettings>().getPrecision());
     ASSERT_LT(std::abs(x[1] - 3), storm::settings::getModule<storm::settings::modules::EigenEquationSolverSettings>().getPrecision());
     ASSERT_LT(std::abs(x[2] - (-1)), storm::settings::getModule<storm::settings::modules::EigenEquationSolverSettings>().getPrecision());
@@ -327,7 +327,7 @@ TEST(EigenLinearEquationSolver, BiCGSTAB) {
     solver.getSettings().setMaximalNumberOfIterations(10000);
     solver.getSettings().setPreconditioner(storm::solver::EigenLinearEquationSolverSettings<double>::Preconditioner::None);
 
-    ASSERT_NO_THROW(solver.solveEquations(x, b));
+    ASSERT_NO_THROW(solver.solveEquations(env, x, b));
     ASSERT_LT(std::abs(x[0] - 1), storm::settings::getModule<storm::settings::modules::EigenEquationSolverSettings>().getPrecision());
     ASSERT_LT(std::abs(x[1] - 3), storm::settings::getModule<storm::settings::modules::EigenEquationSolverSettings>().getPrecision());
     ASSERT_LT(std::abs(x[2] - (-1)), storm::settings::getModule<storm::settings::modules::EigenEquationSolverSettings>().getPrecision());
@@ -357,7 +357,7 @@ TEST(EigenLinearEquationSolver, BiCGSTAB_Ilu) {
     solver.getSettings().setPrecision(1e-6);
     solver.getSettings().setMaximalNumberOfIterations(10000);
     solver.getSettings().setPreconditioner(storm::solver::EigenLinearEquationSolverSettings<double>::Preconditioner::Ilu);
-    ASSERT_NO_THROW(solver.solveEquations(x, b));
+    ASSERT_NO_THROW(solver.solveEquations(env, x, b));
     ASSERT_LT(std::abs(x[0] - 1), storm::settings::getModule<storm::settings::modules::EigenEquationSolverSettings>().getPrecision());
     ASSERT_LT(std::abs(x[1] - 3), storm::settings::getModule<storm::settings::modules::EigenEquationSolverSettings>().getPrecision());
     ASSERT_LT(std::abs(x[2] - (-1)), storm::settings::getModule<storm::settings::modules::EigenEquationSolverSettings>().getPrecision());
@@ -387,7 +387,7 @@ TEST(EigenLinearEquationSolver, BiCGSTAB_Diagonal) {
     solver.getSettings().setPrecision(1e-6);
     solver.getSettings().setMaximalNumberOfIterations(10000);
     solver.getSettings().setPreconditioner(storm::solver::EigenLinearEquationSolverSettings<double>::Preconditioner::Diagonal);
-    ASSERT_NO_THROW(solver.solveEquations(x, b));
+    ASSERT_NO_THROW(solver.solveEquations(env, x, b));
     ASSERT_LT(std::abs(x[0] - 1), storm::settings::getModule<storm::settings::modules::EigenEquationSolverSettings>().getPrecision());
     ASSERT_LT(std::abs(x[1] - 3), storm::settings::getModule<storm::settings::modules::EigenEquationSolverSettings>().getPrecision());
     ASSERT_LT(std::abs(x[2] - (-1)), storm::settings::getModule<storm::settings::modules::EigenEquationSolverSettings>().getPrecision());

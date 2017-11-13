@@ -187,7 +187,7 @@ namespace storm {
                     req.clearUpperBounds();
                 }
                 STORM_LOG_THROW(req.empty(), storm::exceptions::UncheckedRequirementException, "At least one requirement was not checked.");
-                solver->setRequirementsChecked(env, true);
+                solver->setRequirementsChecked(true);
                 solver->setOptimizationDirection(storm::solver::OptimizationDirection::Maximize);
                 
                 // Use the (0...0) vector as initial guess for the solution.

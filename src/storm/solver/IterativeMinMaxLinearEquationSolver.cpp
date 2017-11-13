@@ -35,6 +35,23 @@ namespace storm {
         }
         
         template<typename ValueType>
+        MinMaxMethod IterativeMinMaxLinearEquationSolver<ValueType>::getMethod(Environment const& env, bool isExactMode) const {
+            // Adjust the method if none was specified and we are using rational numbers.
+            auto method = env.solver().minMax().getMethod();
+            
+            if (isExactMode && method != MinMaxMethod::PolicyIteration && method != MinMaxMethod::RationalSearch) {
+                if (env.solver().minMax().isMethodSetFromDefault()) {
+                    STORM_LOG_INFO("Selecting 'Policy iteration' as the solution technique to guarantee exact results. If you want to override this, please explicitly specify a different method.");
+                    method = MinMaxMethod::PolicyIteration;
+                } else {
+                    STORM_LOG_WARN("The selected solution method does not guarantee exact results.");
+                }
+            }
+            STORM_LOG_THROW(method == MinMaxMethod::ValueIteration || method == MinMaxMethod::PolicyIteration || method == MinMaxMethod::RationalSearch, storm::exceptions::InvalidEnvironmentException, "This solver does not support the selected method.");
+            return method;
+        }
+        
+        template<typename ValueType>
         bool IterativeMinMaxLinearEquationSolver<ValueType>::internalSolveEquations(Environment const& env, OptimizationDirection dir, std::vector<ValueType>& x, std::vector<ValueType> const& b) const {
             bool result = false;
             switch (env.solver().minMax().getMethod()) {
@@ -145,7 +162,7 @@ namespace storm {
                 
                 // Update environment variables.
                 ++iterations;
-                status = updateStatusIfNotConverged(status, x, iterations, dir == storm::OptimizationDirection::Minimize ? SolverGuarantee::GreaterOrEqual : SolverGuarantee::LessOrEqual);
+                status = updateStatusIfNotConverged(status, x, iterations, env.solver().minMax().getMaximalNumberOfIterations(), dir == storm::OptimizationDirection::Minimize ? SolverGuarantee::GreaterOrEqual : SolverGuarantee::LessOrEqual);
 
                 // Potentially show progress.
                 this->showProgressIterative(iterations);
@@ -174,22 +191,6 @@ namespace storm {
             }
         }
 
-        MinMaxMethod getMethod(Environment const& env, bool isExactMode) {
-            // Adjust the method if none was specified and we are using rational numbers.
-            auto method = env.solver().minMax().getMethod();
-            
-            if (isExactMode && method != MinMaxMethod::PolicyIteration || method != MinMaxMethod::RationalSearch) {
-                if (env.solver().minMax().isMethodSetFromDefault()) {
-                    STORM_LOG_INFO("Selecting 'Policy iteration' as the solution technique to guarantee exact results. If you want to override this, please explicitly specify a different method.");
-                    method = MinMaxMethod::PolicyIteration;
-                } else {
-                    STORM_LOG_WARN("The selected solution method does not guarantee exact results.");
-                }
-            }
-            STORM_LOG_THROW(method == MinMaxMethod::ValueIteration || method == MinMaxMethod::PolicyIteration || method == MinMaxMethod::RationalSearch, storm::exceptions::InvalidEnvironmentException, "This solver does not support the selected method.");
-            return method;
-        }
-        
         template<typename ValueType>
         MinMaxLinearEquationSolverRequirements IterativeMinMaxLinearEquationSolver<ValueType>::getRequirements(Environment const& env, boost::optional<storm::solver::OptimizationDirection> const& direction) const {
             // Start by copying the requirements of the linear equation solver.
@@ -236,7 +237,7 @@ namespace storm {
         }
 
         template<typename ValueType>
-        typename IterativeMinMaxLinearEquationSolver<ValueType>::ValueIterationResult IterativeMinMaxLinearEquationSolver<ValueType>::performValueIteration(OptimizationDirection dir, std::vector<ValueType>*& currentX, std::vector<ValueType>*& newX, std::vector<ValueType> const& b, ValueType const& precision, bool relative, SolverGuarantee const& guarantee, uint64_t currentIterations, storm::solver::MultiplicationStyle const& multiplicationStyle) const {
+        typename IterativeMinMaxLinearEquationSolver<ValueType>::ValueIterationResult IterativeMinMaxLinearEquationSolver<ValueType>::performValueIteration(OptimizationDirection dir, std::vector<ValueType>*& currentX, std::vector<ValueType>*& newX, std::vector<ValueType> const& b, ValueType const& precision, bool relative, SolverGuarantee const& guarantee, uint64_t currentIterations, uint64_t maximalNumberOfIterations, storm::solver::MultiplicationStyle const& multiplicationStyle) const {
             
             STORM_LOG_ASSERT(currentX != newX, "Vectors must not be aliased.");
             
@@ -270,7 +271,7 @@ namespace storm {
                 // Update environment variables.
                 std::swap(currentX, newX);
                 ++iterations;
-                status = updateStatusIfNotConverged(status, *currentX, iterations, guarantee);
+                status = updateStatusIfNotConverged(status, *currentX, iterations, maximalNumberOfIterations, guarantee);
 
                 // Potentially show progress.
                 this->showProgressIterative(iterations);
@@ -327,7 +328,7 @@ namespace storm {
             std::vector<ValueType>* currentX = &x;
             
             this->startMeasureProgress();
-            ValueIterationResult result = performValueIteration(dir, currentX, newX, b, env.solver().minMax().getPrecision(), env.solver().minMax().getRelativeTerminationCriterion(), guarantee, 0);
+            ValueIterationResult result = performValueIteration(dir, currentX, newX, b, storm::utility::convertNumber<ValueType>(env.solver().minMax().getPrecision()), env.solver().minMax().getRelativeTerminationCriterion(), guarantee, 0, env.solver().minMax().getMaximalNumberOfIterations(), env.solver().minMax().getMultiplicationStyle());
 
             // Swap the result into the output x.
             if (currentX == auxiliaryRowGroupVector.get()) {
@@ -380,7 +381,7 @@ namespace storm {
          * Model Checker: Interval Iteration for Markov Decision Processes, CAV 2017).
          */
         template<typename ValueType>
-        bool IterativeMinMaxLinearEquationSolver<ValueType>::solveEquationsSoundValueIteration(Environment const& env, OptimizationDirection dir, std::vector<ValueType>& x, std::vector<ValueType> const& b, storm::solver::MultiplicationStyle const& multiplicationStyle) const {
+        bool IterativeMinMaxLinearEquationSolver<ValueType>::solveEquationsSoundValueIteration(Environment const& env, OptimizationDirection dir, std::vector<ValueType>& x, std::vector<ValueType> const& b) const {
             STORM_LOG_THROW(this->hasUpperBound(), storm::exceptions::UnmetRequirementException, "Solver requires upper bound, but none was given.");
 
             if (!this->linEqSolverA) {
@@ -419,7 +420,7 @@ namespace storm {
             ValueType maxLowerDiff = storm::utility::zero<ValueType>();
             ValueType maxUpperDiff = storm::utility::zero<ValueType>();
             bool relative = env.solver().minMax().getRelativeTerminationCriterion();
-            ValueType precision = storm::utility::convertNumber<ValueType>(env.solver().minMax().getPrecision())
+            ValueType precision = storm::utility::convertNumber<ValueType>(env.solver().minMax().getPrecision());
             if (!relative) {
                 precision *= storm::utility::convertNumber<ValueType>(2.0);
             }
@@ -517,10 +518,10 @@ namespace storm {
                 ++iterations;
                 doConvergenceCheck = !doConvergenceCheck;
                 if (lowerStep) {
-                    status = updateStatusIfNotConverged(status, *lowerX, iterations, SolverGuarantee::LessOrEqual);
+                    status = updateStatusIfNotConverged(status, *lowerX, iterations, env.solver().minMax().getMaximalNumberOfIterations(), SolverGuarantee::LessOrEqual);
                 }
                 if (upperStep) {
-                    status = updateStatusIfNotConverged(status, *upperX, iterations, SolverGuarantee::GreaterOrEqual);
+                    status = updateStatusIfNotConverged(status, *upperX, iterations, env.solver().minMax().getMaximalNumberOfIterations(), SolverGuarantee::GreaterOrEqual);
                 }
 
                 // Potentially show progress.
@@ -785,7 +786,7 @@ namespace storm {
             impreciseSolver.startMeasureProgress();
             while (status == SolverStatus::InProgress && overallIterations < env.solver().minMax().getMaximalNumberOfIterations()) {
                 // Perform value iteration with the current precision.
-                typename IterativeMinMaxLinearEquationSolver<ImpreciseType>::ValueIterationResult result = impreciseSolver.performValueIteration(env, dir, currentX, newX, b, storm::utility::convertNumber<ImpreciseType, ValueType>(precision), env.solver().minMax().getRelativeTerminationCriterion(), SolverGuarantee::LessOrEqual, overallIterations);
+                typename IterativeMinMaxLinearEquationSolver<ImpreciseType>::ValueIterationResult result = impreciseSolver.performValueIteration(dir, currentX, newX, b, storm::utility::convertNumber<ImpreciseType, ValueType>(precision), env.solver().minMax().getRelativeTerminationCriterion(), SolverGuarantee::LessOrEqual, overallIterations, env.solver().minMax().getMaximalNumberOfIterations(), env.solver().minMax().getMultiplicationStyle());
                 
                 // At this point, the result of the imprecise value iteration is stored in the (imprecise) current x.
                 
@@ -861,11 +862,11 @@ namespace storm {
         }
 
         template<typename ValueType>
-        SolverStatus IterativeMinMaxLinearEquationSolver<ValueType>::updateStatusIfNotConverged(Environment const& env, SolverStatus status, std::vector<ValueType> const& x, uint64_t iterations, SolverGuarantee const& guarantee) const {
+        SolverStatus IterativeMinMaxLinearEquationSolver<ValueType>::updateStatusIfNotConverged(SolverStatus status, std::vector<ValueType> const& x, uint64_t iterations, uint64_t maximalNumberOfIterations, SolverGuarantee const& guarantee) const {
             if (status != SolverStatus::Converged) {
                 if (this->hasCustomTerminationCondition() && this->getTerminationCondition().terminateNow(x, guarantee)) {
                     status = SolverStatus::TerminatedEarly;
-                } else if (iterations >= env.solver().minMax().getMaximalNumberOfIterations()) {
+                } else if (iterations >= maximalNumberOfIterations) {
                     status = SolverStatus::MaximalIterationsExceeded;
                 }
             }
@@ -910,7 +911,9 @@ namespace storm {
         std::unique_ptr<MinMaxLinearEquationSolver<ValueType>> IterativeMinMaxLinearEquationSolverFactory<ValueType>::create(Environment const& env) const {
             STORM_LOG_ASSERT(this->linearEquationSolverFactory, "Linear equation solver factory not initialized.");
             
-            auto method = getMethod(env, std::is_same<ValueType, storm::RationalNumber>::value);
+            auto method = env.solver().minMax().getMethod();
+            STORM_LOG_THROW(method == MinMaxMethod::ValueIteration || method == MinMaxMethod::PolicyIteration || method == MinMaxMethod::RationalSearch, storm::exceptions::InvalidEnvironmentException, "This solver does not support the selected method.");
+            
             std::unique_ptr<MinMaxLinearEquationSolver<ValueType>> result = std::make_unique<IterativeMinMaxLinearEquationSolver<ValueType>>(this->linearEquationSolverFactory->clone());
             result->setRequirementsChecked(this->isRequirementsCheckedSet());
             return result;
