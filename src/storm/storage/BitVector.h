@@ -502,7 +502,9 @@ namespace storm {
             friend std::ostream& operator<<(std::ostream& out, BitVector const& bitVector);
             friend struct std::hash<storm::storage::BitVector>;
             friend struct FNV1aBitVectorHash;
-            friend struct Murmur3_32_BitVectorHash;
+            
+            template<typename StateType>
+            friend struct Murmur3BitVectorHash;
             
         private:
             /*!
@@ -576,8 +578,9 @@ namespace storm {
             std::size_t operator()(storm::storage::BitVector const& bv) const;
         };
 
-        struct Murmur3_32_BitVectorHash {
-            std::size_t operator()(storm::storage::BitVector const& bv) const;
+        template<typename StateType>
+        struct Murmur3BitVectorHash {
+            StateType operator()(storm::storage::BitVector const& bv) const;
         };
 
     } // namespace storage
