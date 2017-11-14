@@ -11,7 +11,7 @@ namespace storm {
                 // Intentionally left empty.
             }
 
-            InternalSignatureRefinerOptions::InternalSignatureRefinerOptions(bool shiftStateVariables) : shiftStateVariables(shiftStateVariables), createChangedStates(true), parallel(false) {
+            InternalSignatureRefinerOptions::InternalSignatureRefinerOptions(bool shiftStateVariables) : shiftStateVariables(shiftStateVariables), createChangedStates(true) {
                 auto const& bisimulationSettings = storm::settings::getModule<storm::settings::modules::BisimulationSettings>();
                 
                 storm::settings::modules::BisimulationSettings::ReuseMode reuseMode = bisimulationSettings.getReuseMode();
@@ -19,9 +19,6 @@ namespace storm {
                 
                 storm::settings::modules::BisimulationSettings::RefinementMode refinementMode = bisimulationSettings.getRefinementMode();
                 this->createChangedStates = refinementMode == storm::settings::modules::BisimulationSettings::RefinementMode::ChangedStates;
-                
-                storm::settings::modules::BisimulationSettings::ParallelismMode parallelismMode = bisimulationSettings.getParallelismMode();
-                this->parallel = parallelismMode == storm::settings::modules::BisimulationSettings::ParallelismMode::Parallel;
             }
             
             ReuseWrapper::ReuseWrapper() : ReuseWrapper(false) {

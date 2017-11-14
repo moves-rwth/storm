@@ -20,7 +20,6 @@ namespace storm {
             const std::string BisimulationSettings::reuseOptionName = "reuse";
             const std::string BisimulationSettings::initialPartitionOptionName = "init";
             const std::string BisimulationSettings::refinementModeOptionName = "refine";
-            const std::string BisimulationSettings::parallelismModeOptionName = "parallel";
             
             BisimulationSettings::BisimulationSettings() : ModuleSettings(moduleName) {
                 std::vector<std::string> types = { "strong", "weak" };
@@ -50,12 +49,6 @@ namespace storm {
                 this->addOption(storm::settings::OptionBuilder(moduleName, refinementModeOptionName, true, "Sets which refinement mode to use.")
                                 .addArgument(storm::settings::ArgumentBuilder::createStringArgument("mode", "The mode to use.").addValidatorString(ArgumentValidatorFactory::createMultipleChoiceValidator(refinementModes))
                                              .setDefaultValueString("full").build())
-                                .build());
-
-                std::vector<std::string> parallelismModes = {"on", "off"};
-                this->addOption(storm::settings::OptionBuilder(moduleName, parallelismModeOptionName, true, "Sets whether to use parallelism mode or not.")
-                                .addArgument(storm::settings::ArgumentBuilder::createStringArgument("mode", "The mode to use.").addValidatorString(ArgumentValidatorFactory::createMultipleChoiceValidator(parallelismModes))
-                                             .setDefaultValueString("on").build())
                                 .build());
             }
             
@@ -125,16 +118,6 @@ namespace storm {
                 return RefinementMode::Full;
             }
 
-            BisimulationSettings::ParallelismMode BisimulationSettings::getParallelismMode() const {
-                std::string parallelismModeAsString = this->getOption(parallelismModeOptionName).getArgumentByName("mode").getValueAsString();
-                if (parallelismModeAsString == "on") {
-                    return ParallelismMode::Parallel;
-                } else if (parallelismModeAsString == "off") {
-                    return ParallelismMode::Sequential;
-                }
-                return ParallelismMode::Parallel;
-            }
-            
             bool BisimulationSettings::check() const {
                 bool optionsSet = this->getOption(typeOptionName).getHasOptionBeenSet();
                 STORM_LOG_WARN_COND(storm::settings::getModule<storm::settings::modules::GeneralSettings>().isBisimulationSet() || !optionsSet, "Bisimulation minimization is not selected, so setting options for bisimulation has no effect.");

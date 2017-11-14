@@ -83,6 +83,18 @@ namespace storm {
                 return hash ^ (hash>>32);
             }
             
+            /*!
+             * The code below was taken from the SigrefMC implementation by Tom van Dijk, available at
+             *
+             *  https://github.com/utwente-fmt/sigrefmc/
+             *
+             * It provides a fully multi-threaded version of signature-based partition refinement and includes, amongst
+             * other things, a small custom-tailored hashmap that supports multi-threaded insertion.
+             *
+             * The code was modified in minor places to account for necessary changes, for example to handle
+             * nondeterminism variables.
+             */
+            
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wc99-extensions"
 #pragma GCC diagnostic push
@@ -181,16 +193,6 @@ namespace storm {
                 }
             }
             
-            TASK_3(BDD, sylvan_encode_block, BDD, vars, uint64_t, numberOfVariables, uint64_t, blockIndex)
-            {
-                std::vector<uint8_t> e(numberOfVariables);
-                for (uint64_t i = 0; i < numberOfVariables; ++i) {
-                    e[i] = blockIndex & 1 ? 1 : 0;
-                    blockIndex >>= 1;
-                }
-                return sylvan_cube(vars, e.data());
-            }
-            
             TASK_1(uint64_t, sylvan_decode_block, BDD, block)
             {
                 uint64_t result = 0;
@@ -208,6 +210,16 @@ namespace storm {
                 return result;
             }
             
+            TASK_3(BDD, sylvan_encode_block, BDD, vars, uint64_t, numberOfVariables, uint64_t, blockIndex)
+            {
+                std::vector<uint8_t> e(numberOfVariables);
+                for (uint64_t i = 0; i < numberOfVariables; ++i) {
+                    e[i] = blockIndex & 1 ? 1 : 0;
+                    blockIndex >>= 1;
+                }
+                return sylvan_cube(vars, e.data());
+            }
+            
             TASK_3(BDD, sylvan_assign_block, BDD, sig, BDD, previous_block, InternalSylvanSignatureRefinerBase*, refiner)
             {
                 assert(previous_block != mtbdd_false); // if so, incorrect call!
@@ -223,7 +235,8 @@ namespace storm {
                 // try to claim previous block number
                 assert(previous_block != sylvan_false);
                 const uint64_t p_b = CALL(sylvan_decode_block, previous_block);
-                
+                assert(p_b < refiner->signatures.size());
+
                 for (;;) {
                     BDD cur = *(volatile BDD*)&refiner->signatures[p_b];
                     if (cur == sig) return previous_block;
@@ -269,7 +282,7 @@ namespace storm {
                 bool nondet = nondetvars_var == vars_var;
                 uint64_t offset = (nondet || !refiner->options.shiftStateVariables) ? 0 : 1;
 
-                while (vars_var < dd_var && vars_var < pp_var+offset) {
+                while (vars_var < dd_var && vars_var+offset < pp_var) {
                     vars = sylvan_set_next(vars);
                     if (nondet) {
                         nondetvars = sylvan_set_next(nondetvars);

@@ -16,7 +16,6 @@ namespace storm {
                 bool shiftStateVariables;
                 bool reuseBlockNumbers;
                 bool createChangedStates;
-                bool parallel;
             };
             
             class ReuseWrapper {
