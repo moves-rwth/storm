@@ -11,7 +11,7 @@
 #include "storm/storage/expressions/ExpressionManager.h"
 
 #include "storm/settings/modules/CoreSettings.h"
-#include "storm/settings/modules/IOSettings.h"
+#include "storm/settings/modules/BuildSettings.h"
 
 #include "storm/builder/RewardModelBuilder.h"
 #include "storm/builder/ChoiceInformationBuilder.h"
@@ -43,7 +43,7 @@ namespace storm {
     namespace builder {
                         
         template <typename ValueType, typename RewardModelType, typename StateType>
-        ExplicitModelBuilder<ValueType, RewardModelType, StateType>::Options::Options() : explorationOrder(storm::settings::getModule<storm::settings::modules::IOSettings>().getExplorationOrder()) {
+        ExplicitModelBuilder<ValueType, RewardModelType, StateType>::Options::Options() : explorationOrder(storm::settings::getModule<storm::settings::modules::BuildSettings>().getExplorationOrder()) {
             // Intentionally left empty.
         }
         
@@ -89,20 +89,22 @@ namespace storm {
             // Check, if the state was already registered.
             std::pair<StateType, std::size_t> actualIndexBucketPair = stateStorage.stateToId.findOrAddAndGetBucket(state, newIndex);
             
-            if (actualIndexBucketPair.first == newIndex) {
+            StateType actualIndex = actualIndexBucketPair.first;
+            
+            if (actualIndex == newIndex) {
                 if (options.explorationOrder == ExplorationOrder::Dfs) {
-                    statesToExplore.push_front(state);
+                    statesToExplore.emplace_front(state, actualIndex);
 
                     // Reserve one slot for the new state in the remapping.
                     stateRemapping.get().push_back(storm::utility::zero<StateType>());
                 } else if (options.explorationOrder == ExplorationOrder::Bfs) {
-                    statesToExplore.push_back(state);
+                    statesToExplore.emplace_back(state, actualIndex);
                 } else {
                     STORM_LOG_ASSERT(false, "Invalid exploration order.");
                 }
             }
             
-            return actualIndexBucketPair.first;
+            return actualIndex;
         }
         
         template <typename ValueType, typename RewardModelType, typename StateType>
@@ -139,8 +141,8 @@ namespace storm {
             // Perform a search through the model.
             while (!statesToExplore.empty()) {
                 // Get the first state in the queue.
-                CompressedState currentState = statesToExplore.front();
-                StateType currentIndex = stateStorage.stateToId.getValue(currentState);
+                CompressedState currentState = statesToExplore.front().first;
+                StateType currentIndex = statesToExplore.front().second;
                 statesToExplore.pop_front();
                 
                 // If the exploration order differs from breadth-first, we remember that this row group was actually
@@ -149,7 +151,9 @@ namespace storm {
                     stateRemapping.get()[currentIndex] = currentRowGroup;
                 }
                 
-                STORM_LOG_TRACE("Exploring state with id " << currentIndex << ".");
+                if (currentIndex % 100000 == 0) {
+                    STORM_LOG_TRACE("Exploring state with id " << currentIndex << ".");
+                }
                 
                 generator->load(currentState);
                 storm::generator::StateBehavior<ValueType, StateType> behavior = generator->expand(stateToIdCallback);
@@ -304,7 +308,7 @@ namespace storm {
             
             buildMatrices(transitionMatrixBuilder, rewardModelBuilders, choiceInformationBuilder, markovianStates);
             
-            // initialize the model components with the obtained information.
+            // Initialize the model components with the obtained information.
             storm::storage::sparse::ModelComponents<ValueType, RewardModelType> modelComponents(transitionMatrixBuilder.build(), buildStateLabeling(), std::unordered_map<std::string, RewardModelType>(), !generator->isDiscreteTimeModel(), std::move(markovianStates));
             
             // Now finalize all reward models.
@@ -314,7 +318,7 @@ namespace storm {
             // Build the choice labeling
             modelComponents.choiceLabeling = choiceInformationBuilder.buildChoiceLabeling(modelComponents.transitionMatrix.getRowCount());
             
-            // if requested, build the state valuations and choice origins
+            // If requested, build the state valuations and choice origins
             if (generator->getOptions().isBuildStateValuationsSet()) {
                 std::vector<storm::expressions::SimpleValuation> valuations(modelComponents.transitionMatrix.getRowGroupCount());
                 for (auto const& bitVectorIndexPair : stateStorage.stateToId) {
@@ -332,7 +336,7 @@ namespace storm {
         
         template <typename ValueType, typename RewardModelType, typename StateType>
         storm::models::sparse::StateLabeling ExplicitModelBuilder<ValueType, RewardModelType, StateType>::buildStateLabeling() {
-            return generator->label(stateStorage.stateToId, stateStorage.initialStateIndices, stateStorage.deadlockStateIndices);
+            return generator->label(stateStorage, stateStorage.initialStateIndices, stateStorage.deadlockStateIndices);
         }
         
         // Explicitly instantiate the class.

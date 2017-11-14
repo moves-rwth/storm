@@ -127,7 +127,17 @@ namespace storm {
             /*!
              * Retrieves the requirements of the solver.
              */
-            virtual MinMaxLinearEquationSolverRequirements getRequirements(EquationSystemType const& equationSystemType, boost::optional<storm::solver::OptimizationDirection> const& direction = boost::none) const;
+            virtual MinMaxLinearEquationSolverRequirements getRequirements(boost::optional<storm::solver::OptimizationDirection> const& direction = boost::none) const;
+            
+                        /*!
+             * Sets whether the solution to the min max equation system is known to be unique.
+             */
+            void setHasUniqueSolution(bool value = true);
+            
+            /*!
+             * Retrieves whether the solution to the min max equation system is assumed to be unique
+             */
+            bool hasUniqueSolution() const;
             
             /*!
              * Notifies the solver that the requirements for solving equations have been checked. If this has not been
@@ -208,6 +218,9 @@ namespace storm {
             // The settings to use.
             SymbolicMinMaxLinearEquationSolverSettings<ValueType> settings;
             
+            // Whether the solver can assume that the min-max equation system has a unique solution
+            bool uniqueSolution;
+            
             // A flag indicating whether the requirements were checked.
             bool requirementsChecked;
             
@@ -230,7 +243,7 @@ namespace storm {
              * Retrieves the requirements of the solver that would be created when calling create() right now. The
              * requirements are guaranteed to be ordered according to their appearance in the SolverRequirement type.
              */
-            MinMaxLinearEquationSolverRequirements getRequirements(EquationSystemType const& equationSystemType, boost::optional<storm::solver::OptimizationDirection> const& direction = boost::none) const;
+            MinMaxLinearEquationSolverRequirements getRequirements(bool hasUniqueSolution = false, boost::optional<storm::solver::OptimizationDirection> const& direction = boost::none) const;
             
         private:
             virtual std::unique_ptr<storm::solver::SymbolicMinMaxLinearEquationSolver<DdType, ValueType>> create() const = 0;

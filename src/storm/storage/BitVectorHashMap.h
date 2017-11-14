@@ -14,7 +14,8 @@ namespace storm {
          * queries and insertions are supported. Also, the keys must be bit vectors with a length that is a multiple of
          * 64.
          */
-        template<typename ValueType, typename Hash1 = std::hash<storm::storage::BitVector>, class Hash2 = storm::storage::NonZeroBitVectorHash>
+//        template<typename ValueType, typename Hash = std::hash<storm::storage::BitVector>>
+        template<typename ValueType, typename Hash = FNV1aBitVectorHash>
         class BitVectorHashMap {
         public:
             class BitVectorHashMapIterator {
@@ -57,6 +58,11 @@ namespace storm {
              */
             BitVectorHashMap(uint64_t bucketSize = 64, uint64_t initialSize = 1000, double loadFactor = 0.75);
             
+            BitVectorHashMap(BitVectorHashMap const&) = default;
+            BitVectorHashMap(BitVectorHashMap&&) = default;
+            BitVectorHashMap& operator=(BitVectorHashMap const&) = default;
+            BitVectorHashMap& operator=(BitVectorHashMap&&) = default;
+
             /*!
              * Searches for the given key in the map. If it is found, the mapped-to value is returned. Otherwise, the
              * key is inserted with the given value.
@@ -113,6 +119,13 @@ namespace storm {
              * @return The value associated with the given key (if any).
              */
             ValueType getValue(storm::storage::BitVector const& key) const;
+
+            /*!
+             * Retrieves the value associated with the given bucket.
+             *
+             * @return The value associated with the given bucket (if any).
+             */
+            ValueType getValue(std::size_t bucket) const;
             
             /*!
              * Checks if the given key is already contained in the map.
@@ -210,8 +223,8 @@ namespace storm {
             // The size of one bucket.
             uint64_t bucketSize;
             
-            // The number of buckets.
-            std::size_t numberOfBuckets;
+            // The number of buckets is 2^currentSize.
+            uint64_t currentSize;
             
             // The buckets that hold the elements of the map.
             storm::storage::BitVector buckets;
@@ -225,15 +238,16 @@ namespace storm {
             // The number of elements in this map.
             std::size_t numberOfElements;
             
-            // An iterator to a value in the static sizes table.
-            std::vector<std::size_t>::const_iterator currentSizeIterator;
-            
             // Functor object that are used to perform the actual hashing.
-            Hash1 hasher1;
-            Hash2 hasher2;
+            Hash hasher;
             
-            // A static table that produces the next possible size of the hash table.
-            static const std::vector<std::size_t> sizes;
+#ifndef NDEBUG
+            // Some performance metrics.
+            mutable uint64_t numberOfInsertions;
+            mutable uint64_t numberOfInsertionProbingSteps;
+            mutable uint64_t numberOfFinds;
+            mutable uint64_t numberOfFindProbingSteps;
+#endif
         };
 
     }

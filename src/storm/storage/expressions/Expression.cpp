@@ -9,6 +9,7 @@
 #include "storm/storage/expressions/ChangeManagerVisitor.h"
 #include "storm/storage/expressions/CheckIfThenElseGuardVisitor.h"
 #include "storm/storage/expressions/Expressions.h"
+#include "storm/storage/expressions/CompiledExpression.h"
 #include "storm/exceptions/InvalidTypeException.h"
 #include "storm/exceptions/InvalidArgumentException.h"
 #include "storm/utility/macros.h"
@@ -24,6 +25,11 @@ namespace storm {
          */
         static void assertSameManager(BaseExpression const& a, BaseExpression const& b) {
             STORM_LOG_THROW(a.getManager() == b.getManager(), storm::exceptions::InvalidArgumentException, "Expressions are managed by different manager.");
+        }
+        
+        // Spell out destructor explicitly so we can use forward declarations in the header.
+        Expression::~Expression() {
+            // Intentionally left empty.
         }
         
         Expression::Expression(std::shared_ptr<BaseExpression const> const& expressionPtr) : expressionPtr(expressionPtr) {
@@ -196,7 +202,19 @@ namespace storm {
                 return true;
             }
             SyntacticalEqualityCheckVisitor checker;
-            return checker.isSyntaticallyEqual(*this, other);
+            return checker.isSyntacticallyEqual(*this, other);
+        }
+        
+        bool Expression::hasCompiledExpression() const {
+            return static_cast<bool>(compiledExpression);
+        }
+        
+        void Expression::setCompiledExpression(std::shared_ptr<CompiledExpression> const& compiledExpression) const {
+            this->compiledExpression = compiledExpression;
+        }
+        
+        CompiledExpression const& Expression::getCompiledExpression() const {
+            return *compiledExpression;
         }
 
         std::string Expression::toString() const {

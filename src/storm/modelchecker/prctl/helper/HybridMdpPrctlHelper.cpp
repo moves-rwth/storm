@@ -108,8 +108,8 @@ namespace storm {
                     oneStepProbabilities = std::move(subvector);
                 } else {
                     STORM_LOG_DEBUG("Not eliminating ECs as there are none.");
-                    eliminateExtendedStatesFromExplicitRepresentation(explicitRepresentation, solverRequirementsData.initialScheduler, solverRequirementsData.properMaybeStates);
                     oneStepProbabilities = explicitRepresentation.first.getConstrainedRowGroupSumVector(solverRequirementsData.properMaybeStates, targetStates);
+                    eliminateExtendedStatesFromExplicitRepresentation(explicitRepresentation, solverRequirementsData.initialScheduler, solverRequirementsData.properMaybeStates);
                 }
             }
             
@@ -135,8 +135,10 @@ namespace storm {
                 } else {
                     // If there are maybe states, we need to solve an equation system.
                     if (!maybeStates.isZero()) {
+                        // If we minimize, we know that the solution to the equation system is unique.
+                        bool uniqueSolution = dir == storm::solver::OptimizationDirection::Minimize;
                         // Check for requirements of the solver early so we can adjust the maybe state computation accordingly.
-                        storm::solver::MinMaxLinearEquationSolverRequirements requirements = linearEquationSolverFactory.getRequirements(storm::solver::EquationSystemType::UntilProbabilities, dir);
+                        storm::solver::MinMaxLinearEquationSolverRequirements requirements = linearEquationSolverFactory.getRequirements(uniqueSolution, dir);
                         storm::solver::MinMaxLinearEquationSolverRequirements clearedRequirements = requirements;
                         SolverRequirementsData<ValueType> solverRequirementsData;
                         bool extendMaybeStates = false;
@@ -212,6 +214,10 @@ namespace storm {
                         std::vector<ValueType> x(explicitRepresentation.first.getRowGroupCount(), storm::utility::zero<ValueType>());
                         
                         std::unique_ptr<storm::solver::MinMaxLinearEquationSolver<ValueType>> solver = linearEquationSolverFactory.create(std::move(explicitRepresentation.first));
+                        
+                        // Set whether the equation system will have a unique solution
+                        solver->setHasUniqueSolution(uniqueSolution);
+
                         if (solverRequirementsData.initialScheduler) {
                             solver->setInitialScheduler(std::move(solverRequirementsData.initialScheduler.get()));
                         }
@@ -487,8 +493,10 @@ namespace storm {
                 } else {
                     // If there are maybe states, we need to solve an equation system.
                     if (!maybeStates.isZero()) {
+                        // If we maximize, we know that the solution to the equation system is unique.
+                        bool uniqueSolution = dir == storm::solver::OptimizationDirection::Maximize;
                         // Check for requirements of the solver this early so we can adapt the maybe states accordingly.
-                        storm::solver::MinMaxLinearEquationSolverRequirements requirements = linearEquationSolverFactory.getRequirements(storm::solver::EquationSystemType::ReachabilityRewards, dir);
+                        storm::solver::MinMaxLinearEquationSolverRequirements requirements = linearEquationSolverFactory.getRequirements(uniqueSolution, dir);
                         storm::solver::MinMaxLinearEquationSolverRequirements clearedRequirements = requirements;
                         bool extendMaybeStates = false;
                         if (!clearedRequirements.empty()) {
@@ -567,6 +575,9 @@ namespace storm {
                         
                         // Now solve the resulting equation system.
                         std::unique_ptr<storm::solver::MinMaxLinearEquationSolver<ValueType>> solver = linearEquationSolverFactory.create();
+                        
+                        // Set whether the equation system will have a unique solution
+                        solver->setHasUniqueSolution(uniqueSolution);
                         
                         // If the solver requires upper bounds, compute them now.
                         if (requirements.requiresUpperBounds()) {

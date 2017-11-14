@@ -15,7 +15,7 @@
 #include "storm/settings/SettingsManager.h"
 #include "storm/settings/modules/GeneralSettings.h"
 #include "storm/settings/modules/ResourceSettings.h"
-#include "storm/settings/modules/PGCLSettings.h"
+#include "storm-pgcl/settings/modules/PGCLSettings.h"
 #include "storm/settings/modules/CoreSettings.h"
 #include "storm/settings/modules/DebugSettings.h"
 #include "storm/settings/modules/JaniExportSettings.h"

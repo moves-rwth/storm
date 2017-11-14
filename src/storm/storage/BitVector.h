@@ -501,7 +501,7 @@ namespace storm {
             
             friend std::ostream& operator<<(std::ostream& out, BitVector const& bitVector);
             friend struct std::hash<storm::storage::BitVector>;
-            friend struct NonZeroBitVectorHash;
+            friend struct FNV1aBitVectorHash;
             
         private:
             /*!
@@ -571,8 +571,7 @@ namespace storm {
             static const uint_fast64_t mod64mask = (1 << 6) - 1;
         };
         
-        // A hashing functor that guarantees that the result of the hash is never going to be -1.
-        struct NonZeroBitVectorHash {
+        struct FNV1aBitVectorHash {
             std::size_t operator()(storm::storage::BitVector const& bv) const;
         };
         

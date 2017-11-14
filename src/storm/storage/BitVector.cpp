@@ -116,7 +116,10 @@ namespace storm {
             // Only perform the assignment if the source and target are not identical.
             if (this != &other) {
                 bitCount = other.bitCount;
-                buckets = new uint64_t[other.bucketCount()];
+                if (buckets && bucketCount() != other.bucketCount()) {
+                    delete[] buckets;
+                    buckets = new uint64_t[other.bucketCount()];
+                }
                 std::copy_n(other.buckets, other.bucketCount(), buckets);
             }
             return *this;
@@ -999,22 +1002,22 @@ namespace storm {
             out << std::endl;
         }
 
-        std::size_t NonZeroBitVectorHash::operator()(storm::storage::BitVector const& bitvector) const {
-            STORM_LOG_ASSERT(bitvector.size() > 0, "Cannot hash bit vector of zero size.");
-            std::size_t result = 0;
-
-            for (uint_fast64_t index = 0; index < bitvector.bucketCount(); ++index) {
-                result ^= result << 3;
-                result ^= result >> bitvector.getAsInt(index << 6, 5);
+        std::size_t FNV1aBitVectorHash::operator()(storm::storage::BitVector const& bv) const {
+            std::size_t seed = 14695981039346656037ull;
+            
+            unsigned char const* it = reinterpret_cast<unsigned char const*>(bv.buckets);
+            unsigned char const* ite = it + 8 * bv.bucketCount();
+            
+            while (it < ite) {
+                seed ^= *it++;
+                
+                // Multiplication with magic prime.
+                seed += (seed << 1) + (seed << 4) + (seed << 5) + (seed << 7) + (seed << 8) + (seed << 40);
             }
-
-            // Erase the last bit and add one to definitely make this hash value non-zero.
-            result &= ~1ull;
-            result += 1;
-
-            return result;
+            
+            return seed;
         }
-
+        
         // All necessary explicit template instantiations.
         template BitVector::BitVector(uint_fast64_t length, std::vector<uint_fast64_t>::iterator begin, std::vector<uint_fast64_t>::iterator end);
         template BitVector::BitVector(uint_fast64_t length, std::vector<uint_fast64_t>::const_iterator begin, std::vector<uint_fast64_t>::const_iterator end);
@@ -1028,7 +1031,6 @@ namespace storm {
 }
 
 namespace std {
-
     std::size_t hash<storm::storage::BitVector>::operator()(storm::storage::BitVector const& bitvector) const {
         return boost::hash_range(bitvector.buckets, bitvector.buckets + bitvector.bucketCount());
     }

@@ -4,7 +4,6 @@
 #include "storm/adapters/RationalFunctionAdapter.h"
 
 #include "storm/settings/SettingsManager.h"
-#include "storm/settings/modules/IOSettings.h"
 #include "storm/settings/modules/GeneralSettings.h"
 
 #include "storm/utility/constants.h"
@@ -169,6 +168,16 @@ namespace storm {
         }
         
         template<typename ValueType>
+        void AbstractEquationSolver<ValueType>::createUpperBoundsVector(std::vector<ValueType>& upperBoundsVector) const {
+            STORM_LOG_ASSERT(this->hasUpperBound(), "Expecting upper bound(s).");
+            if (this->hasUpperBound(BoundType::Global)) {
+                upperBoundsVector.assign(upperBoundsVector.size(), this->getUpperBound());
+            } else {
+                upperBoundsVector.assign(this->getUpperBounds().begin(), this->getUpperBounds().end());
+            }
+        }
+        
+        template<typename ValueType>
         void AbstractEquationSolver<ValueType>::createUpperBoundsVector(std::unique_ptr<std::vector<ValueType>>& upperBoundsVector, uint64_t length) const {
             STORM_LOG_ASSERT(this->hasUpperBound(), "Expecting upper bound(s).");
             if (!upperBoundsVector) {
@@ -179,17 +188,7 @@ namespace storm {
                     upperBoundsVector = std::make_unique<std::vector<ValueType>>(length, this->getUpperBound());
                 }
             } else {
-                if (this->hasUpperBound(BoundType::Global)) {
-                    for (auto& e : *upperBoundsVector) {
-                        e = this->getUpperBound();
-                    }
-                } else {
-                    auto upperBoundsIt = this->getUpperBounds().begin();
-                    for (auto& e : *upperBoundsVector) {
-                        e = *upperBoundsIt;
-                        ++upperBoundsIt;
-                    }
-                }
+                createUpperBoundsVector(*upperBoundsVector);
             }
         }
         

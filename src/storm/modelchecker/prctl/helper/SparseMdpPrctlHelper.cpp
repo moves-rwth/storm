@@ -22,7 +22,7 @@
 
 #include "storm/solver/MinMaxLinearEquationSolver.h"
 #include "storm/solver/LpSolver.h"
- 
+
 #include "storm/settings/SettingsManager.h"
 #include "storm/settings/modules/MinMaxEquationSolverSettings.h"
 
@@ -38,6 +38,11 @@ namespace storm {
     namespace modelchecker {
         namespace helper {
 
+            enum class EquationSystemType {
+                UntilProbabilities,
+                ExpectedRewards
+            };
+            
             template<typename ValueType>
             std::vector<ValueType> SparseMdpPrctlHelper<ValueType>::computeBoundedUntilProbabilities(storm::solver::SolveGoal<ValueType>&& goal, storm::storage::SparseMatrix<ValueType> const& transitionMatrix, storm::storage::SparseMatrix<ValueType> const& backwardTransitions, storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates, uint_fast64_t stepBound, storm::solver::MinMaxLinearEquationSolverFactory<ValueType> const& minMaxLinearEquationSolverFactory, ModelCheckerHint const& hint) {
                 std::vector<ValueType> result(transitionMatrix.getRowGroupCount(), storm::utility::zero<ValueType>());
@@ -91,12 +96,12 @@ namespace storm {
             }
             
             template<typename ValueType>
-            std::vector<uint_fast64_t> computeValidSchedulerHint(storm::solver::EquationSystemType const& type, storm::storage::SparseMatrix<ValueType> const& transitionMatrix, storm::storage::SparseMatrix<ValueType> const& backwardTransitions, storm::storage::BitVector const& maybeStates, storm::storage::BitVector const& filterStates, storm::storage::BitVector const& targetStates) {
+            std::vector<uint_fast64_t> computeValidSchedulerHint(EquationSystemType const& type, storm::storage::SparseMatrix<ValueType> const& transitionMatrix, storm::storage::SparseMatrix<ValueType> const& backwardTransitions, storm::storage::BitVector const& maybeStates, storm::storage::BitVector const& filterStates, storm::storage::BitVector const& targetStates) {
                 storm::storage::Scheduler<ValueType> validScheduler(maybeStates.size());
 
-                if (type == storm::solver::EquationSystemType::UntilProbabilities) {
+                if (type == EquationSystemType::UntilProbabilities) {
                     storm::utility::graph::computeSchedulerProbGreater0E(transitionMatrix, backwardTransitions, filterStates, targetStates, validScheduler, boost::none);
-                } else if (type == storm::solver::EquationSystemType::ReachabilityRewards) {
+                } else if (type == EquationSystemType::ExpectedRewards) {
                     storm::utility::graph::computeSchedulerProb1E(maybeStates | targetStates, transitionMatrix, backwardTransitions, filterStates, targetStates, validScheduler);
                 } else {
                     STORM_LOG_ASSERT(false, "Unexpected equation system type.");
@@ -114,7 +119,7 @@ namespace storm {
             
             template<typename ValueType>
             struct SparseMdpHintType {
-                SparseMdpHintType() : eliminateEndComponents(false), computeUpperBounds(false) {
+                SparseMdpHintType() : eliminateEndComponents(false), computeUpperBounds(false), uniqueSolution(false) {
                     // Intentionally left empty.
                 }
                 
@@ -169,6 +174,10 @@ namespace storm {
                 bool getComputeUpperBounds() {
                     return computeUpperBounds;
                 }
+
+                bool hasUniqueSolution() const {
+                    return uniqueSolution;
+                }
                 
                 boost::optional<std::vector<uint64_t>> schedulerHint;
                 boost::optional<std::vector<ValueType>> valueHint;
@@ -177,6 +186,7 @@ namespace storm {
                 boost::optional<std::vector<ValueType>> upperResultBounds;
                 bool eliminateEndComponents;
                 bool computeUpperBounds;
+                bool uniqueSolution;
             };
             
             template<typename ValueType>
@@ -230,19 +240,22 @@ namespace storm {
             }
             
             template<typename ValueType>
-            SparseMdpHintType<ValueType> computeHints(storm::solver::EquationSystemType const& type, ModelCheckerHint const& hint, storm::OptimizationDirection const& dir, storm::storage::SparseMatrix<ValueType> const& transitionMatrix, storm::storage::SparseMatrix<ValueType> const& backwardTransitions, storm::storage::BitVector const& maybeStates, storm::storage::BitVector const& phiStates, storm::storage::BitVector const& targetStates, storm::solver::MinMaxLinearEquationSolverFactory<ValueType> const& minMaxLinearEquationSolverFactory, boost::optional<storm::storage::BitVector> const& selectedChoices = boost::none) {
+            SparseMdpHintType<ValueType> computeHints(EquationSystemType const& type, ModelCheckerHint const& hint, storm::OptimizationDirection const& dir, storm::storage::SparseMatrix<ValueType> const& transitionMatrix, storm::storage::SparseMatrix<ValueType> const& backwardTransitions, storm::storage::BitVector const& maybeStates, storm::storage::BitVector const& phiStates, storm::storage::BitVector const& targetStates, storm::solver::MinMaxLinearEquationSolverFactory<ValueType> const& minMaxLinearEquationSolverFactory, boost::optional<storm::storage::BitVector> const& selectedChoices = boost::none) {
                 SparseMdpHintType<ValueType> result;
 
+                // The solution to the min-max equation system is unique if we minimize until probabilities or
+                // maximize reachability rewards or if the hint tells us that there are no end-compontnes.
+                result.uniqueSolution = (dir == storm::solver::OptimizationDirection::Minimize && type == EquationSystemType::UntilProbabilities)
+                                      || (dir == storm::solver::OptimizationDirection::Maximize && type == EquationSystemType::ExpectedRewards)
+                                      || (hint.isExplicitModelCheckerHint() && hint.asExplicitModelCheckerHint<ValueType>().getNoEndComponentsInMaybeStates());
+                
                 // Check for requirements of the solver.
-                storm::solver::MinMaxLinearEquationSolverRequirements requirements = minMaxLinearEquationSolverFactory.getRequirements(type, dir);
+                storm::solver::MinMaxLinearEquationSolverRequirements requirements = minMaxLinearEquationSolverFactory.getRequirements(result.uniqueSolution, dir);
                 if (!requirements.empty()) {
-                    // If the hint tells us that there are no end-components, we can clear that requirement.
-                    if (hint.isExplicitModelCheckerHint() && hint.asExplicitModelCheckerHint<ValueType>().getNoEndComponentsInMaybeStates()) {
-                        requirements.clearNoEndComponents();
-                    }
                     
                     // If the solver still requires no end-components, we have to eliminate them later.
                     if (requirements.requiresNoEndComponents()) {
+                        STORM_LOG_ASSERT(!result.hasUniqueSolution(), "The solver requires to eliminate the end components although the solution is already assumed to be unique.");
                         STORM_LOG_DEBUG("Scheduling EC elimination, because the solver requires it.");
                         result.eliminateEndComponents = true;
                         requirements.clearNoEndComponents();
@@ -256,9 +269,9 @@ namespace storm {
                     }
                     
                     // Finally, we have information on the bounds depending on the problem type.
-                    if (type == storm::solver::EquationSystemType::UntilProbabilities) {
+                    if (type == EquationSystemType::UntilProbabilities) {
                         requirements.clearBounds();
-                    } else if (type == storm::solver::EquationSystemType::ReachabilityRewards) {
+                    } else if (type == EquationSystemType::ExpectedRewards) {
                         requirements.clearLowerBounds();
                     }
                     if (requirements.requiresUpperBounds()) {
@@ -273,8 +286,7 @@ namespace storm {
                 // Only if there is no end component decomposition that we will need to do later, we use value and scheduler
                 // hints from the provided hint.
                 if (!result.eliminateEndComponents) {
-                    bool skipEcWithinMaybeStatesCheck = dir == storm::OptimizationDirection::Minimize || (hint.isExplicitModelCheckerHint() && hint.asExplicitModelCheckerHint<ValueType>().getNoEndComponentsInMaybeStates());
-                    extractValueAndSchedulerHint(result, transitionMatrix, backwardTransitions, maybeStates, selectedChoices, hint, skipEcWithinMaybeStatesCheck);
+                    extractValueAndSchedulerHint(result, transitionMatrix, backwardTransitions, maybeStates, selectedChoices, hint, result.uniqueSolution);
                 } else {
                     STORM_LOG_WARN_COND(hint.isEmpty(), "A non-empty hint was provided, but its information will be disregarded.");
                 }
@@ -283,7 +295,7 @@ namespace storm {
                 if (!result.hasLowerResultBound()) {
                     result.lowerResultBound = storm::utility::zero<ValueType>();
                 }
-                if (!result.hasUpperResultBound() && type == storm::solver::EquationSystemType::UntilProbabilities) {
+                if (!result.hasUpperResultBound() && type == EquationSystemType::UntilProbabilities) {
                     result.upperResultBound = storm::utility::one<ValueType>();
                 }
                 
@@ -326,6 +338,7 @@ namespace storm {
                 // Set up the solver.
                 std::unique_ptr<storm::solver::MinMaxLinearEquationSolver<ValueType>> solver = storm::solver::configureMinMaxLinearEquationSolver(std::move(goal), minMaxLinearEquationSolverFactory, std::move(submatrix));
                 solver->setRequirementsChecked();
+                solver->setHasUniqueSolution(hint.hasUniqueSolution());
                 if (hint.hasLowerResultBound()) {
                     solver->setLowerBound(hint.getLowerResultBound());
                 }
@@ -526,7 +539,7 @@ namespace storm {
                         // In this case we have have to compute the remaining probabilities.
                         
                         // Obtain proper hint information either from the provided hint or from requirements of the solver.
-                        SparseMdpHintType<ValueType> hintInformation = computeHints(storm::solver::EquationSystemType::UntilProbabilities, hint, goal.direction(), transitionMatrix, backwardTransitions, qualitativeStateSets.maybeStates, phiStates, qualitativeStateSets.statesWithProbability1, minMaxLinearEquationSolverFactory);
+                        SparseMdpHintType<ValueType> hintInformation = computeHints(EquationSystemType::UntilProbabilities, hint, goal.direction(), transitionMatrix, backwardTransitions, qualitativeStateSets.maybeStates, phiStates, qualitativeStateSets.statesWithProbability1, minMaxLinearEquationSolverFactory);
                         
                         // Declare the components of the equation system we will solve.
                         storm::storage::SparseMatrix<ValueType> submatrix;
@@ -882,7 +895,7 @@ namespace storm {
                         }
                         
                         // Obtain proper hint information either from the provided hint or from requirements of the solver.
-                        SparseMdpHintType<ValueType> hintInformation = computeHints(storm::solver::EquationSystemType::ReachabilityRewards, hint, goal.direction(), transitionMatrix, backwardTransitions, qualitativeStateSets.maybeStates, ~targetStates, targetStates, minMaxLinearEquationSolverFactory, selectedChoices);
+                        SparseMdpHintType<ValueType> hintInformation = computeHints(EquationSystemType::ExpectedRewards, hint, goal.direction(), transitionMatrix, backwardTransitions, qualitativeStateSets.maybeStates, ~targetStates, targetStates, minMaxLinearEquationSolverFactory, selectedChoices);
                         
                         // Declare the components of the equation system we will solve.
                         storm::storage::SparseMatrix<ValueType> submatrix;
@@ -1089,14 +1102,16 @@ namespace storm {
                 storm::storage::SparseMatrix<ValueType> sspMatrix = sspMatrixBuilder.build(currentChoice, numberOfSspStates, numberOfSspStates);
                 
                 // Check for requirements of the solver.
-                storm::solver::MinMaxLinearEquationSolverRequirements requirements = minMaxLinearEquationSolverFactory.getRequirements(storm::solver::EquationSystemType::StochasticShortestPath);
-                requirements.clearLowerBounds();
+                storm::solver::MinMaxLinearEquationSolverRequirements requirements = minMaxLinearEquationSolverFactory.getRequirements(true, goal.direction());
+                requirements.clearBounds();
                 STORM_LOG_THROW(requirements.empty(), storm::exceptions::UncheckedRequirementException, "Cannot establish requirements for solver.");
                 
                 std::vector<ValueType> sspResult(numberOfSspStates);
                 goal.restrictRelevantValues(statesNotContainedInAnyMec);
                 std::unique_ptr<storm::solver::MinMaxLinearEquationSolver<ValueType>> solver = storm::solver::configureMinMaxLinearEquationSolver(std::move(goal), minMaxLinearEquationSolverFactory, sspMatrix);
                 solver->setLowerBound(storm::utility::zero<ValueType>());
+                solver->setUpperBound(*std::max_element(lraValuesForEndComponents.begin(), lraValuesForEndComponents.end()));
+                solver->setHasUniqueSolution();
                 solver->setRequirementsChecked();
                 solver->solveEquations(sspResult, b);
                 

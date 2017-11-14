@@ -8,7 +8,6 @@
 #include "storm/storage/jani/Model.h"
 
 #include "storm/settings/SettingsManager.h"
-#include "storm/settings/modules/IOSettings.h"
 
 TEST(ExplicitJitJaniModelBuilderTest, Dtmc) {
     storm::prism::Program program = storm::parser::PrismParser::parse(STORM_TEST_RESOURCES_DIR "/dtmc/die.pm");
@@ -44,35 +43,33 @@ TEST(ExplicitJitJaniModelBuilderTest, Dtmc) {
 }
 
 TEST(ExplicitJitJaniModelBuilderTest, Ctmc) {
-    // Set the PRISM compatibility mode temporarily. It is set to its old value once the returned object is destructed.
-    std::unique_ptr<storm::settings::SettingMemento> enablePrismCompatibility = storm::settings::mutableIOSettings().overridePrismCompatibilityMode(true);
-    
-    storm::prism::Program program = storm::parser::PrismParser::parse(STORM_TEST_RESOURCES_DIR "/ctmc/cluster2.sm");
+
+    storm::prism::Program program = storm::parser::PrismParser::parse(STORM_TEST_RESOURCES_DIR "/ctmc/cluster2.sm", true);
     storm::jani::Model janiModel = program.toJani();
     
     std::shared_ptr<storm::models::sparse::Model<double>> model = storm::builder::jit::ExplicitJitJaniModelBuilder<double>(janiModel).build();;
     EXPECT_EQ(276ul, model->getNumberOfStates());
     EXPECT_EQ(1120ul, model->getNumberOfTransitions());
     
-    program = storm::parser::PrismParser::parse(STORM_TEST_RESOURCES_DIR "/ctmc/embedded2.sm");
+    program = storm::parser::PrismParser::parse(STORM_TEST_RESOURCES_DIR "/ctmc/embedded2.sm", true);
     janiModel = program.toJani();
     model = storm::builder::jit::ExplicitJitJaniModelBuilder<double>(janiModel).build();;
     EXPECT_EQ(3478ul, model->getNumberOfStates());
     EXPECT_EQ(14639ul, model->getNumberOfTransitions());
     
-    program = storm::parser::PrismParser::parse(STORM_TEST_RESOURCES_DIR "/ctmc/polling2.sm");
+    program = storm::parser::PrismParser::parse(STORM_TEST_RESOURCES_DIR "/ctmc/polling2.sm", true);
     janiModel = program.toJani();
     model = storm::builder::jit::ExplicitJitJaniModelBuilder<double>(janiModel).build();;
     EXPECT_EQ(12ul, model->getNumberOfStates());
     EXPECT_EQ(22ul, model->getNumberOfTransitions());
     
-    program = storm::parser::PrismParser::parse(STORM_TEST_RESOURCES_DIR "/ctmc/fms2.sm");
+    program = storm::parser::PrismParser::parse(STORM_TEST_RESOURCES_DIR "/ctmc/fms2.sm", true);
     janiModel = program.toJani();
     model = storm::builder::jit::ExplicitJitJaniModelBuilder<double>(janiModel).build();;
     EXPECT_EQ(810ul, model->getNumberOfStates());
     EXPECT_EQ(3699ul, model->getNumberOfTransitions());
     
-    program = storm::parser::PrismParser::parse(STORM_TEST_RESOURCES_DIR "/ctmc/tandem5.sm");
+    program = storm::parser::PrismParser::parse(STORM_TEST_RESOURCES_DIR "/ctmc/tandem5.sm", true);
     janiModel = program.toJani();
     model = storm::builder::jit::ExplicitJitJaniModelBuilder<double>(janiModel).build();;
     EXPECT_EQ(66ul, model->getNumberOfStates());

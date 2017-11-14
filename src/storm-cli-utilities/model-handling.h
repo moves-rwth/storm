@@ -27,6 +27,7 @@
 #include "storm/settings/SettingsManager.h"
 #include "storm/settings/modules/ResourceSettings.h"
 #include "storm/settings/modules/JitBuilderSettings.h"
+#include "storm/settings/modules/BuildSettings.h"
 #include "storm/settings/modules/DebugSettings.h"
 #include "storm/settings/modules/IOSettings.h"
 #include "storm/settings/modules/CoreSettings.h"
@@ -54,7 +55,7 @@ namespace storm {
         void parseSymbolicModelDescription(storm::settings::modules::IOSettings const& ioSettings, SymbolicInput& input) {
             if (ioSettings.isPrismOrJaniInputSet()) {
                 if (ioSettings.isPrismInputSet()) {
-                    input.model = storm::api::parseProgram(ioSettings.getPrismInputFilename());
+                    input.model = storm::api::parseProgram(ioSettings.getPrismInputFilename(), storm::settings::getModule<storm::settings::modules::BuildSettings>().isPrismCompatibilityEnabled());
                 } else {
                     auto janiInput = storm::api::parseJaniModel(ioSettings.getJaniInputFilename());
                     input.model = janiInput.first;
@@ -99,6 +100,7 @@ namespace storm {
         
         SymbolicInput preprocessSymbolicInput(SymbolicInput const& input) {
             auto ioSettings = storm::settings::getModule<storm::settings::modules::IOSettings>();
+            auto buildSettings = storm::settings::getModule<storm::settings::modules::BuildSettings>();
             auto coreSettings = storm::settings::getModule<storm::settings::modules::CoreSettings>();
             
             SymbolicInput output = input;
@@ -117,7 +119,7 @@ namespace storm {
             // Check whether conversion for PRISM to JANI is requested or necessary.
             if (input.model && input.model.get().isPrismProgram()) {
                 bool transformToJani = ioSettings.isPrismToJaniSet();
-                bool transformToJaniForJit = coreSettings.getEngine() == storm::settings::modules::CoreSettings::Engine::Sparse && ioSettings.isJitSet();
+                bool transformToJaniForJit = coreSettings.getEngine() == storm::settings::modules::CoreSettings::Engine::Sparse && buildSettings.isJitSet();
                 STORM_LOG_WARN_COND(transformToJani || !transformToJaniForJit, "The JIT-based model builder is only available for JANI models, automatically converting the PRISM input model.");
                 transformToJani |= transformToJaniForJit;
                 
@@ -175,22 +177,22 @@ namespace storm {
         
         template <storm::dd::DdType DdType, typename ValueType>
         std::shared_ptr<storm::models::ModelBase> buildModelDd(SymbolicInput const& input) {
-            return storm::api::buildSymbolicModel<DdType, ValueType>(input.model.get(), createFormulasToRespect(input.properties), storm::settings::getModule<storm::settings::modules::IOSettings>().isBuildFullModelSet());
+            return storm::api::buildSymbolicModel<DdType, ValueType>(input.model.get(), createFormulasToRespect(input.properties), storm::settings::getModule<storm::settings::modules::BuildSettings>().isBuildFullModelSet());
         }
         
         template <typename ValueType>
-        std::shared_ptr<storm::models::ModelBase> buildModelSparse(SymbolicInput const& input, storm::settings::modules::IOSettings const& ioSettings) {
+        std::shared_ptr<storm::models::ModelBase> buildModelSparse(SymbolicInput const& input, storm::settings::modules::BuildSettings const& buildSettings) {
             auto counterexampleGeneratorSettings = storm::settings::getModule<storm::settings::modules::CounterexampleGeneratorSettings>();
             storm::builder::BuilderOptions options(createFormulasToRespect(input.properties));
-            options.setBuildChoiceLabels(ioSettings.isBuildChoiceLabelsSet());
-            options.setBuildStateValuations(ioSettings.isBuildStateValuationsSet());
+            options.setBuildChoiceLabels(buildSettings.isBuildChoiceLabelsSet());
+            options.setBuildStateValuations(buildSettings.isBuildStateValuationsSet());
             options.setBuildChoiceOrigins(counterexampleGeneratorSettings.isMinimalCommandSetGenerationSet());
-            options.setBuildAllLabels(ioSettings.isBuildFullModelSet());
-            options.setBuildAllRewardModels(ioSettings.isBuildFullModelSet());
-            if (ioSettings.isBuildFullModelSet()) {
+            options.setBuildAllLabels(buildSettings.isBuildFullModelSet());
+            options.setBuildAllRewardModels(buildSettings.isBuildFullModelSet());
+            if (buildSettings.isBuildFullModelSet()) {
                 options.clearTerminalStates();
             }
-            return storm::api::buildSparseModel<ValueType>(input.model.get(), options, ioSettings.isJitSet(), storm::settings::getModule<storm::settings::modules::JitBuilderSettings>().isDoctorSet());
+            return storm::api::buildSparseModel<ValueType>(input.model.get(), options, buildSettings.isJitSet(), storm::settings::getModule<storm::settings::modules::JitBuilderSettings>().isDoctorSet());
         }
         
         template <typename ValueType>
@@ -210,13 +212,14 @@ namespace storm {
         template <storm::dd::DdType DdType, typename ValueType>
         std::shared_ptr<storm::models::ModelBase> buildModel(storm::settings::modules::CoreSettings::Engine const& engine, SymbolicInput const& input, storm::settings::modules::IOSettings const& ioSettings) {
             storm::utility::Stopwatch modelBuildingWatch(true);
-            
+
+            auto buildSettings = storm::settings::getModule<storm::settings::modules::BuildSettings>();
             std::shared_ptr<storm::models::ModelBase> result;
             if (input.model) {
                 if (engine == storm::settings::modules::CoreSettings::Engine::Dd || engine == storm::settings::modules::CoreSettings::Engine::Hybrid || engine == storm::settings::modules::CoreSettings::Engine::AbstractionRefinement) {
                     result = buildModelDd<DdType, ValueType>(input);
                 } else if (engine == storm::settings::modules::CoreSettings::Engine::Sparse) {
-                    result = buildModelSparse<ValueType>(input, ioSettings);
+                    result = buildModelSparse<ValueType>(input, buildSettings);
                 }
             } else if (ioSettings.isExplicitSet() || ioSettings.isExplicitDRNSet() || ioSettings.isExplicitIMCASet()) {
                 STORM_LOG_THROW(engine == storm::settings::modules::CoreSettings::Engine::Sparse, storm::exceptions::InvalidSettingsException, "Can only use sparse engine with explicit input.");
@@ -613,8 +616,9 @@ namespace storm {
         template <storm::dd::DdType DdType, typename ValueType>
         std::shared_ptr<storm::models::ModelBase> buildPreprocessExportModelWithValueTypeAndDdlib(SymbolicInput const& input, storm::settings::modules::CoreSettings::Engine engine) {
             auto ioSettings = storm::settings::getModule<storm::settings::modules::IOSettings>();
+            auto buildSettings = storm::settings::getModule<storm::settings::modules::BuildSettings>();
             std::shared_ptr<storm::models::ModelBase> model;
-            if (!ioSettings.isNoBuildModelSet()) {
+            if (!buildSettings.isNoBuildModelSet()) {
                 model = buildModel<DdType, ValueType>(engine, input, ioSettings);
             }
             

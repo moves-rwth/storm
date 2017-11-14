@@ -3,7 +3,7 @@
 #include "storm/logic/Formulas.h"
 
 #include "storm/settings/SettingsManager.h"
-#include "storm/settings/modules/IOSettings.h"
+#include "storm/settings/modules/BuildSettings.h"
 #include "storm/settings/modules/GeneralSettings.h"
 
 #include "storm/utility/macros.h"
@@ -55,9 +55,9 @@ namespace storm {
                 }
             }
             
-            auto const& ioSettings = storm::settings::getModule<storm::settings::modules::IOSettings>();
+            auto const& buildSettings = storm::settings::getModule<storm::settings::modules::BuildSettings>();
             auto const& generalSettings = storm::settings::getModule<storm::settings::modules::GeneralSettings>();
-            explorationChecks = ioSettings.isExplorationChecksSet();
+            explorationChecks = buildSettings.isExplorationChecksSet();
             showProgress = generalSettings.isVerboseSet();
             showProgressDelay = generalSettings.getShowProgressDelay();
         }
