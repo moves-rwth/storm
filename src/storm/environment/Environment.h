@@ -1,9 +1,8 @@
 #pragma once
 
-#include<memory>
+#include "storm/environment/SubEnvironment.h"
 
 namespace storm {
-    
     
     // Forward declare sub-environments
     class SolverEnvironment;
@@ -12,8 +11,6 @@ namespace storm {
     public:
         
         Environment();
-        Environment(Environment const& other);
-        
         virtual ~Environment();
 
         SolverEnvironment& solver();
@@ -21,9 +18,7 @@ namespace storm {
         
     private:
     
-        std::unique_ptr<SolverEnvironment> solverEnvironment;
-        
-        
+        SubEnvironment<SolverEnvironment> solverEnvironment;
     };
 }
 

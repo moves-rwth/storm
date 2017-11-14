@@ -9,7 +9,7 @@
 #include "storm/exceptions/InvalidArgumentException.h"
 #include "storm/exceptions/InternalTypeErrorException.h"
 
-#include "storm/environment/environments.h"
+#include "storm/environment/Environment.h"
 
 #include "storm/models/sparse/Dtmc.h"
 #include "storm/models/sparse/Ctmc.h"

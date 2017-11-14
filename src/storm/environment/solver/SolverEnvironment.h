@@ -2,6 +2,9 @@
 
 #include<memory>
 
+#include "storm/environment/Environment.h"
+#include "storm/environment/SubEnvironment.h"
+
 namespace storm {
     
     // Forward declare subenvironments
@@ -14,7 +17,6 @@ namespace storm {
     public:
         
         SolverEnvironment();
-        SolverEnvironment(SolverEnvironment const& other);
         ~SolverEnvironment();
         
 //        EigenSolverEnvironment& eigen();
@@ -32,7 +34,7 @@ namespace storm {
     private:
 //        std::unique_ptr<EigenSolverEnvironment> eigenSolverEnvironment;
 //        std::unique_ptr<GmmxxSolverEnvironment> gmmxxSolverEnvironment;
-        std::unique_ptr<MinMaxSolverEnvironment> minMaxSolverEnvironment;
+        SubEnvironment<MinMaxSolverEnvironment> minMaxSolverEnvironment;
  //       std::unique_ptr<NativeSolverEnvironment> nativeSolverEnvironment;
       
         bool forceSoundness;

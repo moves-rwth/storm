@@ -1,7 +1,5 @@
 #include "storm/solver/LpMinMaxLinearEquationSolver.h"
 
-#include "storm/environment/Environment.h"
-#include "storm/environment/solver/SolverEnvironment.h"
 #include "storm/environment/solver/MinMaxSolverEnvironment.h"
 #include "storm/utility/vector.h"
 #include "storm/utility/macros.h"

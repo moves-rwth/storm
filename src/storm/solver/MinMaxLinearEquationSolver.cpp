@@ -7,8 +7,6 @@
 #include "storm/solver/TopologicalMinMaxLinearEquationSolver.h"
 #include "storm/solver/LpMinMaxLinearEquationSolver.h"
 
-#include "storm/environment/Environment.h"
-#include "storm/environment/solver/SolverEnvironment.h"
 #include "storm/environment/solver/MinMaxSolverEnvironment.h"
 
 #include "storm/utility/macros.h"

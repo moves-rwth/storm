@@ -1,19 +1,13 @@
 #include "storm/environment/solver/SolverEnvironment.h"
 #include "storm/environment/solver/MinMaxSolverEnvironment.h"
 
+#include "storm/settings/SettingsManager.h"
+#include "storm/settings/modules/GeneralSettings.h"
+
 namespace storm {
     
-    SolverEnvironment::SolverEnvironment() :
-//        eigenSolverEnvironment(std::make_unique<EigenSolverEnvironment>()),
- //       gmmxxSolverEnvironment(std::make_unique<GmmxxSolverEnvironment>()),
-        minMaxSolverEnvironment(std::make_unique<MinMaxSolverEnvironment>()) //,
-//        nativeSolverEnvironment(std::make_unique<NativeSolverEnvironment>()) {
-    { }
-    
-    SolverEnvironment::SolverEnvironment(SolverEnvironment const& other) :
-            minMaxSolverEnvironment(new MinMaxSolverEnvironment(*other.minMaxSolverEnvironment)),
-            forceSoundness(other.forceSoundness) {
-        // Intentionally left empty
+    SolverEnvironment::SolverEnvironment() {
+        forceSoundness = storm::settings::getModule<storm::settings::modules::GeneralSettings>().isSoundSet();
     }
     
     SolverEnvironment::~SolverEnvironment() {
@@ -21,11 +15,11 @@ namespace storm {
     }
     
     MinMaxSolverEnvironment& SolverEnvironment::minMax() {
-        return *minMaxSolverEnvironment;
+        return minMaxSolverEnvironment.get();
     }
     
-    MinMaxSolverEnvironment const& SolverEnvironment::minMax() const{
-        return *minMaxSolverEnvironment;
+    MinMaxSolverEnvironment const& SolverEnvironment::minMax() const {
+        return minMaxSolverEnvironment.get();
     }
 
     bool SolverEnvironment::isForceSoundness() const {

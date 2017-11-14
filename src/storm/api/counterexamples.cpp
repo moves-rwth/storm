@@ -1,6 +1,6 @@
 #include "storm/api/counterexamples.h"
 
-#include "storm/environment/environments.h"
+#include "storm/environment/Environment.h"
 
 namespace storm {
     namespace api {

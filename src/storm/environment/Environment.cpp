@@ -1,28 +1,22 @@
 #include "storm/environment/Environment.h"
+#include "storm/environment/SubEnvironment.h"
 #include "storm/environment/solver/SolverEnvironment.h"
-#include "storm/environment/solver/MinMaxSolverEnvironment.h"
-
 namespace storm {
 
 
-    Environment::Environment() : solverEnvironment(std::make_unique<SolverEnvironment>()) {
+    Environment::Environment() {
         // Intentionally left empty.
     }
     
-    Environment::Environment(Environment const& other) :
-            solverEnvironment(new SolverEnvironment(*other.solverEnvironment)) {
-        // Intentionally left empty.
-    }
-
     Environment::~Environment() {
         // Intentionally left empty.
     }
     
     SolverEnvironment& Environment::solver() {
-        return *solverEnvironment;
+        return solverEnvironment.get();
     }
     
     SolverEnvironment const& Environment::solver() const {
-        return *solverEnvironment;
+        return solverEnvironment.get();
     }
 }

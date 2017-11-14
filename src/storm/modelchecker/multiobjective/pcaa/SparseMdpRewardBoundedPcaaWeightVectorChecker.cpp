@@ -10,8 +10,6 @@
 #include "storm/solver/MinMaxLinearEquationSolver.h"
 #include "storm/solver/LinearEquationSolver.h"
 
-#include "storm/environment/Environment.h"
-#include "storm/environment/solver/SolverEnvironment.h"
 #include "storm/environment/solver/MinMaxSolverEnvironment.h"
 
 #include "storm/settings/SettingsManager.h"
