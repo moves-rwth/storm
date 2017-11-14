@@ -15,7 +15,8 @@ namespace storm {
          * 64.
          */
 //        template<typename ValueType, typename Hash = std::hash<storm::storage::BitVector>>
-        template<typename ValueType, typename Hash = FNV1aBitVectorHash>
+//        template<typename ValueType, typename Hash = FNV1aBitVectorHash>
+        template<typename ValueType, typename Hash = Murmur3_32_BitVectorHash>
         class BitVectorHashMap {
         public:
             class BitVectorHashMapIterator {

@@ -1005,8 +1005,8 @@ namespace storm {
         std::size_t FNV1aBitVectorHash::operator()(storm::storage::BitVector const& bv) const {
             std::size_t seed = 14695981039346656037ull;
             
-            unsigned char const* it = reinterpret_cast<unsigned char const*>(bv.buckets);
-            unsigned char const* ite = it + 8 * bv.bucketCount();
+            uint8_t* it = reinterpret_cast<uint8_t*>(bv.buckets);
+            uint8_t const* ite = it + 8 * bv.bucketCount();
             
             while (it < ite) {
                 seed ^= *it++;
@@ -1016,6 +1016,62 @@ namespace storm {
             }
             
             return seed;
+        }
+        
+        inline __attribute__((always_inline)) uint32_t fmix32 (uint32_t h) {
+            h ^= h >> 16;
+            h *= 0x85ebca6b;
+            h ^= h >> 13;
+            h *= 0xc2b2ae35;
+            h ^= h >> 16;
+            
+            return h;
+        }
+        
+        inline uint32_t rotl32(uint32_t x, int8_t r) {
+            return (x << r) | (x >> (32 - r));
+        }
+        
+        inline __attribute__((always_inline)) uint32_t getblock32 (uint32_t const* p, int i) {
+            return p[i];
+        }
+        
+        std::size_t Murmur3_32_BitVectorHash::operator()(storm::storage::BitVector const& bv) const {
+            const uint8_t * data = reinterpret_cast<uint8_t const*>(bv.buckets);
+            uint32_t len = bv.bucketCount() * 8;
+            const int nblocks = bv.bucketCount() * 2;
+            
+            // Using 0 as seed.
+            uint32_t h1 = 0;
+            
+            const uint32_t c1 = 0xcc9e2d51;
+            const uint32_t c2 = 0x1b873593;
+            
+            //----------
+            // body
+            
+            const uint32_t * blocks = reinterpret_cast<uint32_t const*>(data + nblocks*4);
+            
+            for (int i = -nblocks; i; i++) {
+                uint32_t k1 = getblock32(blocks, i);
+                
+                k1 *= c1;
+                k1 = rotl32(k1,15);
+                k1 *= c2;
+                
+                h1 ^= k1;
+                h1 = rotl32(h1,13);
+                h1 = h1*5+0xe6546b64;
+            }
+            
+            //----------
+            // finalization
+            
+            h1 ^= len;
+            
+            h1 = fmix32(h1);
+            
+            return h1;
         }
         
         // All necessary explicit template instantiations.
