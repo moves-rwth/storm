@@ -116,7 +116,10 @@ namespace storm {
             // Only perform the assignment if the source and target are not identical.
             if (this != &other) {
                 bitCount = other.bitCount;
-                buckets = new uint64_t[other.bucketCount()];
+                if (buckets && bucketCount() != other.bucketCount()) {
+                    delete[] buckets;
+                    buckets = new uint64_t[other.bucketCount()];
+                }
                 std::copy_n(other.buckets, other.bucketCount(), buckets);
             }
             return *this;
