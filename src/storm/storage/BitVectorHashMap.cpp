@@ -209,7 +209,7 @@ namespace storm {
                 }
             }
 
-            return std::make_tuple(false, bucket);
+            return std::make_pair(false, bucket);
         }
         
         template<class ValueType, class Hash>
