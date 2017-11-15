@@ -1,19 +1,19 @@
 #include "gtest/gtest.h"
 #include "storm-config.h"
 
-#include "test/storm/testmacros.h"
+#include "test/storm_gtest.h"
 
 #include "storm/solver/MinMaxLinearEquationSolver.h"
 #include "storm/environment/solver/MinMaxSolverEnvironment.h"
 #include "storm/solver/SolverSelectionOptions.h"
 #include "storm/storage/SparseMatrix.h"
 
-#if GTEST_HAS_PARAM_TEST
 namespace {
     
     class DoubleViEnvironment {
     public:
         typedef double ValueType;
+        static const bool isExact = false;
         static storm::Environment createEnvironment() {
             storm::Environment env;
             env.solver().minMax().setMethod(storm::solver::MinMaxMethod::ValueIteration);
@@ -24,6 +24,7 @@ namespace {
     class DoubleSoundViEnvironment {
     public:
         typedef double ValueType;
+        static const bool isExact = false;
         static storm::Environment createEnvironment() {
             storm::Environment env;
             env.solver().minMax().setMethod(storm::solver::MinMaxMethod::ValueIteration);
@@ -35,6 +36,7 @@ namespace {
     class DoubleTopologicalViEnvironment {
     public:
         typedef double ValueType;
+        static const bool isExact = false;
         static storm::Environment createEnvironment() {
             storm::Environment env;
             env.solver().minMax().setMethod(storm::solver::MinMaxMethod::Topological);
@@ -45,6 +47,7 @@ namespace {
     class DoublePIEnvironment {
     public:
         typedef double ValueType;
+        static const bool isExact = false;
         static storm::Environment createEnvironment() {
             storm::Environment env;
             env.solver().minMax().setMethod(storm::solver::MinMaxMethod::PolicyIteration);
@@ -55,6 +58,7 @@ namespace {
     class RationalPIEnvironment {
     public:
         typedef storm::RationalNumber ValueType;
+        static const bool isExact = true;
         static storm::Environment createEnvironment() {
             storm::Environment env;
             env.solver().minMax().setMethod(storm::solver::MinMaxMethod::PolicyIteration);
@@ -64,6 +68,7 @@ namespace {
     class RationalRationalSearchEnvironment {
     public:
         typedef storm::RationalNumber ValueType;
+        static const bool isExact = true;
         static storm::Environment createEnvironment() {
             storm::Environment env;
             env.solver().minMax().setMethod(storm::solver::MinMaxMethod::RationalSearch);
@@ -77,7 +82,7 @@ namespace {
         typedef typename TestType::ValueType ValueType;
         MinMaxLinearEquationSolverTest() : _environment(TestType::createEnvironment()) {}
         storm::Environment const& env() const { return _environment; }
-        ValueType precision() const { return storm::utility::convertNumber<ValueType>(1e-6);}
+        ValueType precision() const { return TestType::isExact ? parseNumber("0") : parseNumber("1e-6");}
         ValueType parseNumber(std::string const& input) const { return storm::utility::convertNumber<ValueType>(input);}
     private:
         storm::Environment _environment;
@@ -167,9 +172,6 @@ namespace {
     }
     
 }
-#else
-   TEST(MinMaxLinearEquationSolverTest, ValueParameterizedTestsAreNotSupportedOnThisPlatform) {}
-#endif
 
 
 
