@@ -52,7 +52,7 @@ namespace storm {
         template<typename ValueType>
         bool IterativeMinMaxLinearEquationSolver<ValueType>::internalSolveEquations(Environment const& env, OptimizationDirection dir, std::vector<ValueType>& x, std::vector<ValueType> const& b) const {
             bool result = false;
-            switch (env.solver().minMax().getMethod()) {
+            switch (getMethod(env, std::is_same<ValueType, storm::RationalNumber>::value)) {
                 case MinMaxMethod::ValueIteration:
                     if (env.solver().isForceSoundness()) {
                         result = solveEquationsSoundValueIteration(env, dir, x, b);
