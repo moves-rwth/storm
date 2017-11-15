@@ -118,6 +118,8 @@ namespace storm {
                 bitCount = other.bitCount;
                 if (buckets && bucketCount() != other.bucketCount()) {
                     delete[] buckets;
+                }
+                if (!buckets) {
                     buckets = new uint64_t[other.bucketCount()];
                 }
                 std::copy_n(other.buckets, other.bucketCount(), buckets);
