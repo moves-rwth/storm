@@ -3,8 +3,10 @@
 
 #include "test/storm_gtest.h"
 
-#include "storm/parser/FormulaParser.h"
-#include "storm/logic/Formulas.h"
+#include "storm/api/builder.h"
+#include "storm/api/model_descriptions.h"
+#include "storm/api/properties.h"
+
 #include "storm/models/sparse/Mdp.h"
 #include "storm/models/symbolic/Mdp.h"
 #include "storm/models/sparse/StandardRewardModel.h"
@@ -15,35 +17,31 @@
 #include "storm/modelchecker/results/ExplicitQualitativeCheckResult.h"
 #include "storm/modelchecker/results/SymbolicQualitativeCheckResult.h"
 #include "storm/modelchecker/results/QualitativeCheckResult.h"
-#include "storm/settings/SettingsManager.h"
-#include "storm/api/builder.h"
-#include "storm/api/model_descriptions.h"
-#include "storm/api/properties.h"
 #include "storm/environment/solver/MinMaxSolverEnvironment.h"
-
-#include "storm/settings/modules/GeneralSettings.h"
 #include "storm/settings/modules/CoreSettings.h"
-#include "storm/parser/AutoParser.h"
+#include "storm/logic/Formulas.h"
+#include "storm/storage/jani/Property.h"
+#include "storm/exceptions/UncheckedRequirementException.h"
 
 namespace {
     class SparseDoubleValueIterationEnvironment {
     public:
         static const storm::dd::DdType ddType = storm::dd::DdType::Sylvan; // Unused for sparse models
+        static const storm::settings::modules::CoreSettings::Engine engine = storm::settings::modules::CoreSettings::Engine::Sparse;
         static const bool isExact = false;
         typedef double ValueType;
         typedef storm::models::sparse::Mdp<ValueType> ModelType;
         static storm::Environment createEnvironment() {
             storm::Environment env;
             env.solver().minMax().setMethod(storm::solver::MinMaxMethod::ValueIteration);
-            env.solver().minMax().setPrecision(storm::utility::convertNumber<storm::RationalNumber>(1e-8));
+            env.solver().minMax().setPrecision(storm::utility::convertNumber<storm::RationalNumber>(1e-10));
             return env;
         }
-        // TODO: this should be part of the environment
-        static storm::settings::modules::CoreSettings::Engine engine() { return storm::settings::modules::CoreSettings::Engine::Sparse; }
     };
     class SparseDoubleSoundValueIterationEnvironment {
     public:
         static const storm::dd::DdType ddType = storm::dd::DdType::Sylvan; // Unused for sparse models
+        static const storm::settings::modules::CoreSettings::Engine engine = storm::settings::modules::CoreSettings::Engine::Sparse;
         static const bool isExact = false;
         typedef double ValueType;
         typedef storm::models::sparse::Mdp<ValueType> ModelType;
@@ -54,12 +52,11 @@ namespace {
             env.solver().minMax().setPrecision(storm::utility::convertNumber<storm::RationalNumber>(1e-6));
             return env;
         }
-        // TODO: this should be part of the environment
-        static storm::settings::modules::CoreSettings::Engine engine() { return storm::settings::modules::CoreSettings::Engine::Sparse; }
     };
     class SparseRationalPolicyIterationEnvironment {
     public:
         static const storm::dd::DdType ddType = storm::dd::DdType::Sylvan; // Unused for sparse models
+        static const storm::settings::modules::CoreSettings::Engine engine = storm::settings::modules::CoreSettings::Engine::Sparse;
         static const bool isExact = true;
         typedef storm::RationalNumber ValueType;
         typedef storm::models::sparse::Mdp<ValueType> ModelType;
@@ -68,12 +65,11 @@ namespace {
             env.solver().minMax().setMethod(storm::solver::MinMaxMethod::PolicyIteration);
             return env;
         }
-        // TODO: this should be part of the environment
-        static storm::settings::modules::CoreSettings::Engine engine() { return storm::settings::modules::CoreSettings::Engine::Sparse; }
     };
     class SparseRationalRationalSearchEnvironment {
     public:
         static const storm::dd::DdType ddType = storm::dd::DdType::Sylvan; // Unused for sparse models
+        static const storm::settings::modules::CoreSettings::Engine engine = storm::settings::modules::CoreSettings::Engine::Sparse;
         static const bool isExact = true;
         typedef storm::RationalNumber ValueType;
         typedef storm::models::sparse::Mdp<ValueType> ModelType;
@@ -82,10 +78,119 @@ namespace {
             env.solver().minMax().setMethod(storm::solver::MinMaxMethod::RationalSearch);
             return env;
         }
-        // TODO: this should be part of the environment
-        static storm::settings::modules::CoreSettings::Engine engine() { return storm::settings::modules::CoreSettings::Engine::Sparse; }
     };
-    
+    class HybridCuddDoubleValueIterationEnvironment {
+    public:
+        static const storm::dd::DdType ddType = storm::dd::DdType::CUDD;
+        static const storm::settings::modules::CoreSettings::Engine engine = storm::settings::modules::CoreSettings::Engine::Hybrid;
+        static const bool isExact = false;
+        typedef double ValueType;
+        typedef storm::models::symbolic::Mdp<ddType, ValueType> ModelType;
+        static storm::Environment createEnvironment() {
+            storm::Environment env;
+            env.solver().minMax().setMethod(storm::solver::MinMaxMethod::ValueIteration);
+            env.solver().minMax().setPrecision(storm::utility::convertNumber<storm::RationalNumber>(1e-10));
+            return env;
+        }
+    };
+    class HybridSylvanDoubleValueIterationEnvironment {
+    public:
+        static const storm::dd::DdType ddType = storm::dd::DdType::Sylvan;
+        static const storm::settings::modules::CoreSettings::Engine engine = storm::settings::modules::CoreSettings::Engine::Hybrid;
+        static const bool isExact = false;
+        typedef double ValueType;
+        typedef storm::models::symbolic::Mdp<ddType, ValueType> ModelType;
+        static storm::Environment createEnvironment() {
+            storm::Environment env;
+            env.solver().minMax().setMethod(storm::solver::MinMaxMethod::ValueIteration);
+            env.solver().minMax().setPrecision(storm::utility::convertNumber<storm::RationalNumber>(1e-10));
+            return env;
+        }
+    };
+    class HybridCuddDoubleSoundValueIterationEnvironment {
+    public:
+        static const storm::dd::DdType ddType = storm::dd::DdType::CUDD;
+        static const storm::settings::modules::CoreSettings::Engine engine = storm::settings::modules::CoreSettings::Engine::Hybrid;
+        static const bool isExact = false;
+        typedef double ValueType;
+        typedef storm::models::symbolic::Mdp<ddType, ValueType> ModelType;
+        static storm::Environment createEnvironment() {
+            storm::Environment env;
+            env.solver().setForceSoundness(true);
+            env.solver().minMax().setMethod(storm::solver::MinMaxMethod::ValueIteration);
+            env.solver().minMax().setPrecision(storm::utility::convertNumber<storm::RationalNumber>(1e-6));
+            return env;
+        }
+    };
+    class HybridSylvanRationalPolicyIterationEnvironment {
+    public:
+        static const storm::dd::DdType ddType = storm::dd::DdType::Sylvan;
+        static const storm::settings::modules::CoreSettings::Engine engine = storm::settings::modules::CoreSettings::Engine::Hybrid;
+        static const bool isExact = true;
+        typedef storm::RationalNumber ValueType;
+        typedef storm::models::symbolic::Mdp<ddType, ValueType> ModelType;
+        static storm::Environment createEnvironment() {
+            storm::Environment env;
+            env.solver().minMax().setMethod(storm::solver::MinMaxMethod::PolicyIteration);
+            return env;
+        }
+    };
+   class DdCuddDoubleValueIterationEnvironment {
+    public:
+        static const storm::dd::DdType ddType = storm::dd::DdType::CUDD;
+        static const storm::settings::modules::CoreSettings::Engine engine = storm::settings::modules::CoreSettings::Engine::Dd;
+        static const bool isExact = false;
+        typedef double ValueType;
+        typedef storm::models::symbolic::Mdp<ddType, ValueType> ModelType;
+        static storm::Environment createEnvironment() {
+            storm::Environment env;
+            env.solver().minMax().setMethod(storm::solver::MinMaxMethod::ValueIteration);
+            env.solver().minMax().setPrecision(storm::utility::convertNumber<storm::RationalNumber>(1e-10));
+            return env;
+        }
+    };
+    class DdSylvanDoubleValueIterationEnvironment {
+    public:
+        static const storm::dd::DdType ddType = storm::dd::DdType::Sylvan;
+        static const storm::settings::modules::CoreSettings::Engine engine = storm::settings::modules::CoreSettings::Engine::Dd;
+        static const bool isExact = false;
+        typedef double ValueType;
+        typedef storm::models::symbolic::Mdp<ddType, ValueType> ModelType;
+        static storm::Environment createEnvironment() {
+            storm::Environment env;
+            env.solver().minMax().setMethod(storm::solver::MinMaxMethod::ValueIteration);
+            env.solver().minMax().setPrecision(storm::utility::convertNumber<storm::RationalNumber>(1e-10));
+            return env;
+        }
+    };
+    class DdCuddDoublePolicyIterationEnvironment {
+    public:
+        static const storm::dd::DdType ddType = storm::dd::DdType::CUDD;
+        static const storm::settings::modules::CoreSettings::Engine engine = storm::settings::modules::CoreSettings::Engine::Dd;
+        static const bool isExact = false;
+        typedef double ValueType;
+        typedef storm::models::symbolic::Mdp<ddType, ValueType> ModelType;
+        static storm::Environment createEnvironment() {
+            storm::Environment env;
+            env.solver().minMax().setMethod(storm::solver::MinMaxMethod::PolicyIteration);
+            env.solver().minMax().setPrecision(storm::utility::convertNumber<storm::RationalNumber>(1e-10));
+            return env;
+        }
+    };
+    class DdSylvanRationalRationalSearchEnvironment {
+    public:
+        static const storm::dd::DdType ddType = storm::dd::DdType::Sylvan;
+        static const storm::settings::modules::CoreSettings::Engine engine = storm::settings::modules::CoreSettings::Engine::Dd;
+        static const bool isExact = true;
+        typedef storm::RationalNumber ValueType;
+        typedef storm::models::symbolic::Mdp<ddType, ValueType> ModelType;
+        static storm::Environment createEnvironment() {
+            storm::Environment env;
+            env.solver().minMax().setMethod(storm::solver::MinMaxMethod::RationalSearch);
+            return env;
+        }
+    };
+
     template<typename TestType>
     class MdpPrctlModelCheckerTest : public ::testing::Test {
     public:
@@ -133,15 +238,17 @@ namespace {
         template <typename MT = typename TestType::ModelType>
         typename std::enable_if<std::is_same<MT, SparseModelType>::value, std::shared_ptr<storm::modelchecker::AbstractModelChecker<MT>>>::type
         createModelChecker(std::shared_ptr<MT> const& model) const {
-            return std::make_shared<storm::modelchecker::SparseMdpPrctlModelChecker<SparseModelType>>(*model);
+            if (TestType::engine == storm::settings::modules::CoreSettings::Engine::Sparse) {
+                return std::make_shared<storm::modelchecker::SparseMdpPrctlModelChecker<SparseModelType>>(*model);
+            }
         }
         
         template <typename MT = typename TestType::ModelType>
         typename std::enable_if<std::is_same<MT, SymbolicModelType>::value, std::shared_ptr<storm::modelchecker::AbstractModelChecker<MT>>>::type
         createModelChecker(std::shared_ptr<MT> const& model) const {
-            if (TestType::engine() == storm::settings::modules::CoreSettings::Engine::Hybrid) {
+            if (TestType::engine == storm::settings::modules::CoreSettings::Engine::Hybrid) {
                 return std::make_shared<storm::modelchecker::HybridMdpPrctlModelChecker<SymbolicModelType>>(*model);
-            } else if (TestType::engine() == storm::settings::modules::CoreSettings::Engine::Dd) {
+            } else if (TestType::engine == storm::settings::modules::CoreSettings::Engine::Dd) {
                 return std::make_shared<storm::modelchecker::SymbolicMdpPrctlModelChecker<SymbolicModelType>>(*model);
             }
         }
@@ -174,8 +281,16 @@ namespace {
             SparseDoubleValueIterationEnvironment,
             SparseDoubleSoundValueIterationEnvironment,
             SparseRationalPolicyIterationEnvironment,
-            SparseRationalRationalSearchEnvironment
-    > TestingTypes;
+            SparseRationalRationalSearchEnvironment,
+            HybridCuddDoubleValueIterationEnvironment,
+            HybridSylvanDoubleValueIterationEnvironment,
+            HybridCuddDoubleSoundValueIterationEnvironment,
+            HybridSylvanRationalPolicyIterationEnvironment,
+            DdCuddDoubleValueIterationEnvironment,
+            DdSylvanDoubleValueIterationEnvironment,
+            DdCuddDoublePolicyIterationEnvironment,
+            DdSylvanRationalRationalSearchEnvironment
+        > TestingTypes;
     
     TYPED_TEST_CASE(MdpPrctlModelCheckerTest, TestingTypes);
     
@@ -261,6 +376,42 @@ namespace {
         EXPECT_NEAR(this->parseNumber("30/7"), this->getQuantitativeResultAtInitialState(model, result), this->precision());
     }
     
+    TYPED_TEST(MdpPrctlModelCheckerTest, consensus) {
+        std::string formulasString = "Pmax=? [F \"finished\"]";
+                    formulasString += "; Pmax=? [F \"all_coins_equal_1\"]";
+                    formulasString += "; Rmax=? [F \"all_coins_equal_1\"]";
+                    formulasString += "; Rmin=? [F \"all_coins_equal_1\"]";
+                    formulasString += "; Rmax=? [F \"finished\"]";
+                    formulasString += "; Rmin=? [F \"finished\"]";
+
+        auto modelFormulas = this->buildModelFormulas(STORM_TEST_RESOURCES_DIR "/mdp/coin2-2.nm", formulasString);
+        auto model = std::move(modelFormulas.first);
+        auto tasks = this->getTasks(modelFormulas.second);
+        EXPECT_EQ(272ul, model->getNumberOfStates());
+        EXPECT_EQ(492ul, model->getNumberOfTransitions());
+        ASSERT_EQ(model->getType(), storm::models::ModelType::Mdp);
+        auto checker = this->createModelChecker(model);
+        std::unique_ptr<storm::modelchecker::CheckResult> result;
+
+        result = checker->check(this->env(), tasks[0]);
+        EXPECT_NEAR(this->parseNumber("1"), this->getQuantitativeResultAtInitialState(model, result), this->precision());
+ 
+        result = checker->check(this->env(), tasks[1]);
+        EXPECT_NEAR(this->parseNumber("57/64"), this->getQuantitativeResultAtInitialState(model, result), this->precision());
+ 
+        result = checker->check(this->env(), tasks[2]);
+        EXPECT_TRUE(storm::utility::isInfinity(this->getQuantitativeResultAtInitialState(model, result)));
+ 
+        result = checker->check(this->env(), tasks[3]);
+        EXPECT_TRUE(storm::utility::isInfinity(this->getQuantitativeResultAtInitialState(model, result)));
+ 
+        result = checker->check(this->env(), tasks[4]);
+        EXPECT_NEAR(this->parseNumber("75"), this->getQuantitativeResultAtInitialState(model, result), this->precision());
+
+        result = checker->check(this->env(), tasks[5]);
+        EXPECT_NEAR(this->parseNumber("48"), this->getQuantitativeResultAtInitialState(model, result), this->precision());
+    }
+    
     TYPED_TEST(MdpPrctlModelCheckerTest, TinyRewards) {
         std::string formulasString = "Rmin=? [F \"target\"]";
         auto modelFormulas = this->buildModelFormulas(STORM_TEST_RESOURCES_DIR "/mdp/tiny_rewards.nm", formulasString);
@@ -271,8 +422,15 @@ namespace {
         ASSERT_EQ(model->getType(), storm::models::ModelType::Mdp);
         auto checker = this->createModelChecker(model);
         std::unique_ptr<storm::modelchecker::CheckResult> result;
+        
+        // This example considers a zero-reward end component that does not reach the target
+        // For some methods this requires end-component elimination which is (currently) not supported in the Dd engine
 
-        result = checker->check(this->env(), tasks[0]);
-        EXPECT_NEAR(this->parseNumber("1"), this->getQuantitativeResultAtInitialState(model, result), this->precision());
+        if (TypeParam::engine == storm::settings::modules::CoreSettings::Engine::Dd && this->env().solver().minMax().getMethod() == storm::solver::MinMaxMethod::RationalSearch) {
+            EXPECT_THROW(checker->check(this->env(), tasks[0]), storm::exceptions::UncheckedRequirementException);
+        } else {
+            result = checker->check(this->env(), tasks[0]);
+            EXPECT_NEAR(this->parseNumber("1"), this->getQuantitativeResultAtInitialState(model, result), this->precision());
+        }
     }
 }
