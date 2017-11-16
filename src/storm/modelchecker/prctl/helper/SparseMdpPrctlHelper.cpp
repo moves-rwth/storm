@@ -660,11 +660,19 @@ namespace storm {
             template<typename ValueType>
             boost::optional<SparseMdpEndComponentInformation<ValueType>> computeFixedPointSystemUntilProbabilitiesEliminateEndComponents(storm::solver::SolveGoal<ValueType>& goal, storm::storage::SparseMatrix<ValueType> const& transitionMatrix, storm::storage::SparseMatrix<ValueType> const& backwardTransitions, QualitativeStateSetsUntilProbabilities const& qualitativeStateSets, storm::storage::SparseMatrix<ValueType>& submatrix, std::vector<ValueType>& b) {
                 
-                // Start by computing the states that are in MECs.
-                storm::storage::MaximalEndComponentDecomposition<ValueType> endComponentDecomposition(transitionMatrix, backwardTransitions, qualitativeStateSets.maybeStates);
+                // Get the set of states that (under some scheduler) can stay in the set of maybestates forever
+                storm::storage::BitVector candidateStates = storm::utility::graph::performProb0E(transitionMatrix, transitionMatrix.getRowGroupIndices(), backwardTransitions, qualitativeStateSets.maybeStates, ~qualitativeStateSets.maybeStates);
+                
+                bool doDecomposition = !candidateStates.empty();
+                
+                storm::storage::MaximalEndComponentDecomposition<ValueType> endComponentDecomposition;
+                if (doDecomposition) {
+                    // Compute the states that are in MECs.
+                    endComponentDecomposition = storm::storage::MaximalEndComponentDecomposition<ValueType>(transitionMatrix, backwardTransitions, candidateStates);
+                }
                 
                 // Only do more work if there are actually end-components.
-                if (!endComponentDecomposition.empty()) {
+                if (doDecomposition && !endComponentDecomposition.empty()) {
                     STORM_LOG_DEBUG("Eliminating " << endComponentDecomposition.size() << " EC(s).");
                     SparseMdpEndComponentInformation<ValueType> result = SparseMdpEndComponentInformation<ValueType>::eliminateEndComponents(endComponentDecomposition, transitionMatrix, qualitativeStateSets.maybeStates, &qualitativeStateSets.statesWithProbability1, nullptr, nullptr, submatrix, &b, nullptr);
                     
@@ -993,6 +1001,9 @@ namespace storm {
                         candidateStates.set(state, false);
                     }
                 }
+                
+                // Only keep the candidate states that (under some scheduler) can stay in the set of candidates forever
+                candidateStates = storm::utility::graph::performProb0E(transitionMatrix, transitionMatrix.getRowGroupIndices(), backwardTransitions, candidateStates, ~candidateStates);
                 
                 bool doDecomposition = !candidateStates.empty();
                 

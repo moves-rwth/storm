@@ -96,8 +96,16 @@ namespace storm {
                 
                 storm::storage::MaximalEndComponentDecomposition<ValueType> endComponentDecomposition;
                 if (doDecomposition) {
-                    // Then compute the states that are in MECs with zero reward.
-                    endComponentDecomposition = storm::storage::MaximalEndComponentDecomposition<ValueType>(transitionMatrix, transitionMatrix.transpose(), solverRequirementsData.properMaybeStates);
+                    auto backwardTransitions = transitionMatrix.transpose(true);
+                    // Get the set of states that (under some scheduler) can stay in the set of maybestates forever
+                    storm::storage::BitVector candidateStates = storm::utility::graph::performProb0E(transitionMatrix, transitionMatrix.getRowGroupIndices(), backwardTransitions, solverRequirementsData.properMaybeStates, ~solverRequirementsData.properMaybeStates);
+                    
+                    doDecomposition = !candidateStates.empty();
+                    
+                    if (doDecomposition) {
+                        // If there are candidates, compute the states that are in MECs with zero reward.
+                        endComponentDecomposition = storm::storage::MaximalEndComponentDecomposition<ValueType>(transitionMatrix, backwardTransitions, candidateStates);
+                    }
                 }
                 
                 // Only do more work if there are actually end-components.
@@ -430,8 +438,17 @@ namespace storm {
                 
                 storm::storage::MaximalEndComponentDecomposition<ValueType> endComponentDecomposition;
                 if (doDecomposition) {
-                    // Then compute the states that are in MECs with zero reward.
-                    endComponentDecomposition = storm::storage::MaximalEndComponentDecomposition<ValueType>(transitionMatrix, transitionMatrix.transpose(), candidateStates, zeroRewardChoices);
+                    auto backwardTransitions = transitionMatrix.transpose(true);
+                    
+                    // Only keep the candidate states that (under some scheduler) can stay in the set of candidates forever
+                    candidateStates = storm::utility::graph::performProb0E(transitionMatrix, transitionMatrix.getRowGroupIndices(), backwardTransitions, candidateStates, ~candidateStates);
+                    
+                    doDecomposition = !candidateStates.empty();
+                    
+                    if (doDecomposition) {
+                        // If there are candidates, compute the states that are in MECs with zero reward.
+                        endComponentDecomposition = storm::storage::MaximalEndComponentDecomposition<ValueType>(transitionMatrix, backwardTransitions, candidateStates, zeroRewardChoices);
+                    }
                 }
 
                 // Only do more work if there are actually end-components.

@@ -67,6 +67,10 @@ namespace storm {
                 // Now solve the resulting equation system.
                 std::unique_ptr<storm::solver::SymbolicMinMaxLinearEquationSolver<DdType, ValueType>> solver = linearEquationSolverFactory.create(submatrix, maybeStates, model.getIllegalMask() && maybeStates, model.getRowVariables(), model.getColumnVariables(), model.getNondeterminismVariables(), model.getRowColumnMetaVariablePairs());
                 
+                if (storm::solver::minimize(dir)) {
+                    solver->setHasUniqueSolution(true);
+                }
+                
                 // Check requirements of solver.
                 storm::solver::MinMaxLinearEquationSolverRequirements requirements = solver->getRequirements(env, dir);
                 boost::optional<storm::dd::Bdd<DdType>> initialScheduler;
@@ -77,6 +81,12 @@ namespace storm {
                         requirements.clearValidInitialScheduler();
                     }
                     requirements.clearBounds();
+                    if (requirements.requiresNoEndComponents()) {
+                        // Check whether there are end components
+                        if (storm::utility::graph::performProb0E(model, transitionMatrix.notZero(), maybeStates, !maybeStates && model.getReachableStates()).isZero()) {
+                            requirements.clearNoEndComponents();
+                        }
+                    }
                     STORM_LOG_THROW(requirements.empty(), storm::exceptions::UncheckedRequirementException, "Could not establish requirements of solver.");
                 }
                 if (initialScheduler) {
@@ -224,6 +234,10 @@ namespace storm {
                 // Now solve the resulting equation system.
                 std::unique_ptr<storm::solver::SymbolicMinMaxLinearEquationSolver<DdType, ValueType>> solver = linearEquationSolverFactory.create(submatrix, maybeStates, model.getIllegalMask() && maybeStates, model.getRowVariables(), model.getColumnVariables(), model.getNondeterminismVariables(), model.getRowColumnMetaVariablePairs());
                 
+                if (storm::solver::maximize(dir)) {
+                    solver->setHasUniqueSolution(true);
+                }
+                
                 // Check requirements of solver.
                 storm::solver::MinMaxLinearEquationSolverRequirements requirements = solver->getRequirements(env, dir);
                 boost::optional<storm::dd::Bdd<DdType>> initialScheduler;
@@ -234,6 +248,12 @@ namespace storm {
                         requirements.clearValidInitialScheduler();
                     }
                     requirements.clearLowerBounds();
+                    if (requirements.requiresNoEndComponents()) {
+                        // Check whether there are end components
+                        if (storm::utility::graph::performProb0E(model, transitionMatrixBdd, maybeStates, !maybeStates && model.getReachableStates()).isZero()) {
+                            requirements.clearNoEndComponents();
+                        }
+                    }
                     STORM_LOG_THROW(requirements.empty(), storm::exceptions::UncheckedRequirementException, "Could not establish requirements of solver.");
                 }
                 if (initialScheduler) {
