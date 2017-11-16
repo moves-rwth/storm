@@ -120,10 +120,10 @@ namespace {
         req.clearBounds();
         ASSERT_TRUE(req.empty());
         ASSERT_NO_THROW(solver->solveEquations(this->env(), storm::OptimizationDirection::Minimize, x, b));
-        STORM_EXPECT_NEAR(x[0], this->parseNumber("0.5"), this->precision());
+        EXPECT_NEAR(x[0], this->parseNumber("0.5"), this->precision());
         
         ASSERT_NO_THROW(solver->solveEquations(this->env(), storm::OptimizationDirection::Maximize, x, b));
-        STORM_EXPECT_NEAR(x[0], this->parseNumber("0.99"), this->precision());
+        EXPECT_NEAR(x[0], this->parseNumber("0.99"), this->precision());
     }
     
     TYPED_TEST(MinMaxLinearEquationSolverTest, MatrixVectorMultiplication) {
@@ -152,23 +152,23 @@ namespace {
         
         x = initialX;
         ASSERT_NO_THROW(solver->repeatedMultiply(storm::OptimizationDirection::Minimize, x, nullptr, 1));
-        STORM_EXPECT_NEAR(x[0], this->parseNumber("0.099"), this->precision());
+        EXPECT_NEAR(x[0], this->parseNumber("0.099"), this->precision());
         
         x = initialX;
         ASSERT_NO_THROW(solver->repeatedMultiply(storm::OptimizationDirection::Minimize, x, nullptr, 2));
-        STORM_EXPECT_NEAR(x[0], this->parseNumber("0.1881"), this->precision());
+        EXPECT_NEAR(x[0], this->parseNumber("0.1881"), this->precision());
         
         x = initialX;
         ASSERT_NO_THROW(solver->repeatedMultiply(storm::OptimizationDirection::Minimize, x, nullptr, 20));
-        STORM_EXPECT_NEAR(x[0], this->parseNumber("0.5"), this->precision());
+        EXPECT_NEAR(x[0], this->parseNumber("0.5"), this->precision());
         
         x = initialX;
         ASSERT_NO_THROW(solver->repeatedMultiply(storm::OptimizationDirection::Maximize, x, nullptr, 1));
-        STORM_EXPECT_NEAR(x[0], this->parseNumber("0.5"), this->precision());
+        EXPECT_NEAR(x[0], this->parseNumber("0.5"), this->precision());
         
         x = initialX;
         ASSERT_NO_THROW(solver->repeatedMultiply(storm::OptimizationDirection::Maximize, x, nullptr, 20));
-        STORM_EXPECT_NEAR(x[0], this->parseNumber("0.9238082658"), this->precision());
+        EXPECT_NEAR(x[0], this->parseNumber("0.923808265834023387639"), this->precision());
     }
     
 }
