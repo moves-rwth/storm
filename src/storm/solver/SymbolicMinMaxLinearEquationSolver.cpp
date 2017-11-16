@@ -127,7 +127,7 @@ namespace storm {
             storm::dd::Add<DdType, RationalType> sharpenedX;
             
             for (uint64_t p = 1; p < precision; ++p) {
-                sharpenedX = x.sharpenKwekMehlhorn(precision);
+                sharpenedX = x.sharpenKwekMehlhorn(p);
                 isSolution = rationalSolver.isSolution(dir, sharpenedX, rationalB);
                 
                 if (isSolution) {
