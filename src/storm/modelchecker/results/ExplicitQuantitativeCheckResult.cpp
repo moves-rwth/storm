@@ -43,6 +43,21 @@ namespace storm {
         }
         
         template<typename ValueType>
+        ExplicitQuantitativeCheckResult<ValueType>::ExplicitQuantitativeCheckResult(boost::variant<vector_type, map_type> const& values, boost::optional<std::shared_ptr<storm::storage::Scheduler<ValueType>>> scheduler) : values(values), scheduler(scheduler) {
+            // Intentionally left empty.
+        }
+        
+        template<typename ValueType>
+        ExplicitQuantitativeCheckResult<ValueType>::ExplicitQuantitativeCheckResult(boost::variant<vector_type, map_type>&& values, boost::optional<std::shared_ptr<storm::storage::Scheduler<ValueType>>> scheduler) : values(std::move(values)), scheduler(scheduler) {
+            // Intentionally left empty.
+        }
+        
+        template<typename ValueType>
+        std::unique_ptr<CheckResult> ExplicitQuantitativeCheckResult<ValueType>::clone() const {
+            return std::make_unique<ExplicitQuantitativeCheckResult<ValueType>>(this->values, this->scheduler);
+        }
+        
+        template<typename ValueType>
         typename ExplicitQuantitativeCheckResult<ValueType>::vector_type const& ExplicitQuantitativeCheckResult<ValueType>::getValueVector() const {
             return boost::get<vector_type>(values);
         }
@@ -87,7 +102,7 @@ namespace storm {
                 this->values = newMap;
             }
         }
-        
+
         template<typename ValueType>
         ValueType ExplicitQuantitativeCheckResult<ValueType>::getMin() const {
             STORM_LOG_THROW(!values.empty(), storm::exceptions::InvalidOperationException, "Minimum of empty set is not defined.");
@@ -123,7 +138,7 @@ namespace storm {
         
         template<typename ValueType>
         ValueType ExplicitQuantitativeCheckResult<ValueType>::sum() const {
-            STORM_LOG_THROW(!values.empty(),storm::exceptions::InvalidOperationException, "Minimum of empty set is not defined");
+            STORM_LOG_THROW(!values.empty(),storm::exceptions::InvalidOperationException, "Sum of empty set is not defined");
             
             ValueType sum = storm::utility::zero<ValueType>();
             if (this->isResultForAllStates()) {
@@ -142,7 +157,7 @@ namespace storm {
         
         template<typename ValueType>
         ValueType ExplicitQuantitativeCheckResult<ValueType>::average() const {
-            STORM_LOG_THROW(!values.empty(),storm::exceptions::InvalidOperationException, "Minimum of empty set is not defined");
+            STORM_LOG_THROW(!values.empty(),storm::exceptions::InvalidOperationException, "Average of empty set is not defined");
             
             ValueType sum = storm::utility::zero<ValueType>();
             if (this->isResultForAllStates()) {

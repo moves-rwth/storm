@@ -50,12 +50,12 @@ namespace storm {
                 void setSignatureMode(SignatureMode const& newMode);
 
                 SignatureIterator<DdType, ValueType> compute(Partition<DdType, ValueType> const& partition);
-                
-            private:
+
                 /// Methods to compute the signatures.
                 Signature<DdType, ValueType> getFullSignature(Partition<DdType, ValueType> const& partition) const;
                 Signature<DdType, ValueType> getQualitativeSignature(Partition<DdType, ValueType> const& partition) const;
-                
+
+            private:
                 bool qualitativeTransitionMatrixIsBdd() const;
                 storm::dd::Bdd<DdType> const& getQualitativeTransitionMatrixAsBdd() const;
                 storm::dd::Add<DdType, ValueType> const& getQualitativeTransitionMatrixAsAdd() const;

@@ -34,7 +34,7 @@ TEST(FullySymbolicGameSolverTest, Solve_Cudd) {
     
     matrix += manager->getEncoding(state.first, 1).template toAdd<double>() * manager->getEncoding(state.second, 1).template toAdd<double>() * manager->getEncoding(pl1.first, 1).template toAdd<double>() * manager->getEncoding(pl2.first, 1).template toAdd<double>() * manager->getConstant<double>(1);
     
-    std::unique_ptr<storm::utility::solver::SymbolicGameSolverFactory<storm::dd::DdType::CUDD, double>> solverFactory(new storm::utility::solver::SymbolicGameSolverFactory<storm::dd::DdType::CUDD, double>());
+    std::unique_ptr<storm::solver::SymbolicGameSolverFactory<storm::dd::DdType::CUDD, double>> solverFactory(new storm::solver::SymbolicGameSolverFactory<storm::dd::DdType::CUDD, double>());
 
     storm::dd::Bdd<storm::dd::DdType::CUDD> tmp = matrix.toBdd().existsAbstract({state.second});
     storm::dd::Bdd<storm::dd::DdType::CUDD> illegalPlayer2Mask = !tmp && manager->getRange(state.first);
@@ -99,7 +99,7 @@ TEST(FullySymbolicGameSolverTest, Solve_Sylvan) {
     
     matrix += manager->getEncoding(state.first, 1).template toAdd<double>() * manager->getEncoding(state.second, 1).template toAdd<double>() * manager->getEncoding(pl1.first, 1).template toAdd<double>() * manager->getEncoding(pl2.first, 1).template toAdd<double>() * manager->getConstant<double>(1);
     
-    std::unique_ptr<storm::utility::solver::SymbolicGameSolverFactory<storm::dd::DdType::Sylvan, double>> solverFactory(new storm::utility::solver::SymbolicGameSolverFactory<storm::dd::DdType::Sylvan, double>());
+    std::unique_ptr<storm::solver::SymbolicGameSolverFactory<storm::dd::DdType::Sylvan, double>> solverFactory(new storm::solver::SymbolicGameSolverFactory<storm::dd::DdType::Sylvan, double>());
     
     storm::dd::Bdd<storm::dd::DdType::Sylvan> tmp = matrix.toBdd().existsAbstract({state.second});
     storm::dd::Bdd<storm::dd::DdType::Sylvan> illegalPlayer2Mask = !tmp && manager->getRange(state.first);

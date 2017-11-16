@@ -1,12 +1,22 @@
 #pragma once
 
-#include "storm/utility/graph.h"
+#include "storm/storage/dd/DdType.h"
 
 namespace storm {
+    namespace dd {
+        template <storm::dd::DdType Type>
+        class Bdd;
+    }
+    
     namespace abstraction {
         
         template <storm::dd::DdType Type>
-        using QualitativeResult = storm::utility::graph::GameProb01Result<Type>;
+        class QualitativeResult {
+        public:
+            virtual storm::dd::Bdd<Type> const& getStates() const = 0;
+        };
         
     }
 }
+
+

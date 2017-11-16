@@ -17,6 +17,7 @@
 #include "storm/models/symbolic/Dtmc.h"
 #include "storm/models/symbolic/Ctmc.h"
 #include "storm/models/symbolic/Mdp.h"
+#include "storm/models/symbolic/StochasticTwoPlayerGame.h"
 #include "storm/models/sparse/MarkovAutomaton.h"
 #include "storm/models/sparse/StandardRewardModel.h"
 #include "storm/models/symbolic/StandardRewardModel.h"
@@ -322,6 +323,10 @@ namespace storm {
         template class AbstractModelChecker<storm::models::sparse::MarkovAutomaton<storm::RationalFunction>>;
 #endif
         // DD
+        template class AbstractModelChecker<storm::models::symbolic::Model<storm::dd::DdType::CUDD, double>>;
+        template class AbstractModelChecker<storm::models::symbolic::Model<storm::dd::DdType::Sylvan, double>>;
+        template class AbstractModelChecker<storm::models::symbolic::Model<storm::dd::DdType::Sylvan, storm::RationalNumber>>;
+        template class AbstractModelChecker<storm::models::symbolic::Model<storm::dd::DdType::Sylvan, storm::RationalFunction>>;
         template class AbstractModelChecker<storm::models::symbolic::Dtmc<storm::dd::DdType::CUDD, double>>;
         template class AbstractModelChecker<storm::models::symbolic::Dtmc<storm::dd::DdType::Sylvan, double>>;
         template class AbstractModelChecker<storm::models::symbolic::Dtmc<storm::dd::DdType::Sylvan, storm::RationalNumber>>;
@@ -334,5 +339,9 @@ namespace storm {
         template class AbstractModelChecker<storm::models::symbolic::Ctmc<storm::dd::DdType::Sylvan, double>>;
         template class AbstractModelChecker<storm::models::symbolic::Ctmc<storm::dd::DdType::Sylvan, storm::RationalNumber>>;
         template class AbstractModelChecker<storm::models::symbolic::Ctmc<storm::dd::DdType::Sylvan, storm::RationalFunction>>;
+        template class AbstractModelChecker<storm::models::symbolic::StochasticTwoPlayerGame<storm::dd::DdType::CUDD, double>>;
+        template class AbstractModelChecker<storm::models::symbolic::StochasticTwoPlayerGame<storm::dd::DdType::Sylvan, double>>;
+        template class AbstractModelChecker<storm::models::symbolic::StochasticTwoPlayerGame<storm::dd::DdType::Sylvan, storm::RationalNumber>>;
+        template class AbstractModelChecker<storm::models::symbolic::StochasticTwoPlayerGame<storm::dd::DdType::Sylvan, storm::RationalFunction>>;
     }
 }

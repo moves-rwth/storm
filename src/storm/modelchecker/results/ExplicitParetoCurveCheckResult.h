@@ -11,7 +11,6 @@ namespace storm {
         template<typename ValueType>
         class ExplicitParetoCurveCheckResult : public ParetoCurveCheckResult<ValueType> {
         public:
-
             ExplicitParetoCurveCheckResult();
             ExplicitParetoCurveCheckResult(storm::storage::sparse::state_type const& state, std::vector<typename ParetoCurveCheckResult<ValueType>::point_type> const& points, typename ParetoCurveCheckResult<ValueType>::polytope_type const& underApproximation, typename ParetoCurveCheckResult<ValueType>::polytope_type const& overApproximation);
             ExplicitParetoCurveCheckResult(storm::storage::sparse::state_type const& state, std::vector<typename ParetoCurveCheckResult<ValueType>::point_type>&& points, typename ParetoCurveCheckResult<ValueType>::polytope_type&& underApproximation, typename ParetoCurveCheckResult<ValueType>::polytope_type&& overApproximation);
@@ -21,6 +20,8 @@ namespace storm {
             ExplicitParetoCurveCheckResult(ExplicitParetoCurveCheckResult&& other) = default;
             ExplicitParetoCurveCheckResult& operator=(ExplicitParetoCurveCheckResult&& other) = default;
             virtual ~ExplicitParetoCurveCheckResult() = default;
+            
+            virtual std::unique_ptr<CheckResult> clone() const override;
             
             virtual bool isExplicitParetoCurveCheckResult() const override;
             virtual bool isExplicit() const override;

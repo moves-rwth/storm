@@ -20,6 +20,11 @@ namespace storm {
         }
         
         template<storm::dd::DdType Type, typename ValueType>
+        std::unique_ptr<CheckResult> HybridQuantitativeCheckResult<Type, ValueType>::clone() const {
+            return std::make_unique<HybridQuantitativeCheckResult<Type, ValueType>>(this->reachableStates, this->symbolicStates, this->symbolicValues, this->explicitStates, this->odd, this->explicitValues);
+        }
+        
+        template<storm::dd::DdType Type, typename ValueType>
         std::unique_ptr<CheckResult> HybridQuantitativeCheckResult<Type, ValueType>::compareAgainstBound(storm::logic::ComparisonType comparisonType, ValueType const& bound) const {
             storm::dd::Bdd<Type> symbolicResult = symbolicStates;
             

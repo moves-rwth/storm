@@ -2,21 +2,22 @@
 
 #include "storm/storage/dd/DdType.h"
 
-#include "storm/utility/graph.h"
-
 namespace storm {
     namespace abstraction {
 
         template<storm::dd::DdType Type>
-        struct QualitativeResultMinMax {
+        class SymbolicQualitativeResultMinMax;
+        
+        class QualitativeResultMinMax {
         public:
-            QualitativeResultMinMax() = default;
+            virtual bool isSymbolic() const;
             
-            storm::utility::graph::GameProb01Result<Type> prob0Min;
-            storm::utility::graph::GameProb01Result<Type> prob1Min;
-            storm::utility::graph::GameProb01Result<Type> prob0Max;
-            storm::utility::graph::GameProb01Result<Type> prob1Max;
+            template<storm::dd::DdType Type>
+            SymbolicQualitativeResultMinMax<Type> const& asSymbolicQualitativeResultMinMax() const;
+            
+            template<storm::dd::DdType Type>
+            SymbolicQualitativeResultMinMax<Type>& asSymbolicQualitativeResultMinMax();
         };
-
+        
     }
 }

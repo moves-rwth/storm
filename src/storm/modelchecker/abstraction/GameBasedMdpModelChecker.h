@@ -9,8 +9,8 @@
 
 #include "storm/storage/SymbolicModelDescription.h"
 
-#include "storm/abstraction/QualitativeResult.h"
-#include "storm/abstraction/QualitativeResultMinMax.h"
+#include "storm/abstraction/QualitativeGameResult.h"
+#include "storm/abstraction/QualitativeGameResultMinMax.h"
 
 #include "storm/logic/Bound.h"
 
@@ -29,8 +29,8 @@ namespace storm {
     
     namespace modelchecker {
         
-        using storm::abstraction::QualitativeResult;
-        using storm::abstraction::QualitativeResultMinMax;
+        using storm::abstraction::QualitativeGameResult;
+        using storm::abstraction::QualitativeGameResultMinMax;
         
         template<storm::dd::DdType Type, typename ModelType>
         class GameBasedMdpModelChecker : public AbstractModelChecker<ModelType> {
@@ -71,7 +71,7 @@ namespace storm {
              * Performs a qualitative check on the the given game to compute the (player 1) states that have probability
              * 0 or 1, respectively, to reach a target state and only visiting constraint states before.
              */
-            QualitativeResultMinMax<Type> computeProb01States(boost::optional<QualitativeResultMinMax<Type>> const& previousQualitativeResult, storm::abstraction::MenuGame<Type, ValueType> const& game, storm::OptimizationDirection player1Direction, storm::dd::Bdd<Type> const& transitionMatrixBdd, storm::dd::Bdd<Type> const& constraintStates, storm::dd::Bdd<Type> const& targetStates);
+            QualitativeGameResultMinMax<Type> computeProb01States(boost::optional<QualitativeGameResultMinMax<Type>> const& previousQualitativeResult, storm::abstraction::MenuGame<Type, ValueType> const& game, storm::OptimizationDirection player1Direction, storm::dd::Bdd<Type> const& transitionMatrixBdd, storm::dd::Bdd<Type> const& constraintStates, storm::dd::Bdd<Type> const& targetStates);
             
             void printStatistics(storm::abstraction::MenuGameAbstractor<Type, ValueType> const& abstractor, storm::abstraction::MenuGame<Type, ValueType> const& game) const;
             

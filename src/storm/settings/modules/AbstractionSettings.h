@@ -11,6 +11,10 @@ namespace storm {
              */
             class AbstractionSettings : public ModuleSettings {
             public:
+                enum class Method {
+                    Games, Bisimulation
+                };
+                
                 enum class PivotSelectionHeuristic {
                     NearestMaximalDeviation, MostProbablePath, MaxWeightedDeviation
                 };
@@ -27,6 +31,11 @@ namespace storm {
                  * Creates a new set of abstraction settings.
                  */
                 AbstractionSettings();
+                
+                /*!
+                 * Retrieves the selected abstraction refinement method.
+                 */
+                Method getAbstractionRefinementMethod() const;
                 
                 /*!
                  * Retrieves whether the option to use the decomposition was set.
@@ -87,6 +96,7 @@ namespace storm {
                 const static std::string moduleName;
                 
             private:
+                const static std::string methodOptionName;
                 const static std::string useDecompositionOptionName;
                 const static std::string splitModeOptionName;
                 const static std::string addAllGuardsOptionName;

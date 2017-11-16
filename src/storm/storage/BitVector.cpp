@@ -116,7 +116,12 @@ namespace storm {
             // Only perform the assignment if the source and target are not identical.
             if (this != &other) {
                 bitCount = other.bitCount;
-                buckets = new uint64_t[other.bucketCount()];
+                if (buckets && bucketCount() != other.bucketCount()) {
+                    delete[] buckets;
+                }
+                if (!buckets) {
+                    buckets = new uint64_t[other.bucketCount()];
+                }
                 std::copy_n(other.buckets, other.bucketCount(), buckets);
             }
             return *this;
@@ -1031,6 +1036,176 @@ namespace storm {
             out << std::endl;
         }
 
+        std::size_t FNV1aBitVectorHash::operator()(storm::storage::BitVector const& bv) const {
+            std::size_t seed = 14695981039346656037ull;
+            
+            uint8_t* it = reinterpret_cast<uint8_t*>(bv.buckets);
+            uint8_t const* ite = it + 8 * bv.bucketCount();
+            
+            while (it < ite) {
+                seed ^= *it++;
+                
+                // Multiplication with magic prime.
+                seed += (seed << 1) + (seed << 4) + (seed << 5) + (seed << 7) + (seed << 8) + (seed << 40);
+            }
+            
+            return seed;
+        }
+        
+        inline __attribute__((always_inline)) uint32_t fmix32(uint32_t h) {
+            h ^= h >> 16;
+            h *= 0x85ebca6b;
+            h ^= h >> 13;
+            h *= 0xc2b2ae35;
+            h ^= h >> 16;
+            
+            return h;
+        }
+        
+        inline __attribute__((always_inline)) uint64_t fmix64(uint64_t k) {
+            k ^= k >> 33;
+            k *= 0xff51afd7ed558ccdull;
+            k ^= k >> 33;
+            k *= 0xc4ceb9fe1a85ec53ull;
+            k ^= k >> 33;
+            
+            return k;
+        }
+        
+        inline uint32_t rotl32(uint32_t x, int8_t r) {
+            return (x << r) | (x >> (32 - r));
+        }
+        
+        inline uint64_t rotl64 ( uint64_t x, int8_t r )
+        {
+            return (x << r) | (x >> (64 - r));
+        }
+        
+        inline __attribute__((always_inline)) uint32_t getblock32(uint32_t const* p, int i) {
+            return p[i];
+        }
+        
+        inline __attribute__((always_inline)) uint32_t getblock64(uint64_t const* p, int i) {
+            return p[i];
+        }
+        
+        template<>
+        uint32_t Murmur3BitVectorHash<uint32_t>::operator()(storm::storage::BitVector const& bv) const {
+            uint8_t const* data = reinterpret_cast<uint8_t const*>(bv.buckets);
+            uint32_t len = bv.bucketCount() * 8;
+            const int nblocks = bv.bucketCount() * 2;
+            
+            // Using 0 as seed.
+            uint32_t h1 = 0;
+            
+            const uint32_t c1 = 0xcc9e2d51;
+            const uint32_t c2 = 0x1b873593;
+            
+            //----------
+            // body
+            
+            const uint32_t * blocks = reinterpret_cast<uint32_t const*>(data + nblocks*4);
+            
+            for (int i = -nblocks; i; i++) {
+                uint32_t k1 = getblock32(blocks, i);
+                
+                k1 *= c1;
+                k1 = rotl32(k1,15);
+                k1 *= c2;
+                
+                h1 ^= k1;
+                h1 = rotl32(h1,13);
+                h1 = h1*5+0xe6546b64;
+            }
+            
+            //----------
+            // finalization
+            
+            h1 ^= len;
+            
+            h1 = fmix32(h1);
+            
+            return h1;
+        }
+        
+        template<>
+        uint64_t Murmur3BitVectorHash<uint64_t>::operator()(storm::storage::BitVector const& bv) const {
+            uint8_t const* data = reinterpret_cast<uint8_t const*>(bv.buckets);
+            uint64_t len = bv.bucketCount() * 8;
+            const int nblocks = bv.bucketCount() / 2;
+            
+            uint64_t h1 = 0;
+            uint64_t h2 = 0;
+            
+            const uint64_t c1 = 0x87c37b91114253d5ull;
+            const uint64_t c2 = 0x4cf5ad432745937full;
+            
+            //----------
+            // body
+            
+            const uint64_t * blocks = (const uint64_t *)(data);
+            
+            for (int i = 0; i < nblocks; i++) {
+                uint64_t k1 = getblock64(blocks,i*2+0);
+                uint64_t k2 = getblock64(blocks,i*2+1);
+                
+                k1 *= c1; k1  = rotl64(k1,31); k1 *= c2; h1 ^= k1;
+                
+                h1 = rotl64(h1,27); h1 += h2; h1 = h1*5+0x52dce729;
+                
+                k2 *= c2; k2  = rotl64(k2,33); k2 *= c1; h2 ^= k2;
+                
+                h2 = rotl64(h2,31); h2 += h1; h2 = h2*5+0x38495ab5;
+            }
+            
+            //----------
+            // tail
+            
+            uint8_t const* tail = reinterpret_cast<uint8_t const*>(data + nblocks*16);
+            
+            uint64_t k1 = 0;
+            uint64_t k2 = 0;
+            
+            switch(len & 15)
+            {
+                case 15: k2 ^= ((uint64_t)tail[14]) << 48;
+                case 14: k2 ^= ((uint64_t)tail[13]) << 40;
+                case 13: k2 ^= ((uint64_t)tail[12]) << 32;
+                case 12: k2 ^= ((uint64_t)tail[11]) << 24;
+                case 11: k2 ^= ((uint64_t)tail[10]) << 16;
+                case 10: k2 ^= ((uint64_t)tail[ 9]) << 8;
+                case  9: k2 ^= ((uint64_t)tail[ 8]) << 0;
+                    k2 *= c2; k2  = rotl64(k2,33); k2 *= c1; h2 ^= k2;
+                    
+                case  8: k1 ^= ((uint64_t)tail[ 7]) << 56;
+                case  7: k1 ^= ((uint64_t)tail[ 6]) << 48;
+                case  6: k1 ^= ((uint64_t)tail[ 5]) << 40;
+                case  5: k1 ^= ((uint64_t)tail[ 4]) << 32;
+                case  4: k1 ^= ((uint64_t)tail[ 3]) << 24;
+                case  3: k1 ^= ((uint64_t)tail[ 2]) << 16;
+                case  2: k1 ^= ((uint64_t)tail[ 1]) << 8;
+                case  1: k1 ^= ((uint64_t)tail[ 0]) << 0;
+                    k1 *= c1; k1  = rotl64(k1,31); k1 *= c2; h1 ^= k1;
+            };
+            
+            
+            //----------
+            // finalization
+            
+            h1 ^= len; h2 ^= len;
+            
+            h1 += h2;
+            h2 += h1;
+            
+            h1 = fmix64(h1);
+            h2 = fmix64(h2);
+            
+            h1 += h2;
+            h2 += h1;
+            
+            return h1 ^ h2;
+        }
+        
         // All necessary explicit template instantiations.
         template BitVector::BitVector(uint_fast64_t length, std::vector<uint_fast64_t>::iterator begin, std::vector<uint_fast64_t>::iterator end);
         template BitVector::BitVector(uint_fast64_t length, std::vector<uint_fast64_t>::const_iterator begin, std::vector<uint_fast64_t>::const_iterator end);
@@ -1040,6 +1215,9 @@ namespace storm {
         template void BitVector::set(std::vector<uint_fast64_t>::const_iterator begin, std::vector<uint_fast64_t>::const_iterator end, bool value);
         template void BitVector::set(boost::container::flat_set<uint_fast64_t>::iterator begin, boost::container::flat_set<uint_fast64_t>::iterator end, bool value);
         template void BitVector::set(boost::container::flat_set<uint_fast64_t>::const_iterator begin, boost::container::flat_set<uint_fast64_t>::const_iterator end, bool value);
+        
+        template struct Murmur3BitVectorHash<uint32_t>;
+        template struct Murmur3BitVectorHash<uint64_t>;
     }
 }
 

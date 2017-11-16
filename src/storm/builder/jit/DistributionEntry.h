@@ -4,20 +4,20 @@ namespace storm {
     namespace builder {
         namespace jit {
             
-            template <typename IndexType, typename ValueType>
+            template <typename StateType, typename ValueType>
             class DistributionEntry {
             public:
                 DistributionEntry();
-                DistributionEntry(IndexType const& index, ValueType const& value);
+                DistributionEntry(StateType const& state, ValueType const& value);
                 
-                IndexType const& getIndex() const;
+                StateType const& getState() const;
                 ValueType const& getValue() const;
                 
                 void addToValue(ValueType const& value);
                 void divide(ValueType const& value);
 
             private:
-                IndexType index;
+                StateType state;
                 ValueType value;
             };
             

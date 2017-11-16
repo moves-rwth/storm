@@ -44,6 +44,11 @@ namespace storm {
                 Partition<DdType, ValueType> const& getStatePartition() const;
                 
                 /*!
+                 * Retrieves the full signature of all states wrt. the current state partition.
+                 */
+                Signature<DdType, ValueType> getFullSignature() const;
+                
+                /*!
                  * Retrieves the status of the refinement process.
                  */
                 Status getStatus() const;
