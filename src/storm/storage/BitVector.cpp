@@ -118,6 +118,7 @@ namespace storm {
                 bitCount = other.bitCount;
                 if (buckets && bucketCount() != other.bucketCount()) {
                     delete[] buckets;
+                    buckets = nullptr;
                 }
                 if (!buckets) {
                     buckets = new uint64_t[other.bucketCount()];
