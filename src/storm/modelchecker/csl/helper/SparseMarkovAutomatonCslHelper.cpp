@@ -337,10 +337,82 @@ namespace storm {
                 logfile << " res = " << res << "\n";
             }
 
+            template <typename ValueType, typename std::enable_if<storm::NumberTraits<ValueType>::SupportsExponential, int>::type=0>
+            int SparseMarkovAutomatonCslHelper::trajans(storm::storage::SparseMatrix<ValueType> const& transitionMatrix, uint64_t node, std::vector<uint64_t >& disc, std::vector<uint64_t >& finish, uint64_t* counter) {
+                auto const &rowGroupIndice = transitionMatrix.getRowGroupIndices();
+
+                disc[node] = *counter;
+                finish[node] = *counter;
+                (*counter)+=1;
+
+                auto from = rowGroupIndice[node];
+                auto to = rowGroupIndice[node+1];
+
+                for(uint64_t i =from; i<to ; i++ ) {
+                    for(auto element : transitionMatrix.getRow(i)){
+                        if (disc[element.getColumn()]==0){
+                            uint64_t back = trajans(transitionMatrix,element.getColumn(),disc,finish, counter);
+                            finish[node]=std::min(finish[node], back);
+                        } else {
+                            finish[node]=std::min(finish[node], disc[element.getColumn()]);
+                        }
+                    }
+                }
+
+                return finish[node];
+            }
+
+
+            template <typename ValueType, typename std::enable_if<storm::NumberTraits<ValueType>::SupportsExponential, int>::type=0>
+            storm::storage::BitVector SparseMarkovAutomatonCslHelper::identifyProbCycles(storm::storage::SparseMatrix<ValueType> const& transitionMatrix, storm::storage::BitVector const& markovianStates, storm::storage::BitVector const& psiStates){
+
+                storm::storage::BitVector const& probabilisticStates = ~markovianStates;
+                storm::storage::BitVector const& probabilisticNonGoalStates = ~markovianStates & ~psiStates;
+
+                storm::storage::SparseMatrix<ValueType> const& probMatrix = transitionMatrix.getSubmatrix(true, probabilisticNonGoalStates, probabilisticNonGoalStates);
+                uint64_t  probSize = probMatrix.getRowGroupCount();
+                std::vector<uint64_t> disc(probSize, 0), finish(probSize, 0);
+
+                uint64_t counter =1;
+
+                for (uint64_t i =0; i<probSize; i++){
+                    if (disc[i]==0) {
+                        trajans(probMatrix, i, disc, finish, &counter);
+                    }
+                }
+
+                std::cout << "giving the circle vectors \n";
+                for (uint64_t i = 0 ; i<probSize; i++){
+                    std::cout << disc[i] << '\t' << finish[i] << "\n";
+                }
+
+
+                storm::storage::BitVector cycleStates(markovianStates.size(), false);
+                for (int i = 0 ; i< finish.size() ; i++){
+                    auto f = finish[i];
+                    for (int j =i; j<finish.size() ; j++){
+                        if (finish[j]==f){
+
+                            cycleStates.set(transformIndice(probabilisticNonGoalStates,i),true);
+                            cycleStates.set(transformIndice(probabilisticNonGoalStates,j),true);
+                        }
+                    }
+                }
+
+                return cycleStates;
+            }
+
+
             template <typename ValueType, typename std::enable_if<storm::NumberTraits<ValueType>::SupportsExponential, int>::type>
             std::vector<ValueType> SparseMarkovAutomatonCslHelper::unifPlus( std::pair<double, double> const& boundsPair, std::vector<ValueType> const& exitRateVector, storm::storage::SparseMatrix<ValueType> const& transitionMatrix, storm::storage::BitVector const& markovianStates, storm::storage::BitVector const& psiStates){
                 STORM_LOG_TRACE("Using UnifPlus to compute bounded until probabilities.");
-                
+
+                storm::storage::BitVector const& probabilisticNonGoalStates = ~markovianStates & ~psiStates;
+                auto cycleStates = identifyProbCycles(transitionMatrix, markovianStates, psiStates);
+
+                for (int i=0 ; i < cycleStates.size() ; i++ ){
+                    std::cout << cycleStates[i] <<  "\t" << probabilisticNonGoalStates[i] <<"\n";
+                }
                 std::ofstream logfile("U+logfile.txt", std::ios::app);
                 ValueType maxNorm = 0;
 
