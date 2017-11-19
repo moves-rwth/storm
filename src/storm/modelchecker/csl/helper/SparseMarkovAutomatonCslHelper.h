@@ -56,7 +56,24 @@ namespace storm {
                 static std::vector<ValueType> computeReachabilityTimes(OptimizationDirection dir, storm::storage::SparseMatrix<ValueType> const& transitionMatrix, storm::storage::SparseMatrix<ValueType> const& backwardTransitions, std::vector<ValueType> const& exitRateVector, storm::storage::BitVector const& markovianStates, storm::storage::BitVector const& psiStates, storm::solver::MinMaxLinearEquationSolverFactory<ValueType> const& minMaxLinearEquationSolverFactory);
                 
             private:
+                static uint64_t transformIndice(storm::storage::BitVector const& subset, uint64_t fakeId){
+                    uint64_t id =0;
+                    uint64_t counter =0;
+                    while(counter<=fakeId){
+                        if(subset[id]){
+                            counter++;
+                        }
+                        id++;
+                    }
+                    return id-1;
+                }
 
+                template <typename ValueType, typename std::enable_if<storm::NumberTraits<ValueType>::SupportsExponential, int>::type=0>
+                static storm::storage::BitVector identifyProbCyclesGoalStates(storm::storage::SparseMatrix<ValueType> const& transitionMatrix,  storm::storage::BitVector const& cycleStates);
+
+
+                    template <typename ValueType, typename std::enable_if<storm::NumberTraits<ValueType>::SupportsExponential, int>::type=0>
+                static storm::storage::BitVector identifyProbCycles(storm::storage::SparseMatrix<ValueType> const& TransitionMatrix, storm::storage::BitVector const& markovianStates, storm::storage::BitVector const& psiStates);
                 /*!
                  * Computes the poission-distribution
                  *
@@ -69,6 +86,8 @@ namespace storm {
                 template <typename ValueType>
                 static ValueType poisson(ValueType lambda, uint64_t i);
 
+                template <typename ValueType, typename std::enable_if<storm::NumberTraits<ValueType>::SupportsExponential, int>::type=0>
+                static int trajans(storm::storage::SparseMatrix<ValueType> const& TransitionMatrix, uint64_t node, std::vector<uint64_t>& disc, std::vector<uint64_t>& finish, uint64_t * counter);
 
                 /*!
                  * Computes vd vector according to UnifPlus
@@ -99,7 +118,7 @@ namespace storm {
                  */
 
                 template <typename ValueType, typename std::enable_if<storm::NumberTraits<ValueType>::SupportsExponential, int>::type=0>
-                static void printTransitions(std::vector<ValueType> const& exitRateVector, storm::storage::SparseMatrix<ValueType> const& fullTransitionMatrix, storm::storage::BitVector const& markovianStates,std::vector<std::vector<ValueType>>& vd, std::vector<std::vector<ValueType>>& vu, std::vector<std::vector<ValueType>>& wu);
+                static void printTransitions(std::vector<ValueType> const& exitRateVector, storm::storage::SparseMatrix<ValueType> const& fullTransitionMatrix, storm::storage::BitVector const& markovianStates, storm::storage::BitVector const& psiStates,  storm::storage::BitVector const& cycleStates, storm::storage::BitVector const& cycleGoalStates, std::vector<std::vector<ValueType>>& vd, std::vector<std::vector<ValueType>>& vu, std::vector<std::vector<ValueType>>& wu);
 
                 template <typename ValueType, typename std::enable_if<storm::NumberTraits<ValueType>::SupportsExponential, int>::type = 0>
                 static void computeBoundedReachabilityProbabilities(OptimizationDirection dir, storm::storage::SparseMatrix<ValueType> const& transitionMatrix, std::vector<ValueType> const& exitRates, storm::storage::BitVector const& goalStates, storm::storage::BitVector const& markovianNonGoalStates, storm::storage::BitVector const& probabilisticNonGoalStates, std::vector<ValueType>& markovianNonGoalValues, std::vector<ValueType>& probabilisticNonGoalValues, ValueType delta, uint64_t numberOfSteps, storm::solver::MinMaxLinearEquationSolverFactory<ValueType> const& minMaxLinearEquationSolverFactory);
