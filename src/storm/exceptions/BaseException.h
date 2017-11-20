@@ -46,6 +46,10 @@ namespace storm {
         protected:
             // This stream stores the message of this exception.
             std::stringstream stream;
+
+        private:
+            // storage for the string backing the C string returned by what()
+            mutable std::string errorString;
         };
         
     } // namespace exceptions
