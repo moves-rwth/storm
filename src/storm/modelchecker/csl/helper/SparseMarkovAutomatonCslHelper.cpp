@@ -162,7 +162,7 @@ namespace storm {
 
                 logfile << "probStates\tmarkovianStates\tgoalStates\tcycleStates\tcycleGoalStates\n";
                 for (int i =0 ; i< markovianStates.size() ; i++){
-                    logfile << (~markovianStates)[i] << "\t" << markovianStates[i] << "\t" << psiStates[i] << "\t" << cycleStates[i] << "\t" << cycleGoalStates[i] << "\n";
+                    logfile << (~markovianStates)[i] << "\t\t" << markovianStates[i] << "\t\t" << psiStates[i] << "\t\t" << cycleStates[i] << "\t\t" << cycleGoalStates[i] << "\n";
                 }
 
 
@@ -369,6 +369,9 @@ namespace storm {
 
                 for(uint64_t i =from; i<to ; i++ ) {
                     for(auto element : transitionMatrix.getRow(i)){
+                        if (element.getValue()==0){
+                            continue;
+                        }
                         if (disc[element.getColumn()]==0){
                             uint64_t back = trajans(transitionMatrix,element.getColumn(),disc,finish, counter);
                             finish[node]=std::min(finish[node], back);
@@ -423,11 +426,6 @@ namespace storm {
                     }
                 }
 
-                std::cout << "giving the circle vectors \n";
-                for (uint64_t i = 0 ; i<probSize; i++){
-                    std::cout << disc[i] << '\t' << finish[i] << "\n";
-                }
-
 
                 storm::storage::BitVector cycleStates(markovianStates.size(), false);
                 for (int i = 0 ; i< finish.size() ; i++){
@@ -443,36 +441,12 @@ namespace storm {
                 return cycleStates;
             }
 
+            template <typename ValueType>
+            std::vector<ValueType> SparseMarkovAutomatonCslHelper::deleteProbDiagonalEntries(storm::storage::SparseMatrix<ValueType>& transitionMatrix, storm::storage::BitVector const& markovianStates){
 
-            template <typename ValueType, typename std::enable_if<storm::NumberTraits<ValueType>::SupportsExponential, int>::type>
-            std::vector<ValueType> SparseMarkovAutomatonCslHelper::unifPlus(OptimizationDirection dir, std::pair<double, double> const& boundsPair, std::vector<ValueType> const& exitRateVector, storm::storage::SparseMatrix<ValueType> const& transitionMatrix, storm::storage::BitVector const& markovianStates, storm::storage::BitVector const& psiStates){
-                STORM_LOG_TRACE("Using UnifPlus to compute bounded until probabilities.");
+                auto const&  rowGroupIndices = transitionMatrix.getRowGroupIndices();
 
-
-                storm::storage::BitVector const& probabilisticNonGoalStates = ~markovianStates & ~psiStates;
-                auto cycleStates = identifyProbCycles(transitionMatrix, markovianStates, psiStates);
-                auto cycleGoals = identifyProbCyclesGoalStates(transitionMatrix, cycleStates);
-
-
-                std::ofstream logfile("U+logfile.txt", std::ios::app);
-                ValueType maxNorm = 0;
-
-                //bitvectors to identify different kind of states
-//                storm::storage::BitVector const &markovianNonGoalStates = markovianStates & ~psiStates;
-//                storm::storage::BitVector const &probabilisticNonGoalStates = ~markovianStates & ~psiStates;
-                storm::storage::BitVector allStates(markovianStates.size(), true);
-
-                //vectors to save calculation
-                std::vector<std::vector<ValueType>> vd,vu,wu;
-                printTransitions(exitRateVector, transitionMatrix, markovianStates, psiStates, cycleStates, cycleGoals, vd,vu,wu); // TODO: delete when develepmont is finished
-
-                //transition matrix with diagonal entries. The values can be changed during uniformisation
-                std::vector<ValueType> exitRate{exitRateVector};
-                typename storm::storage::SparseMatrix<ValueType> fullTransitionMatrix = transitionMatrix.getSubmatrix(true, allStates , allStates , true);
-                auto rowGroupIndices = fullTransitionMatrix.getRowGroupIndices();
-
-                //delete prob-diagonal entries
-                for (uint64_t i =0; i<fullTransitionMatrix.getRowGroupCount(); i++) {
+                for (uint64_t i =0; i<transitionMatrix.getRowGroupCount(); i++) {
                     if (markovianStates[i]) {
                         continue;
                     }
@@ -480,7 +454,7 @@ namespace storm {
                     auto to = rowGroupIndices[i + 1];
                     for (uint64_t j = from; j < to; j++) {
                         ValueType selfLoop = 0;
-                        for (auto& element: fullTransitionMatrix.getRow(j)){
+                        for (auto& element: transitionMatrix.getRow(j)){
                             if (element.getColumn()==i){
                                 selfLoop = element.getValue();
                             }
@@ -488,7 +462,7 @@ namespace storm {
                         if (selfLoop==0){
                             continue;
                         }
-                        for (auto& element : fullTransitionMatrix.getRow(j)){
+                        for (auto& element : transitionMatrix.getRow(j)){
                             if (element.getColumn()!=i && selfLoop!=1){
                                 element.setValue(element.getValue()/(1-selfLoop));
                             } else {
@@ -497,6 +471,34 @@ namespace storm {
                         }
                     }
                 }
+            }
+
+                template <typename ValueType, typename std::enable_if<storm::NumberTraits<ValueType>::SupportsExponential, int>::type>
+            std::vector<ValueType> SparseMarkovAutomatonCslHelper::unifPlus(OptimizationDirection dir, std::pair<double, double> const& boundsPair, std::vector<ValueType> const& exitRateVector, storm::storage::SparseMatrix<ValueType> const& transitionMatrix, storm::storage::BitVector const& markovianStates, storm::storage::BitVector const& psiStates){
+                STORM_LOG_TRACE("Using UnifPlus to compute bounded until probabilities.");
+
+                std::ofstream logfile("U+logfile.txt", std::ios::app);
+                ValueType maxNorm = 0;
+
+                //bitvectors to identify different kind of states
+                storm::storage::BitVector allStates(markovianStates.size(), true);
+
+                //vectors to save calculation
+                std::vector<std::vector<ValueType>> vd,vu,wu;
+
+
+                //transition matrix with diagonal entries. The values can be changed during uniformisation
+                std::vector<ValueType> exitRate{exitRateVector};
+                typename storm::storage::SparseMatrix<ValueType> fullTransitionMatrix = transitionMatrix.getSubmatrix(true, allStates , allStates , true);
+                auto rowGroupIndices = fullTransitionMatrix.getRowGroupIndices();
+
+
+                //delete prob-diagonal entries
+                deleteProbDiagonalEntries(fullTransitionMatrix, markovianStates);
+
+                //identify cycles and cycleGoals
+                 auto cycleStates = identifyProbCycles(transitionMatrix, markovianStates, psiStates);
+                 auto cycleGoals = identifyProbCyclesGoalStates(transitionMatrix, cycleStates);
 
 
                 //(1) define horizon, epsilon, kappa , N, lambda,
@@ -543,13 +545,14 @@ namespace storm {
                         }
                         exitRate[i] = exitNew;
                     }
-                       
+
                     // (4) define vectors/matrices
                     std::vector<ValueType> init(numberOfStates, -1);
                     vd = std::vector<std::vector<ValueType>> (N + 1, init);
                     vu = std::vector<std::vector<ValueType>> (N + 1, init);
                     wu = std::vector<std::vector<ValueType>> (N + 1, init);
-                    
+
+                    printTransitions(exitRateVector, transitionMatrix, markovianStates, psiStates, cycleStates, cycleGoals, vd,vu,wu); // TODO: delete when develepmont is finished
 
                     // (5) calculate vectors and maxNorm
                     for (uint64_t i = 0; i < numberOfStates; i++) {
@@ -562,7 +565,7 @@ namespace storm {
                                 maxNorm  = std::max(maxNorm, diff);
                             }
                     }
-                    //printTransitions(exitRate, fullTransitionMatrix, markovianStates,vd,vu,wu); // TODO: delete when development is finished
+                    printTransitions(exitRateVector, transitionMatrix, markovianStates, psiStates, cycleStates, cycleGoals, vd,vu,wu); // TODO: delete when develepmont is finished
 
 
                     // (6) double lambda 
