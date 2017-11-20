@@ -158,6 +158,8 @@ namespace storm {
             // Only perform the assignment if the source and target are not identical.
             if (this != &other) {
                 bitCount = other.bitCount;
+                if (this->buckets)
+                    delete[] this->buckets;
                 this->buckets = other.buckets;
                 other.buckets = nullptr;
             }
