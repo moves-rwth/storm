@@ -62,7 +62,8 @@ namespace storm {
         class SymbolicMinMaxLinearEquationSolver : public SymbolicEquationSolver<DdType, ValueType> {
         public:
             SymbolicMinMaxLinearEquationSolver(SymbolicMinMaxLinearEquationSolverSettings<ValueType> const& settings = SymbolicMinMaxLinearEquationSolverSettings<ValueType>());
-            
+            virtual ~SymbolicMinMaxLinearEquationSolver() = default;
+
             /*!
              * Constructs a symbolic min/max linear equation solver with the given meta variable sets and pairs.
              *
@@ -237,6 +238,8 @@ namespace storm {
         template<storm::dd::DdType DdType, typename ValueType>
         class SymbolicMinMaxLinearEquationSolverFactory {
         public:
+            virtual ~SymbolicMinMaxLinearEquationSolverFactory() = default;
+
             virtual std::unique_ptr<storm::solver::SymbolicMinMaxLinearEquationSolver<DdType, ValueType>> create(storm::dd::Add<DdType, ValueType> const& A, storm::dd::Bdd<DdType> const& allRows, storm::dd::Bdd<DdType> const& illegalMask, std::set<storm::expressions::Variable> const& rowMetaVariables, std::set<storm::expressions::Variable> const& columnMetaVariables, std::set<storm::expressions::Variable> const& choiceVariables, std::vector<std::pair<storm::expressions::Variable, storm::expressions::Variable>> const& rowColumnMetaVariablePairs) const = 0;
             
             /*!

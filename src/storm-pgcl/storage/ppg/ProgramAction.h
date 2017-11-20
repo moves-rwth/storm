@@ -13,7 +13,9 @@ namespace storm {
             ProgramAction(ProgramGraph* graph, ProgramActionIdentifier id) : graph(graph), actId(id) {
                 
             }
-            
+
+            virtual ~ProgramAction() = default;
+
             ProgramActionIdentifier id() const {
                 return actId;
             }

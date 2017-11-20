@@ -10,6 +10,8 @@ namespace storm {
         template<typename ValueType>
         class TerminationCondition {
         public:
+            virtual ~TerminationCondition() = default;
+
             /*!
              * Retrieves whether the guarantee provided by the solver for the current result is sufficient to terminate.
              */

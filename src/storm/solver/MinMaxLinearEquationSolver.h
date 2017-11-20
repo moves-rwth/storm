@@ -207,6 +207,7 @@ namespace storm {
         class MinMaxLinearEquationSolverFactory {
         public:
             MinMaxLinearEquationSolverFactory(MinMaxMethodSelection const& method = MinMaxMethodSelection::FROMSETTINGS, bool trackScheduler = false);
+	    virtual ~MinMaxLinearEquationSolverFactory() = default;
             
             std::unique_ptr<MinMaxLinearEquationSolver<ValueType>> create(storm::storage::SparseMatrix<ValueType> const& matrix) const;
             std::unique_ptr<MinMaxLinearEquationSolver<ValueType>> create(storm::storage::SparseMatrix<ValueType>&& matrix) const;

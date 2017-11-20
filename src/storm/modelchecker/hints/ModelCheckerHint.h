@@ -15,7 +15,8 @@ namespace storm {
         class ModelCheckerHint {
         public:
             ModelCheckerHint() = default;
-            
+            virtual ~ModelCheckerHint() = default;
+
             // Returns true iff this hint does not contain any information.
             virtual bool isEmpty() const;
             

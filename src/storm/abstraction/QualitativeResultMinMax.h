@@ -10,6 +10,8 @@ namespace storm {
         
         class QualitativeResultMinMax {
         public:
+            virtual ~QualitativeResultMinMax() = default;
+
             virtual bool isSymbolic() const;
             
             template<storm::dd::DdType Type>
