@@ -56,6 +56,10 @@ namespace storm {
                 static std::vector<ValueType> computeReachabilityTimes(OptimizationDirection dir, storm::storage::SparseMatrix<ValueType> const& transitionMatrix, storm::storage::SparseMatrix<ValueType> const& backwardTransitions, std::vector<ValueType> const& exitRateVector, storm::storage::BitVector const& markovianStates, storm::storage::BitVector const& psiStates, storm::solver::MinMaxLinearEquationSolverFactory<ValueType> const& minMaxLinearEquationSolverFactory);
                 
             private:
+
+                template <typename ValueType, typename std::enable_if<storm::NumberTraits<ValueType>::SupportsExponential, int>::type=0>
+                static void deleteProbDiagonals(storm::storage::SparseMatrix<ValueType>& transitionMatrix, storm::storage::BitVector const& markovianStates);
+
                 static uint64_t transformIndice(storm::storage::BitVector const& subset, uint64_t fakeId){
                     uint64_t id =0;
                     uint64_t counter =0;
@@ -84,14 +88,14 @@ namespace storm {
                  *
                  * @param parameter lambda to use
                  * @param point i
-                 * TODO: replace with Fox-Lynn
+                 * TODO: replace with Fox-glynn
                  * @return the probability
                  */
                 template <typename ValueType>
                 static ValueType poisson(ValueType lambda, uint64_t i);
 
                 template <typename ValueType, typename std::enable_if<storm::NumberTraits<ValueType>::SupportsExponential, int>::type=0>
-                static int trajans(storm::storage::SparseMatrix<ValueType> const& TransitionMatrix, uint64_t node, std::vector<uint64_t>& disc, std::vector<uint64_t>& finish, uint64_t * counter);
+                static uint64_t trajans(storm::storage::SparseMatrix<ValueType> const& TransitionMatrix, uint64_t node, std::vector<uint64_t>& disc, std::vector<uint64_t>& finish, uint64_t * counter);
 
                 /*!
                  * Computes vd vector according to UnifPlus

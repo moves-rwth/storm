@@ -357,7 +357,7 @@ namespace storm {
             }
 
             template <typename ValueType, typename std::enable_if<storm::NumberTraits<ValueType>::SupportsExponential, int>::type=0>
-            int SparseMarkovAutomatonCslHelper::trajans(storm::storage::SparseMatrix<ValueType> const& transitionMatrix, uint64_t node, std::vector<uint64_t >& disc, std::vector<uint64_t >& finish, uint64_t* counter) {
+            uint64_t SparseMarkovAutomatonCslHelper::trajans(storm::storage::SparseMatrix<ValueType> const& transitionMatrix, uint64_t node, std::vector<uint64_t >& disc, std::vector<uint64_t >& finish, uint64_t* counter) {
                 auto const& rowGroupIndice = transitionMatrix.getRowGroupIndices();
 
                 disc[node] = *counter;
@@ -430,7 +430,7 @@ namespace storm {
                 storm::storage::BitVector cycleStates(markovianStates.size(), false);
                 for (int i = 0 ; i< finish.size() ; i++){
                     auto f = finish[i];
-                    for (int j =i; j<finish.size() ; j++){
+                    for (int j =i+1; j<finish.size() ; j++){
                         if (finish[j]==f){
                             cycleStates.set(transformIndice(probabilisticNonGoalStates,i),true);
                             cycleStates.set(transformIndice(probabilisticNonGoalStates,j),true);
@@ -441,9 +441,9 @@ namespace storm {
                 return cycleStates;
             }
 
-            template <typename ValueType>
-            std::vector<ValueType> SparseMarkovAutomatonCslHelper::deleteProbDiagonalEntries(storm::storage::SparseMatrix<ValueType>& transitionMatrix, storm::storage::BitVector const& markovianStates){
 
+            template <typename ValueType, typename std::enable_if<storm::NumberTraits<ValueType>::SupportsExponential, int>::type=0>
+            void SparseMarkovAutomatonCslHelper::deleteProbDiagonals(storm::storage::SparseMatrix<ValueType>& transitionMatrix, storm::storage::BitVector const& markovianStates){
                 auto const&  rowGroupIndices = transitionMatrix.getRowGroupIndices();
 
                 for (uint64_t i =0; i<transitionMatrix.getRowGroupCount(); i++) {
@@ -459,6 +459,7 @@ namespace storm {
                                 selfLoop = element.getValue();
                             }
                         }
+
                         if (selfLoop==0){
                             continue;
                         }
@@ -467,10 +468,17 @@ namespace storm {
                                 element.setValue(element.getValue()/(1-selfLoop));
                             } else {
                                 element.setValue(0);
+
                             }
                         }
                     }
                 }
+            }
+
+            template <typename ValueType>
+            std::vector<ValueType> SparseMarkovAutomatonCslHelper::deleteProbDiagonalEntries(storm::storage::SparseMatrix<ValueType>& transitionMatrix, storm::storage::BitVector const& markovianStates){
+
+
             }
 
                 template <typename ValueType, typename std::enable_if<storm::NumberTraits<ValueType>::SupportsExponential, int>::type>
@@ -494,11 +502,14 @@ namespace storm {
 
 
                 //delete prob-diagonal entries
-                deleteProbDiagonalEntries(fullTransitionMatrix, markovianStates);
+                //deleteProbDiagonalEntries(fullTransitionMatrix, markovianStates);
+                    deleteProbDiagonals(fullTransitionMatrix, markovianStates);
 
                 //identify cycles and cycleGoals
-                 auto cycleStates = identifyProbCycles(transitionMatrix, markovianStates, psiStates);
-                 auto cycleGoals = identifyProbCyclesGoalStates(transitionMatrix, cycleStates);
+                 auto cycleStates = identifyProbCycles(fullTransitionMatrix, markovianStates, psiStates);
+                 auto cycleGoals = identifyProbCyclesGoalStates(fullTransitionMatrix, cycleStates);
+
+                 printTransitions(exitRateVector, fullTransitionMatrix, markovianStates, psiStates, cycleStates, cycleGoals, vd,vu,wu); // TODO: delete when develepmont is finished
 
 
                 //(1) define horizon, epsilon, kappa , N, lambda,
@@ -552,7 +563,6 @@ namespace storm {
                     vu = std::vector<std::vector<ValueType>> (N + 1, init);
                     wu = std::vector<std::vector<ValueType>> (N + 1, init);
 
-                    printTransitions(exitRateVector, transitionMatrix, markovianStates, psiStates, cycleStates, cycleGoals, vd,vu,wu); // TODO: delete when develepmont is finished
 
                     // (5) calculate vectors and maxNorm
                     for (uint64_t i = 0; i < numberOfStates; i++) {
@@ -565,7 +575,6 @@ namespace storm {
                                 maxNorm  = std::max(maxNorm, diff);
                             }
                     }
-                    printTransitions(exitRateVector, transitionMatrix, markovianStates, psiStates, cycleStates, cycleGoals, vd,vu,wu); // TODO: delete when develepmont is finished
 
 
                     // (6) double lambda 
