@@ -78,7 +78,7 @@ namespace storm {
             assert(subB.size() == x.size());
             
             // Resolve the nondeterminism according to the given scheduler.
-            bool convertToEquationSystem = this->linearEquationSolverFactory->getEquationProblemFormat() == LinearEquationSolverProblemFormat::EquationSystem;
+            bool convertToEquationSystem = this->linearEquationSolverFactory->getEquationProblemFormat(env) == LinearEquationSolverProblemFormat::EquationSystem;
             storm::storage::SparseMatrix<ValueType> submatrix = this->A->selectRowsFromRowGroups(scheduler, convertToEquationSystem);
             if (convertToEquationSystem) {
                 submatrix.convertToEquationSystem();
@@ -88,20 +88,15 @@ namespace storm {
             // Check whether the linear equation solver is already initialized
             if (!linearEquationSolver) {
                 // Initialize the equation solver
-                linearEquationSolver = this->linearEquationSolverFactory->create(std::move(submatrix));
-                if (this->lowerBound) { // TODO
-                    linearEquationSolver->setLowerBound(this->lowerBound.get());
-                }
-                if (this->upperBound) {
-                    linearEquationSolver->setUpperBound(this->upperBound.get());
-                }
+                linearEquationSolver = this->linearEquationSolverFactory->create(env, std::move(submatrix));
+                linearEquationSolver->setBoundsFromOtherSolver(*this);
                 linearEquationSolver->setCachingEnabled(true);
             } else {
                 // If the equation solver is already initialized, it suffices to update the matrix
                 linearEquationSolver->setMatrix(std::move(submatrix));
             }
             // Solve the equation system for the 'DTMC' and return true upon success
-            return linearEquationSolver->solveEquations(x, subB);
+            return linearEquationSolver->solveEquations(env, x, subB);
         }
         
         template<typename ValueType>
@@ -192,7 +187,7 @@ namespace storm {
         template<typename ValueType>
         MinMaxLinearEquationSolverRequirements IterativeMinMaxLinearEquationSolver<ValueType>::getRequirements(Environment const& env, boost::optional<storm::solver::OptimizationDirection> const& direction) const {
             // Start by copying the requirements of the linear equation solver.
-            MinMaxLinearEquationSolverRequirements requirements(this->linearEquationSolverFactory->getRequirements());
+            MinMaxLinearEquationSolverRequirements requirements(this->linearEquationSolverFactory->getRequirements(env));
 
             auto method = getMethod(env, std::is_same<ValueType, storm::RationalNumber>::value);
             if (method == MinMaxMethod::ValueIteration) {
@@ -286,7 +281,7 @@ namespace storm {
         template<typename ValueType>
         bool IterativeMinMaxLinearEquationSolver<ValueType>::solveEquationsValueIteration(Environment const& env, OptimizationDirection dir, std::vector<ValueType>& x, std::vector<ValueType> const& b) const {
             if (!this->linEqSolverA) {
-                this->linEqSolverA = this->linearEquationSolverFactory->create(*this->A);
+                this->linEqSolverA = this->linearEquationSolverFactory->create(env, *this->A);
                 this->linEqSolverA->setCachingEnabled(true);
             }
             
@@ -383,7 +378,7 @@ namespace storm {
             STORM_LOG_THROW(this->hasUpperBound(), storm::exceptions::UnmetRequirementException, "Solver requires upper bound, but none was given.");
 
             if (!this->linEqSolverA) {
-                this->linEqSolverA = this->linearEquationSolverFactory->create(*this->A);
+                this->linEqSolverA = this->linearEquationSolverFactory->create(env, *this->A);
                 this->linEqSolverA->setCachingEnabled(true);
             }
             
@@ -600,8 +595,8 @@ namespace storm {
         }
 
         template<typename ValueType>
-        void IterativeMinMaxLinearEquationSolver<ValueType>::createLinearEquationSolver() const {
-            this->linEqSolverA = this->linearEquationSolverFactory->create(*this->A);
+        void IterativeMinMaxLinearEquationSolver<ValueType>::createLinearEquationSolver(Environment const& env) const {
+            this->linEqSolverA = this->linearEquationSolverFactory->create(env, *this->A);
         }
 
         template<typename ValueType>
@@ -615,7 +610,7 @@ namespace storm {
             std::vector<storm::RationalNumber> rationalB = storm::utility::vector::convertNumericVector<storm::RationalNumber>(b);
             
             if (!this->linEqSolverA) {
-                this->linEqSolverA = this->linearEquationSolverFactory->create(*this->A);
+                this->linEqSolverA = this->linearEquationSolverFactory->create(env, *this->A);
                 this->linEqSolverA->setCachingEnabled(true);
             }
             
@@ -645,7 +640,7 @@ namespace storm {
             // Version for when the overall value type is exact and the same type is to be used for the imprecise part.
             
             if (!this->linEqSolverA) {
-                this->linEqSolverA = this->linearEquationSolverFactory->create(*this->A);
+                this->linEqSolverA = this->linearEquationSolverFactory->create(env, *this->A);
                 this->linEqSolverA->setCachingEnabled(true);
             }
             
@@ -696,7 +691,7 @@ namespace storm {
             // Create imprecise solver from the imprecise data.
             IterativeMinMaxLinearEquationSolver<ImpreciseType> impreciseSolver(std::make_unique<storm::solver::GeneralLinearEquationSolverFactory<ImpreciseType>>());
             impreciseSolver.setMatrix(impreciseA);
-            impreciseSolver.createLinearEquationSolver();
+            impreciseSolver.createLinearEquationSolver(env);
             impreciseSolver.setCachingEnabled(true);
             
             bool converged = false;
@@ -723,7 +718,7 @@ namespace storm {
                 impreciseA = storm::storage::SparseMatrix<ImpreciseType>();
 
                 if (!this->linEqSolverA) {
-                    this->linEqSolverA = this->linearEquationSolverFactory->create(*this->A);
+                    this->linEqSolverA = this->linearEquationSolverFactory->create(env, *this->A);
                     this->linEqSolverA->setCachingEnabled(true);
                 }
                 

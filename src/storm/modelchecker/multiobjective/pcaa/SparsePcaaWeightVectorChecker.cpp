@@ -248,7 +248,7 @@ namespace storm {
                            objectiveResults[objIndex].resize(transitionMatrix.getRowGroupCount(), storm::utility::zero<ValueType>());
 
                            if (!maybeStates.empty()) {
-                               bool needEquationSystem = linearEquationSolverFactory.getEquationProblemFormat() == storm::solver::LinearEquationSolverProblemFormat::EquationSystem;
+                               bool needEquationSystem = linearEquationSolverFactory.getEquationProblemFormat(env) == storm::solver::LinearEquationSolverProblemFormat::EquationSystem;
                                storm::storage::SparseMatrix<ValueType> submatrix = deterministicMatrix.getSubmatrix(
                                        true, maybeStates, maybeStates, needEquationSystem);
                                if (needEquationSystem) {
@@ -262,8 +262,8 @@ namespace storm {
                                std::vector<ValueType> b = storm::utility::vector::filterVector(deterministicStateRewards, maybeStates);
 
                                // Now solve the resulting equation system.
-                               std::unique_ptr<storm::solver::LinearEquationSolver<ValueType>> solver = linearEquationSolverFactory.create(std::move(submatrix));
-                               auto req = solver->getRequirements();
+                               std::unique_ptr<storm::solver::LinearEquationSolver<ValueType>> solver = linearEquationSolverFactory.create(env, std::move(submatrix));
+                               auto req = solver->getRequirements(env);
                                solver->clearBounds();
                                if (obj.lowerResultBound) {
                                    req.clearLowerBounds();
@@ -274,7 +274,7 @@ namespace storm {
                                    req.clearUpperBounds();
                                }
                                STORM_LOG_THROW(req.empty(), storm::exceptions::UncheckedRequirementException, "At least one requirement of the LinearEquationSolver was not met.");
-                               solver->solveEquations(x, b);
+                               solver->solveEquations(env, x, b);
 
                                // Set the result for this objective accordingly
                                storm::utility::vector::setVectorValues<ValueType>(objectiveResults[objIndex], maybeStates, x);

@@ -76,7 +76,7 @@ namespace storm {
                     
                     goal.restrictRelevantValues(maybeStates);
                     std::unique_ptr<storm::solver::MinMaxLinearEquationSolver<ValueType>> solver = storm::solver::configureMinMaxLinearEquationSolver(env, std::move(goal), minMaxLinearEquationSolverFactory, std::move(submatrix));
-                    solver->repeatedMultiply(subresult, &b, stepBound);
+                    solver->repeatedMultiply(env, subresult, &b, stepBound);
                     
                     // Set the values of the resulting vector accordingly.
                     storm::utility::vector::setVectorValues(result, maybeStates, subresult);
@@ -272,7 +272,7 @@ namespace storm {
                 storm::utility::vector::setVectorValues(result, nextStates, storm::utility::one<ValueType>());
                 
                 std::unique_ptr<storm::solver::MinMaxLinearEquationSolver<ValueType>> solver = minMaxLinearEquationSolverFactory.create(env, transitionMatrix);
-                solver->repeatedMultiply(dir, result, nullptr, 1);
+                solver->repeatedMultiply(env, dir, result, nullptr, 1);
                 
                 return result;
             }
@@ -809,7 +809,7 @@ namespace storm {
                 std::vector<ValueType> result(rewardModel.getStateRewardVector());
                 
                 std::unique_ptr<storm::solver::MinMaxLinearEquationSolver<ValueType>> solver = storm::solver::configureMinMaxLinearEquationSolver(env, std::move(goal), minMaxLinearEquationSolverFactory, transitionMatrix);
-                solver->repeatedMultiply(result, nullptr, stepCount);
+                solver->repeatedMultiply(env, result, nullptr, stepCount);
                 
                 return result;
             }
@@ -828,7 +828,7 @@ namespace storm {
                 std::vector<ValueType> result(transitionMatrix.getRowGroupCount(), storm::utility::zero<ValueType>());
                 
                 std::unique_ptr<storm::solver::MinMaxLinearEquationSolver<ValueType>> solver = storm::solver::configureMinMaxLinearEquationSolver(env, std::move(goal), minMaxLinearEquationSolverFactory, transitionMatrix);
-                solver->repeatedMultiply(result, &totalRewardVector, stepBound);
+                solver->repeatedMultiply(env, result, &totalRewardVector, stepBound);
                 
                 return result;
             }
@@ -1423,7 +1423,7 @@ namespace storm {
                 ValueType maxDiff, minDiff;
                 while (true) {
                     // Compute the obtained rewards for the next step
-                    solver->repeatedMultiply(dir, x, &choiceRewards, 1);
+                    solver->repeatedMultiply(env, dir, x, &choiceRewards, 1);
                     
                     // update xPrime and check for convergence
                     // to avoid large (and numerically unstable) x-values, we substract a reference value.

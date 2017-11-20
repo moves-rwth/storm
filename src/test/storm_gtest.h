@@ -9,7 +9,7 @@
 namespace testing {
     namespace internal {
     
-        GTEST_API_ AssertionResult DoubleNearPredFormat(const char* expr1,
+        inline GTEST_API_ AssertionResult DoubleNearPredFormat(const char* expr1,
                                                 const char* expr2,
                                                 const char* abs_error_expr,
                                                 storm::RationalNumber val1,

@@ -13,8 +13,14 @@ namespace storm {
         ExtendEnumsWithSelectionField(LpSolverType, Gurobi, Glpk, Z3)
         ExtendEnumsWithSelectionField(EquationSolverType, Native, Gmmxx, Eigen, Elimination)
         ExtendEnumsWithSelectionField(SmtSolverType, Z3, Mathsat)
+        
+        ExtendEnumsWithSelectionField(NativeLinearEquationSolverMethod, Jacobi, GaussSeidel, SOR, WalkerChae, Power, RationalSearch)
+        ExtendEnumsWithSelectionField(GmmxxLinearEquationSolverMethod, Bicgstab, Qmr, Gmres)
+        ExtendEnumsWithSelectionField(GmmxxLinearEquationSolverPreconditioner, Ilu, Diagonal, None)
+        ExtendEnumsWithSelectionField(EigenLinearEquationSolverMethod, SparseLU, Bicgstab, DGmres, Gmres)
+        ExtendEnumsWithSelectionField(EigenLinearEquationSolverPreconditioner, Ilu, Diagonal, None)
     }
-} 
+}
 
 #endif	
 

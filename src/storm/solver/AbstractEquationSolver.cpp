@@ -156,6 +156,22 @@ namespace storm {
         }
         
         template<typename ValueType>
+        void AbstractEquationSolver<ValueType>::setBoundsFromOtherSolver(AbstractEquationSolver<ValueType> const& other) {
+            if (other.hasLowerBound(BoundType::Global)) {
+                this->setLowerBound(other.getLowerBound());
+            }
+            if (other.hasLowerBound(BoundType::Local)) {
+                this->setLowerBounds(other.getLowerBounds());
+            }
+            if (other.hasUpperBound(BoundType::Global)) {
+                this->setUpperBound(other.getUpperBound());
+            }
+            if (other.hasUpperBound(BoundType::Local)) {
+                this->setUpperBounds(other.getUpperBounds());
+            }
+        }
+        
+        template<typename ValueType>
         void AbstractEquationSolver<ValueType>::clearBounds() {
             lowerBound = boost::none;
             upperBound = boost::none;

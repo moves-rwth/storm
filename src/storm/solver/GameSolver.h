@@ -13,6 +13,9 @@
 #include "storm/exceptions/InvalidSettingsException.h"
 
 namespace storm {
+    
+    class Environment;
+    
     namespace storage {
         template<typename T> class SparseMatrix;
     }
@@ -37,7 +40,7 @@ namespace storm {
              * @param x The initial guess of the solution. For correctness, the guess has to be less (or equal) to the final solution (unless both players minimize)
              * @param b The vector to add after matrix-vector multiplication.
              */
-            virtual bool solveGame(OptimizationDirection player1Dir, OptimizationDirection player2Dir, std::vector<ValueType>& x, std::vector<ValueType> const& b) const = 0;
+            virtual bool solveGame(Environment const& env, OptimizationDirection player1Dir, OptimizationDirection player2Dir, std::vector<ValueType>& x, std::vector<ValueType> const& b) const = 0;
             
             /*!
              * Performs (repeated) matrix-vector multiplication with the given parameters, i.e. computes
@@ -53,7 +56,7 @@ namespace storm {
              * @param b If not null, this vector is added after each multiplication.
              * @param n Specifies the number of iterations the matrix-vector multiplication is performed.
              */
-            virtual void repeatedMultiply(OptimizationDirection player1Dir, OptimizationDirection player2Dir, std::vector<ValueType>& x, std::vector<ValueType> const* b, uint_fast64_t n = 1) const = 0;
+            virtual void repeatedMultiply(Environment const& env, OptimizationDirection player1Dir, OptimizationDirection player2Dir, std::vector<ValueType>& x, std::vector<ValueType> const* b, uint_fast64_t n = 1) const = 0;
             
             /*!
              * Sets whether schedulers are generated when solving equation systems. If the argument is false, the currently
@@ -93,18 +96,6 @@ namespace storm {
              */
             bool hasSchedulerHints() const;
             
-            /**
-             * Gets the precision after which the solver takes two numbers as equal.
-             *
-             * @see getRelative()
-             */
-            virtual ValueType getPrecision() const = 0;
-
-            /**
-             *  Gets whether the precision is taken to be absolute or relative
-             */
-            virtual bool getRelative() const = 0;
-            
             /*!
              * Sets whether some of the generated data during solver calls should be cached.
              * This possibly decreases the runtime of subsequent calls but also increases memory consumption.
@@ -121,21 +112,6 @@ namespace storm {
              */
             virtual void clearCache() const;
 
-            /*!
-             * Sets a lower bound for the solution that can potentially used by the solver.
-             */
-            void setLowerBound(ValueType const& value);
-            
-            /*!
-             * Sets an upper bound for the solution that can potentially used by the solver.
-             */
-            void setUpperBound(ValueType const& value);
-            
-            /*!
-             * Sets bounds for the solution that can potentially used by the solver.
-             */
-            void setBounds(ValueType const& lower, ValueType const& upper);
-
         protected:
             
             GameSolver();
@@ -146,12 +122,6 @@ namespace storm {
             /// The scheduler choices that induce the optimal values (if they could be successfully generated).
             mutable boost::optional<std::vector<uint_fast64_t>> player1SchedulerChoices;
             mutable boost::optional<std::vector<uint_fast64_t>> player2SchedulerChoices;
-            
-            // A lower bound if one was set.
-            boost::optional<ValueType> lowerBound;
-            
-            // An upper bound if one was set.
-            boost::optional<ValueType> upperBound;
             
             // scheduler choices that might be considered by the solver as an initial guess
             boost::optional<std::vector<uint_fast64_t>> player1ChoicesHint;
@@ -168,8 +138,8 @@ namespace storm {
         public:
             GameSolverFactory();
 
-            virtual std::unique_ptr<GameSolver<ValueType>> create(storm::storage::SparseMatrix<storm::storage::sparse::state_type> const& player1Matrix, storm::storage::SparseMatrix<ValueType> const& player2Matrix) const;
-            virtual std::unique_ptr<GameSolver<ValueType>> create(storm::storage::SparseMatrix<storm::storage::sparse::state_type>&& player1Matrix, storm::storage::SparseMatrix<ValueType>&& player2Matrix) const;
+            virtual std::unique_ptr<GameSolver<ValueType>> create(Environment const& env, storm::storage::SparseMatrix<storm::storage::sparse::state_type> const& player1Matrix, storm::storage::SparseMatrix<ValueType> const& player2Matrix) const;
+            virtual std::unique_ptr<GameSolver<ValueType>> create(Environment const& env, storm::storage::SparseMatrix<storm::storage::sparse::state_type>&& player1Matrix, storm::storage::SparseMatrix<ValueType>&& player2Matrix) const;
 
         private:
             bool trackScheduler;

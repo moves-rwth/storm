@@ -27,6 +27,13 @@ namespace storm {
                 bool isGameSolvingMethodSet() const;
                 
                 /*!
+                 * Retrieves whether the game solving technique has been set from the default value.
+                 *
+                 * @return True iff the game solving technique has been set from the default value.
+                 */
+                bool isGameSolvingMethodSetFromDefaultValue() const;
+                
+                /*!
                  * Retrieves the selected game solving technique.
                  *
                  * @return The selected game solving technique.

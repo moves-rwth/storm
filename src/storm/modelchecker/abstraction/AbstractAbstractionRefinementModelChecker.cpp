@@ -332,12 +332,12 @@ namespace storm {
             }
 
             if (isRewardFormula) {
-                storm::dd::Add<DdType, ValueType> values = storm::modelchecker::helper::SymbolicDtmcPrctlHelper<DdType, ValueType>::computeReachabilityRewards(abstractModel, abstractModel.getTransitionMatrix(), checkTask->isRewardModelSet() ? abstractModel.getRewardModel(checkTask->getRewardModel()) : abstractModel.getRewardModel(""), maybe, targetStates.getStates(), !qualitativeResults.getProb1Min().getStates() && abstractModel.getReachableStates(), storm::solver::GeneralSymbolicLinearEquationSolverFactory<DdType, ValueType>(), startValues);
+                storm::dd::Add<DdType, ValueType> values = storm::modelchecker::helper::SymbolicDtmcPrctlHelper<DdType, ValueType>::computeReachabilityRewards(env, abstractModel, abstractModel.getTransitionMatrix(), checkTask->isRewardModelSet() ? abstractModel.getRewardModel(checkTask->getRewardModel()) : abstractModel.getRewardModel(""), maybe, targetStates.getStates(), !qualitativeResults.getProb1Min().getStates() && abstractModel.getReachableStates(), storm::solver::GeneralSymbolicLinearEquationSolverFactory<DdType, ValueType>(), startValues);
                 
                 result.first = std::make_unique<SymbolicQuantitativeCheckResult<DdType, ValueType>>(abstractModel.getReachableStates(), values);
                 result.second = result.first->clone();
             } else {
-                storm::dd::Add<DdType, ValueType> values = storm::modelchecker::helper::SymbolicDtmcPrctlHelper<DdType, ValueType>::computeUntilProbabilities(abstractModel, abstractModel.getTransitionMatrix(), maybe, qualitativeResults.getProb1Min().getStates(), storm::solver::GeneralSymbolicLinearEquationSolverFactory<DdType, ValueType>(), startValues);
+                storm::dd::Add<DdType, ValueType> values = storm::modelchecker::helper::SymbolicDtmcPrctlHelper<DdType, ValueType>::computeUntilProbabilities(env, abstractModel, abstractModel.getTransitionMatrix(), maybe, qualitativeResults.getProb1Min().getStates(), storm::solver::GeneralSymbolicLinearEquationSolverFactory<DdType, ValueType>(), startValues);
                 
                 result.first = std::make_unique<SymbolicQuantitativeCheckResult<DdType, ValueType>>(abstractModel.getReachableStates(), values);
                 result.second = result.first->clone();
@@ -414,15 +414,15 @@ namespace storm {
             if (isRewardFormula) {
                 STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Reward properties are not supported for abstract stochastic games.");
             } else {
-                result.first = computeReachabilityProbabilitiesHelper(abstractModel, this->getAbstractionPlayer() == 1 ? storm::OptimizationDirection::Minimize : checkTask->getOptimizationDirection(), this->getAbstractionPlayer() == 2 ? storm::OptimizationDirection::Minimize : checkTask->getOptimizationDirection(), maybeMin, qualitativeResults.getProb1Min().getStates(), minStartValues);
-                result.second = computeReachabilityProbabilitiesHelper(abstractModel, this->getAbstractionPlayer() == 1 ? storm::OptimizationDirection::Maximize : checkTask->getOptimizationDirection(), this->getAbstractionPlayer() == 2 ? storm::OptimizationDirection::Maximize : checkTask->getOptimizationDirection(), maybeMin, qualitativeResults.getProb1Max().getStates(), maybeMax.ite(result.first->asSymbolicQuantitativeCheckResult<DdType, ValueType>().getValueVector(), abstractModel.getManager().template getAddZero<ValueType>()));
+                result.first = computeReachabilityProbabilitiesHelper(env, abstractModel, this->getAbstractionPlayer() == 1 ? storm::OptimizationDirection::Minimize : checkTask->getOptimizationDirection(), this->getAbstractionPlayer() == 2 ? storm::OptimizationDirection::Minimize : checkTask->getOptimizationDirection(), maybeMin, qualitativeResults.getProb1Min().getStates(), minStartValues);
+                result.second = computeReachabilityProbabilitiesHelper(env, abstractModel, this->getAbstractionPlayer() == 1 ? storm::OptimizationDirection::Maximize : checkTask->getOptimizationDirection(), this->getAbstractionPlayer() == 2 ? storm::OptimizationDirection::Maximize : checkTask->getOptimizationDirection(), maybeMin, qualitativeResults.getProb1Max().getStates(), maybeMax.ite(result.first->asSymbolicQuantitativeCheckResult<DdType, ValueType>().getValueVector(), abstractModel.getManager().template getAddZero<ValueType>()));
             }
             
             return result;
         }
         
         template<typename ModelType>
-        std::unique_ptr<CheckResult> AbstractAbstractionRefinementModelChecker<ModelType>::computeReachabilityProbabilitiesHelper(storm::models::symbolic::StochasticTwoPlayerGame<DdType, ValueType> const& abstractModel, storm::OptimizationDirection const& player1Direction, storm::OptimizationDirection const& player2Direction, storm::dd::Bdd<DdType> const& maybeStates, storm::dd::Bdd<DdType> const& prob1States, storm::dd::Add<DdType, ValueType> const& startValues) {
+        std::unique_ptr<CheckResult> AbstractAbstractionRefinementModelChecker<ModelType>::computeReachabilityProbabilitiesHelper(Environment const& env, storm::models::symbolic::StochasticTwoPlayerGame<DdType, ValueType> const& abstractModel, storm::OptimizationDirection const& player1Direction, storm::OptimizationDirection const& player2Direction, storm::dd::Bdd<DdType> const& maybeStates, storm::dd::Bdd<DdType> const& prob1States, storm::dd::Add<DdType, ValueType> const& startValues) {
             
             STORM_LOG_TRACE("Performing quantative solution step. Player 1: " << player1Direction << ", player 2: " << player2Direction << ".");
             
@@ -442,7 +442,7 @@ namespace storm {
             // Create the solver and solve the equation system.
             storm::solver::SymbolicGameSolverFactory<DdType, ValueType> solverFactory;
             std::unique_ptr<storm::solver::SymbolicGameSolver<DdType, ValueType>> solver = solverFactory.create(submatrix, maybeStates, abstractModel.getIllegalPlayer1Mask(), abstractModel.getIllegalPlayer2Mask(), abstractModel.getRowVariables(), abstractModel.getColumnVariables(), abstractModel.getRowColumnMetaVariablePairs(), abstractModel.getPlayer1Variables(), abstractModel.getPlayer2Variables());
-            auto values = solver->solveGame(player1Direction, player2Direction, startVector, subvector);
+            auto values = solver->solveGame(env, player1Direction, player2Direction, startVector, subvector);
             
             return std::make_unique<storm::modelchecker::SymbolicQuantitativeCheckResult<DdType, ValueType>>(abstractModel.getReachableStates(), prob1States.template toAdd<ValueType>() + values);
         }

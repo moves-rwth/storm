@@ -141,7 +141,7 @@ namespace storm {
             void printBoundsInformation(std::pair<std::unique_ptr<CheckResult>, std::unique_ptr<CheckResult>>& bounds);
             void printBoundsInformation(SymbolicQuantitativeCheckResult<DdType, ValueType> const& lowerBounds, SymbolicQuantitativeCheckResult<DdType, ValueType> const& upperBounds);
             bool checkForResultAfterQuantitativeCheck(storm::models::Model<ValueType> const& abstractModel, bool lowerBounds, QuantitativeCheckResult<ValueType> const& result);
-            std::unique_ptr<CheckResult> computeReachabilityProbabilitiesHelper(storm::models::symbolic::StochasticTwoPlayerGame<DdType, ValueType> const& abstractModel, storm::OptimizationDirection const& player1Direction, storm::OptimizationDirection const& player2Direction, storm::dd::Bdd<DdType> const& maybeStates, storm::dd::Bdd<DdType> const& prob1States, storm::dd::Add<DdType, ValueType> const& startValues);
+            std::unique_ptr<CheckResult> computeReachabilityProbabilitiesHelper(Environment const& env, storm::models::symbolic::StochasticTwoPlayerGame<DdType, ValueType> const& abstractModel, storm::OptimizationDirection const& player1Direction, storm::OptimizationDirection const& player2Direction, storm::dd::Bdd<DdType> const& maybeStates, storm::dd::Bdd<DdType> const& prob1States, storm::dd::Add<DdType, ValueType> const& startValues);
 
             /// Tries to obtain the results from the bounds. If either of the two bounds is null, the result is assumed
             /// to be the non-null bound. If neither is null and the bounds are sufficiently close, the average of the

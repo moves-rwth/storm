@@ -5,6 +5,7 @@
 
 #include "storm/solver/MinMaxLinearEquationSolver.h"
 #include "storm/environment/solver/MinMaxSolverEnvironment.h"
+#include "storm/environment/solver/NativeSolverEnvironment.h"
 #include "storm/solver/SolverSelectionOptions.h"
 #include "storm/storage/SparseMatrix.h"
 
@@ -52,6 +53,9 @@ namespace {
             storm::Environment env;
             env.solver().minMax().setMethod(storm::solver::MinMaxMethod::PolicyIteration);
             env.solver().minMax().setPrecision(storm::utility::convertNumber<storm::RationalNumber>(1e-8));
+            env.solver().setLinearEquationSolverType(storm::solver::EquationSolverType::Native);
+            env.solver().native().setMethod(storm::solver::NativeLinearEquationSolverMethod::Jacobi);
+            env.solver().setLinearEquationSolverPrecision(env.solver().minMax().getPrecision());
             return env;
         }
     };
@@ -151,23 +155,23 @@ namespace {
         auto solver = factory.create(this->env(), A);
         
         x = initialX;
-        ASSERT_NO_THROW(solver->repeatedMultiply(storm::OptimizationDirection::Minimize, x, nullptr, 1));
+        ASSERT_NO_THROW(solver->repeatedMultiply(this->env(), storm::OptimizationDirection::Minimize, x, nullptr, 1));
         EXPECT_NEAR(x[0], this->parseNumber("0.099"), this->precision());
         
         x = initialX;
-        ASSERT_NO_THROW(solver->repeatedMultiply(storm::OptimizationDirection::Minimize, x, nullptr, 2));
+        ASSERT_NO_THROW(solver->repeatedMultiply(this->env(), storm::OptimizationDirection::Minimize, x, nullptr, 2));
         EXPECT_NEAR(x[0], this->parseNumber("0.1881"), this->precision());
         
         x = initialX;
-        ASSERT_NO_THROW(solver->repeatedMultiply(storm::OptimizationDirection::Minimize, x, nullptr, 20));
+        ASSERT_NO_THROW(solver->repeatedMultiply(this->env(), storm::OptimizationDirection::Minimize, x, nullptr, 20));
         EXPECT_NEAR(x[0], this->parseNumber("0.5"), this->precision());
         
         x = initialX;
-        ASSERT_NO_THROW(solver->repeatedMultiply(storm::OptimizationDirection::Maximize, x, nullptr, 1));
+        ASSERT_NO_THROW(solver->repeatedMultiply(this->env(), storm::OptimizationDirection::Maximize, x, nullptr, 1));
         EXPECT_NEAR(x[0], this->parseNumber("0.5"), this->precision());
         
         x = initialX;
-        ASSERT_NO_THROW(solver->repeatedMultiply(storm::OptimizationDirection::Maximize, x, nullptr, 20));
+        ASSERT_NO_THROW(solver->repeatedMultiply(this->env(), storm::OptimizationDirection::Maximize, x, nullptr, 20));
         EXPECT_NEAR(x[0], this->parseNumber("0.923808265834023387639"), this->precision());
     }
     

@@ -11,6 +11,7 @@
 #include "storm/solver/LinearEquationSolver.h"
 
 #include "storm/environment/solver/MinMaxSolverEnvironment.h"
+#include "storm/environment/solver/NativeSolverEnvironment.h"
 
 #include "storm/settings/SettingsManager.h"
 #include "storm/utility/export.h"
@@ -77,6 +78,7 @@ namespace storm {
                 ValueType precision = rewardUnfolding.getRequiredEpochModelPrecision(initEpoch, storm::utility::convertNumber<ValueType>(storm::settings::getModule<storm::settings::modules::GeneralSettings>().getPrecision()));
                 Environment newEnv = env;
                 newEnv.solver().minMax().setPrecision(storm::utility::convertNumber<storm::RationalNumber>(precision));
+                newEnv.solver().setLinearEquationSolverPrecision(storm::utility::convertNumber<storm::RationalNumber>(precision));
                 storm::utility::ProgressMeasurement progress("epochs");
                 progress.setMaxCount(epochOrder.size());
                 progress.startNewMeasurement(0);
@@ -237,13 +239,12 @@ namespace storm {
                         cachedData.minMaxSolver->setInitialScheduler(std::move(choicesTmp));
                         cachedData.schedulerChoices = choices;
                         storm::solver::GeneralLinearEquationSolverFactory<ValueType> linEqSolverFactory;
-                        bool needEquationSystem = linEqSolverFactory.getEquationProblemFormat() == storm::solver::LinearEquationSolverProblemFormat::EquationSystem;
+                        bool needEquationSystem = linEqSolverFactory.getEquationProblemFormat(env) == storm::solver::LinearEquationSolverProblemFormat::EquationSystem;
                         storm::storage::SparseMatrix<ValueType> subMatrix = epochModel.epochMatrix.selectRowsFromRowGroups(choices, needEquationSystem);
                         if (needEquationSystem) {
                             subMatrix.convertToEquationSystem();
                         }
-                        cachedData.linEqSolver = linEqSolverFactory.create(std::move(subMatrix));
-                        cachedData.linEqSolver->setPrecision(storm::utility::convertNumber<ValueType>(env.solver().minMax().getPrecision()));
+                        cachedData.linEqSolver = linEqSolverFactory.create(env, std::move(subMatrix));
                         cachedData.linEqSolver->setCachingEnabled(true);
                     }
                     
@@ -284,7 +285,7 @@ namespace storm {
                             ++choiceIt;
                         }
                         assert(x.size() == choices.size());
-                        auto req = cachedData.linEqSolver->getRequirements();
+                        auto req = cachedData.linEqSolver->getRequirements(env);
                         cachedData.linEqSolver->clearBounds();
                         if (obj.lowerResultBound) {
                             req.clearLowerBounds();
@@ -295,7 +296,7 @@ namespace storm {
                             req.clearUpperBounds();
                         }
                         STORM_LOG_THROW(req.empty(), storm::exceptions::UncheckedRequirementException, "At least one requirement was not checked.");
-                        cachedData.linEqSolver->solveEquations(x, cachedData.bLinEq);
+                        cachedData.linEqSolver->solveEquations(env, x, cachedData.bLinEq);
                         auto resultIt = result.begin();
                         for (auto const& state : epochModel.epochInStates) {
                             resultIt->push_back(x[state]);

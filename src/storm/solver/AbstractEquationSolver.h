@@ -132,6 +132,8 @@ namespace storm {
              */
             void setBounds(std::vector<ValueType> const& lower, std::vector<ValueType> const& upper);
             
+            void setBoundsFromOtherSolver(AbstractEquationSolver<ValueType> const& other);
+            
             /*!
              * Removes all specified solution bounds
              */

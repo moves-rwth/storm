@@ -135,8 +135,8 @@ namespace storm {
             
             MinMaxMethod getMethod(Environment const& env, bool isExactMode) const;
             
-            storm::dd::Add<DdType, ValueType> solveEquationsWithScheduler(storm::dd::Bdd<DdType> const& scheduler, storm::dd::Add<DdType, ValueType> const& x, storm::dd::Add<DdType, ValueType> const& b) const;
-            storm::dd::Add<DdType, ValueType> solveEquationsWithScheduler(SymbolicLinearEquationSolver<DdType, ValueType>& solver, storm::dd::Bdd<DdType> const& scheduler, storm::dd::Add<DdType, ValueType> const& x, storm::dd::Add<DdType, ValueType> const& b, storm::dd::Add<DdType, ValueType> const& diagonal) const;
+            storm::dd::Add<DdType, ValueType> solveEquationsWithScheduler(Environment const& env, storm::dd::Bdd<DdType> const& scheduler, storm::dd::Add<DdType, ValueType> const& x, storm::dd::Add<DdType, ValueType> const& b) const;
+            storm::dd::Add<DdType, ValueType> solveEquationsWithScheduler(Environment const& env, SymbolicLinearEquationSolver<DdType, ValueType>& solver, storm::dd::Bdd<DdType> const& scheduler, storm::dd::Add<DdType, ValueType> const& x, storm::dd::Add<DdType, ValueType> const& b, storm::dd::Add<DdType, ValueType> const& diagonal) const;
             
             storm::dd::Add<DdType, ValueType> solveEquationsValueIteration(Environment const& env, storm::solver::OptimizationDirection const& dir, storm::dd::Add<DdType, ValueType> const& x, storm::dd::Add<DdType, ValueType> const& b) const;
             storm::dd::Add<DdType, ValueType> solveEquationsPolicyIteration(Environment const& env, storm::solver::OptimizationDirection const& dir, storm::dd::Add<DdType, ValueType> const& x, storm::dd::Add<DdType, ValueType> const& b) const;

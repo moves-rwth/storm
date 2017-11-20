@@ -7,8 +7,10 @@
 #include "storm/models/sparse/StandardRewardModel.h"
 #include "storm/utility/macros.h"
 #include "storm/utility/vector.h"
-#include "storm/solver/NativeLinearEquationSolver.h"
 #include "storm/logic/Formulas.h"
+#include "storm/solver/SolverSelectionOptions.h"
+
+#include "storm/environment/solver/NativeSolverEnvironment.h"
 
 #include "storm/exceptions/InvalidOperationException.h"
 #include "storm/exceptions/InvalidPropertyException.h"
@@ -325,10 +327,15 @@ namespace storm {
             template <typename VT, typename std::enable_if<storm::NumberTraits<VT>::SupportsExponential, int>::type>
             std::unique_ptr<typename SparseMaPcaaWeightVectorChecker<SparseMaModelType>::LinEqSolverData> SparseMaPcaaWeightVectorChecker<SparseMaModelType>::initLinEqSolver(Environment const& env, SubModel const& PS) const {
                 std::unique_ptr<LinEqSolverData> result(new LinEqSolverData());
-                auto factory = std::make_unique<storm::solver::NativeLinearEquationSolverFactory<ValueType>>();
-                // We choose Jacobi since we call the solver very frequently on 'easy' inputs (note that jacobi without preconditioning has very little overhead).
-                factory->getSettings().setSolutionMethod(storm::solver::NativeLinearEquationSolverSettings<ValueType>::SolutionMethod::Jacobi);
-                result->factory = std::move(factory);
+                result->env = std::make_unique<Environment>();
+                // Unless the solver / method was explicitly specified, we switch it to Native / Power.
+                // We choose the Power method since we call the solver very frequently on 'easy' inputs and power has little overhead).
+                if ((result->env->solver().isLinearEquationSolverTypeSetFromDefaultValue() || result->env->solver().getLinearEquationSolverType() == storm::solver::EquationSolverType::Native) && (result->env->solver().native().isMethodSetFromDefault() || result->env->solver().native().getMethod() == storm::solver::NativeLinearEquationSolverMethod::Power)) {
+                    STORM_LOG_INFO("Switching to Native/Power linear equation solver method. To overwrite this, explicitly specify another method.");
+                    result->env->solver().setLinearEquationSolverType(storm::solver::EquationSolverType::Native);
+                    result->env->solver().native().setMethod(storm::solver::NativeLinearEquationSolverMethod::Power);
+                }
+                result->factory = std::make_unique<storm::solver::GeneralLinearEquationSolverFactory<ValueType>>();
                 result->b.resize(PS.getNumberOfStates());
                 return result;
             }
@@ -375,12 +382,12 @@ namespace storm {
                     if (linEq.solver == nullptr || newChoices != optimalChoicesAtCurrentEpoch) {
                         optimalChoicesAtCurrentEpoch = newChoices;
                         linEq.solver = nullptr;
-                        bool needEquationSystem = linEq.factory->getEquationProblemFormat() == storm::solver::LinearEquationSolverProblemFormat::EquationSystem;
+                        bool needEquationSystem = linEq.factory->getEquationProblemFormat(*linEq.env) == storm::solver::LinearEquationSolverProblemFormat::EquationSystem;
                         storm::storage::SparseMatrix<ValueType> linEqMatrix = PS.toPS.selectRowsFromRowGroups(optimalChoicesAtCurrentEpoch, needEquationSystem);
                         if (needEquationSystem) {
                             linEqMatrix.convertToEquationSystem();
                         }
-                        linEq.solver = linEq.factory->create(std::move(linEqMatrix));
+                        linEq.solver = linEq.factory->create(*linEq.env, std::move(linEqMatrix));
                         linEq.solver->setCachingEnabled(true);
                     }
                     
@@ -402,7 +409,7 @@ namespace storm {
                             ++itGroupIndex;
                             ++itChoiceOffset;
                         }
-                        linEq.solver->solveEquations(PS.objectiveSolutionVectors[objIndex], linEq.b);
+                        linEq.solver->solveEquations(*linEq.env, PS.objectiveSolutionVectors[objIndex], linEq.b);
                     }
                 }
             }

@@ -283,9 +283,9 @@ namespace storm {
             // Invoke the solver
             if(stepBound) {
                 assert(*stepBound > 0);
-                solver->repeatedMultiply(this->currentCheckTask->getOptimizationDirection(), dirForParameters, x, &parameterLifter->getVector(), *stepBound);
+                solver->repeatedMultiply(env, this->currentCheckTask->getOptimizationDirection(), dirForParameters, x, &parameterLifter->getVector(), *stepBound);
             } else {
-                solver->solveGame(this->currentCheckTask->getOptimizationDirection(), dirForParameters, x, parameterLifter->getVector());
+                solver->solveGame(env, this->currentCheckTask->getOptimizationDirection(), dirForParameters, x, parameterLifter->getVector());
                 if(applyPreviousResultAsHint) {
                     if(storm::solver::minimize(dirForParameters)) {
                         minSchedChoices = solver->getPlayer2SchedulerChoices();

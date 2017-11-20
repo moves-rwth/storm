@@ -69,6 +69,7 @@ namespace storm {
                 };
                 
                 struct LinEqSolverData {
+                    std::unique_ptr<Environment> env;
                     std::unique_ptr<storm::solver::LinearEquationSolverFactory<ValueType>> factory;
                     std::unique_ptr<storm::solver::LinearEquationSolver<ValueType>> solver;
                     std::vector<ValueType> b;
