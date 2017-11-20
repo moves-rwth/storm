@@ -72,10 +72,6 @@ namespace storm {
                     return id-1;
                 }
 
-                template <typename ValueType>
-                static std::vector<ValueType> deleteProbDiagonalEntries(storm::storage::SparseMatrix<ValueType>& transitionMatrix, storm::storage::BitVector const& markovianStates);
-
-
                     template <typename ValueType, typename std::enable_if<storm::NumberTraits<ValueType>::SupportsExponential, int>::type=0>
                 static storm::storage::BitVector identifyProbCyclesGoalStates(storm::storage::SparseMatrix<ValueType> const& transitionMatrix,  storm::storage::BitVector const& cycleStates);
 

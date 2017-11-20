@@ -475,12 +475,6 @@ namespace storm {
                 }
             }
 
-            template <typename ValueType>
-            std::vector<ValueType> SparseMarkovAutomatonCslHelper::deleteProbDiagonalEntries(storm::storage::SparseMatrix<ValueType>& transitionMatrix, storm::storage::BitVector const& markovianStates){
-
-
-            }
-
                 template <typename ValueType, typename std::enable_if<storm::NumberTraits<ValueType>::SupportsExponential, int>::type>
             std::vector<ValueType> SparseMarkovAutomatonCslHelper::unifPlus(OptimizationDirection dir, std::pair<double, double> const& boundsPair, std::vector<ValueType> const& exitRateVector, storm::storage::SparseMatrix<ValueType> const& transitionMatrix, storm::storage::BitVector const& markovianStates, storm::storage::BitVector const& psiStates){
                 STORM_LOG_TRACE("Using UnifPlus to compute bounded until probabilities.");
