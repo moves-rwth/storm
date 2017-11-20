@@ -10,6 +10,8 @@ namespace storm {
 
         class FormulaVisitor {
         public:
+            virtual ~FormulaVisitor() = default;
+
             virtual boost::any visit(AtomicExpressionFormula const& f, boost::any const& data) const = 0;
             virtual boost::any visit(AtomicLabelFormula const& f, boost::any const& data) const = 0;
             virtual boost::any visit(BinaryBooleanStateFormula const& f, boost::any const& data) const = 0;

@@ -27,7 +27,9 @@ namespace storm {
                  * @param oneStepTargetProbabilities For each state the probability to go to a goal state in one step.
                  */
                 DsMpiDtmcUpperRewardBoundsComputer(storm::storage::SparseMatrix<ValueType> const& transitionMatrix, std::vector<ValueType> const& rewards, std::vector<ValueType> const& oneStepTargetProbabilities);
-                
+
+                virtual ~DsMpiDtmcUpperRewardBoundsComputer() = default;
+
                 /*!
                  * Computes upper bounds on the expected rewards.
                  */

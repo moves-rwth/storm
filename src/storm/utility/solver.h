@@ -59,6 +59,8 @@ namespace storm {
             template<typename ValueType>
             class LpSolverFactory {
             public:
+                virtual ~LpSolverFactory() = default;
+
                 /*!
                  * Creates a new linear equation solver instance with the given name.
                  *
@@ -98,6 +100,8 @@ namespace storm {
 
             class SmtSolverFactory {
             public:
+                virtual ~SmtSolverFactory() = default;
+
                 /*!
                  * Creates a new SMT solver instance.
                  *

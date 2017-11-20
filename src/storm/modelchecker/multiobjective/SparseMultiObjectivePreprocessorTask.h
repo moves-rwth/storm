@@ -24,7 +24,9 @@ namespace storm {
                 SparseMultiObjectivePreprocessorTask(std::shared_ptr<Objective<typename SparseModelType::ValueType>> const& objective) : objective(objective) {
                     // intentionally left empty
                 }
-                
+
+                virtual ~SparseMultiObjectivePreprocessorTask() = default;
+
                 virtual void perform(SparseModelType& preprocessedModel) const = 0;
                 
                 virtual bool requiresEndComponentAnalysis() const {

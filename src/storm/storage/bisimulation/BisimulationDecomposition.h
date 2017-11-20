@@ -180,7 +180,9 @@ namespace storm {
              * @param options The options to use during for the decomposition.
              */
             BisimulationDecomposition(ModelType const& model, Options const& options);
-            
+
+            virtual ~BisimulationDecomposition() = default;
+
             /*!
              * Retrieves the quotient of the model under the computed bisimulation.
              *

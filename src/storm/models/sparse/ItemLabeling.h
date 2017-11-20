@@ -33,6 +33,7 @@ namespace storm {
                 ItemLabeling(ItemLabeling const& other) = default;
                 ItemLabeling& operator=(ItemLabeling const& other) = default;
 
+                virtual ~ItemLabeling() = default;
 
                 virtual bool isStateLabeling() const;
                 virtual bool isChoiceLabeling() const;

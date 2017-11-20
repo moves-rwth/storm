@@ -9,6 +9,8 @@ namespace storm {
             
             class StateAnnotation {
             public:
+                virtual ~StateAnnotation() = default;
+
                 virtual std::string getStateInfo(storm::storage::sparse::state_type const& state) const = 0;
             };
             

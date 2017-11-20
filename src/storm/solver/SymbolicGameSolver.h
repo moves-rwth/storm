@@ -54,7 +54,9 @@ namespace storm {
              * @param relative Sets whether or not to use a relativ stopping criterion rather than an absolute one.
              */
             SymbolicGameSolver(storm::dd::Add<Type, ValueType> const& A, storm::dd::Bdd<Type> const& allRows, storm::dd::Bdd<Type> const& illegalPlayer1Mask, storm::dd::Bdd<Type> const& illegalPlayer2Mask, std::set<storm::expressions::Variable> const& rowMetaVariables, std::set<storm::expressions::Variable> const& columnMetaVariables, std::vector<std::pair<storm::expressions::Variable, storm::expressions::Variable>> const& rowColumnMetaVariablePairs, std::set<storm::expressions::Variable> const& player1Variables, std::set<storm::expressions::Variable> const& player2Variables, ValueType precision, uint_fast64_t maximalNumberOfIterations, bool relative);
-            
+
+            virtual ~SymbolicGameSolver() = default;
+
             /*!
              * Solves the equation system defined by the game matrix. Note that the game matrix has to be given upon
              * construction time of the solver object.
@@ -133,6 +135,8 @@ namespace storm {
         template<storm::dd::DdType Type, typename ValueType>
         class SymbolicGameSolverFactory {
         public:
+            virtual ~SymbolicGameSolverFactory() = default;
+
             virtual std::unique_ptr<storm::solver::SymbolicGameSolver<Type, ValueType>> create(storm::dd::Add<Type, ValueType> const& A, storm::dd::Bdd<Type> const& allRows, storm::dd::Bdd<Type> const& illegalPlayer1Mask, storm::dd::Bdd<Type> const& illegalPlayer2Mask, std::set<storm::expressions::Variable> const& rowMetaVariables, std::set<storm::expressions::Variable> const& columnMetaVariables, std::vector<std::pair<storm::expressions::Variable, storm::expressions::Variable>> const& rowColumnMetaVariablePairs, std::set<storm::expressions::Variable> const& player1Variables, std::set<storm::expressions::Variable> const& player2Variables) const;
         };
         
