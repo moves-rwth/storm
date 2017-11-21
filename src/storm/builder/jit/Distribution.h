@@ -15,6 +15,11 @@ namespace storm {
                 
                 Distribution();
                 
+                Distribution(Distribution const&);
+                Distribution(Distribution&&);
+                Distribution& operator=(Distribution const&);
+                Distribution& operator=(Distribution&&);
+
                 /*!
                  * Adds the given entry to the distribution.
                  */
@@ -40,6 +45,11 @@ namespace storm {
                  * Divides all values in the distribution by the provided value.
                  */
                 void divide(ValueType const& value);
+                
+                /*!
+                 * Clears this distribution.
+                 */
+                void clear();
                 
                 /*!
                  * Access to iterators over the entries of the distribution. Note that there may be multiple entries for

@@ -8,7 +8,7 @@ namespace storm {
         namespace bisimulation {
             
             template<storm::dd::DdType DdType, typename ValueType>
-            MdpPartitionRefiner<DdType, ValueType>::MdpPartitionRefiner(storm::models::symbolic::Mdp<DdType, ValueType> const& mdp, Partition<DdType, ValueType> const& initialStatePartition) : PartitionRefiner<DdType, ValueType>(mdp, initialStatePartition), mdp(mdp), choicePartition(Partition<DdType, ValueType>::createTrivialChoicePartition(mdp, initialStatePartition.getBlockVariables())), stateSignatureRefiner(mdp.getManager(), this->statePartition.getBlockVariable(), mdp.getRowVariables(), true) {
+            MdpPartitionRefiner<DdType, ValueType>::MdpPartitionRefiner(storm::models::symbolic::Mdp<DdType, ValueType> const& mdp, Partition<DdType, ValueType> const& initialStatePartition) : PartitionRefiner<DdType, ValueType>(mdp, initialStatePartition), mdp(mdp), choicePartition(Partition<DdType, ValueType>::createTrivialChoicePartition(mdp, initialStatePartition.getBlockVariables())), stateSignatureRefiner(mdp.getManager(), this->statePartition.getBlockVariable(), mdp.getRowVariables(), mdp.getColumnVariables(), true) {
                 // Intentionally left empty.
             }
             
@@ -23,7 +23,7 @@ namespace storm {
                 STORM_LOG_TRACE("Refining choice partition.");
                 Partition<DdType, ValueType> newChoicePartition = this->internalRefine(this->signatureComputer, this->signatureRefiner, this->choicePartition, this->statePartition, mode);
                 
-                if (newChoicePartition == choicePartition) {
+                if (newChoicePartition.getNumberOfBlocks() == choicePartition.getNumberOfBlocks()) {
                     this->status = Status::FixedPoint;
                     return false;
                 } else {

@@ -177,6 +177,12 @@ namespace storm {
             }
             
             template<typename ValueType, typename RewardModelType>
+            std::string const& Model<ValueType, RewardModelType>::getUniqueRewardModelName() const {
+                STORM_LOG_THROW(this->getNumberOfRewardModels() == 1, storm::exceptions::IllegalFunctionCallException, "The reward model is not unique.");
+                return this->rewardModels.begin()->first;
+            }
+            
+            template<typename ValueType, typename RewardModelType>
             bool Model<ValueType, RewardModelType>::hasRewardModel() const {
                 return !this->rewardModels.empty();
             }

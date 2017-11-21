@@ -67,7 +67,8 @@ namespace storm {
             InternalAdd& operator=(InternalAdd<DdType::CUDD, ValueType> const& other) = default;
             InternalAdd(InternalAdd<DdType::CUDD, ValueType>&& other) = default;
             InternalAdd& operator=(InternalAdd<DdType::CUDD, ValueType>&& other) = default;
-            
+            virtual ~InternalAdd() = default;
+
             /*!
              * Retrieves whether the two DDs represent the same function.
              *

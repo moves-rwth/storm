@@ -26,8 +26,9 @@ namespace storm {
             {
                 
             }
-            
-                    
+
+            virtual ~PermissiveSchedulerComputation() = default;
+
             virtual void calculatePermissiveScheduler(bool lowerBound, double boundary) = 0;
             
             void setPenalties(PermissiveSchedulerPenalties penalties) {

@@ -261,7 +261,7 @@ namespace storm {
                  *
                  * @return True iff the model has a reward model with the given name.
                  */
-                bool hasRewardModel(std::string const& rewardModelName) const;
+                virtual bool hasRewardModel(std::string const& rewardModelName) const override;
                 
                 /*!
                  * Retrieves the reward model with the given name, if one exists. Otherwise, an exception is thrown.
@@ -282,7 +282,7 @@ namespace storm {
                  *
                  * @return The name of the unique reward model.
                  */
-                std::string const& getUniqueRewardModelName() const;
+                virtual std::string const& getUniqueRewardModelName() const override;
 
                 /*!
                  * Retrieves the unique reward model, if there exists exactly one. Otherwise, an exception is thrown.
@@ -296,7 +296,7 @@ namespace storm {
                  *
                  * @return True iff the model has a unique reward model.
                  */
-                bool hasUniqueRewardModel() const;
+                virtual bool hasUniqueRewardModel() const override;
                 
                 /*!
                  * Retrieves whether the model has at least one reward model.

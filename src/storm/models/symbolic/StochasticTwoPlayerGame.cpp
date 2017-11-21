@@ -86,6 +86,7 @@ namespace storm {
 			template class StochasticTwoPlayerGame<storm::dd::DdType::CUDD, double>;
 			template class StochasticTwoPlayerGame<storm::dd::DdType::Sylvan, double>;
 #ifdef STORM_HAVE_CARL
+            template class StochasticTwoPlayerGame<storm::dd::DdType::Sylvan, storm::RationalNumber>;
 			template class StochasticTwoPlayerGame<storm::dd::DdType::Sylvan, storm::RationalFunction>;
 #endif
             

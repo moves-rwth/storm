@@ -7,8 +7,8 @@
 #include <boost/optional.hpp>
 
 #include "storm/abstraction/RefinementCommand.h"
-#include "storm/abstraction/QualitativeResultMinMax.h"
-#include "storm/abstraction/QuantitativeResultMinMax.h"
+#include "storm/abstraction/QualitativeGameResultMinMax.h"
+#include "storm/abstraction/QuantitativeGameResultMinMax.h"
 
 #include "storm/storage/expressions/Expression.h"
 #include "storm/storage/expressions/FullPredicateSplitter.h"
@@ -85,14 +85,14 @@ namespace storm {
              *
              * @param True if predicates for refinement could be derived, false otherwise.
              */
-            bool refine(storm::abstraction::MenuGame<Type, ValueType> const& game, storm::dd::Bdd<Type> const& transitionMatrixBdd, QualitativeResultMinMax<Type> const& qualitativeResult) const;
+            bool refine(storm::abstraction::MenuGame<Type, ValueType> const& game, storm::dd::Bdd<Type> const& transitionMatrixBdd, QualitativeGameResultMinMax<Type> const& qualitativeResult) const;
             
             /*!
              * Refines the abstractor based on the quantitative result by trying to derive suitable predicates.
              *
              * @param True if predicates for refinement could be derived, false otherwise.
              */
-            bool refine(storm::abstraction::MenuGame<Type, ValueType> const& game, storm::dd::Bdd<Type> const& transitionMatrixBdd, QuantitativeResultMinMax<Type, ValueType> const& quantitativeResult) const;
+            bool refine(storm::abstraction::MenuGame<Type, ValueType> const& game, storm::dd::Bdd<Type> const& transitionMatrixBdd, QuantitativeGameResultMinMax<Type, ValueType> const& quantitativeResult) const;
             
             /*!
              * Retrieves whether all guards were added.

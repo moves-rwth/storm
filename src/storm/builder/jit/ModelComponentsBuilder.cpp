@@ -58,7 +58,7 @@ namespace storm {
                     for (auto const& choice : behaviour.getChoices()) {
                         // Add the elements to the transition matrix.
                         for (auto const& element : choice.getDistribution()) {
-                            transitionMatrixBuilder->addNextValue(currentRow, element.getIndex(), element.getValue());
+                            transitionMatrixBuilder->addNextValue(currentRow, element.getState(), element.getValue());
                         }
                         
                         // Add state-action reward entries.

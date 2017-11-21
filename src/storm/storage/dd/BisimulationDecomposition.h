@@ -28,21 +28,38 @@ namespace storm {
 
             template <storm::dd::DdType DdType, typename ValueType>
             class PartitionRefiner;
+            
+            template <storm::dd::DdType DdType, typename ValueType>
+            class PartialQuotientExtractor;
         }
         
         template <storm::dd::DdType DdType, typename ValueType>
         class BisimulationDecomposition {
         public:
             BisimulationDecomposition(storm::models::symbolic::Model<DdType, ValueType> const& model, storm::storage::BisimulationType const& bisimulationType);
+            BisimulationDecomposition(storm::models::symbolic::Model<DdType, ValueType> const& model, storm::storage::BisimulationType const& bisimulationType, bisimulation::PreservationInformation<DdType, ValueType> const& preservationInformation);
             BisimulationDecomposition(storm::models::symbolic::Model<DdType, ValueType> const& model, std::vector<std::shared_ptr<storm::logic::Formula const>> const& formulas, storm::storage::BisimulationType const& bisimulationType);
             BisimulationDecomposition(storm::models::symbolic::Model<DdType, ValueType> const& model, bisimulation::Partition<DdType, ValueType> const& initialPartition, bisimulation::PreservationInformation<DdType, ValueType> const& preservationInformation);
             
             ~BisimulationDecomposition();
             
             /*!
-             * Computes the decomposition.
+             * Performs partition refinement until a fixpoint has been reached.
              */
             void compute(bisimulation::SignatureMode const& mode = bisimulation::SignatureMode::Eager);
+            
+            /*!
+             * Performs the given number of refinement steps.
+             *
+             * @return True iff the computation arrived at a fixpoint.
+             */
+            bool compute(uint64_t steps, bisimulation::SignatureMode const& mode = bisimulation::SignatureMode::Eager);
+            
+            /*!
+             * Retrieves whether a fixed point has been reached. Depending on this, extracting a quotient will either
+             * give a full quotient or a partial one.
+             */
+            bool getReachedFixedPoint() const;
             
             /*!
              * Retrieves the quotient model after the bisimulation decomposition was computed.
@@ -50,6 +67,7 @@ namespace storm {
             std::shared_ptr<storm::models::Model<ValueType>> getQuotient() const;
             
         private:
+            void initialize();
             void refineWrtRewardModels();
             
             // The model for which to compute the bisimulation decomposition.
@@ -60,6 +78,9 @@ namespace storm {
             
             // The refiner to use.
             std::unique_ptr<bisimulation::PartitionRefiner<DdType, ValueType>> refiner;
+            
+            // A quotient extractor that is used when the fixpoint has not been reached yet.
+            mutable std::unique_ptr<bisimulation::PartialQuotientExtractor<DdType, ValueType>> partialQuotientExtractor;
             
             // A flag indicating whether progress is reported.
             bool showProgress;

@@ -28,7 +28,6 @@ namespace storm {
             ParetoCurveCheckResult(std::vector<point_type> const& points, polytope_type const& underApproximation, polytope_type const& overApproximation);
             ParetoCurveCheckResult(std::vector<point_type>&& points, polytope_type&& underApproximation, polytope_type&& overApproximation);
 
-
             // The pareto optimal points that have been found.
             std::vector<point_type> points;
             

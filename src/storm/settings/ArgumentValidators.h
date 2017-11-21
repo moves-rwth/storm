@@ -12,6 +12,8 @@ namespace storm {
         template <typename ValueType>
         class ArgumentValidator {
         public:
+            virtual ~ArgumentValidator() = default;
+
             /*!
              * Checks whether the argument passes the validation.
              */

@@ -36,6 +36,8 @@ namespace storm {
              */
             LpSolver(OptimizationDirection const& optDir);
 
+            virtual ~LpSolver() = default;
+
             /*!
              * Registers an upper- and lower-bounded continuous variable, i.e. a variable that may take all real values
              * within its bounds.

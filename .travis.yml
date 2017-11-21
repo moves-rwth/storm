@@ -42,6 +42,7 @@ jobs:
     # osx
     - stage: Build (1st run)
       os: osx
+      osx_image: xcode9.1
       compiler: clang
       env: CONFIG=DefaultDebug COMPILER=clang STL=libc++
       install:
@@ -53,6 +54,7 @@ jobs:
         - find build -iname '*err*.log' -type f -print -exec cat {} \;
     - stage: Build (1st run)
       os: osx
+      osx_image: xcode9.1
       compiler: clang
       env: CONFIG=DefaultRelease COMPILER=clang STL=libc++
       install:
@@ -97,6 +99,7 @@ jobs:
     # osx
     - stage: Build (2nd run)
       os: osx
+      osx_image: xcode9.1
       compiler: clang
       env: CONFIG=DefaultDebug COMPILER=clang STL=libc++
       install:
@@ -107,6 +110,7 @@ jobs:
         - find build -iname '*err*.log' -type f -print -exec cat {} \;
     - stage: Build (2nd run)
       os: osx
+      osx_image: xcode9.1
       compiler: clang
       env: CONFIG=DefaultRelease COMPILER=clang STL=libc++
       install:
@@ -148,6 +152,7 @@ jobs:
     # osx
     - stage: Build (3rd run)
       os: osx
+      osx_image: xcode9.1
       compiler: clang
       env: CONFIG=DefaultDebug COMPILER=clang STL=libc++
       install:
@@ -158,6 +163,7 @@ jobs:
         - find build -iname '*err*.log' -type f -print -exec cat {} \;
     - stage: Build (3rd run)
       os: osx
+      osx_image: xcode9.1
       compiler: clang
       env: CONFIG=DefaultRelease COMPILER=clang STL=libc++
       install:
@@ -199,6 +205,7 @@ jobs:
     # osx
     - stage: Build (4th run)
       os: osx
+      osx_image: xcode9.1
       compiler: clang
       env: CONFIG=DefaultDebug COMPILER=clang STL=libc++
       install:
@@ -209,6 +216,7 @@ jobs:
         - find build -iname '*err*.log' -type f -print -exec cat {} \;
     - stage: Build (4th run)
       os: osx
+      osx_image: xcode9.1
       compiler: clang
       env: CONFIG=DefaultRelease COMPILER=clang STL=libc++
       install:
@@ -250,6 +258,7 @@ jobs:
     # osx
     - stage: Test all
       os: osx
+      osx_image: xcode9.1
       compiler: clang
       env: CONFIG=DefaultDebug COMPILER=clang STL=libc++
       install:
@@ -260,6 +269,7 @@ jobs:
         - find build -iname '*err*.log' -type f -print -exec cat {} \;
     - stage: Test all
       os: osx
+      osx_image: xcode9.1
       compiler: clang
       env: CONFIG=DefaultRelease COMPILER=clang STL=libc++
       install:
