@@ -136,7 +136,7 @@ namespace storm {
             }
             
             template <typename ValueType, typename std::enable_if<storm::NumberTraits<ValueType>::SupportsExponential, int>::type>
-            void SparseMarkovAutomatonCslHelper::printTransitions(std::vector<ValueType> const& exitRateVector, storm::storage::SparseMatrix<ValueType> const& fullTransitionMatrix, storm::storage::BitVector const& markovianStates, storm::storage::BitVector const& psiStates, storm::storage::BitVector const& cycleStates, storm::storage::BitVector const& cycleGoalStates, std::vector<std::vector<ValueType>>& vd, std::vector<std::vector<ValueType>>& vu, std::vector<std::vector<ValueType>>& wu){
+            void SparseMarkovAutomatonCslHelper::printTransitions(std::vector<std::vector<ValueType>> relReachability, std::vector<ValueType> const& exitRateVector, storm::storage::SparseMatrix<ValueType> const& fullTransitionMatrix, storm::storage::BitVector const& markovianStates, storm::storage::BitVector const& psiStates, storm::storage::BitVector const& cycleStates, storm::storage::BitVector const& cycleGoalStates, std::vector<std::vector<ValueType>>& vd, std::vector<std::vector<ValueType>>& vu, std::vector<std::vector<ValueType>>& wu){
                 std::ofstream logfile("U+logfile.txt", std::ios::app);
                 
                 auto const& rowGroupIndices = fullTransitionMatrix.getRowGroupIndices();
@@ -165,6 +165,12 @@ namespace storm {
                     logfile << (~markovianStates)[i] << "\t\t" << markovianStates[i] << "\t\t" << psiStates[i] << "\t\t" << cycleStates[i] << "\t\t" << cycleGoalStates[i] << "\n";
                 }
 
+                for (int i =0; i<relReachability.size(); i++){
+                    for (int j=0; j<relReachability[i].size(); j++){
+                        logfile << relReachability[i][j] << "\n";
+                    }
+                    logfile << "\n";
+                }
 
 
                 logfile << "vd: \n";
@@ -495,15 +501,7 @@ namespace storm {
                 auto rowGroupIndices = fullTransitionMatrix.getRowGroupIndices();
 
 
-                //delete prob-diagonal entries
-                //deleteProbDiagonalEntries(fullTransitionMatrix, markovianStates);
-                    deleteProbDiagonals(fullTransitionMatrix, markovianStates);
 
-                //identify cycles and cycleGoals
-                 auto cycleStates = identifyProbCycles(fullTransitionMatrix, markovianStates, psiStates);
-                 auto cycleGoals = identifyProbCyclesGoalStates(fullTransitionMatrix, cycleStates);
-
-                 printTransitions(exitRateVector, fullTransitionMatrix, markovianStates, psiStates, cycleStates, cycleGoals, vd,vu,wu); // TODO: delete when develepmont is finished
 
 
                 //(1) define horizon, epsilon, kappa , N, lambda,
@@ -517,8 +515,26 @@ namespace storm {
                 }
                 uint64_t N;
 
+                //calculate relative ReachabilityVectors
+                std::vector<ValueType> in(fullTransitionMatrix.getRowCount(), 0);
+                std::vector<std::vector<ValueType>> relReachability(numberOfStates,in);
 
-                // while not close enough to precision:
+                printTransitions(relReachability, exitRateVector, fullTransitionMatrix, markovianStates, psiStates, psiStates, psiStates, vd,vu,wu); // TODO: delete when develepmont is finished
+                for(int i=0 ; i<numberOfStates; i++){
+                     auto from = rowGroupIndices[i];
+                     auto to = rowGroupIndices[i+1];
+                     for (auto j=from ; j,to; j++){
+                         std::vector<ValueType>& act = relReachability[j];
+                         for(auto element: fullTransitionMatrix.getRow(j)){
+                             if (markovianStates[element.getColumn()]){
+                                 act[element.getColumn]=element.getValue();
+                             }
+                         }
+
+                     }
+                }
+
+                    // while not close enough to precision:
                 do {
                     // (2) update parameter
                     N = ceil(lambda*T*exp(2)-log(kappa*epsilon));
