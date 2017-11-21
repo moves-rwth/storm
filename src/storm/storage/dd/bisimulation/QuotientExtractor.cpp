@@ -255,6 +255,8 @@ namespace storm {
                     STORM_LOG_TRACE("Partition has " << partitionBdd.existsAbstract(model.getRowVariables()).getNonZeroCount() << " states in " << this->numberOfBlocks << " blocks.");
                 }
 
+                virtual ~InternalSparseQuotientExtractorBase() = default;
+
                 storm::storage::SparseMatrix<ValueType> extractTransitionMatrix(storm::dd::Add<DdType, ValueType> const& transitionMatrix) {
                     return extractMatrixInternal(transitionMatrix);
                 }

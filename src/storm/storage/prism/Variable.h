@@ -17,7 +17,8 @@ namespace storm {
             Variable& operator=(Variable const& otherVariable)= default;
             Variable(Variable&& otherVariable) = default;
             Variable& operator=(Variable&& otherVariable) = default;
-
+            virtual ~Variable() = default;
+            
             /*!
              * Retrieves the name of the variable.
              *

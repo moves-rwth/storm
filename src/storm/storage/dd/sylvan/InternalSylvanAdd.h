@@ -60,7 +60,8 @@ namespace storm {
             InternalAdd& operator=(InternalAdd<DdType::Sylvan, ValueType> const& other) = default;
             InternalAdd(InternalAdd<DdType::Sylvan, ValueType>&& other) = default;
             InternalAdd& operator=(InternalAdd<DdType::Sylvan, ValueType>&& other) = default;
-            
+            virtual ~InternalAdd() = default;
+
             /*!
              * Retrieves whether the two DDs represent the same function.
              *
@@ -732,7 +733,7 @@ namespace storm {
             static MTBDD getLeaf(uint_fast64_t value);
 
             /*!
-             * Retrieves the sylvan representation of the given storm::RatíonalNumber.
+             * Retrieves the sylvan representation of the given storm::Ratï¿½onalNumber.
              *
              * @return The sylvan node for the given value.
              */

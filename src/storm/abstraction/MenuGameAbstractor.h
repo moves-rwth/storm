@@ -24,6 +24,8 @@ namespace storm {
         template <storm::dd::DdType DdType, typename ValueType>
         class MenuGameAbstractor {
         public:
+            virtual ~MenuGameAbstractor() = default;
+
             /// Retrieves the abstraction.
             virtual MenuGame<DdType, ValueType> abstract() = 0;
 

@@ -13,6 +13,8 @@ namespace storm {
          */
         class AbstractStatementVisitor {
         public:
+            virtual ~AbstractStatementVisitor() = default;
+
             // Those functions need to be implemented for every possible
             // statement instantiation.
             virtual void visit(class AssignmentStatement const&) = 0;

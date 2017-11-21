@@ -182,6 +182,8 @@ namespace storm {
         template<typename ValueType>
         class LinearEquationSolverFactory {
         public:
+            virtual ~LinearEquationSolverFactory() = default;
+
             /*!
              * Creates a new linear equation solver instance with the given matrix.
              *

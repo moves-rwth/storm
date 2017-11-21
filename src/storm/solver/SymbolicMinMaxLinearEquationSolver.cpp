@@ -277,6 +277,7 @@ namespace storm {
             if (solver.getEquationProblemFormat(env) == storm::solver::LinearEquationSolverProblemFormat::EquationSystem) {
                 schedulerA = diagonal - schedulerA;
             }
+
             storm::dd::Add<DdType, ValueType> schedulerB = scheduler.ite(b, scheduler.getDdManager().template getAddZero<ValueType>()).sumAbstract(this->choiceVariables);
 
             // Set the matrix for the solver.
@@ -314,9 +315,16 @@ namespace storm {
                 storm::dd::Bdd<DdType> nextScheduler;
                 if (dir == storm::solver::OptimizationDirection::Minimize) {
                     choiceValues += illegalMaskAdd;
-                    nextScheduler = choiceValues.minAbstractRepresentative(this->choiceVariables);
+                    
+                    storm::dd::Add<DdType, ValueType> newStateValues = choiceValues.minAbstract(this->choiceVariables);
+                    storm::dd::Bdd<DdType> improvedStates = newStateValues.less(schedulerX);
+                    
+                    nextScheduler = improvedStates.ite(choiceValues.minAbstractRepresentative(this->choiceVariables), scheduler);
                 } else {
-                    nextScheduler = choiceValues.maxAbstractRepresentative(this->choiceVariables);
+                    storm::dd::Add<DdType, ValueType> newStateValues = choiceValues.maxAbstract(this->choiceVariables);
+                    storm::dd::Bdd<DdType> improvedStates = newStateValues.greater(schedulerX);
+
+                    nextScheduler = improvedStates.ite(choiceValues.maxAbstractRepresentative(this->choiceVariables), scheduler);
                 }
                 
                 // Check for convergence.

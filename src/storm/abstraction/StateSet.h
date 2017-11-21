@@ -10,6 +10,8 @@ namespace storm {
         
         class StateSet {
         public:
+            virtual ~StateSet() = default;
+
             virtual bool isSymbolic() const;
             
             template<storm::dd::DdType Type>

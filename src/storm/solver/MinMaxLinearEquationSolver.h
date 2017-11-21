@@ -210,6 +210,7 @@ namespace storm {
         class MinMaxLinearEquationSolverFactory {
         public:
             MinMaxLinearEquationSolverFactory();
+	    virtual ~MinMaxLinearEquationSolverFactory() = default;
             
             std::unique_ptr<MinMaxLinearEquationSolver<ValueType>> create(Environment const& env, storm::storage::SparseMatrix<ValueType> const& matrix) const;
             std::unique_ptr<MinMaxLinearEquationSolver<ValueType>> create(Environment const& env, storm::storage::SparseMatrix<ValueType>&& matrix) const;

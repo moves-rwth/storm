@@ -15,6 +15,8 @@ namespace storm {
         
         class CompositionVisitor {
         public:
+            virtual ~CompositionVisitor() = default;
+
             virtual boost::any visit(ModuleComposition const& composition, boost::any const& data) = 0;
             virtual boost::any visit(RenamingComposition const& composition, boost::any const& data) = 0;
             virtual boost::any visit(HidingComposition const& composition, boost::any const& data) = 0;

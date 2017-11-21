@@ -36,7 +36,8 @@ namespace storm {
                  * @param manager The manager responsible for the variables whose value can be requested.
                  */
                 ModelReference(storm::expressions::ExpressionManager const& manager);
-                
+                virtual ~ModelReference() = default;
+
                 virtual bool getBooleanValue(storm::expressions::Variable const& variable) const = 0;
 				virtual int_fast64_t getIntegerValue(storm::expressions::Variable const& variable) const = 0;
                 virtual double getRationalValue(storm::expressions::Variable const& variable) const = 0;

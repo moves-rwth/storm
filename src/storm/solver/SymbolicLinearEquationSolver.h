@@ -36,7 +36,8 @@ namespace storm {
         class SymbolicLinearEquationSolver : public SymbolicEquationSolver<DdType, ValueType> {
         public:
             SymbolicLinearEquationSolver();
-            
+            virtual ~SymbolicLinearEquationSolver() = default;
+
             /*!
              * Constructs a symbolic linear equation solver with the given meta variable sets and pairs.
              *
@@ -119,6 +120,8 @@ namespace storm {
         template<storm::dd::DdType DdType, typename ValueType>
         class SymbolicLinearEquationSolverFactory {
         public:
+            virtual ~SymbolicLinearEquationSolverFactory() = default;
+            
             std::unique_ptr<storm::solver::SymbolicLinearEquationSolver<DdType, ValueType>> create(Environment const& env, storm::dd::Bdd<DdType> const& allRows, std::set<storm::expressions::Variable> const& rowMetaVariables, std::set<storm::expressions::Variable> const& columnMetaVariables, std::vector<std::pair<storm::expressions::Variable, storm::expressions::Variable>> const& rowColumnMetaVariablePairs) const;
             
             std::unique_ptr<storm::solver::SymbolicLinearEquationSolver<DdType, ValueType>> create(Environment const& env, storm::dd::Add<DdType, ValueType> const& A, storm::dd::Bdd<DdType> const& allRows, std::set<storm::expressions::Variable> const& rowMetaVariables, std::set<storm::expressions::Variable> const& columnMetaVariables, std::vector<std::pair<storm::expressions::Variable, storm::expressions::Variable>> const& rowColumnMetaVariablePairs) const;

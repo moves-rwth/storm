@@ -138,7 +138,7 @@ namespace storm {
 
         private:
             // The manager that is responsible for this variable.
-            std::shared_ptr<ExpressionManager const> manager;
+            std::weak_ptr<ExpressionManager const> manager;
             
             // The index of the variable.
             uint_fast64_t index;

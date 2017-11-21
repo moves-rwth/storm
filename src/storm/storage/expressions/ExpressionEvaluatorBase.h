@@ -9,7 +9,8 @@ namespace storm {
         class ExpressionEvaluatorBase {
         public:
             ExpressionEvaluatorBase(storm::expressions::ExpressionManager const& manager);
-            
+            virtual ~ExpressionEvaluatorBase() = default;
+
             virtual bool asBool(Expression const& expression) const = 0;
             virtual int_fast64_t asInt(Expression const& expression) const = 0;
             virtual RationalReturnType asRational(Expression const& expression) const = 0;

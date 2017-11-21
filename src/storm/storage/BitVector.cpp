@@ -118,6 +118,7 @@ namespace storm {
                 bitCount = other.bitCount;
                 if (buckets && bucketCount() != other.bucketCount()) {
                     delete[] buckets;
+                    buckets = nullptr;
                 }
                 if (!buckets) {
                     buckets = new uint64_t[other.bucketCount()];
@@ -157,6 +158,9 @@ namespace storm {
             // Only perform the assignment if the source and target are not identical.
             if (this != &other) {
                 bitCount = other.bitCount;
+                if (this->buckets) {
+                    delete[] this->buckets;
+                }
                 this->buckets = other.buckets;
                 other.buckets = nullptr;
             }
