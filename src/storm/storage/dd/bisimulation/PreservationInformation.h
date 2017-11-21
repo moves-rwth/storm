@@ -21,10 +21,10 @@ namespace storm {
             public:
                 PreservationInformation() = default;
             
-                PreservationInformation(storm::models::symbolic::Model<DdType, ValueType> const& model, storm::storage::BisimulationType const& bisimulationType);
-                PreservationInformation(storm::models::symbolic::Model<DdType, ValueType> const& model, std::vector<std::string> const& labels, storm::storage::BisimulationType const& bisimulationType);
-                PreservationInformation(storm::models::symbolic::Model<DdType, ValueType> const& model, std::vector<storm::expressions::Expression> const& expressions, storm::storage::BisimulationType const& bisimulationType);
-                PreservationInformation(storm::models::symbolic::Model<DdType, ValueType> const& model, std::vector<std::shared_ptr<storm::logic::Formula const>> const& formulas, storm::storage::BisimulationType const& bisimulationType);
+                PreservationInformation(storm::models::symbolic::Model<DdType, ValueType> const& model);
+                PreservationInformation(storm::models::symbolic::Model<DdType, ValueType> const& model, std::vector<std::string> const& labels);
+                PreservationInformation(storm::models::symbolic::Model<DdType, ValueType> const& model, std::vector<storm::expressions::Expression> const& expressions);
+                PreservationInformation(storm::models::symbolic::Model<DdType, ValueType> const& model, std::vector<std::shared_ptr<storm::logic::Formula const>> const& formulas);
                 
                 void addLabel(std::string const& label);
                 void addExpression(storm::expressions::Expression const& expression);

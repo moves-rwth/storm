@@ -1,12 +1,13 @@
-#ifndef STORM_MODELCHECKER_HINTS_MODELCHECKERHINT_H
-#define STORM_MODELCHECKER_HINTS_MODELCHECKERHINT_H
+#pragma once
+
+#include "storm/storage/dd/DdType.h"
 
 namespace storm {
     namespace modelchecker {
         
         template<typename ValueType>
         class ExplicitModelCheckerHint;
-        
+
         /*!
          * This class contains information that might accelerate the model checking process.
          * @note The model checker has to make sure whether a given hint is actually applicable and thus a hint might be ignored.
@@ -14,11 +15,12 @@ namespace storm {
         class ModelCheckerHint {
         public:
             ModelCheckerHint() = default;
-            
-            // Returns true iff this hint does not contain any information
+            virtual ~ModelCheckerHint() = default;
+
+            // Returns true iff this hint does not contain any information.
             virtual bool isEmpty() const;
             
-            // Returns true iff this is an explicit model checker hint
+            // Returns true iff this is an explicit model checker hint.
             virtual bool isExplicitModelCheckerHint() const;
             
             template<typename ValueType>
@@ -26,10 +28,8 @@ namespace storm {
             
             template<typename ValueType>
             ExplicitModelCheckerHint<ValueType> const& asExplicitModelCheckerHint() const;
-            
         };
         
     }
 }
 
-#endif /* STORM_MODELCHECKER_HINTS_MODELCHECKERHINT_H */

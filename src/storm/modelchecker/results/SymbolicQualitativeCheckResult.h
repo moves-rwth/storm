@@ -22,6 +22,8 @@ namespace storm {
             SymbolicQualitativeCheckResult& operator=(SymbolicQualitativeCheckResult&& other) = default;
 #endif
             
+            virtual std::unique_ptr<CheckResult> clone() const override;
+
             virtual bool isSymbolic() const override;
             virtual bool isResultForAllStates() const override;
             

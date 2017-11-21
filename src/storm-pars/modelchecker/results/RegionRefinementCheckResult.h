@@ -21,7 +21,8 @@ namespace storm {
             storm::storage::ParameterRegion<ValueType> const& getParameterSpace() const;
 
             virtual std::ostream& writeIllustrationToStream(std::ostream& out) const override;
-            
+
+            virtual std::unique_ptr<CheckResult> clone() const override;
 
         protected:
             storm::storage::ParameterRegion<ValueType> parameterSpace;

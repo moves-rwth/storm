@@ -7,6 +7,7 @@ namespace storm {
         
         class CompiledExpression {
         public:
+            virtual ~CompiledExpression() = default;
             
             virtual bool isExprtkCompiledExpression() const;
             ExprtkCompiledExpression& asExprtkCompiledExpression();

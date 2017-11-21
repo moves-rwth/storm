@@ -26,6 +26,11 @@ namespace storm {
         }
         
         template<typename ValueType>
+        std::unique_ptr<CheckResult> ExplicitParetoCurveCheckResult<ValueType>::clone() const {
+            return std::make_unique<ExplicitParetoCurveCheckResult<ValueType>>(this->state, this->points, this->underApproximation, this->overApproximation);
+        }
+        
+        template<typename ValueType>
         bool ExplicitParetoCurveCheckResult<ValueType>::isExplicitParetoCurveCheckResult() const {
             return true;
         }

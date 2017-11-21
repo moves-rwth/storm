@@ -29,6 +29,18 @@ namespace storm {
             // Intentionally left empty.
         }
         
+        ExplicitQualitativeCheckResult::ExplicitQualitativeCheckResult(boost::variant<vector_type, map_type> const& truthValues) : truthValues(truthValues) {
+            // Intentionally left empty.
+        }
+        
+        ExplicitQualitativeCheckResult::ExplicitQualitativeCheckResult(boost::variant<vector_type, map_type>&& truthValues) : truthValues(std::move(truthValues)) {
+            // Intentionally left empty.
+        }
+        
+        std::unique_ptr<CheckResult> ExplicitQualitativeCheckResult::clone() const {
+            return std::make_unique<ExplicitQualitativeCheckResult>(this->truthValues);
+        }
+        
         void ExplicitQualitativeCheckResult::performLogicalOperation(ExplicitQualitativeCheckResult& first, QualitativeCheckResult const& second, bool logicalAnd) {
             STORM_LOG_THROW(second.isExplicitQualitativeCheckResult(), storm::exceptions::InvalidOperationException, "Cannot perform logical 'and' on check results of incompatible type.");
             STORM_LOG_THROW(first.isResultForAllStates() == second.isResultForAllStates(), storm::exceptions::InvalidOperationException, "Cannot perform logical 'and' on check results of incompatible type.");

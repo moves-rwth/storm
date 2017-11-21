@@ -9,6 +9,8 @@ namespace storm {
         
         class Composition {
         public:
+            virtual ~Composition() = default;
+
             virtual boost::any accept(CompositionVisitor& visitor, boost::any const& data) const = 0;
             
             virtual void write(std::ostream& stream) const = 0;

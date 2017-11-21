@@ -8,6 +8,8 @@
 #include "storm/storage/expressions/SimpleValuation.h"
 #include "storm/storage/sparse/PrismChoiceOrigins.h"
 
+#include "storm/builder/jit/Distribution.h"
+
 #include "storm/solver/SmtSolver.h"
 
 #include "storm/utility/constants.h"
@@ -449,6 +451,9 @@ namespace storm {
         std::vector<Choice<ValueType>> PrismNextStateGenerator<ValueType, StateType>::getLabeledChoices(CompressedState const& state, StateToIdCallback stateToIdCallback) {
             std::vector<Choice<ValueType>> result;
 
+            storm::builder::jit::Distribution<CompressedState, ValueType> currentDistribution;
+            storm::builder::jit::Distribution<CompressedState, ValueType> nextDistribution;
+
             for (uint_fast64_t actionIndex : program.getSynchronizingActionIndices()) {
                 boost::optional<std::vector<std::vector<std::reference_wrapper<storm::prism::Command const>>>> optionalActiveCommandLists = getActiveCommandsByActionIndex(actionIndex);
                 
@@ -465,40 +470,32 @@ namespace storm {
                     // As long as there is one feasible combination of commands, keep on expanding it.
                     bool done = false;
                     while (!done) {
-                        boost::container::flat_map<CompressedState, ValueType>* currentTargetStates = new boost::container::flat_map<CompressedState, ValueType>();
-                        boost::container::flat_map<CompressedState, ValueType>* newTargetStates = new boost::container::flat_map<CompressedState, ValueType>();
-                        
-                        currentTargetStates->emplace(state, storm::utility::one<ValueType>());
+                        currentDistribution.clear();
+                        nextDistribution.clear();
+
+                        currentDistribution.add(state, storm::utility::one<ValueType>());
                         
                         for (uint_fast64_t i = 0; i < iteratorList.size(); ++i) {
                             storm::prism::Command const& command = *iteratorList[i];
                             for (uint_fast64_t j = 0; j < command.getNumberOfUpdates(); ++j) {
                                 storm::prism::Update const& update = command.getUpdate(j);
                                 
-                                for (auto const& stateProbabilityPair : *currentTargetStates) {
-                                    ValueType probability = stateProbabilityPair.second * this->evaluator->asRational(update.getLikelihoodExpression());
+                                for (auto const& stateProbability : currentDistribution) {
+                                    ValueType probability = stateProbability.getValue() * this->evaluator->asRational(update.getLikelihoodExpression());
 
                                     if (!storm::utility::isZero<ValueType>(probability)) {
                                         // Compute the new state under the current update and add it to the set of new target states.
-                                        CompressedState newTargetState = applyUpdate(stateProbabilityPair.first, update);
-                                        
-                                        // If the new state was already found as a successor state, update the probability
-                                        // and otherwise insert it.
-                                        auto targetStateIt = newTargetStates->find(newTargetState);
-                                        if (targetStateIt != newTargetStates->end()) {
-                                            targetStateIt->second += probability;
-                                        } else {
-                                            newTargetStates->emplace(newTargetState, probability);
-                                        }
+                                        CompressedState newTargetState = applyUpdate(stateProbability.getState(), update);
+                                        nextDistribution.add(newTargetState, probability);
                                     }
                                 }
                             }
                             
+                            nextDistribution.compress();
+                            
                             // If there is one more command to come, shift the target states one time step back.
                             if (i < iteratorList.size() - 1) {
-                                delete currentTargetStates;
-                                currentTargetStates = newTargetStates;
-                                newTargetStates = new boost::container::flat_map<CompressedState, ValueType>();
+                                currentDistribution = std::move(nextDistribution);
                             }
                         }
                         
@@ -524,11 +521,11 @@ namespace storm {
                         
                         // Add the probabilities/rates to the newly created choice.
                         ValueType probabilitySum = storm::utility::zero<ValueType>();
-                        for (auto const& stateProbabilityPair : *newTargetStates) {
-                            StateType actualIndex = stateToIdCallback(stateProbabilityPair.first);
-                            choice.addProbability(actualIndex, stateProbabilityPair.second);
+                        for (auto const& stateProbability : nextDistribution) {
+                            StateType actualIndex = stateToIdCallback(stateProbability.getState());
+                            choice.addProbability(actualIndex, stateProbability.getValue());
                             if (this->options.isExplorationChecksSet()) {
-                                probabilitySum += stateProbabilityPair.second;
+                                probabilitySum += stateProbability.getValue();
                             }
                         }
                         
@@ -549,10 +546,6 @@ namespace storm {
                             }
                             choice.addReward(stateActionRewardValue);
                         }
-                        
-                        // Dispose of the temporary maps.
-                        delete currentTargetStates;
-                        delete newTargetStates;
                         
                         // Now, check whether there is one more command combination to consider.
                         bool movedIterator = false;

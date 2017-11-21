@@ -56,6 +56,7 @@ namespace storm {
                 rl.rlim_cur = megabytes * 1024 * 1024;
                 setrlimit(RLIMIT_AS, &rl);
 #else
+                (void)megabytes;
                 STORM_LOG_WARN("Setting a memory limit is not supported for your operating system.");
 #endif
             }

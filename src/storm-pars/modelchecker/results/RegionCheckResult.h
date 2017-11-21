@@ -29,6 +29,8 @@ namespace storm {
 
             virtual void filter(QualitativeCheckResult const& filter) override;
             
+            virtual std::unique_ptr<CheckResult> clone() const override;
+
         protected:
             virtual void initFractions(typename storm::storage::ParameterRegion<ValueType>::CoefficientType const& overallArea);
             

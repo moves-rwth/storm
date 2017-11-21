@@ -28,6 +28,11 @@ namespace storm {
         }
 
         template<typename ValueType>
+        std::unique_ptr<CheckResult> RegionCheckResult<ValueType>::clone() const {
+            return std::make_unique<RegionCheckResult<ValueType>>(this->regionResults);
+        }
+        
+        template<typename ValueType>
         bool RegionCheckResult<ValueType>::isRegionCheckResult() const {
             return true;
         }
@@ -108,7 +113,6 @@ namespace storm {
             // Filtering has no effect as we only store the result w.r.t. a single state anyway.
             // Hence, this is intentionally left empty.
         }
-
         
 #ifdef STORM_HAVE_CARL
         template class RegionCheckResult<storm::RationalFunction>;

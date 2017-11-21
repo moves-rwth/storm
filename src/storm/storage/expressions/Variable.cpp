@@ -16,7 +16,7 @@ namespace storm {
         }
 
         bool Variable::operator==(Variable const& other) const {
-            return manager == other.manager && index == other.index;
+            return &this->getManager() == &other.getManager() && index == other.index;
         }
 
         bool Variable::operator!=(Variable const& other) const {
@@ -48,8 +48,7 @@ namespace storm {
         }
         
         ExpressionManager const& Variable::getManager() const {
-            STORM_LOG_ASSERT(manager != nullptr, "Manager is null.");
-            return *manager;
+            return *manager.lock();
         }
 
         bool Variable::hasBooleanType() const {
