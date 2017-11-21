@@ -248,14 +248,7 @@ namespace storm {
             parameterLifter->specifyRegion(region, dirForParameters);
             
             // Set up the solver
-            auto solver = solverFactory->create(player1Matrix, parameterLifter->getMatrix());
-            if (storm::NumberTraits<ConstantType>::IsExact && dynamic_cast<storm::solver::StandardGameSolver<ConstantType>*>(solver.get())) {
-                STORM_LOG_INFO("Parameter Lifting: Setting solution method for exact Game Solver to policy iteration");
-                auto* standardSolver = dynamic_cast<storm::solver::StandardGameSolver<ConstantType>*>(solver.get());
-                auto settings = standardSolver->getSettings();
-                settings.setSolutionMethod(storm::solver::StandardGameSolverSettings<ConstantType>::SolutionMethod::PolicyIteration);
-                standardSolver->setSettings(settings);
-            }
+            auto solver = solverFactory->create(env, player1Matrix, parameterLifter->getMatrix());
             if (lowerResultBound) solver->setLowerBound(lowerResultBound.get());
             if (upperResultBound) solver->setUpperBound(upperResultBound.get());
             if (applyPreviousResultAsHint) {

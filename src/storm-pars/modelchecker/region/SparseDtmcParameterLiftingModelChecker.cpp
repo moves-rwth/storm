@@ -288,7 +288,7 @@ namespace storm {
             if (stepBound) {
                 assert(*stepBound > 0);
                 x = std::vector<ConstantType>(maybeStates.getNumberOfSetBits(), storm::utility::zero<ConstantType>());
-                solver->repeatedMultiply(dirForParameters, x, &parameterLifter->getVector(), *stepBound);
+                solver->repeatedMultiply(env, dirForParameters, x, &parameterLifter->getVector(), *stepBound);
             } else {
                 x.resize(maybeStates.getNumberOfSetBits(), storm::utility::zero<ConstantType>());
                 solver->solveEquations(env, dirForParameters, x, parameterLifter->getVector());
