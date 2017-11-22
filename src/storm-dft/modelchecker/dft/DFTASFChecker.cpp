@@ -119,6 +119,23 @@ namespace storm {
         };
 
 
+        class Implies : public DFTConstraint {
+        public:
+            Implies(std::shared_ptr<DFTConstraint> l, std::shared_ptr<DFTConstraint> r) : lhs(l), rhs(r) {
+            }
+
+            std::string toSmtlib2(std::vector<std::string> const& varNames) const override {
+                std::stringstream sstr;
+                sstr << "(=> " << lhs->toSmtlib2(varNames) << " " << rhs->toSmtlib2(varNames) << ")";
+                return sstr.str();
+            }
+
+        private:
+            std::shared_ptr<DFTConstraint> lhs;
+            std::shared_ptr<DFTConstraint> rhs;
+        };
+
+
         class Iff : public DFTConstraint {
         public:
             Iff(std::shared_ptr<DFTConstraint> l, std::shared_ptr<DFTConstraint> r) : lhs(l), rhs(r) {
@@ -367,7 +384,7 @@ namespace storm {
                         auto const& children = spare->children();
                         // If last child is claimed before failure the spare fails when the last child fails (constraint 5)
                         std::shared_ptr<DFTConstraint> leftC = std::make_shared<IsLEqual>(getClaimVariableIndex(spare->id(), children.back()->id()), childVarIndices.back());
-                        constraints.push_back(std::make_shared<Iff>(leftC, std::make_shared<IsEqual>(timePointVariables.at(i), childVarIndices.back())));
+                        constraints.push_back(std::make_shared<Implies>(leftC, std::make_shared<IsEqual>(timePointVariables.at(i), childVarIndices.back())));
                         constraints.back()->setDescription("Last child & claimed -> spare fails");
 
                         // Construct constraint for claiming
