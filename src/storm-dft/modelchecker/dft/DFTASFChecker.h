@@ -12,10 +12,9 @@ namespace storm {
         class DFTConstraint {
         public:
             virtual ~DFTConstraint() {
-                
             }
             
-            virtual  std::string toSmtlib2(std::vector<std::string> const& varNames) const = 0;
+            virtual std::string toSmtlib2(std::vector<std::string> const& varNames) const = 0;
             virtual std::string description() const { return descript; }
 
             void setDescription(std::string const& descr) {
@@ -27,10 +26,8 @@ namespace storm {
         };
         
         class SpareAndChildPair {
-            
         public:
             SpareAndChildPair(uint64_t spareIndex, uint64_t childIndex) : spareIndex(spareIndex), childIndex(childIndex) {
-                
             }
             
             uint64_t spareIndex;
@@ -43,7 +40,6 @@ namespace storm {
         
         class DFTASFChecker {
             using ValueType = double;
-            
         public:
             DFTASFChecker(storm::storage::DFT<ValueType> const&);
             void convert();
