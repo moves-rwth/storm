@@ -1,6 +1,8 @@
 #include "DFTASFChecker.h"
 #include <string>
 #include "storm/utility/file.h"
+#include "storm/exceptions/NotImplementedException.h"
+#include "storm/exceptions/NotSupportedException.h"
 
 namespace storm {
     
@@ -337,14 +339,14 @@ namespace storm {
 
             // Generate constraints
 
-            // No two BEs fail at the same time (first part of constraint 12)
-            constraints.push_back(std::make_shared<PairwiseDifferent>(beVariables));
-            constraints.back()->setDescription("No two BEs fail at the same time");
-
-            // All BEs have to fail (second part of constraint 12)
+            // All BEs have to fail (first part of constraint 12)
             for (auto const& beV : beVariables) {
                 constraints.push_back(std::make_shared<BetweenValues>(beV, 1, dft.nrBasicElements()));
             }
+
+            // No two BEs fail at the same time (second part of constraint 12)
+            constraints.push_back(std::make_shared<PairwiseDifferent>(beVariables));
+            constraints.back()->setDescription("No two BEs fail at the same time");
 
             // Initialize claim variables in [1, |BE|+1]
             for (auto const& claimVariable : claimVariables) {
@@ -387,6 +389,9 @@ namespace storm {
                         constraints.push_back(std::make_shared<IfThenElse>(ifC, thenC, elseC));
                         constraints.back()->setDescription("PAND gate");
                     }
+                    case storm::storage::DFTElementType::SEQ:
+                        STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "SMT encoding of SEQs is not implemented yet.");
+                        break;
                     case storm::storage::DFTElementType::SPARE:
                     {
                         auto spare = std::static_pointer_cast<storm::storage::DFTSpare<double> const>(element);
@@ -439,8 +444,11 @@ namespace storm {
                         }
                         break;
                     }
+                    case storm::storage::DFTElementType::PDEP:
+                        STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "SMT encoding of FDEPs and PDEPs is not implemented yet.");
+                        break;
                     default:
-                        STORM_LOG_WARN("DFT element of type '" << element->type() << "' is ignored for SMT encoding.");
+                        STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "SMT encoding for type '" << element->type() << "' is not supported.");
                         break;
                 }
             }
