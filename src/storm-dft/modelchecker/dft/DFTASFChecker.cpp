@@ -174,6 +174,27 @@ namespace storm {
         };
 
 
+        class IsLessConstant : public DFTConstraint {
+        public:
+            IsLessConstant(uint64_t varIndex, uint64_t val) :varIndex(varIndex), value(val) {
+            }
+
+            virtual ~IsLessConstant() {
+            }
+
+            std::string toSmtlib2(std::vector<std::string> const& varNames) const override {
+                std::stringstream sstr;
+                assert(varIndex < varNames.size());
+                sstr << "(< " << varNames.at(varIndex) << " " << value << ")";
+                return sstr.str();
+            }
+
+        private:
+            uint64_t varIndex;
+            uint64_t value;
+        };
+
+
         class IsEqual : public DFTConstraint {
         public:
             IsEqual(uint64_t varIndex1, uint64_t varIndex2) :var1Index(varIndex1), var2Index(varIndex2) {
@@ -183,7 +204,7 @@ namespace storm {
             }
 
             std::string toSmtlib2(std::vector<std::string> const& varNames) const override {
-                return "(= " + varNames.at(var1Index) + " " +  varNames.at(var2Index) + " )";
+                return "(= " + varNames.at(var1Index) + " " +  varNames.at(var2Index) + ")";
             }
 
         private:
@@ -192,16 +213,16 @@ namespace storm {
         };
 
 
-        class IsLessEqual : public DFTConstraint {
+        class IsLess : public DFTConstraint {
         public:
-            IsLessEqual(uint64_t varIndex1, uint64_t varIndex2) :var1Index(varIndex1), var2Index(varIndex2) {
+            IsLess(uint64_t varIndex1, uint64_t varIndex2) :var1Index(varIndex1), var2Index(varIndex2) {
             }
 
-            virtual ~IsLessEqual() {
+            virtual ~IsLess() {
             }
 
             std::string toSmtlib2(std::vector<std::string> const& varNames) const override {
-                return "(<= " + varNames.at(var1Index) + " " +  varNames.at(var2Index) + " )";
+                return "(< " + varNames.at(var1Index) + " " +  varNames.at(var2Index) + ")";
             }
 
         private:
@@ -378,7 +399,7 @@ namespace storm {
                         constraints.back()->setDescription("SPARE " + spare->name() + " claims first child");
 
                         // If last child is claimed before failure, then the spare fails when the last child fails (constraint 5)
-                        std::shared_ptr<DFTConstraint> leftC = std::make_shared<IsLessEqual>(getClaimVariableIndex(spare->id(), lastChild), childVarIndices.back());
+                        std::shared_ptr<DFTConstraint> leftC = std::make_shared<IsLess>(getClaimVariableIndex(spare->id(), lastChild), childVarIndices.back());
                         constraints.push_back(std::make_shared<Implies>(leftC, std::make_shared<IsEqual>(timePointVariables.at(i), childVarIndices.back())));
                         constraints.back()->setDescription("Last child & claimed -> SPARE fails");
 
@@ -397,11 +418,11 @@ namespace storm {
                             // Check if next child is availble (first part of case distinction for constraint 7)
                             std::vector<std::shared_ptr<DFTConstraint>> ifcs;
                             // Next child is not yet failed
-                            ifcs.push_back(std::make_shared<IsLessEqual>(timeCurrChild, timeNextChild));
+                            ifcs.push_back(std::make_shared<IsLess>(timeCurrChild, timeNextChild));
                             // Child is not yet claimed by a different spare
                             for (auto const& otherSpare : children.at(nextChild)->parents()) {
                                 if (otherSpare->id() == i) {
-                                    // not an OTHER spare.
+                                    // not a different spare.
                                     continue;
                                 }
                                 ifcs.push_back(std::make_shared<IsConstantValue>(getClaimVariableIndex(otherSpare->id(), children.at(nextChild)->id()), notFailed));
@@ -413,7 +434,7 @@ namespace storm {
                             // Next iteration of phi
                             oldPhi = tryClaimC;
                             // If i-th child fails after being claimed, then try to claim (i+1)-th child (constraint 6)
-                            constraints.push_back(std::make_shared<Iff>(std::make_shared<IsLessEqual>(getClaimVariableIndex(spare->id(), children.at(currChild)->id()), timeCurrChild), tryClaimC));
+                            constraints.push_back(std::make_shared<Iff>(std::make_shared<IsLess>(getClaimVariableIndex(spare->id(), children.at(currChild)->id()), timeCurrChild), tryClaimC));
                             constraints.back()->setDescription("Try to claim " + std::to_string(nextChild+1) + "th child");
                         }
                         break;
@@ -423,6 +444,31 @@ namespace storm {
                         break;
                 }
             }
+
+            // Only one spare can claim a child (constraint 8)
+            for (size_t i = 0; i < dft.nrElements(); ++i) {
+                std::shared_ptr<storm::storage::DFTElement<ValueType> const> element = dft.getElement(i);
+                if (element->isSpareGate()) {
+                    auto spare = std::static_pointer_cast<storm::storage::DFTSpare<double> const>(element);
+                    for (auto const& child : spare->children()) {
+                        // No other spare claims this child
+                        std::vector<std::shared_ptr<DFTConstraint>> noOtherClaims;
+                        for (auto const& otherSpare : child->parents()) {
+                            if (otherSpare->id() == spare->id()) {
+                                // original spare
+                                continue;
+                            }
+                            noOtherClaims.push_back(std::make_shared<IsConstantValue>(getClaimVariableIndex(otherSpare->id(), child->id()), notFailed));
+                        }
+                        if (!noOtherClaims.empty()) {
+                            std::shared_ptr<DFTConstraint> leftC = std::make_shared<IsLessConstant>(getClaimVariableIndex(spare->id(), child->id()), notFailed);
+                            constraints.push_back(std::make_shared<Implies>(leftC, std::make_shared<And>(noOtherClaims)));
+                            constraints.back()->setDescription("Only one spare claims the child " + child->name());
+                        }
+                    }
+                }
+            }
+
             // Toplevel element will not fail (part of constraint 13)
             constraints.push_back(std::make_shared<IsConstantValue>(dft.getTopLevelIndex(), notFailed));
             constraints.back()->setDescription("Toplevel element should not fail");
