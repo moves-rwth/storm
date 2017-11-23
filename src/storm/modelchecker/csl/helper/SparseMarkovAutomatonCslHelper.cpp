@@ -213,7 +213,7 @@ namespace storm {
             }
 
             template <typename ValueType, typename std::enable_if<storm::NumberTraits<ValueType>::SupportsExponential, int>::type>
-            void SparseMarkovAutomatonCslHelper::calculateVu(OptimizationDirection dir, uint64_t k, uint64_t node, ValueType lambda, std::vector<std::vector<ValueType>>& vu, std::vector<std::vector<ValueType>>& wu, storm::storage::SparseMatrix<ValueType> const& fullTransitionMatrix, storm::storage::BitVector const& markovianStates, storm::storage::BitVector const& psiStates){
+            void SparseMarkovAutomatonCslHelper::calculateVu(std::vector<std::vector<ValueType>> const& relativeReachability, OptimizationDirection dir, uint64_t k, uint64_t node, ValueType lambda, std::vector<std::vector<ValueType>>& vu, std::vector<std::vector<ValueType>>& wu, storm::storage::SparseMatrix<ValueType> const& fullTransitionMatrix, storm::storage::BitVector const& markovianStates, storm::storage::BitVector const& psiStates, storm::solver::MinMaxLinearEquationSolverFactory<ValueType> const& minMaxLinearEquationSolverFactory){
                 if (vu[k][node]!=-1){return;} //dynamic programming. avoiding multiple calculation.
                 uint64_t N = vu.size()-1;
                 auto rowGroupIndices = fullTransitionMatrix.getRowGroupIndices();
@@ -221,7 +221,7 @@ namespace storm {
                 ValueType res =0;
                 for (uint64_t i = k ; i < N ; i++ ){
                     if (wu[N-1-(i-k)][node]==-1){
-                        calculateWu(dir, (N-1-(i-k)),node,lambda,wu,fullTransitionMatrix,markovianStates,psiStates);
+                        calculateWu(relativeReachability, dir, (N-1-(i-k)),node,lambda,wu,fullTransitionMatrix,markovianStates,psiStates, minMaxLinearEquationSolverFactory);
                     }
                     res+=poisson(lambda, i)*wu[N-1-(i-k)][node];
                 }
@@ -229,7 +229,7 @@ namespace storm {
             }
 
             template <typename ValueType, typename std::enable_if<storm::NumberTraits<ValueType>::SupportsExponential, int>::type>
-            void SparseMarkovAutomatonCslHelper::calculateWu(OptimizationDirection dir, uint64_t k, uint64_t node, ValueType lambda, std::vector<std::vector<ValueType>>& wu, storm::storage::SparseMatrix<ValueType> const& fullTransitionMatrix, storm::storage::BitVector const& markovianStates, storm::storage::BitVector const& psiStates){
+            void SparseMarkovAutomatonCslHelper::calculateWu(std::vector<std::vector<ValueType>> const& relativeReachability, OptimizationDirection dir, uint64_t k, uint64_t node, ValueType lambda, std::vector<std::vector<ValueType>>& wu, storm::storage::SparseMatrix<ValueType> const& fullTransitionMatrix, storm::storage::BitVector const& markovianStates, storm::storage::BitVector const& psiStates, storm::solver::MinMaxLinearEquationSolverFactory<ValueType> const& minMaxLinearEquationSolverFactory){
                 if (wu[k][node]!=-1){return;} //dynamic programming. avoiding multiple calculation.
                 uint64_t N = wu.size()-1;
                 auto const& rowGroupIndices = fullTransitionMatrix.getRowGroupIndices( );
@@ -251,11 +251,72 @@ namespace storm {
                     for (auto &element : line){
                         uint64_t to = element.getColumn();
                         if (wu[k+1][to]==-1){
-                            calculateWu(dir, k+1,to,lambda,wu,fullTransitionMatrix,markovianStates,psiStates);
+                            calculateWu(relativeReachability, dir, k+1,to,lambda,wu,fullTransitionMatrix,markovianStates,psiStates, minMaxLinearEquationSolverFactory);
                         }
                         res+=element.getValue()*wu[k+1][to];
                     }
                 } else {
+
+                    // applying simpleMDP stuff
+                    auto numberOfStates=relativeReachability[0].size();
+                    typename storm::storage::SparseMatrix<ValueType> probMatrix = fullTransitionMatrix.getSubmatrix(true, ~markovianStates , ~markovianStates, true);
+                    auto probSize = probMatrix.getRowGroupCount();
+                    std::vector<ValueType> b(probSize, 0), x(probSize,0);
+
+                    //calculate b
+                    for (uint64_t i =0 ; i<probSize; i++){
+                        auto trueI = transformIndice(~markovianStates, i);
+                        auto rowStart = rowGroupIndices[trueI];
+                        auto rowEnd = rowGroupIndices[trueI+1];
+                        res =-1;
+                        for (auto j = rowStart; j<rowEnd ; j++){
+                            ValueType between =0;
+                            for (auto& element: fullTransitionMatrix.getRow(j)){
+                                uint64_t to = element.getColumn();
+                                if (!markovianStates[to]){
+                                    continue;
+                                }
+                                if (wu[k][to]==-1){
+                                    calculateWu(relativeReachability,dir,k,to,lambda,wu,fullTransitionMatrix, markovianStates,psiStates, minMaxLinearEquationSolverFactory);
+                                }
+                                between+= relativeReachability[j][to]*wu[k][to];
+                            }
+                            if (maximize(dir)){
+                                res = std::max(res, between);
+                            } else {
+                                if (res==-1){
+                                    res = between;
+                                } else {
+                                    res =std::min(res,between);
+                                }
+                            }
+                        }
+                        b[i]=res;
+                    }
+
+
+
+
+                    storm::solver::MinMaxLinearEquationSolverRequirements requirements = minMaxLinearEquationSolverFactory.getRequirements(true, dir);
+                    requirements.clearBounds();
+                    STORM_LOG_THROW(requirements.empty(), storm::exceptions::UncheckedRequirementException, "Cannot establish requirements for solver.");
+
+                    std::unique_ptr<storm::solver::MinMaxLinearEquationSolver<ValueType>> solver = minMaxLinearEquationSolverFactory.create(probMatrix);
+
+                    solver->setHasUniqueSolution();
+                    solver->setBounds(storm::utility::zero<ValueType>(), storm::utility::one<ValueType>());
+                    solver->setRequirementsChecked();
+                    solver->setCachingEnabled(true);
+
+
+                    solver->solveEquations(dir, x, b);
+
+                    for (uint64_t i =0 ; i<probSize ; i++){
+                        auto trueI = transformIndice(~markovianStates,i);
+                        wu[k][trueI]=x[i];
+                    }
+
+                    /* unifPlus
                     res = -1;
                     uint64_t rowStart = rowGroupIndices[node];
                     uint64_t rowEnd = rowGroupIndices[node+1];
@@ -281,14 +342,13 @@ namespace storm {
                                 res = between;
                             }
                         }
-                    }
+                    } */
                 } // end no goal-prob state
-                
                 wu[k][node]=res;
             }
 
             template <typename ValueType, typename std::enable_if<storm::NumberTraits<ValueType>::SupportsExponential, int>::type>
-            void SparseMarkovAutomatonCslHelper::calculateVd(OptimizationDirection dir, uint64_t k, uint64_t node, ValueType lambda, std::vector<std::vector<ValueType>>& vd, storm::storage::SparseMatrix<ValueType> const& fullTransitionMatrix, storm::storage::BitVector const& markovianStates, storm::storage::BitVector const& psiStates){
+            void SparseMarkovAutomatonCslHelper::calculateVd(std::vector<std::vector<ValueType>> const& relativeReachability, OptimizationDirection dir, uint64_t k, uint64_t node, ValueType lambda, std::vector<std::vector<ValueType>>& vd, storm::storage::SparseMatrix<ValueType> const& fullTransitionMatrix, storm::storage::BitVector const& markovianStates, storm::storage::BitVector const& psiStates, storm::solver::MinMaxLinearEquationSolverFactory<ValueType> const& minMaxLinearEquationSolverFactory){
                
                 std::ofstream logfile("U+logfile.txt", std::ios::app);
 
@@ -324,11 +384,83 @@ namespace storm {
                     for (auto &element : line){
                         uint64_t to = element.getColumn();
                         if (vd[k+1][to]==-1){
-                            calculateVd(dir,k+1,to,lambda,vd, fullTransitionMatrix, markovianStates,psiStates);
+                            calculateVd(relativeReachability, dir,k+1,to,lambda,vd, fullTransitionMatrix, markovianStates,psiStates, minMaxLinearEquationSolverFactory);
                         }
                         res+=element.getValue()*vd[k+1][to];
                     }
+
+                    vd[k][node]=res;
+                    logfile << " res = " << res << "\n";
                 } else { //no-goal prob state
+                    // applying simpleMDP stuff
+                    logfile << "probState, applying MDP stuff ";
+                    auto numberOfStates=relativeReachability[0].size();
+                    typename storm::storage::SparseMatrix<ValueType> probMatrix = fullTransitionMatrix.getSubmatrix(true, ~markovianStates , ~markovianStates, true);
+                    auto probSize = probMatrix.getRowGroupCount();
+                    std::vector<ValueType> b(probSize, 0), x(probSize,0);
+
+                    //calculate b
+                    for (uint64_t i =0 ; i<probSize; i++){
+                        auto trueI = transformIndice(~markovianStates, i);
+                        auto rowStart = rowGroupIndices[trueI];
+                        auto rowEnd = rowGroupIndices[trueI+1];
+                        res =-1;
+                        for (auto j = rowStart; j<rowEnd ; j++){
+                            ValueType between =0;
+                            for (auto& element: fullTransitionMatrix.getRow(j)){
+                                uint64_t to = element.getColumn();
+                                if (!markovianStates[to]){
+                                    continue;
+                                }
+                                if (vd[k][to]==-1){
+                                    calculateVd(relativeReachability,dir,k,to,lambda,vd,fullTransitionMatrix, markovianStates,psiStates, minMaxLinearEquationSolverFactory);
+                                }
+                                between+= relativeReachability[j][to]*vd[k][to];
+                            }
+                            if (maximize(dir)){
+                                res = std::max(res, between);
+                            } else {
+                                if (res==-1){
+                                    res = between;
+                                } else {
+                                    res =std::min(res,between);
+                                }
+                            }
+                        }
+                        b[i]=res;
+                    }
+
+                    logfile << "\nreach vector b is \n";
+                    for (uint64_t i =0 ; i<probSize; i++){
+                        logfile << b[i] << "\n";
+                    }
+
+
+
+                    storm::solver::MinMaxLinearEquationSolverRequirements requirements = minMaxLinearEquationSolverFactory.getRequirements(true, dir);
+                    requirements.clearBounds();
+                    STORM_LOG_THROW(requirements.empty(), storm::exceptions::UncheckedRequirementException, "Cannot establish requirements for solver.");
+
+                    std::unique_ptr<storm::solver::MinMaxLinearEquationSolver<ValueType>> solver = minMaxLinearEquationSolverFactory.create(probMatrix);
+
+                    solver->setHasUniqueSolution();
+                    solver->setBounds(storm::utility::zero<ValueType>(), storm::utility::one<ValueType>());
+                    solver->setRequirementsChecked();
+                    solver->setCachingEnabled(true);
+
+
+                    solver->solveEquations(dir, x, b);
+                    logfile << "goal vector x is \n";
+                    for (int i =0 ; i<probSize; i++){
+                        logfile << x[i] << "\n";
+                    }
+
+
+                    for (uint64_t i =0 ; i<probSize ; i++){
+                        auto trueI = transformIndice(~markovianStates,i);
+                        vd[k][trueI]=x[i];
+                    }
+                    /* unif Plus
                     logfile << "prob state: ";
                     res = -1;
                     uint64_t rowStart = rowGroupIndices[node];
@@ -357,9 +489,8 @@ namespace storm {
                             }
                         }
                     }
-                } 
-                vd[k][node]=res;
-                logfile << " res = " << res << "\n";
+                    */
+                }
             }
 
             template <typename ValueType, typename std::enable_if<storm::NumberTraits<ValueType>::SupportsExponential, int>::type=0>
@@ -482,7 +613,7 @@ namespace storm {
             }
 
                 template <typename ValueType, typename std::enable_if<storm::NumberTraits<ValueType>::SupportsExponential, int>::type>
-            std::vector<ValueType> SparseMarkovAutomatonCslHelper::unifPlus(OptimizationDirection dir, std::pair<double, double> const& boundsPair, std::vector<ValueType> const& exitRateVector, storm::storage::SparseMatrix<ValueType> const& transitionMatrix, storm::storage::BitVector const& markovianStates, storm::storage::BitVector const& psiStates){
+            std::vector<ValueType> SparseMarkovAutomatonCslHelper::unifPlus(OptimizationDirection dir, std::pair<double, double> const& boundsPair, std::vector<ValueType> const& exitRateVector, storm::storage::SparseMatrix<ValueType> const& transitionMatrix, storm::storage::BitVector const& markovianStates, storm::storage::BitVector const& psiStates, storm::solver::MinMaxLinearEquationSolverFactory<ValueType> const& minMaxLinearEquationSolverFactory){
                 STORM_LOG_TRACE("Using UnifPlus to compute bounded until probabilities.");
 
                 std::ofstream logfile("U+logfile.txt", std::ios::app);
@@ -516,24 +647,32 @@ namespace storm {
                 uint64_t N;
 
                 //calculate relative ReachabilityVectors
-                std::vector<ValueType> in(fullTransitionMatrix.getRowCount(), 0);
-                std::vector<std::vector<ValueType>> relReachability(numberOfStates,in);
+                std::vector<ValueType> in(numberOfStates, 0);
+                std::vector<std::vector<ValueType>> relReachability(fullTransitionMatrix.getRowCount(),in);
 
                 printTransitions(relReachability, exitRateVector, fullTransitionMatrix, markovianStates, psiStates, psiStates, psiStates, vd,vu,wu); // TODO: delete when develepmont is finished
-                for(int i=0 ; i<numberOfStates; i++){
+
+                 //calculate relative reachability
+
+                for(uint64_t i=0 ; i<numberOfStates; i++){
+                    if (markovianStates[i]){
+                        continue;
+                    }
                      auto from = rowGroupIndices[i];
                      auto to = rowGroupIndices[i+1];
-                     for (auto j=from ; j,to; j++){
+                     for (auto j=from ; j<to; j++){
                          std::vector<ValueType>& act = relReachability[j];
                          for(auto element: fullTransitionMatrix.getRow(j)){
                              if (markovianStates[element.getColumn()]){
-                                 act[element.getColumn]=element.getValue();
+                                 act[element.getColumn()]=element.getValue();
                              }
                          }
-
                      }
                 }
 
+
+
+                    printTransitions(relReachability, exitRateVector, fullTransitionMatrix, markovianStates, psiStates, psiStates, psiStates, vd,vu,wu); // TODO: delete when develepmont is finished
                     // while not close enough to precision:
                 do {
                     // (2) update parameter
@@ -577,14 +716,16 @@ namespace storm {
                     // (5) calculate vectors and maxNorm
                     for (uint64_t i = 0; i < numberOfStates; i++) {
                         for (uint64_t k = N; k <= N; k--) {
-                                calculateVd(dir, k, i, T*lambda, vd, fullTransitionMatrix, markovianStates, psiStates);
-                                calculateWu(dir, k, i, T*lambda, wu, fullTransitionMatrix, markovianStates, psiStates);
-                                calculateVu(dir, k, i, T*lambda, vu, wu, fullTransitionMatrix, markovianStates, psiStates);
+                                calculateVd(relReachability, dir, k, i, T*lambda, vd, fullTransitionMatrix, markovianStates, psiStates, minMaxLinearEquationSolverFactory);
+                                calculateWu(relReachability, dir, k, i, T*lambda, wu, fullTransitionMatrix, markovianStates, psiStates, minMaxLinearEquationSolverFactory);
+                                calculateVu(relReachability, dir, k, i, T*lambda, vu, wu, fullTransitionMatrix, markovianStates, psiStates, minMaxLinearEquationSolverFactory);
                                 //also use iteration to keep maxNorm of vd and vu up to date, so the loop-condition is easy to prove
                                 ValueType diff = std::abs(vd[k][i]-vu[k][i]);
                                 maxNorm  = std::max(maxNorm, diff);
                             }
                     }
+
+                    printTransitions(relReachability, exitRateVector, fullTransitionMatrix, markovianStates, psiStates, psiStates, psiStates, vd,vu,wu); // TODO: delete when develepmont is finished
 
 
                     // (6) double lambda 
@@ -668,8 +809,7 @@ namespace storm {
                 } else {
                     STORM_LOG_ASSERT(markovAutomatonSettings.getTechnique() == storm::settings::modules::MarkovAutomatonSettings::BoundedReachabilityTechnique::UnifPlus, "Unknown solution technique.");
                     
-                    // Why is optimization direction not passed?
-                    return unifPlus(dir, boundsPair, exitRateVector, transitionMatrix, markovianStates, psiStates);
+                    return unifPlus(dir, boundsPair, exitRateVector, transitionMatrix, markovianStates, psiStates, minMaxLinearEquationSolverFactory);
                 }
             }
               
