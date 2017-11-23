@@ -86,7 +86,7 @@ namespace {
             storm::Environment env;
             env.solver().setLinearEquationSolverType(storm::solver::EquationSolverType::Native);
             env.solver().native().setMethod(storm::solver::NativeLinearEquationSolverMethod::SOR);
-            env.solver().native().setPrecision(storm::utility::convertNumber<storm::RationalNumber>(1e-8));
+            env.solver().native().setPrecision(storm::utility::convertNumber<storm::RationalNumber>(1e-9));
             env.solver().native().setRelativeTerminationCriterion(false);
             env.solver().native().setMaximalNumberOfIterations(5000000);
             return env;
