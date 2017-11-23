@@ -38,11 +38,11 @@ namespace storm {
     }
     
     uint64_t const& GmmxxSolverEnvironment::getRestartThreshold() const {
-        return maxIterationCount;
+        return restartThreshold;
     }
     
     void GmmxxSolverEnvironment::setRestartThreshold(uint64_t value) {
-        maxIterationCount = value;
+        restartThreshold = value;
     }
     
     uint64_t const& GmmxxSolverEnvironment::getMaximalNumberOfIterations() const {
