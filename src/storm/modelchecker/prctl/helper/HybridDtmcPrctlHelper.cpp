@@ -14,11 +14,15 @@
 
 #include "storm/models/symbolic/StandardRewardModel.h"
 
+#include "storm/modelchecker/prctl/helper/DsMpiUpperRewardBoundsComputer.h"
 #include "storm/modelchecker/results/SymbolicQualitativeCheckResult.h"
 #include "storm/modelchecker/results/SymbolicQuantitativeCheckResult.h"
 #include "storm/modelchecker/results/HybridQuantitativeCheckResult.h"
 
 #include "storm/exceptions/InvalidPropertyException.h"
+#include "storm/exceptions/NotSupportedException.h"
+#include "storm/exceptions/UncheckedRequirementException.h"
+
 
 namespace storm {
     namespace modelchecker {
@@ -194,6 +198,19 @@ namespace storm {
                 return std::unique_ptr<CheckResult>(new HybridQuantitativeCheckResult<DdType, ValueType>(model.getReachableStates(), model.getManager().getBddZero(), model.getManager().template getAddZero<ValueType>(), model.getReachableStates(), odd, x));
             }
             
+            // This function computes an upper bound on the reachability rewards (see Baier et al, CAV'17).
+            template<typename ValueType>
+            inline std::vector<ValueType> computeUpperRewardBounds(storm::storage::SparseMatrix<ValueType> const& transitionMatrix, std::vector<ValueType> const& rewards, std::vector<ValueType> const& oneStepTargetProbabilities) {
+                DsMpiDtmcUpperRewardBoundsComputer<ValueType> dsmpi(transitionMatrix, rewards, oneStepTargetProbabilities);
+                std::vector<ValueType> bounds = dsmpi.computeUpperBounds();
+                return bounds;
+            }
+            
+            template<>
+            inline std::vector<storm::RationalFunction> computeUpperRewardBounds(storm::storage::SparseMatrix<storm::RationalFunction> const& transitionMatrix, std::vector<storm::RationalFunction> const& rewards, std::vector<storm::RationalFunction> const& oneStepTargetProbabilities) {
+                STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Computing upper reward bounds is not supported for rational functions.");
+            }
+            
             template<storm::dd::DdType DdType, typename ValueType>
             std::unique_ptr<CheckResult> HybridDtmcPrctlHelper<DdType, ValueType>::computeReachabilityRewards(Environment const& env, storm::models::symbolic::Model<DdType, ValueType> const& model, storm::dd::Add<DdType, ValueType> const& transitionMatrix, RewardModelType const& rewardModel, storm::dd::Bdd<DdType> const& targetStates, bool qualitative, storm::solver::LinearEquationSolverFactory<ValueType> const& linearEquationSolverFactory) {
                 
@@ -228,6 +245,19 @@ namespace storm {
                         // Then compute the state reward vector to use in the computation.
                         storm::dd::Add<DdType, ValueType> subvector = rewardModel.getTotalRewardVector(maybeStatesAdd, submatrix, model.getColumnVariables());
 
+                        // Check the requirements of a linear equation solver
+                        auto req = linearEquationSolverFactory.getRequirements(env);
+                        req.clearLowerBounds();
+                        boost::optional<storm::dd::Add<DdType, ValueType>> oneStepTargetProbs;
+                        if (req.requiresUpperBounds()) {
+                            storm::dd::Add<DdType, ValueType> targetStatesAsColumn = targetStates.template toAdd<ValueType>();
+                            targetStatesAsColumn = targetStatesAsColumn.swapVariables(model.getRowColumnMetaVariablePairs());
+                            oneStepTargetProbs = submatrix * targetStatesAsColumn;
+                            oneStepTargetProbs = oneStepTargetProbs->sumAbstract(model.getColumnVariables());
+                            req.clearUpperBounds();
+                        }
+                        STORM_LOG_THROW(req.empty(), storm::exceptions::UncheckedRequirementException, "At least one requirement of the linear equation solver could not be matched.");
+                        
                         // Check whether we need to create an equation system.
                         bool convertToEquationSystem = linearEquationSolverFactory.getEquationProblemFormat(env) == storm::solver::LinearEquationSolverProblemFormat::EquationSystem;
                         
@@ -245,9 +275,18 @@ namespace storm {
                         storm::storage::SparseMatrix<ValueType> explicitSubmatrix = submatrix.toMatrix(odd, odd);
                         std::vector<ValueType> b = subvector.toVector(odd);
                         
+                        // Create the upper bounds vector if one was requested
+                        boost::optional<std::vector<ValueType>> upperBounds;
+                        if (oneStepTargetProbs) {
+                            upperBounds = computeUpperRewardBounds(explicitSubmatrix, b, oneStepTargetProbs->toVector(odd));
+                        }
+                        
                         // Now solve the resulting equation system.
                         std::unique_ptr<storm::solver::LinearEquationSolver<ValueType>> solver = linearEquationSolverFactory.create(env, std::move(explicitSubmatrix));
                         solver->setLowerBound(storm::utility::zero<ValueType>());
+                        if (upperBounds) {
+                            solver->setUpperBounds(std::move(upperBounds.get()));
+                        }
                         solver->solveEquations(env, x, b);
                         
                         // Return a hybrid check result that stores the numerical values explicitly.
