@@ -479,7 +479,7 @@ namespace storm {
             }
 
             // Toplevel element will not fail (part of constraint 13)
-            constraints.push_back(std::make_shared<IsConstantValue>(dft.getTopLevelIndex(), notFailed));
+            constraints.push_back(std::make_shared<IsConstantValue>(timePointVariables.at(dft.getTopLevelIndex()), notFailed));
             constraints.back()->setDescription("Toplevel element should not fail");
         }
 
