@@ -1,6 +1,7 @@
 #pragma once
 
 #include<memory>
+#include <boost/optional.hpp>
 
 #include "storm/environment/Environment.h"
 #include "storm/environment/SubEnvironment.h"
@@ -40,6 +41,7 @@ namespace storm {
         void setLinearEquationSolverType(storm::solver::EquationSolverType const& value);
         bool isLinearEquationSolverTypeSetFromDefaultValue() const;
         
+        boost::optional<storm::RationalNumber> getPrecisionOfCurrentLinearEquationSolver() const;
         void setLinearEquationSolverPrecision(storm::RationalNumber const& value);
         void setLinearEquationSolverRelativeTerminationCriterion(bool value);
     

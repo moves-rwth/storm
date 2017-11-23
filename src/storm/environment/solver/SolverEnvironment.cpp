@@ -87,15 +87,30 @@ namespace storm {
         return linearEquationSolverTypeSetFromDefault;
     }
     
+    boost::optional<storm::RationalNumber> SolverEnvironment::getPrecisionOfCurrentLinearEquationSolver() const {
+        switch (getLinearEquationSolverType()) {
+            case storm::solver::EquationSolverType::Gmmxx:
+                return gmmxx().getPrecision();
+            case storm::solver::EquationSolverType::Eigen:
+                return eigen().getPrecision();
+            case storm::solver::EquationSolverType::Native:
+                return native().getPrecision();
+            case storm::solver::EquationSolverType::Elimination:
+                return boost::none;
+            default:
+                STORM_LOG_ASSERT(false, "The selected solver type is unknown.");
+        }
+    }
+    
     void SolverEnvironment::setLinearEquationSolverPrecision(storm::RationalNumber const& value) {
         STORM_LOG_ASSERT(getLinearEquationSolverType() == storm::solver::EquationSolverType::Native ||
                          getLinearEquationSolverType() == storm::solver::EquationSolverType::Gmmxx ||
                          getLinearEquationSolverType() == storm::solver::EquationSolverType::Eigen ||
                          getLinearEquationSolverType() == storm::solver::EquationSolverType::Elimination,
                         "The current solver type is not respected in this method.");
-        native().setPrecision(value);
-        gmmxx().setPrecision(value);
-        eigen().setPrecision(value);
+            native().setPrecision(value);
+            gmmxx().setPrecision(value);
+            eigen().setPrecision(value);
         // Elimination solver does not have a precision
     }
     

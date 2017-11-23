@@ -5,6 +5,7 @@
 #include "storm/environment/solver/MinMaxSolverEnvironment.h"
 
 #include "storm/utility/KwekMehlhorn.h"
+#include "storm/utility/NumberTraits.h"
 
 #include "storm/utility/vector.h"
 #include "storm/utility/macros.h"
@@ -52,7 +53,7 @@ namespace storm {
         template<typename ValueType>
         bool IterativeMinMaxLinearEquationSolver<ValueType>::internalSolveEquations(Environment const& env, OptimizationDirection dir, std::vector<ValueType>& x, std::vector<ValueType> const& b) const {
             bool result = false;
-            switch (getMethod(env, std::is_same<ValueType, storm::RationalNumber>::value)) {
+            switch (getMethod(env, storm::NumberTraits<ValueType>::IsExact)) {
                 case MinMaxMethod::ValueIteration:
                     if (env.solver().isForceSoundness()) {
                         result = solveEquationsSoundValueIteration(env, dir, x, b);
@@ -112,13 +113,20 @@ namespace storm {
 
             // The solver that we will use throughout the procedure.
             std::unique_ptr<storm::solver::LinearEquationSolver<ValueType>> solver;
+            // The linear equation solver should be at least as precise as this solver
+            std::unique_ptr<storm::Environment> environmentOfSolver;
+            boost::optional<storm::RationalNumber> precOfSolver = env.solver().getPrecisionOfCurrentLinearEquationSolver();
+            if (!storm::NumberTraits<ValueType>::IsExact && precOfSolver && precOfSolver.get() > env.solver().minMax().getPrecision()) {
+                environmentOfSolver = std::make_unique<storm::Environment>(env);
+                environmentOfSolver->solver().setLinearEquationSolverPrecision(env.solver().minMax().getPrecision());
+            }
             
             SolverStatus status = SolverStatus::InProgress;
             uint64_t iterations = 0;
             this->startMeasureProgress();
             do {
                 // Solve the equation system for the 'DTMC'.
-                solveInducedEquationSystem(env, solver, scheduler, x, subB, b);
+                solveInducedEquationSystem(environmentOfSolver ? *environmentOfSolver : env, solver, scheduler, x, subB, b);
                 
                 // Go through the multiplication result and see whether we can improve any of the choices.
                 bool schedulerImproved = false;
@@ -189,7 +197,7 @@ namespace storm {
             // Start by copying the requirements of the linear equation solver.
             MinMaxLinearEquationSolverRequirements requirements(this->linearEquationSolverFactory->getRequirements(env));
 
-            auto method = getMethod(env, std::is_same<ValueType, storm::RationalNumber>::value);
+            auto method = getMethod(env, storm::NumberTraits<ValueType>::IsExact);
             if (method == MinMaxMethod::ValueIteration) {
                 if (env.solver().isForceSoundness()) {
                     // Interval iteration requires a unique solution and lower+upper bounds
@@ -295,7 +303,15 @@ namespace storm {
             if (this->hasInitialScheduler()) {
                 // Solve the equation system induced by the initial scheduler.
                 std::unique_ptr<storm::solver::LinearEquationSolver<ValueType>> linEqSolver;
-                solveInducedEquationSystem(env, linEqSolver, this->getInitialScheduler(), x, *auxiliaryRowGroupVector, b);
+                // The linear equation solver should be at least as precise as this solver
+                std::unique_ptr<storm::Environment> environmentOfSolver;
+                boost::optional<storm::RationalNumber> precOfSolver = env.solver().getPrecisionOfCurrentLinearEquationSolver();
+                if (!storm::NumberTraits<ValueType>::IsExact && precOfSolver && precOfSolver.get() > env.solver().minMax().getPrecision()) {
+                    environmentOfSolver = std::make_unique<storm::Environment>(env);
+                    environmentOfSolver->solver().setLinearEquationSolverPrecision(env.solver().minMax().getPrecision());
+                }
+
+                solveInducedEquationSystem(environmentOfSolver ? *environmentOfSolver : env, linEqSolver, this->getInitialScheduler(), x, *auxiliaryRowGroupVector, b);
                 // If we were given an initial scheduler and are maximizing (minimizing), our current solution becomes
                 // always less-or-equal (greater-or-equal) than the actual solution.
                 guarantee = maximize(dir) ? SolverGuarantee::LessOrEqual : SolverGuarantee::GreaterOrEqual;
@@ -308,10 +324,10 @@ namespace storm {
                     guarantee = SolverGuarantee::GreaterOrEqual;
                 }
             } else if (this->hasCustomTerminationCondition()) {
-                if (this->getTerminationCondition().requiresGuarantee(SolverGuarantee::LessOrEqual)) {
+                if (this->getTerminationCondition().requiresGuarantee(SolverGuarantee::LessOrEqual) && this->hasLowerBound()) {
                     this->createLowerBoundsVector(x);
                     guarantee = SolverGuarantee::LessOrEqual;
-                } else if (this->getTerminationCondition().requiresGuarantee(SolverGuarantee::GreaterOrEqual)) {
+                } else if (this->getTerminationCondition().requiresGuarantee(SolverGuarantee::GreaterOrEqual) && this->hasUpperBound()) {
                     this->createUpperBoundsVector(x);
                     guarantee = SolverGuarantee::GreaterOrEqual;
                 }

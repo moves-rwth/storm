@@ -241,7 +241,14 @@ namespace storm {
             } else {
                 // If we were given an initial scheduler, we take its solution as the starting point.
                 if (this->hasInitialScheduler()) {
-                    localX = solveEquationsWithScheduler(env, this->getInitialScheduler(), x, b);
+                    // The linear equation solver should be at least as precise as this solver
+                    std::unique_ptr<storm::Environment> environmentOfSolver;
+                    boost::optional<storm::RationalNumber> precOfSolver = env.solver().getPrecisionOfCurrentLinearEquationSolver();
+                    if (!storm::NumberTraits<ValueType>::IsExact && precOfSolver && precOfSolver.get() > env.solver().minMax().getPrecision()) {
+                        environmentOfSolver = std::make_unique<storm::Environment>(env);
+                        environmentOfSolver->solver().setLinearEquationSolverPrecision(env.solver().minMax().getPrecision());
+                    }
+                    localX = solveEquationsWithScheduler(environmentOfSolver ? *environmentOfSolver : env, this->getInitialScheduler(), x, b);
                 } else {
                     localX = this->getLowerBoundsVector();
                 }
@@ -301,13 +308,21 @@ namespace storm {
             storm::dd::Bdd<DdType> scheduler = this->hasInitialScheduler() ? this->getInitialScheduler() : this->A.sumAbstract(this->columnMetaVariables).maxAbstractRepresentative(this->choiceVariables);
             
             // Initialize linear equation solver.
-            std::unique_ptr<SymbolicLinearEquationSolver<DdType, ValueType>> linearEquationSolver = linearEquationSolverFactory->create(env, this->allRows, this->rowMetaVariables, this->columnMetaVariables, this->rowColumnMetaVariablePairs);
+            // It should be at least as precise as this solver.
+            std::unique_ptr<storm::Environment> environmentOfSolver;
+            boost::optional<storm::RationalNumber> precOfSolver = env.solver().getPrecisionOfCurrentLinearEquationSolver();
+            if (!storm::NumberTraits<ValueType>::IsExact && precOfSolver && precOfSolver.get() > env.solver().minMax().getPrecision()) {
+                environmentOfSolver = std::make_unique<storm::Environment>(env);
+                environmentOfSolver->solver().setLinearEquationSolverPrecision(env.solver().minMax().getPrecision());
+            }
+
+            std::unique_ptr<SymbolicLinearEquationSolver<DdType, ValueType>> linearEquationSolver = linearEquationSolverFactory->create(environmentOfSolver ? *environmentOfSolver : env, this->allRows, this->rowMetaVariables, this->columnMetaVariables, this->rowColumnMetaVariablePairs);
             this->forwardBounds(*linearEquationSolver);
             
             // Iteratively solve and improve the scheduler.
             uint64_t maxIter = env.solver().minMax().getMaximalNumberOfIterations();
             while (!converged && iterations < maxIter) {
-                storm::dd::Add<DdType, ValueType> schedulerX = solveEquationsWithScheduler(env, *linearEquationSolver, scheduler, currentSolution, b, diagonal);
+                storm::dd::Add<DdType, ValueType> schedulerX = solveEquationsWithScheduler(environmentOfSolver ? *environmentOfSolver : env, *linearEquationSolver, scheduler, currentSolution, b, diagonal);
                 
                 // Policy improvement step.
                 storm::dd::Add<DdType, ValueType> choiceValues = this->A.multiplyMatrix(schedulerX.swapVariables(this->rowColumnMetaVariablePairs), this->columnMetaVariables) + b;

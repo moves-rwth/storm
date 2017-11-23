@@ -4,6 +4,7 @@
 
 #include "storm/utility/ConstantsComparator.h"
 #include "storm/utility/KwekMehlhorn.h"
+#include "storm/utility/NumberTraits.h"
 #include "storm/utility/constants.h"
 #include "storm/utility/vector.h"
 #include "storm/exceptions/InvalidStateException.h"
@@ -312,7 +313,7 @@ namespace storm {
                 
                 // Now check for termination.
                 converged = storm::utility::vector::equalModuloPrecision<ValueType>(*currentX, *newX, precision, relative);
-                terminate = this->terminateNow(*currentX, SolverGuarantee::LessOrEqual);
+                terminate = this->terminateNow(*currentX, guarantee);
                 
                 // Potentially show progress.
                 this->showProgressIterative(iterations);
@@ -332,7 +333,6 @@ namespace storm {
         
         template<typename ValueType>
         bool NativeLinearEquationSolver<ValueType>::solveEquationsPower(Environment const& env, std::vector<ValueType>& x, std::vector<ValueType> const& b) const {
-            STORM_LOG_THROW(this->hasLowerBound(), storm::exceptions::UnmetRequirementException, "Solver requires upper bound, but none was given.");
             STORM_LOG_INFO("Solving linear equation system (" << x.size() << " rows) with NativeLinearEquationSolver (Power)");
 
             // Prepare the solution vectors.
@@ -340,12 +340,22 @@ namespace storm {
                 this->cachedRowVector = std::make_unique<std::vector<ValueType>>(getMatrixRowCount());
             }
             std::vector<ValueType>* currentX = &x;
+            SolverGuarantee guarantee = SolverGuarantee::None;
+            if (this->hasCustomTerminationCondition()) {
+                if (this->getTerminationCondition().requiresGuarantee(SolverGuarantee::LessOrEqual) && this->hasLowerBound()) {
+                    this->createLowerBoundsVector(*currentX);
+                    guarantee = SolverGuarantee::LessOrEqual;
+                } else if (this->getTerminationCondition().requiresGuarantee(SolverGuarantee::GreaterOrEqual) && this->hasUpperBound()) {
+                    this->createUpperBoundsVector(*currentX);
+                    guarantee = SolverGuarantee::GreaterOrEqual;
+                }
+            }
             std::vector<ValueType>* newX = this->cachedRowVector.get();
             
             // Forward call to power iteration implementation.
             this->startMeasureProgress();
             ValueType precision = storm::utility::convertNumber<ValueType>(env.solver().native().getPrecision());
-            PowerIterationResult result = this->performPowerIteration(currentX, newX, b, precision, env.solver().native().getRelativeTerminationCriterion(), SolverGuarantee::LessOrEqual, 0, env.solver().native().getMaximalNumberOfIterations(), env.solver().native().getPowerMethodMultiplicationStyle());
+            PowerIterationResult result = this->performPowerIteration(currentX, newX, b, precision, env.solver().native().getRelativeTerminationCriterion(), guarantee, 0, env.solver().native().getMaximalNumberOfIterations(), env.solver().native().getPowerMethodMultiplicationStyle());
 
             // Swap the result in place.
             if (currentX == this->cachedRowVector.get()) {
@@ -387,10 +397,9 @@ namespace storm {
         
         template<typename ValueType>
         bool NativeLinearEquationSolver<ValueType>::solveEquationsSoundPower(Environment const& env, std::vector<ValueType>& x, std::vector<ValueType> const& b) const {
-            STORM_LOG_THROW(this->hasLowerBound(), storm::exceptions::UnmetRequirementException, "Solver requires upper bound, but none was given.");
+            STORM_LOG_THROW(this->hasLowerBound(), storm::exceptions::UnmetRequirementException, "Solver requires lower bound, but none was given.");
             STORM_LOG_THROW(this->hasUpperBound(), storm::exceptions::UnmetRequirementException, "Solver requires upper bound, but none was given.");
             STORM_LOG_INFO("Solving linear equation system (" << x.size() << " rows) with NativeLinearEquationSolver (SoundPower)");
-            
 
             std::vector<ValueType>* lowerX = &x;
             this->createLowerBoundsVector(*lowerX);
@@ -833,7 +842,7 @@ namespace storm {
         
         template<typename ValueType>
         bool NativeLinearEquationSolver<ValueType>::internalSolveEquations(Environment const& env, std::vector<ValueType>& x, std::vector<ValueType> const& b) const {
-            switch(getMethod(env, std::is_same<ValueType, storm::RationalNumber>::value)) {
+            switch(getMethod(env, storm::NumberTraits<ValueType>::IsExact)) {
                 case NativeLinearEquationSolverMethod::SOR:
                     return this->solveEquationsSOR(env, x, b, storm::utility::convertNumber<ValueType>(env.solver().native().getSorOmega()));
                 case NativeLinearEquationSolverMethod::GaussSeidel:
@@ -911,7 +920,7 @@ namespace storm {
         
         template<typename ValueType>
         LinearEquationSolverProblemFormat NativeLinearEquationSolver<ValueType>::getEquationProblemFormat(Environment const& env) const {
-            auto method = getMethod(env, std::is_same<ValueType, storm::RationalNumber>::value);
+            auto method = getMethod(env, storm::NumberTraits<ValueType>::IsExact);
             if (method == NativeLinearEquationSolverMethod::Power || method == NativeLinearEquationSolverMethod::RationalSearch) {
                 return LinearEquationSolverProblemFormat::FixedPointSystem;
             } else {
@@ -922,7 +931,7 @@ namespace storm {
         template<typename ValueType>
         LinearEquationSolverRequirements NativeLinearEquationSolver<ValueType>::getRequirements(Environment const& env) const {
             LinearEquationSolverRequirements requirements;
-            auto method = getMethod(env, std::is_same<ValueType, storm::RationalNumber>::value);
+            auto method = getMethod(env, storm::NumberTraits<ValueType>::IsExact);
             if (method == NativeLinearEquationSolverMethod::Power && env.solver().isForceSoundness()) {
                 requirements.requireBounds();
             } else if (method == NativeLinearEquationSolverMethod::RationalSearch) {
