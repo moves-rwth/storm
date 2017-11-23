@@ -50,6 +50,7 @@ namespace {
             env.solver().setForceSoundness(true);
             env.solver().minMax().setMethod(storm::solver::MinMaxMethod::ValueIteration);
             env.solver().minMax().setPrecision(storm::utility::convertNumber<storm::RationalNumber>(1e-6));
+            env.solver().minMax().setRelativeTerminationCriterion(false);
             return env;
         }
     };
@@ -119,6 +120,7 @@ namespace {
             env.solver().setForceSoundness(true);
             env.solver().minMax().setMethod(storm::solver::MinMaxMethod::ValueIteration);
             env.solver().minMax().setPrecision(storm::utility::convertNumber<storm::RationalNumber>(1e-6));
+            env.solver().minMax().setRelativeTerminationCriterion(false);
             return env;
         }
     };
