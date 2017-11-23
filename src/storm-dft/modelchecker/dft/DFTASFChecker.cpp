@@ -384,7 +384,7 @@ namespace storm {
                     {
                         // Constraint for PAND gate (constraint 3)
                         std::shared_ptr<DFTConstraint> ifC = std::make_shared<Sorted>(childVarIndices);
-                        std::shared_ptr<DFTConstraint> thenC = std::make_shared<IsEqual>(timePointVariables.at(i), timePointVariables.at(childVarIndices.back()));
+                        std::shared_ptr<DFTConstraint> thenC = std::make_shared<IsEqual>(timePointVariables.at(i), childVarIndices.back());
                         std::shared_ptr<DFTConstraint> elseC = std::make_shared<IsConstantValue>(timePointVariables.at(i), notFailed);
                         constraints.push_back(std::make_shared<IfThenElse>(ifC, thenC, elseC));
                         constraints.back()->setDescription("PAND gate");
