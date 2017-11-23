@@ -50,8 +50,6 @@ namespace storm {
                 if (method != NativeLinearEquationSolverMethod::Power && method != NativeLinearEquationSolverMethod::RationalSearch && method != NativeLinearEquationSolverMethod::Jacobi) {
                     method = NativeLinearEquationSolverMethod::Jacobi;
                     STORM_LOG_INFO("The selected solution method is not supported in the dd engine. Falling back to  '" + toString(method) + "'.");
-                } else {
-                    STORM_LOG_WARN("The selected solution method does not guarantee sound results.");
                 }
                 STORM_LOG_WARN_COND_DEBUG(!env.solver().isForceSoundness(), "Sound computations are not supported in the Dd engine.");
             }
