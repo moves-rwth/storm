@@ -388,6 +388,7 @@ namespace storm {
                         std::shared_ptr<DFTConstraint> elseC = std::make_shared<IsConstantValue>(timePointVariables.at(i), notFailed);
                         constraints.push_back(std::make_shared<IfThenElse>(ifC, thenC, elseC));
                         constraints.back()->setDescription("PAND gate");
+                        break;
                     }
                     case storm::storage::DFTElementType::SEQ:
                         STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "SMT encoding of SEQs is not implemented yet.");
