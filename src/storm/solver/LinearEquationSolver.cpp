@@ -136,15 +136,15 @@ namespace storm {
         }
         
         template<typename ValueType>
-        std::unique_ptr<LinearEquationSolver<ValueType>> LinearEquationSolverFactory<ValueType>::create(Environment const& env, storm::storage::SparseMatrix<ValueType> const& matrix) const {
-            std::unique_ptr<LinearEquationSolver<ValueType>> solver = this->create(env);
+        std::unique_ptr<LinearEquationSolver<ValueType>> LinearEquationSolverFactory<ValueType>::create(Environment const& env, storm::storage::SparseMatrix<ValueType> const& matrix, LinearEquationSolverTask const& task) const {
+            std::unique_ptr<LinearEquationSolver<ValueType>> solver = this->create(env, task);
             solver->setMatrix(matrix);
             return solver;
         }
         
         template<typename ValueType>
-        std::unique_ptr<LinearEquationSolver<ValueType>> LinearEquationSolverFactory<ValueType>::create(Environment const& env, storm::storage::SparseMatrix<ValueType>&& matrix) const {
-            std::unique_ptr<LinearEquationSolver<ValueType>> solver = this->create(env);
+        std::unique_ptr<LinearEquationSolver<ValueType>> LinearEquationSolverFactory<ValueType>::create(Environment const& env, storm::storage::SparseMatrix<ValueType>&& matrix, LinearEquationSolverTask const& task) const {
+            std::unique_ptr<LinearEquationSolver<ValueType>> solver = this->create(env, task);
             solver->setMatrix(std::move(matrix));
             return solver;
         }
@@ -166,7 +166,7 @@ namespace storm {
         
         
         template<>
-        std::unique_ptr<LinearEquationSolver<storm::RationalNumber>> GeneralLinearEquationSolverFactory<storm::RationalNumber>::create(Environment const& env) const {
+        std::unique_ptr<LinearEquationSolver<storm::RationalNumber>> GeneralLinearEquationSolverFactory<storm::RationalNumber>::create(Environment const& env, LinearEquationSolverTask const& task) const {
             EquationSolverType type = env.solver().getLinearEquationSolverType();
             
              // Adjust the solver type if it is not supported by this value type
@@ -186,7 +186,7 @@ namespace storm {
         }
         
         template<>
-        std::unique_ptr<LinearEquationSolver<storm::RationalFunction>> GeneralLinearEquationSolverFactory<storm::RationalFunction>::create(Environment const& env) const {
+        std::unique_ptr<LinearEquationSolver<storm::RationalFunction>> GeneralLinearEquationSolverFactory<storm::RationalFunction>::create(Environment const& env, LinearEquationSolverTask const& task) const {
             EquationSolverType type = env.solver().getLinearEquationSolverType();
             
              // Adjust the solver type if it is not supported by this value type
@@ -206,11 +206,11 @@ namespace storm {
         }
         
         template<typename ValueType>
-        std::unique_ptr<LinearEquationSolver<ValueType>> GeneralLinearEquationSolverFactory<ValueType>::create(Environment const& env) const {
+        std::unique_ptr<LinearEquationSolver<ValueType>> GeneralLinearEquationSolverFactory<ValueType>::create(Environment const& env, LinearEquationSolverTask const& task) const {
             EquationSolverType type = env.solver().getLinearEquationSolverType();
             
             // Adjust the solver type if none was specified and we want sound computations
-            if (env.solver().isForceSoundness() && type != EquationSolverType::Native && type != EquationSolverType::Eigen && type != EquationSolverType::Elimination) {
+            if (env.solver().isForceSoundness() && task != LinearEquationSolverTask::Multiply, type != EquationSolverType::Native && type != EquationSolverType::Eigen && type != EquationSolverType::Elimination) {
                 if (env.solver().isLinearEquationSolverTypeSetFromDefaultValue()) {
                     type = EquationSolverType::Native;
                     STORM_LOG_INFO("Selecting '" + toString(type) + "' as the linear equation solver to guarantee sound results. If you want to override this, please explicitly specify a different solver.");

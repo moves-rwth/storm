@@ -8,6 +8,7 @@
 #include "storm/solver/MultiplicationStyle.h"
 #include "storm/solver/LinearEquationSolverProblemFormat.h"
 #include "storm/solver/LinearEquationSolverRequirements.h"
+#include "storm/solver/LinearEquationSolverTask.h"
 #include "storm/solver/OptimizationDirection.h"
 
 #include "storm/utility/VectorHelper.h"
@@ -20,10 +21,6 @@ namespace storm {
     
     namespace solver {
         
-        enum class LinearEquationSolverOperation {
-            SolveEquations, MultiplyRepeatedly
-        };
-
         /*!
          * An interface that represents an abstract linear equation solver. In addition to solving a system of linear
          * equations, the functionality to repeatedly multiply a matrix with a given vector is provided.
@@ -190,7 +187,7 @@ namespace storm {
              * @param matrix The matrix that defines the equation system.
              * @return A pointer to the newly created solver.
              */
-            std::unique_ptr<LinearEquationSolver<ValueType>> create(Environment const& env, storm::storage::SparseMatrix<ValueType> const& matrix) const;
+            std::unique_ptr<LinearEquationSolver<ValueType>> create(Environment const& env, storm::storage::SparseMatrix<ValueType> const& matrix, LinearEquationSolverTask const& task = LinearEquationSolverTask::Unspecified) const;
 
             /*!
              * Creates a new linear equation solver instance with the given matrix. The caller gives up posession of the
@@ -199,12 +196,12 @@ namespace storm {
              * @param matrix The matrix that defines the equation system.
              * @return A pointer to the newly created solver.
              */
-            std::unique_ptr<LinearEquationSolver<ValueType>> create(Environment const& env, storm::storage::SparseMatrix<ValueType>&& matrix) const;
+            std::unique_ptr<LinearEquationSolver<ValueType>> create(Environment const& env, storm::storage::SparseMatrix<ValueType>&& matrix, LinearEquationSolverTask const& task = LinearEquationSolverTask::Unspecified) const;
 
             /*!
              * Creates an equation solver with the current settings, but without a matrix.
              */
-            virtual std::unique_ptr<LinearEquationSolver<ValueType>> create(Environment const& env) const = 0;
+            virtual std::unique_ptr<LinearEquationSolver<ValueType>> create(Environment const& env, LinearEquationSolverTask const& task = LinearEquationSolverTask::Unspecified) const = 0;
 
             /*!
              * Creates a copy of this factory.
@@ -230,7 +227,7 @@ namespace storm {
             
             using LinearEquationSolverFactory<ValueType>::create;
 
-            virtual std::unique_ptr<LinearEquationSolver<ValueType>> create(Environment const& env) const override;
+            virtual std::unique_ptr<LinearEquationSolver<ValueType>> create(Environment const& env, LinearEquationSolverTask const& task = LinearEquationSolverTask::Unspecified) const override;
 
             virtual std::unique_ptr<LinearEquationSolverFactory<ValueType>> clone() const override;
         };

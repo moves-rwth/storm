@@ -289,7 +289,7 @@ namespace storm {
         template<typename ValueType>
         bool IterativeMinMaxLinearEquationSolver<ValueType>::solveEquationsValueIteration(Environment const& env, OptimizationDirection dir, std::vector<ValueType>& x, std::vector<ValueType> const& b) const {
             if (!this->linEqSolverA) {
-                this->linEqSolverA = this->linearEquationSolverFactory->create(env, *this->A);
+                this->createLinearEquationSolver(env);
                 this->linEqSolverA->setCachingEnabled(true);
             }
             
@@ -394,7 +394,7 @@ namespace storm {
             STORM_LOG_THROW(this->hasUpperBound(), storm::exceptions::UnmetRequirementException, "Solver requires upper bound, but none was given.");
 
             if (!this->linEqSolverA) {
-                this->linEqSolverA = this->linearEquationSolverFactory->create(env, *this->A);
+                this->createLinearEquationSolver(env);
                 this->linEqSolverA->setCachingEnabled(true);
             }
             
@@ -612,7 +612,7 @@ namespace storm {
 
         template<typename ValueType>
         void IterativeMinMaxLinearEquationSolver<ValueType>::createLinearEquationSolver(Environment const& env) const {
-            this->linEqSolverA = this->linearEquationSolverFactory->create(env, *this->A);
+            this->linEqSolverA = this->linearEquationSolverFactory->create(env, *this->A, LinearEquationSolverTask::Multiply);
         }
 
         template<typename ValueType>
@@ -626,7 +626,7 @@ namespace storm {
             std::vector<storm::RationalNumber> rationalB = storm::utility::vector::convertNumericVector<storm::RationalNumber>(b);
             
             if (!this->linEqSolverA) {
-                this->linEqSolverA = this->linearEquationSolverFactory->create(env, *this->A);
+                this->createLinearEquationSolver(env);
                 this->linEqSolverA->setCachingEnabled(true);
             }
             
@@ -656,7 +656,7 @@ namespace storm {
             // Version for when the overall value type is exact and the same type is to be used for the imprecise part.
             
             if (!this->linEqSolverA) {
-                this->linEqSolverA = this->linearEquationSolverFactory->create(env, *this->A);
+                this->createLinearEquationSolver(env);
                 this->linEqSolverA->setCachingEnabled(true);
             }
             
@@ -734,7 +734,7 @@ namespace storm {
                 impreciseA = storm::storage::SparseMatrix<ImpreciseType>();
 
                 if (!this->linEqSolverA) {
-                    this->linEqSolverA = this->linearEquationSolverFactory->create(env, *this->A);
+                    createLinearEquationSolver(env);
                     this->linEqSolverA->setCachingEnabled(true);
                 }
                 

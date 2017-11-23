@@ -46,7 +46,7 @@ namespace storm {
         template<typename ValueType>
         void StandardMinMaxLinearEquationSolver<ValueType>::repeatedMultiply(Environment const& env, OptimizationDirection dir, std::vector<ValueType>& x, std::vector<ValueType> const* b, uint_fast64_t n) const {
             if (!linEqSolverA) {
-                linEqSolverA = linearEquationSolverFactory->create(env, *A);
+                linEqSolverA = linearEquationSolverFactory->create(env, *A, LinearEquationSolverTask::Multiply);
                 linEqSolverA->setCachingEnabled(true);
             }
             

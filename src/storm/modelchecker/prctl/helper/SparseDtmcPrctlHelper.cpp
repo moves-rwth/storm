@@ -58,7 +58,7 @@ namespace storm {
                     
                     // Perform the matrix vector multiplication as often as required by the formula bound.
                     goal.restrictRelevantValues(maybeStates);
-                    std::unique_ptr<storm::solver::LinearEquationSolver<ValueType>> solver = storm::solver::configureLinearEquationSolver(env, std::move(goal), linearEquationSolverFactory, std::move(submatrix));
+                    std::unique_ptr<storm::solver::LinearEquationSolver<ValueType>> solver = storm::solver::configureLinearEquationSolver(env, std::move(goal), linearEquationSolverFactory, std::move(submatrix), storm::solver::LinearEquationSolverTask::Multiply);
                     solver->repeatedMultiply(subresult, &b, stepBound);
                     
                     // Set the values of the resulting vector accordingly.
@@ -172,7 +172,7 @@ namespace storm {
                 storm::utility::vector::setVectorValues(result, nextStates, storm::utility::one<ValueType>());
                 
                 // Perform one single matrix-vector multiplication.
-                std::unique_ptr<storm::solver::LinearEquationSolver<ValueType>> solver = linearEquationSolverFactory.create(env, transitionMatrix);
+                std::unique_ptr<storm::solver::LinearEquationSolver<ValueType>> solver = linearEquationSolverFactory.create(env, transitionMatrix, storm::solver::LinearEquationSolverTask::Multiply);
                 solver->repeatedMultiply(result, nullptr, 1);
                 return result;
             }
@@ -186,7 +186,7 @@ namespace storm {
                 std::vector<ValueType> totalRewardVector = rewardModel.getTotalRewardVector(transitionMatrix);
                 
                 // Perform the matrix vector multiplication as often as required by the formula bound.
-                std::unique_ptr<storm::solver::LinearEquationSolver<ValueType>> solver = storm::solver::configureLinearEquationSolver(env, std::move(goal), linearEquationSolverFactory, transitionMatrix);
+                std::unique_ptr<storm::solver::LinearEquationSolver<ValueType>> solver = storm::solver::configureLinearEquationSolver(env, std::move(goal), linearEquationSolverFactory, transitionMatrix, storm::solver::LinearEquationSolverTask::Multiply);
                 solver->repeatedMultiply(result, &totalRewardVector, stepBound);
                 
                 return result;

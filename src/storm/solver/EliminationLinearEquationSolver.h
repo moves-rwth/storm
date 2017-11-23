@@ -46,7 +46,7 @@ namespace storm {
         public:
             using LinearEquationSolverFactory<ValueType>::create;
             
-            virtual std::unique_ptr<storm::solver::LinearEquationSolver<ValueType>> create(Environment const& env) const override;
+            virtual std::unique_ptr<storm::solver::LinearEquationSolver<ValueType>> create(Environment const& env, LinearEquationSolverTask const& task = LinearEquationSolverTask::Unspecified) const override;
             
             virtual std::unique_ptr<LinearEquationSolverFactory<ValueType>> clone() const override;
 

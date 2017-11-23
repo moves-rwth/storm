@@ -9,7 +9,6 @@
 #include "storm/solver/SymbolicEquationSolver.h"
 #include "storm/solver/OptimizationDirection.h"
 #include "storm/solver/SymbolicLinearEquationSolver.h"
-#include "storm/solver/EquationSystemType.h"
 #include "storm/solver/MinMaxLinearEquationSolverRequirements.h"
 #include "storm/solver/SolverStatus.h"
 

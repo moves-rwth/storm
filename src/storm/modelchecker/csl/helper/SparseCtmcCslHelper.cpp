@@ -664,7 +664,7 @@ namespace storm {
                     }
                 }
                 
-                std::unique_ptr<storm::solver::LinearEquationSolver<ValueType>> solver = linearEquationSolverFactory.create(env, std::move(uniformizedMatrix));
+                std::unique_ptr<storm::solver::LinearEquationSolver<ValueType>> solver = linearEquationSolverFactory.create(env, std::move(uniformizedMatrix), storm::solver::LinearEquationSolverTask::Multiply);
                 solver->setCachingEnabled(true);
                 
                 if (!useMixedPoissonProbabilities && std::get<0>(foxGlynnResult) > 1) {

@@ -140,7 +140,7 @@ namespace storm {
                     storm::storage::SparseMatrix<ValueType> explicitSubmatrix = submatrix.toMatrix(odd, odd);
                     std::vector<ValueType> b = subvector.toVector(odd);
                     
-                    std::unique_ptr<storm::solver::LinearEquationSolver<ValueType>> solver = linearEquationSolverFactory.create(env, std::move(explicitSubmatrix));
+                    std::unique_ptr<storm::solver::LinearEquationSolver<ValueType>> solver = linearEquationSolverFactory.create(env, std::move(explicitSubmatrix), storm::solver::LinearEquationSolverTask::Multiply);
                     solver->repeatedMultiply(x, &b, stepBound);
                     
                     // Return a hybrid check result that stores the numerical values explicitly.
@@ -165,7 +165,7 @@ namespace storm {
                 storm::storage::SparseMatrix<ValueType> explicitMatrix = transitionMatrix.toMatrix(odd, odd);
                 
                 // Perform the matrix-vector multiplication.
-                std::unique_ptr<storm::solver::LinearEquationSolver<ValueType>> solver = linearEquationSolverFactory.create(env, std::move(explicitMatrix));
+                std::unique_ptr<storm::solver::LinearEquationSolver<ValueType>> solver = linearEquationSolverFactory.create(env, std::move(explicitMatrix), storm::solver::LinearEquationSolverTask::Multiply);
                 solver->repeatedMultiply(x, nullptr, stepBound);
                 
                 // Return a hybrid check result that stores the numerical values explicitly.
@@ -191,7 +191,7 @@ namespace storm {
                 std::vector<ValueType> b = totalRewardVector.toVector(odd);
                 
                 // Perform the matrix-vector multiplication.
-                std::unique_ptr<storm::solver::LinearEquationSolver<ValueType>> solver = linearEquationSolverFactory.create(env, std::move(explicitMatrix));
+                std::unique_ptr<storm::solver::LinearEquationSolver<ValueType>> solver = linearEquationSolverFactory.create(env, std::move(explicitMatrix), storm::solver::LinearEquationSolverTask::Multiply);
                 solver->repeatedMultiply(x, &b, stepBound);
                 
                 // Return a hybrid check result that stores the numerical values explicitly.

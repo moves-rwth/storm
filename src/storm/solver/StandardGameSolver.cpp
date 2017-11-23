@@ -139,7 +139,7 @@ namespace storm {
         bool StandardGameSolver<ValueType>::solveGameValueIteration(Environment const& env, OptimizationDirection player1Dir, OptimizationDirection player2Dir, std::vector<ValueType>& x, std::vector<ValueType> const& b) const {
                          
             if(!linEqSolverPlayer2Matrix) {
-                linEqSolverPlayer2Matrix = linearEquationSolverFactory->create(env, player2Matrix);
+                linEqSolverPlayer2Matrix = linearEquationSolverFactory->create(env, player2Matrix, storm::solver::LinearEquationSolverTask::Multiply);
                 linEqSolverPlayer2Matrix->setCachingEnabled(true);
             }
             
@@ -222,7 +222,7 @@ namespace storm {
         void StandardGameSolver<ValueType>::repeatedMultiply(Environment const& env, OptimizationDirection player1Dir, OptimizationDirection player2Dir, std::vector<ValueType>& x, std::vector<ValueType> const* b, uint_fast64_t n) const {
             
             if(!linEqSolverPlayer2Matrix) {
-                linEqSolverPlayer2Matrix = linearEquationSolverFactory->create(env, player2Matrix);
+                linEqSolverPlayer2Matrix = linearEquationSolverFactory->create(env, player2Matrix, storm::solver::LinearEquationSolverTask::Multiply);
                 linEqSolverPlayer2Matrix->setCachingEnabled(true);
             }
             

@@ -959,7 +959,7 @@ namespace storm {
         }
         
         template<typename ValueType>
-        std::unique_ptr<storm::solver::LinearEquationSolver<ValueType>> NativeLinearEquationSolverFactory<ValueType>::create(Environment const& env) const {
+        std::unique_ptr<storm::solver::LinearEquationSolver<ValueType>> NativeLinearEquationSolverFactory<ValueType>::create(Environment const& env, LinearEquationSolverTask const& task) const {
             return std::make_unique<storm::solver::NativeLinearEquationSolver<ValueType>>();
         }
         
