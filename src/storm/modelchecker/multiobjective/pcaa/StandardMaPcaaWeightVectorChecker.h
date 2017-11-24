@@ -4,7 +4,7 @@
 #include <vector>
 #include <type_traits>
 
-#include "storm/modelchecker/multiobjective/pcaa/SparsePcaaWeightVectorChecker.h"
+#include "storm/modelchecker/multiobjective/pcaa/StandardPcaaWeightVectorChecker.h"
 #include "storm/solver/LinearEquationSolver.h"
 #include "storm/solver/MinMaxLinearEquationSolver.h"
 #include "storm/utility/NumberTraits.h"
@@ -20,13 +20,13 @@ namespace storm {
              * - computes for each objective the value induced by this scheduler
              */
             template <class SparseMaModelType>
-            class SparseMaPcaaWeightVectorChecker : public SparsePcaaWeightVectorChecker<SparseMaModelType> {
+            class StandardMaPcaaWeightVectorChecker : public StandardPcaaWeightVectorChecker<SparseMaModelType> {
             public:
                 typedef typename SparseMaModelType::ValueType ValueType;
                 
-                SparseMaPcaaWeightVectorChecker(SparseMultiObjectivePreprocessorResult<SparseMaModelType> const& preprocessorResult);
+                StandardMaPcaaWeightVectorChecker(SparseMultiObjectivePreprocessorResult<SparseMaModelType> const& preprocessorResult);
                 
-                virtual ~SparseMaPcaaWeightVectorChecker() = default;
+                virtual ~StandardMaPcaaWeightVectorChecker() = default;
 
             protected:
                 virtual void initializeModelTypeSpecificData(SparseMaModelType const& model) override;

@@ -3,7 +3,7 @@
 
 #include <vector>
 
-#include "storm/modelchecker/multiobjective/pcaa/SparsePcaaWeightVectorChecker.h"
+#include "storm/modelchecker/multiobjective/pcaa/StandardPcaaWeightVectorChecker.h"
 #include "storm/modelchecker/prctl/helper/rewardbounded/MultiDimensionalRewardUnfolding.h"
 
 namespace storm {
@@ -17,7 +17,7 @@ namespace storm {
              * - computes for each objective the value induced by this scheduler
              */
             template <class SparseMdpModelType>
-            class SparseMdpPcaaWeightVectorChecker : public SparsePcaaWeightVectorChecker<SparseMdpModelType> {
+            class StandardMdpPcaaWeightVectorChecker : public StandardPcaaWeightVectorChecker<SparseMdpModelType> {
             public:
                 typedef typename SparseMdpModelType::ValueType ValueType;
                 typedef typename SparseMdpModelType::RewardModelType RewardModelType;
@@ -32,9 +32,9 @@ namespace storm {
                  *
                  */
                 
-                SparseMdpPcaaWeightVectorChecker(SparseMultiObjectivePreprocessorResult<SparseMdpModelType> const& preprocessorResult);
+                StandardMdpPcaaWeightVectorChecker(SparseMultiObjectivePreprocessorResult<SparseMdpModelType> const& preprocessorResult);
 
-                virtual ~SparseMdpPcaaWeightVectorChecker() = default;
+                virtual ~StandardMdpPcaaWeightVectorChecker() = default;
 
             protected:
                 virtual void initializeModelTypeSpecificData(SparseMdpModelType const& model) override;

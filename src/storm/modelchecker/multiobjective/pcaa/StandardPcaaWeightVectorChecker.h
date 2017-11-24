@@ -20,7 +20,7 @@ namespace storm {
              * - computes for each objective the value induced by this scheduler
              */
             template <class SparseModelType>
-            class SparsePcaaWeightVectorChecker : public PcaaWeightVectorChecker<SparseModelType> {
+            class StandardPcaaWeightVectorChecker : public PcaaWeightVectorChecker<SparseModelType> {
             public:
                 typedef typename SparseModelType::ValueType ValueType;
                 
@@ -34,9 +34,9 @@ namespace storm {
                  *
                  */
                 
-                SparsePcaaWeightVectorChecker(SparseMultiObjectivePreprocessorResult<SparseModelType> const& preprocessorResult);
+                StandardPcaaWeightVectorChecker(SparseMultiObjectivePreprocessorResult<SparseModelType> const& preprocessorResult);
                 
-                virtual ~SparsePcaaWeightVectorChecker() = default;
+                virtual ~StandardPcaaWeightVectorChecker() = default;
                 
                 /*!
                  * - computes the optimal expected reward w.r.t. the weighted sum of the rewards of the individual objectives

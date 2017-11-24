@@ -1,4 +1,4 @@
-#include "storm/modelchecker/multiobjective/pcaa/SparseMdpRewardBoundedPcaaWeightVectorChecker.h"
+#include "storm/modelchecker/multiobjective/pcaa/RewardBoundedMdpPcaaWeightVectorChecker.h"
 
 #include "storm/adapters/RationalFunctionAdapter.h"
 #include "storm/models/sparse/Mdp.h"
@@ -32,7 +32,7 @@ namespace storm {
         namespace multiobjective {
             
             template <class SparseMdpModelType>
-            SparseMdpRewardBoundedPcaaWeightVectorChecker<SparseMdpModelType>::SparseMdpRewardBoundedPcaaWeightVectorChecker(SparseMultiObjectivePreprocessorResult<SparseMdpModelType> const& preprocessorResult) : PcaaWeightVectorChecker<SparseMdpModelType>(preprocessorResult.objectives), swAll(true), rewardUnfolding(*preprocessorResult.preprocessedModel, preprocessorResult.objectives) {
+            RewardBoundedMdpPcaaWeightVectorChecker<SparseMdpModelType>::RewardBoundedMdpPcaaWeightVectorChecker(SparseMultiObjectivePreprocessorResult<SparseMdpModelType> const& preprocessorResult) : PcaaWeightVectorChecker<SparseMdpModelType>(preprocessorResult.objectives), swAll(true), rewardUnfolding(*preprocessorResult.preprocessedModel, preprocessorResult.objectives) {
                 
                 STORM_LOG_THROW(preprocessorResult.rewardFinitenessType == SparseMultiObjectivePreprocessorResult<SparseMdpModelType>::RewardFinitenessType::AllFinite, storm::exceptions::NotSupportedException, "There is a scheduler that yields infinite reward for one  objective. This is not supported.");
                 STORM_LOG_THROW(preprocessorResult.preprocessedModel->getInitialStates().getNumberOfSetBits() == 1, storm::exceptions::NotSupportedException, "The model has multiple initial states.");
@@ -48,7 +48,7 @@ namespace storm {
             }
             
             template <class SparseMdpModelType>
-            SparseMdpRewardBoundedPcaaWeightVectorChecker<SparseMdpModelType>::~SparseMdpRewardBoundedPcaaWeightVectorChecker() {
+            RewardBoundedMdpPcaaWeightVectorChecker<SparseMdpModelType>::~RewardBoundedMdpPcaaWeightVectorChecker() {
                 swAll.stop();
                 if (storm::settings::getModule<storm::settings::modules::CoreSettings>().isShowStatisticsSet()) {
                     STORM_PRINT_AND_LOG("--------------------------------------------------" << std::endl);
@@ -65,7 +65,7 @@ namespace storm {
             }
             
             template <class SparseMdpModelType>
-            void SparseMdpRewardBoundedPcaaWeightVectorChecker<SparseMdpModelType>::check(Environment const& env, std::vector<ValueType> const& weightVector) {
+            void RewardBoundedMdpPcaaWeightVectorChecker<SparseMdpModelType>::check(Environment const& env, std::vector<ValueType> const& weightVector) {
                 ++numChecks;
                 STORM_LOG_INFO("Analyzing weight vector #" << numChecks << ": "  << storm::utility::vector::toString(weightVector));
                 
@@ -120,7 +120,7 @@ namespace storm {
             }
             
             template <class SparseMdpModelType>
-            void SparseMdpRewardBoundedPcaaWeightVectorChecker<SparseMdpModelType>::computeEpochSolution(Environment const& env, typename helper::rewardbounded::MultiDimensionalRewardUnfolding<ValueType, false>::Epoch const& epoch, std::vector<ValueType> const& weightVector, EpochCheckingData& cachedData) {
+            void RewardBoundedMdpPcaaWeightVectorChecker<SparseMdpModelType>::computeEpochSolution(Environment const& env, typename helper::rewardbounded::MultiDimensionalRewardUnfolding<ValueType, false>::Epoch const& epoch, std::vector<ValueType> const& weightVector, EpochCheckingData& cachedData) {
                 
                 ++numCheckedEpochs;
                 swEpochModelBuild.start();
@@ -309,7 +309,7 @@ namespace storm {
             }
 
             template <class SparseMdpModelType>
-            void SparseMdpRewardBoundedPcaaWeightVectorChecker<SparseMdpModelType>::updateCachedData(Environment const& env, typename helper::rewardbounded::MultiDimensionalRewardUnfolding<ValueType, false>::EpochModel const& epochModel, EpochCheckingData& cachedData, std::vector<ValueType> const& weightVector) {
+            void RewardBoundedMdpPcaaWeightVectorChecker<SparseMdpModelType>::updateCachedData(Environment const& env, typename helper::rewardbounded::MultiDimensionalRewardUnfolding<ValueType, false>::EpochModel const& epochModel, EpochCheckingData& cachedData, std::vector<ValueType> const& weightVector) {
                 if (epochModel.epochMatrixChanged) {
                 
                     // Update the cached MinMaxSolver data
@@ -349,20 +349,20 @@ namespace storm {
             }
             
             template <class SparseMdpModelType>
-            std::vector<typename SparseMdpRewardBoundedPcaaWeightVectorChecker<SparseMdpModelType>::ValueType> SparseMdpRewardBoundedPcaaWeightVectorChecker<SparseMdpModelType>::getUnderApproximationOfInitialStateResults() const {
+            std::vector<typename RewardBoundedMdpPcaaWeightVectorChecker<SparseMdpModelType>::ValueType> RewardBoundedMdpPcaaWeightVectorChecker<SparseMdpModelType>::getUnderApproximationOfInitialStateResults() const {
                 STORM_LOG_THROW(underApproxResult, storm::exceptions::InvalidOperationException, "Tried to retrieve results but check(..) has not been called before.");
                 return underApproxResult.get();
             }
             
             template <class SparseMdpModelType>
-            std::vector<typename SparseMdpRewardBoundedPcaaWeightVectorChecker<SparseMdpModelType>::ValueType> SparseMdpRewardBoundedPcaaWeightVectorChecker<SparseMdpModelType>::getOverApproximationOfInitialStateResults() const {
+            std::vector<typename RewardBoundedMdpPcaaWeightVectorChecker<SparseMdpModelType>::ValueType> RewardBoundedMdpPcaaWeightVectorChecker<SparseMdpModelType>::getOverApproximationOfInitialStateResults() const {
                 STORM_LOG_THROW(overApproxResult, storm::exceptions::InvalidOperationException, "Tried to retrieve results but check(..) has not been called before.");
                 return overApproxResult.get();
             }
             
-            template class SparseMdpRewardBoundedPcaaWeightVectorChecker<storm::models::sparse::Mdp<double>>;
+            template class RewardBoundedMdpPcaaWeightVectorChecker<storm::models::sparse::Mdp<double>>;
 #ifdef STORM_HAVE_CARL
-            template class SparseMdpRewardBoundedPcaaWeightVectorChecker<storm::models::sparse::Mdp<storm::RationalNumber>>;
+            template class RewardBoundedMdpPcaaWeightVectorChecker<storm::models::sparse::Mdp<storm::RationalNumber>>;
 #endif
         
         }

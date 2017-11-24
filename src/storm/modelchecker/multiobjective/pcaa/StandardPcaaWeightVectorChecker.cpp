@@ -1,4 +1,4 @@
-#include "storm/modelchecker/multiobjective/pcaa/SparsePcaaWeightVectorChecker.h"
+#include "storm/modelchecker/multiobjective/pcaa/StandardPcaaWeightVectorChecker.h"
 
 #include <map>
 #include <set>
@@ -27,7 +27,7 @@ namespace storm {
             
 
             template <class SparseModelType>
-            SparsePcaaWeightVectorChecker<SparseModelType>::SparsePcaaWeightVectorChecker(SparseMultiObjectivePreprocessorResult<SparseModelType> const& preprocessorResult) :
+            StandardPcaaWeightVectorChecker<SparseModelType>::StandardPcaaWeightVectorChecker(SparseMultiObjectivePreprocessorResult<SparseModelType> const& preprocessorResult) :
                     PcaaWeightVectorChecker<SparseModelType>(preprocessorResult.objectives) {
                 
                 STORM_LOG_THROW(preprocessorResult.rewardFinitenessType != SparseMultiObjectivePreprocessorResult<SparseModelType>::RewardFinitenessType::Infinite, storm::exceptions::NotSupportedException, "There is no Pareto optimal scheduler that yields finite reward for all objectives. This is not supported.");
@@ -38,7 +38,7 @@ namespace storm {
             }
             
             template <class SparseModelType>
-            void SparsePcaaWeightVectorChecker<SparseModelType>::initialize(SparseMultiObjectivePreprocessorResult<SparseModelType> const& preprocessorResult) {
+            void StandardPcaaWeightVectorChecker<SparseModelType>::initialize(SparseMultiObjectivePreprocessorResult<SparseModelType> const& preprocessorResult) {
                 // Build a subsystem of the preprocessor result model that discards states that yield infinite reward for all schedulers.
                 // We can also merge the states that will have reward zero anyway.
                 storm::storage::BitVector maybeStates = preprocessorResult.rewardLessInfinityEStates.get() & ~preprocessorResult.reward0AStates;
@@ -90,7 +90,7 @@ namespace storm {
 
             
             template <class SparseModelType>
-            void SparsePcaaWeightVectorChecker<SparseModelType>::check(Environment const& env, std::vector<ValueType> const& weightVector) {
+            void StandardPcaaWeightVectorChecker<SparseModelType>::check(Environment const& env, std::vector<ValueType> const& weightVector) {
                 checkHasBeenCalled = true;
                 STORM_LOG_INFO("Invoked WeightVectorChecker with weights " << std::endl << "\t" << storm::utility::vector::toString(storm::utility::vector::convertNumericVector<double>(weightVector)));
                 
@@ -121,7 +121,7 @@ namespace storm {
             }
             
             template <class SparseModelType>
-            std::vector<typename SparsePcaaWeightVectorChecker<SparseModelType>::ValueType> SparsePcaaWeightVectorChecker<SparseModelType>::getUnderApproximationOfInitialStateResults() const {
+            std::vector<typename StandardPcaaWeightVectorChecker<SparseModelType>::ValueType> StandardPcaaWeightVectorChecker<SparseModelType>::getUnderApproximationOfInitialStateResults() const {
                 STORM_LOG_THROW(checkHasBeenCalled, storm::exceptions::IllegalFunctionCallException, "Tried to retrieve results but check(..) has not been called before.");
                 std::vector<ValueType> res;
                 res.reserve(this->objectives.size());
@@ -132,7 +132,7 @@ namespace storm {
             }
             
             template <class SparseModelType>
-            std::vector<typename SparsePcaaWeightVectorChecker<SparseModelType>::ValueType> SparsePcaaWeightVectorChecker<SparseModelType>::getOverApproximationOfInitialStateResults() const {
+            std::vector<typename StandardPcaaWeightVectorChecker<SparseModelType>::ValueType> StandardPcaaWeightVectorChecker<SparseModelType>::getOverApproximationOfInitialStateResults() const {
                 STORM_LOG_THROW(checkHasBeenCalled, storm::exceptions::IllegalFunctionCallException, "Tried to retrieve results but check(..) has not been called before.");
                 std::vector<ValueType> res;
                 res.reserve(this->objectives.size());
@@ -143,7 +143,7 @@ namespace storm {
             }
             
             template <class SparseModelType>
-            storm::storage::Scheduler<typename SparsePcaaWeightVectorChecker<SparseModelType>::ValueType> SparsePcaaWeightVectorChecker<SparseModelType>::computeScheduler() const {
+            storm::storage::Scheduler<typename StandardPcaaWeightVectorChecker<SparseModelType>::ValueType> StandardPcaaWeightVectorChecker<SparseModelType>::computeScheduler() const {
                 STORM_LOG_THROW(this->checkHasBeenCalled, storm::exceptions::IllegalFunctionCallException, "Tried to retrieve results but check(..) has not been called before.");
                 for (auto const& obj : this->objectives) {
                     STORM_LOG_THROW(obj.formula->getSubformula().isTotalRewardFormula(), storm::exceptions::NotImplementedException, "Scheduler retrival is only implemented for objectives without time-bound.");
@@ -159,7 +159,7 @@ namespace storm {
             }
             
             template <class SparseModelType>
-            void SparsePcaaWeightVectorChecker<SparseModelType>::unboundedWeightedPhase(Environment const& env, std::vector<ValueType> const& weightedRewardVector, std::vector<ValueType> const& weightVector) {
+            void StandardPcaaWeightVectorChecker<SparseModelType>::unboundedWeightedPhase(Environment const& env, std::vector<ValueType> const& weightedRewardVector, std::vector<ValueType> const& weightVector) {
                 
                 if (this->objectivesWithNoUpperTimeBound.empty() || !storm::utility::vector::hasNonZeroEntry(weightedRewardVector)) {
                     this->weightedResult = std::vector<ValueType>(transitionMatrix.getRowGroupCount(), storm::utility::zero<ValueType>());
@@ -201,7 +201,7 @@ namespace storm {
             }
             
             template <class SparseModelType>
-            void SparsePcaaWeightVectorChecker<SparseModelType>::unboundedIndividualPhase(Environment const& env,std::vector<ValueType> const& weightVector) {
+            void StandardPcaaWeightVectorChecker<SparseModelType>::unboundedIndividualPhase(Environment const& env,std::vector<ValueType> const& weightVector) {
                 if (objectivesWithNoUpperTimeBound.getNumberOfSetBits() == 1 && storm::utility::isOne(weightVector[*objectivesWithNoUpperTimeBound.begin()])) {
                    uint_fast64_t objIndex = *objectivesWithNoUpperTimeBound.begin();
                    objectiveResults[objIndex] = weightedResult;
@@ -294,7 +294,7 @@ namespace storm {
             }
             
             template <class SparseModelType>
-            void SparsePcaaWeightVectorChecker<SparseModelType>::updateEcQuotient(std::vector<ValueType> const& weightedRewardVector) {
+            void StandardPcaaWeightVectorChecker<SparseModelType>::updateEcQuotient(std::vector<ValueType> const& weightedRewardVector) {
                 // Check whether we need to update the currently cached ecElimResult
                 storm::storage::BitVector newReward0Choices = storm::utility::vector::filterZero(weightedRewardVector);
                 if (!ecQuotient || ecQuotient->origReward0Choices != newReward0Choices) {
@@ -325,7 +325,7 @@ namespace storm {
 
             
             template <class SparseModelType>
-            void SparsePcaaWeightVectorChecker<SparseModelType>::transformReducedSolutionToOriginalModel(storm::storage::SparseMatrix<ValueType> const& reducedMatrix,
+            void StandardPcaaWeightVectorChecker<SparseModelType>::transformReducedSolutionToOriginalModel(storm::storage::SparseMatrix<ValueType> const& reducedMatrix,
                                                          std::vector<ValueType> const& reducedSolution,
                                                          std::vector<uint_fast64_t> const& reducedOptimalChoices,
                                                          std::vector<uint_fast64_t> const& reducedToOriginalChoiceMapping,
@@ -422,11 +422,11 @@ namespace storm {
             
             
             
-            template class SparsePcaaWeightVectorChecker<storm::models::sparse::Mdp<double>>;
-            template class SparsePcaaWeightVectorChecker<storm::models::sparse::MarkovAutomaton<double>>;
+            template class StandardPcaaWeightVectorChecker<storm::models::sparse::Mdp<double>>;
+            template class StandardPcaaWeightVectorChecker<storm::models::sparse::MarkovAutomaton<double>>;
 #ifdef STORM_HAVE_CARL
-            template class SparsePcaaWeightVectorChecker<storm::models::sparse::Mdp<storm::RationalNumber>>;
-            template class SparsePcaaWeightVectorChecker<storm::models::sparse::MarkovAutomaton<storm::RationalNumber>>;
+            template class StandardPcaaWeightVectorChecker<storm::models::sparse::Mdp<storm::RationalNumber>>;
+            template class StandardPcaaWeightVectorChecker<storm::models::sparse::MarkovAutomaton<storm::RationalNumber>>;
 #endif
             
         }

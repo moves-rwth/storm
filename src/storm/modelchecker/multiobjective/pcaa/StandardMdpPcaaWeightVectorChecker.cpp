@@ -1,4 +1,4 @@
-#include "storm/modelchecker/multiobjective/pcaa/SparseMdpPcaaWeightVectorChecker.h"
+#include "storm/modelchecker/multiobjective/pcaa/StandardMdpPcaaWeightVectorChecker.h"
 
 #include "storm/adapters/RationalFunctionAdapter.h"
 #include "storm/models/sparse/Mdp.h"
@@ -21,13 +21,13 @@ namespace storm {
         namespace multiobjective {
             
             template <class SparseMdpModelType>
-            SparseMdpPcaaWeightVectorChecker<SparseMdpModelType>::SparseMdpPcaaWeightVectorChecker(SparseMultiObjectivePreprocessorResult<SparseMdpModelType> const& preprocessorResult) :
-                SparsePcaaWeightVectorChecker<SparseMdpModelType>(preprocessorResult) {
+            StandardMdpPcaaWeightVectorChecker<SparseMdpModelType>::StandardMdpPcaaWeightVectorChecker(SparseMultiObjectivePreprocessorResult<SparseMdpModelType> const& preprocessorResult) :
+                StandardPcaaWeightVectorChecker<SparseMdpModelType>(preprocessorResult) {
                 this->initialize(preprocessorResult);
             }
             
             template <class SparseMdpModelType>
-            void SparseMdpPcaaWeightVectorChecker<SparseMdpModelType>::initializeModelTypeSpecificData(SparseMdpModelType const& model) {
+            void StandardMdpPcaaWeightVectorChecker<SparseMdpModelType>::initializeModelTypeSpecificData(SparseMdpModelType const& model) {
                 // set the state action rewards. Also do some sanity checks on the objectives.
                 this->actionRewards.resize(this->objectives.size());
                 for (uint_fast64_t objIndex = 0; objIndex < this->objectives.size(); ++objIndex) {
@@ -47,7 +47,7 @@ namespace storm {
             }
             
             template <class SparseMdpModelType>
-            void SparseMdpPcaaWeightVectorChecker<SparseMdpModelType>::boundedPhase(Environment const& env,std::vector<ValueType> const& weightVector, std::vector<ValueType>& weightedRewardVector) {
+            void StandardMdpPcaaWeightVectorChecker<SparseMdpModelType>::boundedPhase(Environment const& env,std::vector<ValueType> const& weightVector, std::vector<ValueType>& weightedRewardVector) {
                 // Allocate some memory so this does not need to happen for each time epoch
                 std::vector<uint_fast64_t> optimalChoicesInCurrentEpoch(this->transitionMatrix.getRowGroupCount());
                 std::vector<ValueType> choiceValues(weightedRewardVector.size());
@@ -114,9 +114,9 @@ namespace storm {
                 }
             }
             
-            template class SparseMdpPcaaWeightVectorChecker<storm::models::sparse::Mdp<double>>;
+            template class StandardMdpPcaaWeightVectorChecker<storm::models::sparse::Mdp<double>>;
 #ifdef STORM_HAVE_CARL
-            template class SparseMdpPcaaWeightVectorChecker<storm::models::sparse::Mdp<storm::RationalNumber>>;
+            template class StandardMdpPcaaWeightVectorChecker<storm::models::sparse::Mdp<storm::RationalNumber>>;
 #endif
             
         }
