@@ -356,6 +356,7 @@ namespace storm {
             // Encoding for gates
             for (size_t i = 0; i < dft.nrElements(); ++i) {
                 std::shared_ptr<storm::storage::DFTElement<ValueType> const> element = dft.getElement(i);
+                STORM_LOG_ASSERT(i == element->id(), "Id and index should match.");
 
                 // Get indices for gate children
                 std::vector<uint64_t> childVarIndices;
