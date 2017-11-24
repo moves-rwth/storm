@@ -101,7 +101,8 @@ namespace storm {
 
         class And : public DFTConstraint {
         public:
-            And(std::vector<std::shared_ptr<DFTConstraint>> const& constraints) : constraints(constraints) {}
+            And(std::vector<std::shared_ptr<DFTConstraint>> const& constraints) : constraints(constraints) {
+            }
             virtual ~And() {
             }
 
@@ -111,6 +112,34 @@ namespace storm {
                     sstr << "true";
                 } else {
                     sstr << "(and";
+                    for(auto const& c : constraints) {
+                        sstr << " " << c->toSmtlib2(varNames);
+                    }
+                    sstr << ")";
+                }
+                return sstr.str();
+            }
+
+        private:
+            std::vector<std::shared_ptr<DFTConstraint>> constraints;
+
+        };
+
+
+        class Or : public DFTConstraint {
+        public:
+            Or(std::vector<std::shared_ptr<DFTConstraint>> const& constraints) : constraints(constraints) {
+            }
+
+            virtual ~Or() {
+            }
+
+            std::string toSmtlib2(std::vector<std::string> const& varNames) const override {
+                std::stringstream sstr;
+                if (constraints.empty()) {
+                    sstr << "false";
+                } else {
+                    sstr << "(or";
                     for(auto const& c : constraints) {
                         sstr << " " << c->toSmtlib2(varNames);
                     }
@@ -217,6 +246,26 @@ namespace storm {
                 std::stringstream sstr;
                 assert(varIndex < varNames.size());
                 sstr << "(< " << varNames.at(varIndex) << " " << value << ")";
+                return sstr.str();
+            }
+
+        private:
+            uint64_t varIndex;
+            uint64_t value;
+        };
+
+        class IsLessEqualConstant : public DFTConstraint {
+        public:
+            IsLessEqualConstant(uint64_t varIndex, uint64_t val) :varIndex(varIndex), value(val) {
+            }
+
+            virtual ~IsLessEqualConstant() {
+            }
+
+            std::string toSmtlib2(std::vector<std::string> const& varNames) const override {
+                std::stringstream sstr;
+                assert(varIndex < varNames.size());
+                sstr << "(<= " << varNames.at(varIndex) << " " << value << ")";
                 return sstr.str();
             }
 
@@ -533,19 +582,20 @@ namespace storm {
         }
 
         void DFTASFChecker::addMarkovianConstraints() {
-            // This vector contains Markovian constraints for each timepoint
+            // Vector containing (non-)Markovian constraints for each timepoint
             std::vector<std::vector<std::shared_ptr<DFTConstraint>>> markovianC(dft.nrBasicElements() -1);
+            std::vector<std::vector<std::shared_ptr<DFTConstraint>>> nonMarkovianC(dft.nrBasicElements() -1);
 
+            // All dependent events of a failed trigger have failed as well (constraint 9)
             for (size_t j = 0; j < dft.nrElements(); ++j) {
                 std::shared_ptr<storm::storage::DFTElement<ValueType> const> element = dft.getElement(j);
                 if (element->hasOutgoingDependencies()) {
                     for (uint64_t i = 0; i < dft.nrBasicElements() -1; ++i) {
-                        // All dependent events of a failed trigger have failed as well (constraint 9)
-                        std::shared_ptr<DFTConstraint> triggerFailed = std::make_shared<IsLessConstant>(timePointVariables.at(j), i);
+                        std::shared_ptr<DFTConstraint> triggerFailed = std::make_shared<IsLessEqualConstant>(timePointVariables.at(j), i);
                         std::vector<std::shared_ptr<DFTConstraint>> depFailed;
                         for (auto const& dependency : element->outgoingDependencies()) {
                             for (auto const& depElement : dependency->dependentEvents()) {
-                                depFailed.push_back(std::make_shared<IsLessConstant>(timePointVariables.at(depElement->id()), i));
+                                depFailed.push_back(std::make_shared<IsLessEqualConstant>(timePointVariables.at(depElement->id()), i));
                             }
                         }
                         markovianC[i].push_back(std::make_shared<Implies>(triggerFailed, std::make_shared<And>(depFailed)));
@@ -556,6 +606,30 @@ namespace storm {
                 constraints.push_back(std::make_shared<Iff>(std::make_shared<IsBoolValue>(markovianVariables.at(i), true), std::make_shared<And>(markovianC[i])));
                 constraints.back()->setDescription("Markovian (" + std::to_string(i) + ") iff all dependent events which trigger failed also failed.");
             }
+
+            // In non-Markovian steps the next failed element is a dependent BE (constraint 10)
+            for (size_t j = 0; j < dft.nrElements(); ++j) {
+                std::shared_ptr<storm::storage::DFTElement<ValueType> const> element = dft.getElement(j);
+                if (element->isBasicElement()) {
+                    auto be = std::static_pointer_cast<storm::storage::DFTBE<double> const>(element);
+
+                    if (be->hasIngoingDependencies()) {
+                        for (uint64_t i = 0; i < dft.nrBasicElements() -1; ++i) {
+                            std::shared_ptr<DFTConstraint> nextFailure = std::make_shared<IsConstantValue>(timePointVariables.at(j), i+1);
+                            std::vector<std::shared_ptr<DFTConstraint>> triggerFailed;
+                            for (auto const& dependency : be->ingoingDependencies()) {
+                                triggerFailed.push_back(std::make_shared<IsLessEqualConstant>(timePointVariables.at(dependency->triggerEvent()->id()), i));
+                            }
+                            nonMarkovianC[i].push_back(std::make_shared<Implies>(nextFailure, std::make_shared<Or>(triggerFailed)));
+                        }
+                    }
+                }
+            }
+            for (uint64_t i = 0; i < dft.nrBasicElements() - 1; ++i) {
+                constraints.push_back(std::make_shared<Implies>(std::make_shared<IsBoolValue>(markovianVariables.at(i), false), std::make_shared<And>(nonMarkovianC[i])));
+                constraints.back()->setDescription("Non-Markovian (" + std::to_string(i) + ") -> next failure is dependent BE.");
+            }
+
         }
 
 
