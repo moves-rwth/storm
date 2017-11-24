@@ -305,7 +305,7 @@ namespace storm {
             bool converged = false;
         
             // Choose initial scheduler.
-            storm::dd::Bdd<DdType> scheduler = this->hasInitialScheduler() ? this->getInitialScheduler() : this->A.sumAbstract(this->columnMetaVariables).maxAbstractRepresentative(this->choiceVariables);
+            storm::dd::Bdd<DdType> scheduler = this->hasInitialScheduler() ? this->getInitialScheduler() : (this->A.sumAbstract(this->columnMetaVariables).notZero() || b.notZero()).existsAbstractRepresentative(this->choiceVariables);
             
             // Initialize linear equation solver.
             // It should be at least as precise as this solver.

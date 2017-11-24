@@ -895,7 +895,7 @@ namespace storm {
                 
                 uint_fast64_t iterations = 0;
                 while (!frontier.isZero()) {
-                    storm::dd::Bdd<Type> statesAndChoicesWithProbabilityGreater0E = statesWithProbabilityGreater0E.inverseRelationalProductWithExtendedRelation(transitionMatrix, model.getRowVariables(), model.getColumnVariables());
+                    storm::dd::Bdd<Type> statesAndChoicesWithProbabilityGreater0E = frontier.inverseRelationalProductWithExtendedRelation(transitionMatrix, model.getRowVariables(), model.getColumnVariables());
                     frontier = phiStates && statesAndChoicesWithProbabilityGreater0E.existsAbstract(model.getNondeterminismVariables()) && !statesWithProbabilityGreater0E;
                     scheduler = scheduler || (frontier && statesAndChoicesWithProbabilityGreater0E).existsAbstractRepresentative(model.getNondeterminismVariables());
                     statesWithProbabilityGreater0E |= frontier;
