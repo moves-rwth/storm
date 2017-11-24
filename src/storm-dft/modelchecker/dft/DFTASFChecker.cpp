@@ -493,6 +493,22 @@ namespace storm {
                         constraints.back()->setDescription("PAND gate");
                         break;
                     }
+                    case storm::storage::DFTElementType::POR:
+                    {
+                        // Constraint for POR gate
+                        // First child fails before all others
+                        std::vector<std::shared_ptr<DFTConstraint>> firstSmallestC;
+                        uint64_t timeFirstChild = childVarIndices.front();
+                        for (uint64_t i = 1; i < childVarIndices.size(); ++i) {
+                            firstSmallestC.push_back(std::make_shared<IsLess>(timeFirstChild, childVarIndices.at(i)));
+                        }
+                        std::shared_ptr<DFTConstraint> ifC = std::make_shared<And>(firstSmallestC);
+                        std::shared_ptr<DFTConstraint> thenC = std::make_shared<IsEqual>(timePointVariables.at(i), childVarIndices.front());
+                        std::shared_ptr<DFTConstraint> elseC = std::make_shared<IsConstantValue>(timePointVariables.at(i), notFailed);
+                        constraints.push_back(std::make_shared<IfThenElse>(ifC, thenC, elseC));
+                        constraints.back()->setDescription("POR gate");
+                        break;
+                    }
                     case storm::storage::DFTElementType::SEQ:
                         STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "SMT encoding of SEQs is not implemented yet.");
                         break;
