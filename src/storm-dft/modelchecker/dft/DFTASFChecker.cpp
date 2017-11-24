@@ -566,10 +566,10 @@ namespace storm {
                         // Child must be operational at time of claiming
                         additionalC.push_back(std::make_shared<IsLess>(timeClaiming, timePointVariables.at(child->id())));
                         // No other spare claims this child
-                        for (auto const& otherSpare : child->parents()) {
-                            if (otherSpare->id() != spare->id()) {
+                        for (auto const& parent : child->parents()) {
+                            if (parent->isSpareGate() && parent->id() != spare->id()) {
                                 // Different spare
-                                additionalC.push_back(std::make_shared<IsConstantValue>(getClaimVariableIndex(otherSpare->id(), child->id()), notFailed));
+                                additionalC.push_back(std::make_shared<IsConstantValue>(getClaimVariableIndex(parent->id(), child->id()), notFailed));
                             }
                         }
                         constraints.push_back(std::make_shared<Implies>(leftC, std::make_shared<And>(additionalC)));
