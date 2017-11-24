@@ -483,6 +483,10 @@ namespace storm {
                         constraints.push_back(std::make_shared<IsMinimum>(timePointVariables.at(i), childVarIndices));
                         constraints.back()->setDescription("OR gate");
                         break;
+                    case storm::storage::DFTElementType::VOT:
+                        //TODO implement via and/or construction
+                        STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "SMT encoding of VOTs is not implemented yet.");
+                        break;
                     case storm::storage::DFTElementType::PAND:
                     {
                         // Constraint for PAND gate (constraint 3)
