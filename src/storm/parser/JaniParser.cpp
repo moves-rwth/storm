@@ -273,7 +273,7 @@ namespace storm {
                         } else {
                             if (rewExpr.isVariable()) {
                                 std::string rewardName = rewExpr.getVariables().begin()->getName();
-                                return std::make_shared<storm::logic::RewardOperatorFormula>(std::make_shared<storm::logic::CumulativeRewardFormula>(storm::logic::TimeBound(false, stepInstantExpr), storm::logic::TimeBoundType::Steps), rewardName, opInfo);
+                                return std::make_shared<storm::logic::RewardOperatorFormula>(std::make_shared<storm::logic::CumulativeRewardFormula>(storm::logic::TimeBound(false, stepInstantExpr), storm::logic::TimeBoundReference(storm::logic::TimeBoundType::Steps)), rewardName, opInfo);
                             } else {
                                 STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Only simple reward expressions are currently supported");
                             }
@@ -294,7 +294,7 @@ namespace storm {
                         } else {
                             if (rewExpr.isVariable()) {
                                 std::string rewardName = rewExpr.getVariables().begin()->getName();
-                                return std::make_shared<storm::logic::RewardOperatorFormula>(std::make_shared<storm::logic::CumulativeRewardFormula>(storm::logic::TimeBound(false, timeInstantExpr), storm::logic::TimeBoundType::Time), rewardName, opInfo);
+                                return std::make_shared<storm::logic::RewardOperatorFormula>(std::make_shared<storm::logic::CumulativeRewardFormula>(storm::logic::TimeBound(false, timeInstantExpr), storm::logic::TimeBoundReference(storm::logic::TimeBoundType::Time)), rewardName, opInfo);
                             } else {
                                 STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Only simple reward expressions are currently supported");
                             }
@@ -619,7 +619,7 @@ namespace storm {
                             initVal = expressionManager->rational(defaultRationalInitialValue);
                         } else {
                             initVal = parseExpression(variableStructure.at("initial-value"), "Initial value for variable " + name + " (scope: " + scopeDescription + ") ", globalVars, constants, localVars);
-                            STORM_LOG_THROW(initVal.get().hasRationalType(), storm::exceptions::InvalidJaniException, "Initial value for integer variable " + name + "(scope " + scopeDescription + ") should be a rational");
+                            STORM_LOG_THROW(initVal.get().hasRationalType() || initVal.get().hasIntegerType(), storm::exceptions::InvalidJaniException, "Initial value for rational variable " + name + "(scope " + scopeDescription + ") should be a rational");
                         }
                         return std::make_shared<storm::jani::RealVariable>(name, expressionManager->declareRationalVariable(exprManagerName), initVal.get(), transientVar);
                         
@@ -632,7 +632,7 @@ namespace storm {
                             initVal = expressionManager->boolean(defaultBooleanInitialValue);
                         } else {
                             initVal = parseExpression(variableStructure.at("initial-value"), "Initial value for variable " + name + " (scope: " + scopeDescription + ") ", globalVars, constants, localVars);
-                            STORM_LOG_THROW(initVal.get().hasBooleanType(), storm::exceptions::InvalidJaniException, "Initial value for integer variable " + name + "(scope " + scopeDescription + ") should be a Boolean");
+                            STORM_LOG_THROW(initVal.get().hasBooleanType(), storm::exceptions::InvalidJaniException, "Initial value for boolean variable " + name + "(scope " + scopeDescription + ") should be a Boolean");
                         }
                         if(transientVar) {
                             labels.insert(name);

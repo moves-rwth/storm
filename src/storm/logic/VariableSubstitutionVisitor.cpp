@@ -35,34 +35,43 @@ namespace storm {
         }
         
         boost::any VariableSubstitutionVisitor::visit(BoundedUntilFormula const& f, boost::any const& data) const {
-            auto left = boost::any_cast<std::shared_ptr<Formula>>(f.getLeftSubformula().accept(*this, data));
-            auto right = boost::any_cast<std::shared_ptr<Formula>>(f.getRightSubformula().accept(*this, data));
-
-            std::vector<boost::optional<storm::logic::TimeBound>> lowerBounds;
-            std::vector<boost::optional<storm::logic::TimeBound>> upperBounds;
-            std::vector<storm::logic::TimeBoundReference> tbReferences;
-
-            for (unsigned i = 0; i < f.getDimension(); ++i) {
+            std::vector<boost::optional<TimeBound>> lowerBounds, upperBounds;
+            std::vector<TimeBoundReference> timeBoundReferences;
+            for (uint64_t i = 0; i < f.getDimension(); ++i) {
                 if (f.hasLowerBound(i)) {
-                    lowerBounds.push_back(TimeBound(f.isLowerBoundStrict(i), f.getLowerBound(i).substitute(substitution)));
+                    lowerBounds.emplace_back(TimeBound(f.isLowerBoundStrict(i), f.getLowerBound(i).substitute(substitution)));
                 } else {
-                    lowerBounds.push_back(boost::none);
+                    lowerBounds.emplace_back();
                 }
-
                 if (f.hasUpperBound(i)) {
-                    upperBounds.push_back(TimeBound(f.isUpperBoundStrict(i), f.getUpperBound(i).substitute(substitution)));
+                    upperBounds.emplace_back(TimeBound(f.isUpperBoundStrict(i), f.getUpperBound(i).substitute(substitution)));
                 } else {
-                    upperBounds.push_back(boost::none);
+                    upperBounds.emplace_back();
                 }
-                tbReferences.push_back(f.getTimeBoundReference(i));
+                timeBoundReferences.push_back(f.getTimeBoundReference(i));
             }
-
-
-            return std::static_pointer_cast<Formula>(std::make_shared<BoundedUntilFormula>(left, right, lowerBounds, upperBounds, tbReferences));
+            if (f.hasMultiDimensionalSubformulas()) {
+                std::vector<std::shared_ptr<Formula const>> leftSubformulas, rightSubformulas;
+                for (uint64_t i = 0; i < f.getDimension(); ++i) {
+                    leftSubformulas.push_back(boost::any_cast<std::shared_ptr<Formula>>(f.getLeftSubformula(i).accept(*this, data)));
+                    rightSubformulas.push_back(boost::any_cast<std::shared_ptr<Formula>>(f.getRightSubformula(i).accept(*this, data)));
+                }
+                return std::static_pointer_cast<Formula>(std::make_shared<BoundedUntilFormula>(leftSubformulas, rightSubformulas, lowerBounds, upperBounds, timeBoundReferences));
+            } else {
+                std::shared_ptr<Formula> left = boost::any_cast<std::shared_ptr<Formula>>(f.getLeftSubformula().accept(*this, data));
+                std::shared_ptr<Formula> right = boost::any_cast<std::shared_ptr<Formula>>(f.getRightSubformula().accept(*this, data));
+                return std::static_pointer_cast<Formula>(std::make_shared<BoundedUntilFormula>(left, right, lowerBounds, upperBounds, timeBoundReferences));
+            }
         }
         
         boost::any VariableSubstitutionVisitor::visit(CumulativeRewardFormula const& f, boost::any const&) const {
-            return std::static_pointer_cast<Formula>(std::make_shared<CumulativeRewardFormula>(storm::logic::TimeBound(f.isBoundStrict(), f.getBound().substitute(substitution)), f.getTimeBoundType()));
+            std::vector<TimeBound> bounds;
+            std::vector<TimeBoundReference> timeBoundReferences;
+            for (uint64_t i = 0; i < f.getDimension(); ++i) {
+                bounds.emplace_back(TimeBound(f.isBoundStrict(i), f.getBound(i).substitute(substitution)));
+                timeBoundReferences.push_back(f.getTimeBoundReference(i));
+            }
+            return std::static_pointer_cast<Formula>(std::make_shared<CumulativeRewardFormula>(bounds, timeBoundReferences));
         }
         
         boost::any VariableSubstitutionVisitor::visit(InstantaneousRewardFormula const& f, boost::any const&) const {

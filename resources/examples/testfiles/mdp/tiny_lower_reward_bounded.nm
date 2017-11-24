@@ -1,0 +1,22 @@
+mdp
+
+module main
+	x : [0..4] init 0;
+	
+	[a] x=0 -> 1/10 : (x'=1) + 9/10 : (x'=0);
+	[b] x=0 -> 1/4 : (x'=1) + 3/4 : (x'=2);
+	[] x=2 -> (x'=3);
+	[] x=3 -> 1/2 : (x'=2) + 1/2 : (x'=3);
+	[] x=3 -> 1/3 : (x'=3) + 2/3 : (x'=4);
+	[] x=4 -> (x'=0);
+
+endmodule
+
+rewards "a"
+ [a] true : 2/5;
+endrewards
+ 
+
+rewards "b"
+ [b] true : 1;
+endrewards

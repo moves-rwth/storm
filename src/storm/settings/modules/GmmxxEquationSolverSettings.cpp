@@ -43,14 +43,14 @@ namespace storm {
                 return this->getOption(techniqueOptionName).getHasOptionBeenSet();
             }
             
-            GmmxxEquationSolverSettings::LinearEquationMethod GmmxxEquationSolverSettings::getLinearEquationSystemMethod() const {
+            storm::solver::GmmxxLinearEquationSolverMethod GmmxxEquationSolverSettings::getLinearEquationSystemMethod() const {
                 std::string linearEquationSystemTechniqueAsString = this->getOption(techniqueOptionName).getArgumentByName("name").getValueAsString();
                 if (linearEquationSystemTechniqueAsString == "bicgstab") {
-                    return GmmxxEquationSolverSettings::LinearEquationMethod::Bicgstab;
+                    return storm::solver::GmmxxLinearEquationSolverMethod::Bicgstab;
                 } else if (linearEquationSystemTechniqueAsString == "qmr") {
-                    return GmmxxEquationSolverSettings::LinearEquationMethod::Qmr;
+                    return storm::solver::GmmxxLinearEquationSolverMethod::Qmr;
                 } else if (linearEquationSystemTechniqueAsString == "gmres") {
-                    return GmmxxEquationSolverSettings::LinearEquationMethod::Gmres;
+                    return storm::solver::GmmxxLinearEquationSolverMethod::Gmres;
                 }
                 STORM_LOG_THROW(false, storm::exceptions::IllegalArgumentValueException, "Unknown solution technique '" << linearEquationSystemTechniqueAsString << "' selected.");
             }
@@ -59,16 +59,16 @@ namespace storm {
                 return this->getOption(preconditionOptionName).getHasOptionBeenSet();
             }
             
-            GmmxxEquationSolverSettings::PreconditioningMethod GmmxxEquationSolverSettings::getPreconditioningMethod() const {
-                std::string PreconditioningMethodAsString = this->getOption(preconditionOptionName).getArgumentByName("name").getValueAsString();
-                if (PreconditioningMethodAsString == "ilu") {
-                    return GmmxxEquationSolverSettings::PreconditioningMethod::Ilu;
-                } else if (PreconditioningMethodAsString == "diagonal") {
-                    return GmmxxEquationSolverSettings::PreconditioningMethod::Diagonal;
-                } else if (PreconditioningMethodAsString == "none") {
-                    return GmmxxEquationSolverSettings::PreconditioningMethod::None;
+            storm::solver::GmmxxLinearEquationSolverPreconditioner GmmxxEquationSolverSettings::getPreconditioningMethod() const {
+                std::string preconditioningMethodAsString = this->getOption(preconditionOptionName).getArgumentByName("name").getValueAsString();
+                if (preconditioningMethodAsString == "ilu") {
+                    return storm::solver::GmmxxLinearEquationSolverPreconditioner::Ilu;
+                } else if (preconditioningMethodAsString == "diagonal") {
+                    return storm::solver::GmmxxLinearEquationSolverPreconditioner::Diagonal;
+                } else if (preconditioningMethodAsString == "none") {
+                    return storm::solver::GmmxxLinearEquationSolverPreconditioner::None;
                 }
-                STORM_LOG_THROW(false, storm::exceptions::IllegalArgumentValueException, "Unknown preconditioning technique '" << PreconditioningMethodAsString << "' selected.");
+                STORM_LOG_THROW(false, storm::exceptions::IllegalArgumentValueException, "Unknown preconditioning technique '" << preconditioningMethodAsString << "' selected.");
             }
             
             bool GmmxxEquationSolverSettings::isRestartIterationCountSet() const {

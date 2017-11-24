@@ -23,7 +23,7 @@ namespace storm {
         namespace multiobjective {
             
             template<typename SparseModelType>
-            std::unique_ptr<CheckResult> performMultiObjectiveModelChecking(SparseModelType const& model, storm::logic::MultiObjectiveFormula const& formula,  MultiObjectiveMethodSelection methodSelection) {
+            std::unique_ptr<CheckResult> performMultiObjectiveModelChecking(Environment const& env, SparseModelType const& model, storm::logic::MultiObjectiveFormula const& formula,  MultiObjectiveMethodSelection methodSelection) {
                 storm::utility::Stopwatch swTotal(true);
                 storm::utility::Stopwatch swPreprocessing(true);
                 STORM_LOG_ASSERT(model.getInitialStates().getNumberOfSetBits() == 1, "Multi-objective Model checking on model with multiple initial states is not supported.");
@@ -58,13 +58,13 @@ namespace storm {
                     {
                         std::unique_ptr<SparsePcaaQuery<SparseModelType, storm::RationalNumber>> query;
                         switch (preprocessorResult.queryType) {
-                            case SparseMultiObjectivePreprocessorReturnType<SparseModelType>::QueryType::Achievability:
+                            case SparseMultiObjectivePreprocessorResult<SparseModelType>::QueryType::Achievability:
                                 query = std::unique_ptr<SparsePcaaQuery<SparseModelType, storm::RationalNumber>> (new SparsePcaaAchievabilityQuery<SparseModelType, storm::RationalNumber>(preprocessorResult));
                                 break;
-                            case SparseMultiObjectivePreprocessorReturnType<SparseModelType>::QueryType::Quantitative:
+                            case SparseMultiObjectivePreprocessorResult<SparseModelType>::QueryType::Quantitative:
                                 query = std::unique_ptr<SparsePcaaQuery<SparseModelType, storm::RationalNumber>> (new SparsePcaaQuantitativeQuery<SparseModelType, storm::RationalNumber>(preprocessorResult));
                                 break;
-                            case SparseMultiObjectivePreprocessorReturnType<SparseModelType>::QueryType::Pareto:
+                            case SparseMultiObjectivePreprocessorResult<SparseModelType>::QueryType::Pareto:
                                 query = std::unique_ptr<SparsePcaaQuery<SparseModelType, storm::RationalNumber>> (new SparsePcaaParetoQuery<SparseModelType, storm::RationalNumber>(preprocessorResult));
                                 break;
                             default:
@@ -72,7 +72,7 @@ namespace storm {
                                 break;
                         }
         
-                        result = query->check();
+                        result = query->check(env);
                                         
                         if(storm::settings::getModule<storm::settings::modules::MultiObjectiveSettings>().isExportPlotSet()) {
                             query->exportPlotOfCurrentApproximation(storm::settings::getModule<storm::settings::modules::MultiObjectiveSettings>().getExportPlotDirectory());
@@ -83,7 +83,7 @@ namespace storm {
                     {
                         std::unique_ptr<SparseCbQuery<SparseModelType>> query;
                         switch (preprocessorResult.queryType) {
-                            case SparseMultiObjectivePreprocessorReturnType<SparseModelType>::QueryType::Achievability:
+                            case SparseMultiObjectivePreprocessorResult<SparseModelType>::QueryType::Achievability:
                                 query = std::unique_ptr<SparseCbQuery<SparseModelType>> (new SparseCbAchievabilityQuery<SparseModelType>(preprocessorResult));
                                 break;
                             default:
@@ -91,7 +91,7 @@ namespace storm {
                                 break;
                         }
                         
-                        result = query->check();
+                        result = query->check(env);
                      
                         if(storm::settings::getModule<storm::settings::modules::MultiObjectiveSettings>().isExportPlotSet()) {
                             STORM_LOG_ERROR("Can not export plot for the constrained based solver.");
@@ -112,10 +112,10 @@ namespace storm {
             }
      
             
-            template std::unique_ptr<CheckResult> performMultiObjectiveModelChecking<storm::models::sparse::Mdp<double>>(storm::models::sparse::Mdp<double> const& model, storm::logic::MultiObjectiveFormula const& formula, MultiObjectiveMethodSelection methodSelection);
-            template std::unique_ptr<CheckResult> performMultiObjectiveModelChecking<storm::models::sparse::MarkovAutomaton<double>>(storm::models::sparse::MarkovAutomaton<double> const& model, storm::logic::MultiObjectiveFormula const& formula, MultiObjectiveMethodSelection methodSelection);
-            template std::unique_ptr<CheckResult> performMultiObjectiveModelChecking<storm::models::sparse::Mdp<storm::RationalNumber>>(storm::models::sparse::Mdp<storm::RationalNumber> const& model, storm::logic::MultiObjectiveFormula const& formula, MultiObjectiveMethodSelection methodSelection);
-            template std::unique_ptr<CheckResult> performMultiObjectiveModelChecking<storm::models::sparse::MarkovAutomaton<storm::RationalNumber>>(storm::models::sparse::MarkovAutomaton<storm::RationalNumber> const& model, storm::logic::MultiObjectiveFormula const& formula, MultiObjectiveMethodSelection methodSelection);
+            template std::unique_ptr<CheckResult> performMultiObjectiveModelChecking<storm::models::sparse::Mdp<double>>(Environment const& env, storm::models::sparse::Mdp<double> const& model, storm::logic::MultiObjectiveFormula const& formula, MultiObjectiveMethodSelection methodSelection);
+            template std::unique_ptr<CheckResult> performMultiObjectiveModelChecking<storm::models::sparse::MarkovAutomaton<double>>(Environment const& env, storm::models::sparse::MarkovAutomaton<double> const& model, storm::logic::MultiObjectiveFormula const& formula, MultiObjectiveMethodSelection methodSelection);
+            template std::unique_ptr<CheckResult> performMultiObjectiveModelChecking<storm::models::sparse::Mdp<storm::RationalNumber>>(Environment const& env, storm::models::sparse::Mdp<storm::RationalNumber> const& model, storm::logic::MultiObjectiveFormula const& formula, MultiObjectiveMethodSelection methodSelection);
+            template std::unique_ptr<CheckResult> performMultiObjectiveModelChecking<storm::models::sparse::MarkovAutomaton<storm::RationalNumber>>(Environment const& env, storm::models::sparse::MarkovAutomaton<storm::RationalNumber> const& model, storm::logic::MultiObjectiveFormula const& formula, MultiObjectiveMethodSelection methodSelection);
 
         }
     }

@@ -56,6 +56,9 @@ namespace storm {
 
         template<typename TargetType, typename SourceType>
         TargetType convertNumber(SourceType const& number);
+        
+        template<typename ValueType>
+        std::pair<ValueType, ValueType> asFraction(ValueType const& number);
 
         template<typename ValueType>
         ValueType simplify(ValueType value);
