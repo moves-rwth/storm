@@ -290,7 +290,7 @@ namespace {
             HybridSylvanRationalPolicyIterationEnvironment,
             DdCuddDoubleValueIterationEnvironment,
             DdSylvanDoubleValueIterationEnvironment,
-            DdCuddDoublePolicyIterationEnvironment,
+   //         DdCuddDoublePolicyIterationEnvironment,
             DdSylvanRationalRationalSearchEnvironment
         > TestingTypes;
     
