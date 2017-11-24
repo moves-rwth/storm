@@ -10,6 +10,7 @@
 #include "storm/models/sparse/Mdp.h"
 #include "storm/models/symbolic/Mdp.h"
 #include "storm/models/sparse/StandardRewardModel.h"
+#include "storm/models/symbolic/StandardRewardModel.h"
 #include "storm/modelchecker/prctl/SparseMdpPrctlModelChecker.h"
 #include "storm/modelchecker/prctl/HybridMdpPrctlModelChecker.h"
 #include "storm/modelchecker/prctl/SymbolicMdpPrctlModelChecker.h"
@@ -290,7 +291,7 @@ namespace {
             HybridSylvanRationalPolicyIterationEnvironment,
             DdCuddDoubleValueIterationEnvironment,
             DdSylvanDoubleValueIterationEnvironment,
-   //         DdCuddDoublePolicyIterationEnvironment,
+            DdCuddDoublePolicyIterationEnvironment,
             DdSylvanRationalRationalSearchEnvironment
         > TestingTypes;
     
