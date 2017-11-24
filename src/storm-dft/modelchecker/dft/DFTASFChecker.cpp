@@ -188,6 +188,25 @@ namespace storm {
         };
 
 
+        class IsTrue : public DFTConstraint {
+        public:
+            IsTrue(bool val) :value(val) {
+            }
+
+            virtual ~IsTrue() {
+            }
+
+            std::string toSmtlib2(std::vector<std::string> const& varNames) const override {
+                std::stringstream sstr;
+                sstr << (value ? "true" : "false");
+                return sstr.str();
+            }
+
+        private:
+            bool value;
+        };
+
+
         class IsBoolValue : public DFTConstraint {
         public:
             IsBoolValue(uint64_t varIndex, bool val) : varIndex(varIndex), value(val) {
@@ -414,7 +433,7 @@ namespace storm {
                 }
             }
             // Initialize variables indicating Markovian states
-            for (size_t i = 0; i < dft.nrBasicElements() - 1; ++i) {
+            for (size_t i = 0; i < dft.nrBasicElements(); ++i) {
                 varNames.push_back("m_" + std::to_string(i));
                 markovianVariables.emplace(i, varNames.size() - 1);
             }
@@ -582,15 +601,17 @@ namespace storm {
         }
 
         void DFTASFChecker::addMarkovianConstraints() {
+            uint64_t nrMarkovian = dft.nrBasicElements();
             // Vector containing (non-)Markovian constraints for each timepoint
-            std::vector<std::vector<std::shared_ptr<DFTConstraint>>> markovianC(dft.nrBasicElements() -1);
-            std::vector<std::vector<std::shared_ptr<DFTConstraint>>> nonMarkovianC(dft.nrBasicElements() -1);
+            std::vector<std::vector<std::shared_ptr<DFTConstraint>>> markovianC(nrMarkovian);
+            std::vector<std::vector<std::shared_ptr<DFTConstraint>>> nonMarkovianC(nrMarkovian);
+            std::vector<std::vector<std::shared_ptr<DFTConstraint>>> notColdC(nrMarkovian);
 
             // All dependent events of a failed trigger have failed as well (constraint 9)
             for (size_t j = 0; j < dft.nrElements(); ++j) {
                 std::shared_ptr<storm::storage::DFTElement<ValueType> const> element = dft.getElement(j);
                 if (element->hasOutgoingDependencies()) {
-                    for (uint64_t i = 0; i < dft.nrBasicElements() -1; ++i) {
+                    for (uint64_t i = 0; i < nrMarkovian; ++i) {
                         std::shared_ptr<DFTConstraint> triggerFailed = std::make_shared<IsLessEqualConstant>(timePointVariables.at(j), i);
                         std::vector<std::shared_ptr<DFTConstraint>> depFailed;
                         for (auto const& dependency : element->outgoingDependencies()) {
@@ -602,7 +623,7 @@ namespace storm {
                     }
                 }
             }
-            for (uint64_t i = 0; i < dft.nrBasicElements() - 1; ++i) {
+            for (uint64_t i = 0; i < nrMarkovian; ++i) {
                 constraints.push_back(std::make_shared<Iff>(std::make_shared<IsBoolValue>(markovianVariables.at(i), true), std::make_shared<And>(markovianC[i])));
                 constraints.back()->setDescription("Markovian (" + std::to_string(i) + ") iff all dependent events which trigger failed also failed.");
             }
@@ -614,7 +635,7 @@ namespace storm {
                     auto be = std::static_pointer_cast<storm::storage::DFTBE<double> const>(element);
 
                     if (be->hasIngoingDependencies()) {
-                        for (uint64_t i = 0; i < dft.nrBasicElements() -1; ++i) {
+                        for (uint64_t i = 0; i < nrMarkovian -1; ++i) {
                             std::shared_ptr<DFTConstraint> nextFailure = std::make_shared<IsConstantValue>(timePointVariables.at(j), i+1);
                             std::vector<std::shared_ptr<DFTConstraint>> triggerFailed;
                             for (auto const& dependency : be->ingoingDependencies()) {
@@ -625,9 +646,28 @@ namespace storm {
                     }
                 }
             }
-            for (uint64_t i = 0; i < dft.nrBasicElements() - 1; ++i) {
+            for (uint64_t i = 0; i < nrMarkovian; ++i) {
                 constraints.push_back(std::make_shared<Implies>(std::make_shared<IsBoolValue>(markovianVariables.at(i), false), std::make_shared<And>(nonMarkovianC[i])));
                 constraints.back()->setDescription("Non-Markovian (" + std::to_string(i) + ") -> next failure is dependent BE.");
+            }
+
+            // In Markovian steps the failure rate is positive (constraint 11)
+            for (size_t j = 0; j < dft.nrElements(); ++j) {
+                std::shared_ptr<storm::storage::DFTElement<ValueType> const> element = dft.getElement(j);
+                if (element->isBasicElement()) {
+                    auto be = std::static_pointer_cast<storm::storage::DFTBE<double> const>(element);
+                    for (uint64_t i = 0; i < nrMarkovian; ++i) {
+                        std::shared_ptr<DFTConstraint> nextFailure = std::make_shared<IsConstantValue>(timePointVariables.at(j), i+1);
+                        // BE is not cold
+                        // TODO: implement use of activation variables here
+                        bool cold = storm::utility::isZero<ValueType>(be->activeFailureRate());
+                        notColdC[i].push_back(std::make_shared<Implies>(nextFailure, std::make_shared<IsTrue>(!cold)));
+                    }
+                }
+            }
+            for (uint64_t i = 0; i < nrMarkovian; ++i) {
+                constraints.push_back(std::make_shared<Implies>(std::make_shared<IsBoolValue>(markovianVariables.at(i), true), std::make_shared<And>(notColdC[i])));
+                constraints.back()->setDescription("Markovian (" + std::to_string(i) + ") -> positive failure rate.");
             }
 
         }
