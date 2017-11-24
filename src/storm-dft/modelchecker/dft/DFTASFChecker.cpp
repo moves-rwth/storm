@@ -432,25 +432,26 @@ namespace storm {
             }
 
             // Only one spare can claim a child (constraint 8)
+            // and only not failed childs can be claimed (addition to constrain 8)
             for (size_t i = 0; i < dft.nrElements(); ++i) {
                 std::shared_ptr<storm::storage::DFTElement<ValueType> const> element = dft.getElement(i);
                 if (element->isSpareGate()) {
                     auto spare = std::static_pointer_cast<storm::storage::DFTSpare<double> const>(element);
                     for (auto const& child : spare->children()) {
+                        std::vector<std::shared_ptr<DFTConstraint>> additionalC;
+                        uint64_t timeClaiming = getClaimVariableIndex(spare->id(), child->id());
+                        std::shared_ptr<DFTConstraint> leftC = std::make_shared<IsLessConstant>(timeClaiming, notFailed);
+                        // Child must be operational at time of claiming
+                        additionalC.push_back(std::make_shared<IsLess>(timeClaiming, timePointVariables.at(child->id())));
                         // No other spare claims this child
-                        std::vector<std::shared_ptr<DFTConstraint>> noOtherClaims;
                         for (auto const& otherSpare : child->parents()) {
-                            if (otherSpare->id() == spare->id()) {
-                                // original spare
-                                continue;
+                            if (otherSpare->id() != spare->id()) {
+                                // Different spare
+                                additionalC.push_back(std::make_shared<IsConstantValue>(getClaimVariableIndex(otherSpare->id(), child->id()), notFailed));
                             }
-                            noOtherClaims.push_back(std::make_shared<IsConstantValue>(getClaimVariableIndex(otherSpare->id(), child->id()), notFailed));
                         }
-                        if (!noOtherClaims.empty()) {
-                            std::shared_ptr<DFTConstraint> leftC = std::make_shared<IsLessConstant>(getClaimVariableIndex(spare->id(), child->id()), notFailed);
-                            constraints.push_back(std::make_shared<Implies>(leftC, std::make_shared<And>(noOtherClaims)));
-                            constraints.back()->setDescription("Only one spare claims the child " + child->name());
-                        }
+                        constraints.push_back(std::make_shared<Implies>(leftC, std::make_shared<And>(additionalC)));
+                        constraints.back()->setDescription("Child " + child->name() + " must be operational at time of claiming by spare " + spare->name() + " and can only be claimed by one spare.");
                     }
                 }
             }
@@ -467,7 +468,6 @@ namespace storm {
 
             std::vector<std::shared_ptr<DFTConstraint>> noClaimingPossible;
             // Child cannot be claimed.
-            noClaimingPossible.push_back(std::make_shared<IsEqual>(claimChild, notFailed));
             if (childIndex + 1 < spare->children().size()) {
                 // Consider next child for claiming (second case in constraint 7)
                 noClaimingPossible.push_back(generateTryToClaimConstraint(spare, childIndex+1, timepoint));
