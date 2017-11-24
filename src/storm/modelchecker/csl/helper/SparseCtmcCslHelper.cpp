@@ -23,6 +23,7 @@
 #include "storm/exceptions/InvalidStateException.h"
 #include "storm/exceptions/InvalidPropertyException.h"
 #include "storm/exceptions/FormatUnsupportedBySolverException.h"
+#include "storm/exceptions/UncheckedRequirementException.h"
 
 namespace storm {
     namespace modelchecker {
@@ -490,6 +491,8 @@ namespace storm {
                     bsccEquationSystem = builder.build();
                     
                     {
+                        // Check solver requirements
+                        STORM_LOG_THROW(linearEquationSolverFactory.getRequirements(env).empty(), storm::exceptions::UncheckedRequirementException, "At least one requirement of the linear equation solver could not be matched.");
                         // Check whether we have the right input format for the solver.
                         STORM_LOG_THROW(linearEquationSolverFactory.getEquationProblemFormat(env) == storm::solver::LinearEquationSolverProblemFormat::EquationSystem, storm::exceptions::FormatUnsupportedBySolverException, "The selected solver does not support the required format.");
                         std::unique_ptr<storm::solver::LinearEquationSolver<ValueType>> solver = linearEquationSolverFactory.create(env, std::move(bsccEquationSystem));
@@ -560,6 +563,8 @@ namespace storm {
                     rewardSolution = std::vector<ValueType>(rewardEquationSystemMatrix.getColumnCount(), one);
                     
                     {
+                        // Check solver requirements
+                        STORM_LOG_THROW(linearEquationSolverFactory.getRequirements(env).empty(), storm::exceptions::UncheckedRequirementException, "At least one requirement of the linear equation solver could not be matched.");
                         // Check whether we have the right input format for the solver.
                         STORM_LOG_THROW(linearEquationSolverFactory.getEquationProblemFormat(env) == storm::solver::LinearEquationSolverProblemFormat::EquationSystem, storm::exceptions::FormatUnsupportedBySolverException, "The selected solver does not support the required format.");
                         std::unique_ptr<storm::solver::LinearEquationSolver<ValueType>> solver = linearEquationSolverFactory.create(env, std::move(rewardEquationSystemMatrix));

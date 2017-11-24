@@ -62,6 +62,11 @@ namespace storm {
                         storm::dd::Add<DdType, ValueType> subvector = submatrix * prob1StatesAsColumn;
                         subvector = subvector.sumAbstract(model.getColumnVariables());
 
+                        auto req = linearEquationSolverFactory.getRequirements(env);
+                        req.clearLowerBounds();
+                        req.clearUpperBounds();
+                        STORM_LOG_THROW(req.empty(), storm::exceptions::UncheckedRequirementException, "At least one requirement of the linear equation solver could not be matched.");
+                        
                         // Check whether we need to create an equation system.
                         bool convertToEquationSystem = linearEquationSolverFactory.getEquationProblemFormat(env) == storm::solver::LinearEquationSolverProblemFormat::EquationSystem;
                         
@@ -246,9 +251,10 @@ namespace storm {
                         storm::dd::Add<DdType, ValueType> subvector = rewardModel.getTotalRewardVector(maybeStatesAdd, submatrix, model.getColumnVariables());
 
                         // Check the requirements of a linear equation solver
+                        // We might need to compute upper reward bounds for which the oneStepTargetProbabilities are needed.
+                        boost::optional<storm::dd::Add<DdType, ValueType>> oneStepTargetProbs;
                         auto req = linearEquationSolverFactory.getRequirements(env);
                         req.clearLowerBounds();
-                        boost::optional<storm::dd::Add<DdType, ValueType>> oneStepTargetProbs;
                         if (req.requiresUpperBounds()) {
                             storm::dd::Add<DdType, ValueType> targetStatesAsColumn = targetStates.template toAdd<ValueType>();
                             targetStatesAsColumn = targetStatesAsColumn.swapVariables(model.getRowColumnMetaVariablePairs());
@@ -275,9 +281,11 @@ namespace storm {
                         storm::storage::SparseMatrix<ValueType> explicitSubmatrix = submatrix.toMatrix(odd, odd);
                         std::vector<ValueType> b = subvector.toVector(odd);
                         
-                        // Create the upper bounds vector if one was requested
+                        // Create the upper bounds vector if one was requested.
                         boost::optional<std::vector<ValueType>> upperBounds;
                         if (oneStepTargetProbs) {
+                            // FIXME: This will fail if we already converted the matrix to the equation problem format.
+                            STORM_LOG_ASSERT(!convertToEquationSystem, "Upper reward bounds required, but the matrix is in the wrong format for the computation.");
                             upperBounds = computeUpperRewardBounds(explicitSubmatrix, b, oneStepTargetProbs->toVector(odd));
                         }
                         

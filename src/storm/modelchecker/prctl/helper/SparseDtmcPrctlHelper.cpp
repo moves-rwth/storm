@@ -273,11 +273,6 @@ namespace storm {
                         // In this case we have to compute the reward values for the remaining states.
                         // We can eliminate the rows and columns from the original transition probability matrix.
                         storm::storage::SparseMatrix<ValueType> submatrix = transitionMatrix.getSubmatrix(true, maybeStates, maybeStates, convertToEquationSystem);
-                        if (convertToEquationSystem) {
-                            // Converting the matrix from the fixpoint notation to the form needed for the equation
-                            // system. That is, we go from x = A*x + b to (I-A)x = b.
-                            submatrix.convertToEquationSystem();
-                        }
                         
                         // Initialize the x vector with the hint (if available) or with 1 for each element.
                         // This is the initial guess for the iterative solvers.
@@ -300,6 +295,12 @@ namespace storm {
                         }
                         STORM_LOG_THROW(requirements.empty(), storm::exceptions::UncheckedRequirementException, "There are unchecked requirements of the solver.");
                         
+                        // If necessary, convert the matrix from the fixpoint notation to the form needed for the equation system.
+                        if (convertToEquationSystem) {
+                            // go from x = A*x + b to (I-A)x = b.
+                            submatrix.convertToEquationSystem();
+                        }
+
                         // Create the solver.
                         goal.restrictRelevantValues(maybeStates);
                         std::unique_ptr<storm::solver::LinearEquationSolver<ValueType>> solver = storm::solver::configureLinearEquationSolver(env, std::move(goal), linearEquationSolverFactory, std::move(submatrix));
