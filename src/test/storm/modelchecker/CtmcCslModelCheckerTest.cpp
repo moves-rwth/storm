@@ -9,6 +9,7 @@
 #include "storm/logic/Formulas.h"
 #include "storm/solver/EigenLinearEquationSolver.h"
 #include "storm/models/sparse/StandardRewardModel.h"
+#include "storm/models/symbolic/StandardRewardModel.h"
 #include "storm/models/sparse/Ctmc.h"
 #include "storm/models/symbolic/Ctmc.h"
 #include "storm/modelchecker/csl/SparseCtmcCslModelChecker.h"
