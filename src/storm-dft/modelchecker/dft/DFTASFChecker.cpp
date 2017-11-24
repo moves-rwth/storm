@@ -107,11 +107,15 @@ namespace storm {
 
             std::string toSmtlib2(std::vector<std::string> const& varNames) const override {
                 std::stringstream sstr;
-                sstr << "(and";
-                for(auto const& c : constraints) {
-                    sstr << " " << c->toSmtlib2(varNames);
+                if (constraints.empty()) {
+                    sstr << "true";
+                } else {
+                    sstr << "(and";
+                    for(auto const& c : constraints) {
+                        sstr << " " << c->toSmtlib2(varNames);
+                    }
+                    sstr << ")";
                 }
-                sstr << ")";
                 return sstr.str();
             }
 
