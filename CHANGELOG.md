@@ -8,10 +8,11 @@ Version 1.1.x
 -------------
 - long run average computation via value iteration
 - LP based MDP model checking
-- parametric model checking has an own binary
 - solvers can now expose requirements
 - unbounded reachability and reachability rewards now correctly respect solver requirements
 - sound (interval) value iteration
+- Support for Multi-objective multi-dimensional reward bounded reachability properties for MDPs.
+- Developers can now change environment variables (such as the solver precisions) locally. 
 
 ### Version 1.1.1
 - c++ api changes: Building model takes BuilderOptions instead of extended list of Booleans, does not depend on settings anymore.
