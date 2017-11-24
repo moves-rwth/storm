@@ -311,7 +311,7 @@ namespace storm {
 
         void DFTASFChecker::convert() {
             std::vector<uint64_t> beVariables;
-            uint64_t notFailed = dft.nrBasicElements()+1; // Value indicating the element is not failed
+            notFailed = dft.nrBasicElements()+1; // Value indicating the element is not failed
 
             // Initialize variables
             for (size_t i = 0; i < dft.nrElements(); ++i) {
@@ -410,38 +410,14 @@ namespace storm {
                         constraints.back()->setDescription("Last child & claimed -> SPARE fails");
 
                         // Construct constraint for trying to claim next child
-                        // We recursively build the function phi^s_i
-                        // Last child: spare fails at same point as second to last child (otherwise case in constraint 7)
-                        std::shared_ptr<DFTConstraint> oldPhi = std::make_shared<IsEqual>(timePointVariables.at(i), childVarIndices.at(children.size() - 2));
                         STORM_LOG_ASSERT(children.size() >= 2, "Spare has only one child");
-                        for (uint64_t j = 0; j+1 < children.size(); ++j) {
-                            uint64_t currChild = children.size() - 2 - j;
-                            uint64_t nextChild = currChild + 1;
+                        for (uint64_t currChild = 0; currChild < children.size() - 1; ++currChild) {
                             uint64_t timeCurrChild = childVarIndices.at(currChild); // Moment when current child fails
-                            uint64_t timeNextChild = childVarIndices.at(nextChild); // Moment when next child fails
-                            uint64_t claimNextChild = getClaimVariableIndex(spare->id(), childVarIndices.at(nextChild)); // Moment the spare claims the next child
 
-                            // Check if next child is availble (first part of case distinction for constraint 7)
-                            std::vector<std::shared_ptr<DFTConstraint>> ifcs;
-                            // Next child is not yet failed
-                            ifcs.push_back(std::make_shared<IsLess>(timeCurrChild, timeNextChild));
-                            // Child is not yet claimed by a different spare
-                            for (auto const& otherSpare : children.at(nextChild)->parents()) {
-                                if (otherSpare->id() == i) {
-                                    // not a different spare.
-                                    continue;
-                                }
-                                ifcs.push_back(std::make_shared<IsConstantValue>(getClaimVariableIndex(otherSpare->id(), children.at(nextChild)->id()), notFailed));
-                            }
-
-                            // Claim next child (constraint 7)
-                            // oldPhi contains the constraints for the recursive call to phi^s_{i+1}
-                            std::shared_ptr<DFTConstraint> tryClaimC = std::make_shared<IfThenElse>(std::make_shared<And>(ifcs), std::make_shared<IsEqual>(claimNextChild, timeCurrChild), oldPhi);
-                            // Next iteration of phi
-                            oldPhi = tryClaimC;
-                            // If i-th child fails after being claimed, then try to claim (i+1)-th child (constraint 6)
+                            // If i-th child fails after being claimed, then try to claim next child (constraint 6)
+                            std::shared_ptr<DFTConstraint> tryClaimC = generateTryToClaimConstraint(spare, currChild + 1, timeCurrChild);
                             constraints.push_back(std::make_shared<Iff>(std::make_shared<IsLess>(getClaimVariableIndex(spare->id(), children.at(currChild)->id()), timeCurrChild), tryClaimC));
-                            constraints.back()->setDescription("Try to claim " + std::to_string(nextChild+1) + "th child");
+                            constraints.back()->setDescription("Try to claim " + std::to_string(currChild+2) + "th child");
                         }
                         break;
                     }
@@ -482,6 +458,40 @@ namespace storm {
             constraints.push_back(std::make_shared<IsConstantValue>(timePointVariables.at(dft.getTopLevelIndex()), notFailed));
             constraints.back()->setDescription("Toplevel element should not fail");
         }
+
+        std::shared_ptr<DFTConstraint> DFTASFChecker::generateTryToClaimConstraint(std::shared_ptr<storm::storage::DFTSpare<ValueType> const> spare, uint64_t childIndex, uint64_t timepoint) const {
+            auto child = spare->children().at(childIndex);
+            uint64_t timeChild = timePointVariables.at(child->id()); // Moment when the child fails
+            uint64_t claimChild = getClaimVariableIndex(spare->id(), child->id()); // Moment the spare claims the child
+
+            std::vector<std::shared_ptr<DFTConstraint>> noClaimingPossible;
+            if (childIndex + 1 < spare->children().size()) {
+                // Consider next child for claiming (second case in constraint 7)
+                noClaimingPossible.push_back(generateTryToClaimConstraint(spare, childIndex+1, timepoint));
+            } else {
+                // Last child: spare fails at same point as this child (third case in constraint 7)
+                noClaimingPossible.push_back(std::make_shared<IsEqual>(timePointVariables.at(spare->id()), timepoint));
+            }
+            std::shared_ptr<DFTConstraint> elseCaseC = std::make_shared<And>(noClaimingPossible);
+
+            // Check if next child is availble (first case in constraint 7)
+            std::vector<std::shared_ptr<DFTConstraint>> claimingPossibleC;
+            // Next child is not yet failed
+            claimingPossibleC.push_back(std::make_shared<IsLess>(timepoint, timeChild));
+            // Child is not yet claimed by a different spare
+            for (auto const& otherSpare : child->parents()) {
+                if (otherSpare->id() == spare->id()) {
+                    // not a different spare.
+                    continue;
+                }
+                claimingPossibleC.push_back(std::make_shared<IsConstantValue>(getClaimVariableIndex(otherSpare->id(), child->id()), notFailed));
+            }
+
+            // Claim child if available
+            std::shared_ptr<DFTConstraint> firstCaseC = std::make_shared<IfThenElse>(std::make_shared<And>(claimingPossibleC), std::make_shared<IsEqual>(claimChild, timepoint), elseCaseC);
+            return firstCaseC;
+        }
+
 
         void DFTASFChecker::toFile(std::string const& filename) {
             std::ofstream stream;
