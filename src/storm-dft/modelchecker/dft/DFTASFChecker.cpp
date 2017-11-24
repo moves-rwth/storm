@@ -465,6 +465,8 @@ namespace storm {
             uint64_t claimChild = getClaimVariableIndex(spare->id(), child->id()); // Moment the spare claims the child
 
             std::vector<std::shared_ptr<DFTConstraint>> noClaimingPossible;
+            // Child cannot be claimed.
+            noClaimingPossible.push_back(std::make_shared<IsEqual>(claimChild, notFailed));
             if (childIndex + 1 < spare->children().size()) {
                 // Consider next child for claiming (second case in constraint 7)
                 noClaimingPossible.push_back(generateTryToClaimConstraint(spare, childIndex+1, timepoint));
