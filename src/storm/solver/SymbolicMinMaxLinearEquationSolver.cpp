@@ -170,7 +170,7 @@ namespace storm {
                 if (isSolution) {
                     status = SolverStatus::Converged;
                 } else {
-                    precision /= 10;
+                    precision /= storm::utility::convertNumber<ValueType, uint64_t>(10);
                 }
             }
             
