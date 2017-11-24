@@ -146,7 +146,7 @@ namespace storm {
                         // If we minimize, we know that the solution to the equation system is unique.
                         bool uniqueSolution = dir == storm::solver::OptimizationDirection::Minimize;
                         // Check for requirements of the solver early so we can adjust the maybe state computation accordingly.
-                        storm::solver::MinMaxLinearEquationSolverRequirements requirements = linearEquationSolverFactory.getRequirements(env, uniqueSolution, dir);
+                        storm::solver::MinMaxLinearEquationSolverRequirements requirements = linearEquationSolverFactory.getRequirements(env, uniqueSolution, dir, true);
                         storm::solver::MinMaxLinearEquationSolverRequirements clearedRequirements = requirements;
                         SolverRequirementsData<ValueType> solverRequirementsData;
                         bool extendMaybeStates = false;
@@ -513,7 +513,7 @@ namespace storm {
                         // If we maximize, we know that the solution to the equation system is unique.
                         bool uniqueSolution = dir == storm::solver::OptimizationDirection::Maximize;
                         // Check for requirements of the solver this early so we can adapt the maybe states accordingly.
-                        storm::solver::MinMaxLinearEquationSolverRequirements requirements = linearEquationSolverFactory.getRequirements(env, uniqueSolution, dir);
+                        storm::solver::MinMaxLinearEquationSolverRequirements requirements = linearEquationSolverFactory.getRequirements(env, uniqueSolution, dir, true);
                         storm::solver::MinMaxLinearEquationSolverRequirements clearedRequirements = requirements;
                         bool extendMaybeStates = false;
                         if (!clearedRequirements.empty()) {

@@ -112,7 +112,7 @@ namespace storm {
         }
         
         template<typename ValueType>
-        LinearEquationSolverRequirements LinearEquationSolver<ValueType>::getRequirements(Environment const& env) const {
+        LinearEquationSolverRequirements LinearEquationSolver<ValueType>::getRequirements(Environment const& env, LinearEquationSolverTask const& task) const {
             return LinearEquationSolverRequirements();
         }
         
@@ -155,8 +155,8 @@ namespace storm {
         }
         
         template<typename ValueType>
-        LinearEquationSolverRequirements LinearEquationSolverFactory<ValueType>::getRequirements(Environment const& env) const {
-            return this->create(env)->getRequirements(env);
+        LinearEquationSolverRequirements LinearEquationSolverFactory<ValueType>::getRequirements(Environment const& env, LinearEquationSolverTask const& task) const {
+            return this->create(env)->getRequirements(env, task);
         }
         
         template<typename ValueType>
@@ -210,7 +210,7 @@ namespace storm {
             EquationSolverType type = env.solver().getLinearEquationSolverType();
             
             // Adjust the solver type if none was specified and we want sound computations
-            if (env.solver().isForceSoundness() && task != LinearEquationSolverTask::Multiply, type != EquationSolverType::Native && type != EquationSolverType::Eigen && type != EquationSolverType::Elimination) {
+            if (env.solver().isForceSoundness() && task != LinearEquationSolverTask::Multiply && type != EquationSolverType::Native && type != EquationSolverType::Eigen && type != EquationSolverType::Elimination) {
                 if (env.solver().isLinearEquationSolverTypeSetFromDefaultValue()) {
                     type = EquationSolverType::Native;
                     STORM_LOG_INFO("Selecting '" + toString(type) + "' as the linear equation solver to guarantee sound results. If you want to override this, please explicitly specify a different solver.");

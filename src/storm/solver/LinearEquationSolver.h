@@ -132,7 +132,7 @@ namespace storm {
              * Retrieves the requirements of the solver under the current settings. Note that these requirements only
              * apply to solving linear equations and not to the matrix vector multiplications.
              */
-            virtual LinearEquationSolverRequirements getRequirements(Environment const& env) const;
+            virtual LinearEquationSolverRequirements getRequirements(Environment const& env, LinearEquationSolverTask const& task = LinearEquationSolverTask::Unspecified) const;
             
             /*!
              * Sets whether some of the generated data during solver calls should be cached.
@@ -217,7 +217,7 @@ namespace storm {
              * Retrieves the requirements of the solver if it was created with the current settings. Note that these
              * requirements only apply to solving linear equations and not to the matrix vector multiplications.
              */
-            LinearEquationSolverRequirements getRequirements(Environment const& env) const;
+            LinearEquationSolverRequirements getRequirements(Environment const& env, LinearEquationSolverTask const& task = LinearEquationSolverTask::Unspecified) const;
         };
 
         template<typename ValueType>

@@ -147,7 +147,7 @@ namespace storm {
                     minMaxSolver->setOptimizationDirection(dir);
                     minMaxSolver->setCachingEnabled(true);
                     minMaxSolver->setTrackScheduler(true);
-                    auto req = minMaxSolver->getRequirements(env, dir);
+                    auto req = minMaxSolver->getRequirements(env, dir, false);
                     if (lowerBound) {
                         minMaxSolver->setLowerBound(lowerBound.get());
                         req.clearLowerBounds();
@@ -432,7 +432,8 @@ namespace storm {
                                       || (hint.isExplicitModelCheckerHint() && hint.asExplicitModelCheckerHint<ValueType>().getNoEndComponentsInMaybeStates());
                 
                 // Check for requirements of the solver.
-                storm::solver::MinMaxLinearEquationSolverRequirements requirements = minMaxLinearEquationSolverFactory.getRequirements(env, result.uniqueSolution, dir);
+                bool hasSchedulerHint = hint.isExplicitModelCheckerHint() && hint.template asExplicitModelCheckerHint<ValueType>().hasSchedulerHint();
+                storm::solver::MinMaxLinearEquationSolverRequirements requirements = minMaxLinearEquationSolverFactory.getRequirements(env, result.uniqueSolution, dir, !hasSchedulerHint);
                 if (!requirements.empty()) {
                     
                     // If the solver still requires no end-components, we have to eliminate them later.
@@ -1295,7 +1296,7 @@ namespace storm {
                 storm::storage::SparseMatrix<ValueType> sspMatrix = sspMatrixBuilder.build(currentChoice, numberOfSspStates, numberOfSspStates);
                 
                 // Check for requirements of the solver.
-                storm::solver::MinMaxLinearEquationSolverRequirements requirements = minMaxLinearEquationSolverFactory.getRequirements(env, true, goal.direction());
+                storm::solver::MinMaxLinearEquationSolverRequirements requirements = minMaxLinearEquationSolverFactory.getRequirements(env, true, goal.direction(), true);
                 requirements.clearBounds();
                 STORM_LOG_THROW(requirements.empty(), storm::exceptions::UncheckedRequirementException, "Cannot establish requirements for solver.");
                 

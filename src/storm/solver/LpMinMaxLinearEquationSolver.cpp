@@ -111,9 +111,9 @@ namespace storm {
         }
         
         template<typename ValueType>
-        MinMaxLinearEquationSolverRequirements LpMinMaxLinearEquationSolver<ValueType>::getRequirements(Environment const& env, boost::optional<storm::solver::OptimizationDirection> const& direction) const {
+        MinMaxLinearEquationSolverRequirements LpMinMaxLinearEquationSolver<ValueType>::getRequirements(Environment const& env, boost::optional<storm::solver::OptimizationDirection> const& direction, bool const& assumeNoInitialScheduler) const {
             
-            MinMaxLinearEquationSolverRequirements requirements;
+            MinMaxLinearEquationSolverRequirements requirements(this->linearEquationSolverFactory->getRequirements(env, LinearEquationSolverTask::Multiply));
             
             // In case we need to retrieve a scheduler, the solution has to be unique
             if (!this->hasUniqueSolution() && this->isTrackSchedulerSet()) {

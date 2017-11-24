@@ -26,7 +26,7 @@ namespace storm {
 
             virtual void clearCache() const override;
             
-            virtual MinMaxLinearEquationSolverRequirements getRequirements(Environment const& env, boost::optional<storm::solver::OptimizationDirection> const& direction = boost::none) const override;
+            virtual MinMaxLinearEquationSolverRequirements getRequirements(Environment const& env, boost::optional<storm::solver::OptimizationDirection> const& direction = boost::none, bool const& assumeNoInitialScheduler = false) const override;
             
         private:
             

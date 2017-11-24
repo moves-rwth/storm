@@ -193,11 +193,18 @@ namespace storm {
         }
 
         template<typename ValueType>
-        MinMaxLinearEquationSolverRequirements IterativeMinMaxLinearEquationSolver<ValueType>::getRequirements(Environment const& env, boost::optional<storm::solver::OptimizationDirection> const& direction) const {
-            // Start by copying the requirements of the linear equation solver.
-            MinMaxLinearEquationSolverRequirements requirements(this->linearEquationSolverFactory->getRequirements(env));
-
+        MinMaxLinearEquationSolverRequirements IterativeMinMaxLinearEquationSolver<ValueType>::getRequirements(Environment const& env, boost::optional<storm::solver::OptimizationDirection> const& direction, bool const& assumeNoInitialScheduler) const {
             auto method = getMethod(env, storm::NumberTraits<ValueType>::IsExact);
+            
+            // Start by getting the requirements of the linear equation solver.
+            LinearEquationSolverTask linEqTask = LinearEquationSolverTask::Unspecified;
+            if (method == MinMaxMethod::ValueIteration || method == MinMaxMethod::RationalSearch) {
+                if (!this->hasInitialScheduler() && assumeNoInitialScheduler) {
+                    linEqTask = LinearEquationSolverTask::Multiply;
+                }
+            }
+            MinMaxLinearEquationSolverRequirements requirements(this->linearEquationSolverFactory->getRequirements(env, linEqTask));
+
             if (method == MinMaxMethod::ValueIteration) {
                 if (env.solver().isForceSoundness()) {
                     // Interval iteration requires a unique solution and lower+upper bounds

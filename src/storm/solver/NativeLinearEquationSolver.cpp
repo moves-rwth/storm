@@ -929,13 +929,15 @@ namespace storm {
         }
         
         template<typename ValueType>
-        LinearEquationSolverRequirements NativeLinearEquationSolver<ValueType>::getRequirements(Environment const& env) const {
+        LinearEquationSolverRequirements NativeLinearEquationSolver<ValueType>::getRequirements(Environment const& env, LinearEquationSolverTask const& task) const {
             LinearEquationSolverRequirements requirements;
-            auto method = getMethod(env, storm::NumberTraits<ValueType>::IsExact);
-            if (method == NativeLinearEquationSolverMethod::Power && env.solver().isForceSoundness()) {
-                requirements.requireBounds();
-            } else if (method == NativeLinearEquationSolverMethod::RationalSearch) {
-                requirements.requireLowerBounds();
+            if (task != LinearEquationSolverTask::Multiply) {
+                auto method = getMethod(env, storm::NumberTraits<ValueType>::IsExact);
+                if (method == NativeLinearEquationSolverMethod::Power && env.solver().isForceSoundness()) {
+                    requirements.requireBounds();
+                } else if (method == NativeLinearEquationSolverMethod::RationalSearch) {
+                    requirements.requireLowerBounds();
+                }
             }
             return requirements;
         }

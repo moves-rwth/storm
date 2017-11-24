@@ -37,7 +37,7 @@ namespace storm {
             virtual void multiplyAndReduceGaussSeidel(OptimizationDirection const& dir, std::vector<uint64_t> const& rowGroupIndices, std::vector<ValueType>& x, std::vector<ValueType> const* b, std::vector<uint_fast64_t>* choices = nullptr) const override;
             
             virtual LinearEquationSolverProblemFormat getEquationProblemFormat(storm::Environment const& env) const override;
-            virtual LinearEquationSolverRequirements getRequirements(storm::Environment const& env) const override;
+            virtual LinearEquationSolverRequirements getRequirements(Environment const& env, LinearEquationSolverTask const& task = LinearEquationSolverTask::Unspecified) const override;
 
             virtual void clearCache() const override;
 

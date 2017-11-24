@@ -175,7 +175,7 @@ namespace storm {
                 std::unique_ptr<storm::solver::MinMaxLinearEquationSolver<ValueType>> solver = solverFactory.create(env, ecQuotient->matrix);
                 solver->setTrackScheduler(true);
                 solver->setHasUniqueSolution(true);
-                auto req = solver->getRequirements(env);
+                auto req = solver->getRequirements(env, storm::solver::OptimizationDirection::Maximize, true);
                 boost::optional<ValueType> lowerBound = this->computeWeightedResultBound(true, weightVector, objectivesWithNoUpperTimeBound);
                 if (lowerBound) {
                     solver->setLowerBound(lowerBound.get());
