@@ -2,10 +2,8 @@
 
 namespace storm {
     namespace logic {
-        FormulaInformation::FormulaInformation() {
-            this->mContainsRewardOperator = false;
-            this->mContainsNextFormula = false;
-            this->mContainsBoundedUntilFormula = false;
+        FormulaInformation::FormulaInformation() : mContainsRewardOperator(false), mContainsNextFormula(false), mContainsBoundedUntilFormula(false), mContainsCumulativeRewardFormula(false), mContainsRewardBoundedFormula(false) {
+            // Intentionally left empty
         }
         
         bool FormulaInformation::containsRewardOperator() const {
