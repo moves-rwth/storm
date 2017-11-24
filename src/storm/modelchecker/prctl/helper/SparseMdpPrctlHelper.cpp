@@ -441,6 +441,8 @@ namespace storm {
                         STORM_LOG_ASSERT(!result.hasUniqueSolution(), "The solver requires to eliminate the end components although the solution is already assumed to be unique.");
                         STORM_LOG_DEBUG("Scheduling EC elimination, because the solver requires it.");
                         result.eliminateEndComponents = true;
+                        // If end components have been eliminated we can assume a unique solution.
+                        result.uniqueSolution = true;
                         requirements.clearNoEndComponents();
                     }
                     

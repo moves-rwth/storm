@@ -199,6 +199,10 @@ namespace storm {
                             
                             // Eliminate the end components and remove the states that are not interesting (target or non-filter).
                             eliminateEndComponentsAndExtendedStatesUntilProbabilities(explicitRepresentation, solverRequirementsData, targetStates);
+                            
+                            // The solution becomes unique after end components have been eliminated.
+                            uniqueSolution = true;
+
                         } else {
                             // Then compute the vector that contains the one-step probabilities to a state with probability 1 for all
                             // maybe states.
@@ -571,6 +575,8 @@ namespace storm {
 
                             if (requirements.requiresNoEndComponents()) {
                                 eliminateEndComponentsAndTargetStatesReachabilityRewards(explicitRepresentation, solverRequirementsData, targetStates, requirements.requiresUpperBounds());
+                                // The solution becomes unique after end components have been eliminated.
+                                uniqueSolution = true;
                             } else {
                                 if (requirements.requiresValidInitialScheduler()) {
                                     // Compute a valid initial scheduler.
