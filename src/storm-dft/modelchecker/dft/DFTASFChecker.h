@@ -62,12 +62,19 @@ namespace storm {
              * @return Constraint encoding the claiming.
              */
             std::shared_ptr<DFTConstraint> generateTryToClaimConstraint(std::shared_ptr<storm::storage::DFTSpare<ValueType> const> spare, uint64_t childIndex, uint64_t timepoint) const;
+
+            /**
+             * Add constraints encoding Markovian states.
+             * This corresponds to constraints (9), (10) and (11)
+             */
+            void addMarkovianConstraints();
             
             storm::storage::DFT<ValueType> const& dft;
             std::vector<std::string> varNames;
             std::unordered_map<uint64_t, uint64_t> timePointVariables;
             std::vector<std::shared_ptr<DFTConstraint>> constraints;
             std::map<SpareAndChildPair, uint64_t> claimVariables;
+            std::unordered_map<uint64_t, uint64_t> markovianVariables;
             uint64_t notFailed;
         };
     }

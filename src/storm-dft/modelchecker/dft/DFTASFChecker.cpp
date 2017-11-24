@@ -155,6 +155,31 @@ namespace storm {
         };
 
 
+        class IsBoolValue : public DFTConstraint {
+        public:
+            IsBoolValue(uint64_t varIndex, bool val) : varIndex(varIndex), value(val) {
+            }
+
+            virtual ~IsBoolValue() {
+            }
+
+            std::string toSmtlib2(std::vector<std::string> const& varNames) const override {
+                std::stringstream sstr;
+                assert(varIndex < varNames.size());
+                if (value) {
+                    sstr << varNames.at(varIndex);
+                } else {
+                    sstr << "(not " << varNames.at(varIndex) << ")";
+                }
+                return sstr.str();
+            }
+
+        private:
+            uint64_t varIndex;
+            bool value;
+        };
+
+
         class IsConstantValue : public DFTConstraint {
         public:
             IsConstantValue(uint64_t varIndex, uint64_t val) : varIndex(varIndex), value(val) {
@@ -335,6 +360,11 @@ namespace storm {
                         break;
                 }
             }
+            // Initialize variables indicating Markovian states
+            for (size_t i = 0; i < dft.nrBasicElements() - 1; ++i) {
+                varNames.push_back("m_" + std::to_string(i));
+                markovianVariables.emplace(i, varNames.size() - 1);
+            }
 
 
             // Generate constraints
@@ -423,7 +453,7 @@ namespace storm {
                         break;
                     }
                     case storm::storage::DFTElementType::PDEP:
-                        STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "SMT encoding of FDEPs and PDEPs is not implemented yet.");
+                        // FDEPs are considered later in the Markovian constraints
                         break;
                     default:
                         STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "SMT encoding for type '" << element->type() << "' is not supported.");
@@ -455,6 +485,9 @@ namespace storm {
                     }
                 }
             }
+
+            // Handle dependencies
+            addMarkovianConstraints();
 
             // Toplevel element will not fail (part of constraint 13)
             constraints.push_back(std::make_shared<IsConstantValue>(timePointVariables.at(dft.getTopLevelIndex()), notFailed));
@@ -495,6 +528,32 @@ namespace storm {
             return firstCaseC;
         }
 
+        void DFTASFChecker::addMarkovianConstraints() {
+            // This vector contains Markovian constraints for each timepoint
+            std::vector<std::vector<std::shared_ptr<DFTConstraint>>> markovianC(dft.nrBasicElements() -1);
+
+            for (size_t j = 0; j < dft.nrElements(); ++j) {
+                std::shared_ptr<storm::storage::DFTElement<ValueType> const> element = dft.getElement(j);
+                if (element->hasOutgoingDependencies()) {
+                    for (uint64_t i = 0; i < dft.nrBasicElements() -1; ++i) {
+                        // All dependent events of a failed trigger have failed as well (constraint 9)
+                        std::shared_ptr<DFTConstraint> triggerFailed = std::make_shared<IsLessConstant>(timePointVariables.at(j), i);
+                        std::vector<std::shared_ptr<DFTConstraint>> depFailed;
+                        for (auto const& dependency : element->outgoingDependencies()) {
+                            for (auto const& depElement : dependency->dependentEvents()) {
+                                depFailed.push_back(std::make_shared<IsLessConstant>(timePointVariables.at(depElement->id()), i));
+                            }
+                        }
+                        markovianC[i].push_back(std::make_shared<Implies>(triggerFailed, std::make_shared<And>(depFailed)));
+                    }
+                }
+            }
+            for (uint64_t i = 0; i < dft.nrBasicElements() - 1; ++i) {
+                constraints.push_back(std::make_shared<Iff>(std::make_shared<IsBoolValue>(markovianVariables.at(i), true), std::make_shared<And>(markovianC[i])));
+                constraints.back()->setDescription("Markovian (" + std::to_string(i) + ") iff all dependent events which trigger failed also failed.");
+            }
+        }
+
 
         void DFTASFChecker::toFile(std::string const& filename) {
             std::ofstream stream;
@@ -506,6 +565,10 @@ namespace storm {
             stream << "; claim variables" << std::endl;
             for (auto const& claimVarEntry : claimVariables) {
                 stream << "(declare-fun " << varNames[claimVarEntry.second] << "() Int)" << std::endl;
+            }
+            stream << "; Markovian variables" << std::endl;
+            for (auto const& markovianVarEntry : markovianVariables) {
+                stream << "(declare-fun " << varNames[markovianVarEntry.second] << "() Bool)" << std::endl;
             }
             for (auto const& constraint : constraints) {
                 if (!constraint->description().empty()) {
