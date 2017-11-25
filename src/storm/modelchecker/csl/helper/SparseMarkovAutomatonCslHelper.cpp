@@ -258,6 +258,7 @@ namespace storm {
                 logfile << "calculating vector " << kind   <<  " for k = " << k << " node "<< node << " \t";
 
                 auto probabilisticStates = ~markovianStates;
+                auto numberOfProbStates = probabilisticStates.getNumberOfSetBits();
                 auto numberOfStates=fullTransitionMatrix.getRowGroupCount();
                 uint64_t N = unifVectors[kind].size()-1;
                 auto const& rowGroupIndices = fullTransitionMatrix.getRowGroupIndices();
@@ -309,7 +310,7 @@ namespace storm {
                 //probabilistic non-goal State
                 if (probabilisticStates[node]){
                     logfile << "probabilistic state: ";
-                    std::vector<ValueType> b(probSize, 0), x(probabilisticStates.getNumberOfSetBits(),0);
+                    std::vector<ValueType> b(probSize, 0), x(numberOfProbStates,0);
                     //calculate b
                     uint64_t  lineCounter=0;
                     for (int i =0; i<numberOfStates; i++) {
@@ -341,7 +342,7 @@ namespace storm {
 
 
 
-                    for (uint64_t i =0 ; i<probSize ; i++){
+                    for (uint64_t i =0 ; i<numberOfProbStates; i++){
                         auto trueI = transformIndice(probabilisticStates,i);
                         unifVectors[kind][k][trueI]=x[i];
                     }
@@ -460,11 +461,12 @@ namespace storm {
                             continue;
                         }
                         for (auto& element : transitionMatrix.getRow(j)){
-                            if (element.getColumn()!=i && selfLoop!=1){
-                                element.setValue(element.getValue()/(1-selfLoop));
+                            if (element.getColumn()!=i ){
+                                if (selfLoop!=1){
+                                    element.setValue(element.getValue()/(1-selfLoop));
+                                }
                             } else {
                                 element.setValue(0);
-
                             }
                         }
                     }
@@ -490,6 +492,8 @@ namespace storm {
                 //transition matrix with diagonal entries. The values can be changed during uniformisation
                 std::vector<ValueType> exitRate{exitRateVector};
                 typename storm::storage::SparseMatrix<ValueType> fullTransitionMatrix = transitionMatrix.getSubmatrix(true, allStates , allStates , true);
+                    // delete diagonals
+                    deleteProbDiagonals(fullTransitionMatrix, markovianStates);
                 typename storm::storage::SparseMatrix<ValueType> probMatrix{};
                 uint64_t  probSize =0;
                 if (probabilisticStates.getNumberOfSetBits()!=0){ //work around in case there are no prob states
@@ -518,6 +522,7 @@ namespace storm {
                 std::vector<std::vector<ValueType>> relReachability(fullTransitionMatrix.getRowCount(),in);
 
 
+
                 //calculate relative reachability
 
                 for(uint64_t i=0 ; i<numberOfStates; i++){
@@ -536,7 +541,7 @@ namespace storm {
                      }
                 }
 
-                //create equitation solver
+                    //create equitation solver
                 storm::solver::MinMaxLinearEquationSolverRequirements requirements = minMaxLinearEquationSolverFactory.getRequirements(true, dir);
                 requirements.clearBounds();
                 STORM_LOG_THROW(requirements.empty(), storm::exceptions::UncheckedRequirementException, "Cannot establish requirements for solver.");
@@ -593,9 +598,6 @@ namespace storm {
                     unifVectors.push_back(vd);
                     unifVectors.push_back(vd);
 
-
-                   printTransitions(fullTransitionMatrix,exitRate,markovianStates,psiStates,relReachability,psiStates, psiStates,unifVectors); //TODO remove
-
                     //define 0=vd 1=vu 2=wu
                     // (5) calculate vectors and maxNorm
                     for (uint64_t i = 0; i < numberOfStates; i++) {
@@ -608,7 +610,6 @@ namespace storm {
                                 maxNorm  = std::max(maxNorm, diff);
                             }
                     }
-                    std::cout << "\nTBU was " << unifVectors[0][0][0] << "\n";
                     printTransitions(fullTransitionMatrix,exitRate,markovianStates,psiStates,relReachability,psiStates, psiStates,unifVectors); //TODO remove
 
 
