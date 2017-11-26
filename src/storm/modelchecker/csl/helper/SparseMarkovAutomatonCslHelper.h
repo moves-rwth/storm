@@ -112,7 +112,7 @@ namespace storm {
                  */
 
                 template <typename ValueType, typename std::enable_if<storm::NumberTraits<ValueType>::SupportsExponential, int>::type=0>
-                static void printTransitions(storm::storage::SparseMatrix<ValueType> const& fullTransitionMatrix, std::vector<ValueType> const& exitRateVector,  storm::storage::BitVector const& markovianStates,
+                static void printTransitions(const uint64_t  N, ValueType const diff, storm::storage::SparseMatrix<ValueType> const& fullTransitionMatrix, std::vector<ValueType> const& exitRateVector,  storm::storage::BitVector const& markovianStates,
                                              storm::storage::BitVector const& psiStates,  std::vector<std::vector<ValueType>> relReachability,
                                              storm::storage::BitVector const& cycleStates , storm::storage::BitVector const& cycleGoalStates ,std::vector<std::vector<std::vector<ValueType>>>& unifVectors);
 

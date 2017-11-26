@@ -136,7 +136,7 @@ namespace storm {
             }
 
             template<typename ValueType, typename std::enable_if<storm::NumberTraits<ValueType>::SupportsExponential, int>::type= 0>
-            void SparseMarkovAutomatonCslHelper::printTransitions(
+            void SparseMarkovAutomatonCslHelper::printTransitions(const uint64_t  N, ValueType const diff,
                     storm::storage::SparseMatrix<ValueType> const &fullTransitionMatrix,
                     std::vector<ValueType> const &exitRateVector, storm::storage::BitVector const &markovianStates,
                     storm::storage::BitVector const &psiStates, std::vector<std::vector<ValueType>> relReachability,
@@ -169,19 +169,12 @@ namespace storm {
                 }
                 logfile << "\n";
 
-                logfile << "probStates\tmarkovianStates\tgoalStates\tcycleStates\tcycleGoalStates\n";
+                /*logfile << "probStates\tmarkovianStates\tgoalStates\tcycleStates\tcycleGoalStates\n";
                     for (int i =0 ; i< markovianStates.size() ; i++){
                         logfile << (~markovianStates)[i] << "\t\t" << markovianStates[i] << "\t\t" << psiStates[i] << "\t\t" << cycleStates[i] << "\t\t" << cycleGoalStates[i] << "\n";
-                }
+                } */
 
-                for (int i =0; i<relReachability.size(); i++){
-                    for (int j=0; j<relReachability[i].size(); j++){
-                        logfile << relReachability[i][j] << "\n";
-                    }
-                    logfile << "\n";
-                }
-
-
+                logfile << "Iteration for N = " << N << "maximal difference was " << " diff\n";
                 logfile << "vd: \n";
                 for (uint64_t i =0 ; i<unifVectors[0].size(); i++){
                     for(uint64_t j=0; j<unifVectors[0][i].size(); j++){
@@ -254,8 +247,8 @@ namespace storm {
                                                                          std::unique_ptr<storm::solver::MinMaxLinearEquationSolver<ValueType>> const &solver) {
 
                 if (unifVectors[kind][k][node]!=-1){return;}
-                std::ofstream logfile("U+logfile.txt", std::ios::app);
-                logfile << "calculating vector " << kind   <<  " for k = " << k << " node "<< node << " \t";
+                //std::ofstream logfile("U+logfile.txt", std::ios::app);
+                //logfile << "calculating vector " << kind   <<  " for k = " << k << " node "<< node << " \t";
 
                 auto probabilisticStates = ~markovianStates;
                 auto numberOfProbStates = probabilisticStates.getNumberOfSetBits();
@@ -266,7 +259,7 @@ namespace storm {
 
                 // First Case, k==N, independent from kind of state
                 if (k==N){
-                    logfile << "k == N! res = 0\n";
+                    //logfile << "k == N! res = 0\n";
                     unifVectors[kind][k][node]=0;
                     return;
                 }
@@ -285,14 +278,14 @@ namespace storm {
                         // WU
                         unifVectors[kind][k][node]=1;
                     }
-                    logfile << "goal state node " << node << " res = " << res << "\n";
+                    //logfile << "goal state node " << node << " res = " << res << "\n";
                     return;
 
                 }
 
                 //markovian non-goal State
                 if (markovianStates[node]){
-                    logfile << "markovian state: ";
+                    //logfile << "markovian state: ";
                     res = 0;
                     auto line = fullTransitionMatrix.getRow(rowGroupIndices[node]);
                     for (auto &element : line){
@@ -303,13 +296,13 @@ namespace storm {
                         res+=element.getValue()*unifVectors[kind][k+1][to];
                     }
                     unifVectors[kind][k][node]=res;
-                    logfile << " res = " << res << "\n";
+                    //logfile << " res = " << res << "\n";
                     return;
                 }
 
                 //probabilistic non-goal State
                 if (probabilisticStates[node]){
-                    logfile << "probabilistic state: ";
+                    //logfile << "probabilistic state: ";
                     std::vector<ValueType> b(probSize, 0), x(numberOfProbStates,0);
                     //calculate b
                     uint64_t  lineCounter=0;
@@ -347,7 +340,7 @@ namespace storm {
                         unifVectors[kind][k][trueI]=x[i];
                     }
 
-                    logfile << " res = " << unifVectors[kind][k][node] << " but calculated more \n";
+                    //logfile << " res = " << unifVectors[kind][k][node] << " but calculated more \n";
 
                 } //end probabilistic states
             }
@@ -610,7 +603,7 @@ namespace storm {
                                 maxNorm  = std::max(maxNorm, diff);
                             }
                     }
-                    printTransitions(fullTransitionMatrix,exitRate,markovianStates,psiStates,relReachability,psiStates, psiStates,unifVectors); //TODO remove
+                    printTransitions(N, maxNorm, fullTransitionMatrix,exitRate,markovianStates,psiStates,relReachability,psiStates, psiStates,unifVectors); //TODO remove
 
 
                     // (6) double lambda
