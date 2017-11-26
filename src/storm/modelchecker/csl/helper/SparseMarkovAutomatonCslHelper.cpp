@@ -141,11 +141,7 @@ namespace storm {
                     std::vector<ValueType> const &exitRateVector, storm::storage::BitVector const &markovianStates,
                     storm::storage::BitVector const &psiStates, std::vector<std::vector<ValueType>> relReachability,
                     const storage::BitVector &cycleStates, const storage::BitVector &cycleGoalStates,
-                    std::vector<std::vector<std::vector<ValueType>>> &unifVectors) {
-
-
-
-                std::ofstream logfile("U+logfile.txt", std::ios::app);
+                    std::vector<std::vector<std::vector<ValueType>>> &unifVectors, std::ofstream& logfile) {
 
                 auto const& rowGroupIndices = fullTransitionMatrix.getRowGroupIndices();
                 auto numberOfStates = fullTransitionMatrix.getRowGroupCount();            
@@ -169,12 +165,12 @@ namespace storm {
                 }
                 logfile << "\n";
 
-                /*logfile << "probStates\tmarkovianStates\tgoalStates\tcycleStates\tcycleGoalStates\n";
+                logfile << "probStates\tmarkovianStates\tgoalStates\tcycleStates\tcycleGoalStates\n";
                     for (int i =0 ; i< markovianStates.size() ; i++){
                         logfile << (~markovianStates)[i] << "\t\t" << markovianStates[i] << "\t\t" << psiStates[i] << "\t\t" << cycleStates[i] << "\t\t" << cycleGoalStates[i] << "\n";
-                } */
+                }
 
-                logfile << "Iteration for N = " << N << "maximal difference was " << " diff\n";
+                logfile << "Iteration for N = " << N << "maximal difference was " << diff << "\n";
                 logfile << "vd: \n";
                 for (uint64_t i =0 ; i<unifVectors[0].size(); i++){
                     for(uint64_t j=0; j<unifVectors[0][i].size(); j++){
@@ -198,8 +194,6 @@ namespace storm {
                     }
                     logfile << "\n";
                 }
-
-                logfile.close();
             }
 
             template<typename ValueType>
@@ -217,7 +211,7 @@ namespace storm {
 
 
             template <typename ValueType, typename std::enable_if<storm::NumberTraits<ValueType>::SupportsExponential, int>::type>
-            void SparseMarkovAutomatonCslHelper::calculateVu(std::vector<std::vector<ValueType>> const& relativeReachability, OptimizationDirection dir, uint64_t k, uint64_t node, uint64_t const kind, ValueType lambda, uint64_t probSize, std::vector<std::vector<std::vector<ValueType>>>& unifVectors, storm::storage::SparseMatrix<ValueType> const& fullTransitionMatrix, storm::storage::BitVector const& markovianStates, storm::storage::BitVector const& psiStates, std::unique_ptr<storm::solver::MinMaxLinearEquationSolver<ValueType>> const& solver){
+            void SparseMarkovAutomatonCslHelper::calculateVu(std::vector<std::vector<ValueType>> const& relativeReachability, OptimizationDirection dir, uint64_t k, uint64_t node, uint64_t const kind, ValueType lambda, uint64_t probSize, std::vector<std::vector<std::vector<ValueType>>>& unifVectors, storm::storage::SparseMatrix<ValueType> const& fullTransitionMatrix, storm::storage::BitVector const& markovianStates, storm::storage::BitVector const& psiStates, std::unique_ptr<storm::solver::MinMaxLinearEquationSolver<ValueType>> const& solver, std::ofstream& logfile){
                 if (unifVectors[1][k][node]!=-1){return;} //dynamic programming. avoiding multiple calculation.
                 uint64_t N = unifVectors[1].size()-1;
                 auto rowGroupIndices = fullTransitionMatrix.getRowGroupIndices();
@@ -225,7 +219,7 @@ namespace storm {
                 ValueType res =0;
                 for (uint64_t i = k ; i < N ; i++ ){
                     if (unifVectors[2][N-1-(i-k)][node]==-1){
-                       calculateUnifPlusVector(N-1-(i-k),node,2,lambda,probSize,relativeReachability,dir,unifVectors,fullTransitionMatrix, markovianStates,psiStates,solver);
+                       calculateUnifPlusVector(N-1-(i-k),node,2,lambda,probSize,relativeReachability,dir,unifVectors,fullTransitionMatrix, markovianStates,psiStates,solver, logfile);
                                //old:  relativeReachability, dir, (N-1-(i-k)),node,lambda,wu,fullTransitionMatrix,markovianStates,psiStates, solver);
                     }
                     res+=poisson(lambda, i)*unifVectors[2][N-1-(i-k)][node];
@@ -244,11 +238,14 @@ namespace storm {
                                                                          storm::storage::SparseMatrix<ValueType> const &fullTransitionMatrix,
                                                                          storm::storage::BitVector const &markovianStates,
                                                                          storm::storage::BitVector const &psiStates,
-                                                                         std::unique_ptr<storm::solver::MinMaxLinearEquationSolver<ValueType>> const &solver) {
+                                                                         std::unique_ptr<storm::solver::MinMaxLinearEquationSolver<ValueType>> const &solver, std::ofstream& logfile) {
 
-                if (unifVectors[kind][k][node]!=-1){return;}
-                //std::ofstream logfile("U+logfile.txt", std::ios::app);
-                //logfile << "calculating vector " << kind   <<  " for k = " << k << " node "<< node << " \t";
+
+                if (unifVectors[kind][k][node]!=-1){
+                    logfile << "already calculated for k = " << k << " node = " << node << "\n";
+                    return;
+                }
+                std::string print = std::string("calculating vector ") + std::to_string(kind)   +  " for k = " + std::to_string(k) + " node " + std::to_string(node) +" \t";
 
                 auto probabilisticStates = ~markovianStates;
                 auto numberOfProbStates = probabilisticStates.getNumberOfSetBits();
@@ -259,7 +256,7 @@ namespace storm {
 
                 // First Case, k==N, independent from kind of state
                 if (k==N){
-                    //logfile << "k == N! res = 0\n";
+                    logfile << print << "k == N! res = 0\n";
                     unifVectors[kind][k][node]=0;
                     return;
                 }
@@ -278,31 +275,29 @@ namespace storm {
                         // WU
                         unifVectors[kind][k][node]=1;
                     }
-                    //logfile << "goal state node " << node << " res = " << res << "\n";
+                     logfile << print << "goal state node " << node << " res = " << res << "\n";
                     return;
 
                 }
 
                 //markovian non-goal State
                 if (markovianStates[node]){
-                    //logfile << "markovian state: ";
                     res = 0;
                     auto line = fullTransitionMatrix.getRow(rowGroupIndices[node]);
                     for (auto &element : line){
                         uint64_t to = element.getColumn();
                         if (unifVectors[kind][k+1][to]==-1){
-                            calculateUnifPlusVector(k+1,to,kind,lambda,probSize,relativeReachability,dir,unifVectors,fullTransitionMatrix,markovianStates,psiStates,solver);
+                            calculateUnifPlusVector(k+1,to,kind,lambda,probSize,relativeReachability,dir,unifVectors,fullTransitionMatrix,markovianStates,psiStates,solver, logfile);
                         }
                         res+=element.getValue()*unifVectors[kind][k+1][to];
                     }
                     unifVectors[kind][k][node]=res;
-                    //logfile << " res = " << res << "\n";
+                    logfile << print << "markovian state: " << " res = " << res << "\n";
                     return;
                 }
 
                 //probabilistic non-goal State
                 if (probabilisticStates[node]){
-                    //logfile << "probabilistic state: ";
                     std::vector<ValueType> b(probSize, 0), x(numberOfProbStates,0);
                     //calculate b
                     uint64_t  lineCounter=0;
@@ -322,7 +317,7 @@ namespace storm {
                                 if (unifVectors[kind][k][to] == -1) {
                                     calculateUnifPlusVector(k, to, kind, lambda, probSize, relativeReachability, dir,
                                                             unifVectors, fullTransitionMatrix, markovianStates,
-                                                            psiStates, solver);
+                                                            psiStates, solver, logfile);
                                 }
                                 res = res + relativeReachability[j][to] * unifVectors[kind][k][to];
                             }
@@ -340,7 +335,7 @@ namespace storm {
                         unifVectors[kind][k][trueI]=x[i];
                     }
 
-                    //logfile << " res = " << unifVectors[kind][k][node] << " but calculated more \n";
+                    logfile << print << "probabilistic state: "<< " res = " << unifVectors[kind][k][node] << " but calculated more \n";
 
                 } //end probabilistic states
             }
@@ -467,12 +462,16 @@ namespace storm {
             }
 
                 template <typename ValueType, typename std::enable_if<storm::NumberTraits<ValueType>::SupportsExponential, int>::type>
-            std::vector<ValueType> SparseMarkovAutomatonCslHelper::unifPlus(OptimizationDirection dir, std::pair<double, double> const& boundsPair, std::vector<ValueType> const& exitRateVector, storm::storage::SparseMatrix<ValueType> const& transitionMatrix, storm::storage::BitVector const& markovianStates, storm::storage::BitVector const& psiStates, storm::solver::MinMaxLinearEquationSolverFactory<ValueType> const& minMaxLinearEquationSolverFactory){
+            std::vector<ValueType> SparseMarkovAutomatonCslHelper::unifPlus(OptimizationDirection dir, std::pair<double, double> const& boundsPair, std::vector<ValueType> const& exitRateVector, storm::storage::SparseMatrix<ValueType> const& transitionMatrix, storm::storage::BitVector const& markovStates, storm::storage::BitVector const& psiStates, storm::solver::MinMaxLinearEquationSolverFactory<ValueType> const& minMaxLinearEquationSolverFactory){
                 STORM_LOG_TRACE("Using UnifPlus to compute bounded until probabilities.");
 
+
+
+                std::ofstream logfile("U+logfile.txt", std::ios::app);
                 ValueType maxNorm = storm::utility::zero<ValueType>();
 
                 //bitvectors to identify different kind of states
+                storm::storage::BitVector markovianStates = markovStates;
                 storm::storage::BitVector allStates(markovianStates.size(), true);
                 storm::storage::BitVector probabilisticStates = ~markovianStates;
 
@@ -481,6 +480,14 @@ namespace storm {
                 std::vector<std::vector<ValueType>> vd,vu,wu;
                 std::vector<std::vector<std::vector<ValueType>>> unifVectors{};
 
+
+                //transitions from goalStates will be ignored. still: they are not allowed to be probabilistic!
+                    for (uint64_t i =0 ; i<psiStates.size(); i++){
+                        if (psiStates[i]){
+                            markovianStates.set(i,true);
+                            probabilisticStates.set(i,false);
+                        }
+                    }
 
                 //transition matrix with diagonal entries. The values can be changed during uniformisation
                 std::vector<ValueType> exitRate{exitRateVector};
@@ -595,22 +602,22 @@ namespace storm {
                     // (5) calculate vectors and maxNorm
                     for (uint64_t i = 0; i < numberOfStates; i++) {
                         for (uint64_t k = N; k <= N; k--) {
-                                calculateUnifPlusVector(k,i,0,lambda,probSize,relReachability,dir,unifVectors,fullTransitionMatrix,markovianStates,psiStates,solver);
-                                calculateUnifPlusVector(k,i,2,lambda,probSize,relReachability,dir,unifVectors,fullTransitionMatrix,markovianStates,psiStates,solver);
-                                calculateVu(relReachability,dir,k,i,1,lambda,probSize,unifVectors,fullTransitionMatrix,markovianStates,psiStates,solver);
+                                calculateUnifPlusVector(k,i,0,lambda,probSize,relReachability,dir,unifVectors,fullTransitionMatrix,markovianStates,psiStates,solver, logfile);
+                                calculateUnifPlusVector(k,i,2,lambda,probSize,relReachability,dir,unifVectors,fullTransitionMatrix,markovianStates,psiStates,solver, logfile);
+                                calculateVu(relReachability,dir,k,i,1,lambda,probSize,unifVectors,fullTransitionMatrix,markovianStates,psiStates,solver, logfile);
                                 //also use iteration to keep maxNorm of vd and vup to date, so the loop-condition is easy to prove
                                 ValueType diff = std::abs(unifVectors[0][k][i]-unifVectors[1][k][i]);
                                 maxNorm  = std::max(maxNorm, diff);
                             }
                     }
-                    printTransitions(N, maxNorm, fullTransitionMatrix,exitRate,markovianStates,psiStates,relReachability,psiStates, psiStates,unifVectors); //TODO remove
-
+                    printTransitions(N, maxNorm, fullTransitionMatrix,exitRate,markovianStates,psiStates,relReachability,psiStates, psiStates,unifVectors, logfile); //TODO remove
 
                     // (6) double lambda
                     lambda=2*lambda;
 
                 } while (maxNorm>epsilon*(1-kappa));
 
+                logfile.close();
                 return unifVectors[0][0];
             }
 
