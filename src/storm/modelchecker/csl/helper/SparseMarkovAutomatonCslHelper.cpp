@@ -469,6 +469,7 @@ namespace storm {
 
                 std::ofstream logfile("U+logfile.txt", std::ios::app);
                 ValueType maxNorm = storm::utility::zero<ValueType>();
+                ValueType oldDiff = -storm::utility::zero<ValueType>();
 
                 //bitvectors to identify different kind of states
                 storm::storage::BitVector markovianStates = markovStates;
@@ -556,6 +557,7 @@ namespace storm {
                 }
                     // while not close enough to precision:
                 do {
+                    maxNorm = storm::utility::zero<ValueType>();
                     // (2) update parameter
                     N = ceil(lambda*T*exp(2)-log(kappa*epsilon));
 
@@ -615,6 +617,14 @@ namespace storm {
                     // (6) double lambda
                     lambda=2*lambda;
 
+                    // (7) escape if not coming closer to solution
+                     if (oldDiff!=-1){
+                         if (oldDiff==maxNorm){
+                             std::cout << "Not coming closer to solution as " << maxNorm << "/n";
+                             break;
+                         }
+                     }
+                    oldDiff = maxNorm;
                 } while (maxNorm>epsilon*(1-kappa));
 
                 logfile.close();
