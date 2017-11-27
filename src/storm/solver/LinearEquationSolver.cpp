@@ -190,7 +190,7 @@ namespace storm {
             EquationSolverType type = env.solver().getLinearEquationSolverType();
             
              // Adjust the solver type if it is not supported by this value type
-            if (type == EquationSolverType::Gmmxx && type == EquationSolverType::Native) {
+            if (type == EquationSolverType::Gmmxx || type == EquationSolverType::Native) {
                 type = EquationSolverType::Eigen;
                 STORM_LOG_INFO("Selecting '" + toString(type) + "' as the linear equation solver since the selected one does not support parametric computations.");
             }
@@ -202,7 +202,6 @@ namespace storm {
                     STORM_LOG_THROW(false, storm::exceptions::InvalidEnvironmentException, "Unknown solver type.");
                     return nullptr;
             }
-    
         }
         
         template<typename ValueType>
