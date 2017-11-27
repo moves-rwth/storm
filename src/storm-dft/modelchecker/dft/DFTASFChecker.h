@@ -75,6 +75,7 @@ namespace storm {
             std::vector<std::shared_ptr<DFTConstraint>> constraints;
             std::map<SpareAndChildPair, uint64_t> claimVariables;
             std::unordered_map<uint64_t, uint64_t> markovianVariables;
+            std::vector<uint64_t> tmpTimePointVariables;
             uint64_t notFailed;
         };
     }

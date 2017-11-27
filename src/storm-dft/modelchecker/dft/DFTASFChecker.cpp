@@ -1,6 +1,7 @@
 #include "DFTASFChecker.h"
 #include <string>
 #include "storm/utility/file.h"
+#include "storm/utility/bitoperations.h"
 #include "storm/exceptions/NotImplementedException.h"
 #include "storm/exceptions/NotSupportedException.h"
 
@@ -476,17 +477,46 @@ namespace storm {
                     case storm::storage::DFTElementType::AND:
                         // Constraint for AND gate (constraint 1)
                         constraints.push_back(std::make_shared<IsMaximum>(timePointVariables.at(i), childVarIndices));
-                        constraints.back()->setDescription("AND gate");
+                        constraints.back()->setDescription("AND gate " + element->name());
                         break;
                     case storm::storage::DFTElementType::OR:
                         // Constraint for OR gate (constraint 2)
                         constraints.push_back(std::make_shared<IsMinimum>(timePointVariables.at(i), childVarIndices));
-                        constraints.back()->setDescription("OR gate");
+                        constraints.back()->setDescription("OR gate " + element->name());
                         break;
                     case storm::storage::DFTElementType::VOT:
-                        //TODO implement via and/or construction
-                        STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "SMT encoding of VOTs is not implemented yet.");
+                    {
+                        // VOTs are implemented via OR over ANDs with all possible combinations
+                        auto vot = std::static_pointer_cast<storm::storage::DFTVot<double> const>(element);
+                        std::vector<uint64_t> tmpVars;
+                        size_t i = 0;
+                        // Generate all permutations of k out of n
+                        size_t combination = smallestIntWithNBitsSet(static_cast<size_t>(vot->threshold()));
+                        do {
+                            // Construct selected children from combination
+                            std::vector<uint64_t> combinationChildren;
+                            for (size_t j = 0; j < vot->nrChildren(); ++j) {
+                                if (combination & (1 << j)) {
+                                    combinationChildren.push_back(childVarIndices.at(j));
+                                }
+                            }
+                            // Introduce temporary variable for this AND
+                            varNames.push_back("v_" + vot->name() + "_" + std::to_string(i));
+                            tmpVars.push_back(varNames.size() - 1);
+                            tmpTimePointVariables.push_back(varNames.size() - 1);
+                            // AND over the selected children
+                            constraints.push_back(std::make_shared<IsMaximum>(tmpVars.at(i), combinationChildren));
+                            constraints.back()->setDescription("VOT gate " + element->name() + ": AND no. " + std::to_string(i));
+                            // Generate next permutation
+                            combination = nextBitPermutation(combination);
+                            ++i;
+                        } while(combination < (1 << vot->nrChildren()) && combination != 0);
+
+                        // Constraint is OR over all possible combinations
+                        constraints.push_back(std::make_shared<IsMinimum>(timePointVariables.at(i), tmpVars));
+                        constraints.back()->setDescription("VOT gate " + element->name() + ": OR");
                         break;
+                    }
                     case storm::storage::DFTElementType::PAND:
                     {
                         // Constraint for PAND gate (constraint 3)
@@ -494,7 +524,7 @@ namespace storm {
                         std::shared_ptr<DFTConstraint> thenC = std::make_shared<IsEqual>(timePointVariables.at(i), childVarIndices.back());
                         std::shared_ptr<DFTConstraint> elseC = std::make_shared<IsConstantValue>(timePointVariables.at(i), notFailed);
                         constraints.push_back(std::make_shared<IfThenElse>(ifC, thenC, elseC));
-                        constraints.back()->setDescription("PAND gate");
+                        constraints.back()->setDescription("PAND gate " + element->name());
                         break;
                     }
                     case storm::storage::DFTElementType::POR:
@@ -510,7 +540,7 @@ namespace storm {
                         std::shared_ptr<DFTConstraint> thenC = std::make_shared<IsEqual>(timePointVariables.at(i), childVarIndices.front());
                         std::shared_ptr<DFTConstraint> elseC = std::make_shared<IsConstantValue>(timePointVariables.at(i), notFailed);
                         constraints.push_back(std::make_shared<IfThenElse>(ifC, thenC, elseC));
-                        constraints.back()->setDescription("POR gate");
+                        constraints.back()->setDescription("POR gate " + element->name());
                         break;
                     }
                     case storm::storage::DFTElementType::SEQ:
@@ -525,7 +555,7 @@ namespace storm {
 
                         // First child of each spare is claimed in the beginning
                         constraints.push_back(std::make_shared<IsConstantValue>(getClaimVariableIndex(spare->id(), firstChild), 0));
-                        constraints.back()->setDescription("SPARE " + spare->name() + " claims first child");
+                        constraints.back()->setDescription("SPARE gate " + spare->name() + " claims first child");
 
                         // If last child is claimed before failure, then the spare fails when the last child fails (constraint 5)
                         std::shared_ptr<DFTConstraint> leftC = std::make_shared<IsLess>(getClaimVariableIndex(spare->id(), lastChild), childVarIndices.back());
@@ -707,6 +737,12 @@ namespace storm {
             stream << "; Markovian variables" << std::endl;
             for (auto const& markovianVarEntry : markovianVariables) {
                 stream << "(declare-fun " << varNames[markovianVarEntry.second] << "() Bool)" << std::endl;
+            }
+            if (!tmpTimePointVariables.empty()) {
+                stream << "; Temporary variables" << std::endl;
+                for (auto const& tmpVar : tmpTimePointVariables) {
+                    stream << "(declare-fun " << varNames[tmpVar] << "() Int)" << std::endl;
+                }
             }
             for (auto const& constraint : constraints) {
                 if (!constraint->description().empty()) {
