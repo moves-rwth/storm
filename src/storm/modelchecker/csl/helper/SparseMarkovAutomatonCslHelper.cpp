@@ -369,6 +369,45 @@ namespace storm {
                 return finish[node];
             }
 
+            template<typename ValueType, typename std::enable_if<storm::NumberTraits<ValueType>::SupportsExponential, int>::type= 0>
+            void SparseMarkovAutomatonCslHelper::identify(
+                    storm::storage::SparseMatrix<ValueType> const &fullTransitionMatrix,
+                    storm::storage::BitVector const &markovianStates, storm::storage::BitVector const& psiStates) {
+                auto indices = fullTransitionMatrix.getRowGroupIndices();
+                bool realProb = false;
+                bool NDM = false;
+                bool Alternating = true;
+                bool probStates = false;
+                bool markStates = false;
+
+                for (uint64_t i=0; i<fullTransitionMatrix.getRowGroupCount(); i++){
+                    auto from = indices[i];
+                    auto to = indices[i+1];
+                    if (from+1!=to){
+                        NDM = true;
+                    }
+                    if (!psiStates[i]){
+                        if (markovianStates[i]){
+                                markStates=true;
+                        } else {
+                               probStates=true;
+                        }
+                    }
+                    for (uint64_t j =from; j<to ; j++){
+                        for (auto& element: fullTransitionMatrix.getRow(j)){
+                            if (markovianStates[i]==markovianStates[element.getColumn()] && !psiStates[element.getColumn()]){
+                                Alternating = false;
+                            }
+                            if (!markovianStates[i] && element.getValue()!=1){
+                                realProb = true;
+                            }
+                        }
+                    }
+                }
+
+                std:: cout << "prob States :" << probStates <<" markovian States: " << markStates << " realProb: "<< realProb << " NDM: " << NDM << " Alternating: " << Alternating << "\n";
+            }
+
             template <typename ValueType, typename std::enable_if<storm::NumberTraits<ValueType>::SupportsExponential, int>::type=0>
             storm::storage::BitVector SparseMarkovAutomatonCslHelper::identifyProbCyclesGoalStates(storm::storage::SparseMatrix<ValueType> const& transitionMatrix,  storm::storage::BitVector const& cycleStates) {
 
@@ -463,174 +502,181 @@ namespace storm {
 
                 template <typename ValueType, typename std::enable_if<storm::NumberTraits<ValueType>::SupportsExponential, int>::type>
             std::vector<ValueType> SparseMarkovAutomatonCslHelper::unifPlus(OptimizationDirection dir, std::pair<double, double> const& boundsPair, std::vector<ValueType> const& exitRateVector, storm::storage::SparseMatrix<ValueType> const& transitionMatrix, storm::storage::BitVector const& markovStates, storm::storage::BitVector const& psiStates, storm::solver::MinMaxLinearEquationSolverFactory<ValueType> const& minMaxLinearEquationSolverFactory){
-                STORM_LOG_TRACE("Using UnifPlus to compute bounded until probabilities.");
-
-                std::ofstream logfile("U+logfile.txt", std::ios::app);
-                ValueType maxNorm = storm::utility::zero<ValueType>();
-                ValueType oldDiff = -storm::utility::zero<ValueType>();
-
-                //bitvectors to identify different kind of states
-                storm::storage::BitVector markovianStates = markovStates;
-                storm::storage::BitVector allStates(markovianStates.size(), true);
-                storm::storage::BitVector probabilisticStates = ~markovianStates;
+                    STORM_LOG_TRACE("Using UnifPlus to compute bounded until probabilities.");
 
 
-                //vectors to save calculation
-                std::vector<std::vector<ValueType>> vd,vu,wu;
-                std::vector<std::vector<std::vector<ValueType>>> unifVectors{};
+                    std::ofstream logfile("U+logfile.txt", std::ios::app);
+                    ValueType maxNorm = storm::utility::zero<ValueType>();
+                    ValueType oldDiff = -storm::utility::zero<ValueType>();
+
+                    //bitvectors to identify different kind of states
+                    storm::storage::BitVector markovianStates = markovStates;
+                    storm::storage::BitVector allStates(markovianStates.size(), true);
+                    storm::storage::BitVector probabilisticStates = ~markovianStates;
 
 
-                //transitions from goalStates will be ignored. still: they are not allowed to be probabilistic!
-                    for (uint64_t i =0 ; i<psiStates.size(); i++){
-                        if (psiStates[i]){
-                            markovianStates.set(i,true);
-                            probabilisticStates.set(i,false);
-                        }
-                    }
-
-                //transition matrix with diagonal entries. The values can be changed during uniformisation
-                std::vector<ValueType> exitRate{exitRateVector};
-                typename storm::storage::SparseMatrix<ValueType> fullTransitionMatrix = transitionMatrix.getSubmatrix(true, allStates , allStates , true);
-                    // delete diagonals
-                    deleteProbDiagonals(fullTransitionMatrix, markovianStates);
-                typename storm::storage::SparseMatrix<ValueType> probMatrix{};
-                uint64_t  probSize =0;
-                if (probabilisticStates.getNumberOfSetBits()!=0){ //work around in case there are no prob states
-                    probMatrix = fullTransitionMatrix.getSubmatrix(true, probabilisticStates , probabilisticStates, true);
-                    probSize = probMatrix.getRowCount();
-                }
-
-                auto& rowGroupIndices = fullTransitionMatrix.getRowGroupIndices();
+                    //vectors to save calculation
+                    std::vector<std::vector<ValueType>> vd,vu,wu;
+                    std::vector<std::vector<std::vector<ValueType>>> unifVectors{};
 
 
-                //(1) define horizon, epsilon, kappa , N, lambda,
-                uint64_t numberOfStates = fullTransitionMatrix.getRowGroupCount();
-                double T = boundsPair.second;
-                ValueType kappa = storm::utility::one<ValueType>() /10; // would be better as option-parameter
-                ValueType epsilon = storm::settings::getModule<storm::settings::modules::GeneralSettings>().getPrecision();
-                ValueType lambda = exitRateVector[0];
-                for (ValueType act: exitRateVector) {
-                    lambda = std::max(act, lambda);
-                }
-                uint64_t N;
-
-
-
-                //calculate relative ReachabilityVectors
-                std::vector<ValueType> in(numberOfStates, 0);
-                std::vector<std::vector<ValueType>> relReachability(fullTransitionMatrix.getRowCount(),in);
-
-
-
-                //calculate relative reachability
-
-                for(uint64_t i=0 ; i<numberOfStates; i++){
-                    if (markovianStates[i]){
-                        continue;
-                    }
-                     auto from = rowGroupIndices[i];
-                     auto to = rowGroupIndices[i+1];
-                     for (auto j=from ; j<to; j++){
-                         std::vector<ValueType>& act = relReachability[j];
-                         for(auto element: fullTransitionMatrix.getRow(j)){
-                             if (markovianStates[element.getColumn()]){
-                                 act[element.getColumn()]=element.getValue();
-                             }
-                         }
-                     }
-                }
-
-                    //create equitation solver
-                storm::solver::MinMaxLinearEquationSolverRequirements requirements = minMaxLinearEquationSolverFactory.getRequirements(true, dir);
-                requirements.clearBounds();
-                STORM_LOG_THROW(requirements.empty(), storm::exceptions::UncheckedRequirementException, "Cannot establish requirements for solver.");
-
-                std::unique_ptr<storm::solver::MinMaxLinearEquationSolver<ValueType>> solver;
-                if (probSize!=0){
-                    solver = minMaxLinearEquationSolverFactory.create(probMatrix);
-                    solver->setHasUniqueSolution();
-                    solver->setBounds(storm::utility::zero<ValueType>(), storm::utility::one<ValueType>());
-                    solver->setRequirementsChecked();
-                    solver->setCachingEnabled(true);
-                }
-                    // while not close enough to precision:
-                do {
-                    maxNorm = storm::utility::zero<ValueType>();
-                    // (2) update parameter
-                    N = ceil(lambda*T*exp(2)-log(kappa*epsilon));
-
-                    // (3) uniform  - just applied to markovian states
-                    for (uint_fast64_t i = 0; i < fullTransitionMatrix.getRowGroupCount(); i++) {
-                        if (!markovianStates[i]) {
-                            continue;
-                        }
-                        uint64_t from = rowGroupIndices[i]; //markovian state -> no Nondeterminism -> only one row
-
-                        if (exitRate[i] == lambda) {
-                            continue; //already unified
-                        }
-
-                        auto line = fullTransitionMatrix.getRow(from);
-                        ValueType exitOld = exitRate[i];
-                        ValueType exitNew = lambda;
-                        for (auto &v : line) {
-                            if (v.getColumn() == i) { //diagonal element
-                                ValueType newSelfLoop = exitNew - exitOld + v.getValue();
-                                ValueType newRate = newSelfLoop / exitNew;
-                                v.setValue(newRate);
-                            } else { //modify probability
-                                ValueType propOld = v.getValue();
-                                ValueType propNew = propOld * exitOld / exitNew;
-                                v.setValue(propNew);
+                    //transitions from goalStates will be ignored. still: they are not allowed to be probabilistic!
+                        for (uint64_t i =0 ; i<psiStates.size(); i++){
+                            if (psiStates[i]){
+                                markovianStates.set(i,true);
+                                probabilisticStates.set(i,false);
                             }
                         }
-                        exitRate[i] = exitNew;
+
+                    //transition matrix with diagonal entries. The values can be changed during uniformisation
+                    std::vector<ValueType> exitRate{exitRateVector};
+                    typename storm::storage::SparseMatrix<ValueType> fullTransitionMatrix = transitionMatrix.getSubmatrix(true, allStates , allStates , true);
+                        // delete diagonals
+                        deleteProbDiagonals(fullTransitionMatrix, markovianStates);
+                    typename storm::storage::SparseMatrix<ValueType> probMatrix{};
+                    uint64_t  probSize =0;
+                    if (probabilisticStates.getNumberOfSetBits()!=0){ //work around in case there are no prob states
+                        probMatrix = fullTransitionMatrix.getSubmatrix(true, probabilisticStates , probabilisticStates, true);
+                        probSize = probMatrix.getRowCount();
                     }
 
-                    // calculate poisson distribution
-                    std::vector<double> poisson = foxGlynnProb(lambda*T, N, epsilon*kappa);
+                    auto& rowGroupIndices = fullTransitionMatrix.getRowGroupIndices();
 
-                    // (4) define vectors/matrices
-                    std::vector<ValueType> init(numberOfStates, -1);
-                    vd = std::vector<std::vector<ValueType>> (N + 1, init);
-                    vu = std::vector<std::vector<ValueType>> (N + 1, init);
-                    wu = std::vector<std::vector<ValueType>> (N + 1, init);
 
-                    unifVectors.clear();
-                    unifVectors.push_back(vd);
-                    unifVectors.push_back(vd);
-                    unifVectors.push_back(vd);
-
-                    //define 0=vd 1=vu 2=wu
-                    // (5) calculate vectors and maxNorm
-                    for (uint64_t i = 0; i < numberOfStates; i++) {
-                        for (uint64_t k = N; k <= N; k--) {
-                                calculateUnifPlusVector(k,i,0,lambda,probSize,relReachability,dir,unifVectors,fullTransitionMatrix,markovianStates,psiStates,solver, logfile, poisson);
-                                calculateUnifPlusVector(k,i,2,lambda,probSize,relReachability,dir,unifVectors,fullTransitionMatrix,markovianStates,psiStates,solver, logfile, poisson);
-                                calculateVu(relReachability,dir,k,i,1,lambda,probSize,unifVectors,fullTransitionMatrix,markovianStates,psiStates,solver, logfile, poisson);
-                                //also use iteration to keep maxNorm of vd and vup to date, so the loop-condition is easy to prove
-                                ValueType diff = std::abs(unifVectors[0][k][i]-unifVectors[1][k][i]);
-                                maxNorm  = std::max(maxNorm, diff);
-                            }
+                    //(1) define horizon, epsilon, kappa , N, lambda,
+                    uint64_t numberOfStates = fullTransitionMatrix.getRowGroupCount();
+                    double T = boundsPair.second;
+                    ValueType kappa = storm::utility::one<ValueType>() /10; // would be better as option-parameter
+                    ValueType epsilon = storm::settings::getModule<storm::settings::modules::GeneralSettings>().getPrecision();
+                    ValueType lambda = exitRateVector[0];
+                    for (ValueType act: exitRateVector) {
+                        lambda = std::max(act, lambda);
                     }
-                    printTransitions(N, maxNorm, fullTransitionMatrix,exitRate,markovianStates,psiStates,relReachability,psiStates, psiStates,unifVectors, logfile); //TODO remove
+                    uint64_t N;
 
-                    // (6) double lambda
 
-                    lambda=2*lambda;
 
-                    // (7) escape if not coming closer to solution
-                     if (oldDiff!=-1){
-                         if (oldDiff==maxNorm){
-                             std::cout << "Not coming closer to solution as " << maxNorm << "/n";
-                             break;
-                         }
-                     }
-                    oldDiff = maxNorm;
-                } while (maxNorm>epsilon*(1-kappa));
 
-                logfile.close();
-                return unifVectors[0][0];
+                                    //calculate relative ReachabilityVectors
+                                    std::vector<ValueType> in(numberOfStates, 0);
+                                    std::vector<std::vector<ValueType>> relReachability(fullTransitionMatrix.getRowCount(),in);
+
+
+
+                                    //calculate relative reachability
+
+                                    for(uint64_t i=0 ; i<numberOfStates; i++){
+                                        if (markovianStates[i]){
+                                            continue;
+                                        }
+                                         auto from = rowGroupIndices[i];
+                                         auto to = rowGroupIndices[i+1];
+                                         for (auto j=from ; j<to; j++){
+                                             std::vector<ValueType>& act = relReachability[j];
+                                             for(auto element: fullTransitionMatrix.getRow(j)){
+                                                 if (markovianStates[element.getColumn()]){
+                                                     act[element.getColumn()]=element.getValue();
+                                                 }
+                                             }
+                                         }
+                                    }
+
+                                        //create equitation solver
+                                    storm::solver::MinMaxLinearEquationSolverRequirements requirements = minMaxLinearEquationSolverFactory.getRequirements(true, dir);
+                                    requirements.clearBounds();
+                                    STORM_LOG_THROW(requirements.empty(), storm::exceptions::UncheckedRequirementException, "Cannot establish requirements for solver.");
+
+                                    std::unique_ptr<storm::solver::MinMaxLinearEquationSolver<ValueType>> solver;
+                                    if (probSize!=0){
+                                        solver = minMaxLinearEquationSolverFactory.create(probMatrix);
+                                        solver->setHasUniqueSolution();
+                                        solver->setBounds(storm::utility::zero<ValueType>(), storm::utility::one<ValueType>());
+                                        solver->setRequirementsChecked();
+                                        solver->setCachingEnabled(true);
+                                    }
+                                        // while not close enough to precision:
+                                    do {
+                                        maxNorm = storm::utility::zero<ValueType>();
+                                        // (2) update parameter
+                                        N = ceil(lambda*T*exp(2)-log(kappa*epsilon));
+
+                                        // (3) uniform  - just applied to markovian states
+                                        for (uint_fast64_t i = 0; i < fullTransitionMatrix.getRowGroupCount(); i++) {
+                                            if (!markovianStates[i]) {
+                                                continue;
+                                            }
+                                            uint64_t from = rowGroupIndices[i]; //markovian state -> no Nondeterminism -> only one row
+
+                                            if (exitRate[i] == lambda) {
+                                                continue; //already unified
+                                            }
+
+                                            auto line = fullTransitionMatrix.getRow(from);
+                                            ValueType exitOld = exitRate[i];
+                                            ValueType exitNew = lambda;
+                                            for (auto &v : line) {
+                                                if (v.getColumn() == i) { //diagonal element
+                                                    ValueType newSelfLoop = exitNew - exitOld + v.getValue();
+                                                    ValueType newRate = newSelfLoop / exitNew;
+                                                    v.setValue(newRate);
+                                                } else { //modify probability
+                                                    ValueType propOld = v.getValue();
+                                                    ValueType propNew = propOld * exitOld / exitNew;
+                                                    v.setValue(propNew);
+                                                }
+                                            }
+                                            exitRate[i] = exitNew;
+                                        }
+
+                                        // calculate poisson distribution
+                                        std::tuple<uint_fast64_t, uint_fast64_t, ValueType, std::vector<ValueType>> foxGlynnResult = storm::utility::numerical::getFoxGlynnCutoff(T*lambda, 1e+300, epsilon*kappa/ 8.0);
+
+                                        // Scale the weights so they add up to one.
+                                        for (auto& element : std::get<3>(foxGlynnResult)) {
+                                            element /= std::get<2>(foxGlynnResult);
+                                        }
+                                        // (4) define vectors/matrices
+                                        std::vector<ValueType> init(numberOfStates, -1);
+                                        vd = std::vector<std::vector<ValueType>> (N + 1, init);
+                                        vu = std::vector<std::vector<ValueType>> (N + 1, init);
+                                        wu = std::vector<std::vector<ValueType>> (N + 1, init);
+
+                                        unifVectors.clear();
+                                        unifVectors.push_back(vd);
+                                        unifVectors.push_back(vd);
+                                        unifVectors.push_back(vd);
+
+                                        //define 0=vd 1=vu 2=wu
+                                        // (5) calculate vectors and maxNorm
+                                        for (uint64_t i = 0; i < numberOfStates; i++) {
+                                            for (uint64_t k = N; k <= N; k--) {
+                                                    calculateUnifPlusVector(k,i,0,lambda,probSize,relReachability,dir,unifVectors,fullTransitionMatrix,markovianStates,psiStates,solver, logfile, std::get<3>(foxGlynnResult));
+                                                    calculateUnifPlusVector(k,i,2,lambda,probSize,relReachability,dir,unifVectors,fullTransitionMatrix,markovianStates,psiStates,solver, logfile, std::get<3>(foxGlynnResult));
+                                                    calculateVu(relReachability,dir,k,i,1,lambda,probSize,unifVectors,fullTransitionMatrix,markovianStates,psiStates,solver, logfile, std::get<3>(foxGlynnResult));
+                                                    //also use iteration to keep maxNorm of vd and vup to date, so the loop-condition is easy to prove
+                                                    ValueType diff = std::abs(unifVectors[0][k][i]-unifVectors[1][k][i]);
+                                                    maxNorm  = std::max(maxNorm, diff);
+                                                }
+                                        }
+                                        printTransitions(N, maxNorm, fullTransitionMatrix,exitRate,markovianStates,psiStates,relReachability,psiStates, psiStates,unifVectors, logfile); //TODO remove
+
+                                        // (6) double lambda
+
+                                        lambda=2*lambda;
+
+                                        // (7) escape if not coming closer to solution
+                                         if (oldDiff!=-1){
+                                             if (oldDiff==maxNorm){
+                                                 std::cout << "Not coming closer to solution as " << maxNorm << "/n";
+                                                 break;
+                                             }
+                                         }
+                                        oldDiff = maxNorm;
+                                    } while (maxNorm>epsilon*(1-kappa));
+
+                                    logfile.close();
+                                    return unifVectors[0][0];
+
             }
 
             template <typename ValueType, typename std::enable_if<storm::NumberTraits<ValueType>::SupportsExponential, int>::type>
