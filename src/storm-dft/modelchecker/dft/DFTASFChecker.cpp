@@ -505,7 +505,7 @@ namespace storm {
                             tmpVars.push_back(varNames.size() - 1);
                             tmpTimePointVariables.push_back(varNames.size() - 1);
                             // AND over the selected children
-                            constraints.push_back(std::make_shared<IsMaximum>(tmpVars.at(i), combinationChildren));
+                            constraints.push_back(std::make_shared<IsMaximum>(timePointVariables.at(i), combinationChildren));
                             constraints.back()->setDescription("VOT gate " + element->name() + ": AND no. " + std::to_string(i));
                             // Generate next permutation
                             combination = nextBitPermutation(combination);
