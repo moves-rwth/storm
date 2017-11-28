@@ -44,9 +44,16 @@ namespace storm {
                 // * a matrix aProbabilistic with all (non-discretized) transitions from probabilistic non-goal states to other probabilistic non-goal states.
                 // * a matrix aProbabilisticToMarkovian with all (non-discretized) transitions from probabilistic non-goal states to all Markovian non-goal states.
                 typename storm::storage::SparseMatrix<ValueType> aMarkovian = transitionMatrix.getSubmatrix(true, markovianNonGoalStates, markovianNonGoalStates, true);
-                typename storm::storage::SparseMatrix<ValueType> aMarkovianToProbabilistic = transitionMatrix.getSubmatrix(true, markovianNonGoalStates, probabilisticNonGoalStates);
-                typename storm::storage::SparseMatrix<ValueType> aProbabilistic = transitionMatrix.getSubmatrix(true, probabilisticNonGoalStates, probabilisticNonGoalStates);
-                typename storm::storage::SparseMatrix<ValueType> aProbabilisticToMarkovian = transitionMatrix.getSubmatrix(true, probabilisticNonGoalStates, markovianNonGoalStates);
+                
+                bool existProbabilisticStates = !probabilisticNonGoalStates.empty();
+                typename storm::storage::SparseMatrix<ValueType> aMarkovianToProbabilistic;
+                typename storm::storage::SparseMatrix<ValueType> aProbabilistic;
+                typename storm::storage::SparseMatrix<ValueType> aProbabilisticToMarkovian;
+                if (existProbabilisticStates) {
+                    aMarkovianToProbabilistic = transitionMatrix.getSubmatrix(true, markovianNonGoalStates, probabilisticNonGoalStates);
+                    aProbabilistic = transitionMatrix.getSubmatrix(true, probabilisticNonGoalStates, probabilisticNonGoalStates);
+                    aProbabilisticToMarkovian = transitionMatrix.getSubmatrix(true, probabilisticNonGoalStates, markovianNonGoalStates);
+                }
                 
                 // The matrices with transitions from Markovian states need to be digitized.
                 // Digitize aMarkovian. Based on whether the transition is a self-loop or not, we apply the two digitization rules.
@@ -64,20 +71,25 @@ namespace storm {
                 }
                 
                 // Digitize aMarkovianToProbabilistic. As there are no self-loops in this case, we only need to apply the digitization formula for regular successors.
-                rowIndex = 0;
-                for (auto state : markovianNonGoalStates) {
-                    for (auto& element : aMarkovianToProbabilistic.getRow(rowIndex)) {
-                        element.setValue((1 - std::exp(-exitRates[state] * delta)) * element.getValue());
+                if (existProbabilisticStates) {
+                    rowIndex = 0;
+                    for (auto state : markovianNonGoalStates) {
+                        for (auto& element : aMarkovianToProbabilistic.getRow(rowIndex)) {
+                            element.setValue((1 - std::exp(-exitRates[state] * delta)) * element.getValue());
+                        }
+                        ++rowIndex;
                     }
-                    ++rowIndex;
                 }
                 
                 // Initialize the two vectors that hold the variable one-step probabilities to all target states for probabilistic and Markovian (non-goal) states.
-                std::vector<ValueType> bProbabilistic(aProbabilistic.getRowCount());
+                std::vector<ValueType> bProbabilistic(existProbabilisticStates ? aProbabilistic.getRowCount() : 0);
                 std::vector<ValueType> bMarkovian(markovianNonGoalStates.getNumberOfSetBits());
                 
                 // Compute the two fixed right-hand side vectors, one for Markovian states and one for the probabilistic ones.
-                std::vector<ValueType> bProbabilisticFixed = transitionMatrix.getConstrainedRowGroupSumVector(probabilisticNonGoalStates, goalStates);
+                std::vector<ValueType> bProbabilisticFixed;
+                if (existProbabilisticStates) {
+                    bProbabilisticFixed = transitionMatrix.getConstrainedRowGroupSumVector(probabilisticNonGoalStates, goalStates);
+                }
                 std::vector<ValueType> bMarkovianFixed;
                 bMarkovianFixed.reserve(markovianNonGoalStates.getNumberOfSetBits());
                 for (auto state : markovianNonGoalStates) {
@@ -110,25 +122,34 @@ namespace storm {
                 // *    perform one timed-step using v_MS := A_MSwG * v_MS + A_MStoPS * v_PS + (A * 1_G)|MS
                 std::vector<ValueType> markovianNonGoalValuesSwap(markovianNonGoalValues);
                 for (uint64_t currentStep = 0; currentStep < numberOfSteps; ++currentStep) {
-                    // Start by (re-)computing bProbabilistic = bProbabilisticFixed + aProbabilisticToMarkovian * vMarkovian.
-                    aProbabilisticToMarkovian.multiplyWithVector(markovianNonGoalValues, bProbabilistic);
-                    storm::utility::vector::addVectors(bProbabilistic, bProbabilisticFixed, bProbabilistic);
+                    if (existProbabilisticStates) {
+                        // Start by (re-)computing bProbabilistic = bProbabilisticFixed + aProbabilisticToMarkovian * vMarkovian.
+                        aProbabilisticToMarkovian.multiplyWithVector(markovianNonGoalValues, bProbabilistic);
+                        storm::utility::vector::addVectors(bProbabilistic, bProbabilisticFixed, bProbabilistic);
                     
-                    // Now perform the inner value iteration for probabilistic states.
-                    solver->solveEquations(env, dir, probabilisticNonGoalValues, bProbabilistic);
+                        // Now perform the inner value iteration for probabilistic states.
+                        solver->solveEquations(env, dir, probabilisticNonGoalValues, bProbabilistic);
                     
-                    // (Re-)compute bMarkovian = bMarkovianFixed + aMarkovianToProbabilistic * vProbabilistic.
-                    aMarkovianToProbabilistic.multiplyWithVector(probabilisticNonGoalValues, bMarkovian);
-                    storm::utility::vector::addVectors(bMarkovian, bMarkovianFixed, bMarkovian);
+                        // (Re-)compute bMarkovian = bMarkovianFixed + aMarkovianToProbabilistic * vProbabilistic.
+                        aMarkovianToProbabilistic.multiplyWithVector(probabilisticNonGoalValues, bMarkovian);
+                        storm::utility::vector::addVectors(bMarkovian, bMarkovianFixed, bMarkovian);
+                    }
+                    
                     aMarkovian.multiplyWithVector(markovianNonGoalValues, markovianNonGoalValuesSwap);
                     std::swap(markovianNonGoalValues, markovianNonGoalValuesSwap);
-                    storm::utility::vector::addVectors(markovianNonGoalValues, bMarkovian, markovianNonGoalValues);
+                    if (existProbabilisticStates) {
+                        storm::utility::vector::addVectors(markovianNonGoalValues, bMarkovian, markovianNonGoalValues);
+                    } else {
+                        storm::utility::vector::addVectors(markovianNonGoalValues, bMarkovianFixed, markovianNonGoalValues);
+                    }
                 }
                 
-                // After the loop, perform one more step of the value iteration for PS states.
-                aProbabilisticToMarkovian.multiplyWithVector(markovianNonGoalValues, bProbabilistic);
-                storm::utility::vector::addVectors(bProbabilistic, bProbabilisticFixed, bProbabilistic);
-                solver->solveEquations(env, dir, probabilisticNonGoalValues, bProbabilistic);
+                if (existProbabilisticStates) {
+                    // After the loop, perform one more step of the value iteration for PS states.
+                    aProbabilisticToMarkovian.multiplyWithVector(markovianNonGoalValues, bProbabilistic);
+                    storm::utility::vector::addVectors(bProbabilistic, bProbabilisticFixed, bProbabilistic);
+                    solver->solveEquations(env, dir, probabilisticNonGoalValues, bProbabilistic);
+                }
             }
              
             template <typename ValueType, typename std::enable_if<!storm::NumberTraits<ValueType>::SupportsExponential, int>::type>
