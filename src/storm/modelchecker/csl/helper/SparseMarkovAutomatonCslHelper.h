@@ -106,16 +106,17 @@ namespace storm {
                     std::vector<double> poisson_p(N,0.0);
                     unsigned long iter_num;
 
+                    std::cout << "fg left " << fg->left << " fh right " << fg->right <<"\n";
                     //for(int i=fg->left; i<=fg->right; i++) {
                     for (int i = 0; i<N ; i++){
                         poisson_p[i] = fg->weights[i-fg->left]/fg->total_weight;
                         sumOfPoissonProbs+=poisson_p[i];
                     }
 
-                    /*for(int i=fg->left-1; i>=0; i--) {
+                    for(int i=fg->left-1; i>=0; i--) {
                         poisson_p[i] = poisson_p[i+1]*((i+1)/(lambdaT));
                         sumOfPoissonProbs+=poisson_p[i];
-                    }*/
+                    }
 
                     iter_num = fg->right;
 

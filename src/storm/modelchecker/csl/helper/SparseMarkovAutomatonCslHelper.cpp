@@ -267,7 +267,7 @@ namespace storm {
                         // Vd
                         res = storm::utility::zero<ValueType>();
                         for (uint64_t i = k ; i<N ; i++){
-                            if (i < poisson.size()){
+                            if (poisson[i]>1e-300){
                                 ValueType between = poisson[i];
                                 res+=between;
                             }
@@ -652,6 +652,8 @@ namespace storm {
                     }
 
 
+                    std::vector<double> poisson = foxGlynnProb(lambda*T, N+1, epsilon*kappa);
+
                     // (4) define vectors/matrices
                     std::vector<ValueType> init(numberOfStates, -1);
                     vd = std::vector<std::vector<ValueType>>(N + 1, init);
@@ -669,13 +671,13 @@ namespace storm {
                         for (uint64_t k = N; k <= N; k--) {
                             calculateUnifPlusVector(k, i, 0, lambda, probSize, relReachability, dir, unifVectors,
                                                     fullTransitionMatrix, markovianStates, psiStates, solver, logfile,
-                                                    std::get<3>(foxGlynnResult));
+                                                    poisson);
                             calculateUnifPlusVector(k, i, 2, lambda, probSize, relReachability, dir, unifVectors,
                                                     fullTransitionMatrix, markovianStates, psiStates, solver, logfile,
-                                                    std::get<3>(foxGlynnResult));
+                                                    poisson);
                             calculateVu(relReachability, dir, k, i, 1, lambda, probSize, unifVectors,
                                         fullTransitionMatrix, markovianStates, psiStates, solver, logfile,
-                                        std::get<3>(foxGlynnResult));
+                                        poisson);
                             //also use iteration to keep maxNorm of vd and vup to date, so the loop-condition is easy to prove
                             ValueType diff = std::abs(unifVectors[0][k][i] - unifVectors[1][k][i]);
                             maxNorm = std::max(maxNorm, diff);
@@ -700,7 +702,6 @@ namespace storm {
 
                 logfile.close();
                 return unifVectors[0][0];
-
             }
 
             template <typename ValueType, typename std::enable_if<storm::NumberTraits<ValueType>::SupportsExponential, int>::type>
