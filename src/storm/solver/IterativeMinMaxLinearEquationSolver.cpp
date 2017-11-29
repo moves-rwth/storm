@@ -829,7 +829,7 @@ namespace storm {
                     TemporaryHelper<RationalType, ImpreciseType>::swapSolutions(rationalX, temporaryRational, x, currentX, newX);
                 } else {
                     // Increase the precision.
-                    precision /= 10;
+                    precision /= storm::utility::convertNumber<ValueType>(static_cast<uint64_t>(10));
                 }
             }
             

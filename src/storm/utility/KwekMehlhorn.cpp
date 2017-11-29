@@ -43,8 +43,8 @@ namespace storm {
                 }
                 
                 double powerOfTen = std::pow(10, precision);
-                double truncated = storm::utility::trunc<double>(value * powerOfTen);
-                return std::make_pair(truncated, powerOfTen);
+                auto truncated = storm::utility::trunc<double>(value * powerOfTen);
+                return std::make_pair(storm::utility::convertNumber<typename NumberTraits<RationalType>::IntegerType>(truncated), storm::utility::convertNumber<typename NumberTraits<RationalType>::IntegerType>(powerOfTen));
             }
             
             template<typename RationalType, typename ImpreciseType>
