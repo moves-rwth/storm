@@ -56,6 +56,9 @@ if(WITH_COVERAGE)
     )
 endif()
 
+message(STATUS "Sylvan - Including Boost directories located at ${Boost_INCLUDE_DIRS}.")
+include_directories("${Boost_INCLUDE_DIRS}")
+
 if(USE_CARL)
     add_definitions(-DSYLVAN_HAVE_CARL)
     include_directories("${carl_INCLUDE_DIR}")
