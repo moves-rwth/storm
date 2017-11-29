@@ -4,23 +4,27 @@ Changelog
 This changelog lists only the most important changes. Smaller (bug)fixes as well as non-mature features are not part of the changelog.
 The releases of major and minor versions contain an overview of changes since the last major/minor update.
 
-Version 1.1.x
--------------
-- long run average computation via value iteration
-- LP based MDP model checking
-- solvers can now expose requirements
-- unbounded reachability and reachability rewards now correctly respect solver requirements
-- sound (interval) value iteration
-- Support for Multi-objective multi-dimensional reward bounded reachability properties for MDPs.
-- Developers can now change environment variables (such as the solver precisions) locally. 
 
-### Version 1.1.1
+
+### Version 1.2
 - c++ api changes: Building model takes BuilderOptions instead of extended list of Booleans, does not depend on settings anymore.
 - storm-cli-utilities now contains cli related stuff, instead of storm-lib
 - storm-pars: support for welldefinedness constraints in mdps.
 - symbolic (MT/BDD) bisimulation 
 - Fixed issue related to variable names that can not be used in Exprtk.
 - DRN parser improved
+- LP based MDP model checking
+- Sound (interval) value iteration
+- Support for Multi-objective multi-dimensional reward bounded reachability properties for MDPs.
+- Features for developers:
+	* Solvers can now expose requirements
+	* unbounded reachability and reachability rewards now correctly respect solver requirements
+	* Environment variables (such as the solver precisions) can now be handled more flexible
+
+
+
+Version 1.1.x
+-------------
 
 ### Version 1.1.0 (2017/8)
 
