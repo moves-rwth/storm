@@ -453,7 +453,7 @@ namespace {
             HybridCuddNativeSoundPowerEnvironment,
             HybridSylvanNativeRationalSearchEnvironment,
             DdSylvanNativePowerEnvironment,
-            DdCuddNativeJacobiEnvironment //,
+            DdCuddNativeJacobiEnvironment,
             DdSylvanRationalSearchEnvironment
         > TestingTypes;
     
