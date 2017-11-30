@@ -9,7 +9,6 @@ The releases of major and minor versions contain an overview of changes since th
 ### Version 1.2
 - C++ api changes: Building model takes BuilderOptions instead of extended list of Booleans, does not depend on settings anymore.
 - storm-cli-utilities now contains cli related stuff, instead of storm-lib
-- storm-pars: support for welldefinedness constraints in mdps.
 - Symbolic (MT/BDD) bisimulation
 - Fixed issue related to variable names that can not be used in Exprtk.
 - DRN parser improved
@@ -20,12 +19,15 @@ The releases of major and minor versions contain an overview of changes since th
 - WalkerChae method for solving linear equation systems with guaranteed convergence
 - Performance improvements for sparse model building
 - Performance improvements for conditional properties on MDPs
+- Automatically convert MA without probabilistic states into CTMC
+- storm-pars: support for welldefinedness constraints in mdps.
+- storm-dft: split DFT settings into IO settings and fault tree settings
+- storm-dft: removed obsolete explicit model builder for DFTs
 - Features for developers:
 	* Solvers can now expose requirements
 	* unbounded reachability and reachability rewards now correctly respect solver requirements
 	* Environment variables (such as the solver precisions) can now be handled more flexible
 	* changes to Matrix-Vector operation interfaces, in particular fixed some issues with the use Intel TBB
-
 
 
 Version 1.1.x
