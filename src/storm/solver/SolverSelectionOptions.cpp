@@ -78,6 +78,8 @@ namespace storm {
                     return "Power";
                 case NativeLinearEquationSolverMethod::RationalSearch:
                     return "RationalSearch";
+                case NativeLinearEquationSolverMethod::QuickPower:
+                    return "QuickPower";
             }
             return "invalid";
         }

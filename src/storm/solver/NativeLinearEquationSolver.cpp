@@ -555,6 +555,99 @@ namespace storm {
             return converged;
         }
         
+        
+        
+        template<typename ValueType>
+        bool NativeLinearEquationSolver<ValueType>::solveEquationsQuickSoundPower(Environment const& env, std::vector<ValueType>& x, std::vector<ValueType> const& b) const {
+            STORM_LOG_INFO("Solving linear equation system (" << x.size() << " rows) with NativeLinearEquationSolver (QuickPower)");
+            // Prepare the solution vectors.
+            if (!this->cachedRowVector) {
+                this->cachedRowVector = std::make_unique<std::vector<ValueType>>(getMatrixRowCount(), storm::utility::zero<ValueType>());
+            } else {
+                this->cachedRowVector->assign(getMatrixRowCount(), storm::utility::zero<ValueType>());
+            }
+            if (!this->cachedRowVector2) {
+                this->cachedRowVector2 = std::make_unique<std::vector<ValueType>>(getMatrixRowCount(), storm::utility::one<ValueType>());
+            } else {
+                this->cachedRowVector2->assign(getMatrixRowCount(), storm::utility::one<ValueType>());
+            }
+
+            std::vector<ValueType>* stepBoundedValues = this->cachedRowVector.get();
+            std::vector<ValueType>* stepBoundedStayProbabilities = this->cachedRowVector2.get();
+
+            std::vector<ValueType>* tmp = &x;
+            
+            bool converged = false;
+            bool terminate = false;
+            uint64_t iterations = 0;
+            bool doConvergenceCheck = true;
+            bool useDiffs = this->hasRelevantValues();
+            ValueType precision = storm::utility::convertNumber<ValueType>(env.solver().native().getPrecision());
+            ValueType lowerValueBound, upperValueBound;
+            bool relative = env.solver().native().getRelativeTerminationCriterion();
+            if (!relative) {
+                precision *= storm::utility::convertNumber<ValueType>(2.0);
+            }
+            uint64_t maxIter = env.solver().native().getMaximalNumberOfIterations();
+            this->startMeasureProgress();
+            auto firstProb1EntryIt = stepBoundedStayProbabilities->begin();
+            while (!converged && !terminate && iterations < maxIter) {
+                this->multiplier.multAdd(*this->A, *stepBoundedValues, &b, *tmp);
+                std::swap(tmp, stepBoundedValues);
+                this->multiplier.multAdd(*this->A, *stepBoundedStayProbabilities, nullptr, *tmp);
+                std::swap(tmp, stepBoundedStayProbabilities);
+                for (; firstProb1EntryIt != stepBoundedStayProbabilities->end(); ++firstProb1EntryIt) {
+                    static_assert(NumberTraits<ValueType>::IsExact || std::is_same<ValueType, double>::value, "Considered ValueType not handled.");
+                    if (NumberTraits<ValueType>::IsExact) {
+                        if (storm::utility::isOne(*firstProb1EntryIt)) {
+                            break;
+                        }
+                    } else {
+                        if (storm::utility::isAlmostOne(storm::utility::convertNumber<double>(*firstProb1EntryIt))) {
+                            break;
+                        }
+                    }
+                }
+                if (firstProb1EntryIt == stepBoundedStayProbabilities->end()) {
+                    auto valIt = stepBoundedValues->begin();
+                    auto valIte = stepBoundedValues->end();
+                    auto probIt = stepBoundedStayProbabilities->begin();
+                    STORM_LOG_ASSERT(!storm::utility::isOne(*probIt), "Did not expect staying-probability 1 at this point.");
+                    lowerValueBound = *valIt / (storm::utility::one<ValueType>() - *probIt);
+                    upperValueBound = lowerValueBound;
+                    ValueType largestStayProb = *probIt;
+                    for (; valIt != valIte; ++valIt, ++probIt) {
+                        ValueType currentBound = *valIt / (storm::utility::one<ValueType>() - *probIt);
+                        lowerValueBound = std::min(lowerValueBound, currentBound);
+                        upperValueBound = std::max(upperValueBound, currentBound);
+                        largestStayProb = std::max(largestStayProb, *probIt);
+                    }
+                    STORM_LOG_ASSERT(!relative, "Relative termination criterion not implemented currently.");
+                    converged = largestStayProb * (upperValueBound - lowerValueBound) < precision;
+                }
+                
+                // Potentially show progress.
+                this->showProgressIterative(iterations);
+                
+                // Set up next iteration.
+                ++iterations;
+
+            }
+            
+            // Finally set up the solution vector
+            ValueType meanBound = (upperValueBound - lowerValueBound) / storm::utility::convertNumber<ValueType>(2.0);
+            storm::utility::vector::applyPointwise(*stepBoundedValues, *stepBoundedStayProbabilities, x, [&meanBound] (ValueType const& v, ValueType const& p) { return v + p * meanBound; });
+            
+            if (!this->isCachingEnabled()) {
+                clearCache();
+            }
+            
+            this->logIterations(converged, terminate, iterations);
+
+            return converged;
+
+        }
+        
         template<typename ValueType>
         bool NativeLinearEquationSolver<ValueType>::solveEquationsRationalSearch(Environment const& env, std::vector<ValueType>& x, std::vector<ValueType> const& b) const {
             return solveEquationsRationalSearchHelper<double>(env, x, b);
@@ -828,7 +921,7 @@ namespace storm {
                 } else {
                     STORM_LOG_WARN("The selected solution method does not guarantee exact results.");
                 }
-            } else if (env.solver().isForceSoundness() && method != NativeLinearEquationSolverMethod::Power && method != NativeLinearEquationSolverMethod::RationalSearch) {
+            } else if (env.solver().isForceSoundness() && method != NativeLinearEquationSolverMethod::Power && method != NativeLinearEquationSolverMethod::RationalSearch && method != NativeLinearEquationSolverMethod::QuickPower) {
                 if (env.solver().native().isMethodSetFromDefault()) {
                     method = NativeLinearEquationSolverMethod::Power;
                     STORM_LOG_INFO("Selecting '" + toString(method) + "' as the solution technique to guarantee sound results. If you want to override this, please explicitly specify a different method.");
@@ -857,6 +950,8 @@ namespace storm {
                     } else {
                         return this->solveEquationsPower(env, x, b);
                     }
+                case NativeLinearEquationSolverMethod::QuickPower:
+                        return this->solveEquationsQuickSoundPower(env, x, b);
                 case NativeLinearEquationSolverMethod::RationalSearch:
                     return this->solveEquationsRationalSearch(env, x, b);
             }
@@ -921,7 +1016,7 @@ namespace storm {
         template<typename ValueType>
         LinearEquationSolverProblemFormat NativeLinearEquationSolver<ValueType>::getEquationProblemFormat(Environment const& env) const {
             auto method = getMethod(env, storm::NumberTraits<ValueType>::IsExact);
-            if (method == NativeLinearEquationSolverMethod::Power || method == NativeLinearEquationSolverMethod::RationalSearch) {
+            if (method == NativeLinearEquationSolverMethod::Power || method == NativeLinearEquationSolverMethod::RationalSearch || method == NativeLinearEquationSolverMethod::QuickPower) {
                 return LinearEquationSolverProblemFormat::FixedPointSystem;
             } else {
                 return LinearEquationSolverProblemFormat::EquationSystem;

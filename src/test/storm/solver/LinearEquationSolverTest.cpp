@@ -38,6 +38,21 @@ namespace {
         }
     };
     
+    class NativeDoubleQuickSoundPowerEnvironment {
+    public:
+        typedef double ValueType;
+        static const bool isExact = false;
+        static storm::Environment createEnvironment() {
+            storm::Environment env;
+            env.solver().setForceSoundness(true);
+            env.solver().setLinearEquationSolverType(storm::solver::EquationSolverType::Native);
+            env.solver().native().setMethod(storm::solver::NativeLinearEquationSolverMethod::QuickPower);
+            env.solver().native().setRelativeTerminationCriterion(false);
+            env.solver().native().setPrecision(storm::utility::convertNumber<storm::RationalNumber, std::string>("1e-6"));
+            return env;
+        }
+    };
+    
     class NativeDoubleJacobiEnvironment {
     public:
         typedef double ValueType;
@@ -265,6 +280,7 @@ namespace {
     typedef ::testing::Types<
             NativeDoublePowerEnvironment,
             NativeDoubleSoundPowerEnvironment,
+            NativeDoubleQuickSoundPowerEnvironment,
             NativeDoubleJacobiEnvironment,
             NativeDoubleGaussSeidelEnvironment,
             NativeDoubleSorEnvironment,

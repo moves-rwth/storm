@@ -222,6 +222,24 @@ namespace {
         }
     };
 
+    class SparseNativeQuickSoundPowerEnvironment {
+    public:
+        static const storm::dd::DdType ddType = storm::dd::DdType::Sylvan; // unused for sparse models
+        static const storm::settings::modules::CoreSettings::Engine engine = storm::settings::modules::CoreSettings::Engine::Sparse;
+        static const bool isExact = false;
+        typedef double ValueType;
+        typedef storm::models::sparse::Dtmc<ValueType> ModelType;
+        static storm::Environment createEnvironment() {
+            storm::Environment env;
+            env.solver().setForceSoundness(true);
+            env.solver().setLinearEquationSolverType(storm::solver::EquationSolverType::Native);
+            env.solver().native().setMethod(storm::solver::NativeLinearEquationSolverMethod::QuickPower);
+            env.solver().native().setRelativeTerminationCriterion(false);
+            env.solver().native().setPrecision(storm::utility::convertNumber<storm::RationalNumber>(1e-6));
+            return env;
+        }
+    };
+
     class SparseNativeRationalSearchEnvironment {
     public:
         static const storm::dd::DdType ddType = storm::dd::DdType::Sylvan; // unused for sparse models
@@ -447,6 +465,7 @@ namespace {
             SparseNativeSorEnvironment,
             SparseNativePowerEnvironment,
             SparseNativeSoundPowerEnvironment,
+            SparseNativeQuickSoundPowerEnvironment,
             SparseNativeRationalSearchEnvironment,
             HybridSylvanGmmxxGmresEnvironment,
             HybridCuddNativeJacobiEnvironment,
