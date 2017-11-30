@@ -178,7 +178,7 @@ namespace storm {
                 
                 k = 4;
                 do {
-                    R = maxr + static_cast<uint64_t>(std::ceil(k * r2l + 0.5));
+                    R = mmax + static_cast<uint64_t>(std::ceil(k * r2l + 0.5));
                     STORM_LOG_THROW(R <= maxr, storm::exceptions::PrecisionExceededException, "Fox-Glynn: cannot bound right tail.");
                     ValueType dkl = storm::utility::one<ValueType>();
                     if (dkl * std::exp(-(k * k / 2.0)) / k <= rhsa) {
