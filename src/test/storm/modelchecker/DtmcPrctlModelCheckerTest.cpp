@@ -454,7 +454,7 @@ namespace {
             HybridSylvanNativeRationalSearchEnvironment,
             DdSylvanNativePowerEnvironment,
             DdCuddNativeJacobiEnvironment //,
-     //       DdSylvanRationalSearchEnvironment
+            DdSylvanRationalSearchEnvironment
         > TestingTypes;
     
     TYPED_TEST_CASE(DtmcPrctlModelCheckerTest, TestingTypes);
