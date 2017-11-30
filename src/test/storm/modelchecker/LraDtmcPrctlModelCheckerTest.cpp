@@ -24,35 +24,35 @@ namespace {
     
     class GmmxxDoubleGmresEnvironment {
     public:
-        typedef storm::RationalNumber ValueType;
+        typedef double ValueType;
         static const bool isExact = false;
         static storm::Environment createEnvironment() {
             storm::Environment env;
             env.solver().setLinearEquationSolverType(storm::solver::EquationSolverType::Gmmxx);
             env.solver().gmmxx().setMethod(storm::solver::GmmxxLinearEquationSolverMethod::Gmres);
             env.solver().gmmxx().setPreconditioner(storm::solver::GmmxxLinearEquationSolverPreconditioner::Ilu);
-            env.solver().gmmxx().setPrecision(storm::utility::convertNumber<ValueType>(1e-8));
+            env.solver().gmmxx().setPrecision(storm::utility::convertNumber<storm::RationalNumber>(1e-8));
             return env;
         }
     };
     
     class EigenDoubleDGmresEnvironment {
     public:
-        typedef storm::RationalNumber ValueType;
+        typedef double ValueType;
         static const bool isExact = false;
         static storm::Environment createEnvironment() {
             storm::Environment env;
             env.solver().setLinearEquationSolverType(storm::solver::EquationSolverType::Eigen);
             env.solver().eigen().setMethod(storm::solver::EigenLinearEquationSolverMethod::DGmres);
             env.solver().eigen().setPreconditioner(storm::solver::EigenLinearEquationSolverPreconditioner::Ilu);
-            env.solver().eigen().setPrecision(storm::utility::convertNumber<ValueType>(1e-8));
+            env.solver().eigen().setPrecision(storm::utility::convertNumber<storm::RationalNumber>(1e-8));
             return env;
         }
     };
     
     class EigenRationalLUEnvironment {
     public:
-        typedef storm::RationalNumber ValueType;
+        typedef double ValueType;
         static const bool isExact = true;
         static storm::Environment createEnvironment() {
             storm::Environment env;
@@ -70,7 +70,7 @@ namespace {
             storm::Environment env;
             env.solver().setLinearEquationSolverType(storm::solver::EquationSolverType::Native);
             env.solver().native().setMethod(storm::solver::NativeLinearEquationSolverMethod::SOR);
-            env.solver().native().setSorOmega(storm::utility::convertNumber<ValueType>(0.9));
+            env.solver().native().setSorOmega(storm::utility::convertNumber<storm::RationalNumber>(0.9));
             env.solver().native().setPrecision(storm::utility::convertNumber<storm::RationalNumber>(1e-8));
             return env;
         }

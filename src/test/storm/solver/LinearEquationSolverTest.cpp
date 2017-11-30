@@ -18,7 +18,7 @@ namespace {
             storm::Environment env;
             env.solver().setLinearEquationSolverType(storm::solver::EquationSolverType::Native);
             env.solver().native().setMethod(storm::solver::NativeLinearEquationSolverMethod::Power);
-            env.solver().native().setPrecision(storm::utility::convertNumber<ValueType, std::string>("1e-10"));
+            env.solver().native().setPrecision(storm::utility::convertNumber<storm::RationalNumber, std::string>("1e-10"));
             return env;
         }
     };
@@ -33,7 +33,7 @@ namespace {
             env.solver().setLinearEquationSolverType(storm::solver::EquationSolverType::Native);
             env.solver().native().setMethod(storm::solver::NativeLinearEquationSolverMethod::Power);
             env.solver().native().setRelativeTerminationCriterion(false);
-            env.solver().native().setPrecision(storm::utility::convertNumber<ValueType, std::string>("1e-6"));
+            env.solver().native().setPrecision(storm::utility::convertNumber<storm::RationalNumber, std::string>("1e-6"));
             return env;
         }
     };
@@ -46,7 +46,7 @@ namespace {
             storm::Environment env;
             env.solver().setLinearEquationSolverType(storm::solver::EquationSolverType::Native);
             env.solver().native().setMethod(storm::solver::NativeLinearEquationSolverMethod::Jacobi);
-            env.solver().native().setPrecision(storm::utility::convertNumber<ValueType, std::string>("1e-10"));
+            env.solver().native().setPrecision(storm::utility::convertNumber<storm::RationalNumber, std::string>("1e-10"));
             return env;
         }
     };
@@ -59,7 +59,7 @@ namespace {
             storm::Environment env;
             env.solver().setLinearEquationSolverType(storm::solver::EquationSolverType::Native);
             env.solver().native().setMethod(storm::solver::NativeLinearEquationSolverMethod::GaussSeidel);
-            env.solver().native().setPrecision(storm::utility::convertNumber<ValueType, std::string>("1e-10"));
+            env.solver().native().setPrecision(storm::utility::convertNumber<storm::RationalNumber, std::string>("1e-10"));
             return env;
         }
     };
@@ -72,7 +72,7 @@ namespace {
             storm::Environment env;
             env.solver().setLinearEquationSolverType(storm::solver::EquationSolverType::Native);
             env.solver().native().setMethod(storm::solver::NativeLinearEquationSolverMethod::SOR);
-            env.solver().native().setPrecision(storm::utility::convertNumber<ValueType, std::string>("1e-10"));
+            env.solver().native().setPrecision(storm::utility::convertNumber<storm::RationalNumber, std::string>("1e-10"));
             return env;
         }
     };
@@ -85,7 +85,7 @@ namespace {
             storm::Environment env;
             env.solver().setLinearEquationSolverType(storm::solver::EquationSolverType::Native);
             env.solver().native().setMethod(storm::solver::NativeLinearEquationSolverMethod::WalkerChae);
-            env.solver().native().setPrecision(storm::utility::convertNumber<ValueType, std::string>("1e-8"));
+            env.solver().native().setPrecision(storm::utility::convertNumber<storm::RationalNumber, std::string>("1e-8"));
             env.solver().native().setMaximalNumberOfIterations(500000);
             return env;
         }
@@ -123,7 +123,7 @@ namespace {
             env.solver().setLinearEquationSolverType(storm::solver::EquationSolverType::Gmmxx);
             env.solver().gmmxx().setMethod(storm::solver::GmmxxLinearEquationSolverMethod::Gmres);
             env.solver().gmmxx().setPreconditioner(storm::solver::GmmxxLinearEquationSolverPreconditioner::Ilu);
-            env.solver().gmmxx().setPrecision(storm::utility::convertNumber<ValueType, std::string>("1e-8"));
+            env.solver().gmmxx().setPrecision(storm::utility::convertNumber<storm::RationalNumber, std::string>("1e-8"));
             return env;
         }
     };
@@ -137,7 +137,7 @@ namespace {
             env.solver().setLinearEquationSolverType(storm::solver::EquationSolverType::Gmmxx);
             env.solver().gmmxx().setMethod(storm::solver::GmmxxLinearEquationSolverMethod::Gmres);
             env.solver().gmmxx().setPreconditioner(storm::solver::GmmxxLinearEquationSolverPreconditioner::Diagonal);
-            env.solver().gmmxx().setPrecision(storm::utility::convertNumber<ValueType, std::string>("1e-8"));
+            env.solver().gmmxx().setPrecision(storm::utility::convertNumber<storm::RationalNumber, std::string>("1e-8"));
             return env;
         }
     };
@@ -151,7 +151,7 @@ namespace {
             env.solver().setLinearEquationSolverType(storm::solver::EquationSolverType::Gmmxx);
             env.solver().gmmxx().setMethod(storm::solver::GmmxxLinearEquationSolverMethod::Gmres);
             env.solver().gmmxx().setPreconditioner(storm::solver::GmmxxLinearEquationSolverPreconditioner::None);
-            env.solver().gmmxx().setPrecision(storm::utility::convertNumber<ValueType, std::string>("1e-8"));
+            env.solver().gmmxx().setPrecision(storm::utility::convertNumber<storm::RationalNumber, std::string>("1e-8"));
             return env;
         }
     };
@@ -165,7 +165,7 @@ namespace {
             env.solver().setLinearEquationSolverType(storm::solver::EquationSolverType::Gmmxx);
             env.solver().gmmxx().setMethod(storm::solver::GmmxxLinearEquationSolverMethod::Bicgstab);
             env.solver().gmmxx().setPreconditioner(storm::solver::GmmxxLinearEquationSolverPreconditioner::Ilu);
-            env.solver().gmmxx().setPrecision(storm::utility::convertNumber<ValueType, std::string>("1e-8"));
+            env.solver().gmmxx().setPrecision(storm::utility::convertNumber<storm::RationalNumber, std::string>("1e-8"));
             return env;
         }
     };
@@ -179,7 +179,7 @@ namespace {
             env.solver().setLinearEquationSolverType(storm::solver::EquationSolverType::Gmmxx);
             env.solver().gmmxx().setMethod(storm::solver::GmmxxLinearEquationSolverMethod::Qmr);
             env.solver().gmmxx().setPreconditioner(storm::solver::GmmxxLinearEquationSolverPreconditioner::Diagonal);
-            env.solver().gmmxx().setPrecision(storm::utility::convertNumber<ValueType, std::string>("1e-8"));
+            env.solver().gmmxx().setPrecision(storm::utility::convertNumber<storm::RationalNumber, std::string>("1e-8"));
             return env;
         }
     };
@@ -193,7 +193,7 @@ namespace {
             env.solver().setLinearEquationSolverType(storm::solver::EquationSolverType::Eigen);
             env.solver().eigen().setMethod(storm::solver::EigenLinearEquationSolverMethod::DGmres);
             env.solver().eigen().setPreconditioner(storm::solver::EigenLinearEquationSolverPreconditioner::Diagonal);
-            env.solver().eigen().setPrecision(storm::utility::convertNumber<ValueType, std::string>("1e-8"));
+            env.solver().eigen().setPrecision(storm::utility::convertNumber<storm::RationalNumber, std::string>("1e-8"));
             return env;
         }
     };
@@ -207,7 +207,7 @@ namespace {
             env.solver().setLinearEquationSolverType(storm::solver::EquationSolverType::Eigen);
             env.solver().eigen().setMethod(storm::solver::EigenLinearEquationSolverMethod::Gmres);
             env.solver().eigen().setPreconditioner(storm::solver::EigenLinearEquationSolverPreconditioner::Ilu);
-            env.solver().eigen().setPrecision(storm::utility::convertNumber<ValueType, std::string>("1e-8"));
+            env.solver().eigen().setPrecision(storm::utility::convertNumber<storm::RationalNumber, std::string>("1e-8"));
             return env;
         }
     };
@@ -221,7 +221,7 @@ namespace {
             env.solver().setLinearEquationSolverType(storm::solver::EquationSolverType::Eigen);
             env.solver().eigen().setMethod(storm::solver::EigenLinearEquationSolverMethod::Bicgstab);
             env.solver().eigen().setPreconditioner(storm::solver::EigenLinearEquationSolverPreconditioner::None);
-            env.solver().eigen().setPrecision(storm::utility::convertNumber<ValueType, std::string>("1e-8"));
+            env.solver().eigen().setPrecision(storm::utility::convertNumber<storm::RationalNumber, std::string>("1e-8"));
             return env;
         }
     };
