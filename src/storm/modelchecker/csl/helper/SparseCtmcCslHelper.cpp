@@ -632,19 +632,21 @@ namespace storm {
                 }
                 
                 // Use Fox-Glynn to get the truncation points and the weights.
-                std::tuple<uint_fast64_t, uint_fast64_t, ValueType, std::vector<ValueType>> foxGlynnResult = storm::utility::numerical::getFoxGlynnCutoff(lambda, 1e+300, storm::settings::getModule<storm::settings::modules::GeneralSettings>().getPrecision() / 8.0);
-                STORM_LOG_DEBUG("Fox-Glynn cutoff points: left=" << std::get<0>(foxGlynnResult) << ", right=" << std::get<1>(foxGlynnResult));
+//                std::tuple<uint_fast64_t, uint_fast64_t, ValueType, std::vector<ValueType>> foxGlynnResult = storm::utility::numerical::getFoxGlynnCutoff(lambda, 1e+300, storm::settings::getModule<storm::settings::modules::GeneralSettings>().getPrecision() / 8.0);
+                
+                storm::utility::numerical::FoxGlynnResult<ValueType> foxGlynnResult = storm::utility::numerical::foxGlynn(lambda, storm::settings::getModule<storm::settings::modules::GeneralSettings>().getPrecision() / 8.0);
+                STORM_LOG_DEBUG("Fox-Glynn cutoff points: left=" << foxGlynnResult.left << ", right=" << foxGlynnResult.right);
                 
                 // Scale the weights so they add up to one.
-                for (auto& element : std::get<3>(foxGlynnResult)) {
-                    element /= std::get<2>(foxGlynnResult);
+                for (auto& element : foxGlynnResult.weights) {
+                    element /= foxGlynnResult.totalWeight;
                 }
                 
                 // If the cumulative reward is to be computed, we need to adjust the weights.
                 if (useMixedPoissonProbabilities) {
                     ValueType sum = storm::utility::zero<ValueType>();
                     
-                    for (auto& element : std::get<3>(foxGlynnResult)) {
+                    for (auto& element : foxGlynnResult.weights) {
                         sum += element;
                         element = (1 - sum) / uniformizationRate;
                     }
@@ -654,10 +656,10 @@ namespace storm {
                 
                 // Initialize result.
                 std::vector<ValueType> result;
-                uint_fast64_t startingIteration = std::get<0>(foxGlynnResult);
+                uint_fast64_t startingIteration = foxGlynnResult.left;
                 if (startingIteration == 0) {
                     result = values;
-                    storm::utility::vector::scaleVectorInPlace(result, std::get<3>(foxGlynnResult)[0]);
+                    storm::utility::vector::scaleVectorInPlace(result, foxGlynnResult.weights.front());
                     ++startingIteration;
                 } else {
                     if (useMixedPoissonProbabilities) {
@@ -672,9 +674,9 @@ namespace storm {
                 std::unique_ptr<storm::solver::LinearEquationSolver<ValueType>> solver = linearEquationSolverFactory.create(env, std::move(uniformizedMatrix), storm::solver::LinearEquationSolverTask::Multiply);
                 solver->setCachingEnabled(true);
                 
-                if (!useMixedPoissonProbabilities && std::get<0>(foxGlynnResult) > 1) {
+                if (!useMixedPoissonProbabilities && foxGlynnResult.left > 1) {
                     // Perform the matrix-vector multiplications (without adding).
-                    solver->repeatedMultiply(values, addVector, std::get<0>(foxGlynnResult) - 1);
+                    solver->repeatedMultiply(values, addVector, foxGlynnResult.left - 1);
                 } else if (useMixedPoissonProbabilities) {
                     std::function<ValueType(ValueType const&, ValueType const&)> addAndScale = [&uniformizationRate] (ValueType const& a, ValueType const& b) { return a + b / uniformizationRate; };
                     
@@ -689,10 +691,10 @@ namespace storm {
                 // multiplication, scale and add the result.
                 ValueType weight = 0;
                 std::function<ValueType(ValueType const&, ValueType const&)> addAndScale = [&weight] (ValueType const& a, ValueType const& b) { return a + weight * b; };
-                for (uint_fast64_t index = startingIteration; index <= std::get<1>(foxGlynnResult); ++index) {
+                for (uint_fast64_t index = startingIteration; index <= foxGlynnResult.right; ++index) {
                     solver->repeatedMultiply(values, addVector, 1);
                     
-                    weight = std::get<3>(foxGlynnResult)[index - std::get<0>(foxGlynnResult)];
+                    weight = foxGlynnResult.weights[index - foxGlynnResult.left];
                     storm::utility::vector::applyPointwise(result, values, result, addAndScale);
                 }
                 
