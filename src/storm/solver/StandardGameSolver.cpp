@@ -1,104 +1,66 @@
 #include "storm/solver/StandardGameSolver.h"
 
-#include "storm/settings/SettingsManager.h"
-#include "storm/settings/modules/GameSolverSettings.h"
-
 #include "storm/solver/GmmxxLinearEquationSolver.h"
 #include "storm/solver/EigenLinearEquationSolver.h"
 #include "storm/solver/NativeLinearEquationSolver.h"
 #include "storm/solver/EliminationLinearEquationSolver.h"
 
+#include "storm/environment/solver/GameSolverEnvironment.h"
+
 #include "storm/utility/vector.h"
 #include "storm/utility/macros.h"
-#include "storm/exceptions/InvalidSettingsException.h"
+#include "storm/exceptions/InvalidEnvironmentException.h"
 #include "storm/exceptions/InvalidStateException.h"
 #include "storm/exceptions/NotImplementedException.h"
 namespace storm {
     namespace solver {
         
         template<typename ValueType>
-        StandardGameSolverSettings<ValueType>::StandardGameSolverSettings() {
-            // Get the settings object to customize game solving.
-            storm::settings::modules::GameSolverSettings const& settings = storm::settings::getModule<storm::settings::modules::GameSolverSettings>();
-            
-            maximalNumberOfIterations = settings.getMaximalIterationCount();
-            precision = storm::utility::convertNumber<ValueType>(settings.getPrecision());
-            relative = settings.getConvergenceCriterion() == storm::settings::modules::GameSolverSettings::ConvergenceCriterion::Relative;
-            
-            auto method = settings.getGameSolvingMethod();
-            switch (method) {
-                case GameMethod::ValueIteration: this->solutionMethod = SolutionMethod::ValueIteration; break;
-                case GameMethod::PolicyIteration: this->solutionMethod = SolutionMethod::PolicyIteration; break;
-                default:
-                    STORM_LOG_THROW(false, storm::exceptions::InvalidSettingsException, "Unsupported technique.");
+        StandardGameSolver<ValueType>::StandardGameSolver(storm::storage::SparseMatrix<storm::storage::sparse::state_type> const& player1Matrix, storm::storage::SparseMatrix<ValueType> const& player2Matrix, std::unique_ptr<LinearEquationSolverFactory<ValueType>>&& linearEquationSolverFactory) : linearEquationSolverFactory(std::move(linearEquationSolverFactory)), localP1Matrix(nullptr), localP2Matrix(nullptr), player1Matrix(player1Matrix), player2Matrix(player2Matrix) {
+            // Intentionally left empty.
+        }
+        
+        template<typename ValueType>
+        StandardGameSolver<ValueType>::StandardGameSolver(storm::storage::SparseMatrix<storm::storage::sparse::state_type>&& player1Matrix, storm::storage::SparseMatrix<ValueType>&& player2Matrix, std::unique_ptr<LinearEquationSolverFactory<ValueType>>&& linearEquationSolverFactory) : linearEquationSolverFactory(std::move(linearEquationSolverFactory)), localP1Matrix(std::make_unique<storm::storage::SparseMatrix<storm::storage::sparse::state_type>>(std::move(player1Matrix))), localP2Matrix(std::make_unique<storm::storage::SparseMatrix<ValueType>>(std::move(player2Matrix))), player1Matrix(*localP1Matrix), player2Matrix(*localP2Matrix) {
+            // Intentionally left empty.
+        }
+        
+        template<typename ValueType>
+        GameMethod StandardGameSolver<ValueType>::getMethod(Environment const& env, bool isExactMode) const {
+            auto method = env.solver().game().getMethod();
+            if (isExactMode && method != GameMethod::PolicyIteration) {
+                if (env.solver().game().isMethodSetFromDefault()) {
+                    method = GameMethod::PolicyIteration;
+                    STORM_LOG_INFO("Changing game method to policy-iteration to guarantee exact results. If you want to override this, specify another method.");
+                } else {
+                    STORM_LOG_WARN("The selected game method does not guarantee exact results.");
+                }
+            } else if (env.solver().isForceSoundness() && method != GameMethod::PolicyIteration) {
+                if (env.solver().game().isMethodSetFromDefault()) {
+                    method = GameMethod::PolicyIteration;
+                    STORM_LOG_INFO("Changing game method to policy-iteration to guarantee sound results. If you want to override this, specify another method.");
+                } else {
+                    STORM_LOG_WARN("The selected game method does not guarantee sound results.");
+                }
             }
+            return method;
         }
         
         template<typename ValueType>
-        void StandardGameSolverSettings<ValueType>::setSolutionMethod(SolutionMethod const& solutionMethod) {
-            this->solutionMethod = solutionMethod;
-        }
-        
-        template<typename ValueType>
-        void StandardGameSolverSettings<ValueType>::setMaximalNumberOfIterations(uint64_t maximalNumberOfIterations) {
-            this->maximalNumberOfIterations = maximalNumberOfIterations;
-        }
-        
-        template<typename ValueType>
-        void StandardGameSolverSettings<ValueType>::setRelativeTerminationCriterion(bool value) {
-            this->relative = value;
-        }
-        
-        template<typename ValueType>
-        void StandardGameSolverSettings<ValueType>::setPrecision(ValueType precision) {
-            this->precision = precision;
-        }
-        
-        template<typename ValueType>
-        typename StandardGameSolverSettings<ValueType>::SolutionMethod const& StandardGameSolverSettings<ValueType>::getSolutionMethod() const {
-            return solutionMethod;
-        }
-        
-        template<typename ValueType>
-        uint64_t StandardGameSolverSettings<ValueType>::getMaximalNumberOfIterations() const {
-            return maximalNumberOfIterations;
-        }
-        
-        template<typename ValueType>
-        ValueType StandardGameSolverSettings<ValueType>::getPrecision() const {
-            return precision;
-        }
-        
-        template<typename ValueType>
-        bool StandardGameSolverSettings<ValueType>::getRelativeTerminationCriterion() const {
-            return relative;
-        }
-        
-        template<typename ValueType>
-        StandardGameSolver<ValueType>::StandardGameSolver(storm::storage::SparseMatrix<storm::storage::sparse::state_type> const& player1Matrix, storm::storage::SparseMatrix<ValueType> const& player2Matrix, std::unique_ptr<LinearEquationSolverFactory<ValueType>>&& linearEquationSolverFactory, StandardGameSolverSettings<ValueType> const& settings) : settings(settings), linearEquationSolverFactory(std::move(linearEquationSolverFactory)), localP1Matrix(nullptr), localP2Matrix(nullptr), player1Matrix(player1Matrix), player2Matrix(player2Matrix) {
-            // Intentionally left empty.
-        }
-        
-        template<typename ValueType>
-        StandardGameSolver<ValueType>::StandardGameSolver(storm::storage::SparseMatrix<storm::storage::sparse::state_type>&& player1Matrix, storm::storage::SparseMatrix<ValueType>&& player2Matrix, std::unique_ptr<LinearEquationSolverFactory<ValueType>>&& linearEquationSolverFactory, StandardGameSolverSettings<ValueType> const& settings) : settings(settings), linearEquationSolverFactory(std::move(linearEquationSolverFactory)), localP1Matrix(std::make_unique<storm::storage::SparseMatrix<storm::storage::sparse::state_type>>(std::move(player1Matrix))), localP2Matrix(std::make_unique<storm::storage::SparseMatrix<ValueType>>(std::move(player2Matrix))), player1Matrix(*localP1Matrix), player2Matrix(*localP2Matrix) {
-            // Intentionally left empty.
-        }
-        
-        template<typename ValueType>
-        bool StandardGameSolver<ValueType>::solveGame(OptimizationDirection player1Dir, OptimizationDirection player2Dir, std::vector<ValueType>& x, std::vector<ValueType> const& b) const {
-            switch (this->getSettings().getSolutionMethod()) {
-                case StandardGameSolverSettings<ValueType>::SolutionMethod::ValueIteration:
-                    return solveGameValueIteration(player1Dir, player2Dir, x, b);
-                case StandardGameSolverSettings<ValueType>::SolutionMethod::PolicyIteration:
-                    return solveGamePolicyIteration(player1Dir, player2Dir, x, b);
+        bool StandardGameSolver<ValueType>::solveGame(Environment const& env, OptimizationDirection player1Dir, OptimizationDirection player2Dir, std::vector<ValueType>& x, std::vector<ValueType> const& b) const {
+            switch (getMethod(env, std::is_same<ValueType, storm::RationalNumber>::value)) {
+                case GameMethod::ValueIteration:
+                    return solveGameValueIteration(env, player1Dir, player2Dir, x, b);
+                case GameMethod::PolicyIteration:
+                    return solveGamePolicyIteration(env, player1Dir, player2Dir, x, b);
                 default:
-                    STORM_LOG_THROW(false, storm::exceptions::InvalidSettingsException, "This solver does not implement the selected solution method");
+                    STORM_LOG_THROW(false, storm::exceptions::InvalidEnvironmentException, "This solver does not implement the selected solution method");
             }
             return false;
         }
         
         template<typename ValueType>
-        bool StandardGameSolver<ValueType>::solveGamePolicyIteration(OptimizationDirection player1Dir, OptimizationDirection player2Dir, std::vector<ValueType>& x, std::vector<ValueType> const& b) const {
+        bool StandardGameSolver<ValueType>::solveGamePolicyIteration(Environment const& env, OptimizationDirection player1Dir, OptimizationDirection player2Dir, std::vector<ValueType>& x, std::vector<ValueType> const& b) const {
             
             // Create the initial choice selections.
             std::vector<storm::storage::sparse::state_type> player1Choices = this->hasSchedulerHints() ? this->player1ChoicesHint.get() : std::vector<storm::storage::sparse::state_type>(this->player1Matrix.getRowGroupCount(), 0);
@@ -112,13 +74,15 @@ namespace storm {
             }
             std::vector<ValueType>& subB = *auxiliaryP1RowGroupVector;
 
+            uint64_t maxIter = env.solver().game().getMaximalNumberOfIterations();
+            
             // Solve the equation system induced by the two schedulers.
             storm::storage::SparseMatrix<ValueType> submatrix;
             getInducedMatrixVector(x, b, player1Choices, player2Choices, submatrix, subB);
-            if (this->linearEquationSolverFactory->getEquationProblemFormat() == LinearEquationSolverProblemFormat::EquationSystem) {
+            if (this->linearEquationSolverFactory->getEquationProblemFormat(env) == LinearEquationSolverProblemFormat::EquationSystem) {
                 submatrix.convertToEquationSystem();
             }
-            auto submatrixSolver = linearEquationSolverFactory->create(std::move(submatrix));
+            auto submatrixSolver = linearEquationSolverFactory->create(env, std::move(submatrix));
             if (this->lowerBound) { submatrixSolver->setLowerBound(this->lowerBound.get()); }
             if (this->upperBound) { submatrixSolver->setUpperBound(this->upperBound.get()); }
             submatrixSolver->setCachingEnabled(true);
@@ -128,7 +92,7 @@ namespace storm {
             do {
                 // Solve the equation system for the 'DTMC'.
                 // FIXME: we need to remove the 0- and 1- states to make the solution unique.
-                submatrixSolver->solveEquations(x, subB);
+                submatrixSolver->solveEquations(env, x, subB);
                 
                 bool schedulerImproved = extractChoices(player1Dir, player2Dir, x, b, *auxiliaryP2RowGroupVector, player1Choices, player2Choices);
                 
@@ -144,7 +108,7 @@ namespace storm {
                 
                 // Update environment variables.
                 ++iterations;
-                status = updateStatusIfNotConverged(status, x, iterations);
+                status = updateStatusIfNotConverged(status, x, iterations, maxIter);
             } while (status == Status::InProgress);
             
             reportStatus(status, iterations);
@@ -172,20 +136,10 @@ namespace storm {
         }
 
         template<typename ValueType>
-        ValueType StandardGameSolver<ValueType>::getPrecision() const {
-            return this->getSettings().getPrecision();
-        }
-
-        template<typename ValueType>
-        bool StandardGameSolver<ValueType>::getRelative() const {
-            return this->getSettings().getRelativeTerminationCriterion();
-        }
-
-        template<typename ValueType>
-        bool StandardGameSolver<ValueType>::solveGameValueIteration(OptimizationDirection player1Dir, OptimizationDirection player2Dir, std::vector<ValueType>& x, std::vector<ValueType> const& b) const {
+        bool StandardGameSolver<ValueType>::solveGameValueIteration(Environment const& env, OptimizationDirection player1Dir, OptimizationDirection player2Dir, std::vector<ValueType>& x, std::vector<ValueType> const& b) const {
                          
             if(!linEqSolverPlayer2Matrix) {
-                linEqSolverPlayer2Matrix = linearEquationSolverFactory->create(player2Matrix);
+                linEqSolverPlayer2Matrix = linearEquationSolverFactory->create(env, player2Matrix, storm::solver::LinearEquationSolverTask::Multiply);
                 linEqSolverPlayer2Matrix->setCachingEnabled(true);
             }
             
@@ -200,7 +154,11 @@ namespace storm {
             if (!auxiliaryP1RowGroupVector) {
                 auxiliaryP1RowGroupVector = std::make_unique<std::vector<ValueType>>(player1Matrix.getRowGroupCount());
             }
-             
+            
+            ValueType precision = storm::utility::convertNumber<ValueType>(env.solver().game().getPrecision());
+            bool relative = env.solver().game().getRelativeTerminationCriterion();
+            uint64_t maxIter = env.solver().game().getMaximalNumberOfIterations();
+            
             std::vector<ValueType>& multiplyResult = *auxiliaryP2RowVector;
             std::vector<ValueType>& reducedMultiplyResult = *auxiliaryP2RowGroupVector;
              
@@ -208,13 +166,13 @@ namespace storm {
                 // Solve the equation system induced by the two schedulers.
                 storm::storage::SparseMatrix<ValueType> submatrix;
                 getInducedMatrixVector(x, b, this->player1ChoicesHint.get(), this->player2ChoicesHint.get(), submatrix, *auxiliaryP1RowGroupVector);
-                if (this->linearEquationSolverFactory->getEquationProblemFormat() == LinearEquationSolverProblemFormat::EquationSystem) {
+                if (this->linearEquationSolverFactory->getEquationProblemFormat(env) == LinearEquationSolverProblemFormat::EquationSystem) {
                     submatrix.convertToEquationSystem();
                 }
-                auto submatrixSolver = linearEquationSolverFactory->create(std::move(submatrix));
+                auto submatrixSolver = linearEquationSolverFactory->create(env, std::move(submatrix));
                 if (this->lowerBound) { submatrixSolver->setLowerBound(this->lowerBound.get()); }
                 if (this->upperBound) { submatrixSolver->setUpperBound(this->upperBound.get()); }
-                submatrixSolver->solveEquations(x, *auxiliaryP1RowGroupVector);
+                submatrixSolver->solveEquations(env, x, *auxiliaryP1RowGroupVector);
             }
              
             std::vector<ValueType>* newX = auxiliaryP1RowGroupVector.get();
@@ -228,14 +186,14 @@ namespace storm {
                 multiplyAndReduce(player1Dir, player2Dir, *currentX, &b, *linEqSolverPlayer2Matrix, multiplyResult, reducedMultiplyResult, *newX);
 
                 // Determine whether the method converged.
-                if (storm::utility::vector::equalModuloPrecision<ValueType>(*currentX, *newX, this->getSettings().getPrecision(), this->getSettings().getRelativeTerminationCriterion())) {
+                if (storm::utility::vector::equalModuloPrecision<ValueType>(*currentX, *newX, precision, relative)) {
                     status = Status::Converged;
                 }
                 
                 // Update environment variables.
                 std::swap(currentX, newX);
                 ++iterations;
-                status = updateStatusIfNotConverged(status, *currentX, iterations);
+                status = updateStatusIfNotConverged(status, *currentX, iterations, maxIter);
             }
                         
             reportStatus(status, iterations);
@@ -261,10 +219,10 @@ namespace storm {
         }
         
         template<typename ValueType>
-        void StandardGameSolver<ValueType>::repeatedMultiply(OptimizationDirection player1Dir, OptimizationDirection player2Dir, std::vector<ValueType>& x, std::vector<ValueType> const* b, uint_fast64_t n) const {
+        void StandardGameSolver<ValueType>::repeatedMultiply(Environment const& env, OptimizationDirection player1Dir, OptimizationDirection player2Dir, std::vector<ValueType>& x, std::vector<ValueType> const* b, uint_fast64_t n) const {
             
             if(!linEqSolverPlayer2Matrix) {
-                linEqSolverPlayer2Matrix = linearEquationSolverFactory->create(player2Matrix);
+                linEqSolverPlayer2Matrix = linearEquationSolverFactory->create(env, player2Matrix, storm::solver::LinearEquationSolverTask::Multiply);
                 linEqSolverPlayer2Matrix->setCachingEnabled(true);
             }
             
@@ -401,11 +359,11 @@ namespace storm {
         }
         
         template<typename ValueType>
-        typename StandardGameSolver<ValueType>::Status StandardGameSolver<ValueType>::updateStatusIfNotConverged(Status status, std::vector<ValueType> const& x, uint64_t iterations) const {
+        typename StandardGameSolver<ValueType>::Status StandardGameSolver<ValueType>::updateStatusIfNotConverged(Status status, std::vector<ValueType> const& x, uint64_t iterations, uint64_t maximalNumberOfIterations) const {
             if (status != Status::Converged) {
                 if (this->hasCustomTerminationCondition() && this->getTerminationCondition().terminateNow(x)) {
                     status = Status::TerminatedEarly;
-                } else if (iterations >= this->getSettings().getMaximalNumberOfIterations()) {
+                } else if (iterations >= maximalNumberOfIterations) {
                     status = Status::MaximalIterationsExceeded;
                 }
             }
@@ -424,16 +382,6 @@ namespace storm {
         }
         
         template<typename ValueType>
-        StandardGameSolverSettings<ValueType> const& StandardGameSolver<ValueType>::getSettings() const {
-            return settings;
-        }
-        
-        template<typename ValueType>
-        void StandardGameSolver<ValueType>::setSettings(StandardGameSolverSettings<ValueType> const& newSettings) {
-            settings = newSettings;
-        }
-        
-        template<typename ValueType>
         void StandardGameSolver<ValueType>::clearCache() const {
             linEqSolverPlayer2Matrix.reset();
             auxiliaryP2RowVector.reset();
@@ -442,9 +390,7 @@ namespace storm {
             GameSolver<ValueType>::clearCache();
         }
         
-        template class StandardGameSolverSettings<double>;
         template class StandardGameSolver<double>;
-        template class StandardGameSolverSettings<storm::RationalNumber>;
         template class StandardGameSolver<storm::RationalNumber>;
     }
 }

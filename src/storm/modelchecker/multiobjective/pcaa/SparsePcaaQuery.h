@@ -2,11 +2,14 @@
 #define STORM_MODELCHECKER_MULTIOBJECTIVE_PCAA_SPARSEPCAAQUERY_H_
 
 #include "storm/modelchecker/results/CheckResult.h"
-#include "storm/modelchecker/multiobjective/SparseMultiObjectivePreprocessorReturnType.h"
-#include "storm/modelchecker/multiobjective/pcaa/SparsePcaaWeightVectorChecker.h"
+#include "storm/modelchecker/multiobjective/SparseMultiObjectivePreprocessorResult.h"
+#include "storm/modelchecker/multiobjective/pcaa/PcaaWeightVectorChecker.h"
 #include "storm/storage/geometry/Polytope.h"
 
 namespace storm {
+
+    class Environment;
+    
     namespace modelchecker {
         namespace multiobjective {
             
@@ -27,7 +30,7 @@ namespace storm {
                 /*
                  * Invokes the computation and retrieves the result
                  */
-                virtual std::unique_ptr<CheckResult> check() = 0;
+                virtual std::unique_ptr<CheckResult> check(Environment const& env) = 0;
                 
                 /*
                  * Exports the current approximations and the currently processed points into respective .csv files located at the given directory.
@@ -38,14 +41,6 @@ namespace storm {
                 void exportPlotOfCurrentApproximation(std::string const& destinationDir) const;
                 
             protected:
-                
-                /*
-                 * Initializes the weight vector checker with the provided data from preprocessing
-                 */
-                void initializeWeightVectorChecker(SparseModelType const& model,
-                                                   std::vector<Objective<typename SparseModelType::ValueType>> const& objectives,
-                                                   storm::storage::BitVector const& possibleECActions,
-                                                   storm::storage::BitVector const& possibleBottomStates);
                 
                 /*
                  * Represents the information obtained in a single iteration of the algorithm
@@ -60,7 +55,7 @@ namespace storm {
                  * Creates a new query for the Pareto curve approximation algorithm (Pcaa)
                  * @param preprocessorResult the result from preprocessing
                  */
-                SparsePcaaQuery(SparseMultiObjectivePreprocessorReturnType<SparseModelType>& preprocessorResult);
+                SparsePcaaQuery(SparseMultiObjectivePreprocessorResult<SparseModelType>& preprocessorResult);
                 
                 /*
                  * Returns a weight vector w that separates the under approximation from the given point p, i.e.,
@@ -73,7 +68,7 @@ namespace storm {
                 /*
                  * Refines the current result w.r.t. the given direction vector.
                  */
-                void performRefinementStep(WeightVector&& direction);
+                void performRefinementStep(Environment const& env, WeightVector&& direction);
                 
                 /*
                  * Updates the overapproximation after a refinement step has been performed
@@ -104,11 +99,10 @@ namespace storm {
                 SparseModelType const& originalModel;
                 storm::logic::MultiObjectiveFormula const& originalFormula;
                 
-                SparseModelType preprocessedModel;
                 std::vector<Objective<typename SparseModelType::ValueType>> objectives;
                 
                 // The corresponding weight vector checker
-                std::unique_ptr<SparsePcaaWeightVectorChecker<SparseModelType>> weightVectorChecker;
+                std::unique_ptr<PcaaWeightVectorChecker<SparseModelType>> weightVectorChecker;
 
                 //The results in each iteration of the algorithm
                 std::vector<RefinementStep> refinementSteps;

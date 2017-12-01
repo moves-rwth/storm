@@ -325,18 +325,18 @@ namespace storm {
         template<typename ValueType>
         ValueType InternalAdd<DdType::CUDD, ValueType>::getMin() const {
             cudd::ADD constantMinAdd = this->getCuddAdd().FindMin();
-            return static_cast<double>(Cudd_V(constantMinAdd.getNode()));
+            return storm::utility::convertNumber<ValueType>(Cudd_V(constantMinAdd.getNode()));
         }
         
         template<typename ValueType>
         ValueType InternalAdd<DdType::CUDD, ValueType>::getMax() const {
             cudd::ADD constantMaxAdd = this->getCuddAdd().FindMax();
-            return static_cast<double>(Cudd_V(constantMaxAdd.getNode()));
+            return storm::utility::convertNumber<ValueType>(Cudd_V(constantMaxAdd.getNode()));
         }
         
         template<typename ValueType>
         ValueType InternalAdd<DdType::CUDD, ValueType>::getValue() const {
-            return static_cast<ValueType>(Cudd_V(this->getCuddAdd().getNode()));
+            return storm::utility::convertNumber<ValueType>(Cudd_V(this->getCuddAdd().getNode()));
         }
         
         template<typename ValueType>
@@ -403,7 +403,7 @@ namespace storm {
             int* cube;
             double value;
             DdGen* generator = this->getCuddAdd().FirstCube(&cube, &value);
-            return AddIterator<DdType::CUDD, ValueType>(fullDdManager, generator, cube, value, (Cudd_IsGenEmpty(generator) != 0), &metaVariables, enumerateDontCareMetaVariables);
+            return AddIterator<DdType::CUDD, ValueType>(fullDdManager, generator, cube, storm::utility::convertNumber<ValueType>(value), (Cudd_IsGenEmpty(generator) != 0), &metaVariables, enumerateDontCareMetaVariables);
         }
         
         template<typename ValueType>
@@ -504,7 +504,7 @@ namespace storm {
             // If we are at the maximal level, the value to be set is stored as a constant in the DD.
             if (currentLevel == maxLevel) {
                 ValueType& targetValue = targetVector[offsets != nullptr ? (*offsets)[currentOffset] : currentOffset];
-                targetValue = function(targetValue, Cudd_V(dd));
+                targetValue = function(targetValue, storm::utility::convertNumber<ValueType>(Cudd_V(dd)));
             } else if (ddVariableIndices[currentLevel] < Cudd_NodeReadIndex(dd)) {
                 // If we skipped a level, we need to enumerate the explicit entries for the case in which the bit is set
                 // and for the one in which it is not set.
@@ -590,7 +590,7 @@ namespace storm {
             // If we are at the maximal level, the value to be set is stored as a constant in the DD.
             if (currentRowLevel + currentColumnLevel == maxLevel) {
                 if (generateValues) {
-                    columnsAndValues[rowIndications[rowGroupOffsets[currentRowOffset]]] = storm::storage::MatrixEntry<uint_fast64_t, ValueType>(currentColumnOffset, Cudd_V(dd));
+                    columnsAndValues[rowIndications[rowGroupOffsets[currentRowOffset]]] = storm::storage::MatrixEntry<uint_fast64_t, ValueType>(currentColumnOffset, storm::utility::convertNumber<ValueType>(Cudd_V(dd)));
                 }
                 ++rowIndications[rowGroupOffsets[currentRowOffset]];
             } else {

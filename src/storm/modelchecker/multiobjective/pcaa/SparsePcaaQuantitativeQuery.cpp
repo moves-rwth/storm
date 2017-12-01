@@ -20,8 +20,8 @@ namespace storm {
             
             
             template <class SparseModelType, typename GeometryValueType>
-            SparsePcaaQuantitativeQuery<SparseModelType, GeometryValueType>::SparsePcaaQuantitativeQuery(SparseMultiObjectivePreprocessorReturnType<SparseModelType>& preprocessorResult) : SparsePcaaQuery<SparseModelType, GeometryValueType>(preprocessorResult) {
-                STORM_LOG_ASSERT(preprocessorResult.queryType == SparseMultiObjectivePreprocessorReturnType<SparseModelType>::QueryType::Quantitative, "Invalid query Type");
+            SparsePcaaQuantitativeQuery<SparseModelType, GeometryValueType>::SparsePcaaQuantitativeQuery(SparseMultiObjectivePreprocessorResult<SparseModelType>& preprocessorResult) : SparsePcaaQuery<SparseModelType, GeometryValueType>(preprocessorResult) {
+                STORM_LOG_ASSERT(preprocessorResult.queryType == SparseMultiObjectivePreprocessorResult<SparseModelType>::QueryType::Quantitative, "Invalid query Type");
                 
                 for (uint_fast64_t objIndex = 0; objIndex < this->objectives.size(); ++objIndex) {
                     if (!this->objectives[objIndex].formula->hasBound()) {
@@ -66,11 +66,11 @@ namespace storm {
             }
             
             template <class SparseModelType, typename GeometryValueType>
-            std::unique_ptr<CheckResult> SparsePcaaQuantitativeQuery<SparseModelType, GeometryValueType>::check() {
+            std::unique_ptr<CheckResult> SparsePcaaQuantitativeQuery<SparseModelType, GeometryValueType>::check(Environment const& env) {
                 // First find one solution that achieves the given thresholds ...
-                if (this->checkAchievability()) {
+                if (this->checkAchievability(env)) {
                     // ... then improve it
-                    GeometryValueType result = this->improveSolution();
+                    GeometryValueType result = this->improveSolution(env);
                     
                     // transform the obtained result for the preprocessed model to a result w.r.t. the original model and return the checkresult
                     auto const& obj = this->objectives[indexOfOptimizingObjective];
@@ -94,7 +94,7 @@ namespace storm {
             }
             
             template <class SparseModelType, typename GeometryValueType>
-            bool SparsePcaaQuantitativeQuery<SparseModelType, GeometryValueType>::checkAchievability() {
+            bool SparsePcaaQuantitativeQuery<SparseModelType, GeometryValueType>::checkAchievability(Environment const& env) {
                  if (this->objectives.size() > 1) {
                     // We don't care for the optimizing objective at this point
                     this->diracWeightVectorsToBeChecked.set(indexOfOptimizingObjective, false);
@@ -102,7 +102,7 @@ namespace storm {
                     while(!this->maxStepsPerformed()){
                         WeightVector separatingVector = this->findSeparatingVector(thresholds);
                         this->updateWeightedPrecisionInAchievabilityPhase(separatingVector);
-                        this->performRefinementStep(std::move(separatingVector));
+                        this->performRefinementStep(env, std::move(separatingVector));
                         //Pick the threshold for the optimizing objective low enough so valid solutions are not excluded
                         thresholds[indexOfOptimizingObjective] = std::min(thresholds[indexOfOptimizingObjective], this->refinementSteps.back().lowerBoundPoint[indexOfOptimizingObjective]);
                         if (!checkIfThresholdsAreSatisfied(this->overApproximation)){
@@ -139,7 +139,7 @@ namespace storm {
             }
 
             template <class SparseModelType, typename GeometryValueType>
-            GeometryValueType SparsePcaaQuantitativeQuery<SparseModelType, GeometryValueType>::improveSolution() {
+            GeometryValueType SparsePcaaQuantitativeQuery<SparseModelType, GeometryValueType>::improveSolution(Environment const& env) {
                 this->diracWeightVectorsToBeChecked.clear(); // Only check weight vectors that can actually improve the solution
             
                 WeightVector directionOfOptimizingObjective(this->objectives.size(), storm::utility::zero<GeometryValueType>());
@@ -155,7 +155,7 @@ namespace storm {
                         // We did not make any refinement steps during the checkAchievability phase (e.g., because there is only one objective).
                         this->weightVectorChecker->setWeightedPrecision(storm::utility::convertNumber<typename SparseModelType::ValueType>(storm::settings::getModule<storm::settings::modules::MultiObjectiveSettings>().getPrecision()));
                         WeightVector separatingVector = directionOfOptimizingObjective;
-                        this->performRefinementStep(std::move(separatingVector));
+                        this->performRefinementStep(env, std::move(separatingVector));
                     }
                     std::pair<Point, bool> optimizationRes = this->underApproximation->intersection(thresholdsAsPolytope)->optimize(directionOfOptimizingObjective);
                     STORM_LOG_THROW(optimizationRes.second, storm::exceptions::UnexpectedException, "The underapproximation is either unbounded or empty.");
@@ -177,7 +177,7 @@ namespace storm {
                     }
                     WeightVector separatingVector = this->findSeparatingVector(thresholds);
                     this->updateWeightedPrecisionInImprovingPhase(separatingVector);
-                    this->performRefinementStep(std::move(separatingVector));
+                    this->performRefinementStep(env, std::move(separatingVector));
                 }
                STORM_LOG_ERROR("Could not reach the desired precision: Exceeded maximum number of refinement steps");
                return result;

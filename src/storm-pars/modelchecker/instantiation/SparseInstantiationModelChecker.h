@@ -7,6 +7,9 @@
 #include "storm/modelchecker/hints/ModelCheckerHint.h"
 
 namespace storm {
+    
+    class Environment;
+    
     namespace modelchecker {
         
         /*!
@@ -20,7 +23,7 @@ namespace storm {
             
             void specifyFormula(CheckTask<storm::logic::Formula, typename SparseModelType::ValueType> const& checkTask);
             
-            virtual std::unique_ptr<CheckResult> check(storm::utility::parametric::Valuation<typename SparseModelType::ValueType> const& valuation) = 0;
+            virtual std::unique_ptr<CheckResult> check(Environment const& env, storm::utility::parametric::Valuation<typename SparseModelType::ValueType> const& valuation) = 0;
             
             // If set, it is assumed that all considered model instantiations have the same underlying graph structure.
             // This bypasses the graph analysis for the different instantiations.

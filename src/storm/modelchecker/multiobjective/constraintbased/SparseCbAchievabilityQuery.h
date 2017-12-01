@@ -19,14 +19,14 @@ namespace storm {
                 
                 typedef typename SparseModelType::ValueType ValueType;
                 
-                SparseCbAchievabilityQuery(SparseMultiObjectivePreprocessorReturnType<SparseModelType>& preprocessorResult);
+                SparseCbAchievabilityQuery(SparseMultiObjectivePreprocessorResult<SparseModelType> const& preprocessorResult);
                 
                 virtual ~SparseCbAchievabilityQuery() = default;
 
                 /*
                  * Invokes the computation and retrieves the result
                  */
-                virtual std::unique_ptr<CheckResult> check() override;
+                virtual std::unique_ptr<CheckResult> check(Environment const& env) override;
                 
             private:
                 

@@ -49,20 +49,20 @@ namespace storm {
                 return !this->getOption(techniqueOptionName).getHasOptionBeenSet() || this->getOption(techniqueOptionName).getArgumentByName("name").wasSetFromDefaultValue();
             }
             
-            NativeEquationSolverSettings::LinearEquationMethod NativeEquationSolverSettings::getLinearEquationSystemMethod() const {
+            storm::solver::NativeLinearEquationSolverMethod NativeEquationSolverSettings::getLinearEquationSystemMethod() const {
                 std::string linearEquationSystemTechniqueAsString = this->getOption(techniqueOptionName).getArgumentByName("name").getValueAsString();
                 if (linearEquationSystemTechniqueAsString == "jacobi") {
-                    return NativeEquationSolverSettings::LinearEquationMethod::Jacobi;
+                    return storm::solver::NativeLinearEquationSolverMethod::Jacobi;
                 } else if (linearEquationSystemTechniqueAsString == "gaussseidel") {
-                    return NativeEquationSolverSettings::LinearEquationMethod::GaussSeidel;
+                    return storm::solver::NativeLinearEquationSolverMethod::GaussSeidel;
                 } else if (linearEquationSystemTechniqueAsString == "sor") {
-                    return NativeEquationSolverSettings::LinearEquationMethod::SOR;
+                    return storm::solver::NativeLinearEquationSolverMethod::SOR;
                 } else if (linearEquationSystemTechniqueAsString == "walkerchae") {
-                    return NativeEquationSolverSettings::LinearEquationMethod::WalkerChae;
+                    return storm::solver::NativeLinearEquationSolverMethod::WalkerChae;
                 } else if (linearEquationSystemTechniqueAsString == "power") {
-                    return NativeEquationSolverSettings::LinearEquationMethod::Power;
+                    return storm::solver::NativeLinearEquationSolverMethod::Power;
                 } else if (linearEquationSystemTechniqueAsString == "ratsearch") {
-                    return NativeEquationSolverSettings::LinearEquationMethod::RationalSearch;
+                    return storm::solver::NativeLinearEquationSolverMethod::RationalSearch;
                 }
                 STORM_LOG_THROW(false, storm::exceptions::IllegalArgumentValueException, "Unknown solution technique '" << linearEquationSystemTechniqueAsString << "' selected.");
             }
@@ -112,18 +112,6 @@ namespace storm {
                 STORM_LOG_WARN_COND(storm::settings::getModule<storm::settings::modules::CoreSettings>().getEquationSolver() == storm::solver::EquationSolverType::Native || !optionSet, "Native is not selected as the preferred equation solver, so setting options for native might have no effect.");
                 
                 return true;
-            }
-            
-            std::ostream& operator<<(std::ostream& out, NativeEquationSolverSettings::LinearEquationMethod const& method) {
-                switch (method) {
-                    case NativeEquationSolverSettings::LinearEquationMethod::Jacobi: out << "jacobi"; break;
-                    case NativeEquationSolverSettings::LinearEquationMethod::GaussSeidel: out << "gaussseidel"; break;
-                    case NativeEquationSolverSettings::LinearEquationMethod::SOR: out << "sor"; break;
-                    case NativeEquationSolverSettings::LinearEquationMethod::WalkerChae: out << "walkerchae"; break;
-                    case NativeEquationSolverSettings::LinearEquationMethod::Power: out << "power"; break;
-                    case NativeEquationSolverSettings::LinearEquationMethod::RationalSearch: out << "ratsearch"; break;
-                }
-                return out;
             }
             
         } // namespace modules

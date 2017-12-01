@@ -2,6 +2,7 @@
 #define STORM_SETTINGS_MODULES_GMMXXSETTINGS_H_
 
 #include "storm/settings/modules/ModuleSettings.h"
+#include "storm/solver/SolverSelectionOptions.h"
 
 namespace storm {
     namespace settings {
@@ -12,12 +13,6 @@ namespace storm {
              */
             class GmmxxEquationSolverSettings : public ModuleSettings {
             public:
-                // An enumeration of all available methods for solving linear equations.
-                enum class LinearEquationMethod { Bicgstab, Qmr, Gmres };
-
-                // An enumeration of all available preconditioning methods.
-                enum class PreconditioningMethod { Ilu, Diagonal, None };
-                
                 /*!
                  * Creates a new set of gmm++ settings.
                  */
@@ -35,7 +30,7 @@ namespace storm {
                  *
                  * @return The method to use.
                  */
-                LinearEquationMethod getLinearEquationSystemMethod() const;
+                storm::solver::GmmxxLinearEquationSolverMethod getLinearEquationSystemMethod() const;
                 
                 /*!
                  * Retrieves whether the preconditioning method has been set.
@@ -49,7 +44,7 @@ namespace storm {
                  *
                  * @return The method to use.
                  */
-                PreconditioningMethod getPreconditioningMethod() const;
+                storm::solver::GmmxxLinearEquationSolverPreconditioner getPreconditioningMethod() const;
                 
                 /*!
                  * Retrieves whether the restart iteration count has been set.

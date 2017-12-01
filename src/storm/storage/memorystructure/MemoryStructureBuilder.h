@@ -21,6 +21,11 @@ namespace storm {
             MemoryStructureBuilder(uint_fast64_t numberOfMemoryStates, storm::models::sparse::Model<ValueType, RewardModelType> const& model);
             
             /*!
+             * Initializes a new builder with the data from the provided memory structure
+             */
+            MemoryStructureBuilder(MemoryStructure const& memoryStructure, storm::models::sparse::Model<ValueType, RewardModelType> const& model);
+            
+            /*!
              * Specifies for the given initial state of the model the corresponding initial memory state.
              *
              * @note The default initial memory state is 0.

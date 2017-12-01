@@ -95,11 +95,7 @@ namespace storm {
             
             template <typename ValueType, typename RewardModelType>
             ValueType MarkovAutomaton<ValueType, RewardModelType>::getMaximalExitRate() const {
-                ValueType result = storm::utility::zero<ValueType>();
-                for (auto markovianState : this->markovianStates) {
-                    result = std::max(result, this->exitRates[markovianState]);
-                }
-                return result;
+                return storm::utility::vector::max_if(this->exitRates, this->markovianStates);
             }
             
             template <typename ValueType, typename RewardModelType>
@@ -174,6 +170,11 @@ namespace storm {
             }
             
             template <typename ValueType, typename RewardModelType>
+            bool MarkovAutomaton<ValueType, RewardModelType>::isConvertibleToCtmc() const {
+                return markovianStates.full();
+            }
+            
+            template <typename ValueType, typename RewardModelType>
             bool MarkovAutomaton<ValueType, RewardModelType>::hasOnlyTrivialNondeterminism() const {
                 // Check every state
                 for (uint_fast64_t state = 0; state < this->getNumberOfStates(); ++state) {
@@ -201,7 +202,7 @@ namespace storm {
             }
             
             template <typename ValueType, typename RewardModelType>
-            std::shared_ptr<storm::models::sparse::Ctmc<ValueType, RewardModelType>> MarkovAutomaton<ValueType, RewardModelType>::convertToCTMC() const {
+            std::shared_ptr<storm::models::sparse::Ctmc<ValueType, RewardModelType>> MarkovAutomaton<ValueType, RewardModelType>::convertToCtmc() const {
                 STORM_LOG_TRACE("MA matrix:" << std::endl << this->getTransitionMatrix());
                 STORM_LOG_TRACE("Markovian states: " << getMarkovianStates());
 

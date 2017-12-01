@@ -238,10 +238,9 @@ namespace storm {
         std::shared_ptr<storm::models::sparse::Model<ValueType>> preprocessSparseMarkovAutomaton(std::shared_ptr<storm::models::sparse::MarkovAutomaton<ValueType>> const& model) {
             std::shared_ptr<storm::models::sparse::Model<ValueType>> result = model;
             model->close();
-            if (model->hasOnlyTrivialNondeterminism()) {
-                STORM_LOG_WARN_COND(false, "Non-deterministic choices in MA seem to be unnecessary. Consider using a CTMC instead.");
-                // Activate again if transformation is correct
-                //result = model->convertToCTMC();
+            if (model->isConvertibleToCtmc()) {
+                STORM_LOG_WARN_COND(false, "MA is convertible to a CTMC, consider using a CTMC instead.");
+                result = model->convertToCtmc();
             }
             return result;
         }

@@ -85,7 +85,7 @@ namespace storm {
         }
                 
         template<storm::dd::DdType Type, typename ModelType>
-        std::unique_ptr<CheckResult> GameBasedMdpModelChecker<Type, ModelType>::computeUntilProbabilities(CheckTask<storm::logic::UntilFormula> const& checkTask) {
+        std::unique_ptr<CheckResult> GameBasedMdpModelChecker<Type, ModelType>::computeUntilProbabilities(Environment const& env, CheckTask<storm::logic::UntilFormula> const& checkTask) {
             storm::logic::UntilFormula const& pathFormula = checkTask.getFormula();
             std::map<std::string, storm::expressions::Expression> labelToExpressionMapping;
             if (preprocessedModel.isPrismProgram()) {
@@ -102,11 +102,11 @@ namespace storm {
             storm::expressions::Expression constraintExpression = pathFormula.getLeftSubformula().toExpression(preprocessedModel.getManager(), labelToExpressionMapping);
             storm::expressions::Expression targetStateExpression = pathFormula.getRightSubformula().toExpression(preprocessedModel.getManager(), labelToExpressionMapping);
             
-            return performGameBasedAbstractionRefinement(checkTask.substituteFormula<storm::logic::Formula>(pathFormula), constraintExpression, targetStateExpression);
+            return performGameBasedAbstractionRefinement(env, checkTask.substituteFormula<storm::logic::Formula>(pathFormula), constraintExpression, targetStateExpression);
         }
         
         template<storm::dd::DdType Type, typename ModelType>
-        std::unique_ptr<CheckResult> GameBasedMdpModelChecker<Type, ModelType>::computeReachabilityProbabilities(CheckTask<storm::logic::EventuallyFormula> const& checkTask) {
+        std::unique_ptr<CheckResult> GameBasedMdpModelChecker<Type, ModelType>::computeReachabilityProbabilities(Environment const& env, CheckTask<storm::logic::EventuallyFormula> const& checkTask) {
             storm::logic::EventuallyFormula const& pathFormula = checkTask.getFormula();
             std::map<std::string, storm::expressions::Expression> labelToExpressionMapping;
             if (preprocessedModel.isPrismProgram()) {
@@ -123,7 +123,7 @@ namespace storm {
             storm::expressions::Expression constraintExpression = preprocessedModel.getManager().boolean(true);
             storm::expressions::Expression targetStateExpression = pathFormula.getSubformula().toExpression(preprocessedModel.getManager(), labelToExpressionMapping);
             
-            return performGameBasedAbstractionRefinement(checkTask.substituteFormula<storm::logic::Formula>(pathFormula), constraintExpression, targetStateExpression);
+            return performGameBasedAbstractionRefinement(env, checkTask.substituteFormula<storm::logic::Formula>(pathFormula), constraintExpression, targetStateExpression);
         }
         
         template<storm::dd::DdType Type, typename ValueType>
@@ -233,7 +233,7 @@ namespace storm {
         }
         
         template<storm::dd::DdType Type, typename ValueType>
-        QuantitativeGameResult<Type, ValueType> solveMaybeStates(storm::OptimizationDirection const& player1Direction, storm::OptimizationDirection const& player2Direction, storm::abstraction::MenuGame<Type, ValueType> const& game, storm::dd::Bdd<Type> const& maybeStates, storm::dd::Bdd<Type> const& prob1States, boost::optional<QuantitativeGameResult<Type, ValueType>> const& startInfo = boost::none) {
+        QuantitativeGameResult<Type, ValueType> solveMaybeStates(Environment const& env, storm::OptimizationDirection const& player1Direction, storm::OptimizationDirection const& player2Direction, storm::abstraction::MenuGame<Type, ValueType> const& game, storm::dd::Bdd<Type> const& maybeStates, storm::dd::Bdd<Type> const& prob1States, boost::optional<QuantitativeGameResult<Type, ValueType>> const& startInfo = boost::none) {
             
             STORM_LOG_TRACE("Performing quantative solution step. Player 1: " << player1Direction << ", player 2: " << player2Direction << ".");
             
@@ -259,12 +259,12 @@ namespace storm {
             storm::solver::SymbolicGameSolverFactory<Type, ValueType> solverFactory;
             std::unique_ptr<storm::solver::SymbolicGameSolver<Type, ValueType>> solver = solverFactory.create(submatrix, maybeStates, game.getIllegalPlayer1Mask(), game.getIllegalPlayer2Mask(), game.getRowVariables(), game.getColumnVariables(), game.getRowColumnMetaVariablePairs(), game.getPlayer1Variables(), game.getPlayer2Variables());
             solver->setGeneratePlayersStrategies(true);
-            auto values = solver->solveGame(player1Direction, player2Direction, startVector, subvector, startInfo ? boost::make_optional(startInfo.get().getPlayer1Strategy()) : boost::none, startInfo ? boost::make_optional(startInfo.get().getPlayer2Strategy()) : boost::none);
+            auto values = solver->solveGame(env, player1Direction, player2Direction, startVector, subvector, startInfo ? boost::make_optional(startInfo.get().getPlayer1Strategy()) : boost::none, startInfo ? boost::make_optional(startInfo.get().getPlayer2Strategy()) : boost::none);
             return QuantitativeGameResult<Type, ValueType>(std::make_pair(storm::utility::zero<ValueType>(), storm::utility::one<ValueType>()), values, solver->getPlayer1Strategy(), solver->getPlayer2Strategy());
         }
         
         template<storm::dd::DdType Type, typename ValueType>
-        QuantitativeGameResult<Type, ValueType> computeQuantitativeResult(storm::OptimizationDirection player1Direction, storm::OptimizationDirection player2Direction, storm::abstraction::MenuGame<Type, ValueType> const& game, QualitativeGameResultMinMax<Type> const& qualitativeResult, storm::dd::Add<Type, ValueType> const& initialStatesAdd, storm::dd::Bdd<Type> const& maybeStates, boost::optional<QuantitativeGameResult<Type, ValueType>> const& startInfo = boost::none) {
+        QuantitativeGameResult<Type, ValueType> computeQuantitativeResult(Environment const& env, storm::OptimizationDirection player1Direction, storm::OptimizationDirection player2Direction, storm::abstraction::MenuGame<Type, ValueType> const& game, QualitativeGameResultMinMax<Type> const& qualitativeResult, storm::dd::Add<Type, ValueType> const& initialStatesAdd, storm::dd::Bdd<Type> const& maybeStates, boost::optional<QuantitativeGameResult<Type, ValueType>> const& startInfo = boost::none) {
             
             bool min = player2Direction == storm::OptimizationDirection::Minimize;
             QuantitativeGameResult<Type, ValueType> result;
@@ -290,7 +290,7 @@ namespace storm {
                 STORM_LOG_TRACE("Solving " << maybeStates.getNonZeroCount() << " maybe states.");
                 
                 // Solve the quantitative values of maybe states.
-                result = solveMaybeStates(player1Direction, player2Direction, game, maybeStates, min ? qualitativeResult.prob1Min.getPlayer1States() : qualitativeResult.prob1Max.getPlayer1States(), startInfo);
+                result = solveMaybeStates(env, player1Direction, player2Direction, game, maybeStates, min ? qualitativeResult.prob1Min.getPlayer1States() : qualitativeResult.prob1Max.getPlayer1States(), startInfo);
                 
                 // Cut the obtained strategies to the reachable states of the game.
                 result.getPlayer1Strategy() &= game.getReachableStates();
@@ -324,7 +324,7 @@ namespace storm {
         }
         
         template<storm::dd::DdType Type, typename ModelType>
-        std::unique_ptr<CheckResult> GameBasedMdpModelChecker<Type, ModelType>::performGameBasedAbstractionRefinement(CheckTask<storm::logic::Formula> const& checkTask, storm::expressions::Expression const& constraintExpression, storm::expressions::Expression const& targetStateExpression) {
+        std::unique_ptr<CheckResult> GameBasedMdpModelChecker<Type, ModelType>::performGameBasedAbstractionRefinement(Environment const& env, CheckTask<storm::logic::Formula> const& checkTask, storm::expressions::Expression const& constraintExpression, storm::expressions::Expression const& targetStateExpression) {
             STORM_LOG_THROW(checkTask.isOnlyInitialStatesRelevantSet(), storm::exceptions::InvalidPropertyException, "The game-based abstraction refinement model checker can only compute the result for the initial states.");
 
             // Optimization: do not compute both bounds if not necessary (e.g. if bound given and exceeded, etc.)
@@ -428,7 +428,7 @@ namespace storm {
                     QuantitativeGameResultMinMax<Type, ValueType> quantitativeResult;
                     
                     // (7) Solve the min values and check whether we can give the answer already.
-                    quantitativeResult.min = computeQuantitativeResult(player1Direction, storm::OptimizationDirection::Minimize, game, qualitativeResult, initialStatesAdd, maybeMin, reuseQuantitativeResults ? previousMinQuantitativeResult : boost::none);
+                    quantitativeResult.min = computeQuantitativeResult(env, player1Direction, storm::OptimizationDirection::Minimize, game, qualitativeResult, initialStatesAdd, maybeMin, reuseQuantitativeResults ? previousMinQuantitativeResult : boost::none);
                     previousMinQuantitativeResult = quantitativeResult.min;
                     result = checkForResultAfterQuantitativeCheck<ValueType>(checkTask, storm::OptimizationDirection::Minimize, quantitativeResult.min.getInitialStatesRange());
                     if (result) {
@@ -437,7 +437,7 @@ namespace storm {
                     }
                     
                     // (8) Solve the max values and check whether we can give the answer already.
-                    quantitativeResult.max = computeQuantitativeResult(player1Direction, storm::OptimizationDirection::Maximize, game, qualitativeResult, initialStatesAdd, maybeMax, boost::make_optional(quantitativeResult.min));
+                    quantitativeResult.max = computeQuantitativeResult(env, player1Direction, storm::OptimizationDirection::Maximize, game, qualitativeResult, initialStatesAdd, maybeMax, boost::make_optional(quantitativeResult.min));
                     result = checkForResultAfterQuantitativeCheck<ValueType>(checkTask, storm::OptimizationDirection::Maximize, quantitativeResult.max.getInitialStatesRange());
                     if (result) {
                         printStatistics(*abstractor, game);

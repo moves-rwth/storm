@@ -9,6 +9,7 @@
 #include "storm/modelchecker/propositional/SparsePropositionalModelChecker.h"
 #include "storm/modelchecker/results/ExplicitQualitativeCheckResult.h"
 #include "storm/utility/constants.h"
+#include "storm/storage/memorystructure/MemoryStructureBuilder.h"
 #include "storm/utility/macros.h"
 #include "storm/utility/builder.h"
 
@@ -18,95 +19,113 @@ namespace storm {
     namespace storage {
 
         template <typename ValueType, typename RewardModelType>
-        SparseModelMemoryProduct<ValueType, RewardModelType>::SparseModelMemoryProduct(storm::models::sparse::Model<ValueType, RewardModelType> const& sparseModel, storm::storage::MemoryStructure const& memoryStructure) : model(sparseModel), memory(memoryStructure) {
-            reachableStates = storm::storage::BitVector(model.getNumberOfStates() * memory.getNumberOfStates(), false);
+        SparseModelMemoryProduct<ValueType, RewardModelType>::SparseModelMemoryProduct(storm::models::sparse::Model<ValueType, RewardModelType> const& sparseModel, storm::storage::MemoryStructure const& memoryStructure) : isInitialized(false), memoryStateCount(memoryStructure.getNumberOfStates()), model(sparseModel), memory(memoryStructure), scheduler(boost::none) {
+            reachableStates = storm::storage::BitVector(model.getNumberOfStates() * memoryStateCount, false);
+        }
+        
+        template <typename ValueType, typename RewardModelType>
+        SparseModelMemoryProduct<ValueType, RewardModelType>::SparseModelMemoryProduct(storm::models::sparse::Model<ValueType, RewardModelType> const& sparseModel, storm::storage::Scheduler<ValueType> const& scheduler) : isInitialized(false), memoryStateCount(scheduler.getNumberOfMemoryStates()), model(sparseModel), localMemory(scheduler.getMemoryStructure() ? boost::optional<MemoryStructure>() : boost::optional<MemoryStructure>(storm::storage::MemoryStructureBuilder<ValueType, RewardModelType>::buildTrivialMemoryStructure(model))), memory(scheduler.getMemoryStructure() ? scheduler.getMemoryStructure().get() : localMemory.get()), scheduler(scheduler) {
+            reachableStates = storm::storage::BitVector(model.getNumberOfStates() * memoryStateCount, false);
+        }
+        
+        template <typename ValueType, typename RewardModelType>
+        void SparseModelMemoryProduct<ValueType, RewardModelType>::initialize() {
+            if (!isInitialized) {
+                uint64_t modelStateCount = model.getNumberOfStates();
+            
+                computeMemorySuccessors();
+                
+                // Get the initial states and reachable states. A stateIndex s corresponds to the model state (s / memoryStateCount) and memory state (s % memoryStateCount)
+                storm::storage::BitVector initialStates(modelStateCount * memoryStateCount, false);
+                auto memoryInitIt = memory.getInitialMemoryStates().begin();
+                for (auto const& modelInit : model.getInitialStates()) {
+                    initialStates.set(modelInit * memoryStateCount + *memoryInitIt, true);
+                    ++memoryInitIt;
+                }
+                STORM_LOG_ASSERT(memoryInitIt == memory.getInitialMemoryStates().end(), "Unexpected number of initial states.");
+                
+                computeReachableStates(initialStates);
+                
+                // Compute the mapping to the states of the result
+                uint64_t reachableStateCount = 0;
+                toResultStateMapping = std::vector<uint64_t> (model.getNumberOfStates() * memoryStateCount, std::numeric_limits<uint64_t>::max());
+                for (auto const& reachableState : reachableStates) {
+                    toResultStateMapping[reachableState] = reachableStateCount;
+                    ++reachableStateCount;
+                }
+                
+                isInitialized = true;
+            }
         }
         
         template <typename ValueType, typename RewardModelType>
         void SparseModelMemoryProduct<ValueType, RewardModelType>::addReachableState(uint64_t const& modelState, uint64_t const& memoryState) {
-            reachableStates.set(modelState * memory.getNumberOfStates() + memoryState, true);
+            isInitialized = false;
+            reachableStates.set(modelState * memoryStateCount + memoryState, true);
         }
 
        template <typename ValueType, typename RewardModelType>
        void SparseModelMemoryProduct<ValueType, RewardModelType>::setBuildFullProduct() {
-            reachableStates.clear();
-            reachableStates.complement();
+            isInitialized = false;
+            reachableStates.fill();
        }
         
         template <typename ValueType, typename RewardModelType>
-        std::shared_ptr<storm::models::sparse::Model<ValueType, RewardModelType>> SparseModelMemoryProduct<ValueType, RewardModelType>::build(boost::optional<storm::storage::Scheduler<ValueType>> const& scheduler) {
+        std::shared_ptr<storm::models::sparse::Model<ValueType, RewardModelType>> SparseModelMemoryProduct<ValueType, RewardModelType>::build() {
             
-            uint64_t modelStateCount = model.getNumberOfStates();
-            uint64_t memoryStateCount = memory.getNumberOfStates();
+            initialize();
             
-            std::vector<uint64_t> memorySuccessors = computeMemorySuccessors();
-            
-            // Get the initial states and reachable states. A stateIndex s corresponds to the model state (s / memoryStateCount) and memory state (s % memoryStateCount)
-            storm::storage::BitVector initialStates(modelStateCount * memoryStateCount, false);
-            auto memoryInitIt = memory.getInitialMemoryStates().begin();
-            for (auto const& modelInit : model.getInitialStates()) {
-                initialStates.set(modelInit * memoryStateCount + *memoryInitIt, true);
-                ++memoryInitIt;
-            }
-            STORM_LOG_ASSERT(memoryInitIt == memory.getInitialMemoryStates().end(), "Unexpected number of initial states.");
-            
-            computeReachableStates(memorySuccessors, initialStates, scheduler);
-            
-            // Compute the mapping to the states of the result
-            uint64_t reachableStateCount = 0;
-            toResultStateMapping = std::vector<uint64_t> (model.getNumberOfStates() * memory.getNumberOfStates(), std::numeric_limits<uint64_t>::max());
-            for (auto const& reachableState : reachableStates) {
-                toResultStateMapping[reachableState] = reachableStateCount;
-                ++reachableStateCount;
-            }
-                
             // Build the model components
             storm::storage::SparseMatrix<ValueType> transitionMatrix;
             if (scheduler) {
-                transitionMatrix = buildTransitionMatrixForScheduler(memorySuccessors, scheduler.get());
+                transitionMatrix = buildTransitionMatrixForScheduler();
             } else if (model.getTransitionMatrix().hasTrivialRowGrouping()) {
-                transitionMatrix = buildDeterministicTransitionMatrix(memorySuccessors);
+                transitionMatrix = buildDeterministicTransitionMatrix();
             } else {
-                transitionMatrix = buildNondeterministicTransitionMatrix(memorySuccessors);
+                transitionMatrix = buildNondeterministicTransitionMatrix();
             }
             storm::models::sparse::StateLabeling labeling = buildStateLabeling(transitionMatrix);
-            std::unordered_map<std::string, RewardModelType> rewardModels = buildRewardModels(transitionMatrix, memorySuccessors, scheduler);
+            std::unordered_map<std::string, RewardModelType> rewardModels = buildRewardModels(transitionMatrix);
 
-            // Add the label for the initial states. We need to translate the state indices w.r.t. the set of reachable states.
-            labeling.addLabel("init", initialStates % reachableStates);
             
-            
-            return buildResult(std::move(transitionMatrix), std::move(labeling), std::move(rewardModels), scheduler);
+            return buildResult(std::move(transitionMatrix), std::move(labeling), std::move(rewardModels));
 
         }
             
         template <typename ValueType, typename RewardModelType>
-        uint64_t const& SparseModelMemoryProduct<ValueType, RewardModelType>::getResultState(uint64_t const& modelState, uint64_t const& memoryState) const {
-                return toResultStateMapping[modelState * memory.getNumberOfStates() + memoryState];
+        bool SparseModelMemoryProduct<ValueType, RewardModelType>::isStateReachable(uint64_t const& modelState, uint64_t const& memoryState) {
+            STORM_LOG_ASSERT(modelState < getOriginalModel().getNumberOfStates(), "Invalid model state: " << modelState << ".");
+            STORM_LOG_ASSERT(memoryState < memoryStateCount, "Invalid memory state: " << memoryState << ".");
+            initialize();
+            return reachableStates.get(modelState * memoryStateCount + memoryState);
+        }
+        
+        template <typename ValueType, typename RewardModelType>
+        uint64_t const& SparseModelMemoryProduct<ValueType, RewardModelType>::getResultState(uint64_t const& modelState, uint64_t const& memoryState) {
+            initialize();
+            STORM_LOG_ASSERT(isStateReachable(modelState, memoryState), "Tried to get unreachable product state (" << modelState << "," << memoryState << ")");
+            return toResultStateMapping[modelState * memoryStateCount + memoryState];
         }
             
         template <typename ValueType, typename RewardModelType>
-        std::vector<uint64_t> SparseModelMemoryProduct<ValueType, RewardModelType>::computeMemorySuccessors() const {
+        void SparseModelMemoryProduct<ValueType, RewardModelType>::computeMemorySuccessors() {
             uint64_t modelTransitionCount = model.getTransitionMatrix().getEntryCount();
-            uint64_t memoryStateCount = memory.getNumberOfStates();
-            std::vector<uint64_t> result(modelTransitionCount * memoryStateCount, std::numeric_limits<uint64_t>::max());
+            memorySuccessors = std::vector<uint64_t>(modelTransitionCount * memoryStateCount, std::numeric_limits<uint64_t>::max());
             
             for (uint64_t memoryState = 0; memoryState < memoryStateCount; ++memoryState) {
                 for (uint64_t transitionGoal = 0; transitionGoal < memoryStateCount; ++transitionGoal) {
                     auto const& memoryTransition = memory.getTransitionMatrix()[memoryState][transitionGoal];
                     if (memoryTransition) {
                         for (auto const& modelTransitionIndex : memoryTransition.get()) {
-                            result[modelTransitionIndex * memoryStateCount + memoryState] = transitionGoal;
+                            memorySuccessors[modelTransitionIndex * memoryStateCount + memoryState] = transitionGoal;
                         }
                     }
                 }
             }
-            return result;
         }
             
         template <typename ValueType, typename RewardModelType>
-        void SparseModelMemoryProduct<ValueType, RewardModelType>::computeReachableStates(std::vector<uint64_t> const& memorySuccessors, storm::storage::BitVector const& initialStates,                     boost::optional<storm::storage::Scheduler<ValueType>> const& scheduler) {
-            uint64_t memoryStateCount = memory.getNumberOfStates();
+        void SparseModelMemoryProduct<ValueType, RewardModelType>::computeReachableStates(storm::storage::BitVector const& initialStates) {
             // Explore the reachable states via DFS.
             // A state s on the stack corresponds to the model state (s / memoryStateCount) and memory state (s % memoryStateCount)
             reachableStates |= initialStates;
@@ -157,8 +176,7 @@ namespace storm {
         }
         
         template <typename ValueType, typename RewardModelType>
-        storm::storage::SparseMatrix<ValueType> SparseModelMemoryProduct<ValueType, RewardModelType>::buildDeterministicTransitionMatrix(std::vector<uint64_t> const& memorySuccessors) const {
-            uint64_t memoryStateCount = memory.getNumberOfStates();
+        storm::storage::SparseMatrix<ValueType> SparseModelMemoryProduct<ValueType, RewardModelType>::buildDeterministicTransitionMatrix() {
             uint64_t numResStates = reachableStates.getNumberOfSetBits();
             uint64_t numResTransitions = 0;
             for (auto const& stateIndex : reachableStates) {
@@ -173,7 +191,7 @@ namespace storm {
                 auto const& modelRow = model.getTransitionMatrix().getRow(modelState);
                 for (auto entryIt = modelRow.begin(); entryIt != modelRow.end(); ++entryIt) {
                     uint64_t transitionId = entryIt - model.getTransitionMatrix().begin();
-                    uint64_t const& successorMemoryState = memorySuccessors[transitionId * memoryStateCount + memoryState];
+                    uint64_t successorMemoryState = memorySuccessors[transitionId * memoryStateCount + memoryState];
                     builder.addNextValue(currentRow, getResultState(entryIt->getColumn(), successorMemoryState), entryIt->getValue());
                 }
                 ++currentRow;
@@ -183,8 +201,7 @@ namespace storm {
         }
         
         template <typename ValueType, typename RewardModelType>
-        storm::storage::SparseMatrix<ValueType> SparseModelMemoryProduct<ValueType, RewardModelType>::buildNondeterministicTransitionMatrix(std::vector<uint64_t> const& memorySuccessors) const {
-            uint64_t memoryStateCount = memory.getNumberOfStates();
+        storm::storage::SparseMatrix<ValueType> SparseModelMemoryProduct<ValueType, RewardModelType>::buildNondeterministicTransitionMatrix() {
             uint64_t numResStates = reachableStates.getNumberOfSetBits();
             uint64_t numResChoices = 0;
             uint64_t numResTransitions = 0;
@@ -206,7 +223,7 @@ namespace storm {
                     auto const& modelRow = model.getTransitionMatrix().getRow(modelRowIndex);
                     for (auto entryIt = modelRow.begin(); entryIt != modelRow.end(); ++entryIt) {
                         uint64_t transitionId = entryIt - model.getTransitionMatrix().begin();
-                        uint64_t const& successorMemoryState = memorySuccessors[transitionId * memoryStateCount + memoryState];
+                        uint64_t successorMemoryState = memorySuccessors[transitionId * memoryStateCount + memoryState];
                         builder.addNextValue(currentRow, getResultState(entryIt->getColumn(), successorMemoryState), entryIt->getValue());
                     }
                     ++currentRow;
@@ -217,8 +234,7 @@ namespace storm {
         }
         
         template <typename ValueType, typename RewardModelType>
-        storm::storage::SparseMatrix<ValueType> SparseModelMemoryProduct<ValueType, RewardModelType>::buildTransitionMatrixForScheduler(std::vector<uint64_t> const& memorySuccessors, storm::storage::Scheduler<ValueType> const& scheduler) const {
-            uint64_t memoryStateCount = memory.getNumberOfStates();
+        storm::storage::SparseMatrix<ValueType> SparseModelMemoryProduct<ValueType, RewardModelType>::buildTransitionMatrixForScheduler() {
             uint64_t numResStates = reachableStates.getNumberOfSetBits();
             uint64_t numResChoices = 0;
             uint64_t numResTransitions = 0;
@@ -226,7 +242,7 @@ namespace storm {
             for (auto const& stateIndex : reachableStates) {
                 uint64_t modelState = stateIndex / memoryStateCount;
                 uint64_t memoryState = stateIndex % memoryStateCount;
-                storm::storage::SchedulerChoice<ValueType> choice = scheduler.getChoice(modelState, memoryState);
+                storm::storage::SchedulerChoice<ValueType> choice = scheduler->getChoice(modelState, memoryState);
                 if (choice.isDefined()) {
                     ++numResChoices;
                     if (choice.isDeterministic()) {
@@ -263,14 +279,14 @@ namespace storm {
                 if (!hasTrivialNondeterminism) {
                     builder.newRowGroup(currentRow);
                 }
-                storm::storage::SchedulerChoice<ValueType> choice = scheduler.getChoice(modelState, memoryState);
+                storm::storage::SchedulerChoice<ValueType> choice = scheduler->getChoice(modelState, memoryState);
                 if (choice.isDefined()) {
                     if (choice.isDeterministic()) {
                         uint64_t modelRowIndex = model.getTransitionMatrix().getRowGroupIndices()[modelState] + choice.getDeterministicChoice();
                         auto const& modelRow = model.getTransitionMatrix().getRow(modelRowIndex);
                         for (auto entryIt = modelRow.begin(); entryIt != modelRow.end(); ++entryIt) {
                             uint64_t transitionId = entryIt - model.getTransitionMatrix().begin();
-                            uint64_t const& successorMemoryState = memorySuccessors[transitionId * memoryStateCount + memoryState];
+                            uint64_t successorMemoryState = memorySuccessors[transitionId * memoryStateCount + memoryState];
                             builder.addNextValue(currentRow, getResultState(entryIt->getColumn(), successorMemoryState), entryIt->getValue());
                         }
                     } else {
@@ -281,7 +297,7 @@ namespace storm {
                                 auto const& modelRow = model.getTransitionMatrix().getRow(modelRowIndex);
                                 for (auto entryIt = modelRow.begin(); entryIt != modelRow.end(); ++entryIt) {
                                     uint64_t transitionId = entryIt - model.getTransitionMatrix().begin();
-                                    uint64_t const& successorMemoryState = memorySuccessors[transitionId * memoryStateCount + memoryState];
+                                    uint64_t successorMemoryState = memorySuccessors[transitionId * memoryStateCount + memoryState];
                                     ValueType transitionValue = choiceIndex.second * entryIt->getValue();
                                     auto insertionRes = transitions.insert(std::make_pair(getResultState(entryIt->getColumn(), successorMemoryState), transitionValue));
                                     if (!insertionRes.second) {
@@ -300,7 +316,7 @@ namespace storm {
                         auto const& modelRow = model.getTransitionMatrix().getRow(modelRowIndex);
                         for (auto entryIt = modelRow.begin(); entryIt != modelRow.end(); ++entryIt) {
                             uint64_t transitionId = entryIt - model.getTransitionMatrix().begin();
-                            uint64_t const& successorMemoryState = memorySuccessors[transitionId * memoryStateCount + memoryState];
+                            uint64_t successorMemoryState = memorySuccessors[transitionId * memoryStateCount + memoryState];
                             builder.addNextValue(currentRow, getResultState(entryIt->getColumn(), successorMemoryState), entryIt->getValue());
                         }
                         ++currentRow;
@@ -312,9 +328,8 @@ namespace storm {
         }
         
         template <typename ValueType, typename RewardModelType>
-        storm::models::sparse::StateLabeling SparseModelMemoryProduct<ValueType, RewardModelType>::buildStateLabeling(storm::storage::SparseMatrix<ValueType> const& resultTransitionMatrix) const {
+        storm::models::sparse::StateLabeling SparseModelMemoryProduct<ValueType, RewardModelType>::buildStateLabeling(storm::storage::SparseMatrix<ValueType> const& resultTransitionMatrix) {
             uint64_t modelStateCount = model.getNumberOfStates();
-            uint64_t memoryStateCount = memory.getNumberOfStates();
             
             uint64_t numResStates = resultTransitionMatrix.getRowGroupCount();
             storm::models::sparse::StateLabeling resultLabeling(numResStates);
@@ -324,10 +339,8 @@ namespace storm {
                     storm::storage::BitVector resLabeledStates(numResStates, false);
                     for (auto const& modelState : model.getStateLabeling().getStates(modelLabel)) {
                         for (uint64_t memoryState = 0; memoryState < memoryStateCount; ++memoryState) {
-                            uint64_t const& resState = getResultState(modelState, memoryState);
-                            // Check if the state exists in the result (i.e. if it is reachable)
-                            if (resState < numResStates) {
-                                resLabeledStates.set(resState, true);
+                            if (isStateReachable(modelState, memoryState)) {
+                                resLabeledStates.set(getResultState(modelState, memoryState), true);
                             }
                         }
                     }
@@ -339,25 +352,31 @@ namespace storm {
                 storm::storage::BitVector resLabeledStates(numResStates, false);
                 for (auto const& memoryState : memory.getStateLabeling().getStates(memoryLabel)) {
                     for (uint64_t modelState = 0; modelState < modelStateCount; ++modelState) {
-                        uint64_t const& resState = getResultState(modelState, memoryState);
-                        // Check if the state exists in the result (i.e. if it is reachable)
-                        if (resState < numResStates) {
-                            resLabeledStates.set(resState, true);
+                        if (isStateReachable(modelState, memoryState)) {
+                            resLabeledStates.set(getResultState(modelState, memoryState), true);
                         }
                     }
                 }
                 resultLabeling.addLabel(memoryLabel, std::move(resLabeledStates));
             }
+            
+            storm::storage::BitVector initialStates(numResStates, false);
+            auto memoryInitIt = memory.getInitialMemoryStates().begin();
+            for (auto const& modelInit : model.getInitialStates()) {
+                    initialStates.set(getResultState(modelInit, *memoryInitIt), true);
+                    ++memoryInitIt;
+                }
+            resultLabeling.addLabel("init", std::move(initialStates));
+            
             return resultLabeling;
         }
         
         template <typename ValueType, typename RewardModelType>
-        std::unordered_map<std::string, RewardModelType> SparseModelMemoryProduct<ValueType, RewardModelType>::buildRewardModels(storm::storage::SparseMatrix<ValueType> const& resultTransitionMatrix, std::vector<uint64_t> const& memorySuccessors, boost::optional<storm::storage::Scheduler<ValueType>> const& scheduler) const {
+        std::unordered_map<std::string, RewardModelType> SparseModelMemoryProduct<ValueType, RewardModelType>::buildRewardModels(storm::storage::SparseMatrix<ValueType> const& resultTransitionMatrix) {
             
             typedef typename RewardModelType::ValueType RewardValueType;
             
             std::unordered_map<std::string, RewardModelType> result;
-            uint64_t memoryStateCount = memory.getNumberOfStates();
             uint64_t numResStates = resultTransitionMatrix.getRowGroupCount();
 
             for (auto const& rewardModel : model.getRewardModels()) {
@@ -368,10 +387,8 @@ namespace storm {
                     for (auto const& modelStateReward : rewardModel.second.getStateRewardVector()) {
                         if (!storm::utility::isZero(modelStateReward)) {
                             for (uint64_t memoryState = 0; memoryState < memoryStateCount; ++memoryState) {
-                                uint64_t const& resState = getResultState(modelState, memoryState);
-                                // Check if the state exists in the result (i.e. if it is reachable)
-                                if (resState < numResStates) {
-                                    stateRewards.get()[resState] = modelStateReward;
+                                if (isStateReachable(modelState, memoryState)) {
+                                    stateRewards.get()[getResultState(modelState, memoryState)] = modelStateReward;
                                 }
                             }
                         }
@@ -390,14 +407,12 @@ namespace storm {
                             }
                             uint64_t rowOffset = modelRow - model.getTransitionMatrix().getRowGroupIndices()[modelState];
                             for (uint64_t memoryState = 0; memoryState < memoryStateCount; ++memoryState) {
-                                uint64_t const& resState = getResultState(modelState, memoryState);
-                                // Check if the state exists in the result (i.e. if it is reachable)
-                                if (resState < numResStates) {
+                                if (isStateReachable(modelState, memoryState)) {
                                     if (scheduler && scheduler->getChoice(modelState, memoryState).isDefined()) {
                                         ValueType factor = scheduler->getChoice(modelState, memoryState).getChoiceAsDistribution().getProbability(rowOffset);
-                                        stateActionRewards.get()[resultTransitionMatrix.getRowGroupIndices()[resState]] = factor * modelStateActionReward;
+                                        stateActionRewards.get()[resultTransitionMatrix.getRowGroupIndices()[getResultState(modelState, memoryState)]] = factor * modelStateActionReward;
                                     } else {
-                                        stateActionRewards.get()[resultTransitionMatrix.getRowGroupIndices()[resState] + rowOffset] = modelStateActionReward;
+                                        stateActionRewards.get()[resultTransitionMatrix.getRowGroupIndices()[getResultState(modelState, memoryState)] + rowOffset] = modelStateActionReward;
                                     }
                                 }
                             }
@@ -425,7 +440,7 @@ namespace storm {
                                             ++transitionEntryIt;
                                         }
                                         uint64_t transitionId = transitionEntryIt - model.getTransitionMatrix().begin();
-                                        uint64_t const& successorMemoryState = memorySuccessors[transitionId * memoryStateCount + memoryState];
+                                        uint64_t successorMemoryState = memorySuccessors[transitionId * memoryStateCount + memoryState];
                                         auto insertionRes = rewards.insert(std::make_pair(getResultState(rewardEntry.getColumn(), successorMemoryState), rewardEntry.getValue()));
                                         if (!insertionRes.second) {
                                             insertionRes.first->second += rewardEntry.getValue();
@@ -447,7 +462,7 @@ namespace storm {
                                             ++transitionEntryIt;
                                         }
                                         uint64_t transitionId = transitionEntryIt - model.getTransitionMatrix().begin();
-                                        uint64_t const& successorMemoryState = memorySuccessors[transitionId * memoryStateCount + memoryState];
+                                        uint64_t successorMemoryState = memorySuccessors[transitionId * memoryStateCount + memoryState];
                                         builder.addNextValue(resRowIndex, getResultState(rewardEntry.getColumn(), successorMemoryState), rewardEntry.getValue());
                                     }
                                 }
@@ -463,7 +478,7 @@ namespace storm {
         }
             
         template <typename ValueType, typename RewardModelType>
-        std::shared_ptr<storm::models::sparse::Model<ValueType, RewardModelType>> SparseModelMemoryProduct<ValueType, RewardModelType>::buildResult(storm::storage::SparseMatrix<ValueType>&& matrix, storm::models::sparse::StateLabeling&& labeling, std::unordered_map<std::string, RewardModelType>&& rewardModels, boost::optional<storm::storage::Scheduler<ValueType>> const& scheduler) const {
+        std::shared_ptr<storm::models::sparse::Model<ValueType, RewardModelType>> SparseModelMemoryProduct<ValueType, RewardModelType>::buildResult(storm::storage::SparseMatrix<ValueType>&& matrix, storm::models::sparse::StateLabeling&& labeling, std::unordered_map<std::string, RewardModelType>&& rewardModels) {
             storm::storage::sparse::ModelComponents<ValueType, RewardModelType> components (std::move(matrix), std::move(labeling), std::move(rewardModels));
             
             if (model.isOfType(storm::models::ModelType::Ctmc)) {
@@ -471,7 +486,6 @@ namespace storm {
             } else if (model.isOfType(storm::models::ModelType::MarkovAutomaton)) {
                 // We also need to translate the exit rates and the Markovian states
                 uint64_t numResStates = components.transitionMatrix.getRowGroupCount();
-                uint64_t memoryStateCount = memory.getNumberOfStates();
                 std::vector<ValueType> resultExitRates;
                 resultExitRates.reserve(components.transitionMatrix.getRowGroupCount());
                 storm::storage::BitVector resultMarkovianStates(numResStates, false);
@@ -503,6 +517,16 @@ namespace storm {
             }
             
             return storm::utility::builder::buildModelFromComponents(resultType, std::move(components));
+        }
+        
+        template <typename ValueType, typename RewardModelType>
+        storm::models::sparse::Model<ValueType, RewardModelType> const& SparseModelMemoryProduct<ValueType, RewardModelType>::getOriginalModel() const {
+            return model;
+        }
+        
+        template <typename ValueType, typename RewardModelType>
+        storm::storage::MemoryStructure const& SparseModelMemoryProduct<ValueType, RewardModelType>::getMemory() const {
+            return memory;
         }
         
         template class SparseModelMemoryProduct<double>;

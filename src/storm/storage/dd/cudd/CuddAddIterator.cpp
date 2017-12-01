@@ -183,7 +183,7 @@ namespace storm {
         
         template<typename ValueType>
         std::pair<storm::expressions::SimpleValuation, ValueType> AddIterator<DdType::CUDD, ValueType>::operator*() const {
-            return std::make_pair(currentValuation, static_cast<ValueType>(valueAsDouble));
+            return std::make_pair(currentValuation, storm::utility::convertNumber<ValueType>(valueAsDouble));
         }
         
         template class AddIterator<DdType::CUDD, double>;

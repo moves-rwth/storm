@@ -1,0 +1,21 @@
+mdp
+const int N;
+
+const double p = 0.5;
+
+module main
+	x : [0..N] init N/2;
+	
+	[right] x<N -> p : (x'=x+1) + (1-p) : (x'=x);
+	[left] x>0 -> p : (x'=x-1) + (1-p) : (x'=x);
+	
+endmodule
+
+rewards "r"
+ [right] true : 1;
+ endrewards
+ 
+
+ rewards "l"
+  [left] true : 1;
+  endrewards

@@ -29,7 +29,7 @@ namespace storm {
     namespace modelchecker {
         namespace helper {
             template<typename ValueType, typename RewardModelType>
-            std::vector<ValueType> SparseDtmcPrctlHelper<ValueType, RewardModelType>::computeBoundedUntilProbabilities(storm::solver::SolveGoal<ValueType>&& goal, storm::storage::SparseMatrix<ValueType> const& transitionMatrix, storm::storage::SparseMatrix<ValueType> const& backwardTransitions, storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates, uint_fast64_t stepBound, storm::solver::LinearEquationSolverFactory<ValueType> const& linearEquationSolverFactory, ModelCheckerHint const& hint) {
+            std::vector<ValueType> SparseDtmcPrctlHelper<ValueType, RewardModelType>::computeBoundedUntilProbabilities(Environment const& env, storm::solver::SolveGoal<ValueType>&& goal, storm::storage::SparseMatrix<ValueType> const& transitionMatrix, storm::storage::SparseMatrix<ValueType> const& backwardTransitions, storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates, uint_fast64_t stepBound, storm::solver::LinearEquationSolverFactory<ValueType> const& linearEquationSolverFactory, ModelCheckerHint const& hint) {
                 std::vector<ValueType> result(transitionMatrix.getRowCount(), storm::utility::zero<ValueType>());
                 
                 // If we identify the states that have probability 0 of reaching the target states, we can exclude them in the further analysis.
@@ -58,7 +58,7 @@ namespace storm {
                     
                     // Perform the matrix vector multiplication as often as required by the formula bound.
                     goal.restrictRelevantValues(maybeStates);
-                    std::unique_ptr<storm::solver::LinearEquationSolver<ValueType>> solver = storm::solver::configureLinearEquationSolver(std::move(goal), linearEquationSolverFactory, std::move(submatrix));
+                    std::unique_ptr<storm::solver::LinearEquationSolver<ValueType>> solver = storm::solver::configureLinearEquationSolver(env, std::move(goal), linearEquationSolverFactory, std::move(submatrix), storm::solver::LinearEquationSolverTask::Multiply);
                     solver->repeatedMultiply(subresult, &b, stepBound);
                     
                     // Set the values of the resulting vector accordingly.
@@ -70,7 +70,7 @@ namespace storm {
             
             template<typename ValueType, typename RewardModelType>
 
-            std::vector<ValueType> SparseDtmcPrctlHelper<ValueType, RewardModelType>::computeUntilProbabilities(storm::solver::SolveGoal<ValueType>&& goal, storm::storage::SparseMatrix<ValueType> const& transitionMatrix, storm::storage::SparseMatrix<ValueType> const& backwardTransitions, storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates, bool qualitative, storm::solver::LinearEquationSolverFactory<ValueType> const& linearEquationSolverFactory, ModelCheckerHint const& hint) {
+            std::vector<ValueType> SparseDtmcPrctlHelper<ValueType, RewardModelType>::computeUntilProbabilities(Environment const& env, storm::solver::SolveGoal<ValueType>&& goal, storm::storage::SparseMatrix<ValueType> const& transitionMatrix, storm::storage::SparseMatrix<ValueType> const& backwardTransitions, storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates, bool qualitative, storm::solver::LinearEquationSolverFactory<ValueType> const& linearEquationSolverFactory, ModelCheckerHint const& hint) {
                 
                 std::vector<ValueType> result(transitionMatrix.getRowCount(), storm::utility::zero<ValueType>());
                 
@@ -118,7 +118,7 @@ namespace storm {
                         // In this case we have have to compute the probabilities.
                         
                         // Check whether we need to convert the input to equation system format.
-                        bool convertToEquationSystem = linearEquationSolverFactory.getEquationProblemFormat() == storm::solver::LinearEquationSolverProblemFormat::EquationSystem;
+                        bool convertToEquationSystem = linearEquationSolverFactory.getEquationProblemFormat(env) == storm::solver::LinearEquationSolverProblemFormat::EquationSystem;
                         
                         // We can eliminate the rows and columns from the original transition probability matrix.
                         storm::storage::SparseMatrix<ValueType> submatrix = transitionMatrix.getSubmatrix(true, maybeStates, maybeStates, convertToEquationSystem);
@@ -144,9 +144,9 @@ namespace storm {
                         
                         // Now solve the created system of linear equations.
                         goal.restrictRelevantValues(maybeStates);
-                        std::unique_ptr<storm::solver::LinearEquationSolver<ValueType>> solver = storm::solver::configureLinearEquationSolver(std::move(goal), linearEquationSolverFactory, std::move(submatrix));
+                        std::unique_ptr<storm::solver::LinearEquationSolver<ValueType>> solver = storm::solver::configureLinearEquationSolver(env, std::move(goal), linearEquationSolverFactory, std::move(submatrix));
                         solver->setBounds(storm::utility::zero<ValueType>(), storm::utility::one<ValueType>());
-                        solver->solveEquations(x, b);
+                        solver->solveEquations(env, x, b);
                         
                         // Set values of resulting vector according to result.
                         storm::utility::vector::setVectorValues<ValueType>(result, maybeStates, x);
@@ -156,9 +156,9 @@ namespace storm {
             }
             
             template<typename ValueType, typename RewardModelType>
-            std::vector<ValueType> SparseDtmcPrctlHelper<ValueType, RewardModelType>::computeGloballyProbabilities(storm::solver::SolveGoal<ValueType>&& goal, storm::storage::SparseMatrix<ValueType> const& transitionMatrix, storm::storage::SparseMatrix<ValueType> const& backwardTransitions, storm::storage::BitVector const& psiStates, bool qualitative, storm::solver::LinearEquationSolverFactory<ValueType> const& linearEquationSolverFactory) {
+            std::vector<ValueType> SparseDtmcPrctlHelper<ValueType, RewardModelType>::computeGloballyProbabilities(Environment const& env, storm::solver::SolveGoal<ValueType>&& goal, storm::storage::SparseMatrix<ValueType> const& transitionMatrix, storm::storage::SparseMatrix<ValueType> const& backwardTransitions, storm::storage::BitVector const& psiStates, bool qualitative, storm::solver::LinearEquationSolverFactory<ValueType> const& linearEquationSolverFactory) {
                 goal.oneMinus();
-                std::vector<ValueType> result = computeUntilProbabilities(std::move(goal), transitionMatrix, backwardTransitions, storm::storage::BitVector(transitionMatrix.getRowCount(), true), ~psiStates, qualitative, linearEquationSolverFactory);
+                std::vector<ValueType> result = computeUntilProbabilities(env, std::move(goal), transitionMatrix, backwardTransitions, storm::storage::BitVector(transitionMatrix.getRowCount(), true), ~psiStates, qualitative, linearEquationSolverFactory);
                 for (auto& entry : result) {
                     entry = storm::utility::one<ValueType>() - entry;
                 }
@@ -166,19 +166,19 @@ namespace storm {
             }
             
             template<typename ValueType, typename RewardModelType>
-            std::vector<ValueType> SparseDtmcPrctlHelper<ValueType, RewardModelType>::computeNextProbabilities(storm::storage::SparseMatrix<ValueType> const& transitionMatrix, storm::storage::BitVector const& nextStates, storm::solver::LinearEquationSolverFactory<ValueType> const& linearEquationSolverFactory) {
+            std::vector<ValueType> SparseDtmcPrctlHelper<ValueType, RewardModelType>::computeNextProbabilities(Environment const& env, storm::storage::SparseMatrix<ValueType> const& transitionMatrix, storm::storage::BitVector const& nextStates, storm::solver::LinearEquationSolverFactory<ValueType> const& linearEquationSolverFactory) {
                 // Create the vector with which to multiply and initialize it correctly.
                 std::vector<ValueType> result(transitionMatrix.getRowCount());
                 storm::utility::vector::setVectorValues(result, nextStates, storm::utility::one<ValueType>());
                 
                 // Perform one single matrix-vector multiplication.
-                std::unique_ptr<storm::solver::LinearEquationSolver<ValueType>> solver = linearEquationSolverFactory.create(transitionMatrix);
+                std::unique_ptr<storm::solver::LinearEquationSolver<ValueType>> solver = linearEquationSolverFactory.create(env, transitionMatrix, storm::solver::LinearEquationSolverTask::Multiply);
                 solver->repeatedMultiply(result, nullptr, 1);
                 return result;
             }
             
             template<typename ValueType, typename RewardModelType>
-            std::vector<ValueType> SparseDtmcPrctlHelper<ValueType, RewardModelType>::computeCumulativeRewards(storm::solver::SolveGoal<ValueType>&& goal, storm::storage::SparseMatrix<ValueType> const& transitionMatrix, RewardModelType const& rewardModel, uint_fast64_t stepBound, storm::solver::LinearEquationSolverFactory<ValueType> const& linearEquationSolverFactory) {
+            std::vector<ValueType> SparseDtmcPrctlHelper<ValueType, RewardModelType>::computeCumulativeRewards(Environment const& env, storm::solver::SolveGoal<ValueType>&& goal, storm::storage::SparseMatrix<ValueType> const& transitionMatrix, RewardModelType const& rewardModel, uint_fast64_t stepBound, storm::solver::LinearEquationSolverFactory<ValueType> const& linearEquationSolverFactory) {
                 // Initialize result to the null vector.
                 std::vector<ValueType> result(transitionMatrix.getRowCount());
                 
@@ -186,14 +186,14 @@ namespace storm {
                 std::vector<ValueType> totalRewardVector = rewardModel.getTotalRewardVector(transitionMatrix);
                 
                 // Perform the matrix vector multiplication as often as required by the formula bound.
-                std::unique_ptr<storm::solver::LinearEquationSolver<ValueType>> solver = storm::solver::configureLinearEquationSolver(std::move(goal), linearEquationSolverFactory, transitionMatrix);
+                std::unique_ptr<storm::solver::LinearEquationSolver<ValueType>> solver = storm::solver::configureLinearEquationSolver(env, std::move(goal), linearEquationSolverFactory, transitionMatrix, storm::solver::LinearEquationSolverTask::Multiply);
                 solver->repeatedMultiply(result, &totalRewardVector, stepBound);
                 
                 return result;
             }
             
             template<typename ValueType, typename RewardModelType>
-            std::vector<ValueType> SparseDtmcPrctlHelper<ValueType, RewardModelType>::computeInstantaneousRewards(storm::solver::SolveGoal<ValueType>&& goal, storm::storage::SparseMatrix<ValueType> const& transitionMatrix, RewardModelType const& rewardModel, uint_fast64_t stepCount, storm::solver::LinearEquationSolverFactory<ValueType> const& linearEquationSolverFactory) {
+            std::vector<ValueType> SparseDtmcPrctlHelper<ValueType, RewardModelType>::computeInstantaneousRewards(Environment const& env, storm::solver::SolveGoal<ValueType>&& goal, storm::storage::SparseMatrix<ValueType> const& transitionMatrix, RewardModelType const& rewardModel, uint_fast64_t stepCount, storm::solver::LinearEquationSolverFactory<ValueType> const& linearEquationSolverFactory) {
                 // Only compute the result if the model has a state-based reward this->getModel().
                 STORM_LOG_THROW(rewardModel.hasStateRewards(), storm::exceptions::InvalidPropertyException, "Missing reward model for formula. Skipping formula.");
                 
@@ -201,21 +201,21 @@ namespace storm {
                 std::vector<ValueType> result = rewardModel.getStateRewardVector();
                 
                 // Perform the matrix vector multiplication as often as required by the formula bound.
-                std::unique_ptr<storm::solver::LinearEquationSolver<ValueType>> solver = storm::solver::configureLinearEquationSolver(std::move(goal), linearEquationSolverFactory, transitionMatrix);
+                std::unique_ptr<storm::solver::LinearEquationSolver<ValueType>> solver = storm::solver::configureLinearEquationSolver(env, std::move(goal), linearEquationSolverFactory, transitionMatrix);
                 solver->repeatedMultiply(result, nullptr, stepCount);
                 
                 return result;
             }
             
             template<typename ValueType, typename RewardModelType>
-            std::vector<ValueType> SparseDtmcPrctlHelper<ValueType, RewardModelType>::computeReachabilityRewards(storm::solver::SolveGoal<ValueType>&& goal, storm::storage::SparseMatrix<ValueType> const& transitionMatrix, storm::storage::SparseMatrix<ValueType> const& backwardTransitions, RewardModelType const& rewardModel, storm::storage::BitVector const& targetStates, bool qualitative, storm::solver::LinearEquationSolverFactory<ValueType> const& linearEquationSolverFactory, ModelCheckerHint const& hint) {
-                return computeReachabilityRewards(std::move(goal), transitionMatrix, backwardTransitions, [&] (uint_fast64_t numberOfRows, storm::storage::SparseMatrix<ValueType> const& transitionMatrix, storm::storage::BitVector const& maybeStates) { return rewardModel.getTotalRewardVector(numberOfRows, transitionMatrix, maybeStates); }, targetStates, qualitative, linearEquationSolverFactory, hint);
+            std::vector<ValueType> SparseDtmcPrctlHelper<ValueType, RewardModelType>::computeReachabilityRewards(Environment const& env, storm::solver::SolveGoal<ValueType>&& goal, storm::storage::SparseMatrix<ValueType> const& transitionMatrix, storm::storage::SparseMatrix<ValueType> const& backwardTransitions, RewardModelType const& rewardModel, storm::storage::BitVector const& targetStates, bool qualitative, storm::solver::LinearEquationSolverFactory<ValueType> const& linearEquationSolverFactory, ModelCheckerHint const& hint) {
+                return computeReachabilityRewards(env, std::move(goal), transitionMatrix, backwardTransitions, [&] (uint_fast64_t numberOfRows, storm::storage::SparseMatrix<ValueType> const& transitionMatrix, storm::storage::BitVector const& maybeStates) { return rewardModel.getTotalRewardVector(numberOfRows, transitionMatrix, maybeStates); }, targetStates, qualitative, linearEquationSolverFactory, hint);
             }
 
             template<typename ValueType, typename RewardModelType>
-            std::vector<ValueType> SparseDtmcPrctlHelper<ValueType, RewardModelType>::computeReachabilityRewards(storm::solver::SolveGoal<ValueType>&& goal, storm::storage::SparseMatrix<ValueType> const& transitionMatrix, storm::storage::SparseMatrix<ValueType> const& backwardTransitions, std::vector<ValueType> const& totalStateRewardVector, storm::storage::BitVector const& targetStates, bool qualitative, storm::solver::LinearEquationSolverFactory<ValueType> const& linearEquationSolverFactory, ModelCheckerHint const& hint) {
+            std::vector<ValueType> SparseDtmcPrctlHelper<ValueType, RewardModelType>::computeReachabilityRewards(Environment const& env, storm::solver::SolveGoal<ValueType>&& goal, storm::storage::SparseMatrix<ValueType> const& transitionMatrix, storm::storage::SparseMatrix<ValueType> const& backwardTransitions, std::vector<ValueType> const& totalStateRewardVector, storm::storage::BitVector const& targetStates, bool qualitative, storm::solver::LinearEquationSolverFactory<ValueType> const& linearEquationSolverFactory, ModelCheckerHint const& hint) {
 
-                return computeReachabilityRewards(std::move(goal), transitionMatrix, backwardTransitions,
+                return computeReachabilityRewards(env, std::move(goal), transitionMatrix, backwardTransitions,
                                                   [&] (uint_fast64_t numberOfRows, storm::storage::SparseMatrix<ValueType> const&, storm::storage::BitVector const& maybeStates) {
                                                       std::vector<ValueType> result(numberOfRows);
                                                       storm::utility::vector::selectVectorValues(result, maybeStates, totalStateRewardVector);
@@ -238,7 +238,7 @@ namespace storm {
             }
             
             template<typename ValueType, typename RewardModelType>
-            std::vector<ValueType> SparseDtmcPrctlHelper<ValueType, RewardModelType>::computeReachabilityRewards(storm::solver::SolveGoal<ValueType>&& goal, storm::storage::SparseMatrix<ValueType> const& transitionMatrix, storm::storage::SparseMatrix<ValueType> const& backwardTransitions, std::function<std::vector<ValueType>(uint_fast64_t, storm::storage::SparseMatrix<ValueType> const&, storm::storage::BitVector const&)> const& totalStateRewardVectorGetter, storm::storage::BitVector const& targetStates, bool qualitative, storm::solver::LinearEquationSolverFactory<ValueType> const& linearEquationSolverFactory, ModelCheckerHint const& hint) {
+            std::vector<ValueType> SparseDtmcPrctlHelper<ValueType, RewardModelType>::computeReachabilityRewards(Environment const& env, storm::solver::SolveGoal<ValueType>&& goal, storm::storage::SparseMatrix<ValueType> const& transitionMatrix, storm::storage::SparseMatrix<ValueType> const& backwardTransitions, std::function<std::vector<ValueType>(uint_fast64_t, storm::storage::SparseMatrix<ValueType> const&, storm::storage::BitVector const&)> const& totalStateRewardVectorGetter, storm::storage::BitVector const& targetStates, bool qualitative, storm::solver::LinearEquationSolverFactory<ValueType> const& linearEquationSolverFactory, ModelCheckerHint const& hint) {
                 
                 std::vector<ValueType> result(transitionMatrix.getRowCount(), storm::utility::zero<ValueType>());
                 
@@ -268,16 +268,11 @@ namespace storm {
                 } else {
                     if (!maybeStates.empty()) {
                         // Check whether we need to convert the input to equation system format.
-                        bool convertToEquationSystem = linearEquationSolverFactory.getEquationProblemFormat() == storm::solver::LinearEquationSolverProblemFormat::EquationSystem;
+                        bool convertToEquationSystem = linearEquationSolverFactory.getEquationProblemFormat(env) == storm::solver::LinearEquationSolverProblemFormat::EquationSystem;
                         
                         // In this case we have to compute the reward values for the remaining states.
                         // We can eliminate the rows and columns from the original transition probability matrix.
                         storm::storage::SparseMatrix<ValueType> submatrix = transitionMatrix.getSubmatrix(true, maybeStates, maybeStates, convertToEquationSystem);
-                        if (convertToEquationSystem) {
-                            // Converting the matrix from the fixpoint notation to the form needed for the equation
-                            // system. That is, we go from x = A*x + b to (I-A)x = b.
-                            submatrix.convertToEquationSystem();
-                        }
                         
                         // Initialize the x vector with the hint (if available) or with 1 for each element.
                         // This is the initial guess for the iterative solvers.
@@ -291,7 +286,7 @@ namespace storm {
                         // Prepare the right-hand side of the equation system.
                         std::vector<ValueType> b = totalStateRewardVectorGetter(submatrix.getRowCount(), transitionMatrix, maybeStates);
 
-                        storm::solver::LinearEquationSolverRequirements requirements = linearEquationSolverFactory.getRequirements();
+                        storm::solver::LinearEquationSolverRequirements requirements = linearEquationSolverFactory.getRequirements(env);
                         boost::optional<std::vector<ValueType>> upperRewardBounds;
                         requirements.clearLowerBounds();
                         if (requirements.requiresUpperBounds()) {
@@ -300,16 +295,22 @@ namespace storm {
                         }
                         STORM_LOG_THROW(requirements.empty(), storm::exceptions::UncheckedRequirementException, "There are unchecked requirements of the solver.");
                         
+                        // If necessary, convert the matrix from the fixpoint notation to the form needed for the equation system.
+                        if (convertToEquationSystem) {
+                            // go from x = A*x + b to (I-A)x = b.
+                            submatrix.convertToEquationSystem();
+                        }
+
                         // Create the solver.
                         goal.restrictRelevantValues(maybeStates);
-                        std::unique_ptr<storm::solver::LinearEquationSolver<ValueType>> solver = storm::solver::configureLinearEquationSolver(std::move(goal), linearEquationSolverFactory, std::move(submatrix));
+                        std::unique_ptr<storm::solver::LinearEquationSolver<ValueType>> solver = storm::solver::configureLinearEquationSolver(env, std::move(goal), linearEquationSolverFactory, std::move(submatrix));
                         solver->setLowerBound(storm::utility::zero<ValueType>());
                         if (upperRewardBounds) {
                             solver->setUpperBounds(std::move(upperRewardBounds.get()));
                         }
                         
                         // Now solve the resulting equation system.
-                        solver->solveEquations(x, b);
+                        solver->solveEquations(env, x, b);
                         
                         // Set values of resulting vector according to result.
                         storm::utility::vector::setVectorValues<ValueType>(result, maybeStates, x);
@@ -319,27 +320,27 @@ namespace storm {
             }
             
             template<typename ValueType, typename RewardModelType>
-            std::vector<ValueType> SparseDtmcPrctlHelper<ValueType, RewardModelType>::computeLongRunAverageProbabilities(storm::solver::SolveGoal<ValueType>&& goal, storm::storage::SparseMatrix<ValueType> const& transitionMatrix, storm::storage::BitVector const& psiStates, storm::solver::LinearEquationSolverFactory<ValueType> const& linearEquationSolverFactory) {
-                return SparseCtmcCslHelper::computeLongRunAverageProbabilities<ValueType>(std::move(goal), transitionMatrix, psiStates, nullptr, linearEquationSolverFactory);
+            std::vector<ValueType> SparseDtmcPrctlHelper<ValueType, RewardModelType>::computeLongRunAverageProbabilities(Environment const& env, storm::solver::SolveGoal<ValueType>&& goal, storm::storage::SparseMatrix<ValueType> const& transitionMatrix, storm::storage::BitVector const& psiStates, storm::solver::LinearEquationSolverFactory<ValueType> const& linearEquationSolverFactory) {
+                return SparseCtmcCslHelper::computeLongRunAverageProbabilities<ValueType>(env, std::move(goal), transitionMatrix, psiStates, nullptr, linearEquationSolverFactory);
             }
             
             template<typename ValueType, typename RewardModelType>
-            std::vector<ValueType> SparseDtmcPrctlHelper<ValueType, RewardModelType>::computeLongRunAverageRewards(storm::solver::SolveGoal<ValueType>&& goal, storm::storage::SparseMatrix<ValueType> const& transitionMatrix, RewardModelType const& rewardModel, storm::solver::LinearEquationSolverFactory<ValueType> const& linearEquationSolverFactory) {
-                return SparseCtmcCslHelper::computeLongRunAverageRewards<ValueType, RewardModelType>(std::move(goal), transitionMatrix, rewardModel, nullptr, linearEquationSolverFactory);
+            std::vector<ValueType> SparseDtmcPrctlHelper<ValueType, RewardModelType>::computeLongRunAverageRewards(Environment const& env, storm::solver::SolveGoal<ValueType>&& goal, storm::storage::SparseMatrix<ValueType> const& transitionMatrix, RewardModelType const& rewardModel, storm::solver::LinearEquationSolverFactory<ValueType> const& linearEquationSolverFactory) {
+                return SparseCtmcCslHelper::computeLongRunAverageRewards<ValueType, RewardModelType>(env, std::move(goal), transitionMatrix, rewardModel, nullptr, linearEquationSolverFactory);
             }
             
             template<typename ValueType, typename RewardModelType>
-            std::vector<ValueType> SparseDtmcPrctlHelper<ValueType, RewardModelType>::computeLongRunAverageRewards(storm::solver::SolveGoal<ValueType>&& goal, storm::storage::SparseMatrix<ValueType> const& transitionMatrix, std::vector<ValueType> const& stateRewards, storm::solver::LinearEquationSolverFactory<ValueType> const& linearEquationSolverFactory) {
-                return SparseCtmcCslHelper::computeLongRunAverageRewards<ValueType>(std::move(goal), transitionMatrix, stateRewards, nullptr, linearEquationSolverFactory);
+            std::vector<ValueType> SparseDtmcPrctlHelper<ValueType, RewardModelType>::computeLongRunAverageRewards(Environment const& env, storm::solver::SolveGoal<ValueType>&& goal, storm::storage::SparseMatrix<ValueType> const& transitionMatrix, std::vector<ValueType> const& stateRewards, storm::solver::LinearEquationSolverFactory<ValueType> const& linearEquationSolverFactory) {
+                return SparseCtmcCslHelper::computeLongRunAverageRewards<ValueType>(env, std::move(goal), transitionMatrix, stateRewards, nullptr, linearEquationSolverFactory);
             }
             
             template<typename ValueType, typename RewardModelType>
-            typename SparseDtmcPrctlHelper<ValueType, RewardModelType>::BaierTransformedModel SparseDtmcPrctlHelper<ValueType, RewardModelType>::computeBaierTransformation(storm::storage::SparseMatrix<ValueType> const& transitionMatrix, storm::storage::SparseMatrix<ValueType> const& backwardTransitions, storm::storage::BitVector const& targetStates, storm::storage::BitVector const& conditionStates, boost::optional<std::vector<ValueType>> const& stateRewards, storm::solver::LinearEquationSolverFactory<ValueType> const& linearEquationSolverFactory) {
+            typename SparseDtmcPrctlHelper<ValueType, RewardModelType>::BaierTransformedModel SparseDtmcPrctlHelper<ValueType, RewardModelType>::computeBaierTransformation(Environment const& env, storm::storage::SparseMatrix<ValueType> const& transitionMatrix, storm::storage::SparseMatrix<ValueType> const& backwardTransitions, storm::storage::BitVector const& targetStates, storm::storage::BitVector const& conditionStates, boost::optional<std::vector<ValueType>> const& stateRewards, storm::solver::LinearEquationSolverFactory<ValueType> const& linearEquationSolverFactory) {
 
                 BaierTransformedModel result;
                 
                 // Start by computing all 'before' states, i.e. the states for which the conditional probability is defined.
-                std::vector<ValueType> probabilitiesToReachConditionStates = computeUntilProbabilities(storm::solver::SolveGoal<ValueType>(), transitionMatrix, backwardTransitions, storm::storage::BitVector(transitionMatrix.getRowCount(), true), conditionStates, false, linearEquationSolverFactory);
+                std::vector<ValueType> probabilitiesToReachConditionStates = computeUntilProbabilities(env, storm::solver::SolveGoal<ValueType>(), transitionMatrix, backwardTransitions, storm::storage::BitVector(transitionMatrix.getRowCount(), true), conditionStates, false, linearEquationSolverFactory);
                 
                 result.beforeStates = storm::storage::BitVector(targetStates.size(), true);
                 uint_fast64_t state = 0;
@@ -454,13 +455,13 @@ namespace storm {
             }
             
             template<typename ValueType, typename RewardModelType>
-            std::vector<ValueType> SparseDtmcPrctlHelper<ValueType, RewardModelType>::computeConditionalProbabilities(storm::solver::SolveGoal<ValueType>&& goal, storm::storage::SparseMatrix<ValueType> const& transitionMatrix, storm::storage::SparseMatrix<ValueType> const& backwardTransitions, storm::storage::BitVector const& targetStates, storm::storage::BitVector const& conditionStates, bool qualitative, storm::solver::LinearEquationSolverFactory<ValueType> const& linearEquationSolverFactory) {
+            std::vector<ValueType> SparseDtmcPrctlHelper<ValueType, RewardModelType>::computeConditionalProbabilities(Environment const& env, storm::solver::SolveGoal<ValueType>&& goal, storm::storage::SparseMatrix<ValueType> const& transitionMatrix, storm::storage::SparseMatrix<ValueType> const& backwardTransitions, storm::storage::BitVector const& targetStates, storm::storage::BitVector const& conditionStates, bool qualitative, storm::solver::LinearEquationSolverFactory<ValueType> const& linearEquationSolverFactory) {
                 
                 // Prepare result vector.
                 std::vector<ValueType> result(transitionMatrix.getRowCount(), storm::utility::infinity<ValueType>());
                 
                 if (!conditionStates.empty()) {
-                    BaierTransformedModel transformedModel = computeBaierTransformation(transitionMatrix, backwardTransitions, targetStates, conditionStates, boost::none, linearEquationSolverFactory);
+                    BaierTransformedModel transformedModel = computeBaierTransformation(env, transitionMatrix, backwardTransitions, targetStates, conditionStates, boost::none, linearEquationSolverFactory);
                     
                     if (transformedModel.noTargetStates) {
                         storm::utility::vector::setVectorValues(result, transformedModel.beforeStates, storm::utility::zero<ValueType>());
@@ -471,7 +472,7 @@ namespace storm {
                         
                         // Now compute reachability probabilities in the transformed model.
                         storm::storage::SparseMatrix<ValueType> const& newTransitionMatrix = transformedModel.transitionMatrix.get();
-                        std::vector<ValueType> conditionalProbabilities = computeUntilProbabilities(std::move(goal), newTransitionMatrix, newTransitionMatrix.transpose(), storm::storage::BitVector(newTransitionMatrix.getRowCount(), true), transformedModel.targetStates.get(), qualitative, linearEquationSolverFactory);
+                        std::vector<ValueType> conditionalProbabilities = computeUntilProbabilities(env, std::move(goal), newTransitionMatrix, newTransitionMatrix.transpose(), storm::storage::BitVector(newTransitionMatrix.getRowCount(), true), transformedModel.targetStates.get(), qualitative, linearEquationSolverFactory);
                         
                         storm::utility::vector::setVectorValues(result, transformedModel.beforeStates, conditionalProbabilities);
                     }
@@ -481,12 +482,12 @@ namespace storm {
             }
             
             template<typename ValueType, typename RewardModelType>
-            std::vector<ValueType> SparseDtmcPrctlHelper<ValueType, RewardModelType>::computeConditionalRewards(storm::solver::SolveGoal<ValueType>&& goal, storm::storage::SparseMatrix<ValueType> const& transitionMatrix, storm::storage::SparseMatrix<ValueType> const& backwardTransitions, RewardModelType const& rewardModel, storm::storage::BitVector const& targetStates, storm::storage::BitVector const& conditionStates, bool qualitative, storm::solver::LinearEquationSolverFactory<ValueType> const& linearEquationSolverFactory) {
+            std::vector<ValueType> SparseDtmcPrctlHelper<ValueType, RewardModelType>::computeConditionalRewards(Environment const& env, storm::solver::SolveGoal<ValueType>&& goal, storm::storage::SparseMatrix<ValueType> const& transitionMatrix, storm::storage::SparseMatrix<ValueType> const& backwardTransitions, RewardModelType const& rewardModel, storm::storage::BitVector const& targetStates, storm::storage::BitVector const& conditionStates, bool qualitative, storm::solver::LinearEquationSolverFactory<ValueType> const& linearEquationSolverFactory) {
                 // Prepare result vector.
                 std::vector<ValueType> result(transitionMatrix.getRowCount(), storm::utility::infinity<ValueType>());
                 
                 if (!conditionStates.empty()) {
-                    BaierTransformedModel transformedModel = computeBaierTransformation(transitionMatrix, backwardTransitions, targetStates, conditionStates, rewardModel.getTotalRewardVector(transitionMatrix), linearEquationSolverFactory);
+                    BaierTransformedModel transformedModel = computeBaierTransformation(env, transitionMatrix, backwardTransitions, targetStates, conditionStates, rewardModel.getTotalRewardVector(transitionMatrix), linearEquationSolverFactory);
                     
                     if (transformedModel.noTargetStates) {
                         storm::utility::vector::setVectorValues(result, transformedModel.beforeStates, storm::utility::zero<ValueType>());
@@ -497,7 +498,7 @@ namespace storm {
                         
                         // Now compute reachability probabilities in the transformed model.
                         storm::storage::SparseMatrix<ValueType> const& newTransitionMatrix = transformedModel.transitionMatrix.get();
-                        std::vector<ValueType> conditionalRewards = computeReachabilityRewards(std::move(goal), newTransitionMatrix, newTransitionMatrix.transpose(), transformedModel.stateRewards.get(), transformedModel.targetStates.get(), qualitative, linearEquationSolverFactory);
+                        std::vector<ValueType> conditionalRewards = computeReachabilityRewards(env, std::move(goal), newTransitionMatrix, newTransitionMatrix.transpose(), transformedModel.stateRewards.get(), transformedModel.targetStates.get(), qualitative, linearEquationSolverFactory);
                         storm::utility::vector::setVectorValues(result, transformedModel.beforeStates, conditionalRewards);
                     }
                 }

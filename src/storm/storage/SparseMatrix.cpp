@@ -892,6 +892,7 @@ namespace storm {
         
         template<typename ValueType>
         SparseMatrix<ValueType> SparseMatrix<ValueType>::getSubmatrix(storm::storage::BitVector const& rowGroupConstraint, storm::storage::BitVector const& columnConstraint, std::vector<index_type> const& rowGroupIndices, bool insertDiagonalEntries) const {
+            STORM_LOG_THROW(!rowGroupConstraint.empty() && !columnConstraint.empty(), storm::exceptions::InvalidArgumentException, "Cannot build empty submatrix.");
             uint_fast64_t submatrixColumnCount = columnConstraint.getNumberOfSetBits();
             
             // Start by creating a temporary vector that stores for each index whose bit is set to true the number of

@@ -12,7 +12,7 @@ namespace storm {
             ValidatingSparseMdpParameterLiftingModelChecker();
             virtual ~ValidatingSparseMdpParameterLiftingModelChecker() = default;
             
-            virtual void specify(std::shared_ptr<storm::models::ModelBase> parametricModel, CheckTask<storm::logic::Formula, typename SparseModelType::ValueType> const& checkTask) override;
+            virtual void specify(Environment const& env, std::shared_ptr<storm::models::ModelBase> parametricModel, CheckTask<storm::logic::Formula, typename SparseModelType::ValueType> const& checkTask) override;
 
         protected:
             virtual SparseParameterLiftingModelChecker<SparseModelType, ImpreciseType>& getImpreciseChecker() override;

@@ -7,6 +7,7 @@
 #include <boost/optional.hpp>
 
 #include "storm/solver/TerminationCondition.h"
+#include "storm/utility/ProgressMeasurement.h"
 
 namespace storm {
     namespace solver {
@@ -131,6 +132,13 @@ namespace storm {
              */
             void setBounds(std::vector<ValueType> const& lower, std::vector<ValueType> const& upper);
             
+            void setBoundsFromOtherSolver(AbstractEquationSolver<ValueType> const& other);
+            
+            /*!
+             * Removes all specified solution bounds
+             */
+            void clearBounds();
+            
             /*!
              * Retrieves whether progress is to be shown.
              */
@@ -150,6 +158,8 @@ namespace storm {
              * Shows progress if this solver is asked to do so.
              */
             void showProgressIterative(uint64_t iterations, boost::optional<uint64_t> const& bound = boost::none) const;
+            
+            virtual void setPrecision(ValueType const& precision);
 
         protected:
             /*!
@@ -183,16 +193,8 @@ namespace storm {
             boost::optional<std::vector<ValueType>> upperBounds;
 
         private:
-            // A flag that indicates whether progress is to be shown.
-            bool showProgressFlag;
-            
-            // The delay between progress emission.
-            uint64_t showProgressDelay;
-            
-            // Time points that are used when showing progress.
-            mutable uint64_t iterationOfLastMessage;
-            mutable std::chrono::high_resolution_clock::time_point timeOfStart;
-            mutable std::chrono::high_resolution_clock::time_point timeOfLastMessage;
+            // Indicates the progress of this solver.
+            mutable boost::optional<storm::utility::ProgressMeasurement> progressMeasurement;
         };
         
     }

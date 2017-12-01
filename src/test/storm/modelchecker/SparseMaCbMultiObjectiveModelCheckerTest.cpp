@@ -10,8 +10,10 @@
 #include "storm/settings/SettingsManager.h"
 #include "storm/api/storm.h"
 
+#include "storm/environment/Environment.h"
 
 TEST(SparseMaCbMultiObjectiveModelCheckerTest, server) {
+    storm::Environment env;
     
     std::string programFile = STORM_TEST_RESOURCES_DIR "/ma/server.ma";
     std::string formulasAsString = "multi(T>=5/3 [ F \"error\" ], P>=7/12 [ F \"processB\" ]) "; // true
@@ -25,11 +27,11 @@ TEST(SparseMaCbMultiObjectiveModelCheckerTest, server) {
 
     std::unique_ptr<storm::modelchecker::CheckResult> result;
 
-    result = storm::modelchecker::multiobjective::performMultiObjectiveModelChecking(*ma, formulas[0]->asMultiObjectiveFormula(), storm::modelchecker::multiobjective::MultiObjectiveMethodSelection::ConstraintBased);
+    result = storm::modelchecker::multiobjective::performMultiObjectiveModelChecking(env, *ma, formulas[0]->asMultiObjectiveFormula(), storm::modelchecker::multiobjective::MultiObjectiveMethodSelection::ConstraintBased);
     ASSERT_TRUE(result->isExplicitQualitativeCheckResult());
     EXPECT_TRUE(result->asExplicitQualitativeCheckResult()[initState]);
 
-    result = storm::modelchecker::multiobjective::performMultiObjectiveModelChecking(*ma, formulas[1]->asMultiObjectiveFormula(), storm::modelchecker::multiobjective::MultiObjectiveMethodSelection::ConstraintBased);
+    result = storm::modelchecker::multiobjective::performMultiObjectiveModelChecking(env, *ma, formulas[1]->asMultiObjectiveFormula(), storm::modelchecker::multiobjective::MultiObjectiveMethodSelection::ConstraintBased);
     ASSERT_TRUE(result->isExplicitQualitativeCheckResult());
     EXPECT_FALSE(result->asExplicitQualitativeCheckResult()[initState]);
 }
