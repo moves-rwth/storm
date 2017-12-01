@@ -617,6 +617,7 @@ namespace storm {
                     upperValueBound = lowerValueBound;
                     ValueType largestStayProb = *probIt;
                     for (; valIt != valIte; ++valIt, ++probIt) {
+                        STORM_LOG_ASSERT(!storm::utility::isOne(*probIt), "Did not expect staying-probability 1 at this point.");
                         ValueType currentBound = *valIt / (storm::utility::one<ValueType>() - *probIt);
                         lowerValueBound = std::min(lowerValueBound, currentBound);
                         upperValueBound = std::max(upperValueBound, currentBound);
