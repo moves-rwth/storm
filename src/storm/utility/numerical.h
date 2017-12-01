@@ -13,7 +13,7 @@ namespace storm {
                 uint64_t right;
                 ValueType totalWeight;
                 std::vector<ValueType> weights;
-            }
+            };
             
             template<typename ValueType>
             FoxGlynnResult<ValueType> foxGlynn(ValueType lambda, ValueType epsilon);
