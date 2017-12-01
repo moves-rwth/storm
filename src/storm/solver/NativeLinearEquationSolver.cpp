@@ -580,8 +580,6 @@ namespace storm {
             bool converged = false;
             bool terminate = false;
             uint64_t iterations = 0;
-            bool doConvergenceCheck = true;
-            bool useDiffs = this->hasRelevantValues();
             ValueType precision = storm::utility::convertNumber<ValueType>(env.solver().native().getPrecision());
             ValueType lowerValueBound, upperValueBound;
             bool relative = env.solver().native().getRelativeTerminationCriterion();
@@ -590,25 +588,25 @@ namespace storm {
             }
             uint64_t maxIter = env.solver().native().getMaximalNumberOfIterations();
             this->startMeasureProgress();
-            auto firstProb1EntryIt = stepBoundedStayProbabilities->begin();
+            uint64_t firstProb1Entry = 0;
             while (!converged && !terminate && iterations < maxIter) {
                 this->multiplier.multAdd(*this->A, *stepBoundedValues, &b, *tmp);
                 std::swap(tmp, stepBoundedValues);
                 this->multiplier.multAdd(*this->A, *stepBoundedStayProbabilities, nullptr, *tmp);
                 std::swap(tmp, stepBoundedStayProbabilities);
-                for (; firstProb1EntryIt != stepBoundedStayProbabilities->end(); ++firstProb1EntryIt) {
+                for (; firstProb1Entry != stepBoundedStayProbabilities->size(); ++firstProb1Entry) {
                     static_assert(NumberTraits<ValueType>::IsExact || std::is_same<ValueType, double>::value, "Considered ValueType not handled.");
                     if (NumberTraits<ValueType>::IsExact) {
-                        if (storm::utility::isOne(*firstProb1EntryIt)) {
+                        if (storm::utility::isOne(stepBoundedStayProbabilities->at(firstProb1Entry))) {
                             break;
                         }
                     } else {
-                        if (storm::utility::isAlmostOne(storm::utility::convertNumber<double>(*firstProb1EntryIt))) {
+                        if (storm::utility::isAlmostOne(storm::utility::convertNumber<double>(stepBoundedStayProbabilities->at(firstProb1Entry)))) {
                             break;
                         }
                     }
                 }
-                if (firstProb1EntryIt == stepBoundedStayProbabilities->end()) {
+                if (firstProb1Entry == stepBoundedStayProbabilities->size()) {
                     auto valIt = stepBoundedValues->begin();
                     auto valIte = stepBoundedValues->end();
                     auto probIt = stepBoundedStayProbabilities->begin();
@@ -625,6 +623,7 @@ namespace storm {
                     }
                     STORM_LOG_ASSERT(!relative, "Relative termination criterion not implemented currently.");
                     converged = largestStayProb * (upperValueBound - lowerValueBound) < precision;
+                    STORM_LOG_INFO_COND(!converged, "Lower value bound: " << lowerValueBound << " Upper value bound: " << upperValueBound << " Largest stay prob.: " << largestStayProb);
                 }
                 
                 // Potentially show progress.
