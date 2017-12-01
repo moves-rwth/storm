@@ -219,20 +219,6 @@ namespace storm {
                 }
             }
 
-            template<typename ValueType>
-            ValueType SparseMarkovAutomatonCslHelper::poisson(ValueType lambda, uint64_t i) {
-                ValueType res = pow(lambda, i);
-                ValueType fac = 1;
-                for (uint64_t j = i ; j>0 ; j--){
-                    fac = fac *j;
-                }
-                res = res / fac ;
-                res = res * exp(-lambda);
-                return res;
-            }
-
-
-
             template <typename ValueType, typename std::enable_if<storm::NumberTraits<ValueType>::SupportsExponential, int>::type>
             void SparseMarkovAutomatonCslHelper::calculateVu(Environment const& env, std::vector<std::vector<ValueType>> const& relativeReachability, OptimizationDirection dir, uint64_t k, uint64_t node, uint64_t const kind, ValueType lambda, uint64_t probSize, std::vector<std::vector<std::vector<ValueType>>>& unifVectors, storm::storage::SparseMatrix<ValueType> const& fullTransitionMatrix, storm::storage::BitVector const& markovianStates, storm::storage::BitVector const& psiStates, std::unique_ptr<storm::solver::MinMaxLinearEquationSolver<ValueType>> const& solver, std::ofstream& logfile, std::vector<double> const& poisson){
                 if (unifVectors[1][k][node]!=-1){return;} //dynamic programming. avoiding multiple calculation.
@@ -245,7 +231,9 @@ namespace storm {
                        calculateUnifPlusVector(env, N-1-(i-k),node,2,lambda,probSize,relativeReachability,dir,unifVectors,fullTransitionMatrix, markovianStates,psiStates,solver, logfile, poisson);
                                //old:  relativeReachability, dir, (N-1-(i-k)),node,lambda,wu,fullTransitionMatrix,markovianStates,psiStates, solver);
                     }
-                    res+=poisson[i]*unifVectors[2][N-1-(i-k)][node];
+                    if (i<poisson.size()){
+                        res+=poisson[i]*unifVectors[2][N-1-(i-k)][node];
+                    }
                 }
                 unifVectors[1][k][node]=res;
             }
@@ -290,7 +278,7 @@ namespace storm {
                         // Vd
                         res = storm::utility::zero<ValueType>();
                         for (uint64_t i = k ; i<N ; i++){
-                            if (poisson[i]>1e-300){
+                            if (i<poisson.size()){
                                 ValueType between = poisson[i];
                                 res+=between;
                             }
@@ -664,17 +652,14 @@ namespace storm {
 
                     // calculate poisson distribution
 
-                    /*std::tuple<uint_fast64_t, uint_fast64_t, ValueType, std::vector<ValueType>> foxGlynnResult = storm::utility::numerical::getFoxGlynnCutoff(
-                                T * lambda, 1e+300, epsilon * epsilon * kappa);
+                    storm::utility::numerical::FoxGlynnResult<ValueType> foxGlynnResult = storm::utility::numerical::foxGlynn(lambda*T, epsilon*kappa);
 
 
                     // Scale the weights so they add up to one.
-                    for (auto &element : std::get<3>(foxGlynnResult)) {
-                        element /= std::get<2>(foxGlynnResult);
+                    for (auto& element : foxGlynnResult.weights) {
+                        element /= foxGlynnResult.totalWeight;
                     }
-*/
 
-                    std::vector<double> poisson = foxGlynnProb(lambda*T, N+1, epsilon*kappa);
 
                     // (4) define vectors/matrices
                     std::vector<ValueType> init(numberOfStates, -1);
@@ -693,13 +678,13 @@ namespace storm {
                         for (uint64_t k = N; k <= N; k--) {
                             calculateUnifPlusVector(env, k, i, 0, lambda, probSize, relReachability, dir, unifVectors,
                                                     fullTransitionMatrix, markovianStates, psiStates, solver, logfile,
-                                                    poisson);
+                                                    foxGlynnResult.weights);
                             calculateUnifPlusVector(env, k, i, 2, lambda, probSize, relReachability, dir, unifVectors,
                                                     fullTransitionMatrix, markovianStates, psiStates, solver, logfile,
-                                                    poisson);
+                                                    foxGlynnResult.weights);
                             calculateVu(env, relReachability, dir, k, i, 1, lambda, probSize, unifVectors,
                                         fullTransitionMatrix, markovianStates, psiStates, solver, logfile,
-                                        poisson);
+                                        foxGlynnResult.weights);
                             //also use iteration to keep maxNorm of vd and vup to date, so the loop-condition is easy to prove
                             ValueType diff = std::abs(unifVectors[0][k][i] - unifVectors[1][k][i]);
                             maxNorm = std::max(maxNorm, diff);
