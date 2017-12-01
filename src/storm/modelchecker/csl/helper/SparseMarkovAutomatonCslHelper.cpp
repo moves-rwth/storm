@@ -456,7 +456,6 @@ namespace storm {
                 return goalStates;
 
             }
-            std::vector<ValueType> SparseMarkovAutomatonCslHelper::computeBoundedUntilProbabilities(Environment const& env, OptimizationDirection dir, storm::storage::SparseMatrix<ValueType> const& transitionMatrix, std::vector<ValueType> const& exitRateVector, storm::storage::BitVector const& markovianStates, storm::storage::BitVector const& psiStates, std::pair<double, double> const& boundsPair, storm::solver::MinMaxLinearEquationSolverFactory<ValueType> const& minMaxLinearEquationSolverFactory) {
 
                 template <typename ValueType, typename std::enable_if<storm::NumberTraits<ValueType>::SupportsExponential, int>::type=0>
             storm::storage::BitVector SparseMarkovAutomatonCslHelper::identifyProbCycles(storm::storage::SparseMatrix<ValueType> const& transitionMatrix, storm::storage::BitVector const& markovianStates, storm::storage::BitVector const& psiStates){
@@ -666,7 +665,7 @@ namespace storm {
 
                     // calculate poisson distribution
 
-                    std::tuple<uint_fast64_t, uint_fast64_t, ValueType, std::vector<ValueType>> foxGlynnResult = storm::utility::numerical::getFoxGlynnCutoff(
+                    /*std::tuple<uint_fast64_t, uint_fast64_t, ValueType, std::vector<ValueType>> foxGlynnResult = storm::utility::numerical::getFoxGlynnCutoff(
                                 T * lambda, 1e+300, epsilon * epsilon * kappa);
 
 
@@ -674,7 +673,7 @@ namespace storm {
                     for (auto &element : std::get<3>(foxGlynnResult)) {
                         element /= std::get<2>(foxGlynnResult);
                     }
-
+*/
 
                     std::vector<double> poisson = foxGlynnProb(lambda*T, N+1, epsilon*kappa);
 
