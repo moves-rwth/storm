@@ -690,7 +690,7 @@ namespace storm {
                         }
                     }
                     //printTransitions(N, maxNorm, fullTransitionMatrix, exitRate, markovianStates, psiStates,
-                                     relReachability, psiStates, psiStates, unifVectors, logfile); //TODO remove
+                                    // relReachability, psiStates, psiStates, unifVectors, logfile); //TODO remove
 
                     // (6) double lambda
 
