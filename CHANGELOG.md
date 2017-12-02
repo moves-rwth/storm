@@ -20,6 +20,7 @@ The releases of major and minor versions contain an overview of changes since th
 - Performance improvements for sparse model building
 - Performance improvements for conditional properties on MDPs
 - Automatically convert MA without probabilistic states into CTMC
+- Fixed implemention of Fox and Glynn' algorithm
 - storm-pars: support for welldefinedness constraints in mdps.
 - storm-dft: split DFT settings into IO settings and fault tree settings
 - storm-dft: removed obsolete explicit model builder for DFTs
