@@ -142,9 +142,10 @@ namespace storm {
         template<typename RationalType, typename ImpreciseType>
         storm::dd::Add<DdType, RationalType> SymbolicMinMaxLinearEquationSolver<DdType, ValueType>::solveEquationsRationalSearchHelper(Environment const& env, OptimizationDirection dir, SymbolicMinMaxLinearEquationSolver<DdType, RationalType> const& rationalSolver, SymbolicMinMaxLinearEquationSolver<DdType, ImpreciseType> const& impreciseSolver, storm::dd::Add<DdType, RationalType> const& rationalB, storm::dd::Add<DdType, ImpreciseType> const& x, storm::dd::Add<DdType, ImpreciseType> const& b) const {
             
-            // Storage for the rational sharpened vector.
+            // Storage for the rational sharpened vector and the power iteration intermediate vector.
             storm::dd::Add<DdType, RationalType> sharpenedX;
-            
+            storm::dd::Add<DdType, ImpreciseType> currentX = x;
+
             // The actual rational search.
             uint64_t overallIterations = 0;
             uint64_t valueIterationInvocations = 0;
@@ -153,7 +154,7 @@ namespace storm {
             bool relative = env.solver().minMax().getRelativeTerminationCriterion();
             SolverStatus status = SolverStatus::InProgress;
             while (status == SolverStatus::InProgress && overallIterations < maxIter) {
-                typename SymbolicMinMaxLinearEquationSolver<DdType, ImpreciseType>::ValueIterationResult viResult = impreciseSolver.performValueIteration(dir, x, b, storm::utility::convertNumber<ImpreciseType, ValueType>(precision), relative, maxIter);
+                typename SymbolicMinMaxLinearEquationSolver<DdType, ImpreciseType>::ValueIterationResult viResult = impreciseSolver.performValueIteration(dir, currentX, b, storm::utility::convertNumber<ImpreciseType, ValueType>(precision), relative, maxIter);
                 
                 ++valueIterationInvocations;
                 STORM_LOG_TRACE("Completed " << valueIterationInvocations << " value iteration invocations, the last one with precision " << precision << " completed in " << viResult.iterations << " iterations.");
@@ -170,6 +171,7 @@ namespace storm {
                 if (isSolution) {
                     status = SolverStatus::Converged;
                 } else {
+                    currentX = viResult.values;
                     precision /= storm::utility::convertNumber<ValueType, uint64_t>(10);
                 }
             }

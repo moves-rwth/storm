@@ -174,10 +174,10 @@ namespace storm {
             
             storm::dd::Add<DdType, RationalType> sharpenedX;
             
-            for (uint64_t p = 1; p < precision; ++p) {
+            for (uint64_t p = 1; p <= precision; ++p) {
                 sharpenedX = x.sharpenKwekMehlhorn(p);
+
                 isSolution = rationalSolver.isSolutionFixedPoint(sharpenedX, rationalB);
-                
                 if (isSolution) {
                     break;
                 }
@@ -190,8 +190,9 @@ namespace storm {
         template<typename RationalType, typename ImpreciseType>
         storm::dd::Add<DdType, RationalType> SymbolicNativeLinearEquationSolver<DdType, ValueType>::solveEquationsRationalSearchHelper(Environment const& env, SymbolicNativeLinearEquationSolver<DdType, RationalType> const& rationalSolver, SymbolicNativeLinearEquationSolver<DdType, ImpreciseType> const& impreciseSolver, storm::dd::Add<DdType, RationalType> const& rationalB, storm::dd::Add<DdType, ImpreciseType> const& x, storm::dd::Add<DdType, ImpreciseType> const& b) const {
             
-            // Storage for the rational sharpened vector.
+            // Storage for the rational sharpened vector and the power iteration intermediate vector.
             storm::dd::Add<DdType, RationalType> sharpenedX;
+            storm::dd::Add<DdType, ImpreciseType> currentX = x;
             
             // The actual rational search.
             uint64_t overallIterations = 0;
@@ -201,7 +202,7 @@ namespace storm {
             bool relative = env.solver().native().getRelativeTerminationCriterion();
             SolverStatus status = SolverStatus::InProgress;
             while (status == SolverStatus::InProgress && overallIterations < maxIter) {
-                typename SymbolicNativeLinearEquationSolver<DdType, ImpreciseType>::PowerIterationResult result = impreciseSolver.performPowerIteration(x, b, storm::utility::convertNumber<ImpreciseType, ValueType>(precision), relative, maxIter - overallIterations);
+                typename SymbolicNativeLinearEquationSolver<DdType, ImpreciseType>::PowerIterationResult result = impreciseSolver.performPowerIteration(currentX, b, storm::utility::convertNumber<ImpreciseType, ValueType>(precision), relative, maxIter - overallIterations);
                 
                 ++powerIterationInvocations;
                 STORM_LOG_TRACE("Completed " << powerIterationInvocations << " power iteration invocations, the last one with precision " << precision << " completed in " << result.iterations << " iterations.");
@@ -218,6 +219,7 @@ namespace storm {
                 if (isSolution) {
                     status = SolverStatus::Converged;
                 } else {
+                    currentX = result.values;
                     precision /= storm::utility::convertNumber<ValueType, uint64_t>(10);
                 }
             }

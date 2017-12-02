@@ -776,9 +776,9 @@ namespace storm {
         template<typename ValueType>
         template<typename RationalType, typename ImpreciseType>
         bool NativeLinearEquationSolver<ValueType>::sharpen(uint64_t precision, storm::storage::SparseMatrix<RationalType> const& A, std::vector<ImpreciseType> const& x, std::vector<RationalType> const& b, std::vector<RationalType>& tmp) {
-            for (uint64_t p = 0; p <= precision; ++p) {
+            for (uint64_t p = 1; p <= precision; ++p) {
                 storm::utility::kwek_mehlhorn::sharpen(p, x, tmp);
-                
+
                 if (NativeLinearEquationSolver<RationalType>::isSolution(A, tmp, b)) {
                     return true;
                 }

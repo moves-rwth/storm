@@ -629,6 +629,11 @@ namespace storm {
              */
             DdNode* getCuddDdNode() const;
             
+            /*!
+             * Retrieves a string representation of an ID for thid ADD.
+             */
+            std::string getStringId() const;
+            
         private:
             /*!
              * Performs a recursive step to perform the given function between the given DD-based vector and the given

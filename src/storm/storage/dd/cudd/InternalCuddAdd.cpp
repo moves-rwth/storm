@@ -420,6 +420,13 @@ namespace storm {
         DdNode* InternalAdd<DdType::CUDD, ValueType>::getCuddDdNode() const {
             return this->getCuddAdd().getNode();
         }
+        
+        template<typename ValueType>
+        std::string InternalAdd<DdType::CUDD, ValueType>::getStringId() const {
+            std::stringstream ss;
+            ss << this->getCuddDdNode();
+            return ss.str();
+        }
 
         template<typename ValueType>
         Odd InternalAdd<DdType::CUDD, ValueType>::createOdd(std::vector<uint_fast64_t> const& ddVariableIndices) const {
