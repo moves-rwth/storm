@@ -266,7 +266,7 @@ namespace storm {
 
                 // First Case, k==N, independent from kind of state
                 if (k==N){
-                    logfile << print << "k == N! res = 0\n";
+                    //logfile << print << "k == N! res = 0\n";
                     unifVectors[kind][k][node]=0;
                     return;
                 }
@@ -287,7 +287,7 @@ namespace storm {
                         // WU
                         unifVectors[kind][k][node]=1;
                     }
-                     logfile << print << "goal state node " << node << " res = " << res << "\n";
+                     //logfile << print << "goal state node " << node << " res = " << res << "\n";
                     return;
 
                 }
@@ -304,7 +304,7 @@ namespace storm {
                         res+=element.getValue()*unifVectors[kind][k+1][to];
                     }
                     unifVectors[kind][k][node]=res;
-                    logfile << print << "markovian state: " << " res = " << res << "\n";
+                    //logfile << print << "markovian state: " << " res = " << res << "\n";
                     return;
                 }
 
@@ -349,7 +349,7 @@ namespace storm {
                         unifVectors[kind][k][trueI]=x[i];
                     }
 
-                    logfile << print << "probabilistic state: "<< " res = " << unifVectors[kind][k][node] << " but calculated more \n";
+                    //logfile << print << "probabilistic state: "<< " res = " << unifVectors[kind][k][node] << " but calculated more \n";
 
                 } //end probabilistic states
             }
@@ -526,7 +526,7 @@ namespace storm {
 
 
                 std::ofstream logfile("U+logfile.txt", std::ios::app);
-                logfile << "Using U+\n";
+                //logfile << "Using U+\n";
                 ValueType maxNorm = storm::utility::zero<ValueType>();
                 ValueType oldDiff = -storm::utility::zero<ValueType>();
 
@@ -618,7 +618,7 @@ namespace storm {
                 }
                 // while not close enough to precision:
                 do {
-                    logfile << "starting iteration\n";
+                    //logfile << "starting iteration\n";
                     maxNorm = storm::utility::zero<ValueType>();
                     // (2) update parameter
                     N = ceil(lambda * T * exp(2) - log(kappa * epsilon));
@@ -689,7 +689,7 @@ namespace storm {
                             maxNorm = std::max(maxNorm, diff);
                         }
                     }
-                    printTransitions(N, maxNorm, fullTransitionMatrix, exitRate, markovianStates, psiStates,
+                    //printTransitions(N, maxNorm, fullTransitionMatrix, exitRate, markovianStates, psiStates,
                                      relReachability, psiStates, psiStates, unifVectors, logfile); //TODO remove
 
                     // (6) double lambda
