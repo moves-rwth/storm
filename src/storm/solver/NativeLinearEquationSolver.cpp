@@ -555,8 +555,6 @@ namespace storm {
             return converged;
         }
         
-        
-        
         template<typename ValueType>
         bool NativeLinearEquationSolver<ValueType>::solveEquationsQuickSoundPower(Environment const& env, std::vector<ValueType>& x, std::vector<ValueType> const& b) const {
             STORM_LOG_INFO("Solving linear equation system (" << x.size() << " rows) with NativeLinearEquationSolver (QuickPower)");
@@ -577,53 +575,94 @@ namespace storm {
 
             std::vector<ValueType>* tmp = &x;
             
-            bool converged = false;
-            bool terminate = false;
-            uint64_t iterations = 0;
             ValueType precision = storm::utility::convertNumber<ValueType>(env.solver().native().getPrecision());
-            ValueType lowerValueBound, upperValueBound;
             bool relative = env.solver().native().getRelativeTerminationCriterion();
             if (!relative) {
                 precision *= storm::utility::convertNumber<ValueType>(2.0);
             }
             uint64_t maxIter = env.solver().native().getMaximalNumberOfIterations();
+
+            //std::cout << *this->A << std::endl;
+            //std::cout << storm::utility::vector::toString(b) << std::endl;
+
+            //std::cout << "solving eq sys.. " << std::endl;
+            
+            uint64_t iterations = 0;
+            bool converged = false;
+            bool terminate = false;
+            ValueType minValueBound, maxValueBound;
+            uint64_t minIndex(0), maxIndex(0);
+            uint64_t firstStayProb1Index = 0;
+            uint64_t firstIndexViolatingConvergence = this->hasRelevantValues() ? this->getRelevantValues().getNextSetIndex(0) : 0;
             this->startMeasureProgress();
-            uint64_t firstProb1Entry = 0;
             while (!converged && !terminate && iterations < maxIter) {
+                
+                // Apply step
                 this->multiplier.multAdd(*this->A, *stepBoundedValues, &b, *tmp);
                 std::swap(tmp, stepBoundedValues);
                 this->multiplier.multAdd(*this->A, *stepBoundedStayProbabilities, nullptr, *tmp);
                 std::swap(tmp, stepBoundedStayProbabilities);
-                for (; firstProb1Entry != stepBoundedStayProbabilities->size(); ++firstProb1Entry) {
+                
+                //std::cout << "Iteration " << iterations << std::endl;
+                //std::cout << "x: " << storm::utility::vector::toString(*stepBoundedValues) << std::endl;
+                //std::cout << "y: " << storm::utility::vector::toString(*stepBoundedStayProbabilities) << std::endl;
+                
+                // Check for convergence
+                // Phase 1: the probability to 'stay within the matrix' has to be < 1 at every state
+                for (; firstStayProb1Index != stepBoundedStayProbabilities->size(); ++firstStayProb1Index) {
                     static_assert(NumberTraits<ValueType>::IsExact || std::is_same<ValueType, double>::value, "Considered ValueType not handled.");
                     if (NumberTraits<ValueType>::IsExact) {
-                        if (storm::utility::isOne(stepBoundedStayProbabilities->at(firstProb1Entry))) {
+                        if (storm::utility::isOne(stepBoundedStayProbabilities->at(firstStayProb1Index))) {
                             break;
                         }
                     } else {
-                        if (storm::utility::isAlmostOne(storm::utility::convertNumber<double>(stepBoundedStayProbabilities->at(firstProb1Entry)))) {
+                        if (storm::utility::isAlmostOne(storm::utility::convertNumber<double>(stepBoundedStayProbabilities->at(firstStayProb1Index)))) {
                             break;
+                           // std::cout << "In Phase 1" << std::endl;
                         }
                     }
                 }
-                if (firstProb1Entry == stepBoundedStayProbabilities->size()) {
-                    auto valIt = stepBoundedValues->begin();
-                    auto valIte = stepBoundedValues->end();
-                    auto probIt = stepBoundedStayProbabilities->begin();
-                    STORM_LOG_ASSERT(!storm::utility::isOne(*probIt), "Did not expect staying-probability 1 at this point.");
-                    lowerValueBound = *valIt / (storm::utility::one<ValueType>() - *probIt);
-                    upperValueBound = lowerValueBound;
-                    ValueType largestStayProb = *probIt;
-                    for (; valIt != valIte; ++valIt, ++probIt) {
-                        STORM_LOG_ASSERT(!storm::utility::isOne(*probIt), "Did not expect staying-probability 1 at this point.");
-                        ValueType currentBound = *valIt / (storm::utility::one<ValueType>() - *probIt);
-                        lowerValueBound = std::min(lowerValueBound, currentBound);
-                        upperValueBound = std::max(upperValueBound, currentBound);
-                        largestStayProb = std::max(largestStayProb, *probIt);
+                if (firstStayProb1Index == stepBoundedStayProbabilities->size()) {
+                    STORM_LOG_ASSERT(!std::any_of(stepBoundedStayProbabilities->begin(), stepBoundedStayProbabilities->end(), [](ValueType value){return storm::utility::isOne(value);}), "Did not expect staying-probability 1 at this point.");
+                    // Phase 2: the difference between lower and upper bound has to be < precision at every (relevant) value
+                   // std::cout << "In Phase 2" << std::endl;
+                    // First check with (possibly too tight) bounds from a previous iteration. Only compute the actual bounds if this first check passes.
+                    minValueBound = stepBoundedValues->at(minIndex) / (storm::utility::one<ValueType>() - stepBoundedStayProbabilities->at(minIndex));
+                    maxValueBound = stepBoundedValues->at(maxIndex) / (storm::utility::one<ValueType>() - stepBoundedStayProbabilities->at(maxIndex));
+                    ValueType const& stayProb = stepBoundedStayProbabilities->at(firstIndexViolatingConvergence);
+                    if (stayProb * (maxValueBound - minValueBound) < precision) {
+                        // Compute the actual bounds now
+                        auto valIt = stepBoundedValues->begin();
+                        auto valIte = stepBoundedValues->end();
+                        auto probIt = stepBoundedStayProbabilities->begin();
+                        for (uint64_t index = 0; valIt != valIte; ++valIt, ++probIt, ++index) {
+                            ValueType currentBound = *valIt / (storm::utility::one<ValueType>() - *probIt);
+                            if (currentBound < minValueBound) {
+                                minIndex = index;
+                                minValueBound = std::move(currentBound);
+                            } else if (currentBound > maxValueBound) {
+                                maxIndex = index;
+                                maxValueBound = std::move(currentBound);
+                            }
+                        }
+                        if (stayProb * (maxValueBound - minValueBound) < precision) {
+                            // The current index satisfies the desired bound. We now move to the next index that violates it
+                            do {
+                                ++firstIndexViolatingConvergence;
+                                if (this->hasRelevantValues()) {
+                                    firstIndexViolatingConvergence = this->getRelevantValues().getNextSetIndex(firstIndexViolatingConvergence);
+                                }
+                                if (firstIndexViolatingConvergence == stepBoundedStayProbabilities->size()) {
+                                    converged = true;
+                                    break;
+                                } else if (stepBoundedStayProbabilities->at(firstIndexViolatingConvergence) * (maxValueBound - minValueBound) >= precision) {
+                                    // not converged yet
+                                    break;
+                                }
+                            } while (true);
+                        }
                     }
                     STORM_LOG_ASSERT(!relative, "Relative termination criterion not implemented currently.");
-                    converged = largestStayProb * (upperValueBound - lowerValueBound) < precision;
-                    STORM_LOG_INFO_COND(!converged, "Lower value bound: " << lowerValueBound << " Upper value bound: " << upperValueBound << " Largest stay prob.: " << largestStayProb);
                 }
                 
                 // Potentially show progress.
@@ -635,7 +674,7 @@ namespace storm {
             }
             
             // Finally set up the solution vector
-            ValueType meanBound = (upperValueBound - lowerValueBound) / storm::utility::convertNumber<ValueType>(2.0);
+            ValueType meanBound = (maxValueBound + minValueBound) / storm::utility::convertNumber<ValueType>(2.0);
             storm::utility::vector::applyPointwise(*stepBoundedValues, *stepBoundedStayProbabilities, x, [&meanBound] (ValueType const& v, ValueType const& p) { return v + p * meanBound; });
             
             if (!this->isCachingEnabled()) {
@@ -643,6 +682,7 @@ namespace storm {
             }
             
             this->logIterations(converged, terminate, iterations);
+            STORM_LOG_INFO("Quick Power Iteration terminated with lower value bound " << minValueBound << " and upper value bound " << maxValueBound << ".");
 
             return converged;
 
