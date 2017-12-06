@@ -4,9 +4,10 @@ Changelog
 This changelog lists only the most important changes. Smaller (bug)fixes as well as non-mature features are not part of the changelog.
 The releases of major and minor versions contain an overview of changes since the last major/minor update.
 
+Version 1.2.x
+-------------
 
-
-### Version 1.2
+### Version 1.2.0
 - C++ api changes: Building model takes BuilderOptions instead of extended list of Booleans, does not depend on settings anymore.
 - storm-cli-utilities now contains cli related stuff, instead of storm-lib
 - Symbolic (MT/BDD) bisimulation
