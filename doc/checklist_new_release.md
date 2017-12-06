@@ -19,11 +19,17 @@ Note that in most case a simultaneous release of [carl](https://github.com/smtra
 
 5. Set new tag in git
    ```console
-   git tag new_version
+   git tag -a new_version
    git push origin new_version
    ```
+   Next we push the tag to GitHub. This step requires the GitHub repo to to be configured as a remote.
+   ```console
+   git remote add github https://github.com/moves-rwth/storm.git
+   git push github new_version
+   ```
+   The new tag should now be visible on [GitHub](https://github.com/moves-rwth/storm/tags)
 
-6. [Add new release](https://github.com/moves-rwth/storm/releases/new) in Github
+6. [Add new release](https://github.com/moves-rwth/storm/releases/new) in GitHub
 
 7. Update [Homebrew formula](https://github.com/moves-rwth/homebrew-storm)
 
