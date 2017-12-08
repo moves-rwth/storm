@@ -175,7 +175,7 @@ namespace storm {
                         bool skipped = false;
                         BDD elsePartitionNode;
                         BDD thenPartitionNode;
-                        if (storm::dd::InternalBdd<storm::dd::DdType::Sylvan>::matchesVariableIndex(partitionNode, sylvan_var(stateVariablesCube))) {
+                        if (sylvan_bdd_matches_variable_index(partitionNode, sylvan_var(stateVariablesCube))) {
                             elsePartitionNode = sylvan_low(partitionNode);
                             thenPartitionNode = sylvan_high(partitionNode);
                         } else {
@@ -255,6 +255,8 @@ namespace storm {
                     STORM_LOG_TRACE("Partition has " << partitionBdd.existsAbstract(model.getRowVariables()).getNonZeroCount() << " states in " << this->numberOfBlocks << " blocks.");
                 }
 
+                virtual ~InternalSparseQuotientExtractorBase() = default;
+
                 storm::storage::SparseMatrix<ValueType> extractTransitionMatrix(storm::dd::Add<DdType, ValueType> const& transitionMatrix) {
                     return extractMatrixInternal(transitionMatrix);
                 }
@@ -269,18 +271,13 @@ namespace storm {
                     } else {
                         STORM_LOG_ASSERT(!this->rowPermutation.empty(), "Expected proper row permutation.");
                         std::vector<ValueType> valueVector = extractVectorInternal(vector, this->allSourceVariablesCube, this->nondeterminismOdd);
-                        
-                        // Reorder the values according to the known row permutation.
-                        for (uint64_t position = 0; position < valueVector.size(); ) {
-                            if (rowPermutation[position] != position) {
-                                std::swap(valueVector[position], valueVector[rowPermutation[position]]);
-                                std::swap(rowPermutation[position], rowPermutation[rowPermutation[position]]);
-                            } else {
-                                ++position;
-                            }
-                        }
 
-                        return valueVector;
+                        // Reorder the values according to the known row permutation.
+                        std::vector<ValueType> reorderedValues(valueVector.size());
+                        for (uint64_t pos = 0; pos < valueVector.size(); ++pos) {
+                            reorderedValues[pos] = valueVector[rowPermutation[pos]];
+                        }
+                        return reorderedValues;
                     }
                 }
                 
@@ -427,7 +424,7 @@ namespace storm {
                 
                 void createBlockToOffsetMappingRec(DdNodePtr partitionNode, DdNodePtr representativesNode, DdNodePtr variables, storm::dd::Odd const& odd, uint64_t offset) {
                     STORM_LOG_ASSERT(partitionNode != Cudd_ReadLogicZero(ddman) || representativesNode == Cudd_ReadLogicZero(ddman), "Expected representative to be zero if the partition is zero.");
-                    if (representativesNode == Cudd_ReadLogicZero(ddman)) {
+                    if (representativesNode == Cudd_ReadLogicZero(ddman) || partitionNode == Cudd_ReadLogicZero(ddman)) {
                         return;
                     }
                     
@@ -471,7 +468,7 @@ namespace storm {
                 }
                 
                 void extractVectorRec(DdNodePtr vector, DdNodePtr representativesNode, DdNodePtr variables, storm::dd::Odd const& odd, uint64_t offset, std::vector<ValueType>& result) {
-                    if (representativesNode == Cudd_ReadLogicZero(ddman)) {
+                    if (representativesNode == Cudd_ReadLogicZero(ddman) || vector == Cudd_ReadZero(ddman)) {
                         return;
                     }
                     
@@ -643,7 +640,7 @@ namespace storm {
                 }
                 
                 void extractVectorRec(MTBDD vector, BDD representativesNode, BDD variables, storm::dd::Odd const& odd, uint64_t offset, std::vector<ValueType>& result) {
-                    if (representativesNode == sylvan_false) {
+                    if (representativesNode == sylvan_false || mtbdd_iszero(vector)) {
                         return;
                     }
                     
@@ -652,7 +649,7 @@ namespace storm {
                     } else {
                         MTBDD vectorT;
                         MTBDD vectorE;
-                        if (storm::dd::InternalAdd<storm::dd::DdType::Sylvan, ValueType>::matchesVariableIndex(vector, sylvan_var(variables))) {
+                        if (sylvan_mtbdd_matches_variable_index(vector, sylvan_var(variables))) {
                             vectorT = sylvan_high(vector);
                             vectorE = sylvan_low(vector);
                         } else {
@@ -661,7 +658,7 @@ namespace storm {
                         
                         BDD representativesT;
                         BDD representativesE;
-                        if (storm::dd::InternalBdd<storm::dd::DdType::Sylvan>::matchesVariableIndex(representativesNode, sylvan_var(variables))) {
+                        if (sylvan_bdd_matches_variable_index(representativesNode, sylvan_var(variables))) {
                             representativesT = sylvan_high(representativesNode);
                             representativesE = sylvan_low(representativesNode);
                         } else {
@@ -680,7 +677,7 @@ namespace storm {
                 
                 void createBlockToOffsetMappingRec(BDD partitionNode, BDD representativesNode, BDD variables, storm::dd::Odd const& odd, uint64_t offset) {
                     STORM_LOG_ASSERT(partitionNode != sylvan_false || representativesNode == sylvan_false, "Expected representative to be zero if the partition is zero.");
-                    if (representativesNode == sylvan_false) {
+                    if (representativesNode == sylvan_false || partitionNode == sylvan_false) {
                         return;
                     }
                     
@@ -692,7 +689,7 @@ namespace storm {
                         STORM_LOG_ASSERT(!odd.isTerminalNode(), "Expected non-terminal node.");
                         BDD partitionT;
                         BDD partitionE;
-                        if (storm::dd::InternalBdd<storm::dd::DdType::Sylvan>::matchesVariableIndex(partitionNode, sylvan_var(variables))) {
+                        if (sylvan_bdd_matches_variable_index(partitionNode, sylvan_var(variables))) {
                             partitionT = sylvan_high(partitionNode);
                             partitionE = sylvan_low(partitionNode);
                         } else {
@@ -701,7 +698,7 @@ namespace storm {
                         
                         BDD representativesT;
                         BDD representativesE;
-                        if (storm::dd::InternalBdd<storm::dd::DdType::Sylvan>::matchesVariableIndex(representativesNode, sylvan_var(variables))) {
+                        if (sylvan_bdd_matches_variable_index(representativesNode, sylvan_var(variables))) {
                             representativesT = sylvan_high(representativesNode);
                             representativesE = sylvan_low(representativesNode);
                         } else {
@@ -737,7 +734,7 @@ namespace storm {
                             MTBDD e;
                             
                             // Determine whether the variable was skipped in the matrix.
-                            if (storm::dd::InternalAdd<storm::dd::DdType::Sylvan, ValueType>::matchesVariableIndex(transitionMatrixNode, sylvan_var(variables))) {
+                            if (sylvan_mtbdd_matches_variable_index(transitionMatrixNode, sylvan_var(variables))) {
                                 t = sylvan_high(transitionMatrixNode);
                                 e = sylvan_low(transitionMatrixNode);
                             } else {
@@ -754,7 +751,7 @@ namespace storm {
                             MTBDD e;
                             MTBDD et;
                             MTBDD ee;
-                            if (storm::dd::InternalAdd<storm::dd::DdType::Sylvan, ValueType>::matchesVariableIndex(transitionMatrixNode, sylvan_var(variables))) {
+                            if (sylvan_mtbdd_matches_variable_index(transitionMatrixNode, sylvan_var(variables))) {
                                 // Source node was not skipped in transition matrix.
                                 t = sylvan_high(transitionMatrixNode);
                                 e = sylvan_low(transitionMatrixNode);
@@ -762,7 +759,7 @@ namespace storm {
                                 t = e = transitionMatrixNode;
                             }
                             
-                            if (storm::dd::InternalAdd<storm::dd::DdType::Sylvan, ValueType>::matchesVariableIndex(t, sylvan_var(variables) + 1)) {
+                            if (sylvan_mtbdd_matches_variable_index(t, sylvan_var(variables) + 1)) {
                                 // Target node was not skipped in transition matrix.
                                 tt = sylvan_high(t);
                                 te = sylvan_low(t);
@@ -771,7 +768,7 @@ namespace storm {
                                 tt = te = t;
                             }
                             if (t != e) {
-                                if (storm::dd::InternalAdd<storm::dd::DdType::Sylvan, ValueType>::matchesVariableIndex(e, sylvan_var(variables) + 1)) {
+                                if (sylvan_mtbdd_matches_variable_index(e, sylvan_var(variables) + 1)) {
                                     // Target node was not skipped in transition matrix.
                                     et = sylvan_high(e);
                                     ee = sylvan_low(e);
@@ -786,7 +783,7 @@ namespace storm {
                             
                             BDD targetT;
                             BDD targetE;
-                            if (storm::dd::InternalBdd<storm::dd::DdType::Sylvan>::matchesVariableIndex(targetPartitionNode, sylvan_var(variables))) {
+                            if (sylvan_bdd_matches_variable_index(targetPartitionNode, sylvan_var(variables))) {
                                 // Node was not skipped in target partition.
                                 targetT = sylvan_high(targetPartitionNode);
                                 targetE = sylvan_low(targetPartitionNode);
@@ -797,7 +794,7 @@ namespace storm {
                             
                             BDD representativesT;
                             BDD representativesE;
-                            if (storm::dd::InternalBdd<storm::dd::DdType::Sylvan>::matchesVariableIndex(representativesNode, sylvan_var(variables))) {
+                            if (sylvan_bdd_matches_variable_index(representativesNode, sylvan_var(variables))) {
                                 // Node was not skipped in representatives.
                                 representativesT = sylvan_high(representativesNode);
                                 representativesE = sylvan_low(representativesNode);
@@ -857,7 +854,7 @@ namespace storm {
                 storm::storage::SparseMatrix<ValueType> quotientTransitionMatrix = sparseExtractor.extractTransitionMatrix(model.getTransitionMatrix());
                 auto end = std::chrono::high_resolution_clock::now();
                 STORM_LOG_TRACE("Quotient transition matrix extracted in " << std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count() << "ms.");
-                
+
                 start = std::chrono::high_resolution_clock::now();
                 storm::models::sparse::StateLabeling quotientStateLabeling(partition.getNumberOfBlocks());
                 quotientStateLabeling.addLabel("init", sparseExtractor.extractSetExists(model.getInitialStates()));
@@ -984,8 +981,12 @@ namespace storm {
                     end = std::chrono::high_resolution_clock::now();
                     
                     // Check quotient matrix for sanity.
-                    STORM_LOG_ASSERT(quotientTransitionMatrix.greater(storm::utility::one<ValueType>()).isZero(), "Illegal entries in quotient matrix.");
-                    STORM_LOG_ASSERT(quotientTransitionMatrix.sumAbstract(blockPrimeVariableSet).equalModuloPrecision(quotientTransitionMatrix.notZero().existsAbstract(blockPrimeVariableSet).template toAdd<ValueType>(), ValueType(1e-6)), "Illegal non-probabilistic matrix.");
+                    if (std::is_same<ValueType, storm::RationalNumber>::value) {
+                        STORM_LOG_ASSERT(quotientTransitionMatrix.greater(storm::utility::one<ValueType>()).isZero(), "Illegal entries in quotient matrix.");
+                    } else {
+                        STORM_LOG_ASSERT(quotientTransitionMatrix.greater(storm::utility::one<ValueType>() + storm::utility::convertNumber<ValueType>(1e-6)).isZero(), "Illegal entries in quotient matrix.");
+                    }
+                    STORM_LOG_ASSERT(quotientTransitionMatrix.sumAbstract(blockPrimeVariableSet).equalModuloPrecision(quotientTransitionMatrix.notZero().existsAbstract(blockPrimeVariableSet).template toAdd<ValueType>(), storm::utility::convertNumber<ValueType>(1e-6)), "Illegal non-probabilistic matrix.");
                     
                     STORM_LOG_TRACE("Quotient transition matrix extracted in " << std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count() << "ms.");
 

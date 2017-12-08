@@ -9,10 +9,11 @@
 #include "storm/solver/SymbolicNativeLinearEquationSolver.h"
 #include "storm/solver/SolverSelectionOptions.h"
 
-#include "storm/settings/SettingsManager.h"
-#include "storm/settings/modules/CoreSettings.h"
+#include "storm/environment/solver/SolverEnvironment.h"
 
 #include "storm/utility/macros.h"
+#include "storm/exceptions/UnmetRequirementException.h"
+#include "storm/exceptions/InvalidEnvironmentException.h"
 
 #include "storm/adapters/RationalFunctionAdapter.h"
 
@@ -20,12 +21,17 @@ namespace storm {
     namespace solver {
 
         template<storm::dd::DdType DdType, typename ValueType>
+        SymbolicLinearEquationSolver<DdType, ValueType>::SymbolicLinearEquationSolver() {
+            // Intentionally left empty.
+        }
+        
+        template<storm::dd::DdType DdType, typename ValueType>
         SymbolicLinearEquationSolver<DdType, ValueType>::SymbolicLinearEquationSolver(storm::dd::Add<DdType, ValueType> const& A, storm::dd::Bdd<DdType> const& allRows, std::set<storm::expressions::Variable> const& rowMetaVariables, std::set<storm::expressions::Variable> const& columnMetaVariables, std::vector<std::pair<storm::expressions::Variable, storm::expressions::Variable>> const& rowColumnMetaVariablePairs) : SymbolicLinearEquationSolver(allRows, rowMetaVariables, columnMetaVariables, rowColumnMetaVariablePairs) {
             this->setMatrix(A);
         }
         
         template<storm::dd::DdType DdType, typename ValueType>
-        SymbolicLinearEquationSolver<DdType, ValueType>::SymbolicLinearEquationSolver(storm::dd::Bdd<DdType> const& allRows, std::set<storm::expressions::Variable> const& rowMetaVariables, std::set<storm::expressions::Variable> const& columnMetaVariables, std::vector<std::pair<storm::expressions::Variable, storm::expressions::Variable>> const& rowColumnMetaVariablePairs) : allRows(allRows), rowMetaVariables(rowMetaVariables), columnMetaVariables(columnMetaVariables), rowColumnMetaVariablePairs(rowColumnMetaVariablePairs) {
+        SymbolicLinearEquationSolver<DdType, ValueType>::SymbolicLinearEquationSolver(storm::dd::Bdd<DdType> const& allRows, std::set<storm::expressions::Variable> const& rowMetaVariables, std::set<storm::expressions::Variable> const& columnMetaVariables, std::vector<std::pair<storm::expressions::Variable, storm::expressions::Variable>> const& rowColumnMetaVariablePairs) : SymbolicEquationSolver<DdType, ValueType>(allRows), rowMetaVariables(rowMetaVariables), columnMetaVariables(columnMetaVariables), rowColumnMetaVariablePairs(rowColumnMetaVariablePairs) {
             // Intentionally left empty.
         }
         
@@ -46,87 +52,105 @@ namespace storm {
         }
         
         template<storm::dd::DdType DdType, typename ValueType>
+        LinearEquationSolverProblemFormat SymbolicLinearEquationSolver<DdType, ValueType>::getEquationProblemFormat(Environment const& env) const {
+            return LinearEquationSolverProblemFormat::EquationSystem;
+        }
+        
+        template<storm::dd::DdType DdType, typename ValueType>
+        LinearEquationSolverRequirements SymbolicLinearEquationSolver<DdType, ValueType>::getRequirements(Environment const& env) const {
+            // Return empty requirements by default.
+            return LinearEquationSolverRequirements();
+        }
+        
+        template<storm::dd::DdType DdType, typename ValueType>
         void SymbolicLinearEquationSolver<DdType, ValueType>::setMatrix(storm::dd::Add<DdType, ValueType> const& newA) {
             this->A = newA;
         }
         
         template<storm::dd::DdType DdType, typename ValueType>
-        storm::dd::DdManager<DdType>& SymbolicLinearEquationSolver<DdType, ValueType>::getDdManager() const {
-            return this->allRows.getDdManager();
+        void SymbolicLinearEquationSolver<DdType, ValueType>::setData(storm::dd::Bdd<DdType> const& allRows, std::set<storm::expressions::Variable> const& rowMetaVariables, std::set<storm::expressions::Variable> const& columnMetaVariables, std::vector<std::pair<storm::expressions::Variable, storm::expressions::Variable>> const& rowColumnMetaVariablePairs) {
+            this->setAllRows(allRows);
+            this->rowMetaVariables = rowMetaVariables;
+            this->columnMetaVariables = columnMetaVariables;
+            this->rowColumnMetaVariablePairs = rowColumnMetaVariablePairs;
         }
-        
+                
         template<storm::dd::DdType DdType, typename ValueType>
-        std::unique_ptr<storm::solver::SymbolicLinearEquationSolver<DdType, ValueType>> SymbolicLinearEquationSolverFactory<DdType, ValueType>::create(storm::dd::Add<DdType, ValueType> const& A, storm::dd::Bdd<DdType> const& allRows, std::set<storm::expressions::Variable> const& rowMetaVariables, std::set<storm::expressions::Variable> const& columnMetaVariables, std::vector<std::pair<storm::expressions::Variable, storm::expressions::Variable>> const& rowColumnMetaVariablePairs) const {
-            std::unique_ptr<storm::solver::SymbolicLinearEquationSolver<DdType, ValueType>> solver = this->create(allRows, rowMetaVariables, columnMetaVariables, rowColumnMetaVariablePairs);
+        std::unique_ptr<storm::solver::SymbolicLinearEquationSolver<DdType, ValueType>> SymbolicLinearEquationSolverFactory<DdType, ValueType>::create(Environment const& env, storm::dd::Add<DdType, ValueType> const& A, storm::dd::Bdd<DdType> const& allRows, std::set<storm::expressions::Variable> const& rowMetaVariables, std::set<storm::expressions::Variable> const& columnMetaVariables, std::vector<std::pair<storm::expressions::Variable, storm::expressions::Variable>> const& rowColumnMetaVariablePairs) const {
+            std::unique_ptr<storm::solver::SymbolicLinearEquationSolver<DdType, ValueType>> solver = this->create(env, allRows, rowMetaVariables, columnMetaVariables, rowColumnMetaVariablePairs);
             solver->setMatrix(A);
             return solver;
         }
         
         template<storm::dd::DdType DdType, typename ValueType>
-        std::unique_ptr<storm::solver::SymbolicLinearEquationSolver<DdType, ValueType>> GeneralSymbolicLinearEquationSolverFactory<DdType, ValueType>::create(storm::dd::Bdd<DdType> const& allRows, std::set<storm::expressions::Variable> const& rowMetaVariables, std::set<storm::expressions::Variable> const& columnMetaVariables, std::vector<std::pair<storm::expressions::Variable, storm::expressions::Variable>> const& rowColumnMetaVariablePairs) const {
-            storm::solver::EquationSolverType equationSolver = storm::settings::getModule<storm::settings::modules::CoreSettings>().getEquationSolver();
-            switch (equationSolver) {
-                case storm::solver::EquationSolverType::Elimination: return std::make_unique<storm::solver::SymbolicEliminationLinearEquationSolver<DdType, ValueType>>(allRows, rowMetaVariables, columnMetaVariables, rowColumnMetaVariablePairs);
-                    break;
-                case storm::solver::EquationSolverType::Native: return std::make_unique<storm::solver::SymbolicNativeLinearEquationSolver<DdType, ValueType>>(allRows, rowMetaVariables, columnMetaVariables, rowColumnMetaVariablePairs);
-                    break;
+        std::unique_ptr<storm::solver::SymbolicLinearEquationSolver<DdType, ValueType>> SymbolicLinearEquationSolverFactory<DdType, ValueType>::create(Environment const& env, storm::dd::Bdd<DdType> const& allRows, std::set<storm::expressions::Variable> const& rowMetaVariables, std::set<storm::expressions::Variable> const& columnMetaVariables, std::vector<std::pair<storm::expressions::Variable, storm::expressions::Variable>> const& rowColumnMetaVariablePairs) const {
+            std::unique_ptr<storm::solver::SymbolicLinearEquationSolver<DdType, ValueType>> solver = this->create(env);
+            solver->setData(allRows, rowMetaVariables, columnMetaVariables, rowColumnMetaVariablePairs);
+            return solver;
+        }
+        
+        template<storm::dd::DdType DdType, typename ValueType>
+        LinearEquationSolverProblemFormat SymbolicLinearEquationSolverFactory<DdType, ValueType>::getEquationProblemFormat(Environment const& env) const {
+            return this->create(env)->getEquationProblemFormat(env);
+        }
+        
+        template<storm::dd::DdType DdType, typename ValueType>
+        LinearEquationSolverRequirements SymbolicLinearEquationSolverFactory<DdType, ValueType>::getRequirements(Environment const& env) const {
+            return this->create(env)->getRequirements(env);
+        }
+
+        template<>
+        std::unique_ptr<storm::solver::SymbolicLinearEquationSolver<storm::dd::DdType::Sylvan, storm::RationalFunction>> GeneralSymbolicLinearEquationSolverFactory<storm::dd::DdType::Sylvan, storm::RationalFunction>::create(Environment const& env) const {
+            EquationSolverType type = env.solver().getLinearEquationSolverType();
+            
+            // Adjust the solver type if it is not supported in the Dd engine with rational functions
+            if (type != EquationSolverType::Elimination) {
+                type = EquationSolverType::Elimination;
+                STORM_LOG_INFO("The selected equation solver is not available in the parametric dd engine. Falling back to " << toString(type) << " solver.");
+            }
+            
+            switch (type) {
+                case EquationSolverType::Elimination: return std::make_unique<SymbolicEliminationLinearEquationSolver<storm::dd::DdType::Sylvan, storm::RationalFunction>>();
                 default:
-                    STORM_LOG_WARN("The selected equation solver is not available in the dd engine. Falling back to native solver.");
-                    return std::make_unique<storm::solver::SymbolicNativeLinearEquationSolver<DdType, ValueType>>(allRows, rowMetaVariables, columnMetaVariables, rowColumnMetaVariablePairs);
+                    STORM_LOG_THROW(false, storm::exceptions::InvalidEnvironmentException, "Unknown solver type.");
+                    return nullptr;
             }
         }
         
-        template<storm::dd::DdType DdType>
-        std::unique_ptr<storm::solver::SymbolicLinearEquationSolver<DdType, storm::RationalNumber>> GeneralSymbolicLinearEquationSolverFactory<DdType, storm::RationalNumber>::create(storm::dd::Bdd<DdType> const& allRows, std::set<storm::expressions::Variable> const& rowMetaVariables, std::set<storm::expressions::Variable> const& columnMetaVariables, std::vector<std::pair<storm::expressions::Variable, storm::expressions::Variable>> const& rowColumnMetaVariablePairs) const {
-
-            auto const& coreSettings = storm::settings::getModule<storm::settings::modules::CoreSettings>();
-            storm::solver::EquationSolverType equationSolver = coreSettings.getEquationSolver();
-            if (coreSettings.isEquationSolverSetFromDefaultValue() && equationSolver != storm::solver::EquationSolverType::Elimination) {
-                STORM_LOG_WARN("Selecting the elimination solver to guarantee exact results. If you want to override this, please explicitly specify a different equation solver.");
-                equationSolver = storm::solver::EquationSolverType::Elimination;
+        template<storm::dd::DdType DdType, typename ValueType>
+        std::unique_ptr<storm::solver::SymbolicLinearEquationSolver<DdType, ValueType>> GeneralSymbolicLinearEquationSolverFactory<DdType, ValueType>::create(Environment const& env) const {
+            EquationSolverType type = env.solver().getLinearEquationSolverType();
+            
+            // Adjust the solver type if it is not supported in the Dd engine
+            if (type != EquationSolverType::Native && type != EquationSolverType::Elimination) {
+                type = EquationSolverType::Native;
+                STORM_LOG_INFO("The selected equation solver is not available in the dd engine. Falling back to " << toString(type) << " solver.");
             }
             
-            if (equationSolver != storm::solver::EquationSolverType::Elimination) {
-                STORM_LOG_WARN("The chosen equation solver does not guarantee precise results despite using exact arithmetic. Consider using the elimination solver instead.");
-            }
-
-            switch (equationSolver) {
-                case storm::solver::EquationSolverType::Elimination: return std::make_unique<storm::solver::SymbolicEliminationLinearEquationSolver<DdType, storm::RationalNumber>>(allRows, rowMetaVariables, columnMetaVariables, rowColumnMetaVariablePairs);
-                    break;
-                case storm::solver::EquationSolverType::Native:
-                    return std::make_unique<storm::solver::SymbolicNativeLinearEquationSolver<DdType, storm::RationalNumber>>(allRows, rowMetaVariables, columnMetaVariables, rowColumnMetaVariablePairs);
-                    break;
+            switch (type) {
+                case EquationSolverType::Native: return std::make_unique<SymbolicNativeLinearEquationSolver<DdType, ValueType>>();
+                case EquationSolverType::Elimination: return std::make_unique<SymbolicEliminationLinearEquationSolver<DdType, ValueType>>();
                 default:
-                    STORM_LOG_WARN("The selected equation solver is not available in the dd engine. Falling back to elimination solver.");
-                    return std::make_unique<storm::solver::SymbolicEliminationLinearEquationSolver<DdType, storm::RationalNumber>>(allRows, rowMetaVariables, columnMetaVariables, rowColumnMetaVariablePairs);
+                    STORM_LOG_THROW(false, storm::exceptions::InvalidEnvironmentException, "Unknown solver type.");
+                    return nullptr;
             }
-        }
-        
-        template<storm::dd::DdType DdType>
-        std::unique_ptr<storm::solver::SymbolicLinearEquationSolver<DdType, storm::RationalFunction>> GeneralSymbolicLinearEquationSolverFactory<DdType, storm::RationalFunction>::create(storm::dd::Bdd<DdType> const& allRows, std::set<storm::expressions::Variable> const& rowMetaVariables, std::set<storm::expressions::Variable> const& columnMetaVariables, std::vector<std::pair<storm::expressions::Variable, storm::expressions::Variable>> const& rowColumnMetaVariablePairs) const {
-            
-            storm::solver::EquationSolverType equationSolver = storm::settings::getModule<storm::settings::modules::CoreSettings>().getEquationSolver();
-            switch (equationSolver) {
-                case storm::solver::EquationSolverType::Elimination: return std::make_unique<storm::solver::SymbolicEliminationLinearEquationSolver<DdType, storm::RationalFunction>>(allRows, rowMetaVariables, columnMetaVariables, rowColumnMetaVariablePairs);
-                    break;
-                default:
-                    STORM_LOG_WARN("The selected equation solver is not available in the DD setting. Falling back to elimination solver.");
-                    return std::make_unique<storm::solver::SymbolicEliminationLinearEquationSolver<DdType, storm::RationalFunction>>(allRows, rowMetaVariables, columnMetaVariables, rowColumnMetaVariablePairs);
-            }            
         }
         
         template class SymbolicLinearEquationSolver<storm::dd::DdType::CUDD, double>;
+        template class SymbolicLinearEquationSolver<storm::dd::DdType::CUDD, storm::RationalNumber>;
+
         template class SymbolicLinearEquationSolver<storm::dd::DdType::Sylvan, double>;
-        
         template class SymbolicLinearEquationSolver<storm::dd::DdType::Sylvan, storm::RationalNumber>;
         template class SymbolicLinearEquationSolver<storm::dd::DdType::Sylvan, storm::RationalFunction>;
         
         template class SymbolicLinearEquationSolverFactory<storm::dd::DdType::CUDD, double>;
+        template class SymbolicLinearEquationSolverFactory<storm::dd::DdType::CUDD, storm::RationalNumber>;
         template class SymbolicLinearEquationSolverFactory<storm::dd::DdType::Sylvan, double>;
         template class SymbolicLinearEquationSolverFactory<storm::dd::DdType::Sylvan, storm::RationalNumber>;
         template class SymbolicLinearEquationSolverFactory<storm::dd::DdType::Sylvan, storm::RationalFunction>;
         
         template class GeneralSymbolicLinearEquationSolverFactory<storm::dd::DdType::CUDD, double>;
+        template class GeneralSymbolicLinearEquationSolverFactory<storm::dd::DdType::CUDD, storm::RationalNumber>;
         template class GeneralSymbolicLinearEquationSolverFactory<storm::dd::DdType::Sylvan, double>;
         template class GeneralSymbolicLinearEquationSolverFactory<storm::dd::DdType::Sylvan, storm::RationalNumber>;
         template class GeneralSymbolicLinearEquationSolverFactory<storm::dd::DdType::Sylvan, storm::RationalFunction>;

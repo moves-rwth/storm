@@ -7,6 +7,8 @@ namespace storm {
         
         class Counterexample {
         public:
+            virtual ~Counterexample() = default;
+
             virtual void writeToStream(std::ostream& out) const = 0;
         };
         

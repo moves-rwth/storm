@@ -6,6 +6,7 @@
 #include "storm/modelchecker/hints/ExplicitModelCheckerHint.h"
 #include "storm/modelchecker/prctl/helper/DsMpiUpperRewardBoundsComputer.h"
 #include "storm/modelchecker/prctl/helper/BaierUpperRewardBoundsComputer.h"
+#include "storm/modelchecker/prctl/helper/SparseMdpEndComponentInformation.h"
 
 #include "storm/models/sparse/StandardRewardModel.h"
 
@@ -21,9 +22,18 @@
 
 #include "storm/solver/MinMaxLinearEquationSolver.h"
 #include "storm/solver/LpSolver.h"
- 
+
 #include "storm/settings/SettingsManager.h"
 #include "storm/settings/modules/MinMaxEquationSolverSettings.h"
+#include "storm/settings/modules/GeneralSettings.h"
+#include "storm/settings/modules/CoreSettings.h"
+#include "storm/settings/modules/IOSettings.h"
+
+#include "storm/utility/Stopwatch.h"
+#include "storm/utility/ProgressMeasurement.h"
+#include "storm/utility/export.h"
+
+#include "storm/environment/solver/MinMaxSolverEnvironment.h"
 
 #include "storm/exceptions/InvalidStateException.h"
 #include "storm/exceptions/InvalidPropertyException.h"
@@ -38,7 +48,7 @@ namespace storm {
         namespace helper {
 
             template<typename ValueType>
-            std::vector<ValueType> SparseMdpPrctlHelper<ValueType>::computeBoundedUntilProbabilities(storm::solver::SolveGoal<ValueType>&& goal, storm::storage::SparseMatrix<ValueType> const& transitionMatrix, storm::storage::SparseMatrix<ValueType> const& backwardTransitions, storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates, uint_fast64_t stepBound, storm::solver::MinMaxLinearEquationSolverFactory<ValueType> const& minMaxLinearEquationSolverFactory, ModelCheckerHint const& hint) {
+            std::vector<ValueType> SparseMdpPrctlHelper<ValueType>::computeStepBoundedUntilProbabilities(Environment const& env, storm::solver::SolveGoal<ValueType>&& goal, storm::storage::SparseMatrix<ValueType> const& transitionMatrix, storm::storage::SparseMatrix<ValueType> const& backwardTransitions, storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates, uint_fast64_t stepBound, storm::solver::MinMaxLinearEquationSolverFactory<ValueType> const& minMaxLinearEquationSolverFactory, ModelCheckerHint const& hint) {
                 std::vector<ValueType> result(transitionMatrix.getRowGroupCount(), storm::utility::zero<ValueType>());
                 
                 // Determine the states that have 0 probability of reaching the target states.
@@ -65,8 +75,8 @@ namespace storm {
                     std::vector<ValueType> subresult(maybeStates.getNumberOfSetBits());
                     
                     goal.restrictRelevantValues(maybeStates);
-                    std::unique_ptr<storm::solver::MinMaxLinearEquationSolver<ValueType>> solver = storm::solver::configureMinMaxLinearEquationSolver(std::move(goal), minMaxLinearEquationSolverFactory, std::move(submatrix));
-                    solver->repeatedMultiply(subresult, &b, stepBound);
+                    std::unique_ptr<storm::solver::MinMaxLinearEquationSolver<ValueType>> solver = storm::solver::configureMinMaxLinearEquationSolver(env, std::move(goal), minMaxLinearEquationSolverFactory, std::move(submatrix));
+                    solver->repeatedMultiply(env, subresult, &b, stepBound);
                     
                     // Set the values of the resulting vector accordingly.
                     storm::utility::vector::setVectorValues(result, maybeStates, subresult);
@@ -77,25 +87,203 @@ namespace storm {
             }
 
             template<typename ValueType>
-            std::vector<ValueType> SparseMdpPrctlHelper<ValueType>::computeNextProbabilities(OptimizationDirection dir, storm::storage::SparseMatrix<ValueType> const& transitionMatrix, storm::storage::BitVector const& nextStates, storm::solver::MinMaxLinearEquationSolverFactory<ValueType> const& minMaxLinearEquationSolverFactory) {
+            std::vector<ValueType> analyzeTrivialEpochModel(OptimizationDirection dir, typename rewardbounded::MultiDimensionalRewardUnfolding<ValueType, true>::EpochModel& epochModel) {
+                // Assert that the epoch model is indeed trivial
+                assert(epochModel.epochMatrix.getEntryCount() == 0);
+                
+                std::vector<ValueType> epochResult;
+                epochResult.reserve(epochModel.epochInStates.getNumberOfSetBits());
+                
+                auto stepSolutionIt = epochModel.stepSolutions.begin();
+                auto stepChoiceIt = epochModel.stepChoices.begin();
+                for (auto const& state : epochModel.epochInStates) {
+                    // Obtain the best choice for this state
+                    ValueType bestValue;
+                    uint64_t lastChoice = epochModel.epochMatrix.getRowGroupIndices()[state + 1];
+                    bool isFirstChoice = true;
+                    for (uint64_t choice = epochModel.epochMatrix.getRowGroupIndices()[state]; choice < lastChoice; ++choice) {
+                        while (*stepChoiceIt < choice) {
+                            ++stepChoiceIt;
+                            ++stepSolutionIt;
+                        }
+                        
+                        ValueType choiceValue = storm::utility::zero<ValueType>();
+                        if (epochModel.objectiveRewardFilter.front().get(choice)) {
+                            choiceValue += epochModel.objectiveRewards.front()[choice];
+                        }
+                        if (*stepChoiceIt == choice) {
+                            choiceValue += *stepSolutionIt;
+                        }
+                        
+                        if (isFirstChoice) {
+                            bestValue = std::move(choiceValue);
+                            isFirstChoice = false;
+                        } else {
+                            if (storm::solver::minimize(dir)) {
+                                if (choiceValue < bestValue) {
+                                    bestValue = std::move(choiceValue);
+                                }
+                            } else {
+                                if (choiceValue > bestValue) {
+                                    bestValue = std::move(choiceValue);
+                                }
+                            }
+                        }
+                    }
+                    // Insert the solution w.r.t. this choice
+                    epochResult.push_back(std::move(bestValue));
+                }
+                return epochResult;
+            }
+            
+            template<typename ValueType>
+            std::vector<ValueType> analyzeNonTrivialEpochModel(Environment const& env, OptimizationDirection dir, typename rewardbounded::MultiDimensionalRewardUnfolding<ValueType, true>::EpochModel& epochModel, std::vector<ValueType>& x, std::vector<ValueType>& b, std::unique_ptr<storm::solver::MinMaxLinearEquationSolver<ValueType>>& minMaxSolver, storm::solver::MinMaxLinearEquationSolverFactory<ValueType> const& minMaxLinearEquationSolverFactory, boost::optional<ValueType> const& lowerBound, boost::optional<ValueType> const& upperBound) {
+ 
+                // Update some data for the case that the Matrix has changed
+                if (epochModel.epochMatrixChanged) {
+                    x.assign(epochModel.epochMatrix.getRowGroupCount(), storm::utility::zero<ValueType>());
+                    minMaxSolver = minMaxLinearEquationSolverFactory.create(env, epochModel.epochMatrix);
+                    minMaxSolver->setHasUniqueSolution();
+                    minMaxSolver->setOptimizationDirection(dir);
+                    minMaxSolver->setCachingEnabled(true);
+                    minMaxSolver->setTrackScheduler(true);
+                    auto req = minMaxSolver->getRequirements(env, dir, false);
+                    if (lowerBound) {
+                        minMaxSolver->setLowerBound(lowerBound.get());
+                        req.clearLowerBounds();
+                    }
+                    if (upperBound) {
+                        minMaxSolver->setUpperBound(upperBound.get());
+                        req.clearUpperBounds();
+                    }
+                    STORM_LOG_THROW(req.empty(), storm::exceptions::UncheckedRequirementException, "At least one requirement was not checked.");
+                    minMaxSolver->setRequirementsChecked();
+                } else {
+                    auto choicesTmp = minMaxSolver->getSchedulerChoices();
+                    minMaxSolver->setInitialScheduler(std::move(choicesTmp));
+                }
+                
+                // Prepare the right hand side of the equation system
+                b.assign(epochModel.epochMatrix.getRowCount(), storm::utility::zero<ValueType>());
+                std::vector<ValueType> const& objectiveValues = epochModel.objectiveRewards.front();
+                for (auto const& choice : epochModel.objectiveRewardFilter.front()) {
+                    b[choice] = objectiveValues[choice];
+                }
+                auto stepSolutionIt = epochModel.stepSolutions.begin();
+                for (auto const& choice : epochModel.stepChoices) {
+                    b[choice] += *stepSolutionIt;
+                    ++stepSolutionIt;
+                }
+                assert(stepSolutionIt == epochModel.stepSolutions.end());
+                
+                // Solve the minMax equation system
+                minMaxSolver->solveEquations(env, x, b);
+                
+                return storm::utility::vector::filterVector(x, epochModel.epochInStates);
+            }
+            
+            template<typename ValueType>
+            std::map<storm::storage::sparse::state_type, ValueType> SparseMdpPrctlHelper<ValueType>::computeRewardBoundedValues(Environment const& env, OptimizationDirection dir, rewardbounded::MultiDimensionalRewardUnfolding<ValueType, true>& rewardUnfolding, storm::storage::BitVector const& initialStates, storm::solver::MinMaxLinearEquationSolverFactory<ValueType> const& minMaxLinearEquationSolverFactory) {
+                storm::utility::Stopwatch swAll(true), swBuild, swCheck;
+                
+                // Get lower and upper bounds for the solution.
+                auto lowerBound = rewardUnfolding.getLowerObjectiveBound();
+                auto upperBound = rewardUnfolding.getUpperObjectiveBound();
+                
+                // Initialize epoch models
+                auto initEpoch = rewardUnfolding.getStartEpoch();
+                auto epochOrder = rewardUnfolding.getEpochComputationOrder(initEpoch);
+                
+                // initialize data that will be needed for each epoch
+                std::vector<ValueType> x, b;
+                std::unique_ptr<storm::solver::MinMaxLinearEquationSolver<ValueType>> minMaxSolver;
+
+                ValueType precision = rewardUnfolding.getRequiredEpochModelPrecision(initEpoch, storm::utility::convertNumber<ValueType>(storm::settings::getModule<storm::settings::modules::GeneralSettings>().getPrecision()));
+                Environment preciseEnv = env;
+                preciseEnv.solver().minMax().setPrecision(storm::utility::convertNumber<storm::RationalNumber>(precision));
+                
+                // In case of cdf export we store the necessary data.
+                std::vector<std::vector<ValueType>> cdfData;
+
+                storm::utility::ProgressMeasurement progress("epochs");
+                progress.setMaxCount(epochOrder.size());
+                progress.startNewMeasurement(0);
+                uint64_t numCheckedEpochs = 0;
+                for (auto const& epoch : epochOrder) {
+                    swBuild.start();
+                    auto& epochModel = rewardUnfolding.setCurrentEpoch(epoch);
+                    swBuild.stop(); swCheck.start();
+                    // If the epoch matrix is empty we do not need to solve a linear equation system
+                    if (epochModel.epochMatrix.getEntryCount() == 0) {
+                        rewardUnfolding.setSolutionForCurrentEpoch(analyzeTrivialEpochModel<ValueType>(dir, epochModel));
+                    } else {
+                        rewardUnfolding.setSolutionForCurrentEpoch(analyzeNonTrivialEpochModel<ValueType>(preciseEnv, dir, epochModel, x, b, minMaxSolver, minMaxLinearEquationSolverFactory, lowerBound, upperBound));
+                    }
+                    swCheck.stop();
+                    if (storm::settings::getModule<storm::settings::modules::IOSettings>().isExportCdfSet() && !rewardUnfolding.getEpochManager().hasBottomDimension(epoch)) {
+                        std::vector<ValueType> cdfEntry;
+                        for (uint64_t i = 0; i < rewardUnfolding.getEpochManager().getDimensionCount(); ++i) {
+                            uint64_t offset = rewardUnfolding.getDimension(i).isUpperBounded ? 0 : 1;
+                            cdfEntry.push_back(storm::utility::convertNumber<ValueType>(rewardUnfolding.getEpochManager().getDimensionOfEpoch(epoch, i) + offset) * rewardUnfolding.getDimension(i).scalingFactor);
+                        }
+                        cdfEntry.push_back(rewardUnfolding.getInitialStateResult(epoch));
+                        cdfData.push_back(std::move(cdfEntry));
+                    }
+                    ++numCheckedEpochs;
+                    progress.updateProgress(numCheckedEpochs);
+                }
+                
+                std::map<storm::storage::sparse::state_type, ValueType> result;
+                for (auto const& initState : initialStates) {
+                    result[initState] = rewardUnfolding.getInitialStateResult(initEpoch, initState);
+                }
+                
+                swAll.stop();
+                
+                if (storm::settings::getModule<storm::settings::modules::IOSettings>().isExportCdfSet()) {
+                    std::vector<std::string> headers;
+                    for (uint64_t i = 0; i < rewardUnfolding.getEpochManager().getDimensionCount(); ++i) {
+                        headers.push_back(rewardUnfolding.getDimension(i).formula->toString());
+                    }
+                    headers.push_back("Result");
+                    storm::utility::exportDataToCSVFile<ValueType, std::string, std::string>(storm::settings::getModule<storm::settings::modules::IOSettings>().getExportCdfDirectory() + "cdf.csv", cdfData, headers);
+                }
+
+                
+                if (storm::settings::getModule<storm::settings::modules::CoreSettings>().isShowStatisticsSet()) {
+                    STORM_PRINT_AND_LOG("---------------------------------" << std::endl);
+                    STORM_PRINT_AND_LOG("Statistics:" << std::endl);
+                    STORM_PRINT_AND_LOG("---------------------------------" << std::endl);
+                    STORM_PRINT_AND_LOG("          #checked epochs: " << epochOrder.size() << "." << std::endl);
+                    STORM_PRINT_AND_LOG("             overall Time: " << swAll << "." << std::endl);
+                    STORM_PRINT_AND_LOG("Epoch Model building Time: " << swBuild << "." << std::endl);
+                    STORM_PRINT_AND_LOG("Epoch Model checking Time: " << swCheck << "." << std::endl);
+                    STORM_PRINT_AND_LOG("---------------------------------" << std::endl);
+                }
+                
+                return  result;
+            }
+
+            template<typename ValueType>
+            std::vector<ValueType> SparseMdpPrctlHelper<ValueType>::computeNextProbabilities(Environment const& env, OptimizationDirection dir, storm::storage::SparseMatrix<ValueType> const& transitionMatrix, storm::storage::BitVector const& nextStates, storm::solver::MinMaxLinearEquationSolverFactory<ValueType> const& minMaxLinearEquationSolverFactory) {
 
                 // Create the vector with which to multiply and initialize it correctly.
                 std::vector<ValueType> result(transitionMatrix.getRowGroupCount());
                 storm::utility::vector::setVectorValues(result, nextStates, storm::utility::one<ValueType>());
                 
-                std::unique_ptr<storm::solver::MinMaxLinearEquationSolver<ValueType>> solver = minMaxLinearEquationSolverFactory.create(transitionMatrix);
-                solver->repeatedMultiply(dir, result, nullptr, 1);
+                std::unique_ptr<storm::solver::MinMaxLinearEquationSolver<ValueType>> solver = minMaxLinearEquationSolverFactory.create(env, transitionMatrix);
+                solver->repeatedMultiply(env, dir, result, nullptr, 1);
                 
                 return result;
             }
             
             template<typename ValueType>
-            std::vector<uint_fast64_t> computeValidSchedulerHint(storm::solver::EquationSystemType const& type, storm::storage::SparseMatrix<ValueType> const& transitionMatrix, storm::storage::SparseMatrix<ValueType> const& backwardTransitions, storm::storage::BitVector const& maybeStates, storm::storage::BitVector const& filterStates, storm::storage::BitVector const& targetStates) {
+            std::vector<uint_fast64_t> computeValidSchedulerHint(Environment const& env, SolutionType const& type, storm::storage::SparseMatrix<ValueType> const& transitionMatrix, storm::storage::SparseMatrix<ValueType> const& backwardTransitions, storm::storage::BitVector const& maybeStates, storm::storage::BitVector const& filterStates, storm::storage::BitVector const& targetStates) {
                 storm::storage::Scheduler<ValueType> validScheduler(maybeStates.size());
 
-                if (type == storm::solver::EquationSystemType::UntilProbabilities) {
+                if (type == SolutionType::UntilProbabilities) {
                     storm::utility::graph::computeSchedulerProbGreater0E(transitionMatrix, backwardTransitions, filterStates, targetStates, validScheduler, boost::none);
-                } else if (type == storm::solver::EquationSystemType::ReachabilityRewards) {
+                } else if (type == SolutionType::ExpectedRewards) {
                     storm::utility::graph::computeSchedulerProb1E(maybeStates | targetStates, transitionMatrix, backwardTransitions, filterStates, targetStates, validScheduler);
                 } else {
                     STORM_LOG_ASSERT(false, "Unexpected equation system type.");
@@ -113,7 +301,7 @@ namespace storm {
             
             template<typename ValueType>
             struct SparseMdpHintType {
-                SparseMdpHintType() : eliminateEndComponents(false), computeUpperBounds(false) {
+                SparseMdpHintType() : eliminateEndComponents(false), computeUpperBounds(false), uniqueSolution(false) {
                     // Intentionally left empty.
                 }
                 
@@ -168,6 +356,10 @@ namespace storm {
                 bool getComputeUpperBounds() {
                     return computeUpperBounds;
                 }
+
+                bool hasUniqueSolution() const {
+                    return uniqueSolution;
+                }
                 
                 boost::optional<std::vector<uint64_t>> schedulerHint;
                 boost::optional<std::vector<ValueType>> valueHint;
@@ -176,6 +368,7 @@ namespace storm {
                 boost::optional<std::vector<ValueType>> upperResultBounds;
                 bool eliminateEndComponents;
                 bool computeUpperBounds;
+                bool uniqueSolution;
             };
             
             template<typename ValueType>
@@ -229,35 +422,41 @@ namespace storm {
             }
             
             template<typename ValueType>
-            SparseMdpHintType<ValueType> computeHints(storm::solver::EquationSystemType const& type, ModelCheckerHint const& hint, storm::OptimizationDirection const& dir, storm::storage::SparseMatrix<ValueType> const& transitionMatrix, storm::storage::SparseMatrix<ValueType> const& backwardTransitions, storm::storage::BitVector const& maybeStates, storm::storage::BitVector const& phiStates, storm::storage::BitVector const& targetStates, storm::solver::MinMaxLinearEquationSolverFactory<ValueType> const& minMaxLinearEquationSolverFactory, boost::optional<storm::storage::BitVector> const& selectedChoices = boost::none) {
+            SparseMdpHintType<ValueType> computeHints(Environment const& env, SolutionType const& type, ModelCheckerHint const& hint, storm::OptimizationDirection const& dir, storm::storage::SparseMatrix<ValueType> const& transitionMatrix, storm::storage::SparseMatrix<ValueType> const& backwardTransitions, storm::storage::BitVector const& maybeStates, storm::storage::BitVector const& phiStates, storm::storage::BitVector const& targetStates, storm::solver::MinMaxLinearEquationSolverFactory<ValueType> const& minMaxLinearEquationSolverFactory, boost::optional<storm::storage::BitVector> const& selectedChoices = boost::none) {
                 SparseMdpHintType<ValueType> result;
 
+                // The solution to the min-max equation system is unique if we minimize until probabilities or
+                // maximize reachability rewards or if the hint tells us that there are no end-compontnes.
+                result.uniqueSolution = (dir == storm::solver::OptimizationDirection::Minimize && type == SolutionType::UntilProbabilities)
+                                      || (dir == storm::solver::OptimizationDirection::Maximize && type == SolutionType::ExpectedRewards)
+                                      || (hint.isExplicitModelCheckerHint() && hint.asExplicitModelCheckerHint<ValueType>().getNoEndComponentsInMaybeStates());
+                
                 // Check for requirements of the solver.
-                storm::solver::MinMaxLinearEquationSolverRequirements requirements = minMaxLinearEquationSolverFactory.getRequirements(type, dir);
+                bool hasSchedulerHint = hint.isExplicitModelCheckerHint() && hint.template asExplicitModelCheckerHint<ValueType>().hasSchedulerHint();
+                storm::solver::MinMaxLinearEquationSolverRequirements requirements = minMaxLinearEquationSolverFactory.getRequirements(env, result.uniqueSolution, dir, !hasSchedulerHint);
                 if (!requirements.empty()) {
-                    // If the hint tells us that there are no end-components, we can clear that requirement.
-                    if (hint.isExplicitModelCheckerHint() && hint.asExplicitModelCheckerHint<ValueType>().getNoEndComponentsInMaybeStates()) {
-                        requirements.clearNoEndComponents();
-                    }
                     
                     // If the solver still requires no end-components, we have to eliminate them later.
                     if (requirements.requiresNoEndComponents()) {
+                        STORM_LOG_ASSERT(!result.hasUniqueSolution(), "The solver requires to eliminate the end components although the solution is already assumed to be unique.");
                         STORM_LOG_DEBUG("Scheduling EC elimination, because the solver requires it.");
                         result.eliminateEndComponents = true;
+                        // If end components have been eliminated we can assume a unique solution.
+                        result.uniqueSolution = true;
                         requirements.clearNoEndComponents();
                     }
                     
                     // If the solver requires an initial scheduler, compute one now.
                     if (requirements.requires(storm::solver::MinMaxLinearEquationSolverRequirements::Element::ValidInitialScheduler)) {
                         STORM_LOG_DEBUG("Computing valid scheduler, because the solver requires it.");
-                        result.schedulerHint = computeValidSchedulerHint(type, transitionMatrix, backwardTransitions, maybeStates, phiStates, targetStates);
+                        result.schedulerHint = computeValidSchedulerHint(env, type, transitionMatrix, backwardTransitions, maybeStates, phiStates, targetStates);
                         requirements.clearValidInitialScheduler();
                     }
                     
                     // Finally, we have information on the bounds depending on the problem type.
-                    if (type == storm::solver::EquationSystemType::UntilProbabilities) {
+                    if (type == SolutionType::UntilProbabilities) {
                         requirements.clearBounds();
-                    } else if (type == storm::solver::EquationSystemType::ReachabilityRewards) {
+                    } else if (type == SolutionType::ExpectedRewards) {
                         requirements.clearLowerBounds();
                     }
                     if (requirements.requiresUpperBounds()) {
@@ -272,8 +471,7 @@ namespace storm {
                 // Only if there is no end component decomposition that we will need to do later, we use value and scheduler
                 // hints from the provided hint.
                 if (!result.eliminateEndComponents) {
-                    bool skipEcWithinMaybeStatesCheck = dir == storm::OptimizationDirection::Minimize || (hint.isExplicitModelCheckerHint() && hint.asExplicitModelCheckerHint<ValueType>().getNoEndComponentsInMaybeStates());
-                    extractValueAndSchedulerHint(result, transitionMatrix, backwardTransitions, maybeStates, selectedChoices, hint, skipEcWithinMaybeStatesCheck);
+                    extractValueAndSchedulerHint(result, transitionMatrix, backwardTransitions, maybeStates, selectedChoices, hint, result.uniqueSolution);
                 } else {
                     STORM_LOG_WARN_COND(hint.isEmpty(), "A non-empty hint was provided, but its information will be disregarded.");
                 }
@@ -282,7 +480,7 @@ namespace storm {
                 if (!result.hasLowerResultBound()) {
                     result.lowerResultBound = storm::utility::zero<ValueType>();
                 }
-                if (!result.hasUpperResultBound() && type == storm::solver::EquationSystemType::UntilProbabilities) {
+                if (!result.hasUpperResultBound() && type == SolutionType::UntilProbabilities) {
                     result.upperResultBound = storm::utility::one<ValueType>();
                 }
                 
@@ -317,14 +515,15 @@ namespace storm {
             };
             
             template<typename ValueType>
-            MaybeStateResult<ValueType> computeValuesForMaybeStates(storm::solver::SolveGoal<ValueType>&& goal, storm::storage::SparseMatrix<ValueType>&& submatrix, std::vector<ValueType> const& b, bool produceScheduler, storm::solver::MinMaxLinearEquationSolverFactory<ValueType> const& minMaxLinearEquationSolverFactory, SparseMdpHintType<ValueType>& hint) {
+            MaybeStateResult<ValueType> computeValuesForMaybeStates(Environment const& env, storm::solver::SolveGoal<ValueType>&& goal, storm::storage::SparseMatrix<ValueType>&& submatrix, std::vector<ValueType> const& b, bool produceScheduler, storm::solver::MinMaxLinearEquationSolverFactory<ValueType> const& minMaxLinearEquationSolverFactory, SparseMdpHintType<ValueType>& hint) {
                 
                 // Initialize the solution vector.
                 std::vector<ValueType> x = hint.hasValueHint() ? std::move(hint.getValueHint()) : std::vector<ValueType>(submatrix.getRowGroupCount(), hint.hasLowerResultBound() ? hint.getLowerResultBound() : storm::utility::zero<ValueType>());
                 
                 // Set up the solver.
-                std::unique_ptr<storm::solver::MinMaxLinearEquationSolver<ValueType>> solver = storm::solver::configureMinMaxLinearEquationSolver(std::move(goal), minMaxLinearEquationSolverFactory, std::move(submatrix));
+                std::unique_ptr<storm::solver::MinMaxLinearEquationSolver<ValueType>> solver = storm::solver::configureMinMaxLinearEquationSolver(env, std::move(goal), minMaxLinearEquationSolverFactory, std::move(submatrix));
                 solver->setRequirementsChecked();
+                solver->setHasUniqueSolution(hint.hasUniqueSolution());
                 if (hint.hasLowerResultBound()) {
                     solver->setLowerBound(hint.getLowerResultBound());
                 }
@@ -340,7 +539,7 @@ namespace storm {
                 solver->setTrackScheduler(produceScheduler);
                 
                 // Solve the corresponding system of equations.
-                solver->solveEquations(x, b);
+                solver->solveEquations(env, x, b);
                 
 #ifndef NDEBUG
                 // As a sanity check, make sure our local upper bounds were in fact correct.
@@ -448,7 +647,7 @@ namespace storm {
             }
             
             template<typename ValueType>
-            void computeFixedPointSystemUntilProbabilities(storm::storage::SparseMatrix<ValueType> const& transitionMatrix, QualitativeStateSetsUntilProbabilities const& qualitativeStateSets, storm::storage::SparseMatrix<ValueType>& submatrix, std::vector<ValueType>& b) {
+            void computeFixedPointSystemUntilProbabilities(storm::solver::SolveGoal<ValueType>& goal, storm::storage::SparseMatrix<ValueType> const& transitionMatrix, QualitativeStateSetsUntilProbabilities const& qualitativeStateSets, storm::storage::SparseMatrix<ValueType>& submatrix, std::vector<ValueType>& b) {
                 // First, we can eliminate the rows and columns from the original transition probability matrix for states
                 // whose probabilities are already known.
                 submatrix = transitionMatrix.getSubmatrix(true, qualitativeStateSets.maybeStates, qualitativeStateSets.maybeStates, false);
@@ -456,231 +655,59 @@ namespace storm {
                 // Prepare the right-hand side of the equation system. For entry i this corresponds to
                 // the accumulated probability of going from state i to some state that has probability 1.
                 b = transitionMatrix.getConstrainedRowGroupSumVector(qualitativeStateSets.maybeStates, qualitativeStateSets.statesWithProbability1);
+                
+                // If the solve goal has relevant values, we need to adjust them.
+                goal.restrictRelevantValues(qualitativeStateSets.maybeStates);
             }
             
-            static const uint64_t NOT_IN_EC = std::numeric_limits<uint64_t>::max();
-            
             template<typename ValueType>
-            struct SparseMdpEndComponentInformation {
-                SparseMdpEndComponentInformation(storm::storage::MaximalEndComponentDecomposition<ValueType> const& endComponentDecomposition, storm::storage::BitVector const& maybeStates) : eliminatedEndComponents(false), numberOfMaybeStatesInEc(0), numberOfMaybeStatesNotInEc(0), numberOfEc(endComponentDecomposition.size()) {
-
-                    // (1) Compute how many maybe states there are before each other maybe state.
-                    maybeStatesBefore = maybeStates.getNumberOfSetBitsBeforeIndices();
-                    
-                    // (2) Create mapping from maybe states to their MEC. If they are not contained in an MEC, their value
-                    // is set to a special constant.
-                    maybeStateToEc.resize(maybeStates.getNumberOfSetBits(), NOT_IN_EC);
-                    uint64_t mecIndex = 0;
-                    for (auto const& mec : endComponentDecomposition) {
-                        for (auto const& stateActions : mec) {
-                            maybeStateToEc[maybeStatesBefore[stateActions.first]] = mecIndex;
-                            ++numberOfMaybeStatesInEc;
-                        }
-                        ++mecIndex;
-                    }
-                    
-                    // (3) Compute number of states not in MECs.
-                    numberOfMaybeStatesNotInEc = maybeStateToEc.size() - numberOfMaybeStatesInEc;
+            boost::optional<SparseMdpEndComponentInformation<ValueType>> computeFixedPointSystemUntilProbabilitiesEliminateEndComponents(storm::solver::SolveGoal<ValueType>& goal, storm::storage::SparseMatrix<ValueType> const& transitionMatrix, storm::storage::SparseMatrix<ValueType> const& backwardTransitions, QualitativeStateSetsUntilProbabilities const& qualitativeStateSets, storm::storage::SparseMatrix<ValueType>& submatrix, std::vector<ValueType>& b) {
+                
+                // Get the set of states that (under some scheduler) can stay in the set of maybestates forever
+                storm::storage::BitVector candidateStates = storm::utility::graph::performProb0E(transitionMatrix, transitionMatrix.getRowGroupIndices(), backwardTransitions, qualitativeStateSets.maybeStates, ~qualitativeStateSets.maybeStates);
+                
+                bool doDecomposition = !candidateStates.empty();
+                
+                storm::storage::MaximalEndComponentDecomposition<ValueType> endComponentDecomposition;
+                if (doDecomposition) {
+                    // Compute the states that are in MECs.
+                    endComponentDecomposition = storm::storage::MaximalEndComponentDecomposition<ValueType>(transitionMatrix, backwardTransitions, candidateStates);
                 }
                 
-                bool isMaybeStateInEc(uint64_t maybeState) const {
-                    return maybeStateToEc[maybeState] != NOT_IN_EC;
-                }
-
-                bool isStateInEc(uint64_t state) const {
-                    return maybeStateToEc[maybeStatesBefore[state]] != NOT_IN_EC;
-                }
-
-                std::vector<uint64_t> getNumberOfMaybeStatesNotInEcBeforeIndices() const {
-                    std::vector<uint64_t> result(maybeStateToEc.size());
+                // Only do more work if there are actually end-components.
+                if (doDecomposition && !endComponentDecomposition.empty()) {
+                    STORM_LOG_DEBUG("Eliminating " << endComponentDecomposition.size() << " EC(s).");
+                    SparseMdpEndComponentInformation<ValueType> result = SparseMdpEndComponentInformation<ValueType>::eliminateEndComponents(endComponentDecomposition, transitionMatrix, qualitativeStateSets.maybeStates, &qualitativeStateSets.statesWithProbability1, nullptr, nullptr, submatrix, &b, nullptr);
                     
-                    uint64_t count = 0;
-                    auto resultIt = result.begin();
-                    for (auto const& e : maybeStateToEc) {
-                        *resultIt = count;
-                        if (e != NOT_IN_EC) {
-                            ++count;
+                    // If the solve goal has relevant values, we need to adjust them.
+                    if (goal.hasRelevantValues()) {
+                        storm::storage::BitVector newRelevantValues(submatrix.getRowGroupCount());
+                        for (auto state : goal.relevantValues()) {
+                            if (qualitativeStateSets.maybeStates.get(state)) {
+                                newRelevantValues.set(result.getRowGroupAfterElimination(state));
+                            }
                         }
-                        ++resultIt;
+                        if (!newRelevantValues.empty()) {
+                            goal.setRelevantValues(std::move(newRelevantValues));
+                        }
                     }
                     
                     return result;
-                }
-                
-                uint64_t getEc(uint64_t state) const {
-                    return maybeStateToEc[maybeStatesBefore[state]];
-                }
-                
-                uint64_t getSubmatrixRowGroupOfStateInEc(uint64_t state) const {
-                    return numberOfMaybeStatesNotInEc + getEc(state);
-                }
-                
-                bool eliminatedEndComponents;
-                
-                std::vector<uint64_t> maybeStatesBefore;
-                uint64_t numberOfMaybeStatesInEc;
-                uint64_t numberOfMaybeStatesNotInEc;
-                uint64_t numberOfEc;
-                
-                std::vector<uint64_t> maybeStateToEc;
-            };
-            
-            template<typename ValueType>
-            SparseMdpEndComponentInformation<ValueType> eliminateEndComponents(storm::storage::MaximalEndComponentDecomposition<ValueType> const& endComponentDecomposition, storm::storage::SparseMatrix<ValueType> const& transitionMatrix, storm::storage::BitVector const& maybeStates, storm::storage::BitVector const* sumColumns, storm::storage::BitVector const* selectedChoices, std::vector<ValueType> const* summand, storm::storage::SparseMatrix<ValueType>& submatrix, std::vector<ValueType>* columnSumVector, std::vector<ValueType>* summandResultVector) {
-
-                SparseMdpEndComponentInformation<ValueType> result(endComponentDecomposition, maybeStates);
-
-                // (1) Compute the number of maybe states not in ECs before any other maybe state.
-                std::vector<uint64_t> maybeStatesNotInEcBefore = result.getNumberOfMaybeStatesNotInEcBeforeIndices();
-                uint64_t numberOfStates = result.numberOfMaybeStatesNotInEc + result.numberOfEc;
-                
-                STORM_LOG_TRACE("Found " << numberOfStates << " states, " << result.numberOfMaybeStatesNotInEc << " not in ECs, " << result.numberOfMaybeStatesInEc << " in ECs and " << result.numberOfEc << " ECs.");
-                
-                // Prepare builder and vector storage.
-                storm::storage::SparseMatrixBuilder<ValueType> builder(0, numberOfStates, 0, true, true, numberOfStates);
-                STORM_LOG_ASSERT((sumColumns && columnSumVector) || (!sumColumns && !columnSumVector), "Expecting a bit vector for which columns to sum  iff there is a column sum result vector.");
-                if (columnSumVector) {
-                    columnSumVector->resize(numberOfStates);
-                }
-                STORM_LOG_ASSERT((summand && summandResultVector) || (!summand && !summandResultVector), "Expecting summand iff there is a summand result vector.");
-                if (summandResultVector) {
-                    summandResultVector->resize(numberOfStates);
-                }
-                std::vector<std::pair<uint64_t, ValueType>> ecValuePairs;
-                
-                // (2) Create the parts of the submatrix and vector b that belong to states not contained in ECs.
-                uint64_t currentRow = 0;
-                for (auto state : maybeStates) {
-                    if (!result.isStateInEc(state)) {
-                        builder.newRowGroup(currentRow);
-                        for (uint64_t row = transitionMatrix.getRowGroupIndices()[state], endRow = transitionMatrix.getRowGroupIndices()[state + 1]; row < endRow; ++row) {
-                            // If the choices is not in the selected ones, drop it.
-                            if (selectedChoices && !selectedChoices->get(row)) {
-                                continue;
-                            }
-                            
-                            ecValuePairs.clear();
-                            
-                            if (summand) {
-                                (*summandResultVector)[currentRow] += (*summand)[row];
-                            }
-                            for (auto const& e : transitionMatrix.getRow(row)) {
-                                if (sumColumns && sumColumns->get(e.getColumn())) {
-                                    (*columnSumVector)[currentRow] += e.getValue();
-                                } else if (maybeStates.get(e.getColumn())) {
-                                    // If the target state of the transition is not contained in an EC, we can just add the entry.
-                                    if (result.isStateInEc(e.getColumn())) {
-                                        builder.addNextValue(currentRow, maybeStatesNotInEcBefore[result.maybeStatesBefore[e.getColumn()]], e.getValue());
-                                    } else {
-                                        // Otherwise, we store the information that the state can go to a certain EC.
-                                        ecValuePairs.emplace_back(result.getEc(e.getColumn()), e.getValue());
-                                    }
-                                }
-                            }
-                            
-                            if (!ecValuePairs.empty()) {
-                                std::sort(ecValuePairs.begin(), ecValuePairs.end());
-                                
-                                for (auto const& e : ecValuePairs) {
-                                    builder.addNextValue(currentRow, result.numberOfMaybeStatesNotInEc + e.first, e.second);
-                                }
-                            }
-                            
-                            ++currentRow;
-                        }
-                    }
-                }
-                
-                // (3) Create the parts of the submatrix and vector b that belong to states contained in ECs.
-                for (auto const& mec : endComponentDecomposition) {
-                    builder.newRowGroup(currentRow);
-
-                    for (auto const& stateActions : mec) {
-                        uint64_t const& state = stateActions.first;
-                        for (uint64_t row = transitionMatrix.getRowGroupIndices()[state], endRow = transitionMatrix.getRowGroupIndices()[state + 1]; row < endRow; ++row) {
-                            // If the choice is contained in the MEC, drop it.
-                            if (stateActions.second.find(row) != stateActions.second.end()) {
-                                continue;
-                            }
-                            // If the choices is not in the selected ones, drop it.
-                            if (selectedChoices && !selectedChoices->get(row)) {
-                                continue;
-                            }
-                            
-                            ecValuePairs.clear();
-
-                            if (summand) {
-                                (*summandResultVector)[currentRow] += (*summand)[row];
-                            }
-                            for (auto const& e : transitionMatrix.getRow(row)) {
-                                if (sumColumns && sumColumns->get(e.getColumn())) {
-                                    (*columnSumVector)[currentRow] += e.getValue();
-                                } else if (maybeStates.get(e.getColumn())) {
-                                    // If the target state of the transition is not contained in an EC, we can just add the entry.
-                                    if (result.isStateInEc(e.getColumn())) {
-                                        builder.addNextValue(currentRow, maybeStatesNotInEcBefore[result.maybeStatesBefore[e.getColumn()]], e.getValue());
-                                    } else {
-                                        // Otherwise, we store the information that the state can go to a certain EC.
-                                        ecValuePairs.emplace_back(result.getEc(e.getColumn()), e.getValue());
-                                    }
-                                }
-                            }
-                            
-                            if (!ecValuePairs.empty()) {
-                                std::sort(ecValuePairs.begin(), ecValuePairs.end());
-                                
-                                for (auto const& e : ecValuePairs) {
-                                    builder.addNextValue(currentRow, result.numberOfMaybeStatesNotInEc + e.first, e.second);
-                                }
-                            }
-                            
-                            ++currentRow;
-                        }
-                    }
-                }
-                
-                submatrix = builder.build();
-                return result;
-            }
-            
-            template<typename ValueType>
-            boost::optional<SparseMdpEndComponentInformation<ValueType>> computeFixedPointSystemUntilProbabilitiesEliminateEndComponents(storm::storage::SparseMatrix<ValueType> const& transitionMatrix, storm::storage::SparseMatrix<ValueType> const& backwardTransitions, QualitativeStateSetsUntilProbabilities const& qualitativeStateSets, storm::storage::SparseMatrix<ValueType>& submatrix, std::vector<ValueType>& b) {
-                
-                // Start by computing the states that are in MECs.
-                storm::storage::MaximalEndComponentDecomposition<ValueType> endComponentDecomposition(transitionMatrix, backwardTransitions, qualitativeStateSets.maybeStates);
-                
-                // Only do more work if there are actually end-components.
-                if (!endComponentDecomposition.empty()) {
-                    STORM_LOG_DEBUG("Eliminating " << endComponentDecomposition.size() << " ECs.");
-                    return eliminateEndComponents<ValueType>(endComponentDecomposition, transitionMatrix, qualitativeStateSets.maybeStates, &qualitativeStateSets.statesWithProbability1, nullptr, nullptr, submatrix, &b, nullptr);
                 } else {
                     STORM_LOG_DEBUG("Not eliminating ECs as there are none.");
-                    computeFixedPointSystemUntilProbabilities(transitionMatrix, qualitativeStateSets, submatrix, b);
+                    computeFixedPointSystemUntilProbabilities(goal, transitionMatrix, qualitativeStateSets, submatrix, b);
+                    
                     return boost::none;
                 }
             }
             
             template<typename ValueType>
-            void setResultValuesWrtEndComponents(SparseMdpEndComponentInformation<ValueType> const& ecInformation, std::vector<ValueType>& result, storm::storage::BitVector const& maybeStates, std::vector<ValueType> const& fromResult) {
-                auto notInEcResultIt = result.begin();
-                for (auto state : maybeStates) {
-                    if (ecInformation.isStateInEc(state)) {
-                        result[state] = result[ecInformation.getSubmatrixRowGroupOfStateInEc(state)];
-                    } else {
-                        result[state] = *notInEcResultIt;
-                        ++notInEcResultIt;
-                    }
-                }
-                STORM_LOG_ASSERT(notInEcResultIt == result.begin() + ecInformation.numberOfMaybeStatesNotInEc, "Mismatching iterators.");
-            }
-            
-            template<typename ValueType>
-            MDPSparseModelCheckingHelperReturnType<ValueType> SparseMdpPrctlHelper<ValueType>::computeUntilProbabilities(storm::solver::SolveGoal<ValueType>&& goal, storm::storage::SparseMatrix<ValueType> const& transitionMatrix, storm::storage::SparseMatrix<ValueType> const& backwardTransitions, storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates, bool qualitative, bool produceScheduler, storm::solver::MinMaxLinearEquationSolverFactory<ValueType> const& minMaxLinearEquationSolverFactory, ModelCheckerHint const& hint) {
+            MDPSparseModelCheckingHelperReturnType<ValueType> SparseMdpPrctlHelper<ValueType>::computeUntilProbabilities(Environment const& env, storm::solver::SolveGoal<ValueType>&& goal, storm::storage::SparseMatrix<ValueType> const& transitionMatrix, storm::storage::SparseMatrix<ValueType> const& backwardTransitions, storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates, bool qualitative, bool produceScheduler, storm::solver::MinMaxLinearEquationSolverFactory<ValueType> const& minMaxLinearEquationSolverFactory, ModelCheckerHint const& hint) {
                 STORM_LOG_THROW(!qualitative || !produceScheduler, storm::exceptions::InvalidSettingsException, "Cannot produce scheduler when performing qualitative model checking only.");
                 
                 // Prepare resulting vector.
                 std::vector<ValueType> result(transitionMatrix.getRowGroupCount(), storm::utility::zero<ValueType>());
-                 
+                
                 // We need to identify the maybe states (states which have a probability for satisfying the until formula
                 // that is strictly between 0 and 1) and the states that satisfy the formula with probablity 1 and 0, respectively.
                 QualitativeStateSetsUntilProbabilities qualitativeStateSets = getQualitativeStateSetsUntilProbabilities(goal, transitionMatrix, backwardTransitions, phiStates, psiStates, hint);
@@ -705,7 +732,7 @@ namespace storm {
                         // In this case we have have to compute the remaining probabilities.
                         
                         // Obtain proper hint information either from the provided hint or from requirements of the solver.
-                        SparseMdpHintType<ValueType> hintInformation = computeHints(storm::solver::EquationSystemType::UntilProbabilities, hint, goal.direction(), transitionMatrix, backwardTransitions, qualitativeStateSets.maybeStates, phiStates, qualitativeStateSets.statesWithProbability1, minMaxLinearEquationSolverFactory);
+                        SparseMdpHintType<ValueType> hintInformation = computeHints(env, SolutionType::UntilProbabilities, hint, goal.direction(), transitionMatrix, backwardTransitions, qualitativeStateSets.maybeStates, phiStates, qualitativeStateSets.statesWithProbability1, minMaxLinearEquationSolverFactory);
                         
                         // Declare the components of the equation system we will solve.
                         storm::storage::SparseMatrix<ValueType> submatrix;
@@ -714,22 +741,21 @@ namespace storm {
                         // If the hint information tells us that we have to eliminate MECs, we do so now.
                         boost::optional<SparseMdpEndComponentInformation<ValueType>> ecInformation;
                         if (hintInformation.getEliminateEndComponents()) {
-                            ecInformation = computeFixedPointSystemUntilProbabilitiesEliminateEndComponents(transitionMatrix, backwardTransitions, qualitativeStateSets, submatrix, b);
+                            ecInformation = computeFixedPointSystemUntilProbabilitiesEliminateEndComponents(goal, transitionMatrix, backwardTransitions, qualitativeStateSets, submatrix, b);
 
                             // Make sure we are not supposed to produce a scheduler if we actually eliminate end components.
-                            STORM_LOG_THROW(!ecInformation || !ecInformation.get().eliminatedEndComponents || !produceScheduler, storm::exceptions::NotSupportedException, "Producing schedulers is not supported if end-components need to be eliminated for the solver.");
+                            STORM_LOG_THROW(!ecInformation || !ecInformation.get().getEliminatedEndComponents() || !produceScheduler, storm::exceptions::NotSupportedException, "Producing schedulers is not supported if end-components need to be eliminated for the solver.");
                         } else {
                             // Otherwise, we compute the standard equations.
-                            computeFixedPointSystemUntilProbabilities(transitionMatrix, qualitativeStateSets, submatrix, b);
+                            computeFixedPointSystemUntilProbabilities(goal, transitionMatrix, qualitativeStateSets, submatrix, b);
                         }
                         
                         // Now compute the results for the maybe states.
-                        goal.restrictRelevantValues(qualitativeStateSets.maybeStates);
-                        MaybeStateResult<ValueType> resultForMaybeStates = computeValuesForMaybeStates(std::move(goal), std::move(submatrix), b, produceScheduler, minMaxLinearEquationSolverFactory, hintInformation);
+                        MaybeStateResult<ValueType> resultForMaybeStates = computeValuesForMaybeStates(env, std::move(goal), std::move(submatrix), b, produceScheduler, minMaxLinearEquationSolverFactory, hintInformation);
                         
                         // If we eliminated end components, we need to extract the result differently.
-                        if (ecInformation && ecInformation.get().eliminatedEndComponents) {
-                            setResultValuesWrtEndComponents(ecInformation.get(), result, qualitativeStateSets.maybeStates, resultForMaybeStates.getValues());
+                        if (ecInformation && ecInformation.get().getEliminatedEndComponents()) {
+                            ecInformation.get().setValues(result, qualitativeStateSets.maybeStates, resultForMaybeStates.getValues());
                         } else {
                             // Set values of resulting vector according to result.
                             storm::utility::vector::setVectorValues<ValueType>(result, qualitativeStateSets.maybeStates, resultForMaybeStates.getValues());
@@ -754,7 +780,7 @@ namespace storm {
             }
 
             template<typename ValueType>
-            std::vector<ValueType> SparseMdpPrctlHelper<ValueType>::computeGloballyProbabilities(storm::solver::SolveGoal<ValueType>&& goal, storm::storage::SparseMatrix<ValueType> const& transitionMatrix, storm::storage::SparseMatrix<ValueType> const& backwardTransitions, storm::storage::BitVector const& psiStates, bool qualitative, storm::solver::MinMaxLinearEquationSolverFactory<ValueType> const& minMaxLinearEquationSolverFactory, bool useMecBasedTechnique) {
+            std::vector<ValueType> SparseMdpPrctlHelper<ValueType>::computeGloballyProbabilities(Environment const& env, storm::solver::SolveGoal<ValueType>&& goal, storm::storage::SparseMatrix<ValueType> const& transitionMatrix, storm::storage::SparseMatrix<ValueType> const& backwardTransitions, storm::storage::BitVector const& psiStates, bool qualitative, storm::solver::MinMaxLinearEquationSolverFactory<ValueType> const& minMaxLinearEquationSolverFactory, bool useMecBasedTechnique) {
                 if (useMecBasedTechnique) {
                     storm::storage::MaximalEndComponentDecomposition<ValueType> mecDecomposition(transitionMatrix, backwardTransitions, psiStates);
                     storm::storage::BitVector statesInPsiMecs(transitionMatrix.getRowGroupCount());
@@ -764,10 +790,10 @@ namespace storm {
                         }
                     }
                     
-                    return std::move(computeUntilProbabilities(std::move(goal), transitionMatrix, backwardTransitions, psiStates, statesInPsiMecs, qualitative, false, minMaxLinearEquationSolverFactory).values);
+                    return std::move(computeUntilProbabilities(env, std::move(goal), transitionMatrix, backwardTransitions, psiStates, statesInPsiMecs, qualitative, false, minMaxLinearEquationSolverFactory).values);
                 } else {
                     goal.oneMinus();
-                    std::vector<ValueType> result = computeUntilProbabilities(std::move(goal), transitionMatrix, backwardTransitions, storm::storage::BitVector(transitionMatrix.getRowGroupCount(), true), ~psiStates, qualitative, false, minMaxLinearEquationSolverFactory).values;
+                    std::vector<ValueType> result = computeUntilProbabilities(env, std::move(goal), transitionMatrix, backwardTransitions, storm::storage::BitVector(transitionMatrix.getRowGroupCount(), true), ~psiStates, qualitative, false, minMaxLinearEquationSolverFactory).values;
                     for (auto& element : result) {
                         element = storm::utility::one<ValueType>() - element;
                     }
@@ -777,7 +803,7 @@ namespace storm {
             
             template<typename ValueType>
             template<typename RewardModelType>
-            std::vector<ValueType> SparseMdpPrctlHelper<ValueType>::computeInstantaneousRewards(storm::solver::SolveGoal<ValueType>&& goal, storm::storage::SparseMatrix<ValueType> const& transitionMatrix, RewardModelType const& rewardModel, uint_fast64_t stepCount, storm::solver::MinMaxLinearEquationSolverFactory<ValueType> const& minMaxLinearEquationSolverFactory) {
+            std::vector<ValueType> SparseMdpPrctlHelper<ValueType>::computeInstantaneousRewards(Environment const& env, storm::solver::SolveGoal<ValueType>&& goal, storm::storage::SparseMatrix<ValueType> const& transitionMatrix, RewardModelType const& rewardModel, uint_fast64_t stepCount, storm::solver::MinMaxLinearEquationSolverFactory<ValueType> const& minMaxLinearEquationSolverFactory) {
 
                 // Only compute the result if the model has a state-based reward this->getModel().
                 STORM_LOG_THROW(rewardModel.hasStateRewards(), storm::exceptions::InvalidPropertyException, "Missing reward model for formula. Skipping formula.");
@@ -785,15 +811,15 @@ namespace storm {
                 // Initialize result to state rewards of the this->getModel().
                 std::vector<ValueType> result(rewardModel.getStateRewardVector());
                 
-                std::unique_ptr<storm::solver::MinMaxLinearEquationSolver<ValueType>> solver = storm::solver::configureMinMaxLinearEquationSolver(std::move(goal), minMaxLinearEquationSolverFactory, transitionMatrix);
-                solver->repeatedMultiply(result, nullptr, stepCount);
+                std::unique_ptr<storm::solver::MinMaxLinearEquationSolver<ValueType>> solver = storm::solver::configureMinMaxLinearEquationSolver(env, std::move(goal), minMaxLinearEquationSolverFactory, transitionMatrix);
+                solver->repeatedMultiply(env, result, nullptr, stepCount);
                 
                 return result;
             }
             
             template<typename ValueType>
             template<typename RewardModelType>
-            std::vector<ValueType> SparseMdpPrctlHelper<ValueType>::computeCumulativeRewards(storm::solver::SolveGoal<ValueType>&& goal, storm::storage::SparseMatrix<ValueType> const& transitionMatrix, RewardModelType const& rewardModel, uint_fast64_t stepBound, storm::solver::MinMaxLinearEquationSolverFactory<ValueType> const& minMaxLinearEquationSolverFactory) {
+            std::vector<ValueType> SparseMdpPrctlHelper<ValueType>::computeCumulativeRewards(Environment const& env, storm::solver::SolveGoal<ValueType>&& goal, storm::storage::SparseMatrix<ValueType> const& transitionMatrix, RewardModelType const& rewardModel, uint_fast64_t stepBound, storm::solver::MinMaxLinearEquationSolverFactory<ValueType> const& minMaxLinearEquationSolverFactory) {
 
                 // Only compute the result if the model has at least one reward this->getModel().
                 STORM_LOG_THROW(!rewardModel.empty(), storm::exceptions::InvalidPropertyException, "Missing reward model for formula. Skipping formula.");
@@ -804,18 +830,18 @@ namespace storm {
                 // Initialize result to the zero vector.
                 std::vector<ValueType> result(transitionMatrix.getRowGroupCount(), storm::utility::zero<ValueType>());
                 
-                std::unique_ptr<storm::solver::MinMaxLinearEquationSolver<ValueType>> solver = storm::solver::configureMinMaxLinearEquationSolver(std::move(goal), minMaxLinearEquationSolverFactory, transitionMatrix);
-                solver->repeatedMultiply(result, &totalRewardVector, stepBound);
+                std::unique_ptr<storm::solver::MinMaxLinearEquationSolver<ValueType>> solver = storm::solver::configureMinMaxLinearEquationSolver(env, std::move(goal), minMaxLinearEquationSolverFactory, transitionMatrix);
+                solver->repeatedMultiply(env, result, &totalRewardVector, stepBound);
                 
                 return result;
             }
             
             template<typename ValueType>
             template<typename RewardModelType>
-            MDPSparseModelCheckingHelperReturnType<ValueType> SparseMdpPrctlHelper<ValueType>::computeReachabilityRewards(storm::solver::SolveGoal<ValueType>&& goal, storm::storage::SparseMatrix<ValueType> const& transitionMatrix, storm::storage::SparseMatrix<ValueType> const& backwardTransitions, RewardModelType const& rewardModel, storm::storage::BitVector const& targetStates, bool qualitative, bool produceScheduler, storm::solver::MinMaxLinearEquationSolverFactory<ValueType> const& minMaxLinearEquationSolverFactory, ModelCheckerHint const& hint) {
+            MDPSparseModelCheckingHelperReturnType<ValueType> SparseMdpPrctlHelper<ValueType>::computeReachabilityRewards(Environment const& env, storm::solver::SolveGoal<ValueType>&& goal, storm::storage::SparseMatrix<ValueType> const& transitionMatrix, storm::storage::SparseMatrix<ValueType> const& backwardTransitions, RewardModelType const& rewardModel, storm::storage::BitVector const& targetStates, bool qualitative, bool produceScheduler, storm::solver::MinMaxLinearEquationSolverFactory<ValueType> const& minMaxLinearEquationSolverFactory, ModelCheckerHint const& hint) {
                 // Only compute the result if the model has at least one reward this->getModel().
                 STORM_LOG_THROW(!rewardModel.empty(), storm::exceptions::InvalidPropertyException, "Missing reward model for formula. Skipping formula.");
-                return computeReachabilityRewardsHelper(std::move(goal), transitionMatrix, backwardTransitions,
+                return computeReachabilityRewardsHelper(env, std::move(goal), transitionMatrix, backwardTransitions,
                                                         [&rewardModel] (uint_fast64_t rowCount, storm::storage::SparseMatrix<ValueType> const& transitionMatrix, storm::storage::BitVector const& maybeStates) {
                                                             return rewardModel.getTotalRewardVector(rowCount, transitionMatrix, maybeStates);
                                                         },
@@ -824,10 +850,10 @@ namespace storm {
             
 #ifdef STORM_HAVE_CARL
             template<typename ValueType>
-            std::vector<ValueType> SparseMdpPrctlHelper<ValueType>::computeReachabilityRewards(storm::solver::SolveGoal<ValueType>&& goal, storm::storage::SparseMatrix<ValueType> const& transitionMatrix, storm::storage::SparseMatrix<ValueType> const& backwardTransitions, storm::models::sparse::StandardRewardModel<storm::Interval> const& intervalRewardModel, bool lowerBoundOfIntervals, storm::storage::BitVector const& targetStates, bool qualitative, storm::solver::MinMaxLinearEquationSolverFactory<ValueType> const& minMaxLinearEquationSolverFactory) {
+            std::vector<ValueType> SparseMdpPrctlHelper<ValueType>::computeReachabilityRewards(Environment const& env, storm::solver::SolveGoal<ValueType>&& goal, storm::storage::SparseMatrix<ValueType> const& transitionMatrix, storm::storage::SparseMatrix<ValueType> const& backwardTransitions, storm::models::sparse::StandardRewardModel<storm::Interval> const& intervalRewardModel, bool lowerBoundOfIntervals, storm::storage::BitVector const& targetStates, bool qualitative, storm::solver::MinMaxLinearEquationSolverFactory<ValueType> const& minMaxLinearEquationSolverFactory) {
                 // Only compute the result if the reward model is not empty.
                 STORM_LOG_THROW(!intervalRewardModel.empty(), storm::exceptions::InvalidPropertyException, "Missing reward model for formula. Skipping formula.");
-                return computeReachabilityRewardsHelper(std::move(goal), transitionMatrix, backwardTransitions, \
+                return computeReachabilityRewardsHelper(env, std::move(goal), transitionMatrix, backwardTransitions, \
                                                         [&] (uint_fast64_t rowCount, storm::storage::SparseMatrix<ValueType> const& transitionMatrix, storm::storage::BitVector const& maybeStates) {
                                                             std::vector<ValueType> result;
                                                             result.reserve(rowCount);
@@ -841,7 +867,7 @@ namespace storm {
             }
             
             template<>
-            std::vector<storm::RationalNumber> SparseMdpPrctlHelper<storm::RationalNumber>::computeReachabilityRewards(storm::solver::SolveGoal<storm::RationalNumber>&&, storm::storage::SparseMatrix<storm::RationalNumber> const&, storm::storage::SparseMatrix<storm::RationalNumber> const&, storm::models::sparse::StandardRewardModel<storm::Interval> const&, bool, storm::storage::BitVector const&, bool, storm::solver::MinMaxLinearEquationSolverFactory<storm::RationalNumber> const&) {
+            std::vector<storm::RationalNumber> SparseMdpPrctlHelper<storm::RationalNumber>::computeReachabilityRewards(Environment const& env, storm::solver::SolveGoal<storm::RationalNumber>&&, storm::storage::SparseMatrix<storm::RationalNumber> const&, storm::storage::SparseMatrix<storm::RationalNumber> const&, storm::models::sparse::StandardRewardModel<storm::Interval> const&, bool, storm::storage::BitVector const&, bool, storm::solver::MinMaxLinearEquationSolverFactory<storm::RationalNumber> const&) {
                 STORM_LOG_THROW(false, storm::exceptions::IllegalFunctionCallException, "Computing reachability rewards is unsupported for this data type.");
             }
 #endif
@@ -923,7 +949,7 @@ namespace storm {
             }
             
             template<typename ValueType>
-            void computeFixedPointSystemReachabilityRewards(storm::storage::SparseMatrix<ValueType> const& transitionMatrix, QualitativeStateSetsReachabilityRewards const& qualitativeStateSets, storm::storage::BitVector const& targetStates, boost::optional<storm::storage::BitVector> const& selectedChoices, std::function<std::vector<ValueType>(uint_fast64_t, storm::storage::SparseMatrix<ValueType> const&, storm::storage::BitVector const&)> const& totalStateRewardVectorGetter, storm::storage::SparseMatrix<ValueType>& submatrix, std::vector<ValueType>& b, std::vector<ValueType>* oneStepTargetProbabilities = nullptr) {
+            void computeFixedPointSystemReachabilityRewards(storm::solver::SolveGoal<ValueType>& goal, storm::storage::SparseMatrix<ValueType> const& transitionMatrix, QualitativeStateSetsReachabilityRewards const& qualitativeStateSets, storm::storage::BitVector const& targetStates, boost::optional<storm::storage::BitVector> const& selectedChoices, std::function<std::vector<ValueType>(uint_fast64_t, storm::storage::SparseMatrix<ValueType> const&, storm::storage::BitVector const&)> const& totalStateRewardVectorGetter, storm::storage::SparseMatrix<ValueType>& submatrix, std::vector<ValueType>& b, std::vector<ValueType>* oneStepTargetProbabilities = nullptr) {
                 // Remove rows and columns from the original transition probability matrix for states whose reward values are already known.
                 // If there are infinity states, we additionally have to remove choices of maybeState that lead to infinity.
                 if (qualitativeStateSets.infinityStates.empty()) {
@@ -940,10 +966,13 @@ namespace storm {
                         (*oneStepTargetProbabilities) = transitionMatrix.getConstrainedRowSumVector(*selectedChoices, targetStates);
                     }
                 }
+                
+                // If the solve goal has relevant values, we need to adjust them.
+                goal.restrictRelevantValues(qualitativeStateSets.maybeStates);
             }
             
             template<typename ValueType>
-            boost::optional<SparseMdpEndComponentInformation<ValueType>> computeFixedPointSystemReachabilityRewardsEliminateEndComponents(storm::storage::SparseMatrix<ValueType> const& transitionMatrix, storm::storage::SparseMatrix<ValueType> const& backwardTransitions, QualitativeStateSetsReachabilityRewards const& qualitativeStateSets, storm::storage::BitVector const& targetStates, boost::optional<storm::storage::BitVector> const& selectedChoices, std::function<std::vector<ValueType>(uint_fast64_t, storm::storage::SparseMatrix<ValueType> const&, storm::storage::BitVector const&)> const& totalStateRewardVectorGetter, storm::storage::SparseMatrix<ValueType>& submatrix, std::vector<ValueType>& b, boost::optional<std::vector<ValueType>>& oneStepTargetProbabilities) {
+            boost::optional<SparseMdpEndComponentInformation<ValueType>> computeFixedPointSystemReachabilityRewardsEliminateEndComponents(storm::solver::SolveGoal<ValueType>& goal, storm::storage::SparseMatrix<ValueType> const& transitionMatrix, storm::storage::SparseMatrix<ValueType> const& backwardTransitions, QualitativeStateSetsReachabilityRewards const& qualitativeStateSets, storm::storage::BitVector const& targetStates, boost::optional<storm::storage::BitVector> const& selectedChoices, std::function<std::vector<ValueType>(uint_fast64_t, storm::storage::SparseMatrix<ValueType> const&, storm::storage::BitVector const&)> const& totalStateRewardVectorGetter, storm::storage::SparseMatrix<ValueType>& submatrix, std::vector<ValueType>& b, boost::optional<std::vector<ValueType>>& oneStepTargetProbabilities) {
                 
                 // Start by computing the choices with reward 0, as we only want ECs within this fragment.
                 storm::storage::BitVector zeroRewardChoices(transitionMatrix.getRowCount());
@@ -976,6 +1005,9 @@ namespace storm {
                     }
                 }
                 
+                // Only keep the candidate states that (under some scheduler) can stay in the set of candidates forever
+                candidateStates = storm::utility::graph::performProb0E(transitionMatrix, transitionMatrix.getRowGroupIndices(), backwardTransitions, candidateStates, ~candidateStates);
+                
                 bool doDecomposition = !candidateStates.empty();
                 
                 storm::storage::MaximalEndComponentDecomposition<ValueType> endComponentDecomposition;
@@ -987,10 +1019,25 @@ namespace storm {
                 // Only do more work if there are actually end-components.
                 if (doDecomposition && !endComponentDecomposition.empty()) {
                     STORM_LOG_DEBUG("Eliminating " << endComponentDecomposition.size() << " ECs.");
-                    return eliminateEndComponents<ValueType>(endComponentDecomposition, transitionMatrix, qualitativeStateSets.maybeStates, oneStepTargetProbabilities ? &targetStates : nullptr, selectedChoices ? &selectedChoices.get() : nullptr, &rewardVector, submatrix, oneStepTargetProbabilities ? &oneStepTargetProbabilities.get() : nullptr, &b);
+                    SparseMdpEndComponentInformation<ValueType> result = SparseMdpEndComponentInformation<ValueType>::eliminateEndComponents(endComponentDecomposition, transitionMatrix, qualitativeStateSets.maybeStates, oneStepTargetProbabilities ? &targetStates : nullptr, selectedChoices ? &selectedChoices.get() : nullptr, &rewardVector, submatrix, oneStepTargetProbabilities ? &oneStepTargetProbabilities.get() : nullptr, &b);
+                    
+                    // If the solve goal has relevant values, we need to adjust them.
+                    if (goal.hasRelevantValues()) {
+                        storm::storage::BitVector newRelevantValues(submatrix.getRowGroupCount());
+                        for (auto state : goal.relevantValues()) {
+                            if (qualitativeStateSets.maybeStates.get(state)) {
+                                newRelevantValues.set(result.getRowGroupAfterElimination(state));
+                            }
+                        }
+                        if (!newRelevantValues.empty()) {
+                            goal.setRelevantValues(std::move(newRelevantValues));
+                        }
+                    }
+                    
+                    return result;
                 } else {
                     STORM_LOG_DEBUG("Not eliminating ECs as there are none.");
-                    computeFixedPointSystemReachabilityRewards(transitionMatrix, qualitativeStateSets, targetStates, selectedChoices, totalStateRewardVectorGetter, submatrix, b, oneStepTargetProbabilities ? &oneStepTargetProbabilities.get() : nullptr);
+                    computeFixedPointSystemReachabilityRewards(goal, transitionMatrix, qualitativeStateSets, targetStates, selectedChoices, totalStateRewardVectorGetter, submatrix, b, oneStepTargetProbabilities ? &oneStepTargetProbabilities.get() : nullptr);
                     return boost::none;
                 }
             }
@@ -1009,7 +1056,7 @@ namespace storm {
             }
             
             template<typename ValueType>
-            MDPSparseModelCheckingHelperReturnType<ValueType> SparseMdpPrctlHelper<ValueType>::computeReachabilityRewardsHelper(storm::solver::SolveGoal<ValueType>&& goal, storm::storage::SparseMatrix<ValueType> const& transitionMatrix, storm::storage::SparseMatrix<ValueType> const& backwardTransitions, std::function<std::vector<ValueType>(uint_fast64_t, storm::storage::SparseMatrix<ValueType> const&, storm::storage::BitVector const&)> const& totalStateRewardVectorGetter, storm::storage::BitVector const& targetStates, bool qualitative, bool produceScheduler, storm::solver::MinMaxLinearEquationSolverFactory<ValueType> const& minMaxLinearEquationSolverFactory, ModelCheckerHint const& hint) {
+            MDPSparseModelCheckingHelperReturnType<ValueType> SparseMdpPrctlHelper<ValueType>::computeReachabilityRewardsHelper(Environment const& env, storm::solver::SolveGoal<ValueType>&& goal, storm::storage::SparseMatrix<ValueType> const& transitionMatrix, storm::storage::SparseMatrix<ValueType> const& backwardTransitions, std::function<std::vector<ValueType>(uint_fast64_t, storm::storage::SparseMatrix<ValueType> const&, storm::storage::BitVector const&)> const& totalStateRewardVectorGetter, storm::storage::BitVector const& targetStates, bool qualitative, bool produceScheduler, storm::solver::MinMaxLinearEquationSolverFactory<ValueType> const& minMaxLinearEquationSolverFactory, ModelCheckerHint const& hint) {
                 
                 // Prepare resulting vector.
                 std::vector<ValueType> result(transitionMatrix.getRowGroupCount(), storm::utility::zero<ValueType>());
@@ -1044,7 +1091,7 @@ namespace storm {
                         }
                         
                         // Obtain proper hint information either from the provided hint or from requirements of the solver.
-                        SparseMdpHintType<ValueType> hintInformation = computeHints(storm::solver::EquationSystemType::ReachabilityRewards, hint, goal.direction(), transitionMatrix, backwardTransitions, qualitativeStateSets.maybeStates, ~targetStates, targetStates, minMaxLinearEquationSolverFactory, selectedChoices);
+                        SparseMdpHintType<ValueType> hintInformation = computeHints(env, SolutionType::ExpectedRewards, hint, goal.direction(), transitionMatrix, backwardTransitions, qualitativeStateSets.maybeStates, ~targetStates, targetStates, minMaxLinearEquationSolverFactory, selectedChoices);
                         
                         // Declare the components of the equation system we will solve.
                         storm::storage::SparseMatrix<ValueType> submatrix;
@@ -1060,13 +1107,13 @@ namespace storm {
                         // If the hint information tells us that we have to eliminate MECs, we do so now.
                         boost::optional<SparseMdpEndComponentInformation<ValueType>> ecInformation;
                         if (hintInformation.getEliminateEndComponents()) {
-                            ecInformation = computeFixedPointSystemReachabilityRewardsEliminateEndComponents(transitionMatrix, backwardTransitions, qualitativeStateSets, targetStates, selectedChoices, totalStateRewardVectorGetter, submatrix, b, oneStepTargetProbabilities);
+                            ecInformation = computeFixedPointSystemReachabilityRewardsEliminateEndComponents(goal, transitionMatrix, backwardTransitions, qualitativeStateSets, targetStates, selectedChoices, totalStateRewardVectorGetter, submatrix, b, oneStepTargetProbabilities);
                             
                             // Make sure we are not supposed to produce a scheduler if we actually eliminate end components.
-                            STORM_LOG_THROW(!ecInformation || !ecInformation.get().eliminatedEndComponents || !produceScheduler, storm::exceptions::NotSupportedException, "Producing schedulers is not supported if end-components need to be eliminated for the solver.");
+                            STORM_LOG_THROW(!ecInformation || !ecInformation.get().getEliminatedEndComponents() || !produceScheduler, storm::exceptions::NotSupportedException, "Producing schedulers is not supported if end-components need to be eliminated for the solver.");
                         } else {
                             // Otherwise, we compute the standard equations.
-                            computeFixedPointSystemReachabilityRewards(transitionMatrix, qualitativeStateSets, targetStates, selectedChoices, totalStateRewardVectorGetter, submatrix, b, oneStepTargetProbabilities ? &oneStepTargetProbabilities.get() : nullptr);
+                            computeFixedPointSystemReachabilityRewards(goal, transitionMatrix, qualitativeStateSets, targetStates, selectedChoices, totalStateRewardVectorGetter, submatrix, b, oneStepTargetProbabilities ? &oneStepTargetProbabilities.get() : nullptr);
                         }
                         
                         // If we need to compute upper bounds, do so now.
@@ -1076,12 +1123,11 @@ namespace storm {
                         }
                         
                         // Now compute the results for the maybe states.
-                        goal.restrictRelevantValues(qualitativeStateSets.maybeStates);
-                        MaybeStateResult<ValueType> resultForMaybeStates = computeValuesForMaybeStates(std::move(goal), std::move(submatrix), b, produceScheduler, minMaxLinearEquationSolverFactory, hintInformation);
+                        MaybeStateResult<ValueType> resultForMaybeStates = computeValuesForMaybeStates(env, std::move(goal), std::move(submatrix), b, produceScheduler, minMaxLinearEquationSolverFactory, hintInformation);
 
                         // If we eliminated end components, we need to extract the result differently.
-                        if (ecInformation && ecInformation.get().eliminatedEndComponents) {
-                            setResultValuesWrtEndComponents(ecInformation.get(), result, qualitativeStateSets.maybeStates, resultForMaybeStates.getValues());
+                        if (ecInformation && ecInformation.get().getEliminatedEndComponents()) {
+                            ecInformation.get().setValues(result, qualitativeStateSets.maybeStates, resultForMaybeStates.getValues());
                         } else {
                             // Set values of resulting vector according to result.
                             storm::utility::vector::setVectorValues<ValueType>(result, qualitativeStateSets.maybeStates, resultForMaybeStates.getValues());
@@ -1105,7 +1151,7 @@ namespace storm {
             }
             
             template<typename ValueType>
-            std::vector<ValueType> SparseMdpPrctlHelper<ValueType>::computeLongRunAverageProbabilities(storm::solver::SolveGoal<ValueType>&& goal, storm::storage::SparseMatrix<ValueType> const& transitionMatrix, storm::storage::SparseMatrix<ValueType> const& backwardTransitions, storm::storage::BitVector const& psiStates, storm::solver::MinMaxLinearEquationSolverFactory<ValueType> const& minMaxLinearEquationSolverFactory) {
+            std::vector<ValueType> SparseMdpPrctlHelper<ValueType>::computeLongRunAverageProbabilities(Environment const& env, storm::solver::SolveGoal<ValueType>&& goal, storm::storage::SparseMatrix<ValueType> const& transitionMatrix, storm::storage::SparseMatrix<ValueType> const& backwardTransitions, storm::storage::BitVector const& psiStates, storm::solver::MinMaxLinearEquationSolverFactory<ValueType> const& minMaxLinearEquationSolverFactory) {
                 
                 // If there are no goal states, we avoid the computation and directly return zero.
                 if (psiStates.empty()) {
@@ -1122,12 +1168,12 @@ namespace storm {
                 std::vector<ValueType> stateRewards(psiStates.size(), storm::utility::zero<ValueType>());
                 storm::utility::vector::setVectorValues(stateRewards, psiStates, storm::utility::one<ValueType>());
                 storm::models::sparse::StandardRewardModel<ValueType> rewardModel(std::move(stateRewards));
-                return computeLongRunAverageRewards(std::move(goal), transitionMatrix, backwardTransitions, rewardModel, minMaxLinearEquationSolverFactory);
+                return computeLongRunAverageRewards(env, std::move(goal), transitionMatrix, backwardTransitions, rewardModel, minMaxLinearEquationSolverFactory);
             }
             
             template<typename ValueType>
             template<typename RewardModelType>
-            std::vector<ValueType> SparseMdpPrctlHelper<ValueType>::computeLongRunAverageRewards(storm::solver::SolveGoal<ValueType>&& goal, storm::storage::SparseMatrix<ValueType> const& transitionMatrix, storm::storage::SparseMatrix<ValueType> const& backwardTransitions, RewardModelType const& rewardModel, storm::solver::MinMaxLinearEquationSolverFactory<ValueType> const& minMaxLinearEquationSolverFactory) {
+            std::vector<ValueType> SparseMdpPrctlHelper<ValueType>::computeLongRunAverageRewards(Environment const& env, storm::solver::SolveGoal<ValueType>&& goal, storm::storage::SparseMatrix<ValueType> const& transitionMatrix, storm::storage::SparseMatrix<ValueType> const& backwardTransitions, RewardModelType const& rewardModel, storm::solver::MinMaxLinearEquationSolverFactory<ValueType> const& minMaxLinearEquationSolverFactory) {
                 
                 uint64_t numberOfStates = transitionMatrix.getRowGroupCount();
 
@@ -1146,7 +1192,7 @@ namespace storm {
                 for (uint_fast64_t currentMecIndex = 0; currentMecIndex < mecDecomposition.size(); ++currentMecIndex) {
                     storm::storage::MaximalEndComponent const& mec = mecDecomposition[currentMecIndex];
                     
-                    lraValuesForEndComponents[currentMecIndex] = computeLraForMaximalEndComponent(goal.direction(), transitionMatrix, rewardModel, mec, minMaxLinearEquationSolverFactory);
+                    lraValuesForEndComponents[currentMecIndex] = computeLraForMaximalEndComponent(env, goal.direction(), transitionMatrix, rewardModel, mec, minMaxLinearEquationSolverFactory);
                     
                     // Gather information for later use.
                     for (auto const& stateChoicesPair : mec) {
@@ -1252,14 +1298,18 @@ namespace storm {
                 storm::storage::SparseMatrix<ValueType> sspMatrix = sspMatrixBuilder.build(currentChoice, numberOfSspStates, numberOfSspStates);
                 
                 // Check for requirements of the solver.
-                storm::solver::MinMaxLinearEquationSolverRequirements requirements = minMaxLinearEquationSolverFactory.getRequirements(storm::solver::EquationSystemType::StochasticShortestPath);
+                storm::solver::MinMaxLinearEquationSolverRequirements requirements = minMaxLinearEquationSolverFactory.getRequirements(env, true, goal.direction(), true);
+                requirements.clearBounds();
                 STORM_LOG_THROW(requirements.empty(), storm::exceptions::UncheckedRequirementException, "Cannot establish requirements for solver.");
                 
                 std::vector<ValueType> sspResult(numberOfSspStates);
                 goal.restrictRelevantValues(statesNotContainedInAnyMec);
-                std::unique_ptr<storm::solver::MinMaxLinearEquationSolver<ValueType>> solver = storm::solver::configureMinMaxLinearEquationSolver(std::move(goal), minMaxLinearEquationSolverFactory, sspMatrix);
+                std::unique_ptr<storm::solver::MinMaxLinearEquationSolver<ValueType>> solver = storm::solver::configureMinMaxLinearEquationSolver(env, std::move(goal), minMaxLinearEquationSolverFactory, sspMatrix);
+                solver->setLowerBound(storm::utility::zero<ValueType>());
+                solver->setUpperBound(*std::max_element(lraValuesForEndComponents.begin(), lraValuesForEndComponents.end()));
+                solver->setHasUniqueSolution();
                 solver->setRequirementsChecked();
-                solver->solveEquations(sspResult, b);
+                solver->solveEquations(env, sspResult, b);
                 
                 // Prepare result vector.
                 std::vector<ValueType> result(numberOfStates, zero);
@@ -1277,7 +1327,7 @@ namespace storm {
             
             template<typename ValueType>
             template<typename RewardModelType>
-            ValueType SparseMdpPrctlHelper<ValueType>::computeLraForMaximalEndComponent(OptimizationDirection dir, storm::storage::SparseMatrix<ValueType> const& transitionMatrix, RewardModelType const& rewardModel, storm::storage::MaximalEndComponent const& mec, storm::solver::MinMaxLinearEquationSolverFactory<ValueType> const& minMaxLinearEquationSolverFactory) {
+            ValueType SparseMdpPrctlHelper<ValueType>::computeLraForMaximalEndComponent(Environment const& env, OptimizationDirection dir, storm::storage::SparseMatrix<ValueType> const& transitionMatrix, RewardModelType const& rewardModel, storm::storage::MaximalEndComponent const& mec, storm::solver::MinMaxLinearEquationSolverFactory<ValueType> const& minMaxLinearEquationSolverFactory) {
                 
                 // If the mec only consists of a single state, we compute the LRA value directly
                 if (++mec.begin() == mec.end()) {
@@ -1297,9 +1347,9 @@ namespace storm {
                 // Solve MEC with the method specified in the settings
                 storm::solver::LraMethod method = storm::settings::getModule<storm::settings::modules::MinMaxEquationSolverSettings>().getLraMethod();
                 if (method == storm::solver::LraMethod::LinearProgramming) {
-                    return computeLraForMaximalEndComponentLP(dir, transitionMatrix, rewardModel, mec);
+                    return computeLraForMaximalEndComponentLP(env, dir, transitionMatrix, rewardModel, mec);
                 } else if (method == storm::solver::LraMethod::ValueIteration) {
-                    return computeLraForMaximalEndComponentVI(dir, transitionMatrix, rewardModel, mec, minMaxLinearEquationSolverFactory);
+                    return computeLraForMaximalEndComponentVI(env, dir, transitionMatrix, rewardModel, mec, minMaxLinearEquationSolverFactory);
                 } else {
                     STORM_LOG_THROW(false, storm::exceptions::InvalidSettingsException, "Unsupported technique.");
                 }
@@ -1307,7 +1357,7 @@ namespace storm {
             
             template<typename ValueType>
             template<typename RewardModelType>
-            ValueType SparseMdpPrctlHelper<ValueType>::computeLraForMaximalEndComponentVI(OptimizationDirection dir, storm::storage::SparseMatrix<ValueType> const& transitionMatrix, RewardModelType const& rewardModel, storm::storage::MaximalEndComponent const& mec, storm::solver::MinMaxLinearEquationSolverFactory<ValueType> const& minMaxLinearEquationSolverFactory) {
+            ValueType SparseMdpPrctlHelper<ValueType>::computeLraForMaximalEndComponentVI(Environment const& env, OptimizationDirection dir, storm::storage::SparseMatrix<ValueType> const& transitionMatrix, RewardModelType const& rewardModel, storm::storage::MaximalEndComponent const& mec, storm::solver::MinMaxLinearEquationSolverFactory<ValueType> const& minMaxLinearEquationSolverFactory) {
                 
                 // Initialize data about the mec
                 storm::storage::BitVector mecStates(transitionMatrix.getRowGroupCount(), false);
@@ -1371,12 +1421,12 @@ namespace storm {
                 std::vector<ValueType> x(mecTransitions.getRowGroupCount(), storm::utility::zero<ValueType>());
                 std::vector<ValueType> xPrime = x;
                 
-                auto solver = minMaxLinearEquationSolverFactory.create(std::move(mecTransitions));
+                auto solver = minMaxLinearEquationSolverFactory.create(env, std::move(mecTransitions));
                 solver->setCachingEnabled(true);
                 ValueType maxDiff, minDiff;
                 while (true) {
                     // Compute the obtained rewards for the next step
-                    solver->repeatedMultiply(dir, x, &choiceRewards, 1);
+                    solver->repeatedMultiply(env, dir, x, &choiceRewards, 1);
                     
                     // update xPrime and check for convergence
                     // to avoid large (and numerically unstable) x-values, we substract a reference value.
@@ -1404,7 +1454,7 @@ namespace storm {
             
             template<typename ValueType>
             template<typename RewardModelType>
-            ValueType SparseMdpPrctlHelper<ValueType>::computeLraForMaximalEndComponentLP(OptimizationDirection dir, storm::storage::SparseMatrix<ValueType> const& transitionMatrix, RewardModelType const& rewardModel, storm::storage::MaximalEndComponent const& mec) {
+            ValueType SparseMdpPrctlHelper<ValueType>::computeLraForMaximalEndComponentLP(Environment const& env, OptimizationDirection dir, storm::storage::SparseMatrix<ValueType> const& transitionMatrix, RewardModelType const& rewardModel, storm::storage::MaximalEndComponent const& mec) {
                 std::shared_ptr<storm::solver::LpSolver<ValueType>> solver = storm::utility::solver::getLpSolver<ValueType>("LRA for MEC");
                 solver->setOptimizationDirection(invert(dir));
                 
@@ -1445,7 +1495,7 @@ namespace storm {
             }
             
             template<typename ValueType>
-            std::unique_ptr<CheckResult> SparseMdpPrctlHelper<ValueType>::computeConditionalProbabilities(storm::solver::SolveGoal<ValueType>&& goal, storm::storage::SparseMatrix<ValueType> const& transitionMatrix, storm::storage::SparseMatrix<ValueType> const& backwardTransitions, storm::storage::BitVector const& targetStates, storm::storage::BitVector const& conditionStates, storm::solver::MinMaxLinearEquationSolverFactory<ValueType> const& minMaxLinearEquationSolverFactory) {
+            std::unique_ptr<CheckResult> SparseMdpPrctlHelper<ValueType>::computeConditionalProbabilities(Environment const& env, storm::solver::SolveGoal<ValueType>&& goal, storm::storage::SparseMatrix<ValueType> const& transitionMatrix, storm::storage::SparseMatrix<ValueType> const& backwardTransitions, storm::storage::BitVector const& targetStates, storm::storage::BitVector const& conditionStates, storm::solver::MinMaxLinearEquationSolverFactory<ValueType> const& minMaxLinearEquationSolverFactory) {
                 
                 std::chrono::high_resolution_clock::time_point start = std::chrono::high_resolution_clock::now();
                 
@@ -1481,7 +1531,7 @@ namespace storm {
 
                 STORM_LOG_DEBUG("Computing probabilities to satisfy condition.");
                 std::chrono::high_resolution_clock::time_point conditionStart = std::chrono::high_resolution_clock::now();
-                std::vector<ValueType> conditionProbabilities = std::move(computeUntilProbabilities(OptimizationDirection::Maximize, transitionMatrix, backwardTransitions, allStates, extendedConditionStates, false, false, minMaxLinearEquationSolverFactory).values);
+                std::vector<ValueType> conditionProbabilities = std::move(computeUntilProbabilities(env, OptimizationDirection::Maximize, transitionMatrix, backwardTransitions, allStates, extendedConditionStates, false, false, minMaxLinearEquationSolverFactory).values);
                 std::chrono::high_resolution_clock::time_point conditionEnd = std::chrono::high_resolution_clock::now();
                 STORM_LOG_DEBUG("Computed probabilities to satisfy for condition in " << std::chrono::duration_cast<std::chrono::milliseconds>(conditionEnd - conditionStart).count() << "ms.");
                 
@@ -1492,7 +1542,7 @@ namespace storm {
                 
                 STORM_LOG_DEBUG("Computing probabilities to reach target.");
                 std::chrono::high_resolution_clock::time_point targetStart = std::chrono::high_resolution_clock::now();
-                std::vector<ValueType> targetProbabilities = std::move(computeUntilProbabilities(OptimizationDirection::Maximize, transitionMatrix, backwardTransitions, allStates, fixedTargetStates, false, false, minMaxLinearEquationSolverFactory).values);
+                std::vector<ValueType> targetProbabilities = std::move(computeUntilProbabilities(env, OptimizationDirection::Maximize, transitionMatrix, backwardTransitions, allStates, fixedTargetStates, false, false, minMaxLinearEquationSolverFactory).values);
                 std::chrono::high_resolution_clock::time_point targetEnd = std::chrono::high_resolution_clock::now();
                 STORM_LOG_DEBUG("Computed probabilities to reach target in " << std::chrono::duration_cast<std::chrono::milliseconds>(targetEnd - targetStart).count() << "ms.");
 
@@ -1584,7 +1634,7 @@ namespace storm {
                 }
                 
                 std::chrono::high_resolution_clock::time_point conditionalStart = std::chrono::high_resolution_clock::now();
-                std::vector<ValueType> goalProbabilities = std::move(computeUntilProbabilities(std::move(goal), newTransitionMatrix, newBackwardTransitions, storm::storage::BitVector(newFailState + 1, true), newGoalStates, false, false, minMaxLinearEquationSolverFactory).values);
+                std::vector<ValueType> goalProbabilities = std::move(computeUntilProbabilities(env, std::move(goal), newTransitionMatrix, newBackwardTransitions, storm::storage::BitVector(newFailState + 1, true), newGoalStates, false, false, minMaxLinearEquationSolverFactory).values);
                 std::chrono::high_resolution_clock::time_point conditionalEnd = std::chrono::high_resolution_clock::now();
                 STORM_LOG_DEBUG("Computed conditional probabilities in transformed model in " << std::chrono::duration_cast<std::chrono::milliseconds>(conditionalEnd - conditionalStart).count() << "ms.");
                 
@@ -1592,23 +1642,23 @@ namespace storm {
             }
             
             template class SparseMdpPrctlHelper<double>;
-            template std::vector<double> SparseMdpPrctlHelper<double>::computeInstantaneousRewards(storm::solver::SolveGoal<double>&& goal, storm::storage::SparseMatrix<double> const& transitionMatrix, storm::models::sparse::StandardRewardModel<double> const& rewardModel, uint_fast64_t stepCount, storm::solver::MinMaxLinearEquationSolverFactory<double> const& minMaxLinearEquationSolverFactory);
-            template std::vector<double> SparseMdpPrctlHelper<double>::computeCumulativeRewards(storm::solver::SolveGoal<double>&& goal, storm::storage::SparseMatrix<double> const& transitionMatrix, storm::models::sparse::StandardRewardModel<double> const& rewardModel, uint_fast64_t stepBound, storm::solver::MinMaxLinearEquationSolverFactory<double> const& minMaxLinearEquationSolverFactory);
-            template MDPSparseModelCheckingHelperReturnType<double> SparseMdpPrctlHelper<double>::computeReachabilityRewards(storm::solver::SolveGoal<double>&& goal, storm::storage::SparseMatrix<double> const& transitionMatrix, storm::storage::SparseMatrix<double> const& backwardTransitions, storm::models::sparse::StandardRewardModel<double> const& rewardModel, storm::storage::BitVector const& targetStates, bool qualitative, bool produceScheduler, storm::solver::MinMaxLinearEquationSolverFactory<double> const& minMaxLinearEquationSolverFactory, ModelCheckerHint const& hint);
-            template std::vector<double> SparseMdpPrctlHelper<double>::computeLongRunAverageRewards(storm::solver::SolveGoal<double>&& goal, storm::storage::SparseMatrix<double> const& transitionMatrix, storm::storage::SparseMatrix<double> const& backwardTransitions, storm::models::sparse::StandardRewardModel<double> const& rewardModel, storm::solver::MinMaxLinearEquationSolverFactory<double> const& minMaxLinearEquationSolverFactory);
-            template double SparseMdpPrctlHelper<double>::computeLraForMaximalEndComponent(OptimizationDirection dir, storm::storage::SparseMatrix<double> const& transitionMatrix, storm::models::sparse::StandardRewardModel<double> const& rewardModel, storm::storage::MaximalEndComponent const& mec, storm::solver::MinMaxLinearEquationSolverFactory<double> const& minMaxLinearEquationSolverFactory);
-            template double SparseMdpPrctlHelper<double>::computeLraForMaximalEndComponentVI(OptimizationDirection dir, storm::storage::SparseMatrix<double> const& transitionMatrix, storm::models::sparse::StandardRewardModel<double> const& rewardModel, storm::storage::MaximalEndComponent const& mec, storm::solver::MinMaxLinearEquationSolverFactory<double> const& minMaxLinearEquationSolverFactory);
-            template double SparseMdpPrctlHelper<double>::computeLraForMaximalEndComponentLP(OptimizationDirection dir, storm::storage::SparseMatrix<double> const& transitionMatrix, storm::models::sparse::StandardRewardModel<double> const& rewardModel, storm::storage::MaximalEndComponent const& mec);
+            template std::vector<double> SparseMdpPrctlHelper<double>::computeInstantaneousRewards(Environment const& env, storm::solver::SolveGoal<double>&& goal, storm::storage::SparseMatrix<double> const& transitionMatrix, storm::models::sparse::StandardRewardModel<double> const& rewardModel, uint_fast64_t stepCount, storm::solver::MinMaxLinearEquationSolverFactory<double> const& minMaxLinearEquationSolverFactory);
+            template std::vector<double> SparseMdpPrctlHelper<double>::computeCumulativeRewards(Environment const& env, storm::solver::SolveGoal<double>&& goal, storm::storage::SparseMatrix<double> const& transitionMatrix, storm::models::sparse::StandardRewardModel<double> const& rewardModel, uint_fast64_t stepBound, storm::solver::MinMaxLinearEquationSolverFactory<double> const& minMaxLinearEquationSolverFactory);
+            template MDPSparseModelCheckingHelperReturnType<double> SparseMdpPrctlHelper<double>::computeReachabilityRewards(Environment const& env, storm::solver::SolveGoal<double>&& goal, storm::storage::SparseMatrix<double> const& transitionMatrix, storm::storage::SparseMatrix<double> const& backwardTransitions, storm::models::sparse::StandardRewardModel<double> const& rewardModel, storm::storage::BitVector const& targetStates, bool qualitative, bool produceScheduler, storm::solver::MinMaxLinearEquationSolverFactory<double> const& minMaxLinearEquationSolverFactory, ModelCheckerHint const& hint);
+            template std::vector<double> SparseMdpPrctlHelper<double>::computeLongRunAverageRewards(Environment const& env, storm::solver::SolveGoal<double>&& goal, storm::storage::SparseMatrix<double> const& transitionMatrix, storm::storage::SparseMatrix<double> const& backwardTransitions, storm::models::sparse::StandardRewardModel<double> const& rewardModel, storm::solver::MinMaxLinearEquationSolverFactory<double> const& minMaxLinearEquationSolverFactory);
+            template double SparseMdpPrctlHelper<double>::computeLraForMaximalEndComponent(Environment const& env, OptimizationDirection dir, storm::storage::SparseMatrix<double> const& transitionMatrix, storm::models::sparse::StandardRewardModel<double> const& rewardModel, storm::storage::MaximalEndComponent const& mec, storm::solver::MinMaxLinearEquationSolverFactory<double> const& minMaxLinearEquationSolverFactory);
+            template double SparseMdpPrctlHelper<double>::computeLraForMaximalEndComponentVI(Environment const& env, OptimizationDirection dir, storm::storage::SparseMatrix<double> const& transitionMatrix, storm::models::sparse::StandardRewardModel<double> const& rewardModel, storm::storage::MaximalEndComponent const& mec, storm::solver::MinMaxLinearEquationSolverFactory<double> const& minMaxLinearEquationSolverFactory);
+            template double SparseMdpPrctlHelper<double>::computeLraForMaximalEndComponentLP(Environment const& env, OptimizationDirection dir, storm::storage::SparseMatrix<double> const& transitionMatrix, storm::models::sparse::StandardRewardModel<double> const& rewardModel, storm::storage::MaximalEndComponent const& mec);
 
 #ifdef STORM_HAVE_CARL
             template class SparseMdpPrctlHelper<storm::RationalNumber>;
-            template std::vector<storm::RationalNumber> SparseMdpPrctlHelper<storm::RationalNumber>::computeInstantaneousRewards(storm::solver::SolveGoal<storm::RationalNumber>&& goal, storm::storage::SparseMatrix<storm::RationalNumber> const& transitionMatrix, storm::models::sparse::StandardRewardModel<storm::RationalNumber> const& rewardModel, uint_fast64_t stepCount, storm::solver::MinMaxLinearEquationSolverFactory<storm::RationalNumber> const& minMaxLinearEquationSolverFactory);
-            template std::vector<storm::RationalNumber> SparseMdpPrctlHelper<storm::RationalNumber>::computeCumulativeRewards(storm::solver::SolveGoal<storm::RationalNumber>&& goal, storm::storage::SparseMatrix<storm::RationalNumber> const& transitionMatrix, storm::models::sparse::StandardRewardModel<storm::RationalNumber> const& rewardModel, uint_fast64_t stepBound, storm::solver::MinMaxLinearEquationSolverFactory<storm::RationalNumber> const& minMaxLinearEquationSolverFactory);
-            template MDPSparseModelCheckingHelperReturnType<storm::RationalNumber> SparseMdpPrctlHelper<storm::RationalNumber>::computeReachabilityRewards(storm::solver::SolveGoal<storm::RationalNumber>&& goal, storm::storage::SparseMatrix<storm::RationalNumber> const& transitionMatrix, storm::storage::SparseMatrix<storm::RationalNumber> const& backwardTransitions, storm::models::sparse::StandardRewardModel<storm::RationalNumber> const& rewardModel, storm::storage::BitVector const& targetStates, bool qualitative, bool produceScheduler, storm::solver::MinMaxLinearEquationSolverFactory<storm::RationalNumber> const& minMaxLinearEquationSolverFactory, ModelCheckerHint const& hint);
-            template std::vector<storm::RationalNumber> SparseMdpPrctlHelper<storm::RationalNumber>::computeLongRunAverageRewards(storm::solver::SolveGoal<storm::RationalNumber>&& goal, storm::storage::SparseMatrix<storm::RationalNumber> const& transitionMatrix, storm::storage::SparseMatrix<storm::RationalNumber> const& backwardTransitions, storm::models::sparse::StandardRewardModel<storm::RationalNumber> const& rewardModel, storm::solver::MinMaxLinearEquationSolverFactory<storm::RationalNumber> const& minMaxLinearEquationSolverFactory);
-            template storm::RationalNumber SparseMdpPrctlHelper<storm::RationalNumber>::computeLraForMaximalEndComponent(OptimizationDirection dir, storm::storage::SparseMatrix<storm::RationalNumber> const& transitionMatrix, storm::models::sparse::StandardRewardModel<storm::RationalNumber> const& rewardModel, storm::storage::MaximalEndComponent const& mec, storm::solver::MinMaxLinearEquationSolverFactory<storm::RationalNumber> const& minMaxLinearEquationSolverFactory);
-            template storm::RationalNumber SparseMdpPrctlHelper<storm::RationalNumber>::computeLraForMaximalEndComponentVI(OptimizationDirection dir, storm::storage::SparseMatrix<storm::RationalNumber> const& transitionMatrix, storm::models::sparse::StandardRewardModel<storm::RationalNumber> const& rewardModel, storm::storage::MaximalEndComponent const& mec, storm::solver::MinMaxLinearEquationSolverFactory<storm::RationalNumber> const& minMaxLinearEquationSolverFactory);
-            template storm::RationalNumber SparseMdpPrctlHelper<storm::RationalNumber>::computeLraForMaximalEndComponentLP(OptimizationDirection dir, storm::storage::SparseMatrix<storm::RationalNumber> const& transitionMatrix, storm::models::sparse::StandardRewardModel<storm::RationalNumber> const& rewardModel, storm::storage::MaximalEndComponent const& mec);
+            template std::vector<storm::RationalNumber> SparseMdpPrctlHelper<storm::RationalNumber>::computeInstantaneousRewards(Environment const& env, storm::solver::SolveGoal<storm::RationalNumber>&& goal, storm::storage::SparseMatrix<storm::RationalNumber> const& transitionMatrix, storm::models::sparse::StandardRewardModel<storm::RationalNumber> const& rewardModel, uint_fast64_t stepCount, storm::solver::MinMaxLinearEquationSolverFactory<storm::RationalNumber> const& minMaxLinearEquationSolverFactory);
+            template std::vector<storm::RationalNumber> SparseMdpPrctlHelper<storm::RationalNumber>::computeCumulativeRewards(Environment const& env, storm::solver::SolveGoal<storm::RationalNumber>&& goal, storm::storage::SparseMatrix<storm::RationalNumber> const& transitionMatrix, storm::models::sparse::StandardRewardModel<storm::RationalNumber> const& rewardModel, uint_fast64_t stepBound, storm::solver::MinMaxLinearEquationSolverFactory<storm::RationalNumber> const& minMaxLinearEquationSolverFactory);
+            template MDPSparseModelCheckingHelperReturnType<storm::RationalNumber> SparseMdpPrctlHelper<storm::RationalNumber>::computeReachabilityRewards(Environment const& env, storm::solver::SolveGoal<storm::RationalNumber>&& goal, storm::storage::SparseMatrix<storm::RationalNumber> const& transitionMatrix, storm::storage::SparseMatrix<storm::RationalNumber> const& backwardTransitions, storm::models::sparse::StandardRewardModel<storm::RationalNumber> const& rewardModel, storm::storage::BitVector const& targetStates, bool qualitative, bool produceScheduler, storm::solver::MinMaxLinearEquationSolverFactory<storm::RationalNumber> const& minMaxLinearEquationSolverFactory, ModelCheckerHint const& hint);
+            template std::vector<storm::RationalNumber> SparseMdpPrctlHelper<storm::RationalNumber>::computeLongRunAverageRewards(Environment const& env, storm::solver::SolveGoal<storm::RationalNumber>&& goal, storm::storage::SparseMatrix<storm::RationalNumber> const& transitionMatrix, storm::storage::SparseMatrix<storm::RationalNumber> const& backwardTransitions, storm::models::sparse::StandardRewardModel<storm::RationalNumber> const& rewardModel, storm::solver::MinMaxLinearEquationSolverFactory<storm::RationalNumber> const& minMaxLinearEquationSolverFactory);
+            template storm::RationalNumber SparseMdpPrctlHelper<storm::RationalNumber>::computeLraForMaximalEndComponent(Environment const& env, OptimizationDirection dir, storm::storage::SparseMatrix<storm::RationalNumber> const& transitionMatrix, storm::models::sparse::StandardRewardModel<storm::RationalNumber> const& rewardModel, storm::storage::MaximalEndComponent const& mec, storm::solver::MinMaxLinearEquationSolverFactory<storm::RationalNumber> const& minMaxLinearEquationSolverFactory);
+            template storm::RationalNumber SparseMdpPrctlHelper<storm::RationalNumber>::computeLraForMaximalEndComponentVI(Environment const& env, OptimizationDirection dir, storm::storage::SparseMatrix<storm::RationalNumber> const& transitionMatrix, storm::models::sparse::StandardRewardModel<storm::RationalNumber> const& rewardModel, storm::storage::MaximalEndComponent const& mec, storm::solver::MinMaxLinearEquationSolverFactory<storm::RationalNumber> const& minMaxLinearEquationSolverFactory);
+            template storm::RationalNumber SparseMdpPrctlHelper<storm::RationalNumber>::computeLraForMaximalEndComponentLP(Environment const& env, OptimizationDirection dir, storm::storage::SparseMatrix<storm::RationalNumber> const& transitionMatrix, storm::models::sparse::StandardRewardModel<storm::RationalNumber> const& rewardModel, storm::storage::MaximalEndComponent const& mec);
 
 #endif
         }

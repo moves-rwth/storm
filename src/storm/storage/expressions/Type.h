@@ -15,6 +15,7 @@ namespace storm {
         class BaseType {
         public:
             BaseType();
+            virtual ~BaseType() = default;
             
             /*!
              * Retrieves the mask that is associated with this type.

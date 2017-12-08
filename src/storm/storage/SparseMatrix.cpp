@@ -231,16 +231,13 @@ namespace storm {
                 rowIndications.push_back(currentEntryCount);
             }
             
-            // If there are no rows, we need to erase the start index of the current (non-existing) row.
-            if (rowCount == 0) {
-                rowIndications.pop_back();
-            }
-            
             // We put a sentinel element at the last position of the row indices array. This eases iteration work,
             // as now the indices of row i are always between rowIndications[i] and rowIndications[i + 1], also for
             // the first and last row.
-            rowIndications.push_back(currentEntryCount);
-            STORM_LOG_ASSERT(rowCount == rowIndications.size() - 1, "Wrong sizes of vectors.");
+            if (rowCount > 0) {
+                rowIndications.push_back(currentEntryCount);
+            }
+            STORM_LOG_ASSERT(rowCount == rowIndications.size() - 1, "Wrong sizes of vectors: " << rowCount << " != " << (rowIndications.size() - 1) << ".");
             uint_fast64_t columnCount = hasEntries ? highestColumn + 1 : 0;
             if (initialColumnCountSet && forceInitialDimensions) {
                 STORM_LOG_THROW(columnCount <= initialColumnCount, storm::exceptions::InvalidStateException, "Expected not more than " << initialColumnCount << " columns, but got " << columnCount << ".");
@@ -895,17 +892,17 @@ namespace storm {
         
         template<typename ValueType>
         SparseMatrix<ValueType> SparseMatrix<ValueType>::getSubmatrix(storm::storage::BitVector const& rowGroupConstraint, storm::storage::BitVector const& columnConstraint, std::vector<index_type> const& rowGroupIndices, bool insertDiagonalEntries) const {
+            STORM_LOG_THROW(!rowGroupConstraint.empty() && !columnConstraint.empty(), storm::exceptions::InvalidArgumentException, "Cannot build empty submatrix.");
             uint_fast64_t submatrixColumnCount = columnConstraint.getNumberOfSetBits();
             
             // Start by creating a temporary vector that stores for each index whose bit is set to true the number of
             // bits that were set before that particular index.
             std::vector<index_type> columnBitsSetBeforeIndex = columnConstraint.getNumberOfSetBitsBeforeIndices();
-            std::vector<index_type>* rowBitsSetBeforeIndex;
-            if (&rowGroupConstraint == &columnConstraint) {
-                rowBitsSetBeforeIndex = &columnBitsSetBeforeIndex;
-            } else {
-                rowBitsSetBeforeIndex = new std::vector<index_type>(rowGroupConstraint.getNumberOfSetBitsBeforeIndices());
+            std::unique_ptr<std::vector<index_type>> tmp;
+            if (rowGroupConstraint != columnConstraint) {
+                tmp = std::make_unique<std::vector<index_type>>(rowGroupConstraint.getNumberOfSetBitsBeforeIndices());
             }
+            std::vector<index_type> const& rowBitsSetBeforeIndex = tmp ? *tmp : columnBitsSetBeforeIndex;
             
             // Then, we need to determine the number of entries and the number of rows of the submatrix.
             index_type subEntries = 0;
@@ -920,7 +917,7 @@ namespace storm {
                         if (columnConstraint.get(it->getColumn())) {
                             ++subEntries;
                             
-                            if (columnBitsSetBeforeIndex[it->getColumn()] == (*rowBitsSetBeforeIndex)[index]) {
+                            if (columnBitsSetBeforeIndex[it->getColumn()] == rowBitsSetBeforeIndex[index]) {
                                 foundDiagonalElement = true;
                             }
                         }
@@ -949,9 +946,9 @@ namespace storm {
                     
                     for (const_iterator it = this->begin(i), ite = this->end(i); it != ite; ++it) {
                         if (columnConstraint.get(it->getColumn())) {
-                            if (columnBitsSetBeforeIndex[it->getColumn()] == (*rowBitsSetBeforeIndex)[index]) {
+                            if (columnBitsSetBeforeIndex[it->getColumn()] == rowBitsSetBeforeIndex[index]) {
                                 insertedDiagonalElement = true;
-                            } else if (insertDiagonalEntries && !insertedDiagonalElement && columnBitsSetBeforeIndex[it->getColumn()] > (*rowBitsSetBeforeIndex)[index]) {
+                            } else if (insertDiagonalEntries && !insertedDiagonalElement && columnBitsSetBeforeIndex[it->getColumn()] > rowBitsSetBeforeIndex[index]) {
                                 matrixBuilder.addNextValue(rowCount, rowGroupCount, storm::utility::zero<ValueType>());
                                 insertedDiagonalElement = true;
                             }
@@ -959,16 +956,11 @@ namespace storm {
                         }
                     }
                     if (insertDiagonalEntries && !insertedDiagonalElement && rowGroupCount < submatrixColumnCount) {
-                        matrixBuilder.addNextValue(rowGroupCount, rowGroupCount, storm::utility::zero<ValueType>());
+                        matrixBuilder.addNextValue(rowCount, rowGroupCount, storm::utility::zero<ValueType>());
                     }
                     ++rowCount;
                 }
                 ++rowGroupCount;
-            }
-            
-            // If the constraints were not the same, we have allocated some additional memory we need to free now.
-            if (&rowGroupConstraint != &columnConstraint) {
-                delete rowBitsSetBeforeIndex;
             }
             
             return matrixBuilder.build();
@@ -1380,17 +1372,19 @@ namespace storm {
                 summandIterator = summand->begin();
             }
             
-            for (; resultIterator != resultIteratorEnd; ++rowIterator, ++resultIterator) {
+            for (; resultIterator != resultIteratorEnd; ++rowIterator, ++resultIterator, ++summandIterator) {
+                ValueType newValue;
                 if (summand) {
-                    *resultIterator = *summandIterator;
-                    ++summandIterator;
+                    newValue = *summandIterator;
                 } else {
-                    *resultIterator = storm::utility::zero<ValueType>();
+                    newValue = storm::utility::zero<ValueType>();
                 }
                 
                 for (ite = this->begin() + *(rowIterator + 1); it != ite; ++it) {
-                    *resultIterator += it->getValue() * vector[it->getColumn()];
+                    newValue += it->getValue() * vector[it->getColumn()];
                 }
+                
+                *resultIterator = newValue;
             }
         }
         
@@ -1406,17 +1400,19 @@ namespace storm {
                 summandIterator = summand->end() - 1;
             }
             
-            for (; resultIterator != resultIteratorEnd; --rowIterator, --resultIterator) {
+            for (; resultIterator != resultIteratorEnd; --rowIterator, --resultIterator, --summandIterator) {
+                ValueType newValue;
                 if (summand) {
-                    *resultIterator = *summandIterator;
-                    --summandIterator;
+                    newValue = *summandIterator;
                 } else {
-                    *resultIterator = storm::utility::zero<ValueType>();
+                    newValue = storm::utility::zero<ValueType>();
                 }
                 
                 for (ite = this->begin() + *rowIterator - 1; it != ite; --it) {
-                    *resultIterator += it->getValue() * vector[it->getColumn()];
+                    newValue += (it->getValue() * vector[it->getColumn()]);
                 }
+                
+                *resultIterator = newValue;
             }
         }
         
@@ -1446,11 +1442,13 @@ namespace storm {
                 }
                 
                 for (; resultIterator != resultIteratorEnd; ++rowIterator, ++resultIterator, ++summandIterator) {
-                    *resultIterator = summand ? *summandIterator : storm::utility::zero<ValueType>();
+                    ValueType newValue = summand ? *summandIterator : storm::utility::zero<ValueType>();
                     
                     for (ite = columnsAndEntries.begin() + *(rowIterator + 1); it != ite; ++it) {
-                        *resultIterator += it->getValue() * x[it->getColumn()];
+                        newValue += it->getValue() * x[it->getColumn()];
                     }
+                    
+                    *resultIterator = newValue;
                 }
             }
             
@@ -1478,7 +1476,8 @@ namespace storm {
         template<typename ValueType>
         ValueType SparseMatrix<ValueType>::multiplyRowWithVector(index_type row, std::vector<ValueType> const& vector) const {
             ValueType result = storm::utility::zero<ValueType>();
-            for(auto const& entry : this->getRow(row)){
+
+            for (auto const& entry : this->getRow(row)){
                 result += entry.getValue() * vector[entry.getColumn()];
             }
             return result;
@@ -1567,19 +1566,20 @@ namespace storm {
             }
             
             for (auto resultIt = result.begin(), resultIte = result.end(); resultIt != resultIte; ++resultIt, ++choiceIt, ++rowGroupIt) {
-                ValueType currentValue = summand ? *summandIt : storm::utility::zero<ValueType>();
-                ++summandIt;
+                ValueType currentValue = storm::utility::zero<ValueType>();
                 if (choices) {
                     *choiceIt = 0;
                 }
                 
                 // Only multiply and reduce if there is at least one row in the group.
                 if (*rowGroupIt < *(rowGroupIt + 1)) {
+                    if (summand) {
+                        currentValue = *summandIt;
+                        ++summandIt;
+                    }
+
                     for (auto elementIte = this->begin() + *(rowIt + 1); elementIt != elementIte; ++elementIt) {
                         currentValue += elementIt->getValue() * vector[elementIt->getColumn()];
-                    }
-                    if (choices) {
-                        *choiceIt = 0;
                     }
                     
                     ++rowIt;
@@ -1600,6 +1600,8 @@ namespace storm {
                             ++summandIt;
                         }
                     }
+                } else if (choices) {
+                    *choiceIt = 0;
                 }
                 
                 // Finally write value to target vector.
@@ -1629,21 +1631,27 @@ namespace storm {
             }
             
             for (auto resultIt = result.end() - 1, resultIte = result.begin() - 1; resultIt != resultIte; --resultIt, --choiceIt, --rowGroupIt) {
-                ValueType currentValue = summand ? *summandIt : storm::utility::zero<ValueType>();
-                --summandIt;
-
+                if (choices) {
+                    *choiceIt = 0;
+                }
+                ValueType currentValue = storm::utility::zero<ValueType>();
+                
                 // Only multiply and reduce if there is at least one row in the group.
                 if (*rowGroupIt < *(rowGroupIt + 1)) {
+                    if (summand) {
+                        currentValue = *summandIt;
+                        --summandIt;
+                    }
+
                     for (auto elementIte = this->begin() + *rowIt - 1; elementIt != elementIte; --elementIt) {
                         currentValue += elementIt->getValue() * vector[elementIt->getColumn()];
                     }
                     if (choices) {
                         *choiceIt = std::distance(rowIndications.begin(), rowIt) - *rowGroupIt;
                     }
-                    
                     --rowIt;
                     
-                    for (uint64_t i = *rowGroupIt + 1, end = *(rowGroupIt + 1); i < end; --rowIt, ++i) {
+                    for (uint64_t i = *rowGroupIt + 1, end = *(rowGroupIt + 1); i < end; --rowIt, ++i, --summandIt) {
                         ValueType newValue = summand ? *summandIt : storm::utility::zero<ValueType>();
                         for (auto elementIte = this->begin() + *rowIt - 1; elementIt != elementIte; --elementIt) {
                             newValue += elementIt->getValue() * vector[elementIt->getColumn()];
@@ -1655,12 +1663,7 @@ namespace storm {
                                 *choiceIt = std::distance(rowIndications.begin(), rowIt) - *rowGroupIt;
                             }
                         }
-                        if (summand) {
-                            --summandIt;
-                        }
                     }
-                } else if (choices) {
-                    *choiceIt = 0;
                 }
                 
                 // Finally write value to target vector.
@@ -1705,14 +1708,19 @@ namespace storm {
                 auto resultIt = result.begin() + range.begin();
                 
                 for (; groupIt != groupIte; ++groupIt, ++resultIt, ++choiceIt) {
-                    ValueType currentValue = summand ? *summandIt : storm::utility::zero<ValueType>();
-                    ++summandIt;
                     if (choices) {
                         *choiceIt = 0;
                     }
                     
+                    ValueType currentValue = storm::utility::zero<ValueType>();
+                    
                     // Only multiply and reduce if there is at least one row in the group.
                     if (*groupIt < *(groupIt + 1)) {
+                        if (summand) {
+                            currentValue = *summandIt;
+                            ++summandIt;
+                        }
+
                         for (auto elementIte = columnsAndEntries.begin() + *(rowIt + 1); elementIt != elementIte; ++elementIt) {
                             currentValue += elementIt->getValue() * x[elementIt->getColumn()];
                         }

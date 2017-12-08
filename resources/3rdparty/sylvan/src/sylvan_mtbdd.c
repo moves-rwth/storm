@@ -900,6 +900,60 @@ TASK_IMPL_3(MTBDD, mtbdd_uapply, MTBDD, dd, mtbdd_uapply_op, op, size_t, param)
     return result;
 }
 
+/**
+ * Apply a unary operation <op> to <dd>.
+ */
+TASK_IMPL_3(MTBDD, mtbdd_uapply_fail_false, MTBDD, dd, mtbdd_uapply_op, op, size_t, param)
+{
+    /* Maybe perform garbage collection */
+    sylvan_gc_test();
+    
+    /* Count operation */
+    sylvan_stats_count(MTBDD_UAPPLY);
+    
+    /* Check cache */
+    MTBDD result;
+    if (cache_get3(CACHE_MTBDD_UAPPLY, dd, (size_t)op, param, &result)) {
+        sylvan_stats_count(MTBDD_UAPPLY_CACHED);
+        return result;
+    }
+    
+    /* Check terminal case */
+    result = WRAP(op, dd, param);
+    if (result != mtbdd_invalid) {
+        /* Store in cache */
+        if (cache_put3(CACHE_MTBDD_UAPPLY, dd, (size_t)op, param, result)) {
+            sylvan_stats_count(MTBDD_UAPPLY_CACHEDPUT);
+        }
+        
+        return result;
+    }
+    
+    /* Get cofactors */
+    mtbddnode_t ndd = MTBDD_GETNODE(dd);
+    MTBDD ddlow = node_getlow(dd, ndd);
+    MTBDD ddhigh = node_gethigh(dd, ndd);
+    
+    /* Recursive */
+    mtbdd_refs_spawn(SPAWN(mtbdd_uapply, ddhigh, op, param));
+    MTBDD low = mtbdd_refs_push(CALL(mtbdd_uapply, ddlow, op, param));
+    MTBDD high = mtbdd_refs_sync(SYNC(mtbdd_uapply));
+    mtbdd_refs_pop(1);
+    
+    if (low == mtbdd_false || high == mtbdd_false) {
+        result = mtbdd_false;
+    } else {
+        result = mtbdd_makenode(mtbddnode_getvariable(ndd), low, high);
+    }
+    
+    /* Store in cache */
+    if (cache_put3(CACHE_MTBDD_UAPPLY, dd, (size_t)op, param, result)) {
+        sylvan_stats_count(MTBDD_UAPPLY_CACHEDPUT);
+    }
+    
+    return result;
+}
+
 TASK_2(MTBDD, mtbdd_uop_times_uint, MTBDD, a, size_t, k)
 {
     if (a == mtbdd_false) return mtbdd_false;

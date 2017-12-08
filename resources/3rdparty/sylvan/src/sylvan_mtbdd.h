@@ -421,6 +421,14 @@ TASK_DECL_3(MTBDD, mtbdd_uapply, MTBDD, mtbdd_uapply_op, size_t);
 #define mtbdd_uapply(dd, op, param) CALL(mtbdd_uapply, dd, op, param)
 
 /**
+ * Apply a unary operation <op> to <dd> and fail if one of the subresults is mtbdd_false, where failing means returning
+ * mtbdd_false.
+ * Callback <op> is consulted after the cache, thus the application to a terminal is cached.
+ */
+TASK_DECL_3(MTBDD, mtbdd_uapply_fail_false, MTBDD, mtbdd_uapply_op, size_t);
+#define mtbdd_uapply_fail_false(dd, op, param) CALL(mtbdd_uapply_fail_false, dd, op, param)
+
+/**
  * Callback function types for abstraction.
  * MTBDD mtbdd_abstract_op(MTBDD a, MTBDD b, int k).
  * The function is either called with k==0 (apply to two arguments) or k>0 (k skipped BDD variables)

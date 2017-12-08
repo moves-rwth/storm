@@ -62,10 +62,10 @@ namespace storm {
             storm::logic::FormulaInformation info = formula.info();
             
             // Preserve rewards if necessary.
-            keepRewards = keepRewards || info.containsRewardOperator();
+            keepRewards = keepRewards || info.containsRewardOperator() || info.containsRewardBoundedFormula();
             
             // Preserve bounded properties if necessary.
-            bounded = bounded || (info.containsBoundedUntilFormula() || info.containsNextFormula());
+            bounded = bounded || (info.containsBoundedUntilFormula() || info.containsNextFormula() || info.containsCumulativeRewardFormula());
             
             // Compute the relevant labels and expressions.
             this->addToRespectedAtomicPropositions(formula.getAtomicExpressionFormulas(), formula.getAtomicLabelFormulas());
@@ -76,10 +76,10 @@ namespace storm {
             // Retrieve information about formula.
             storm::logic::FormulaInformation info = formula.info();
 
-            keepRewards = info.containsRewardOperator();
+            keepRewards = info.containsRewardOperator() || info.containsRewardBoundedFormula();
             
             // We need to preserve bounded properties iff the formula contains a bounded until or a next subformula.
-            bounded = info.containsBoundedUntilFormula() || info.containsNextFormula();
+            bounded = info.containsBoundedUntilFormula() || info.containsNextFormula() || info.containsCumulativeRewardFormula();
             
             // Compute the relevant labels and expressions.
             this->addToRespectedAtomicPropositions(formula.getAtomicExpressionFormulas(), formula.getAtomicLabelFormulas());

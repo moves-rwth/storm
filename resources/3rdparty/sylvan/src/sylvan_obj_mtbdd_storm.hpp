@@ -30,6 +30,10 @@ Mtbdd Maximum() const;
 bool EqualNorm(const Mtbdd& other, double epsilon) const;
 bool EqualNormRel(const Mtbdd& other, double epsilon) const;
 
+Mtbdd SharpenKwekMehlhorn(size_t precision) const;
+
+Mtbdd ToRationalNumber() const;
+
 // Functions that operate on Mtbdds over rational numbers.
 static Mtbdd stormRationalNumberTerminal(storm::RationalNumber const& value);
 

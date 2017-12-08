@@ -20,6 +20,8 @@ namespace storm {
         
         class ExpressionVisitor {
         public:
+            virtual ~ExpressionVisitor() = default;
+
             virtual boost::any visit(IfThenElseExpression const& expression, boost::any const& data) = 0;
             virtual boost::any visit(BinaryBooleanFunctionExpression const& expression, boost::any const& data) = 0;
             virtual boost::any visit(BinaryNumericalFunctionExpression const& expression, boost::any const& data) = 0;

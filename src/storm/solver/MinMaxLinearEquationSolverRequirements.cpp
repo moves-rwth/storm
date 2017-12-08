@@ -37,7 +37,7 @@ namespace storm {
             return noEndComponents;
         }
         
-        bool MinMaxLinearEquationSolverRequirements::requiresValidIntialScheduler() const {
+        bool MinMaxLinearEquationSolverRequirements::requiresValidInitialScheduler() const {
             return validInitialScheduler;
         }
         

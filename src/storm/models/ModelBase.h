@@ -130,6 +130,16 @@ namespace storm {
              */
             virtual void reduceToStateBasedRewards() = 0;
             
+            /*!
+             * Retrieves whether the model has a reward model with the given name.
+             *
+             * @return True iff the model has a reward model with the given name.
+             */
+            virtual bool hasRewardModel(std::string const& rewardModelName) const = 0;
+            
+            virtual bool hasUniqueRewardModel() const = 0;
+            virtual std::string const& getUniqueRewardModelName() const = 0;
+            
         private:
             // The type of the model.
             ModelType modelType;

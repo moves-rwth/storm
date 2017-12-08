@@ -55,7 +55,7 @@ namespace storm {
                                     throw storm::exceptions::WrongFormatException() << "Illegal value for boolean constant: " << value << ".";
                                 }
                             } else if (variable.hasIntegerType()) {
-                                int_fast64_t integerValue = std::stoi(value);
+                                int_fast64_t integerValue = std::stoll(value);
                                 constantDefinitions[variable] = manager.integer(integerValue);
                             } else if (variable.hasRationalType()) {
                                 try {

@@ -6,6 +6,8 @@
 #include <functional>
 #include <memory>
 
+#include "storm/adapters/RationalNumberAdapter.h"
+
 #include "storm/storage/dd/DdType.h"
 #include "storm/storage/dd/InternalAdd.h"
 #include "storm/storage/dd/Odd.h"
@@ -65,7 +67,8 @@ namespace storm {
             InternalAdd& operator=(InternalAdd<DdType::CUDD, ValueType> const& other) = default;
             InternalAdd(InternalAdd<DdType::CUDD, ValueType>&& other) = default;
             InternalAdd& operator=(InternalAdd<DdType::CUDD, ValueType>&& other) = default;
-            
+            virtual ~InternalAdd() = default;
+
             /*!
              * Retrieves whether the two DDs represent the same function.
              *
@@ -238,6 +241,13 @@ namespace storm {
             InternalAdd<DdType::CUDD, ValueType> ceil() const;
             
             /*!
+             * Retrieves the function that sharpens all values in the current ADD with the Kwek-Mehlhorn algorithm.
+             *
+             * @return The resulting ADD.
+             */
+            InternalAdd<DdType::CUDD, storm::RationalNumber> sharpenKwekMehlhorn(size_t precision) const;
+            
+            /*!
              * Retrieves the function that maps all evaluations to the minimum of the function values of the two ADDs.
              *
              * @param other The ADD with which to perform the operation.
@@ -253,6 +263,16 @@ namespace storm {
              */
             InternalAdd<DdType::CUDD, ValueType> maximum(InternalAdd<DdType::CUDD, ValueType> const& other) const;
             
+            /*!
+             * Replaces the leaves in this MTBDD with the converted values in the target value type.
+             *
+             * @return The resulting function represented as an ADD.
+             */
+            template<typename TargetValueType>
+            typename std::enable_if<std::is_same<ValueType, TargetValueType>::value, InternalAdd<DdType::CUDD, TargetValueType>>::type toValueType() const;
+            template<typename TargetValueType>
+            typename std::enable_if<!std::is_same<ValueType, TargetValueType>::value, InternalAdd<DdType::CUDD, TargetValueType>>::type toValueType() const;
+
             /*!
              * Sum-abstracts from the given cube.
              *
@@ -608,6 +628,11 @@ namespace storm {
              * @return The DD node of CUDD associated with this ADD.
              */
             DdNode* getCuddDdNode() const;
+            
+            /*!
+             * Retrieves a string representation of an ID for thid ADD.
+             */
+            std::string getStringId() const;
             
         private:
             /*!

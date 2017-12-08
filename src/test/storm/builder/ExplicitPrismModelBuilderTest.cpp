@@ -2,11 +2,9 @@
 #include "storm-config.h"
 #include "storm/models/sparse/StandardRewardModel.h"
 #include "storm/models/sparse/MarkovAutomaton.h"
-#include "storm/settings/SettingMemento.h"
 #include "storm/parser/PrismParser.h"
 #include "storm/builder/ExplicitModelBuilder.h"
 
-#include "storm/settings/modules/IOSettings.h"
 
 TEST(ExplicitPrismModelBuilderTest, Dtmc) {
     storm::prism::Program program = storm::parser::PrismParser::parse(STORM_TEST_RESOURCES_DIR "/dtmc/die.pm");
@@ -37,31 +35,29 @@ TEST(ExplicitPrismModelBuilderTest, Dtmc) {
 }
 
 TEST(ExplicitPrismModelBuilderTest, Ctmc) {
-    // Set the PRISM compatibility mode temporarily. It is set to its old value once the returned object is destructed.
-    std::unique_ptr<storm::settings::SettingMemento> enablePrismCompatibility = storm::settings::mutableIOSettings().overridePrismCompatibilityMode(true);
 
-    storm::prism::Program program = storm::parser::PrismParser::parse(STORM_TEST_RESOURCES_DIR "/ctmc/cluster2.sm");
+    storm::prism::Program program = storm::parser::PrismParser::parse(STORM_TEST_RESOURCES_DIR "/ctmc/cluster2.sm", true);
 
     std::shared_ptr<storm::models::sparse::Model<double>> model = storm::builder::ExplicitModelBuilder<double>(program).build();
     EXPECT_EQ(276ul, model->getNumberOfStates());
     EXPECT_EQ(1120ul, model->getNumberOfTransitions());
     
-    program = storm::parser::PrismParser::parse(STORM_TEST_RESOURCES_DIR "/ctmc/embedded2.sm");
+    program = storm::parser::PrismParser::parse(STORM_TEST_RESOURCES_DIR "/ctmc/embedded2.sm", true);
     model = storm::builder::ExplicitModelBuilder<double>(program).build();
     EXPECT_EQ(3478ul, model->getNumberOfStates());
     EXPECT_EQ(14639ul, model->getNumberOfTransitions());
     
-    program = storm::parser::PrismParser::parse(STORM_TEST_RESOURCES_DIR "/ctmc/polling2.sm");
+    program = storm::parser::PrismParser::parse(STORM_TEST_RESOURCES_DIR "/ctmc/polling2.sm", true);
     model = storm::builder::ExplicitModelBuilder<double>(program).build();
     EXPECT_EQ(12ul, model->getNumberOfStates());
     EXPECT_EQ(22ul, model->getNumberOfTransitions());
     
-    program = storm::parser::PrismParser::parse(STORM_TEST_RESOURCES_DIR "/ctmc/fms2.sm");
+    program = storm::parser::PrismParser::parse(STORM_TEST_RESOURCES_DIR "/ctmc/fms2.sm", true);
     model = storm::builder::ExplicitModelBuilder<double>(program).build();
     EXPECT_EQ(810ul, model->getNumberOfStates());
     EXPECT_EQ(3699ul, model->getNumberOfTransitions());
     
-    program = storm::parser::PrismParser::parse(STORM_TEST_RESOURCES_DIR "/ctmc/tandem5.sm");
+    program = storm::parser::PrismParser::parse(STORM_TEST_RESOURCES_DIR "/ctmc/tandem5.sm", true);
     model = storm::builder::ExplicitModelBuilder<double>(program).build();
     EXPECT_EQ(66ul, model->getNumberOfStates());
     EXPECT_EQ(189ul, model->getNumberOfTransitions());

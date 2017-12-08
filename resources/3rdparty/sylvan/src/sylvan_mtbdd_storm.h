@@ -114,7 +114,7 @@ TASK_DECL_1(MTBDD, mtbdd_bool_to_int64, MTBDD)
  */
 TASK_DECL_2(double, mtbdd_non_zero_count, MTBDD, size_t)
 #define mtbdd_non_zero_count(dd, nvars) CALL(mtbdd_non_zero_count, dd, nvars)
-
+    
 // Checks whether the given MTBDD (does represents a zero leaf.
 int mtbdd_iszero(MTBDD);
 int mtbdd_isnonzero(MTBDD);
@@ -127,6 +127,20 @@ int mtbdd_isnonzero(MTBDD);
 /* Create a MTBDD representing just <var> or the negation of <var> */
 MTBDD mtbdd_ithvar(uint32_t var);
 
+/**
+ * Monad that sharpens the provided vector using the Kwek-Mehlhorn algorithm.
+ */
+TASK_DECL_2(MTBDD, mtbdd_op_sharpen, MTBDD, size_t)
+TASK_DECL_2(MTBDD, mtbdd_sharpen, MTBDD, size_t)
+#define mtbdd_sharpen(dd, p) CALL(mtbdd_sharpen, dd, p)
+
+/**
+ * Monad that converts the double MTBDD to an MTBDD over rational numbers.
+ */
+TASK_DECL_2(MTBDD, mtbdd_op_to_rational_number, MTBDD, size_t)
+TASK_DECL_2(MTBDD, mtbdd_to_rational_number, MTBDD, size_t)
+#define mtbdd_to_rational_number(dd) CALL(mtbdd_to_rational_number, dd, 0)
+    
 /**
  * Unary operation Complement.
  * Supported domains: Integer, Real
@@ -150,8 +164,10 @@ TASK_DECL_3(BDD, mtbdd_min_abstract_representative, MTBDD, MTBDD, uint32_t);
 TASK_DECL_3(BDD, mtbdd_max_abstract_representative, MTBDD, MTBDD, uint32_t);
 #define mtbdd_max_abstract_representative(a, vars) (CALL(mtbdd_max_abstract_representative, a, vars, 0))
 
+// A version of unary apply that performs no caching. This is needed of the argument is actually used by the unary operation,
+// but may not be used to identify cache entries, for example if the argument is a pointer.
 TASK_DECL_3(MTBDD, mtbdd_uapply_nocache, MTBDD, mtbdd_uapply_op, size_t);
-#define mtbdd_uapply_nocache(dd, op, param) CALL(mtbdd_uapply_nocache, dd, op, param)
+#define mtbdd_uapply_nocache(dd, op, param) (CALL(mtbdd_uapply_nocache, dd, op, param))
 
 #ifdef __cplusplus
 }

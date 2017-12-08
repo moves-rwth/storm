@@ -11,12 +11,75 @@ namespace storm {
     namespace solver {
      
         template<storm::dd::DdType DdType, typename ValueType>
+        SymbolicEliminationLinearEquationSolver<DdType, ValueType>::SymbolicEliminationLinearEquationSolver() : SymbolicLinearEquationSolver<DdType, ValueType>() {
+            // Intentionally left empty.
+        }
+        
+        template<storm::dd::DdType DdType, typename ValueType>
         SymbolicEliminationLinearEquationSolver<DdType, ValueType>::SymbolicEliminationLinearEquationSolver(storm::dd::Add<DdType, ValueType> const& A, storm::dd::Bdd<DdType> const& allRows, std::set<storm::expressions::Variable> const& rowMetaVariables, std::set<storm::expressions::Variable> const& columnMetaVariables, std::vector<std::pair<storm::expressions::Variable, storm::expressions::Variable>> const& rowColumnMetaVariablePairs) : SymbolicEliminationLinearEquationSolver(allRows, rowMetaVariables, columnMetaVariables, rowColumnMetaVariablePairs) {
             this->setMatrix(A);
         }
         
         template<storm::dd::DdType DdType, typename ValueType>
         SymbolicEliminationLinearEquationSolver<DdType, ValueType>::SymbolicEliminationLinearEquationSolver(storm::dd::Bdd<DdType> const& allRows, std::set<storm::expressions::Variable> const& rowMetaVariables, std::set<storm::expressions::Variable> const& columnMetaVariables, std::vector<std::pair<storm::expressions::Variable, storm::expressions::Variable>> const& rowColumnMetaVariablePairs) : SymbolicLinearEquationSolver<DdType, ValueType>(allRows, rowMetaVariables, columnMetaVariables, rowColumnMetaVariablePairs) {
+            this->createInternalData(allRows, rowMetaVariables, columnMetaVariables, rowColumnMetaVariablePairs);
+        }
+                
+        template<storm::dd::DdType DdType, typename ValueType>
+        storm::dd::Add<DdType, ValueType> SymbolicEliminationLinearEquationSolver<DdType, ValueType>::solveEquations(Environment const& env, storm::dd::Add<DdType, ValueType> const& x, storm::dd::Add<DdType, ValueType> const& b) const {
+            storm::dd::DdManager<DdType>& ddManager = x.getDdManager();
+            
+            // Build diagonal BDD over new meta variables.
+            storm::dd::Bdd<DdType> diagonal = storm::utility::dd::getRowColumnDiagonal(ddManager, this->rowColumnMetaVariablePairs);
+            diagonal &= this->getAllRows();
+            diagonal = diagonal.swapVariables(this->oldNewMetaVariablePairs);
+
+            storm::dd::Add<DdType, ValueType> rowsAdd = this->getAllRows().swapVariables(rowRowMetaVariablePairs).template toAdd<ValueType>();
+            storm::dd::Add<DdType, ValueType> diagonalAdd = diagonal.template toAdd<ValueType>();
+            
+            // Move the matrix to the new meta variables.
+            storm::dd::Add<DdType, ValueType> matrix = this->A.swapVariables(oldNewMetaVariablePairs);
+            
+            // Initialize solution over the new meta variables.
+            storm::dd::Add<DdType, ValueType> solution = b.swapVariables(oldNewMetaVariablePairs);
+            
+            // As long as there are transitions, we eliminate them.
+            uint64_t iterations = 0;
+            while (!matrix.isZero()) {
+                // Determine inverse loop probabilies.
+                storm::dd::Add<DdType, ValueType> inverseLoopProbabilities = rowsAdd / (rowsAdd - (diagonalAdd * matrix).sumAbstract(newColumnVariables));
+                
+                // Scale all transitions with the inverse loop probabilities.
+                matrix *= inverseLoopProbabilities;
+                
+                solution *= inverseLoopProbabilities;
+                
+                // Delete diagonal elements, i.e. remove self-loops.
+                matrix = diagonal.ite(ddManager.template getAddZero<ValueType>(), matrix);
+            
+                // Update the one-step probabilities.
+                solution += (matrix * solution.swapVariables(newRowColumnMetaVariablePairs)).sumAbstract(newColumnVariables);
+                
+                // Shortcut all transitions by eliminating one intermediate step.
+                matrix = matrix.multiplyMatrix(matrix.permuteVariables(shiftMetaVariablePairs), newColumnVariables);
+                matrix = matrix.swapVariables(columnHelperMetaVariablePairs);
+                
+                ++iterations;
+                STORM_LOG_TRACE("Completed iteration " << iterations << " of elimination process.");
+            }
+            
+            STORM_LOG_INFO("Elimination completed in " << iterations << " iterations.");
+            
+            return solution.swapVariables(rowRowMetaVariablePairs);
+        }
+
+        template<storm::dd::DdType DdType, typename ValueType>
+        LinearEquationSolverProblemFormat SymbolicEliminationLinearEquationSolver<DdType, ValueType>::getEquationProblemFormat(Environment const& env) const {
+            return LinearEquationSolverProblemFormat::FixedPointSystem;
+        }
+        
+        template<storm::dd::DdType DdType, typename ValueType>
+        void SymbolicEliminationLinearEquationSolver<DdType, ValueType>::createInternalData(storm::dd::Bdd<DdType> const& allRows, std::set<storm::expressions::Variable> const& rowMetaVariables, std::set<storm::expressions::Variable> const& columnMetaVariables, std::vector<std::pair<storm::expressions::Variable, storm::expressions::Variable>> const& rowColumnMetaVariablePairs) {
             storm::dd::DdManager<DdType>& ddManager = allRows.getDdManager();
             
             // Create triple-layered meta variables for all original meta variables. We will use them later in the elimination process.
@@ -61,74 +124,28 @@ namespace storm {
         }
         
         template<storm::dd::DdType DdType, typename ValueType>
-        storm::dd::Add<DdType, ValueType> SymbolicEliminationLinearEquationSolver<DdType, ValueType>::solveEquations(storm::dd::Add<DdType, ValueType> const& x, storm::dd::Add<DdType, ValueType> const& b) const {
-            storm::dd::DdManager<DdType>& ddManager = x.getDdManager();
+        void SymbolicEliminationLinearEquationSolver<DdType, ValueType>::setData(storm::dd::Bdd<DdType> const& allRows, std::set<storm::expressions::Variable> const& rowMetaVariables, std::set<storm::expressions::Variable> const& columnMetaVariables, std::vector<std::pair<storm::expressions::Variable, storm::expressions::Variable>> const& rowColumnMetaVariablePairs) {
             
-            // Build diagonal BDD over new meta variables.
-            storm::dd::Bdd<DdType> diagonal = storm::utility::dd::getRowColumnDiagonal(ddManager, this->rowColumnMetaVariablePairs);
-            diagonal &= this->allRows;
-            diagonal = diagonal.swapVariables(this->oldNewMetaVariablePairs);
-
-            storm::dd::Add<DdType, ValueType> rowsAdd = this->allRows.swapVariables(rowRowMetaVariablePairs).template toAdd<ValueType>();
-            storm::dd::Add<DdType, ValueType> diagonalAdd = diagonal.template toAdd<ValueType>();
+            // Call superclass function.
+            SymbolicLinearEquationSolver<DdType, ValueType>::setData(allRows, rowMetaVariables, columnMetaVariables, rowColumnMetaVariablePairs);
             
-            // Revert the conversion to an equation system and move it to the new meta variables.
-            storm::dd::Add<DdType, ValueType> matrix = diagonalAdd - this->A.swapVariables(oldNewMetaVariablePairs);
-            
-            // Initialize solution over the new meta variables.
-            storm::dd::Add<DdType, ValueType> solution = b.swapVariables(oldNewMetaVariablePairs);
-            
-            // As long as there are transitions, we eliminate them.
-            uint64_t iterations = 0;
-            while (!matrix.isZero()) {
-                // Determine inverse loop probabilies.
-                storm::dd::Add<DdType, ValueType> inverseLoopProbabilities = rowsAdd / (rowsAdd - (diagonalAdd * matrix).sumAbstract(newColumnVariables));
-                
-                // Scale all transitions with the inverse loop probabilities.
-                matrix *= inverseLoopProbabilities;
-                
-                solution *= inverseLoopProbabilities;
-                
-                // Delete diagonal elements, i.e. remove self-loops.
-                matrix = diagonal.ite(ddManager.template getAddZero<ValueType>(), matrix);
-            
-                // Update the one-step probabilities.
-                solution += (matrix * solution.swapVariables(newRowColumnMetaVariablePairs)).sumAbstract(newColumnVariables);
-                
-                // Shortcut all transitions by eliminating one intermediate step.
-                matrix = matrix.multiplyMatrix(matrix.permuteVariables(shiftMetaVariablePairs), newColumnVariables);
-                matrix = matrix.swapVariables(columnHelperMetaVariablePairs);
-                
-                ++iterations;
-                STORM_LOG_TRACE("Completed iteration " << iterations << " of elimination process.");
-            }
-            
-            STORM_LOG_INFO("Elimination completed in " << iterations << " iterations.");
-            
-            return solution.swapVariables(rowRowMetaVariablePairs);
-        }
-
-        template<storm::dd::DdType DdType, typename ValueType>
-        std::unique_ptr<storm::solver::SymbolicLinearEquationSolver<DdType, ValueType>> SymbolicEliminationLinearEquationSolverFactory<DdType, ValueType>::create(storm::dd::Bdd<DdType> const& allRows, std::set<storm::expressions::Variable> const& rowMetaVariables, std::set<storm::expressions::Variable> const& columnMetaVariables, std::vector<std::pair<storm::expressions::Variable, storm::expressions::Variable>> const& rowColumnMetaVariablePairs) const {
-            return std::make_unique<SymbolicEliminationLinearEquationSolver<DdType, ValueType>>(allRows, rowMetaVariables, columnMetaVariables, rowColumnMetaVariablePairs);
-        }
-            
-        template<storm::dd::DdType DdType, typename ValueType>
-        SymbolicEliminationLinearEquationSolverSettings<ValueType>& SymbolicEliminationLinearEquationSolverFactory<DdType, ValueType>::getSettings() {
-            return settings;
-        }
-
-        template<storm::dd::DdType DdType, typename ValueType>
-        SymbolicEliminationLinearEquationSolverSettings<ValueType> const& SymbolicEliminationLinearEquationSolverFactory<DdType, ValueType>::getSettings() const {
-            return settings;
+            // Now create new variables as needed.
+            this->createInternalData(this->getAllRows(), this->rowMetaVariables, this->columnMetaVariables, this->rowColumnMetaVariablePairs);
         }
         
+        template<storm::dd::DdType DdType, typename ValueType>
+        std::unique_ptr<storm::solver::SymbolicLinearEquationSolver<DdType, ValueType>> SymbolicEliminationLinearEquationSolverFactory<DdType, ValueType>::create(Environment const& env) const {
+            return std::make_unique<SymbolicEliminationLinearEquationSolver<DdType, ValueType>>();
+        }
+            
         template class SymbolicEliminationLinearEquationSolver<storm::dd::DdType::CUDD, double>;
+        template class SymbolicEliminationLinearEquationSolver<storm::dd::DdType::CUDD, storm::RationalNumber>;
         template class SymbolicEliminationLinearEquationSolver<storm::dd::DdType::Sylvan, double>;
         template class SymbolicEliminationLinearEquationSolver<storm::dd::DdType::Sylvan, storm::RationalNumber>;
         template class SymbolicEliminationLinearEquationSolver<storm::dd::DdType::Sylvan, storm::RationalFunction>;
 
         template class SymbolicEliminationLinearEquationSolverFactory<storm::dd::DdType::CUDD, double>;
+        template class SymbolicEliminationLinearEquationSolverFactory<storm::dd::DdType::CUDD, storm::RationalNumber>;
         template class SymbolicEliminationLinearEquationSolverFactory<storm::dd::DdType::Sylvan, double>;
         template class SymbolicEliminationLinearEquationSolverFactory<storm::dd::DdType::Sylvan, storm::RationalNumber>;
         template class SymbolicEliminationLinearEquationSolverFactory<storm::dd::DdType::Sylvan, storm::RationalFunction>;

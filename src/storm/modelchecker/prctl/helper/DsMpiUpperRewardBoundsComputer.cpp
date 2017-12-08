@@ -23,6 +23,7 @@ namespace storm {
             
             template<typename ValueType>
             std::vector<ValueType> DsMpiDtmcUpperRewardBoundsComputer<ValueType>::computeUpperBounds() {
+                STORM_LOG_TRACE("Computing upper reward bounds using DS-MPI.");
                 std::chrono::high_resolution_clock::time_point start = std::chrono::high_resolution_clock::now();
                 sweep();
                 ValueType lambda = computeLambda();

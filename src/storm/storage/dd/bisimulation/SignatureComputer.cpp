@@ -101,9 +101,17 @@ namespace storm {
             template<storm::dd::DdType DdType, typename ValueType>
             Signature<DdType, ValueType> SignatureComputer<DdType, ValueType>::getFullSignature(Partition<DdType, ValueType> const& partition) const {
                 if (partition.storedAsBdd()) {
-                    return Signature<DdType, ValueType>(this->transitionMatrix.multiplyMatrix(partition.asBdd(), columnVariables));
+                    if (partition.hasChangedStates()) {
+                        return Signature<DdType, ValueType>(this->transitionMatrix.multiplyMatrix(partition.asBdd() && partition.changedStatesAsBdd(), columnVariables));
+                    } else {
+                        return Signature<DdType, ValueType>(this->transitionMatrix.multiplyMatrix(partition.asBdd(), columnVariables));
+                    }
                 } else {
-                    return Signature<DdType, ValueType>(this->transitionMatrix.multiplyMatrix(partition.asAdd(), columnVariables));
+                    if (partition.hasChangedStates()) {
+                        return Signature<DdType, ValueType>(this->transitionMatrix.multiplyMatrix(partition.asAdd() * partition.changedStatesAsAdd(), columnVariables));
+                    } else {
+                        return Signature<DdType, ValueType>(this->transitionMatrix.multiplyMatrix(partition.asAdd(), columnVariables));
+                    }
                 }
             }
             

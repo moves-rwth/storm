@@ -60,7 +60,8 @@ namespace storm {
             InternalAdd& operator=(InternalAdd<DdType::Sylvan, ValueType> const& other) = default;
             InternalAdd(InternalAdd<DdType::Sylvan, ValueType>&& other) = default;
             InternalAdd& operator=(InternalAdd<DdType::Sylvan, ValueType>&& other) = default;
-            
+            virtual ~InternalAdd() = default;
+
             /*!
              * Retrieves whether the two DDs represent the same function.
              *
@@ -197,7 +198,7 @@ namespace storm {
              * Retrieves the function that represents the current ADD to the power of the given ADD.
              *
              * @other The exponent function (given as an ADD).
-             * @retur The resulting ADD.
+             * @return The resulting ADD.
              */
             InternalAdd<DdType::Sylvan, ValueType> pow(InternalAdd<DdType::Sylvan, ValueType> const& other) const;
             
@@ -205,7 +206,7 @@ namespace storm {
              * Retrieves the function that represents the current ADD modulo the given ADD.
              *
              * @other The modul function (given as an ADD).
-             * @retur The resulting ADD.
+             * @return The resulting ADD.
              */
             InternalAdd<DdType::Sylvan, ValueType> mod(InternalAdd<DdType::Sylvan, ValueType> const& other) const;
             
@@ -214,23 +215,30 @@ namespace storm {
              * ADD.
              *
              * @other The base function (given as an ADD).
-             * @retur The resulting ADD.
+             * @return The resulting ADD.
              */
             InternalAdd<DdType::Sylvan, ValueType> logxy(InternalAdd<DdType::Sylvan, ValueType> const& other) const;
             
             /*!
              * Retrieves the function that floors all values in the current ADD.
              *
-             * @retur The resulting ADD.
+             * @return The resulting ADD.
              */
             InternalAdd<DdType::Sylvan, ValueType> floor() const;
             
             /*!
              * Retrieves the function that ceils all values in the current ADD.
              *
-             * @retur The resulting ADD.
+             * @return The resulting ADD.
              */
             InternalAdd<DdType::Sylvan, ValueType> ceil() const;
+            
+            /*!
+             * Retrieves the function that sharpens all values in the current ADD with the Kwek-Mehlhorn algorithm.
+             *
+             * @return The resulting ADD.
+             */
+            InternalAdd<DdType::Sylvan, storm::RationalNumber> sharpenKwekMehlhorn(size_t precision) const;
             
             /*!
              * Retrieves the function that maps all evaluations to the minimum of the function values of the two ADDs.
@@ -249,7 +257,7 @@ namespace storm {
             InternalAdd<DdType::Sylvan, ValueType> maximum(InternalAdd<DdType::Sylvan, ValueType> const& other) const;
             
 			/*!
-             * Replaces the leaves in this MTBDD, converting them to double if possible, and -1.0 else.
+             * Replaces the leaves in this MTBDD with the converted values in the target value type.
              *
              * @return The resulting function represented as an ADD.
              */
@@ -611,16 +619,8 @@ namespace storm {
              * @return The value of the leaf.
              */
             static ValueType getValue(MTBDD const& node);
-
-            /*!
-             * Retrieves whether the topmost variable in the MTBDD is the one with the given index.
-             *
-             * @param The top node of the MTBDD.
-             * @param variableIndex The variable index.
-             * @param offset An offset that is applied to the index of the top variable in the MTBDD.
-             * @return True iff the MTBDD's top variable has the given index.
-             */
-            static bool matchesVariableIndex(MTBDD const& node, uint64_t variableIndex, int64_t offset = 0);
+            
+            std::string getStringId() const;
             
         private:
             /*!
@@ -735,7 +735,7 @@ namespace storm {
             static MTBDD getLeaf(uint_fast64_t value);
 
             /*!
-             * Retrieves the sylvan representation of the given storm::RatíonalNumber.
+             * Retrieves the sylvan representation of the given storm::Ratï¿½onalNumber.
              *
              * @return The sylvan node for the given value.
              */

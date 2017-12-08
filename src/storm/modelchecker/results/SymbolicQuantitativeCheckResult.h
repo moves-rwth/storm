@@ -22,8 +22,9 @@ namespace storm {
             SymbolicQuantitativeCheckResult& operator=(SymbolicQuantitativeCheckResult&& other) = default;
 #endif
             
-            virtual std::unique_ptr<CheckResult> compareAgainstBound(storm::logic::ComparisonType comparisonType, ValueType const& bound) const override;
+            virtual std::unique_ptr<CheckResult> clone() const override;
 
+            virtual std::unique_ptr<CheckResult> compareAgainstBound(storm::logic::ComparisonType comparisonType, ValueType const& bound) const override;
 
             virtual bool isSymbolic() const override;
             virtual bool isResultForAllStates() const override;
@@ -31,7 +32,9 @@ namespace storm {
             virtual bool isSymbolicQuantitativeCheckResult() const override;
             
             storm::dd::Add<Type, ValueType> const& getValueVector() const;
-            
+            storm::dd::Bdd<Type> const& getStates() const;
+            storm::dd::Bdd<Type> const& getReachableStates() const;
+
             virtual std::ostream& writeToStream(std::ostream& out) const override;
             
             virtual void filter(QualitativeCheckResult const& filter) override;

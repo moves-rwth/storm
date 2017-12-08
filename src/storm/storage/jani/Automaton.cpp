@@ -543,6 +543,9 @@ namespace storm {
             for (auto const& edge : edges) {
                 outStream << "\t" << name << "_e" << edgeIndex << "[ label=\"\" , shape=circle, width=.2, style=filled, fillcolor=\"black\"];" << std::endl;
                 ++edgeIndex;
+                
+                // Silencing unused variable warning.
+                (void)edge;
             }
 
             // Connect edges

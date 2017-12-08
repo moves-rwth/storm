@@ -44,13 +44,19 @@ namespace storm {
                 Partition<DdType, ValueType> const& getStatePartition() const;
                 
                 /*!
+                 * Retrieves the full signature of all states wrt. the current state partition.
+                 */
+                Signature<DdType, ValueType> getFullSignature() const;
+                
+                /*!
                  * Retrieves the status of the refinement process.
                  */
                 Status getStatus() const;
                 
             protected:
                 Partition<DdType, ValueType> internalRefine(SignatureComputer<DdType, ValueType>& stateSignatureComputer, SignatureRefiner<DdType, ValueType>& signatureRefiner, Partition<DdType, ValueType> const& oldPartition, Partition<DdType, ValueType> const& targetPartition, SignatureMode const& mode = SignatureMode::Eager);
-                
+                Partition<DdType, ValueType> internalRefine(Signature<DdType, ValueType> const& signature, SignatureRefiner<DdType, ValueType>& signatureRefiner, Partition<DdType, ValueType> const& oldPartition);
+
                 virtual bool refineWrtStateRewards(storm::dd::Add<DdType, ValueType> const& stateRewards);
                 virtual bool refineWrtStateActionRewards(storm::dd::Add<DdType, ValueType> const& stateActionRewards);
                 

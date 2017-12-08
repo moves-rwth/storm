@@ -10,6 +10,7 @@ namespace storm {
             virtual ~QualitativeCheckResult() = default;
             virtual QualitativeCheckResult& operator&=(QualitativeCheckResult const& other);
             virtual QualitativeCheckResult& operator|=(QualitativeCheckResult const& other);
+            
             virtual void complement();
             
             virtual bool existsTrue() const = 0;

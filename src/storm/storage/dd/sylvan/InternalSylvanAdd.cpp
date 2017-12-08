@@ -10,6 +10,7 @@
 #include "storm/utility/constants.h"
 #include "storm/exceptions/NotImplementedException.h"
 #include "storm/exceptions/InvalidOperationException.h"
+#include "storm/exceptions/NotSupportedException.h"
 
 #include "storm-config.h"
 
@@ -56,9 +57,7 @@ namespace storm {
             bool negated = mtbdd_hascomp(node);
             
             STORM_LOG_ASSERT(mtbdd_gettype(node) == sylvan_storm_rational_number_get_type(), "Expected a storm::RationalNumber value.");
-            uint64_t value = mtbdd_getvalue(node);
-            storm_rational_number_ptr ptr = (storm_rational_number_ptr)value;
-            
+            storm_rational_number_ptr ptr = (storm_rational_number_ptr)mtbdd_getstorm_rational_number_ptr(node);
             storm::RationalNumber* rationalNumber = (storm::RationalNumber*)(ptr);
             
             return negated ? -(*rationalNumber) : (*rationalNumber);
@@ -80,12 +79,7 @@ namespace storm {
             return negated ? -(*rationalFunction) : (*rationalFunction);
         }
 #endif
-        
-        template<typename ValueType>
-        bool InternalAdd<DdType::Sylvan, ValueType>::matchesVariableIndex(MTBDD const& node, uint64_t variableIndex, int64_t offset) {
-            return !mtbdd_isleaf(node) && static_cast<uint64_t>(sylvan_var(node) + offset) == variableIndex;
-        }
-        
+                
         template<typename ValueType>
         bool InternalAdd<DdType::Sylvan, ValueType>::operator==(InternalAdd<DdType::Sylvan, ValueType> const& other) const {
             return this->sylvanMtbdd == other.sylvanMtbdd;
@@ -394,6 +388,18 @@ namespace storm {
             return InternalAdd<DdType::Sylvan, storm::RationalFunction>(ddManager, this->sylvanMtbdd.CeilRF());
         }
 #endif
+        
+        template<typename ValueType>
+        InternalAdd<DdType::Sylvan, storm::RationalNumber> InternalAdd<DdType::Sylvan, ValueType>::sharpenKwekMehlhorn(size_t precision) const {
+            return InternalAdd<DdType::Sylvan, storm::RationalNumber>(ddManager, this->sylvanMtbdd.SharpenKwekMehlhorn(precision));
+        }
+
+#ifdef STORM_HAVE_CARL
+        template<>
+        InternalAdd<DdType::Sylvan, storm::RationalNumber> InternalAdd<DdType::Sylvan, storm::RationalFunction>::sharpenKwekMehlhorn(size_t precision) const {
+            STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Operation not supported.");
+        }
+#endif
 
         template<typename ValueType>
         InternalAdd<DdType::Sylvan, ValueType> InternalAdd<DdType::Sylvan, ValueType>::minimum(InternalAdd<DdType::Sylvan, ValueType> const& other) const {
@@ -444,7 +450,12 @@ namespace storm {
             return InternalAdd<DdType::Sylvan, double>(ddManager, this->sylvanMtbdd.ToDoubleRN());
         }
 
-        
+        template<>
+        template<>
+        InternalAdd<DdType::Sylvan, storm::RationalNumber> InternalAdd<DdType::Sylvan, double>::toValueType() const {
+            return InternalAdd<DdType::Sylvan, storm::RationalNumber>(ddManager, this->sylvanMtbdd.ToRationalNumber());
+        }
+
 #ifdef STORM_HAVE_CARL
 		template<>
         template<>
@@ -1138,6 +1149,13 @@ namespace storm {
         template<typename ValueType>
         sylvan::Mtbdd InternalAdd<DdType::Sylvan, ValueType>::getSylvanMtbdd() const {
             return sylvanMtbdd;
+        }
+        
+        template<typename ValueType>
+        std::string InternalAdd<DdType::Sylvan, ValueType>::getStringId() const {
+            std::stringstream ss;
+            ss << this->getSylvanMtbdd().GetMTBDD();
+            return ss.str();
         }
         
         template class InternalAdd<DdType::Sylvan, double>;

@@ -528,6 +528,9 @@ namespace storm {
                 
         template InternalAdd<DdType::CUDD, double> InternalBdd<DdType::CUDD>::toAdd() const;
         template InternalAdd<DdType::CUDD, uint_fast64_t> InternalBdd<DdType::CUDD>::toAdd() const;
+#ifdef STORM_HAVE_CARL
+        template InternalAdd<DdType::CUDD, storm::RationalNumber> InternalBdd<DdType::CUDD>::toAdd() const;
+#endif
         
         template void InternalBdd<DdType::CUDD>::filterExplicitVectorRec<double>(DdNode const* dd, cudd::Cudd const& manager, uint_fast64_t currentLevel, bool complement, uint_fast64_t maxLevel, std::vector<uint_fast64_t> const& ddVariableIndices, uint_fast64_t currentOffset, storm::dd::Odd const& odd, std::vector<double>& result, uint_fast64_t& currentIndex, std::vector<double> const& values);
         template void InternalBdd<DdType::CUDD>::filterExplicitVectorRec<uint_fast64_t>(DdNode const* dd, cudd::Cudd const& manager, uint_fast64_t currentLevel, bool complement, uint_fast64_t maxLevel, std::vector<uint_fast64_t> const& ddVariableIndices, uint_fast64_t currentOffset, storm::dd::Odd const& odd, std::vector<uint_fast64_t>& result, uint_fast64_t& currentIndex, std::vector<uint_fast64_t> const& values);
@@ -537,5 +540,6 @@ namespace storm {
 
         template InternalAdd<DdType::CUDD, double> InternalBdd<DdType::CUDD>::ite(InternalAdd<DdType::CUDD, double> const& thenAdd, InternalAdd<DdType::CUDD, double> const& elseAdd) const;
         template InternalAdd<DdType::CUDD, uint_fast64_t> InternalBdd<DdType::CUDD>::ite(InternalAdd<DdType::CUDD, uint_fast64_t> const& thenAdd, InternalAdd<DdType::CUDD, uint_fast64_t> const& elseAdd) const;
+        template InternalAdd<DdType::CUDD, storm::RationalNumber> InternalBdd<DdType::CUDD>::ite(InternalAdd<DdType::CUDD, storm::RationalNumber> const& thenAdd, InternalAdd<DdType::CUDD, storm::RationalNumber> const& elseAdd) const;
     }
 }

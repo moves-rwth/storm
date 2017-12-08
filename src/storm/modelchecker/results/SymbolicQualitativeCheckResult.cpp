@@ -18,6 +18,11 @@ namespace storm {
         }
         
         template <storm::dd::DdType Type>
+        std::unique_ptr<CheckResult> SymbolicQualitativeCheckResult<Type>::clone() const {
+            return std::make_unique<SymbolicQualitativeCheckResult<Type>>(this->reachableStates, this->states, this->truthValues);
+        }
+        
+        template <storm::dd::DdType Type>
         bool SymbolicQualitativeCheckResult<Type>::isSymbolic() const {
             return true;
         }

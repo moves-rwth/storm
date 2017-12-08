@@ -12,8 +12,8 @@ namespace storm {
                     return "linearprogramming";
                 case MinMaxMethod::Topological:
                     return "topological";
-                case MinMaxMethod::Acyclic:
-                    return "acyclic";
+                case MinMaxMethod::RationalSearch:
+                    return "ratsearch";
             }
             return "invalid";
         }
@@ -60,6 +60,74 @@ namespace storm {
                     return "Z3";
                 case SmtSolverType::Mathsat:
                     return "Mathsat";
+            }
+            return "invalid";
+        }
+        
+        std::string toString(NativeLinearEquationSolverMethod t) {
+            switch( t) {
+                case NativeLinearEquationSolverMethod::Jacobi:
+                    return "Jacobi";
+                case NativeLinearEquationSolverMethod::GaussSeidel:
+                    return "GaussSeidel";
+                case NativeLinearEquationSolverMethod::SOR:
+                    return "SOR";
+                case NativeLinearEquationSolverMethod::WalkerChae:
+                    return "WalkerChae";
+                case NativeLinearEquationSolverMethod::Power:
+                    return "Power";
+                case NativeLinearEquationSolverMethod::RationalSearch:
+                    return "RationalSearch";
+            }
+            return "invalid";
+        }
+        
+        std::string toString(GmmxxLinearEquationSolverMethod t) {
+            switch (t) {
+                case GmmxxLinearEquationSolverMethod::Bicgstab:
+                    return "BiCGSTAB";
+                case GmmxxLinearEquationSolverMethod::Qmr:
+                    return "QMR";
+                case GmmxxLinearEquationSolverMethod::Gmres:
+                    return "GMRES";
+            }
+            return "invalid";
+        }
+        
+        std::string toString(GmmxxLinearEquationSolverPreconditioner t) {
+            switch (t) {
+                case GmmxxLinearEquationSolverPreconditioner::Diagonal:
+                    return "diagonal";
+                case GmmxxLinearEquationSolverPreconditioner::Ilu:
+                    return "ilu";
+                case GmmxxLinearEquationSolverPreconditioner::None:
+                    return "none";
+            }
+            return "invalid";
+        }
+        
+        std::string toString(EigenLinearEquationSolverMethod t) {
+            switch (t) {
+                case EigenLinearEquationSolverMethod::SparseLU:
+                    return "SparseLU";
+                case EigenLinearEquationSolverMethod::Bicgstab:
+                    return "BiCGSTAB";
+                case EigenLinearEquationSolverMethod::DGmres:
+                    return "DGMRES";
+                case EigenLinearEquationSolverMethod::Gmres:
+                    return "GMRES";
+            }
+            return "invalid";
+        }
+        
+        std::string toString(EigenLinearEquationSolverPreconditioner t) {
+            switch (t) {
+                case EigenLinearEquationSolverPreconditioner::Diagonal:
+                    return "diagonal";
+                case EigenLinearEquationSolverPreconditioner::Ilu:
+                    return "ilu";
+                case EigenLinearEquationSolverPreconditioner::None:
+                    return "none";
             }
             return "invalid";
         }

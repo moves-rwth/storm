@@ -41,7 +41,6 @@ namespace storm {
             return overApproximation;
         }
         
-        
         template<typename ValueType>
         std::ostream& ParetoCurveCheckResult<ValueType>::writeToStream(std::ostream& out) const {
             out << std::endl;

@@ -317,6 +317,13 @@ namespace storm {
             void complement();
             
             /*!
+             * Increments the (unsigned) number represented by this BitVector by one.
+             * @note Index 0 is assumed to be the least significant bit.
+             * @note Wraps around, i.e., incrementing 11..1 yields 00..0.
+             */
+            void increment();
+            
+            /*!
              * Performs a logical "implies" with the given bit vector. In case the sizes of the bit vectors do not
              * match, only the matching portion is considered and the overlapping bits are set to 0.
              *
@@ -421,6 +428,11 @@ namespace storm {
             void clear();
                         
             /*!
+             * Sets all bits from the bit vector. Calling full() after this operation will yield true.
+             */
+            void fill();
+            
+            /*!
              * Returns the number of bits that are set to true in this bit vector.
              *
              * @return The number of bits that are set to true in this bit vector.
@@ -501,7 +513,10 @@ namespace storm {
             
             friend std::ostream& operator<<(std::ostream& out, BitVector const& bitVector);
             friend struct std::hash<storm::storage::BitVector>;
-            friend struct NonZeroBitVectorHash;
+            friend struct FNV1aBitVectorHash;
+            
+            template<typename StateType>
+            friend struct Murmur3BitVectorHash;
             
         private:
             /*!
@@ -571,11 +586,15 @@ namespace storm {
             static const uint_fast64_t mod64mask = (1 << 6) - 1;
         };
         
-        // A hashing functor that guarantees that the result of the hash is never going to be -1.
-        struct NonZeroBitVectorHash {
+        struct FNV1aBitVectorHash {
             std::size_t operator()(storm::storage::BitVector const& bv) const;
         };
-        
+
+        template<typename StateType>
+        struct Murmur3BitVectorHash {
+            StateType operator()(storm::storage::BitVector const& bv) const;
+        };
+
     } // namespace storage
 } // namespace storm
 

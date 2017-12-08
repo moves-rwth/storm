@@ -533,7 +533,7 @@ namespace storm {
                     if (ma->hasOnlyTrivialNondeterminism()) {
                         // Markov automaton can be converted into CTMC
                         // TODO Matthias: change components which were not moved accordingly
-                        model = ma->convertToCTMC();
+                        model = ma->convertToCtmc();
                     } else {
                         model = ma;
                     }
@@ -592,7 +592,7 @@ namespace storm {
                 if (ma->hasOnlyTrivialNondeterminism()) {
                     // Markov automaton can be converted into CTMC
                     // TODO Matthias: change components which were not moved accordingly
-                    model = ma->convertToCTMC();
+                    model = ma->convertToCtmc();
                 } else {
                     model = ma;
                 }

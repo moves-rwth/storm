@@ -28,10 +28,10 @@ namespace storm {
         };
  
         template <typename SparseModelType, typename ImpreciseType, typename PreciseType>
-        RegionResult ValidatingSparseParameterLiftingModelChecker<SparseModelType, ImpreciseType, PreciseType>::analyzeRegion(storm::storage::ParameterRegion<typename SparseModelType::ValueType> const& region, RegionResultHypothesis const& hypothesis, RegionResult const& initialResult, bool sampleVerticesOfRegion) {
+        RegionResult ValidatingSparseParameterLiftingModelChecker<SparseModelType, ImpreciseType, PreciseType>::analyzeRegion(Environment const& env, storm::storage::ParameterRegion<typename SparseModelType::ValueType> const& region, RegionResultHypothesis const& hypothesis, RegionResult const& initialResult, bool sampleVerticesOfRegion) {
 
         
-            RegionResult currentResult = getImpreciseChecker().analyzeRegion(region, hypothesis, initialResult, false);
+            RegionResult currentResult = getImpreciseChecker().analyzeRegion(env, region, hypothesis, initialResult, false);
             
             if (currentResult == RegionResult::AllSat || currentResult == RegionResult::AllViolated) {
                 applyHintsToPreciseChecker();
@@ -41,7 +41,7 @@ namespace storm {
                     parameterOptDir = storm::solver::invert(parameterOptDir);
                 }
                 
-                bool preciseResult = getPreciseChecker().check(region, parameterOptDir)->asExplicitQualitativeCheckResult()[*getPreciseChecker().getConsideredParametricModel().getInitialStates().begin()];
+                bool preciseResult = getPreciseChecker().check(env, region, parameterOptDir)->asExplicitQualitativeCheckResult()[*getPreciseChecker().getConsideredParametricModel().getInitialStates().begin()];
                 bool preciseResultAgrees = preciseResult == (currentResult == RegionResult::AllSat);
                 
                 if (!preciseResultAgrees) {
@@ -52,7 +52,7 @@ namespace storm {
                     // Check the other direction in case no hypothesis was given
                     if (hypothesis == RegionResultHypothesis::Unknown) {
                         parameterOptDir = storm::solver::invert(parameterOptDir);
-                        preciseResult = getPreciseChecker().check(region, parameterOptDir)->asExplicitQualitativeCheckResult()[*getPreciseChecker().getConsideredParametricModel().getInitialStates().begin()];
+                        preciseResult = getPreciseChecker().check(env, region, parameterOptDir)->asExplicitQualitativeCheckResult()[*getPreciseChecker().getConsideredParametricModel().getInitialStates().begin()];
                         if (preciseResult && parameterOptDir == getPreciseChecker().getCurrentCheckTask().getOptimizationDirection()) {
                             currentResult = RegionResult::AllSat;
                         } else if (!preciseResult && parameterOptDir == storm::solver::invert(getPreciseChecker().getCurrentCheckTask().getOptimizationDirection())) {
@@ -63,7 +63,7 @@ namespace storm {
             }
             
             if (sampleVerticesOfRegion && currentResult != RegionResult::AllSat && currentResult != RegionResult::AllViolated) {
-                currentResult = getPreciseChecker().sampleVertices(region, currentResult);
+                currentResult = getPreciseChecker().sampleVertices(env, region, currentResult);
             }
     
             return currentResult;

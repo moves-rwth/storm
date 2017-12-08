@@ -43,16 +43,20 @@ namespace storm {
                 return this->getOption(techniqueOptionName).getHasOptionBeenSet();
             }
             
-            EigenEquationSolverSettings::LinearEquationMethod EigenEquationSolverSettings::getLinearEquationSystemMethod() const {
+            bool EigenEquationSolverSettings::isLinearEquationSystemMethodSetFromDefault() const {
+                return !this->getOption(techniqueOptionName).getHasOptionBeenSet() || this->getOption(techniqueOptionName).getArgumentByName("name").wasSetFromDefaultValue();
+            }
+            
+            storm::solver::EigenLinearEquationSolverMethod EigenEquationSolverSettings::getLinearEquationSystemMethod() const {
                 std::string linearEquationSystemTechniqueAsString = this->getOption(techniqueOptionName).getArgumentByName("name").getValueAsString();
                 if (linearEquationSystemTechniqueAsString == "sparselu") {
-                    return EigenEquationSolverSettings::LinearEquationMethod::SparseLU;
+                    return storm::solver::EigenLinearEquationSolverMethod::SparseLU;
                 } else if (linearEquationSystemTechniqueAsString == "bicgstab") {
-                    return EigenEquationSolverSettings::LinearEquationMethod::BiCGSTAB;
+                    return storm::solver::EigenLinearEquationSolverMethod::Bicgstab;
                 } else if (linearEquationSystemTechniqueAsString == "dgmres") {
-                    return EigenEquationSolverSettings::LinearEquationMethod::DGMRES;
+                    return storm::solver::EigenLinearEquationSolverMethod::DGmres;
                 } else if (linearEquationSystemTechniqueAsString == "gmres") {
-                    return EigenEquationSolverSettings::LinearEquationMethod::GMRES;
+                    return storm::solver::EigenLinearEquationSolverMethod::Gmres;
                 }
                 STORM_LOG_THROW(false, storm::exceptions::IllegalArgumentValueException, "Unknown solution technique '" << linearEquationSystemTechniqueAsString << "' selected.");
             }
@@ -61,14 +65,14 @@ namespace storm {
                 return this->getOption(preconditionOptionName).getHasOptionBeenSet();
             }
             
-            EigenEquationSolverSettings::PreconditioningMethod EigenEquationSolverSettings::getPreconditioningMethod() const {
+            storm::solver::EigenLinearEquationSolverPreconditioner EigenEquationSolverSettings::getPreconditioningMethod() const {
                 std::string PreconditioningMethodAsString = this->getOption(preconditionOptionName).getArgumentByName("name").getValueAsString();
                 if (PreconditioningMethodAsString == "ilu") {
-                    return EigenEquationSolverSettings::PreconditioningMethod::Ilu;
+                    return storm::solver::EigenLinearEquationSolverPreconditioner::Ilu;
                 } else if (PreconditioningMethodAsString == "diagonal") {
-                    return EigenEquationSolverSettings::PreconditioningMethod::Diagonal;
+                    return storm::solver::EigenLinearEquationSolverPreconditioner::Diagonal;
                 } else if (PreconditioningMethodAsString == "none") {
-                    return EigenEquationSolverSettings::PreconditioningMethod::None;
+                    return storm::solver::EigenLinearEquationSolverPreconditioner::None;
                 }
                 STORM_LOG_THROW(false, storm::exceptions::IllegalArgumentValueException, "Unknown preconditioning technique '" << PreconditioningMethodAsString << "' selected.");
             }
