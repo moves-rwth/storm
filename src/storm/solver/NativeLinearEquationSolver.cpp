@@ -558,23 +558,37 @@ namespace storm {
         template<typename ValueType>
         bool NativeLinearEquationSolver<ValueType>::solveEquationsQuickSoundPower(Environment const& env, std::vector<ValueType>& x, std::vector<ValueType> const& b) const {
             STORM_LOG_INFO("Solving linear equation system (" << x.size() << " rows) with NativeLinearEquationSolver (QuickPower)");
+            bool useGaussSeidelMultiplication = env.solver().native().getPowerMethodMultiplicationStyle() == storm::solver::MultiplicationStyle::GaussSeidel;
+
             // Prepare the solution vectors.
-            if (!this->cachedRowVector) {
-                this->cachedRowVector = std::make_unique<std::vector<ValueType>>(getMatrixRowCount(), storm::utility::zero<ValueType>());
+            assert(x.size() == getMatrixRowCount());
+            std::vector<ValueType> *stepBoundedX, *stepBoundedStayProbs, *tmp;
+            if (useGaussSeidelMultiplication) {
+                stepBoundedX = &x;
+                stepBoundedX->assign(getMatrixRowCount(), storm::utility::zero<ValueType>());
+                if (!this->cachedRowVector) {
+                    this->cachedRowVector = std::make_unique<std::vector<ValueType>>(getMatrixRowCount(), storm::utility::one<ValueType>());
+                } else {
+                    this->cachedRowVector->assign(getMatrixRowCount(), storm::utility::one<ValueType>());
+                }
+                stepBoundedStayProbs = this->cachedRowVector.get();
+                tmp = nullptr;
             } else {
-                this->cachedRowVector->assign(getMatrixRowCount(), storm::utility::zero<ValueType>());
-            }
-            if (!this->cachedRowVector2) {
-                this->cachedRowVector2 = std::make_unique<std::vector<ValueType>>(getMatrixRowCount(), storm::utility::one<ValueType>());
-            } else {
-                this->cachedRowVector2->assign(getMatrixRowCount(), storm::utility::one<ValueType>());
+                if (!this->cachedRowVector) {
+                    this->cachedRowVector = std::make_unique<std::vector<ValueType>>(getMatrixRowCount(), storm::utility::zero<ValueType>());
+                } else {
+                    this->cachedRowVector->assign(getMatrixRowCount(), storm::utility::zero<ValueType>());
+                }
+                stepBoundedX = this->cachedRowVector.get();
+                if (!this->cachedRowVector2) {
+                    this->cachedRowVector2 = std::make_unique<std::vector<ValueType>>(getMatrixRowCount(), storm::utility::one<ValueType>());
+                } else {
+                    this->cachedRowVector2->assign(getMatrixRowCount(), storm::utility::one<ValueType>());
+                }
+                stepBoundedStayProbs = this->cachedRowVector2.get();
+                tmp = &x;
             }
 
-            std::vector<ValueType>* stepBoundedValues = this->cachedRowVector.get();
-            std::vector<ValueType>* stepBoundedStayProbabilities = this->cachedRowVector2.get();
-
-            std::vector<ValueType>* tmp = &x;
-            
             ValueType precision = storm::utility::convertNumber<ValueType>(env.solver().native().getPrecision());
             bool relative = env.solver().native().getRelativeTerminationCriterion();
             if (!relative) {
@@ -598,43 +612,53 @@ namespace storm {
             while (!converged && !terminate && iterations < maxIter) {
                 
                 // Apply step
-                this->multiplier.multAdd(*this->A, *stepBoundedValues, &b, *tmp);
-                std::swap(tmp, stepBoundedValues);
-                this->multiplier.multAdd(*this->A, *stepBoundedStayProbabilities, nullptr, *tmp);
-                std::swap(tmp, stepBoundedStayProbabilities);
+                if (useGaussSeidelMultiplication) {
+                    this->multiplier.multAddGaussSeidelBackward(*this->A, *stepBoundedX, &b);
+                    this->multiplier.multAddGaussSeidelBackward(*this->A, *stepBoundedStayProbs, nullptr);
+                } else {
+                    this->multiplier.multAdd(*this->A, *stepBoundedX, &b, *tmp);
+                    std::swap(tmp, stepBoundedX);
+                    this->multiplier.multAdd(*this->A, *stepBoundedStayProbs, nullptr, *tmp);
+                    std::swap(tmp, stepBoundedStayProbs);
+                }
                 
                 //std::cout << "Iteration " << iterations << std::endl;
-                //std::cout << "x: " << storm::utility::vector::toString(*stepBoundedValues) << std::endl;
-                //std::cout << "y: " << storm::utility::vector::toString(*stepBoundedStayProbabilities) << std::endl;
+                //std::cout << "x: " << storm::utility::vector::toString(*stepBoundedX) << std::endl;
+                //std::cout << "y: " << storm::utility::vector::toString(*stepBoundedStayProbs) << std::endl;
                 
                 // Check for convergence
                 // Phase 1: the probability to 'stay within the matrix' has to be < 1 at every state
-                for (; firstStayProb1Index != stepBoundedStayProbabilities->size(); ++firstStayProb1Index) {
+                for (; firstStayProb1Index != stepBoundedStayProbs->size(); ++firstStayProb1Index) {
                     static_assert(NumberTraits<ValueType>::IsExact || std::is_same<ValueType, double>::value, "Considered ValueType not handled.");
                     if (NumberTraits<ValueType>::IsExact) {
-                        if (storm::utility::isOne(stepBoundedStayProbabilities->at(firstStayProb1Index))) {
+                        if (storm::utility::isOne(stepBoundedStayProbs->at(firstStayProb1Index))) {
                             break;
                         }
                     } else {
-                        if (storm::utility::isAlmostOne(storm::utility::convertNumber<double>(stepBoundedStayProbabilities->at(firstStayProb1Index)))) {
+                        if (storm::utility::isAlmostOne(storm::utility::convertNumber<double>(stepBoundedStayProbs->at(firstStayProb1Index)))) {
                             break;
                            // std::cout << "In Phase 1" << std::endl;
                         }
                     }
                 }
-                if (firstStayProb1Index == stepBoundedStayProbabilities->size()) {
-                    STORM_LOG_ASSERT(!std::any_of(stepBoundedStayProbabilities->begin(), stepBoundedStayProbabilities->end(), [](ValueType value){return storm::utility::isOne(value);}), "Did not expect staying-probability 1 at this point.");
+                if (firstStayProb1Index == stepBoundedStayProbs->size()) {
+                    STORM_LOG_ASSERT(!std::any_of(stepBoundedStayProbs->begin(), stepBoundedStayProbs->end(), [](ValueType value){return storm::utility::isOne(value);}), "Did not expect staying-probability 1 at this point.");
                     // Phase 2: the difference between lower and upper bound has to be < precision at every (relevant) value
                    // std::cout << "In Phase 2" << std::endl;
                     // First check with (possibly too tight) bounds from a previous iteration. Only compute the actual bounds if this first check passes.
-                    minValueBound = stepBoundedValues->at(minIndex) / (storm::utility::one<ValueType>() - stepBoundedStayProbabilities->at(minIndex));
-                    maxValueBound = stepBoundedValues->at(maxIndex) / (storm::utility::one<ValueType>() - stepBoundedStayProbabilities->at(maxIndex));
-                    ValueType const& stayProb = stepBoundedStayProbabilities->at(firstIndexViolatingConvergence);
-                    if (stayProb * (maxValueBound - minValueBound) < precision) {
+                    minValueBound = stepBoundedX->at(minIndex) / (storm::utility::one<ValueType>() - stepBoundedStayProbs->at(minIndex));
+                    maxValueBound = stepBoundedX->at(maxIndex) / (storm::utility::one<ValueType>() - stepBoundedStayProbs->at(maxIndex));
+                    ValueType const& stayProb = stepBoundedStayProbs->at(firstIndexViolatingConvergence);
+                    // The error made in this iteration
+                    ValueType absoluteError = stayProb * (maxValueBound - minValueBound);
+                    // The maximal allowed error (possibly respecting relative precision)
+                    // Note: We implement the relative convergence criterion in a way that avoids division by zero in the case where stepBoundedX[i] is zero.
+                    ValueType maxAllowedError = relative ? (precision * stepBoundedX->at(firstIndexViolatingConvergence)) : precision;
+                    if (absoluteError <= maxAllowedError) {
                         // Compute the actual bounds now
-                        auto valIt = stepBoundedValues->begin();
-                        auto valIte = stepBoundedValues->end();
-                        auto probIt = stepBoundedStayProbabilities->begin();
+                        auto valIt = stepBoundedX->begin();
+                        auto valIte = stepBoundedX->end();
+                        auto probIt = stepBoundedStayProbs->begin();
                         for (uint64_t index = 0; valIt != valIte; ++valIt, ++probIt, ++index) {
                             ValueType currentBound = *valIt / (storm::utility::one<ValueType>() - *probIt);
                             if (currentBound < minValueBound) {
@@ -645,24 +669,28 @@ namespace storm {
                                 maxValueBound = std::move(currentBound);
                             }
                         }
-                        if (stayProb * (maxValueBound - minValueBound) < precision) {
+                        absoluteError = stayProb * (maxValueBound - minValueBound);
+                        if (absoluteError <= maxAllowedError) {
                             // The current index satisfies the desired bound. We now move to the next index that violates it
-                            do {
+                            while (true) {
                                 ++firstIndexViolatingConvergence;
                                 if (this->hasRelevantValues()) {
                                     firstIndexViolatingConvergence = this->getRelevantValues().getNextSetIndex(firstIndexViolatingConvergence);
                                 }
-                                if (firstIndexViolatingConvergence == stepBoundedStayProbabilities->size()) {
+                                if (firstIndexViolatingConvergence == stepBoundedStayProbs->size()) {
                                     converged = true;
                                     break;
-                                } else if (stepBoundedStayProbabilities->at(firstIndexViolatingConvergence) * (maxValueBound - minValueBound) >= precision) {
-                                    // not converged yet
-                                    break;
+                                } else {
+                                    absoluteError = stepBoundedStayProbs->at(firstIndexViolatingConvergence) * (maxValueBound - minValueBound);
+                                    maxAllowedError = relative ? (precision * stepBoundedX->at(firstIndexViolatingConvergence)) : precision;
+                                    if (absoluteError > maxAllowedError) {
+                                        // not converged yet
+                                        break;
+                                    }
                                 }
-                            } while (true);
+                            }
                         }
                     }
-                    STORM_LOG_ASSERT(!relative, "Relative termination criterion not implemented currently.");
                 }
                 
                 // Potentially show progress.
@@ -675,7 +703,7 @@ namespace storm {
             
             // Finally set up the solution vector
             ValueType meanBound = (maxValueBound + minValueBound) / storm::utility::convertNumber<ValueType>(2.0);
-            storm::utility::vector::applyPointwise(*stepBoundedValues, *stepBoundedStayProbabilities, x, [&meanBound] (ValueType const& v, ValueType const& p) { return v + p * meanBound; });
+            storm::utility::vector::applyPointwise(*stepBoundedX, *stepBoundedStayProbs, x, [&meanBound] (ValueType const& v, ValueType const& p) { return v + p * meanBound; });
             
             if (!this->isCachingEnabled()) {
                 clearCache();
