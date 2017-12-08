@@ -209,12 +209,22 @@ namespace storm {
             
             template<typename ValueType, typename RewardModelType>
             std::vector<ValueType> SparseDtmcPrctlHelper<ValueType, RewardModelType>::computeReachabilityRewards(Environment const& env, storm::solver::SolveGoal<ValueType>&& goal, storm::storage::SparseMatrix<ValueType> const& transitionMatrix, storm::storage::SparseMatrix<ValueType> const& backwardTransitions, RewardModelType const& rewardModel, storm::storage::BitVector const& targetStates, bool qualitative, storm::solver::LinearEquationSolverFactory<ValueType> const& linearEquationSolverFactory, ModelCheckerHint const& hint) {
-                return computeReachabilityRewards(env, std::move(goal), transitionMatrix, backwardTransitions, [&] (uint_fast64_t numberOfRows, storm::storage::SparseMatrix<ValueType> const& transitionMatrix, storm::storage::BitVector const& maybeStates) { return rewardModel.getTotalRewardVector(numberOfRows, transitionMatrix, maybeStates); }, targetStates, qualitative, linearEquationSolverFactory, hint);
+                // Extend the set of target states such that states for which target is reached without collecting any reward are included
+                // TODO
+                storm::storage::BitVector extendedTargetStates = storm::utility::graph::performProb1(backwardTransitions, rewardModel.getStatesWithZeroReward(transitionMatrix), targetStates);
+                STORM_LOG_INFO("Extended the set of target states from " << targetStates.getNumberOfSetBits() << " states to " << extendedTargetStates.getNumberOfSetBits() << " states.");
+                std::cout << "TODO: make target state extension a setting." << std::endl;
+                return computeReachabilityRewards(env, std::move(goal), transitionMatrix, backwardTransitions, [&] (uint_fast64_t numberOfRows, storm::storage::SparseMatrix<ValueType> const& transitionMatrix, storm::storage::BitVector const& maybeStates) { return rewardModel.getTotalRewardVector(numberOfRows, transitionMatrix, maybeStates); }, extendedTargetStates, qualitative, linearEquationSolverFactory, hint);
             }
 
             template<typename ValueType, typename RewardModelType>
             std::vector<ValueType> SparseDtmcPrctlHelper<ValueType, RewardModelType>::computeReachabilityRewards(Environment const& env, storm::solver::SolveGoal<ValueType>&& goal, storm::storage::SparseMatrix<ValueType> const& transitionMatrix, storm::storage::SparseMatrix<ValueType> const& backwardTransitions, std::vector<ValueType> const& totalStateRewardVector, storm::storage::BitVector const& targetStates, bool qualitative, storm::solver::LinearEquationSolverFactory<ValueType> const& linearEquationSolverFactory, ModelCheckerHint const& hint) {
 
+                // TODO
+                storm::storage::BitVector extendedTargetStates = storm::utility::graph::performProb1(backwardTransitions, storm::utility::vector::filterZero(totalStateRewardVector), targetStates);
+                STORM_LOG_INFO("Extended the set of target states from " << targetStates.getNumberOfSetBits() << " states to " << extendedTargetStates.getNumberOfSetBits() << " states.");
+                std::cout << "TODO: make target state extension a setting" << std::endl;
+                
                 return computeReachabilityRewards(env, std::move(goal), transitionMatrix, backwardTransitions,
                                                   [&] (uint_fast64_t numberOfRows, storm::storage::SparseMatrix<ValueType> const&, storm::storage::BitVector const& maybeStates) {
                                                       std::vector<ValueType> result(numberOfRows);
