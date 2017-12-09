@@ -118,6 +118,11 @@ namespace storm {
             void setLowerBounds(std::vector<ValueType> const& values);
             
             /*!
+             * Sets lower bounds for the solution that can potentially be used by the solver.
+             */
+            void setLowerBounds(std::vector<ValueType>&& values);
+            
+            /*!
              * Sets upper bounds for the solution that can potentially be used by the solver.
              */
             void setUpperBounds(std::vector<ValueType> const& values);

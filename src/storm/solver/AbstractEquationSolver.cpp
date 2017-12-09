@@ -140,6 +140,11 @@ namespace storm {
         }
         
         template<typename ValueType>
+        void AbstractEquationSolver<ValueType>::setLowerBounds(std::vector<ValueType>&& values) {
+            lowerBounds = std::move(values);
+        }
+        
+        template<typename ValueType>
         void AbstractEquationSolver<ValueType>::setUpperBounds(std::vector<ValueType> const& values) {
             upperBounds = values;
         }
