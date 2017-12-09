@@ -6,6 +6,7 @@
 #include "storm/environment/solver/NativeSolverEnvironment.h"
 #include "storm/environment/solver/GmmxxSolverEnvironment.h"
 #include "storm/environment/solver/EigenSolverEnvironment.h"
+#include "storm/environment/solver/TopologicalLinearEquationSolverEnvironment.h"
 
 #include "storm/utility/vector.h"
 namespace {
@@ -265,6 +266,19 @@ namespace {
         }
     };
     
+    class TopologicalEigenRationalLUEnvironment {
+    public:
+        typedef storm::RationalNumber ValueType;
+        static const bool isExact = true;
+        static storm::Environment createEnvironment() {
+            storm::Environment env;
+            env.solver().setLinearEquationSolverType(storm::solver::EquationSolverType::Topological);
+            env.solver().topological().setUnderlyingSolverType(storm::solver::EquationSolverType::Eigen);
+            env.solver().eigen().setMethod(storm::solver::EigenLinearEquationSolverMethod::SparseLU);
+            return env;
+        }
+    };
+    
     template<typename TestType>
     class LinearEquationSolverTest : public ::testing::Test {
     public:
@@ -296,7 +310,8 @@ namespace {
             EigenGmresIluEnvironment,
             EigenBicgstabNoneEnvironment,
             EigenDoubleLUEnvironment,
-            EigenRationalLUEnvironment
+            EigenRationalLUEnvironment,
+            TopologicalEigenRationalLUEnvironment
     > TestingTypes;
     
     TYPED_TEST_CASE(LinearEquationSolverTest, TestingTypes);

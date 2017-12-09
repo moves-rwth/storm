@@ -25,6 +25,7 @@
 #include "storm/environment/solver/NativeSolverEnvironment.h"
 #include "storm/environment/solver/GmmxxSolverEnvironment.h"
 #include "storm/environment/solver/EigenSolverEnvironment.h"
+#include "storm/environment/solver/TopologicalLinearEquationSolverEnvironment.h"
 
 namespace {
     
@@ -255,6 +256,22 @@ namespace {
         }
     };
 
+    class SparseTopologicalEigenLUEnvironment {
+    public:
+        static const storm::dd::DdType ddType = storm::dd::DdType::Sylvan; // unused for sparse models
+        static const storm::settings::modules::CoreSettings::Engine engine = storm::settings::modules::CoreSettings::Engine::Sparse;
+        static const bool isExact = true;
+        typedef storm::RationalNumber ValueType;
+        typedef storm::models::sparse::Dtmc<ValueType> ModelType;
+        static storm::Environment createEnvironment() {
+            storm::Environment env;
+            env.solver().setLinearEquationSolverType(storm::solver::EquationSolverType::Topological);
+            env.solver().topological().setUnderlyingSolverType(storm::solver::EquationSolverType::Eigen);
+            env.solver().eigen().setMethod(storm::solver::EigenLinearEquationSolverMethod::SparseLU);
+            return env;
+        }
+    };
+
     class HybridSylvanGmmxxGmresEnvironment {
     public:
         static const storm::dd::DdType ddType = storm::dd::DdType::Sylvan;
@@ -467,6 +484,7 @@ namespace {
             SparseNativeSoundPowerEnvironment,
             SparseNativeQuickSoundPowerEnvironment,
             SparseNativeRationalSearchEnvironment,
+            SparseTopologicalEigenLUEnvironment,
             HybridSylvanGmmxxGmresEnvironment,
             HybridCuddNativeJacobiEnvironment,
             HybridCuddNativeSoundPowerEnvironment,
