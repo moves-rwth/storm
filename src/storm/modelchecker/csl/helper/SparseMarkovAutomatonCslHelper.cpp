@@ -553,7 +553,7 @@ namespace storm {
                 typename storm::storage::SparseMatrix<ValueType> fullTransitionMatrix = transitionMatrix.getSubmatrix(
                         true, allStates, allStates, true);
                 // delete diagonals
-              deleteProbDiagonals(fullTransitionMatrix, markovianStates);
+              //deleteProbDiagonals(fullTransitionMatrix, markovianStates); //for now leaving this out
                 typename storm::storage::SparseMatrix<ValueType> probMatrix{};
                 uint64_t probSize = 0;
                 if (probabilisticStates.getNumberOfSetBits() != 0) { //work around in case there are no prob states
