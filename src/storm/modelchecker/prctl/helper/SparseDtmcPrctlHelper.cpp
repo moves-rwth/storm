@@ -463,6 +463,22 @@ namespace storm {
                 
                 return result;
             }
+
+            template<typename ValueType, typename RewardModelType>
+            storm::storage::BitVector SparseDtmcPrctlHelper<ValueType, RewardModelType>::BaierTransformedModel::getNewRelevantStates() const {
+                storm::storage::BitVector newRelevantStates(transitionMatrix.get().getRowCount());
+                for (uint64_t i = 0; i < this->beforeStates.getNumberOfSetBits(); ++i) {
+                    newRelevantStates.set(i);
+                }
+                return newRelevantStates;
+            }
+            
+            template<typename ValueType, typename RewardModelType>
+            storm::storage::BitVector SparseDtmcPrctlHelper<ValueType, RewardModelType>::BaierTransformedModel::getNewRelevantStates(storm::storage::BitVector const& oldRelevantStates) const {
+                storm::storage::BitVector result = oldRelevantStates % this->beforeStates;
+                result.resize(transitionMatrix.get().getRowCount());
+                return result;
+            }
             
             template<typename ValueType, typename RewardModelType>
             std::vector<ValueType> SparseDtmcPrctlHelper<ValueType, RewardModelType>::computeConditionalProbabilities(Environment const& env, storm::solver::SolveGoal<ValueType>&& goal, storm::storage::SparseMatrix<ValueType> const& transitionMatrix, storm::storage::SparseMatrix<ValueType> const& backwardTransitions, storm::storage::BitVector const& targetStates, storm::storage::BitVector const& conditionStates, bool qualitative, storm::solver::LinearEquationSolverFactory<ValueType> const& linearEquationSolverFactory) {
@@ -482,6 +498,13 @@ namespace storm {
                         
                         // Now compute reachability probabilities in the transformed model.
                         storm::storage::SparseMatrix<ValueType> const& newTransitionMatrix = transformedModel.transitionMatrix.get();
+                        storm::storage::BitVector newRelevantValues;
+                        if (goal.hasRelevantValues()) {
+                            newRelevantValues = transformedModel.getNewRelevantStates(goal.relevantValues());
+                        } else {
+                            newRelevantValues = transformedModel.getNewRelevantStates();
+                        }
+                        goal.setRelevantValues(std::move(newRelevantValues));
                         std::vector<ValueType> conditionalProbabilities = computeUntilProbabilities(env, std::move(goal), newTransitionMatrix, newTransitionMatrix.transpose(), storm::storage::BitVector(newTransitionMatrix.getRowCount(), true), transformedModel.targetStates.get(), qualitative, linearEquationSolverFactory);
                         
                         storm::utility::vector::setVectorValues(result, transformedModel.beforeStates, conditionalProbabilities);
@@ -508,6 +531,13 @@ namespace storm {
                         
                         // Now compute reachability probabilities in the transformed model.
                         storm::storage::SparseMatrix<ValueType> const& newTransitionMatrix = transformedModel.transitionMatrix.get();
+                        storm::storage::BitVector newRelevantValues;
+                        if (goal.hasRelevantValues()) {
+                            newRelevantValues = transformedModel.getNewRelevantStates(goal.relevantValues());
+                        } else {
+                            newRelevantValues = transformedModel.getNewRelevantStates();
+                        }
+                        goal.setRelevantValues(std::move(newRelevantValues));
                         std::vector<ValueType> conditionalRewards = computeReachabilityRewards(env, std::move(goal), newTransitionMatrix, newTransitionMatrix.transpose(), transformedModel.stateRewards.get(), transformedModel.targetStates.get(), qualitative, linearEquationSolverFactory);
                         storm::utility::vector::setVectorValues(result, transformedModel.beforeStates, conditionalRewards);
                     }

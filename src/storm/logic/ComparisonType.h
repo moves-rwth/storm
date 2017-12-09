@@ -4,32 +4,45 @@
 #include <iostream>
 
 namespace storm {
-	namespace logic {
-            enum class ComparisonType { Less, LessEqual, Greater, GreaterEqual };
-
-            inline bool isStrict(ComparisonType t) {
-                return (t == ComparisonType::Less || t == ComparisonType::Greater);
-            }
-
-            inline bool isLowerBound(ComparisonType t) {
-                return (t == ComparisonType::Greater || t == ComparisonType::GreaterEqual);
-            }
+    namespace logic {
+        enum class ComparisonType { Less, LessEqual, Greater, GreaterEqual };
         
-            inline ComparisonType invert(ComparisonType t) {
-                switch(t) {
-                    case ComparisonType::Less:
-                        return ComparisonType::GreaterEqual;
-                    case ComparisonType::LessEqual:
-                        return ComparisonType::Greater;
-                    case ComparisonType::Greater:
-                        return ComparisonType::LessEqual;
-                    case ComparisonType::GreaterEqual:
-                        return ComparisonType::Less;
-                }
-            }
+        inline bool isStrict(ComparisonType t) {
+            return (t == ComparisonType::Less || t == ComparisonType::Greater);
+        }
         
-            std::ostream& operator<<(std::ostream& out, ComparisonType const& comparisonType);
-	}
+        inline bool isLowerBound(ComparisonType t) {
+            return (t == ComparisonType::Greater || t == ComparisonType::GreaterEqual);
+        }
+        
+        inline ComparisonType invert(ComparisonType t) {
+            switch(t) {
+                case ComparisonType::Less:
+                    return ComparisonType::GreaterEqual;
+                case ComparisonType::LessEqual:
+                    return ComparisonType::Greater;
+                case ComparisonType::Greater:
+                    return ComparisonType::LessEqual;
+                case ComparisonType::GreaterEqual:
+                    return ComparisonType::Less;
+            }
+        }
+        
+        inline ComparisonType invertPreserveStrictness(ComparisonType t) {
+            switch(t) {
+                case ComparisonType::Less:
+                    return ComparisonType::Greater;
+                case ComparisonType::LessEqual:
+                    return ComparisonType::GreaterEqual;
+                case ComparisonType::Greater:
+                    return ComparisonType::Less;
+                case ComparisonType::GreaterEqual:
+                    return ComparisonType::LessEqual;
+            }
+        }
+        
+        std::ostream& operator<<(std::ostream& out, ComparisonType const& comparisonType);
+    }
 }
 
 #endif /* STORM_LOGIC_COMPARISONTYPE_H_ */

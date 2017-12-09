@@ -59,7 +59,10 @@ namespace storm {
                     BaierTransformedModel() : noTargetStates(false) {
                         // Intentionally left empty.
                     }
-                    
+
+                    storm::storage::BitVector getNewRelevantStates(storm::storage::BitVector const& oldRelevantStates) const;
+                    storm::storage::BitVector getNewRelevantStates() const;
+
                     storm::storage::BitVector beforeStates;
                     boost::optional<storm::storage::SparseMatrix<ValueType>> transitionMatrix;
                     boost::optional<storm::storage::BitVector> targetStates;

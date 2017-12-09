@@ -941,7 +941,7 @@ namespace storm {
         
         template<DdType LibraryType, typename ValueType>
         std::ostream& operator<<(std::ostream& out, Add<LibraryType, ValueType> const& add) {
-            out << "ADD with " << add.getNonZeroCount() << " nnz, " << add.getNodeCount() << " nodes, " << add.getLeafCount() << " leaves" << std::endl;
+            out << "ADD [" << add.getInternalAdd().getStringId() << "] with " << add.getNonZeroCount() << " nnz, " << add.getNodeCount() << " nodes, " << add.getLeafCount() << " leaves" << std::endl;
             std::vector<std::string> variableNames;
             for (auto const& variable : add.getContainedMetaVariables()) {
                 variableNames.push_back(variable.getName());
@@ -993,15 +993,19 @@ namespace storm {
         }
 		
         template class Add<storm::dd::DdType::CUDD, double>;
+        template std::ostream& operator<<(std::ostream& out, Add<storm::dd::DdType::CUDD, double> const& add);
         template class Add<storm::dd::DdType::CUDD, uint_fast64_t>;
 
         template class Add<storm::dd::DdType::Sylvan, double>;
+        template std::ostream& operator<<(std::ostream& out, Add<storm::dd::DdType::Sylvan, double> const& add);
         template class Add<storm::dd::DdType::Sylvan, uint_fast64_t>;
 
 #ifdef STORM_HAVE_CARL
         template class Add<storm::dd::DdType::CUDD, storm::RationalNumber>;
+        template std::ostream& operator<<(std::ostream& out, Add<storm::dd::DdType::CUDD, storm::RationalNumber> const& add);
 
         template class Add<storm::dd::DdType::Sylvan, storm::RationalNumber>;
+        template std::ostream& operator<<(std::ostream& out, Add<storm::dd::DdType::Sylvan, storm::RationalNumber> const& add);
 		template class Add<storm::dd::DdType::Sylvan, storm::RationalFunction>;
 
         template Add<storm::dd::DdType::CUDD, storm::RationalNumber> Add<storm::dd::DdType::CUDD, storm::RationalNumber>::toValueType<storm::RationalNumber>() const;
