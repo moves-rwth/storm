@@ -5,6 +5,7 @@
 #include "storm/environment/solver/NativeSolverEnvironment.h"
 #include "storm/environment/solver/MinMaxSolverEnvironment.h"
 #include "storm/environment/solver/GameSolverEnvironment.h"
+#include "storm/environment/solver/TopologicalLinearEquationSolverEnvironment.h"
 
 namespace storm {
     
@@ -40,6 +41,7 @@ namespace storm {
     template class SubEnvironment<NativeSolverEnvironment>;
     template class SubEnvironment<MinMaxSolverEnvironment>;
     template class SubEnvironment<GameSolverEnvironment>;
+    template class SubEnvironment<TopologicalLinearEquationSolverEnvironment>;
     
 }
 

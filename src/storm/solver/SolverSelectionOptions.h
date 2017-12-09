@@ -11,7 +11,7 @@ namespace storm {
         ExtendEnumsWithSelectionField(LraMethod, LinearProgramming, ValueIteration)
 
         ExtendEnumsWithSelectionField(LpSolverType, Gurobi, Glpk, Z3)
-        ExtendEnumsWithSelectionField(EquationSolverType, Native, Gmmxx, Eigen, Elimination)
+        ExtendEnumsWithSelectionField(EquationSolverType, Native, Gmmxx, Eigen, Elimination, Topological)
         ExtendEnumsWithSelectionField(SmtSolverType, Z3, Mathsat)
         
         ExtendEnumsWithSelectionField(NativeLinearEquationSolverMethod, Jacobi, GaussSeidel, SOR, WalkerChae, Power, RationalSearch, QuickPower)

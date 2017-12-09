@@ -5,6 +5,7 @@
 #include "storm/environment/solver/GmmxxSolverEnvironment.h"
 #include "storm/environment/solver/NativeSolverEnvironment.h"
 #include "storm/environment/solver/GameSolverEnvironment.h"
+#include "storm/environment/solver/TopologicalLinearEquationSolverEnvironment.h"
 
 #include "storm/settings/SettingsManager.h"
 #include "storm/settings/modules/GeneralSettings.h"
@@ -66,6 +67,14 @@ namespace storm {
         return gameSolverEnvironment.get();
     }
 
+    TopologicalLinearEquationSolverEnvironment& SolverEnvironment::topological() {
+        return topologicalSolverEnvironment.get();
+    }
+    
+    TopologicalLinearEquationSolverEnvironment const& SolverEnvironment::topological() const {
+        return topologicalSolverEnvironment.get();
+    }
+
     bool SolverEnvironment::isForceSoundness() const {
         return forceSoundness;
     }
@@ -106,22 +115,24 @@ namespace storm {
         STORM_LOG_ASSERT(getLinearEquationSolverType() == storm::solver::EquationSolverType::Native ||
                          getLinearEquationSolverType() == storm::solver::EquationSolverType::Gmmxx ||
                          getLinearEquationSolverType() == storm::solver::EquationSolverType::Eigen ||
-                         getLinearEquationSolverType() == storm::solver::EquationSolverType::Elimination,
+                         getLinearEquationSolverType() == storm::solver::EquationSolverType::Elimination ||
+                         getLinearEquationSolverType() == storm::solver::EquationSolverType::Topological,
                         "The current solver type is not respected in this method.");
             native().setPrecision(value);
             gmmxx().setPrecision(value);
             eigen().setPrecision(value);
-        // Elimination solver does not have a precision
+        // Elimination and Topological solver do not have a precision
     }
     
     void SolverEnvironment::setLinearEquationSolverRelativeTerminationCriterion(bool value) {
         STORM_LOG_ASSERT(getLinearEquationSolverType() == storm::solver::EquationSolverType::Native ||
                          getLinearEquationSolverType() == storm::solver::EquationSolverType::Gmmxx ||
                          getLinearEquationSolverType() == storm::solver::EquationSolverType::Eigen ||
-                         getLinearEquationSolverType() == storm::solver::EquationSolverType::Elimination,
+                         getLinearEquationSolverType() == storm::solver::EquationSolverType::Elimination ||
+                         getLinearEquationSolverType() == storm::solver::EquationSolverType::Topological,
                         "The current solver type is not respected in this method.");
         native().setRelativeTerminationCriterion(value);
-        // Elimination, gmm and eigen solver do not have an option for relative termination criterion
+        // Elimination, gmm, eigen, and topological solver do not have an option for relative termination criterion
     }
 
     
