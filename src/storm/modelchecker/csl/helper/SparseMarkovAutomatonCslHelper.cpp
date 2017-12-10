@@ -588,14 +588,14 @@ namespace storm {
                 //calculate relative reachability
 
                 for (uint64_t i = 0; i < numberOfStates; i++) {
-                    if (markovStates[i]) {
+                    if (markovianStates[i]) {
                         continue;
                     }
                     auto from = rowGroupIndices[i];
                     auto to = rowGroupIndices[i + 1];
                     for (auto j = from; j < to; j++) {
                         for (auto& element: fullTransitionMatrix.getRow(j)) {
-                            if (markovStates[element.getColumn()]) {
+                            if (markovianStates[element.getColumn()]) {
                                 relReachability[j].push_back(element.getValue());
                             }
                         }
