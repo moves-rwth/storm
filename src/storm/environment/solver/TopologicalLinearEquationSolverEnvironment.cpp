@@ -1,7 +1,7 @@
 #include "storm/environment/solver/TopologicalLinearEquationSolverEnvironment.h"
 
 #include "storm/settings/SettingsManager.h"
-#include "storm/settings/modules/GameSolverSettings.h"
+#include "storm/settings/modules/TopologicalEquationSolverSettings.h"
 #include "storm/utility/macros.h"
 
 #include "storm/exceptions/InvalidArgumentException.h"
@@ -9,10 +9,9 @@
 namespace storm {
     
     TopologicalLinearEquationSolverEnvironment::TopologicalLinearEquationSolverEnvironment() {
-        auto const& topologicalSettings = storm::settings::getModule<storm::settings::modules::GameSolverSettings>();
-        std::cout << "TODO: get actual settings in topo environment." << std::endl;
-        underlyingSolverType = storm::solver::EquationSolverType::Native;
-        underlyingSolverTypeSetFromDefault = true;
+        auto const& topologicalSettings = storm::settings::getModule<storm::settings::modules::TopologicalEquationSolverSettings>();
+        underlyingSolverType = topologicalSettings.getUnderlyingEquationSolverType();
+        underlyingSolverTypeSetFromDefault = topologicalSettings.isUnderlyingEquationSolverTypeSetFromDefaultValue();
     }
 
     TopologicalLinearEquationSolverEnvironment::~TopologicalLinearEquationSolverEnvironment() {

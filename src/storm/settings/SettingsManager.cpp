@@ -31,6 +31,7 @@
 #include "storm/settings/modules/GurobiSettings.h"
 #include "storm/settings/modules/Smt2SmtSolverSettings.h"
 #include "storm/settings/modules/TopologicalValueIterationEquationSolverSettings.h"
+#include "storm/settings/modules/TopologicalEquationSolverSettings.h"
 #include "storm/settings/modules/ExplorationSettings.h"
 #include "storm/settings/modules/ResourceSettings.h"
 #include "storm/settings/modules/AbstractionSettings.h"
@@ -527,6 +528,7 @@ namespace storm {
             storm::settings::addModule<storm::settings::modules::GlpkSettings>();
             storm::settings::addModule<storm::settings::modules::GurobiSettings>();
             storm::settings::addModule<storm::settings::modules::TopologicalValueIterationEquationSolverSettings>();
+            storm::settings::addModule<storm::settings::modules::TopologicalEquationSolverSettings>();
             storm::settings::addModule<storm::settings::modules::Smt2SmtSolverSettings>();
             storm::settings::addModule<storm::settings::modules::ExplorationSettings>();
             storm::settings::addModule<storm::settings::modules::ResourceSettings>();
