@@ -49,13 +49,31 @@ namespace storm {
 
         template<typename ValueType>
         bool TopologicalLinearEquationSolver<ValueType>::internalSolveEquations(Environment const& env, std::vector<ValueType>& x, std::vector<ValueType> const& b) const {
+            //std::cout << "Solving equation system with fixpoint characterization " << std::endl;
+            //std::cout << *this->A << std::endl;
+            //std::cout << storm::utility::vector::toString(b) << std::endl;
+            //std::cout << "Initial solution vector: " << std::endl;
+            //std::cout << storm::utility::vector::toString(x) << std::endl;
+            
             
             if (!this->sortedSccDecomposition) {
                 STORM_LOG_TRACE("Creating SCC decomposition.");
                 createSortedSccDecomposition();
             }
             
+            //std::cout << "Sorted SCC decomposition: " << std::endl;
+            for (auto const& scc : *this->sortedSccDecomposition) {
+                //std::cout << "SCC: ";
+                for (auto const& row : scc) {
+                    //std::cout << row << "  ";
+                }
+                //std::cout << std::endl;
+            }
+            
             storm::Environment sccSolverEnvironment = getEnvironmentForUnderlyingSolver(env);
+            
+            std::cout << "Found " << this->sortedSccDecomposition->size() << "SCCs. Average size is " << static_cast<double>(x.size()) /
+                    static_cast<double>(this->sortedSccDecomposition->size()) << "." << std::endl;
             
             // Handle the case where there is just one large SCC
             if (this->sortedSccDecomposition->size() == 1) {
@@ -66,13 +84,13 @@ namespace storm {
             bool returnValue = true;
             for (auto const& scc : *this->sortedSccDecomposition) {
                 if (scc.isTrivial()) {
-                    returnValue = returnValue && solveTrivialScc(*scc.begin(), x, b);
+                    returnValue = solveTrivialScc(*scc.begin(), x, b) && returnValue;
                 } else {
                     sccAsBitVector.clear();
                     for (auto const& state : scc) {
                         sccAsBitVector.set(state, true);
                     }
-                    returnValue = returnValue && solveScc(sccSolverEnvironment, sccAsBitVector, x, b);
+                    returnValue = solveScc(sccSolverEnvironment, sccAsBitVector, x, b) && returnValue;
                 }
             }
             
@@ -166,6 +184,7 @@ namespace storm {
             if (hasDiagonalEntry) {
                 xi /= denominator;
             }
+            //std::cout << "Solved trivial scc " << sccState << " with result " << globalX[sccState] << std::endl;
             return true;
         }
         
@@ -202,6 +221,8 @@ namespace storm {
             if (asEquationSystem) {
                 sccA.convertToEquationSystem();
             }
+            //std::cout << "Solving SCC " << scc << std::endl;
+            //std::cout << "Matrix is " << sccA << std::endl;
             this->sccSolver->setMatrix(std::move(sccA));
             
             // x Vector
@@ -231,8 +252,13 @@ namespace storm {
             } else if (this->hasUpperBound(storm::solver::AbstractEquationSolver<ValueType>::BoundType::Local)) {
                 this->sccSolver->setUpperBounds(storm::utility::vector::filterVector(this->getUpperBounds(), scc));
             }
-    
-            return this->sccSolver->solveEquations(sccSolverEnvironment, sccX, sccB);
+            
+            //std::cout << "rhs is " << storm::utility::vector::toString(sccB) << std::endl;
+            //std::cout << "x is " << storm::utility::vector::toString(sccX) << std::endl;
+            
+            bool returnvalue = this->sccSolver->solveEquations(sccSolverEnvironment, sccX, sccB);
+            storm::utility::vector::setVectorValues(globalX, scc, sccX);
+            return returnvalue;
         }
         
         
