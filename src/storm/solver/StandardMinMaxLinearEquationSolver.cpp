@@ -5,6 +5,7 @@
 #include "storm/solver/EigenLinearEquationSolver.h"
 #include "storm/solver/NativeLinearEquationSolver.h"
 #include "storm/solver/EliminationLinearEquationSolver.h"
+#include "storm/solver/TopologicalLinearEquationSolver.h"
 
 #include "storm/environment/solver/MinMaxSolverEnvironment.h"
 
@@ -92,6 +93,7 @@ namespace storm {
                 case EquationSolverType::Eigen: linearEquationSolverFactory = std::make_unique<EigenLinearEquationSolverFactory<ValueType>>(); break;
                 case EquationSolverType::Native: linearEquationSolverFactory = std::make_unique<NativeLinearEquationSolverFactory<ValueType>>(); break;
                 case EquationSolverType::Elimination: linearEquationSolverFactory = std::make_unique<EliminationLinearEquationSolverFactory<ValueType>>(); break;
+                case EquationSolverType::Topological: linearEquationSolverFactory = std::make_unique<TopologicalLinearEquationSolverFactory<ValueType>>(); break;
             }
         }
 
