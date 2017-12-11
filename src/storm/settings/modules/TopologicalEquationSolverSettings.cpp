@@ -26,7 +26,7 @@ namespace storm {
             
             TopologicalEquationSolverSettings::TopologicalEquationSolverSettings() : ModuleSettings(moduleName) {
                 std::vector<std::string> linearEquationSolver = {"gmm++", "native", "eigen", "elimination"};
-                this->addOption(storm::settings::OptionBuilder(moduleName, underlyingEquationSolverOptionName, false, "Sets which solver is considered for solving the underlying equation systems.")
+                this->addOption(storm::settings::OptionBuilder(moduleName, underlyingEquationSolverOptionName, true, "Sets which solver is considered for solving the underlying equation systems.")
                                 .addArgument(storm::settings::ArgumentBuilder::createStringArgument("name", "The name of the used solver.").addValidatorString(ArgumentValidatorFactory::createMultipleChoiceValidator(linearEquationSolver)).setDefaultValueString("gmm++").build()).build());
             }
 
