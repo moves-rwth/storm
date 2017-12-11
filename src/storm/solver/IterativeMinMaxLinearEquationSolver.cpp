@@ -114,19 +114,32 @@ namespace storm {
             // The solver that we will use throughout the procedure.
             std::unique_ptr<storm::solver::LinearEquationSolver<ValueType>> solver;
             // The linear equation solver should be at least as precise as this solver
-            std::unique_ptr<storm::Environment> environmentOfSolver;
-            boost::optional<storm::RationalNumber> precOfSolver = env.solver().getPrecisionOfCurrentLinearEquationSolver();
-            if (!storm::NumberTraits<ValueType>::IsExact && precOfSolver && precOfSolver.get() > env.solver().minMax().getPrecision()) {
-                environmentOfSolver = std::make_unique<storm::Environment>(env);
-                environmentOfSolver->solver().setLinearEquationSolverPrecision(env.solver().minMax().getPrecision());
+            std::unique_ptr<storm::Environment> environmentOfSolverStorage;
+            auto precOfSolver = env.solver().getPrecisionOfLinearEquationSolver(env.solver().getLinearEquationSolverType());
+            if (!storm::NumberTraits<ValueType>::IsExact) {
+                bool changePrecision = precOfSolver.first && precOfSolver.first.get() > env.solver().minMax().getPrecision();
+                bool changeRelative = precOfSolver.second && !precOfSolver.second.get() && env.solver().minMax().getRelativeTerminationCriterion();
+                if (changePrecision || changeRelative) {
+                    environmentOfSolverStorage = std::make_unique<storm::Environment>(env);
+                    boost::optional<storm::RationalNumber> newPrecision;
+                    boost::optional<bool> newRelative;
+                    if (changePrecision) {
+                        newPrecision = env.solver().minMax().getPrecision();
+                    }
+                    if (changeRelative) {
+                        newRelative = true;
+                    }
+                    environmentOfSolverStorage->solver().setLinearEquationSolverPrecision(newPrecision, newRelative);
+                }
             }
-            
+            storm::Environment const& environmentOfSolver = environmentOfSolverStorage ? *environmentOfSolverStorage : env;
+
             SolverStatus status = SolverStatus::InProgress;
             uint64_t iterations = 0;
             this->startMeasureProgress();
             do {
                 // Solve the equation system for the 'DTMC'.
-                solveInducedEquationSystem(environmentOfSolver ? *environmentOfSolver : env, solver, scheduler, x, subB, b);
+                solveInducedEquationSystem(environmentOfSolver, solver, scheduler, x, subB, b);
                 
                 // Go through the multiplication result and see whether we can improve any of the choices.
                 bool schedulerImproved = false;
@@ -311,14 +324,27 @@ namespace storm {
                 // Solve the equation system induced by the initial scheduler.
                 std::unique_ptr<storm::solver::LinearEquationSolver<ValueType>> linEqSolver;
                 // The linear equation solver should be at least as precise as this solver
-                std::unique_ptr<storm::Environment> environmentOfSolver;
-                boost::optional<storm::RationalNumber> precOfSolver = env.solver().getPrecisionOfCurrentLinearEquationSolver();
-                if (!storm::NumberTraits<ValueType>::IsExact && precOfSolver && precOfSolver.get() > env.solver().minMax().getPrecision()) {
-                    environmentOfSolver = std::make_unique<storm::Environment>(env);
-                    environmentOfSolver->solver().setLinearEquationSolverPrecision(env.solver().minMax().getPrecision());
+                std::unique_ptr<storm::Environment> environmentOfSolverStorage;
+                auto precOfSolver = env.solver().getPrecisionOfLinearEquationSolver(env.solver().getLinearEquationSolverType());
+                if (!storm::NumberTraits<ValueType>::IsExact) {
+                    bool changePrecision = precOfSolver.first && precOfSolver.first.get() > env.solver().minMax().getPrecision();
+                    bool changeRelative = precOfSolver.second && !precOfSolver.second.get() && env.solver().minMax().getRelativeTerminationCriterion();
+                    if (changePrecision || changeRelative) {
+                        environmentOfSolverStorage = std::make_unique<storm::Environment>(env);
+                        boost::optional<storm::RationalNumber> newPrecision;
+                        boost::optional<bool> newRelative;
+                        if (changePrecision) {
+                            newPrecision = env.solver().minMax().getPrecision();
+                        }
+                        if (changeRelative) {
+                            newRelative = true;
+                        }
+                        environmentOfSolverStorage->solver().setLinearEquationSolverPrecision(newPrecision, newRelative);
+                    }
                 }
+                storm::Environment const& environmentOfSolver = environmentOfSolverStorage ? *environmentOfSolverStorage : env;
 
-                solveInducedEquationSystem(environmentOfSolver ? *environmentOfSolver : env, linEqSolver, this->getInitialScheduler(), x, *auxiliaryRowGroupVector, b);
+                solveInducedEquationSystem(environmentOfSolver, linEqSolver, this->getInitialScheduler(), x, *auxiliaryRowGroupVector, b);
                 // If we were given an initial scheduler and are maximizing (minimizing), our current solution becomes
                 // always less-or-equal (greater-or-equal) than the actual solution.
                 guarantee = maximize(dir) ? SolverGuarantee::LessOrEqual : SolverGuarantee::GreaterOrEqual;

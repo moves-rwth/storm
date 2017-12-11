@@ -76,13 +76,34 @@ namespace storm {
 
             uint64_t maxIter = env.solver().game().getMaximalNumberOfIterations();
             
+            // The linear equation solver should be at least as precise as this solver
+            std::unique_ptr<storm::Environment> environmentOfSolverStorage;
+            auto precOfSolver = env.solver().getPrecisionOfLinearEquationSolver(env.solver().getLinearEquationSolverType());
+            if (!storm::NumberTraits<ValueType>::IsExact) {
+                bool changePrecision = precOfSolver.first && precOfSolver.first.get() > env.solver().game().getPrecision();
+                bool changeRelative = precOfSolver.second && !precOfSolver.second.get() && env.solver().game().getRelativeTerminationCriterion();
+                if (changePrecision || changeRelative) {
+                    environmentOfSolverStorage = std::make_unique<storm::Environment>(env);
+                    boost::optional<storm::RationalNumber> newPrecision;
+                    boost::optional<bool> newRelative;
+                    if (changePrecision) {
+                        newPrecision = env.solver().game().getPrecision();
+                    }
+                    if (changeRelative) {
+                        newRelative = true;
+                    }
+                    environmentOfSolverStorage->solver().setLinearEquationSolverPrecision(newPrecision, newRelative);
+                }
+            }
+            storm::Environment const& environmentOfSolver = environmentOfSolverStorage ? *environmentOfSolverStorage : env;
+            
             // Solve the equation system induced by the two schedulers.
             storm::storage::SparseMatrix<ValueType> submatrix;
             getInducedMatrixVector(x, b, player1Choices, player2Choices, submatrix, subB);
-            if (this->linearEquationSolverFactory->getEquationProblemFormat(env) == LinearEquationSolverProblemFormat::EquationSystem) {
+            if (this->linearEquationSolverFactory->getEquationProblemFormat(environmentOfSolver) == LinearEquationSolverProblemFormat::EquationSystem) {
                 submatrix.convertToEquationSystem();
             }
-            auto submatrixSolver = linearEquationSolverFactory->create(env, std::move(submatrix));
+            auto submatrixSolver = linearEquationSolverFactory->create(environmentOfSolver, std::move(submatrix));
             if (this->lowerBound) { submatrixSolver->setLowerBound(this->lowerBound.get()); }
             if (this->upperBound) { submatrixSolver->setUpperBound(this->upperBound.get()); }
             submatrixSolver->setCachingEnabled(true);
@@ -92,7 +113,7 @@ namespace storm {
             do {
                 // Solve the equation system for the 'DTMC'.
                 // FIXME: we need to remove the 0- and 1- states to make the solution unique.
-                submatrixSolver->solveEquations(env, x, subB);
+                submatrixSolver->solveEquations(environmentOfSolver, x, subB);
                 
                 bool schedulerImproved = extractChoices(player1Dir, player2Dir, x, b, *auxiliaryP2RowGroupVector, player1Choices, player2Choices);
                 

@@ -41,12 +41,11 @@ namespace storm {
         void setForceSoundness(bool value);
         
         storm::solver::EquationSolverType const& getLinearEquationSolverType() const;
-        void setLinearEquationSolverType(storm::solver::EquationSolverType const& value);
+        void setLinearEquationSolverType(storm::solver::EquationSolverType const& value, bool assumeSetFromDefault = false);
         bool isLinearEquationSolverTypeSetFromDefaultValue() const;
-        
-        boost::optional<storm::RationalNumber> getPrecisionOfCurrentLinearEquationSolver() const;
-        void setLinearEquationSolverPrecision(storm::RationalNumber const& value);
-        void setLinearEquationSolverRelativeTerminationCriterion(bool value);
+
+        std::pair<boost::optional<storm::RationalNumber>, boost::optional<bool>> getPrecisionOfLinearEquationSolver(storm::solver::EquationSolverType const& solverType) const;
+        void setLinearEquationSolverPrecision(boost::optional<storm::RationalNumber> const& newPrecision, boost::optional<bool> const& relativePrecision = boost::none);
     
     private:
         SubEnvironment<EigenSolverEnvironment> eigenSolverEnvironment;
