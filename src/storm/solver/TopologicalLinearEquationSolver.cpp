@@ -138,7 +138,7 @@ namespace storm {
             storm::storage::BitVector unsortedSCCs(sccDecomposition.size(), true);
             std::vector<uint32_t> sccStack, chainSizes;
             if (needLongestChainSize) {
-                chainSizes.resize(this->sortedSccDecomposition->size(), 1u);
+                chainSizes.resize(sccDecomposition.size(), 1u);
             }
             uint32_t longestChainSize = 0;
             uint32_t const token = std::numeric_limits<uint32_t>::max();
