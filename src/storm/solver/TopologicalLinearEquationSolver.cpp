@@ -182,7 +182,10 @@ namespace storm {
                             uint32_t& currentChainSize = chainSizes[currentSccIndex];
                             for (auto const& row : scc) {
                                 for (auto const& entry : this->A->getRow(row)) {
-                                    currentChainSize = std::max(currentChainSize, chainSizes[sccIndices[entry.getColumn()]] + 1);
+                                    auto const& successorSCC = sccIndices[entry.getColumn()];
+                                    if (successorSCC != currentSccIndex) {
+                                        currentChainSize = std::max(currentChainSize, chainSizes[successorSCC] + 1);
+                                    }
                                 }
                             }
                             longestChainSize = std::max(longestChainSize, currentChainSize);
