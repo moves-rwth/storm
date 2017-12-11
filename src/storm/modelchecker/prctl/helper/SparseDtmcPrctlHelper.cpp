@@ -437,7 +437,7 @@ namespace storm {
                     }
                     
                     // Build the new transition matrix and the new targets.
-                    result.transitionMatrix = builder.build();
+                    result.transitionMatrix = builder.build(addDeadlockState ? (deadlockState + 1) : deadlockState);
                     storm::storage::BitVector newTargetStates = targetStates % result.beforeStates;
                     newTargetStates.resize(result.transitionMatrix.get().getRowCount());
                     for (auto state : targetStates % statesWithProbabilityGreater0) {
@@ -450,15 +450,16 @@ namespace storm {
                         std::vector<ValueType> newStateRewards(result.beforeStates.getNumberOfSetBits());
                         storm::utility::vector::selectVectorValues(newStateRewards, result.beforeStates, stateRewards.get());
                         
-                        newStateRewards.reserve(newStateRewards.size() + statesWithProbabilityGreater0.getNumberOfSetBits() + 1);
+                        newStateRewards.reserve(result.transitionMatrix.get().getRowCount());
                         for (auto state : statesWithProbabilityGreater0) {
                             newStateRewards.push_back(stateRewards.get()[state]);
                         }
                         // Add a zero reward to the deadlock state.
-                        newStateRewards.push_back(storm::utility::zero<ValueType>());
+                        if (addDeadlockState) {
+                            newStateRewards.push_back(storm::utility::zero<ValueType>());
+                        }
                         result.stateRewards = std::move(newStateRewards);
                     }
-                    
                 }
                 
                 return result;
