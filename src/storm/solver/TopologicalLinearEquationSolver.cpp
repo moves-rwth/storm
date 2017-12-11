@@ -41,9 +41,14 @@ namespace storm {
         }
         
         template<typename ValueType>
-        storm::Environment TopologicalLinearEquationSolver<ValueType>::getEnvironmentForUnderlyingSolver(storm::Environment const& env) const {
+        storm::Environment TopologicalLinearEquationSolver<ValueType>::getEnvironmentForUnderlyingSolver(storm::Environment const& env, bool adaptPrecision) const {
             storm::Environment subEnv(env);
-            subEnv.solver().setLinearEquationSolverType(env.solver().topological().getUnderlyingSolverType());
+            subEnv.solver().setLinearEquationSolverType(env.solver().topological().getUnderlyingSolverType(), env.solver().topological().isUnderlyingSolverTypeSetFromDefault());
+            if (adaptPrecision) {
+                STORM_LOG_ASSERT(this->longestSccChainSize, "Did not compute the longest SCC chain size although it is needed.");
+                auto subEnvPrec = subEnv.solver().getPrecisionOfLinearEquationSolver(subEnv.solver().getLinearEquationSolverType());
+                subEnv.solver().setLinearEquationSolverPrecision(static_cast<storm::RationalNumber>(subEnvPrec.first.get() / storm::utility::convertNumber<storm::RationalNumber>(this->longestSccChainSize.get())));
+            }
             return subEnv;
         }
 
@@ -55,25 +60,32 @@ namespace storm {
             //std::cout << "Initial solution vector: " << std::endl;
             //std::cout << storm::utility::vector::toString(x) << std::endl;
             
+            // For sound computations we need to increase the precision in each SCC
+            bool needAdaptPrecision = env.solver().isForceSoundness() && env.solver().getPrecisionOfLinearEquationSolver(env.solver().topological().getUnderlyingSolverType()).first.is_initialized();
             
-            if (!this->sortedSccDecomposition) {
+            if (!this->sortedSccDecomposition || (needAdaptPrecision && !this->longestSccChainSize)) {
                 STORM_LOG_TRACE("Creating SCC decomposition.");
-                createSortedSccDecomposition();
+                createSortedSccDecomposition(needAdaptPrecision);
             }
             
             //std::cout << "Sorted SCC decomposition: " << std::endl;
-            for (auto const& scc : *this->sortedSccDecomposition) {
+            //for (auto const& scc : *this->sortedSccDecomposition) {
                 //std::cout << "SCC: ";
-                for (auto const& row : scc) {
+              //  for (auto const& row : scc) {
                     //std::cout << row << "  ";
-                }
+               // }
                 //std::cout << std::endl;
+            //}
+            
+            // We do not need to adapt the precision if all SCCs are trivial (i.e., the system is acyclic)
+            needAdaptPrecision = needAdaptPrecision && (this->sortedSccDecomposition->size() != this->getMatrixRowCount());
+            
+            storm::Environment sccSolverEnvironment = getEnvironmentForUnderlyingSolver(env, needAdaptPrecision);
+            
+            std::cout << "Found " << this->sortedSccDecomposition->size() << "SCCs. Average size is " << static_cast<double>(this->getMatrixRowCount()) / static_cast<double>(this->sortedSccDecomposition->size()) << "." << std::endl;
+            if (this->longestSccChainSize) {
+                std::cout << "Longest SCC chain size is " << this->longestSccChainSize.get() << std::endl;
             }
-            
-            storm::Environment sccSolverEnvironment = getEnvironmentForUnderlyingSolver(env);
-            
-            std::cout << "Found " << this->sortedSccDecomposition->size() << "SCCs. Average size is " << static_cast<double>(x.size()) /
-                    static_cast<double>(this->sortedSccDecomposition->size()) << "." << std::endl;
             
             // Handle the case where there is just one large SCC
             if (this->sortedSccDecomposition->size() == 1) {
@@ -102,7 +114,7 @@ namespace storm {
         }
         
         template<typename ValueType>
-        void TopologicalLinearEquationSolver<ValueType>::createSortedSccDecomposition() const {
+        void TopologicalLinearEquationSolver<ValueType>::createSortedSccDecomposition(bool needLongestChainSize) const {
             // Obtain the scc decomposition
             auto sccDecomposition = storm::storage::StronglyConnectedComponentDecomposition<ValueType>(*this->A);
             
@@ -124,7 +136,11 @@ namespace storm {
             
             // Find a topological sort via DFS.
             storm::storage::BitVector unsortedSCCs(sccDecomposition.size(), true);
-            std::vector<uint32_t> sccStack;
+            std::vector<uint32_t> sccStack, chainSizes;
+            if (needLongestChainSize) {
+                chainSizes.resize(this->sortedSccDecomposition->size(), 1u);
+            }
+            uint32_t longestChainSize = 0;
             uint32_t const token = std::numeric_limits<uint32_t>::max();
             std::set<uint64_t> successorSCCs;
 
@@ -132,7 +148,7 @@ namespace storm {
                 
                 sccStack.push_back(firstUnsortedScc);
                 while (!sccStack.empty()) {
-                    auto const& currentSccIndex = sccStack.back();
+                    uint32_t currentSccIndex = sccStack.back();
                     if (currentSccIndex != token) {
                         // Check whether the SCC is still unprocessed
                         if (unsortedSCCs.get(currentSccIndex)) {
@@ -157,11 +173,30 @@ namespace storm {
                     } else {
                         // all successors of the current scc have already been explored.
                         sccStack.pop_back(); // pop the token
-                        sortedSCCs.push_back(std::move(sccDecomposition.getBlock(sccStack.back())));
-                        unsortedSCCs.set(sccStack.back(), false);
+                        
+                        currentSccIndex = sccStack.back();
+                        storm::storage::StronglyConnectedComponent& scc = sccDecomposition.getBlock(currentSccIndex);
+                        
+                        // Compute the longest chain size for this scc
+                        if (needLongestChainSize) {
+                            uint32_t& currentChainSize = chainSizes[currentSccIndex];
+                            for (auto const& row : scc) {
+                                for (auto const& entry : this->A->getRow(row)) {
+                                    currentChainSize = std::max(currentChainSize, chainSizes[sccIndices[entry.getColumn()]] + 1);
+                                }
+                            }
+                            longestChainSize = std::max(longestChainSize, currentChainSize);
+                        }
+                        
+                        unsortedSCCs.set(currentSccIndex, false);
                         sccStack.pop_back(); // pop the current scc index
+                        sortedSCCs.push_back(std::move(scc));
                     }
                 }
+            }
+            
+            if (longestChainSize > 0) {
+                this->longestSccChainSize = longestChainSize;
             }
         }
         

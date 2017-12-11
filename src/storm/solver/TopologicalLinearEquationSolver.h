@@ -41,10 +41,10 @@ namespace storm {
             virtual uint64_t getMatrixRowCount() const override;
             virtual uint64_t getMatrixColumnCount() const override;
 
-            storm::Environment getEnvironmentForUnderlyingSolver(storm::Environment const& env) const;
+            storm::Environment getEnvironmentForUnderlyingSolver(storm::Environment const& env, bool adaptPrecision = false) const;
             
             // Creates an SCC decomposition and sorts the SCCs according to a topological sort.
-            void createSortedSccDecomposition() const;
+            void createSortedSccDecomposition(bool needLongestChainSize) const;
             
             // Solves the SCC with the given index
             // ... for the case that the SCC is trivial
@@ -67,6 +67,7 @@ namespace storm {
 
             // cached auxiliary data
             mutable std::unique_ptr<std::vector<storm::storage::StronglyConnectedComponent>> sortedSccDecomposition;
+            mutable boost::optional<uint64_t> longestSccChainSize;
             mutable std::unique_ptr<storm::solver::LinearEquationSolver<ValueType>> sccSolver;
         };
         
