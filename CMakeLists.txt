@@ -105,6 +105,8 @@ if(STORM_COMPILE_WITH_CCACHE)
 	else()
 		message(STATUS "Storm - Could not find ccache.")
 	endif()
+else()
+    message(STATUS "Storm - Disabled use of ccache.")
 endif()
 
 # Directory for test resources.
