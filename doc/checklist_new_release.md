@@ -8,8 +8,8 @@ Note that in most case a simultaneous release of [carl](https://github.com/smtra
    ```
 
 2. Update used carl version:
-  * Update `GIT_TAG` in `resources/3rdparty/carl/CMakeLists.txt`
-  * Maybe update `CARL_MINVERSION` in `resources/3rdparty/CMakeLists.txt`
+   * Update `GIT_TAG` in `resources/3rdparty/carl/CMakeLists.txt`
+   * Maybe update `CARL_MINVERSION` in `resources/3rdparty/CMakeLists.txt`
 
 3. Check that storm builds without errors and all tests are successful
    * [Travis](https://travis-ci.org/moves-rwth/storm) should run successfully
