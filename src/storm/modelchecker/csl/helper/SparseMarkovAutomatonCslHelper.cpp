@@ -661,6 +661,13 @@ namespace storm {
                         element /= foxGlynnResult.totalWeight;
                     }
 
+                    ValueType leftSum=0;
+                    for (int i  =0 ; i< foxGlynnResult.left; i++){
+                        leftSum += foxGlynnResult.weights[i];
+                        std::cout << foxGlynnResult.weights[i] << "\n";
+                    }
+                    std::cout<< "sum Left is " << leftSum <<"\n";
+
 
                     // (4) define vectors/matrices
                     std::vector<ValueType> init(numberOfStates, -1);
