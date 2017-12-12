@@ -119,6 +119,18 @@ if __name__ == "__main__":
                 buildConfig += "        - docker cp storm:/storm/. .\n"
                 buildConfig += "      after_failure:\n"
                 buildConfig += "        - find build -iname '*err*.log' -type f -print -exec cat {} \;\n"
+                # Upload to dockerhub
+                if stage[1] == "TestAll":
+                    buildConfig += "      after_success:\n"
+                    buildConfig += "        - docker login -u '$DOCKER_USERNAME' -p '$DOCKER_PASSWORD';\n"
+                    if "Debug" in build:
+                        buildConfig += "        - docker tag storm mvolk/storm-debug:travis;\n"
+                        buildConfig += "        - docker push mvolk/storm-debug:travis;\n"
+                    elif "Release" in build:
+                        buildConfig += "        - docker tag storm mvolk/storm:travis;\n"
+                        buildConfig += "        - docker push mvolk/storm:travis;\n"
+                    else:
+                        assert False
             s += buildConfig
 
     print(s)
