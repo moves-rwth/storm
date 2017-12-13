@@ -292,8 +292,8 @@ jobs:
       after_failure:
         - find build -iname '*err*.log' -type f -print -exec cat {} \;
       after_success:
-        - docker login -u '$DOCKER_USERNAME' -p '$DOCKER_PASSWORD';
-        - docker tag storm mvolk/storm-debug:travis;
+        - docker login -u "$DOCKER_USERNAME" -p "$DOCKER_PASSWORD";
+        - docker commit storm mvolk/storm-debug:travis;
         - docker push mvolk/storm-debug:travis;
     - stage: Test all
       os: linux
@@ -308,7 +308,7 @@ jobs:
       after_failure:
         - find build -iname '*err*.log' -type f -print -exec cat {} \;
       after_success:
-        - docker login -u '$DOCKER_USERNAME' -p '$DOCKER_PASSWORD';
-        - docker tag storm mvolk/storm:travis;
+        - docker login -u "$DOCKER_USERNAME" -p "$DOCKER_PASSWORD";
+        - docker commit storm mvolk/storm:travis;
         - docker push mvolk/storm:travis;
 

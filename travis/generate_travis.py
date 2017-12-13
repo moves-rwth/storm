@@ -122,12 +122,12 @@ if __name__ == "__main__":
                 # Upload to dockerhub
                 if stage[1] == "TestAll":
                     buildConfig += "      after_success:\n"
-                    buildConfig += "        - docker login -u '$DOCKER_USERNAME' -p '$DOCKER_PASSWORD';\n"
+                    buildConfig += '        - docker login -u "$DOCKER_USERNAME" -p "$DOCKER_PASSWORD";\n'
                     if "Debug" in build:
-                        buildConfig += "        - docker tag storm mvolk/storm-debug:travis;\n"
+                        buildConfig += "        - docker commit storm mvolk/storm-debug:travis;\n"
                         buildConfig += "        - docker push mvolk/storm-debug:travis;\n"
                     elif "Release" in build:
-                        buildConfig += "        - docker tag storm mvolk/storm:travis;\n"
+                        buildConfig += "        - docker commit storm mvolk/storm:travis;\n"
                         buildConfig += "        - docker push mvolk/storm:travis;\n"
                     else:
                         assert False
