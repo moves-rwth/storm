@@ -22,7 +22,7 @@
 #include "storm/storage/expressions/Expression.h"
 #include "storm/storage/expressions/ExpressionManager.h"
 
-#include "storm/utility/numerical.h"
+//#include "storm/utility/numerical.h"
 
 #include "storm/solver/MinMaxLinearEquationSolver.h"
 #include "storm/solver/LpSolver.h"
@@ -220,7 +220,7 @@ namespace storm {
             }
 
             template <typename ValueType, typename std::enable_if<storm::NumberTraits<ValueType>::SupportsExponential, int>::type>
-            void SparseMarkovAutomatonCslHelper::calculateVu(Environment const& env, std::vector<std::vector<ValueType>> const& relativeReachability, OptimizationDirection dir, uint64_t k, uint64_t node, uint64_t const kind, ValueType lambda, uint64_t probSize, std::vector<std::vector<std::vector<ValueType>>>& unifVectors, storm::storage::SparseMatrix<ValueType> const& fullTransitionMatrix, storm::storage::BitVector const& markovianStates, storm::storage::BitVector const& psiStates, std::unique_ptr<storm::solver::MinMaxLinearEquationSolver<ValueType>> const& solver, std::ofstream& logfile, std::vector<double> const& poisson){
+            void SparseMarkovAutomatonCslHelper::calculateVu(Environment const& env, std::vector<std::vector<ValueType>> const& relativeReachability, OptimizationDirection dir, uint64_t k, uint64_t node, uint64_t const kind, ValueType lambda, uint64_t probSize, std::vector<std::vector<std::vector<ValueType>>>& unifVectors, storm::storage::SparseMatrix<ValueType> const& fullTransitionMatrix, storm::storage::BitVector const& markovianStates, storm::storage::BitVector const& psiStates, std::unique_ptr<storm::solver::MinMaxLinearEquationSolver<ValueType>> const& solver, std::ofstream& logfile, storm::utility::numerical::FoxGlynnResult<ValueType> const & poisson){
                 if (unifVectors[1][k][node]!=-1){return;} //dynamic programming. avoiding multiple calculation.
                 uint64_t N = unifVectors[1].size()-1;
                 auto const& rowGroupIndices = fullTransitionMatrix.getRowGroupIndices();
@@ -231,8 +231,8 @@ namespace storm {
                        calculateUnifPlusVector(env, N-1-(i-k),node,2,lambda,probSize,relativeReachability,dir,unifVectors,fullTransitionMatrix, markovianStates,psiStates,solver, logfile, poisson);
                                //old:  relativeReachability, dir, (N-1-(i-k)),node,lambda,wu,fullTransitionMatrix,markovianStates,psiStates, solver);
                     }
-                    if (i<poisson.size()){
-                        res+=poisson[i]*unifVectors[2][N-1-(i-k)][node];
+                    if (i>=poisson.left && i<=poisson.right){
+                        res+=poisson.weights[i-poisson.left]*unifVectors[2][N-1-(i-k)][node];
                     }
                 }
                 unifVectors[1][k][node]=res;
@@ -249,7 +249,7 @@ namespace storm {
                                                                          storm::storage::SparseMatrix<ValueType> const &fullTransitionMatrix,
                                                                          storm::storage::BitVector const &markovianStates,
                                                                          storm::storage::BitVector const &psiStates,
-                                                                         std::unique_ptr<storm::solver::MinMaxLinearEquationSolver<ValueType>> const &solver, std::ofstream& logfile, std::vector<double> const& poisson) {
+                                                                         std::unique_ptr<storm::solver::MinMaxLinearEquationSolver<ValueType>> const &solver, std::ofstream& logfile, storm::utility::numerical::FoxGlynnResult<ValueType> const & poisson) {
 
 
                 if (unifVectors[kind][k][node]!=-1){
@@ -277,8 +277,8 @@ namespace storm {
                         // Vd
                         res = storm::utility::zero<ValueType>();
                         for (uint64_t i = k ; i<N ; i++){
-                            if (i<poisson.size()){
-                                ValueType between = poisson[i];
+                            if (i>=poisson.left && i<=poisson.right){
+                                ValueType between = poisson.weights[i-poisson.left];
                                 res+=between;
                             }
                         }
@@ -621,7 +621,6 @@ namespace storm {
                     //logfile << "starting iteration\n";
                     maxNorm = storm::utility::zero<ValueType>();
                     // (2) update parameter
-                    N = ceil(lambda * T * exp(2) - log(kappa * epsilon));
 
                     // (3) uniform  - just applied to markovian states
                     for (uint_fast64_t i = 0; i < fullTransitionMatrix.getRowGroupCount(); i++) {
@@ -655,18 +654,18 @@ namespace storm {
 
                     storm::utility::numerical::FoxGlynnResult<ValueType> foxGlynnResult = storm::utility::numerical::foxGlynn(lambda*T, epsilon*kappa);
 
+                    N = std::max(ceil(lambda * T * exp(2) - log(kappa * epsilon)), ceil(foxGlynnResult.right - foxGlynnResult.left +1 ));
 
                     // Scale the weights so they add up to one.
                     for (auto& element : foxGlynnResult.weights) {
                         element /= foxGlynnResult.totalWeight;
                     }
 
-                    ValueType leftSum=0;
-                    for (int i  =0 ; i< foxGlynnResult.left; i++){
-                        leftSum += foxGlynnResult.weights[i];
-                        std::cout << foxGlynnResult.weights[i] << "\n";
+                    ValueType sum = 0;
+                    for (auto i = foxGlynnResult.left ; i<=foxGlynnResult.right; i++){
+                        sum+=foxGlynnResult.weights[i-foxGlynnResult.left];
                     }
-                    std::cout<< "sum Left is " << leftSum <<"\n";
+                    std::cout << " left " << foxGlynnResult.left << " right " << foxGlynnResult.right << " size " << foxGlynnResult.weights.size() << " sum " << sum << "\n";
 
 
                     // (4) define vectors/matrices
@@ -684,20 +683,20 @@ namespace storm {
                         for (uint64_t k = N; k <= N; k--) {
                             calculateUnifPlusVector(env, k, i, 0, lambda, probSize, relReachability, dir, unifVectors,
                                                     fullTransitionMatrix, markovianStates, psiStates, solver, logfile,
-                                                    foxGlynnResult.weights);
+                                                    foxGlynnResult);
                             calculateUnifPlusVector(env, k, i, 2, lambda, probSize, relReachability, dir, unifVectors,
                                                     fullTransitionMatrix, markovianStates, psiStates, solver, logfile,
-                                                    foxGlynnResult.weights);
+                                                    foxGlynnResult);
                             calculateVu(env, relReachability, dir, k, i, 1, lambda, probSize, unifVectors,
                                         fullTransitionMatrix, markovianStates, psiStates, solver, logfile,
-                                        foxGlynnResult.weights);
+                                        foxGlynnResult);
                             //also use iteration to keep maxNorm of vd and vup to date, so the loop-condition is easy to prove
                             ValueType diff = std::abs(unifVectors[0][k][i] - unifVectors[1][k][i]);
                             maxNorm = std::max(maxNorm, diff);
                         }
                     }
-                    //printTransitions(N, maxNorm, fullTransitionMatrix, exitRate, markovianStates, psiStates,
-                                    // relReachability, psiStates, psiStates, unifVectors, logfile); //TODO remove
+                    printTransitions(N, maxNorm, fullTransitionMatrix, exitRate, markovianStates, psiStates,
+                                    relReachability, psiStates, psiStates, unifVectors, logfile); //TODO remove
 
                     // (6) double lambda
 
@@ -706,7 +705,7 @@ namespace storm {
                     // (7) escape if not coming closer to solution
                     if (oldDiff != -1) {
                         if (oldDiff == maxNorm) {
-                            std::cout << "Not coming closer to solution as " << maxNorm << "/n";
+                            std::cout << "Not coming closer to solution as " << maxNorm << "\n";
                             break;
                         }
                     }
