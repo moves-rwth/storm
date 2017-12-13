@@ -570,14 +570,11 @@ namespace storm {
                 double T = boundsPair.second;
                 ValueType kappa = storm::utility::one<ValueType>() / 10; // would be better as option-parameter
                 ValueType epsilon = storm::settings::getModule<storm::settings::modules::GeneralSettings>().getPrecision();
-                ValueType lambda = exitRateVector[0];
-                for (ValueType act: exitRateVector) {
+                ValueType lambda = exitRate[0];
+                for (ValueType act: exitRate) {
                     lambda = std::max(act, lambda);
                 }
                 uint64_t N;
-
-
-
 
                 //calculate relative ReachabilityVectors
                 std::vector<ValueType> in{};
@@ -621,10 +618,11 @@ namespace storm {
                     //logfile << "starting iteration\n";
                     maxNorm = storm::utility::zero<ValueType>();
                     // (2) update parameter
+                    N = ceil(lambda * T * exp(2) - log(kappa * epsilon));
 
                     // (3) uniform  - just applied to markovian states
-                    for (uint_fast64_t i = 0; i < fullTransitionMatrix.getRowGroupCount(); i++) {
-                        if (!markovianStates[i]) {
+                    for (uint64_t i = 0; i < fullTransitionMatrix.getRowGroupCount(); i++) {
+                        if (!markovianStates[i] || psiStates[i]) {
                             continue;
                         }
                         uint64_t from = rowGroupIndices[i]; //markovian state -> no Nondeterminism -> only one row
@@ -638,7 +636,7 @@ namespace storm {
                         ValueType exitNew = lambda;
                         for (auto &v : line) {
                             if (v.getColumn() == i) { //diagonal element
-                                ValueType newSelfLoop = exitNew - exitOld + v.getValue();
+                                ValueType newSelfLoop = exitNew - exitOld + v.getValue()*exitOld;
                                 ValueType newRate = newSelfLoop / exitNew;
                                 v.setValue(newRate);
                             } else { //modify probability
@@ -653,8 +651,6 @@ namespace storm {
                     // calculate poisson distribution
 
                     storm::utility::numerical::FoxGlynnResult<ValueType> foxGlynnResult = storm::utility::numerical::foxGlynn(lambda*T, epsilon*kappa);
-
-                    N = std::max(ceil(lambda * T * exp(2) - log(kappa * epsilon)), ceil(foxGlynnResult.right - foxGlynnResult.left +1 ));
 
                     // Scale the weights so they add up to one.
                     for (auto& element : foxGlynnResult.weights) {
@@ -695,8 +691,8 @@ namespace storm {
                             maxNorm = std::max(maxNorm, diff);
                         }
                     }
-                    printTransitions(N, maxNorm, fullTransitionMatrix, exitRate, markovianStates, psiStates,
-                                    relReachability, psiStates, psiStates, unifVectors, logfile); //TODO remove
+                    //printTransitions(N, maxNorm, fullTransitionMatrix, exitRate, markovianStates, psiStates,
+                    //                relReachability, psiStates, psiStates, unifVectors, logfile); //TODO remove
 
                     // (6) double lambda
 
