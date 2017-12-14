@@ -229,6 +229,7 @@ namespace storm {
                         } else {
                             t = j;
                             result.right = j + result.left;
+                            result.weights.resize(result.right - result.left + 1);
                             
                             // It's time to compute W.
                             break;
