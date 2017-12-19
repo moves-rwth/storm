@@ -690,9 +690,14 @@ namespace storm {
                                         fullTransitionMatrix, markovianStates, psiStates, solver, logfile,
                                         foxGlynnResult);
                             //also use iteration to keep maxNorm of vd and vup to date, so the loop-condition is easy to prove
-                            ValueType diff = std::abs(unifVectors[0][k][i] - unifVectors[1][k][i]);
-                            maxNorm = std::max(maxNorm, diff);
+                            //ValueType diff = std::abs(unifVectors[0][k][i] - unifVectors[1][k][i]);
                         }
+                    }
+
+                    //only iterate over result vector, as the results can only get more precise
+                    for (uint64_t i = 0; i < numberOfStates; i++){
+                        ValueType diff = std::abs(unifVectors[0][0][i]-unifVectors[1][0][i]);
+                         maxNorm = std::max(maxNorm, diff);
                     }
                     //printTransitions(N, maxNorm, fullTransitionMatrix, exitRate, markovianStates, psiStates,
                     //                relReachability, psiStates, psiStates, unifVectors, logfile); //TODO remove
