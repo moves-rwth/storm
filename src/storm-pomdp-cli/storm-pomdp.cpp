@@ -51,9 +51,7 @@ void initializeSettings() {
     storm::settings::addModule<storm::settings::modules::IOSettings>();
     storm::settings::addModule<storm::settings::modules::CoreSettings>();
     storm::settings::addModule<storm::settings::modules::DebugSettings>();
-    storm::settings::addModule<storm::settings::modules::CounterexampleGeneratorSettings>(false);
-//storm::settings::addModule<storm::settings::modules::CuddSettings>();
-//    storm::settings::addModule<storm::settings::modules::SylvanSettings>();
+    storm::settings::addModule<storm::settings::modules::BuildSettings>();
     storm::settings::addModule<storm::settings::modules::GmmxxEquationSolverSettings>();
     storm::settings::addModule<storm::settings::modules::EigenEquationSolverSettings>();
     storm::settings::addModule<storm::settings::modules::NativeEquationSolverSettings>();
@@ -62,15 +60,10 @@ void initializeSettings() {
     storm::settings::addModule<storm::settings::modules::GameSolverSettings>();
     storm::settings::addModule<storm::settings::modules::BisimulationSettings>();
     storm::settings::addModule<storm::settings::modules::GlpkSettings>();
-    storm::settings::addModule<storm::settings::modules::GurobiSettings>();
-    storm::settings::addModule<storm::settings::modules::TopologicalValueIterationEquationSolverSettings>();
-    storm::settings::addModule<storm::settings::modules::Smt2SmtSolverSettings>();
     storm::settings::addModule<storm::settings::modules::ExplorationSettings>();
     storm::settings::addModule<storm::settings::modules::ResourceSettings>();
-    storm::settings::addModule<storm::settings::modules::AbstractionSettings>();
     storm::settings::addModule<storm::settings::modules::JaniExportSettings>();
     storm::settings::addModule<storm::settings::modules::JitBuilderSettings>();
-    storm::settings::addModule<storm::settings::modules::MultiObjectiveSettings>();
 
 
     storm::settings::addModule<storm::settings::modules::POMDPSettings>();
