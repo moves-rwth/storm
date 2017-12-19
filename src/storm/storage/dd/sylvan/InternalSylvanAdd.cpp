@@ -1151,6 +1151,13 @@ namespace storm {
             return sylvanMtbdd;
         }
         
+        template<typename ValueType>
+        std::string InternalAdd<DdType::Sylvan, ValueType>::getStringId() const {
+            std::stringstream ss;
+            ss << this->getSylvanMtbdd().GetMTBDD();
+            return ss.str();
+        }
+        
         template class InternalAdd<DdType::Sylvan, double>;
         template class InternalAdd<DdType::Sylvan, uint_fast64_t>;
 

@@ -42,18 +42,18 @@ namespace storm {
             result &= parametricModel->supportsParameters();
             auto dtmc = parametricModel->template as<SparseModelType>();
             result &= static_cast<bool>(dtmc);
-            result &= checkTask.getFormula().isInFragment(storm::logic::reachability().setRewardOperatorsAllowed(true).setReachabilityRewardFormulasAllowed(true).setBoundedUntilFormulasAllowed(true).setCumulativeRewardFormulasAllowed(true).setStepBoundedUntilFormulasAllowed(true).setTimeBoundedUntilFormulasAllowed(true));
+            result &= checkTask.getFormula().isInFragment(storm::logic::reachability().setRewardOperatorsAllowed(true).setReachabilityRewardFormulasAllowed(true).setBoundedUntilFormulasAllowed(true).setCumulativeRewardFormulasAllowed(true).setStepBoundedCumulativeRewardFormulasAllowed(true).setTimeBoundedCumulativeRewardFormulasAllowed(true).setTimeBoundedUntilFormulasAllowed(true).setStepBoundedUntilFormulasAllowed(true).setTimeBoundedUntilFormulasAllowed(true));
             return result;
         }
         
         template <typename SparseModelType, typename ConstantType>
-        void SparseDtmcParameterLiftingModelChecker<SparseModelType, ConstantType>::specify(std::shared_ptr<storm::models::ModelBase> parametricModel, CheckTask<storm::logic::Formula, typename SparseModelType::ValueType> const& checkTask) {
+        void SparseDtmcParameterLiftingModelChecker<SparseModelType, ConstantType>::specify(Environment const& env, std::shared_ptr<storm::models::ModelBase> parametricModel, CheckTask<storm::logic::Formula, typename SparseModelType::ValueType> const& checkTask) {
             auto dtmc = parametricModel->template as<SparseModelType>();
-            specify(dtmc, checkTask, false);
+            specify(env, dtmc, checkTask, false);
         }
         
         template <typename SparseModelType, typename ConstantType>
-        void SparseDtmcParameterLiftingModelChecker<SparseModelType, ConstantType>::specify(std::shared_ptr<SparseModelType> parametricModel, CheckTask<storm::logic::Formula, typename SparseModelType::ValueType> const& checkTask, bool skipModelSimplification) {
+        void SparseDtmcParameterLiftingModelChecker<SparseModelType, ConstantType>::specify(Environment const& env, std::shared_ptr<SparseModelType> parametricModel, CheckTask<storm::logic::Formula, typename SparseModelType::ValueType> const& checkTask, bool skipModelSimplification) {
 
             STORM_LOG_ASSERT(this->canHandle(parametricModel, checkTask), "specified model and formula can not be handled by this.");
          
@@ -61,20 +61,20 @@ namespace storm {
             
             if (skipModelSimplification) {
                 this->parametricModel = parametricModel;
-                this->specifyFormula(checkTask);
+                this->specifyFormula(env, checkTask);
             } else {
                 auto simplifier = storm::transformer::SparseParametricDtmcSimplifier<SparseModelType>(*parametricModel);
                 if (!simplifier.simplify(checkTask.getFormula())) {
                     STORM_LOG_THROW(false, storm::exceptions::UnexpectedException, "Simplifying the model was not successfull.");
                 }
                 this->parametricModel = simplifier.getSimplifiedModel();
-                this->specifyFormula(checkTask.substituteFormula(*simplifier.getSimplifiedFormula()));
+                this->specifyFormula(env, checkTask.substituteFormula(*simplifier.getSimplifiedFormula()));
             }
         }
         
         
         template <typename SparseModelType, typename ConstantType>
-        void SparseDtmcParameterLiftingModelChecker<SparseModelType, ConstantType>::specifyBoundedUntilFormula(CheckTask<storm::logic::BoundedUntilFormula, ConstantType> const& checkTask) {
+        void SparseDtmcParameterLiftingModelChecker<SparseModelType, ConstantType>::specifyBoundedUntilFormula(Environment const& env, CheckTask<storm::logic::BoundedUntilFormula, ConstantType> const& checkTask) {
             
             // get the step bound
             STORM_LOG_THROW(!checkTask.getFormula().hasLowerBound(), storm::exceptions::NotSupportedException, "Lower step bounds are not supported.");
@@ -118,7 +118,7 @@ namespace storm {
         }
 
         template <typename SparseModelType, typename ConstantType>
-        void SparseDtmcParameterLiftingModelChecker<SparseModelType, ConstantType>::specifyUntilFormula(CheckTask<storm::logic::UntilFormula, ConstantType> const& checkTask) {
+        void SparseDtmcParameterLiftingModelChecker<SparseModelType, ConstantType>::specifyUntilFormula(Environment const& env, CheckTask<storm::logic::UntilFormula, ConstantType> const& checkTask) {
             
             // get the results for the subformulas
             storm::modelchecker::SparsePropositionalModelChecker<SparseModelType> propositionalChecker(*this->parametricModel);
@@ -147,14 +147,14 @@ namespace storm {
             upperResultBound = storm::utility::one<ConstantType>();
             
             // The solution of the min-max equation system will always be unique (assuming graph-preserving instantiations).
-            auto req = solverFactory->getRequirements(true);
+            auto req = solverFactory->getRequirements(env, true);
             req.clearBounds();
             STORM_LOG_THROW(req.empty(), storm::exceptions::UncheckedRequirementException, "Unchecked solver requirement.");
             solverFactory->setRequirementsChecked(true);
         }
 
         template <typename SparseModelType, typename ConstantType>
-        void SparseDtmcParameterLiftingModelChecker<SparseModelType, ConstantType>::specifyReachabilityRewardFormula(CheckTask<storm::logic::EventuallyFormula, ConstantType> const& checkTask) {
+        void SparseDtmcParameterLiftingModelChecker<SparseModelType, ConstantType>::specifyReachabilityRewardFormula(Environment const& env, CheckTask<storm::logic::EventuallyFormula, ConstantType> const& checkTask) {
             
             // get the results for the subformula
             storm::modelchecker::SparsePropositionalModelChecker<SparseModelType> propositionalChecker(*this->parametricModel);
@@ -186,7 +186,7 @@ namespace storm {
             lowerResultBound = storm::utility::zero<ConstantType>();
         
             // The solution of the min-max equation system will always be unique (assuming graph-preserving instantiations).
-            auto req = solverFactory->getRequirements(true);
+            auto req = solverFactory->getRequirements(env, true);
             req.clearLowerBounds();
             if (req.requiresUpperBounds()) {
                 solvingRequiresUpperRewardBounds = true;
@@ -199,7 +199,7 @@ namespace storm {
         }
 
         template <typename SparseModelType, typename ConstantType>
-        void SparseDtmcParameterLiftingModelChecker<SparseModelType, ConstantType>::specifyCumulativeRewardFormula(CheckTask<storm::logic::CumulativeRewardFormula, ConstantType> const& checkTask) {
+        void SparseDtmcParameterLiftingModelChecker<SparseModelType, ConstantType>::specifyCumulativeRewardFormula(Environment const& env, CheckTask<storm::logic::CumulativeRewardFormula, ConstantType> const& checkTask) {
             
             // Obtain the stepBound
             stepBound = checkTask.getFormula().getBound().evaluateAsInt();
@@ -239,20 +239,15 @@ namespace storm {
         }
         
         template <typename SparseModelType, typename ConstantType>
-        std::unique_ptr<CheckResult> SparseDtmcParameterLiftingModelChecker<SparseModelType, ConstantType>::computeQuantitativeValues(storm::storage::ParameterRegion<typename SparseModelType::ValueType> const& region, storm::solver::OptimizationDirection const& dirForParameters) {
+        std::unique_ptr<CheckResult> SparseDtmcParameterLiftingModelChecker<SparseModelType, ConstantType>::computeQuantitativeValues(Environment const& env, storm::storage::ParameterRegion<typename SparseModelType::ValueType> const& region, storm::solver::OptimizationDirection const& dirForParameters) {
             
-            if(maybeStates.empty()) {
+            if (maybeStates.empty()) {
                 return std::make_unique<storm::modelchecker::ExplicitQuantitativeCheckResult<ConstantType>>(resultsForNonMaybeStates);
             }
             
             parameterLifter->specifyRegion(region, dirForParameters);
             
-            // Set up the solver
-            if (storm::NumberTraits<ConstantType>::IsExact && solverFactory->getMinMaxMethod() == storm::solver::MinMaxMethod::ValueIteration) {
-                STORM_LOG_INFO("Parameter Lifting: Setting solution method for exact MinMaxSolver to policy iteration");
-                solverFactory->setMinMaxMethod(storm::solver::MinMaxMethod::PolicyIteration);
-            }
-            auto solver = solverFactory->create(parameterLifter->getMatrix());
+            auto solver = solverFactory->create(env, parameterLifter->getMatrix());
             solver->setHasUniqueSolution();
             if (lowerResultBound) solver->setLowerBound(lowerResultBound.get());
             if (upperResultBound) {
@@ -293,10 +288,10 @@ namespace storm {
             if (stepBound) {
                 assert(*stepBound > 0);
                 x = std::vector<ConstantType>(maybeStates.getNumberOfSetBits(), storm::utility::zero<ConstantType>());
-                solver->repeatedMultiply(dirForParameters, x, &parameterLifter->getVector(), *stepBound);
+                solver->repeatedMultiply(env, dirForParameters, x, &parameterLifter->getVector(), *stepBound);
             } else {
                 x.resize(maybeStates.getNumberOfSetBits(), storm::utility::zero<ConstantType>());
-                solver->solveEquations(dirForParameters, x, parameterLifter->getVector());
+                solver->solveEquations(env, dirForParameters, x, parameterLifter->getVector());
                 if(storm::solver::minimize(dirForParameters)) {
                     minSchedChoices = solver->getSchedulerChoices();
                 } else {
@@ -313,7 +308,6 @@ namespace storm {
             }
             return std::make_unique<storm::modelchecker::ExplicitQuantitativeCheckResult<ConstantType>>(std::move(result));
         }
-        
         
         template <typename SparseModelType, typename ConstantType>
         void SparseDtmcParameterLiftingModelChecker<SparseModelType, ConstantType>::reset() {

@@ -20,6 +20,8 @@ namespace storm {
             const std::string IOSettings::exportDotOptionName = "exportdot";
             const std::string IOSettings::exportExplicitOptionName = "exportexplicit";
             const std::string IOSettings::exportJaniDotOptionName = "exportjanidot";
+            const std::string IOSettings::exportCdfOptionName = "exportcdf";
+            const std::string IOSettings::exportCdfOptionShortName = "cdf";
             const std::string IOSettings::explicitOptionName = "explicit";
             const std::string IOSettings::explicitOptionShortName = "exp";
             const std::string IOSettings::explicitDrnOptionName = "explicit-drn";
@@ -47,6 +49,7 @@ namespace storm {
                                 .addArgument(storm::settings::ArgumentBuilder::createStringArgument("filename", "The name of the file to which the model is to be written.").build()).build());
                 this->addOption(storm::settings::OptionBuilder(moduleName, exportJaniDotOptionName, "", "If given, the loaded jani model will be written to the specified file in the dot format.")
                                         .addArgument(storm::settings::ArgumentBuilder::createStringArgument("filename", "The name of the file to which the model is to be written.").build()).build());
+                this->addOption(storm::settings::OptionBuilder(moduleName, exportCdfOptionName, false, "Exports the cumulative density function for reward bounded properties into a .csv file.").setShortName(exportCdfOptionShortName).addArgument(storm::settings::ArgumentBuilder::createStringArgument("directory", "A path to an existing directory where the cdf files will be stored.").build()).build());
                 this->addOption(storm::settings::OptionBuilder(moduleName, exportExplicitOptionName, "", "If given, the loaded model will be written to the specified file in the drn format.")
                                 .addArgument(storm::settings::ArgumentBuilder::createStringArgument("filename", "the name of the file to which the model is to be writen.").build()).build());
                 this->addOption(storm::settings::OptionBuilder(moduleName, explicitOptionName, false, "Parses the model given in an explicit (sparse) representation.").setShortName(explicitOptionShortName)
@@ -103,7 +106,19 @@ namespace storm {
             std::string IOSettings::getExportExplicitFilename() const {
                 return this->getOption(exportExplicitOptionName).getArgumentByName("filename").getValueAsString();
             }
-
+            
+            bool IOSettings::isExportCdfSet() const {
+                return this->getOption(exportCdfOptionName).getHasOptionBeenSet();
+            }
+            
+            std::string IOSettings::getExportCdfDirectory() const {
+                std::string result = this->getOption(exportCdfOptionName).getArgumentByName("directory").getValueAsString();
+                if (result.back() != '/') {
+                    result.push_back('/');
+                }
+                return result;
+            }
+            
             bool IOSettings::isExplicitSet() const {
                 return this->getOption(explicitOptionName).getHasOptionBeenSet();
             }
@@ -155,7 +170,6 @@ namespace storm {
             std::string IOSettings::getJaniInputFilename() const {
                 return this->getOption(janiInputOptionName).getArgumentByName("filename").getValueAsString();
             }
-
 
             bool IOSettings::isTransitionRewardsSet() const {
                 return this->getOption(transitionRewardsOptionName).getHasOptionBeenSet();

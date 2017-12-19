@@ -15,17 +15,23 @@ namespace storm {
             bool containsRewardOperator() const;
             bool containsNextFormula() const;
             bool containsBoundedUntilFormula() const;
+            bool containsCumulativeRewardFormula() const;
+            bool containsRewardBoundedFormula() const;
             
             FormulaInformation join(FormulaInformation const& other);
             
             FormulaInformation& setContainsRewardOperator(bool newValue = true);
             FormulaInformation& setContainsNextFormula(bool newValue = true);
             FormulaInformation& setContainsBoundedUntilFormula(bool newValue = true);
+            FormulaInformation& setContainsCumulativeRewardFormula(bool newValue = true);
+            FormulaInformation& setContainsRewardBoundedFormula(bool newValue = true);
             
         private:
             bool mContainsRewardOperator;
             bool mContainsNextFormula;
             bool mContainsBoundedUntilFormula;
+            bool mContainsCumulativeRewardFormula;
+            bool mContainsRewardBoundedFormula;
         };
         
     }

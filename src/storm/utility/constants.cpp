@@ -336,6 +336,15 @@ namespace storm {
         }
         
         template<>
+        typename NumberTraits<ClnRationalNumber>::IntegerType convertNumber(double const& number){
+            if (number < static_cast<double>(std::numeric_limits<uint64_t>::max())) {
+                return NumberTraits<ClnRationalNumber>::IntegerType(static_cast<uint64_t>(number));
+            } else {
+                return carl::round(carl::rationalize<ClnRationalNumber>(number));
+            }
+        }
+        
+        template<>
         ClnRationalNumber convertNumber(int_fast64_t const& number) {
             STORM_LOG_ASSERT(static_cast<carl::sint>(number) == number, "Rationalizing failed, because the number is too large.");
             return carl::rationalize<ClnRationalNumber>(static_cast<carl::sint>(number));
@@ -351,6 +360,11 @@ namespace storm {
             return carl::parse<ClnRationalNumber>(number);
         }
         
+        template<>
+        std::pair<ClnRationalNumber, ClnRationalNumber> asFraction(ClnRationalNumber const& number) {
+            return std::make_pair(carl::getNum(number), carl::getDenom(number));
+        }
+
         template<>
         ClnRationalNumber sqrt(ClnRationalNumber const& number) {
             return carl::sqrt(number);
@@ -514,6 +528,11 @@ namespace storm {
         }
 
         template<>
+        typename NumberTraits<GmpRationalNumber>::IntegerType convertNumber(double const& number){
+            return NumberTraits<GmpRationalNumber>::IntegerType(number);
+        }
+
+        template<>
         GmpRationalNumber convertNumber(int_fast64_t const& number){
             STORM_LOG_ASSERT(static_cast<carl::sint>(number) == number, "Rationalizing failed, because the number is too large.");
             return carl::rationalize<GmpRationalNumber>(static_cast<carl::sint>(number));
@@ -529,6 +548,11 @@ namespace storm {
             return carl::parse<GmpRationalNumber>(number);
         }
         
+        template<>
+        std::pair<GmpRationalNumber, GmpRationalNumber> asFraction(GmpRationalNumber const& number) {
+            return std::make_pair(carl::getNum(number), carl::getDenom(number));
+        }
+
         template<>
         GmpRationalNumber sqrt(GmpRationalNumber const& number) {
             return carl::sqrt(number);

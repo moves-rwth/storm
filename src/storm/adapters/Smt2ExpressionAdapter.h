@@ -133,7 +133,7 @@ namespace storm {
                         STORM_LOG_DEBUG("Declaring the variable " + variableString);
                         declaredVariables.back().insert(variableString);
                         std::string varDeclaration = "( declare-fun " + variableString + " () ";
-                        switch (variableToCheck.getType()){
+                        switch (variableToCheck.type()){
                             case carl::VariableType::VT_BOOL:
                                 varDeclaration += "Bool";
                                 break;

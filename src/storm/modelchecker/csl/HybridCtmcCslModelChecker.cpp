@@ -46,44 +46,44 @@ namespace storm {
         }
         
         template<typename ModelType>
-        std::unique_ptr<CheckResult> HybridCtmcCslModelChecker<ModelType>::computeUntilProbabilities(CheckTask<storm::logic::UntilFormula, ValueType> const& checkTask) {
+        std::unique_ptr<CheckResult> HybridCtmcCslModelChecker<ModelType>::computeUntilProbabilities(Environment const& env, CheckTask<storm::logic::UntilFormula, ValueType> const& checkTask) {
             storm::logic::UntilFormula const& pathFormula = checkTask.getFormula();
-            std::unique_ptr<CheckResult> leftResultPointer = this->check(pathFormula.getLeftSubformula());
-            std::unique_ptr<CheckResult> rightResultPointer = this->check(pathFormula.getRightSubformula());
+            std::unique_ptr<CheckResult> leftResultPointer = this->check(env, pathFormula.getLeftSubformula());
+            std::unique_ptr<CheckResult> rightResultPointer = this->check(env, pathFormula.getRightSubformula());
             SymbolicQualitativeCheckResult<DdType> const& leftResult = leftResultPointer->asSymbolicQualitativeCheckResult<DdType>();
             SymbolicQualitativeCheckResult<DdType> const& rightResult = rightResultPointer->asSymbolicQualitativeCheckResult<DdType>();
             
-            return storm::modelchecker::helper::HybridCtmcCslHelper::computeUntilProbabilities<DdType, ValueType>(this->getModel(), this->getModel().getTransitionMatrix(), this->getModel().getExitRateVector(), leftResult.getTruthValuesVector(), rightResult.getTruthValuesVector(), checkTask.isQualitativeSet(), *this->linearEquationSolverFactory);
+            return storm::modelchecker::helper::HybridCtmcCslHelper::computeUntilProbabilities<DdType, ValueType>(env, this->getModel(), this->getModel().getTransitionMatrix(), this->getModel().getExitRateVector(), leftResult.getTruthValuesVector(), rightResult.getTruthValuesVector(), checkTask.isQualitativeSet(), *this->linearEquationSolverFactory);
         }
         
         template<typename ModelType>
-        std::unique_ptr<CheckResult> HybridCtmcCslModelChecker<ModelType>::computeNextProbabilities(CheckTask<storm::logic::NextFormula, ValueType> const& checkTask) {
+        std::unique_ptr<CheckResult> HybridCtmcCslModelChecker<ModelType>::computeNextProbabilities(Environment const& env, CheckTask<storm::logic::NextFormula, ValueType> const& checkTask) {
             storm::logic::NextFormula const& pathFormula = checkTask.getFormula();
-            std::unique_ptr<CheckResult> subResultPointer = this->check(pathFormula.getSubformula());
+            std::unique_ptr<CheckResult> subResultPointer = this->check(env, pathFormula.getSubformula());
             SymbolicQualitativeCheckResult<DdType> const& subResult = subResultPointer->asSymbolicQualitativeCheckResult<DdType>();
             
-            return storm::modelchecker::helper::HybridCtmcCslHelper::computeNextProbabilities<DdType, ValueType>(this->getModel(), this->getModel().getTransitionMatrix(), this->getModel().getExitRateVector(), subResult.getTruthValuesVector());
+            return storm::modelchecker::helper::HybridCtmcCslHelper::computeNextProbabilities<DdType, ValueType>(env, this->getModel(), this->getModel().getTransitionMatrix(), this->getModel().getExitRateVector(), subResult.getTruthValuesVector());
         }
 
 
         template<typename ModelType>
-        std::unique_ptr<CheckResult> HybridCtmcCslModelChecker<ModelType>::computeReachabilityRewards(storm::logic::RewardMeasureType, CheckTask<storm::logic::EventuallyFormula, ValueType> const& checkTask) {
+        std::unique_ptr<CheckResult> HybridCtmcCslModelChecker<ModelType>::computeReachabilityRewards(Environment const& env, storm::logic::RewardMeasureType, CheckTask<storm::logic::EventuallyFormula, ValueType> const& checkTask) {
             storm::logic::EventuallyFormula const& eventuallyFormula = checkTask.getFormula();
-            std::unique_ptr<CheckResult> subResultPointer = this->check(eventuallyFormula.getSubformula());
+            std::unique_ptr<CheckResult> subResultPointer = this->check(env, eventuallyFormula.getSubformula());
             SymbolicQualitativeCheckResult<DdType> const& subResult = subResultPointer->asSymbolicQualitativeCheckResult<DdType>();
 
-            return storm::modelchecker::helper::HybridCtmcCslHelper::computeReachabilityRewards<DdType, ValueType>(this->getModel(), this->getModel().getTransitionMatrix(), this->getModel().getExitRateVector(), checkTask.isRewardModelSet() ? this->getModel().getRewardModel(checkTask.getRewardModel()) : this->getModel().getRewardModel(""), subResult.getTruthValuesVector(), checkTask.isQualitativeSet(), *linearEquationSolverFactory);
+            return storm::modelchecker::helper::HybridCtmcCslHelper::computeReachabilityRewards<DdType, ValueType>(env, this->getModel(), this->getModel().getTransitionMatrix(), this->getModel().getExitRateVector(), checkTask.isRewardModelSet() ? this->getModel().getRewardModel(checkTask.getRewardModel()) : this->getModel().getRewardModel(""), subResult.getTruthValuesVector(), checkTask.isQualitativeSet(), *linearEquationSolverFactory);
         }
         
         template<typename ModelType>
-        std::unique_ptr<CheckResult> HybridCtmcCslModelChecker<ModelType>::computeBoundedUntilProbabilities(CheckTask<storm::logic::BoundedUntilFormula, ValueType> const& checkTask) {
+        std::unique_ptr<CheckResult> HybridCtmcCslModelChecker<ModelType>::computeBoundedUntilProbabilities(Environment const& env, CheckTask<storm::logic::BoundedUntilFormula, ValueType> const& checkTask) {
             storm::logic::BoundedUntilFormula const& pathFormula = checkTask.getFormula();
-            std::unique_ptr<CheckResult> leftResultPointer = this->check(pathFormula.getLeftSubformula());
-            std::unique_ptr<CheckResult> rightResultPointer = this->check(pathFormula.getRightSubformula());
+            std::unique_ptr<CheckResult> leftResultPointer = this->check(env, pathFormula.getLeftSubformula());
+            std::unique_ptr<CheckResult> rightResultPointer = this->check(env, pathFormula.getRightSubformula());
             SymbolicQualitativeCheckResult<DdType> const& leftResult = leftResultPointer->asSymbolicQualitativeCheckResult<DdType>();
             SymbolicQualitativeCheckResult<DdType> const& rightResult = rightResultPointer->asSymbolicQualitativeCheckResult<DdType>();
             
-            STORM_LOG_THROW(!pathFormula.getTimeBoundReference().isStepBound(), storm::exceptions::NotImplementedException, "Currently step-bounded properties on CTMCs are not supported.");
+            STORM_LOG_THROW(pathFormula.getTimeBoundReference().isTimeBound(), storm::exceptions::NotImplementedException, "Currently step-bounded and reward-bounded properties on CTMCs are not supported.");
             double lowerBound = 0;
             double upperBound = 0;
             if (pathFormula.hasLowerBound()) {
@@ -95,37 +95,37 @@ namespace storm {
                 upperBound = storm::utility::infinity<double>();
             }
             
-            return storm::modelchecker::helper::HybridCtmcCslHelper::computeBoundedUntilProbabilities<DdType, ValueType>(this->getModel(), this->getModel().getTransitionMatrix(), this->getModel().getExitRateVector(), leftResult.getTruthValuesVector(), rightResult.getTruthValuesVector(), checkTask.isQualitativeSet(), lowerBound, upperBound, *linearEquationSolverFactory);
+            return storm::modelchecker::helper::HybridCtmcCslHelper::computeBoundedUntilProbabilities<DdType, ValueType>(env, this->getModel(), this->getModel().getTransitionMatrix(), this->getModel().getExitRateVector(), leftResult.getTruthValuesVector(), rightResult.getTruthValuesVector(), checkTask.isQualitativeSet(), lowerBound, upperBound, *linearEquationSolverFactory);
         }
         
         template<typename ModelType>
-        std::unique_ptr<CheckResult> HybridCtmcCslModelChecker<ModelType>::computeInstantaneousRewards(storm::logic::RewardMeasureType, CheckTask<storm::logic::InstantaneousRewardFormula, ValueType> const& checkTask) {
+        std::unique_ptr<CheckResult> HybridCtmcCslModelChecker<ModelType>::computeInstantaneousRewards(Environment const& env, storm::logic::RewardMeasureType, CheckTask<storm::logic::InstantaneousRewardFormula, ValueType> const& checkTask) {
             storm::logic::InstantaneousRewardFormula const& rewardPathFormula = checkTask.getFormula();
             
             STORM_LOG_THROW(!rewardPathFormula.isStepBounded(), storm::exceptions::NotImplementedException, "Currently step-bounded properties on CTMCs are not supported.");
-            return storm::modelchecker::helper::HybridCtmcCslHelper::computeInstantaneousRewards<DdType, ValueType>(this->getModel(), this->getModel().getTransitionMatrix(), this->getModel().getExitRateVector(), checkTask.isRewardModelSet() ? this->getModel().getRewardModel(checkTask.getRewardModel()) : this->getModel().getRewardModel(""), rewardPathFormula.getBound<double>(), *linearEquationSolverFactory);
+            return storm::modelchecker::helper::HybridCtmcCslHelper::computeInstantaneousRewards<DdType, ValueType>(env, this->getModel(), this->getModel().getTransitionMatrix(), this->getModel().getExitRateVector(), checkTask.isRewardModelSet() ? this->getModel().getRewardModel(checkTask.getRewardModel()) : this->getModel().getRewardModel(""), rewardPathFormula.getBound<double>(), *linearEquationSolverFactory);
         }
 
         template<typename ModelType>
-        std::unique_ptr<CheckResult> HybridCtmcCslModelChecker<ModelType>::computeCumulativeRewards(storm::logic::RewardMeasureType, CheckTask<storm::logic::CumulativeRewardFormula, ValueType> const& checkTask) {
+        std::unique_ptr<CheckResult> HybridCtmcCslModelChecker<ModelType>::computeCumulativeRewards(Environment const& env, storm::logic::RewardMeasureType, CheckTask<storm::logic::CumulativeRewardFormula, ValueType> const& checkTask) {
             storm::logic::CumulativeRewardFormula const& rewardPathFormula = checkTask.getFormula();
 
-            STORM_LOG_THROW(!rewardPathFormula.isStepBounded(), storm::exceptions::NotImplementedException, "Currently step-bounded properties on CTMCs are not supported.");
-            return storm::modelchecker::helper::HybridCtmcCslHelper::computeCumulativeRewards<DdType, ValueType>(this->getModel(), this->getModel().getTransitionMatrix(), this->getModel().getExitRateVector(), checkTask.isRewardModelSet() ? this->getModel().getRewardModel(checkTask.getRewardModel()) : this->getModel().getRewardModel(""), rewardPathFormula.getNonStrictBound<double>(), *linearEquationSolverFactory);
+            STORM_LOG_THROW(rewardPathFormula.getTimeBoundReference().isTimeBound(), storm::exceptions::NotImplementedException, "Currently step-bounded and reward-bounded properties on CTMCs are not supported.");
+            return storm::modelchecker::helper::HybridCtmcCslHelper::computeCumulativeRewards<DdType, ValueType>(env, this->getModel(), this->getModel().getTransitionMatrix(), this->getModel().getExitRateVector(), checkTask.isRewardModelSet() ? this->getModel().getRewardModel(checkTask.getRewardModel()) : this->getModel().getRewardModel(""), rewardPathFormula.getNonStrictBound<double>(), *linearEquationSolverFactory);
         }
         
         template<typename ModelType>
-        std::unique_ptr<CheckResult> HybridCtmcCslModelChecker<ModelType>::computeLongRunAverageProbabilities(CheckTask<storm::logic::StateFormula, ValueType> const& checkTask) {
+        std::unique_ptr<CheckResult> HybridCtmcCslModelChecker<ModelType>::computeLongRunAverageProbabilities(Environment const& env, CheckTask<storm::logic::StateFormula, ValueType> const& checkTask) {
             storm::logic::StateFormula const& stateFormula = checkTask.getFormula();
-            std::unique_ptr<CheckResult> subResultPointer = this->check(stateFormula);
+            std::unique_ptr<CheckResult> subResultPointer = this->check(env, stateFormula);
             SymbolicQualitativeCheckResult<DdType> const& subResult = subResultPointer->asSymbolicQualitativeCheckResult<DdType>();
             
-            return storm::modelchecker::helper::HybridCtmcCslHelper::computeLongRunAverageProbabilities<DdType, ValueType>(this->getModel(), this->getModel().getTransitionMatrix(), this->getModel().getExitRateVector(), subResult.getTruthValuesVector(), *linearEquationSolverFactory);
+            return storm::modelchecker::helper::HybridCtmcCslHelper::computeLongRunAverageProbabilities<DdType, ValueType>(env, this->getModel(), this->getModel().getTransitionMatrix(), this->getModel().getExitRateVector(), subResult.getTruthValuesVector(), *linearEquationSolverFactory);
         }
         
         template<typename ModelType>
-        std::unique_ptr<CheckResult> HybridCtmcCslModelChecker<ModelType>::computeLongRunAverageRewards(storm::logic::RewardMeasureType rewardMeasureType, CheckTask<storm::logic::LongRunAverageRewardFormula, ValueType> const& checkTask) {
-            return storm::modelchecker::helper::HybridCtmcCslHelper::computeLongRunAverageRewards<DdType, ValueType>(this->getModel(), this->getModel().getTransitionMatrix(), this->getModel().getExitRateVector(), checkTask.isRewardModelSet() ? this->getModel().getRewardModel(checkTask.getRewardModel()) : this->getModel().getRewardModel(""), *linearEquationSolverFactory);
+        std::unique_ptr<CheckResult> HybridCtmcCslModelChecker<ModelType>::computeLongRunAverageRewards(Environment const& env, storm::logic::RewardMeasureType rewardMeasureType, CheckTask<storm::logic::LongRunAverageRewardFormula, ValueType> const& checkTask) {
+            return storm::modelchecker::helper::HybridCtmcCslHelper::computeLongRunAverageRewards<DdType, ValueType>(env, this->getModel(), this->getModel().getTransitionMatrix(), this->getModel().getExitRateVector(), checkTask.isRewardModelSet() ? this->getModel().getRewardModel(checkTask.getRewardModel()) : this->getModel().getRewardModel(""), *linearEquationSolverFactory);
         }
         
         // Explicitly instantiate the model checker.

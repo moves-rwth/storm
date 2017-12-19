@@ -134,14 +134,19 @@ namespace storm {
                  */
                 void close();
                 
+                /*!
+                 * Determines whether the Markov automaton can be converted to a CTMC without changing any measures.
+                 */
+                bool isConvertibleToCtmc() const;
+                
                 bool hasOnlyTrivialNondeterminism() const;
                 
                 /*!
-                 * Convert the MA into a MA by eliminating all states with probabilistic choices.
+                 * Convert the MA to a CTMC. May only be called if the MA is convertible to a CTMC.
                  *
-                 * @return Ctmc.
+                 * @return The resulting CTMC.
                  */
-                std::shared_ptr<storm::models::sparse::Ctmc<ValueType, RewardModelType>> convertToCTMC() const;
+                std::shared_ptr<storm::models::sparse::Ctmc<ValueType, RewardModelType>> convertToCtmc() const;
                 
                 virtual void printModelInformationToStream(std::ostream& out) const override;
                 

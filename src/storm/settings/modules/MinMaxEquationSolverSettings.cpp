@@ -21,7 +21,7 @@ namespace storm {
             const std::string MinMaxEquationSolverSettings::valueIterationMultiplicationStyleOptionName = "vimult";
 
             MinMaxEquationSolverSettings::MinMaxEquationSolverSettings() : ModuleSettings(moduleName) {
-                std::vector<std::string> minMaxSolvingTechniques = {"vi", "value-iteration", "pi", "policy-iteration", "linear-programming", "lp", "acyclic", "ratsearch"};
+                std::vector<std::string> minMaxSolvingTechniques = {"vi", "value-iteration", "pi", "policy-iteration", "linear-programming", "lp", "ratsearch"};
                 this->addOption(storm::settings::OptionBuilder(moduleName, solvingMethodOptionName, false, "Sets which min/max linear equation solving technique is preferred.")
                                 .addArgument(storm::settings::ArgumentBuilder::createStringArgument("name", "The name of a min/max linear equation solving technique.").addValidatorString(ArgumentValidatorFactory::createMultipleChoiceValidator(minMaxSolvingTechniques)).setDefaultValueString("vi").build()).build());
                 
@@ -48,8 +48,6 @@ namespace storm {
                     return storm::solver::MinMaxMethod::PolicyIteration;
                 } else if (minMaxEquationSolvingTechnique == "linear-programming" || minMaxEquationSolvingTechnique == "lp") {
                     return storm::solver::MinMaxMethod::LinearProgramming;
-                } else if (minMaxEquationSolvingTechnique == "acyclic") {
-                    return storm::solver::MinMaxMethod::Acyclic;
                 } else if (minMaxEquationSolvingTechnique == "ratsearch") {
                     return storm::solver::MinMaxMethod::RationalSearch;
                 }

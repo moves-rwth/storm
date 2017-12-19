@@ -620,6 +620,8 @@ namespace storm {
              */
             static ValueType getValue(MTBDD const& node);
             
+            std::string getStringId() const;
+            
         private:
             /*!
              * Recursively builds the ODD from an ADD.

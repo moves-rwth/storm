@@ -331,13 +331,15 @@ TEST(SparseMatrix, Submatrix) {
     storm::storage::SparseMatrix<double> matrix;
     ASSERT_NO_THROW(matrix = matrixBuilder.build());
 
+    storm::storage::BitVector rowGroupConstraint(4);
+    storm::storage::BitVector columnConstraint(4);
+
+    ASSERT_THROW(matrix.getSubmatrix(true, rowGroupConstraint, columnConstraint), storm::exceptions::InvalidArgumentException);
+
     std::vector<uint_fast64_t> rowGroupIndices = {0, 1, 2, 4, 5};
     
-    storm::storage::BitVector rowGroupConstraint(4);
     rowGroupConstraint.set(2);
     rowGroupConstraint.set(3);
-    
-    storm::storage::BitVector columnConstraint(4);
     columnConstraint.set(0);
     columnConstraint.set(3);
     

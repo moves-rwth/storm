@@ -9,6 +9,9 @@
 #include "storm/solver/LinearEquationSolver.h"
 
 namespace storm {
+    
+    class Environment;
+    
     namespace modelchecker {
         // Forward-declare result class.
         class CheckResult;
@@ -20,23 +23,23 @@ namespace storm {
             public:
                 typedef typename storm::models::symbolic::Model<DdType, ValueType>::RewardModelType RewardModelType;
                 
-                static std::unique_ptr<CheckResult> computeBoundedUntilProbabilities(storm::models::symbolic::Model<DdType, ValueType> const& model, storm::dd::Add<DdType, ValueType> const& transitionMatrix, storm::dd::Bdd<DdType> const& phiStates, storm::dd::Bdd<DdType> const& psiStates, uint_fast64_t stepBound, storm::solver::LinearEquationSolverFactory<ValueType> const& linearEquationSolverFactory);
+                static std::unique_ptr<CheckResult> computeBoundedUntilProbabilities(Environment const& env, storm::models::symbolic::Model<DdType, ValueType> const& model, storm::dd::Add<DdType, ValueType> const& transitionMatrix, storm::dd::Bdd<DdType> const& phiStates, storm::dd::Bdd<DdType> const& psiStates, uint_fast64_t stepBound, storm::solver::LinearEquationSolverFactory<ValueType> const& linearEquationSolverFactory);
                 
-                static std::unique_ptr<CheckResult> computeNextProbabilities(storm::models::symbolic::Model<DdType, ValueType> const& model, storm::dd::Add<DdType, ValueType> const& transitionMatrix, storm::dd::Bdd<DdType> const& nextStates);
+                static std::unique_ptr<CheckResult> computeNextProbabilities(Environment const& env, storm::models::symbolic::Model<DdType, ValueType> const& model, storm::dd::Add<DdType, ValueType> const& transitionMatrix, storm::dd::Bdd<DdType> const& nextStates);
                 
-                static std::unique_ptr<CheckResult> computeUntilProbabilities(storm::models::symbolic::Model<DdType, ValueType> const& model, storm::dd::Add<DdType, ValueType> const& transitionMatrix, storm::dd::Bdd<DdType> const& phiStates, storm::dd::Bdd<DdType> const& psiStates, bool qualitative, storm::solver::LinearEquationSolverFactory<ValueType> const& linearEquationSolverFactory);
+                static std::unique_ptr<CheckResult> computeUntilProbabilities(Environment const& env, storm::models::symbolic::Model<DdType, ValueType> const& model, storm::dd::Add<DdType, ValueType> const& transitionMatrix, storm::dd::Bdd<DdType> const& phiStates, storm::dd::Bdd<DdType> const& psiStates, bool qualitative, storm::solver::LinearEquationSolverFactory<ValueType> const& linearEquationSolverFactory);
                 
-                static std::unique_ptr<CheckResult> computeGloballyProbabilities(storm::models::symbolic::Model<DdType, ValueType> const& model, storm::dd::Add<DdType, ValueType> const& transitionMatrix, storm::dd::Bdd<DdType> const& psiStates, bool qualitative, storm::solver::LinearEquationSolverFactory<ValueType> const& linearEquationSolverFactory);
+                static std::unique_ptr<CheckResult> computeGloballyProbabilities(Environment const& env, storm::models::symbolic::Model<DdType, ValueType> const& model, storm::dd::Add<DdType, ValueType> const& transitionMatrix, storm::dd::Bdd<DdType> const& psiStates, bool qualitative, storm::solver::LinearEquationSolverFactory<ValueType> const& linearEquationSolverFactory);
                 
-                static std::unique_ptr<CheckResult> computeCumulativeRewards(storm::models::symbolic::Model<DdType, ValueType> const& model, storm::dd::Add<DdType, ValueType> const& transitionMatrix, RewardModelType const& rewardModel, uint_fast64_t stepBound, storm::solver::LinearEquationSolverFactory<ValueType> const& linearEquationSolverFactory);
+                static std::unique_ptr<CheckResult> computeCumulativeRewards(Environment const& env, storm::models::symbolic::Model<DdType, ValueType> const& model, storm::dd::Add<DdType, ValueType> const& transitionMatrix, RewardModelType const& rewardModel, uint_fast64_t stepBound, storm::solver::LinearEquationSolverFactory<ValueType> const& linearEquationSolverFactory);
                 
-                static std::unique_ptr<CheckResult> computeInstantaneousRewards(storm::models::symbolic::Model<DdType, ValueType> const& model, storm::dd::Add<DdType, ValueType> const& transitionMatrix, RewardModelType const& rewardModel, uint_fast64_t stepBound, storm::solver::LinearEquationSolverFactory<ValueType> const& linearEquationSolverFactory);
+                static std::unique_ptr<CheckResult> computeInstantaneousRewards(Environment const& env, storm::models::symbolic::Model<DdType, ValueType> const& model, storm::dd::Add<DdType, ValueType> const& transitionMatrix, RewardModelType const& rewardModel, uint_fast64_t stepBound, storm::solver::LinearEquationSolverFactory<ValueType> const& linearEquationSolverFactory);
                 
-                static std::unique_ptr<CheckResult> computeReachabilityRewards(storm::models::symbolic::Model<DdType, ValueType> const& model, storm::dd::Add<DdType, ValueType> const& transitionMatrix, RewardModelType const& rewardModel, storm::dd::Bdd<DdType> const& targetStates, bool qualitative, storm::solver::LinearEquationSolverFactory<ValueType> const& linearEquationSolverFactory);
+                static std::unique_ptr<CheckResult> computeReachabilityRewards(Environment const& env, storm::models::symbolic::Model<DdType, ValueType> const& model, storm::dd::Add<DdType, ValueType> const& transitionMatrix, RewardModelType const& rewardModel, storm::dd::Bdd<DdType> const& targetStates, bool qualitative, storm::solver::LinearEquationSolverFactory<ValueType> const& linearEquationSolverFactory);
 
-                static std::unique_ptr<CheckResult> computeLongRunAverageProbabilities(storm::models::symbolic::Model<DdType, ValueType> const& model, storm::dd::Add<DdType, ValueType> const& transitionMatrix, storm::dd::Bdd<DdType> const& targetStates, storm::solver::LinearEquationSolverFactory<ValueType> const& linearEquationSolverFactory);
+                static std::unique_ptr<CheckResult> computeLongRunAverageProbabilities(Environment const& env, storm::models::symbolic::Model<DdType, ValueType> const& model, storm::dd::Add<DdType, ValueType> const& transitionMatrix, storm::dd::Bdd<DdType> const& targetStates, storm::solver::LinearEquationSolverFactory<ValueType> const& linearEquationSolverFactory);
 
-                static std::unique_ptr<CheckResult> computeLongRunAverageRewards(storm::models::symbolic::Model<DdType, ValueType> const& model, storm::dd::Add<DdType, ValueType> const& transitionMatrix, RewardModelType const& rewardModel, storm::solver::LinearEquationSolverFactory<ValueType> const& linearEquationSolverFactory);
+                static std::unique_ptr<CheckResult> computeLongRunAverageRewards(Environment const& env, storm::models::symbolic::Model<DdType, ValueType> const& model, storm::dd::Add<DdType, ValueType> const& transitionMatrix, RewardModelType const& rewardModel, storm::solver::LinearEquationSolverFactory<ValueType> const& linearEquationSolverFactory);
 
             };
             

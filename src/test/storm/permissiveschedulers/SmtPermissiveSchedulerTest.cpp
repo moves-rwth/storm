@@ -6,6 +6,7 @@
 #include "storm/logic/Formulas.h"
 #include "storm/permissivesched/PermissiveSchedulers.h"
 #include "storm/builder/ExplicitModelBuilder.h"
+#include "storm/environment/Environment.h"
 
 #include "storm/models/sparse/StandardRewardModel.h"
 #include "storm/modelchecker/prctl/SparseMdpPrctlModelChecker.h"
@@ -16,6 +17,7 @@ TEST(SmtPermissiveSchedulerTest, DieSelection) {
 #else
 TEST(SmtPermissiveSchedulerTest, DISABLED_DieSelection) {
 #endif
+    storm::Environment env;
     storm::prism::Program program = storm::parser::PrismParser::parse(STORM_TEST_RESOURCES_DIR "/mdp/die_c1.nm");
     storm::parser::FormulaParser formulaParser(program);
     
@@ -43,7 +45,7 @@ TEST(SmtPermissiveSchedulerTest, DISABLED_DieSelection) {
     
     storm::modelchecker::SparseMdpPrctlModelChecker<storm::models::sparse::Mdp<double>> checker0(*mdp);
     
-    std::unique_ptr<storm::modelchecker::CheckResult> result0 = checker0.check(formula02b);
+    std::unique_ptr<storm::modelchecker::CheckResult> result0 = checker0.check(env, formula02b);
     storm::modelchecker::ExplicitQualitativeCheckResult& qualitativeResult0 = result0->asExplicitQualitativeCheckResult();
     
     ASSERT_FALSE(qualitativeResult0[0]);
@@ -51,7 +53,7 @@ TEST(SmtPermissiveSchedulerTest, DISABLED_DieSelection) {
     auto submdp = perms3->apply();
     storm::modelchecker::SparseMdpPrctlModelChecker<storm::models::sparse::Mdp<double>> checker1(submdp);
     
-    std::unique_ptr<storm::modelchecker::CheckResult> result1 = checker1.check(formula02b);
+    std::unique_ptr<storm::modelchecker::CheckResult> result1 = checker1.check(env, formula02b);
     storm::modelchecker::ExplicitQualitativeCheckResult& qualitativeResult1 = result1->asExplicitQualitativeCheckResult();
     
     EXPECT_TRUE(qualitativeResult1[0]);

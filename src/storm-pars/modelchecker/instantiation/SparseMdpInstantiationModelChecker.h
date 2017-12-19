@@ -20,13 +20,13 @@ namespace storm {
         public:
             SparseMdpInstantiationModelChecker(SparseModelType const& parametricModel);
             
-            virtual std::unique_ptr<CheckResult> check(storm::utility::parametric::Valuation<typename SparseModelType::ValueType> const& valuation) override;
+            virtual std::unique_ptr<CheckResult> check(Environment const& env, storm::utility::parametric::Valuation<typename SparseModelType::ValueType> const& valuation) override;
 
         protected:
             // Optimizations for the different formula types
-            std::unique_ptr<CheckResult> checkReachabilityProbabilityFormula(storm::modelchecker::SparseMdpPrctlModelChecker<storm::models::sparse::Mdp<ConstantType>>& modelChecker, storm::models::sparse::Mdp<ConstantType> const& instantiatedModel);
-            std::unique_ptr<CheckResult> checkReachabilityRewardFormula(storm::modelchecker::SparseMdpPrctlModelChecker<storm::models::sparse::Mdp<ConstantType>>& modelChecker, storm::models::sparse::Mdp<ConstantType> const& instantiatedModel);
-            std::unique_ptr<CheckResult> checkBoundedUntilFormula(storm::modelchecker::SparseMdpPrctlModelChecker<storm::models::sparse::Mdp<ConstantType>>& modelChecker);
+            std::unique_ptr<CheckResult> checkReachabilityProbabilityFormula(Environment const& env, storm::modelchecker::SparseMdpPrctlModelChecker<storm::models::sparse::Mdp<ConstantType>>& modelChecker, storm::models::sparse::Mdp<ConstantType> const& instantiatedModel);
+            std::unique_ptr<CheckResult> checkReachabilityRewardFormula(Environment const& env, storm::modelchecker::SparseMdpPrctlModelChecker<storm::models::sparse::Mdp<ConstantType>>& modelChecker, storm::models::sparse::Mdp<ConstantType> const& instantiatedModel);
+            std::unique_ptr<CheckResult> checkBoundedUntilFormula(Environment const& env, storm::modelchecker::SparseMdpPrctlModelChecker<storm::models::sparse::Mdp<ConstantType>>& modelChecker);
             
             storm::utility::ModelInstantiator<SparseModelType, storm::models::sparse::Mdp<ConstantType>> modelInstantiator;
         };

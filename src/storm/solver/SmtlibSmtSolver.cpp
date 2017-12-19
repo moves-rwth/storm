@@ -103,7 +103,7 @@ namespace storm {
         }
         
         void SmtlibSmtSolver::add(const storm::RationalFunctionVariable& variable, bool value){
-            STORM_LOG_THROW((variable.getType()==carl::VariableType::VT_BOOL), storm::exceptions::IllegalArgumentException, "Tried to add a constraint that consists of a non-boolean variable.");
+            STORM_LOG_THROW((variable.type()==carl::VariableType::VT_BOOL), storm::exceptions::IllegalArgumentException, "Tried to add a constraint that consists of a non-boolean variable.");
             std::set<storm::RationalFunctionVariable> variableSet;
             variableSet.insert(variable);
             std::vector<std::string> const varDeclarations = expressionAdapter->checkForUndeclaredVariables(variableSet);

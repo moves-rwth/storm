@@ -17,10 +17,16 @@
 #include "storm/settings/SettingsManager.h"
 #include "storm/settings/modules/CoreSettings.h"
 
+#include "storm/utility/macros.h"
+#include "storm/exceptions/NotSupportedException.h"
+
 #include "storm/utility/counterexamples.h"
 #include "storm/utility/cli.h"
 
 namespace storm {
+    
+    class Environment;
+    
     namespace counterexamples {
         
         /*!
@@ -593,28 +599,6 @@ namespace storm {
                 // cuts.
                 std::unique_ptr<storm::solver::SmtSolver> localSolver(new storm::solver::Z3SmtSolver(program.getManager()));
                 storm::expressions::ExpressionManager const& localManager = program.getManager();
-//
-//                // Create a context and register all variables of the program with their correct type.
-//                z3::context localContext;
-//                z3::solver localSolver(localContext);
-//                std::map<std::string, z3::expr> solverVariables;
-//                for (auto const& booleanVariable : program.getGlobalBooleanVariables()) {
-//                    solverVariables.emplace(booleanVariable.getName(), localContext.bool_const(booleanVariable.getName().c_str()));
-//                }
-//                for (auto const& integerVariable : program.getGlobalIntegerVariables()) {
-//                    solverVariables.emplace(integerVariable.getName(), localContext.int_const(integerVariable.getName().c_str()));
-//                }
-//
-//                for (auto const& module : program.getModules()) {
-//                    for (auto const& booleanVariable : module.getBooleanVariables()) {
-//                        solverVariables.emplace(booleanVariable.getName(), localContext.bool_const(booleanVariable.getName().c_str()));
-//                    }
-//                    for (auto const& integerVariable : module.getIntegerVariables()) {
-//                        solverVariables.emplace(integerVariable.getName(), localContext.int_const(integerVariable.getName().c_str()));
-//                    }
-//                }
-//
-//                storm::adapters::Z3ExpressionAdapter expressionAdapter(localContext, false, solverVariables);
 
                 // Then add the constraints for bounds of the integer variables..
                 for (auto const& integerVariable : program.getGlobalIntegerVariables()) {
@@ -1589,9 +1573,7 @@ namespace storm {
              * Returns the submdp obtained from removing all choices that do not originate from the specified filterLabelSet.
              * Also returns the Labelsets of the submdp
              */
-            static std::pair<storm::models::sparse::Mdp<T>, std::vector<boost::container::flat_set<uint_fast64_t>>> restrictMdpToLabelSet(storm::models::sparse::Mdp<T> const& mdp,  std::vector<boost::container::flat_set<uint_fast64_t>> const& labelSets, boost::container::flat_set<uint_fast64_t> const& filterLabelSet) {
-
-                STORM_LOG_THROW(mdp.getNumberOfChoices() == labelSets.size(), storm::exceptions::InvalidArgumentException, "The given number of labels does not match the number of choices.");
+            static std::pair<storm::models::sparse::Mdp<T>, std::vector<boost::container::flat_set<uint_fast64_t>>> restrictMdpToLabelSet(storm::models::sparse::Mdp<T> const& mdp,  boost::container::flat_set<uint_fast64_t> const& filterLabelSet) {
 
                 std::vector<boost::container::flat_set<uint_fast64_t>> resultLabelSet;
                 storm::storage::SparseMatrixBuilder<T> transitionMatrixBuilder(0, mdp.getTransitionMatrix().getColumnCount(), 0, true, true, mdp.getTransitionMatrix().getRowGroupCount());
@@ -1601,7 +1583,8 @@ namespace storm {
                 for(uint_fast64_t state = 0; state < mdp.getNumberOfStates(); ++state) {
                     bool stateHasValidChoice = false;
                     for (uint_fast64_t choice = mdp.getTransitionMatrix().getRowGroupIndices()[state]; choice < mdp.getTransitionMatrix().getRowGroupIndices()[state + 1]; ++choice) {
-                        bool choiceValid = std::includes(filterLabelSet.begin(), filterLabelSet.end(), labelSets[choice].begin(), labelSets[choice].end());
+                        auto const& choiceLabelSet = mdp.getChoiceOrigins()->asPrismChoiceOrigins().getCommandSet(choice);
+                        bool choiceValid = std::includes(filterLabelSet.begin(), filterLabelSet.end(), choiceLabelSet.begin(), choiceLabelSet.end());
 
                         // If the choice is valid, copy over all its elements.
                         if (choiceValid) {
@@ -1612,7 +1595,7 @@ namespace storm {
                             for (auto const& entry : mdp.getTransitionMatrix().getRow(choice)) {
                                 transitionMatrixBuilder.addNextValue(currentRow, entry.getColumn(), entry.getValue());
                             }
-                            resultLabelSet.push_back(labelSets[choice]);
+                            resultLabelSet.push_back(choiceLabelSet);
                             ++currentRow;
                         }
                     }
@@ -1633,8 +1616,6 @@ namespace storm {
             }
 
         public:
-         
-            
             /*!
              * Computes the minimal command set that is needed in the given MDP to exceed the given probability threshold for satisfying phi until psi.
              *
@@ -1642,13 +1623,12 @@ namespace storm {
              * @param mdp The MDP in which to find the minimal command set.
              * @param phiStates A bit vector characterizing all phi states in the model.
              * @param psiStates A bit vector characterizing all psi states in the model.
-             * @param probabilityThreshold The probability value that must be achieved or exceeded.
-             * @param strictBound A flag indicating whether the probability must be achieved (in which case the flag must be set) or strictly exceeded
-             * (if the flag is set to false).
+             * @param probabilityThreshold The threshold that is to be achieved or exceeded.
+             * @param strictBound Indicates whether the threshold needs to be achieved (true) or exceeded (false).
              * @param checkThresholdFeasible If set, it is verified that the model can actually achieve/exceed the given probability value. If this check
              * is made and fails, an exception is thrown.
              */
-            static boost::container::flat_set<uint_fast64_t> getMinimalCommandSet(storm::prism::Program program, storm::models::sparse::Mdp<T> const& mdp, storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates, double probabilityThreshold, bool strictBound, bool checkThresholdFeasible = false, bool includeReachabilityEncoding = false) {
+            static boost::container::flat_set<uint_fast64_t> getMinimalCommandSet(Environment const& env,storm::prism::Program program, storm::models::sparse::Mdp<T> const& mdp, storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates, double probabilityThreshold, bool strictBound, bool checkThresholdFeasible = false, bool includeReachabilityEncoding = false) {
 #ifdef STORM_HAVE_Z3
                 // Set up all clocks used for time measurement.
                 auto totalClock = std::chrono::high_resolution_clock::now();
@@ -1669,7 +1649,7 @@ namespace storm {
 
                 // (0) Obtain the label sets for each choice.
                 // The label set of a choice corresponds to the set of prism commands that induce the choice.
-                STORM_LOG_THROW(mdp.hasChoiceOrigins(), storm::exceptions::InvalidArgumentException, "Restriction to minimal command set is impossible for model without choice origns.");
+                STORM_LOG_THROW(mdp.hasChoiceOrigins(), storm::exceptions::InvalidArgumentException, "Restriction to minimal command set is impossible for model without choice origins.");
                 STORM_LOG_THROW(mdp.getChoiceOrigins()->isPrismChoiceOrigins(), storm::exceptions::InvalidArgumentException, "Restriction to command set is impossible for model without prism choice origins.");
                 storm::storage::sparse::PrismChoiceOrigins const& choiceOrigins = mdp.getChoiceOrigins()->asPrismChoiceOrigins();
                 std::vector<boost::container::flat_set<uint_fast64_t>> labelSets;
@@ -1683,7 +1663,7 @@ namespace storm {
                 if (checkThresholdFeasible) {
                     storm::modelchecker::helper::SparseMdpPrctlHelper<T> modelCheckerHelper;
                     STORM_LOG_DEBUG("Invoking model checker.");
-                    std::vector<T> result = std::move(modelCheckerHelper.computeUntilProbabilities(false, mdp.getTransitionMatrix(), mdp.getBackwardTransitions(), phiStates, psiStates, false, false, storm::solver::GeneralMinMaxLinearEquationSolverFactory<T>()).values);
+                    std::vector<T> result = std::move(modelCheckerHelper.computeUntilProbabilities(env, false, mdp.getTransitionMatrix(), mdp.getBackwardTransitions(), phiStates, psiStates, false, false, storm::solver::GeneralMinMaxLinearEquationSolverFactory<T>()).values);
                     for (auto state : mdp.getInitialStates()) {
                         maximalReachabilityProbability = std::max(maximalReachabilityProbability, result[state]);
                     }
@@ -1695,8 +1675,8 @@ namespace storm {
                 RelevancyInformation relevancyInformation = determineRelevantStatesAndLabels(mdp, labelSets, phiStates, psiStates);
                 
                 // (3) Create a solver.
-                std::shared_ptr<storm::expressions::ExpressionManager> manager(new storm::expressions::ExpressionManager());
-                std::unique_ptr<storm::solver::SmtSolver> solver(new storm::solver::Z3SmtSolver(*manager));
+                std::shared_ptr<storm::expressions::ExpressionManager> manager = std::make_shared<storm::expressions::ExpressionManager>();
+                std::unique_ptr<storm::solver::SmtSolver> solver = std::make_unique<storm::solver::Z3SmtSolver>(*manager);
                 
                 // (4) Create the variables for the relevant commands.
                 VariableInformation variableInformation = createVariables(manager, mdp, psiStates, relevancyInformation, includeReachabilityEncoding);
@@ -1744,13 +1724,13 @@ namespace storm {
                     // Restrict the given MDP to the current set of labels and compute the reachability probability.
                     modelCheckingClock = std::chrono::high_resolution_clock::now();
                     commandSet.insert(relevancyInformation.knownLabels.begin(), relevancyInformation.knownLabels.end());
-                    auto subMdpChoiceOrigins = restrictMdpToLabelSet(mdp, labelSets, commandSet);
+                    auto subMdpChoiceOrigins = restrictMdpToLabelSet(mdp, commandSet);
                     storm::models::sparse::Mdp<T> const& subMdp = subMdpChoiceOrigins.first;
                     std::vector<boost::container::flat_set<uint_fast64_t>> const& subLabelSets = subMdpChoiceOrigins.second;
   
                     storm::modelchecker::helper::SparseMdpPrctlHelper<T> modelCheckerHelper;
                     STORM_LOG_DEBUG("Invoking model checker.");
-                    std::vector<T> result = std::move(modelCheckerHelper.computeUntilProbabilities(false, subMdp.getTransitionMatrix(), subMdp.getBackwardTransitions(), phiStates, psiStates, false, false, storm::solver::GeneralMinMaxLinearEquationSolverFactory<T>()).values);
+                    std::vector<T> result = std::move(modelCheckerHelper.computeUntilProbabilities(env, false, subMdp.getTransitionMatrix(), subMdp.getBackwardTransitions(), phiStates, psiStates, false, false, storm::solver::GeneralMinMaxLinearEquationSolverFactory<T>()).values);
                     STORM_LOG_DEBUG("Computed model checking results.");
                     totalModelCheckingTime += std::chrono::high_resolution_clock::now() - modelCheckingClock;
 
@@ -1808,29 +1788,98 @@ namespace storm {
 #endif
             }
             
-            static std::shared_ptr<PrismHighLevelCounterexample> computeCounterexample(storm::prism::Program program, storm::models::sparse::Mdp<T> const& mdp, std::shared_ptr<storm::logic::Formula const> const& formula) {
+            static void extendCommandSetLowerBound(storm::models::sparse::Mdp<T> const& mdp, boost::container::flat_set<uint_fast64_t>& commandSet, storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates) {
+                auto startTime = std::chrono::high_resolution_clock::now();
+                
+                // Create sub-MDP that only contains the choices allowed by the given command set.
+                storm::models::sparse::Mdp<T> subMdp = restrictMdpToLabelSet(mdp, commandSet).first;
+                
+                // Then determine all prob0E(psi) states that are reachable in the sub-MDP.
+                storm::storage::BitVector reachableProb0EStates = storm::utility::graph::getReachableStates(subMdp.getTransitionMatrix(), subMdp.getInitialStates(), phiStates, psiStates);
+                
+                // Create a queue of reachable prob0E(psi) states so we can check which commands need to be added
+                // to give them a strategy that avoids psi states.
+                std::queue<uint_fast64_t> prob0EWorklist;
+                for (auto const& e : reachableProb0EStates) {
+                    prob0EWorklist.push(e);
+                }
+                
+                // As long as there are reachable prob0E(psi) states, we add commands so they can stay within
+                // prob0E(states).
+                while (!prob0EWorklist.empty()) {
+                    uint_fast64_t state = prob0EWorklist.front();
+                    prob0EWorklist.pop();
+                    
+                    // Now iterate over the original choices of the prob0E(psi) state and add at least one.
+                    bool hasLabeledChoice = false;
+                    uint64_t smallestCommandSetSize = 0;
+                    uint64_t smallestCommandChoice = mdp.getTransitionMatrix().getRowGroupIndices()[state];
+                    
+                    // Determine the choice with the least amount of commands (bad heuristic).
+                    for (uint64_t choice = smallestCommandChoice; choice < mdp.getTransitionMatrix().getRowGroupIndices()[state + 1]; ++choice) {
+                        bool onlyProb0ESuccessors = true;
+                        for (auto const& successorEntry : mdp.getTransitionMatrix().getRow(choice)) {
+                            if (!psiStates.get(successorEntry.getColumn())) {
+                                onlyProb0ESuccessors = false;
+                                break;
+                            }
+                        }
+                        
+                        if (onlyProb0ESuccessors) {
+                            auto const& labelSet = mdp.getChoiceOrigins()->asPrismChoiceOrigins().getCommandSet(choice);
+                            hasLabeledChoice |= !labelSet.empty();
+                            
+                            if (smallestCommandChoice == 0 || labelSet.size() < smallestCommandSetSize) {
+                                smallestCommandSetSize = labelSet.size();
+                                smallestCommandChoice = choice;
+                            }
+                        }
+                    }
+                    
+                    if (hasLabeledChoice) {
+                        // Take all labels of the selected choice.
+                        auto const& labelSet = mdp.getChoiceOrigins()->asPrismChoiceOrigins().getCommandSet(smallestCommandChoice);
+                        commandSet.insert(labelSet.begin(), labelSet.end());
+                        
+                        // Check for which successor states choices need to be added
+                        for (auto const& successorEntry : mdp.getTransitionMatrix().getRow(smallestCommandChoice)) {
+                            if (!storm::utility::isZero(successorEntry.getValue())) {
+                                if (!reachableProb0EStates.get(successorEntry.getColumn())) {
+                                    reachableProb0EStates.set(successorEntry.getColumn());
+                                    prob0EWorklist.push(successorEntry.getColumn());
+                                }
+                            }
+                        }
+                    }
+                }
+                
+                auto endTime = std::chrono::high_resolution_clock::now();
+                std::cout << std::endl << "Extended command for lower bounded property to size " << commandSet.size() << " in " << std::chrono::duration_cast<std::chrono::milliseconds>(endTime - startTime).count() << "ms." << std::endl;
+            }
+            
+            static std::shared_ptr<PrismHighLevelCounterexample> computeCounterexample(Environment const& env, storm::prism::Program program, storm::models::sparse::Mdp<T> const& mdp, std::shared_ptr<storm::logic::Formula const> const& formula) {
 #ifdef STORM_HAVE_Z3
                 std::cout << std::endl << "Generating minimal label counterexample for formula " << *formula << std::endl;
                 
                 STORM_LOG_THROW(formula->isProbabilityOperatorFormula(), storm::exceptions::InvalidPropertyException, "Counterexample generation does not support this kind of formula. Expecting a probability operator as the outermost formula element.");
                 storm::logic::ProbabilityOperatorFormula const& probabilityOperator = formula->asProbabilityOperatorFormula();
                 STORM_LOG_THROW(probabilityOperator.hasBound(), storm::exceptions::InvalidPropertyException, "Counterexample generation only supports bounded formulas.");
-                storm::logic::ComparisonType comparisonType = probabilityOperator.getComparisonType();
-                STORM_LOG_THROW(comparisonType == storm::logic::ComparisonType::Less || comparisonType == storm::logic::ComparisonType::LessEqual, storm::exceptions::InvalidPropertyException, "Counterexample generation only supports formulas with an upper probability bound.");
                 STORM_LOG_THROW(probabilityOperator.getSubformula().isUntilFormula() || probabilityOperator.getSubformula().isEventuallyFormula(), storm::exceptions::InvalidPropertyException, "Path formula is required to be of the form 'phi U psi' for counterexample generation.");
-                
+
+                storm::logic::ComparisonType comparisonType = probabilityOperator.getComparisonType();
                 bool strictBound = comparisonType == storm::logic::ComparisonType::Less;
-                double threshold = probabilityOperator.getThresholdAs<double>();
+                double threshold = probabilityOperator.getThresholdAs<T>();
                 
                 storm::storage::BitVector phiStates;
                 storm::storage::BitVector psiStates;
                 storm::modelchecker::SparseMdpPrctlModelChecker<storm::models::sparse::Mdp<T>> modelchecker(mdp);
                 
                 if (probabilityOperator.getSubformula().isUntilFormula()) {
+                    STORM_LOG_THROW(!storm::logic::isLowerBound(comparisonType), storm::exceptions::NotSupportedException, "Lower bounds in counterexamples are only supported for eventually formulas.");
                     storm::logic::UntilFormula const& untilFormula = probabilityOperator.getSubformula().asUntilFormula();
                     
-                    std::unique_ptr<storm::modelchecker::CheckResult> leftResult = modelchecker.check(untilFormula.getLeftSubformula());
-                    std::unique_ptr<storm::modelchecker::CheckResult> rightResult = modelchecker.check(untilFormula.getRightSubformula());
+                    std::unique_ptr<storm::modelchecker::CheckResult> leftResult = modelchecker.check(env, untilFormula.getLeftSubformula());
+                    std::unique_ptr<storm::modelchecker::CheckResult> rightResult = modelchecker.check(env, untilFormula.getRightSubformula());
                     
                     storm::modelchecker::ExplicitQualitativeCheckResult const& leftQualitativeResult = leftResult->asExplicitQualitativeCheckResult();
                     storm::modelchecker::ExplicitQualitativeCheckResult const& rightQualitativeResult = rightResult->asExplicitQualitativeCheckResult();
@@ -1840,7 +1889,7 @@ namespace storm {
                 } else if (probabilityOperator.getSubformula().isEventuallyFormula()) {
                     storm::logic::EventuallyFormula const& eventuallyFormula = probabilityOperator.getSubformula().asEventuallyFormula();
                     
-                    std::unique_ptr<storm::modelchecker::CheckResult> subResult = modelchecker.check(eventuallyFormula.getSubformula());
+                    std::unique_ptr<storm::modelchecker::CheckResult> subResult = modelchecker.check(env, eventuallyFormula.getSubformula());
                     
                     storm::modelchecker::ExplicitQualitativeCheckResult const& subQualitativeResult = subResult->asExplicitQualitativeCheckResult();
                     
@@ -1848,11 +1897,42 @@ namespace storm {
                     psiStates = subQualitativeResult.getTruthValuesVector();
                 }
                 
+                bool lowerBoundedFormula = false;
+                if (storm::logic::isLowerBound(comparisonType)) {
+                    // If the formula specifies a lower bound, we need to modify the phi and psi states.
+                    // More concretely, we convert P(min)>lambda(F psi) to P(max)<(1-lambda)(G !psi) = P(max)<(1-lambda)(!psi U prob0E(psi))
+                    // where prob0E(psi) is the set of states for which there exists a strategy \sigma_0 that avoids
+                    // reaching psi states completely.
+
+                    // This means that from all states in prob0E(psi) we need to include labels such that \sigma_0
+                    // is actually included in the resulting MDP. This prevents us from guaranteeing the minimality of
+                    // the returned counterexample, so we warn about that.
+                    STORM_LOG_WARN("Generating counterexample for lower-bounded property. The resulting command set need not be minimal.");
+
+                    // Modify bound appropriately.
+                    comparisonType = storm::logic::invertPreserveStrictness(comparisonType);
+                    threshold = storm::utility::one<T>() - threshold;
+                    
+                    // Modify the phi and psi states appropriately.
+                    storm::storage::BitVector statesWithProbability0E = storm::utility::graph::performProb0E(mdp.getTransitionMatrix(), mdp.getTransitionMatrix().getRowGroupIndices(), mdp.getBackwardTransitions(), phiStates, psiStates);
+                    phiStates = ~psiStates;
+                    psiStates = std::move(statesWithProbability0E);
+
+                    // Remember our transformation so we can add commands to guarantee that the prob0E(a) states actually
+                    // have a strategy that voids a states.
+                    lowerBoundedFormula = true;
+                }
+                
                 // Delegate the actual computation work to the function of equal name.
                 auto startTime = std::chrono::high_resolution_clock::now();
-                auto commandSet = getMinimalCommandSet(program, mdp, phiStates, psiStates, threshold, strictBound, true, storm::settings::getModule<storm::settings::modules::CounterexampleGeneratorSettings>().isEncodeReachabilitySet());
+                auto commandSet = getMinimalCommandSet(env, program, mdp, phiStates, psiStates, threshold, strictBound, true, storm::settings::getModule<storm::settings::modules::CounterexampleGeneratorSettings>().isEncodeReachabilitySet());
                 auto endTime = std::chrono::high_resolution_clock::now();
                 std::cout << std::endl << "Computed minimal command set of size " << commandSet.size() << " in " << std::chrono::duration_cast<std::chrono::milliseconds>(endTime - startTime).count() << "ms." << std::endl;
+                
+                // Extend the command set properly.
+                if (lowerBoundedFormula) {
+                    extendCommandSetLowerBound(mdp, commandSet, phiStates, psiStates);
+                }
                 
                 return std::make_shared<PrismHighLevelCounterexample>(program.restrictCommands(commandSet));
 

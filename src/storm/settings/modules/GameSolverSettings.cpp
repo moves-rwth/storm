@@ -44,6 +44,10 @@ namespace storm {
                 return this->getOption(solvingMethodOptionName).getHasOptionBeenSet();
             }
             
+           bool GameSolverSettings::isGameSolvingMethodSetFromDefaultValue() const {
+                return !this->getOption(solvingMethodOptionName).getArgumentByName("name").getHasBeenSet() || this->getOption(solvingMethodOptionName).getArgumentByName("name").wasSetFromDefaultValue();
+            }
+            
             bool GameSolverSettings::isMaximalIterationCountSet() const {
                 return this->getOption(maximalIterationsOptionName).getHasOptionBeenSet();
             }
