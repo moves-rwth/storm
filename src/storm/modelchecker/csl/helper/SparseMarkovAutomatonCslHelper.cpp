@@ -658,15 +658,6 @@ namespace storm {
                         element /= foxGlynnResult.totalWeight;
                     }
 
-                    ValueType sum = 0;
-                    for (auto i = foxGlynnResult.left ; i<=foxGlynnResult.right; i++){
-                        sum+=foxGlynnResult.weights[i-foxGlynnResult.left];
-                        logfile << i << "\t" << foxGlynnResult.weights[i-foxGlynnResult.left];
-                        logfile << i << "\t" << sum;
-                    }
-                    std::cout << " left " << foxGlynnResult.left << " right " << foxGlynnResult.right << " size " << foxGlynnResult.weights.size() << " sum " << sum << "\n";
-
-
                     // (4) define vectors/matrices
                     std::vector<ValueType> init(numberOfStates, -1);
                     std::vector<std::vector<ValueType>> v = std::vector<std::vector<ValueType>>(N + 1, init);
@@ -714,7 +705,7 @@ namespace storm {
                         }
                     }
                     oldDiff = maxNorm;
-                    std::cout << "Finished Iteration for N = " << N << " with difference " << maxNorm << "\n";
+                    //std::cout << "Finished Iteration for N = " << N << " with difference " << maxNorm << "\n";
                 } while (maxNorm > epsilon * (1 - kappa));
 
                 logfile.close();
