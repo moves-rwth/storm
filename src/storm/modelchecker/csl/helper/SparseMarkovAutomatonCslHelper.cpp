@@ -193,7 +193,8 @@ namespace storm {
                         logfile << (~markovianStates)[i] << "\t\t" << markovianStates[i] << "\t\t" << psiStates[i] << "\t\t" << cycleStates[i] << "\t\t" << cycleGoalStates[i] << "\n";
                 }
 
-                logfile << "Iteration for N = " << N << "maximal difference was " << diff << "\n";
+                logfile << "Iteration for N = " << N << " maximal difference was " << diff << "\n";
+                
                 logfile << "vd: \n";
                 for (uint64_t i =0 ; i<unifVectors[0].size(); i++){
                     for(uint64_t j=0; j<unifVectors[0][i].size(); j++){
@@ -650,7 +651,7 @@ namespace storm {
 
                     // calculate poisson distribution
 
-                    storm::utility::numerical::FoxGlynnResult<ValueType> foxGlynnResult = storm::utility::numerical::foxGlynn(lambda*T, epsilon*kappa);
+                    storm::utility::numerical::FoxGlynnResult<ValueType> foxGlynnResult = storm::utility::numerical::foxGlynn(lambda*T, epsilon*kappa/100);
 
                     // Scale the weights so they add up to one.
                     for (auto& element : foxGlynnResult.weights) {
@@ -660,6 +661,8 @@ namespace storm {
                     ValueType sum = 0;
                     for (auto i = foxGlynnResult.left ; i<=foxGlynnResult.right; i++){
                         sum+=foxGlynnResult.weights[i-foxGlynnResult.left];
+                        logfile << i << "\t" << foxGlynnResult.weights[i-foxGlynnResult.left];
+                        logfile << i << "\t" << sum;
                     }
                     std::cout << " left " << foxGlynnResult.left << " right " << foxGlynnResult.right << " size " << foxGlynnResult.weights.size() << " sum " << sum << "\n";
 
@@ -706,6 +709,7 @@ namespace storm {
                         }
                     }
                     oldDiff = maxNorm;
+                    std::cout << "Finished Iteration for N = " << N << " with difference " << maxNorm << "\n";
                 } while (maxNorm > epsilon * (1 - kappa));
 
                 logfile.close();
