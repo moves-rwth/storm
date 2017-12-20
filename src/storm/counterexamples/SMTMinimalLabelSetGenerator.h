@@ -1859,11 +1859,10 @@ namespace storm {
                 auto endTime = std::chrono::high_resolution_clock::now();
                 std::cout << std::endl << "Extended command for lower bounded property to size " << commandSet.size() << " in " << std::chrono::duration_cast<std::chrono::milliseconds>(endTime - startTime).count() << "ms." << std::endl;
             }
-            
-            static std::shared_ptr<PrismHighLevelCounterexample> computeCounterexample(Environment const& env, storm::prism::Program program, storm::models::sparse::Mdp<T> const& mdp, std::shared_ptr<storm::logic::Formula const> const& formula) {
-#ifdef STORM_HAVE_Z3
+
+            static boost::container::flat_set<uint_fast64_t>  computeCounterexampleCommandSet(Environment const& env, storm::prism::Program program, storm::models::sparse::Mdp<T> const& mdp, std::shared_ptr<storm::logic::Formula const> const& formula) {
                 std::cout << std::endl << "Generating minimal label counterexample for formula " << *formula << std::endl;
-                
+
                 STORM_LOG_THROW(formula->isProbabilityOperatorFormula(), storm::exceptions::InvalidPropertyException, "Counterexample generation does not support this kind of formula. Expecting a probability operator as the outermost formula element.");
                 storm::logic::ProbabilityOperatorFormula const& probabilityOperator = formula->asProbabilityOperatorFormula();
                 STORM_LOG_THROW(probabilityOperator.hasBound(), storm::exceptions::InvalidPropertyException, "Counterexample generation only supports bounded formulas.");
@@ -1872,34 +1871,34 @@ namespace storm {
                 storm::logic::ComparisonType comparisonType = probabilityOperator.getComparisonType();
                 bool strictBound = comparisonType == storm::logic::ComparisonType::Less;
                 double threshold = probabilityOperator.getThresholdAs<T>();
-                
+
                 storm::storage::BitVector phiStates;
                 storm::storage::BitVector psiStates;
                 storm::modelchecker::SparseMdpPrctlModelChecker<storm::models::sparse::Mdp<T>> modelchecker(mdp);
-                
+
                 if (probabilityOperator.getSubformula().isUntilFormula()) {
                     STORM_LOG_THROW(!storm::logic::isLowerBound(comparisonType), storm::exceptions::NotSupportedException, "Lower bounds in counterexamples are only supported for eventually formulas.");
                     storm::logic::UntilFormula const& untilFormula = probabilityOperator.getSubformula().asUntilFormula();
-                    
+
                     std::unique_ptr<storm::modelchecker::CheckResult> leftResult = modelchecker.check(env, untilFormula.getLeftSubformula());
                     std::unique_ptr<storm::modelchecker::CheckResult> rightResult = modelchecker.check(env, untilFormula.getRightSubformula());
-                    
+
                     storm::modelchecker::ExplicitQualitativeCheckResult const& leftQualitativeResult = leftResult->asExplicitQualitativeCheckResult();
                     storm::modelchecker::ExplicitQualitativeCheckResult const& rightQualitativeResult = rightResult->asExplicitQualitativeCheckResult();
-                    
+
                     phiStates = leftQualitativeResult.getTruthValuesVector();
                     psiStates = rightQualitativeResult.getTruthValuesVector();
                 } else if (probabilityOperator.getSubformula().isEventuallyFormula()) {
                     storm::logic::EventuallyFormula const& eventuallyFormula = probabilityOperator.getSubformula().asEventuallyFormula();
-                    
+
                     std::unique_ptr<storm::modelchecker::CheckResult> subResult = modelchecker.check(env, eventuallyFormula.getSubformula());
-                    
+
                     storm::modelchecker::ExplicitQualitativeCheckResult const& subQualitativeResult = subResult->asExplicitQualitativeCheckResult();
-                    
+
                     phiStates = storm::storage::BitVector(mdp.getNumberOfStates(), true);
                     psiStates = subQualitativeResult.getTruthValuesVector();
                 }
-                
+
                 bool lowerBoundedFormula = false;
                 if (storm::logic::isLowerBound(comparisonType)) {
                     // If the formula specifies a lower bound, we need to modify the phi and psi states.
@@ -1915,7 +1914,7 @@ namespace storm {
                     // Modify bound appropriately.
                     comparisonType = storm::logic::invertPreserveStrictness(comparisonType);
                     threshold = storm::utility::one<T>() - threshold;
-                    
+
                     // Modify the phi and psi states appropriately.
                     storm::storage::BitVector statesWithProbability0E = storm::utility::graph::performProb0E(mdp.getTransitionMatrix(), mdp.getTransitionMatrix().getRowGroupIndices(), mdp.getBackwardTransitions(), phiStates, psiStates);
                     phiStates = ~psiStates;
@@ -1925,17 +1924,23 @@ namespace storm {
                     // have a strategy that voids a states.
                     lowerBoundedFormula = true;
                 }
-                
+
                 // Delegate the actual computation work to the function of equal name.
                 auto startTime = std::chrono::high_resolution_clock::now();
                 auto commandSet = getMinimalCommandSet(env, program, mdp, phiStates, psiStates, threshold, strictBound, true, storm::settings::getModule<storm::settings::modules::CounterexampleGeneratorSettings>().isEncodeReachabilitySet());
                 auto endTime = std::chrono::high_resolution_clock::now();
                 std::cout << std::endl << "Computed minimal command set of size " << commandSet.size() << " in " << std::chrono::duration_cast<std::chrono::milliseconds>(endTime - startTime).count() << "ms." << std::endl;
-                
+
                 // Extend the command set properly.
                 if (lowerBoundedFormula) {
                     extendCommandSetLowerBound(mdp, commandSet, phiStates, psiStates);
                 }
+                return commandSet;
+            }
+
+            static std::shared_ptr<PrismHighLevelCounterexample> computeCounterexample(Environment const& env, storm::prism::Program program, storm::models::sparse::Mdp<T> const& mdp, std::shared_ptr<storm::logic::Formula const> const& formula) {
+#ifdef STORM_HAVE_Z3
+                auto commandSet = computeCounterexampleCommandSet(env, program, mdp, formula);
                 
                 return std::make_shared<PrismHighLevelCounterexample>(program.restrictCommands(commandSet));
 
