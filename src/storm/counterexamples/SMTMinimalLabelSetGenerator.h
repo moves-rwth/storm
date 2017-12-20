@@ -1709,6 +1709,9 @@ namespace storm {
                 
                 // Set up some variables for the iterations.
                 boost::container::flat_set<uint_fast64_t> commandSet(relevancyInformation.relevantLabels);
+                if (relevancyInformation.relevantLabels.empty()) {
+                    return commandSet;
+                }
                 bool done = false;
                 uint_fast64_t iterations = 0;
                 uint_fast64_t currentBound = 0;
