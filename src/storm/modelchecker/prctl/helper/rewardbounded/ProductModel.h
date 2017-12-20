@@ -7,7 +7,7 @@
 #include "storm/modelchecker/prctl/helper/rewardbounded/EpochManager.h"
 #include "storm/modelchecker/prctl/helper/rewardbounded/MemoryStateManager.h"
 #include "storm/modelchecker/prctl/helper/rewardbounded/Dimension.h"
-#include "storm/models/sparse/Mdp.h"
+#include "storm/models/sparse/Model.h"
 #include "storm/utility/vector.h"
 #include "storm/storage/memorystructure/MemoryStructure.h"
 #include "storm/storage/memorystructure/SparseModelMemoryProduct.h"
@@ -26,9 +26,9 @@ namespace storm {
                     typedef typename MemoryStateManager::MemoryState MemoryState;
     
                     
-                    ProductModel(storm::models::sparse::Mdp<ValueType> const& model, std::vector<storm::modelchecker::multiobjective::Objective<ValueType>> const& objectives, std::vector<Dimension<ValueType>> const& dimensions, std::vector<storm::storage::BitVector> const& objectiveDimensions, EpochManager const& epochManager, std::vector<Epoch> const& originalModelSteps);
+                    ProductModel(storm::models::sparse::Model<ValueType> const& model, std::vector<storm::modelchecker::multiobjective::Objective<ValueType>> const& objectives, std::vector<Dimension<ValueType>> const& dimensions, std::vector<storm::storage::BitVector> const& objectiveDimensions, EpochManager const& epochManager, std::vector<Epoch> const& originalModelSteps);
                     
-                    storm::models::sparse::Mdp<ValueType> const& getProduct() const;
+                    storm::models::sparse::Model<ValueType> const& getProduct() const;
                     std::vector<Epoch> const& getSteps() const;
                     
                     bool productStateExists(uint64_t const& modelState, uint64_t const& memoryState) const;
@@ -50,7 +50,7 @@ namespace storm {
                     
                 private:
                     
-                    storm::storage::MemoryStructure computeMemoryStructure(storm::models::sparse::Mdp<ValueType> const& model, std::vector<storm::modelchecker::multiobjective::Objective<ValueType>> const& objectives) const;
+                    storm::storage::MemoryStructure computeMemoryStructure(storm::models::sparse::Model<ValueType> const& model, std::vector<storm::modelchecker::multiobjective::Objective<ValueType>> const& objectives) const;
                     std::vector<MemoryState> computeMemoryStateMap(storm::storage::MemoryStructure const& memory) const;
     
                     
@@ -66,7 +66,7 @@ namespace storm {
                     EpochManager const& epochManager;
                     MemoryStateManager memoryStateManager;
     
-                    std::shared_ptr<storm::models::sparse::Mdp<ValueType>> product;
+                    std::shared_ptr<storm::models::sparse::Model<ValueType>> product;
                     std::vector<Epoch> steps;
                     std::map<EpochClass, storm::storage::BitVector> reachableStates;
                     std::map<EpochClass, storm::storage::BitVector> inStates;

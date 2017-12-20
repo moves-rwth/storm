@@ -9,6 +9,8 @@
 
 #include "storm/modelchecker/propositional/SparsePropositionalModelChecker.h"
 #include "storm/modelchecker/results/ExplicitQualitativeCheckResult.h"
+#include "storm/models/sparse/Mdp.h"
+#include "storm/models/sparse/Dtmc.h"
 
 #include "storm/exceptions/UnexpectedException.h"
 #include "storm/exceptions/NotSupportedException.h"
@@ -19,7 +21,7 @@ namespace storm {
             namespace rewardbounded {
                 
                 template<typename ValueType>
-                ProductModel<ValueType>::ProductModel(storm::models::sparse::Mdp<ValueType> const& model, std::vector<storm::modelchecker::multiobjective::Objective<ValueType>> const& objectives, std::vector<Dimension<ValueType>> const& dimensions, std::vector<storm::storage::BitVector> const& objectiveDimensions, EpochManager const& epochManager, std::vector<Epoch> const& originalModelSteps) : dimensions(dimensions), objectiveDimensions(objectiveDimensions), epochManager(epochManager), memoryStateManager(dimensions.size()) {
+                ProductModel<ValueType>::ProductModel(storm::models::sparse::Model<ValueType> const& model, std::vector<storm::modelchecker::multiobjective::Objective<ValueType>> const& objectives, std::vector<Dimension<ValueType>> const& dimensions, std::vector<storm::storage::BitVector> const& objectiveDimensions, EpochManager const& epochManager, std::vector<Epoch> const& originalModelSteps) : dimensions(dimensions), objectiveDimensions(objectiveDimensions), epochManager(epochManager), memoryStateManager(dimensions.size()) {
                     
                     for (uint64_t dim = 0; dim < dimensions.size(); ++dim) {
                         if (!dimensions[dim].memoryLabel) {
@@ -34,7 +36,7 @@ namespace storm {
                     storm::storage::SparseModelMemoryProduct<ValueType> productBuilder(memory.product(model));
                     
                     setReachableProductStates(productBuilder, originalModelSteps, memoryStateMap);
-                    product = productBuilder.build()->template as<storm::models::sparse::Mdp<ValueType>>();
+                    product = productBuilder.build();
                     
                     uint64_t numModelStates = productBuilder.getOriginalModel().getNumberOfStates();
                     MemoryState upperMemStateBound = memoryStateManager.getUpperMemoryStateBound();
@@ -57,7 +59,7 @@ namespace storm {
                     }
                     
                     // Map choice indices of the product to the state where it origins
-                    choiceToStateMap.reserve(getProduct().getNumberOfChoices());
+                    choiceToStateMap.reserve(getProduct().getTransitionMatrix().getRowCount());
                     for (uint64_t productState = 0; productState < numProductStates; ++productState) {
                         uint64_t groupSize = getProduct().getTransitionMatrix().getRowGroupSize(productState);
                         for (uint64_t i = 0; i < groupSize; ++i) {
@@ -66,7 +68,7 @@ namespace storm {
                     }
                     
                     // Compute the epoch steps for the product
-                    steps.resize(getProduct().getNumberOfChoices(), 0);
+                    steps.resize(getProduct().getTransitionMatrix().getRowCount(), 0);
                     for (uint64_t modelState = 0; modelState < numModelStates; ++modelState) {
                         uint64_t numChoices = productBuilder.getOriginalModel().getTransitionMatrix().getRowGroupSize(modelState);
                         uint64_t firstChoice = productBuilder.getOriginalModel().getTransitionMatrix().getRowGroupIndices()[modelState];
@@ -92,9 +94,9 @@ namespace storm {
                 
                 
                 template<typename ValueType>
-                storm::storage::MemoryStructure ProductModel<ValueType>::computeMemoryStructure(storm::models::sparse::Mdp<ValueType> const& model, std::vector<storm::modelchecker::multiobjective::Objective<ValueType>> const& objectives) const {
+                storm::storage::MemoryStructure ProductModel<ValueType>::computeMemoryStructure(storm::models::sparse::Model<ValueType> const& model, std::vector<storm::modelchecker::multiobjective::Objective<ValueType>> const& objectives) const {
                     
-                    storm::modelchecker::SparsePropositionalModelChecker<storm::models::sparse::Mdp<ValueType>> mc(model);
+                    storm::modelchecker::SparsePropositionalModelChecker<storm::models::sparse::Model<ValueType>> mc(model);
                     
                     // Create a memory structure that remembers whether (sub)objectives are satisfied
                     storm::storage::MemoryStructure memory = storm::storage::MemoryStructureBuilder<ValueType>::buildTrivialMemoryStructure(model);
@@ -285,7 +287,7 @@ namespace storm {
                 }
     
                 template<typename ValueType>
-                storm::models::sparse::Mdp<ValueType> const& ProductModel<ValueType>::getProduct() const {
+                storm::models::sparse::Model<ValueType> const& ProductModel<ValueType>::getProduct() const {
                     return *product;
                 }
                 
@@ -341,7 +343,7 @@ namespace storm {
                     for (uint64_t objIndex = 0; objIndex < objectives.size(); ++objIndex) {
                         auto const& formula = *objectives[objIndex].formula;
                         if (formula.isProbabilityOperatorFormula()) {
-                            storm::modelchecker::SparsePropositionalModelChecker<storm::models::sparse::Mdp<ValueType>> mc(getProduct());
+                            storm::modelchecker::SparsePropositionalModelChecker<storm::models::sparse::Model<ValueType>> mc(getProduct());
                             std::vector<uint64_t> dimensionIndexMap;
                             for (auto const& globalDimensionIndex : objectiveDimensions[objIndex]) {
                                 dimensionIndexMap.push_back(globalDimensionIndex);
