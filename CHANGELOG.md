@@ -7,6 +7,9 @@ The releases of major and minor versions contain an overview of changes since th
 Version 1.2.x
 -------------
 
+### Version 1.2.1 (to be released)
+- Multi-dimensional reward bounded reachability properties for DTMCs.
+
 ### Version 1.2.0 (2017/12)
 - C++ api changes: Building model takes `BuilderOptions` instead of extended list of Booleans, does not depend on settings anymore.
 - `storm-cli-utilities` now contains cli related stuff, instead of `storm-lib`
