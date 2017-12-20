@@ -13,6 +13,7 @@ Note that in most case a simultaneous release of [carl](https://github.com/smtra
 
 3. Check that storm builds without errors and all tests are successful
    * [Travis](https://travis-ci.org/moves-rwth/storm) should run successfully
+   * Invoke the script test_build_configurations.py to build and check different cmake configurations
 
 4. Set new storm version:
    * Set new storm version in `version.cmake`
