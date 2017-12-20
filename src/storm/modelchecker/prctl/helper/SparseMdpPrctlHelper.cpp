@@ -87,7 +87,7 @@ namespace storm {
             }
 
             template<typename ValueType>
-            std::vector<ValueType> analyzeTrivialEpochModel(OptimizationDirection dir, typename rewardbounded::MultiDimensionalRewardUnfolding<ValueType, true>::EpochModel& epochModel) {
+            std::vector<ValueType> analyzeTrivialMdpEpochModel(OptimizationDirection dir, typename rewardbounded::MultiDimensionalRewardUnfolding<ValueType, true>::EpochModel& epochModel) {
                 // Assert that the epoch model is indeed trivial
                 assert(epochModel.epochMatrix.getEntryCount() == 0);
                 
@@ -137,7 +137,7 @@ namespace storm {
             }
             
             template<typename ValueType>
-            std::vector<ValueType> analyzeNonTrivialEpochModel(Environment const& env, OptimizationDirection dir, typename rewardbounded::MultiDimensionalRewardUnfolding<ValueType, true>::EpochModel& epochModel, std::vector<ValueType>& x, std::vector<ValueType>& b, std::unique_ptr<storm::solver::MinMaxLinearEquationSolver<ValueType>>& minMaxSolver, storm::solver::MinMaxLinearEquationSolverFactory<ValueType> const& minMaxLinearEquationSolverFactory, boost::optional<ValueType> const& lowerBound, boost::optional<ValueType> const& upperBound) {
+            std::vector<ValueType> analyzeNonTrivialMdpEpochModel(Environment const& env, OptimizationDirection dir, typename rewardbounded::MultiDimensionalRewardUnfolding<ValueType, true>::EpochModel& epochModel, std::vector<ValueType>& x, std::vector<ValueType>& b, std::unique_ptr<storm::solver::MinMaxLinearEquationSolver<ValueType>>& minMaxSolver, storm::solver::MinMaxLinearEquationSolverFactory<ValueType> const& minMaxLinearEquationSolverFactory, boost::optional<ValueType> const& lowerBound, boost::optional<ValueType> const& upperBound) {
  
                 // Update some data for the case that the Matrix has changed
                 if (epochModel.epochMatrixChanged) {
@@ -215,9 +215,9 @@ namespace storm {
                     swBuild.stop(); swCheck.start();
                     // If the epoch matrix is empty we do not need to solve a linear equation system
                     if (epochModel.epochMatrix.getEntryCount() == 0) {
-                        rewardUnfolding.setSolutionForCurrentEpoch(analyzeTrivialEpochModel<ValueType>(dir, epochModel));
+                        rewardUnfolding.setSolutionForCurrentEpoch(analyzeTrivialMdpEpochModel<ValueType>(dir, epochModel));
                     } else {
-                        rewardUnfolding.setSolutionForCurrentEpoch(analyzeNonTrivialEpochModel<ValueType>(preciseEnv, dir, epochModel, x, b, minMaxSolver, minMaxLinearEquationSolverFactory, lowerBound, upperBound));
+                        rewardUnfolding.setSolutionForCurrentEpoch(analyzeNonTrivialMdpEpochModel<ValueType>(preciseEnv, dir, epochModel, x, b, minMaxSolver, minMaxLinearEquationSolverFactory, lowerBound, upperBound));
                     }
                     swCheck.stop();
                     if (storm::settings::getModule<storm::settings::modules::IOSettings>().isExportCdfSet() && !rewardUnfolding.getEpochManager().hasBottomDimension(epoch)) {
