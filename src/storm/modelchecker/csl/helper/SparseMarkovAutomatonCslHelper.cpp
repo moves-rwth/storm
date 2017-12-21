@@ -310,49 +310,36 @@ namespace storm {
                 }
 
                 //probabilistic non-goal State
-                if (!markovianStates[node]){
-                    std::vector<ValueType> b(probSize, 0), x(numberOfProbStates,0);
-                    //calculate b
-                    uint64_t  lineCounter=0;
-                    for (int i =0; i<numberOfStates; i++) {
-                        if (markovianStates[i]) {
+                res = -1;
+                uint64_t rowStart = rowGroupIndices[node];
+                uint64_t rowEnd = rowGroupIndices[node+1];
+                for (uint64_t i = rowStart; i< rowEnd; i++){
+                    auto line = fullTransitionMatrix.getRow(i);
+                    ValueType between = 0;
+                    for (auto& element: line){
+                        uint64_t to = element.getColumn();
+                        if (to==node){
                             continue;
                         }
-                        auto rowStart = rowGroupIndices[i];
-                        auto rowEnd = rowGroupIndices[i + 1];
-                        for (auto j = rowStart; j < rowEnd; j++) {
-                            uint64_t  stateCount = 0;
-                            res = 0;
-                            for (auto &element:fullTransitionMatrix.getRow(j)) {
-                                auto to = element.getColumn();
-                                if (!markovianStates[to]) {
-                                    continue;
-                                }
-                                if (unifVectors[kind][k][to] == -1) {
-                                    calculateUnifPlusVector(env, k, to, kind, lambda, probSize, relativeReachability, dir,
-                                                            unifVectors, fullTransitionMatrix, markovianStates,
-                                                            psiStates, solver, logfile, poisson);
-                                }
-                                res = res + relativeReachability[j][stateCount] * unifVectors[kind][k][to];
-                                stateCount++;
-                            }
-                            b[lineCounter] = res;
-                            lineCounter++;
+                        if (unifVectors[kind][k][to]==-1){
+                            calculateUnifPlusVector(env, k,to,kind,lambda,probSize,relativeReachability,dir,unifVectors,fullTransitionMatrix,markovianStates,psiStates,solver, logfile, poisson);
+                        }
+                        between+=element.getValue()*unifVectors[kind][k][to];
+                    }    
+                    if (maximize(dir)){
+                        res = std::max(res,between);
+                    } else {
+                        if (res!=-1){
+                            res = std::min(res,between);
+                        } else {
+                            res = between;
                         }
                     }
-
-                    solver->solveEquations(env, dir, x, b);
-
-
-
-                    for (uint64_t i =0 ; i<numberOfProbStates; i++){
-                        auto trueI = transformIndice(~markovianStates,i);
-                        unifVectors[kind][k][trueI]=x[i];
-                    }
-
+                }
+                unifVectors[kind][k][node]=res;
                     //logfile << print << "probabilistic state: "<< " res = " << unifVectors[kind][k][node] << " but calculated more \n";
 
-                } //end probabilistic states
+                 //end probabilistic states
             }
 
 
@@ -554,7 +541,7 @@ namespace storm {
                 typename storm::storage::SparseMatrix<ValueType> fullTransitionMatrix = transitionMatrix.getSubmatrix(
                         true, allStates, allStates, true);
                 // delete diagonals
-              //deleteProbDiagonals(fullTransitionMatrix, markovianStates); //for now leaving this out
+                deleteProbDiagonals(fullTransitionMatrix, markovianStates); //for now leaving this out
                 typename storm::storage::SparseMatrix<ValueType> probMatrix{};
                 uint64_t probSize = 0;
                 if (probabilisticStates.getNumberOfSetBits() != 0) { //work around in case there are no prob states
@@ -584,7 +571,7 @@ namespace storm {
 
 
                 //calculate relative reachability
-
+                /*
                 for (uint64_t i = 0; i < numberOfStates; i++) {
                     if (markovianStates[i]) {
                         continue;
@@ -600,20 +587,21 @@ namespace storm {
                     }
                 }
 
-                //create equitation solver
+                //create equitation solver 
                 storm::solver::MinMaxLinearEquationSolverRequirements requirements = minMaxLinearEquationSolverFactory.getRequirements(env, true, dir);
+                
                 requirements.clearBounds();
                 STORM_LOG_THROW(requirements.empty(), storm::exceptions::UncheckedRequirementException,
                                 "Cannot establish requirements for solver.");
-
+                */
                 std::unique_ptr<storm::solver::MinMaxLinearEquationSolver<ValueType>> solver;
-                if (probSize != 0) {
+                /*if (probSize != 0) {
                     solver = minMaxLinearEquationSolverFactory.create(env, probMatrix);
                     solver->setHasUniqueSolution();
                     solver->setBounds(storm::utility::zero<ValueType>(), storm::utility::one<ValueType>());
                     solver->setRequirementsChecked();
                     solver->setCachingEnabled(true);
-                }
+                } */
                 // while not close enough to precision:
                 do {
                     //logfile << "starting iteration\n";
@@ -690,8 +678,8 @@ namespace storm {
                         ValueType diff = std::abs(unifVectors[0][0][i]-unifVectors[1][0][i]);
                          maxNorm = std::max(maxNorm, diff);
                     }
-                    //printTransitions(N, maxNorm, fullTransitionMatrix, exitRate, markovianStates, psiStates,
-                    //                relReachability, psiStates, psiStates, unifVectors, logfile); //TODO remove
+                    printTransitions(N, maxNorm, fullTransitionMatrix, exitRate, markovianStates, psiStates,
+                                    relReachability, psiStates, psiStates, unifVectors, logfile); //TODO remove
 
                     // (6) double lambda
 
@@ -705,7 +693,7 @@ namespace storm {
                         }
                     }
                     oldDiff = maxNorm;
-                    //std::cout << "Finished Iteration for N = " << N << " with difference " << maxNorm << "\n";
+                    std::cout << "Finished Iteration for N = " << N << " with difference " << maxNorm << "\n";
                 } while (maxNorm > epsilon * (1 - kappa));
 
                 logfile.close();
