@@ -694,7 +694,7 @@ namespace storm {
                     }
                     oldDiff = maxNorm;
                     std::cout << "Finished Iteration for N = " << N << " with difference " << maxNorm << "\n";
-                } while (maxNorm > epsilon * (1 - kappa));
+                } while (maxNorm > epsilon /* * (1 - kappa)*/);
 
                 logfile.close();
                 return unifVectors[0][0];
