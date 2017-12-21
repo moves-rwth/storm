@@ -1584,8 +1584,10 @@ namespace storm {
              */
             static std::pair<std::shared_ptr<storm::models::sparse::Model<T>>, std::vector<boost::container::flat_set<uint_fast64_t>>> restrictModelToLabelSet(storm::models::sparse::Model<T> const& model,  boost::container::flat_set<uint_fast64_t> const& filterLabelSet) {
 
+                bool customRowGrouping = model.isOfType(storm::models::ModelType::Mdp);
+                
                 std::vector<boost::container::flat_set<uint_fast64_t>> resultLabelSet;
-                storm::storage::SparseMatrixBuilder<T> transitionMatrixBuilder(0, model.getTransitionMatrix().getColumnCount(), 0, true, true, model.getTransitionMatrix().getRowGroupCount());
+                storm::storage::SparseMatrixBuilder<T> transitionMatrixBuilder(0, model.getTransitionMatrix().getColumnCount(), 0, true, customRowGrouping, model.getTransitionMatrix().getRowGroupCount());
 
                 // Check for each choice of each state, whether the choice commands are fully contained in the given command set.
                 uint_fast64_t currentRow = 0;
@@ -1611,7 +1613,9 @@ namespace storm {
 
                     // If no choice of the current state may be taken, we insert a self-loop to the state instead.
                     if (!stateHasValidChoice) {
-                        transitionMatrixBuilder.newRowGroup(currentRow);
+                        if (customRowGrouping) {
+                            transitionMatrixBuilder.newRowGroup(currentRow);
+                        }
                         transitionMatrixBuilder.addNextValue(currentRow, state, storm::utility::one<T>());
                         // Insert an empty label set for this choice
                         resultLabelSet.emplace_back();
