@@ -119,6 +119,8 @@ namespace storm {
                 
                 virtual uint_fast64_t getNumberOfTransitions() const override;
                 
+                virtual uint_fast64_t getNumberOfChoices() const override;
+
                 /*!
                  * Retrieves the manager responsible for the DDs that represent this model.
                  *
