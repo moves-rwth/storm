@@ -119,7 +119,7 @@ namespace storm {
 
                 // Retrieve some references for convenient access.
                 storm::storage::SparseMatrix<T> const& transitionMatrix = model.getTransitionMatrix();
-                std::vector<uint_fast64_t> const& nondeterministicChoiceIndices = model.getNondeterministicChoiceIndices();
+                std::vector<uint_fast64_t> const& nondeterministicChoiceIndices = transitionMatrix.getRowGroupIndices();
 
                 // Now traverse all choices of all relevant states and check whether there is a successor target state.
                 // If so, the associated labels become relevant. Also, if a choice of a relevant state has at least one
@@ -1374,7 +1374,7 @@ namespace storm {
                 }
                 
                 storm::storage::SparseMatrix<T> const& transitionMatrix = subModel.getTransitionMatrix();
-                std::vector<uint_fast64_t> const& nondeterministicChoiceIndices = subModel.getNondeterministicChoiceIndices();
+                std::vector<uint_fast64_t> const& nondeterministicChoiceIndices = transitionMatrix.getRowGroupIndices();
                 
                 // Now determine which states and labels are actually reachable.
                 boost::container::flat_set<uint_fast64_t> reachableLabels;
@@ -1498,7 +1498,7 @@ namespace storm {
                 }
                 
                 storm::storage::SparseMatrix<T> const& transitionMatrix = subModel.getTransitionMatrix();
-                std::vector<uint_fast64_t> const& nondeterministicChoiceIndices = subModel.getNondeterministicChoiceIndices();
+                std::vector<uint_fast64_t> const& nondeterministicChoiceIndices = transitionMatrix.getRowGroupIndices();
                 
                 // Now determine which states and labels are actually reachable.
                 boost::container::flat_set<uint_fast64_t> reachableLabels;
@@ -1821,10 +1821,10 @@ namespace storm {
                 auto startTime = std::chrono::high_resolution_clock::now();
                 
                 // Create sub-model that only contains the choices allowed by the given command set.
-                storm::models::sparse::Model<T> subModel = restrictModelToLabelSet(model, commandSet).first;
+                std::shared_ptr<storm::models::sparse::Model<T>> subModel = restrictModelToLabelSet(model, commandSet).first;
                 
                 // Then determine all prob0E(psi) states that are reachable in the sub-model.
-                storm::storage::BitVector reachableProb0EStates = storm::utility::graph::getReachableStates(subModel.getTransitionMatrix(), subModel.getInitialStates(), phiStates, psiStates);
+                storm::storage::BitVector reachableProb0EStates = storm::utility::graph::getReachableStates(subModel->getTransitionMatrix(), subModel->getInitialStates(), phiStates, psiStates);
                 
                 // Create a queue of reachable prob0E(psi) states so we can check which commands need to be added
                 // to give them a strategy that avoids psi states.
@@ -1887,6 +1887,7 @@ namespace storm {
             }
 
             static boost::container::flat_set<uint_fast64_t>  computeCounterexampleCommandSet(Environment const& env, storm::prism::Program program, storm::models::sparse::Model<T> const& model, std::shared_ptr<storm::logic::Formula const> const& formula) {
+                STORM_LOG_THROW(model.isOfType(storm::models::ModelType::Dtmc) || model.isOfType(storm::models::ModelType::Mdp), storm::exceptions::NotSupportedException, "MaxSAT-based counterexample generation is supported only for discrete-time models.");
                 std::cout << std::endl << "Generating minimal label counterexample for formula " << *formula << std::endl;
 
                 STORM_LOG_THROW(formula->isProbabilityOperatorFormula(), storm::exceptions::InvalidPropertyException, "Counterexample generation does not support this kind of formula. Expecting a probability operator as the outermost formula element.");

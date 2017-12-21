@@ -1,5 +1,5 @@
 // Knuth's model of a fair die using only fair coins
-mdp
+dtmc
 
 module die
 

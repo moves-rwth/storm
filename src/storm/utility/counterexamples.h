@@ -18,20 +18,20 @@ namespace storm {
              * @return The set of labels that is visited on all paths from any state to a target state.
              */
             template <typename T>
-            std::vector<boost::container::flat_set<uint_fast64_t>> getGuaranteedLabelSets(storm::models::sparse::Mdp<T> const& mdp, std::vector<boost::container::flat_set<uint_fast64_t>> const& labelSets, storm::storage::BitVector const& psiStates, boost::container::flat_set<uint_fast64_t> const& relevantLabels) {
-                STORM_LOG_THROW(mdp.getNumberOfChoices() == labelSets.size(), storm::exceptions::InvalidArgumentException, "The given number of labels does not match the number of choices.");
+            std::vector<boost::container::flat_set<uint_fast64_t>> getGuaranteedLabelSets(storm::models::sparse::Model<T> const& model, std::vector<boost::container::flat_set<uint_fast64_t>> const& labelSets, storm::storage::BitVector const& psiStates, boost::container::flat_set<uint_fast64_t> const& relevantLabels) {
+                STORM_LOG_THROW(model.getNumberOfChoices() == labelSets.size(), storm::exceptions::InvalidArgumentException, "The given number of labels does not match the number of choices.");
                 
-                // Get some data from the MDP for convenient access.
-                storm::storage::SparseMatrix<T> const& transitionMatrix = mdp.getTransitionMatrix();
-                std::vector<uint_fast64_t> const& nondeterministicChoiceIndices = mdp.getNondeterministicChoiceIndices();
-                storm::storage::SparseMatrix<T> backwardTransitions = mdp.getBackwardTransitions();
+                // Get some data from the model for convenient access.
+                storm::storage::SparseMatrix<T> const& transitionMatrix = model.getTransitionMatrix();
+                std::vector<uint_fast64_t> const& nondeterministicChoiceIndices = transitionMatrix.getRowGroupIndices();
+                storm::storage::SparseMatrix<T> backwardTransitions = model.getBackwardTransitions();
 
                 // Now we compute the set of labels that is present on all paths from the initial to the target states.
-                std::vector<boost::container::flat_set<uint_fast64_t>> analysisInformation(mdp.getNumberOfStates(), relevantLabels);
+                std::vector<boost::container::flat_set<uint_fast64_t>> analysisInformation(model.getNumberOfStates(), relevantLabels);
                 
                 std::queue<uint_fast64_t> worklist;
-                storm::storage::BitVector statesInWorkList(mdp.getNumberOfStates());
-                storm::storage::BitVector markedStates(mdp.getNumberOfStates());
+                storm::storage::BitVector statesInWorkList(model.getNumberOfStates());
+                storm::storage::BitVector markedStates(model.getNumberOfStates());
                 
                 // Initially, put all predecessors of target states in the worklist and empty the analysis information them.
                 for (auto state : psiStates) {
@@ -108,12 +108,12 @@ namespace storm {
              * @return The set of labels that is executed on all paths from an initial state to a target state.
              */
             template <typename T>
-            boost::container::flat_set<uint_fast64_t> getGuaranteedLabelSet(storm::models::sparse::Mdp<T> const& mdp, std::vector<boost::container::flat_set<uint_fast64_t>> const& labelSets, storm::storage::BitVector const& psiStates, boost::container::flat_set<uint_fast64_t> const& relevantLabels) {
-                std::vector<boost::container::flat_set<uint_fast64_t>> guaranteedLabels = getGuaranteedLabelSets(mdp, labelSets, psiStates, relevantLabels);
+            boost::container::flat_set<uint_fast64_t> getGuaranteedLabelSet(storm::models::sparse::Model<T> const& model, std::vector<boost::container::flat_set<uint_fast64_t>> const& labelSets, storm::storage::BitVector const& psiStates, boost::container::flat_set<uint_fast64_t> const& relevantLabels) {
+                std::vector<boost::container::flat_set<uint_fast64_t>> guaranteedLabels = getGuaranteedLabelSets(model, labelSets, psiStates, relevantLabels);
                 
                 boost::container::flat_set<uint_fast64_t> knownLabels(relevantLabels);
                 boost::container::flat_set<uint_fast64_t> tempIntersection;
-                for (auto initialState : mdp.getInitialStates()) {
+                for (auto initialState : model.getInitialStates()) {
                     std::set_intersection(knownLabels.begin(), knownLabels.end(), guaranteedLabels[initialState].begin(), guaranteedLabels[initialState].end(), std::inserter(tempIntersection, tempIntersection.end()));
                     std::swap(knownLabels, tempIntersection);
                 }

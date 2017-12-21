@@ -19,10 +19,8 @@ namespace storm {
              * The base class of sparse nondeterministic models.
              */
             template<class ValueType, typename RewardModelType = StandardRewardModel<ValueType>>
-            class NondeterministicModel: public Model<ValueType, RewardModelType> {
+            class NondeterministicModel : public Model<ValueType, RewardModelType> {
             public:
-                
-                
                 /*!
                  * Constructs a model from the given data.
                  *
@@ -38,6 +36,8 @@ namespace storm {
                  * @return The vector indicating which matrix rows represent non-deterministic choices of a certain state.
                  */
                 std::vector<uint_fast64_t> const& getNondeterministicChoiceIndices() const;
+                
+                using Model<ValueType, RewardModelType>::getNumberOfChoices;
                 
                 /*!
                  * @param state State for which we want to know how many choices it has
