@@ -2016,6 +2016,35 @@ namespace storm {
         }
         
         template<typename ValueType>
+        bool SparseMatrix<ValueType>::isIdentityMatrix() const {
+            if (this->getRowCount() != this->getColumnCount()) {
+                return false;
+            }
+            if (this->getNonzeroEntryCount() != this->getRowCount()) {
+                return false;
+            }
+            for (uint64_t row = 0; row < this->getRowCount(); ++row) {
+                bool rowHasEntry = false;
+                for (auto const& entry : this->getRow(row)) {
+                    if (entry.getColumn() == row) {
+                        if (!storm::utility::isOne(entry.getValue())) {
+                            return false;
+                        }
+                        rowHasEntry = true;
+                    } else {
+                        if (!storm::utility::isZero(entry.getValue())) {
+                            return false;
+                        }
+                    }
+                }
+                if (!rowHasEntry) {
+                    return false;
+                }
+            }
+            return true;
+        }
+
+        template<typename ValueType>
         std::ostream& operator<<(std::ostream& out, SparseMatrix<ValueType> const& matrix) {
             // Print column numbers in header.
             out << "\t\t";

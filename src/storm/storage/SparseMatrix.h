@@ -929,6 +929,9 @@ namespace storm {
             template<typename OtherValueType>
             bool isSubmatrixOf(SparseMatrix<OtherValueType> const& matrix) const;
             
+            // Returns true if the matrix is the identity matrix
+            bool isIdentityMatrix() const;
+            
             template<typename TPrime>
             friend std::ostream& operator<<(std::ostream& out, SparseMatrix<TPrime> const& matrix);
 

@@ -10,6 +10,8 @@
 #include "storm/modelchecker/propositional/SparsePropositionalModelChecker.h"
 #include "storm/modelchecker/results/ExplicitQualitativeCheckResult.h"
 #include "storm/modelchecker/prctl/helper/BaierUpperRewardBoundsComputer.h"
+#include "storm/models/sparse/Mdp.h"
+#include "storm/models/sparse/Dtmc.h"
 
 #include "storm/transformer/EndComponentEliminator.h"
 
@@ -24,14 +26,13 @@ namespace storm {
             namespace rewardbounded {
     
                 template<typename ValueType, bool SingleObjectiveMode>
-                MultiDimensionalRewardUnfolding<ValueType, SingleObjectiveMode>::MultiDimensionalRewardUnfolding(storm::models::sparse::Mdp<ValueType> const& model, std::vector<storm::modelchecker::multiobjective::Objective<ValueType>> const& objectives) : model(model), objectives(objectives) {
+                MultiDimensionalRewardUnfolding<ValueType, SingleObjectiveMode>::MultiDimensionalRewardUnfolding(storm::models::sparse::Model<ValueType> const& model, std::vector<storm::modelchecker::multiobjective::Objective<ValueType>> const& objectives) : model(model), objectives(objectives) {
                     initialize();
                 }
                 
                 template<typename ValueType, bool SingleObjectiveMode>
-                MultiDimensionalRewardUnfolding<ValueType, SingleObjectiveMode>::MultiDimensionalRewardUnfolding(storm::models::sparse::Mdp<ValueType> const& model, std::shared_ptr<storm::logic::OperatorFormula const> objectiveFormula) : model(model) {
+                MultiDimensionalRewardUnfolding<ValueType, SingleObjectiveMode>::MultiDimensionalRewardUnfolding(storm::models::sparse::Model<ValueType> const& model, std::shared_ptr<storm::logic::OperatorFormula const> objectiveFormula) : model(model) {
                     
-                    STORM_LOG_THROW(objectiveFormula->hasOptimalityType(), storm::exceptions::InvalidPropertyException, "Formula needs to specify whether minimal or maximal values are to be computed on nondeterministic model.");
                     if (objectiveFormula->isProbabilityOperatorFormula()) {
                         if (objectiveFormula->getSubformula().isMultiObjectiveFormula()) {
                             for (auto const& subFormula : objectiveFormula->getSubformula().asMultiObjectiveFormula().getSubformulas()) {
@@ -91,7 +92,7 @@ namespace storm {
                                 // lower bounded until formulas with non-trivial left hand side are excluded as this would require some additional effort (in particular the ProductModel::transformMemoryState method).
                                 STORM_LOG_THROW(dimension.isUpperBounded || subformula.getLeftSubformula(dim).isTrueFormula(), storm::exceptions::NotSupportedException, "Lower bounded until formulas are only supported by this method if the left subformula is 'true'. Got " << subformula << " instead.");
                                 if (subformula.getTimeBoundReference(dim).isTimeBound() || subformula.getTimeBoundReference(dim).isStepBound()) {
-                                    dimensionWiseEpochSteps.push_back(std::vector<uint64_t>(model.getNumberOfChoices(), 1));
+                                    dimensionWiseEpochSteps.push_back(std::vector<uint64_t>(model.getTransitionMatrix().getRowCount(), 1));
                                     dimension.scalingFactor = storm::utility::one<ValueType>();
                                 } else {
                                     STORM_LOG_ASSERT(subformula.getTimeBoundReference(dim).isRewardBound(), "Unexpected type of time bound.");
@@ -114,7 +115,7 @@ namespace storm {
                                 dimension.objectiveIndex = objIndex;
                                 dimension.isUpperBounded = true;
                                 if (subformula.getTimeBoundReference(dim).isTimeBound() || subformula.getTimeBoundReference(dim).isStepBound()) {
-                                    dimensionWiseEpochSteps.push_back(std::vector<uint64_t>(model.getNumberOfChoices(), 1));
+                                    dimensionWiseEpochSteps.push_back(std::vector<uint64_t>(model.getTransitionMatrix().getRowCount(), 1));
                                     dimension.scalingFactor = storm::utility::one<ValueType>();
                                 } else {
                                     STORM_LOG_ASSERT(subformula.getTimeBoundReference(dim).isRewardBound(), "Unexpected type of time bound.");
@@ -166,8 +167,8 @@ namespace storm {
                     epochManager = EpochManager(dimensions.size());
                     
                     // Convert the epoch steps to a choice-wise representation
-                    epochSteps.reserve(model.getNumberOfChoices());
-                    for (uint64_t choice = 0; choice < model.getNumberOfChoices(); ++choice) {
+                    epochSteps.reserve(model.getTransitionMatrix().getRowCount());
+                    for (uint64_t choice = 0; choice < model.getTransitionMatrix().getRowCount(); ++choice) {
                         Epoch step;
                         uint64_t dim = 0;
                         for (auto const& dimensionSteps : dimensionWiseEpochSteps) {
@@ -396,7 +397,7 @@ namespace storm {
                     // std::cout << "Setting epoch class for epoch " << epochManager.toString(epoch) << std::endl;
                     auto productObjectiveRewards = productModel->computeObjectiveRewards(epochClass, objectives);
                     
-                    storm::storage::BitVector stepChoices(productModel->getProduct().getNumberOfChoices(), false);
+                    storm::storage::BitVector stepChoices(productModel->getProduct().getTransitionMatrix().getRowCount(), false);
                     uint64_t choice = 0;
                     for (auto const& step : productModel->getSteps()) {
                         if (!epochManager.isZeroEpoch(step) && epochManager.getSuccessorEpoch(epoch, step) != epoch) {
@@ -421,7 +422,7 @@ namespace storm {
                         }
                     }
                     
-                    storm::storage::BitVector zeroObjRewardChoices(productModel->getProduct().getNumberOfChoices(), true);
+                    storm::storage::BitVector zeroObjRewardChoices(productModel->getProduct().getTransitionMatrix().getRowCount(), true);
                     for (uint64_t objIndex = 0; objIndex < objectives.size(); ++objIndex) {
                         if (violatedLowerBoundedDimensions.isDisjointFrom(objectiveDimensions[objIndex])) {
                             zeroObjRewardChoices &= storm::utility::vector::filterZero(productObjectiveRewards[objIndex]);
@@ -433,15 +434,68 @@ namespace storm {
                     storm::storage::BitVector productInStates = productModel->getInStates(epochClass);
                     // The epoch model only needs to consider the states that are reachable from a relevant state
                     storm::storage::BitVector consideredStates = storm::utility::graph::getReachableStates(epochModel.epochMatrix, productInStates, allProductStates, ~allProductStates);
-                    // std::cout << "numInStates = " << productInStates.getNumberOfSetBits() << std::endl;
-                    // std::cout << "numConsideredStates = " << consideredStates.getNumberOfSetBits() << std::endl;
                     
                     // We assume that there is no end component in which objective reward is earned
                     STORM_LOG_ASSERT(!storm::utility::graph::checkIfECWithChoiceExists(epochModel.epochMatrix, epochModel.epochMatrix.transpose(true), allProductStates, ~zeroObjRewardChoices & ~stepChoices), "There is a scheduler that yields infinite reward for one objective. This case should be excluded");
-                    auto ecElimResult = storm::transformer::EndComponentEliminator<ValueType>::transform(epochModel.epochMatrix, consideredStates, zeroObjRewardChoices & ~stepChoices, consideredStates);
-                    epochModel.epochMatrix = std::move(ecElimResult.matrix);
-                    epochModelToProductChoiceMap = std::move(ecElimResult.newToOldRowMapping);
                     
+                    // Create the epoch model matrix
+                    std::vector<uint64_t> productToEpochModelStateMapping;
+                    if (model.isOfType(storm::models::ModelType::Dtmc)) {
+                        assert(zeroObjRewardChoices.size() == productModel->getProduct().getNumberOfStates());
+                        assert(stepChoices.size() == productModel->getProduct().getNumberOfStates());
+                        STORM_LOG_ASSERT(equationSolverProblemFormatForEpochModel.is_initialized(), "Linear equation problem format was not set.");
+                        bool convertToEquationSystem = equationSolverProblemFormatForEpochModel.get() == storm::solver::LinearEquationSolverProblemFormat::EquationSystem;
+                        // For DTMCs we consider the subsystem induced by the considered states.
+                        // The transitions for states with zero reward are filtered out to guarantee a unique solution of the eq-system.
+                        auto backwardTransitions = epochModel.epochMatrix.transpose(true);
+                        storm::storage::BitVector nonZeroRewardStates = storm::utility::graph::performProbGreater0(backwardTransitions, consideredStates, consideredStates & (~zeroObjRewardChoices | stepChoices));
+                        // If there is at least one considered state with reward zero, we have to add a 'zero-reward-state' to the epoch model.
+                        bool requiresZeroRewardState = nonZeroRewardStates != consideredStates;
+                        uint64_t numEpochModelStates = nonZeroRewardStates.getNumberOfSetBits();
+                        uint64_t zeroRewardInState = numEpochModelStates;
+                        if (requiresZeroRewardState) {
+                            ++numEpochModelStates;
+                        }
+                        storm::storage::SparseMatrixBuilder<ValueType> builder;
+                        if (!nonZeroRewardStates.empty()) {
+                            builder = storm::storage::SparseMatrixBuilder<ValueType>(epochModel.epochMatrix.getSubmatrix(true, nonZeroRewardStates, nonZeroRewardStates, convertToEquationSystem));
+                        }
+                        if (requiresZeroRewardState) {
+                            if (convertToEquationSystem) {
+                                // add a diagonal entry
+                                builder.addNextValue(zeroRewardInState, zeroRewardInState, storm::utility::zero<ValueType>());
+                            }
+                            epochModel.epochMatrix = builder.build(numEpochModelStates, numEpochModelStates);
+                        } else {
+                            assert (!nonZeroRewardStates.empty());
+                            epochModel.epochMatrix = builder.build();
+                        }
+                        if (convertToEquationSystem) {
+                            epochModel.epochMatrix.convertToEquationSystem();
+                        }
+                        
+                        epochModelToProductChoiceMap.clear();
+                        epochModelToProductChoiceMap.reserve(numEpochModelStates);
+                        productToEpochModelStateMapping.assign(nonZeroRewardStates.size(), zeroRewardInState);
+                        for (auto const& productState : nonZeroRewardStates) {
+                            productToEpochModelStateMapping[productState] = epochModelToProductChoiceMap.size();
+                            epochModelToProductChoiceMap.push_back(productState);
+                        }
+                        if (requiresZeroRewardState) {
+                            uint64_t zeroRewardProductState = (consideredStates & ~nonZeroRewardStates).getNextSetIndex(0);
+                            assert(zeroRewardProductState < consideredStates.size());
+                            epochModelToProductChoiceMap.push_back(zeroRewardProductState);
+                        }
+                    } else if (model.isOfType(storm::models::ModelType::Mdp)) {
+                        // Eliminate zero-reward end components
+                        auto ecElimResult = storm::transformer::EndComponentEliminator<ValueType>::transform(epochModel.epochMatrix, consideredStates, zeroObjRewardChoices & ~stepChoices, consideredStates);
+                        epochModel.epochMatrix = std::move(ecElimResult.matrix);
+                        epochModelToProductChoiceMap = std::move(ecElimResult.newToOldRowMapping);
+                        productToEpochModelStateMapping = std::move(ecElimResult.oldToNewStateMapping);
+                    } else {
+                        STORM_LOG_THROW(false, storm::exceptions::UnexpectedException, "Unsupported model type.");
+                    }
+                
                     epochModel.stepChoices = storm::storage::BitVector(epochModel.epochMatrix.getRowCount(), false);
                     for (uint64_t choice = 0; choice < epochModel.epochMatrix.getRowCount(); ++choice) {
                         if (stepChoices.get(epochModelToProductChoiceMap[choice])) {
@@ -466,14 +520,14 @@ namespace storm {
                     
                     epochModel.epochInStates = storm::storage::BitVector(epochModel.epochMatrix.getRowGroupCount(), false);
                     for (auto const& productState : productInStates) {
-                        STORM_LOG_ASSERT(ecElimResult.oldToNewStateMapping[productState] < epochModel.epochMatrix.getRowGroupCount(), "Selected product state does not exist in the epoch model.");
-                        epochModel.epochInStates.set(ecElimResult.oldToNewStateMapping[productState], true);
+                        STORM_LOG_ASSERT(productToEpochModelStateMapping[productState] < epochModel.epochMatrix.getRowGroupCount(), "Selected product state does not exist in the epoch model.");
+                        epochModel.epochInStates.set(productToEpochModelStateMapping[productState], true);
                     }
                     
                     std::vector<uint64_t> toEpochModelInStatesMap(productModel->getProduct().getNumberOfStates(), std::numeric_limits<uint64_t>::max());
                     std::vector<uint64_t> epochModelStateToInStateMap = epochModel.epochInStates.getNumberOfSetBitsBeforeIndices();
                     for (auto const& productState : productInStates) {
-                        toEpochModelInStatesMap[productState] = epochModelStateToInStateMap[ecElimResult.oldToNewStateMapping[productState]];
+                        toEpochModelInStatesMap[productState] = epochModelStateToInStateMap[productToEpochModelStateMapping[productState]];
                     }
                     productStateToEpochModelInStateMap = std::make_shared<std::vector<uint64_t> const>(std::move(toEpochModelInStatesMap));
                     
@@ -487,6 +541,13 @@ namespace storm {
                 }
                 
      
+                template<typename ValueType, bool SingleObjectiveMode>
+                void MultiDimensionalRewardUnfolding<ValueType, SingleObjectiveMode>::setEquationSystemFormatForEpochModel(storm::solver::LinearEquationSolverProblemFormat eqSysFormat) {
+                    STORM_LOG_ASSERT(model.isOfType(storm::models::ModelType::Dtmc), "Trying to set the equation problem format although the model is not deterministic.");
+                    equationSolverProblemFormatForEpochModel = eqSysFormat;
+                }
+
+                
                 template<typename ValueType, bool SingleObjectiveMode>
                 template<bool SO, typename std::enable_if<SO, int>::type>
                 typename MultiDimensionalRewardUnfolding<ValueType, SingleObjectiveMode>::SolutionType MultiDimensionalRewardUnfolding<ValueType, SingleObjectiveMode>::getScaledSolution(SolutionType const& solution, ValueType const& scalingFactor) const {
