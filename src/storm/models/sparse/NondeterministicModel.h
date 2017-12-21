@@ -31,13 +31,6 @@ namespace storm {
                  */
                 NondeterministicModel(ModelType modelType, storm::storage::sparse::ModelComponents<ValueType, RewardModelType> const& components);
                 NondeterministicModel(ModelType modelType, storm::storage::sparse::ModelComponents<ValueType, RewardModelType>&& components);
-
-                /*!
-                 * Retrieves the number of (nondeterministic) choices in the model.
-                 *
-                 * @return The number of (nondeterministic) choices in the model.
-                 */
-                uint_fast64_t getNumberOfChoices() const;
                 
                 /*!
                  * Retrieves the vector indicating which matrix rows represent non-deterministic choices of a certain state.

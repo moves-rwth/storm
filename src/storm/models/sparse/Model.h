@@ -76,7 +76,14 @@ namespace storm {
                  * @return The number of (non-zero) transitions of the model.
                  */
                 virtual uint_fast64_t getNumberOfTransitions() const override;
-                
+
+                /*!
+                 * Returns the number of choices ine the model.
+                 *
+                 * @return The number of choices in of the model.
+                 */
+                virtual uint_fast64_t getNumberOfChoices() const override;
+
                 /*!
                  * Retrieves the initial states of the model.
                  *

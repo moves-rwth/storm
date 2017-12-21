@@ -98,7 +98,12 @@ namespace storm {
             uint_fast64_t Model<ValueType, RewardModelType>::getNumberOfTransitions() const {
                 return this->getTransitionMatrix().getNonzeroEntryCount();
             }
-            
+
+            template<typename ValueType, typename RewardModelType>
+            uint_fast64_t Model<ValueType, RewardModelType>::getNumberOfChoices() const {
+                return this->getTransitionMatrix().getRowCount();
+            }
+
             template<typename ValueType, typename RewardModelType>
             storm::storage::BitVector const& Model<ValueType, RewardModelType>::getInitialStates() const {
                 return this->getStates("init");

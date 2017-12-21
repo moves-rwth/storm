@@ -64,6 +64,11 @@ namespace storm {
             uint_fast64_t Model<Type, ValueType>::getNumberOfTransitions() const {
                 return transitionMatrix.getNonZeroCount();
             }
+
+            template<storm::dd::DdType Type, typename ValueType>
+            uint_fast64_t Model<Type, ValueType>::getNumberOfChoices() const {
+                return reachableStates.getNonZeroCount();
+            }
             
             template<storm::dd::DdType Type, typename ValueType>
             storm::dd::DdManager<Type>& Model<Type, ValueType>::getManager() const {
