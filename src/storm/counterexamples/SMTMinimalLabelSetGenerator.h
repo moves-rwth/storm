@@ -1599,7 +1599,7 @@ namespace storm {
 
                         // If the choice is valid, copy over all its elements.
                         if (choiceValid) {
-                            if (!stateHasValidChoice) {
+                            if (!stateHasValidChoice && customRowGrouping) {
                                 transitionMatrixBuilder.newRowGroup(currentRow);
                             }
                             stateHasValidChoice = true;
