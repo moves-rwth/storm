@@ -678,8 +678,8 @@ namespace storm {
                         ValueType diff = std::abs(unifVectors[0][0][i]-unifVectors[1][0][i]);
                          maxNorm = std::max(maxNorm, diff);
                     }
-                    printTransitions(N, maxNorm, fullTransitionMatrix, exitRate, markovianStates, psiStates,
-                                    relReachability, psiStates, psiStates, unifVectors, logfile); //TODO remove
+                    //printTransitions(N, maxNorm, fullTransitionMatrix, exitRate, markovianStates, psiStates,
+                    //                relReachability, psiStates, psiStates, unifVectors, logfile); //TODO remove
 
                     // (6) double lambda
 
