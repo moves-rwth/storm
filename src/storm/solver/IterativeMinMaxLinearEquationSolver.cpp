@@ -257,6 +257,7 @@ namespace storm {
                 if (!this->hasUniqueSolution()) {
                     requirements.requireNoEndComponents();
                 }
+                requirements.requireBounds();
             } else {
                 STORM_LOG_THROW(false, storm::exceptions::InvalidEnvironmentException, "Unsupported technique for iterative MinMax linear equation solver.");
             }
@@ -686,6 +687,7 @@ namespace storm {
             // If minimizing, the primary bound is the lower bound; if maximizing, the primary bound is the upper bound.
             ValueType& primaryBound = minimize(dir) ? currentLowerBound : currentUpperBound;
             bool& hasPrimaryBound = minimize(dir) ? hasCurrentLowerBound : hasCurrentUpperBound;
+            STORM_LOG_INFO_COND(!hasPrimaryBound, "Initial bound on the result is " << primaryBound);
             
             // Proceed with the iterations as long as the method did not converge or reach the maximum number of iterations.
             SolverStatus status = SolverStatus::InProgress;
@@ -733,7 +735,7 @@ namespace storm {
                             ValueType bestValue = yTmp.front();
                             for (uint64_t choice = 1; choice < xTmp.size(); ++choice) {
                                 ValueType const& value = yTmp[choice];
-                                if (betterEqual(value, bestValue) && (value != bestValue || better(xTmp[choice], xTmp[bestChoice]))) {
+                                if (value >= bestValue && (value != bestValue || better(xTmp[choice], xTmp[bestChoice]))) {
                                     bestValue = std::move(value);
                                     bestChoice = choice;
                                 }
@@ -749,7 +751,7 @@ namespace storm {
                                 if (deltaY > storm::utility::zero<ValueType>()) {
                                    ValueType newDecisionValue = (xTmp[choice] - *xIt) / deltaY;
                                     if (!hasDecisionValue || better(newDecisionValue, decisionValue)) {
-             //                           std::cout << "Updating decision value to " << newDecisionValue << ", where deltaX = " << xTmp[choice] << " - " << *xIt << " = " << (xTmp[choice] - *xIt) << " and deltaY= " << *yIt << " - " << yTmp[choice] << " = " << deltaY << "." << std::endl;
+                                   //     std::cout << "Updating decision value in Iteration " << iterations << " to " << newDecisionValue << ", where deltaX = " << xTmp[choice] << " - " << *xIt << " = " << (xTmp[choice] - *xIt) << " and deltaY= " << *yIt << " - " << yTmp[choice] << " = " << deltaY << "." << std::endl;
                                         decisionValue = std::move(newDecisionValue);
                                         hasDecisionValue = true;
                                     }
