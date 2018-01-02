@@ -32,6 +32,7 @@ namespace storm {
             virtual bool supportsGaussSeidelMultiplication() const override;
             virtual void multiplyGaussSeidel(std::vector<ValueType>& x, std::vector<ValueType> const* b) const override;
             virtual void multiplyAndReduceGaussSeidel(OptimizationDirection const& dir, std::vector<uint64_t> const& rowGroupIndices, std::vector<ValueType>& x, std::vector<ValueType> const* b, std::vector<uint_fast64_t>* choices = nullptr) const override;
+            virtual ValueType multiplyRow(uint64_t const& rowIndex, std::vector<ValueType> const& x) const override;
 
             virtual LinearEquationSolverProblemFormat getEquationProblemFormat(Environment const& env) const override;
             

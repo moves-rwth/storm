@@ -109,6 +109,11 @@ namespace storm {
                 }
             }
         }
+
+        template<typename ValueType>
+        ValueType EliminationLinearEquationSolver<ValueType>::multiplyRow(uint64_t const& rowIndex, std::vector<ValueType> const& x) const {
+            return A->multiplyRowWithVector(rowIndex, x);
+        }
         
         template<typename ValueType>
         LinearEquationSolverProblemFormat EliminationLinearEquationSolver<ValueType>::getEquationProblemFormat(Environment const& env) const {

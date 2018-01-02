@@ -110,6 +110,14 @@ namespace storm {
             virtual void multiplyAndReduceGaussSeidel(OptimizationDirection const& dir, std::vector<uint64_t> const& rowGroupIndices, std::vector<ValueType>& x, std::vector<ValueType> const* b, std::vector<uint_fast64_t>* choices = nullptr) const;
             
             /*!
+             * Multiplies the row with the given index with x and adds the given offset
+             * @param rowIndex The index of the considered row
+             * @param x The input vector with which the row is multiplied
+             * @param offset A value that is added to the matrix-vector multiplication result
+             */
+            virtual ValueType multiplyRow(uint64_t const& rowIndex, std::vector<ValueType> const& x) const = 0;
+            
+            /*!
              * Performs repeated matrix-vector multiplication, using x[0] = x and x[i + 1] = A*x[i] + b. After
              * performing the necessary multiplications, the result is written to the input vector x. Note that the
              * matrix A has to be given upon construction time of the solver object.

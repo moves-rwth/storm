@@ -269,6 +269,13 @@ namespace storm {
         }
         
         template<typename ValueType>
+        ValueType EigenLinearEquationSolver<ValueType>::multiplyRow(uint64_t const& rowIndex, std::vector<ValueType> const& x) const {
+            auto eigenX = StormEigen::Matrix<ValueType, StormEigen::Dynamic, 1>::Map(x.data(), x.size());
+            return (eigenA->row(rowIndex) * eigenX)(0);
+        }
+
+        
+        template<typename ValueType>
         LinearEquationSolverProblemFormat EigenLinearEquationSolver<ValueType>::getEquationProblemFormat(Environment const& env) const {
             return LinearEquationSolverProblemFormat::EquationSystem;
         }

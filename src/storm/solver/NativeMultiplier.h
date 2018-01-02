@@ -25,6 +25,8 @@ namespace storm {
             
             void multAddParallel(storm::storage::SparseMatrix<ValueType> const& matrix, std::vector<ValueType> const& x, std::vector<ValueType> const* b, std::vector<ValueType>& result) const;
             void multAddReduceParallel(storm::solver::OptimizationDirection const& dir, std::vector<uint64_t> const& rowGroupIndices, storm::storage::SparseMatrix<ValueType> const& matrix, std::vector<ValueType> const& x, std::vector<ValueType> const* b, std::vector<ValueType>& result, std::vector<uint64_t>* choices = nullptr) const;
+            
+            ValueType multiplyRow(storm::storage::SparseMatrix<ValueType> const& matrix, uint64_t const& rowIndex, std::vector<ValueType> const& x) const;
         };
         
     }

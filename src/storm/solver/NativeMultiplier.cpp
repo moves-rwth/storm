@@ -89,6 +89,10 @@ namespace storm {
 #endif
         }
 
+        template<typename ValueType>
+        ValueType NativeMultiplier<ValueType>::multiplyRow(storm::storage::SparseMatrix<ValueType> const& matrix, uint64_t const& rowIndex, std::vector<ValueType> const& x) const {
+            return matrix.multiplyRowWithVector(rowIndex, x);
+        }
 
         template class NativeMultiplier<double>;
         

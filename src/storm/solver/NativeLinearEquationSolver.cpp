@@ -1082,6 +1082,12 @@ namespace storm {
         }
         
         template<typename ValueType>
+        ValueType NativeLinearEquationSolver<ValueType>::multiplyRow(uint64_t const& rowIndex, std::vector<ValueType> const& x) const {
+            return multiplier.multiplyRow(*A, rowIndex, x);
+        }
+
+        
+        template<typename ValueType>
         LinearEquationSolverProblemFormat NativeLinearEquationSolver<ValueType>::getEquationProblemFormat(Environment const& env) const {
             auto method = getMethod(env, storm::NumberTraits<ValueType>::IsExact);
             if (method == NativeLinearEquationSolverMethod::Power || method == NativeLinearEquationSolverMethod::RationalSearch || method == NativeLinearEquationSolverMethod::QuickPower) {

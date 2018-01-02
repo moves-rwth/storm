@@ -231,6 +231,14 @@ namespace storm {
             STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "This operation is not supported.");
         }
         
+        template<typename T>
+        T GmmxxMultiplier<T>::multiplyRow(gmm::csr_matrix<T> const& matrix, uint64_t const& rowIndex, std::vector<T> const& x) const {
+            return vect_sp(gmm::mat_const_row(matrix, rowIndex), x, typename gmm::linalg_traits<gmm::csr_matrix<T>>::storage_type(), typename gmm::linalg_traits<std::vector<T>>::storage_type());
+        }
+
+        
+        
+        
         template class GmmxxMultiplier<double>;
         
 #ifdef STORM_HAVE_CARL

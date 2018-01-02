@@ -22,6 +22,8 @@ namespace storm {
             virtual void setMatrix(storm::storage::SparseMatrix<ValueType>&& A) override;
             
             virtual void multiply(std::vector<ValueType>& x, std::vector<ValueType> const* b, std::vector<ValueType>& result) const override;
+            virtual ValueType multiplyRow(uint64_t const& rowIndex, std::vector<ValueType> const& x) const override;
+
 
             virtual LinearEquationSolverProblemFormat getEquationProblemFormat(Environment const& env) const override;
 

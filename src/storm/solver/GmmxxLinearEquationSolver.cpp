@@ -146,6 +146,12 @@ namespace storm {
         }
         
         template<typename ValueType>
+        ValueType GmmxxLinearEquationSolver<ValueType>::multiplyRow(uint64_t const& rowIndex, std::vector<ValueType> const& x) const {
+            return multiplier.multiplyRow(*gmmxxA, rowIndex, x);
+        }
+
+        
+        template<typename ValueType>
         LinearEquationSolverProblemFormat GmmxxLinearEquationSolver<ValueType>::getEquationProblemFormat(Environment const& env) const {
             return LinearEquationSolverProblemFormat::EquationSystem;
         }
