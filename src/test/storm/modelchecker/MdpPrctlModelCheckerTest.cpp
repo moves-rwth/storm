@@ -55,6 +55,22 @@ namespace {
             return env;
         }
     };
+    class SparseDoubleQuickValueIterationEnvironment {
+    public:
+        static const storm::dd::DdType ddType = storm::dd::DdType::Sylvan; // Unused for sparse models
+        static const storm::settings::modules::CoreSettings::Engine engine = storm::settings::modules::CoreSettings::Engine::Sparse;
+        static const bool isExact = false;
+        typedef double ValueType;
+        typedef storm::models::sparse::Mdp<ValueType> ModelType;
+        static storm::Environment createEnvironment() {
+            storm::Environment env;
+            env.solver().setForceSoundness(true);
+            env.solver().minMax().setMethod(storm::solver::MinMaxMethod::QuickValueIteration);
+            env.solver().minMax().setPrecision(storm::utility::convertNumber<storm::RationalNumber>(1e-6));
+            env.solver().minMax().setRelativeTerminationCriterion(false);
+            return env;
+        }
+    };
     class SparseRationalPolicyIterationEnvironment {
     public:
         static const storm::dd::DdType ddType = storm::dd::DdType::Sylvan; // Unused for sparse models
@@ -283,6 +299,7 @@ namespace {
     typedef ::testing::Types<
             SparseDoubleValueIterationEnvironment,
             SparseDoubleSoundValueIterationEnvironment,
+            SparseDoubleQuickValueIterationEnvironment,
             SparseRationalPolicyIterationEnvironment,
             SparseRationalRationalSearchEnvironment,
             HybridCuddDoubleValueIterationEnvironment,

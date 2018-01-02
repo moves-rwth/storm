@@ -111,7 +111,7 @@ namespace storm {
         std::unique_ptr<MinMaxLinearEquationSolver<ValueType>> StandardMinMaxLinearEquationSolverFactory<ValueType>::create(Environment const& env) const {
             std::unique_ptr<MinMaxLinearEquationSolver<ValueType>> result;
             auto method = env.solver().minMax().getMethod();
-            if (method == MinMaxMethod::ValueIteration || method == MinMaxMethod::PolicyIteration || method == MinMaxMethod::RationalSearch) {
+            if (method == MinMaxMethod::ValueIteration || method == MinMaxMethod::PolicyIteration || method == MinMaxMethod::RationalSearch || method == MinMaxMethod::QuickValueIteration) {
                 result = std::make_unique<IterativeMinMaxLinearEquationSolver<ValueType>>(this->linearEquationSolverFactory->clone());
             } else {
                 STORM_LOG_THROW(false, storm::exceptions::InvalidSettingsException, "The selected min max method is not supported by this solver.");

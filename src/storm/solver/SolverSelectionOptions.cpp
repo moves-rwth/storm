@@ -14,6 +14,8 @@ namespace storm {
                     return "topological";
                 case MinMaxMethod::RationalSearch:
                     return "ratsearch";
+                case MinMaxMethod::QuickValueIteration:
+                    return "QuickValueIteration";
             }
             return "invalid";
         }
