@@ -373,8 +373,7 @@ namespace storm {
             STORM_LOG_THROW(model->isSparseModel(), storm::exceptions::NotSupportedException, "Counterexample generation is currently only supported for sparse models.");
             auto sparseModel = model->as<storm::models::sparse::Model<ValueType>>();
             
-            STORM_LOG_THROW(sparseModel->isOfType(storm::models::ModelType::Mdp), storm::exceptions::NotSupportedException, "Counterexample is currently only supported for MDPs.");
-            auto mdp = sparseModel->template as<storm::models::sparse::Mdp<ValueType>>();
+            STORM_LOG_THROW(sparseModel->isOfType(storm::models::ModelType::Dtmc) || sparseModel->isOfType(storm::models::ModelType::Mdp), storm::exceptions::NotSupportedException, "Counterexample is currently only supported for discrete-time models.");
             
             auto counterexampleSettings = storm::settings::getModule<storm::settings::modules::CounterexampleGeneratorSettings>();
             if (counterexampleSettings.isMinimalCommandSetGenerationSet()) {
@@ -387,9 +386,15 @@ namespace storm {
                     printComputingCounterexample(property);
                     storm::utility::Stopwatch watch(true);
                     if (useMilp) {
-                        counterexample = storm::api::computePrismHighLevelCounterexampleMilp(program, mdp, property.getRawFormula());
+                        STORM_LOG_THROW(sparseModel->isOfType(storm::models::ModelType::Mdp), storm::exceptions::NotSupportedException, "Counterexample generation using MILP is currently only supported for MDPs.");
+                        counterexample = storm::api::computePrismHighLevelCounterexampleMilp(program, sparseModel->template as<storm::models::sparse::Mdp<ValueType>>(), property.getRawFormula());
                     } else {
-                        counterexample = storm::api::computePrismHighLevelCounterexampleMaxSmt(program, mdp, property.getRawFormula());
+                        STORM_LOG_THROW(sparseModel->isOfType(storm::models::ModelType::Dtmc) || sparseModel->isOfType(storm::models::ModelType::Mdp), storm::exceptions::NotSupportedException, "Counterexample generation using MaxSAT is currently only supported for discrete-time models.");
+                        if (sparseModel->isOfType(storm::models::ModelType::Dtmc)) {
+                            counterexample = storm::api::computePrismHighLevelCounterexampleMaxSmt(program, sparseModel->template as<storm::models::sparse::Dtmc<ValueType>>(), property.getRawFormula());
+                        } else {
+                            counterexample = storm::api::computePrismHighLevelCounterexampleMaxSmt(program, sparseModel->template as<storm::models::sparse::Mdp<ValueType>>(), property.getRawFormula());
+                        }
                     }
                     watch.stop();
                     printCounterexample(counterexample, &watch);

@@ -1,5 +1,4 @@
-#ifndef STORM_COUNTEREXAMPLES_SMTMINIMALLABELSETGENERATOR_MDP_H_
-#define STORM_COUNTEREXAMPLES_SMTMINIMALLABELSETGENERATOR_MDP_H_
+#pragma once
 
 #include <queue>
 #include <chrono>
@@ -11,7 +10,8 @@
 #include "storm/storage/prism/Program.h"
 #include "storm/storage/expressions/Expression.h"
 #include "storm/storage/sparse/PrismChoiceOrigins.h"
-#include "storm/modelchecker/prctl/SparseMdpPrctlModelChecker.h"
+#include "storm/modelchecker/propositional/SparsePropositionalModelChecker.h"
+#include "storm/modelchecker/prctl/helper/SparseDtmcPrctlHelper.h"
 #include "storm/modelchecker/prctl/helper/SparseMdpPrctlHelper.h"
 #include "storm/modelchecker/results/ExplicitQuantitativeCheckResult.h"
 #include "storm/settings/SettingsManager.h"
@@ -44,6 +44,9 @@ namespace storm {
                 // The set of relevant labels.
                 boost::container::flat_set<uint_fast64_t> relevantLabels;
                 
+                // The set of labels that matter in terms of minimality.
+                boost::container::flat_set<uint_fast64_t> minimalityLabels;
+                
                 // A set of labels that is definitely known to be taken in the final solution.
                 boost::container::flat_set<uint_fast64_t> knownLabels;
                 
@@ -57,6 +60,9 @@ namespace storm {
                 
                 // The variables associated with the relevant labels.
                 std::vector<storm::expressions::Variable> labelVariables;
+                
+                // The variables associated with the labels that matter in terms of minimality.
+                std::vector<storm::expressions::Variable> minimalityLabelVariables;
                 
                 // A mapping from relevant labels to their indices in the variable vector.
                 std::map<uint_fast64_t, uint_fast64_t> labelToIndexMap;
@@ -93,30 +99,30 @@ namespace storm {
              * Computes the set of relevant labels in the model. Relevant labels are choice labels such that there exists
              * a scheduler that satisfies phi until psi with a nonzero probability.
              *
-             * @param mdp The MDP to search for relevant labels.
+             * @param model The model to search for relevant labels.
              * @param phiStates A bit vector representing all states that satisfy phi.
              * @param psiStates A bit vector representing all states that satisfy psi.
+             * @param dontCareLabels A set of labels that are "don't care" labels wrt. minimality.
              * @return A structure containing the relevant labels as well as states.
              */
-            static RelevancyInformation determineRelevantStatesAndLabels(storm::models::sparse::Mdp<T> const& mdp, std::vector<boost::container::flat_set<uint_fast64_t>> const& labelSets, storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates) {
+            static RelevancyInformation determineRelevantStatesAndLabels(storm::models::sparse::Model<T> const& model, std::vector<boost::container::flat_set<uint_fast64_t>> const& labelSets, storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates, boost::container::flat_set<uint_fast64_t> const& dontCareLabels) {
                 // Create result.
                 RelevancyInformation relevancyInformation;
                 
                 // Compute all relevant states, i.e. states for which there exists a scheduler that has a non-zero
                 // probabilitiy of satisfying phi until psi.
-                storm::storage::SparseMatrix<T> backwardTransitions = mdp.getBackwardTransitions();
+                storm::storage::SparseMatrix<T> backwardTransitions = model.getBackwardTransitions();
                 relevancyInformation.relevantStates = storm::utility::graph::performProbGreater0E(backwardTransitions, phiStates, psiStates);
                 relevancyInformation.relevantStates &= ~psiStates;
 
                 STORM_LOG_DEBUG("Found " << relevancyInformation.relevantStates.getNumberOfSetBits() << " relevant states.");
-                STORM_LOG_DEBUG(relevancyInformation.relevantStates);
 
                 // Retrieve some references for convenient access.
-                storm::storage::SparseMatrix<T> const& transitionMatrix = mdp.getTransitionMatrix();
-                std::vector<uint_fast64_t> const& nondeterministicChoiceIndices = mdp.getNondeterministicChoiceIndices();
+                storm::storage::SparseMatrix<T> const& transitionMatrix = model.getTransitionMatrix();
+                std::vector<uint_fast64_t> const& nondeterministicChoiceIndices = transitionMatrix.getRowGroupIndices();
 
                 // Now traverse all choices of all relevant states and check whether there is a successor target state.
-                // If so, the associated labels become relevant. Also, if a choice of relevant state has at least one
+                // If so, the associated labels become relevant. Also, if a choice of a relevant state has at least one
                 // relevant successor, the choice becomes relevant.
                 for (auto state : relevancyInformation.relevantStates) {
                     relevancyInformation.relevantChoicesForRelevantStates.emplace(state, std::list<uint_fast64_t>());
@@ -130,6 +136,7 @@ namespace storm {
                                 for (auto const& label : labelSets[row]) {
                                     relevancyInformation.relevantLabels.insert(label);
                                 }
+
                                 if (!currentChoiceRelevant) {
                                     currentChoiceRelevant = true;
                                     relevancyInformation.relevantChoicesForRelevantStates[state].push_back(row);
@@ -140,15 +147,15 @@ namespace storm {
                 }
                 
                 // Compute the set of labels that are known to be taken in any case.
-                relevancyInformation.knownLabels = storm::utility::counterexamples::getGuaranteedLabelSet(mdp, labelSets, psiStates, relevancyInformation.relevantLabels);
+                relevancyInformation.knownLabels = storm::utility::counterexamples::getGuaranteedLabelSet(model, labelSets, psiStates, relevancyInformation.relevantLabels);
                 if (!relevancyInformation.knownLabels.empty()) {
                     boost::container::flat_set<uint_fast64_t> remainingLabels;
                     std::set_difference(relevancyInformation.relevantLabels.begin(), relevancyInformation.relevantLabels.end(), relevancyInformation.knownLabels.begin(), relevancyInformation.knownLabels.end(), std::inserter(remainingLabels, remainingLabels.end()));
                     relevancyInformation.relevantLabels = remainingLabels;
                 }
                 
-                std::cout << "Found " << relevancyInformation.relevantLabels.size() << " relevant and " << relevancyInformation.knownLabels.size() << " known labels." << std::endl;
-
+                std::set_difference(relevancyInformation.relevantLabels.begin(), relevancyInformation.relevantLabels.end(), dontCareLabels.begin(), dontCareLabels.end(), std::inserter(relevancyInformation.minimalityLabels, relevancyInformation.minimalityLabels.begin()));
+                
                 STORM_LOG_DEBUG("Found " << relevancyInformation.relevantLabels.size() << " relevant and " << relevancyInformation.knownLabels.size() << " known labels.");
                 return relevancyInformation;
             }
@@ -160,7 +167,7 @@ namespace storm {
              * @param relevantCommands A set of relevant labels for which to create the expressions.
              * @return A mapping from relevant labels to their corresponding expressions.
              */
-            static VariableInformation createVariables(std::shared_ptr<storm::expressions::ExpressionManager> const& manager, storm::models::sparse::Mdp<T> const& mdp, storm::storage::BitVector const& psiStates, RelevancyInformation const& relevancyInformation, bool createReachabilityVariables) {
+            static VariableInformation createVariables(std::shared_ptr<storm::expressions::ExpressionManager> const& manager, storm::models::sparse::Model<T> const& model, storm::storage::BitVector const& psiStates, RelevancyInformation const& relevancyInformation, bool createReachabilityVariables) {
                 VariableInformation variableInformation;
                 variableInformation.manager = manager;
                 
@@ -177,6 +184,11 @@ namespace storm {
                     variableName << "c" << label;
                     
                     variableInformation.labelVariables.push_back(manager->declareBooleanVariable(variableName.str()));
+                    
+                    // Record if the label is among the ones that matter for minimality.
+                    if (relevancyInformation.minimalityLabels.find(label) != relevancyInformation.minimalityLabels.end()) {
+                        variableInformation.minimalityLabelVariables.push_back(variableInformation.labelVariables.back());
+                    }
                     
                     // Clear contents of the stream to construct new expression name.
                     variableName.clear();
@@ -197,7 +209,7 @@ namespace storm {
                 if (createReachabilityVariables) {
                     variableInformation.hasReachabilityVariables = true;
                     
-                    storm::storage::SparseMatrix<T> const& transitionMatrix = mdp.getTransitionMatrix();
+                    storm::storage::SparseMatrix<T> const& transitionMatrix = model.getTransitionMatrix();
                     
                     for (auto state : relevancyInformation.relevantStates) {
                         variableInformation.relevantStatesToOrderVariableIndexMap[state] = variableInformation.stateOrderVariables.size();
@@ -253,13 +265,10 @@ namespace storm {
             /*!
              * Asserts the constraints that are initially needed for the Fu-Malik procedure.
              *
-             * @param program The program for which to build the constraints.
-             * @param mdp The MDP that results from the given program.
-             * @param context The Z3 context in which to build the expressions.
              * @param solver The solver in which to assert the constraints.
              * @param variableInformation A structure with information about the variables for the labels.
              */
-            static void assertFuMalikInitialConstraints(storm::prism::Program const& program, storm::models::sparse::Mdp<T> const& mdp, storm::storage::BitVector const& psiStates, z3::context& context, z3::solver& solver, VariableInformation const& variableInformation, RelevancyInformation const& relevancyInformation) {
+            static void assertFuMalikInitialConstraints(z3::solver& solver, VariableInformation const& variableInformation) {
                 // Assert that at least one of the labels must be taken.
                 z3::expr formula = variableInformation.labelVariables.at(0);
                 for (uint_fast64_t index = 1; index < variableInformation.labelVariables.size(); ++index) {
@@ -272,12 +281,12 @@ namespace storm {
              * Asserts cuts that are derived from the explicit representation of the model and rule out a lot of
              * suboptimal solutions.
              *
-             * @param mdp The labeled MDP for which to compute the cuts.
+             * @param model The labeled model for which to compute the cuts.
              * @param context The Z3 context in which to build the expressions.
              * @param solver The solver to use for the satisfiability evaluation.
              */
-            static void assertExplicitCuts(storm::models::sparse::Mdp<T> const& mdp, std::vector<boost::container::flat_set<uint_fast64_t>> const& labelSets, storm::storage::BitVector const& psiStates, VariableInformation const& variableInformation, RelevancyInformation const& relevancyInformation, storm::solver::SmtSolver& solver) {
-                // Walk through the MDP and
+            static void assertExplicitCuts(storm::models::sparse::Model<T> const& model, std::vector<boost::container::flat_set<uint_fast64_t>> const& labelSets, storm::storage::BitVector const& psiStates, VariableInformation const& variableInformation, RelevancyInformation const& relevancyInformation, storm::solver::SmtSolver& solver) {
+                // Walk through the model and
                 // * identify labels enabled in initial states
                 // * identify labels that can directly precede a given action
                 // * identify labels that directly reach a target state
@@ -291,10 +300,10 @@ namespace storm {
                 std::map<boost::container::flat_set<uint_fast64_t>, std::set<boost::container::flat_set<uint_fast64_t>>> followingLabels;
                 std::map<uint_fast64_t, std::set<boost::container::flat_set<uint_fast64_t>>> synchronizingLabels;
                 
-                // Get some data from the MDP for convenient access.
-                storm::storage::SparseMatrix<T> const& transitionMatrix = mdp.getTransitionMatrix();
-                storm::storage::BitVector const& initialStates = mdp.getInitialStates();
-                storm::storage::SparseMatrix<T> backwardTransitions = mdp.getBackwardTransitions();
+                // Get some data from the model for convenient access.
+                storm::storage::SparseMatrix<T> const& transitionMatrix = model.getTransitionMatrix();
+                storm::storage::BitVector const& initialStates = model.getInitialStates();
+                storm::storage::SparseMatrix<T> backwardTransitions = model.getBackwardTransitions();
                 
                 for (auto currentState : relevancyInformation.relevantStates) {
                     for (auto currentChoice : relevancyInformation.relevantChoicesForRelevantStates.at(currentState)) {
@@ -552,16 +561,16 @@ namespace storm {
              * @param program The symbolic representation of the model in terms of a program.
              * @param solver The solver to use for the satisfiability evaluation.
              */
-            static void assertSymbolicCuts(storm::prism::Program& program, storm::models::sparse::Mdp<T> const& mdp, std::vector<boost::container::flat_set<uint_fast64_t>> const& labelSets, VariableInformation const& variableInformation, RelevancyInformation const& relevancyInformation, storm::solver::SmtSolver& solver) {
+            static void assertSymbolicCuts(storm::prism::Program& program, storm::models::sparse::Model<T> const& model, std::vector<boost::container::flat_set<uint_fast64_t>> const& labelSets, VariableInformation const& variableInformation, RelevancyInformation const& relevancyInformation, storm::solver::SmtSolver& solver) {
                 // A container storing the label sets that may precede a given label set.
                 std::map<boost::container::flat_set<uint_fast64_t>, std::set<boost::container::flat_set<uint_fast64_t>>> precedingLabelSets;
 
                 // A container that maps labels to their reachable synchronization sets.
                 std::map<uint_fast64_t, std::set<boost::container::flat_set<uint_fast64_t>>> synchronizingLabels;
 
-                // Get some data from the MDP for convenient access.
-                storm::storage::SparseMatrix<T> const& transitionMatrix = mdp.getTransitionMatrix();
-                storm::storage::SparseMatrix<T> backwardTransitions = mdp.getBackwardTransitions();
+                // Get some data from the model for convenient access.
+                storm::storage::SparseMatrix<T> const& transitionMatrix = model.getTransitionMatrix();
+                storm::storage::SparseMatrix<T> backwardTransitions = model.getBackwardTransitions();
                 
                 // Compute the set of labels that may precede a given action.
                 for (auto currentState : relevancyInformation.relevantStates) {
@@ -871,22 +880,22 @@ namespace storm {
             /*!
              * Asserts constraints necessary to encode the reachability of at least one target state from the initial states.
              */
-            static void assertReachabilityCuts(storm::models::sparse::Mdp<T> const& mdp, std::vector<boost::container::flat_set<uint_fast64_t>> const& labelSets, storm::storage::BitVector const& psiStates, VariableInformation const& variableInformation, RelevancyInformation const& relevancyInformation, storm::solver::SmtSolver& solver) {
+            static void assertReachabilityCuts(storm::models::sparse::Model<T> const& model, std::vector<boost::container::flat_set<uint_fast64_t>> const& labelSets, storm::storage::BitVector const& psiStates, VariableInformation const& variableInformation, RelevancyInformation const& relevancyInformation, storm::solver::SmtSolver& solver) {
                 
                 if (!variableInformation.hasReachabilityVariables) {
                     throw storm::exceptions::InvalidStateException() << "Impossible to assert reachability cuts without the necessary variables.";
                 }
                 
-                // Get some data from the MDP for convenient access.
-                storm::storage::SparseMatrix<T> const& transitionMatrix = mdp.getTransitionMatrix();
-                storm::storage::SparseMatrix<T> backwardTransitions = mdp.getBackwardTransitions();
+                // Get some data from the model for convenient access.
+                storm::storage::SparseMatrix<T> const& transitionMatrix = model.getTransitionMatrix();
+                storm::storage::SparseMatrix<T> backwardTransitions = model.getBackwardTransitions();
 
                 // First, we add the formulas that encode
                 // (1) if an incoming transition is chosen, an outgoing one is chosen as well (for non-initial states)
                 // (2) an outgoing transition out of the initial states is taken.
                 storm::expressions::Expression initialStateExpression = variableInformation.manager->boolean(false);
                 for (auto relevantState : relevancyInformation.relevantStates) {
-                    if (!mdp.getInitialStates().get(relevantState)) {
+                    if (!model.getInitialStates().get(relevantState)) {
                         // Assert the constraints (1).
                         boost::container::flat_set<uint_fast64_t> relevantPredecessors;
                         for (auto const& predecessorEntry : backwardTransitions.getRow(relevantState)) {
@@ -1300,7 +1309,7 @@ namespace storm {
                 std::stringstream variableName;
                 std::vector<storm::expressions::Variable> result;
                 
-                std::vector<storm::expressions::Expression> adderVariables = createCounterCircuit(variableInformation, variableInformation.labelVariables);
+                std::vector<storm::expressions::Expression> adderVariables = createCounterCircuit(variableInformation, variableInformation.minimalityLabelVariables);
                 for (uint_fast64_t i = 0; i < adderVariables.size(); ++i) {
                     variableName.str("");
                     variableName.clear();
@@ -1340,32 +1349,32 @@ namespace storm {
             }
             
             /*!
-             * Analyzes the given sub-MDP that has a maximal reachability of zero (i.e. no psi states are reachable) and tries to construct assertions that aim to make at least one psi state reachable.
+             * Analyzes the given sub-model that has a maximal reachability of zero (i.e. no psi states are reachable) and tries to construct assertions that aim to make at least one psi state reachable.
              *
              * @param solver The solver to use for the satisfiability evaluation.
-             * @param subMdp The sub-MDP resulting from restricting the original MDP to the given command set.
-             * @param originalMdp The original MDP.
+             * @param subModel The sub-model resulting from restricting the original model to the given command set.
+             * @param originalModel The original model.
              * @param phiStates A bit vector characterizing all phi states in the model.
              * @param psiState A bit vector characterizing all psi states in the model.
              * @param commandSet The currently chosen set of commands.
              * @param variableInformation A structure with information about the variables of the solver.
              */
-            static void analyzeZeroProbabilitySolution(storm::solver::SmtSolver& solver, storm::models::sparse::Mdp<T> const& subMdp, std::vector<boost::container::flat_set<uint_fast64_t>> const& subLabelSets, storm::models::sparse::Mdp<T> const& originalMdp, std::vector<boost::container::flat_set<uint_fast64_t>> const& originalLabelSets, storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates, boost::container::flat_set<uint_fast64_t> const& commandSet, VariableInformation& variableInformation, RelevancyInformation const& relevancyInformation) {
-                storm::storage::BitVector reachableStates(subMdp.getNumberOfStates());
+            static void analyzeZeroProbabilitySolution(storm::solver::SmtSolver& solver, storm::models::sparse::Model<T> const& subModel, std::vector<boost::container::flat_set<uint_fast64_t>> const& subLabelSets, storm::models::sparse::Model<T> const& originalModel, std::vector<boost::container::flat_set<uint_fast64_t>> const& originalLabelSets, storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates, boost::container::flat_set<uint_fast64_t> const& commandSet, VariableInformation& variableInformation, RelevancyInformation const& relevancyInformation) {
+                storm::storage::BitVector reachableStates(subModel.getNumberOfStates());
                 
                 STORM_LOG_DEBUG("Analyzing solution with zero probability.");
                 
                 // Initialize the stack for the DFS.
                 bool targetStateIsReachable = false;
                 std::vector<uint_fast64_t> stack;
-                stack.reserve(subMdp.getNumberOfStates());
-                for (auto initialState : subMdp.getInitialStates()) {
+                stack.reserve(subModel.getNumberOfStates());
+                for (auto initialState : subModel.getInitialStates()) {
                     stack.push_back(initialState);
                     reachableStates.set(initialState, true);
                 }
                 
-                storm::storage::SparseMatrix<T> const& transitionMatrix = subMdp.getTransitionMatrix();
-                std::vector<uint_fast64_t> const& nondeterministicChoiceIndices = subMdp.getNondeterministicChoiceIndices();
+                storm::storage::SparseMatrix<T> const& transitionMatrix = subModel.getTransitionMatrix();
+                std::vector<uint_fast64_t> const& nondeterministicChoiceIndices = transitionMatrix.getRowGroupIndices();
                 
                 // Now determine which states and labels are actually reachable.
                 boost::container::flat_set<uint_fast64_t> reachableLabels;
@@ -1404,12 +1413,12 @@ namespace storm {
                 }
                 
                 storm::storage::BitVector unreachableRelevantStates = ~reachableStates & relevancyInformation.relevantStates;
-                storm::storage::BitVector statesThatCanReachTargetStates = storm::utility::graph::performProbGreater0E(subMdp.getBackwardTransitions(), phiStates, psiStates);
+                storm::storage::BitVector statesThatCanReachTargetStates = storm::utility::graph::performProbGreater0E(subModel.getBackwardTransitions(), phiStates, psiStates);
                 
                 boost::container::flat_set<uint_fast64_t> locallyRelevantLabels;
                 std::set_difference(relevancyInformation.relevantLabels.begin(), relevancyInformation.relevantLabels.end(), commandSet.begin(), commandSet.end(), std::inserter(locallyRelevantLabels, locallyRelevantLabels.begin()));
                 
-                std::vector<boost::container::flat_set<uint_fast64_t>> guaranteedLabelSets = storm::utility::counterexamples::getGuaranteedLabelSets(originalMdp, originalLabelSets, statesThatCanReachTargetStates, locallyRelevantLabels);
+                std::vector<boost::container::flat_set<uint_fast64_t>> guaranteedLabelSets = storm::utility::counterexamples::getGuaranteedLabelSets(originalModel, originalLabelSets, statesThatCanReachTargetStates, locallyRelevantLabels);
                 STORM_LOG_DEBUG("Found " << reachableLabels.size() << " reachable labels and " << reachableStates.getNumberOfSetBits() << " reachable states.");
                 
                 // Search for states on the border of the reachable state space, i.e. states that are still reachable
@@ -1421,7 +1430,7 @@ namespace storm {
                             bool isBorderChoice = false;
 
                             // Determine whether the state has the option to leave the reachable state space and go to the unreachable relevant states.
-                            for (auto const& successorEntry : originalMdp.getTransitionMatrix().getRow(currentChoice)) {
+                            for (auto const& successorEntry : originalModel.getTransitionMatrix().getRow(currentChoice)) {
                                 if (unreachableRelevantStates.get(successorEntry.getColumn())) {
                                     isBorderChoice = true;
                                 }
@@ -1463,33 +1472,33 @@ namespace storm {
             }
             
             /*!
-             * Analyzes the given sub-MDP that has a non-zero maximal reachability and tries to construct assertions that aim to guide the solver to solutions
+             * Analyzes the given sub-model that has a non-zero maximal reachability and tries to construct assertions that aim to guide the solver to solutions
              * with an improved probability value.
              *
              * @param solver The solver to use for the satisfiability evaluation.
-             * @param subMdp The sub-MDP resulting from restricting the original MDP to the given command set.
-             * @param originalMdp The original MDP.
+             * @param subModel The sub-model resulting from restricting the original model to the given command set.
+             * @param originalModel The original model.
              * @param phiStates A bit vector characterizing all phi states in the model.
              * @param psiState A bit vector characterizing all psi states in the model.
              * @param commandSet The currently chosen set of commands.
              * @param variableInformation A structure with information about the variables of the solver.
              */
-            static void analyzeInsufficientProbabilitySolution(storm::solver::SmtSolver& solver, storm::models::sparse::Mdp<T> const& subMdp, std::vector<boost::container::flat_set<uint_fast64_t>> const& subLabelSets, storm::models::sparse::Mdp<T> const& originalMdp, std::vector<boost::container::flat_set<uint_fast64_t>> const& originalLabelSets, storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates, boost::container::flat_set<uint_fast64_t> const& commandSet, VariableInformation& variableInformation, RelevancyInformation const& relevancyInformation) {
+            static void analyzeInsufficientProbabilitySolution(storm::solver::SmtSolver& solver, storm::models::sparse::Model<T> const& subModel, std::vector<boost::container::flat_set<uint_fast64_t>> const& subLabelSets, storm::models::sparse::Model<T> const& originalModel, std::vector<boost::container::flat_set<uint_fast64_t>> const& originalLabelSets, storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates, boost::container::flat_set<uint_fast64_t> const& commandSet, VariableInformation& variableInformation, RelevancyInformation const& relevancyInformation) {
 
                 STORM_LOG_DEBUG("Analyzing solution with insufficient probability.");
 
-                storm::storage::BitVector reachableStates(subMdp.getNumberOfStates());
+                storm::storage::BitVector reachableStates(subModel.getNumberOfStates());
                 
                 // Initialize the stack for the DFS.
                 std::vector<uint_fast64_t> stack;
-                stack.reserve(subMdp.getNumberOfStates());
-                for (auto initialState : subMdp.getInitialStates()) {
+                stack.reserve(subModel.getNumberOfStates());
+                for (auto initialState : subModel.getInitialStates()) {
                     stack.push_back(initialState);
                     reachableStates.set(initialState, true);
                 }
                 
-                storm::storage::SparseMatrix<T> const& transitionMatrix = subMdp.getTransitionMatrix();
-                std::vector<uint_fast64_t> const& nondeterministicChoiceIndices = subMdp.getNondeterministicChoiceIndices();
+                storm::storage::SparseMatrix<T> const& transitionMatrix = subModel.getTransitionMatrix();
+                std::vector<uint_fast64_t> const& nondeterministicChoiceIndices = transitionMatrix.getRowGroupIndices();
                 
                 // Now determine which states and labels are actually reachable.
                 boost::container::flat_set<uint_fast64_t> reachableLabels;
@@ -1522,12 +1531,12 @@ namespace storm {
                 STORM_LOG_DEBUG("Successfully determined reachable state space.");
                 
                 storm::storage::BitVector unreachableRelevantStates = ~reachableStates & relevancyInformation.relevantStates;
-                storm::storage::BitVector statesThatCanReachTargetStates = storm::utility::graph::performProbGreater0E(subMdp.getBackwardTransitions(), phiStates, psiStates);
+                storm::storage::BitVector statesThatCanReachTargetStates = storm::utility::graph::performProbGreater0E(subModel.getBackwardTransitions(), phiStates, psiStates);
                 
                 boost::container::flat_set<uint_fast64_t> locallyRelevantLabels;
                 std::set_difference(relevancyInformation.relevantLabels.begin(), relevancyInformation.relevantLabels.end(), commandSet.begin(), commandSet.end(), std::inserter(locallyRelevantLabels, locallyRelevantLabels.begin()));
                 
-                std::vector<boost::container::flat_set<uint_fast64_t>> guaranteedLabelSets = storm::utility::counterexamples::getGuaranteedLabelSets(originalMdp, originalLabelSets, statesThatCanReachTargetStates, locallyRelevantLabels);
+                std::vector<boost::container::flat_set<uint_fast64_t>> guaranteedLabelSets = storm::utility::counterexamples::getGuaranteedLabelSets(originalModel, originalLabelSets, statesThatCanReachTargetStates, locallyRelevantLabels);
                 
                 // Search for states for which we could enable another option and possibly improve the reachability probability.
                 std::set<boost::container::flat_set<uint_fast64_t>> cutLabels;
@@ -1570,29 +1579,31 @@ namespace storm {
         
             
             /*!
-             * Returns the submdp obtained from removing all choices that do not originate from the specified filterLabelSet.
-             * Also returns the Labelsets of the submdp
+             * Returns the sub-model obtained from removing all choices that do not originate from the specified filterLabelSet.
+             * Also returns the Labelsets of the sub-model.
              */
-            static std::pair<storm::models::sparse::Mdp<T>, std::vector<boost::container::flat_set<uint_fast64_t>>> restrictMdpToLabelSet(storm::models::sparse::Mdp<T> const& mdp,  boost::container::flat_set<uint_fast64_t> const& filterLabelSet) {
+            static std::pair<std::shared_ptr<storm::models::sparse::Model<T>>, std::vector<boost::container::flat_set<uint_fast64_t>>> restrictModelToLabelSet(storm::models::sparse::Model<T> const& model,  boost::container::flat_set<uint_fast64_t> const& filterLabelSet) {
 
+                bool customRowGrouping = model.isOfType(storm::models::ModelType::Mdp);
+                
                 std::vector<boost::container::flat_set<uint_fast64_t>> resultLabelSet;
-                storm::storage::SparseMatrixBuilder<T> transitionMatrixBuilder(0, mdp.getTransitionMatrix().getColumnCount(), 0, true, true, mdp.getTransitionMatrix().getRowGroupCount());
+                storm::storage::SparseMatrixBuilder<T> transitionMatrixBuilder(0, model.getTransitionMatrix().getColumnCount(), 0, true, customRowGrouping, model.getTransitionMatrix().getRowGroupCount());
 
                 // Check for each choice of each state, whether the choice commands are fully contained in the given command set.
                 uint_fast64_t currentRow = 0;
-                for(uint_fast64_t state = 0; state < mdp.getNumberOfStates(); ++state) {
+                for(uint_fast64_t state = 0; state < model.getNumberOfStates(); ++state) {
                     bool stateHasValidChoice = false;
-                    for (uint_fast64_t choice = mdp.getTransitionMatrix().getRowGroupIndices()[state]; choice < mdp.getTransitionMatrix().getRowGroupIndices()[state + 1]; ++choice) {
-                        auto const& choiceLabelSet = mdp.getChoiceOrigins()->asPrismChoiceOrigins().getCommandSet(choice);
+                    for (uint_fast64_t choice = model.getTransitionMatrix().getRowGroupIndices()[state]; choice < model.getTransitionMatrix().getRowGroupIndices()[state + 1]; ++choice) {
+                        auto const& choiceLabelSet = model.getChoiceOrigins()->asPrismChoiceOrigins().getCommandSet(choice);
                         bool choiceValid = std::includes(filterLabelSet.begin(), filterLabelSet.end(), choiceLabelSet.begin(), choiceLabelSet.end());
 
                         // If the choice is valid, copy over all its elements.
                         if (choiceValid) {
-                            if (!stateHasValidChoice) {
+                            if (!stateHasValidChoice && customRowGrouping) {
                                 transitionMatrixBuilder.newRowGroup(currentRow);
                             }
                             stateHasValidChoice = true;
-                            for (auto const& entry : mdp.getTransitionMatrix().getRow(choice)) {
+                            for (auto const& entry : model.getTransitionMatrix().getRow(choice)) {
                                 transitionMatrixBuilder.addNextValue(currentRow, entry.getColumn(), entry.getValue());
                             }
                             resultLabelSet.push_back(choiceLabelSet);
@@ -1602,7 +1613,9 @@ namespace storm {
 
                     // If no choice of the current state may be taken, we insert a self-loop to the state instead.
                     if (!stateHasValidChoice) {
-                        transitionMatrixBuilder.newRowGroup(currentRow);
+                        if (customRowGrouping) {
+                            transitionMatrixBuilder.newRowGroup(currentRow);
+                        }
                         transitionMatrixBuilder.addNextValue(currentRow, state, storm::utility::one<T>());
                         // Insert an empty label set for this choice
                         resultLabelSet.emplace_back();
@@ -1610,17 +1623,40 @@ namespace storm {
                     }
                 }
                 
-                storm::models::sparse::Mdp<T> resultMdp(transitionMatrixBuilder.build(), storm::models::sparse::StateLabeling(mdp.getStateLabeling()));
+                std::shared_ptr<storm::models::sparse::Model<T>> resultModel;
+                if (model.isOfType(storm::models::ModelType::Dtmc)) {
+                    resultModel = std::make_shared<storm::models::sparse::Dtmc<T>>(transitionMatrixBuilder.build(), storm::models::sparse::StateLabeling(model.getStateLabeling()));
+                } else {
+                    resultModel = std::make_shared<storm::models::sparse::Mdp<T>>(transitionMatrixBuilder.build(), storm::models::sparse::StateLabeling(model.getStateLabeling()));
+                }
                 
-                return std::make_pair(std::move(resultMdp), std::move(resultLabelSet));
+                return std::make_pair(resultModel, std::move(resultLabelSet));
             }
 
+            static T computeMaximalReachabilityProbability(Environment const& env, storm::models::sparse::Model<T> const& model, storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates) {
+                T result = storm::utility::zero<T>();
+                
+                std::vector<T> allStatesResult;
+                
+                STORM_LOG_DEBUG("Invoking model checker.");
+                if (model.isOfType(storm::models::ModelType::Dtmc)) {
+                    allStatesResult = storm::modelchecker::helper::SparseDtmcPrctlHelper<T>::computeUntilProbabilities(env, false, model.getTransitionMatrix(), model.getBackwardTransitions(), phiStates, psiStates, false, storm::solver::GeneralLinearEquationSolverFactory<T>());
+                } else {
+                    storm::modelchecker::helper::SparseMdpPrctlHelper<T> modelCheckerHelper;
+                    allStatesResult = std::move(modelCheckerHelper.computeUntilProbabilities(env, false, model.getTransitionMatrix(), model.getBackwardTransitions(), phiStates, psiStates, false, false, storm::solver::GeneralMinMaxLinearEquationSolverFactory<T>()).values);
+                }
+                for (auto state : model.getInitialStates()) {
+                    result = std::max(result, allStatesResult[state]);
+                }
+                return result;
+            }
+            
         public:
             /*!
-             * Computes the minimal command set that is needed in the given MDP to exceed the given probability threshold for satisfying phi until psi.
+             * Computes the minimal command set that is needed in the given model to exceed the given probability threshold for satisfying phi until psi.
              *
-             * @param program The program that was used to build the MDP.
-             * @param mdp The MDP in which to find the minimal command set.
+             * @param program The program that was used to build the model.
+             * @param model The sparse model in which to find the minimal command set.
              * @param phiStates A bit vector characterizing all phi states in the model.
              * @param psiStates A bit vector characterizing all psi states in the model.
              * @param probabilityThreshold The threshold that is to be achieved or exceeded.
@@ -1628,7 +1664,7 @@ namespace storm {
              * @param checkThresholdFeasible If set, it is verified that the model can actually achieve/exceed the given probability value. If this check
              * is made and fails, an exception is thrown.
              */
-            static boost::container::flat_set<uint_fast64_t> getMinimalCommandSet(Environment const& env,storm::prism::Program program, storm::models::sparse::Mdp<T> const& mdp, storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates, double probabilityThreshold, bool strictBound, bool checkThresholdFeasible = false, bool includeReachabilityEncoding = false) {
+            static boost::container::flat_set<uint_fast64_t> getMinimalCommandSet(Environment const& env, storm::prism::Program program, storm::models::sparse::Model<T> const& model, storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates, double probabilityThreshold, bool strictBound, boost::container::flat_set<uint_fast64_t> const& dontCareLabels = boost::container::flat_set<uint_fast64_t>(), bool checkThresholdFeasible = false, bool includeReachabilityEncoding = false) {
 #ifdef STORM_HAVE_Z3
                 // Set up all clocks used for time measurement.
                 auto totalClock = std::chrono::high_resolution_clock::now();
@@ -1649,37 +1685,33 @@ namespace storm {
 
                 // (0) Obtain the label sets for each choice.
                 // The label set of a choice corresponds to the set of prism commands that induce the choice.
-                STORM_LOG_THROW(mdp.hasChoiceOrigins(), storm::exceptions::InvalidArgumentException, "Restriction to minimal command set is impossible for model without choice origins.");
-                STORM_LOG_THROW(mdp.getChoiceOrigins()->isPrismChoiceOrigins(), storm::exceptions::InvalidArgumentException, "Restriction to command set is impossible for model without prism choice origins.");
-                storm::storage::sparse::PrismChoiceOrigins const& choiceOrigins = mdp.getChoiceOrigins()->asPrismChoiceOrigins();
+                STORM_LOG_THROW(model.hasChoiceOrigins(), storm::exceptions::InvalidArgumentException, "Restriction to minimal command set is impossible for model without choice origins.");
+                STORM_LOG_THROW(model.getChoiceOrigins()->isPrismChoiceOrigins(), storm::exceptions::InvalidArgumentException, "Restriction to command set is impossible for model without prism choice origins.");
+                storm::storage::sparse::PrismChoiceOrigins const& choiceOrigins = model.getChoiceOrigins()->asPrismChoiceOrigins();
                 std::vector<boost::container::flat_set<uint_fast64_t>> labelSets;
-                labelSets.reserve(mdp.getNumberOfChoices());
-                for (uint_fast64_t choice = 0; choice < mdp.getNumberOfChoices(); ++choice) {
+                labelSets.reserve(model.getNumberOfChoices());
+                for (uint_fast64_t choice = 0; choice < model.getNumberOfChoices(); ++choice) {
                     labelSets.push_back(choiceOrigins.getCommandSet(choice));
                 }
                 
                 // (1) Check whether its possible to exceed the threshold if checkThresholdFeasible is set.
                 double maximalReachabilityProbability = 0;
                 if (checkThresholdFeasible) {
-                    storm::modelchecker::helper::SparseMdpPrctlHelper<T> modelCheckerHelper;
-                    STORM_LOG_DEBUG("Invoking model checker.");
-                    std::vector<T> result = std::move(modelCheckerHelper.computeUntilProbabilities(env, false, mdp.getTransitionMatrix(), mdp.getBackwardTransitions(), phiStates, psiStates, false, false, storm::solver::GeneralMinMaxLinearEquationSolverFactory<T>()).values);
-                    for (auto state : mdp.getInitialStates()) {
-                        maximalReachabilityProbability = std::max(maximalReachabilityProbability, result[state]);
-                    }
+                    maximalReachabilityProbability = computeMaximalReachabilityProbability(env, model, phiStates, psiStates);
+                    
                     STORM_LOG_THROW((strictBound && maximalReachabilityProbability >= probabilityThreshold) || (!strictBound && maximalReachabilityProbability > probabilityThreshold), storm::exceptions::InvalidArgumentException, "Given probability threshold " << probabilityThreshold << " can not be " << (strictBound ? "achieved" : "exceeded") << " in model with maximal reachability probability of " << maximalReachabilityProbability << ".");
                     std::cout << std::endl << "Maximal reachability in model is " << maximalReachabilityProbability << "." << std::endl << std::endl;
                 }
                 
                 // (2) Identify all states and commands that are relevant, because only these need to be considered later.
-                RelevancyInformation relevancyInformation = determineRelevantStatesAndLabels(mdp, labelSets, phiStates, psiStates);
+                RelevancyInformation relevancyInformation = determineRelevantStatesAndLabels(model, labelSets, phiStates, psiStates, dontCareLabels);
                 
                 // (3) Create a solver.
                 std::shared_ptr<storm::expressions::ExpressionManager> manager = std::make_shared<storm::expressions::ExpressionManager>();
                 std::unique_ptr<storm::solver::SmtSolver> solver = std::make_unique<storm::solver::Z3SmtSolver>(*manager);
                 
                 // (4) Create the variables for the relevant commands.
-                VariableInformation variableInformation = createVariables(manager, mdp, psiStates, relevancyInformation, includeReachabilityEncoding);
+                VariableInformation variableInformation = createVariables(manager, model, psiStates, relevancyInformation, includeReachabilityEncoding);
                 STORM_LOG_DEBUG("Created variables.");
 
                 // (5) Now assert an adder whose result variables can later be used to constrain the nummber of label
@@ -1690,12 +1722,12 @@ namespace storm {
                 
                 // (6) Add constraints that cut off a lot of suboptimal solutions.
                 STORM_LOG_DEBUG("Asserting cuts.");
-                assertExplicitCuts(mdp, labelSets, psiStates, variableInformation, relevancyInformation, *solver);
+                assertExplicitCuts(model, labelSets, psiStates, variableInformation, relevancyInformation, *solver);
                 STORM_LOG_DEBUG("Asserted explicit cuts.");
-                assertSymbolicCuts(program, mdp, labelSets, variableInformation, relevancyInformation, *solver);
+                assertSymbolicCuts(program, model, labelSets, variableInformation, relevancyInformation, *solver);
                 STORM_LOG_DEBUG("Asserted symbolic cuts.");
                 if (includeReachabilityEncoding) {
-                    assertReachabilityCuts(mdp, labelSets, psiStates, variableInformation, relevancyInformation, *solver);
+                    assertReachabilityCuts(model, labelSets, psiStates, variableInformation, relevancyInformation, *solver);
                     STORM_LOG_DEBUG("Asserted reachability cuts.");
                 }
                 
@@ -1706,9 +1738,18 @@ namespace storm {
                 // satisfying phi until psi exceeds the given threshold, the set of labels is minimal and can be returned.
                 // Otherwise, the current solution has to be ruled out and the next smallest solution is retrieved from
                 // the solver.
+
+                boost::container::flat_set<uint_fast64_t> commandSet(relevancyInformation.knownLabels);
+                
+                // If there are no relevant labels, return directly.
+                if (relevancyInformation.relevantLabels.empty()) {
+                    return commandSet;
+                } else if (relevancyInformation.minimalityLabels.empty()) {
+                    commandSet.insert(relevancyInformation.relevantLabels.begin(), relevancyInformation.relevantLabels.end());
+                    return commandSet;
+                }
                 
                 // Set up some variables for the iterations.
-                boost::container::flat_set<uint_fast64_t> commandSet(relevancyInformation.relevantLabels);
                 bool done = false;
                 uint_fast64_t iterations = 0;
                 uint_fast64_t currentBound = 0;
@@ -1721,24 +1762,16 @@ namespace storm {
                     totalSolverTime += std::chrono::high_resolution_clock::now() - solverClock;
                     STORM_LOG_DEBUG("Computed minimal command set of size " << (commandSet.size() + relevancyInformation.knownLabels.size()) << ".");
                     
-                    // Restrict the given MDP to the current set of labels and compute the reachability probability.
+                    // Restrict the given model to the current set of labels and compute the reachability probability.
                     modelCheckingClock = std::chrono::high_resolution_clock::now();
                     commandSet.insert(relevancyInformation.knownLabels.begin(), relevancyInformation.knownLabels.end());
-                    auto subMdpChoiceOrigins = restrictMdpToLabelSet(mdp, commandSet);
-                    storm::models::sparse::Mdp<T> const& subMdp = subMdpChoiceOrigins.first;
-                    std::vector<boost::container::flat_set<uint_fast64_t>> const& subLabelSets = subMdpChoiceOrigins.second;
+                    auto subChoiceOrigins = restrictModelToLabelSet(model, commandSet);
+                    std::shared_ptr<storm::models::sparse::Model<T>> const& subModel = subChoiceOrigins.first;
+                    std::vector<boost::container::flat_set<uint_fast64_t>> const& subLabelSets = subChoiceOrigins.second;
   
-                    storm::modelchecker::helper::SparseMdpPrctlHelper<T> modelCheckerHelper;
-                    STORM_LOG_DEBUG("Invoking model checker.");
-                    std::vector<T> result = std::move(modelCheckerHelper.computeUntilProbabilities(env, false, subMdp.getTransitionMatrix(), subMdp.getBackwardTransitions(), phiStates, psiStates, false, false, storm::solver::GeneralMinMaxLinearEquationSolverFactory<T>()).values);
-                    STORM_LOG_DEBUG("Computed model checking results.");
+                    // Now determine the maximal reachability probability in the sub-model.
+                    maximalReachabilityProbability = computeMaximalReachabilityProbability(env, *subModel, phiStates, psiStates);
                     totalModelCheckingTime += std::chrono::high_resolution_clock::now() - modelCheckingClock;
-
-                    // Now determine the maximal reachability probability by checking all initial states.
-                    maximalReachabilityProbability = 0;
-                    for (auto state : mdp.getInitialStates()) {
-                        maximalReachabilityProbability = std::max(maximalReachabilityProbability, result[state]);
-                    }
                     
                     // Depending on whether the threshold was successfully achieved or not, we proceed by either analyzing the bad solution or stopping the iteration process.
                     analysisClock = std::chrono::high_resolution_clock::now();
@@ -1747,11 +1780,11 @@ namespace storm {
                             ++zeroProbabilityCount;
                             
                             // If there was no target state reachable, analyze the solution and guide the solver into the right direction.
-                            analyzeZeroProbabilitySolution(*solver, subMdp, subLabelSets, mdp, labelSets, phiStates, psiStates, commandSet, variableInformation, relevancyInformation);
+                            analyzeZeroProbabilitySolution(*solver, *subModel, subLabelSets, model, labelSets, phiStates, psiStates, commandSet, variableInformation, relevancyInformation);
                         } else {
                             // If the reachability probability was greater than zero (i.e. there is a reachable target state), but the probability was insufficient to exceed
                             // the given threshold, we analyze the solution and try to guide the solver into the right direction.
-                            analyzeInsufficientProbabilitySolution(*solver, subMdp, subLabelSets, mdp, labelSets, phiStates, psiStates, commandSet, variableInformation, relevancyInformation);
+                            analyzeInsufficientProbabilitySolution(*solver, *subModel, subLabelSets, model, labelSets, phiStates, psiStates, commandSet, variableInformation, relevancyInformation);
                         }
                     } else {
                         done = true;
@@ -1788,14 +1821,14 @@ namespace storm {
 #endif
             }
             
-            static void extendCommandSetLowerBound(storm::models::sparse::Mdp<T> const& mdp, boost::container::flat_set<uint_fast64_t>& commandSet, storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates) {
+            static void extendCommandSetLowerBound(storm::models::sparse::Model<T> const& model, boost::container::flat_set<uint_fast64_t>& commandSet, storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates) {
                 auto startTime = std::chrono::high_resolution_clock::now();
                 
-                // Create sub-MDP that only contains the choices allowed by the given command set.
-                storm::models::sparse::Mdp<T> subMdp = restrictMdpToLabelSet(mdp, commandSet).first;
+                // Create sub-model that only contains the choices allowed by the given command set.
+                std::shared_ptr<storm::models::sparse::Model<T>> subModel = restrictModelToLabelSet(model, commandSet).first;
                 
-                // Then determine all prob0E(psi) states that are reachable in the sub-MDP.
-                storm::storage::BitVector reachableProb0EStates = storm::utility::graph::getReachableStates(subMdp.getTransitionMatrix(), subMdp.getInitialStates(), phiStates, psiStates);
+                // Then determine all prob0E(psi) states that are reachable in the sub-model.
+                storm::storage::BitVector reachableProb0EStates = storm::utility::graph::getReachableStates(subModel->getTransitionMatrix(), subModel->getInitialStates(), phiStates, psiStates);
                 
                 // Create a queue of reachable prob0E(psi) states so we can check which commands need to be added
                 // to give them a strategy that avoids psi states.
@@ -1813,12 +1846,12 @@ namespace storm {
                     // Now iterate over the original choices of the prob0E(psi) state and add at least one.
                     bool hasLabeledChoice = false;
                     uint64_t smallestCommandSetSize = 0;
-                    uint64_t smallestCommandChoice = mdp.getTransitionMatrix().getRowGroupIndices()[state];
+                    uint64_t smallestCommandChoice = model.getTransitionMatrix().getRowGroupIndices()[state];
                     
                     // Determine the choice with the least amount of commands (bad heuristic).
-                    for (uint64_t choice = smallestCommandChoice; choice < mdp.getTransitionMatrix().getRowGroupIndices()[state + 1]; ++choice) {
+                    for (uint64_t choice = smallestCommandChoice; choice < model.getTransitionMatrix().getRowGroupIndices()[state + 1]; ++choice) {
                         bool onlyProb0ESuccessors = true;
-                        for (auto const& successorEntry : mdp.getTransitionMatrix().getRow(choice)) {
+                        for (auto const& successorEntry : model.getTransitionMatrix().getRow(choice)) {
                             if (!psiStates.get(successorEntry.getColumn())) {
                                 onlyProb0ESuccessors = false;
                                 break;
@@ -1826,7 +1859,7 @@ namespace storm {
                         }
                         
                         if (onlyProb0ESuccessors) {
-                            auto const& labelSet = mdp.getChoiceOrigins()->asPrismChoiceOrigins().getCommandSet(choice);
+                            auto const& labelSet = model.getChoiceOrigins()->asPrismChoiceOrigins().getCommandSet(choice);
                             hasLabeledChoice |= !labelSet.empty();
                             
                             if (smallestCommandChoice == 0 || labelSet.size() < smallestCommandSetSize) {
@@ -1838,11 +1871,11 @@ namespace storm {
                     
                     if (hasLabeledChoice) {
                         // Take all labels of the selected choice.
-                        auto const& labelSet = mdp.getChoiceOrigins()->asPrismChoiceOrigins().getCommandSet(smallestCommandChoice);
+                        auto const& labelSet = model.getChoiceOrigins()->asPrismChoiceOrigins().getCommandSet(smallestCommandChoice);
                         commandSet.insert(labelSet.begin(), labelSet.end());
                         
                         // Check for which successor states choices need to be added
-                        for (auto const& successorEntry : mdp.getTransitionMatrix().getRow(smallestCommandChoice)) {
+                        for (auto const& successorEntry : model.getTransitionMatrix().getRow(smallestCommandChoice)) {
                             if (!storm::utility::isZero(successorEntry.getValue())) {
                                 if (!reachableProb0EStates.get(successorEntry.getColumn())) {
                                     reachableProb0EStates.set(successorEntry.getColumn());
@@ -1856,11 +1889,11 @@ namespace storm {
                 auto endTime = std::chrono::high_resolution_clock::now();
                 std::cout << std::endl << "Extended command for lower bounded property to size " << commandSet.size() << " in " << std::chrono::duration_cast<std::chrono::milliseconds>(endTime - startTime).count() << "ms." << std::endl;
             }
-            
-            static std::shared_ptr<PrismHighLevelCounterexample> computeCounterexample(Environment const& env, storm::prism::Program program, storm::models::sparse::Mdp<T> const& mdp, std::shared_ptr<storm::logic::Formula const> const& formula) {
-#ifdef STORM_HAVE_Z3
+
+            static boost::container::flat_set<uint_fast64_t>  computeCounterexampleCommandSet(Environment const& env, storm::prism::Program program, storm::models::sparse::Model<T> const& model, std::shared_ptr<storm::logic::Formula const> const& formula) {
+                STORM_LOG_THROW(model.isOfType(storm::models::ModelType::Dtmc) || model.isOfType(storm::models::ModelType::Mdp), storm::exceptions::NotSupportedException, "MaxSAT-based counterexample generation is supported only for discrete-time models.");
                 std::cout << std::endl << "Generating minimal label counterexample for formula " << *formula << std::endl;
-                
+
                 STORM_LOG_THROW(formula->isProbabilityOperatorFormula(), storm::exceptions::InvalidPropertyException, "Counterexample generation does not support this kind of formula. Expecting a probability operator as the outermost formula element.");
                 storm::logic::ProbabilityOperatorFormula const& probabilityOperator = formula->asProbabilityOperatorFormula();
                 STORM_LOG_THROW(probabilityOperator.hasBound(), storm::exceptions::InvalidPropertyException, "Counterexample generation only supports bounded formulas.");
@@ -1869,34 +1902,34 @@ namespace storm {
                 storm::logic::ComparisonType comparisonType = probabilityOperator.getComparisonType();
                 bool strictBound = comparisonType == storm::logic::ComparisonType::Less;
                 double threshold = probabilityOperator.getThresholdAs<T>();
-                
+
                 storm::storage::BitVector phiStates;
                 storm::storage::BitVector psiStates;
-                storm::modelchecker::SparseMdpPrctlModelChecker<storm::models::sparse::Mdp<T>> modelchecker(mdp);
-                
+                storm::modelchecker::SparsePropositionalModelChecker<storm::models::sparse::Model<T>> modelchecker(model);
+
                 if (probabilityOperator.getSubformula().isUntilFormula()) {
                     STORM_LOG_THROW(!storm::logic::isLowerBound(comparisonType), storm::exceptions::NotSupportedException, "Lower bounds in counterexamples are only supported for eventually formulas.");
                     storm::logic::UntilFormula const& untilFormula = probabilityOperator.getSubformula().asUntilFormula();
-                    
+
                     std::unique_ptr<storm::modelchecker::CheckResult> leftResult = modelchecker.check(env, untilFormula.getLeftSubformula());
                     std::unique_ptr<storm::modelchecker::CheckResult> rightResult = modelchecker.check(env, untilFormula.getRightSubformula());
-                    
+
                     storm::modelchecker::ExplicitQualitativeCheckResult const& leftQualitativeResult = leftResult->asExplicitQualitativeCheckResult();
                     storm::modelchecker::ExplicitQualitativeCheckResult const& rightQualitativeResult = rightResult->asExplicitQualitativeCheckResult();
-                    
+
                     phiStates = leftQualitativeResult.getTruthValuesVector();
                     psiStates = rightQualitativeResult.getTruthValuesVector();
                 } else if (probabilityOperator.getSubformula().isEventuallyFormula()) {
                     storm::logic::EventuallyFormula const& eventuallyFormula = probabilityOperator.getSubformula().asEventuallyFormula();
-                    
+
                     std::unique_ptr<storm::modelchecker::CheckResult> subResult = modelchecker.check(env, eventuallyFormula.getSubformula());
-                    
+
                     storm::modelchecker::ExplicitQualitativeCheckResult const& subQualitativeResult = subResult->asExplicitQualitativeCheckResult();
-                    
-                    phiStates = storm::storage::BitVector(mdp.getNumberOfStates(), true);
+
+                    phiStates = storm::storage::BitVector(model.getNumberOfStates(), true);
                     psiStates = subQualitativeResult.getTruthValuesVector();
                 }
-                
+
                 bool lowerBoundedFormula = false;
                 if (storm::logic::isLowerBound(comparisonType)) {
                     // If the formula specifies a lower bound, we need to modify the phi and psi states.
@@ -1905,16 +1938,16 @@ namespace storm {
                     // reaching psi states completely.
 
                     // This means that from all states in prob0E(psi) we need to include labels such that \sigma_0
-                    // is actually included in the resulting MDP. This prevents us from guaranteeing the minimality of
+                    // is actually included in the resulting model. This prevents us from guaranteeing the minimality of
                     // the returned counterexample, so we warn about that.
                     STORM_LOG_WARN("Generating counterexample for lower-bounded property. The resulting command set need not be minimal.");
 
                     // Modify bound appropriately.
                     comparisonType = storm::logic::invertPreserveStrictness(comparisonType);
                     threshold = storm::utility::one<T>() - threshold;
-                    
+
                     // Modify the phi and psi states appropriately.
-                    storm::storage::BitVector statesWithProbability0E = storm::utility::graph::performProb0E(mdp.getTransitionMatrix(), mdp.getTransitionMatrix().getRowGroupIndices(), mdp.getBackwardTransitions(), phiStates, psiStates);
+                    storm::storage::BitVector statesWithProbability0E = storm::utility::graph::performProb0E(model.getTransitionMatrix(), model.getTransitionMatrix().getRowGroupIndices(), model.getBackwardTransitions(), phiStates, psiStates);
                     phiStates = ~psiStates;
                     psiStates = std::move(statesWithProbability0E);
 
@@ -1922,17 +1955,23 @@ namespace storm {
                     // have a strategy that voids a states.
                     lowerBoundedFormula = true;
                 }
-                
+
                 // Delegate the actual computation work to the function of equal name.
                 auto startTime = std::chrono::high_resolution_clock::now();
-                auto commandSet = getMinimalCommandSet(env, program, mdp, phiStates, psiStates, threshold, strictBound, true, storm::settings::getModule<storm::settings::modules::CounterexampleGeneratorSettings>().isEncodeReachabilitySet());
+                auto commandSet = getMinimalCommandSet(env, program, model, phiStates, psiStates, threshold, strictBound, boost::container::flat_set<uint_fast64_t>(), true, storm::settings::getModule<storm::settings::modules::CounterexampleGeneratorSettings>().isEncodeReachabilitySet());
                 auto endTime = std::chrono::high_resolution_clock::now();
                 std::cout << std::endl << "Computed minimal command set of size " << commandSet.size() << " in " << std::chrono::duration_cast<std::chrono::milliseconds>(endTime - startTime).count() << "ms." << std::endl;
-                
+
                 // Extend the command set properly.
                 if (lowerBoundedFormula) {
-                    extendCommandSetLowerBound(mdp, commandSet, phiStates, psiStates);
+                    extendCommandSetLowerBound(model, commandSet, phiStates, psiStates);
                 }
+                return commandSet;
+            }
+
+            static std::shared_ptr<PrismHighLevelCounterexample> computeCounterexample(Environment const& env, storm::prism::Program program, storm::models::sparse::Model<T> const& model, std::shared_ptr<storm::logic::Formula const> const& formula) {
+#ifdef STORM_HAVE_Z3
+                auto commandSet = computeCounterexampleCommandSet(env, program, model, formula);
                 
                 return std::make_shared<PrismHighLevelCounterexample>(program.restrictCommands(commandSet));
 
@@ -1947,4 +1986,3 @@ namespace storm {
     } // namespace counterexamples
 } // namespace storm
 
-#endif /* STORM_COUNTEREXAMPLES_SMTMINIMALLABELSETGENERATOR_MDP_H_ */

@@ -165,7 +165,8 @@ namespace storm {
                                             auto parametricSettings = storm::settings::getModule<storm::settings::modules::ParametricSettings>();
                                             if (parametricSettings.exportResultToFile() && model->isOfType(storm::models::ModelType::Dtmc)) {
                                                 auto dtmc = model->template as<storm::models::sparse::Dtmc<ValueType>>();
-                                                storm::api::exportParametricResultToFile(boost::make_optional<ValueType>(result->asExplicitQuantitativeCheckResult<ValueType>()[*model->getInitialStates().begin()]),storm::analysis::ConstraintCollector<ValueType>(*dtmc), parametricSettings.exportResultPath());
+												boost::optional<ValueType> rationalFunction = result->asExplicitQuantitativeCheckResult<ValueType>()[*model->getInitialStates().begin()];
+                                                storm::api::exportParametricResultToFile(rationalFunction, storm::analysis::ConstraintCollector<ValueType>(*dtmc), parametricSettings.exportResultPath());
                                             }
                                         });
         }

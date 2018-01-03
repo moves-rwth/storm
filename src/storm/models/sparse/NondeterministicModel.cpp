@@ -27,11 +27,6 @@ namespace storm {
             }
             
             template<typename ValueType, typename RewardModelType>
-            uint_fast64_t NondeterministicModel<ValueType, RewardModelType>::getNumberOfChoices() const {
-                return this->getTransitionMatrix().getRowCount();
-            }
-            
-            template<typename ValueType, typename RewardModelType>
             std::vector<uint_fast64_t> const& NondeterministicModel<ValueType, RewardModelType>::getNondeterministicChoiceIndices() const {
                 return this->getTransitionMatrix().getRowGroupIndices();
             }
