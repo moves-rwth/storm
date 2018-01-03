@@ -25,6 +25,12 @@ namespace storm {
         void setRelativeTerminationCriterion(bool value);
         storm::solver::MultiplicationStyle const& getMultiplicationStyle() const;
         void setMultiplicationStyle(storm::solver::MultiplicationStyle value);
+        bool isForceBoundsSet() const;
+        void setForceBounds(bool value);
+        storm::RationalNumber getQviRestartThreshold() const;
+        void setQviRestartThreshold(storm::RationalNumber value);
+        uint64_t getQviRestartMaxIterations() const;
+        void setQviRestartMaxIterations(uint64_t value);
         
     private:
         storm::solver::MinMaxMethod minMaxMethod;
@@ -33,7 +39,9 @@ namespace storm {
         storm::RationalNumber precision;
         bool considerRelativeTerminationCriterion;
         storm::solver::MultiplicationStyle multiplicationStyle;
-    
+        bool forceBounds;
+        storm::RationalNumber qviRestartThreshold;
+        uint64_t qviRestartMaxIterations;
     };
 }
 

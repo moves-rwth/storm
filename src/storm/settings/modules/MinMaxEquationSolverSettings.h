@@ -97,6 +97,21 @@ namespace storm {
                  */
                 storm::solver::MultiplicationStyle getValueIterationMultiplicationStyle() const;
                 
+                /*!
+                 * Retrieves whether the  force bounds option has been set.
+                 */
+                bool isForceBoundsSet() const;
+                
+                /*!
+                 * Retrieves the restart threshold for quick value iteration
+                 */
+                double getQviRestartThreshold() const;
+                
+                /*!
+                 * Retrieves the maximal number of iterations within which a restart of quick value iteration can be triggered.
+                 */
+                uint_fast64_t getQviRestartMaxIterations() const;
+                
                 // The name of the module.
                 static const std::string moduleName;
                 
@@ -108,6 +123,8 @@ namespace storm {
                 static const std::string absoluteOptionName;
                 static const std::string lraMethodOptionName;
                 static const std::string valueIterationMultiplicationStyleOptionName;
+                static const std::string forceBoundsOptionName;
+                static const std::string quickValueIterationRestartOptionName;
             };
             
         }

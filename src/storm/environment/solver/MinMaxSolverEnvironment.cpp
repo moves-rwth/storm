@@ -17,12 +17,14 @@ namespace storm {
         considerRelativeTerminationCriterion = minMaxSettings.getConvergenceCriterion() == storm::settings::modules::MinMaxEquationSolverSettings::ConvergenceCriterion::Relative;
         STORM_LOG_ASSERT(considerRelativeTerminationCriterion || minMaxSettings.getConvergenceCriterion() == storm::settings::modules::MinMaxEquationSolverSettings::ConvergenceCriterion::Absolute, "Unknown convergence criterion");
         multiplicationStyle = minMaxSettings.getValueIterationMultiplicationStyle();
+        forceBounds = minMaxSettings.isForceBoundsSet();
+        qviRestartThreshold = minMaxSettings.getQviRestartThreshold();
+        qviRestartMaxIterations = minMaxSettings.getQviRestartMaxIterations();
     }
 
     MinMaxSolverEnvironment::~MinMaxSolverEnvironment() {
         // Intentionally left empty
     }
-
     
     storm::solver::MinMaxMethod const& MinMaxSolverEnvironment::getMethod() const {
         return minMaxMethod;
@@ -67,6 +69,30 @@ namespace storm {
     
     void MinMaxSolverEnvironment::setMultiplicationStyle(storm::solver::MultiplicationStyle value) {
         multiplicationStyle = value;
+    }
+    
+    bool MinMaxSolverEnvironment::isForceBoundsSet() const {
+        return forceBounds;
+    }
+    
+    void MinMaxSolverEnvironment::setForceBounds(bool value) {
+        forceBounds = value;
+    }
+    
+    storm::RationalNumber MinMaxSolverEnvironment::getQviRestartThreshold() const {
+        return qviRestartThreshold;
+    }
+    
+    void MinMaxSolverEnvironment::setQviRestartThreshold(storm::RationalNumber value) {
+        qviRestartThreshold = value;
+    }
+    
+    uint64_t MinMaxSolverEnvironment::getQviRestartMaxIterations() const {
+        return qviRestartMaxIterations;
+    }
+    
+    void MinMaxSolverEnvironment::setQviRestartMaxIterations(uint64_t value) {
+        qviRestartMaxIterations = value;
     }
     
 
