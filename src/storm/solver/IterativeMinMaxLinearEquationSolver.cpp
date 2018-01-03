@@ -9,6 +9,7 @@
 #include "storm/utility/KwekMehlhorn.h"
 #include "storm/utility/NumberTraits.h"
 
+#include "storm/utility/Stopwatch.h"
 #include "storm/utility/vector.h"
 #include "storm/utility/macros.h"
 #include "storm/exceptions/InvalidEnvironmentException.h"
@@ -607,43 +608,21 @@ namespace storm {
         
         template<typename ValueType>
         bool IterativeMinMaxLinearEquationSolver<ValueType>::solveEquationsQuickSoundValueIteration(Environment const& env, OptimizationDirection dir, std::vector<ValueType>& x, std::vector<ValueType> const& b) const {
-            
             if (!this->linEqSolverA) {
                 this->createLinearEquationSolver(env);
                 this->linEqSolverA->setCachingEnabled(true);
             }
 
-            // Allow aliased multiplications.
-            bool useGaussSeidelMultiplication = this->linEqSolverA->supportsGaussSeidelMultiplication() && env.solver().minMax().getMultiplicationStyle() == storm::solver::MultiplicationStyle::GaussSeidel;
-            
             // Prepare the solution vectors.
             assert(x.size() == this->A->getRowGroupCount());
-            std::vector<ValueType> *stepBoundedX, *stepBoundedStayProbs, *tmp;
-            if (useGaussSeidelMultiplication) {
-                stepBoundedX = &x;
-                stepBoundedX->assign(this->A->getRowGroupCount(), storm::utility::zero<ValueType>());
-                if (!this->auxiliaryRowGroupVector) {
-                    this->auxiliaryRowGroupVector = std::make_unique<std::vector<ValueType>>(this->A->getRowGroupCount(), storm::utility::one<ValueType>());
-                } else {
-                    this->auxiliaryRowGroupVector->assign(this->A->getRowGroupCount(), storm::utility::one<ValueType>());
-                }
-                stepBoundedStayProbs = this->auxiliaryRowGroupVector.get();
-                tmp = nullptr;
+            std::vector<ValueType>& stepBoundedX = x;
+            stepBoundedX.assign(this->A->getRowGroupCount(), storm::utility::zero<ValueType>());
+            if (!this->auxiliaryRowGroupVector) {
+                this->auxiliaryRowGroupVector = std::make_unique<std::vector<ValueType>>(this->A->getRowGroupCount(), storm::utility::one<ValueType>());
             } else {
-                if (!this->auxiliaryRowGroupVector) {
-                    this->auxiliaryRowGroupVector = std::make_unique<std::vector<ValueType>>(this->A->getRowGroupCount(), storm::utility::zero<ValueType>());
-                } else {
-                    this->auxiliaryRowGroupVector->assign(this->A->getRowGroupCount(), storm::utility::zero<ValueType>());
-                }
-                stepBoundedX = this->auxiliaryRowGroupVector.get();
-                if (!this->auxiliaryRowGroupVector2) {
-                    this->auxiliaryRowGroupVector2 = std::make_unique<std::vector<ValueType>>(this->A->getRowGroupCount(), storm::utility::one<ValueType>());
-                } else {
-                    this->auxiliaryRowGroupVector2->assign(this->A->getRowGroupCount(), storm::utility::one<ValueType>());
-                }
-                stepBoundedStayProbs = this->auxiliaryRowGroupVector2.get();
-                tmp = &x;
+                this->auxiliaryRowGroupVector->assign(this->A->getRowGroupCount(), storm::utility::one<ValueType>());
             }
+            std::vector<ValueType>& stepBoundedStayProbs = *this->auxiliaryRowGroupVector;
 
             // Get the precision
             bool relative = env.solver().minMax().getRelativeTerminationCriterion();
@@ -689,41 +668,98 @@ namespace storm {
             bool& hasPrimaryBound = minimize(dir) ? hasCurrentLowerBound : hasCurrentUpperBound;
             STORM_LOG_INFO_COND(!hasPrimaryBound, "Initial bound on the result is " << primaryBound);
             
+            storm::utility::Stopwatch sw1, sw2, sw3, sw4, sw5;
             // Proceed with the iterations as long as the method did not converge or reach the maximum number of iterations.
             SolverStatus status = SolverStatus::InProgress;
             uint64_t iterations = 0;
+            
             std::vector<ValueType> xTmp, yTmp;
+            
             uint64_t minIndex(0), maxIndex(0);
             uint64_t firstStayProb1Index = 0;
             uint64_t firstIndexViolatingConvergence = this->hasRelevantValues() ? this->getRelevantValues().getNextSetIndex(0) : 0;
             while (status == SolverStatus::InProgress && iterations < env.solver().minMax().getMaximalNumberOfIterations()) {
 
                 //Perform the iteration step
-                auto xIt = stepBoundedX->rbegin();
-                auto yIt = stepBoundedStayProbs->rbegin();
+                auto xIt = stepBoundedX.rbegin();
+                auto yIt = stepBoundedStayProbs.rbegin();
                 auto groupStartIt = this->A->getRowGroupIndices().rbegin();
                 ++groupStartIt;
                 auto groupEndIt = this->A->getRowGroupIndices().rbegin();
                 while (groupStartIt != this->A->getRowGroupIndices().rend()) {
-                    // Handle Row Groups of size 1 quickly
-                    if (*groupStartIt + 1 == *groupEndIt) {
-                        *xIt = this->linEqSolverA->multiplyRow(*groupStartIt, *stepBoundedX) + b[*groupStartIt];
-                        *yIt = this->linEqSolverA->multiplyRow(*groupStartIt, *stepBoundedStayProbs);
-                    } else {
-                        // First pass through the group: get the multiplication results
+                    // Perform the iteration for the first row in the group
+                    uint64_t row = *groupStartIt;
+                    uint64_t rowEnd = *groupEndIt;
+                    ValueType xBest = b[row];
+                    ValueType yBest = storm::utility::zero<ValueType>();
+                    for (auto const& entry : this->A->getRow(row)) {
+                        xBest += entry.getValue() * stepBoundedX[entry.getColumn()];
+                        yBest += entry.getValue() * stepBoundedStayProbs[entry.getColumn()];
+                    }
+                    ++row;
+                    // Only do more work if there are still rows in this row group
+                    if (row != rowEnd) {
                         xTmp.clear();
                         yTmp.clear();
-                        for (uint64_t row = *groupStartIt; row < *groupEndIt; ++row) {
-                            xTmp.push_back(this->linEqSolverA->multiplyRow(row, *stepBoundedX) + b[row]);
-                            yTmp.push_back(this->linEqSolverA->multiplyRow(row, *stepBoundedStayProbs));
+                        if (hasPrimaryBound) {
+                            ValueType bestValue = xBest + yBest * primaryBound;
+                            for (;row < *groupEndIt; ++row) {
+                                // Get the multiplication results
+                                ValueType xi = b[row];
+                                ValueType yi = storm::utility::zero<ValueType>();
+                                for (auto const& entry : this->A->getRow(row)) {
+                                    xi += entry.getValue() * stepBoundedX[entry.getColumn()];
+                                    yi += entry.getValue() * stepBoundedStayProbs[entry.getColumn()];
+                                }
+                                // Update the best choice
+                                ValueType currentValue = xi + yi * primaryBound;
+                                if (better(currentValue, bestValue)) {
+                                    if (yBest < yi) {
+                                        xTmp.push_back(std::move(xBest));
+                                        yTmp.push_back(std::move(yBest));
+                                    }
+                                    xBest = std::move(xi);
+                                    yBest = std::move(yi);
+                                    bestValue = std::move(currentValue);
+                                } else if (yBest > yi) {
+                                    if (currentValue == bestValue) {
+                                        xBest = std::move(xi);
+                                        yBest = std::move(yi);
+                                    } else {
+                                        xTmp.push_back(std::move(xi));
+                                        yTmp.push_back(std::move(yi));
+                                    }
+                                }
+                            }
+                        } else {
+                            for (;row < *groupEndIt; ++row) {
+                                // Get the multiplication results
+                                ValueType xi = b[row];
+                                ValueType yi = storm::utility::zero<ValueType>();
+                                for (auto const& entry : this->A->getRow(row)) {
+                                    xi += entry.getValue() * stepBoundedX[entry.getColumn()];
+                                    yi += entry.getValue() * stepBoundedStayProbs[entry.getColumn()];
+                                }
+                                // Update the best choice
+                                if (yi > yBest || (yi == yBest && better(xi, xBest))) {
+                                    xTmp.push_back(std::move(xBest));
+                                    yTmp.push_back(std::move(yBest));
+                                    xBest = std::move(xi);
+                                    yBest = std::move(yi);
+                                } else {
+                                    xTmp.push_back(std::move(xi));
+                                    yTmp.push_back(std::move(yi));
+                                }
+                            }
                         }
                         
+                        /*
                         // Second pass: get the best choice
                         uint64_t bestChoice = 0;
                         if (hasPrimaryBound) {
                             // Second pass: get the best choice
                             ValueType bestValue = xTmp.front() + yTmp.front() * primaryBound;
-                            for (uint64_t choice = 1; choice < xTmp.size(); ++choice) {
+                            for (uint64_t choice = 1; choice < groupSize; ++choice) {
                                 ValueType value = xTmp[choice] + yTmp[choice] * primaryBound;
                                 if (betterEqual(value, bestValue) && (value != bestValue || yTmp[choice] < yTmp[bestChoice])) {
                                     bestValue = std::move(value);
@@ -733,7 +769,7 @@ namespace storm {
                         } else {
                             // If no bound is known, we implicitly assume a sufficiently large (or low) bound
                             ValueType bestValue = yTmp.front();
-                            for (uint64_t choice = 1; choice < xTmp.size(); ++choice) {
+                            for (uint64_t choice = 1; choice < groupSize; ++choice) {
                                 ValueType const& value = yTmp[choice];
                                 if (value >= bestValue && (value != bestValue || better(xTmp[choice], xTmp[bestChoice]))) {
                                     bestValue = std::move(value);
@@ -743,22 +779,24 @@ namespace storm {
                         }
                         *xIt = xTmp[bestChoice];
                         *yIt = yTmp[bestChoice];
+                        */
                         
-                        // Third pass: Update the decision value
-                        for (uint64_t choice = 0; choice < xTmp.size(); ++choice) {
-                            if (choice != bestChoice) {
-                                ValueType deltaY = *yIt - yTmp[choice];
-                                if (deltaY > storm::utility::zero<ValueType>()) {
-                                   ValueType newDecisionValue = (xTmp[choice] - *xIt) / deltaY;
-                                    if (!hasDecisionValue || better(newDecisionValue, decisionValue)) {
+                        // Update the decision value
+                        for (auto xTmpIt = xTmp.begin(), yTmpIt = yTmp.begin(); xTmpIt != xTmp.end(); ++xTmpIt, ++yTmpIt) {
+                            ValueType deltaY = yBest - (*yTmpIt);
+                            if (deltaY > storm::utility::zero<ValueType>()) {
+                                ValueType newDecisionValue = (*xTmpIt - xBest) / deltaY;
+                                if (!hasDecisionValue || better(newDecisionValue, decisionValue)) {
                                    //     std::cout << "Updating decision value in Iteration " << iterations << " to " << newDecisionValue << ", where deltaX = " << xTmp[choice] << " - " << *xIt << " = " << (xTmp[choice] - *xIt) << " and deltaY= " << *yIt << " - " << yTmp[choice] << " = " << deltaY << "." << std::endl;
-                                        decisionValue = std::move(newDecisionValue);
-                                        hasDecisionValue = true;
-                                    }
+                                    decisionValue = std::move(newDecisionValue);
+                                    hasDecisionValue = true;
                                 }
                             }
                         }
                     }
+                    *xIt = std::move(xBest);
+                    *yIt = std::move(yBest);
+
                     ++groupStartIt;
                     ++groupEndIt;
                     ++xIt;
@@ -767,39 +805,39 @@ namespace storm {
                 
                 // Update bounds and check for convergence
                 // Phase 1: the probability to 'stay within the matrix' has to be < 1 at every state
-                for (; firstStayProb1Index != stepBoundedStayProbs->size(); ++firstStayProb1Index) {
+                for (; firstStayProb1Index != stepBoundedStayProbs.size(); ++firstStayProb1Index) {
                     static_assert(NumberTraits<ValueType>::IsExact || std::is_same<ValueType, double>::value, "Considered ValueType not handled.");
                     if (NumberTraits<ValueType>::IsExact) {
-                        if (storm::utility::isOne(stepBoundedStayProbs->at(firstStayProb1Index))) {
+                        if (storm::utility::isOne(stepBoundedStayProbs[firstStayProb1Index])) {
                             break;
                         }
                     } else {
-                        if (storm::utility::isAlmostOne(storm::utility::convertNumber<double>(stepBoundedStayProbs->at(firstStayProb1Index)))) {
+                        if (storm::utility::isAlmostOne(storm::utility::convertNumber<double>(stepBoundedStayProbs[firstStayProb1Index]))) {
                             break;
                         }
                     }
                 }
-                if (firstStayProb1Index == stepBoundedStayProbs->size()) {
-                    STORM_LOG_ASSERT(!std::any_of(stepBoundedStayProbs->begin(), stepBoundedStayProbs->end(), [](ValueType value){return storm::utility::isOne(value);}), "Did not expect staying-probability 1 at this point.");
+                if (firstStayProb1Index == stepBoundedStayProbs.size()) {
+                    STORM_LOG_ASSERT(!std::any_of(stepBoundedStayProbs.begin(), stepBoundedStayProbs.end(), [](ValueType value){return storm::utility::isOne(value);}), "Did not expect staying-probability 1 at this point.");
                    // Phase 2: the difference between lower and upper bound has to be < precision at every (relevant) value
                     // First check with (possibly too tight) bounds from a previous iteration. Only compute the actual bounds if this first check passes.
-                    currentLowerBound = stepBoundedX->at(minIndex) / (storm::utility::one<ValueType>() - stepBoundedStayProbs->at(minIndex));
-                    currentUpperBound = stepBoundedX->at(maxIndex) / (storm::utility::one<ValueType>() - stepBoundedStayProbs->at(maxIndex));
+                    currentLowerBound = stepBoundedX[minIndex] / (storm::utility::one<ValueType>() - stepBoundedStayProbs[minIndex]);
+                    currentUpperBound = stepBoundedX[maxIndex] / (storm::utility::one<ValueType>() - stepBoundedStayProbs[maxIndex]);
                     // Potentially correct the primary bound so that scheduler choices remain valid
                     if (hasDecisionValue && better(decisionValue, primaryBound)) {
                         primaryBound = decisionValue;
                     }
-                    ValueType const& stayProb = stepBoundedStayProbs->at(firstIndexViolatingConvergence);
+                    ValueType const& stayProb = stepBoundedStayProbs[firstIndexViolatingConvergence];
                     // The error made in this iteration
                     ValueType absoluteError = stayProb * (currentUpperBound - currentLowerBound);
                     // The maximal allowed error (possibly respecting relative precision)
                     // Note: We implement the relative convergence criterion in a way that avoids division by zero in the case where stepBoundedX[i] is zero.
-                    ValueType maxAllowedError = relative ? (precision * stepBoundedX->at(firstIndexViolatingConvergence)) : precision;
+                    ValueType maxAllowedError = relative ? (precision * stepBoundedX[firstIndexViolatingConvergence]) : precision;
                     if (absoluteError <= maxAllowedError) {
                         // Compute the actual bounds now
-                        auto valIt = stepBoundedX->begin();
-                        auto valIte = stepBoundedX->end();
-                        auto probIt = stepBoundedStayProbs->begin();
+                        auto valIt = stepBoundedX.begin();
+                        auto valIte = stepBoundedX.end();
+                        auto probIt = stepBoundedStayProbs.begin();
                         for (uint64_t index = 0; valIt != valIte; ++valIt, ++probIt, ++index) {
                             ValueType currentBound = *valIt / (storm::utility::one<ValueType>() - *probIt);
                             if (currentBound < currentLowerBound) {
@@ -824,12 +862,12 @@ namespace storm {
                                 if (this->hasRelevantValues()) {
                                     firstIndexViolatingConvergence = this->getRelevantValues().getNextSetIndex(firstIndexViolatingConvergence);
                                 }
-                                if (firstIndexViolatingConvergence == stepBoundedStayProbs->size()) {
+                                if (firstIndexViolatingConvergence == stepBoundedStayProbs.size()) {
                                     status = SolverStatus::Converged;
                                     break;
                                 } else {
-                                    absoluteError = stepBoundedStayProbs->at(firstIndexViolatingConvergence) * (currentUpperBound - currentLowerBound);
-                                    maxAllowedError = relative ? (precision * stepBoundedX->at(firstIndexViolatingConvergence)) : precision;
+                                    absoluteError = stepBoundedStayProbs[firstIndexViolatingConvergence] * (currentUpperBound - currentLowerBound);
+                                    maxAllowedError = relative ? (precision * stepBoundedX[firstIndexViolatingConvergence]) : precision;
                                     if (absoluteError > maxAllowedError) {
                                         // not converged yet
                                         break;
@@ -840,23 +878,27 @@ namespace storm {
                     }
                 }
                 
-                
                 // Update environment variables.
                 ++iterations;
                 // TODO: Implement custom termination criterion. We would need to add our errors to the stepBoundedX values (only if in second phase)
-                status = updateStatusIfNotConverged(status, *stepBoundedX, iterations, env.solver().minMax().getMaximalNumberOfIterations(), SolverGuarantee::None);
+                status = updateStatusIfNotConverged(status, stepBoundedX, iterations, env.solver().minMax().getMaximalNumberOfIterations(), SolverGuarantee::None);
                 
                 // Potentially show progress.
                 this->showProgressIterative(iterations);
             }
             
+            std::cout << "sw1: " << sw1 << std::endl;
+            std::cout << "sw2: " << sw2 << std::endl;
+            std::cout << "sw3: " << sw3 << std::endl;
+            std::cout << "sw4: " << sw4 << std::endl;
+            std::cout << "sw5: " << sw5 << std::endl;
             reportStatus(status, iterations);
             
             STORM_LOG_WARN_COND(hasCurrentLowerBound && hasCurrentUpperBound, "No lower or upper result bound could be computed within the given number of Iterations.");
             
             // Finally set up the solution vector
             ValueType meanBound = (currentUpperBound + currentLowerBound) / storm::utility::convertNumber<ValueType>(2.0);
-            storm::utility::vector::applyPointwise(*stepBoundedX, *stepBoundedStayProbs, x, [&meanBound] (ValueType const& v, ValueType const& p) { return v + p * meanBound; });
+            storm::utility::vector::applyPointwise(stepBoundedX, stepBoundedStayProbs, x, [&meanBound] (ValueType const& v, ValueType const& p) { return v + p * meanBound; });
             
             // If requested, we store the scheduler for retrieval.
             if (this->isTrackSchedulerSet()) {
