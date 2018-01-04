@@ -23,12 +23,15 @@ namespace storm {
             virtual ~SparseDtmcParameterLiftingModelChecker() = default;
             
             virtual bool canHandle(std::shared_ptr<storm::models::ModelBase> parametricModel, CheckTask<storm::logic::Formula, typename SparseModelType::ValueType> const& checkTask) const override;
-            virtual void specify(Environment const& env, std::shared_ptr<storm::models::ModelBase> parametricModel, CheckTask<storm::logic::Formula, typename SparseModelType::ValueType> const& checkTask) override;
-            void specify(Environment const& env, std::shared_ptr<SparseModelType> parametricModel, CheckTask<storm::logic::Formula, typename SparseModelType::ValueType> const& checkTask, bool skipModelSimplification);
+            virtual void specify(Environment const& env, std::shared_ptr<storm::models::ModelBase> parametricModel, CheckTask<storm::logic::Formula, typename SparseModelType::ValueType> const& checkTask, bool generateRegionSplitEstimates = false) override;
+            void specify(Environment const& env, std::shared_ptr<SparseModelType> parametricModel, CheckTask<storm::logic::Formula, typename SparseModelType::ValueType> const& checkTask, bool generateRegionSplitEstimates, bool skipModelSimplification);
             
             boost::optional<storm::storage::Scheduler<ConstantType>> getCurrentMinScheduler();
             boost::optional<storm::storage::Scheduler<ConstantType>> getCurrentMaxScheduler();
 
+            virtual bool isRegionSplitEstimateSupported() const override;
+            virtual std::map<typename RegionModelChecker<typename SparseModelType::ValueType>::VariableType, double> getRegionSplitEstimate() const override;
+            
         protected:
                 
             virtual void specifyBoundedUntilFormula(Environment const& env, CheckTask<storm::logic::BoundedUntilFormula, ConstantType> const& checkTask) override;
@@ -39,7 +42,9 @@ namespace storm {
             virtual storm::modelchecker::SparseInstantiationModelChecker<SparseModelType, ConstantType>& getInstantiationChecker() override;
                 
             virtual std::unique_ptr<CheckResult> computeQuantitativeValues(Environment const& env, storm::storage::ParameterRegion<typename SparseModelType::ValueType> const& region, storm::solver::OptimizationDirection const& dirForParameters) override;
-                
+            
+            void computeRegionSplitEstimates(std::vector<ConstantType> const& quantitativeResult, std::vector<uint_fast64_t> const& schedulerChoices, storm::storage::ParameterRegion<typename SparseModelType::ValueType> const& region, storm::solver::OptimizationDirection const& dirForParameters);
+            
             virtual void reset() override;
                 
         private:
@@ -59,6 +64,9 @@ namespace storm {
             boost::optional<std::vector<uint_fast64_t>> minSchedChoices, maxSchedChoices;
             std::vector<ConstantType> x;
             boost::optional<ConstantType> lowerResultBound, upperResultBound;
+            
+            bool regionSplitEstimationsEnabled;
+            std::map<typename RegionModelChecker<typename SparseModelType::ValueType>::VariableType, double> regionSplitEstimates;
         };
     }
 }
