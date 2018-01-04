@@ -671,7 +671,8 @@ namespace storm {
             // If minimizing, the primary bound is the lower bound; if maximizing, the primary bound is the upper bound.
             ValueType& primaryBound = minimize(dir) ? currentLowerBound : currentUpperBound;
             bool& hasPrimaryBound = minimize(dir) ? hasCurrentLowerBound : hasCurrentUpperBound;
-            STORM_LOG_INFO_COND(!hasPrimaryBound, "Initial bound on the result is " << primaryBound);
+            STORM_LOG_INFO_COND(!hasCurrentLowerBound, "Initial lower bound on the result is " << currentLowerBound);
+            STORM_LOG_INFO_COND(!hasCurrentUpperBound, "Initial upper bound on the result is " << currentUpperBound);
             ValueType& secondaryBound = minimize(dir) ? currentUpperBound : currentLowerBound;
             
             // Proceed with the iterations as long as the method did not converge or reach the maximum number of iterations.
@@ -806,6 +807,8 @@ namespace storm {
                     // The maximal allowed error (possibly respecting relative precision)
                     // Note: We implement the relative convergence criterion in a way that avoids division by zero in the case where stepBoundedX[i] is zero.
                     ValueType maxAllowedError = relative ? (precision * stepBoundedX[firstIndexViolatingConvergence]) : precision;
+                    ValueType oldLowerBound = currentLowerBound;
+                    ValueType oldUpperBound = currentUpperBound;
                     // First check with (possibly too tight) bounds from a previous iteration. Only compute the actual bounds if this first check passes.
                     secondaryBound = stepBoundedX[secondaryIndex] / (storm::utility::one<ValueType>() - stepBoundedStayProbs[secondaryIndex]);
                     bool computeActualBounds;
@@ -817,7 +820,13 @@ namespace storm {
                         primaryBound = stepBoundedX[primaryIndex] / (storm::utility::one<ValueType>() - stepBoundedStayProbs[primaryIndex]);
                         computeActualBounds = hasDecisionValue && better(decisionValue, primaryBound);
                     }
-
+                    // If the old bounds where tighter, use them instead.
+                    if (hasCurrentLowerBound && oldLowerBound > currentLowerBound) {
+                        currentLowerBound = oldLowerBound;
+                    }
+                    if (hasCurrentUpperBound && oldUpperBound < currentUpperBound) {
+                        currentUpperBound = oldUpperBound;
+                    }
                     computeActualBounds = computeActualBounds || stayProb * (currentUpperBound - currentLowerBound) <= maxAllowedError;
                     
                     if (computeActualBounds) {
@@ -849,6 +858,13 @@ namespace storm {
                         }
                         if (primaryBoundIsDecisionValue) {
                             hasImprovedPrimaryBound = true;
+                        }
+                        // If the old bounds where tighter, use them instead.
+                        if (hasCurrentLowerBound && oldLowerBound > currentLowerBound) {
+                            currentLowerBound = oldLowerBound;
+                        }
+                        if (hasCurrentUpperBound && oldUpperBound < currentUpperBound) {
+                            currentUpperBound = oldUpperBound;
                         }
                         // Potentially correct the primary bound so that scheduler choices remain valid
                         if (!primaryBoundIsDecisionValue && hasDecisionValue && better(decisionValue, primaryBound)) {
